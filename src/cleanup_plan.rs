@@ -8,6 +8,8 @@
 mod build;
 mod deferred_commit;
 mod execute;
+mod lexical_control;
+pub use lexical_control::{LexicalControlPlan, LexicalExitCertificate, LoopCertificate};
 mod native_rust;
 mod owner_admission;
 // Owned-value-across-a-yield liveness query (issue #296, spec section 11.6).
@@ -62,6 +64,8 @@ pub const CLEANUP_PLAN_SCHEMA_V15: &str = "semaprax.cleanup-plan.v15";
 pub const CLEANUP_PLAN_SCHEMA_V16: &str = "semaprax.cleanup-plan.v16";
 /// Same-owner byte-buffer updates preserve their reserved cleanup position.
 pub const CLEANUP_PLAN_SCHEMA_V17: &str = "semaprax.cleanup-plan.v17";
+/// Independently reconstructed lexical exits and finite loop certificates.
+pub const CLEANUP_PLAN_SCHEMA_V18: &str = "semaprax.cleanup-plan.v18";
 
 macro_rules! numeric_id {
     ($name:ident) => {
@@ -400,6 +404,15 @@ pub struct VariantCaseGuard {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ExitContinuation {
     Continue(EdgeId),
+    /// A finite iteration witness hands off to its authenticated runtime latch.
+    LoopLatch { target: crate::hir::ControlTarget },
+    LoopBreak { target: crate::hir::ControlTarget, edge: EdgeId },
+    /// Nested scopes settle before entering the ordinary postcondition route.
+    FunctionReturn {
+        target: crate::hir::ControlTarget,
+        edge: EdgeId,
+        source: CleanupResultSource,
+    },
     CommitResult { source: CleanupResultSource },
     ReturnFailure { source: StatusSourceId },
     ReturnUnit,
@@ -435,6 +448,8 @@ pub struct CleanupPlan {
     pub edges: Vec<CleanupEdge>,
     pub regions: Vec<CleanupRegion>,
     pub exits: Vec<ExitTarget>,
+    /// Absent on legacy functions; never inferred from a schema prefix.
+    pub lexical_control: Option<Box<LexicalControlPlan>>,
 }
 
 impl CleanupPlan {
@@ -455,6 +470,7 @@ impl CleanupPlan {
             edges: Vec::new(),
             regions: Vec::new(),
             exits: Vec::new(),
+            lexical_control: None,
         }
     }
 
