@@ -1,5 +1,6 @@
 //! Scalar projections of independently admitted flat Copy record carriers.
 use super::*;
+use crate::hir::{OwnershipMode, ResolvedProgram};
 
 pub(super) fn admitted(program: &ResolvedProgram, expression: &ResolvedExpr) -> bool {
     let ResolvedExprKind::Project { base, field } = &expression.kind else {
@@ -32,7 +33,7 @@ impl Evaluator<'_> {
         let value = record
             .fields
             .iter()
-            .find(|(id, _)| id == field)
+            .find(|(id, _)| *id == field)
             .map(|(_, value)| value)
             .ok_or(Flow::Guard("Copy projection field"))?;
         self.clone_value(value)
