@@ -261,6 +261,7 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
     let lower = concat!(
         include_str!("../../../../../src/cleanup_plan/build.rs"),
         include_str!("../../../../../src/cleanup_plan/build/lexical_control.rs"),
+        include_str!("../../../../../src/cleanup_plan/build/lexical_contract.rs"),
         include_str!("../../../../../src/cleanup_plan/build/lexical_control/capacity.rs"),
         include_str!("../../../../../src/cleanup_plan/build/lexical_iterator.rs"),
         include_str!("../../../../../src/cleanup_plan/build/lexical_iterator/lookup.rs"),

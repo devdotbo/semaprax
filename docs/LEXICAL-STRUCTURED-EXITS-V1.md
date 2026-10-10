@@ -85,7 +85,11 @@ Return first evaluates its expression left to right. Partial construction or
 argument failure uses the ordinary selected failure and live-prefix cleanup.
 Successful owned return moves into callee ProvisionalResult. It then leaves inner
 loop/block regions, retains root locals through ensures, runs every non-result
-cleanup action, and reaches the single successful CommitResult epilogue. Failure
+cleanup action, and reaches the single successful CommitResult epilogue. Each
+return has its own checked execution domain; repeated source postconditions reuse
+their authenticated source storage/region identities with exact per-domain scope
+selection, rather than cloning an unrelated contract or exposing another return's
+live owners. The ordinary postcondition temporary cleanup remains mandatory. Failure
 in the return expression or ensures never publishes; cleanup cannot replace the
 selected status or reacquire arguments committed to a callee. Borrowed publication
 uses the existing independent lifetime law, with no new borrowing privilege.

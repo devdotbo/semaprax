@@ -85,7 +85,7 @@ resource Token {
 
 @id("lex.hold")
 fn hold(n: i64, token: own Token) -> Token
-    ensures true
+    ensures string_len("ok") == 2
 {
     let mut i = 0;
     while i < n {
