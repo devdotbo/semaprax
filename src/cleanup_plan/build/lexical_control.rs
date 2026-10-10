@@ -8,6 +8,7 @@ pub(super) struct LexicalBuildState {
     pub certificate: super::super::LexicalControlPlan,
     returns: Vec<PendingReturn>,
     active_loops: Vec<LoopContext>,
+    pub(super) wrapper_breaks: Vec<super::lexical_break::PendingWrapperBreak>,
     pub(super) building_resume: bool,
     pub(super) replicated_statuses: BTreeSet<StatusSourceId>,
 }
@@ -31,6 +32,7 @@ pub(crate) fn build_plan_for_execution(
             owner: execution.clone(),
             returns: Vec::new(),
             active_loops: Vec::new(),
+            wrapper_breaks: Vec::new(),
             building_resume: false,
             replicated_statuses: BTreeSet::new(),
             certificate: super::super::LexicalControlPlan {
@@ -74,7 +76,7 @@ impl PlanBuilder<'_> {
 
     /// Settle exactly the lexical contour being left, in canonical runtime
     /// order. A root return deliberately retains root locals through ensures.
-    fn settle_lexical_contour(
+    pub(super) fn settle_lexical_contour(
         &self,
         state: &mut FlowState,
         regions: &[CleanupRegionId],
@@ -204,6 +206,13 @@ impl PlanBuilder<'_> {
     }
 
     pub(super) fn finish_lexical_returns(&mut self) -> Result<(), Diagnostic> {
+        if self
+            .lexical
+            .as_ref()
+            .is_some_and(|control| !control.wrapper_breaks.is_empty())
+        {
+            return Err(plan_error("owning Break wrapper resume was not completed"));
+        }
         let pending = self
             .lexical
             .as_mut()
@@ -410,7 +419,16 @@ impl PlanBuilder<'_> {
                 context.latch,
                 crate::hir::LoopLatchKind::OwnedIteratorStep { .. }
             );
-        let (leaves_regions, finalizers, owned_resume) = if owned_continue {
+        let owned_break = *kind == crate::ast::LexicalExitKind::Break
+            && matches!(
+                context.latch,
+                crate::hir::LoopLatchKind::OwnedIteratorStep { .. }
+            );
+        let (leaves_regions, finalizers, owned_resume) = if owned_break {
+            let (regions, actions, entry) =
+                self.lower_owned_iterator_break(&context, &mut state, region)?;
+            (regions, actions, Some(entry))
+        } else if owned_continue {
             let (regions, actions, entry) =
                 self.lower_owned_iterator_continue(&context, &mut state, region)?;
             (regions, actions, Some(entry))
@@ -425,18 +443,22 @@ impl PlanBuilder<'_> {
         };
         let (continuation, resume) = match kind {
             crate::ast::LexicalExitKind::Break => {
-                if state != context.entry {
+                if !owned_break && state != context.entry {
                     return Err(plan_error(
                         "loop break requires exact surrounding ownership state",
                     ));
                 }
-                let edge = self.new_edge(block, context.after, EdgeCondition::Always)?;
+                let edge = self.new_edge(
+                    block,
+                    owned_resume.unwrap_or(context.after),
+                    EdgeCondition::Always,
+                )?;
                 (
                     ExitContinuation::LoopBreak {
                         target: target.clone(),
                         edge,
                     },
-                    None,
+                    owned_resume,
                 )
             }
             crate::ast::LexicalExitKind::Continue => {

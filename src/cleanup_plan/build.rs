@@ -42,6 +42,7 @@ mod hostile_tests;
 mod iterator;
 pub(super) mod lexical_control;
 mod lexical_iterator;
+mod lexical_break;
 mod owned_try;
 mod record_destructure;
 mod renewal;
@@ -3581,6 +3582,7 @@ impl<'a> PlanBuilder<'a> {
                         )?;
                     }
                     let (block, state) = self.exit_scope(evaluated.block, state, child_region)?;
+                    self.finish_wrapper_breaks(expression, child_region, block, &state)?;
                     results.push(EvalResult {
                         block,
                         state,
