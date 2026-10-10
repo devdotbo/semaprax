@@ -51,13 +51,19 @@ fn directory() -> std::path::PathBuf {
 
 #[test]
 fn native_static_utf8_reads_repeat_without_any_heap_constructor_at_o0_o2() {
-    let ast = parse(SOURCE, Path::new("static-native.spx")).unwrap();
+    native_probe(SOURCE, 0);
+}
+
+fn native_probe(source: &str, owned_allocations: u32) {
+    let ast = parse(source, Path::new("static-native.spx")).unwrap();
     let resolved = hir::resolve(&ast).unwrap();
     hir::validate(&resolved).unwrap();
-    assert!(resolved
-        .functions
-        .iter()
-        .all(|f| f.cleanup_plan.slots.is_empty()));
+    if owned_allocations == 0 {
+        assert!(resolved
+            .functions
+            .iter()
+            .all(|f| f.cleanup_plan.slots.is_empty()));
+    }
     let generated = codegen::emit_c(&ast).unwrap();
     assert_eq!(generated, codegen::emit_c(&ast).unwrap());
     assert!(generated.contains("\\303\\251\\000"));
@@ -70,7 +76,7 @@ fn native_static_utf8_reads_repeat_without_any_heap_constructor_at_o0_o2() {
     let preamble = include_str!("static_utf8/allocations.c");
     let probe = include_str!("static_utf8/probe.c");
     let input = path.join("probe.c");
-    std::fs::write(&input, format!("{preamble}\n{generated}\n{probe}")).unwrap();
+    std::fs::write(&input, format!("{preamble}\n{generated}\n#define SPX_PROBE_EXPECTED_OWNER_ALLOCATIONS {owned_allocations}u\n{probe}")).unwrap();
     for optimization in ["-O0", "-O2"] {
         let executable = path.join(format!(
             "probe{}{}",
@@ -181,4 +187,35 @@ fn static_utf8_backends_replay_types_producers_and_keep_public_providers_closed(
             .code,
         "SPX-W119"
     );
+}
+
+#[test]
+fn static_utf8_writer_helpers_before_and_inside_loops_have_one_settled_owner_at_o0_o2_and_wasm() {
+    let source = include_str!("static_utf8_writer.spx");
+    native_probe(source, 1);
+    let ast = parse(source, Path::new("static-writer.spx")).unwrap();
+    let bytes = wasm::emit_module(&ast).unwrap();
+    wasmparser::Validator::new().validate_all(&bytes).unwrap();
+    if Command::new("node").arg("--version").output().is_err() {
+        return;
+    }
+    let path = directory();
+    std::fs::write(path.join("probe.wasm"), bytes).unwrap();
+    std::fs::write(
+        path.join("probe.mjs"),
+        include_str!("static_utf8/writer.mjs"),
+    )
+    .unwrap();
+    let output = Command::new("node")
+        .arg("probe.mjs")
+        .current_dir(&path)
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{} {}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    std::fs::remove_dir_all(path).unwrap();
 }
