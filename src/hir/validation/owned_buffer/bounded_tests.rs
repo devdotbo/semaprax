@@ -55,3 +55,94 @@ fn bounded_allocation_charges_literal_payload_not_runtime_request() {
     assert_eq!(function.bytes_copy_sites, 1);
     assert_eq!(function.owned_byte_payload_bytes, 64);
 }
+
+#[test]
+fn inline_fixed_copy_array_views_replay_without_granting_computed_or_owned_views() {
+    const SOURCE: &str = "module array_read;@id(\"main\") fn main()->i64 {let key=[65u8,66u8];let mut at=0usize;while at<2usize{let byte=byte_get(array_as_slice(key),at);at=at+1usize;0}i64_from_usize(at)}";
+    let ast = crate::check(SOURCE, "inline-array-loop.spx").unwrap();
+    let program = crate::hir::resolve(&ast).unwrap();
+    crate::hir::validate(&program).unwrap();
+    let canonical = crate::format::canonical(&ast);
+    let roundtrip = crate::check(&canonical, "inline-array-loop-roundtrip.spx").unwrap();
+    assert_eq!(
+        crate::graph::to_json(&ast).unwrap(),
+        crate::graph::to_json(&roundtrip).unwrap()
+    );
+    let function = program
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "main")
+        .unwrap();
+    let ResolvedExprKind::Block { statements, .. } = &function.body.kind else {
+        panic!("body")
+    };
+    let body = statements[2].child(1).expect("while body");
+    let ResolvedExprKind::Block { statements, .. } = &body.kind else {
+        panic!("loop body")
+    };
+    let ResolvedStatement::Let { value, .. } = &statements[0] else {
+        panic!("read")
+    };
+    let ResolvedExprKind::Call { args, .. } = &value.kind else {
+        panic!("byte_get")
+    };
+    let view = &args[0];
+    let validator = HirValidator::new(&program).unwrap();
+    validator.validate_while_admission(view).unwrap();
+    for hostile in 0..4 {
+        let mut changed = view.clone();
+        let ResolvedExprKind::Call {
+            callee,
+            type_arguments,
+            args,
+            ..
+        } = &mut changed.kind
+        else {
+            panic!("array view")
+        };
+        match hostile {
+            0 => *callee = DeclarationId::new(crate::byte_ops::BYTES_AS_SLICE_ID),
+            1 => type_arguments.push(ResolvedType::Usize),
+            2 => args[0].ownership = OwnershipMode::Own,
+            3 => args[0].kind = ResolvedExprKind::ArrayU8(vec![65, 66]),
+            _ => unreachable!(),
+        }
+        assert_eq!(
+            validator
+                .validate_while_admission(&changed)
+                .unwrap_err()
+                .code,
+            "SPX-H006"
+        );
+    }
+    let mut forged = program.clone();
+    let function = forged
+        .functions
+        .iter_mut()
+        .find(|f| f.id.as_str() == "main")
+        .unwrap();
+    let ResolvedExprKind::Block { statements, .. } = &mut function.body.kind else {
+        panic!("body")
+    };
+    let body = match &mut statements[2] {
+        ResolvedStatement::While { body, .. } => body,
+        _ => panic!("while"),
+    };
+    let ResolvedExprKind::Block { statements, .. } = &mut body.kind else {
+        panic!("loop body")
+    };
+    let ResolvedStatement::Let { value, .. } = &mut statements[0] else {
+        panic!("read")
+    };
+    let ResolvedExprKind::Call { args, .. } = &mut value.kind else {
+        panic!("byte_get")
+    };
+    let ResolvedExprKind::Call { args, .. } = &mut args[0].kind else {
+        panic!("array view")
+    };
+    let ResolvedExprKind::Place(place) = &mut args[0].kind else {
+        panic!("named array")
+    };
+    place.root = ValueId::new("forged.array.owner");
+    assert_eq!(crate::hir::validate(&forged).unwrap_err().code, "SPX-H006");
+}

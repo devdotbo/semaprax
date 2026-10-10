@@ -171,16 +171,13 @@ fn chain_capacity(args: &[ResolvedExpr], reopen: bool) -> Result<Option<u64>, Di
         }
         if op == crate::byte_ops::ByteOp::ZeroedBounded {
             return match inner.as_slice() {
-                [
-                    ResolvedExpr {
-                        kind: ResolvedExprKind::Usize(requested),
-                        ..
-                    },
-                    ResolvedExpr {
-                        kind: ResolvedExprKind::Usize(bound),
-                        ..
-                    },
-                ] if *requested <= *bound
+                [ResolvedExpr {
+                    kind: ResolvedExprKind::Usize(requested),
+                    ..
+                }, ResolvedExpr {
+                    kind: ResolvedExprKind::Usize(bound),
+                    ..
+                }] if *requested <= *bound
                     && *bound <= crate::byte_ops::MAX_BUFFER_CAPACITY_BYTES =>
                 {
                     Ok(Some(*requested))
@@ -224,6 +221,31 @@ fn chain_capacity(args: &[ResolvedExpr], reopen: bool) -> Result<Option<u64>, Di
     }
 }
 
+// Fixed byte arrays are Copy storage. This exact nonallocating view is the
+// existing inline indexed-read exception; ordinary HIR validation independently
+// authenticates the named binding, its declared extent and availability.
+fn fixed_array_view(expression: &ResolvedExpr) -> bool {
+    let ResolvedExprKind::Call {
+        callee,
+        type_arguments,
+        instance: None,
+        args,
+    } = &expression.kind
+    else {
+        return false;
+    };
+    let [source] = args.as_slice() else {
+        return false;
+    };
+    callee.as_str() == crate::byte_ops::ARRAY_AS_SLICE_ID
+        && type_arguments.is_empty()
+        && expression.ty == ResolvedType::SliceU8
+        && expression.ownership == OwnershipMode::Borrow
+        && source.ownership == OwnershipMode::Value
+        && matches!(source.ty, ResolvedType::ArrayU8(n) if u64::from(n) <= crate::byte_data_capacity::MAX_ARRAY_BYTES)
+        && matches!(&source.kind, ResolvedExprKind::Place(place) if place.projections.is_empty())
+}
+
 /// Authenticate one compiler-owned byte operation inside a bounded `while`.
 ///
 /// Two shapes qualify. The established read-only indexed profile is
@@ -241,6 +263,15 @@ pub(super) fn require_admitted_while_operation(
     operation: crate::byte_ops::ByteOp,
     args: &[ResolvedExpr],
 ) -> Result<(), Diagnostic> {
+    if operation == crate::byte_ops::ByteOp::ArrayAsSlice {
+        return if fixed_array_view(expression) {
+            Ok(())
+        } else {
+            Err(hir_error(
+                "while loop array view requires one exact whole Copy byte-array binding",
+            ))
+        };
+    }
     if matches!(
         operation,
         crate::byte_ops::ByteOp::Set
@@ -319,6 +350,9 @@ pub(super) fn require_admitted_while_operation(
         )));
     }
     let slice = &args[0];
+    if fixed_array_view(slice) {
+        return Ok(());
+    }
     let ResolvedExprKind::Place(place) = &slice.kind else {
         return Err(hir_error_at_span(
             slice.span,
