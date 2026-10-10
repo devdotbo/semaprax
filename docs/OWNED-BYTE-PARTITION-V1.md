@@ -21,7 +21,10 @@ bytes_partition(buffer: own Bytes, count: usize, width: usize) -> Vec<Bytes>
 The spelling and intrinsic identity require ordinary registry review; neither
 is registered by this document. Evaluation and argument staging are left to
 right. The operation consumes exactly one whole named Bytes owner at one
-commit boundary. Existing loans must have ended before staging its transfer.
+commit boundary. Its authority must independently identify an ordinary whole-
+backing lease; a child range is not an eligible partition input, even when its
+offset is zero or its extent happens to equal the backing extent. Existing loans
+must have ended before staging its transfer.
 There is no borrowed-input overload, projected-owner shortcut, overlapping
 window operation, implicit clone, arbitrary pointer input, or padding/truncation.
 
@@ -88,9 +91,11 @@ administrative backing ownership; it never copies payload bytes.
 Live child ranges are pairwise disjoint. A renewed bytes_set owner retains the
 same exact range and advances the appropriate lease generation. A borrow binds
 the current lease generation and range; existing byte_get/byte_range rules cannot
-read or write outside it. Repartitioning a child consumes that child's lease
-and covers only its exact range, with the same metadata preflight and bounds.
-No source parent or prior generation remains usable after commit.
+read or write outside it. Child leases remain fully affine Bytes for the already
+admitted normal operations,
+including stores, views, transfers, clone and drop. V1 explicitly refuses
+partitioning a child lease; recursive partitioning needs a separate contract and
+metadata proof. No source parent or prior generation remains usable after commit.
 
 Pop, iterator next and consuming traversal transfer the original child lease.
 A popped child survives Vec drop, sibling drop and iterator abandonment. The
@@ -118,7 +123,8 @@ Runtime counters cannot replace independently checked source call-path bounds.
 Lease metadata is a separate finite physical inventory, including slot spare
 capacity, generation records, backing administration and Vec backing. A selected
 invocation must precharge its complete inventory before allocation. A bounded
-count alone does not prove total metadata size or repeated repartition capacity.
+count alone does not prove total metadata size or repeated whole-backing partition
+capacity; child repartitioning remains closed.
 The executable contract must authenticate a finite slot/peak-live bound, reject
 slot-generation exhaustion without ABA reuse, and test exact/one-short refusal.
 No unbounded registry, global cache or per-child hidden heap allocation is allowed.
@@ -186,19 +192,21 @@ partial preparation/clone failure, postcondition failure, early exits, reentry,
 sticky status, untouched failed outputs and exact-once final backing release.
 
 Hostiles include stale generations, wrong domain/module, foreign handles,
-overlapping forged ranges, mismatched lengths, incomplete inventory and graph/
+overlapping forged ranges, child-partition refusal (including zero-offset and
+whole-extent children), mismatched lengths, incomplete inventory and graph/
 cache/source drift. Preserve 32 and +1 backing-event and 2 MiB adjacent controls;
 physical native allocation interception must distinguish payload from metadata.
 No allocation after first-read may be claimed until the actual owning trace
 proves that particular fixture's read phase. Unsupported public routes must
-refuse before producing artifacts. Full quality qualification remains required.
+refuse before producing artifacts. Owning executable qualification remains pending.
 
 ## Separate construction-fusion obligation
 
 This primitive does NOT admit the unchanged 4,096-row fixture that executes
 bytes_zeroed(3usize) inside its constructor loop. It cannot reinterpret 4,096
-source allocations as one simply by naming a partition primitive. A separately
-versioned general bulk-construction lowering would need exact induction/trip
+source allocations as one simply by naming a partition primitive. The separate
+[construction-fusion issue #747](https://github.com/wavect/semaprax/issues/747)
+requires a versioned general bulk-construction lowering with exact induction/trip
 count, capacity, payload extent, fresh row, same Vec destination, no intermediate
 owner escape, left-to-right effects and failure/early-exit equivalence, independently
 replayed from current source. No filename, stable-id or benchmark constant can
