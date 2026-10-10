@@ -161,3 +161,6 @@ fn indexed(text: string) -> usize {
         )
     );
 }
+
+#[path = "return_operand_tests.rs"]
+mod return_operand;

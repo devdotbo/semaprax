@@ -56,6 +56,14 @@ function's declared result and owning transfer. Independent HIR validation uses
 bottom types. A returned call may fail through the ordinary staged-argument
 failure route; that does not authorize another lexical exit in its argument.
 
+A loop return may hand off one direct, whole named owned binding into the
+function result domain: that owner need not be restored to the loop entry.
+This exemption grants no call, effect, allocation or invocation authority.
+Every other return operand retains the loop's existing executable admission,
+and every operand retains ordinary expression/type/ownership and lexical-target
+validation. Source and independent HIR must both reject a closed loop operation
+hidden inside `return`, even though the returned expression executes at most once.
+
 ## Finite cleanup proof
 
 The selective proof is `semaprax.lexical-control-flow.v1`, joined with selective

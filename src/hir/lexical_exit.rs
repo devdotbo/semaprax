@@ -72,7 +72,7 @@ mod latch;
 pub(crate) use latch::validate_latch;
 
 mod wrapper;
-pub(crate) use wrapper::{source_for_wrapper, SourceForWrapper};
+pub(crate) use wrapper::{SourceForWrapper, source_for_wrapper};
 
 mod validation;
 pub(crate) use validation::validate_function;
@@ -90,3 +90,5 @@ pub(crate) fn is_loop_statement(statement: &super::ResolvedStatement) -> bool {
         super::ResolvedStatement::While { .. } | super::ResolvedStatement::LexicalWhile { .. }
     )
 }
+
+pub(crate) mod return_operand;

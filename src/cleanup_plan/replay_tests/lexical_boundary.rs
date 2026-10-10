@@ -128,6 +128,11 @@ fn contract_calls_cover_requires_ordinary_and_each_distinct_return_domain() {
 #[test]
 fn replicated_contract_domains_cannot_borrow_another_return_contour_or_order() {
     let (program, baseline) = fixture();
+    let (_, repeated) = fixture();
+    assert_eq!(
+        baseline.cleanup_plan.status_sources, repeated.cleanup_plan.status_sources,
+        "normal success and two Return ensures domains preserve canonical producer order"
+    );
     let mut changed = baseline.clone();
     changed
         .cleanup_plan
@@ -141,11 +146,18 @@ fn replicated_contract_domains_cannot_borrow_another_return_contour_or_order() {
     let mut changed = baseline.clone();
     changed.cleanup_plan.exits[failures[1]].from = changed.cleanup_plan.exits[failures[2]].from;
     assert!(validate_structure(&program, &changed).is_err());
-    let mut changed = baseline;
+    let mut changed = baseline.clone();
     changed.cleanup_plan.exits[failures[1]]
         .finalize_in_order
         .clear();
     assert!(validate_structure(&program, &changed).is_err());
+    assert!(baseline.cleanup_plan.status_sources.len() >= 2);
+    let mut changed = baseline;
+    changed.cleanup_plan.status_sources.swap(0, 1);
+    assert!(
+        validate_structure(&program, &changed).is_err(),
+        "replicated ensures do not grant authority to repair canonical status order"
+    );
 }
 
 #[test]
@@ -186,7 +198,9 @@ fn requires_cannot_be_replaced_by_ensures_or_omitted_and_contract_loops_stay_clo
     changed.cleanup_plan.status_sources.remove(requires);
     assert!(validate_structure(&program, &changed).is_err());
     for clause in ["requires", "ensures"] {
-        let source=format!("module closed; @id(\"run\") fn run()->i64 {clause} {{ let mut i=0; while i<1 {{i=i+1;0}} i==1 }} {{0}} @id(\"main\") fn main()->i64{{0}}");
+        let source = format!(
+            "module closed; @id(\"run\") fn run()->i64 {clause} {{ let mut i=0; while i<1 {{i=i+1;0}} i==1 }} {{0}} @id(\"main\") fn main()->i64{{0}}"
+        );
         let errors = crate::check(&source, "closed-contract-loop.spx").unwrap_err();
         assert!(errors.iter().any(|error| error.code == "SPX-T253"));
         assert!(errors.iter().any(|error| error.code == "SPX-U106"));
@@ -226,10 +240,12 @@ fn owned_return_keeps_exact_provisional_result_in_its_postcondition_failure_cont
     validate_structure(&program, &baseline).unwrap();
     let failures = ensures_failures(&baseline);
     assert_eq!(failures.len(), 1);
-    assert!(baseline.cleanup_plan.exits[failures[0]]
-        .finalize_in_order
-        .iter()
-        .any(|action| action.source.storage == StorageId::ProvisionalResult));
+    assert!(
+        baseline.cleanup_plan.exits[failures[0]]
+            .finalize_in_order
+            .iter()
+            .any(|action| action.source.storage == StorageId::ProvisionalResult)
+    );
     let mut changed = baseline;
     changed.cleanup_plan.exits[failures[0]]
         .finalize_in_order
