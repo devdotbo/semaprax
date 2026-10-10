@@ -15,6 +15,7 @@ use crate::loan_plan::LoanPlan;
 
 use super::byte_capacity::analyze_byte_data_capacity;
 use super::byte_slice_provenance::derive_byte_slice_provenance;
+use super::hir_error;
 use super::ids::{DeclarationId, FunctionExecutionId, FunctionInstanceId, ValueId};
 use super::monomorphize::materialize_function_template;
 use super::nodes::{

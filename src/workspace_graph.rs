@@ -5378,7 +5378,6 @@ fn signature_type_is_admitted(
 ) -> bool {
     match ty {
         Type::Never => false,
-        Type::Never => false,
         Type::I64
         | Type::I32
         | Type::Char
@@ -5521,6 +5520,7 @@ fn exposed_type_reference_is_directly_imported(
     visiting: &mut BTreeSet<String>,
 ) -> bool {
     match ty {
+        Type::Never => false,
         Type::I64
         | Type::I32
         | Type::Char

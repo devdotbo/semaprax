@@ -1,5 +1,6 @@
 //! Provenance-gated byte views for the Project-v28 native resource profile.
 
+use crate::diagnostic::Diagnostic;
 use crate::hir::{self, ResolvedExpr, ResolvedExprKind, ResolvedType};
 
 use super::super::{CEmitter, COutput, CValue, NativeOutputProfile};
