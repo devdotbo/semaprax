@@ -330,6 +330,9 @@ pub(super) fn derive(
                             ));
                         }
                     }
+                    K::BorrowedUtf8Literal(_) => {
+                        return Err(error("static borrowed UTF-8 is outside the selected final-UTF8 certificate profile"));
+                    }
                     K::String(_) | K::LiteralFormat { .. } => {
                         return Err(error("literal/format String allocation is forbidden"))
                     }

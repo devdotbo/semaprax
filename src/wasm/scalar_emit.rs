@@ -82,6 +82,12 @@ pub(super) fn emit_with_control(
             output.push(0x41);
             write_i64(output, i64::from(*value));
         }
+        ResolvedExprKind::BorrowedUtf8Literal(_) => {
+            return Err(Diagnostic::io(
+                "SPX-W116",
+                "static borrowed UTF-8 requires the aggregate memory profile",
+            ));
+        }
         ResolvedExprKind::String(value) => {
             // A string value is an abstract host handle riding the i64 lane;
             // the handle is freshly allocated for this evaluation.

@@ -89,6 +89,7 @@ fn expression_uses_str_ops(expression: &ResolvedExpr) -> bool {
         | ResolvedExprKind::ArrayU8(_)
         | ResolvedExprKind::RepeatArrayU8 { .. }
         | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. }
         | ResolvedExprKind::FunctionReference { .. } => false,

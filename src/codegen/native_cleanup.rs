@@ -798,7 +798,8 @@ fn validate_expression(
         | ResolvedExprKind::Float32(_)
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::String(_) => {}
+        | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_) => {}
         ResolvedExprKind::BorrowPlace { operation, place } => {
             if !borrow_place_shape_is_admitted(operation, place) {
                 return Err(unsupported(

@@ -193,6 +193,7 @@ pub(super) fn collect_locals(
         | ResolvedExprKind::ArrayU8(_)
         | ResolvedExprKind::RepeatArrayU8 { .. }
         | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. } => {}
     }

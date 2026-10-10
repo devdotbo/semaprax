@@ -286,6 +286,7 @@ pub(super) fn expression_has_try(expression: &ResolvedExpr) -> bool {
         | ResolvedExprKind::ArrayU8(_)
         | ResolvedExprKind::RepeatArrayU8 { .. }
         | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. }
         | ResolvedExprKind::FunctionReference { .. } => false,

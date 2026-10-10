@@ -134,6 +134,7 @@ pub fn inspect(
                                 })
                             }
                         }
+                        K::BorrowedUtf8Literal(_) => None,
                         K::String(_) | K::LiteralFormat { .. } => Some(SiteKind::Literal),
                         K::Place(_) if expression.ty == hir::ResolvedType::String => {
                             Some(SiteKind::StringPlace)

@@ -271,6 +271,7 @@ pub(super) fn resolved_expr_children<'a>(
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
         | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::ArrayU8(_)
         | ResolvedExprKind::RepeatArrayU8 { .. }
         | ResolvedExprKind::Place(_) => Box::new(std::iter::empty()),
