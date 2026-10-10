@@ -761,18 +761,27 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     } => Some(selected.name.as_str()),
                     _ => None,
                 };
-                if let Some(span) = crate::source_verify::record_traversal::body_binding_conflict(
+                match crate::source_verify::record_traversal::body_binding_conflict(
                     body,
                     source,
                     item,
                     selected_index,
                 ) {
-                    self.diagnostics.push(error(
+                    Ok(Some(span)) => {
+                        self.diagnostics.push(error(
+                            self.program,
+                            "SPX-T284",
+                            "record traversal cannot shadow its carrier, row or index binding",
+                            span,
+                        ));
+                    }
+                    Ok(None) => {}
+                    Err(()) => self.diagnostics.push(error(
                         self.program,
                         "SPX-T284",
-                        "record traversal cannot shadow its carrier, row or index binding",
-                        span,
-                    ));
+                        "record traversal binding scan exceeds its source scratch, depth or work budget",
+                        body.span,
+                    )),
                 }
 
                 if let Some(binding) = self.scopes[block_scope].bindings.get_mut(item) {

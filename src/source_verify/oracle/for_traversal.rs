@@ -110,18 +110,27 @@ pub(super) fn check(
     };
     if borrowing && item_inserted {
         if let Some(root) = source {
-            if let Some(span) = crate::source_verify::record_traversal::body_binding_conflict(
+            match crate::source_verify::record_traversal::body_binding_conflict(
                 body,
                 root,
                 item,
                 selected.map(|index| index.name.as_str()),
             ) {
-                diagnostics.push(error(
+                Ok(Some(span)) => {
+                    diagnostics.push(error(
+                        program,
+                        "SPX-T284",
+                        "record traversal cannot shadow its carrier, row or index binding",
+                        span,
+                    ));
+                }
+                Ok(None) => {}
+                Err(()) => diagnostics.push(error(
                     program,
                     "SPX-T284",
-                    "record traversal cannot shadow its carrier, row or index binding",
-                    span,
-                ));
+                    "record traversal binding scan exceeds its source scratch, depth or work budget",
+                    body.span,
+                )),
             }
             if let Some(binding) = scope.get_mut(item) {
                 binding.mode = ParamMode::Borrow;

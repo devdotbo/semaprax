@@ -59,31 +59,99 @@ pub(super) fn project(
     ))
 }
 
+// The scan has its own bounded, charged scratch; neither verifier may rely on
+// the other's traversal to authenticate this preflight. Cursor frames retain
+// ancestors only, never a whole sibling frontier.
+const MAX_SCAN_DEPTH: usize = crate::cache_codec::MAX_DEPTH;
+const MAX_SCAN_WORK: usize = crate::cache_codec::MAX_NODES;
+
 pub(super) fn body_binding_conflict(
     body: &Expr,
     root: &str,
     row: &str,
     index: Option<&str>,
-) -> Option<crate::ast::Span> {
-    let mut pending = vec![body];
-    while let Some(expression) = pending.pop() {
-        if let ExprKind::Block { statements, .. } = &expression.kind {
-            for statement in statements {
-                if let crate::ast::Statement::Let {
-                    name, name_span, ..
-                } = statement
-                {
-                    if name == root || name == row || index == Some(name.as_str()) {
-                        return Some(*name_span);
+) -> Result<Option<crate::ast::Span>, ()> {
+    scan(body, root, row, index, MAX_SCAN_DEPTH, MAX_SCAN_WORK)
+}
+
+fn scan(
+    body: &Expr,
+    root: &str,
+    row: &str,
+    index: Option<&str>,
+    max_depth: usize,
+    mut work: usize,
+) -> Result<Option<crate::ast::Span>, ()> {
+    // Fixed scratch has no allocator rounding, reallocation overlap or hidden
+    // Vec spare capacity. Charge its full physical storage before using it.
+    let scratch_bytes = std::mem::size_of::<[(&Expr, usize); MAX_SCAN_DEPTH]>();
+    if max_depth == 0
+        || max_depth > MAX_SCAN_DEPTH
+        || !crate::bounded_output::reserve_active_required(scratch_bytes)
+    {
+        return Err(());
+    }
+    let mut frames = [(body, 0usize); MAX_SCAN_DEPTH];
+    let mut depth = 0usize;
+    let mut entering = Some(body);
+    loop {
+        if let Some(expression) = entering.take() {
+            work = work.checked_sub(1).ok_or(())?;
+            if let ExprKind::Block { statements, .. } = &expression.kind {
+                for statement in statements {
+                    work = work.checked_sub(1).ok_or(())?;
+                    if let crate::ast::Statement::Let {
+                        name, name_span, ..
+                    } = statement
+                    {
+                        if name == root || name == row || index == Some(name.as_str()) {
+                            return Ok(Some(*name_span));
+                        }
                     }
                 }
             }
+            let mut children = 0usize;
+            while child_counted(expression, children, &mut work)?.is_some() {
+                children += 1;
+            }
+            if depth == max_depth {
+                return Err(());
+            }
+            frames[depth] = (expression, children);
+            depth += 1;
         }
-        let mut position = 0;
-        while let Some(child) = expression.child(position) {
-            pending.push(child);
-            position += 1;
+        let Some(frame) = depth.checked_sub(1) else {
+            return Ok(None);
+        };
+        let (expression, remaining) = frames[frame];
+        if remaining == 0 {
+            depth -= 1;
+        } else {
+            frames[frame].1 -= 1;
+            // Match the old LIFO frontier's reverse-child visit order exactly.
+            entering = child_counted(expression, remaining - 1, &mut work)?;
         }
     }
-    None
 }
+
+fn child_counted<'a>(
+    expression: &'a Expr,
+    index: usize,
+    work: &mut usize,
+) -> Result<Option<&'a Expr>, ()> {
+    // Block/Match child lookup scans preceding statements/arms. Debit that
+    // lookup work too, including a terminal missing-child probe, before it runs.
+    let cost = match expression.kind {
+        ExprKind::Block { .. } => index.checked_add(1).ok_or(())?,
+        ExprKind::Match { .. } => index
+            .checked_add(1)
+            .and_then(|n| n.checked_mul(2))
+            .ok_or(())?,
+        _ => 1,
+    };
+    *work = work.checked_sub(cost).ok_or(())?;
+    Ok(expression.child(index))
+}
+
+#[cfg(test)]
+mod tests;
