@@ -2,7 +2,7 @@
 use super::*;
 
 #[allow(clippy::too_many_arguments)]
-pub(super) fn validate_blocks_and_edges(
+pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(
     program: &dyn ReplayContext,
     function: &ResolvedFunction,
     expressions: &BTreeMap<ExpressionId, Option<CallFact>>,

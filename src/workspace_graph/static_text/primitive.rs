@@ -4,22 +4,22 @@ use super::*;
 use crate::ast::{ParamMode, Type};
 mod body_digest;
 
-pub(super) struct Inventory {
-    pub(super) functions: Vec<FunctionFact>,
+pub(in crate::workspace_graph) struct Inventory {
+    pub(in crate::workspace_graph) functions: Vec<FunctionFact>,
     source_revision: [u8; 32],
 }
-pub(super) struct FunctionFact {
-    pub(super) id: hir::DeclarationId,
-    pub(super) explicit: bool,
-    pub(super) name: String,
-    pub(super) params: Vec<ParameterFact>,
-    pub(super) result: hir::ResolvedType,
+pub(in crate::workspace_graph) struct FunctionFact {
+    pub(in crate::workspace_graph) id: hir::DeclarationId,
+    pub(in crate::workspace_graph) explicit: bool,
+    pub(in crate::workspace_graph) name: String,
+    pub(in crate::workspace_graph) params: Vec<ParameterFact>,
+    pub(in crate::workspace_graph) result: hir::ResolvedType,
     body: [u8; 32],
 }
-pub(super) struct ParameterFact {
-    pub(super) name: String,
-    pub(super) ownership: hir::OwnershipMode,
-    pub(super) ty: hir::ResolvedType,
+pub(in crate::workspace_graph) struct ParameterFact {
+    pub(in crate::workspace_graph) name: String,
+    pub(in crate::workspace_graph) ownership: hir::OwnershipMode,
+    pub(in crate::workspace_graph) ty: hir::ResolvedType,
 }
 
 fn ty(ty: &Type) -> Option<hir::ResolvedType> {
@@ -126,7 +126,7 @@ pub(super) fn capture(
     let Some(sources) = authenticated_sources else {
         return Ok(None);
     };
-    work = work.checked_sub(sources.len()).ok_or_else(fail)?;
+    work.checked_sub(sources.len()).ok_or_else(fail)?;
     let mut current_sources = sources.iter().filter(|source| source.path == program.path);
     let source = current_sources.next().ok_or_else(fail)?;
     if current_sources.next().is_some() {
@@ -220,7 +220,7 @@ pub(super) fn capture(
     Ok(Some(Box::new(inventory)))
 }
 impl Inventory {
-    pub(super) fn owned_capacity_bytes(&self) -> Option<usize> {
+    pub(in crate::workspace_graph) fn owned_capacity_bytes(&self) -> Option<usize> {
         self.functions.iter().try_fold(
             self.functions
                 .capacity()

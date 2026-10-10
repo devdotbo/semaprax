@@ -117,7 +117,7 @@ pub(super) fn authenticate<'a>(
 /// Static literal sites have already been independently authenticated by the
 /// caller. Rebuild primitive declarations, then run complete typed lexical
 /// replay with the same cumulative reservation for every selected function.
-pub(super) fn replay(
+pub(in crate::workspace_graph::source_schema) fn replay(
     module: &WorkspaceResolvedModule,
     facts: &BTreeMap<String, WorkspaceDeclarationFact>,
 ) -> Result<bool, Vec<Diagnostic>> {

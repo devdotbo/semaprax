@@ -1,7 +1,7 @@
 //! Allocation guards for independent lexical-certificate authentication.
 use super::*;
 
-pub(super) fn insert<K: Ord, V>(
+pub(in crate::cleanup_plan::replay) fn insert<K: Ord, V>(
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
     map: &mut BTreeMap<K, V>,
@@ -139,7 +139,7 @@ pub(super) fn chain_contains(
     }
     Ok(found)
 }
-pub(super) fn region_chain(
+pub(in crate::cleanup_plan::replay) fn region_chain(
     function: &ResolvedFunction,
     start: CleanupRegionId,
     budget: &mut ReplayBudget,

@@ -289,8 +289,8 @@ type Observation = std::rc::Rc<SkeletonObservation>;
 /// by the flat `items` appended afterwards.
 #[derive(Clone, Default)]
 pub(super) struct Observations {
-    prefix: Option<std::rc::Rc<ObservationDag>>,
-    items: Vec<Observation>,
+    pub(super) prefix: Option<std::rc::Rc<ObservationDag>>,
+    pub(super) items: Vec<Observation>,
 }
 
 /// A set of observation sequences. `Seq` is `prefix` then `items`; `Cat`
