@@ -56,6 +56,20 @@ pub fn emit_hir_c_with_selected_file_resource_command(
     program: &crate::hir::ResolvedProgram,
 ) -> Result<String, crate::diagnostic::Diagnostic> {
     crate::hir::validate(program)?;
+    if ![
+        crate::string_ops::FILE_READ_TEXT_EFFECT,
+        crate::command_io_ops::ARGS_READ_EFFECT,
+    ]
+    .iter()
+    .all(|required| {
+        program
+            .permits
+            .iter()
+            .any(|permit| permit.as_str() == *required)
+    }) {
+        return Err(crate::diagnostic::Diagnostic::io("SPX-T273",
+            "single-file command-line program authority mismatch: source-command.selected-file.resource-output.v1 requires both fs.read and process.args.read"));
+    }
     crate::source_command::validate_resource_output_authority(program)?;
     crate::command_io_ops::validate_operation_profile(
         program,
@@ -107,3 +121,6 @@ pub(super) fn emit_resource_process_adapter(output: &mut impl COutput, root_symb
     writeln!(output, "#ifndef SPX_NO_ENTRY_WRAPPER\nint main(int argc, char **argv) {{ return spx_selected_file_launch_v1(argc, argv, {root_symbol}); }}\n#endif")
         .expect("writing selected file resource launcher cannot fail");
 }
+
+#[cfg(test)]
+mod resource_tests;
