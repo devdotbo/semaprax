@@ -143,6 +143,6 @@ fn inline_fixed_copy_array_views_replay_without_granting_computed_or_owned_views
     let ResolvedExprKind::Place(place) = &mut args[0].kind else {
         panic!("named array")
     };
-    place.root = ValueId::new("forged.array.owner");
+    place.root = ValueId::new("forged.array.owner".to_owned());
     assert_eq!(crate::hir::validate(&forged).unwrap_err().code, "SPX-H006");
 }

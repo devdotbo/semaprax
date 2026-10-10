@@ -1,24 +1,39 @@
 module app.leaf;
-@id("app.leaf.row") record Row {
- @id("app.leaf.row.priority") priority:i64,
- @id("app.leaf.row.title") title:string,
- @id("app.leaf.row.payload") payload:Bytes,
+
+@id("app.leaf.row")
+record Row {
+    @id("app.leaf.row.priority")
+    priority: i64,
+    @id("app.leaf.row.title")
+    title: string,
+    @id("app.leaf.row.payload")
+    payload: Bytes,
 }
-@id("app.main") fn main()->i64 {
- let mut items=vec_with_capacity<Row>(4096usize);
- let mut next=0;
- while next<4096 {
-  let item=Row{priority:next,title:"é\u{0}",payload:bytes_zeroed(3usize)};
-  items=vec_push<Row>(items,item);
-  next=next+1; 0
- }
- let rows=items;
- let mut count=0; let mut total=0; let mut good=true;
- for borrow row at index in rows {
-  let text=row.title; let data=row.payload; let utf8=str_as_bytes(text);
-  good=good && row.priority==i64_from_usize(index) && str_len_bytes(text)==3 && byte_len(data)==3usize && (match byte_get(utf8,0usize) { Option::Some { value } => value==195u8, Option::None {} => false, }) && (match byte_get(utf8,1usize) { Option::Some { value } => value==169u8, Option::None {} => false, }) && (match byte_get(utf8,2usize) { Option::Some { value } => value==0u8, Option::None {} => false, }) && (match byte_get(data,0usize) { Option::Some { value } => value==0u8, Option::None {} => false, }) && (match byte_get(data,2usize) { Option::Some { value } => value==0u8, Option::None {} => false, });
-  total=total+row.priority; count=count+1; 0
- }
- let renewed=vec_sort_owned<Row>(rows);
- if good && count==4096 && vec_len<Row>(renewed)==4096usize {total}else{0}
+
+@id("app.main")
+fn main() -> i64
+{
+    let mut items = vec_with_capacity<Row>(4096usize);
+    let mut next = 0;
+    while next < 4096 {
+        let item = Row { priority: next, title: "é\u{0}", payload: bytes_zeroed(3usize) };
+        items = vec_push<Row>(items, item);
+        next = next + 1;
+        0
+    }
+    let rows = items;
+    let mut count = 0;
+    let mut total = 0;
+    let mut good = true;
+    for borrow row at index in rows {
+        let text = row.title;
+        let data = row.payload;
+        let utf8 = str_as_bytes(text);
+        good = good && row.priority == i64_from_usize(index) && str_len_bytes(text) == 3 && byte_len(data) == 3usize && match byte_get(utf8, 0usize) { Option::Some { value } => value == 195u8, Option::None {} => false, } && match byte_get(utf8, 1usize) { Option::Some { value } => value == 169u8, Option::None {} => false, } && match byte_get(utf8, 2usize) { Option::Some { value } => value == 0u8, Option::None {} => false, } && match byte_get(data, 0usize) { Option::Some { value } => value == 0u8, Option::None {} => false, } && match byte_get(data, 2usize) { Option::Some { value } => value == 0u8, Option::None {} => false, };
+        total = total + row.priority;
+        count = count + 1;
+        0
+    }
+    let renewed = vec_sort_owned<Row>(rows);
+    if good && count == 4096 && vec_len<Row>(renewed) == 4096usize { total } else { 0 }
 }
