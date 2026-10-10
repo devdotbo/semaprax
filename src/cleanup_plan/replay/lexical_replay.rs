@@ -55,7 +55,7 @@ pub(super) fn validate(
         .filter_map(|exit| exit.value.map(|operand| operand.id.clone()))
         .collect::<BTreeSet<_>>();
     validate_exits(program, function, &storage, &leaves, &return_operands)?;
-    let auth = lexical_cert::authenticate(program, function, &owner, &facts)?;
+    let auth = lexical_cert::authenticate(program, function, &owner, &facts, budget)?;
     validate_reference_coverage(function)?;
     validate_reachable_acyclic_cfg(function)?;
     // Lexical functions always replay every path: no summary shortcut applies.

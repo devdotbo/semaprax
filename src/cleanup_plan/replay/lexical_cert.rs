@@ -7,7 +7,6 @@
 //! or repaired. The proof CFG stays acyclic: a loop latch is a terminal exit,
 //! and the only edge-free continuation is a generated advancement fragment
 //! entered from a certified `continue`.
-use super::lexical_hir;
 use super::*;
 use crate::ast::LexicalExitKind;
 use crate::cleanup_plan::{CleanupPlan, ExitTargetId};
@@ -87,6 +86,7 @@ pub(super) fn authenticate(
     function: &ResolvedFunction,
     owner: &FunctionExecutionId,
     facts: &lexical_hir::LexicalFacts<'_>,
+    budget: &mut ReplayBudget,
 ) -> Result<LexicalAuth, Diagnostic> {
     let plan = &function.cleanup_plan;
     let fail = |message: &str| replay_error(function, message.to_owned());
@@ -97,6 +97,32 @@ pub(super) fn authenticate(
     if control.schema != crate::hir::lexical_exit::LEXICAL_CONTROL_FLOW_SCHEMA_V1 {
         return Err(fail("lexical-control certificate uses an unknown schema"));
     }
+    // Charge every graph traversal below before the first one runs: two per loop
+    // (dominance and reach), one per resume, one ordinary reach, each visiting
+    // every block, edge and exit and scanning the exit certificates, plus the
+    // per-edge region-chain walks of each abrupt-only region.
+    let graph = plan
+        .blocks
+        .len()
+        .saturating_add(plan.edges.len())
+        .saturating_add(plan.exits.len());
+    let traversals = control
+        .loops
+        .len()
+        .saturating_mul(2)
+        .saturating_add(control.resumes.len())
+        .saturating_add(1);
+    let units = traversals
+        .saturating_mul(graph.saturating_mul(control.exits.len().saturating_add(1)))
+        .saturating_add(
+            control
+                .abrupt_only_regions
+                .len()
+                .saturating_mul(plan.edges.len())
+                .saturating_mul(plan.regions.len()),
+        )
+        .saturating_add(plan.edges.len().saturating_mul(plan.regions.len()));
+    budget.charge(function, units, "lexical certificate replay")?;
     let owned_result = type_needs_drop(program, function, &function.return_type)?;
 
     // Every identity a certificate names must exist before any traversal.
@@ -376,17 +402,21 @@ pub(super) fn authenticate(
     }
 
     // Domain entry discipline: only certified exits reach a resume.
+    let return_edges = plan
+        .exits
+        .iter()
+        .filter_map(|exit| match &exit.continuation {
+            ExitContinuation::FunctionReturn { edge, .. } => Some((*edge, exit.from)),
+            _ => None,
+        })
+        .collect::<BTreeMap<_, _>>();
     for edge in &plan.edges {
         let Some(target) = domains[edge.to.0 as usize] else {
             continue;
         };
         let inside = domains[edge.from.0 as usize] == Some(target);
         let certified_entry = control.resumes[target].entry == edge.to
-            && plan.exits.iter().any(|exit| {
-                matches!(&exit.continuation,
-                    ExitContinuation::FunctionReturn { edge: owned, .. } if *owned == edge.id)
-                    && exit.from == edge.from
-            });
+            && return_edges.get(&edge.id) == Some(&edge.from);
         if !inside && !certified_entry {
             return Err(fail(
                 "an edge enters a lexical resume outside its certified exit",
@@ -536,6 +566,15 @@ fn validate_normal_ends(
 ) -> Result<(), Diagnostic> {
     let plan = &function.cleanup_plan;
     let fail = |message: &str| replay_error(function, message.to_owned());
+    let lexical_edges = plan
+        .exits
+        .iter()
+        .filter_map(|exit| match &exit.continuation {
+            ExitContinuation::LoopBreak { edge, .. }
+            | ExitContinuation::FunctionReturn { edge, .. } => Some(*edge),
+            _ => None,
+        })
+        .collect::<BTreeSet<_>>();
     let mut listed = BTreeSet::new();
     for region in &control.abrupt_only_regions {
         if region.0 == 0 || plan.regions.get(region.0 as usize).is_none() || !listed.insert(*region)
@@ -569,7 +608,7 @@ fn validate_normal_ends(
         for edge in &plan.edges {
             if chain_contains(function, edge.from, region.id)?
                 && !chain_contains(function, edge.to, region.id)?
-                && !lexical_exit_edge(plan, edge.id)
+                && !lexical_edges.contains(&edge.id)
             {
                 return Err(fail(
                     "abrupt-only region flow escapes without a lexical exit",
@@ -581,13 +620,4 @@ fn validate_normal_ends(
         return Err(fail("root region has no normal success exit"));
     }
     Ok(())
-}
-
-/// `true` when a lexical `break` or `return` exit owns the edge.
-fn lexical_exit_edge(plan: &CleanupPlan, edge: EdgeId) -> bool {
-    plan.exits.iter().any(|exit| {
-        matches!(&exit.continuation,
-            ExitContinuation::LoopBreak { edge: owned, .. }
-            | ExitContinuation::FunctionReturn { edge: owned, .. } if *owned == edge)
-    })
 }

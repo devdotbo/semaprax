@@ -57,8 +57,10 @@ fn sequence(left: Counts, right: Counts) -> Counts {
 
 /// Work per `continue`: the exit marker plus its generated advancement.
 const CONTINUE_WORK: usize = 160;
-/// Work per lexical loop statement beyond its condition and body.
-const LOOP_STATEMENT_WORK: usize = 12;
+/// Work per lexical loop statement beyond its condition and body: two
+/// sequencings, the Boolean split, the latch observation and the join, each
+/// charged once per path, with headroom for the four continuation pushes.
+const LOOP_STATEMENT_WORK: usize = 40;
 
 fn count(
     program: &ResolvedProgram,
@@ -90,7 +92,7 @@ fn count(
         )?;
         return Ok(counts);
     }
-    let mut local = 0usize;
+    let mut local: usize;
     let counts = match &expression.kind {
         ResolvedExprKind::LexicalExit { kind, value, .. } => {
             let operand = match value {

@@ -50,9 +50,7 @@ pub(super) enum Marker<'a> {
         kind: LexicalExitKind,
         target: &'a ControlTarget,
     },
-    Latch {
-        target: &'a ControlTarget,
-    },
+    Latch,
 }
 
 /// The lexical marker a terminal path ended with, if any.
@@ -62,7 +60,7 @@ pub(super) fn marker(path: &ExprSkeletonPath) -> Option<Marker<'_>> {
             kind: *kind,
             target,
         }),
-        SkeletonObservation::LoopLatch { target } => Some(Marker::Latch { target }),
+        SkeletonObservation::LoopLatch { .. } => Some(Marker::Latch),
         _ => None,
     }
 }
@@ -73,7 +71,7 @@ pub(super) fn terminal(path: &ExprSkeletonPath) -> SkeletonTerminal {
         return SkeletonTerminal::Success;
     }
     match marker(path) {
-        Some(Marker::Latch { .. })
+        Some(Marker::Latch)
         | Some(Marker::Exit {
             kind: LexicalExitKind::Continue,
             ..
