@@ -1,5 +1,5 @@
 use super::*;
-const SOURCE: &str = r#"module selected.final;
+const ORIGINAL_WRITE_AFTER_COPY_SOURCE: &str = r#"module selected.final;
 @id("data.report") record Report { @id("data.raw") raw:string,@id("data.mode") mode:usize, }
 @id("data.result") variant Outcome {
  @id("data.encoded") Encoded { @id("data.text") text:string, },
@@ -20,6 +20,40 @@ ensures value.mode!=2usize
 @id("app.unrelated") fn unrelated()->string {"not selected"}
 @id("app.main") fn main()->i64 {0}
 "#;
+const SOURCE: &str = r#"module selected.final;
+@id("data.report") record Report { @id("data.raw") raw:string,@id("data.mode") mode:usize, }
+@id("data.result") variant Outcome {
+ @id("data.encoded") Encoded { @id("data.text") text:string, },
+ @id("data.refused") Refused { @id("data.required") required:usize, },
+}
+@id("app.make") fn make(mode:usize)->Report {Report{raw:"{\"x\":\"é\\u0000\"}",mode:mode}}
+@id("app.dispose") fn dispose(value:own Report)->i64 {0}
+@id("app.encode") fn encode(value:borrow Report,limit:usize)->Outcome
+ensures value.mode!=2usize
+{
+ let source=str_as_bytes(string_as_str(value.raw));let required=byte_len(source);
+ if required>limit {Outcome::Refused{required:required}} else {
+  let invalid:[u8;16]=[255u8,34u8,120u8,34u8,58u8,34u8,195u8,169u8,92u8,117u8,48u8,48u8,48u8,48u8,34u8,125u8];
+  let finished=if value.mode==1usize {bytes_copy(array_as_slice(invalid))}else{bytes_copy(source)};
+  Outcome::Encoded{text:string_from_utf8(bytes_as_slice(finished))}
+ }
+}
+@id("app.unrelated") fn unrelated()->string {"not selected"}
+@id("app.main") fn main()->i64 {0}
+"#;
+#[test]
+fn write_after_copy_remains_refused_and_invalid_payload_is_identical() {
+    let diagnostics =
+        crate::check(ORIGINAL_WRITE_AFTER_COPY_SOURCE, "write-after-copy.spx").unwrap_err();
+    assert!(diagnostics.iter().any(|d| d.code == "SPX-T271"));
+    let mut original = b"{\"x\":\"\xc3\xa9\\u0000\"}".to_vec();
+    assert_eq!(original.len(), 16);
+    original[0] = 255;
+    assert_eq!(
+        original,
+        [255, 34, 120, 34, 58, 34, 195, 169, 92, 117, 48, 48, 48, 48, 34, 125]
+    );
+}
 fn program(source: &str) -> ResolvedProgram {
     crate::hir::resolve(&crate::check(source, "selected-final-utf8.spx").unwrap()).unwrap()
 }
