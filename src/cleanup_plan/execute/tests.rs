@@ -714,7 +714,10 @@ fn result_publication_rejects_early_cleanup_and_duplicate_commits() {
             ExitContinuation::CommitResult { source } => Some(source.clone()),
             ExitContinuation::Continue(_)
             | ExitContinuation::ReturnFailure { .. }
-            | ExitContinuation::ReturnUnit => None,
+            | ExitContinuation::ReturnUnit
+            | ExitContinuation::LoopLatch { .. }
+            | ExitContinuation::LoopBreak { .. }
+            | ExitContinuation::FunctionReturn { .. } => None,
         })
         .unwrap();
     let mut early = Executor::new(
@@ -742,7 +745,10 @@ fn result_publication_rejects_early_cleanup_and_duplicate_commits() {
             ExitContinuation::CommitResult { source } => Some(source.clone()),
             ExitContinuation::Continue(_)
             | ExitContinuation::ReturnFailure { .. }
-            | ExitContinuation::ReturnUnit => None,
+            | ExitContinuation::ReturnUnit
+            | ExitContinuation::LoopLatch { .. }
+            | ExitContinuation::LoopBreak { .. }
+            | ExitContinuation::FunctionReturn { .. } => None,
         })
         .unwrap();
     let mut duplicate = Executor::new(
@@ -840,7 +846,10 @@ fn try_executor_stages_each_normal_result_path_then_fails_closed_at_materializat
             ExitContinuation::CommitResult { source } => Some(source.clone()),
             ExitContinuation::Continue(_)
             | ExitContinuation::ReturnFailure { .. }
-            | ExitContinuation::ReturnUnit => None,
+            | ExitContinuation::ReturnUnit
+            | ExitContinuation::LoopLatch { .. }
+            | ExitContinuation::LoopBreak { .. }
+            | ExitContinuation::FunctionReturn { .. } => None,
         })
         .unwrap();
     let mut missing = Executor::new(
