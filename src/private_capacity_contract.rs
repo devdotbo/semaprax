@@ -178,6 +178,27 @@ fn shape_owned_capacity(shape: &crate::cleanup::FieldLivenessShape) -> Option<us
                     .capacity()
                     .checked_mul(std::mem::size_of::<crate::cleanup::FieldLiveness>())?,
             ),
+        crate::cleanup::FieldLivenessShape::Variant { declaration, cases } => cases
+            .iter()
+            .try_fold(declaration.as_str().len(), |bytes, case| {
+                bytes
+                    .checked_add(case.case.as_str().len())?
+                    .checked_add(
+                        case.fields
+                            .capacity()
+                            .checked_mul(std::mem::size_of::<crate::cleanup::FieldLiveness>())?,
+                    )?
+                    .checked_add(case.fields.iter().try_fold(0usize, |bytes, field| {
+                        bytes
+                            .checked_add(field.field.as_str().len())?
+                            .checked_add(shape_owned_capacity(&field.shape)?)
+                    })?)
+            })?
+            .checked_add(
+                cases
+                    .capacity()
+                    .checked_mul(std::mem::size_of::<crate::cleanup::VariantCaseLiveness>())?,
+            ),
         _ => None,
     }
 }

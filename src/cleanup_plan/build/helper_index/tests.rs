@@ -170,3 +170,85 @@ fn old_attached_spare_backing_refuses_before_any_index_or_builder_starts() {
             .collect::<Vec<_>>()
     );
 }
+
+#[test]
+fn attached_owned_variant_spare_backing_rebuilds_at_exact_phase_reservation() {
+    let mut program = program(
+        r#"module overlap;
+@id("maybe") fn maybe(input: borrow Slice<u8>, active: bool) -> Option<Bytes> {
+    if active { Option<Bytes>::Some { value: bytes_copy(input) } }
+    else { Option<Bytes>::None {} }
+}
+@id("identity") fn identity<T>(value: T) -> T { value }
+@id("main") fn main() -> i64 { identity<i64>(1) }
+"#,
+    );
+    assert!(!program.function_instances.is_empty());
+    crate::hir::validate(&program).unwrap();
+    let plan = &mut program
+        .functions
+        .iter_mut()
+        .find(|f| f.id.as_str() == "maybe")
+        .unwrap()
+        .cleanup_plan;
+    let before_capacity =
+        crate::private_capacity_contract::cleanup_plan_owned_capacity(plan).unwrap();
+    let shape = plan
+        .slots
+        .iter_mut()
+        .find_map(|slot| match &mut slot.field_liveness_shape {
+            crate::cleanup::FieldLivenessShape::Variant { cases, .. } => Some(cases),
+            _ => None,
+        })
+        .expect("owned Option has an attached conditional inventory");
+    let old_cases = shape.capacity();
+    shape.reserve_exact(7);
+    let case_delta =
+        (shape.capacity() - old_cases) * std::mem::size_of::<crate::cleanup::VariantCaseLiveness>();
+    let fields = &mut shape
+        .iter_mut()
+        .find(|case| !case.fields.is_empty())
+        .unwrap()
+        .fields;
+    let old_fields = fields.capacity();
+    fields.reserve_exact(9);
+    let field_delta =
+        (fields.capacity() - old_fields) * std::mem::size_of::<crate::cleanup::FieldLiveness>();
+    assert_eq!(
+        crate::private_capacity_contract::cleanup_plan_owned_capacity(plan).unwrap()
+            - before_capacity,
+        case_delta + field_delta
+    );
+    let bytes = |program: &ResolvedProgram| {
+        program
+            .functions
+            .iter()
+            .chain(
+                program
+                    .function_instances
+                    .iter()
+                    .map(|instance| &instance.function),
+            )
+            .map(|function| crate::cache_codec::encode(&function.cleanup_plan).unwrap())
+            .collect::<Vec<_>>()
+    };
+    let original = bytes(&program);
+    let (plans, overflowed, required) =
+        crate::bounded_output::with_limit_usage(usize::MAX, || build_program_plans(&program));
+    assert!(plans.is_ok());
+    assert!(!overflowed);
+    let (failure, overflowed, _) = crate::bounded_output::with_limit_usage(required - 1, || {
+        attach_program_plans(&mut program)
+    });
+    assert_eq!(failure.unwrap_err().code, "SPX-H006");
+    assert!(overflowed);
+    assert_eq!(bytes(&program), original);
+    let (rebuilt, overflowed, used) =
+        crate::bounded_output::with_limit_usage(required, || attach_program_plans(&mut program));
+    rebuilt.unwrap();
+    assert!(!overflowed);
+    assert_eq!(used, required);
+    assert_eq!(bytes(&program), original);
+    crate::hir::validate(&program).unwrap();
+    crate::cleanup_plan::validate_program(&program).unwrap();
+}

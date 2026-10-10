@@ -7,6 +7,7 @@ const DEPTH: usize = 514;
 enum Node<'a> {
     Type(&'a ResolvedType),
     Shape(&'a FieldLivenessShape),
+    Case(&'a crate::cleanup::VariantCaseLiveness),
 }
 type Cursor<'a> = [Option<(Node<'a>, usize)>; DEPTH];
 fn charge(work: &mut usize, count: usize) -> Result<(), Diagnostic> {
@@ -36,6 +37,10 @@ fn guard<'a>(root: Node<'a>, cursor: &mut Cursor<'a>, work: &mut usize) -> Resul
             Node::Shape(FieldLivenessShape::Record { fields, .. }) => {
                 fields.get(next).map(|field| Node::Shape(&field.shape))
             }
+            Node::Shape(FieldLivenessShape::Variant { cases, .. }) => {
+                cases.get(next).map(Node::Case)
+            }
+            Node::Case(case) => case.fields.get(next).map(|field| Node::Shape(&field.shape)),
             _ => None,
         };
         if let Some(child) = child {
@@ -58,23 +63,11 @@ fn plan<'a>(
     cursor: &mut Cursor<'a>,
     work: &mut usize,
 ) -> Result<usize, Diagnostic> {
-    // Bound the flat inventories before walking recursive slot/result types.
-    for count in [
-        plan.slots.len(),
-        plan.blocks.len(),
-        plan.edges.len(),
-        plan.regions.len(),
-        plan.exits.len(),
-        plan.status_sources.len(),
-    ] {
-        charge(work, count)?;
-    }
     for slot in &plan.slots {
         guard(Node::Type(&slot.ty), cursor, work)?;
         guard(Node::Shape(&slot.field_liveness_shape), cursor, work)?;
     }
     for block in &plan.blocks {
-        charge(work, block.transitions.len())?;
         for transition in &block.transitions {
             if let CleanupTransition::StageCopyResult { source } = transition {
                 match source {
@@ -116,11 +109,9 @@ pub(super) fn program(program: &ResolvedProgram) -> Result<usize, Diagnostic> {
     let mut recursive = false;
     for function in functions() {
         let old = &function.cleanup_plan;
-        charge(&mut work, old.slots.len())?;
-        charge(&mut work, old.blocks.len())?;
+        flat::plan(old, &mut work)?;
         recursive |= !old.slots.is_empty();
         for block in &old.blocks {
-            charge(&mut work, block.transitions.len())?;
             recursive |= block
                 .transitions
                 .iter()
@@ -151,3 +142,5 @@ pub(super) fn program(program: &ResolvedProgram) -> Result<usize, Diagnostic> {
             .ok_or_else(|| plan_error("attached cleanup overlap capacity overflowed"))
     })
 }
+
+mod flat;

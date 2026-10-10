@@ -116,8 +116,11 @@ plan staging Vec is reserved before allocation, with the index, existing program
 backing and previously completed plans still live. The complete physical capacity
 of old attached plans is additionally reserved before index or builder creation,
 including spare backing kept alive by delayed publication. A fixed 514-frame
-cursor bounds old recursive type/shape census before its physical sum; attached
-plan contents supply no renewal authority. Publication consumes this
+cursor bounds old recursive type/shape census before its physical sum. Conditional
+variant inventories include every case and field carrier capacity and identity
+backing. All flat nested inventories are charged against the census work bound
+before the physical sum, including the path that needs no recursive cursor;
+attached plan contents supply no renewal authority. Publication consumes this
 owned carrier only after the index borrow ends; construction failure replaces
 no attached plans. A module without a relevant signature still reserves its
 ordinary plan carrier but adds no helper index backing.
