@@ -372,6 +372,23 @@ function's `requires` and `ensures` lines, naming the return value `result`,
 so replay binds contracts byte for byte with the body. Functions that
 declare effects are still rejected with `SPX-W121`.
 
+A direct owned `Bytes` or `string` result can be observed through its ordinary
+unprojected immutable views in `ensures`: for example,
+`ensures byte_len(bytes_as_slice(result)) == 2usize`. Source verification binds
+this exact return type only in the postcondition scope. Independent HIR scope,
+view-type and loan replay authenticate the enclosing function's exact result
+identity. This is the callee's provisional storage: it remains owned until all
+postconditions and non-result cleanup complete. A failing postcondition drops
+that storage and preserves the selected failure with no caller result write.
+`result` remains absent from requires/body; contract transfers still refuse
+`SPX-O105`, and this direct view rule admits no projected result fields or
+escaping borrowed result. Cleanup and loan schemas and all physical byte bounds
+remain unchanged. The `hir::provisional_result_borrow_tests::` regressions,
+`cleanup_backends lexical_exits::provisional_result::` native O0/O2 probe, and
+existing `owned_data lexical_exits::returned_owned_result_stays_protected_until_selected_postconditions`
+interpreter/Core Wasm success, failure and reentry cases own qualification;
+these new definitions have not yet run on the current head.
+
 The data-export module retains the historical void Core-Wasm signature for its
 otherwise unused `spx_contract_fail` import. Data-export arithmetic, contract,
 and byte-range failures publish through `__spx_data_status_v1`; they do not call

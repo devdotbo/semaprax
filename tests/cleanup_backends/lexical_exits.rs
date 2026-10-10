@@ -331,3 +331,6 @@ fn owning_break_replay_refuses_a_forged_step_renewal_reservation() {
         .expect_err("conditional Step cannot borrow one-leaf renewal authority");
     assert_eq!(failure.code, "SPX-H006");
 }
+
+#[path = "lexical_exits/provisional_result.rs"]
+mod provisional_result;

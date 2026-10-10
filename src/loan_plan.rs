@@ -34,6 +34,7 @@ mod guidance;
 mod lexical_exit;
 mod native_view;
 pub(crate) mod owned_capacity;
+mod provisional_result;
 mod record_vec_borrow;
 #[cfg(test)]
 mod shared_identity_tests;
@@ -223,6 +224,7 @@ fn has_own_root_candidate(
         }
     }
 
+    let provisional = provisional_result::root(function);
     let mut root_ownership = BTreeMap::<ValueId, bool>::new();
     for expression in expressions {
         if let Some(proof) = traversal::inspect(program, expression)? {
@@ -257,13 +259,25 @@ fn has_own_root_candidate(
             _ => None,
         };
         if let Some(place) = view {
-            if ultimate_root_is_own(&place.root, &aliases, &ownership, &mut root_ownership)? {
+            if ultimate_root_is_own(
+                &place.root,
+                &aliases,
+                &ownership,
+                &mut root_ownership,
+                provisional,
+            )? {
                 return Ok(true);
             }
         }
         for (_, argument) in borrowed_call_arguments(program, expression) {
             if let Some(place) = expression_place(argument) {
-                if ultimate_root_is_own(&place.root, &aliases, &ownership, &mut root_ownership)? {
+                if ultimate_root_is_own(
+                    &place.root,
+                    &aliases,
+                    &ownership,
+                    &mut root_ownership,
+                    provisional,
+                )? {
                     return Ok(true);
                 }
             }
@@ -275,7 +289,13 @@ fn has_own_root_candidate(
         } = &expression.kind
         {
             if let Some(place) = expression_place(scrutinee) {
-                if ultimate_root_is_own(&place.root, &aliases, &ownership, &mut root_ownership)? {
+                if ultimate_root_is_own(
+                    &place.root,
+                    &aliases,
+                    &ownership,
+                    &mut root_ownership,
+                    provisional,
+                )? {
                     return Ok(true);
                 }
             }
@@ -289,6 +309,7 @@ fn ultimate_root_is_own(
     aliases: &BTreeMap<ValueId, Place>,
     ownership: &BTreeMap<ValueId, OwnershipMode>,
     memo: &mut BTreeMap<ValueId, bool>,
+    provisional: Option<&ValueId>,
 ) -> Result<bool, Diagnostic> {
     if let Some(result) = memo.get(root) {
         return Ok(*result);
@@ -304,7 +325,8 @@ fn ultimate_root_is_own(
             return Err(error("shared-loan alias provenance contains a cycle"));
         }
         let Some(parent) = aliases.get(&current) else {
-            break ownership.get(&current) == Some(&OwnershipMode::Own);
+            break ownership.get(&current) == Some(&OwnershipMode::Own)
+                || provisional == Some(&current);
         };
         chain.push(current);
         current = parent.root.clone();
@@ -504,7 +526,12 @@ fn build_cfg_plan_counted(
         }
     }
 
-    drafts.retain(|draft| ownership.get(&draft.origin.root) == Some(&OwnershipMode::Own));
+    // Independent HIR scope validation admits this exact result identity only
+    // in ensures; it is held owned storage until contract settlement completes.
+    drafts.retain(|draft| {
+        ownership.get(&draft.origin.root) == Some(&OwnershipMode::Own)
+            || provisional_result::root(function) == Some(&draft.origin.root)
+    });
     // Borrow-only roots do not need an authenticated loan attachment. Do not
     // retain the transient CFG built to classify candidates: legacy HIR stays
     // heap-identical at this boundary and only real own-root loans carry the
@@ -1001,7 +1028,8 @@ fn evaluation_children(expression: &ResolvedExpr) -> Vec<&ResolvedExpr> {
         | ResolvedExprKind::Float32(_)
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
+        | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. } => Vec::new(),
     }
@@ -1388,7 +1416,8 @@ fn push_children<'a>(expression: &'a ResolvedExpr, pending: &mut Vec<&'a Resolve
         | ResolvedExprKind::Float32(_)
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
+        | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. } => {}
     }

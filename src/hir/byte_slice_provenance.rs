@@ -333,150 +333,176 @@ pub(super) fn derive_byte_slice_provenance(
             .chain(std::iter::once(&function.body))
             .chain(&function.ensures)
             .collect::<Vec<_>>();
-        while let Some(expression) = pending.pop() {
-            match &expression.kind {
-                ResolvedExprKind::Closure { captures, .. } => {
-                    pending.extend(captures.iter().map(|capture| &capture.value))
+        let mut remaining_ensures = function.ensures.len();
+        while let Some(root) = pending.pop() {
+            let in_ensures = remaining_ensures != 0;
+            remaining_ensures = remaining_ensures.saturating_sub(1);
+            let boundary = pending.len();
+            pending.push(root);
+            while pending.len() > boundary {
+                let expression = pending
+                    .pop()
+                    .expect("pending expression above root boundary");
+                // The current function's exact provisional owner is authenticated
+                // by the independent ensures scope, never by a result name/tag.
+                if matches!(&expression.kind, ResolvedExprKind::BorrowPlace { place, .. }
+                if place.root == function.result_id && place.projections.is_empty())
+                    && matches!(
+                        function.return_type,
+                        ResolvedType::Bytes | ResolvedType::String
+                    )
+                {
+                    if !in_ensures {
+                        return Err(hir_error(
+                            "provisional result view is outside its postcondition domain",
+                        ));
+                    }
+                    root_types.insert(function.result_id.clone(), function.return_type.clone());
                 }
-                ResolvedExprKind::FunctionReference { .. } => {}
-                ResolvedExprKind::Invoke { callable, args } => {
-                    pending.push(callable);
-                    pending.extend(args);
-                }
-                ResolvedExprKind::Call { args, .. }
-                | ResolvedExprKind::LiteralFormat { args, .. }
-                | ResolvedExprKind::VecFieldRead { args, .. } => pending.extend(args),
-                ResolvedExprKind::ByteRange {
-                    source, start, end, ..
-                } => {
-                    pending.push(source);
-                    pending.push(start);
-                    pending.push(end);
-                }
-                ResolvedExprKind::NativeRustImportCall(call) => pending.extend(&call.args),
-                ResolvedExprKind::HostCommandCall(call) => pending.extend(&call.args),
-                ResolvedExprKind::LexicalExit { value, .. } => pending.extend(value.as_deref()),
-                ResolvedExprKind::Unary { value, .. }
-                | ResolvedExprKind::Try { operand: value, .. }
-                | ResolvedExprKind::TryOption { operand: value, .. }
-                | ResolvedExprKind::Project { base: value, .. }
-                | ResolvedExprKind::Upcast { source: value }
-                | ResolvedExprKind::Yield { request: value } => pending.push(value),
-                ResolvedExprKind::Binary { left, right, .. } => {
-                    pending.push(left);
-                    pending.push(right);
-                }
-                ResolvedExprKind::Block { statements, tail } => {
-                    pending.push(tail);
-                    for statement in statements {
-                        if let ResolvedStatement::Let {
-                            binding,
-                            mutable,
-                            value,
-                            ..
-                        } = statement
-                        {
-                            root_types.insert(binding.id.clone(), binding.ty.clone());
-                            if matches!(
-                                &value.kind,
-                                ResolvedExprKind::HostCommandCall(ResolvedHostCommandCall {
-                                    operation: ResolvedHostCommandOperation::ArgUtf8,
-                                    ..
-                                })
-                            ) {
-                                command_argument_views.insert(binding.id.clone());
-                            }
-                            if matches!(&value.kind, ResolvedExprKind::HostCommandCall(call) if crate::environment_ops::is_lookup(call.operation))
+                match &expression.kind {
+                    ResolvedExprKind::Closure { captures, .. } => {
+                        pending.extend(captures.iter().map(|capture| &capture.value))
+                    }
+                    ResolvedExprKind::FunctionReference { .. } => {}
+                    ResolvedExprKind::Invoke { callable, args } => {
+                        pending.push(callable);
+                        pending.extend(args);
+                    }
+                    ResolvedExprKind::Call { args, .. }
+                    | ResolvedExprKind::LiteralFormat { args, .. }
+                    | ResolvedExprKind::VecFieldRead { args, .. } => pending.extend(args),
+                    ResolvedExprKind::ByteRange {
+                        source, start, end, ..
+                    } => {
+                        pending.push(source);
+                        pending.push(start);
+                        pending.push(end);
+                    }
+                    ResolvedExprKind::NativeRustImportCall(call) => pending.extend(&call.args),
+                    ResolvedExprKind::HostCommandCall(call) => pending.extend(&call.args),
+                    ResolvedExprKind::LexicalExit { value, .. } => pending.extend(value.as_deref()),
+                    ResolvedExprKind::Unary { value, .. }
+                    | ResolvedExprKind::Try { operand: value, .. }
+                    | ResolvedExprKind::TryOption { operand: value, .. }
+                    | ResolvedExprKind::Project { base: value, .. }
+                    | ResolvedExprKind::Upcast { source: value }
+                    | ResolvedExprKind::Yield { request: value } => pending.push(value),
+                    ResolvedExprKind::Binary { left, right, .. } => {
+                        pending.push(left);
+                        pending.push(right);
+                    }
+                    ResolvedExprKind::Block { statements, tail } => {
+                        pending.push(tail);
+                        for statement in statements {
+                            if let ResolvedStatement::Let {
+                                binding,
+                                mutable,
+                                value,
+                                ..
+                            } = statement
                             {
-                                environment_views.insert(binding.id.clone());
-                            }
-                            if binding.ty == ResolvedType::Str {
-                                vector_strings.push((binding, *mutable, value));
-                                if let ResolvedExprKind::Place(place) = &value.kind {
-                                    if place.projections.is_empty() {
-                                        environment_aliases
-                                            .push((binding.id.clone(), place.root.clone()));
+                                root_types.insert(binding.id.clone(), binding.ty.clone());
+                                if matches!(
+                                    &value.kind,
+                                    ResolvedExprKind::HostCommandCall(ResolvedHostCommandCall {
+                                        operation: ResolvedHostCommandOperation::ArgUtf8,
+                                        ..
+                                    })
+                                ) {
+                                    command_argument_views.insert(binding.id.clone());
+                                }
+                                if matches!(&value.kind, ResolvedExprKind::HostCommandCall(call) if crate::environment_ops::is_lookup(call.operation))
+                                {
+                                    environment_views.insert(binding.id.clone());
+                                }
+                                if binding.ty == ResolvedType::Str {
+                                    vector_strings.push((binding, *mutable, value));
+                                    if let ResolvedExprKind::Place(place) = &value.kind {
+                                        if place.projections.is_empty() {
+                                            environment_aliases
+                                                .push((binding.id.clone(), place.root.clone()));
+                                        }
                                     }
                                 }
+                                if binding.ty == ResolvedType::SliceU8 {
+                                    aliases.push((binding, *mutable, value));
+                                }
                             }
-                            if binding.ty == ResolvedType::SliceU8 {
-                                aliases.push((binding, *mutable, value));
+                            for index in 0..statement.child_count() {
+                                pending.push(
+                                    statement
+                                        .child(index)
+                                        .expect("statement child count is canonical"),
+                                );
                             }
-                        }
-                        for index in 0..statement.child_count() {
-                            pending.push(
-                                statement
-                                    .child(index)
-                                    .expect("statement child count is canonical"),
-                            );
                         }
                     }
-                }
-                ResolvedExprKind::If {
-                    condition,
-                    then_branch,
-                    else_branch,
-                } => {
-                    pending.push(condition);
-                    pending.push(then_branch);
-                    pending.push(else_branch);
-                }
-                ResolvedExprKind::ConstructRecord { fields, .. }
-                | ResolvedExprKind::ConstructVariant { fields, .. } => {
-                    pending.extend(fields.iter().map(|field| &field.value));
-                }
-                ResolvedExprKind::Match {
-                    mode,
-                    scrutinee,
-                    arms,
-                } => {
-                    let origin = if *mode == ResolvedMatchMode::Borrow {
-                        let ResolvedExprKind::Place(place) = &scrutinee.kind else {
-                            return Err(hir_error(
-                                "borrowed record pattern lacks an exact place scrutinee",
-                            ));
+                    ResolvedExprKind::If {
+                        condition,
+                        then_branch,
+                        else_branch,
+                    } => {
+                        pending.push(condition);
+                        pending.push(then_branch);
+                        pending.push(else_branch);
+                    }
+                    ResolvedExprKind::ConstructRecord { fields, .. }
+                    | ResolvedExprKind::ConstructVariant { fields, .. } => {
+                        pending.extend(fields.iter().map(|field| &field.value));
+                    }
+                    ResolvedExprKind::Match {
+                        mode,
+                        scrutinee,
+                        arms,
+                    } => {
+                        let origin = if *mode == ResolvedMatchMode::Borrow {
+                            let ResolvedExprKind::Place(place) = &scrutinee.kind else {
+                                return Err(hir_error(
+                                    "borrowed record pattern lacks an exact place scrutinee",
+                                ));
+                            };
+                            Some(resolve_pattern_origin(
+                                place.clone(),
+                                &borrowed_pattern_origins,
+                            )?)
+                        } else {
+                            None
                         };
-                        Some(resolve_pattern_origin(
-                            place.clone(),
-                            &borrowed_pattern_origins,
-                        )?)
-                    } else {
-                        None
-                    };
-                    pending.push(scrutinee);
-                    for arm in arms {
-                        inventory_record_pattern_bindings(
-                            &arm.pattern,
-                            *mode,
-                            origin.clone(),
-                            declarations,
-                            &mut root_types,
-                            &mut borrowed_pattern_origins,
-                        )?;
-                        if let Some(guard) = &arm.guard {
-                            pending.push(guard);
+                        pending.push(scrutinee);
+                        for arm in arms {
+                            inventory_record_pattern_bindings(
+                                &arm.pattern,
+                                *mode,
+                                origin.clone(),
+                                declarations,
+                                &mut root_types,
+                                &mut borrowed_pattern_origins,
+                            )?;
+                            if let Some(guard) = &arm.guard {
+                                pending.push(guard);
+                            }
+                            pending.push(&arm.value);
                         }
-                        pending.push(&arm.value);
                     }
+                    ResolvedExprKind::UpdateRecord { base, fields, .. } => {
+                        pending.push(base);
+                        pending.extend(fields.iter().map(|field| &field.value));
+                    }
+                    ResolvedExprKind::Int(_)
+                    | ResolvedExprKind::Int32(_)
+                    | ResolvedExprKind::Char(_)
+                    | ResolvedExprKind::Uint8(_)
+                    | ResolvedExprKind::Usize(_)
+                    | ResolvedExprKind::ArrayU8(_)
+                    | ResolvedExprKind::RepeatArrayU8 { .. }
+                    | ResolvedExprKind::Float32(_)
+                    | ResolvedExprKind::Float64(_)
+                    | ResolvedExprKind::Bool(_)
+                    | ResolvedExprKind::String(_)
+                    | ResolvedExprKind::BorrowedUtf8Literal(_)
+                    | ResolvedExprKind::Place(_)
+                    | ResolvedExprKind::BorrowPlace { .. } => {}
                 }
-                ResolvedExprKind::UpdateRecord { base, fields, .. } => {
-                    pending.push(base);
-                    pending.extend(fields.iter().map(|field| &field.value));
-                }
-                ResolvedExprKind::Int(_)
-                | ResolvedExprKind::Int32(_)
-                | ResolvedExprKind::Char(_)
-                | ResolvedExprKind::Uint8(_)
-                | ResolvedExprKind::Usize(_)
-                | ResolvedExprKind::ArrayU8(_)
-                | ResolvedExprKind::RepeatArrayU8 { .. }
-                | ResolvedExprKind::Float32(_)
-                | ResolvedExprKind::Float64(_)
-                | ResolvedExprKind::Bool(_)
-                | ResolvedExprKind::String(_)
-                | ResolvedExprKind::BorrowedUtf8Literal(_)
-                | ResolvedExprKind::Place(_)
-                | ResolvedExprKind::BorrowPlace { .. } => {}
             }
         }
     }
@@ -502,7 +528,9 @@ pub(super) fn derive_byte_slice_provenance(
         unresolved.retain(|(binding, mutable, value)| {
             let mut static_origin = None;
             if !*mutable {
-                if let Some(provenance) = vec_field::origin(value, declarations, &vector_string_origins) {
+                if let Some(provenance) =
+                    vec_field::origin(value, declarations, &vector_string_origins)
+                {
                     facts.insert(binding.id.clone(), provenance);
                     return false;
                 }
@@ -707,7 +735,9 @@ pub(super) fn derive_byte_slice_provenance(
             facts.insert(binding.id.clone(), source);
             false
         });
-        if let Some(error) = static_error { return Err(error); }
+        if let Some(error) = static_error {
+            return Err(error);
+        }
         if unresolved.is_empty() {
             return Ok(facts);
         }

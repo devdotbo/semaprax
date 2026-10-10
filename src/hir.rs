@@ -710,3 +710,7 @@ pub const VALIDATOR_FRAME_BYTES: usize = 288;
 /// Physical source verifier frame, shared without exposing its private module.
 #[doc(hidden)]
 pub const SOURCE_VERIFIER_FRAME_BYTES: usize = crate::source_verify::VERIFIER_FRAME_BYTES;
+
+#[cfg(test)]
+#[path = "hir/provisional_result_borrow_tests.rs"]
+mod provisional_result_borrow_tests;

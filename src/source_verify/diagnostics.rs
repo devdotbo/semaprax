@@ -35,7 +35,8 @@ pub(super) fn reject_aggregate_match_result(
     }
     if !matches!(
         value.ty,
-        Type::Never | Type::I64
+        Type::Never
+            | Type::I64
             | Type::I32
             | Type::U8
             | Type::Usize
@@ -191,8 +192,14 @@ pub(super) fn require_bool(
         }
     });
     let mut contract_variables = variables.clone();
-    if let Some(ty @ Type::Named { name, arguments }) = result_type {
-        if name == "Result" && arguments.as_slice() == [Type::Bytes, Type::Bytes] {
+    if let Some(ty) = result_type {
+        // A provisional owned result is readable only in this postcondition
+        // scope. It stays immutable and contract transfers still select O105.
+        if ty == &function.return_type
+            && (matches!(ty, Type::Bytes | Type::String)
+                || matches!(ty, Type::Named { name, arguments }
+                if name == "Result" && arguments.as_slice() == [Type::Bytes, Type::Bytes]))
+        {
             contract_variables.insert(
                 "result".to_owned(),
                 Binding {
