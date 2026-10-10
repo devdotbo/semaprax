@@ -72,19 +72,18 @@ fn replacement<'a>(
     let ResolvedExprKind::Block { statements, tail } = &arms[1].value.kind else {
         return None;
     };
-    let [
-        ResolvedStatement::Let {
-            binding: discard,
-            mutable: false,
-            value: authored_body,
-            ..
-        },
-    ] = statements.as_slice()
+    let [ResolvedStatement::Let {
+        binding: discard,
+        mutable: false,
+        value: authored_body,
+        ..
+    }] = statements.as_slice()
     else {
         return None;
     };
     if discard.ownership != OwnershipMode::Value
-        || !(is_scalar_resolved_type(&discard.ty)
+        || !(discard.ty == ResolvedType::Never
+            || is_scalar_resolved_type(&discard.ty)
             || owner.is_some_and(|(owner, count)| {
                 generic_collection::parameter(&discard.ty, owner, count)
             }))
@@ -120,14 +119,12 @@ fn recognize_scoped<'a>(
     let ResolvedExprKind::Block { statements, tail } = &body.kind else {
         return None;
     };
-    let [
-        ResolvedStatement::Assign {
-            binding: step,
-            field: None,
-            value,
-            ..
-        },
-    ] = statements.as_slice()
+    let [ResolvedStatement::Assign {
+        binding: step,
+        field: None,
+        value,
+        ..
+    }] = statements.as_slice()
     else {
         return None;
     };
@@ -185,7 +182,7 @@ pub(crate) fn function_contains(function: &ResolvedFunction) -> bool {
     let mut pending = vec![&function.body];
     while let Some(expression) = pending.pop() {
         if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
-            if statements.iter().any(|statement| matches!(statement, ResolvedStatement::While { condition, body, .. } if recognize(condition, body).is_some())) { return true; }
+            if statements.iter().any(|statement| matches!(statement, ResolvedStatement::While { condition, body, .. } | ResolvedStatement::LexicalWhile { condition, body, .. } if recognize(condition, body).is_some())) { return true; }
         }
         push_resolved_expression_children_in_authored_order(expression, &mut pending);
     }
@@ -209,18 +206,19 @@ pub(crate) fn validate_function(
                 }
                 if let ResolvedStatement::While {
                     condition, body, ..
+                }
+                | ResolvedStatement::LexicalWhile {
+                    condition, body, ..
                 } = statement
                 {
                     if let Some(protocol) = recognize(condition, body) {
-                        let [
-                            ResolvedStatement::Let {
-                                binding,
-                                mutable: true,
-                                value: seed,
-                                ..
-                            },
-                            ResolvedStatement::While { .. },
-                        ] = statements.as_slice()
+                        let [ResolvedStatement::Let {
+                            binding,
+                            mutable: true,
+                            value: seed,
+                            ..
+                        }, (ResolvedStatement::While { .. }
+                        | ResolvedStatement::LexicalWhile { .. })] = statements.as_slice()
                         else {
                             return Err(crate::diagnostic::Diagnostic::io(
                                 "SPX-H006",
@@ -295,17 +293,14 @@ pub(crate) fn template_contains(template: &ResolvedFunctionTemplate) -> bool {
     let mut pending = vec![&template.body];
     while let Some(expression) = pending.pop() {
         if let ResolvedExprKind::Block { statements, tail } = &expression.kind {
-            if let [
-                ResolvedStatement::Let {
-                    binding,
-                    mutable: true,
-                    value: seed,
-                    ..
-                },
-                ResolvedStatement::While {
-                    condition, body, ..
-                },
-            ] = statements.as_slice()
+            if let [ResolvedStatement::Let {
+                binding,
+                mutable: true,
+                value: seed,
+                ..
+            }, ResolvedStatement::While {
+                condition, body, ..
+            }] = statements.as_slice()
             {
                 if let Some(protocol) = recognize_scoped(
                     condition,

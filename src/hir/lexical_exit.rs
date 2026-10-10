@@ -67,3 +67,12 @@ mod owner;
 pub(crate) use owner::{owner, validate_owner};
 
 pub(super) mod rekey;
+
+mod latch;
+pub(crate) use latch::validate_latch;
+
+mod wrapper;
+pub(crate) use wrapper::{source_for_wrapper, SourceForWrapper};
+
+mod validation;
+pub(crate) use validation::validate_function;

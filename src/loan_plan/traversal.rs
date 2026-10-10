@@ -64,9 +64,12 @@ fn inspect_counted<'a>(
         mutable: true,
         value: zero,
         ..
-    }, ResolvedStatement::While {
+    }, (ResolvedStatement::While {
         condition, body, ..
-    }] = statements.as_slice()
+    }
+    | ResolvedStatement::LexicalWhile {
+        condition, body, ..
+    })] = statements.as_slice()
     else {
         return Err(fail());
     };
