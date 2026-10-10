@@ -11,13 +11,13 @@ mod module_index;
 mod resolved;
 pub(crate) use module_index::ModuleIndex;
 mod source;
+mod source_index;
 pub(crate) use resolved::{
     bindings, checked_bindings, nonallocating as resolved_nonallocating,
     nonallocating_with as resolved_nonallocating_with,
 };
-pub(crate) use source::{
-    nonallocating as source_nonallocating, nonallocating_with as source_nonallocating_with,
-};
+pub(crate) use source::nonallocating as source_nonallocating;
+pub(crate) use source_index::{SourceHelpers, SourceIndex, SourceProofs};
 const DEPTH: usize = crate::cache_codec::MAX_DEPTH;
 const WORK: usize = crate::cache_codec::MAX_NODES;
 

@@ -1,6 +1,7 @@
 //! Proof over actual provider bodies, never over the generated prototype.
-use super::*;
-use crate::ast::{ModuleUseKind, Program};
+use crate::ast::{
+    Function, ModuleUseKind, ParamMode, Program, Type, TypeDeclaration, TypeDeclarationKind,
+};
 use crate::workspace_graph::{AuthoredDeclaration, AuthoredKind};
 use std::collections::BTreeMap;
 
@@ -163,43 +164,79 @@ fn parameter<'a>(
     }
 }
 
-pub(super) fn authorized<'a>(
-    function: &'a Function,
-    module: &str,
-    authored: &BTreeMap<&str, AuthoredDeclaration<'a>>,
+pub(super) struct ProviderProofs<'a> {
+    authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,
     programs: &'a [Program],
-) -> bool {
-    if function.return_type != Type::Bytes
-        || function
-            .params
-            .iter()
-            .filter(|param| param.mode == ParamMode::Own && param.ty == Type::Bytes)
-            .count()
-            != 1
-    {
-        return false;
-    }
-    let Some(owner) = provider(function, module, authored, programs) else {
-        return false;
-    };
-    let Some(lookup_work) = programs.iter().try_fold(programs.len(), |work, program| {
-        work.checked_add(program.functions.len())?
-            .checked_add(program.types.len())?
-            .checked_add(program.module_uses.len())
-    }) else {
-        return false;
-    };
-    crate::loop_calls::byte_writer::source_nonallocating_with(
-        owner,
-        function,
-        |owner, name| lookup(owner, name, authored, programs),
-        |owner, mode, ty| parameter(owner, mode, ty, authored, programs),
-        |owner, ty| {
-            crate::source_verify::is_scalar_source_type(ty)
-                || crate::loop_calls::ast_copy_variant(owner, ty)
-                || record(owner, ty, authored, programs)
-                    .is_some_and(crate::source_verify::copy_record_declaration_admitted)
-        },
-        lookup_work,
-    )
+    proofs: crate::loop_calls::byte_writer::SourceProofs<'a>,
+    carrier_charged: bool,
 }
+impl<'a> ProviderProofs<'a> {
+    pub(super) fn new(
+        authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,
+        programs: &'a [Program],
+    ) -> Self {
+        Self {
+            authored,
+            programs,
+            proofs: Default::default(),
+            carrier_charged: false,
+        }
+    }
+    pub(super) fn authorized(
+        &mut self,
+        function: &'a Function,
+        module: &str,
+    ) -> Result<bool, crate::diagnostic::Diagnostic> {
+        if let Some(error) = self.proofs.failure() {
+            return Err(error);
+        }
+        let authored = self.authored;
+        let programs = self.programs;
+        if function.return_type != Type::Bytes
+            || function
+                .params
+                .iter()
+                .filter(|param| param.mode == ParamMode::Own && param.ty == Type::Bytes)
+                .count()
+                != 1
+        {
+            return Ok(false);
+        }
+        let Some(owner) = provider(function, module, authored, programs) else {
+            return Ok(false);
+        };
+        let Some(lookup_work) = programs.iter().try_fold(programs.len(), |work, program| {
+            work.checked_add(program.functions.len())?
+                .checked_add(program.types.len())?
+                .checked_add(program.module_uses.len())
+        }) else {
+            return Err(crate::diagnostic::Diagnostic::io(
+                "SPX-G171",
+                "byte helper provider proof lookup work overflowed",
+            ));
+        };
+        if !self.carrier_charged {
+            self.proofs.reserve_carrier(
+                std::mem::size_of::<Self>()
+                    - std::mem::size_of::<crate::loop_calls::byte_writer::SourceProofs<'a>>(),
+            )?;
+            self.carrier_charged = true;
+        }
+        self.proofs.prove(
+            owner,
+            function,
+            |owner, name| lookup(owner, name, authored, programs),
+            |owner, mode, ty| parameter(owner, mode, ty, authored, programs),
+            |owner, ty| {
+                crate::source_verify::is_scalar_source_type(ty)
+                    || crate::loop_calls::ast_copy_variant(owner, ty)
+                    || record(owner, ty, authored, programs)
+                        .is_some_and(crate::source_verify::copy_record_declaration_admitted)
+            },
+            lookup_work,
+        )
+    }
+}
+
+#[cfg(test)]
+mod tests;

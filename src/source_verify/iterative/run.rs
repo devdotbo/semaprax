@@ -29,6 +29,9 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             #[cfg(test)]
             note_capacity_high_water(
                 self.frames.capacity() * std::mem::size_of::<VerifierFrame<'_>>()
+                    + self
+                        .byte_helpers
+                        .map_or(0, |index| index.owned_capacity_bytes())
                     + self.scopes.capacity() * std::mem::size_of::<VerifierScope>()
                     + self.values.capacity() * std::mem::size_of::<Option<CheckedValue>>()
                     + self

@@ -58,7 +58,38 @@ fn prove<'a>(
     >()) {
         return None;
     }
-    let mut frames = [None; DEPTH];
+    let mut cursor = Cursor::default();
+    prove_with_cursor(
+        program,
+        target,
+        lookup,
+        param_admit,
+        result_admit,
+        lookup_work,
+        &mut cursor,
+    )
+}
+pub(super) struct Cursor<'a> {
+    frames: [Option<Frame<'a>>; DEPTH],
+}
+impl Default for Cursor<'_> {
+    fn default() -> Self {
+        Self {
+            frames: [None; DEPTH],
+        }
+    }
+}
+#[allow(clippy::too_many_arguments)]
+pub(super) fn prove_with_cursor<'a>(
+    program: &'a Program,
+    target: &'a Function,
+    lookup: &impl Fn(&'a Program, &str) -> Option<(&'a Program, &'a Function)>,
+    param_admit: &impl Fn(&Program, ParamMode, &Type) -> bool,
+    result_admit: &impl Fn(&Program, &Type) -> bool,
+    lookup_work: usize,
+    cursor: &mut Cursor<'a>,
+) -> Option<()> {
+    let frames = &mut cursor.frames;
     frames[0] = Some(Frame::Function(program, target, 0));
     let mut depth = 1usize;
     let mut work = WORK;

@@ -422,8 +422,10 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
         include_str!("../../src/workspace_graph/expected_projection/statement_segment.rs");
     let projection_defaults =
         include_str!("../../src/workspace_graph/expected_projection/defaults.rs");
-    let projection_import_stub =
-        include_str!("../../src/workspace_graph/expected_projection/import_stub.rs");
+    let projection_import_stub = concat!(
+        include_str!("../../src/workspace_graph/expected_projection/import_stub.rs"),
+        include_str!("../../src/workspace_graph/expected_projection/import_stub/byte_helper.rs"),
+    );
     let projection_uncached_peak =
         include_str!("../../src/workspace_graph/expected_projection/uncached_peak.rs");
     let projection_type_rewrite =

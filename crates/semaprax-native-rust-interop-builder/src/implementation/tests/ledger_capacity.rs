@@ -122,6 +122,7 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
     let hir_resolver = concat!(
         include_str!("../../../../../src/loop_calls/byte_writer.rs"),
         include_str!("../../../../../src/loop_calls/byte_writer/source.rs"),
+        include_str!("../../../../../src/loop_calls/byte_writer/source_index.rs"),
         include_str!("../../../../../src/loop_calls/byte_writer/resolved.rs"),
         include_str!("../../../../../src/loop_calls/byte_writer/bindings.rs"),
         include_str!("../../../../../src/loop_calls/byte_writer/module_index.rs"),
@@ -248,6 +249,7 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
     let verifier = concat!(
         include_str!("../../../../../src/loop_calls/byte_writer.rs"),
         include_str!("../../../../../src/loop_calls/byte_writer/source.rs"),
+        include_str!("../../../../../src/loop_calls/byte_writer/source_index.rs"),
         include_str!("../../../../../src/source_verify.rs"),
         include_str!("../../../../../src/source_verify/lexical_exit.rs"),
         include_str!("../../../../../src/source_verify/iterative/lexical_exit.rs"),

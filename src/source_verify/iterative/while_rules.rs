@@ -2,8 +2,8 @@
 //! rejection of expression forms that are not yet admitted inside a loop.
 
 use crate::ast::{Expr, ExprKind, ParamMode, Statement, Type};
-use crate::source_verify::IterativeVerifier;
 use crate::source_verify::diagnostics::error;
+use crate::source_verify::IterativeVerifier;
 
 impl<'a, 'p> IterativeVerifier<'a, 'p> {
     pub(super) fn reject_for_body_disallowed(
@@ -400,7 +400,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     // loop cleanup-edge-free; unknown names keep flowing so the
                     // established unresolved-value diagnostic fires instead.
                     if let Some(declared) = self.functions.get(name.as_str()) {
-                        let scalar_signature = crate::loop_calls::byte_writer::source_target(self.program, declared) || crate::stdin_stream_ops::ast_forward_signature(declared) || ( crate::loop_calls::effects_admitted(&declared.effects)
+                        let scalar_signature = self.byte_helper_target(declared) || crate::stdin_stream_ops::ast_forward_signature(declared) || ( crate::loop_calls::effects_admitted(&declared.effects)
                             && crate::loop_calls::ast_result_admitted(self.program, &declared.return_type)
                             && declared.params.iter().zip(args).all(|(param, argument)| {
                                 crate::loop_calls::ast_param_admitted(self.program, param.mode, &param.ty)
@@ -529,7 +529,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
     }
 
     pub(super) fn admits_record_owner_renewal(&self, binding: &str, value: &Expr) -> bool {
-        if crate::loop_calls::byte_writer::source_assignment(self.program, binding, value) {
+        if self.byte_helper_assignment(binding, value) {
             return true;
         }
         let ExprKind::Call {

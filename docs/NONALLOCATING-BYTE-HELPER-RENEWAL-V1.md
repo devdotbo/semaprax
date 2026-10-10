@@ -92,9 +92,23 @@ and per-target closure limits. Reservation failure is H006, not a legacy
 fallback. An allocating ordinary helper still supplies no renewal authority
 and retains the ordinary profile.
 
-Source verification, incremental resolver cleanup construction, standalone
-schema queries, and the cleanup path-state renewal checks retain their existing
-independent proof paths. They do not yet share this phase index. This batch
+Source body verification now owns a separate immutable AST proof memo for its
+function-checking phase. Repeated direct targets reuse a completed proof and
+one reserved 256-frame cursor; each different target still replays its complete
+transitive body, requires and ensures. Assignments retain their ordinary
+per-site ownership checks. The independent recursive oracle remains separate.
+
+Workspace projection cost and materialization invocations each own a separate
+provider memo over the held authored facts and source programs. Actual provider,
+module and alias provenance is authenticated before a memo lookup; a generated
+prototype supplies no authority. Borrowed keys and cursor backing are reserved
+before allocation, replacement backing remains charged, and memo reservation and lookup-work
+exhaustion is sticky G171 with no ordinary-profile fallback. An irrelevant
+signature creates no memo backing. These consumers do not reuse proofs across
+invocations, revisions or mutable source.
+
+Incremental resolver cleanup construction, standalone schema queries, and the
+cleanup path-state renewal checks retain their independent proof paths. This batch
 therefore implements bounded reuse in the named consumers, rather than a global
 cache or complete elimination of repeated helper proof work. Construction,
 replay performance and accepted-task efficiency remain unmeasured.

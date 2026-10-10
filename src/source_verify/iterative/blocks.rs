@@ -336,11 +336,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                             // evaluates before publication, so exactly one
                             // generation of the owner is ever live.
                             let owned_reopen = (binding_ty == crate::ast::Type::Bytes
-                                && crate::loop_calls::byte_writer::source_assignment(
-                                    self.program,
-                                    name,
-                                    value,
-                                ))
+                                && self.byte_helper_assignment(name, value))
                                 || (binding_ty == crate::ast::Type::String
                                     && actual.as_ref().is_some_and(|v| {
                                         v.ty == crate::ast::Type::String && v.mode == ParamMode::Own

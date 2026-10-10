@@ -176,6 +176,7 @@ use capacity::{
 struct IterativeVerifier<'a, 'p> {
     program: &'p Program,
     current: &'p Function,
+    byte_helpers: Option<&'a dyn crate::loop_calls::byte_writer::SourceHelpers>,
     functions: &'p HashMap<&'p str, &'p Function>,
     types: &'p TypeTable<'p>,
     result_type: Option<&'p Type>,
@@ -223,6 +224,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         Self {
             program,
             current,
+            byte_helpers: None,
             functions,
             types,
             result_type,

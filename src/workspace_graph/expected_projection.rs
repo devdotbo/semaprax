@@ -88,6 +88,7 @@ pub(super) fn synthetic_builder_bytes_scoped(
     let mut identity_slots = ast_program_identity_slots(program)?;
     let mut runtime = StructuralCost::new();
     let mut default_memo = [BTreeMap::new(), BTreeMap::new()];
+    let mut byte_proofs = import_stub::ByteHelperProofs::new(authored, programs);
     let mut transient_import_clone = 0usize;
     for module_use in program.module_uses.iter().filter(|_| include_imports) {
         if module_use.kind == ModuleUseKind::Protocol {
@@ -155,7 +156,7 @@ pub(super) fn synthetic_builder_bytes_scoped(
                 &mut default_memo,
                 &mut BTreeSet::new(),
                 super::owned_function_import::admitted(program, target, authored, programs),
-                import_stub::byte_helper_authorized(function, target.module, authored, programs),
+                import_stub::byte_helper_authorized(function, target.module, &mut byte_proofs)?,
             )?;
             runtime.add_split(cost.bytes, cost.string_bytes)?;
             runtime.add_identity_carriers(cost.identity_carriers)?;
@@ -773,6 +774,7 @@ pub(super) fn synthetic_program(
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
     programs: &[Program],
 ) -> Result<Program, Vec<Diagnostic>> {
+    let mut byte_proofs = import_stub::ByteHelperProofs::new(authored, programs);
     let mut synthetic = program.clone();
     synthetic.module_uses.clear();
     // Project validation already authenticated static implementation sidecars.
@@ -846,7 +848,7 @@ pub(super) fn synthetic_program(
             &function,
             &type_declarations,
             super::owned_function_import::admitted(program, target, authored, programs),
-            import_stub::byte_helper_authorized(target_function, target.module, authored, programs),
+            import_stub::byte_helper_authorized(target_function, target.module, &mut byte_proofs)?,
         )?;
         synthetic.functions.push(function);
     }

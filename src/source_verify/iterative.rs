@@ -282,6 +282,32 @@ pub(super) fn check_expr_iterative(
     allow_moves: bool,
     diagnostics: &mut Vec<Diagnostic>,
 ) -> Option<CheckedValue> {
+    check_expr_with_helpers(
+        program,
+        current,
+        expr,
+        variables,
+        functions,
+        types,
+        result_type,
+        allow_moves,
+        diagnostics,
+        None,
+    )
+}
+#[allow(clippy::too_many_arguments)]
+pub(super) fn check_expr_with_helpers<'a, 'p>(
+    program: &'p Program,
+    current: &'p Function,
+    expr: &'p Expr,
+    variables: &mut HashMap<String, Binding>,
+    functions: &'p HashMap<&'p str, &'p Function>,
+    types: &'p TypeTable<'p>,
+    result_type: Option<&'p Type>,
+    allow_moves: bool,
+    diagnostics: &'a mut Vec<Diagnostic>,
+    helpers: Option<&'a dyn crate::loop_calls::byte_writer::SourceHelpers>,
+) -> Option<CheckedValue> {
     let initial = std::mem::take(variables);
     let mut verifier = IterativeVerifier::new(
         program,
@@ -293,6 +319,7 @@ pub(super) fn check_expr_iterative(
         allow_moves,
         diagnostics,
     );
+    verifier.byte_helpers = helpers;
     let result = verifier.run(expr);
     *variables = verifier
         .scopes
@@ -306,5 +333,20 @@ pub(super) fn check_expr_iterative(
             diagnostics.push(diagnostic.at_path(&program.path));
             None
         }
+    }
+}
+
+impl<'a, 'p> IterativeVerifier<'a, 'p> {
+    fn byte_helper_target(&self, target: &Function) -> bool {
+        self.byte_helpers.map_or_else(
+            || crate::loop_calls::byte_writer::source_target(self.program, target),
+            |index| index.target(target),
+        )
+    }
+    fn byte_helper_assignment(&self, name: &str, value: &Expr) -> bool {
+        self.byte_helpers.map_or_else(
+            || crate::loop_calls::byte_writer::source_assignment(self.program, name, value),
+            |index| index.assignment(name, value),
+        )
     }
 }

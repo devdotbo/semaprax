@@ -4,13 +4,15 @@ use crate::ast::{
 };
 #[path = "import_stub/byte_helper.rs"]
 mod byte_helper;
+pub(super) use byte_helper::ProviderProofs as ByteHelperProofs;
 pub(super) fn byte_helper_authorized<'a>(
     function: &'a Function,
     module: &str,
-    authored: &std::collections::BTreeMap<&str, super::AuthoredDeclaration<'a>>,
-    programs: &'a [crate::ast::Program],
-) -> bool {
-    byte_helper::authorized(function, module, authored, programs)
+    proofs: &mut ByteHelperProofs<'a>,
+) -> Result<bool, Vec<crate::diagnostic::Diagnostic>> {
+    proofs
+        .authorized(function, module)
+        .map_err(|error| vec![error])
 }
 
 pub(super) fn signature(function: &Function) -> Function {
