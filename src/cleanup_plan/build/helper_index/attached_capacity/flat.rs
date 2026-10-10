@@ -154,7 +154,7 @@ mod tests {
         // This carrier was omitted by the old no-recursive-shape fast path.
         attached.regions[0]
             .slots
-            .extend([crate::cleanup_plan::StorageId::ProvisionalResult; 3]);
+            .extend([const { crate::cleanup_plan::StorageId::ProvisionalResult }; 3]);
         let mut exact = original + 3;
         plan(&attached, &mut exact).unwrap();
         assert_eq!(exact, 0);
