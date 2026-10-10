@@ -121,6 +121,15 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
     // frame machinery they describe, so bind the root and the resolver files.
     let hir_resolver = concat!(
         include_str!("../../../../../src/hir.rs"),
+        include_str!("../../../../../src/hir/lexical_exit.rs"),
+        include_str!("../../../../../src/hir/lexical_exit/latch.rs"),
+        include_str!("../../../../../src/hir/lexical_exit/owner.rs"),
+        include_str!("../../../../../src/hir/lexical_exit/rekey.rs"),
+        include_str!("../../../../../src/hir/lexical_exit/validation.rs"),
+        include_str!("../../../../../src/hir/lexical_exit/walk.rs"),
+        include_str!("../../../../../src/hir/lexical_exit/wrapper.rs"),
+        include_str!("../../../../../src/hir/resolve_expr/lexical_exit.rs"),
+        include_str!("../../../../../src/hir/resolve_expr_reference/control.rs"),
         include_str!("../../../../../src/hir/owned_text_record.rs"),
         include_str!("../../../../../src/stdin_stream_ops.rs"),
         include_str!("../../../../../src/stdin_stream_ops/analysis.rs"),
@@ -197,6 +206,7 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
     );
     let hir_validator = concat!(
         include_str!("../../../../../src/hir/validation.rs"),
+        include_str!("../../../../../src/hir/validation/lexical_exit.rs"),
         include_str!("../../../../../src/hir/validation/call_parameters.rs"),
         include_str!("../../../../../src/hir/validation/nominal_facts.rs"),
         include_str!("../../../../../src/hir/validation/variant_guard_state.rs"),
@@ -227,6 +237,9 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
     );
     let verifier = concat!(
         include_str!("../../../../../src/source_verify.rs"),
+        include_str!("../../../../../src/source_verify/lexical_exit.rs"),
+        include_str!("../../../../../src/source_verify/iterative/lexical_exit.rs"),
+        include_str!("../../../../../src/source_verify/oracle/lexical_exit.rs"),
         include_str!("../../../../../src/source_verify/variant_guards.rs"),
         include_str!("../../../../../src/source_verify/generic_inference.rs"),
         include_str!("../../../../../src/source_verify/closure.rs"),
@@ -247,6 +260,11 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
     );
     let lower = concat!(
         include_str!("../../../../../src/cleanup_plan/build.rs"),
+        include_str!("../../../../../src/cleanup_plan/build/lexical_control.rs"),
+        include_str!("../../../../../src/cleanup_plan/build/lexical_control/capacity.rs"),
+        include_str!("../../../../../src/cleanup_plan/build/lexical_iterator.rs"),
+        include_str!("../../../../../src/cleanup_plan/build/lexical_break.rs"),
+        include_str!("../../../../../src/cleanup_plan/build/execution_boundary.rs"),
         include_str!("../../../../../src/cleanup_plan/build/while_condition.rs"),
         include_str!("../../../../../src/cleanup_plan/build/transfer.rs"),
         include_str!("../../../../../src/cleanup_plan/build/string_replacement.rs"),
