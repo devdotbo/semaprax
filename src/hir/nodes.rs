@@ -138,6 +138,8 @@ pub struct ByteSliceProvenance {
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum ResolvedType {
+    /// Compiler-owned absence of normal completion; never a stored/ABI value.
+    Never,
     /// A retained affine zero-argument, i64-result callable.
     OnceFunction,
     OnceFunctionI64,
@@ -243,6 +245,7 @@ impl ResolvedType {
             | Self::OnceFunctionI64
             | Self::OnceFunctionI64Pair
             | Self::MutFunctionI64
+            | Self::Never
             | Self::Unit
             | Self::I64
             | Self::I32
@@ -266,7 +269,11 @@ impl ResolvedType {
     pub fn identity_key(&self) -> String {
         // Zero-argument nominal keys need no traversal or child-key storage.
         // Keep the exact length-delimited encoding used by the general path.
-        if let Self::Nominal { declaration, arguments } = self {
+        if let Self::Nominal {
+            declaration,
+            arguments,
+        } = self
+        {
             if arguments.is_empty() {
                 return format!("nominal:{}:{}:0:", declaration.as_str().len(), declaration);
             }
@@ -292,6 +299,7 @@ impl ResolvedType {
                         keys.push("fn-once:bytes+i64+i64:i64:v3".to_owned())
                     }
                     Self::MutFunctionI64 => keys.push("fn-mut:i64+i64:i64:v1".to_owned()),
+                    Self::Never => keys.push("never:lexical-exit:v1".to_owned()),
                     Self::Unit => keys.push("unit".to_owned()),
                     Self::I64 => keys.push("i64".to_owned()),
                     Self::I32 => keys.push("i32".to_owned()),

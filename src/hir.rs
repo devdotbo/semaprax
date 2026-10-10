@@ -89,6 +89,8 @@ mod byte_slice_provenance;
 mod capacity_probe;
 pub mod closure;
 mod expr_nodes;
+pub mod lexical_exit;
+pub use lexical_exit::{ControlTarget, FlowCompletion, LoopLatchKind, SourceForKind};
 pub mod function_value;
 mod ids;
 mod inspection;

@@ -852,6 +852,11 @@ pub struct ClosureParam {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ExprKind {
+    /// Terminal source control flow: no normal value and no authored target.
+    LexicalExit {
+        kind: LexicalExitKind,
+        value: Option<Box<Expr>>,
+    },
     Closure {
         params: Vec<ClosureParam>,
         return_type: Type,
@@ -1131,6 +1136,8 @@ pub struct FieldTarget {
     pub span: Span,
 }
 
+mod lexical_exit;
+pub use lexical_exit::LexicalExitKind;
 mod statement;
 pub use statement::{Statement, TraversalIndex};
 
