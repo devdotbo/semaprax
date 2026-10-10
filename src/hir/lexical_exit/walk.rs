@@ -106,7 +106,7 @@ pub(crate) fn child(expr: &ResolvedExpr, index: usize) -> Option<&ResolvedExpr> 
 /// Finite depth-first scan: no frontier allocation, identity clones or recursion.
 /// Callers charge this one source-defined function walk in their existing work census.
 pub(crate) fn requires(function: &ResolvedFunction) -> Result<bool, Diagnostic> {
-    let mut stack = [None; 129];
+    let mut stack = [None; crate::cache_codec::MAX_DEPTH + 1];
     for root in function
         .requires
         .iter()
