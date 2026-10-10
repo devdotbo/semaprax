@@ -56,6 +56,7 @@ fn forged_resume_transfer_phase_refuses_before_interpreter_or_wasm() {
         .unwrap()
         .blocks
         .clone();
+    let wrong_phase = function.body.id.clone();
     // The block result is moved before its scope completion; moving that
     // event to a different expression anchor cannot grant later publication.
     let transfer = function
@@ -72,7 +73,11 @@ fn forged_resume_transfer_phase_refuses_before_interpreter_or_wasm() {
         .unwrap();
     match transfer {
         CleanupTransition::TransferVariant { at, .. } => {
-            *at = serde_json::from_value(serde_json::Value::String("forged.resume.phase".to_owned())).unwrap()
+            assert_ne!(
+                at, &wrong_phase,
+                "root body is a distinct real producer phase"
+            );
+            *at = wrong_phase;
         }
         _ => unreachable!(),
     }

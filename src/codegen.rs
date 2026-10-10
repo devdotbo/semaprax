@@ -2,8 +2,6 @@
 pub mod checked_final_utf8_preflight;
 #[cfg(test)]
 mod checked_string_allocation;
-#[cfg(test)]
-mod checked_string_allocation;
 mod native_adapter_abi;
 #[cfg(test)]
 pub(crate) mod native_aggregate;

@@ -239,4 +239,5 @@ impl<'a> ProviderProofs<'a> {
 }
 
 #[cfg(test)]
+#[path = "byte_helper/tests.rs"]
 mod tests;
