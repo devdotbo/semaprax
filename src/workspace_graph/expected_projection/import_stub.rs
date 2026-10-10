@@ -2,6 +2,16 @@
 use crate::ast::{
     Expr, ExprKind, Function, Param, ParamMode, Type, TypeDeclaration, TypeDeclarationKind,
 };
+#[path = "import_stub/byte_helper.rs"]
+mod byte_helper;
+pub(super) fn byte_helper_authorized<'a>(
+    function: &'a Function,
+    module: &str,
+    authored: &std::collections::BTreeMap<&str, super::AuthoredDeclaration<'a>>,
+    programs: &'a [crate::ast::Program],
+) -> bool {
+    byte_helper::authorized(function, module, authored, programs)
+}
 
 pub(super) fn signature(function: &Function) -> Function {
     Function {
@@ -87,15 +97,21 @@ pub(super) fn default_expr(
     function: &Function,
     declarations: &[(&str, &crate::ast::TypeDeclaration)],
     allow_owned: bool,
+    allow_byte_forward: bool,
 ) -> Result<Expr, Vec<crate::diagnostic::Diagnostic>> {
-    if let Some(parameter) = forward_parameter(function, allow_owned, |ty| {
-        let Type::Named { name, arguments } = ty else {
-            return false;
-        };
-        arguments.is_empty()
-            && declarations
-                .iter()
-                .any(|(candidate, declaration)| *candidate == name && record_shape(declaration))
+    let byte_owner = function.params.iter().find(|parameter| {
+        allow_byte_forward && parameter.mode == ParamMode::Own && parameter.ty == Type::Bytes
+    });
+    if let Some(parameter) = byte_owner.or_else(|| {
+        forward_parameter(function, allow_owned, |ty| {
+            let Type::Named { name, arguments } = ty else {
+                return false;
+            };
+            arguments.is_empty()
+                && declarations
+                    .iter()
+                    .any(|(candidate, declaration)| *candidate == name && record_shape(declaration))
+        })
     }) {
         super::reserve_builder_structure(std::mem::size_of::<Expr>())?;
         return Ok(Expr {
@@ -116,15 +132,21 @@ pub(super) fn default_expr_expanded_cost(
     memo: &mut [std::collections::BTreeMap<String, super::ExpandedDefaultCost>; 2],
     visiting: &mut std::collections::BTreeSet<String>,
     allow_owned: bool,
+    allow_byte_forward: bool,
 ) -> Result<super::ExpandedDefaultCost, Vec<crate::diagnostic::Diagnostic>> {
-    if let Some(parameter) = forward_parameter(function, allow_owned, |ty| {
-        let Type::Named { name, arguments } = ty else {
-            return false;
-        };
-        arguments.is_empty()
-            && super::super::resolve_type_id(module, name, programs)
-                .and_then(|id| authored.get(id.as_str()).and_then(|target| target.ty))
-                .is_some_and(record_shape)
+    let byte_owner = function.params.iter().find(|parameter| {
+        allow_byte_forward && parameter.mode == ParamMode::Own && parameter.ty == Type::Bytes
+    });
+    if let Some(parameter) = byte_owner.or_else(|| {
+        forward_parameter(function, allow_owned, |ty| {
+            let Type::Named { name, arguments } = ty else {
+                return false;
+            };
+            arguments.is_empty()
+                && super::super::resolve_type_id(module, name, programs)
+                    .and_then(|id| authored.get(id.as_str()).and_then(|target| target.ty))
+                    .is_some_and(record_shape)
+        })
     }) {
         let string_bytes = parameter.name.len();
         return Ok(super::ExpandedDefaultCost {

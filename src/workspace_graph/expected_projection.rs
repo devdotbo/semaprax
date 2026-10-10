@@ -35,10 +35,10 @@ mod identity_slots;
 mod import_stub;
 #[path = "expected_projection/local_identity.rs"]
 mod local_identity;
-#[path = "expected_projection/sort_keys.rs"]
-mod sort_keys;
 #[path = "expected_projection/record_traversal.rs"]
 mod record_traversal;
+#[path = "expected_projection/sort_keys.rs"]
+mod sort_keys;
 #[path = "expected_projection/statement_segment.rs"]
 pub(super) mod statement_segment;
 #[path = "expected_projection/type_rewrite.rs"]
@@ -155,6 +155,7 @@ pub(super) fn synthetic_builder_bytes_scoped(
                 &mut default_memo,
                 &mut BTreeSet::new(),
                 super::owned_function_import::admitted(program, target, authored, programs),
+                import_stub::byte_helper_authorized(function, target.module, authored, programs),
             )?;
             runtime.add_split(cost.bytes, cost.string_bytes)?;
             runtime.add_identity_carriers(cost.identity_carriers)?;
@@ -845,6 +846,7 @@ pub(super) fn synthetic_program(
             &function,
             &type_declarations,
             super::owned_function_import::admitted(program, target, authored, programs),
+            import_stub::byte_helper_authorized(target_function, target.module, authored, programs),
         )?;
         synthetic.functions.push(function);
     }
@@ -1443,8 +1445,11 @@ fn collect_expression_type_edges(
                 )?;
             }
         }
-        ExprKind::LexicalExit { value: None, .. } => {},
-        ExprKind::LexicalExit { value: Some(value), .. } | ExprKind::Unary { value, .. } => collect_expression_type_edges(
+        ExprKind::LexicalExit { value: None, .. } => {}
+        ExprKind::LexicalExit {
+            value: Some(value), ..
+        }
+        | ExprKind::Unary { value, .. } => collect_expression_type_edges(
             program,
             owner,
             value,

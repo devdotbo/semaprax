@@ -1,28 +1,81 @@
 use super::*;
 #[derive(Clone, Copy)]
 enum Frame<'a> {
-    Function(&'a Function, usize),
-    Expression(&'a Expr, usize),
+    Function(&'a Program, &'a Function, usize),
+    Expression(&'a Program, &'a Expr, usize),
 }
 
 pub(crate) fn nonallocating(program: &Program, target: &Function) -> bool {
-    prove(program, target).is_some()
+    nonallocating_with(
+        program,
+        target,
+        |owner, name| {
+            owner
+                .functions
+                .iter()
+                .find(|f| f.name == name)
+                .map(|f| (owner, f))
+        },
+        ast_param,
+        super::super::ast_result_admitted,
+        program
+            .functions
+            .len()
+            .saturating_add(program.module_uses.len()),
+    )
 }
-fn prove(program: &Program, target: &Function) -> Option<()> {
+
+/// The supplied lookup must authenticate actual provider bodies. Frames retain
+/// that body's own source module, including for transitive parameter admission.
+pub(crate) fn nonallocating_with<'a>(
+    program: &'a Program,
+    target: &'a Function,
+    lookup: impl Fn(&'a Program, &str) -> Option<(&'a Program, &'a Function)>,
+    param_admit: impl Fn(&Program, ParamMode, &Type) -> bool,
+    result_admit: impl Fn(&Program, &Type) -> bool,
+    lookup_work: usize,
+) -> bool {
+    prove(
+        program,
+        target,
+        &lookup,
+        &param_admit,
+        &result_admit,
+        lookup_work,
+    )
+    .is_some()
+}
+fn prove<'a>(
+    program: &'a Program,
+    target: &'a Function,
+    lookup: &impl Fn(&'a Program, &str) -> Option<(&'a Program, &'a Function)>,
+    param_admit: &impl Fn(&Program, ParamMode, &Type) -> bool,
+    result_admit: &impl Fn(&Program, &Type) -> bool,
+    lookup_work: usize,
+) -> Option<()> {
     if !crate::bounded_output::reserve_active_required(std::mem::size_of::<
         [Option<Frame<'_>>; DEPTH],
     >()) {
         return None;
     }
     let mut frames = [None; DEPTH];
-    frames[0] = Some(Frame::Function(target, 0));
+    frames[0] = Some(Frame::Function(program, target, 0));
     let mut depth = 1usize;
     let mut work = WORK;
     while depth != 0 {
         work = work.checked_sub(1)?;
         let current = depth - 1;
         let child = match frames[current]? {
-            Frame::Function(function, root) => {
+            Frame::Function(owner, function, root) => {
+                if root == 0 {
+                    work = work.checked_sub(
+                        function
+                            .params
+                            .len()
+                            .checked_add(1)?
+                            .checked_mul(lookup_work)?,
+                    )?;
+                }
                 if root == 0
                     && (!function.effects.is_empty()
                         || !function.type_parameters.is_empty()
@@ -31,9 +84,9 @@ fn prove(program: &Program, target: &Function) -> Option<()> {
                         || !function
                             .params
                             .iter()
-                            .all(|p| ast_param(program, p.mode, &p.ty))
+                            .all(|p| param_admit(owner, p.mode, &p.ty))
                         || !(function.return_type == Type::Bytes
-                            || super::super::ast_result_admitted(program, &function.return_type)
+                            || result_admit(owner, &function.return_type)
                                 && function.return_type != Type::String))
                 {
                     return None;
@@ -45,12 +98,12 @@ fn prove(program: &Program, target: &Function) -> Option<()> {
                 } else {
                     function.ensures.get(root - function.requires.len() - 1)
                 };
-                frames[current] = Some(Frame::Function(function, root + 1));
-                expression.map(|e| Frame::Expression(e, usize::MAX))
+                frames[current] = Some(Frame::Function(owner, function, root + 1));
+                expression.map(|e| Frame::Expression(owner, e, usize::MAX))
             }
-            Frame::Expression(expression, next) => {
+            Frame::Expression(owner, expression, next) => {
                 if next == usize::MAX {
-                    frames[current] = Some(Frame::Expression(expression, 0));
+                    frames[current] = Some(Frame::Expression(owner, expression, 0));
                     match &expression.kind {
                         ExprKind::String(_)
                         | ExprKind::Closure { .. }
@@ -65,7 +118,7 @@ fn prove(program: &Program, target: &Function) -> Option<()> {
                             ..
                         } => {
                             if !type_arguments.is_empty()
-                                || !program.types.iter().any(|d| {
+                                || !owner.types.iter().any(|d| {
                                     d.name == *type_name
                                         && crate::source_verify::copy_record_declaration_admitted(d)
                                 })
@@ -78,7 +131,7 @@ fn prove(program: &Program, target: &Function) -> Option<()> {
                             type_arguments,
                             ..
                         } => {
-                            if !copy_variant(program, type_name, type_arguments) {
+                            if !copy_variant(owner, type_name, type_arguments) {
                                 return None;
                             }
                         }
@@ -119,16 +172,15 @@ fn prove(program: &Program, target: &Function) -> Option<()> {
                                     return None;
                                 }
                             } else {
-                                work =
-                                    work.checked_sub(program.functions.len().checked_add(depth)?)?;
-                                let callee = program.functions.iter().find(|f| f.name == *name)?;
+                                work = work.checked_sub(lookup_work.checked_add(depth)?)?;
+                                let (provider, callee) = lookup(owner, name)?;
                                 if !type_arguments.is_empty() || args.len() != callee.params.len()
-                                    || frames[..depth].iter().any(|f| matches!(f, Some(Frame::Function(active, _)) if active.stable_id == callee.stable_id)) { return None; }
-                                frames[current] = Some(Frame::Expression(expression, 0));
+                                    || frames[..depth].iter().any(|f| matches!(f, Some(Frame::Function(_, active, _)) if active.stable_id == callee.stable_id)) { return None; }
+                                frames[current] = Some(Frame::Expression(owner, expression, 0));
                                 if depth == DEPTH {
                                     return None;
                                 }
-                                frames[depth] = Some(Frame::Function(callee, 0));
+                                frames[depth] = Some(Frame::Function(provider, callee, 0));
                                 depth += 1;
                                 continue;
                             }
@@ -139,7 +191,7 @@ fn prove(program: &Program, target: &Function) -> Option<()> {
                 }
                 // Block and Match child selection traverses an actual prefix.
                 work = work.checked_sub(next.checked_add(1)?.checked_mul(2)?)?;
-                frames[current] = Some(Frame::Expression(expression, next + 1));
+                frames[current] = Some(Frame::Expression(owner, expression, next + 1));
                 if next == 2
                     && matches!(&expression.kind, ExprKind::Call { name, .. } if name == crate::vec_field::NAME)
                 {
@@ -147,7 +199,7 @@ fn prove(program: &Program, target: &Function) -> Option<()> {
                 }
                 expression
                     .child(next)
-                    .map(|e| Frame::Expression(e, usize::MAX))
+                    .map(|e| Frame::Expression(owner, e, usize::MAX))
             }
         };
         if let Some(child) = child {

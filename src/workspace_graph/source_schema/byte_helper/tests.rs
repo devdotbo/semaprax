@@ -311,13 +311,13 @@ fn complete_absence_census_has_zero_budget_and_zero_scratch_debit() {
 }
 
 #[test]
-fn allocating_same_owner_helper_outside_loop_retains_the_ordinary_profile() {
+fn allocating_same_owner_call_outside_loop_retains_the_ordinary_profile() {
     let source = r#"module app.main;
 @id("replace") fn replace(output:own Bytes)->Bytes {
  let length=byte_len(bytes_as_slice(output)); bytes_zeroed(length)
 }
 @id("main") fn main()->i64 {
- let mut output=bytes_zeroed(1usize); output=replace(output); 7
+ let mut output=bytes_zeroed(1usize); let next=replace(output); 7
 }
 "#;
     let build = build(&[("app.spx", source)]);
@@ -331,4 +331,41 @@ fn allocating_same_owner_helper_outside_loop_retains_the_ordinary_profile() {
         .unwrap(),
         "semaprax.graph.v76"
     );
+}
+
+#[test]
+fn allocating_same_owner_assignment_remains_outside_explicit_mutation_profile() {
+    let source = r#"module app.main;
+@id("replace") fn replace(output:own Bytes)->Bytes {
+ let length=byte_len(bytes_as_slice(output)); bytes_zeroed(length)
+}
+@id("main") fn main()->i64 {
+ let mut output=bytes_zeroed(1usize); output=replace(output); 7
+}
+"#;
+    let errors = crate::check(source, "allocating-assignment.spx").unwrap_err();
+    assert!(errors.iter().any(|error| error.code == "SPX-U105"));
+}
+
+#[test]
+fn imported_allocating_body_cannot_acquire_identity_prototype_authority() {
+    let allocating = LEAF.replace(
+        "next=bytes_set(next,row.index,65u8);",
+        "let ignored=bytes_zeroed(1usize); next=bytes_set(next,row.index,65u8);",
+    );
+    let sources = [
+        ("app.spx", APP),
+        ("bridge.spx", BRIDGE),
+        ("leaf.spx", allocating.as_str()),
+    ]
+    .into_iter()
+    .map(|(path, source)| WorkspaceSource {
+        path: path.to_owned(),
+        source: format::canonical(&crate::parse(source, Path::new(path)).unwrap()),
+    })
+    .collect();
+    let errors = build_owned_retaining_sources_for_change(sources, MAX_CHANGE_BUILDER_BYTES)
+        .err()
+        .expect("real allocating provider must not become a nonallocating prototype");
+    assert!(errors.iter().any(|error| error.code == "SPX-U105"));
 }
