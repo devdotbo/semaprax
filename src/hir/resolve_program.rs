@@ -564,7 +564,7 @@ impl Resolver<'_> {
                 }
             }
         }
-        validate(&resolved)?;
+        self.function_work.static_text = super::validate_with_static_text(&resolved)?;
         Ok((resolved, self.function_work))
     }
 

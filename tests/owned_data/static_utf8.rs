@@ -154,6 +154,7 @@ fn static_utf8_backends_replay_types_producers_and_keep_public_providers_closed(
             .iter_mut()
             .find(|f| f.id.as_str() == "app.main")
             .unwrap();
+        let unrelated = main.body.id.clone();
         let hir::ResolvedExprKind::Block { statements, .. } = &mut main.body.kind else {
             panic!("block")
         };
@@ -163,7 +164,7 @@ fn static_utf8_backends_replay_types_producers_and_keep_public_providers_closed(
         match forged {
             0 => value.ty = hir::ResolvedType::String,
             1 => value.ownership = hir::OwnershipMode::Own,
-            2 => value.id = hir::ExpressionId::new("forged.static.producer"),
+            2 => value.id = unrelated,
             _ => value.kind = hir::ResolvedExprKind::String("owned".to_owned()),
         }
         assert_eq!(
@@ -218,4 +219,64 @@ fn static_utf8_writer_helpers_before_and_inside_loops_have_one_settled_owner_at_
         String::from_utf8_lossy(&output.stderr)
     );
     std::fs::remove_dir_all(path).unwrap();
+}
+
+#[test]
+fn authenticated_project_retains_static_source_sites_across_revision_and_drift() {
+    use semaprax::project::{self, ProjectExecutionOptions, ProjectExecutionOutcome};
+    let root = directory();
+    std::fs::create_dir(root.join("src")).unwrap();
+    let example = Path::new(env!("CARGO_MANIFEST_DIR")).join("examples/owned-leaf-command-project");
+    std::fs::copy(example.join("semaprax.toml"), root.join("semaprax.toml")).unwrap();
+    let write = |path: &str, source: &str| {
+        let program = semaprax::parse(source, path).unwrap();
+        let canonical = semaprax::format::canonical(&program);
+        assert_eq!(
+            canonical,
+            semaprax::format::canonical(&semaprax::parse(&canonical, path).unwrap())
+        );
+        std::fs::write(root.join(path), canonical).unwrap();
+    };
+    let app = std::fs::read_to_string(example.join("src/app.spx"))
+        .unwrap()
+        .replace(
+            "@id(\"owned.data.verify\") from owned.data",
+            "@id(\"static.writer\") from static.writer",
+        );
+    write("src/app.spx", &app);
+    let data = include_str!("static_utf8_writer.spx")
+        .replace("@id(\"app.main\") fn main()->i64 {run()}", "");
+    write("src/data.spx", &data);
+    write("src/tests.spx", "module owned.tests; use function @id(\"static.writer\") from static.writer as run; @id(\"owned.tests.main\") fn main()->i64 {if run()==42 {0}else{1}} @id(\"owned.tests.run\") fn test()->i64 {if run()==42 {0}else{1}}");
+    let manifest = root.join("semaprax.toml");
+    let before = project::with_authenticated_project(&manifest, |snapshot| {
+        snapshot.check()?;
+        hir::validate(snapshot.entry_program()).map_err(|e| vec![e])?;
+        let options =
+            ProjectExecutionOptions::new(16 * 1024 * 1024, 160_000_000).map_err(|e| vec![e])?;
+        assert_eq!(
+            snapshot.execute_entry(&options)?.outcome(),
+            &ProjectExecutionOutcome::Returned(42)
+        );
+        assert!(snapshot.semantic_graph().contains("static.writer"));
+        assert!(snapshot.semantic_graph().contains("static.write"));
+        Ok(snapshot.retain_revision())
+    })
+    .unwrap();
+    write("src/data.spx", &data.replace("aé", "bé"));
+    let after =
+        project::with_authenticated_project(&manifest, |snapshot| Ok(snapshot.retain_revision()))
+            .unwrap();
+    assert_ne!(before.project_revision(), after.project_revision());
+    assert_ne!(before.semantic_graph(), after.semantic_graph());
+    let drift = project::with_authenticated_project(&manifest, |_snapshot| {
+        write("src/data.spx", &data);
+        Ok(())
+    })
+    .unwrap_err();
+    assert!(
+        !drift.is_empty(),
+        "held authoritative source drift must fail closed"
+    );
+    std::fs::remove_dir_all(root).unwrap();
 }

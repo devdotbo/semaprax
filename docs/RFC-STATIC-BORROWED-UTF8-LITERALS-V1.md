@@ -3,12 +3,12 @@
 Status: design reference for [OPT #740](https://github.com/wavect/semaprax/issues/740).
 An authored direct-source tranche is described in
 [Static borrowed UTF-8 literals v1](STATIC-BORROWED-UTF8-LITERALS-V1.md);
-qualification and retained Workspace/Project adoption remain pending.
+qualification of both direct and retained Workspace/Project adoption remains pending.
 Audience: compiler contributors, language designers, and coding agents planning a future batch.
 
 This document records the original design for an explicit allocation-free
 literal root. The owning implementation document distinguishes authored direct
-routes from the still-closed retained Workspace/Project route. No public profile
+routes from the authored retained Workspace/Project adapter. No public profile
 or completion status is promoted by this design reference.
 The [RFC 0001](RFC-0001.md), [completion matrix](COMPLETION-MATRIX.md),
 [Shared Loan Plan v1](SHARED-LOAN-PLAN-V1.md),

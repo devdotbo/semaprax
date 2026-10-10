@@ -546,9 +546,13 @@ fn resolve_verified(
 pub(crate) struct FunctionResolutionWork {
     costs: BTreeMap<String, usize>,
     reused: usize,
+    static_text: bool,
 }
 
 impl FunctionResolutionWork {
+    pub(crate) fn static_text(&self) -> bool {
+        self.static_text
+    }
     pub(crate) fn costs(self) -> BTreeMap<String, usize> {
         self.costs
     }

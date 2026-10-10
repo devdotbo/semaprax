@@ -53,34 +53,38 @@ fn candidate(statement: &hir::ResolvedStatement) -> bool {
                     if place.root == binding.id && place.projections.is_empty()))))
 }
 
-fn census(function: &hir::ResolvedFunction) -> Option<bool> {
+fn census<'a>(roots: impl IntoIterator<Item = &'a hir::ResolvedExpr>) -> Option<(bool, bool)> {
     let mut stack = [None; crate::cache_codec::MAX_DEPTH];
-    stack[0] = Some((&function.body, 0usize));
-    let mut depth = 1usize;
     let mut work = crate::cache_codec::MAX_NODES;
     let mut found = false;
-    while depth != 0 {
-        work = work.checked_sub(1)?;
-        let index = depth - 1;
-        let (expression, next) = stack[index]?;
-        if next == 0 {
-            if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
-                work = work.checked_sub(statements.len())?;
-                found |= statements.iter().any(candidate);
+    let mut static_text = false;
+    for root in roots {
+        stack[0] = Some((root, 0usize));
+        let mut depth = 1usize;
+        while depth != 0 {
+            work = work.checked_sub(1)?;
+            let index = depth - 1;
+            let (expression, next) = stack[index]?;
+            if next == 0 {
+                static_text |= matches!(expression.kind, ResolvedExprKind::BorrowedUtf8Literal(_));
+                if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+                    work = work.checked_sub(statements.len())?;
+                    found |= statements.iter().any(candidate);
+                }
             }
-        }
-        stack[index] = Some((expression, next.checked_add(1)?));
-        if let Some(child) = hir::lexical_exit::child(expression, next) {
-            if depth == stack.len() {
-                return None;
+            stack[index] = Some((expression, next.checked_add(1)?));
+            if let Some(child) = hir::lexical_exit::child(expression, next) {
+                if depth == stack.len() {
+                    return None;
+                }
+                stack[depth] = Some((child, 0));
+                depth += 1;
+            } else {
+                depth -= 1;
             }
-            stack[depth] = Some((child, 0));
-            depth += 1;
-        } else {
-            depth -= 1;
         }
     }
-    Some(found)
+    Some((found, static_text))
 }
 
 #[cfg(test)]
@@ -116,7 +120,18 @@ pub(super) fn schema_with_proofs<'a>(
         .iter()
         .chain(module.function_instances.iter().map(|i| &i.function))
     {
-        if !census(function).ok_or_else(fail)? {
+        let (potential, static_text) = census(
+            function
+                .requires
+                .iter()
+                .chain(std::iter::once(&function.body))
+                .chain(&function.ensures),
+        )
+        .ok_or_else(fail)?;
+        if static_text && module.static_text.is_none() {
+            return Err(fail());
+        }
+        if !potential {
             if function.cleanup_plan.schema == crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V19 {
                 return Err(fail());
             }
@@ -216,6 +231,21 @@ pub(super) fn schema_with_proofs<'a>(
             return Err(fail());
         }
         any |= found;
+    }
+    if any && module.static_text.is_none() {
+        for template in &module.function_templates {
+            let (_, static_text) = census(
+                template
+                    .requires
+                    .iter()
+                    .chain(std::iter::once(&template.body))
+                    .chain(&template.ensures),
+            )
+            .ok_or_else(fail)?;
+            if static_text && module.static_text.is_none() {
+                return Err(fail());
+            }
+        }
     }
     Ok(any.then_some("semaprax.graph.v76"))
 }

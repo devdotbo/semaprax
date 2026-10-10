@@ -389,12 +389,23 @@ pub(crate) struct SelectiveResolvedModule {
     pub(crate) resolved: crate::hir::ResolvedProgram,
     pub(crate) function_costs: BTreeMap<String, usize>,
     pub(crate) reused_functions: usize,
+    pub(crate) static_text: bool,
 }
 impl SelectiveResolvedModule {
     pub(crate) fn into_parts(
         self,
-    ) -> (crate::hir::ResolvedProgram, BTreeMap<String, usize>, usize) {
-        (self.resolved, self.function_costs, self.reused_functions)
+    ) -> (
+        crate::hir::ResolvedProgram,
+        BTreeMap<String, usize>,
+        usize,
+        bool,
+    ) {
+        (
+            self.resolved,
+            self.function_costs,
+            self.reused_functions,
+            self.static_text,
+        )
     }
 }
 impl FrontendPass {
@@ -476,6 +487,7 @@ impl FrontendPass {
             )
             .map(|(resolved, work)| SelectiveResolvedModule {
                 reused_functions: work.reused(),
+                static_text: work.static_text(),
                 function_costs: work.costs(),
                 resolved,
             }),

@@ -78,6 +78,15 @@ pub(crate) fn visit_functions<'a>(
 
 pub(crate) fn visit_roots<'a>(
     roots: impl IntoIterator<Item = &'a ResolvedExpr>,
+    visit: impl FnMut(&ResolvedExpr, &str, bool) -> Result<(), Diagnostic>,
+) -> Result<(), Diagnostic> {
+    let mut work = WORK;
+    visit_roots_with_work(roots, &mut work, visit)
+}
+
+pub(crate) fn visit_roots_with_work<'a>(
+    roots: impl IntoIterator<Item = &'a ResolvedExpr>,
+    work: &mut usize,
     mut visit: impl FnMut(&ResolvedExpr, &str, bool) -> Result<(), Diagnostic>,
 ) -> Result<(), Diagnostic> {
     type Frame<'a> = Option<(&'a ResolvedExpr, usize)>;
@@ -87,12 +96,11 @@ pub(crate) fn visit_roots<'a>(
         ));
     }
     let mut frames: [Frame<'_>; DEPTH] = [None; DEPTH];
-    let mut work = WORK;
     for root in roots {
         frames[0] = Some((root, usize::MAX));
         let mut depth = 1;
         while depth != 0 {
-            work = work
+            *work = work
                 .checked_sub(1)
                 .ok_or_else(|| hir_error("static UTF-8 literal census exceeds work limit"))?;
             let (expression, next) = frames[depth - 1].expect("live bounded literal cursor");
@@ -128,7 +136,7 @@ pub(crate) fn visit_roots<'a>(
                 ResolvedExprKind::Match { arms, .. } => arms.len(),
                 _ => 0,
             };
-            work = work
+            *work = work
                 .checked_sub(lookup)
                 .ok_or_else(|| hir_error("static UTF-8 literal census exceeds work limit"))?;
             if let Some(child) = super::lexical_exit::child(expression, next) {

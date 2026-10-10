@@ -32,11 +32,26 @@ Selected programs use prelude v16 and Graph v77. The graph's
 `semaprax.static-borrowed-utf8.v1` inventory is descriptive, with `authority:false`.
 The current full-Program graph route composes existing helper-renewal facts.
 Legacy and detached/from-parts graph entry points refuse the new root with
-SPX-G410, including uninstantiated templates. The retained Workspace/Project
-selector also remains closed: it discards full source before its later schema
-selection and does not yet retain an independently replayable literal-site
-inventory. Normal authenticated Project adoption therefore remains an open
-#740 obligation; a stored flag or signature alone is insufficient.
+SPX-G410, including uninstantiated templates. The retained Workspace/Project route constructs a rare source-site inventory
+while the authenticated AST is still held. Each fact binds the source owner,
+identity origin, span, canonical expression path and independent immutable
+source bytes. Later selection independently matches current retained functions,
+generic templates and concrete instance execution identities against these
+facts and the current namespace. Missing, duplicated, changed or misplaced
+sites fail SPX-G410. The selector still checks ordinary renewal profiles; no
+stored bool, schema or signature grants literal authority. This route includes
+an authored normal authenticated command Project case; public scalar/text/data
+provider profiles remain closed.
+
+Selection comes from the mandatory HIR validation walk. Unselected modules
+create no literal-site inventory or selected-module vector backing. A selected
+module reserves its source cursor, borrowed scratch, site carrier, source-byte
+backing and cloned identity strings before construction, including spare
+capacities. The rare optional module field is counted in the existing module
+carrier size. Source and typed-tree walks and site matching have separately
+bounded work domains; this is not a claim of zero extra work in selected modes.
+The existing helper census now also covers contracts and templates so removing
+a source inventory cannot hide static sites behind the helper schema.
 
 One literal may contain at most 65536 decoded bytes (source SPX-T314).
 Independent mandatory HIR validation also sums every represented decoded static
@@ -80,8 +95,14 @@ Authored owning definitions, not executed in this tranche:
   Core-Wasm immutable-pool reads, public-profile refusals, and the shared
   `static_utf8_writer.spx` helper before and inside loops.
 - `wasm::aggregate::tests::static_text::`: exact pool and empty-literal placement.
+- `workspace_graph::source_schema::static_text::tests::`: retained writer,
+  stale source content/identity/namespace/presence and concrete generic sites.
+- `workspace_graph::static_text::tests::`: exact/one-short cursor reservation
+  and absence without selected backing.
+- The `static_utf8::` Project definition authenticates the held source,
+  executes the existing writer, and refuses drift at final recheck.
 
-Remaining completion obligations include retained source/HIR site replay and
-Project adoption, current-source execution of all definitions, final producer
-bindings, and the complete owning gate. No efficiency or cost improvement is
+Remaining completion obligations include current-source execution of the
+retained source/HIR and normal Project definitions, final producer bindings,
+and the complete owning gate. No efficiency or cost improvement is
 claimed without paired measurements.

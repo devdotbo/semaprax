@@ -1,0 +1,89 @@
+//! Move authenticated module outputs into their retained carriers.
+use super::*;
+
+pub(super) fn retain_workspace_module(
+    program: &Program,
+    module: String,
+    resolved: hir::ResolvedProgram,
+    programs: &[Program],
+    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+    mut loan_scratch: Option<&mut loan_retention::RetentionScratch>,
+    selected_static_text: bool,
+) -> Result<(WorkspaceResolvedModule, Vec<hir::ResolvedFunctionInstance>), Vec<Diagnostic>> {
+    let static_text = if selected_static_text {
+        static_text::retain(program, &resolved, authored)?
+    } else {
+        None
+    };
+    let retained_output_only = loan_scratch.is_some();
+    hir::replay_agent_source_associations(program, &resolved.agents)
+        .map_err(|error| vec![error])?;
+    // Declaration facts, then `follows` binding facts, in one `Vec`: the two
+    // JSON shapes are distinguished by their own leading key alone
+    // (`{"stable_id":...` vs `{"function":...`), so storing them together
+    // costs no second per-module `Vec` field -- see the field's own doc
+    // comment on `WorkspaceResolvedModule`.
+    let mut session_protocol_facts = session_protocol_decl::declaration_facts(program, &resolved)?;
+    session_protocol_facts.extend(session_protocol_decl::follows_facts(program)?);
+    session_protocol_facts.extend(agent_execution::facts(program)?);
+    let types = filter_owned_vec(
+        resolved.types,
+        |item| {
+            authored
+                .get(item.id.as_str())
+                .is_some_and(|owner| owner.module == program.module)
+        },
+        retained_output_only,
+    )?;
+    let functions = filter_owned_vec_accounted(
+        loan_retention::prepare_functions(
+            resolved.functions,
+            loan_scratch.as_deref_mut(),
+            program,
+            authored,
+        )?,
+        GRAPH_ACCOUNTED_RESOLVED_FUNCTION_BYTES,
+        |function| match loan_scratch.as_deref_mut() {
+            Some(scratch) => scratch.measure(function),
+            None => retained_function_loan_bytes(function),
+        },
+        |item| loan_retention::authored_function(item, program, authored),
+        retained_output_only,
+    )?;
+    let function_templates = filter_owned_vec(
+        resolved.function_templates,
+        |item| {
+            authored
+                .get(item.id.as_str())
+                .is_some_and(|owner| owner.module == program.module)
+        },
+        retained_output_only,
+    )?;
+    let (function_instances, imported_instances) = owned_generics::retain_module_instances(
+        program,
+        programs,
+        authored,
+        resolved.function_instances,
+        loan_scratch,
+    )?;
+    let signature_types = retained_signature_type_facts(&functions, &resolved.declarations)?;
+    let agents = filter_owned_vec(resolved.agents, |_| true, retained_output_only)?;
+    Ok((
+        WorkspaceResolvedModule {
+            path: crate::bounded_output::budgeted_clone(&program.path),
+            module,
+            permits: resolved.permits,
+            agents,
+            types,
+            interfaces: resolved.interfaces,
+            functions,
+            function_templates,
+            function_instances,
+            signature_types,
+            session_protocol_facts,
+            native_law: false,
+            static_text,
+        },
+        imported_instances,
+    ))
+}

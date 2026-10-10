@@ -30,12 +30,15 @@ mod package;
 mod prelude_binding;
 mod project_render;
 mod record_traversal;
+mod retain_module;
 mod retained_validation;
 mod retained_vectors;
 mod session_protocol_decl;
 mod shape_identity;
 pub(crate) mod source_callables;
 mod source_schema;
+mod static_text;
+use retain_module::retain_workspace_module;
 mod validation;
 use crate::ast::{
     Expr, ExprKind, Function, ModuleUse, ModuleUseKind, ParamMode, Program, Span, Type,
@@ -518,6 +521,7 @@ struct WorkspaceResolvedModule {
     // Only the authored native-law bytes own this schema; the resolved module
     // is an inert internal carrier with no executable declarations.
     native_law: bool,
+    static_text: Option<Box<static_text::Inventory>>,
 }
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub(crate) struct WorkspaceEdge {
@@ -2500,7 +2504,8 @@ fn resolved_function_imports(function: &hir::ResolvedFunction) -> BTreeSet<hir::
             | hir::ResolvedExprKind::Float32(_)
             | hir::ResolvedExprKind::Float64(_)
             | hir::ResolvedExprKind::Bool(_)
-            | hir::ResolvedExprKind::String(_) | hir::ResolvedExprKind::BorrowedUtf8Literal(_)
+            | hir::ResolvedExprKind::String(_)
+            | hir::ResolvedExprKind::BorrowedUtf8Literal(_)
             | hir::ResolvedExprKind::ArrayU8(_)
             | hir::ResolvedExprKind::RepeatArrayU8 { .. }
             | hir::ResolvedExprKind::BorrowPlace { .. }
@@ -4332,6 +4337,7 @@ fn build_resolved_core(
         modules = Vec::with_capacity(programs.len());
     }
     let mut synthetic_ast_peak = 0usize;
+    let mut selected_static_modules = static_text::SelectedModules::default();
     for index in 0..programs.len() {
         let program = &programs[compact_order.map_or(index, |order| order[index])];
         if retained_output_only {
@@ -4350,10 +4356,13 @@ fn build_resolved_core(
         let cached = frontend
             .as_deref_mut()
             .and_then(|cache| cache.checked_module(&program.path, &synthetic));
-        let resolved = if let Some((resolved, resolver_bytes, original_loan_bytes)) = cached {
+        let (resolved, static_text) = if let Some((resolved, resolver_bytes, original_loan_bytes)) =
+            cached
+        {
             let before = crate::bounded_output::active_remaining()
                 .expect("resolved core has a builder budget");
-            staged!(CachedValidation, hir::validate(&resolved)).map_err(|error| vec![error])?;
+            let static_text = staged!(CachedValidation, hir::validate_with_static_text(&resolved))
+                .map_err(|error| vec![error])?;
             let validation_bytes = before.saturating_sub(
                 crate::bounded_output::active_remaining()
                     .expect("resolved core has a builder budget"),
@@ -4378,21 +4387,27 @@ fn build_resolved_core(
                     )]
                 })?;
             charge_builder_prebound(loan_residual)?;
-            resolved
+            (resolved, static_text)
         } else {
             let before = crate::bounded_output::active_remaining()
                 .expect("resolved core has a builder budget");
             let selective = frontend
                 .as_deref()
                 .and_then(|cache| cache.resolve_functions(&program.path, &synthetic));
-            let (resolved, function_costs, reused_functions) =
+            let (resolved, function_costs, reused_functions, static_text) =
                 crate::vec_ops::with_authenticated_linked_source(|| {
                     crate::box_ops::with_authenticated_linked_source(|| {
                         if let Some(selective) = selective {
                             selective.map(|resolved| resolved.into_parts())
                         } else {
-                            staged!(FreshResolution, hir::resolve(&synthetic))
-                                .map(|resolved| (resolved, BTreeMap::new(), 0))
+                            staged!(
+                                FreshResolution,
+                                hir::resolve_with_function_reuse(&synthetic, None, None, None)
+                            )
+                            .map(|(resolved, work)| {
+                                let selected = work.static_text();
+                                (resolved, BTreeMap::new(), 0, selected)
+                            })
                         }
                     })
                 })?;
@@ -4411,7 +4426,7 @@ fn build_resolved_core(
                     reused_functions,
                 );
             }
-            resolved
+            (resolved, static_text)
         };
         verify_resolved_call_edges(program, &resolved, authored)?;
         if let Some(validation) = validation.as_mut() {
@@ -4425,6 +4440,7 @@ fn build_resolved_core(
                     programs,
                     authored,
                     Some(&mut loan_scratch),
+                    static_text,
                 )
             )?;
             owned_generics::merge_imported_vec_instances(
@@ -4433,6 +4449,7 @@ fn build_resolved_core(
             )?;
             modules.push(module);
         } else {
+            selected_static_modules.record(synthetic_modules.len(), programs.len(), static_text)?;
             synthetic_modules.push((
                 crate::bounded_output::budgeted_clone(&program.module),
                 resolved,
@@ -4454,13 +4471,21 @@ fn build_resolved_core(
             .collect::<BTreeMap<_, _>>();
         reserve_workspace_module_carrier(synthetic_modules.len())?;
         modules = Vec::with_capacity(synthetic_modules.len());
-        for (module, resolved) in synthetic_modules {
+        for (module_index, (module, resolved)) in synthetic_modules.into_iter().enumerate() {
             let program = programs_by_module
                 .get(module.as_str())
                 .expect("every resolved module has authenticated source");
             let (module, imported_instances) = staged!(
                 RetainedModule,
-                retain_workspace_module(program, module, resolved, programs, authored, None)
+                retain_workspace_module(
+                    program,
+                    module,
+                    resolved,
+                    programs,
+                    authored,
+                    None,
+                    selected_static_modules.contains(module_index)
+                )
             )?;
             owned_generics::merge_imported_vec_instances(
                 &mut imported_vec_instances,
@@ -4508,86 +4533,6 @@ fn build_resolved_core(
         owned_dependency_depths,
         declarations,
         expected_edges,
-    ))
-}
-
-fn retain_workspace_module(
-    program: &Program,
-    module: String,
-    resolved: hir::ResolvedProgram,
-    programs: &[Program],
-    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
-    mut loan_scratch: Option<&mut loan_retention::RetentionScratch>,
-) -> Result<(WorkspaceResolvedModule, Vec<hir::ResolvedFunctionInstance>), Vec<Diagnostic>> {
-    let retained_output_only = loan_scratch.is_some();
-    hir::replay_agent_source_associations(program, &resolved.agents)
-        .map_err(|error| vec![error])?;
-    // Declaration facts, then `follows` binding facts, in one `Vec`: the two
-    // JSON shapes are distinguished by their own leading key alone
-    // (`{"stable_id":...` vs `{"function":...`), so storing them together
-    // costs no second per-module `Vec` field -- see the field's own doc
-    // comment on `WorkspaceResolvedModule`.
-    let mut session_protocol_facts = session_protocol_decl::declaration_facts(program, &resolved)?;
-    session_protocol_facts.extend(session_protocol_decl::follows_facts(program)?);
-    session_protocol_facts.extend(agent_execution::facts(program)?);
-    let types = filter_owned_vec(
-        resolved.types,
-        |item| {
-            authored
-                .get(item.id.as_str())
-                .is_some_and(|owner| owner.module == program.module)
-        },
-        retained_output_only,
-    )?;
-    let functions = filter_owned_vec_accounted(
-        loan_retention::prepare_functions(
-            resolved.functions,
-            loan_scratch.as_deref_mut(),
-            program,
-            authored,
-        )?,
-        GRAPH_ACCOUNTED_RESOLVED_FUNCTION_BYTES,
-        |function| match loan_scratch.as_deref_mut() {
-            Some(scratch) => scratch.measure(function),
-            None => retained_function_loan_bytes(function),
-        },
-        |item| loan_retention::authored_function(item, program, authored),
-        retained_output_only,
-    )?;
-    let function_templates = filter_owned_vec(
-        resolved.function_templates,
-        |item| {
-            authored
-                .get(item.id.as_str())
-                .is_some_and(|owner| owner.module == program.module)
-        },
-        retained_output_only,
-    )?;
-    let (function_instances, imported_instances) = owned_generics::retain_module_instances(
-        program,
-        programs,
-        authored,
-        resolved.function_instances,
-        loan_scratch,
-    )?;
-    let signature_types = retained_signature_type_facts(&functions, &resolved.declarations)?;
-    let agents = filter_owned_vec(resolved.agents, |_| true, retained_output_only)?;
-    Ok((
-        WorkspaceResolvedModule {
-            path: crate::bounded_output::budgeted_clone(&program.path),
-            module,
-            permits: resolved.permits,
-            agents,
-            types,
-            interfaces: resolved.interfaces,
-            functions,
-            function_templates,
-            function_instances,
-            signature_types,
-            session_protocol_facts,
-            native_law: false,
-        },
-        imported_instances,
     ))
 }
 
@@ -4768,6 +4713,7 @@ impl<'a> CheckedValueNode<'a> {
                 | E::Float64(_)
                 | E::Bool(_)
                 | E::String(_)
+                | E::BorrowedUtf8Literal(_)
                 | E::ArrayU8(_)
                 | E::RepeatArrayU8 { .. }
                 | E::BorrowPlace { .. }

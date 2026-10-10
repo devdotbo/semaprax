@@ -3,6 +3,7 @@
 use super::*;
 use std::fmt::{self, Write};
 mod byte_helper;
+mod static_text;
 pub(super) use byte_helper::Proofs;
 
 struct MatchText<'a>(&'a str);
@@ -196,17 +197,21 @@ pub(super) fn schema_with_proofs<'a>(
     if module.native_law {
         return Ok("semaprax.native-law.v1");
     }
+    let static_schema = static_text::schema(module, facts)?;
     let helper_schema = byte_helper::schema_with_proofs(module, modules, facts, proofs)?;
-    if module
+    let finite_scratch = module
         .functions
         .iter()
         .chain(module.function_instances.iter().map(|i| &i.function))
-        .any(crate::finite_byte_scratch::function_requires)
-    {
-        return Ok("semaprax.graph.v78");
-    }
-    if let Some(schema) = helper_schema {
-        return Ok(schema);
+        .any(crate::finite_byte_scratch::function_requires);
+    // Static modules independently replay the other renewal obligations too.
+    if static_schema.is_none() {
+        if finite_scratch {
+            return Ok("semaprax.graph.v78");
+        }
+        if let Some(schema) = helper_schema {
+            return Ok(schema);
+        }
     }
     let authority = |function: &hir::ResolvedFunction| {
         hir::vec_loop_renewal::requires_with_admission(function, |operation, element| {
@@ -230,6 +235,11 @@ pub(super) fn schema_with_proofs<'a>(
             .iter()
             .map(|instance| &instance.function),
     ) {
+        if helper_schema.is_some()
+            && function.cleanup_plan.schema == crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V19
+        {
+            continue;
+        }
         let byte = crate::byte_ops::requires_same_owner_set(function);
         let string = !byte && crate::string_ops::replacement::requires(function);
         let ordinary = !byte && !string && authority(function);
@@ -254,6 +264,13 @@ pub(super) fn schema_with_proofs<'a>(
                 return Err(vec![graph_error("SPX-G410", message)]);
             }
         }
+    }
+    if let Some(schema) = static_schema {
+        return Ok(if finite_scratch {
+            "semaprax.graph.v78"
+        } else {
+            schema
+        });
     }
     if !module
         .functions
