@@ -263,6 +263,7 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         include_str!("../../../../../src/cleanup_plan/build/lexical_control.rs"),
         include_str!("../../../../../src/cleanup_plan/build/lexical_control/capacity.rs"),
         include_str!("../../../../../src/cleanup_plan/build/lexical_iterator.rs"),
+        include_str!("../../../../../src/cleanup_plan/build/lexical_iterator/lookup.rs"),
         include_str!("../../../../../src/cleanup_plan/build/lexical_break.rs"),
         include_str!("../../../../../src/cleanup_plan/build/execution_boundary.rs"),
         include_str!("../../../../../src/cleanup_plan/build/while_condition.rs"),
