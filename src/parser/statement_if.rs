@@ -35,6 +35,9 @@ pub(super) struct DiscardNames {
     next: usize,
     /// Every identifier the file spells, gathered on first use.
     taken: Option<BTreeSet<String>>,
+    /// Only provisional names from a selective legacy-first parse attempt.
+    provisional: Vec<usize>,
+    recording: bool,
 }
 
 /// What an `if` at the start of a block item turned out to be.
@@ -280,6 +283,9 @@ impl Parser {
             self.discards.next += 1;
             let name = format!("_if{}", self.discards.next);
             if taken.insert(name.clone()) {
+                if self.discards.recording {
+                    self.discards.provisional.push(self.discards.next);
+                }
                 return name;
             }
         }
@@ -299,5 +305,40 @@ fn point(span: Span) -> Span {
     Span {
         start: span.end.saturating_sub(1).max(span.start),
         ..span
+    }
+}
+
+/// An index-only undo log: authored names and successful prior names are never cloned.
+pub(super) struct DiscardCheckpoint {
+    next: usize,
+    length: usize,
+    recording: bool,
+}
+impl DiscardNames {
+    pub(super) fn checkpoint(&mut self) -> DiscardCheckpoint {
+        let checkpoint = DiscardCheckpoint {
+            next: self.next,
+            length: self.provisional.len(),
+            recording: self.recording,
+        };
+        self.recording = true;
+        checkpoint
+    }
+    pub(super) fn finish(&mut self, checkpoint: DiscardCheckpoint, rollback: bool) {
+        if rollback {
+            while self.provisional.len() > checkpoint.length {
+                let index = self.provisional.pop().expect("provisional discard index");
+                if let Some(taken) = &mut self.taken {
+                    taken.remove(&format!("_if{index}"));
+                }
+            }
+            self.next = checkpoint.next;
+        } else if !checkpoint.recording {
+            self.provisional.truncate(checkpoint.length);
+        }
+        self.recording = checkpoint.recording;
+        if !self.recording {
+            self.provisional = Vec::new();
+        }
     }
 }

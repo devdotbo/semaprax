@@ -139,3 +139,29 @@ fn loop_break_cannot_hide_an_outer_owner_transfer_before_later_read() {
         "a lexical break must not republish an already transferred outer owner"
     );
 }
+
+#[test]
+fn legacy_terminal_and_guard_returns_after_unrelated_loop_keep_projection() {
+    for (authored, ordinary) in [
+        ("while false { 0 } return 7;", "while false { 0 } 7"),
+        (
+            "while false { 0 } if true { return 7; } return 9;",
+            "while false { 0 } if true {7} else {9}",
+        ),
+    ] {
+        assert_eq!(
+            format::canonical(&parse(&source(authored), "legacy-loop.spx").unwrap()),
+            format::canonical(&parse(&source(ordinary), "legacy-loop.spx").unwrap())
+        );
+    }
+}
+#[test]
+fn selective_parse_rollback_preserves_authored_and_prior_discard_names() {
+    let program=parse(&source("let _if1=1; if false { let before=2; }; while true { if true { continue; }; break; } return _if1;"),"discard-rollback.spx").unwrap();
+    let canonical = format::canonical(&program);
+    assert_eq!(
+        format::canonical(&parse(&canonical, "discard-rollback.spx").unwrap()),
+        canonical
+    );
+    assert!(verify::verify(&program).is_empty());
+}

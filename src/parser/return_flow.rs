@@ -15,16 +15,25 @@ mod match_tail;
 
 impl Parser {
     pub(super) fn function_return_body(&mut self) -> Result<Expr, Diagnostic> {
-        if self.needs_explicit_lexical_exits(self.cursor) {
-            let before = self.explicit_lexical_exits;
-            self.explicit_lexical_exits = true;
-            let result = self.block("function body");
+        let before = self.explicit_lexical_exits;
+        self.explicit_lexical_exits = false;
+        if !self.needs_explicit_lexical_exits(self.cursor) {
+            let result = self.acyclic_function_return_body();
             self.explicit_lexical_exits = before;
             return result;
         }
-        let before = self.explicit_lexical_exits;
-        self.explicit_lexical_exits = false;
-        let result = self.acyclic_function_return_body();
+        let cursor = self.cursor;
+        let checkpoint = self.discards.checkpoint();
+        let legacy = self.acyclic_function_return_body();
+        if legacy.is_ok() {
+            self.discards.finish(checkpoint, false);
+            self.explicit_lexical_exits = before;
+            return legacy;
+        }
+        self.discards.finish(checkpoint, true);
+        self.cursor = cursor;
+        self.explicit_lexical_exits = true;
+        let result = self.block("function body");
         self.explicit_lexical_exits = before;
         result
     }
