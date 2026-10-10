@@ -2,8 +2,17 @@
 use super::*;
 
 impl ReplayBudget {
-    pub(super) fn with_physical(function: &ResolvedFunction, bytes: usize) -> Result<Self, Diagnostic> {
-        let mut physical = physical_storage::PhysicalReservation::new(bytes);
+    pub(super) fn with_physical(
+        function: &ResolvedFunction,
+        bytes: usize,
+    ) -> Result<Self, Diagnostic> {
+        Self::from_reservation(function, physical_storage::PhysicalReservation::new(bytes))
+    }
+
+    pub(super) fn from_reservation(
+        function: &ResolvedFunction,
+        mut physical: physical_storage::PhysicalReservation,
+    ) -> Result<Self, Diagnostic> {
         physical
             .reserve_array::<physical_storage::PhysicalReservation>(1)
             .map_err(|_| {
@@ -99,6 +108,7 @@ impl ReplayBudget {
         if self.physical.is_none() {
             return Ok(());
         }
+        self.reserve_bytes(function, 0, phase)?;
         let required = values.len().checked_add(additional).ok_or_else(|| {
             replay_error(function, "cleanup replay physical queue length overflowed")
         })?;
@@ -131,6 +141,7 @@ impl ReplayBudget {
         if self.physical.is_none() {
             return Ok(());
         }
+        self.reserve_bytes(function, 0, phase)?;
         let required = values.len().checked_add(additional).ok_or_else(|| {
             replay_error(function, "cleanup replay physical vector length overflowed")
         })?;
