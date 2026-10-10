@@ -249,11 +249,18 @@ pub(super) fn transfer(
             .projections
             .strip_prefix(source.projections.as_slice())
             .ok_or_else(|| replay_error(function, "transfer source is not a projection prefix"))?;
+        let destination_depth = destination
+            .projections
+            .len()
+            .checked_add(relative.len())
+            .ok_or_else(|| {
+                replay_error(function, "transfer destination projection depth overflows")
+            })?;
         let mut matched = None;
         for (candidate, leaf) in leaves.iter() {
             budget.charge(function, 1, "selected transfer leaf correspondence")?;
             if leaf.place.storage == destination.storage
-                && leaf.place.projections.len() == destination.projections.len() + relative.len()
+                && leaf.place.projections.len() == destination_depth
                 && leaf.place.projections.starts_with(&destination.projections)
                 && leaf.place.projections[destination.projections.len()..] == *relative
             {
