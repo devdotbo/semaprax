@@ -36,8 +36,53 @@ pub(super) fn assert_operation(program: &ResolvedProgram, wanted: &str) {
                                 assert_eq!(type_arguments.len(), 1);
                                 assert_eq!(expression.ty, type_arguments[0]);
                                 assert_eq!(expression.ownership, O::Own);
-                                assert_eq!(args[0].ownership, O::Borrow);
+                                // The intrinsic's first parameter borrows an owned
+                                // vector place; argument nodes retain owner identity.
+                                assert_eq!(args[0].ownership, O::Own);
+                                assert!(
+                                    matches!(&args[0].ty, T::Nominal { declaration, arguments }
+                                    if declaration.as_str() == "core.vec"
+                                        && arguments.as_slice() == type_arguments.as_slice())
+                                );
+                                let E::Place(origin) = &args[0].kind else {
+                                    panic!("clone-at must borrow the exact named vector owner");
+                                };
+                                let loans: Vec<_> = function
+                                    .loan_plan
+                                    .loans
+                                    .iter()
+                                    .filter(|loan| {
+                                        loan.site == expression.id
+                                            && matches!(
+                                                loan.cause,
+                                                semaprax::loan_plan::LoanCause::BorrowedCall {
+                                                    argument: 0
+                                                }
+                                            )
+                                    })
+                                    .collect();
+                                assert_eq!(loans.len(), 1);
+                                assert_eq!(&loans[0].origin, origin);
+                                let commits: Vec<_> = function
+                                    .cleanup_plan
+                                    .blocks
+                                    .iter()
+                                    .flat_map(|block| &block.transitions)
+                                    .filter_map(|transition| match transition {
+                                        semaprax::cleanup_plan::CleanupTransition::CallCommit {
+                                            call,
+                                            arguments,
+                                        } if call == &expression.id => Some(arguments),
+                                        _ => None,
+                                    })
+                                    .collect();
+                                assert_eq!(commits.len(), 1);
+                                assert!(
+                                    commits[0].is_empty(),
+                                    "copy-out transfers no source owner"
+                                );
                                 assert_eq!(args[1].ty, T::Usize);
+                                assert_eq!(args[1].ownership, O::Value);
                             }
                             "core.vec.push" => {
                                 assert_eq!(args.len(), 2);
