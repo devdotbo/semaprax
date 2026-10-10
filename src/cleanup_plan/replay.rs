@@ -6090,9 +6090,9 @@ fn finish_scalar_match_skeleton(
         let mut active = Vec::new();
         for path in std::mem::take(&mut remaining) {
             if path.failed || path.residual {
-                results.push(path);
+                work.push_existing_path(&mut results, path, "scalar match path move")?;
             } else {
-                active.push(path);
+                work.push_existing_path(&mut active, path, "scalar match path move")?;
             }
         }
 
@@ -6116,7 +6116,7 @@ fn finish_scalar_match_skeleton(
                     },
                     "scalar match selected observation",
                 )?;
-                selected_paths.push(selected);
+                work.push_existing_path(&mut selected_paths, selected, "scalar match path move")?;
 
                 let mut rejected = path;
                 let scrutinee_id =
@@ -6130,7 +6130,7 @@ fn finish_scalar_match_skeleton(
                     },
                     "scalar match rejected observation",
                 )?;
-                rejected_paths.push(rejected);
+                work.push_existing_path(&mut rejected_paths, rejected, "scalar match path move")?;
             }
         }
 
@@ -6147,7 +6147,7 @@ fn finish_scalar_match_skeleton(
                     &when_false,
                     work,
                 )?;
-                with_false.extend(prefixed);
+                work.extend_existing_paths(&mut with_false, prefixed, "scalar match path extension")?;
             }
             let mut with_terminal = Vec::new();
             for prefix in &selected_paths {
@@ -6157,13 +6157,13 @@ fn finish_scalar_match_skeleton(
                     &terminal,
                     work,
                 )?;
-                with_terminal.extend(prefixed);
+                work.extend_existing_paths(&mut with_terminal, prefixed, "scalar match path extension")?;
             }
             let with_true = sequence_skeleton_paths(selected_paths, &when_true, work)?;
             // False guards and failed guard evaluations fall through.
-            rejected_paths.extend(with_false);
-            rejected_paths.extend(with_terminal);
-            remaining.extend(rejected_paths);
+            work.extend_existing_paths(&mut rejected_paths, with_false, "scalar match path extension")?;
+            work.extend_existing_paths(&mut rejected_paths, with_terminal, "scalar match path extension")?;
+            work.extend_existing_paths(&mut remaining, rejected_paths, "scalar match path extension")?;
             for selected in with_true {
                 append_scalar_arm_value(
                     program,
@@ -6176,7 +6176,7 @@ fn finish_scalar_match_skeleton(
                 )?;
             }
         } else {
-            remaining.extend(rejected_paths);
+            work.extend_existing_paths(&mut remaining, rejected_paths, "scalar match path extension")?;
             for selected in selected_paths {
                 append_scalar_arm_value(
                     program,
@@ -6191,7 +6191,7 @@ fn finish_scalar_match_skeleton(
         }
     }
     for path in remaining {
-        results.push(path);
+        work.push_existing_path(&mut results, path, "scalar match path move")?;
     }
     Ok(results)
 }
@@ -6221,9 +6221,9 @@ fn append_scalar_arm_value(
 
 fn clone_expr_path_shallow(
     path: &ExprSkeletonPath,
-    _work: &mut SkeletonWork<'_, '_>,
+    work: &mut SkeletonWork<'_, '_>,
 ) -> Result<ExprSkeletonPath, Diagnostic> {
-    Ok(path.clone())
+    work.clone_payload(path, "scalar match guarded prefix clone")
 }
 
 #[allow(clippy::type_complexity)]

@@ -96,6 +96,30 @@ impl SkeletonWork<'_, '_> {
         self.budget.charge_skeleton(self.function, units, phase)
     }
 
+    /// Preserve legacy sequencing/work counters for a previously uncharged
+    /// move, while reserving selected vector growth before that move occurs.
+    pub(super) fn push_existing_path(
+        &mut self,
+        target: &mut Vec<ExprSkeletonPath>,
+        path: ExprSkeletonPath,
+        phase: &str,
+    ) -> Result<(), Diagnostic> {
+        self.budget.reserve_vec(self.function, target, 1, phase)?;
+        target.push(path);
+        Ok(())
+    }
+    pub(super) fn extend_existing_paths(
+        &mut self,
+        target: &mut Vec<ExprSkeletonPath>,
+        paths: Vec<ExprSkeletonPath>,
+        phase: &str,
+    ) -> Result<(), Diagnostic> {
+        self.budget
+            .reserve_vec(self.function, target, paths.len(), phase)?;
+        target.extend(paths);
+        Ok(())
+    }
+
     pub(super) fn clone_owned<T: Clone + ClonePayload>(
         &mut self,
         value: &T,
