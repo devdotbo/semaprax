@@ -231,10 +231,13 @@ pub(crate) fn is_authenticated_nested_projected_byte_loan(
     reason = "private Workspace Semantic Graph Phase-A inspection seam"
 )]
 pub(crate) use inspection::workspace_call_sites;
+pub(crate) use inspection::{
+    budgeted_workspace_expression_identity, validate_attached_identity_references,
+    workspace_expression_identity,
+};
 use inspection::{
     path_is_prefix, reject_nul_identity, resolved_lifecycle_effects, validate_nul_free_identities,
 };
-pub(crate) use inspection::{validate_attached_identity_references, workspace_expression_identity};
 pub(crate) use inspection::{visit_resolved_calls, visit_workspace_call_sites};
 
 pub(crate) use type_reachability::{

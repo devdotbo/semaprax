@@ -29,8 +29,8 @@ pub(super) use dependency_closure::{
 };
 
 use super::{
-    CallOccurrenceKey, MAX_CALLS, WorkspaceDeclarationFact, WorkspaceEdge, WorkspaceResolvedModule,
     graph_error, limit_error, push_edge, reserve_builder_structure, visit_ast_call_sites,
+    CallOccurrenceKey, WorkspaceDeclarationFact, WorkspaceEdge, WorkspaceResolvedModule, MAX_CALLS,
 };
 use edge_projection::push_edge_reference;
 
@@ -907,23 +907,47 @@ fn collect_resolved_expression_type_sites<'a>(
             ..
         } => {
             let call_path = if *bytes {
-                format!("{path}.arg.0")
+                std::borrow::Cow::Owned(crate::bounded_output::budgeted_format(format_args!(
+                    "{path}.arg.0"
+                )))
             } else {
-                path.to_owned()
+                std::borrow::Cow::Borrowed(path)
             };
-            collect_resolved_type_sites(
-                owner.as_str(),
-                element,
-                &format!("{call_path}.type_argument.0"),
-                Some(expression_id),
-                imported,
-                out,
-            )?;
+            let type_path =
+                crate::bounded_output::budgeted_format(format_args!("{call_path}.type_argument.0"));
+            if *bytes {
+                let inner_identity = hir::budgeted_workspace_expression_identity(owner, &call_path);
+                if crate::bounded_output::active_refused() {
+                    return Err(vec![limit_error(
+                        "builder_bytes",
+                        super::active_builder_limit(),
+                    )]);
+                }
+                type_projection::collect_reconstructed_sites(
+                    owner,
+                    element,
+                    &type_path,
+                    &inner_identity,
+                    imported,
+                    out,
+                )?;
+            } else {
+                collect_resolved_type_sites(
+                    owner.as_str(),
+                    element,
+                    &type_path,
+                    Some(expression_id),
+                    imported,
+                    out,
+                )?;
+            }
             for (index, argument) in args.iter().enumerate() {
                 collect_resolved_expression_type_sites(
                     owner,
                     argument,
-                    &format!("{call_path}.arg.{index}"),
+                    &crate::bounded_output::budgeted_format(format_args!(
+                        "{call_path}.arg.{index}"
+                    )),
                     imported,
                     out,
                 )?;

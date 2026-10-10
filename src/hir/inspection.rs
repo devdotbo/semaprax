@@ -1054,6 +1054,18 @@ pub(crate) fn workspace_expression_identity(owner: &DeclarationId, path: &str) -
         .to_owned()
 }
 
+/// Same monomorphic workspace identity without uncharged temporary owner/Arc
+/// reconstruction. Each append is reserved before its backing grows.
+pub(crate) fn budgeted_workspace_expression_identity(owner: &DeclarationId, path: &str) -> String {
+    crate::bounded_output::budgeted_format(format_args!(
+        "declaration:{}:{}:expression:{}:{}",
+        owner.as_str().len(),
+        owner,
+        path.len(),
+        path
+    ))
+}
+
 /// Visit every call site in authored order without copying retained identities.
 /// The owner may be a temporary closure identity; expression and target borrow HIR.
 pub(crate) fn visit_workspace_call_sites<'a, E>(
