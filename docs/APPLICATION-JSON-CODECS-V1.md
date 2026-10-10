@@ -142,6 +142,13 @@ Actual borrowed-root and target memory limits still apply.
 output. A short output limit returns Refused before any String construction.
 Success emits one compact object, in declaration order, with ASCII field names
 quoted, canonical decimal integers and lowercase booleans, and no whitespace.
+The scalar renderer uses one mutable String accumulator through the existing
+same-owner append rule. Key appends and direct scalar-render operands retain
+left-to-right field order; immutable label/rendered/output generations are not
+kept alive across the render scope. This changes generated ordinary source and
+its authenticated artifact digest, not output bytes, admission limits or host
+authority. The unchanged eight-entry repeated backend corpus is the owning
+qualification gate; this source repair alone is not execution evidence.
 Output text is published only after all ordinary owned calls complete. Argument
 staging, ownership group commits, intermediate cleanup and sticky runtime failure
 selection retain their existing language meaning. Allocator/contract failures

@@ -149,8 +149,9 @@ pub(super) fn source(program: &Program, record: &TypeDeclaration) -> String {
         write!(out, " + ({length})").unwrap();
     }
     writeln!(out, "\n}}\n@id(\"{id}.json.encode\")\nfn json_{name}_encode(value: {name}, output_limit: usize) -> {name}JsonEncode {{\nlet required = json_{name}_encoded_len(value);\nif required > output_limit {{ {name}JsonEncode::Refused {{ required: required }} }} else {{").unwrap();
-    // Separate immutable owner bindings avoid whole-String renewal admission.
-    out.push_str("let output_0 = \"{\";\n");
+    // Use the independently admitted same-owner append route. Immutable
+    // intermediate String reads clone and retain their original carriers.
+    out.push_str("let mut output = \"{\";\n");
     for (index, f) in fields.iter().enumerate() {
         let field = format!("value.{}", f.name);
         let rendered = match f.ty {
@@ -161,12 +162,11 @@ pub(super) fn source(program: &Program, record: &TypeDeclaration) -> String {
         };
         let label = format!("{}\"{}\":", if index == 0 { "" } else { "," }, f.name);
         let literal = format!("\"{}\"", label.replace('"', "\\\""));
-        writeln!(out, "let label_{index} = string_concat(output_{index}, {literal});\nlet rendered_{index} = {rendered};\nlet output_{} = string_concat(label_{index}, rendered_{index});", index + 1).unwrap();
+        writeln!(out, "output = string_concat(output, {literal});\noutput = string_concat(output, {rendered});").unwrap();
     }
     writeln!(
         out,
-        "{name}JsonEncode::Encoded {{ text: string_concat(output_{}, \"}}\") }}\n}}\n}}",
-        fields.len()
+        "{name}JsonEncode::Encoded {{ text: string_concat(output, \"}}\") }}\n}}\n}}"
     )
     .unwrap();
     out

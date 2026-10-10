@@ -75,6 +75,27 @@ fn codec_source_is_deterministic_ordinary_ast_and_has_no_authority_escape() {
     assert!(source.contains("value_1 = if error == 0 { number } else { value_1 };\nerror == 0\n}"));
     assert!(source.contains("number != other || number < 0 || number > 255"));
     assert!(source.contains("required > output_limit"));
+    // The scalar renderer retains one accumulator rather than cloned named
+    // label/output generations or numeric-render owner bindings.
+    let encoder = parsed
+        .functions
+        .iter()
+        .find(|function| function.name == "json_Row_encode")
+        .unwrap();
+    let crate::ast::ExprKind::Block { tail, .. } = &encoder.body.kind else {
+        panic!("encoder block")
+    };
+    let crate::ast::ExprKind::If { else_branch, .. } = &tail.kind else {
+        panic!("preflight")
+    };
+    let crate::ast::ExprKind::Block { statements, .. } = &else_branch.kind else {
+        panic!("render block")
+    };
+    assert!(
+        matches!(&statements[0], crate::ast::Statement::Let {mutable:true,name,..} if name == "output")
+    );
+    assert_eq!(statements.iter().filter(|statement| matches!(statement, crate::ast::Statement::Assign {name,field:None,..} if name == "output")).count(), 8);
+    assert!(!statements.iter().any(|statement| matches!(statement, crate::ast::Statement::Let {name,..} if name.starts_with("label_") || name.starts_with("rendered_") || name.starts_with("output_"))));
     assert!(!source.contains("serde"));
     assert!(source.len() <= MAX_GENERATED_BYTES);
     // Constant field selectors must be installed once before member iteration;

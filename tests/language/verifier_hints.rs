@@ -512,12 +512,18 @@ fn borrowed_view_of_a_literal_names_the_binding_step() {
     );
     assert_eq!(
         diagnostic.message,
-        "borrowed view `str_as_bytes` requires an exact admitted storage place"
+        "borrowed view `str_as_bytes` requires a named String owner or an authenticated named-record path to a String field"
     );
     assert!(
         help(&diagnostic).contains("let text = \"…\"; str_as_bytes(string_as_str(text))"),
         "{diagnostic}"
     );
+    // Follow the actual repair, retaining the ordinary owned String literal
+    // and the independently authenticated view root rather than admitting
+    // a temporary literal borrow or a new static root.
+    let repaired = "module habit.view; permit {process.stdout.write} @id(\"app.main\") fn main()->i64 uses {process.stdout.write} {let text=\"hi\";let view=string_as_str(text);let n=stdout_write(str_as_bytes(view));0}";
+    let checked = semaprax::check(repaired, "habit-view-repaired.spx").unwrap();
+    semaprax::hir::validate(&semaprax::hir::resolve(&checked).unwrap()).unwrap();
 }
 
 #[test]

@@ -25,8 +25,8 @@ fn cases(output: &Output, passed: bool) -> Vec<Value> {
             "decimal.tests.test_z_after"
         ]
     );
-    assert_eq!(cases[0]["passed"], true);
-    assert_eq!(cases[2]["passed"], true);
+    assert_eq!(cases[0]["passed"], true, "main control: {}", envelope);
+    assert_eq!(cases[2]["passed"], true, "following control: {}", envelope);
     assert_eq!(cases[2]["result"], 0);
     assert_eq!(cases[2]["exit_code"], 0);
     cases

@@ -5,14 +5,14 @@ use std::process::Command;
 use semaprax::{codegen, format, parse, project, wasm};
 use sha2::{Digest, Sha256};
 
+#[path = "application_json/builtin_calls.rs"]
+mod builtin_calls;
 #[path = "application_json/collection_response.rs"]
 mod collection_response;
 #[path = "application_json/nested_request.rs"]
 mod nested_request;
 #[path = "application_json/nested_response.rs"]
 mod nested_response;
-#[path = "application_json/builtin_calls.rs"]
-mod builtin_calls;
 #[path = "application_json/owned.rs"]
 mod owned;
 #[path = "application_json/plan.rs"]
@@ -294,6 +294,19 @@ fn typed_application_json_success_errors_and_exact_capacity_agree_on_three_backe
         };
         // Four fields require exactly a key append and value append each.
         assert_eq!(statements.iter().filter(|statement| concat(statement.value())).count(),8);
+        // Every append transfers the same whole accumulator. HIR validation
+        // above independently authenticates its renewal and cleanup contour.
+        let semaprax::hir::ResolvedStatement::Let {binding,mutable,..} = &statements[0] else {panic!("accumulator")};
+        assert!(*mutable && binding.ty==ResolvedType::String);
+        for statement in statements.iter().filter(|statement| concat(statement.value())) {
+            let semaprax::hir::ResolvedStatement::Assign {binding:target,field:None,value,..} = statement else {panic!("same-owner append")};
+            assert_eq!(target.id,binding.id);
+            let ResolvedExprKind::Call {args,..} = &value.kind else {unreachable!()};
+            let ResolvedExprKind::Place(place) = &args[0].kind else {panic!("whole accumulator")};
+            assert_eq!(place.root,binding.id);
+            assert!(place.projections.is_empty());
+            assert_eq!(args[0].ownership,OwnershipMode::Own);
+        }
         let ResolvedExprKind::ConstructVariant {case,fields,..} = &tail.kind else {panic!("encoded result")};
         assert_eq!(case.as_str(),"application.patient.json.encoded");
         assert_eq!(fields.len(),1);
