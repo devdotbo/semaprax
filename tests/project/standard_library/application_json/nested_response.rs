@@ -1,5 +1,7 @@
 //! Nested response derivation and unchanged three-backend owning command closure.
 use super::*;
+#[path = "nested_response/writer.rs"]
+mod writer;
 
 const SCHEMA: &str = r#"module consumer.schema;
 @id("r.config") record Config {@id("r.config.label") label:string,@id("r.config.retry") retry:usize,}

@@ -29,6 +29,11 @@ pub(super) fn derive(
         writeln!(output, "use function @id(\"std.data.json.{module}.{name}\") from std.data.json.{module} as {alias};").unwrap();
     }
     output.push_str(&super::utf8::nested_response_text(root, max_string_bytes));
+    output.push_str(&super::collection_response::writer::source(
+        root,
+        "nested-response",
+        "nested_response",
+    ));
     output.push_str(&emit::source(root, &shape.root, max_array_items));
     Ok(output)
 }

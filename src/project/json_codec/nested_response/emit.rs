@@ -1,4 +1,5 @@
 //! Every size is checked before arithmetic; rendering starts after complete preflight.
+use super::super::collection_response::writer;
 use super::*;
 
 const INVALID: &str = "18446744073709551615usize";
@@ -16,7 +17,8 @@ pub(super) fn source(root: &TypeDeclaration, record: &Record<'_>, bound: usize) 
 @id(\"{id}.json.nested-response.encode\") fn json_{name}_nested_response_encode(value:borrow {name},output_limit:usize)->{name}JsonNestedResponseEncode {{
 let required=json_{name}_nested_response_encoded_len(value);
 if required=={INVALID} || required>output_limit {{{name}JsonNestedResponseEncode::Refused{{required:required}}}}else{{
-{name}JsonNestedResponseEncode::Encoded{{text:json_{name}_nested_response_object_render_0(value)}}
+let output=bytes_zeroed_bounded(required,131072usize);let finished=json_{name}_nested_response_object_render_0(value,0usize,output);
+let text=string_from_utf8(bytes_as_slice(finished));{name}JsonNestedResponseEncode::Encoded{{text:text}}
 }}
 }}" ).unwrap();
     out
@@ -81,28 +83,49 @@ fn object(
         // Lazy guards ensure a refused child cannot overflow or underflow the sum.
         writeln!(out, "let _ = if valid{{let size={size};if size=={INVALID} || size>{LIMIT}-total{{valid=false;false}}else{{total=total+size;true}}}}else{{false}};").unwrap();
     }
+    let arguments = if indexed { "values,at" } else { "value" };
     writeln!(out, "if valid{{total}}else{{{INVALID}}}\n}}
-@id(\"{id}.json.nested-response.object-render.{n}\") fn json_{name}_nested_response_object_render_{n}({parameters})->string {{let mut text=\"{{\";").unwrap();
+@id(\"{id}.json.nested-response.object-render.{n}\") fn json_{name}_nested_response_object_render_{n}({parameters},position:usize,output:own Bytes)->Bytes
+requires json_{name}_nested_response_object_len_{n}({arguments})!={INVALID} && position<=byte_len(bytes_as_slice(output)) && json_{name}_nested_response_object_len_{n}({arguments})<=byte_len(bytes_as_slice(output))-position {{let mut next=output;let mut cursor=position;").unwrap();
+    out.push_str(&writer::literal_write(
+        &format!("json_{name}_nested_response"),
+        "next",
+        "cursor",
+        "{",
+    ));
     for (index, field) in record.fields.iter().enumerate() {
-        let key = literal(&format!(
+        let key = format!(
             "{}\"{}\":",
             if index == 0 { "" } else { "," },
             field.declaration.name
-        ));
+        );
         let access = access(record, field, indexed, root_path);
         let operand = if matches!(field.kind, Kind::Record(_)) && root_path.is_some() {
             "value"
         } else {
             &access
         };
+        out.push_str(&writer::literal_write(
+            &format!("json_{name}_nested_response"),
+            "next",
+            "cursor",
+            &key,
+        ));
         let rendered = render(root, &field.kind, field.ordinal, operand);
         writeln!(
             out,
-            "text=string_concat(text,{key});text=string_concat(text,{rendered});"
+            "next={rendered};cursor=cursor+({});",
+            length(root, &field.kind, field.ordinal, operand)
         )
         .unwrap();
     }
-    out.push_str("string_concat(text,\"}\")\n}\n");
+    out.push_str(&writer::literal_write(
+        &format!("json_{name}_nested_response"),
+        "next",
+        "cursor",
+        "}",
+    ));
+    out.push_str("next\n}\n");
     out
 }
 
@@ -151,17 +174,25 @@ fn length(root: &TypeDeclaration, kind: &Kind<'_>, ordinal: usize, access: &str)
 fn render(root: &TypeDeclaration, kind: &Kind<'_>, ordinal: usize, access: &str) -> String {
     let name = &root.name;
     match kind {
-        Kind::Text => format!("json_{name}_nested_response_utf8_quote({access})"),
-        Kind::Scalar(Type::Bool) => format!("if {access}{{\"true\"}}else{{\"false\"}}"),
-        Kind::Scalar(Type::Usize) => format!("string_from_usize({access})"),
-        Kind::Scalar(Type::U8) => format!("string_from_i64(i64_from_u8({access}))"),
-        Kind::Scalar(Type::I64) => format!("string_from_i64({access})"),
+        Kind::Text => format!("json_{name}_nested_response_writer_quote({access},cursor,next)"),
+        Kind::Scalar(Type::Bool) => {
+            format!("json_{name}_nested_response_writer_bool({access},cursor,next)")
+        }
+        Kind::Scalar(Type::Usize) => {
+            format!("json_{name}_nested_response_writer_usize({access},cursor,next)")
+        }
+        Kind::Scalar(Type::U8) => {
+            format!("json_{name}_nested_response_writer_i64(i64_from_u8({access}),cursor,next)")
+        }
+        Kind::Scalar(Type::I64) => {
+            format!("json_{name}_nested_response_writer_i64({access},cursor,next)")
+        }
         Kind::Record(child) => format!(
-            "json_{name}_nested_response_object_render_{}({access})",
+            "json_{name}_nested_response_object_render_{}({access},cursor,next)",
             child.ordinal
         ),
         Kind::Vector { .. } => {
-            format!("json_{name}_nested_response_array_render_{ordinal}({access})")
+            format!("json_{name}_nested_response_array_render_{ordinal}({access},cursor,next)")
         }
         Kind::Scalar(_) => unreachable!("validated scalar"),
     }
@@ -185,7 +216,7 @@ fn vector(
                 child.ordinal
             ),
             format!(
-                "json_{name}_nested_response_object_render_{}(values,at)",
+                "json_{name}_nested_response_object_render_{}(values,at,cursor,next)",
                 child.ordinal
             ),
         ),
@@ -202,10 +233,11 @@ let _ = if size=={INVALID} || total>{LIMIT}-comma || size>{LIMIT}-total-comma{{v
 at=at+1usize;valid && at<count
 }}if valid{{total}}else{{{INVALID}}}
 }}
-@id(\"{id}.json.nested-response.array-render.{ordinal}\") fn json_{name}_nested_response_array_render_{ordinal}(values:borrow Vec<{ty}>)->string {{
-let mut text=\"[\";let count=vec_len<{ty}>(values);let mut at=0usize;
-while at<count {{{bindings}let _ = if at>0usize{{text=string_concat(text,\",\");true}}else{{true}};
-text=string_concat(text,{rendered});at=at+1usize;at<count
-}}string_concat(text,\"]\")
+@id(\"{id}.json.nested-response.array-render.{ordinal}\") fn json_{name}_nested_response_array_render_{ordinal}(values:borrow Vec<{ty}>,position:usize,output:own Bytes)->Bytes
+requires json_{name}_nested_response_array_len_{ordinal}(values)!={INVALID} && position<=byte_len(bytes_as_slice(output)) && json_{name}_nested_response_array_len_{ordinal}(values)<=byte_len(bytes_as_slice(output))-position {{
+let mut next=output;let mut cursor=position;next=bytes_set(next,cursor,91u8);cursor=cursor+1usize;let count=vec_len<{ty}>(values);let mut at=0usize;
+while at<count {{{bindings}let _ = if at>0usize{{next=bytes_set(next,cursor,44u8);cursor=cursor+1usize;true}}else{{true}};
+next={rendered};cursor=cursor+({size});at=at+1usize;at<count
+}}next=bytes_set(next,cursor,93u8);next
 }}\n")
 }

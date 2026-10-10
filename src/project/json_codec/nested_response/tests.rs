@@ -30,11 +30,24 @@ fn nested_response_emits_recursive_borrowed_preflight_and_declaration_order() {
         .nth(1)
         .unwrap();
     assert!(api.find("required>output_limit").unwrap() < api.find("object_render_0").unwrap());
+    assert!(
+        api.find("required>output_limit").unwrap()
+            < api
+                .find("bytes_zeroed_bounded(required,131072usize)")
+                .unwrap()
+    );
+    assert_eq!(output.matches("bytes_zeroed_bounded(").count(), 1);
+    assert_eq!(output.matches("string_from_utf8(").count(), 1);
+    assert!(!output.contains("string_concat"));
+    assert!(!output.contains("string_from_i64"));
+    assert!(!output.contains("string_from_usize"));
     let body = output
         .split("fn json_Report_nested_response_object_render_0")
         .nth(1)
         .unwrap();
-    assert!(body.find("object_render_1(value)").unwrap() < body.find("value.rows").unwrap());
+    assert!(
+        body.find("object_render_1(value,cursor,next)").unwrap() < body.find("value.rows").unwrap()
+    );
     assert!(body.find("value.rows").unwrap() < body.find("value.ok").unwrap());
     let parsed = crate::parse(&output, "generated.spx").unwrap();
     assert!(parsed.functions.iter().all(|f| f.effects.is_empty()));
@@ -140,7 +153,7 @@ fn nested_response_template_like_names_and_repeated_records_remain_opaque() {
         parsed
             .functions
             .iter()
-            .filter(|f| f.name.ends_with("utf8_quote"))
+            .filter(|f| f.name.ends_with("writer_quote"))
             .count(),
         1
     );

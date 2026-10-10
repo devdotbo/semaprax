@@ -37,12 +37,18 @@ const ROW_SOURCE: &str = r#"@id("response.row.json.collection-response.object-le
 fn json_Row_response_object_len(value:borrow Row)->usize {
 if !(json_Row_response_owned_valid(string_as_str(value.label))){18446744073709551615usize}else{30usize+(usize_from_i64(jv_i64_len(value.number)))+(json_Row_response_utf8_quoted_len(string_as_str(value.label)))+(if value.active{4usize}else{5usize})}}
 @id("response.row.json.collection-response.object-render")
-fn json_Row_response_object_render(value:borrow Row)->string {
-if !(json_Row_response_owned_valid(string_as_str(value.label))){""}else{let output_0="{";
-let label_0=string_concat(output_0,"\"number\":");let rendered_0=string_from_i64(value.number);let output_1=string_concat(label_0,rendered_0);
-let label_1=string_concat(output_1,",\"label\":");let rendered_1=json_Row_response_utf8_quote(string_as_str(value.label));let output_2=string_concat(label_1,rendered_1);
-let label_2=string_concat(output_2,",\"active\":");let rendered_2=if value.active{"true"}else{"false"};let output_3=string_concat(label_2,rendered_2);
-string_concat(output_3,"}")}}
+fn json_Row_response_object_render(value:borrow Row,position:usize,output:own Bytes)->Bytes
+requires json_Row_response_object_len(value)!=18446744073709551615usize && position<=byte_len(bytes_as_slice(output)) && json_Row_response_object_len(value)<=byte_len(bytes_as_slice(output))-position {
+let mut next=output;let mut cursor=position;
+next=bytes_set(next,cursor,123u8);cursor=cursor+1usize;
+let _={let key=[34u8,110u8,117u8,109u8,98u8,101u8,114u8,34u8,58u8];next=json_Row_response_writer_bytes(array_as_slice(key),cursor,next);cursor=cursor+9usize;true};
+next=json_Row_response_writer_i64(value.number,cursor,next);cursor=cursor+(usize_from_i64(jv_i64_len(value.number)));
+let _={let key=[44u8,34u8,108u8,97u8,98u8,101u8,108u8,34u8,58u8];next=json_Row_response_writer_bytes(array_as_slice(key),cursor,next);cursor=cursor+9usize;true};
+next=json_Row_response_writer_quote(string_as_str(value.label),cursor,next);cursor=cursor+(json_Row_response_utf8_quoted_len(string_as_str(value.label)));
+let _={let key=[44u8,34u8,97u8,99u8,116u8,105u8,118u8,101u8,34u8,58u8];next=json_Row_response_writer_bytes(array_as_slice(key),cursor,next);cursor=cursor+10usize;true};
+next=json_Row_response_writer_bool(value.active,cursor,next);cursor=cursor+(if value.active{4usize}else{5usize});
+next=bytes_set(next,cursor,125u8);cursor=cursor+1usize;
+next}
 "#;
 
 #[test]
@@ -55,17 +61,22 @@ fn collection_response_is_closed_ordered_and_canonical_without_source_authority(
     assert!(output.contains("vec_len<Row>(value.entries)"));
     assert!(!output.contains("vec_clone_at"));
     assert!(output.contains("json_Row_response_object_len_at(value.entries,at)"));
-    assert!(output.contains("json_Row_response_object_render_at(value.entries,at)"));
+    assert!(output.contains("json_Row_response_object_render_at(value.entries,at,cursor,output)"));
     assert!(output.contains("fn json_Metrics_response_object_len(value:Metrics)"));
     assert!(output.contains("fn json_Row_response_object_len(value:borrow Row)"));
     assert!(output.contains("string_as_str(value.label)"));
     assert!(output.contains("json_Row_response_utf8_quoted_len(string_as_str(value.label))"));
-    assert!(output.contains("json_Row_response_utf8_quote(string_as_str(value.label))"));
+    assert!(
+        output.contains("json_Row_response_writer_quote(string_as_str(value.label),cursor,next)")
+    );
     assert!(!output.contains("match borrow value"));
     assert!(!output.contains("response_field_"));
     // Independent exact projection contract: no borrow-match wrapper or synthetic
     // String binding, and identical validity/length/render ordering.
-    assert_eq!(record::source(&program.types[0]), ROW_SOURCE);
+    assert_eq!(
+        record::source(&program.types[0], &program.types[0]),
+        ROW_SOURCE
+    );
     // Authored fields can resemble helper locals; direct roots must retain the
     // actual declaration field, not accidentally read a generated local.
     let field_names = SCHEMA
@@ -73,7 +84,7 @@ fn collection_response_is_closed_ordered_and_canonical_without_source_authority(
         .replace("label:string", "output_0:string")
         .replace("active:bool", "response_field_1:bool");
     let renamed_fields = crate::parse(&field_names, "field-names.spx").unwrap();
-    let field_output = record::source(&renamed_fields.types[0]);
+    let field_output = record::source(&renamed_fields.types[0], &renamed_fields.types[0]);
     assert!(field_output.contains("string_as_str(value.output_0)"));
     assert!(field_output.contains("jv_i64_len(value.value)"));
     assert!(field_output.contains("if value.response_field_1"));
@@ -89,6 +100,11 @@ fn collection_response_is_closed_ordered_and_canonical_without_source_authority(
     assert!(output.contains("count<=256usize"));
     assert!(output.contains("length<=64usize"));
     assert!(output.contains("required>output_limit"));
+    assert_eq!(output.matches("bytes_zeroed_bounded(").count(), 1);
+    assert_eq!(output.matches("string_from_utf8(").count(), 1);
+    assert!(!output.contains("string_concat"));
+    assert!(!output.contains("string_from_i64"));
+    assert!(!output.contains("string_from_usize"));
     assert!(output.contains("size>131072usize-total-comma"));
     assert!(!output.contains("ju_escape_scalar"));
     assert!(!output.contains("vec_sort"));
@@ -223,7 +239,7 @@ fn collection_response_refuses_wrong_bound_nested_shapes_and_unchecked_identitie
 fn collection_response_checks_and_encodes_each_bounded_string_in_row_order() {
     let program = crate::parse(MULTI_STRING_SCHEMA, "multi-string-schema.spx").unwrap();
     let output = source(&program, &program.types[2], 64).unwrap();
-    let row = record::source(&program.types[0]);
+    let row = record::source(&program.types[0], &program.types[0]);
     let first_check =
         "let response_string_valid_0=json_Item_response_owned_valid(string_as_str(value.id));";
     let second_check =
@@ -233,10 +249,12 @@ fn collection_response_checks_and_encodes_each_bounded_string_in_row_order() {
     assert!(row.contains("if !(response_string_valid_0&&response_string_valid_1)"));
     assert!(row.contains("json_Item_response_utf8_quoted_len(string_as_str(value.id))"));
     assert!(row.contains("json_Item_response_utf8_quoted_len(string_as_str(value.server))"));
-    assert!(row.contains("json_Item_response_utf8_quote(string_as_str(value.id))"));
-    assert!(row.contains("json_Item_response_utf8_quote(string_as_str(value.server))"));
-    assert!(row.contains("\\\"id\\\":"));
-    assert!(row.contains("\\\"server\\\":"));
+    assert!(row.contains("json_Item_response_writer_quote(string_as_str(value.id),cursor,next)"));
+    assert!(
+        row.contains("json_Item_response_writer_quote(string_as_str(value.server),cursor,next)")
+    );
+    assert!(row.contains("let key=[34u8,105u8,100u8,34u8,58u8]"));
+    assert!(row.contains("let key=[44u8,34u8,115u8,101u8,114u8,118u8,101u8,114u8,34u8,58u8]"));
     assert!(output.contains("vec_len<Item>(value.entries)"));
     let parsed = crate::parse(&output, "multi-string-generated.spx").unwrap();
     let canonical = crate::format::canonical(&parsed);
@@ -264,12 +282,12 @@ fn collection_response_scoped_rows_keep_direct_helpers_and_exact_field_selectors
         .replace("arrival:i64", "output_0:i64");
     let program = crate::parse(&schema, "scoped-row-fields.spx").unwrap();
     let row = &program.types[0];
-    let indexed = record::indexed_source(row);
+    let indexed = record::indexed_source(row, row);
     assert!(
         indexed.contains("fn json_Item_response_object_len_at(values:borrow Vec<Item>,at:usize)")
     );
     assert!(indexed
-        .contains("fn json_Item_response_object_render_at(values:borrow Vec<Item>,at:usize)"));
+        .contains("fn json_Item_response_object_render_at(values:borrow Vec<Item>,at:usize,position:usize,output:own Bytes)"));
     assert!(indexed.contains("response.item.json.collection-response.object-len-at"));
     assert!(indexed.contains("response.item.json.collection-response.object-render-at"));
     for field in fields(row) {
@@ -287,7 +305,7 @@ fn collection_response_scoped_rows_keep_direct_helpers_and_exact_field_selectors
     let output = source(&program, &program.types[2], 64).unwrap();
     // Keep the original direct Row helpers byte-for-byte while the root's two
     // passes choose only independently authenticated indexed reads.
-    assert!(output.contains(&record::source(row)));
+    assert!(output.contains(&record::source(row, row)));
     assert!(output.contains(&indexed));
     assert!(!output.contains("vec_clone_at"));
     let parsed = crate::parse(&output, "scoped-response.spx").unwrap();

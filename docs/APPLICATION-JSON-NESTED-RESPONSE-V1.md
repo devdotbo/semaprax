@@ -75,8 +75,8 @@ invalid bounded String or an array exceeding the selected cardinality returns
 A value that passes preflight yields its exact encoded byte count. An output
 limit below that count returns `Refused { required: exact_count }` before text
 construction. An invalid/out-of-envelope value returns `Refused` with the sentinel
-even if the caller supplies a larger limit. The encoder starts ordinary String
-construction only after the entire recursive preflight passes. Success emits a
+even if the caller supplies a larger limit. The encoder reserves one exact-sized owned Bytes buffer only after the entire
+recursive preflight passes, using `bytes_zeroed_bounded(required, 131072usize)`. Success emits a
 compact deterministic JSON object with declaration-order fields and array-order
 elements. Escaped controls, quotes and backslashes retain the existing checked
 UTF-8 renderer. No partial text is published by the outcome. Ordinary allocation
@@ -150,3 +150,44 @@ OPT-724 requirement for zero leaks and recovery at every partial String/output
 allocation site therefore remains unmet by this witness. Changing that global
 failure policy requires a separate language/backend decision. This regression
 is authored, not executed; it establishes no application or efficiency result.
+
+## Exact bounded writer composition (OPT-737)
+
+Response rendering uses ordinary source helpers that thread `own Bytes` and a
+scalar position. The original manifest, dependency inventory and selected
+profile remain authoritative; derivation does not inject `std.io` or
+`std.format`. Those packages' Writer representation is not assumed to compose
+with every response profile. The generated helpers use the existing checked
+byte-write operations and the separately checked bounded allocation operation.
+They receive no authority from their generated names or identities.
+
+The full existing preflight runs before reserving the buffer. Invalid schema
+values and exact-size-minus-one caller limits return the original `Refused`
+outcome without reservation or publication. Every helper additionally checks its
+own exact length and remaining capacity before its first write. Keys are fixed
+Copy byte arrays in short scopes, without temporary owned Strings. Numeric digits
+are written directly, including the minimum signed value without negating it;
+booleans and JSON punctuation retain their exact spelling. Valid UTF-8 bytes are
+copied directly, with the existing short escapes and lowercase `\u00xx` controls.
+Field declaration order, array order, bounds, ordinary fuel and cleanup authority
+remain unchanged. Helpers never grow, replace, or clone the payload buffer.
+
+`string_from_utf8(bytes_as_slice(finished))` performs the final checked copy into
+an owned String. This is one buffer reservation plus one String materialization,
+not a zero-copy or single-allocation result. Buffer zero-fill, per-byte stores,
+final payload copy and allocator/header work are distinct costs. Current native
+`string_concat` already uses one allocation; OPT-737 targets repeated prefix
+copying and temporary materialization, not a historical double-buffer claim.
+
+Ordinary normalized Bytes allocation/write failure still follows canonical
+sticky-status cleanup. Fatal native String allocation remains outside that
+recoverable channel. Preflight does not make native String OOM recoverable or
+prove zero-leak settlement there; that OPT-724 obligation remains open.
+
+The new owning definitions retain the original independent wire oracles and
+same-source interpreter/native O0/O2/Core-Wasm requirements. A separate native
+quote-phase definition observes exact buffer reservation, final String allocation
+and explicit memcpy traffic for empty, 16/64-byte ASCII, Unicode, controls and
+quote/backslash inputs in one context. It is not a full application, full-row
+physical measurement, accepted fresh trial, billed cost, or an executed gain.
+Executable qualification and matched application trials remain pending.

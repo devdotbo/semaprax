@@ -4,6 +4,7 @@ mod emit;
 mod record;
 #[cfg(test)]
 mod tests;
+pub(super) mod writer;
 
 use crate::ast::{FieldDeclaration, Program, Type, TypeDeclaration, TypeDeclarationKind};
 use crate::diagnostic::Diagnostic;
@@ -39,9 +40,14 @@ pub(super) fn source(
         writeln!(out, "use function @id(\"std.data.json.{module}.{name}\") from std.data.json.{module} as {alias};").unwrap();
     }
     out.push_str(&super::utf8::response_text(shape.row, max_string_bytes));
-    out.push_str(&record::source(shape.row));
-    out.push_str(&record::indexed_source(shape.row));
-    out.push_str(&record::source(shape.metrics));
+    out.push_str(&record::source(shape.row, shape.row));
+    out.push_str(&record::indexed_source(shape.row, shape.row));
+    out.push_str(&record::source(shape.metrics, shape.row));
+    out.push_str(&writer::source(
+        shape.row,
+        "collection-response",
+        "response",
+    ));
     out.push_str(&emit::source(root, &shape));
     Ok(out)
 }

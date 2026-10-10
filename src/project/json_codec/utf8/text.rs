@@ -37,6 +37,10 @@ pub(super) fn response_source(record: &TypeDeclaration, bound: usize) -> String 
         .split_once("@id(\"__ROW_ID__.json.utf8.owned-valid\")")
         .expect("owned UTF-8 encoder template")
         .1;
+    let suffix = suffix
+        .split_once("@id(\"__ROW_ID__.json.utf8.quoted-render\")")
+        .expect("response renderer boundary")
+        .0;
     let template = format!("@id(\"__ROW_ID__.json.utf8.owned-valid\"){suffix}")
         .replace("json___ROW___", "json___ROW___response_")
         .replace(".json.utf8.", ".json.collection-response.");
@@ -66,6 +70,10 @@ pub(super) fn nested_response_source(record: &TypeDeclaration, bound: usize) -> 
         .split_once("@id(\"__ROW_ID__.json.utf8.owned-valid\")")
         .expect("owned UTF-8 encoder template")
         .1;
+    let suffix = suffix
+        .split_once("@id(\"__ROW_ID__.json.utf8.quoted-render\")")
+        .expect("response renderer boundary")
+        .0;
     let template = format!("@id(\"__ROW_ID__.json.utf8.owned-valid\"){suffix}")
         .replace("json___ROW___", "json___ROW___nested_response_")
         .replace(".json.utf8.", ".json.nested-response.");

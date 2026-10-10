@@ -27,27 +27,15 @@ fn length(record: &TypeDeclaration, field: &FieldDeclaration, indexed: bool) -> 
     }
 }
 
-fn rendered(record: &TypeDeclaration, field: &FieldDeclaration, indexed: bool) -> String {
-    let value = value(record, field, indexed);
-    match field.ty {
-        Type::String => format!("json_{}_response_utf8_quote({value})", record.name),
-        Type::Bool => format!("if {value}{{\"true\"}}else{{\"false\"}}"),
-        Type::Usize => format!("string_from_usize({value})"),
-        Type::U8 => format!("string_from_i64(i64_from_u8({value}))"),
-        Type::I64 => format!("string_from_i64({value})"),
-        _ => unreachable!("validated scalar/string"),
-    }
+pub(super) fn source(record: &TypeDeclaration, writer: &TypeDeclaration) -> String {
+    object_source(record, writer, false)
 }
 
-pub(super) fn source(record: &TypeDeclaration) -> String {
-    object_source(record, false)
+pub(super) fn indexed_source(record: &TypeDeclaration, writer: &TypeDeclaration) -> String {
+    object_source(record, writer, true)
 }
 
-pub(super) fn indexed_source(record: &TypeDeclaration) -> String {
-    object_source(record, true)
-}
-
-fn object_source(record: &TypeDeclaration, indexed: bool) -> String {
+fn object_source(record: &TypeDeclaration, writer: &TypeDeclaration, indexed: bool) -> String {
     let fs = fields(record);
     let name = &record.name;
     let id = &record.stable_id;
@@ -102,22 +90,42 @@ fn json_{name}_response_object_len{suffix}({parameters})->usize {{
     for field in fs {
         write!(out, "+({})", length(record, field, indexed)).unwrap();
     }
-    writeln!(
-        out,
-        "}}}}
-@id(\"{id}.json.collection-response.object-render{identity_suffix}\")
-fn json_{name}_response_object_render{suffix}({parameters})->string {{
-{validity_bindings}if !({validity}){{\"\"}}else{{let output_0=\"{{\";"
-    )
-    .unwrap();
+    let arguments = if indexed { "values,at" } else { "value" };
+    writeln!(out, "}}}}\n@id(\"{id}.json.collection-response.object-render{identity_suffix}\")
+fn json_{name}_response_object_render{suffix}({parameters},position:usize,output:own Bytes)->Bytes
+requires json_{name}_response_object_len{suffix}({arguments})!=18446744073709551615usize && position<=byte_len(bytes_as_slice(output)) && json_{name}_response_object_len{suffix}({arguments})<=byte_len(bytes_as_slice(output))-position {{
+let mut next=output;let mut cursor=position;").unwrap();
+    let prefix = format!("json_{}_response", writer.name);
+    out.push_str(&writer::literal_write(&prefix, "next", "cursor", "{"));
     for (index, field) in fs.iter().enumerate() {
-        let label = literal(&format!(
-            "{}\"{}\":",
-            if index == 0 { "" } else { "," },
-            field.name
+        out.push_str(&writer::literal_write(
+            &prefix,
+            "next",
+            "cursor",
+            &format!("{}\"{}\":", if index == 0 { "" } else { "," }, field.name),
         ));
-        writeln!(out, "let label_{index}=string_concat(output_{index},{label});let rendered_{index}={};let output_{}=string_concat(label_{index},rendered_{index});", rendered(record, field, indexed), index+1).unwrap();
+        let value = value(record, field, indexed);
+        let kind = match field.ty {
+            Type::String => "quote",
+            Type::Bool => "bool",
+            Type::Usize => "usize",
+            Type::U8 | Type::I64 => "i64",
+            _ => unreachable!("validated scalar"),
+        };
+        let operand = if field.ty == Type::U8 {
+            format!("i64_from_u8({value})")
+        } else {
+            value
+        };
+        writeln!(
+            out,
+            "next=json_{}_response_writer_{kind}({operand},cursor,next);cursor=cursor+({});",
+            writer.name,
+            length(record, field, indexed)
+        )
+        .unwrap();
     }
-    writeln!(out, "string_concat(output_{},\"}}\")}}}}", fs.len()).unwrap();
+    out.push_str(&writer::literal_write(&prefix, "next", "cursor", "}"));
+    out.push_str("next}\n");
     out
 }
