@@ -514,7 +514,8 @@ pub(super) fn oracle_match(
         Type::Named { name, arguments } if types.variant_cases(&value.ty).is_some() => {
             Some((name.clone(), arguments.clone()))
         }
-        Type::I64
+        Type::Never
+        | Type::I64
         | Type::I32
         | Type::Char
         | Type::U8
