@@ -96,26 +96,77 @@ pub(crate) mod return_operand;
 /// Only function exits can discard ownership state at a loop join. Break and
 /// continue still reach that loop's continuation and must retain moved owners.
 pub(crate) fn returns_only(expr: &super::ResolvedExpr) -> bool {
-    fn visit(expr: &super::ResolvedExpr, depth: usize) -> bool {
+    use super::{ResolvedExpr, ResolvedExprKind as K, ResolvedStatement as S};
+    const NORMAL: u8 = 1;
+    const RETURN: u8 = 2;
+    const ESCAPE: u8 = 4;
+    const LOCAL: u8 = 8;
+    fn sequence(left: u8, right: impl FnOnce() -> u8) -> u8 {
+        (left & !NORMAL) | if left & NORMAL != 0 { right() } else { 0 }
+    }
+    fn visit(expr: &ResolvedExpr, local_loop: Option<&ExpressionId>, depth: usize) -> u8 {
         if depth > crate::cache_codec::MAX_DEPTH {
-            return false;
+            return NORMAL | ESCAPE;
         }
         match &expr.kind {
-            super::ResolvedExprKind::LexicalExit {
+            K::LexicalExit {
                 kind: LexicalExitKind::Return,
                 ..
-            } => true,
-            super::ResolvedExprKind::Block { tail, .. } => visit(tail, depth + 1),
-            super::ResolvedExprKind::If {
+            } => RETURN,
+            K::LexicalExit { target, .. } => match target {
+                ControlTarget::Loop { site, .. } if local_loop == Some(site) => LOCAL,
+                _ => ESCAPE,
+            },
+            K::Block { statements, tail } => {
+                let mut paths = NORMAL;
+                for statement in statements {
+                    paths = sequence(paths, || match statement {
+                        S::While {
+                            condition, body, ..
+                        }
+                        | S::LexicalWhile {
+                            condition, body, ..
+                        } => sequence(visit(condition, local_loop, depth + 1), || {
+                            NORMAL
+                                | (visit(body, Some(&condition.id), depth + 1) & (RETURN | ESCAPE))
+                        }),
+                        S::Let { value, .. } | S::Assign { value, .. } => {
+                            visit(value, local_loop, depth + 1)
+                        }
+                        S::Unsafe { body, .. } => visit(body, local_loop, depth + 1),
+                    });
+                }
+                sequence(paths, || visit(tail, local_loop, depth + 1))
+            }
+            K::If {
+                condition,
                 then_branch,
                 else_branch,
-                ..
-            } => visit(then_branch, depth + 1) && visit(else_branch, depth + 1),
-            super::ResolvedExprKind::Match { arms, .. } => {
-                !arms.is_empty() && arms.iter().all(|arm| visit(&arm.value, depth + 1))
-            }
-            _ => false,
+            } => sequence(visit(condition, local_loop, depth + 1), || {
+                visit(then_branch, local_loop, depth + 1)
+                    | visit(else_branch, local_loop, depth + 1)
+            }),
+            K::Match {
+                scrutinee, arms, ..
+            } => sequence(visit(scrutinee, local_loop, depth + 1), || {
+                if arms.is_empty() {
+                    NORMAL
+                } else {
+                    arms.iter().fold(0, |paths, arm| {
+                        paths
+                            | sequence(
+                                arm.guard
+                                    .as_ref()
+                                    .map_or(NORMAL, |guard| visit(guard, local_loop, depth + 1)),
+                                || visit(&arm.value, local_loop, depth + 1),
+                            )
+                    })
+                }
+            }),
+            // Typed contour replay independently refuses control crossing value
+            // or callable boundaries before this ownership classification.
+            _ => NORMAL,
         }
     }
-    visit(expr, 0)
+    visit(expr, None, 0) == RETURN
 }

@@ -111,3 +111,103 @@ fn return_operand_cannot_hide_closed_allocation_or_owning_call_from_loop_admissi
         );
     }
 }
+
+#[test]
+fn cached_guarded_loop_exit_before_return_retains_the_moved_outer_owner() {
+    const SOURCE: &str = "module test.guarded_return;@id(\"consume\") fn consume(value:string)->i64 {0}@id(\"main\") fn main(flag:bool)->i64 {let value=\"owner\";while true {if flag {let consumed=consume(value);return consumed;};return 0;}consume(value)}";
+    let ast = crate::check(SOURCE, "guard-return-source.spx").unwrap();
+    let program = crate::hir::resolve(&ast).unwrap();
+    crate::hir::validate(&program).unwrap();
+    for kind in [
+        crate::ast::LexicalExitKind::Break,
+        crate::ast::LexicalExitKind::Continue,
+    ] {
+        let mut forged = program.clone();
+        let function = forged
+            .functions
+            .iter_mut()
+            .find(|f| f.id.as_str() == "main")
+            .unwrap();
+        let owner = FunctionExecutionId::Monomorphic(function.id.clone());
+        let ResolvedExprKind::Block { statements, .. } = &mut function.body.kind else {
+            panic!("body")
+        };
+        let ResolvedStatement::LexicalWhile {
+            condition, body, ..
+        } = &mut statements[1]
+        else {
+            panic!("loop")
+        };
+        let target = crate::hir::ControlTarget::Loop {
+            owner,
+            site: condition.id.clone(),
+        };
+        assert!(crate::hir::lexical_exit::returns_only(body));
+        let ResolvedExprKind::Block { statements, .. } = &mut body.kind else {
+            panic!("loop body")
+        };
+        let ResolvedStatement::Let { value, .. } = &mut statements[0] else {
+            panic!("guard")
+        };
+        let ResolvedExprKind::If { then_branch, .. } = &mut value.kind else {
+            panic!("if")
+        };
+        let ResolvedExprKind::Block { tail, .. } = &mut then_branch.kind else {
+            panic!("branch")
+        };
+        tail.kind = ResolvedExprKind::LexicalExit {
+            kind,
+            target,
+            value: None,
+        };
+        assert!(!crate::hir::lexical_exit::returns_only(body));
+        let wire = crate::cache_codec::encode(&forged).unwrap();
+        let decoded: ResolvedProgram = crate::cache_codec::decode(&wire).unwrap();
+        let refusal = crate::hir::validate(&decoded).unwrap_err();
+        assert_eq!(refusal.code, "SPX-H006");
+        assert_eq!(
+            refusal.message,
+            "while loop body changes ownership liveness"
+        );
+    }
+}
+
+#[test]
+fn nested_loop_exit_is_local_but_foreign_loop_target_is_not_a_function_return() {
+    let ast = crate::check("module nested;@id(\"main\") fn main()->string {let value=\"owner\";while true {while true {break;}return value;}value}", "nested-local-exit.spx").unwrap();
+    let program = crate::hir::resolve(&ast).unwrap();
+    crate::hir::validate(&program).unwrap();
+    let function = program
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "main")
+        .unwrap();
+    let ResolvedExprKind::Block { statements, .. } = &function.body.kind else {
+        panic!("body")
+    };
+    let ResolvedStatement::LexicalWhile {
+        condition, body, ..
+    } = &statements[1]
+    else {
+        panic!("outer loop")
+    };
+    assert!(crate::hir::lexical_exit::returns_only(body));
+    let mut changed = body.as_ref().clone();
+    let ResolvedExprKind::Block { statements, .. } = &mut changed.kind else {
+        panic!("outer body")
+    };
+    let ResolvedStatement::LexicalWhile { body, .. } = &mut statements[0] else {
+        panic!("inner loop")
+    };
+    let ResolvedExprKind::Block { tail, .. } = &mut body.kind else {
+        panic!("inner body")
+    };
+    let ResolvedExprKind::LexicalExit { target, .. } = &mut tail.kind else {
+        panic!("local exit")
+    };
+    *target = crate::hir::ControlTarget::Loop {
+        owner: FunctionExecutionId::Monomorphic(function.id.clone()),
+        site: condition.id.clone(),
+    };
+    assert!(!crate::hir::lexical_exit::returns_only(&changed));
+}

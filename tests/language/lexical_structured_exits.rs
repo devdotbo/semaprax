@@ -192,3 +192,31 @@ fn loop_exit_branches_keep_outer_owner_transfers_and_function_returns_discard_th
     let resolved = hir::resolve(&program).unwrap();
     hir::validate(&resolved).unwrap();
 }
+
+#[test]
+fn guarded_loop_transfers_cannot_hide_behind_a_later_function_return() {
+    for exit in ["break", "continue"] {
+        let source = format!("module app.guarded_exit; @id(\"consume\") fn consume(value:string)->i64 {{0}} @id(\"main\") fn main(flag:bool)->i64 {{let value=\"owner\"; while true {{if flag {{let consumed=consume(value);{exit};}};return 0;}} consume(value)}}");
+        let ast = parse(&source, "guarded-transfer-return.spx").unwrap();
+        let errors = verify::verify(&ast);
+        assert!(
+            errors
+                .iter()
+                .any(|d| matches!(d.code, "SPX-T252" | "SPX-O101" | "SPX-O104")),
+            "{errors:?}"
+        );
+        assert!(hir::resolve(&ast)
+            .unwrap_err()
+            .iter()
+            .any(|d| d.code == "SPX-H006"));
+    }
+    let source = "module app.nested_return; @id(\"main\") fn main()->string {let value=\"owner\";while true {while true {break;}return value;} value}";
+    let ast = semaprax::check(source, "local-break-then-return.spx").unwrap();
+    let program = hir::resolve(&ast).unwrap();
+    hir::validate(&program).unwrap();
+    let canonical = format::canonical(&ast);
+    assert_eq!(
+        format::canonical(&parse(&canonical, "local-break-roundtrip.spx").unwrap()),
+        canonical
+    );
+}
