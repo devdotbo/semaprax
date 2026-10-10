@@ -272,7 +272,24 @@ pub(super) fn derive(
                                     unreachable!("matched call")
                                 };
                                 if args.len() != 1
-                                    || !matches!(&args[0].kind,K::Call{callee,instance:None,args,type_arguments} if type_arguments.is_empty() && crate::byte_ops::by_id(callee.as_str())==Some(crate::byte_ops::ByteOp::BytesAsSlice) && args.len()==1)
+                                    || !args.first().is_some_and(|view| match &view.kind {
+                                        K::BorrowPlace { operation, .. } => {
+                                            crate::byte_ops::by_id(operation.as_str())
+                                                == Some(crate::byte_ops::ByteOp::BytesAsSlice)
+                                        }
+                                        K::Call {
+                                            callee,
+                                            instance: None,
+                                            args,
+                                            type_arguments,
+                                        } => {
+                                            type_arguments.is_empty()
+                                                && args.len() == 1
+                                                && crate::byte_ops::by_id(callee.as_str())
+                                                    == Some(crate::byte_ops::ByteOp::BytesAsSlice)
+                                        }
+                                        _ => false,
+                                    })
                                 {
                                     return Err(error("final constructor requires the exact bounded owned-Bytes view"));
                                 }

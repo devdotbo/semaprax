@@ -26,7 +26,10 @@ policy are certificate data. The final String field is constructed directly by
 `string_from_utf8(bytes_as_slice(owned_buffer))` in the result tail. No alias or
 owning projected String read may obscure a clone. The bounded Bytes view uses
 ordinary independently checked extent, loan and cleanup authority; its selected
-payload ceiling remains 131072 bytes.
+payload ceiling remains 131072 bytes. Profile replay accepts the exact
+compiler-owned `BorrowPlace` projection for `bytes_as_slice` after ordinary
+HIR/loan validation, as well as the existing exact intrinsic-call projection.
+An Array view or a named slice alias does not satisfy this owned-Bytes boundary.
 
 The encoder closure rejects other String constructors/literals/formats,
 String-containing owning parameters or helper results, cloning places,

@@ -225,6 +225,7 @@ pub(super) fn assert_scoped_row_reads(program: &semaprax::hir::ResolvedProgram, 
                 | E::Usize(_)
                 | E::Bool(_)
                 | E::String(_)
+                | E::ArrayU8(_)
                 | E::Place(_)
                 | E::BorrowPlace { .. } => {}
                 other => panic!("unexpected indexed response helper shape: {other:?}"),

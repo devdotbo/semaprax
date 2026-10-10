@@ -206,3 +206,27 @@ fn selected_checked_source_adapter_faults_and_lease_controls_at_o0_o2() {
     }
     std::fs::remove_dir_all(root).unwrap();
 }
+
+#[test]
+fn final_constructor_accepts_authenticated_bytes_projection_and_refuses_array_or_alias_views() {
+    let accepted = program(SOURCE);
+    emit(&accepted).unwrap();
+    let array = program(&SOURCE.replace(
+        "string_from_utf8(bytes_as_slice(finished))",
+        "string_from_utf8(array_as_slice(invalid))",
+    ));
+    let error = emit(&array)
+        .err()
+        .expect("Array view remains outside the profile");
+    assert_eq!(error.code, "SPX-B104");
+    assert!(error.message.contains("exact bounded owned-Bytes view"));
+    let aliased = program(&SOURCE.replace(
+        "Outcome::Encoded{text:string_from_utf8(bytes_as_slice(finished))}",
+        "let view=bytes_as_slice(finished);Outcome::Encoded{text:string_from_utf8(view)}",
+    ));
+    let error = emit(&aliased)
+        .err()
+        .expect("named alias remains outside the profile");
+    assert_eq!(error.code, "SPX-B104");
+    assert!(error.message.contains("exact bounded owned-Bytes view"));
+}
