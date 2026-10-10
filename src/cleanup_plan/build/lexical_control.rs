@@ -15,6 +15,8 @@ pub(super) struct LexicalBuildState {
     pub(super) wrapper_breaks: Vec<super::lexical_break::PendingWrapperBreak>,
     pub(super) building_resume: bool,
     pub(super) replicated_statuses: BTreeSet<StatusSourceId>,
+    pub(super) ensure_regions: BTreeMap<usize, Vec<CleanupRegionId>>,
+    pub(super) current_ensure: Option<(usize, usize)>,
 }
 
 /// Fresh monomorphic functions and late generic instances supply their actual
@@ -39,6 +41,8 @@ pub(crate) fn build_plan_for_execution(
             wrapper_breaks: Vec::new(),
             building_resume: false,
             replicated_statuses: BTreeSet::new(),
+            ensure_regions: BTreeMap::new(),
+            current_ensure: None,
             certificate: super::super::LexicalControlPlan {
                 schema: "semaprax.lexical-control-flow.v1",
                 loops: Vec::new(),
@@ -690,12 +694,18 @@ impl PlanBuilder<'_> {
         region: CleanupRegionId,
         exit: ExitTargetId,
     ) -> Result<(), Diagnostic> {
-        if self
-            .lexical
-            .as_ref()
-            .is_some_and(|control| control.building_resume)
-        {
-            return Ok(());
+        if let Some(control) = &self.lexical {
+            if control.building_resume {
+                let contract_scope = control
+                    .ensure_regions
+                    .values()
+                    .any(|regions| regions.contains(&region));
+                if !contract_scope
+                    || self.regions[region.0 as usize].normal_scope_end != UNRESOLVED_EXIT
+                {
+                    return Ok(());
+                }
+            }
         }
         let normal_end = &mut self.regions[region.0 as usize].normal_scope_end;
         if *normal_end != UNRESOLVED_EXIT {

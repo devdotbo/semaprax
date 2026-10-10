@@ -42,6 +42,7 @@ mod hostile_tests;
 mod iterator;
 pub(super) mod lexical_control;
 mod lexical_iterator;
+mod lexical_contract;
 mod lexical_break;
 mod owned_try;
 mod record_destructure;
@@ -1022,9 +1023,7 @@ impl<'a> PlanBuilder<'a> {
         region: CleanupRegionId,
     ) -> Result<(), Diagnostic> {
         if self.storage_to_slot.contains_key(&storage) {
-            return Err(plan_error(format!(
-                "cleanup storage `{storage:?}` is duplicated"
-            )));
+            return self.reuse_ensure_slot(&storage, &ty, region);
         }
         let index = u32::try_from(self.slots.len())
             .map_err(|_| plan_error("too many cleanup plan slots"))?;
@@ -1486,31 +1485,6 @@ impl<'a> PlanBuilder<'a> {
         Ok((success, state))
     }
 
-    fn lower_contract_expression(
-        &mut self,
-        contract: &ResolvedExpr,
-        block: BlockId,
-        state: FlowState,
-        parent: CleanupRegionId,
-        phase: ContractPhase,
-        ordinal: usize,
-    ) -> Result<(BlockId, FlowState), Diagnostic> {
-        let region = self.new_region(parent)?;
-        let entry = self.new_block(region)?;
-        let edge = self.new_edge(block, entry, EdgeCondition::Always)?;
-        self.terminate(block, CleanupTerminator::Goto(edge))?;
-        let evaluated = self.lower_expr(contract, entry, state, region)?;
-        let (success, state) = self.lower_contract(
-            contract,
-            evaluated.block,
-            evaluated.state,
-            region,
-            phase,
-            ordinal,
-        )?;
-        self.exit_scope(success, state, region)
-    }
-
     fn checked_source(
         &mut self,
         expression: &ResolvedExpr,
@@ -1532,6 +1506,9 @@ impl<'a> PlanBuilder<'a> {
     }
 
     fn new_region(&mut self, parent: CleanupRegionId) -> Result<CleanupRegionId, Diagnostic> {
+        if let Some(region) = self.reuse_ensure_region(parent)? {
+            return Ok(region);
+        }
         let index = u32::try_from(self.regions.len())
             .map_err(|_| plan_error("too many cleanup regions"))?;
         let id = CleanupRegionId(index);
@@ -1541,6 +1518,7 @@ impl<'a> PlanBuilder<'a> {
             slots: Vec::new(),
             normal_scope_end: UNRESOLVED_EXIT,
         });
+        self.retain_ensure_region(id)?;
         Ok(id)
     }
 
