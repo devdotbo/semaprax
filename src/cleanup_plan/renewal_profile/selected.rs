@@ -2,7 +2,7 @@
 //! closes Vec/iterator/String-replacement families before using this subset.
 use super::*;
 use crate::cleanup_plan::{replay_btree_node_upper, ReplayPhysicalReservation};
-use crate::hir::{ResolvedExpr, ResolvedExprKind, ResolvedStatement, ValueId};
+use crate::hir::{ResolvedExprKind, ResolvedStatement, ValueId};
 use std::collections::BTreeSet;
 const DEPTH: usize = 514;
 const WORK: usize = crate::cache_codec::MAX_NODES;
@@ -281,15 +281,18 @@ mod tests {
             nested = parent;
         }
         function.body = nested;
-        let mut frames = [None; DEPTH];
         let mut work = WORK;
-        walk(&function, &mut frames, &mut work, |_| Ok(())).unwrap();
+        {
+            let mut frames = [None; DEPTH];
+            walk(&function, &mut frames, &mut work, |_| Ok(())).unwrap();
+        }
         let mut parent = leaf;
         parent.kind = ResolvedExprKind::Block {
             statements: Vec::new(),
             tail: Box::new(function.body),
         };
         function.body = parent;
+        let mut frames = [None; DEPTH];
         assert_eq!(
             walk(&function, &mut frames, &mut work, |_| Ok(()))
                 .unwrap_err()
