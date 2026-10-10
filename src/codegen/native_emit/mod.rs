@@ -2072,18 +2072,7 @@ fn emit_function(
     if has_try {
         emitter.line("spx_result_staged = true;");
     }
-    if has_try
-        || function
-            .cleanup_plan
-            .lexical_control
-            .as_deref()
-            .is_some_and(|control| {
-                control
-                    .exits
-                    .iter()
-                    .any(|exit| exit.kind == crate::ast::LexicalExitKind::Return)
-            })
-    {
+    if has_try {
         emitter.label("spx_postconditions");
     }
 

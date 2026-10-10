@@ -23,7 +23,9 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             };
             let condition = self.emit_expr(condition)?;
             self.require_type(&condition.ty, &ResolvedType::Bool, "if condition")?;
-            let temporary = if self.plan_owned_leaf_result(&current.ty) {
+            let temporary = if current.ty == ResolvedType::Never {
+                String::new()
+            } else if self.plan_owned_leaf_result(&current.ty) {
                 self.bytes_plan
                     .ok_or_else(|| backend_error("owned Bytes if has no cleanup plan"))?
                     .value(&crate::cleanup_plan::StorageId::Temporary(

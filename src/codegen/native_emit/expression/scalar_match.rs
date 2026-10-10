@@ -17,7 +17,9 @@ impl<'a, O: COutput> CEmitter<'a, O> {
     ) -> Result<CValue, Diagnostic> {
         let staged = self.temporary(&scrutinee.ty)?;
         self.line(&format!("{staged} = {};", scrutinee.code));
-        let result = if is_direct_plan_owned(self.program, &expr.ty) {
+        let result = if expr.ty == ResolvedType::Never {
+            String::new()
+        } else if is_direct_plan_owned(self.program, &expr.ty) {
             self.bytes_plan
                 .ok_or_else(|| backend_error("owned Bytes match has no cleanup plan"))?
                 .value(&crate::cleanup_plan::StorageId::Temporary(expr.id.clone()))?

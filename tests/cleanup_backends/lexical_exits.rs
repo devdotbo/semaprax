@@ -33,7 +33,7 @@ fn native_lexical_loops_return_cleanup_and_failed_ensures_preserve_reentry_o0_o2
     assert_eq!(generated, semaprax::codegen::emit_c(&parsed).unwrap());
     assert!(generated.contains("spx_lexical_latch_"));
     assert!(generated.contains("spx_lexical_break_"));
-    assert!(generated.contains("goto spx_postconditions;"));
+    assert!(generated.contains("spx_canonical_cleanup_done = true;"));
     let symbol = format!(
         "spx_decl_{}",
         "lexical.run"
