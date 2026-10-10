@@ -18,6 +18,7 @@ fn run(function: &ResolvedFunction, limit: usize) -> Result<(), Diagnostic> {
     let storage = validate_slots(function, &mut budget)?;
     let leaves = collect_leaves(function, &mut budget)?;
     validate_regions(function, &storage, &mut budget)?;
+    validate_reference_coverage(function, &mut budget)?;
     assert_eq!(
         leaves.len(),
         function
