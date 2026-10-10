@@ -276,6 +276,20 @@
 - Attach the final resolved-core builder phase's first sticky reservation
   evidence to SPX-G171 help, preserving the exact message, ledger behavior,
   independent retry budgets, and unknown inner-operation attribution.
+- Bind Native Rust Interop accounting pins to exact old/current nine-component
+  reservations on unchanged canonical fixtures. Verify every retained-byte
+  delta and derived sum plus byte-identical complete hostile HIR/cleanup/loan
+  data; retain all limits, minus-one gates and four source SHA pins.
+
+- Fix Native Rust Interop's depth-512 reservation by separating the three
+  possible HIR identity backings from each single cleanup identity reference.
+  Preserve the full backing-growth allowance and unchanged 32 MiB limit.
+
+- Fix the unchanged 64 MiB pattern workspace gate with a final uncached profile
+  that reserves the complete asserted expression footprint and audited identity
+  carriers, then independently replays call facts against borrowed immutable
+  edges. Keep all live debits, hostile checks and earlier profile receipts.
+
 - Refresh workspace artifact KATs only after exact byte reconstruction of 62
   complete historical documents, including nested operations and review inputs;
   retain every limit, domain, replay, no-write and hostile assertion.
