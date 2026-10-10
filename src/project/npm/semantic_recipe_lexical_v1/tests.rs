@@ -26,7 +26,7 @@ fn lexical_selection_replays_statement_guards_and_exact_wasm() {
         recipe.contains("continue;") && recipe.contains("break;") && recipe.contains("return ")
     );
     assert!(
-        !recipe.contains("else 0"),
+        !recipe.contains("else 0") && !recipe.contains("else { 0 }"),
         "absent statement alternative is syntax, not an expression branch"
     );
     crate::parse(
@@ -72,4 +72,32 @@ fn selection_marker_cannot_grant_legacy_or_forged_control_authority() {
         .unwrap();
     assert!(forge(&mut function.body));
     assert!(render(&linked).is_err());
+}
+
+#[test]
+fn explicit_zero_tail_guard_branches_preserve_statements_and_exact_wasm() {
+    for source in [
+        SOURCE.replace(
+            "if index == 1 { continue; };",
+            "if index == 1 { continue; } else { index = index + 1; };",
+        ),
+        SOURCE.replace(
+            "if index == 1 { continue; };",
+            "if index != 1 { index = index + 1; } else { continue; };",
+        ),
+    ] {
+        let linked = program(&source);
+        crate::hir::validate(&linked).unwrap();
+        let recipe = render(&linked).unwrap();
+        assert!(
+            recipe.contains(" else "),
+            "nonempty alternative must survive"
+        );
+        let replayed = replay_against(&linked, &recipe).unwrap();
+        assert_eq!(render(&replayed).unwrap(), recipe);
+        assert_eq!(
+            crate::wasm::emit_resolved_module(&linked).unwrap(),
+            crate::wasm::emit_resolved_module(&replayed).unwrap()
+        );
+    }
 }

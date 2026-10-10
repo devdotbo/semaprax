@@ -556,7 +556,9 @@ fn render_expr(
         ResolvedExprKind::Float32(bits) => render_float(f64::from(f32::from_bits(*bits)), "f32"),
         ResolvedExprKind::Float64(bits) => render_float(f64::from_bits(*bits), "f64"),
         ResolvedExprKind::Bool(value) => Ok(value.to_string()),
-        ResolvedExprKind::BorrowedUtf8Literal(_) => Err(package_error("static borrowed literals are outside semantic recipe v8")),
+        ResolvedExprKind::BorrowedUtf8Literal(_) => Err(package_error(
+            "static borrowed literals are outside semantic recipe v8",
+        )),
         ResolvedExprKind::String(value) => bounded_string_literal(value, MAX_RECIPE_BYTES),
         ResolvedExprKind::Place(place) => render_place(place, names, values),
         ResolvedExprKind::BorrowPlace { operation, place } => {
@@ -621,7 +623,7 @@ fn render_expr(
             render_expr(right, names, values, local_index)?,
         )),
         ResolvedExprKind::Block { statements, tail } => {
-            render_block(statements, tail, names, values, local_index)
+            render_block(statements, tail, names, values, local_index, false)
         }
         ResolvedExprKind::If {
             condition,
@@ -721,12 +723,29 @@ fn render_fields(
         .map(|fields| fields.join(", "))
 }
 
+fn render_guard_branch(
+    expression: &ResolvedExpr,
+    names: &Names,
+    values: &mut BTreeMap<String, String>,
+    local_index: &mut usize,
+) -> Result<String, Diagnostic> {
+    if let ResolvedExprKind::Block { statements, tail } = &expression.kind {
+        if matches!(tail.kind, ResolvedExprKind::Int(0)) {
+            // Statement parsing recreates this zero at the same branch/tail path.
+            // Keep every statement; only the direct synthesized scalar is omitted.
+            return render_block(statements, tail, names, values, local_index, true);
+        }
+    }
+    render_expr(expression, names, values, local_index)
+}
+
 fn render_block(
     statements: &[ResolvedStatement],
     tail: &ResolvedExpr,
     names: &Names,
     values: &mut BTreeMap<String, String>,
     local_index: &mut usize,
+    omit_zero_tail: bool,
 ) -> Result<String, Diagnostic> {
     let mut rendered = String::from("{ ");
     for statement in statements {
@@ -754,17 +773,23 @@ fn render_block(
                     else {
                         unreachable!("statement guard checked above");
                     };
-                    // A statement-if's absent alternative is a synthesized scalar,
-                    // not an authored expression branch. Emit the admitted guard
-                    // spelling so replay reconstructs that same scalar and IDs.
-                    if matches!(else_branch.kind, ResolvedExprKind::Int(0)) {
+                    // The parser represents an absent alternative as an empty
+                    // block with a synthesized zero. A nonempty zero-tail block
+                    // is an explicit alternative and must retain its statements.
+                    let absent = matches!(else_branch.kind, ResolvedExprKind::Int(0))
+                        || matches!(&else_branch.kind,
+                            ResolvedExprKind::Block { statements, tail }
+                            if statements.is_empty() && matches!(tail.kind, ResolvedExprKind::Int(0)));
+                    rendered.push_str(&format!(
+                        "if {} {}",
+                        render_expr(condition, names, values, local_index)?,
+                        render_guard_branch(then_branch, names, values, local_index)?
+                    ));
+                    if !absent {
                         rendered.push_str(&format!(
-                            "if {} {}",
-                            render_expr(condition, names, values, local_index)?,
-                            render_expr(then_branch, names, values, local_index)?
+                            " else {}",
+                            render_guard_branch(else_branch, names, values, local_index)?
                         ));
-                    } else {
-                        rendered.push_str(&render_expr(value, names, values, local_index)?);
                     }
                     rendered.push_str("; ");
                     continue;
@@ -827,7 +852,9 @@ fn render_block(
             )),
         }
     }
-    rendered.push_str(&render_expr(tail, names, values, local_index)?);
+    if !omit_zero_tail {
+        rendered.push_str(&render_expr(tail, names, values, local_index)?);
+    }
     rendered.push_str(" }");
     Ok(rendered)
 }
