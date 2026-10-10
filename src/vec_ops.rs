@@ -616,7 +616,11 @@ pub(crate) fn is_same_owner_reassignment_source(
         ),
         _ => false,
     };
-    op.is_some_and(|op| args.len() == op.arity())
+    // The literal policy is an authored source operand. Resolution encodes it
+    // into the authenticated callee descriptor, leaving only the owning Vec.
+    op.is_some_and(|op| {
+        args.len() == op.arity() + usize::from(direct == Some(VecOp::SortBy))
+    })
         && owner_type_matches
         && matches!(&args[0].kind, ExprKind::Var(source) if source == name)
 }
