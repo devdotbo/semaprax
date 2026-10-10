@@ -125,12 +125,17 @@ fn loop_break_cannot_hide_an_outer_owner_transfer_before_later_read() {
 @id("main") fn main()->i64 {
     let value="owner";
     while true { let consumed=consume(value); break; }
-    string_len(value)
+    consume(value)
 }"#;
     let program = parse(source, "moved-before-break.spx").unwrap();
     let diagnostics = verify::verify(&program);
     assert!(
-        diagnostics.iter().any(|d| d.severity.is_error()) || hir::resolve(&program).is_err(),
+        diagnostics
+            .iter()
+            .any(|d| matches!(d.code.as_str(), "SPX-O101" | "SPX-O104" | "SPX-T252"))
+            || hir::resolve(&program)
+                .err()
+                .is_some_and(|errors| errors.iter().any(|d| d.code == "SPX-H006")),
         "a lexical break must not republish an already transferred outer owner"
     );
 }
