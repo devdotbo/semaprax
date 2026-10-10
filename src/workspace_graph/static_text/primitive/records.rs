@@ -1,0 +1,252 @@
+//! Private source-captured flat-record facts, held before the AST is discarded.
+//! These facts are checked layout claims, never a replay admission switch.
+use super::*;
+use crate::ast::TypeDeclarationKind;
+const MAX_RECORDS: usize = 32;
+const MAX_FIELDS: usize = 8;
+pub(in crate::workspace_graph) struct Records {
+    pub(in crate::workspace_graph) records: Vec<RecordFact>,
+}
+pub(in crate::workspace_graph) struct RecordFact {
+    pub(in crate::workspace_graph) declaration: hir::ResolvedTypeDeclaration,
+    pub(in crate::workspace_graph) explicit: bool,
+    pub(in crate::workspace_graph) field_explicit: Vec<bool>,
+}
+fn field_type(ty: &Type) -> Option<hir::ResolvedType> {
+    let current = super::ty(ty)?;
+    (hir::is_scalar_resolved_type(&current)
+        || matches!(
+            current,
+            hir::ResolvedType::String | hir::ResolvedType::Bytes
+        ))
+    .then_some(current)
+}
+pub(super) fn preflight(
+    program: &Program,
+    resolved: &hir::ResolvedProgram,
+    work: &mut usize,
+) -> Result<bool, Vec<Diagnostic>> {
+    if program.types.len() > MAX_RECORDS {
+        return Ok(false);
+    }
+    for (position, source) in program.types.iter().enumerate() {
+        *work = work
+            .checked_sub(position.checked_add(1).ok_or_else(fail)?)
+            .ok_or_else(fail)?;
+        if !source.type_parameters.is_empty()
+            || source.extends.is_some()
+            || !source.invariants().is_empty()
+            || program.types[..position]
+                .iter()
+                .any(|old| old.stable_id == source.stable_id || old.name == source.name)
+        {
+            return Ok(false);
+        }
+        let TypeDeclarationKind::Record { fields } = &source.kind else {
+            return Ok(false);
+        };
+        if !(1..=MAX_FIELDS).contains(&fields.len()) {
+            return Ok(false);
+        }
+        *work = work.checked_sub(resolved.types.len()).ok_or_else(fail)?;
+        let mut matches = resolved
+            .types
+            .iter()
+            .filter(|record| record.id.as_str() == source.stable_id);
+        let current = matches.next().ok_or_else(fail)?;
+        if matches.next().is_some()
+            || current.name != source.name
+            || current.span != source.span
+            || !current.type_parameters.is_empty()
+        {
+            return Err(fail());
+        }
+        let hir::ResolvedTypeDeclarationKind::Record {
+            fields: current_fields,
+        } = &current.kind
+        else {
+            return Err(fail());
+        };
+        if fields.len() != current_fields.len() {
+            return Err(fail());
+        }
+        for (ordinal, (source, current)) in fields.iter().zip(current_fields).enumerate() {
+            *work = work
+                .checked_sub(ordinal.checked_add(1).ok_or_else(fail)?)
+                .ok_or_else(fail)?;
+            let Some(ty) = field_type(&source.ty) else {
+                return Ok(false);
+            };
+            if source.stable_id != current.id.as_str()
+                || source.name != current.name
+                || source.span != current.span
+                || current.index as usize != ordinal
+                || current.ty != ty
+                || fields[..ordinal]
+                    .iter()
+                    .any(|old| old.stable_id == source.stable_id || old.name == source.name)
+            {
+                return Err(fail());
+            }
+        }
+    }
+    Ok(true)
+}
+pub(super) fn source_type_matches(
+    program: &Program,
+    source: &Type,
+    current: &hir::ResolvedType,
+) -> bool {
+    if let Type::Named { name, arguments } = source {
+        let hir::ResolvedType::Nominal {
+            declaration,
+            arguments: actual,
+        } = current
+        else {
+            return false;
+        };
+        arguments.is_empty()
+            && actual.is_empty()
+            && program
+                .types
+                .iter()
+                .filter(|record| record.name == *name && record.stable_id == declaration.as_str())
+                .count()
+                == 1
+    } else {
+        super::ty(source).as_ref() == Some(current)
+    }
+}
+pub(super) fn source_type_admitted(program: &Program, source: &Type) -> bool {
+    if let Type::Named { name, arguments } = source {
+        arguments.is_empty()
+            && program
+                .types
+                .iter()
+                .filter(|record| record.name == *name)
+                .count()
+                == 1
+    } else {
+        super::ty(source).is_some()
+    }
+}
+pub(super) fn clone_type(
+    current: &hir::ResolvedType,
+) -> Result<hir::ResolvedType, Vec<Diagnostic>> {
+    if let hir::ResolvedType::Nominal {
+        declaration,
+        arguments,
+    } = current
+    {
+        if !arguments.is_empty() {
+            return Err(fail());
+        }
+        reserve_builder_structure(declaration.as_str().len())?;
+    }
+    Ok(current.clone())
+}
+pub(super) fn capture(
+    program: &Program,
+    resolved: &hir::ResolvedProgram,
+    work: &mut usize,
+) -> Result<Option<Box<Records>>, Vec<Diagnostic>> {
+    if program.types.is_empty() {
+        return Ok(None);
+    }
+    if !preflight(program, resolved, work)? {
+        return Err(fail());
+    }
+    reserve_builder_structure(
+        std::mem::size_of::<Records>()
+            .checked_add(
+                program
+                    .types
+                    .len()
+                    .checked_mul(std::mem::size_of::<RecordFact>())
+                    .ok_or_else(capacity)?,
+            )
+            .ok_or_else(capacity)?,
+    )?;
+    let mut records = Vec::with_capacity(program.types.len());
+    for source in &program.types {
+        *work = work.checked_sub(resolved.types.len()).ok_or_else(fail)?;
+        let current = resolved
+            .types
+            .iter()
+            .find(|record| record.id.as_str() == source.stable_id)
+            .ok_or_else(fail)?;
+        let hir::ResolvedTypeDeclarationKind::Record { fields } = &current.kind else {
+            return Err(fail());
+        };
+        let TypeDeclarationKind::Record {
+            fields: source_fields,
+        } = &source.kind
+        else {
+            return Err(fail());
+        };
+        let field_bytes = fields.iter().try_fold(
+            fields
+                .len()
+                .checked_mul(std::mem::size_of::<hir::ResolvedFieldDeclaration>())
+                .ok_or_else(capacity)?,
+            |sum, field| {
+                sum.checked_add(field.id.as_str().len())
+                    .and_then(|n| n.checked_add(field.name.len()))
+                    .ok_or_else(capacity)
+            },
+        )?;
+        reserve_builder_structure(
+            current
+                .id
+                .as_str()
+                .len()
+                .checked_add(current.name.len())
+                .and_then(|n| n.checked_add(field_bytes))
+                .and_then(|n| n.checked_add(fields.len()))
+                .ok_or_else(capacity)?,
+        )?;
+        let field_explicit = source_fields
+            .iter()
+            .map(|field| field.explicit_id)
+            .collect::<Vec<_>>();
+        records.push(RecordFact {
+            declaration: current.clone(),
+            explicit: source.explicit_id,
+            field_explicit,
+        });
+    }
+    if crate::bounded_output::active_refused() {
+        return Err(capacity());
+    }
+    Ok(Some(Box::new(Records { records })))
+}
+impl Records {
+    pub(super) fn owned_capacity_bytes(&self) -> Option<usize> {
+        self.records.iter().try_fold(
+            std::mem::size_of::<Records>().checked_add(
+                self.records
+                    .capacity()
+                    .checked_mul(std::mem::size_of::<RecordFact>())?,
+            )?,
+            |sum, record| {
+                let hir::ResolvedTypeDeclarationKind::Record { fields } = &record.declaration.kind
+                else {
+                    return None;
+                };
+                let fields = fields.iter().try_fold(
+                    fields
+                        .capacity()
+                        .checked_mul(std::mem::size_of::<hir::ResolvedFieldDeclaration>())?,
+                    |sum, field| {
+                        sum.checked_add(field.id.as_str().len())?
+                            .checked_add(field.name.capacity())
+                    },
+                )?;
+                sum.checked_add(record.declaration.id.as_str().len())?
+                    .checked_add(record.declaration.name.capacity())?
+                    .checked_add(fields)?
+                    .checked_add(record.field_explicit.capacity())
+            },
+        )
+    }
+}

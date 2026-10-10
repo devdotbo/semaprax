@@ -1,6 +1,7 @@
 //! Independent source-signature and current namespace authentication for the
 //! module-local primitive retained lexical replay context.
 use super::*;
+mod records;
 use crate::cleanup::ReplayContext;
 use crate::hir::{
     ResolvedFunction, ResolvedFunctionInstance, ResolvedFunctionTemplate, ResolvedInterface,
@@ -16,7 +17,7 @@ impl ReplayContext for Context<'_> {
         &self.index
     }
     fn types(&self) -> &[ResolvedTypeDeclaration] {
-        &[]
+        &self.module.types
     }
     fn interfaces(&self) -> &[ResolvedInterface] {
         &[]
@@ -42,8 +43,7 @@ pub(super) fn authenticate<'a>(
         .as_deref()
         .and_then(|i| i.lexical.as_deref())
         .ok_or_else(fail)?;
-    if !module.types.is_empty()
-        || !module.interfaces.is_empty()
+    if !module.interfaces.is_empty()
         || !module.permits.is_empty()
         || !module.agents.is_empty()
         || !module.function_templates.is_empty()
@@ -110,7 +110,15 @@ pub(super) fn authenticate<'a>(
                 },
             )
         });
-    let index = hir::DeclarationIndex::primitive_replay(origins, physical).map_err(|e| vec![e])?;
+    let mut index =
+        hir::DeclarationIndex::primitive_replay(origins, physical).map_err(|e| vec![e])?;
+    records::authenticate(
+        module,
+        inventory.records.as_deref(),
+        facts,
+        &mut index,
+        physical,
+    )?;
     Ok(Context { index, module })
 }
 
@@ -133,6 +141,11 @@ pub(in crate::workspace_graph::source_schema) fn replay(
         .reserve_array::<Context<'_>>(1)
         .map_err(|_| fail())?;
     let context = authenticate(module, facts, &mut physical)?;
+    // Capturing and authenticating exact record facts does not open the
+    // retained route before all structural/typed constructors are reserved.
+    if !module.types.is_empty() {
+        return Err(fail());
+    }
     let mut found = false;
     for function in &module.functions {
         if crate::hir::lexical_exit::requires(function).map_err(|error| vec![error])? {

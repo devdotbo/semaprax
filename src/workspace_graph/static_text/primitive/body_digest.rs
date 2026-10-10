@@ -29,6 +29,18 @@ impl Encoder {
         self.number(u64::try_from(span.column).ok()?)
     }
     fn ty(&mut self, ty: &ResolvedType) -> Option<()> {
+        if let ResolvedType::Nominal {
+            declaration,
+            arguments,
+        } = ty
+        {
+            if !arguments.is_empty() {
+                return None;
+            }
+            self.text("nominal")?;
+            self.text(declaration.as_str())?;
+            return self.number(0);
+        }
         self.text(match ty {
             ResolvedType::I64 => "i64",
             ResolvedType::I32 => "i32",
@@ -326,6 +338,21 @@ impl Encoder {
                 }
                 Some(())
             }
+            E::ConstructRecord { record, fields } => {
+                self.text("construct-record")?;
+                self.text(record.as_str())?;
+                self.number(fields.len() as u64)?;
+                for field in fields {
+                    self.text(field.field.as_str())?;
+                    self.expression(&field.value, depth + 1)?;
+                }
+                Some(())
+            }
+            E::Project { base, field } => {
+                self.text("project")?;
+                self.text(field.as_str())?;
+                self.expression(base, depth + 1)
+            }
             E::Closure { .. }
             | E::FunctionReference { .. }
             | E::Invoke { .. }
@@ -333,12 +360,10 @@ impl Encoder {
             | E::VecFieldRead { .. }
             | E::NativeRustImportCall(_)
             | E::HostCommandCall(_)
-            | E::ConstructRecord { .. }
             | E::ConstructVariant { .. }
             | E::Try { .. }
             | E::TryOption { .. }
             | E::UpdateRecord { .. }
-            | E::Project { .. }
             | E::Upcast { .. }
             | E::Yield { .. } => None,
         }

@@ -270,6 +270,7 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         include_str!("../../../../../src/hir/cache_codec.rs"),
         include_str!("../../../../../src/hir/declaration_index.rs"),
         include_str!("../../../../../src/hir/declaration_index/primitive_replay.rs"),
+        include_str!("../../../../../src/hir/declaration_index/primitive_replay/flat_record.rs"),
         include_str!("../../../../../src/hir/owned_record_collection.rs"),
         include_str!("../../../../../src/hir/vec_loop_renewal.rs"),
         include_str!("../../../../../src/hir/vec_loop_renewal/consuming.rs"),

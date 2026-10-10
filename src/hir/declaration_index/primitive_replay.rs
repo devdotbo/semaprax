@@ -1,6 +1,7 @@
 //! Minimal selected replay declarations rebuilt from current authenticated
 //! primitive functions. No generic/layout/provenance cache is carried forward.
 use super::*;
+mod flat_record;
 use crate::cleanup_plan::ReplayPhysicalReservation;
 impl DeclarationIndex {
     pub(crate) fn primitive_replay<'a>(

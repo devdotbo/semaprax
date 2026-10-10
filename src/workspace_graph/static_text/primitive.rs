@@ -3,9 +3,11 @@
 use super::*;
 use crate::ast::{ParamMode, Type};
 mod body_digest;
+pub(in crate::workspace_graph) mod records;
 
 pub(in crate::workspace_graph) struct Inventory {
     pub(in crate::workspace_graph) functions: Vec<FunctionFact>,
+    pub(in crate::workspace_graph) records: Option<Box<records::Records>>,
     source_revision: [u8; 32],
 }
 pub(in crate::workspace_graph) struct FunctionFact {
@@ -89,7 +91,6 @@ pub(super) fn capture(
     authenticated_sources: Option<&[WorkspaceSource]>,
 ) -> Result<Option<Box<Inventory>>, Vec<Diagnostic>> {
     if !program.module_uses.is_empty()
-        || !program.types.is_empty()
         || !program.agents.is_empty()
         || !program.interfaces.is_empty()
         || !program.protocols.is_empty()
@@ -99,23 +100,39 @@ pub(super) fn capture(
         return Ok(None);
     }
     let mut work = WORK;
+    if !records::preflight(program, resolved, &mut work)? {
+        return Ok(None);
+    }
     for function in &program.functions {
         work = work
             .checked_sub(function.params.len().checked_add(1).ok_or_else(fail)?)
+            .ok_or_else(fail)?;
+        // Named-type lookups scan the bounded local declaration inventory.
+        work = work
+            .checked_sub(
+                function
+                    .params
+                    .len()
+                    .checked_add(1)
+                    .and_then(|n| n.checked_mul(program.types.len()))
+                    .ok_or_else(fail)?,
+            )
             .ok_or_else(fail)?;
         if !function.type_parameters.is_empty()
             || !function.effects.is_empty()
             || function.yields.is_some()
             || function.follows.is_some()
-            || ty(&function.return_type).is_none()
+            || !records::source_type_admitted(program, &function.return_type)
         {
             return Ok(None);
         }
         for param in &function.params {
-            let Some(ty) = ty(&param.ty) else {
+            if !records::source_type_admitted(program, &param.ty) {
                 return Ok(None);
-            };
-            if ownership(param, &ty).is_none() {
+            }
+            if !matches!(param.ty, Type::Named { .. })
+                && ownership(param, &ty(&param.ty).expect("primitive")).is_none()
+            {
                 return Ok(None);
             }
         }
@@ -154,6 +171,40 @@ pub(super) fn capture(
         if matches.next().is_some() {
             return Err(fail());
         }
+        work = work
+            .checked_sub(
+                source
+                    .params
+                    .len()
+                    .checked_add(1)
+                    .and_then(|n| n.checked_mul(program.types.len()))
+                    .ok_or_else(fail)?,
+            )
+            .ok_or_else(fail)?;
+        if !records::source_type_matches(program, &source.return_type, &function.return_type)
+            || source.params.len() != function.params.len()
+            || source
+                .params
+                .iter()
+                .zip(&function.params)
+                .any(|(source, current)| {
+                    !records::source_type_matches(program, &source.ty, &current.ty)
+                        || if matches!(source.ty, Type::Named { .. }) {
+                            match source.mode {
+                                ParamMode::Own => current.ownership != hir::OwnershipMode::Own,
+                                ParamMode::Borrow => {
+                                    current.ownership != hir::OwnershipMode::Borrow
+                                }
+                                ParamMode::Value => current.ownership != hir::OwnershipMode::Value,
+                                ParamMode::Shared => true,
+                            }
+                        } else {
+                            ownership(source, &current.ty) != Some(current.ownership)
+                        }
+                })
+        {
+            return Err(fail());
+        }
         if body_digest::typed(function, &source_revision).is_none() {
             return Ok(None);
         }
@@ -169,6 +220,7 @@ pub(super) fn capture(
             )
             .ok_or_else(capacity)?,
     )?;
+    let records = records::capture(program, resolved, &mut work)?;
     let mut functions = Vec::with_capacity(program.functions.len());
     for function in &program.functions {
         reserve_builder_structure(
@@ -179,11 +231,19 @@ pub(super) fn capture(
                 .ok_or_else(capacity)?,
         )?;
         let mut params = Vec::with_capacity(function.params.len());
-        for param in &function.params {
-            let resolved = ty(&param.ty).expect("preflight primitive type");
+        body_work = body_work
+            .checked_sub(resolved.functions.len())
+            .ok_or_else(fail)?;
+        let current = resolved
+            .functions
+            .iter()
+            .find(|current| current.id.as_str() == function.stable_id)
+            .ok_or_else(fail)?;
+        for (param, current) in function.params.iter().zip(&current.params) {
+            let resolved = records::clone_type(&current.ty)?;
             params.push(ParameterFact {
                 name: crate::bounded_output::budgeted_clone(&param.name),
-                ownership: ownership(param, &resolved).expect("preflight primitive ownership"),
+                ownership: current.ownership,
                 ty: resolved,
             });
         }
@@ -193,18 +253,8 @@ pub(super) fn capture(
             explicit: function.explicit_id,
             name: crate::bounded_output::budgeted_clone(&function.name),
             params,
-            result: ty(&function.return_type).expect("preflight primitive result"),
-            body: {
-                body_work = body_work
-                    .checked_sub(resolved.functions.len())
-                    .ok_or_else(fail)?;
-                let current = resolved
-                    .functions
-                    .iter()
-                    .find(|current| current.id.as_str() == function.stable_id)
-                    .ok_or_else(fail)?;
-                body_digest::typed(current, &source_revision).ok_or_else(fail)?
-            },
+            result: records::clone_type(&current.return_type)?,
+            body: body_digest::typed(current, &source_revision).ok_or_else(fail)?,
         });
     }
     if crate::bounded_output::active_refused() {
@@ -212,6 +262,7 @@ pub(super) fn capture(
     }
     let inventory = Inventory {
         functions,
+        records,
         source_revision,
     };
     // Validate the complete retained backing arithmetic after the independently
@@ -221,24 +272,45 @@ pub(super) fn capture(
 }
 impl Inventory {
     pub(in crate::workspace_graph) fn owned_capacity_bytes(&self) -> Option<usize> {
-        self.functions.iter().try_fold(
-            self.functions
-                .capacity()
-                .checked_mul(std::mem::size_of::<FunctionFact>())?,
-            |total, function| {
-                let params = function.params.iter().try_fold(
-                    function
-                        .params
-                        .capacity()
-                        .checked_mul(std::mem::size_of::<ParameterFact>())?,
-                    |sum, param| sum.checked_add(param.name.capacity()),
-                )?;
-                total
-                    .checked_add(function.id.as_str().len())?
-                    .checked_add(function.name.capacity())?
-                    .checked_add(params)
-            },
-        )
+        self.functions
+            .iter()
+            .try_fold(
+                self.functions
+                    .capacity()
+                    .checked_mul(std::mem::size_of::<FunctionFact>())?,
+                |total, function| {
+                    let params = function.params.iter().try_fold(
+                        function
+                            .params
+                            .capacity()
+                            .checked_mul(std::mem::size_of::<ParameterFact>())?,
+                        |sum, param| {
+                            sum.checked_add(param.name.capacity())?
+                                .checked_add(match &param.ty {
+                                    hir::ResolvedType::Nominal { declaration, .. } => {
+                                        declaration.as_str().len()
+                                    }
+                                    _ => 0,
+                                })
+                        },
+                    )?;
+                    total
+                        .checked_add(function.id.as_str().len())?
+                        .checked_add(function.name.capacity())?
+                        .checked_add(params)?
+                        .checked_add(match &function.result {
+                            hir::ResolvedType::Nominal { declaration, .. } => {
+                                declaration.as_str().len()
+                            }
+                            _ => 0,
+                        })
+                },
+            )?
+            .checked_add(
+                self.records
+                    .as_ref()
+                    .map_or(Some(0), |records| records.owned_capacity_bytes())?,
+            )
     }
 }
 

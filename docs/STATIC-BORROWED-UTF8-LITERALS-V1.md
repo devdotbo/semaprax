@@ -133,9 +133,17 @@ nongeneric flat records with 1..8 direct Copy/String/Bytes fields, under a
 owners, names, types, order and ordinals to the current checked declaration
 index before cloning. Field carriers, identities, lifecycle strings, flag and
 projection vectors are reserved before construction. This adds constructor
-support only: source-captured record layout binding, record digest projection,
-structural leaves and typed constructor/projection skeleton accounting must
-all be complete before retained record replay can be admitted. Existing
+support only. A further private factory captures exact module-local record and
+field identities, names, spans, types, order and identity origins while checked
+authored source and typed HIR are held. Later context construction independently
+compares the full current layout and namespace before reserving its minimal
+declaration index. The source-bound typed digest now includes nongeneric nominal
+types, record construction and field projection. Structural leaves and typed
+constructor/projection skeleton accounting must still be complete before
+retained record replay can be admitted. Record census, field comparisons and
+named signature lookups use bounded cumulative work; retained carriers and
+index backing are reserved before allocation. No imported or generic record
+authority is captured. Existing
 primitive selected admission and its constructor entry continue to reject
 nominal record contexts before backing allocation. The supporting flat-record
 constructor profile is not selected by the retained entry.
