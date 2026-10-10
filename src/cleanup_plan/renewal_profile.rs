@@ -7,7 +7,9 @@ pub(crate) fn binding<'a>(
     function: &'a ResolvedFunction,
     at: &ExpressionId,
 ) -> Option<&'a ResolvedBinding> {
-    crate::string_ops::replacement::binding(function, at)
+    crate::loop_calls::byte_writer::bindings(program, function)
+        .remove(at)
+        .or_else(|| crate::string_ops::replacement::binding(function, at))
         .or_else(|| crate::byte_ops::same_owner_set_binding(function, at))
         .or_else(|| crate::hir::vec_loop_renewal::binding_in(program, function, at))
         .or_else(|| crate::hir::iterator_loop::renewal_binding(program, function, at))
@@ -24,6 +26,7 @@ pub(crate) fn bindings<'a>(
     found.extend(crate::hir::vec_loop_renewal::bindings_in(program, function));
     found.extend(crate::byte_ops::same_owner_set_bindings(function));
     found.extend(crate::string_ops::replacement::bindings(function));
+    found.extend(crate::loop_calls::byte_writer::bindings(program, function));
     found
 }
 

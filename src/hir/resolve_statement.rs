@@ -312,7 +312,8 @@ impl Resolver<'_> {
                         .find(|function| function.name == *name);
                     if let Some(declared) = declared {
                         let scalar_signature =
-                            crate::stdin_stream_ops::ast_forward_signature(declared)
+                            crate::loop_calls::byte_writer::source_target(self.program, declared)
+                                || crate::stdin_stream_ops::ast_forward_signature(declared)
                                 || (crate::loop_calls::effects_admitted(&declared.effects)
                                     && crate::loop_calls::ast_result_admitted(
                                         self.program,
@@ -452,6 +453,9 @@ impl Resolver<'_> {
     }
 
     fn source_record_owner_renewal(&self, binding: &str, value: &Expr) -> bool {
+        if crate::loop_calls::byte_writer::source_assignment(self.program, binding, value) {
+            return true;
+        }
         let ExprKind::Call {
             name,
             type_arguments,

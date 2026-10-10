@@ -205,3 +205,5 @@ pub(crate) fn ast_copy_variant(program: &Program, ty: &Type) -> bool {
         })
     })
 }
+
+pub(crate) mod byte_writer;

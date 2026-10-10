@@ -119,3 +119,6 @@ mod bulk_utf8;
 
 #[path = "owned_data/lexical_exits.rs"]
 mod lexical_exits;
+
+#[path = "owned_data/byte_helper_renewal.rs"]
+mod byte_helper_renewal;

@@ -1,6 +1,8 @@
 //! Replay narrowly authenticated same-owner renewal without changing canonical history.
 use super::*;
-use crate::cleanup_plan::{CLEANUP_PLAN_SCHEMA_V17, CLEANUP_PLAN_SCHEMA_V18};
+use crate::cleanup_plan::{
+    CLEANUP_PLAN_SCHEMA_V17, CLEANUP_PLAN_SCHEMA_V18, CLEANUP_PLAN_SCHEMA_V19,
+};
 
 pub(super) fn validate_binding(
     program: &ResolvedProgram,
@@ -17,6 +19,7 @@ pub(super) fn validate_binding(
             | CLEANUP_PLAN_SCHEMA_V16
             | CLEANUP_PLAN_SCHEMA_V17
             | CLEANUP_PLAN_SCHEMA_V18
+            | CLEANUP_PLAN_SCHEMA_V19
     ) || (crate::hir::vec_loop_renewal::binding_in(program, function, at).is_some()
         && !matches!(
             function.cleanup_plan.schema,
@@ -24,17 +27,23 @@ pub(super) fn validate_binding(
                 | CLEANUP_PLAN_SCHEMA_V16
                 | CLEANUP_PLAN_SCHEMA_V17
                 | CLEANUP_PLAN_SCHEMA_V18
+                | CLEANUP_PLAN_SCHEMA_V19
         ))
         || (crate::string_ops::replacement::binding(function, at).is_some()
             && !matches!(
                 function.cleanup_plan.schema,
-                CLEANUP_PLAN_SCHEMA_V16 | CLEANUP_PLAN_SCHEMA_V17 | CLEANUP_PLAN_SCHEMA_V18
+                CLEANUP_PLAN_SCHEMA_V16
+                    | CLEANUP_PLAN_SCHEMA_V17
+                    | CLEANUP_PLAN_SCHEMA_V18
+                    | CLEANUP_PLAN_SCHEMA_V19
             ))
         || (crate::byte_ops::same_owner_set_binding(function, at).is_some()
             && !matches!(
                 function.cleanup_plan.schema,
-                CLEANUP_PLAN_SCHEMA_V17 | CLEANUP_PLAN_SCHEMA_V18
+                CLEANUP_PLAN_SCHEMA_V17 | CLEANUP_PLAN_SCHEMA_V18 | CLEANUP_PLAN_SCHEMA_V19
             ))
+        || (crate::loop_calls::byte_writer::bindings(program, function).contains_key(at)
+            && function.cleanup_plan.schema != CLEANUP_PLAN_SCHEMA_V19)
         || !crate::cleanup_plan::renewal_binding(program, function, at).is_some_and(|binding| {
             *place == CleanupPlace::whole(StorageId::Value(binding.id.clone()))
         })
@@ -78,7 +87,10 @@ pub(super) fn reserve(
         || state.renewals.contains_key(at)
         || (!matches!(
             function.cleanup_plan.schema,
-            CLEANUP_PLAN_SCHEMA_V16 | CLEANUP_PLAN_SCHEMA_V17 | CLEANUP_PLAN_SCHEMA_V18
+            CLEANUP_PLAN_SCHEMA_V16
+                | CLEANUP_PLAN_SCHEMA_V17
+                | CLEANUP_PLAN_SCHEMA_V18
+                | CLEANUP_PLAN_SCHEMA_V19
         ) && !state.renewals.is_empty())
     {
         return Err(replay_error(

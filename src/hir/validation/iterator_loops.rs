@@ -218,11 +218,15 @@ impl HirValidator<'_> {
                             ..
                         } = statement
                         {
-                            crate::hir::iterator_loop::is_record_owner_renewal(
+                            (crate::loop_calls::byte_writer::assignment(
                                 self.program,
                                 binding,
                                 value,
-                            )
+                            ) || crate::hir::iterator_loop::is_record_owner_renewal(
+                                self.program,
+                                binding,
+                                value,
+                            ))
                             .then_some(value)
                         } else {
                             None
@@ -454,7 +458,8 @@ impl HirValidator<'_> {
                         }
                         continue;
                     }
-                    let scalar_signature = crate::loop_calls::effects_admitted(&target.effects)
+                    let scalar_signature = crate::loop_calls::byte_writer::resolved_target(self.program, target)
+                        || crate::loop_calls::effects_admitted(&target.effects)
                         && crate::loop_calls::resolved_result_admitted(&self.program.declarations, &target.return_type)
                         && target.params.iter().zip(args).all(|(param, argument)| {
                             crate::loop_calls::resolved_param_admitted(&self.program.declarations, param.ownership, &param.ty)
@@ -476,6 +481,10 @@ impl HirValidator<'_> {
                         )));
                     }
                     for (argument, parameter) in args.iter().zip(&target.params).rev() {
+                        if crate::loop_calls::byte_writer::resolved_target(self.program, target) {
+                            pending.push(argument);
+                            continue;
+                        }
                         if parameter.ty == ResolvedType::SliceU8 {
                             let ResolvedExprKind::Place(place) = &argument.kind else {
                                 return Err(hir_error(

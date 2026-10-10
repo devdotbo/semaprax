@@ -60,7 +60,11 @@ pub struct LexicalControlPlan {
 impl CleanupPlan {
     pub fn lexical_resume(&self, entry: BlockId) -> Option<&ResumeCertificate> {
         let control = self.lexical_control.as_deref()?;
-        if self.schema != super::CLEANUP_PLAN_SCHEMA_V18 || control.schema != SCHEMA {
+        if !matches!(
+            self.schema,
+            super::CLEANUP_PLAN_SCHEMA_V18 | super::CLEANUP_PLAN_SCHEMA_V19
+        ) || control.schema != SCHEMA
+        {
             return None;
         }
         let mut matches = control.resumes.iter().filter(|item| item.entry == entry);
@@ -89,7 +93,11 @@ impl CleanupPlan {
 
     pub fn lexical_loop(&self, condition: &ExpressionId) -> Option<&LoopCertificate> {
         let control = self.lexical_control.as_deref()?;
-        if self.schema != super::CLEANUP_PLAN_SCHEMA_V18 || control.schema != SCHEMA {
+        if !matches!(
+            self.schema,
+            super::CLEANUP_PLAN_SCHEMA_V18 | super::CLEANUP_PLAN_SCHEMA_V19
+        ) || control.schema != SCHEMA
+        {
             return None;
         }
         let mut matches = control
@@ -113,7 +121,11 @@ impl CleanupPlan {
         site: &ExpressionId,
     ) -> Option<(&LexicalExitCertificate, &ExitTarget)> {
         let control = self.lexical_control.as_deref()?;
-        if self.schema != super::CLEANUP_PLAN_SCHEMA_V18 || control.schema != SCHEMA {
+        if !matches!(
+            self.schema,
+            super::CLEANUP_PLAN_SCHEMA_V18 | super::CLEANUP_PLAN_SCHEMA_V19
+        ) || control.schema != SCHEMA
+        {
             return None;
         }
         let mut matches = control.exits.iter().filter(|exit| &exit.site == site);
@@ -134,7 +146,10 @@ impl CleanupPlan {
         region: CleanupRegionId,
         resume: Option<BlockId>,
     ) -> Option<&ExitTarget> {
-        if self.schema != super::CLEANUP_PLAN_SCHEMA_V18 {
+        if !matches!(
+            self.schema,
+            super::CLEANUP_PLAN_SCHEMA_V18 | super::CLEANUP_PLAN_SCHEMA_V19
+        ) {
             if resume.is_some() {
                 return None;
             }

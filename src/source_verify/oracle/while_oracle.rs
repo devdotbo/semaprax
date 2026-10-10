@@ -285,7 +285,8 @@ pub(in crate::source_verify) fn reject_while_disallowed_oracle(
                 }
             }
             if let Some(declared) = functions.get(name.as_str()) {
-                let scalar_signature = crate::stdin_stream_ops::ast_forward_signature(declared)
+                let scalar_signature = crate::loop_calls::byte_writer::source_target(program, declared)
+                    || crate::stdin_stream_ops::ast_forward_signature(declared)
                     || (crate::loop_calls::effects_admitted(&declared.effects)
                         && crate::loop_calls::ast_result_admitted(program, &declared.return_type)
                         && declared.params.iter().zip(args).all(|(param, argument)| {
@@ -543,6 +544,9 @@ fn source_record_owner_renewal(
     binding: &str,
     value: &Expr,
 ) -> bool {
+    if crate::loop_calls::byte_writer::source_assignment(program, binding, value) {
+        return true;
+    }
     let ExprKind::Call {
         name,
         type_arguments,

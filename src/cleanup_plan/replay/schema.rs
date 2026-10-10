@@ -10,6 +10,9 @@ pub(crate) fn selected_schema(
 ) -> Result<&'static str, Diagnostic> {
     // Independently replayed lexical exits select the lexical certificate
     // profile regardless of any attached inventory or plan.
+    if !crate::loop_calls::byte_writer::bindings(program, function).is_empty() {
+        return Ok(crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V19);
+    }
     if lexical_cert::requires_lexical(function) {
         return Ok(CLEANUP_PLAN_SCHEMA_V18);
     }

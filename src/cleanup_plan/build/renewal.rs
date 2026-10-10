@@ -167,6 +167,7 @@ impl PlanBuilder<'_> {
                 | super::super::CLEANUP_PLAN_SCHEMA_V15
                 | super::super::CLEANUP_PLAN_SCHEMA_V16
                 | super::super::CLEANUP_PLAN_SCHEMA_V17
+                | super::super::CLEANUP_PLAN_SCHEMA_V19
                 | super::super::CLEANUP_PLAN_SCHEMA_V18
         ) || crate::cleanup_plan::renewal_binding(self.program, self.function, &value.id)
             .is_none()
@@ -184,6 +185,7 @@ impl PlanBuilder<'_> {
                 self.schema,
                 super::super::CLEANUP_PLAN_SCHEMA_V16
                     | super::super::CLEANUP_PLAN_SCHEMA_V17
+                    | super::super::CLEANUP_PLAN_SCHEMA_V19
                     | super::super::CLEANUP_PLAN_SCHEMA_V18
             ) && !state.renewals.is_empty())
         {

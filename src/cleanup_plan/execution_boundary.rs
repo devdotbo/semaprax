@@ -32,8 +32,10 @@ impl CleanupPlan {
         resume: Option<BlockId>,
     ) -> Option<&ExecutionBoundaryCertificate> {
         let control = self.lexical_control.as_deref()?;
-        if self.schema != super::CLEANUP_PLAN_SCHEMA_V18
-            || control.schema != crate::hir::lexical_exit::LEXICAL_CONTROL_FLOW_SCHEMA_V1
+        if !matches!(
+            self.schema,
+            super::CLEANUP_PLAN_SCHEMA_V18 | super::CLEANUP_PLAN_SCHEMA_V19
+        ) || control.schema != crate::hir::lexical_exit::LEXICAL_CONTROL_FLOW_SCHEMA_V1
             || resume.is_some_and(|entry| self.lexical_resume(entry).is_none())
         {
             return None;

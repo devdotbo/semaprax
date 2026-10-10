@@ -71,6 +71,8 @@ pub const CLEANUP_PLAN_SCHEMA_V16: &str = "semaprax.cleanup-plan.v16";
 pub const CLEANUP_PLAN_SCHEMA_V17: &str = "semaprax.cleanup-plan.v17";
 /// Independently reconstructed lexical exits and finite loop certificates.
 pub const CLEANUP_PLAN_SCHEMA_V18: &str = "semaprax.cleanup-plan.v18";
+/// Transitive nonallocating ordinary Bytes helper renewal, with optional lexical control.
+pub const CLEANUP_PLAN_SCHEMA_V19: &str = "semaprax.cleanup-plan.v19";
 
 macro_rules! numeric_id {
     ($name:ident) => {

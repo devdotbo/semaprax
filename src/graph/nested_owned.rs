@@ -1,10 +1,10 @@
-pub(crate) use super::byte_buffer_renewal::graph_schema;
+pub(crate) use super::byte_helper_renewal::graph_schema;
 use crate::cleanup::FieldLivenessShape;
 use crate::cleanup_plan::{
-    CLEANUP_PLAN_SCHEMA_V7, CLEANUP_PLAN_SCHEMA_V8, CLEANUP_PLAN_SCHEMA_V9,
-    CLEANUP_PLAN_SCHEMA_V10, CLEANUP_PLAN_SCHEMA_V11, CLEANUP_PLAN_SCHEMA_V12,
+    StorageId, CLEANUP_PLAN_SCHEMA_V10, CLEANUP_PLAN_SCHEMA_V11, CLEANUP_PLAN_SCHEMA_V12,
     CLEANUP_PLAN_SCHEMA_V13, CLEANUP_PLAN_SCHEMA_V14, CLEANUP_PLAN_SCHEMA_V15,
-    CLEANUP_PLAN_SCHEMA_V16, CLEANUP_PLAN_SCHEMA_V17, StorageId,
+    CLEANUP_PLAN_SCHEMA_V16, CLEANUP_PLAN_SCHEMA_V17, CLEANUP_PLAN_SCHEMA_V7,
+    CLEANUP_PLAN_SCHEMA_V8, CLEANUP_PLAN_SCHEMA_V9,
 };
 use crate::diagnostic::Diagnostic;
 use crate::hir::{PlaceProjection, ResolvedFunction, ResolvedProgram};
@@ -491,6 +491,9 @@ pub(super) fn requires_generic_result_schema(program: &ResolvedProgram) -> bool 
 pub(super) fn generic_payload_schema(
     program: &ResolvedProgram,
 ) -> Result<&'static str, Diagnostic> {
+    if super::byte_helper_renewal::requires(program) {
+        return super::byte_helper_renewal::graph_schema(program);
+    }
     program_schema(
         program,
         !program.function_instances.is_empty()
@@ -506,6 +509,12 @@ pub(super) fn generic_payload_schema(
 }
 
 pub(crate) fn legacy_graph_schema(program: &ResolvedProgram) -> Result<&'static str, Diagnostic> {
+    if super::byte_helper_renewal::requires(program) {
+        return Err(Diagnostic::io(
+            "SPX-G410",
+            "byte helper renewal requires Graph v76",
+        ));
+    }
     if super::owned_nested_outcome::requires(program) {
         return Err(Diagnostic::io(
             "SPX-G410",
@@ -639,6 +648,7 @@ pub(super) fn graph_schema_includes_modern_composite_facts(schema: &str) -> bool
             | "semaprax.graph.v72"
             | "semaprax.graph.v73"
             | "semaprax.graph.v74"
+            | "semaprax.graph.v76"
             | "semaprax.graph.v75"
     )
 }
@@ -678,6 +688,7 @@ pub(super) fn graph_schema_includes_loans(schema: &str) -> bool {
             | "semaprax.graph.v72"
             | "semaprax.graph.v73"
             | "semaprax.graph.v74"
+            | "semaprax.graph.v76"
             | "semaprax.graph.v75"
     )
 }
@@ -715,6 +726,7 @@ pub(super) fn graph_schema_includes_projected_provenance(schema: &str) -> bool {
             | "semaprax.graph.v72"
             | "semaprax.graph.v73"
             | "semaprax.graph.v74"
+            | "semaprax.graph.v76"
             | "semaprax.graph.v75"
     )
 }

@@ -1,0 +1,123 @@
+use super::*;
+const SOURCE: &str = include_str!("../../../tests/owned_data/byte_helper_renewal.spx");
+#[test]
+fn transitive_byte_helpers_reserve_exact_owners_inside_and_outside_loops() {
+    let checked = crate::check(SOURCE, "byte-helper-renewal.spx").unwrap();
+    let program = crate::hir::resolve(&checked).unwrap();
+    crate::hir::validate(&program).unwrap();
+    for name in ["leaf", "relay"] {
+        let source = checked.functions.iter().find(|f| f.name == name).unwrap();
+        let resolved = program.functions.iter().find(|f| f.name == name).unwrap();
+        assert!(source_target(&checked, source));
+        assert!(resolved_target(&program, resolved));
+    }
+    let main = program
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "app.main")
+        .unwrap();
+    let (refusal, overflowed, _) =
+        crate::bounded_output::with_limit_usage(0, || checked_bindings(&program, main));
+    assert!(overflowed);
+    assert_eq!(refusal.unwrap_err().code, "SPX-H006");
+    let sites = bindings(&program, main);
+    assert_eq!(
+        sites.len(),
+        2,
+        "ordinary assignment and loop assignment are distinct sites"
+    );
+    assert_eq!(
+        main.cleanup_plan.schema,
+        crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V19
+    );
+    for (at, binding) in sites {
+        assert_eq!(binding.name, "output");
+        assert!(main.cleanup_plan.blocks.iter().flat_map(|block| &block.transitions).any(|transition| matches!(transition,
+            crate::cleanup_plan::CleanupTransition::ReserveRenewal { at: site, binding: place }
+                if site == &at && *place == crate::cleanup_plan::CleanupPlace::whole(crate::cleanup_plan::StorageId::Value(binding.id.clone())))));
+    }
+}
+#[test]
+fn transitive_contract_allocation_unknown_calls_and_cycles_have_no_helper_authority() {
+    for source in [
+        SOURCE.replace(
+            "requires index<byte_len(bytes_as_slice(output))",
+            "requires string_len(\"allocated\")==9",
+        ),
+        SOURCE.replace(
+            "next=bytes_set(next,index,value);",
+            "let ignored=bytes_zeroed(1usize); next=bytes_set(next,index,value);",
+        ),
+        SOURCE.replace(
+            "next=bytes_set(next,index,value);",
+            "let ignored=missing(); next=bytes_set(next,index,value);",
+        ),
+        SOURCE.replace(
+            "next=bytes_set(next,index,value);",
+            "next=leaf(next,index,value);",
+        ),
+    ] {
+        let parsed = crate::parse(&source, "byte-helper-hostile.spx").unwrap();
+        let relay = parsed.functions.iter().find(|f| f.name == "relay").unwrap();
+        assert!(
+            !source_target(&parsed, relay),
+            "transitive refusal must inspect leaf and contracts"
+        );
+        assert!(crate::check(&source, "byte-helper-hostile.spx").is_err());
+    }
+    let checked = crate::check(SOURCE, "byte-helper-forged-contract.spx").unwrap();
+    let mut program = crate::hir::resolve(&checked).unwrap();
+    let leaf = program
+        .functions
+        .iter_mut()
+        .find(|f| f.name == "leaf")
+        .unwrap();
+    leaf.requires[0].kind = ResolvedExprKind::String("hidden allocation".into());
+    let relay = program
+        .functions
+        .iter()
+        .find(|f| f.name == "relay")
+        .unwrap();
+    assert!(
+        !resolved_target(&program, relay),
+        "attached v19 cleanup grants no closure authority"
+    );
+    assert_eq!(crate::hir::validate(&program).unwrap_err().code, "SPX-H006");
+}
+#[test]
+fn helper_renewal_replay_refuses_a_different_actual_owner() {
+    let checked = crate::check(SOURCE, "byte-helper-owner-forgery.spx").unwrap();
+    let mut program = crate::hir::resolve(&checked).unwrap();
+    let main = program
+        .functions
+        .iter_mut()
+        .find(|f| f.id.as_str() == "app.main")
+        .unwrap();
+    let ResolvedExprKind::Block { statements, .. } = &mut main.body.kind else {
+        panic!("main block")
+    };
+    let other = statements
+        .iter()
+        .find_map(|s| match s {
+            crate::hir::ResolvedStatement::Let { binding, .. } if binding.name == "untouched" => {
+                Some(binding.id.clone())
+            }
+            _ => None,
+        })
+        .unwrap();
+    let assignment = statements
+        .iter_mut()
+        .find_map(|s| match s {
+            crate::hir::ResolvedStatement::Assign { value, .. } => Some(value),
+            _ => None,
+        })
+        .unwrap();
+    let ResolvedExprKind::Call { args, .. } = &mut assignment.kind else {
+        panic!("helper call")
+    };
+    let ResolvedExprKind::Place(place) = &mut args[0].kind else {
+        panic!("whole owner")
+    };
+    place.root = other;
+    assert_eq!(crate::hir::validate(&program).unwrap_err().code, "SPX-H006");
+}

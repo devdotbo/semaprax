@@ -40,10 +40,10 @@ mod guarded_variant;
 #[cfg(test)]
 mod hostile_tests;
 mod iterator;
+mod lexical_break;
+mod lexical_contract;
 pub(super) mod lexical_control;
 mod lexical_iterator;
-mod lexical_contract;
-mod lexical_break;
 mod owned_try;
 mod record_destructure;
 mod renewal;
@@ -631,6 +631,7 @@ impl<'a> PlanBuilder<'a> {
         program: &'a ResolvedProgram,
         function: &'a ResolvedFunction,
     ) -> Result<Self, Diagnostic> {
+        let byte_helpers = crate::loop_calls::byte_writer::checked_bindings(program, function)?;
         let mut storage_to_slot = BTreeMap::new();
         let mut inventory_storage = BTreeMap::new();
         let mut slots = Vec::with_capacity(function.cleanup.slots.len());
@@ -731,7 +732,9 @@ impl<'a> PlanBuilder<'a> {
             },
             pending_try_residuals: Vec::new(),
             lexical: None,
-            schema: if crate::byte_ops::requires_same_owner_set(function) {
+            schema: if !byte_helpers.is_empty() {
+                super::CLEANUP_PLAN_SCHEMA_V19
+            } else if crate::byte_ops::requires_same_owner_set(function) {
                 super::CLEANUP_PLAN_SCHEMA_V17
             } else if crate::string_ops::replacement::requires(function) {
                 super::CLEANUP_PLAN_SCHEMA_V16
@@ -969,6 +972,7 @@ impl<'a> PlanBuilder<'a> {
                     | super::CLEANUP_PLAN_SCHEMA_V16
                     | super::CLEANUP_PLAN_SCHEMA_V17
                     | super::CLEANUP_PLAN_SCHEMA_V18
+                    | super::CLEANUP_PLAN_SCHEMA_V19
             ) {
                 self.schema
             } else if self
@@ -3823,7 +3827,9 @@ impl<'a> PlanBuilder<'a> {
                         | ResolvedType::TypeParameter { .. }
                         | ResolvedType::Function { .. } => false,
                         ResolvedType::Never => {
-                            return Err(plan_error("match scrutinee cannot have terminal flow type"));
+                            return Err(plan_error(
+                                "match scrutinee cannot have terminal flow type",
+                            ));
                         }
                     };
                     if is_record {
@@ -5029,9 +5035,11 @@ impl<'a> PlanBuilder<'a> {
                 continue;
             }
             let (binding, value) = match statement {
-                ResolvedStatement::LexicalWhile { .. } => return Err(plan_error(
-                    "legacy recursive cleanup reference does not admit lexical loops",
-                )),
+                ResolvedStatement::LexicalWhile { .. } => {
+                    return Err(plan_error(
+                        "legacy recursive cleanup reference does not admit lexical loops",
+                    ))
+                }
                 ResolvedStatement::Let { binding, value, .. }
                 | ResolvedStatement::Assign { binding, value, .. } => (binding, value),
                 // Unsafe boundaries bind nothing: their ordinary block body lowers like any nested block expression.
@@ -6072,7 +6080,9 @@ impl<'a> PlanBuilder<'a> {
             | ResolvedType::StringMap
             | ResolvedType::TypeParameter { .. }
             | ResolvedType::Function { .. } => false,
-            ResolvedType::Never => return Err(plan_error("match scrutinee cannot have terminal flow type")),
+            ResolvedType::Never => {
+                return Err(plan_error("match scrutinee cannot have terminal flow type"))
+            }
         };
         if is_record {
             let [arm] = arms else {

@@ -9,7 +9,7 @@ use crate::diagnostic::Diagnostic;
 
 use super::expr_nodes::{ResolvedExpr, ResolvedExprKind};
 use super::ids::{DeclarationId, ExpressionId, FunctionExecutionId};
-use super::nodes::{OwnershipMode, ResolvedBinding, ResolvedType, is_scalar_resolved_type};
+use super::nodes::{is_scalar_resolved_type, OwnershipMode, ResolvedBinding, ResolvedType};
 use super::resolve_expr_frame::Frame;
 use super::{Binding, Resolver};
 
@@ -76,6 +76,7 @@ pub(super) fn validate_whole_assignment(
         )
         && !crate::byte_ops::is_same_owner_set_hir(value, &target.id)
         && !crate::string_ops::is_same_owner_concat_hir(value, &target.id)
+        && !byte_helper_renewal(resolver, target, value)
         && !record_owner_renewal(resolver, target, value)
         && !crate::stdin_stream_ops::hir_reopen(value, &target.id)
     {
@@ -369,4 +370,36 @@ fn scoped_collection_assignment(
             .is_some_and(|op| op.reopens_same_owner() && args.len() == op.arity())
         && matches!(type_arguments.as_slice(), [argument] if super::generic_collection::parameter(argument, owner, super::generic_collection::source_count(resolver.program, owner)))
         && matches!(&args[0].kind, ResolvedExprKind::Place(place) if place.root == target.id && place.projections.is_empty())
+}
+
+fn byte_helper_renewal(
+    resolver: &Resolver<'_>,
+    binding: &ResolvedBinding,
+    value: &ResolvedExpr,
+) -> bool {
+    let ResolvedExprKind::Call {
+        callee,
+        type_arguments,
+        instance: None,
+        args,
+    } = &value.kind
+    else {
+        return false;
+    };
+    let Some(target) = resolver
+        .program
+        .functions
+        .iter()
+        .find(|f| f.stable_id == callee.as_str())
+    else {
+        return false;
+    };
+    binding.ty == super::ResolvedType::Bytes && value.ty == binding.ty
+        && binding.ownership == OwnershipMode::Own && value.ownership == OwnershipMode::Own
+        && type_arguments.is_empty() && args.len() == target.params.len()
+        && crate::loop_calls::byte_writer::source_target(resolver.program, target)
+        && target.params.iter().zip(args).all(|(p, arg)| {
+            resolver.resolve_type(&p.ty, arg.span).is_ok_and(|ty| ty == arg.ty)
+                && (p.mode != crate::ast::ParamMode::Own || matches!(&arg.kind, ResolvedExprKind::Place(place) if place.root == binding.id && place.projections.is_empty()))
+        })
 }

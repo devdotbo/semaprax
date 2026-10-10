@@ -58,7 +58,8 @@ use generic_instances::legacy_graph_json;
 pub(crate) use generic_instances::to_legacy_hir_json;
 pub use generic_instances::{legacy_context_json, to_legacy_json, verify_json};
 pub(crate) use generic_mapping::requires_v35;
-use scoped_vec_field::graph_json;
+mod byte_helper_renewal;
+use byte_helper_renewal::graph_json;
 #[path = "graph/native_import.rs"]
 mod native_import;
 #[path = "graph/nested_owned.rs"]

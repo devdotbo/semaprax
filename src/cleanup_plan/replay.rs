@@ -2705,6 +2705,7 @@ fn validate_blocks_and_edges(
                             | CLEANUP_PLAN_SCHEMA_V16
                             | super::CLEANUP_PLAN_SCHEMA_V17
                             | super::CLEANUP_PLAN_SCHEMA_V18
+                            | super::CLEANUP_PLAN_SCHEMA_V19
                             | CLEANUP_PLAN_SCHEMA_V14
                     ) && matches!(
                         plan.edges[edge.0 as usize].condition,
@@ -5475,7 +5476,10 @@ fn validate_match_skeleton_shape(
         | ResolvedType::MutFunctionI64
         | ResolvedType::Function { .. } => false,
         ResolvedType::Never => {
-            return Err(replay_error(function, "match scrutinee cannot have terminal flow type"));
+            return Err(replay_error(
+                function,
+                "match scrutinee cannot have terminal flow type",
+            ));
         }
     };
     let is_variant = match &scrutinee.ty {

@@ -33,7 +33,9 @@ pub(crate) fn build_plan_for_execution(
     }
     let mut builder = PlanBuilder::new(program, function)?;
     if crate::hir::lexical_exit::requires(function)? {
-        builder.schema = super::super::CLEANUP_PLAN_SCHEMA_V18;
+        if builder.schema != super::super::CLEANUP_PLAN_SCHEMA_V19 {
+            builder.schema = super::super::CLEANUP_PLAN_SCHEMA_V18;
+        }
         builder.lexical = Some(Box::new(LexicalBuildState {
             owner: execution.clone(),
             returns: Vec::new(),
