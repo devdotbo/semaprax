@@ -828,6 +828,12 @@ pub fn emit_resolved_module_with_scalar_exports(
     program: &ResolvedProgram,
     export_ids: &[String],
 ) -> Result<Vec<u8>, Diagnostic> {
+    if hir::validate_with_static_text(program)? {
+        return Err(Diagnostic::io(
+            "SPX-W119",
+            "static borrowed UTF-8 does not widen public export profiles",
+        ));
+    }
     aggregate::map_collections::validate_scalar_route(program)?;
     let plans = scalar_exports::prepare(program, export_ids)?;
     emit_resolved_module_internal(program, &plans, &[])
@@ -864,6 +870,12 @@ pub fn emit_resolved_module_with_text_exports(
     program: &ResolvedProgram,
     export_ids: &[String],
 ) -> Result<Vec<u8>, Diagnostic> {
+    if hir::validate_with_static_text(program)? {
+        return Err(Diagnostic::io(
+            "SPX-W119",
+            "static borrowed UTF-8 does not widen public export profiles",
+        ));
+    }
     crate::string_ops::refuse_collections_for_wasm(program)?;
     let plans = text_exports::prepare(program, export_ids)?;
     emit_resolved_module_internal(program, &[], &plans)

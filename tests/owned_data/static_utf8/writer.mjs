@@ -14,7 +14,7 @@ Object.assign(env,{spx_add:(a,b)=>a+b,spx_sub:(a,b)=>a-b,spx_mul:(a,b)=>a*b,spx_
  spx_bytes_get:(c,i)=>{const bytes=read(c);return i<0n||i>=BigInt(bytes.length)?-1:bytes[Number(i)]},
  spx_bytes_as_slice:c=>{read(c);return c;},
  spx_bytes_drop:c=>{const d=decode(c);if((d.p&0x80000000)===0||!owners.delete(d.p&0x7fffffff))throw Error('drop authority');drops++;}});
-({instance}=await WebAssembly.instantiate(module,{env}));
+instance=await WebAssembly.instantiate(module,{env});
 const memory=new Uint8Array(instance.exports.__spx_byte_memory.buffer),pool=memory.slice(196608);
 if(memory.length!==262144)throw Error('fixed memory');
 for(let i=0;i<4;i++){const a=allocations,d=drops,w=writes;

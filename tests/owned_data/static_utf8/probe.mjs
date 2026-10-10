@@ -9,7 +9,7 @@ const fail = name => () => {throw Error(`unexpected constructor/import ${name}`)
 const env = Object.fromEntries(WebAssembly.Module.imports(module).map(i=>[i.name,fail(i.name)]));
 Object.assign(env,{spx_add:(a,b)=>a+b,spx_sub:(a,b)=>a-b,spx_mul:(a,b)=>a*b,spx_div:(a,b)=>a/b,spx_rem:(a,b)=>a%b,spx_neg:a=>-a,
   spx_bytes_get:(c,i)=>{const b=read(c);return i<0n||i>=BigInt(b.length)?-1:b[Number(i)]},spx_bytes_as_slice:c=>{read(c);return c}});
-({instance}=await WebAssembly.instantiate(module,{env}));
+instance=await WebAssembly.instantiate(module,{env});
 const memory=new Uint8Array(instance.exports.__spx_byte_memory.buffer);
 if(memory.length!==262144)throw Error('selected fixed memory');
 const pool=memory.slice(196608);

@@ -28,6 +28,7 @@ mod filesystem_ops;
 mod filesystem_v2;
 mod lexical_control;
 mod literal_format;
+mod str_helpers;
 mod str_usage;
 use str_usage::program_uses_str_ops;
 mod generic_record;
@@ -2032,6 +2033,7 @@ fn emit_profile_with_scalar_exports(
 ) -> Result<Vec<u8>, Diagnostic> {
     string_runtime::refuse_unimplemented_collections(program)?;
     let uses_string_runtime = string_runtime::program_uses_runtime(program);
+    let text_helper_count = u32::from(program_uses_str_ops(program)) * 2;
     let uses_record_iterator = crate::iterator_ops::resolved_program_uses_record_iterator(program);
     let uses_maps = map_collections::uses(program);
     let uses_byte_data = super::program_uses_byte_data(program)
@@ -2124,6 +2126,8 @@ fn emit_profile_with_scalar_exports(
             &mut type_indexes,
         )
     });
+    let text_helper_type =
+        str_helpers::helper_type(text_helper_count, &mut types, &mut type_indexes);
     let string_from_char = uses_string_runtime.then(|| {
         intern_type(
             Signature {
@@ -2372,10 +2376,12 @@ fn emit_profile_with_scalar_exports(
                     } else {
                         0
                     }
+                    + text_helper_count
                     + u32::try_from(index).unwrap_or(u32::MAX),
             )
         })
         .collect::<HashMap<_, _>>();
+    str_helpers::insert_indexes(text_helper_count, &mut function_indexes)?;
 
     let mut module = b"\0asm\x01\0\0\0".to_vec();
     let mut type_section = Vec::new();
@@ -2599,9 +2605,19 @@ fn emit_profile_with_scalar_exports(
     let mut function_section = Vec::new();
     write_u32(
         &mut function_section,
-        u32::try_from(function_types.len() + 1 + scalar_export_types.len() + adapter_types.len())
-            .map_err(|_| error("too many aggregate functions"))?,
+        u32::try_from(
+            function_types.len()
+                + 1
+                + scalar_export_types.len()
+                + adapter_types.len()
+                + text_helper_count as usize,
+        )
+        .map_err(|_| error("too many aggregate functions"))?,
     );
+    if let Some(ty) = text_helper_type {
+        write_u32(&mut function_section, ty);
+        write_u32(&mut function_section, ty);
+    }
     for ty in function_types {
         write_u32(&mut function_section, ty);
     }
@@ -2769,6 +2785,8 @@ fn emit_profile_with_scalar_exports(
             })
         })
         .ok_or_else(|| error("aggregate wrapper import count overflows u32"))?
+        .checked_add(text_helper_count)
+        .ok_or_else(|| error("text helper count overflows u32"))?
         .checked_add(
             u32::try_from(executable_functions.len()).map_err(|_| error("too many functions"))?,
         )
@@ -2853,9 +2871,16 @@ fn emit_profile_with_scalar_exports(
     let mut code = Vec::new();
     write_u32(
         &mut code,
-        u32::try_from(executable_functions.len() + 1 + scalar_exports.len() + adapter_types.len())
-            .map_err(|_| error("too many aggregate function bodies"))?,
+        u32::try_from(
+            executable_functions.len()
+                + 1
+                + scalar_exports.len()
+                + adapter_types.len()
+                + text_helper_count as usize,
+        )
+        .map_err(|_| error("too many aggregate function bodies"))?,
     );
+    str_helpers::append_bodies(text_helper_count, &mut code);
     for (function, _) in &executable_functions {
         let body = emit_function(
             program,
