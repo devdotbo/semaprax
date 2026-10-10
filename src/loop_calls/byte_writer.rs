@@ -14,7 +14,8 @@ pub(crate) use module_index::ModuleIndex;
 mod source;
 mod source_index;
 pub(crate) use resolved::{
-    bindings, checked_bindings, nonallocating as resolved_nonallocating,
+    bindings, checked_bindings, checked_bindings_with_reservation,
+    nonallocating as resolved_nonallocating,
     nonallocating_with_cursor as resolved_nonallocating_with_cursor, ProofCursor,
 };
 pub(crate) use source::nonallocating as source_nonallocating;

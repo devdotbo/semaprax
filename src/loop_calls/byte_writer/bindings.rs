@@ -11,6 +11,14 @@ impl<'a> HelperBindings<'a> {
         at: &'a ExpressionId,
         binding: &'a ResolvedBinding,
     ) -> Option<()> {
+        self.insert_with(at, binding, crate::bounded_output::reserve_active_required)
+    }
+    pub(super) fn insert_with(
+        &mut self,
+        at: &'a ExpressionId,
+        binding: &'a ResolvedBinding,
+        mut reserve: impl FnMut(usize) -> bool,
+    ) -> Option<()> {
         let index = match self.entries.binary_search_by(|entry| entry.0.cmp(at)) {
             Ok(index) => {
                 self.entries[index].1 = binding;
@@ -29,7 +37,7 @@ impl<'a> HelperBindings<'a> {
             // Both old and replacement allocations remain charged at the peak.
             // Global Vec::try_reserve_exact requests this exact backing layout;
             // no amortized growth, key backing or tree-node estimate is used.
-            if !crate::bounded_output::reserve_active_required(charge) {
+            if !reserve(charge) {
                 return None;
             }
             let mut replacement = Vec::new();
