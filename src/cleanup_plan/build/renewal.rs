@@ -192,12 +192,7 @@ impl PlanBuilder<'_> {
             value.id.clone(),
             super::super::renewal_history::RenewalHistory::new(
                 state.live_order.clone(),
-                super::super::renewal_profile::consumes_owned_rhs(
-                    self.program,
-                    self.function,
-                    &value.id,
-                )
-                .then_some(flags[0]),
+                super::super::renewal_profile::owned_rhs_provenance(value).then_some(flags[0]),
             ),
         );
         self.push_transition(

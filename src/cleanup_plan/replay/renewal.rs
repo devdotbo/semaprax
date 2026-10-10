@@ -83,7 +83,8 @@ pub(super) fn reserve(
         at.clone(),
         super::super::renewal_history::RenewalHistory::new(
             state.live_order.clone(),
-            super::super::renewal_profile::consumes_owned_rhs(program, function, at)
+            find_resolved_expression(function, at)
+                .is_some_and(super::super::renewal_profile::owned_rhs_provenance)
                 .then_some(flags[0]),
         ),
     );
@@ -263,11 +264,8 @@ pub(super) fn charge_transition(
 ) -> Result<(), Diagnostic> {
     let units = match transition {
         CleanupTransition::ReserveRenewal { at, .. } => {
-            let owned_rhs = find_resolved_expression(function, at).is_some_and(|expression| {
-                matches!(&expression.kind, ResolvedExprKind::Call { callee, args, .. }
-                    if crate::vec_ops::by_id(callee.as_str()).is_some_and(|op| op.reopens_same_owner())
-                        && args.iter().skip(1).any(|arg| arg.ownership == OwnershipMode::Own))
-            });
+            let owned_rhs = find_resolved_expression(function, at)
+                .is_some_and(super::super::renewal_profile::owned_rhs_provenance);
             state
                 .live_order
                 .len()

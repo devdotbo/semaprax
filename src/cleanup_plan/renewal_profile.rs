@@ -27,24 +27,12 @@ pub(crate) fn bindings<'a>(
     found
 }
 
-/// Only admitted owned-element Vec RHS calls need staged-epoch provenance.
-pub(super) fn consumes_owned_rhs(
-    program: &ResolvedProgram,
-    function: &ResolvedFunction,
-    at: &ExpressionId,
-) -> bool {
-    if crate::hir::vec_loop_renewal::binding_in(program, function, at).is_none() {
-        return false;
-    }
-    let mut pending = vec![&function.body];
-    while let Some(expression) = pending.pop() {
-        if &expression.id == at {
-            return matches!(&expression.kind, crate::hir::ResolvedExprKind::Call { args, .. }
-                if args.iter().skip(1).any(|arg| arg.ownership == crate::hir::OwnershipMode::Own));
-        }
-        crate::hir::push_resolved_expression_children_in_authored_order(expression, &mut pending);
-    }
-    false
+/// Called only after the site has independently passed renewal binding admission.
+/// The already-retained RHS selects private provenance; it grants no new site.
+pub(super) fn owned_rhs_provenance(expression: &crate::hir::ResolvedExpr) -> bool {
+    matches!(&expression.kind, crate::hir::ResolvedExprKind::Call { callee, args, .. }
+        if crate::vec_ops::by_id(callee.as_str()).is_some_and(|op| op.reopens_same_owner())
+            && args.iter().skip(1).any(|arg| arg.ownership == crate::hir::OwnershipMode::Own))
 }
 
 #[cfg(test)]
