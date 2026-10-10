@@ -122,6 +122,7 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
     let hir_resolver = concat!(
         include_str!("../../../../../src/hir.rs"),
         include_str!("../../../../../src/hir/lexical_exit.rs"),
+        include_str!("../../../../../src/hir/lexical_exit/return_operand.rs"),
         include_str!("../../../../../src/hir/lexical_exit/latch.rs"),
         include_str!("../../../../../src/hir/lexical_exit/owner.rs"),
         include_str!("../../../../../src/hir/lexical_exit/rekey.rs"),

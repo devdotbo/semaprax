@@ -382,6 +382,7 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
         include_str!("../../src/workspace_graph/callee_inventory.rs"),
         concat!(
             include_str!("../../src/workspace_graph/retained_validation.rs"),
+            include_str!("../../src/workspace_graph/retained_validation/authority.rs"),
             include_str!("../../src/workspace_graph/retained_validation/capability_projection.rs"),
             include_str!("../../src/workspace_graph/retained_validation/compact_calls.rs"),
             include_str!("../../src/workspace_graph/retained_validation/edge_projection.rs"),
