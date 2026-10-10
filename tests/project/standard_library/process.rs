@@ -5,6 +5,7 @@ use semaprax::interpreter::CommandEvaluationOutcome;
 use semaprax::process_provider::{
     FixtureProcessProvider, FixtureProcessStep, ProcessOutput, ProcessRequest, ProcessTermination,
 };
+use std::process::Command;
 
 #[test]
 fn process_package_executes_all_functions_with_registered_request_shape() {
