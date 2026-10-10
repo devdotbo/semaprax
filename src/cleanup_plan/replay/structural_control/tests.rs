@@ -13,7 +13,12 @@ fn program() -> crate::hir::ResolvedProgram {
 #[test]
 fn borrowed_region_prefixes_match_legacy_and_refuse_altered_runtime_order() {
     let program = program();
-    let function = &program.functions()[0];
+    let function = program
+        .functions()
+        .iter()
+        .find(|f| f.id.as_str() == "probe")
+        .unwrap();
+    assert!(function.cleanup_plan.lexical_control.is_some());
     let mut budget = ReplayBudget::with_physical(function, 64 * 1024 * 1024).unwrap();
     for exit in &function.cleanup_plan.exits {
         let expected = super::super::expected_exit_regions(function, exit).unwrap();
@@ -27,7 +32,12 @@ fn borrowed_region_prefixes_match_legacy_and_refuse_altered_runtime_order() {
 #[test]
 fn borrowed_cfg_matches_legacy_and_rejects_unknown_successor_without_panicking() {
     let program = program();
-    let function = &program.functions()[0];
+    let function = program
+        .functions()
+        .iter()
+        .find(|f| f.id.as_str() == "probe")
+        .unwrap();
+    assert!(function.cleanup_plan.lexical_control.is_some());
     super::super::validate_reachable_acyclic_cfg(function).unwrap();
     let mut budget = ReplayBudget::with_physical(function, 64 * 1024 * 1024).unwrap();
     validate_reachable_acyclic_cfg(function, &mut budget).unwrap();
@@ -40,7 +50,12 @@ fn borrowed_cfg_matches_legacy_and_rejects_unknown_successor_without_panicking()
 #[test]
 fn cfg_backing_refusal_is_sticky_before_color_or_stack_construction() {
     let program = program();
-    let function = &program.functions()[0];
+    let function = program
+        .functions()
+        .iter()
+        .find(|f| f.id.as_str() == "probe")
+        .unwrap();
+    assert!(function.cleanup_plan.lexical_control.is_some());
     let mut budget = ReplayBudget {
         physical: Some(Box::new(PhysicalReservation::new(0))),
         ..ReplayBudget::new()
