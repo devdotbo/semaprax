@@ -233,6 +233,7 @@ fn unrelated_owned_catalog_uses_different_field_names_and_identity_position() {
     );
     let application = format!(
         r#"module consumer.app;
+use type @id("catalog.item") from consumer.schema as Item;
 use type @id("catalog.input.json.owned-result") from consumer.schema as Outcome;
 use type @id("catalog.item.json.view-encode") from consumer.schema as Encoded;
 use function @id("catalog.input.json.owned.decode") from consumer.schema as decode;

@@ -172,6 +172,9 @@ fn nested_order_errors_and_exact_schema_capacities_agree_on_three_backends() {
     let root = install("nested-order-errors");
     let source = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(EXAMPLE);
     let mut app = r#"module orders.app;
+use type @id("orders.configuration") from orders.schema as Configuration;
+use type @id("orders.line") from orders.schema as Line;
+use type @id("orders.request") from orders.schema as OrderRequest;
 use type @id("orders.request.json.nested.decode-result") from orders.schema as Outcome;
 use function @id("orders.request.json.nested.decode") from orders.schema as decode;
 @id("orders.error") fn error(input:borrow Slice<u8>,limit:usize,wanted:i64,at:usize,target:i64)->i64 {

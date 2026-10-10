@@ -420,7 +420,7 @@ equal
         (format!("\"{}\"", "é".repeat(33)), Vec::new(), usize::MAX),
     ];
     for (index, (text, expected, length)) in cases.into_iter().enumerate() {
-        app.push_str(&format!("let value_{index}={text};bad=bad+(if check(string_as_str(value_{index}),array_as_slice({}),{length}usize){{0}}else{{1}});\n", array(&expected)));
+        app.push_str(&format!("let value_{index}={text};let expected_{index}={};bad=bad+(if check(string_as_str(value_{index}),array_as_slice(expected_{index}),{length}usize){{0}}else{{1}});\n", array(&expected)));
     }
     app.push_str("if bad==0{727}else{0}}\n");
     let root = install("utf8-json-quote-bulk", &app, 64);

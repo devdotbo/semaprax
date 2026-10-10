@@ -13,6 +13,7 @@ const PERMITS: &str =
 
 fn app() -> String {
     r#"module consumer.app;
+use type @id("application.request.json.identifier-span") from consumer.schema as ServerSpan;
 use type @id("application.request.json.stream-input") from consumer.schema as StreamInput;
 use type @id("application.request.json.request-result") from consumer.schema as RequestResult;
 use type @id("application.patient.json.view-encode") from consumer.schema as Encoded;
