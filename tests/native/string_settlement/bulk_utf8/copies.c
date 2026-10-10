@@ -33,4 +33,7 @@ static void fixture_watch(const uint8_t *input, size_t length) {
 }
 #undef malloc
 #define malloc fixture_bulk_malloc
+/* libc may provide a fortified function-like macro. Keep that implementation
+ * inside the observer above, then intercept only the generated production code. */
+#undef memcpy
 #define memcpy fixture_bulk_memcpy
