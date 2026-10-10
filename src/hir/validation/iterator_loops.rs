@@ -695,6 +695,11 @@ impl HirValidator<'_> {
         condition: &ResolvedExpr,
         body: &ResolvedExpr,
     ) -> Result<(), Diagnostic> {
+        if crate::finite_row_construction::resolved(self.program, condition, body).is_some() {
+            // The independent exact constructor proof replaces only this loop-shape check.
+            // Every node still passes ordinary type/ownership/loan/cleanup validation.
+            return Ok(());
+        }
         if let Some(protocol) = crate::hir::iterator_loop::recognize(condition, body) {
             if !crate::iterator_ops::step_shape(&self.program.declarations, &protocol.step.ty) {
                 return Err(hir_error("iterator loop has unauthenticated Step metadata"));

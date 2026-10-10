@@ -233,7 +233,9 @@ impl Resolver<'_> {
                 // Owned String Loops v1: a literal allocates one owned
                 // String in the per-iteration body region.
                 ExprKind::String(_) => {}
-                ExprKind::BorrowedUtf8Literal(text) => crate::hir::static_text::validate_literal(text)?,
+                ExprKind::BorrowedUtf8Literal(text) => {
+                    crate::hir::static_text::validate_literal(text)?
+                }
                 ExprKind::ArrayU8(_) | ExprKind::RepeatArrayU8 { .. } => {
                     return Err(self.error(
                         "SPX-T252",
@@ -291,7 +293,13 @@ impl Resolver<'_> {
                         }
                     }
                     if let Some(operation) = crate::byte_ops::by_name(name) {
-                        if !operation.admitted_in_while() || args.len() != operation.arity() {
+                        if (!operation.admitted_in_while()
+                            && !crate::source_verify::finite_row_allocation(
+                                self.program,
+                                expression,
+                            ))
+                            || args.len() != operation.arity()
+                        {
                             return Err(self.error(
                                 "SPX-T252",
                                 format!(

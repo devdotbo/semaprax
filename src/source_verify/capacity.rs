@@ -1,12 +1,11 @@
 //! Source-level byte-data storage, call-path, and transcript capacity projection.
 use super::*;
-
 mod command_io;
 mod empty_clone;
 mod functions;
 pub(super) use functions::{source_array_payload, source_capacity_functions};
-
 pub(super) struct SourceCapacityContext<'a> {
+    pub(super) program: &'a Program,
     pub(super) types: &'a TypeTable<'a>,
     pub(super) ordinary: &'a BTreeMap<&'a str, &'a Function>,
     pub(super) enclosing_class: Option<&'a str>,
@@ -993,11 +992,8 @@ fn source_capacity_expr(
                     ExprKind::Call { name, args, .. } => {
                         let target = context.ordinary.get(name.as_str()).copied();
                         let effect = if let Some(flow) =
-                            empty_clone::clone_capacity_flow(
-                                context,
-                                expression,
-                                &path,
-                            ) {
+                            empty_clone::clone_capacity_flow(context, expression, &path)
+                        {
                             Some(flow)
                         } else if name == crate::byte_ops::COPY_NAME {
                             Some(CapacityFlow::BytesCopy {
@@ -1283,7 +1279,7 @@ fn source_capacity_expr(
                     | ExprKind::Float64(_)
                     | ExprKind::Bool(_)
                     | ExprKind::String(_)
-| ExprKind::BorrowedUtf8Literal(_)
+                    | ExprKind::BorrowedUtf8Literal(_)
                     | ExprKind::Var(_) => results.push(CapacityFlow::Empty),
                 }
             }
@@ -1414,7 +1410,7 @@ fn source_capacity_expr(
                                         .map(|proof| proof.iterations)
                                 })
                             } else {
-                                None
+                                crate::source_verify::finite_row_loop(context.program, body)
                             };
                             frames.push(finite.map_or(Frame::Loop, Frame::FiniteOwnedLoop));
                             frames.push(Frame::Visit {
@@ -1578,6 +1574,7 @@ pub(super) fn verify_byte_data_capacity(
         .into_iter()
         .map(|(enclosing_class, function)| {
             let context = SourceCapacityContext {
+                program,
                 types,
                 ordinary: &ordinary,
                 enclosing_class,

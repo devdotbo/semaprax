@@ -22,7 +22,7 @@ use std::collections::{HashMap, HashSet};
 mod classes;
 mod declarations;
 mod functions;
-mod fusion;
+pub(super) mod fusion;
 mod identity;
 
 pub(crate) fn verify(program: &Program) -> Vec<Diagnostic> {

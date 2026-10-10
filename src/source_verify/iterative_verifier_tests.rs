@@ -740,6 +740,7 @@ fn source_type_inference_mutates_one_owned_scope_for_many_inferred_lets() {
         })
         .collect();
     let context = SourceCapacityContext {
+        program: &program,
         types: &types,
         ordinary: &ordinary,
         enclosing_class: None,

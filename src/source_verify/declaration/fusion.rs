@@ -1,4 +1,4 @@
-//! Source-only finite construction inventory. No allocation or admission authority.
+//! Exact finite construction inventory; large candidates remain diagnostic-only.
 use crate::ast::{
     BinaryOp, Expr, ExprKind as K, Function, Program, Statement as S, Type, TypeDeclaration,
     TypeDeclarationKind,
@@ -49,6 +49,8 @@ struct Inventory<'a> {
     function: &'a Function,
     record: &'a TypeDeclaration,
     byte_site: &'a Expr,
+    condition: &'a Expr,
+    body: &'a Expr,
     count: u64,
     width: u64,
     payload_bytes: u64,
@@ -292,9 +294,28 @@ fn inventory(program: &Program) -> Option<Inventory<'_>> {
         function,
         record,
         byte_site: byte_site?,
+        condition,
+        body,
         count,
         width,
         payload_bytes,
         string_bytes: string_bytes?,
+    })
+}
+
+/// Ordinary finite capacity, restricted to the unchanged physical event cap.
+pub(crate) fn finite_loop(program: &Program, expression: &Expr) -> Option<u32> {
+    let proof = inventory(program)?;
+    if proof.count > u64::from(crate::byte_data_capacity::MAX_BYTES_COPY_SITES)
+        || !(std::ptr::eq(expression, proof.condition) || std::ptr::eq(expression, proof.body))
+    {
+        return None;
+    }
+    u32::try_from(proof.count).ok()
+}
+pub(crate) fn finite_allocation(program: &Program, expression: &Expr) -> bool {
+    inventory(program).is_some_and(|proof| {
+        proof.count <= u64::from(crate::byte_data_capacity::MAX_BYTES_COPY_SITES)
+            && std::ptr::eq(expression, proof.byte_site)
     })
 }

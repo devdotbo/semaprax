@@ -102,3 +102,10 @@ source/graph/cache, byte/order/NUL/Unicode, first-read/no-allocation and complet
 settlement/reentry observations remain required. Owning physical fault and
 metadata exact/one-short gates must separately qualify the selected executor.
 Source candidate recognition supplies no success evidence for those gates.
+
+## Separate ordinary finite capacity prerequisite
+
+[Finite owned-row construction v1](FINITE-OWNED-ROW-CONSTRUCTION-V1.md) is an
+authored, independently source/HIR-derived prerequisite restricted to the
+unchanged32 ordinary Bytes events. Owning executable qualification is pending.
+It neither fuses backing allocation nor admits count33 or the original4096 loop.

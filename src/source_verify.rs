@@ -275,3 +275,7 @@ pub(crate) fn generic_variant_profile(program: &Program, function: &Function) ->
 /// Physical shared source-verifier frame layout, without executing a verifier.
 #[doc(hidden)]
 pub const VERIFIER_FRAME_BYTES: usize = std::mem::size_of::<scope::VerifierFrame<'static>>();
+
+pub(crate) use declaration::fusion::{
+    finite_allocation as finite_row_allocation, finite_loop as finite_row_loop,
+};

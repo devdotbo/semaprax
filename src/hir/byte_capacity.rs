@@ -212,14 +212,15 @@ pub(super) fn byte_slice_transcript_source(
                             ByteSliceRootKind::CommandArguments => {
                                 TranscriptSource::CommandArguments
                             }
-                            ByteSliceRootKind::FixedArray | ByteSliceRootKind::SourceExprStatic => match fact.length {
-                                ByteSliceExtent::Constant(length) => {
-                                    TranscriptSource::Fixed(length)
+                            ByteSliceRootKind::FixedArray | ByteSliceRootKind::SourceExprStatic => {
+                                match fact.length {
+                                    ByteSliceExtent::Constant(length) => {
+                                        TranscriptSource::Fixed(length)
+                                    }
+                                    ByteSliceExtent::ParameterLength
+                                    | ByteSliceExtent::ValueLength => TranscriptSource::Unknown,
                                 }
-                                ByteSliceExtent::ParameterLength | ByteSliceExtent::ValueLength => {
-                                    TranscriptSource::Unknown
-                                }
-                            },
+                            }
                             ByteSliceRootKind::OwnedBytes if facts.is_stdin(&fact.root) => {
                                 TranscriptSource::Stdin
                             }
@@ -368,7 +369,8 @@ pub(crate) fn push_resolved_expression_children_in_authored_order<'a>(
         | ResolvedExprKind::Float32(_)
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
+        | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. } => {}
     }
@@ -931,7 +933,12 @@ fn byte_capacity_expression_in(
                                     let finite = crate::finite_byte_scratch::resolved(
                                         program, condition, body,
                                     )
-                                    .map(|proof| proof.iterations);
+                                    .map(|proof| proof.iterations)
+                                    .or_else(|| {
+                                        crate::finite_row_construction::resolved(
+                                            program, condition, body,
+                                        )
+                                    });
                                     frames.push(Frame::Loop(finite));
                                     frames.push(Frame::Visit(body, false));
                                     frames.push(Frame::Visit(condition, false));
@@ -990,7 +997,8 @@ fn byte_capacity_expression_in(
                     | ResolvedExprKind::Float32(_)
                     | ResolvedExprKind::Float64(_)
                     | ResolvedExprKind::Bool(_)
-                    | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
+                    | ResolvedExprKind::String(_)
+                    | ResolvedExprKind::BorrowedUtf8Literal(_)
                     | ResolvedExprKind::Place(_)
                     | ResolvedExprKind::BorrowPlace { .. } => results.push(CapacityFlow::Empty),
                 }

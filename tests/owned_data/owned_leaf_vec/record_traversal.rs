@@ -104,3 +104,22 @@ fn maximum_admitted_owned_rows_preserve_views_order_and_nonallocating_reentry() 
     assert_eq!(expected, 8_386_560);
     run(body, expected);
 }
+
+// Uses the complete maximum witness's functional oracle at the unchanged Byte event cap.
+#[test]
+fn finite_fresh_rows_preserve_utf8_nul_and_settle_across_all_engines() {
+    const SOURCE: &str = include_str!("../../fixtures/record-traversal-maximum.spx");
+    let body = SOURCE.split_once("@id(\"app.main\")").unwrap().1;
+    for count in [1, 8, 32] {
+        let body = format!("@id(\"app.main\"){body}").replace("4096", &count.to_string());
+        run(&body, (0..count).sum());
+    }
+}
+#[test]
+fn finite_fresh_rows_preserve_first_failure_without_result_or_leaked_owner() {
+    const SOURCE: &str = include_str!("../../fixtures/record-traversal-maximum.spx");
+    let body = SOURCE.split_once("@id(\"app.main\")").unwrap().1;
+    let body = format!("@id(\"app.main\"){body}").replace("4096", "8");
+    run_wasm(&body, 15, 0, "push-allocation");
+    run_wasm(&body, 0, 1, "field-bad-word");
+}
