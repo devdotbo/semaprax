@@ -106,6 +106,11 @@ fn complete_bindings(index: &NativeCleanupIndex<'_>) -> NativeCleanupBindings {
                     .or_insert_with(|| format!("spx_bind_status_{next}"));
             }
             ExitContinuation::Continue(_) | ExitContinuation::ReturnUnit => {}
+            ExitContinuation::LoopLatch { .. }
+            | ExitContinuation::LoopBreak { .. }
+            | ExitContinuation::FunctionReturn { .. } => {
+                panic!("legacy native cleanup bindings require the admitted v2 plan");
+            }
         }
     }
     bindings

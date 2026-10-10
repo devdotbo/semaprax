@@ -326,7 +326,7 @@ fn materialize_result(
             })
         }
         (_, WireResult::Unit)
-        | (ResolvedType::Unit, _)
+        | (ResolvedType::Unit | ResolvedType::Never, _)
         | (ResolvedType::I64, _)
         | (ResolvedType::Char, _)
         | (ResolvedType::I32, _)
