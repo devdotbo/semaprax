@@ -77,3 +77,23 @@ fn returned_owned_result_stays_protected_until_selected_postconditions() {
     crate::owned_vec_bytes_runtime::run_wasm_expected(&failed, 10, 2, "none", 0);
     interpret(RETURN_BYTES, 29, false);
 }
+
+#[test]
+fn returned_variant_payload_uses_its_case_qualified_finalizer() {
+    let source = r#"module lexical.variant;
+@id("lexical.choose") fn choose()->Option<Bytes> ensures false {
+ let value=Option<Bytes>::Some{value:bytes_zeroed(2usize)};
+ return value;
+}
+@id("app.main") fn main()->i64 {
+ let choice=choose();
+ match own choice {Option::None{}=>0,Option::Some{value}=>
+  if byte_len(bytes_as_slice(value))==2usize {29}else{0},}
+}
+"#;
+    interpret(source, 0, true);
+    crate::owned_vec_bytes_runtime::run_wasm_expected(source, 10, 1, "none", 0);
+    let recovered = source.replace("ensures false", "ensures true");
+    interpret(&recovered, 29, false);
+    crate::owned_vec_bytes_runtime::run_wasm_expected(&recovered, 0, 1, "none", 29);
+}
