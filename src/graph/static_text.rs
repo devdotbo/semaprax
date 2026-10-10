@@ -29,9 +29,26 @@ pub(crate) fn legacy_graph_schema(program: &ResolvedProgram) -> Result<&'static 
 
 pub(crate) fn reject_frozen<'a>(
     functions: impl IntoIterator<Item = &'a ResolvedFunction>,
+    templates: &'a [hir::ResolvedFunctionTemplate],
 ) -> Result<(), Diagnostic> {
     let mut selected = false;
-    hir::static_text::visit_functions(functions, |_, _, literal| {
+    let roots = functions
+        .into_iter()
+        .flat_map(|function| {
+            function
+                .requires
+                .iter()
+                .chain(std::iter::once(&function.body))
+                .chain(&function.ensures)
+        })
+        .chain(templates.iter().flat_map(|template| {
+            template
+                .requires
+                .iter()
+                .chain(std::iter::once(&template.body))
+                .chain(&template.ensures)
+        }));
+    hir::static_text::visit_roots(roots, |_, _, literal| {
         selected |= literal;
         Ok(())
     })?;

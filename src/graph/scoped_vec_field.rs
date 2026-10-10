@@ -53,7 +53,12 @@ pub(crate) fn graph_schema_from_parts_and_instances_with_renewal_authority(
     instances: &[hir::ResolvedFunctionInstance],
     renewal_authority: Option<&dyn Fn(&ResolvedFunction) -> bool>,
 ) -> Result<&'static str, Diagnostic> {
-    super::static_text::reject_frozen(functions.iter().chain(instances.iter().map(|i| &i.function)))?;
+    super::static_text::reject_frozen(
+        functions
+            .iter()
+            .chain(instances.iter().map(|i| &i.function)),
+        templates,
+    )?;
     if functions
         .iter()
         .chain(instances.iter().map(|i| &i.function))

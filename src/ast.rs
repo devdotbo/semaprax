@@ -48,7 +48,8 @@ pub enum Type {
     /// One uniquely owned immutable byte buffer.
     Bytes,
     /// A borrowed UTF-8 view. Source functions may receive it only through
-    /// an explicit `borrow str` parameter; it has no literal or owned form.
+    /// an explicit `borrow str` parameter or an immutable static UTF-8 literal.
+    /// It has no owned form.
     Str,
     /// A non-escaping immutable byte view rooted in one external invocation
     /// input. It is written exactly `Slice<u8>` and has no owned form.

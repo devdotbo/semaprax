@@ -157,3 +157,89 @@ fn view_extent_and_mutability_are_independently_replayed_without_owner_slots() {
     .unwrap_err();
     assert!(mutable.iter().any(|d| d.code == "SPX-T264"));
 }
+
+#[test]
+fn interpreter_reentry_reads_static_roots_without_foreign_input_or_owned_slots() {
+    let source = crate::check(WRITER, "static-interpreter.spx").unwrap();
+    let program = crate::hir::resolve(&source).unwrap();
+    for _ in 0..4 {
+        let evaluated =
+            crate::interpreter::evaluate_resolved_zero_arg_i64(&program, "app.main", 100_000)
+                .unwrap();
+        assert_eq!(
+            evaluated.outcome,
+            crate::interpreter::ResolvedEvaluationOutcome::ReturnedI64(42)
+        );
+        assert!(evaluated.failure.is_none());
+    }
+    // A static root is module input, never an invocation's borrowed argument.
+    let source = crate::check(
+        "module literal.internal; @id(\"main\") fn main()->i64 {let key=str\"é\\u{0}\";let view=str_as_bytes(key);if byte_len(view)==3usize {42}else{0}}",
+        "literal-internal.spx",
+    ).unwrap();
+    let program = crate::hir::resolve(&source).unwrap();
+    assert!(program
+        .functions
+        .iter()
+        .all(|f| f.cleanup_plan.slots.is_empty()));
+    let evaluated =
+        crate::interpreter::evaluate_resolved_zero_arg_i64(&program, "main", 100_000).unwrap();
+    assert_eq!(
+        evaluated.outcome,
+        crate::interpreter::ResolvedEvaluationOutcome::ReturnedI64(42)
+    );
+}
+
+#[test]
+fn adjacent_spelling_and_frozen_graph_do_not_coerce_ordinary_text() {
+    let ordinary = crate::parse(
+        "module literal.name; @id(\"main\") fn main()->i64 {let str=3;str}",
+        "literal-name.spx",
+    )
+    .unwrap();
+    assert!(!crate::format::canonical(&ordinary).contains("str\""));
+    assert!(crate::parse(
+        "module literal.space; @id(\"main\") fn main()->i64 {let key=str \"x\";0}",
+        "literal-space.spx",
+    )
+    .is_err());
+    let source = crate::check(WRITER, "static-frozen.spx").unwrap();
+    let program = crate::hir::resolve(&source).unwrap();
+    assert_eq!(
+        crate::graph::graph_schema_from_parts_and_instances(
+            &program.interfaces,
+            &program.types,
+            &program.functions,
+            &program.function_templates,
+            &program.function_instances,
+        )
+        .unwrap_err()
+        .code,
+        "SPX-G410"
+    );
+    let generic = crate::check(
+        "module literal.template; @id(\"unused\") fn unused<T>(value:T)->i64 {let key=str\"x\";str_len_bytes(key)} @id(\"main\") fn main()->i64 {0}",
+        "literal-template.spx",
+    ).unwrap();
+    let generic = crate::hir::resolve(&generic).unwrap();
+    assert!(crate::hir::validate_with_static_text(&generic).unwrap());
+    assert_eq!(generic.function_templates.len(), 1);
+    assert_eq!(
+        crate::graph::graph_schema_from_parts_and_instances(
+            &generic.interfaces,
+            &generic.types,
+            &generic.functions,
+            &generic.function_templates,
+            &generic.function_instances,
+        )
+        .unwrap_err()
+        .code,
+        "SPX-G410"
+    );
+    // Static descriptor mutation cannot substitute String owning authority.
+    let owned_argument = crate::check(
+        "module literal.own; @id(\"take\") fn take(value:string)->i64 {string_len(value)} @id(\"main\") fn main()->i64 {let key=str\"x\";take(key)}",
+        "literal-own.spx",
+    ).unwrap_err();
+    assert!(owned_argument.iter().any(|d| d.code == "SPX-T205"));
+}
