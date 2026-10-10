@@ -292,6 +292,7 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         include_str!("../../../../../src/loop_calls/byte_writer/module_index.rs"),
         concat!(
             include_str!("../../../../../src/hir/validation.rs"),
+            include_str!("../../../../../src/hir/validation/contract_owners.rs"),
             "\n",
             include_str!("../../../../../src/hir/validation/byte_range.rs"),
             "\n",
@@ -346,6 +347,7 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         include_str!("../../../../../src/loop_calls/byte_writer/source_index.rs"),
         concat!(
             include_str!("../../../../../src/source_verify.rs"),
+            include_str!("../../../../../src/source_verify/contract_owners.rs"),
             "\n",
             include_str!("../../../../../src/source_verify/arguments.rs"),
             "\n",

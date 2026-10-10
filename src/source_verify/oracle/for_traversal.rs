@@ -88,6 +88,7 @@ pub(super) fn check(
             scope.insert(
                 item.clone(),
                 Binding {
+                    contract_local: false,
                     traversal_row: None,
                     ty: element,
                     mode: ParamMode::Value,
@@ -163,6 +164,7 @@ pub(super) fn check(
                 scope.insert(
                     index.name.clone(),
                     Binding {
+                        contract_local: false,
                         traversal_row: None,
                         ty: Type::Usize,
                         mode: ParamMode::Value,

@@ -1351,6 +1351,7 @@ pub(super) fn check_record_pattern(
                             variables.insert(
                                 name.clone(),
                                 Binding {
+                                    contract_local: false,
                                     traversal_row: None,
                                     mode: if types.needs_drop(&field_ty) {
                                         match mode {

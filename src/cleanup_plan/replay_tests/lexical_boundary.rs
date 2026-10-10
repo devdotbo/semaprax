@@ -30,7 +30,13 @@ fn checked(source: &str, path: &str) -> ResolvedProgram {
     program
 }
 fn fixture() -> (ResolvedProgram, ResolvedFunction) {
-    let program = checked(SOURCE, "contract-loop-boundaries.spx");
+    // The original source is deliberately normalized to ordinary control flow.
+    // Only actual loop returns require distinct lexical result domains.
+    let source = SOURCE.replace(
+        "while i<1 { i=i+1; 0 }\n if n==1 { return 11; };\n if n==2 { return 12; };",
+        "while i<1 { i=i+1; if n==1 { return 11; }; if n==2 { return 12; }; 0 }",
+    );
+    let program = checked(&source, "contract-loop-boundaries.spx");
     let function = function(&program, "run");
     validate_structure(&program, &function).unwrap();
     (program, function)
@@ -62,6 +68,32 @@ fn ensures_failures(function: &ResolvedFunction) -> Vec<usize> {
                 .then_some(index)
         })
         .collect()
+}
+
+#[test]
+fn original_acyclic_returns_keep_ordinary_normalization_graph_and_cache_replay() {
+    let ast = crate::check(SOURCE, "ordinary-contract-boundaries.spx").unwrap();
+    let canonical = crate::format::canonical(&ast);
+    let replay = crate::check(&canonical, "ordinary-contract-boundaries.spx").unwrap();
+    assert_eq!(canonical, crate::format::canonical(&replay));
+    assert_eq!(
+        crate::graph::to_json(&ast).unwrap(),
+        crate::graph::to_json(&replay).unwrap()
+    );
+    let mut program = checked(SOURCE, "ordinary-contract-boundaries.spx");
+    let run = program
+        .functions
+        .iter_mut()
+        .find(|f| f.id.as_str() == "run")
+        .unwrap();
+    assert!(run.cleanup_plan.lexical_control.is_none());
+    let encoded = crate::cache_codec::encode(&run.cleanup_plan).unwrap();
+    run.cleanup_plan = crate::cache_codec::decode(&encoded).unwrap();
+    assert_eq!(
+        encoded,
+        crate::cache_codec::encode(&run.cleanup_plan).unwrap()
+    );
+    hir::validate(&program).unwrap();
 }
 
 #[test]
@@ -324,12 +356,31 @@ fn two_return_postconditions_reuse_owned_temporaries_and_refuse_resource_transfe
     assert!(errors
         .iter()
         .any(|error| error.code == "SPX-O105" && error.message.contains("measure")));
-    assert!(errors
-        .iter()
-        .any(|error| error.code == "SPX-O105" && error.message.contains("local binding")));
+    assert_eq!(
+        errors
+            .iter()
+            .filter(|error| error.code == "SPX-O105" && error.message.contains("measure"))
+            .count(),
+        2,
+        "both inline constructors remain closed; only named fresh locals may transfer"
+    );
+    assert!(
+        !errors
+            .iter()
+            .any(|error| error.code == "SPX-O105" && error.message.contains("local binding")),
+        "the literal String local is independently fresh in this clause"
+    );
     let source = source.replace(
         "let measured=measure(bytes_zeroed(2usize),bytes_zeroed(3usize));\n  let text=\"temporary\";\n  measured==5usize && string_len(text)==9",
         "let measured=string_len(\"first\")+string_len(\"second\");\n  measured==11",
+    );
+    let ordinary = checked(&source, "ordinary-owned-ensure-template.spx");
+    let ordinary_run = function(&ordinary, "run");
+    assert!(ordinary_run.cleanup_plan.lexical_control.is_none());
+    validate_structure(&ordinary, &ordinary_run).unwrap();
+    let source = source.replace(
+        "while i<1 {i=i+1;0}\n if choice {return 11;};\n return 12;",
+        "while i<1 {i=i+1;if choice {return 11;};return 12;}12",
     );
     let program = checked(&source, "owned-ensure-template.spx");
     let baseline = function(&program, "run");
@@ -375,7 +426,11 @@ fn two_return_postconditions_reuse_owned_temporaries_and_refuse_resource_transfe
     assert_eq!(returns.len(), 2);
     assert_ne!(returns[0].resume, returns[1].resume);
     let failures = ensures_failures(&baseline);
-    assert_eq!(failures.len(), 2);
+    assert_eq!(
+        failures.len(),
+        3,
+        "two loop returns and the ordinary loop-zero result"
+    );
     let mut changed = baseline.clone();
     changed.cleanup_plan.exits[failures[0]].from = changed.cleanup_plan.exits[failures[1]].from;
     assert!(validate_structure(&program, &changed).is_err());
@@ -396,4 +451,86 @@ fn two_return_postconditions_reuse_owned_temporaries_and_refuse_resource_transfe
         .leaves_regions
         .clear();
     assert!(validate_structure(&program, &changed).is_err());
+}
+
+#[test]
+fn fresh_contract_local_owner_regions_replay_in_all_selected_return_domains() {
+    let source = r#"module test.fresh_contract_regions;
+@id("inspect") fn inspect(input:own Bytes)->bool {byte_len(bytes_as_slice(input))==2usize}
+@id("run") fn run(n:i64)->i64
+ requires {let required=bytes_zeroed(2usize);inspect(required)}
+ ensures {let checked=bytes_zeroed(3usize);let text="ok";string_len(text)==2 && byte_len(bytes_as_slice(checked))==3usize}
+{
+ let root="live root";let mut i=0;
+ while i<1 {i=i+1;if n==1 {return 11;};if n==2 {return 12;};0}
+ 13
+}
+@id("main") fn main()->i64{0}
+"#;
+    let program = checked(source, "fresh-contract-regions.spx");
+    let baseline = function(&program, "run");
+    validate_structure(&program, &baseline).unwrap();
+    let failures = ensures_failures(&baseline);
+    assert_eq!(failures.len(), 3);
+    let ResolvedExprKind::Block { statements, .. } = &baseline.ensures[0].kind else {
+        panic!("ensures block")
+    };
+    let locals = statements
+        .iter()
+        .filter_map(|statement| match statement {
+            hir::ResolvedStatement::Let { binding, .. } => {
+                Some(StorageId::Value(binding.id.clone()))
+            }
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(locals.len(), 2);
+    for local in &locals {
+        assert_eq!(
+            baseline
+                .cleanup_plan
+                .slots
+                .iter()
+                .filter(|slot| &slot.storage == local)
+                .count(),
+            1
+        );
+        let region = baseline
+            .cleanup_plan
+            .regions
+            .iter()
+            .find(|region| region.slots.contains(local))
+            .unwrap();
+        assert!(
+            baseline.cleanup_plan.exits[region.normal_scope_end.0 as usize]
+                .leaves_regions
+                .contains(&region.id)
+        );
+        let mut forged = baseline.clone();
+        forged.cleanup_plan.exits[region.normal_scope_end.0 as usize]
+            .leaves_regions
+            .clear();
+        assert!(validate_structure(&program, &forged).is_err());
+    }
+    for index in failures {
+        let mut forged = baseline.clone();
+        forged.cleanup_plan.exits[index].finalize_in_order.clear();
+        assert!(
+            validate_structure(&program, &forged).is_err(),
+            "a failed ensures must retain root-owner settlement"
+        );
+    }
+    let mut cached = program.clone();
+    let run = cached
+        .functions
+        .iter_mut()
+        .find(|function| function.id.as_str() == "run")
+        .unwrap();
+    let bytes = crate::cache_codec::encode(&run.cleanup_plan).unwrap();
+    run.cleanup_plan = crate::cache_codec::decode(&bytes).unwrap();
+    assert_eq!(
+        bytes,
+        crate::cache_codec::encode(&run.cleanup_plan).unwrap()
+    );
+    hir::validate(&cached).unwrap();
 }

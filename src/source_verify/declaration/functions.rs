@@ -1125,6 +1125,7 @@ pub(super) fn check_function_bodies<'p>(
                     .insert(
                         param.name.clone(),
                         Binding {
+                            contract_local: false,
                             traversal_row: None,
                             ty: param.ty.clone(),
                             mode: binding_mode,

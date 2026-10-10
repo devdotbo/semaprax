@@ -1125,10 +1125,12 @@ pub(super) fn check_expr(
                         }
                         if let Some(actual) = actual {
                             if actual.ty == Type::Str && *mutable { diagnostics.push(error(program, "SPX-T264", format!("byte-slice alias `{name}` must be immutable and cannot be reassigned"), *name_span)); }
+                            let contract_local = !allow_moves && actual.mode == ParamMode::Own
+                                && super::contract_owners::fresh(value, &actual.ty, &scope);
                             if types.needs_drop(&actual.ty)
                                 && actual.mode == ParamMode::Own
                             {
-                                if allow_moves {
+                                if allow_moves || contract_local {
                                     mark_value_sources_moved(
                                         program,
                                         value,
@@ -1162,7 +1164,7 @@ pub(super) fn check_expr(
                             }
                             scope.insert(
                                 name.clone(),
-                                Binding { traversal_row: None,
+                                Binding { contract_local, traversal_row: None,
                                     ty: actual.ty,
                                     mode: actual.mode,
                                     availability: Availability::Available,
@@ -1269,7 +1271,7 @@ pub(super) fn check_expr(
                         } else if let Some(element) = element.as_ref() {
                             let owned = *element == Type::Bytes
                                 || crate::source_verify::declared_type::owned_leaf_collection::runtime_element(types, element);
-                            scope.insert(item.clone(), Binding { traversal_row: None, ty:element.clone(), mode:if owned { ParamMode::Own } else { ParamMode::Value },
+                            scope.insert(item.clone(), Binding { contract_local: false, traversal_row: None, ty:element.clone(), mode:if owned { ParamMode::Own } else { ParamMode::Value },
                                 availability:Availability::Available, moved_places:HashMap::new(), definitely_partial:HashSet::new(),
                                 native_unit_discard:false, mutable:false, active_loans:BTreeSet::new(), borrow_origin:None });
                         }

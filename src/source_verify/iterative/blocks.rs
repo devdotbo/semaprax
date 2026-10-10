@@ -147,8 +147,15 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                             ));
                         }
                     }
+                    let contract_local = !self.allow_moves
+                        && actual.mode == ParamMode::Own
+                        && crate::source_verify::contract_owners::fresh(
+                            value,
+                            &actual.ty,
+                            &self.scopes[block_scope].bindings,
+                        );
                     if self.types.needs_drop(&actual.ty) && actual.mode == ParamMode::Own {
-                        if self.allow_moves {
+                        if self.allow_moves || contract_local {
                             mark_value_sources_moved(
                                 self.program,
                                 value,
@@ -184,6 +191,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     self.scopes[block_scope].bindings.insert(
                         name.clone(),
                         Binding {
+                            contract_local,
                             traversal_row: None,
                             ty: binding_ty,
                             mode: binding_mode,
@@ -730,7 +738,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             if let Some(element) = element {
                 self.scopes[block_scope].bindings.insert(
                     item.to_owned(),
-                    Binding { traversal_row: None,
+                    Binding { contract_local: false, traversal_row: None,
                         mode: if consuming
                             && (element == Type::Bytes
                                 || crate::source_verify::declared_type::owned_leaf_collection::runtime_element(
@@ -836,6 +844,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     self.scopes[block_scope].bindings.insert(
                         selected.name.clone(),
                         Binding {
+                            contract_local: false,
                             ty: Type::Usize,
                             mode: ParamMode::Value,
                             availability: Availability::Available,

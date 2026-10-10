@@ -3,6 +3,7 @@ use super::*;
 
 pub(super) fn static_binding(ty: Type) -> Binding {
     Binding {
+        contract_local: false,
         traversal_row: None,
         ty,
         mode: ParamMode::Value,

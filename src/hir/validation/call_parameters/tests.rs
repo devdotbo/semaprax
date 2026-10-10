@@ -81,6 +81,7 @@ fn compare_expression(
         scope.insert(
             parameter.id.clone(),
             ValidationBinding {
+                contract_local: false,
                 mutable: false,
                 ty: parameter.ty.clone(),
                 ownership: parameter.ownership,

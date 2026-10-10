@@ -27,6 +27,7 @@ use crate::diagnostic::Diagnostic;
 
 mod arguments;
 mod binding;
+mod contract_owners;
 pub(crate) mod borrowed_closure;
 mod capacity;
 pub(crate) mod closure;

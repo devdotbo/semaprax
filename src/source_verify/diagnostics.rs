@@ -192,6 +192,10 @@ pub(super) fn require_bool(
         }
     });
     let mut contract_variables = variables.clone();
+    // No freshness from a body or previous clause enters this contract domain.
+    for binding in contract_variables.values_mut() {
+        binding.contract_local = false;
+    }
     if let Some(ty) = result_type {
         // A provisional owned result is readable only in this postcondition
         // scope. It stays immutable and contract transfers still select O105.
@@ -203,6 +207,7 @@ pub(super) fn require_bool(
             contract_variables.insert(
                 "result".to_owned(),
                 Binding {
+                    contract_local: false,
                     traversal_row: None,
                     ty: ty.clone(),
                     mode: ParamMode::Own,

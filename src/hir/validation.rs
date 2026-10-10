@@ -13,6 +13,7 @@ mod byte_range;
 mod call_parameters;
 mod callable_types;
 mod closure;
+mod contract_owners;
 mod generic_record_composition;
 mod generic_template;
 mod host_command;
@@ -1399,7 +1400,9 @@ impl<'a> HirValidator<'a> {
             | ResolvedExprKind::Float64(_)
             | ResolvedExprKind::Bool(_) => {}
             ResolvedExprKind::String(value) => self.record_static_pool(value.len(), false)?,
-            ResolvedExprKind::BorrowedUtf8Literal(value) => self.finish_static_text(expression, value)?,
+            ResolvedExprKind::BorrowedUtf8Literal(value) => {
+                self.finish_static_text(expression, value)?
+            }
             ResolvedExprKind::Place(place) => {
                 if generic_template::projected_place_type(self.program, place, values)?
                     != expression.ty
@@ -1799,6 +1802,7 @@ impl<'a> HirValidator<'a> {
             scope.insert(
                 param.id.clone(),
                 ValidationBinding {
+                    contract_local: false,
                     mutable: false,
                     ty: param.ty.clone(),
                     ownership: param.ownership,
@@ -1829,18 +1833,7 @@ impl<'a> HirValidator<'a> {
                 function.id
             )));
         }
-        for (index, contract) in function.requires.iter().enumerate() {
-            let mut contract_scope = scope.clone();
-            self.validate_expr(
-                execution,
-                contract,
-                &mut contract_scope,
-                &format!("requires.{index}"),
-                false,
-                None,
-            )?;
-            self.require_type(&contract.ty, &ResolvedType::Bool, "precondition")?;
-        }
+        self.validate_contracts(execution, &function.requires, &scope, "requires")?;
         self.validate_expr(
             execution,
             &function.body,
@@ -1864,6 +1857,7 @@ impl<'a> HirValidator<'a> {
         ensures_scope.insert(
             function.result_id.clone(),
             ValidationBinding {
+                contract_local: false,
                 mutable: false,
                 ty: function.return_type.clone(),
                 ownership: returned,
@@ -1873,18 +1867,7 @@ impl<'a> HirValidator<'a> {
                 definitely_partial: BTreeSet::new(),
             },
         );
-        for (index, contract) in function.ensures.iter().enumerate() {
-            let mut contract_scope = ensures_scope.clone();
-            self.validate_expr(
-                execution,
-                contract,
-                &mut contract_scope,
-                &format!("ensures.{index}"),
-                false,
-                None,
-            )?;
-            self.require_type(&contract.ty, &ResolvedType::Bool, "postcondition")?;
-        }
+        self.validate_contracts(execution, &function.ensures, &ensures_scope, "ensures")?;
         Ok(())
     }
 
@@ -2102,6 +2085,7 @@ impl<'a> HirValidator<'a> {
                             scope.insert(
                                 binding.id.clone(),
                                 ValidationBinding {
+                                    contract_local: false,
                                     mutable: false,
                                     ty: binding.ty.clone(),
                                     ownership,
@@ -3886,7 +3870,7 @@ impl<'a> HirValidator<'a> {
                         self.validate_byte_slice_call_argument(argument, &scope)?;
                     }
                     if self.is_owned_resource(param.ty, param.ownership)? {
-                        if !allow_moves {
+                        if !allow_moves && !contract_owners::local(argument, &scope) {
                             let callee = match &expression.kind {
                                 ResolvedExprKind::Call { callee, .. } => callee.as_str(),
                                 ResolvedExprKind::LiteralFormat { .. } => crate::literal_format::ID,
@@ -4533,7 +4517,8 @@ impl<'a> HirValidator<'a> {
                             )?);
                         }
                     } else if binding.ty == ResolvedType::Str {
-                        let (origin, creates_loan) = self.borrowed_str_let_origin(value, binding)?;
+                        let (origin, creates_loan) =
+                            self.borrowed_str_let_origin(value, binding)?;
                         if *mutable {
                             return Err(hir_error(
                                 "borrowed-str local alias must be immutable and unprojected",
@@ -4552,8 +4537,9 @@ impl<'a> HirValidator<'a> {
                             )?);
                         }
                     }
+                    let contract_local = !allow_moves && contract_owners::fresh(value, &scope);
                     if self.is_owned_resource(&binding.ty, binding.ownership)? {
-                        if !allow_moves {
+                        if !allow_moves && !contract_owners::fresh(value, &scope) {
                             return Err(hir_error(
                                 "contract cannot transfer ownership into a local binding",
                             ));
@@ -4563,6 +4549,7 @@ impl<'a> HirValidator<'a> {
                     scope.insert(
                         binding.id.clone(),
                         ValidationBinding {
+                            contract_local,
                             mutable: *mutable,
                             ty: binding.ty.clone(),
                             ownership: binding.ownership,
@@ -5524,6 +5511,7 @@ impl<'a> HirValidator<'a> {
                                     arm_scope.insert(
                                         field.binding.id.clone(),
                                         ValidationBinding {
+                                            contract_local: false,
                                             mutable: false,
                                             ty: field.binding.ty.clone(),
                                             ownership: binding_ownership,
@@ -5751,6 +5739,7 @@ impl<'a> HirValidator<'a> {
                             arm_scope.insert(
                                 binding.id.clone(),
                                 ValidationBinding {
+                                    contract_local: false,
                                     mutable: false,
                                     ty: binding.ty.clone(),
                                     ownership: OwnershipMode::Value,
@@ -6258,7 +6247,10 @@ impl<'a> HirValidator<'a> {
                 self.finish_static_text(expression, value)?;
                 (ResolvedType::Str, OwnershipMode::Borrow)
             }
-            ResolvedExprKind::String(value) => { self.record_static_pool(value.len(), false)?; (ResolvedType::String, OwnershipMode::Own) },
+            ResolvedExprKind::String(value) => {
+                self.record_static_pool(value.len(), false)?;
+                (ResolvedType::String, OwnershipMode::Own)
+            }
             ResolvedExprKind::Int(_) => (ResolvedType::I64, OwnershipMode::Value),
             ResolvedExprKind::Int32(_) => (ResolvedType::I32, OwnershipMode::Value),
             ResolvedExprKind::Char(value) => {
@@ -6459,7 +6451,7 @@ impl<'a> HirValidator<'a> {
                     self.validate_argument_ownership_view(argument, parameter)?;
                     let parameter = parameters.parameter(index);
                     if self.is_owned_resource(parameter.ty, parameter.ownership)? {
-                        if !allow_moves {
+                        if !allow_moves && !contract_owners::local(argument, scope) {
                             return Err(hir_error(
                                 "contract cannot transfer ownership to literal format",
                             ));
@@ -6643,7 +6635,7 @@ impl<'a> HirValidator<'a> {
                         self.validate_byte_slice_call_argument(argument, scope)?;
                     }
                     if self.argument_transfers(param)? {
-                        if !allow_moves {
+                        if !allow_moves && !contract_owners::local(argument, scope) {
                             return Err(hir_error(format!(
                                 "contract cannot transfer ownership to `{callee}`"
                             )));
@@ -6932,7 +6924,8 @@ impl<'a> HirValidator<'a> {
                                     )?);
                                 }
                             } else if binding.ty == ResolvedType::Str {
-                                let (origin, creates_loan) = self.borrowed_str_let_origin(value, binding)?;
+                                let (origin, creates_loan) =
+                                    self.borrowed_str_let_origin(value, binding)?;
                                 if *mutable {
                                     return Err(hir_error(
                                         "borrowed-str local alias must be immutable and unprojected",
@@ -6954,8 +6947,10 @@ impl<'a> HirValidator<'a> {
                                     )?);
                                 }
                             }
+                            let contract_local =
+                                !allow_moves && contract_owners::fresh(value, &block_scope);
                             if self.is_owned_resource(&binding.ty, binding.ownership)? {
-                                if !allow_moves {
+                                if !allow_moves && !contract_owners::fresh(value, &block_scope) {
                                     return Err(hir_error(
                                         "contract cannot transfer ownership into a local binding",
                                     ));
@@ -6965,6 +6960,7 @@ impl<'a> HirValidator<'a> {
                             block_scope.insert(
                                 binding.id.clone(),
                                 ValidationBinding {
+                                    contract_local,
                                     mutable: *mutable,
                                     ty: binding.ty.clone(),
                                     ownership: binding.ownership,
@@ -7467,6 +7463,7 @@ impl<'a> HirValidator<'a> {
                                 arm_scope.insert(
                                     binding.id.clone(),
                                     ValidationBinding {
+                                        contract_local: false,
                                         mutable: false,
                                         ty: binding.ty.clone(),
                                         ownership: OwnershipMode::Value,
@@ -7890,6 +7887,7 @@ impl<'a> HirValidator<'a> {
                                 arm_scope.insert(
                                     pattern_field.binding.id.clone(),
                                     ValidationBinding {
+                                        contract_local: false,
                                         mutable: false,
                                         ty: pattern_field.binding.ty.clone(),
                                         ownership: binding_ownership,
@@ -8576,7 +8574,8 @@ impl<'a> HirValidator<'a> {
                     | ResolvedExprKind::Float32(_)
                     | ResolvedExprKind::Float64(_)
                     | ResolvedExprKind::Bool(_)
-                    | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
+                    | ResolvedExprKind::String(_)
+                    | ResolvedExprKind::BorrowedUtf8Literal(_)
                     | ResolvedExprKind::ArrayU8(_)
                     | ResolvedExprKind::RepeatArrayU8 { .. }
                     | ResolvedExprKind::BorrowPlace { .. }

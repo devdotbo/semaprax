@@ -317,6 +317,7 @@ fn validation_scope(function: &ResolvedFunction) -> BTreeMap<ValueId, Validation
             (
                 param.id.clone(),
                 ValidationBinding {
+                    contract_local: false,
                     mutable: false,
                     ty: param.ty.clone(),
                     ownership: param.ownership,

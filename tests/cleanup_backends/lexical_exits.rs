@@ -1,4 +1,7 @@
 //! Actual native exits: shared postconditions, output poisoning, and owned cleanup.
+#[path = "lexical_exits/contract_owners.rs"]
+mod contract_owners;
+
 use std::path::Path;
 use std::process::Command;
 use std::sync::atomic::{AtomicU64, Ordering};

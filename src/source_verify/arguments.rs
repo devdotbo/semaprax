@@ -90,7 +90,7 @@ pub(super) fn check_argument_ownership(
                         actual.ty
                     )),
                 );
-            } else if allow_moves {
+            } else if allow_moves || super::contract_owners::local(arg, &actual.ty, variables) {
                 mark_value_sources_moved(program, arg, variables, types, diagnostics);
             } else {
                 diagnostics.push(error(

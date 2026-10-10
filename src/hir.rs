@@ -426,6 +426,8 @@ impl Availability {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct ValidationBinding {
+    /// Reconstructed by fresh let initialization in one contract clause only.
+    contract_local: bool,
     mutable: bool,
     ty: ResolvedType,
     ownership: OwnershipMode,

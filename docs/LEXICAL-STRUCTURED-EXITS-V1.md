@@ -173,3 +173,42 @@ SCOPED-RECORD-VEC-TRAVERSAL-V2.md and the exact OPT #734 acceptance.
 
 The graph projects the `Never` completion marker on exit expressions but omits it
 from the value type-facts registry: completion has no storage or ABI facts.
+
+## Fresh contract-local owners (OPT-743)
+
+This authored extension permits a clause-local `Bytes` created by literal-sized
+`bytes_zeroed` (at most 131072 bytes), a String literal, and available aliases of
+those exact owners. A consuming ordinary pure call may receive a named fresh
+local after the usual type, loan and staged-argument checks. Constructor results
+used directly as owned call arguments remain closed. General owned call results,
+owned aggregates, captures, projections, effectful calls and ownership transfer
+from function parameters, body locals or the provisional `result` remain closed.
+The same ordinary owner cannot be transferred twice. Source and HIR reconstruct
+freshness independently for each clause; no graph, cache or supplied Boolean
+establishes it. Freshness cannot cross a requires/ensures boundary.
+
+```spx
+@id("contracts.check")
+fn check(value: own Bytes) -> bool { byte_len(bytes_as_slice(value)) == 2usize }
+@id("contracts.main")
+fn main() -> i64
+    requires { let value = bytes_zeroed(2usize); let moved = value; check(moved) }
+    ensures { let text = "ok"; string_len(text) == 2 }
+{ 29 }
+```
+
+Each contract-local owner retains ordinary canonical cleanup and call commit.
+Requires temporaries settle before the body. Every selected return checks its
+ensures with its own exact failure/result domain, settles ensures temporaries and
+non-result owners, and then publishes. Contract failure remains sticky and must
+leave caller result storage uninitialized. Existing root owners and provisional
+results remain protected until their ordinary settlement/publication point.
+
+The allocation census is cumulative across requires, body and ensures: 32 byte
+allocation events and 2097152 statically charged bytes, without refund when a
+local is released. Clause freshness does not grant runtime allocation recovery;
+ordinary native String/Bytes physical OOM retains its existing contract. OPT-724
+remains a separate obligation. Regression definitions cover source/HIR origin
+forgery, aliases, duplicate transfer, clause isolation, exact/+1 resource bounds,
+canonical/graph/cache replay, native O0/O2 cleanup and Core-Wasm/interpreter
+refusal/reentry. These definitions are authored, not evidence of a passing gate.
