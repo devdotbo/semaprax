@@ -307,3 +307,6 @@ codec_enum!(PlaceProjection {0=>Field(field),1=>VariantField{case,field}});
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod record_traversal_tests;
