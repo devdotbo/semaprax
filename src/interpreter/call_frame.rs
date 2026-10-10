@@ -2,7 +2,7 @@
 use super::*;
 
 impl Evaluator<'_> {
-    fn call_frame_inner(
+    pub(super) fn call_frame_inner(
         &mut self,
         function: &ResolvedFunction,
         values: Vec<(ValueId, Value)>,

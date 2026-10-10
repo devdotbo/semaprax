@@ -187,6 +187,7 @@ pub(super) fn validate_expression(
             return Err(body_error(function_id));
         }
         match &expression.kind {
+            ResolvedExprKind::LexicalExit { .. } => return Err(body_error(function_id)),
             ResolvedExprKind::Closure { .. }
             | ResolvedExprKind::FunctionReference { .. }
             | ResolvedExprKind::Invoke { .. } => {

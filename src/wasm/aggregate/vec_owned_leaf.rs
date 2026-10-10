@@ -396,6 +396,9 @@ impl Emitter<'_> {
                 }
             }
             match target {
+                Value::Bottom => {
+                    return Err(error("owned-leaf result field has no runtime storage"))
+                }
                 Value::ScalarMemory { .. } => self.store_scalar(ty),
                 Value::Scalar { local, .. } => {
                     self.output.push(0x21);
