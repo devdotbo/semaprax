@@ -75,6 +75,7 @@ fn profiles_are_deterministic_and_broad_dispatch_files_force_full() {
         "src/graph/scoped_vec_field.rs",
         "src/graph/byte_helper_renewal.rs",
         "src/graph/finite_byte_scratch.rs",
+        "src/graph/consuming_vec_renewal.rs",
         "src/graph/static_text.rs",
         "src/graph/view_render.rs",
         "src/graph/native_import.rs",

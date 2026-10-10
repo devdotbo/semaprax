@@ -204,8 +204,32 @@ pub(super) fn schema_with_proofs<'a>(
         .iter()
         .chain(module.function_instances.iter().map(|i| &i.function))
         .any(crate::finite_byte_scratch::function_requires);
+    let admission = |operation: crate::vec_ops::VecOp, element: &hir::ResolvedType| {
+        if *element == hir::ResolvedType::String && operation.admits_owned_leaf()
+            || *element == hir::ResolvedType::Bytes
+                && crate::vec_ops::resolved_operation_element_is_admitted(operation, element)
+        {
+            return Some(hir::OwnershipMode::Own);
+        }
+        let mode = record_mode(element, module, modules, facts)?;
+        match mode {
+            hir::OwnershipMode::Value if !operation.owned_leaf_only() => Some(mode),
+            hir::OwnershipMode::Own if operation.admits_owned_leaf() => Some(mode),
+            _ => None,
+        }
+    };
+    let authority = |function: &hir::ResolvedFunction| {
+        hir::vec_loop_renewal::requires_with_admission(function, admission)
+    };
+    let consuming = module
+        .functions
+        .iter()
+        .chain(module.function_instances.iter().map(|i| &i.function))
+        .any(|function| {
+            hir::vec_loop_renewal::consuming::requires_with_admission(function, admission)
+        });
     // Static modules independently replay the other renewal obligations too.
-    if static_schema.is_none() {
+    if static_schema.is_none() && !consuming {
         if finite_scratch {
             return Ok("semaprax.graph.v78");
         }
@@ -213,22 +237,6 @@ pub(super) fn schema_with_proofs<'a>(
             return Ok(schema);
         }
     }
-    let authority = |function: &hir::ResolvedFunction| {
-        hir::vec_loop_renewal::requires_with_admission(function, |operation, element| {
-            if *element == hir::ResolvedType::String && operation.admits_owned_leaf()
-                || *element == hir::ResolvedType::Bytes
-                    && crate::vec_ops::resolved_operation_element_is_admitted(operation, element)
-            {
-                return Some(hir::OwnershipMode::Own);
-            }
-            let mode = record_mode(element, module, modules, facts)?;
-            match mode {
-                hir::OwnershipMode::Value if !operation.owned_leaf_only() => Some(mode),
-                hir::OwnershipMode::Own if operation.admits_owned_leaf() => Some(mode),
-                _ => None,
-            }
-        })
-    };
     for function in module.functions.iter().chain(
         module
             .function_instances
@@ -264,6 +272,9 @@ pub(super) fn schema_with_proofs<'a>(
                 return Err(vec![graph_error("SPX-G410", message)]);
             }
         }
+    }
+    if consuming {
+        return Ok("semaprax.graph.v79");
     }
     if let Some(schema) = static_schema {
         return Ok(if finite_scratch {
@@ -304,6 +315,9 @@ pub(super) fn schema_with_proofs<'a>(
 }
 
 #[cfg(test)]
+mod consuming_tests;
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -320,7 +334,7 @@ mod tests {
         build_source(source)
     }
 
-    fn build_source(source: &str) -> WorkspaceGraphBuild {
+    pub(super) fn build_source(source: &str) -> WorkspaceGraphBuild {
         let sources = [
             ("app/main.spx", source),
             (

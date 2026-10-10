@@ -29,6 +29,9 @@
 //! `mod` in a test crate root resolves against `tests/`, so each module names
 //! its file explicitly.
 
+#[path = "cleanup_backends/consuming_record_renewal.rs"]
+mod consuming_record_renewal;
+
 /// `src/byte_data_capacity.rs` is path-included below to exercise it directly,
 /// and it reads the owned-byte ceiling from `crate::byte_ops`. That module is
 /// `pub(crate)` in the compiler and pulls in `crate::{ast, hir, prelude}`, so
@@ -56,8 +59,6 @@ mod executable_aggregate;
 mod executable_generic_function;
 #[path = "cleanup_backends/executable_generic_record.rs"]
 mod executable_generic_record;
-#[path = "cleanup_backends/lexical_exits.rs"]
-mod lexical_exits;
 #[path = "cleanup_backends/executable_owning_closure.rs"]
 mod executable_owning_closure;
 #[path = "cleanup_backends/executable_record_pattern.rs"]
@@ -74,6 +75,8 @@ mod independent_branches;
 mod inventory;
 #[path = "cleanup_backends/kernel_boundary.rs"]
 mod kernel_boundary;
+#[path = "cleanup_backends/lexical_exits.rs"]
+mod lexical_exits;
 #[path = "cleanup_backends/owned_leaf_collections.rs"]
 mod owned_leaf_collections;
 #[path = "cleanup_backends/owned_string_variant.rs"]

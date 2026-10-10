@@ -110,3 +110,10 @@ These new definitions have not been executed as part of the implementation batch
 Loop refusal diagnostics retain their stable code and message prefix, then
 identify the declaration, condition and body expression (each capped at 160
 Unicode scalars) without exposing a full ownership inventory.
+
+## Additive consuming owned-record composition
+
+The separate [consuming owned-record renewal v1](CONSUMING-OWNED-RECORD-VEC-RENEWAL-V1.md)
+reuses this reservation protocol only after independent exact iterator and
+owned-record authority checks. Its selective Graph v79 does not broaden the
+frozen ordinary collector or change canonical cleanup ordering.

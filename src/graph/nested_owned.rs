@@ -467,6 +467,7 @@ pub(super) fn pre_filesystem_graph_schema(
         && !super::scoped_vec_field::requires(program)
         && !super::byte_helper_renewal::requires(program)
         && !super::finite_byte_scratch::requires(program)
+        && !super::consuming_vec_renewal::requires(program)
     {
         return legacy_graph_schema(program);
     }
@@ -493,6 +494,9 @@ pub(super) fn requires_generic_result_schema(program: &ResolvedProgram) -> bool 
 pub(super) fn generic_payload_schema(
     program: &ResolvedProgram,
 ) -> Result<&'static str, Diagnostic> {
+    if super::consuming_vec_renewal::requires(program) {
+        return super::consuming_vec_renewal::graph_schema(program);
+    }
     if super::finite_byte_scratch::requires(program) {
         return super::finite_byte_scratch::graph_schema(program);
     }
@@ -514,6 +518,12 @@ pub(super) fn generic_payload_schema(
 }
 
 pub(crate) fn legacy_graph_schema(program: &ResolvedProgram) -> Result<&'static str, Diagnostic> {
+    if super::consuming_vec_renewal::requires(program) {
+        return Err(Diagnostic::io(
+            "SPX-G410",
+            "consuming owned-record renewal requires Graph v79",
+        ));
+    }
     if super::finite_byte_scratch::requires(program) {
         return Err(Diagnostic::io(
             "SPX-G410",
@@ -661,6 +671,7 @@ pub(super) fn graph_schema_includes_modern_composite_facts(schema: &str) -> bool
             | "semaprax.graph.v74"
             | "semaprax.graph.v76"
             | "semaprax.graph.v78"
+            | "semaprax.graph.v79"
             | "semaprax.graph.v77"
             | "semaprax.graph.v75"
     )
@@ -703,6 +714,7 @@ pub(super) fn graph_schema_includes_loans(schema: &str) -> bool {
             | "semaprax.graph.v74"
             | "semaprax.graph.v76"
             | "semaprax.graph.v78"
+            | "semaprax.graph.v79"
             | "semaprax.graph.v77"
             | "semaprax.graph.v75"
     )
@@ -743,6 +755,7 @@ pub(super) fn graph_schema_includes_projected_provenance(schema: &str) -> bool {
             | "semaprax.graph.v74"
             | "semaprax.graph.v76"
             | "semaprax.graph.v78"
+            | "semaprax.graph.v79"
             | "semaprax.graph.v77"
             | "semaprax.graph.v75"
     )
