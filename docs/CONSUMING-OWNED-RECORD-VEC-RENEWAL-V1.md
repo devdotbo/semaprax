@@ -27,6 +27,10 @@ accepted; only exact typed `vec_len` and literal-index `vec_clone_at` reads may 
 it. Source and HIR independently inspect the complete current function and the
 actual consuming renewal site. The fact is local and is not serialized as a
 supplied empty-vector certificate. Copied call expressions carry no authority.
+A resolved whole-place argument retains its local binding's `Own` mode; the
+independently authenticated `vec_len`/`vec_clone_at` parameter supplies the
+borrow. This representation does not transfer the empty carrier. The complete
+reference census still excludes every consuming use, projection and alias.
 
 The ordinary runtime clone still performs its length/index check and selects
 `semaprax.vec.v1` code 2 before any payload copy; private Core-Wasm token 14

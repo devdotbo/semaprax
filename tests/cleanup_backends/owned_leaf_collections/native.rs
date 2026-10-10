@@ -31,14 +31,25 @@ pub(crate) fn run(source: &str, code: u32, expected: i64, failure: Failure) {
         })
         .collect::<Vec<_>>()
         .join("\n");
-    assert!(generated.contains("spx_leaf_clone"));
+    let has_leaf_clone = generated.contains("spx_leaf_clone(");
+    if !has_leaf_clone {
+        assert!(
+            matches!(failure, Failure::None),
+            "leaf clone faults require the actual clone worker"
+        );
+        assert!(generated.contains("spx_vec_bytes_push("));
+        assert!(generated.contains("spx_iter_bytes_next("));
+        assert!(generated.contains("spx_iter_drop("));
+        assert!(generated.contains("spx_bytes_drop("));
+    }
     // Inject failure only in the clone worker. Ordinary String/Bytes creation
     // keeps its existing policy; this checks the new fallible clone contract.
     // Both exact sites are asserted so moving the worker cannot reduce coverage.
     let string_site = "struct spx_string_v10 *copy = malloc(";
     let bytes_site = "copy.ptr = malloc(";
-    assert_eq!(generated.matches(string_site).count(), 1);
-    assert_eq!(generated.matches(bytes_site).count(), 1);
+    let clone_sites = usize::from(has_leaf_clone);
+    assert_eq!(generated.matches(string_site).count(), clone_sites);
+    assert_eq!(generated.matches(bytes_site).count(), clone_sites);
     let tracked = generated
         .replace(
             string_site,

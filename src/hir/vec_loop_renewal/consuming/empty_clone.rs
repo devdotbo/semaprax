@@ -60,7 +60,9 @@ pub(crate) fn refused(
         return false;
     };
     if callee.as_str() != crate::vec_ops::CLONE_AT_ID
-        || carrier.ownership != OwnershipMode::Borrow
+        // Place expressions retain the binding's Own mode. The exact
+        // compiler-owned clone signature supplies the non-consuming borrow.
+        || !matches!(carrier.ownership, OwnershipMode::Own | OwnershipMode::Borrow)
         || !place.projections.is_empty()
         || index.ty != ResolvedType::Usize
         || !matches!(index.kind, K::Usize(_))
@@ -119,7 +121,7 @@ pub(crate) fn refused(
                 references += 1;
                 valid &= read.projections.is_empty()
                     && expr.ty == carrier.ty
-                    && expr.ownership == OwnershipMode::Borrow;
+                    && matches!(expr.ownership, OwnershipMode::Own | OwnershipMode::Borrow);
             }
         }
         if let K::Closure { captures, .. } = &expr.kind {
@@ -170,6 +172,60 @@ mod tests {
         }));
         selected.expect("owning clone operand")
     }
+    fn selected_mut(expression: &mut ResolvedExpr) -> Option<&mut ResolvedExpr> {
+        if matches!(&expression.kind, K::Call { callee, .. } if callee.as_str()==crate::vec_ops::CLONE_AT_ID)
+        {
+            return Some(expression);
+        }
+        match &mut expression.kind {
+            K::Block { statements, tail } => {
+                for statement in statements {
+                    let child = match statement {
+                        S::Let { value, .. } | S::Assign { value, .. } => value,
+                        S::While { body, .. } | S::LexicalWhile { body, .. } => body.as_mut(),
+                        _ => continue,
+                    };
+                    if let Some(found) = selected_mut(child) {
+                        return Some(found);
+                    }
+                }
+                selected_mut(tail)
+            }
+            K::Call { args, .. } => args.iter_mut().find_map(selected_mut),
+            K::Match { arms, .. } => arms.iter_mut().find_map(|arm| selected_mut(&mut arm.value)),
+            _ => None,
+        }
+    }
+    #[test]
+    fn empty_clone_original_owned_place_does_not_grant_value_or_wrong_owner_authority() {
+        let source = super::super::tests::SOURCE.replace(
+            "words=vec_push<Row>(words,item)",
+            "words=vec_push<Row>(words,vec_clone_at<Row>(later,0usize))",
+        );
+        let program =
+            crate::hir::resolve(&crate::check(&source, "empty-carrier.spx").unwrap()).unwrap();
+        for wrong_owner in [false, true] {
+            let mut forged = program.clone();
+            let result_id = forged.functions[0].result_id.clone();
+            let target =
+                selected_mut(&mut forged.functions[0].body).expect("actual lowered clone site");
+            let K::Call { args, .. } = &mut target.kind else {
+                unreachable!()
+            };
+            assert_eq!(args[0].ownership, OwnershipMode::Own);
+            if wrong_owner {
+                let K::Place(place) = &mut args[0].kind else {
+                    unreachable!()
+                };
+                place.root = result_id;
+            } else {
+                args[0].ownership = OwnershipMode::Value;
+            }
+            let function = &forged.functions[0];
+            assert!(!refused(&forged, function, selected(function)));
+            assert!(crate::hir::validate(&forged).is_err());
+        }
+    }
     #[test]
     fn refusal_replays_current_nominal_owner_constructor_and_not_attached_or_forged_call() {
         let source = super::super::tests::SOURCE.replace(
@@ -179,6 +235,19 @@ mod tests {
         let parsed = crate::check(&source, "empty-refusal.spx").unwrap();
         let program = crate::hir::resolve(&parsed).unwrap();
         let function = &program.functions[0];
+        let K::Call { args, .. } = &selected(function).kind else {
+            unreachable!()
+        };
+        assert_eq!(args[0].ownership, OwnershipMode::Own);
+        assert_eq!(
+            crate::vec_ops::resolved_params_in(
+                &program.declarations,
+                crate::vec_ops::VecOp::CloneAt,
+                &selected(function).ty
+            )[0]
+            .ownership,
+            OwnershipMode::Borrow
+        );
         assert!(refused(&program, function, selected(function)));
         crate::hir::analyze_byte_data_capacity(&program).unwrap();
         crate::hir::validate(&program).unwrap();
