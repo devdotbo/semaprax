@@ -267,6 +267,11 @@ fn c_expression_linear(
         note_c_expression_scratch(mode, &frame, &frames, &values, &arguments, lines)?;
         match frame {
             CExpressionFrame::Enter(expression) => match &expression.kind {
+                ResolvedExprKind::BorrowedUtf8Literal(_) => {
+                    return Err(b107(
+                        "static borrowed UTF-8 is outside the native Rust scalar profile",
+                    ));
+                }
                 ResolvedExprKind::LexicalExit { .. } => {
                     return Err(b107(
                         "lexical control is outside the native Rust scalar profile",

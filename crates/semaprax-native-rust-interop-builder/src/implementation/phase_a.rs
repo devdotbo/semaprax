@@ -1218,7 +1218,10 @@ pub(super) fn validate_selected_scalar_closure(
             return Err(b107("scalar value signature required"));
         }
         match &expression.kind {
-            ResolvedExprKind::LexicalExit { .. } => {
+            ResolvedExprKind::BorrowedUtf8Literal(_) => {
+                    return Err(b107("static borrowed UTF-8 is outside the native Rust scalar profile"));
+                }
+                ResolvedExprKind::LexicalExit { .. } => {
                 return Err(b107("lexical control is outside the native Rust scalar profile"));
             }
             ResolvedExprKind::Int(_)

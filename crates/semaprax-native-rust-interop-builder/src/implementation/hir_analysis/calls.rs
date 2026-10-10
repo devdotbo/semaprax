@@ -315,6 +315,7 @@ pub(in crate::implementation) fn resolved_expression_child<'a>(
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
         | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. } => None,
     }

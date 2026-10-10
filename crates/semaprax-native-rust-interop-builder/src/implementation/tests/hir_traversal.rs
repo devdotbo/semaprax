@@ -542,3 +542,45 @@ fn nominal_facts_lookup_forecast_coexists_with_validator_and_fallback_scratch() 
         capacity.phase_peaks().into_iter().max().unwrap()
     );
 }
+
+#[test]
+fn static_utf8_fingerprint_binds_decoded_bytes_without_granting_scalar_abi() {
+    let resolve = |text: &str| {
+        let source = format!("module interop.static_text; @id(\"selected\") fn selected()->i64 {{let text=str\"{text}\";0}} @id(\"main\") fn main()->i64 {{0}}");
+        hir::resolve(&crate::parse(&source, Path::new("interop-static-text.spx")).unwrap()).unwrap()
+    };
+    let one = resolve("é\\u{0}");
+    let two = resolve("é\\u{1}");
+    let selected = |program: &hir::ResolvedProgram| {
+        program
+            .functions
+            .iter()
+            .find(|function| function.id.as_str() == "selected")
+            .unwrap()
+            .clone()
+    };
+    let first = selected(&one);
+    let second = selected(&two);
+    let literal = |function: &hir::ResolvedFunction| {
+        let ResolvedExprKind::Block { statements, .. } = &function.body.kind else {
+            panic!("block")
+        };
+        let ResolvedStatement::Let { value, .. } = &statements[0] else {
+            panic!("literal binding")
+        };
+        value.clone()
+    };
+    let hash = |expression: &ResolvedExpr| {
+        let mut digest = Sha256::new();
+        hash_expr(&mut digest, expression, 0).unwrap();
+        digest.finalize().to_vec()
+    };
+    assert_ne!(hash(&literal(&first)), hash(&literal(&second)));
+    fingerprint_expression_types_scratch(&first.body, 1).unwrap();
+    assert_eq!(
+        validate_selected_scalar_closure(&[&first])
+            .unwrap_err()
+            .code,
+        "SPX-B107"
+    );
+}

@@ -522,6 +522,7 @@ pub(in crate::implementation) fn fingerprint_expression_types_scratch(
                     | ResolvedExprKind::Float64(_)
                     | ResolvedExprKind::Bool(_)
                     | ResolvedExprKind::String(_)
+                    | ResolvedExprKind::BorrowedUtf8Literal(_)
                     | ResolvedExprKind::Place(_)
                     | ResolvedExprKind::BorrowPlace { .. } => {}
                     ResolvedExprKind::ByteRange {

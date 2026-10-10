@@ -444,6 +444,13 @@ pub(in crate::implementation) fn hash_expr(
                 frame(hasher, identity.as_bytes());
                 frame(hasher, ownership(expression.ownership));
                 match &expression.kind {
+                    ResolvedExprKind::BorrowedUtf8Literal(value) => {
+                        if value.owned_allocation_bytes().is_none() {
+                            return Err(b107("static borrowed UTF-8 lacks its decoded backing"));
+                        }
+                        frame(hasher, b"borrowed-utf8-literal");
+                        frame(hasher, value.as_str().as_bytes());
+                    }
                     ResolvedExprKind::LexicalExit { .. } => {
                         return Err(b107("lexical control is outside the native Rust scalar profile"));
                     }
