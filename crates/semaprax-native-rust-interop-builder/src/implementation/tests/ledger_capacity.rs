@@ -277,7 +277,9 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         include_str!("../../../../../src/cleanup_plan/build/phase_measurement.rs"),
         include_str!("../../../../../src/cleanup_plan/build/helper_index.rs"),
         include_str!("../../../../../src/cleanup_plan/build/helper_index/attached_capacity.rs"),
-        include_str!("../../../../../src/cleanup_plan/build/helper_index/attached_capacity/flat.rs"),
+        include_str!(
+            "../../../../../src/cleanup_plan/build/helper_index/attached_capacity/flat.rs"
+        ),
         include_str!("../../../../../src/cleanup_plan/build/lexical_control.rs"),
         include_str!("../../../../../src/cleanup_plan/build/lexical_contract.rs"),
         include_str!("../../../../../src/cleanup_plan/build/lexical_control/capacity.rs"),

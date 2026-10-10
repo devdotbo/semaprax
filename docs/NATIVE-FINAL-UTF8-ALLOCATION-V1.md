@@ -1,6 +1,7 @@
 # Native final UTF-8 allocation v1
 
 Status: authored explicit native-only profile and owning regression definitions.
+Audience: native ownership implementers and selected-profile adapter hosts.
 No execution, allocation reduction, complete generated-codec qualification, or
 full OPT #724/#737 completion is asserted. The default profile is unchanged.
 The normative allocation cases come from
