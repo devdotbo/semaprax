@@ -94,6 +94,7 @@ fn fixed_expression_identity_slots(kind: &ExprKind) -> usize {
     match kind {
         ExprKind::Try { .. } => BASE + 5,
         ExprKind::Yield { .. } => BASE,
+        ExprKind::LexicalExit { .. } => BASE + 2,
         ExprKind::ConstructVariant { .. } => BASE + 2,
         ExprKind::Call { .. }
         | ExprKind::MethodCall { .. }
@@ -155,7 +156,11 @@ fn ast_expr_identity_slots(expression: &Expr) -> Result<usize, Vec<Diagnostic>> 
                 slots = checked_builder_sum(slots, ast_expr_identity_slots(argument)?)?;
             }
         }
-        ExprKind::Unary { value, .. } => {
+        ExprKind::LexicalExit { value: None, .. } => {}
+        ExprKind::LexicalExit {
+            value: Some(value), ..
+        }
+        | ExprKind::Unary { value, .. } => {
             slots = checked_builder_sum(slots, ast_expr_identity_slots(value)?)?;
         }
         ExprKind::Binary { left, right, .. } => {

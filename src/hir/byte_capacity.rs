@@ -315,6 +315,11 @@ pub(crate) fn push_resolved_expression_children_in_authored_order<'a>(
             pending.push(start);
             pending.push(source);
         }
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            if let Some(value) = value {
+                pending.push(value);
+            }
+        }
         ResolvedExprKind::Unary { value, .. }
         | ResolvedExprKind::Try { operand: value, .. }
         | ResolvedExprKind::TryOption { operand: value, .. }
@@ -846,6 +851,13 @@ pub(super) fn byte_capacity_expression(
                         frames.push(Frame::Visit(start, false));
                         frames.push(Frame::Visit(source, false));
                     }
+                    ResolvedExprKind::LexicalExit { value, .. } => {
+                        if let Some(value) = value {
+                            frames.push(Frame::Visit(value, false));
+                        } else {
+                            results.push(CapacityFlow::Empty);
+                        }
+                    }
                     ResolvedExprKind::Unary { value, .. }
                     | ResolvedExprKind::Try { operand: value, .. }
                     | ResolvedExprKind::TryOption { operand: value, .. }
@@ -882,6 +894,9 @@ pub(super) fn byte_capacity_expression(
                                     frames.push(Frame::Visit(body, true));
                                 }
                                 ResolvedStatement::While {
+                                    condition, body, ..
+                                }
+                                | ResolvedStatement::LexicalWhile {
                                     condition, body, ..
                                 } => {
                                     frames.push(Frame::Loop);

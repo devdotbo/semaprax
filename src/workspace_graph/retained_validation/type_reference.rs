@@ -70,6 +70,9 @@ fn authenticate_for_own<'a>(
         ..
     }, ResolvedStatement::While {
         condition, body, ..
+    }
+    | ResolvedStatement::LexicalWhile {
+        condition, body, ..
     }] = statements.as_slice()
     else {
         return None;

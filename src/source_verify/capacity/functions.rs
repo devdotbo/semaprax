@@ -37,3 +37,45 @@ pub(super) fn source_capacity_slot(
     }
     Ok(())
 }
+
+pub(super) fn source_array_payload(types: &TypeTable<'_>, ty: &Type) -> Result<u32, ()> {
+    let mut total = 0_u32;
+    let mut pending = vec![ty.clone()];
+    let mut expanded = 0_usize;
+    while let Some(ty) = pending.pop() {
+        expanded = expanded.checked_add(1).ok_or(())?;
+        if expanded > 65_536 {
+            return Err(());
+        }
+        match ty {
+            Type::ArrayU8(length) => total = total.checked_add(length).ok_or(())?,
+            Type::Named { .. } => {
+                if let Some(fields) = types.record_fields(&ty) {
+                    for field in fields.iter().rev() {
+                        pending.push(types.record_field_type(&ty, field).ok_or(())?);
+                    }
+                }
+            }
+            Type::Never
+            | Type::I64
+            | Type::I32
+            | Type::Char
+            | Type::U8
+            | Type::Usize
+            | Type::F32
+            | Type::F64
+            | Type::Bool
+            | Type::String
+            | Type::Bytes
+            | Type::Str
+            | Type::SliceU8
+            | Type::StringMap
+            | Type::OnceFunction
+            | Type::OnceFunctionI64
+            | Type::OnceFunctionI64Pair
+            | Type::MutFunctionI64
+            | Type::Function { .. } => {}
+        }
+    }
+    Ok(total)
+}

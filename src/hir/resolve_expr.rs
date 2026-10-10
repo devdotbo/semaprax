@@ -51,7 +51,7 @@ impl Resolver<'_> {
 
         while let Some(frame) = frames.pop() {
             #[cfg(test)]
-            capacity::note(&frames, &results, &frame);
+            capacity::note(&frames, &results, &frame, &loop_targets);
             match frame {
                 Frame::EnterLoop(target) => {
                     lexical_exit::enter_loop(&mut loop_targets, &mut loop_depth, target)?

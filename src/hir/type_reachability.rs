@@ -214,6 +214,11 @@ fn collect_expression(expression: &ResolvedExpr, declarations: &mut BTreeSet<Dec
                 collect_expression(argument, declarations);
             }
         }
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            if let Some(value) = value {
+                collect_expression(value, declarations);
+            }
+        }
         ResolvedExprKind::Unary { value, .. }
         | ResolvedExprKind::Upcast { source: value }
         | ResolvedExprKind::Yield { request: value } => {

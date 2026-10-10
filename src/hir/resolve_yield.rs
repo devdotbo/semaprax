@@ -709,7 +709,11 @@ fn scan_expr(
                 yielded_bindings,
             )?;
         }
-        ResolvedExprKind::Unary { value, .. } => {
+        ResolvedExprKind::LexicalExit { value: None, .. } => {}
+        ResolvedExprKind::LexicalExit {
+            value: Some(value), ..
+        }
+        | ResolvedExprKind::Unary { value, .. } => {
             scan_expr(
                 resolver,
                 function_name,
@@ -1112,6 +1116,9 @@ fn scan_statement(
             yielded_bindings,
         ),
         ResolvedStatement::While {
+            condition, body, ..
+        }
+        | ResolvedStatement::LexicalWhile {
             condition, body, ..
         } => {
             scan_expr(

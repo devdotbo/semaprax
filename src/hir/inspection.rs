@@ -313,6 +313,7 @@ fn audit_resolved_expression(root: &ResolvedExpr) -> Result<(), Diagnostic> {
                 }
                 pending.extend(&call.args);
             }
+            ResolvedExprKind::LexicalExit { value, .. } => pending.extend(value.as_deref()),
             ResolvedExprKind::Unary { value, .. } => pending.push(value),
             ResolvedExprKind::Binary { left, right, .. } => {
                 pending.push(right);
@@ -944,6 +945,11 @@ pub(crate) fn visit_resolved_calls(
                 visit_resolved_calls(arg, visit);
             }
         }
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            if let Some(value) = value {
+                visit_resolved_calls(value, visit);
+            }
+        }
         ResolvedExprKind::Unary { value, .. }
         | ResolvedExprKind::Try { operand: value, .. }
         | ResolvedExprKind::TryOption { operand: value, .. }
@@ -1100,6 +1106,11 @@ pub(crate) fn visit_workspace_call_sites<'a, E>(
             ResolvedExprKind::HostCommandCall(call) => {
                 for argument in &call.args {
                     walk(owner, argument, visit)?;
+                }
+            }
+            ResolvedExprKind::LexicalExit { value, .. } => {
+                if let Some(value) = value {
+                    walk(owner, value, visit)?;
                 }
             }
             ResolvedExprKind::Unary { value, .. }

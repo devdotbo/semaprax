@@ -4,7 +4,7 @@ use super::*;
 mod command_io;
 
 mod functions;
-pub(super) use functions::source_capacity_functions;
+pub(super) use functions::{source_array_payload, source_capacity_functions};
 
 pub(super) struct SourceCapacityContext<'a> {
     pub(super) types: &'a TypeTable<'a>,
@@ -204,48 +204,6 @@ pub(super) fn source_transcript_frame_scratch_peak() -> (usize, usize) {
         SOURCE_TRANSCRIPT_ROOT_REF_PEAK.with(std::cell::Cell::get),
     )
 }
-fn source_array_payload(types: &TypeTable<'_>, ty: &Type) -> Result<u32, ()> {
-    let mut total = 0_u32;
-    let mut pending = vec![ty.clone()];
-    let mut expanded = 0_usize;
-    while let Some(ty) = pending.pop() {
-        expanded = expanded.checked_add(1).ok_or(())?;
-        if expanded > 65_536 {
-            return Err(());
-        }
-        match ty {
-            Type::ArrayU8(length) => total = total.checked_add(length).ok_or(())?,
-            Type::Named { .. } => {
-                if let Some(fields) = types.record_fields(&ty) {
-                    for field in fields.iter().rev() {
-                        pending.push(types.record_field_type(&ty, field).ok_or(())?);
-                    }
-                }
-            }
-            Type::Never
-            | Type::I64
-            | Type::I32
-            | Type::Char
-            | Type::U8
-            | Type::Usize
-            | Type::F32
-            | Type::F64
-            | Type::Bool
-            | Type::String
-            | Type::Bytes
-            | Type::Str
-            | Type::SliceU8
-            | Type::StringMap
-            | Type::OnceFunction
-            | Type::OnceFunctionI64
-            | Type::OnceFunctionI64Pair
-            | Type::MutFunctionI64
-            | Type::Function { .. } => {}
-        }
-    }
-    Ok(total)
-}
-
 fn source_capacity_super_method<'a>(
     context: &SourceCapacityContext<'a>,
     method: &str,
@@ -322,6 +280,7 @@ pub(super) fn source_capacity_expr_type(
                     .get(name.as_str())
                     .map(|item| item.return_type.clone())
             }),
+        ExprKind::LexicalExit { .. } => Some(Type::Never),
         ExprKind::MethodCall { .. }
         | ExprKind::Unary { .. }
         | ExprKind::Try { .. }
@@ -361,6 +320,9 @@ pub(super) fn source_capacity_expr_type(
                 continuations.push(Continuation::Method(method));
                 current = receiver;
                 continue;
+            }
+            ExprKind::LexicalExit { .. } => {
+                result = Some(Type::Never);
             }
             ExprKind::Unary { value, .. }
             | ExprKind::Try { operand: value }
@@ -1168,6 +1130,18 @@ fn source_capacity_expr(
                                 }),
                                 scope: std::rc::Rc::clone(&scope),
                             });
+                        }
+                    }
+                    ExprKind::LexicalExit { value, .. } => {
+                        if let Some(value) = value {
+                            frames.push(Frame::Visit {
+                                expression: value,
+                                path: format!("{path}.value"),
+                                scope: std::rc::Rc::clone(&scope),
+                                direct_destination: false,
+                            });
+                        } else {
+                            results.push(crate::byte_data_capacity::CapacityFlow::Empty);
                         }
                     }
                     ExprKind::Unary { value, .. }

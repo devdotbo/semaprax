@@ -1443,7 +1443,8 @@ fn collect_expression_type_edges(
                 )?;
             }
         }
-        ExprKind::Unary { value, .. } => collect_expression_type_edges(
+        ExprKind::LexicalExit { value: None, .. } => {},
+        ExprKind::LexicalExit { value: Some(value), .. } | ExprKind::Unary { value, .. } => collect_expression_type_edges(
             program,
             owner,
             value,

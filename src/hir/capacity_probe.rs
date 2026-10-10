@@ -201,6 +201,9 @@ pub(super) fn resolved_expr_owned_capacity(expression: &ResolvedExpr) -> usize {
             bytes += operation.as_str().len() + child(source) + child(start) + child(end);
         }
         ResolvedExprKind::ArrayU8(values) => bytes += values.capacity(),
+        ResolvedExprKind::LexicalExit { target, value, .. } => {
+            bytes += lexical_target_capacity(target) + value.as_deref().map_or(0, child);
+        }
         ResolvedExprKind::Unary { value: operand, .. } => bytes += child(operand),
         ResolvedExprKind::Upcast { source } | ResolvedExprKind::Yield { request: source } => {
             bytes += child(source)
@@ -466,6 +469,16 @@ pub(super) fn resolved_statement_owned_capacity(statement: &ResolvedStatement) -
         ResolvedStatement::Unsafe { audit, body, .. } => {
             audit.capacity() + resolved_expr_owned_capacity(body)
         }
+        ResolvedStatement::LexicalWhile {
+            condition,
+            body,
+            latch,
+            ..
+        } => {
+            resolved_expr_owned_capacity(condition)
+                + resolved_expr_owned_capacity(body)
+                + lexical_latch_capacity(latch)
+        }
         // While loops carry their condition plus their ordinary block body.
         ResolvedStatement::While {
             condition, body, ..
@@ -533,4 +546,34 @@ pub(super) fn vector_field_owned_capacity(provenance: &super::ByteSliceProvenanc
             + value.field.as_str().len()
             + value.index.as_str().len()
     })
+}
+
+#[cfg(test)]
+pub(super) fn lexical_target_capacity(target: &super::ControlTarget) -> usize {
+    let (owner, site) = match target {
+        super::ControlTarget::Function(owner) => (owner, 0),
+        super::ControlTarget::Loop { owner, site } => (owner, site.as_str().len()),
+    };
+    site + match owner {
+        super::FunctionExecutionId::Monomorphic(id) => id.as_str().len(),
+        super::FunctionExecutionId::Generic(id) => id.as_str().len(),
+    }
+}
+#[cfg(test)]
+fn lexical_latch_capacity(latch: &super::LoopLatchKind) -> usize {
+    match latch {
+        super::LoopLatchKind::Condition => 0,
+        super::LoopLatchKind::SourceForStep { step, .. } => step.as_str().len(),
+        super::LoopLatchKind::OwnedIteratorStep {
+            next,
+            assignment,
+            step,
+            remainder,
+        } => {
+            next.as_str().len()
+                + assignment.as_str().len()
+                + step.as_str().len()
+                + remainder.as_str().len()
+        }
+    }
 }

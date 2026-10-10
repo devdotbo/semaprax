@@ -159,7 +159,11 @@ pub(super) fn ast_expr_cost(
                 ast_expr_cost(argument, cost)?;
             }
         }
-        ExprKind::Unary { value, .. } => ast_expr_cost(value, cost)?,
+        ExprKind::LexicalExit { value: None, .. } => {}
+        ExprKind::LexicalExit {
+            value: Some(value), ..
+        }
+        | ExprKind::Unary { value, .. } => ast_expr_cost(value, cost)?,
         ExprKind::Binary { left, right, .. } => {
             ast_expr_cost(left, cost)?;
             ast_expr_cost(right, cost)?;

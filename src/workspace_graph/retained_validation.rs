@@ -1,8 +1,5 @@
-//! Independent replay of retained Workspace AST, HIR, and typed edges.
-//!
-//! This module validates already-retained compiler facts under the parent's
-//! bounded builder ledger. It has no filesystem, locking, mutation, rendering,
-//! publication, backend, or runtime authority.
+//! Independent retained AST/HIR/edge replay under the parent bounded ledger.
+//! Read-only proof code with no publication, backend or runtime authority.
 
 use crate::ast::{ModuleUseKind, Program};
 use crate::diagnostic::Diagnostic;
@@ -410,7 +407,11 @@ fn visit_resolved_calls<'a>(
                 visit_resolved_calls(argument, visit);
             }
         }
-        hir::ResolvedExprKind::Unary { value, .. } => visit_resolved_calls(value, visit),
+        hir::ResolvedExprKind::LexicalExit { value: None, .. } => {}
+        hir::ResolvedExprKind::LexicalExit {
+            value: Some(value), ..
+        }
+        | hir::ResolvedExprKind::Unary { value, .. } => visit_resolved_calls(value, visit),
         hir::ResolvedExprKind::Binary { left, right, .. } => {
             visit_resolved_calls(left, visit);
             visit_resolved_calls(right, visit);
@@ -946,7 +947,11 @@ fn collect_resolved_expression_type_sites<'a>(
                 )?;
             }
         }
-        hir::ResolvedExprKind::Unary { value, .. } => collect_resolved_expression_type_sites(
+        hir::ResolvedExprKind::LexicalExit { value: None, .. } => {}
+        hir::ResolvedExprKind::LexicalExit {
+            value: Some(value), ..
+        }
+        | hir::ResolvedExprKind::Unary { value, .. } => collect_resolved_expression_type_sites(
             owner,
             value,
             &crate::bounded_output::budgeted_format(format_args!("{path}.value")),
@@ -983,7 +988,7 @@ fn collect_resolved_expression_type_sites<'a>(
                     continue;
                 }
                 for child_index in 0..statement.child_count() {
-                    let segment = if matches!(statement, hir::ResolvedStatement::While { .. }) {
+                    let segment = if hir::lexical_exit::is_loop_statement(statement) {
                         if child_index == 0 {
                             "condition"
                         } else {

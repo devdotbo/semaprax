@@ -83,3 +83,10 @@ pub(crate) fn reachable_arm(arms: &[super::ResolvedMatchArm]) -> Option<&super::
 pub(crate) fn normal_arm(arms: &[super::ResolvedMatchArm]) -> Option<&super::ResolvedMatchArm> {
     reachable_arm(arms).or_else(|| arms.first())
 }
+
+pub(crate) fn is_loop_statement(statement: &super::ResolvedStatement) -> bool {
+    matches!(
+        statement,
+        super::ResolvedStatement::While { .. } | super::ResolvedStatement::LexicalWhile { .. }
+    )
+}

@@ -448,6 +448,8 @@ pub(super) fn frame_owned_capacity(
     }
     let path = match frame {
         Frame::ForOwn(_) => unreachable!("handled above"),
+        Frame::EnterLoop(_) | Frame::LeaveLoop => 0,
+        Frame::FinishLexicalExit { path, .. } => path.capacity(),
         Frame::FinishInvoke { path, .. }
         | Frame::Enter { path, .. }
         | Frame::FinishNativeCall { path, .. }
@@ -542,6 +544,9 @@ pub(super) fn frame_owned_capacity(
         _ => 0,
     };
     let retained = match frame {
+        Frame::EnterLoop(target) | Frame::FinishLexicalExit { target, .. } => {
+            super::capacity_probe::lexical_target_capacity(target)
+        }
         Frame::FinishInvoke { callable, .. } => resolved_expr_owned_capacity(callable),
         Frame::FinishLiteralFormat { template, .. } => template.capacity(),
         Frame::FinishVecField { element, field, .. }
