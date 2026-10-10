@@ -42,7 +42,27 @@ mod source_census;
 
 /// The complete private implementation module, root first.
 const IMPLEMENTATION_SOURCE: &str = concat!(
-    include_str!("../implementation.rs"),
+    concat!(
+        include_str!("../implementation.rs"),
+        "\n",
+        include_str!("canonical_input.rs"),
+        "\n",
+        include_str!("exact_replay.rs"),
+        "\n",
+        include_str!("hir_analysis.rs"),
+        "\n",
+        include_str!("hir_analysis/calls.rs"),
+        "\n",
+        include_str!("hir_analysis/closure.rs"),
+        "\n",
+        include_str!("hir_analysis/fingerprint.rs"),
+        "\n",
+        include_str!("hir_analysis/scalars.rs"),
+        "\n",
+        include_str!("hir_analysis/type_identity.rs"),
+        "\n",
+        include_str!("phase_a.rs")
+    ),
     include_str!("observability.rs"),
     include_str!("facts_capacity.rs"),
     include_str!("bundle_facts.rs"),
@@ -94,7 +114,11 @@ const TESTS_SOURCE: &str = concat!(
     include_str!("tests/ledger_capacity.rs"),
     include_str!("tests/phase_b_toolchain.rs"),
     include_str!("tests/phase_b_staging.rs"),
-    include_str!("tests/source_census.rs"),
+    concat!(
+        include_str!("tests/source_census.rs"),
+        "\n",
+        include_str!("tests/source_census/lexical.rs")
+    ),
     include_str!("tests/cleanup_census.rs"),
     include_str!("tests/hir_traversal.rs"),
     include_str!("tests/indexed_scalar.rs"),

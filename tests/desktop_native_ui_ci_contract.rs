@@ -16,7 +16,51 @@ fn private_native_ui_is_platform_real_feature_gated_and_source_locked() {
     let diagnostics = format!(
         "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}",
         [
-            read(root, "src/codegen.rs"),
+            [
+                read(root, "src/codegen.rs"),
+                read(root, "src/codegen/checked_final_utf8_preflight.rs"),
+                read(root, "src/codegen/checked_string_allocation.rs"),
+                read(root, "src/codegen/native_adapter_abi.rs"),
+                read(root, "src/codegen/native_aggregate.rs"),
+                read(root, "src/codegen/native_byte_data.rs"),
+                read(root, "src/codegen/native_byte_data/stream_epoch.rs"),
+                read(root, "src/codegen/native_callable_abi.rs"),
+                read(root, "src/codegen/native_callable_abi_v3.rs"),
+                read(root, "src/codegen/native_callable_bundle.rs"),
+                read(root, "src/codegen/native_callable_execution.rs"),
+                read(root, "src/codegen/native_callable_provider.rs"),
+                read(root, "src/codegen/native_callable_provider_v3.rs"),
+                read(root, "src/codegen/native_callable_settlement_proof.rs"),
+                read(root, "src/codegen/native_callable_wire_v3.rs"),
+                read(root, "src/codegen/native_capability_authority.rs"),
+                read(root, "src/codegen/native_capability_token.rs"),
+                read(root, "src/codegen/native_cleanup.rs"),
+                read(root, "src/codegen/native_cleanup_emit.rs"),
+                read(root, "src/codegen/native_command.rs"),
+                read(root, "src/codegen/native_conformance.rs"),
+                read(root, "src/codegen/native_conformance_materialize.rs"),
+                read(root, "src/codegen/native_conformance_wire.rs"),
+                read(root, "src/codegen/native_host_contract.rs"),
+                read(root, "src/codegen/native_host_output.rs"),
+                read(root, "src/codegen/native_module_lease.rs"),
+                read(root, "src/codegen/native_owned_data_provider.rs"),
+                read(
+                    root,
+                    "src/codegen/native_owned_data_provider/nested_record.rs"
+                ),
+                read(root, "src/codegen/native_resource.rs"),
+                read(root, "src/codegen/native_runtime.rs"),
+                read(root, "src/codegen/native_selected_file_command.rs"),
+                read(root, "src/codegen/native_settlement_derivation.rs"),
+                read(root, "src/codegen/selected_final_utf8.rs"),
+                read(root, "src/codegen/selected_final_utf8/adapter.rs"),
+                read(root, "src/codegen/selected_final_utf8/certificate.rs"),
+                read(root, "src/codegen/selected_final_utf8/runtime.rs"),
+                read(root, "src/codegen/native_trace.rs"),
+                read(root, "src/codegen/native_trace_runtime.rs"),
+                read(root, "src/codegen/native_value.rs")
+            ]
+            .join("\n"),
             read(root, "src/codegen/native_bytes.rs"),
             read(root, "src/codegen/native_bytes/lexical_exit.rs"),
             read(root, "src/codegen/native_bytes/origin.rs"),
@@ -61,7 +105,12 @@ fn private_native_ui_is_platform_real_feature_gated_and_source_locked() {
         ),
         format!(
             "{}\n{}\n{}\n{}",
-            read(root, "src/codegen/native_vec.rs"),
+            [
+                read(root, "src/codegen/native_vec.rs"),
+                read(root, "src/codegen/native_vec/copy_record.rs"),
+                read(root, "src/codegen/native_vec/owned_leaf.rs")
+            ]
+            .join("\n"),
             read(root, "src/codegen/native_vec/sort_keys_check.c"),
             read(root, "src/codegen/native_vec/sort_keys.c"),
             read(root, "src/codegen/native_vec/owned_sort_keys.c")

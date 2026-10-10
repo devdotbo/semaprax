@@ -143,7 +143,12 @@ impl Sources {
             // proof that no future command module can activate the provisioner.
             known_ordinary_cli_surfaces: [
                 read(repository, "src/cli_driver.rs"),
-                read(repository, "src/cli/json_codec.rs"),
+                [
+                    read(repository, "src/cli/json_codec.rs"),
+                    read(repository, "src/cli/json_codec/plan.rs"),
+                    read(repository, "src/cli/json_codec/profile.rs"),
+                ]
+                .join("\n"),
                 read(repository, "src/cli_driver/native_test.rs"),
                 read(repository, "src/cli_driver/context_dispatch.rs"),
                 read(repository, "src/cli_driver/hot_reload.rs"),
@@ -156,7 +161,11 @@ impl Sources {
                 read(repository, "src/cli_driver/supply_chain.rs"),
                 read(repository, "src/cli_driver/persistence_dispatch.rs"),
                 read(repository, "src/cli/project_runtime.rs"),
-                read(repository, "src/cli/help.rs"),
+                [
+                    read(repository, "src/cli/help.rs"),
+                    read(repository, "src/cli/help/authoring.rs"),
+                ]
+                .join("\n"),
                 read(repository, "src/cli/help/library.rs"),
                 read(repository, "src/cli/help/shapes.rs"),
                 read(repository, "src/cli/help/diagnostic_index.rs"),

@@ -67,6 +67,16 @@ fn profiles_are_deterministic_and_broad_dispatch_files_force_full() {
     repository.write("src/graph/nested_owned.rs", "pub fn nested_owned() {}\n");
     repository.write("src/graph/work_counter.rs", "pub fn work_counter() {}\n");
     let additive_graph_modules = [
+        "src/graph/generic_instances.rs",
+        "src/graph/generic_mapping.rs",
+        "src/graph/owned_collection_records.rs",
+        "src/graph/owned_nested_outcome.rs",
+        "src/graph/projected_string_view.rs",
+        "src/graph/scoped_vec_field.rs",
+        "src/graph/byte_helper_renewal.rs",
+        "src/graph/native_import.rs",
+        "src/graph/revision_digest.rs",
+        "src/graph/evidence_schema.rs",
         "src/graph/lexical_exit.rs",
         "src/graph/operator_text.rs",
         "src/graph/byte_buffer_renewal.rs",
@@ -118,6 +128,7 @@ fn cli_and_editor_surfaces_route_changed_with_their_own_gates_in_fixed_order() {
     repository.write("src/cli/help.rs", "pub fn help() { /* changed */ }\n");
     repository.write("src/cli/help/library.rs", "pub fn library() {}\n");
     repository.write("src/cli/help/shapes.rs", "pub fn shapes() {}\n");
+    repository.write("src/cli/help/scoped_diagnostics.rs", "pub fn scoped() {}\n");
     repository.write(
         "src/cli/help/diagnostic_index.rs",
         "pub fn response() { /* changed */ }\n",
@@ -128,6 +139,7 @@ fn cli_and_editor_surfaces_route_changed_with_their_own_gates_in_fixed_order() {
     );
     repository.write("src/main.rs", "fn main() { println!(\"cli\"); }\n");
     let plan = repository.changed_plan(&[]).unwrap();
+    assert!(plan.contains("path\tsrc/cli/help/scoped_diagnostics.rs\tcli-surface\tcli-harnesses,documentation,rustdoc\n"));
     assert!(plan.contains("effective\tchanged\n"));
     assert!(plan.contains("reason\tcomplete-git-state-has-narrow-mappings\n"));
     assert!(

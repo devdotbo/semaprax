@@ -1,7 +1,17 @@
 #[test]
 fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
     let validation = concat!(
-        include_str!("../src/hir/validation.rs"),
+        concat!(
+            include_str!("../src/hir/validation.rs"),
+            "\n",
+            include_str!("../src/hir/validation/byte_range.rs"),
+            "\n",
+            include_str!("../src/hir/validation/lexical_exit.rs"),
+            "\n",
+            include_str!("../src/hir/validation/record_traversal.rs"),
+            "\n",
+            include_str!("../src/hir/validation/string_intrinsic.rs")
+        ),
         include_str!("../src/hir/validation/vec_field.rs"),
         include_str!("../src/hir/validation/upcast.rs"),
         include_str!("../src/hir/validation/literal_format_result_tests.rs"),
@@ -36,7 +46,13 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/hir/validation/owned_buffer.rs"),
         include_str!("../src/hir/validation/owned_result_try.rs"),
         include_str!("../src/hir/validation/owner_renewal.rs"),
-        include_str!("../src/loop_calls/byte_writer.rs"),
+        concat!(
+            include_str!("../src/loop_calls/byte_writer.rs"),
+            "\n",
+            include_str!("../src/loop_calls/byte_writer/source.rs"),
+            "\n",
+            include_str!("../src/loop_calls/byte_writer/source_index.rs")
+        ),
         include_str!("../src/loop_calls/byte_writer/resolved.rs"),
         include_str!("../src/loop_calls/byte_writer/bindings.rs"),
         include_str!("../src/loop_calls/byte_writer/module_index.rs"),

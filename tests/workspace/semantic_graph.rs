@@ -347,7 +347,23 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
     let root = format!(
         "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}",
         concat!(
-            include_str!("../../src/workspace_graph.rs"),
+            concat!(
+                include_str!("../../src/workspace_graph.rs"),
+                "\n",
+                include_str!("../../src/workspace_graph/package.rs"),
+                "\n",
+                include_str!("../../src/workspace_graph/record_traversal.rs"),
+                "\n",
+                include_str!("../../src/workspace_graph/source_schema.rs"),
+                "\n",
+                include_str!("../../src/workspace_graph/source_schema/byte_helper.rs"),
+                "\n",
+                include_str!("../../src/workspace_graph/source_schema/byte_helper/proofs.rs"),
+                "\n",
+                include_str!(
+                    "../../src/workspace_graph/source_schema/byte_helper/type_authority.rs"
+                )
+            ),
             include_str!("../../src/workspace_graph/type_names.rs"),
             include_str!("../../src/workspace_graph/shape_identity.rs"),
             include_str!("../../src/workspace_graph/operation_sidecar.rs"),
@@ -404,7 +420,11 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
     );
     let root = root.as_str();
     let projection_root = concat!(
-        include_str!("../../src/workspace_graph/expected_projection.rs"),
+        concat!(
+            include_str!("../../src/workspace_graph/expected_projection.rs"),
+            "\n",
+            include_str!("../../src/workspace_graph/expected_projection/record_traversal.rs")
+        ),
         include_str!("../../src/workspace_graph/expected_projection/sort_keys.rs")
     );
     let projection_local_identity =
