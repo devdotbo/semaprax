@@ -61,4 +61,9 @@ pub enum LoopLatchKind {
 }
 
 mod walk;
-pub(crate) use walk::{child, requires};
+pub(crate) use walk::{child, contains, requires};
+
+mod owner;
+pub(crate) use owner::{owner, validate_owner};
+
+pub(super) mod rekey;

@@ -396,3 +396,20 @@ fn decimal_digits(value: usize) -> usize {
 #[cfg(test)]
 #[path = "ids/identity_comparison_tests.rs"]
 mod identity_comparison_tests;
+
+/// Borrow the canonical path only after independently checking its full owner/domain/length encoding.
+pub(super) fn checked_scoped_path<'a>(
+    value: &'a str,
+    owner: &FunctionExecutionId,
+    kind: &str,
+) -> Option<&'a str> {
+    let empty = scoped_identity(owner, kind, "");
+    let prefix = empty.strip_suffix("0:")?;
+    let rest = value.strip_prefix(prefix)?;
+    let (length, path) = rest.split_once(':')?;
+    let parsed = length.parse::<usize>().ok()?;
+    if length != parsed.to_string() || path.len() != parsed {
+        return None;
+    }
+    matches_scoped_identity(value, owner, kind, parsed, path).then_some(path)
+}

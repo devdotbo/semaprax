@@ -138,3 +138,28 @@ pub(crate) fn requires(function: &ResolvedFunction) -> Result<bool, Diagnostic> 
     }
     Ok(false)
 }
+
+/// Admitted resolver output already obeys the HIR depth bound.
+pub(crate) fn contains(root: &ResolvedExpr) -> bool {
+    let mut stack = [None; crate::cache_codec::MAX_DEPTH + 1];
+    stack[0] = Some((root, 0usize));
+    let mut len = 1;
+    while len != 0 {
+        let (expr, index) = stack[len - 1].expect("occupied lexical frame");
+        if index == 0 && matches!(expr.kind, K::LexicalExit { .. }) {
+            return true;
+        }
+        if let Some(next) = child(expr, index) {
+            if len == stack.len() {
+                return true;
+            } // fail closed: independent HIR depth replay rejects it
+            stack[len - 1] = Some((expr, index + 1));
+            stack[len] = Some((next, 0));
+            len += 1;
+        } else {
+            len -= 1;
+            stack[len] = None;
+        }
+    }
+    false
+}
