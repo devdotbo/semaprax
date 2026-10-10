@@ -71,7 +71,26 @@ impl<'a, 'p> FactCapacity<'a, 'p> {
                     ResolvedType::TypeParameter { owner, .. } => {
                         self.reserve(owner.as_str().len())?
                     }
-                    _ => {}
+                    ResolvedType::Never
+                    | ResolvedType::OnceFunction
+                    | ResolvedType::OnceFunctionI64
+                    | ResolvedType::OnceFunctionI64Pair
+                    | ResolvedType::MutFunctionI64
+                    | ResolvedType::Unit
+                    | ResolvedType::I64
+                    | ResolvedType::I32
+                    | ResolvedType::Char
+                    | ResolvedType::U8
+                    | ResolvedType::Usize
+                    | ResolvedType::ArrayU8(_)
+                    | ResolvedType::F32
+                    | ResolvedType::F64
+                    | ResolvedType::Bool
+                    | ResolvedType::String
+                    | ResolvedType::Bytes
+                    | ResolvedType::Str
+                    | ResolvedType::SliceU8
+                    | ResolvedType::StringMap => {}
                 }
             }
             let child = match ty {
