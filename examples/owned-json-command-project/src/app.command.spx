@@ -14,7 +14,7 @@ fn receive() -> Outcome
     uses { process.stdin.read }
 {
     let normalized = normalize();
-    match own normalized { StreamInput::Error { code, offset, field } => Outcome::Error { code: code, offset: offset, field: field }, StreamInput::Ready { bytes, length } => decode(byte_range(bytes_as_slice(bytes), 0usize, length)), }
+    match own normalized { StreamInput::Error { code, offset, field } => { return Outcome::Error { code: code, offset: offset, field: field }; }, StreamInput::Ready { bytes, length } => { return decode(byte_range(bytes_as_slice(bytes), 0usize, length)); }, }
 }
 
 @id("warehouse.adjust")
@@ -28,7 +28,7 @@ fn command() -> i64
     uses { process.stdin.read, process.stdout.write }
 {
     let outcome = receive();
-    match own outcome { Outcome::Error { code, offset, field } => 2, Outcome::Decoded { locations, stock } => { let locations = vec_sort_owned<string>(locations); let sorted = vec_sort_owned<Stock>(stock); let rows = if vec_len<Stock>(sorted) > 0usize { let first = vec_clone_at<Stock>(sorted, 0usize); let revised = adjust(first); vec_replace<Stock>(sorted, 0usize, revised) } else { sorted }; let rendered = encode(locations, rows, 131072usize); match own rendered { Encoded::Refused { required } => 2, Encoded::Encoded { text } => { let bytes = str_as_bytes(string_as_str(text)); let written = stdout_write(bytes); if written == byte_len(bytes) { 0 } else { 1 } }, } }, }
+    match own outcome { Outcome::Error { code, offset, field } => 2, Outcome::Decoded { locations, stock } => { let sorted_locations = vec_sort_owned<string>(locations); let sorted = vec_sort_owned<Stock>(stock); let rows = if vec_len<Stock>(sorted) > 0usize { let first = vec_clone_at<Stock>(sorted, 0usize); let revised = adjust(first); vec_replace<Stock>(sorted, 0usize, revised) } else { sorted }; let rendered = encode(sorted_locations, rows, 131072usize); match own rendered { Encoded::Refused { required } => 2, Encoded::Encoded { text } => { let bytes = str_as_bytes(string_as_str(text)); let written = stdout_write(bytes); if written == byte_len(bytes) { 0 } else { 1 } }, } }, }
 }
 
 @id("warehouse.app.main")

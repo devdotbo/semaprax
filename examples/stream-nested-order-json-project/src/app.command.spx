@@ -24,7 +24,8 @@ fn summarize(lines: borrow Vec<Line>) -> Summary
     while at < vec_len<Line>(lines) {
         let row = vec_clone_at<Line>(lines, at);
         quantity = quantity + i64_from_u8(row.quantity);
-        sku_bytes = sku_bytes + i64_from_usize(byte_len(str_as_bytes(string_as_str(row.sku))));
+        let sku_view_bytes = str_as_bytes(string_as_str(row.sku));
+        sku_bytes = sku_bytes + i64_from_usize(byte_len(sku_view_bytes));
         at = at + 1usize;
         at < vec_len<Line>(lines)
     }

@@ -59,8 +59,8 @@ use function @id("application.request.json.stream.normalize") from consumer.sche
 permit {process.args.read,process.stderr.write,process.stdin.read,process.stdout.write}
 @id("consumer.receive") fn receive()->Outcome uses{process.stdin.read}{
 let normalized=normalize();match own normalized{
-Input::Error{code,offset,field}=>Outcome::Error{code:code,offset:offset,field:field},
-Input::Ready{bytes,length}=>decode(byte_range(bytes_as_slice(bytes),0usize,length)),
+Input::Error{code,offset,field}=>{return Outcome::Error{code:code,offset:offset,field:field};},
+Input::Ready{bytes,length}=>{return decode(byte_range(bytes_as_slice(bytes),0usize,length));},
 }}
 @id("consumer.change") fn change(value:own Patient)->Patient{
 match own value{Patient{id,arrival,service,priority,deadline}=>Patient{id:id,arrival:arrival+1,service:service,priority:priority,deadline:deadline},}}

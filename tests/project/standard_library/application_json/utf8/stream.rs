@@ -77,8 +77,8 @@ use function @id("unicode.input.json.stream.normalize") from consumer.schema as 
 permit {process.args.read,process.stderr.write,process.stdin.read,process.stdout.write}
 @id("consumer.receive") fn receive()->Outcome uses{process.stdin.read}{
 let normalized=normalize();match own normalized{
-Input::Error{code,offset,field}=>Outcome::Error{code:code,offset:offset,field:field},
-Input::Ready{bytes,length}=>decode(byte_range(bytes_as_slice(bytes),0usize,length)),
+Input::Error{code,offset,field}=>{return Outcome::Error{code:code,offset:offset,field:field};},
+Input::Ready{bytes,length}=>{return decode(byte_range(bytes_as_slice(bytes),0usize,length));},
 }}
 @id("consumer.command") fn command()->i64 uses{process.stdin.read,process.stdout.write}{
 let outcome=receive();match own outcome{

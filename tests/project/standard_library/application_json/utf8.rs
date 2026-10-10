@@ -267,10 +267,11 @@ fn utf8_owned_request_all_264_values_at_64_decoded_bytes_obey_existing_limits() 
     assert!(length + 264 * 64 * 5 > 65536);
     assert!(length + 264 * 64 * 5 <= 131072);
     for escaped in [false, true] {
-        let app = full_bound_app(escaped, length).replace(
-            "module consumer.app;",
-            "module consumer.app;\npermit {process.args.read,process.stderr.write,process.stdin.read,process.stdout.write}\n",
-        ) + "\n@id(\"consumer.command\") fn command()->i64 uses{process.stdin.read}{let mut reader=stdin_stream_open();while !stdin_stream_eof(reader){reader=stdin_stream_next(reader);0}main()}\n";
+        // Workspace uses precede permits; insert the grant after the complete
+        // authenticated import prefix rather than between module and uses.
+        let original = imports();
+        let permitted = format!("{original}\npermit {{process.args.read,process.stderr.write,process.stdin.read,process.stdout.write}}\n");
+        let app = full_bound_app(escaped, length).replacen(original, &permitted, 1) + "\n@id(\"consumer.command\") fn command()->i64 uses{process.stdin.read}{let mut reader=stdin_stream_open();while !stdin_stream_eof(reader){reader=stdin_stream_next(reader);0}main()}\n";
         let root = install(&format!("utf8-json-full-bound-{escaped}"), &app, 64);
         let manifest = MANIFEST
             .replace("owned-data-api.v1", "language-command-io.owned-data.v1")

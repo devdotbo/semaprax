@@ -100,11 +100,11 @@ fn install_identifiers(app: &str) -> std::path::PathBuf {
 fn append_check(app: &mut String, input_len: usize, expected_len: usize) {
     app.push_str(&format!(
         r#"@id("consumer.main") fn main()->i64 {{
-let buffer=witness();let canonical=expected();
+let mut buffer=witness();let canonical=expected();
 let decoded=decode(byte_range(bytes_as_slice(buffer),0usize,{input_len}usize));
 // A late grammar fault after the complete maximum shape must remain a typed
 // grammar error at its absolute supplied-input offset, never partial success.
-let bad=bytes_set(buffer,{input_len}usize,63u8);let malformed=decode(bytes_as_slice(bad));
+buffer=bytes_set(buffer,{input_len}usize,63u8);let malformed=decode(bytes_as_slice(buffer));
 let malformed_ok=match own malformed{{Outcome::Decoded{{labels,rows}}=>false,
 Outcome::Error{{code,offset,field}}=>code==1 && offset=={input_len}usize && field==0,}};
 match own decoded{{Outcome::Error{{code,offset,field}}=>0,Outcome::Decoded{{labels,rows}}=>{{

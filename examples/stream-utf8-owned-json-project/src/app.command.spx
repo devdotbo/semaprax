@@ -14,7 +14,7 @@ fn receive() -> Outcome
     uses { process.stdin.read }
 {
     let normalized = normalize();
-    match own normalized { StreamInput::Error { code, offset, field } => Outcome::Error { code: code, offset: offset, field: field }, StreamInput::Ready { bytes, length } => decode(byte_range(bytes_as_slice(bytes), 0usize, length)), }
+    match own normalized { StreamInput::Error { code, offset, field } => { return Outcome::Error { code: code, offset: offset, field: field }; }, StreamInput::Ready { bytes, length } => { return decode(byte_range(bytes_as_slice(bytes), 0usize, length)); }, }
 }
 
 @id("catalog.bump")
@@ -28,7 +28,7 @@ fn command() -> i64
     uses { process.stdin.read, process.stdout.write }
 {
     let outcome = receive();
-    match own outcome { Outcome::Error { code, offset, field } => 2, Outcome::Decoded { labels, rows } => { if vec_len<Row>(rows) == 0usize { 2 } else { let first = vec_clone_at<Row>(rows, 0usize); let revised = bump(first); let rows = vec_replace<Row>(rows, 0usize, revised); let rendered = encode(labels, rows, 131072usize); match own rendered { Encoded::Refused { required } => 2, Encoded::Encoded { text } => { let bytes = str_as_bytes(string_as_str(text)); let written = stdout_write(bytes); if written == byte_len(bytes) { 0 } else { 1 } }, } } }, }
+    match own outcome { Outcome::Error { code, offset, field } => 2, Outcome::Decoded { labels, rows } => { if vec_len<Row>(rows) == 0usize { 2 } else { let first = vec_clone_at<Row>(rows, 0usize); let revised = bump(first); let revised_rows = vec_replace<Row>(rows, 0usize, revised); let rendered = encode(labels, revised_rows, 131072usize); match own rendered { Encoded::Refused { required } => 2, Encoded::Encoded { text } => { let bytes = str_as_bytes(string_as_str(text)); let written = stdout_write(bytes); if written == byte_len(bytes) { 0 } else { 1 } }, } } }, }
 }
 
 @id("catalog.app.main")
