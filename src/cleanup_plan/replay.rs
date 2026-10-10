@@ -45,6 +45,7 @@ use leaf_index::Leaves;
 mod path_summary;
 mod skeleton_bound;
 mod skeleton_work;
+mod typed_storage;
 use path_summary::{
     cleanup_inert_large_decisions_can_be_summarized, cleanup_inert_path_product_can_be_summarized,
     or_arm_path_counts, plan_structure_units, status_only_paths_can_be_summarized,
@@ -3607,6 +3608,8 @@ fn expression_skeleton(
     }
 
     // Depth excludes the body block; the machine retains its evaluated child, that block, and 512 expression ancestors.
+    work.budget
+        .reserve_array::<Frame<'_>>(function, 515, "typed HIR continuation stack")?;
     let mut frames = Vec::with_capacity(515);
     push_frame!(frames, Frame::Eval(expression));
     let mut produced: Option<Vec<ExprSkeletonPath>> = None;
@@ -3753,7 +3756,7 @@ fn expression_skeleton(
                             Frame::ByteRangeArgument {
                                 expression,
                                 index: 0,
-                                states: vec![(empty_expr_path(), Vec::new())],
+                                states: typed_storage::call_root(work)?,
                             }
                         );
                         push_frame!(frames, Frame::Eval(source));
@@ -3808,10 +3811,11 @@ fn expression_skeleton(
                         push_frame!(frames, Frame::Eval(left));
                     }
                     ResolvedExprKind::Invoke { .. } | ResolvedExprKind::Closure { .. } => {
+                        typed_storage::unsupported_provider(work)?;
                         let (_, args, params) =
                             crate::hir::function_value::cleanup_call(expression)?;
                         work.charge(1, "indirect call skeleton root state")?;
-                        let states = vec![(empty_expr_path(), Vec::new())];
+                        let states = typed_storage::call_root(work)?;
                         if let Some(argument) = args.first() {
                             push_frame!(
                                 frames,
@@ -3831,6 +3835,7 @@ fn expression_skeleton(
                         }
                     }
                     ResolvedExprKind::VecFieldRead { args, .. } => {
+                        typed_storage::unsupported_provider(work)?;
                         let params = resolved_call_params(
                             program,
                             function,
@@ -3840,7 +3845,7 @@ fn expression_skeleton(
                             &[],
                         )?;
                         work.charge(1, "scoped vector read skeleton root state")?;
-                        let states = vec![(empty_expr_path(), Vec::new())];
+                        let states = typed_storage::call_root(work)?;
                         if let Some(argument) = args.first() {
                             push_frame!(
                                 frames,
@@ -3860,6 +3865,7 @@ fn expression_skeleton(
                         }
                     }
                     ResolvedExprKind::LiteralFormat { args, .. } => {
+                        typed_storage::unsupported_provider(work)?;
                         let params = resolved_call_params(
                             program,
                             function,
@@ -3869,7 +3875,7 @@ fn expression_skeleton(
                             &[],
                         )?;
                         work.charge(1, "literal format skeleton root state")?;
-                        let states = vec![(empty_expr_path(), Vec::new())];
+                        let states = typed_storage::call_root(work)?;
                         if let Some(argument) = args.first() {
                             push_frame!(
                                 frames,
@@ -3921,6 +3927,7 @@ fn expression_skeleton(
                         let params = if instance.is_none()
                             && crate::map_ops::by_id(callee.as_str()).is_some()
                         {
+                            typed_storage::unsupported_provider(work)?;
                             resolved_call_params(
                                 program,
                                 function,
@@ -3930,18 +3937,44 @@ fn expression_skeleton(
                                 type_arguments,
                             )?
                         } else if let Some(op) = string_intrinsic {
-                            crate::string_ops::resolved_params(op)
+                            typed_storage::static_params(
+                                op.id(),
+                                op.param_types(),
+                                op.param_names(),
+                                |i, _| op.param_ownership(i),
+                                work,
+                            )?
                         } else if let Some(op) = str_intrinsic {
-                            crate::str_ops::resolved_params(op)
+                            typed_storage::static_params(
+                                op.id(),
+                                op.param_types(),
+                                op.param_names(),
+                                |_, ty| {
+                                    if *ty == ResolvedType::Str {
+                                        OwnershipMode::Borrow
+                                    } else {
+                                        OwnershipMode::Value
+                                    }
+                                },
+                                work,
+                            )?
                         } else if let Some(op) = byte_intrinsic {
-                            crate::byte_ops::resolved_params(op)
+                            typed_storage::static_params(
+                                op.id(),
+                                op.param_types(),
+                                op.param_names(),
+                                |i, _| op.param_ownership(i),
+                                work,
+                            )?
                         } else if let Some(op) = host_io_intrinsic {
+                            typed_storage::unsupported_provider(work)?;
                             crate::host_io_ops::resolved_params(op)
                         } else if instance.is_none()
                             && (crate::iterator_ops::by_id(callee.as_str()).is_some()
                                 || crate::list_ops::by_id(callee.as_str()).is_some()
                                 || callee.as_str() == crate::stdin_stream_ops::EOF_ID)
                         {
+                            typed_storage::unsupported_provider(work)?;
                             resolved_call_params(
                                 program,
                                 function,
@@ -3951,6 +3984,7 @@ fn expression_skeleton(
                                 type_arguments,
                             )?
                         } else if let Some(op) = vec_intrinsic {
+                            typed_storage::unsupported_provider(work)?;
                             let [element] = type_arguments.as_slice() else {
                                 return Err(replay_error(
                                     function,
@@ -3959,6 +3993,7 @@ fn expression_skeleton(
                             };
                             crate::vec_ops::resolved_params_in(program.declarations(), op, element)
                         } else if let Some(op) = box_intrinsic {
+                            typed_storage::unsupported_provider(work)?;
                             let [element] = type_arguments.as_slice() else {
                                 return Err(replay_error(
                                     function,
@@ -3975,10 +4010,10 @@ fn expression_skeleton(
                                         format!("unknown skeleton callee `{callee}`"),
                                     )
                                 })?;
-                            target.params.clone()
+                            work.clone_payload(&target.params, "callee parameter clone")?
                         };
                         work.charge(1, "call skeleton root state")?;
-                        let states = vec![(empty_expr_path(), Vec::new())];
+                        let states = typed_storage::call_root(work)?;
                         if let Some(argument) = args.first() {
                             push_frame!(
                                 frames,
@@ -4000,6 +4035,7 @@ fn expression_skeleton(
                     ResolvedExprKind::NativeRustImportCall(call)
                         if super::native_rust::owns(expression) =>
                     {
+                        typed_storage::unsupported_provider(work)?;
                         let params = resolved_call_params(
                             program,
                             function,
@@ -4009,7 +4045,7 @@ fn expression_skeleton(
                             &[],
                         )?;
                         work.charge(1, "owned native call skeleton root state")?;
-                        let states = vec![(empty_expr_path(), Vec::new())];
+                        let states = typed_storage::call_root(work)?;
                         if let Some(argument) = call.args.first() {
                             let lend = super::native_rust::lends_string_place(
                                 expression,
@@ -4057,9 +4093,10 @@ fn expression_skeleton(
                         }
                     }
                     ResolvedExprKind::HostCommandCall(call) => {
+                        typed_storage::unsupported_provider(work)?;
                         let params = crate::command_io_ops::resolved_params(call.operation);
                         work.charge(1, "host-command skeleton root state")?;
-                        let states = vec![(empty_expr_path(), Vec::new())];
+                        let states = typed_storage::call_root(work)?;
                         if let Some(argument) = call.args.first() {
                             push_frame!(
                                 frames,
@@ -4399,7 +4436,14 @@ fn expression_skeleton(
                 let argument = replay_expression_child(expression, index).ok_or_else(|| {
                     replay_error(function, "byte range skeleton arity is inconsistent")
                 })?;
-                let params = crate::byte_ops::resolved_params(crate::byte_ops::ByteOp::Range);
+                let op = crate::byte_ops::ByteOp::Range;
+                let params = typed_storage::static_params(
+                    op.id(),
+                    op.param_types(),
+                    op.param_names(),
+                    |i, _| op.param_ownership(i),
+                    work,
+                )?;
                 let parameter = params.get(index).ok_or_else(|| {
                     replay_error(function, "byte range parameter arity is inconsistent")
                 })?;
@@ -4613,6 +4657,8 @@ fn expression_skeleton(
                 let prefixed = sequence_skeleton_paths(prefixes, &condition_paths, work)?;
                 let (results, true_prefixes, false_prefixes) =
                     split_boolean_prefixes(prefixed, &condition.id, work)?;
+                work.budget
+                    .reserve_vec(function, &mut active_loops, 1, "active lexical loops")?;
                 active_loops.push(ActiveLoop {
                     condition: &condition.id,
                     advance: lexical_hir::generated_advance(body, latch),
@@ -4655,6 +4701,8 @@ fn expression_skeleton(
                 active_loops.pop();
                 let body_paths = produced.take().expect("loop body path retained");
                 let joined = sequence_skeleton_paths(true_prefixes, &body_paths, work)?;
+                work.budget
+                    .reserve_clone(function, &work.owner, "lexical loop owner clone")?;
                 let owner = work
                     .owner
                     .clone()
@@ -4714,12 +4762,18 @@ fn expression_skeleton(
                     && type_needs_drop(program, function, &field.value.ty)?
                 {
                     let mut destination = temporary_place(expression, work)?;
-                    destination
-                        .projections
-                        .push(work.clone_owned(case, "variant case projection clone")?);
-                    destination
-                        .projections
-                        .push(work.clone_owned(&field.field, "variant field projection clone")?);
+                    typed_storage::push_projection(
+                        &mut destination,
+                        case,
+                        "variant case projection clone",
+                        work,
+                    )?;
+                    typed_storage::push_projection(
+                        &mut destination,
+                        &field.field,
+                        "variant field projection clone",
+                        work,
+                    )?;
                     let value_id =
                         work.clone_owned(&field.value.id, "variant field value clone")?;
                     paths = transfer_completed_paths(
@@ -4761,6 +4815,12 @@ fn expression_skeleton(
                     && type_needs_drop(program, function, &field.value.ty)?
                 {
                     let mut destination = temporary_place(expression, work)?;
+                    work.budget.reserve_vec(
+                        function,
+                        &mut destination.projections,
+                        1,
+                        "field projection slots",
+                    )?;
                     let field_id =
                         work.clone_owned(&field.field, "record field projection clone")?;
                     work.charge(1, "record field projection push")?;
@@ -4887,6 +4947,12 @@ fn expression_skeleton(
                     && type_needs_drop(program, function, &field.value.ty)?
                 {
                     let mut destination = temporary_place(expression, work)?;
+                    work.budget.reserve_vec(
+                        function,
+                        &mut destination.projections,
+                        1,
+                        "field projection slots",
+                    )?;
                     let field_id =
                         work.clone_owned(&field.field, "update field projection clone")?;
                     work.charge(1, "update field projection push")?;
@@ -4968,6 +5034,12 @@ fn expression_skeleton(
                         let mut source = path.owned_source.take().ok_or_else(|| {
                             replay_error(function, "owned projection has no HIR cleanup source")
                         })?;
+                        work.budget.reserve_vec(
+                            function,
+                            &mut source.projections,
+                            1,
+                            "projection slots",
+                        )?;
                         let field = work.clone_owned(field, "projection field clone")?;
                         work.charge(1, "projection field push")?;
                         note_skeleton_materialization();
@@ -5118,6 +5190,7 @@ fn expression_skeleton(
                                         "owned record match lacks an exact record pattern",
                                     ));
                                 };
+                                typed_storage::unsupported_provider(work)?;
                                 if record_destructure::contains_nested(fields) {
                                     let expected = record_destructure::replay(
                                         program, function, record, instance, fields, *mode,
@@ -5129,20 +5202,29 @@ fn expression_skeleton(
                                         ));
                                     }
                                     for binding in expected.bindings {
-                                        let mut field_source = source.clone();
+                                        let mut field_source = work
+                                            .clone_payload(&source, "nested match source clone")?;
                                         for field in binding.path {
+                                            work.budget.reserve_vec(
+                                                function,
+                                                &mut field_source.projections,
+                                                1,
+                                                "nested match projection slots",
+                                            )?;
                                             field_source.projections.push(field);
                                         }
-                                        path.observations.push(
+                                        typed_storage::push_observation(
+                                            &mut path.observations,
                                             SkeletonObservation::Transfer {
                                                 at: expression.id.clone(),
                                                 source: field_source,
                                                 destination: CleanupPlace::whole(StorageId::Value(
                                                     binding.binding,
                                                 )),
-                                            }
-                                            .into(),
-                                        );
+                                            },
+                                            work,
+                                            "nested record transfer observation",
+                                        )?;
                                     }
                                     continue;
                                 }
@@ -5174,16 +5256,29 @@ fn expression_skeleton(
                                     if binding.ownership != crate::hir::OwnershipMode::Own {
                                         continue;
                                     }
-                                    path.observations.push(
+                                    let mut projected =
+                                        work.clone_payload(&source, "record match source clone")?;
+                                    work.budget.reserve_vec(
+                                        function,
+                                        &mut projected.projections,
+                                        1,
+                                        "record match projection slots",
+                                    )?;
+                                    let field_identity = work
+                                        .clone_payload(&field.field, "record match field clone")?;
+                                    projected.projections.push(field_identity);
+                                    typed_storage::push_observation(
+                                        &mut path.observations,
                                         SkeletonObservation::Transfer {
                                             at: expression.id.clone(),
-                                            source: source.projected(field.field.clone()),
+                                            source: projected,
                                             destination: CleanupPlace::whole(StorageId::Value(
                                                 binding.id.clone(),
                                             )),
-                                        }
-                                        .into(),
-                                    );
+                                        },
+                                        work,
+                                        "record transfer observation",
+                                    )?;
                                 }
                             } else {
                                 // A borrowed match observes a named owned or borrowed place without moving any cleanup epoch. The match expression itself
@@ -5895,21 +5990,29 @@ fn prepare_selected_match_path(
     };
     if mode == crate::hir::ResolvedMatchMode::Own {
         if let ResolvedMatchPattern::Variant { case, fields, .. } = &arm.pattern {
-            let source = path.owned_source.clone().ok_or_else(|| {
-                replay_error(function, "owned variant match has no HIR cleanup source")
-            })?;
+            let source = work
+                .clone_payload(&path.owned_source, "selected match owned source clone")?
+                .ok_or_else(|| {
+                    replay_error(function, "owned variant match has no HIR cleanup source")
+                })?;
             for field in fields {
                 if !type_needs_drop(program, function, &field.binding.ty)? {
                     continue;
                 }
                 let mut field_source =
                     work.clone_owned(&source, "owned variant match source clone")?;
-                field_source
-                    .projections
-                    .push(work.clone_owned(case, "owned variant match case clone")?);
-                field_source
-                    .projections
-                    .push(work.clone_owned(&field.field, "owned variant match field clone")?);
+                typed_storage::push_projection(
+                    &mut field_source,
+                    case,
+                    "owned variant match case clone",
+                    work,
+                )?;
+                typed_storage::push_projection(
+                    &mut field_source,
+                    &field.field,
+                    "owned variant match field clone",
+                    work,
+                )?;
                 let destination = CleanupPlace::whole(StorageId::Value(
                     work.clone_owned(&field.binding.id, "owned variant binding clone")?,
                 ));
@@ -6529,6 +6632,8 @@ fn sequence_call_argument(
         if prefix.failed || prefix.residual {
             work.charge(1, "short-circuited call state push")?;
             note_skeleton_materialization();
+            work.budget
+                .reserve_vec(function, &mut next, 1, "short circuit call slots")?;
             next.push((prefix, commits));
             continue;
         }
@@ -6579,10 +6684,18 @@ fn sequence_call_argument(
                 )?;
                 work.charge(1, "call-commit argument push")?;
                 note_skeleton_materialization();
+                work.budget.reserve_vec(
+                    function,
+                    &mut path_commits,
+                    1,
+                    "staged call commit slots",
+                )?;
                 path_commits.push((parameter_index, epoch));
             }
             work.charge(1, "call state push")?;
             note_skeleton_materialization();
+            work.budget
+                .reserve_vec(function, &mut next, 1, "call state slots")?;
             next.push((path, path_commits));
         }
     }
