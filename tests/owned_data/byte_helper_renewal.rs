@@ -61,7 +61,16 @@ fn byte_helper_renewal_canonical_graph_and_physical_engines_preserve_one_owner()
         assert_eq!(envelope["payload"]["outcome"]["value"], "42");
     }
     // Existing owning probes count all physical allocations and reject stale handles.
-    crate::owned_collection_outcome::run_native(&checked, &root);
+    let generated = semaprax::codegen::emit_c(&checked).unwrap();
+    assert!(!generated.contains("SPX_VEC_AUTHORITY_CAPACITY"));
+    assert!(!generated.contains("struct spx_vec_authority_entry"));
+    assert!(generated.contains("spx_bytes_require_valid"));
+    assert!(generated.contains("spx_bytes_drop"));
+    crate::owned_collection_outcome::run_native_generated_with_allocation_count(
+        generated,
+        &root,
+        Some(2), // output and the untouched owner; helper renewals allocate nothing.
+    );
     crate::owned_vec_bytes_runtime::run_wasm_expected(SOURCE, 0, 2, "none", 42);
     std::fs::remove_dir_all(root).unwrap();
 }

@@ -220,6 +220,14 @@ pub(super) fn run_native(ast: &semaprax::ast::Program, root: &std::path::Path) {
 }
 
 pub(super) fn run_native_generated(generated: String, root: &std::path::Path) {
+    run_native_generated_with_allocation_count(generated, root, None);
+}
+
+pub(super) fn run_native_generated_with_allocation_count(
+    generated: String,
+    root: &std::path::Path,
+    expected_allocations: Option<u64>,
+) {
     let tracked = generated
         .replace("malloc(", "outcome_malloc(")
         .replace("calloc(", "outcome_calloc(")
@@ -236,22 +244,32 @@ int main(void) {
  for(unsigned i=0;i<3;++i){
   int64_t value=INT64_C(123456789);
   uint32_t before=context.status_arena.length;
+  uint64_t before_allocations=outcome_total_allocations,before_frees=outcome_total_frees;
   spx_status_token status=spx_decl_6170702e6d61696e(&context,&value);
   if(status!=SPX_STATUS_SUCCESS||value!=INT64_C(42)||context.status_arena.length!=before)return 2;
-  if(outcome_allocations)return 3;
+  if(outcome_allocations||context.call_depth!=0||outcome_total_allocations-before_allocations!=outcome_total_frees-before_frees)return 3;
+  /* exact allocation count */
+#ifdef SPX_VEC_AUTHORITY_CAPACITY
   for(uint32_t j=0;j<SPX_VEC_AUTHORITY_CAPACITY;++j)
    if(context.vec_authority[j].live)return 4;
+#endif
  }
  return 0;
 }
 "#;
+    let probe = probe.replace(
+        "/* exact allocation count */",
+        &expected_allocations.map_or_else(String::new, |count| {
+            format!("if(outcome_total_allocations-before_allocations!=UINT64_C({count}))return 5;")
+        }),
+    );
     let allocator = r#"#include <stdint.h>
 #include <stdlib.h>
-static uint64_t outcome_allocations=0;
-static void *outcome_malloc(size_t n){void*p=malloc(n);if(p)++outcome_allocations;return p;}
-static void *outcome_calloc(size_t n,size_t s){void*p=calloc(n,s);if(p)++outcome_allocations;return p;}
-static void *outcome_realloc(void*p,size_t n){void*r=realloc(p,n);if(r&&!p)++outcome_allocations;return r;}
-static void outcome_free(void*p){if(p){if(!outcome_allocations)abort();--outcome_allocations;free(p);}}"#;
+static uint64_t outcome_allocations=0,outcome_total_allocations=0,outcome_total_frees=0;
+static void *outcome_malloc(size_t n){void*p=malloc(n);if(p){++outcome_allocations;++outcome_total_allocations;}return p;}
+static void *outcome_calloc(size_t n,size_t s){void*p=calloc(n,s);if(p){++outcome_allocations;++outcome_total_allocations;}return p;}
+static __attribute__((unused)) void *outcome_realloc(void*p,size_t n){void*r=realloc(p,n);if(r&&!p){++outcome_allocations;++outcome_total_allocations;}return r;}
+static void outcome_free(void*p){if(p){if(!outcome_allocations)abort();--outcome_allocations;++outcome_total_frees;free(p);}}"#;
     let c_path = root.join("outcome.c");
     std::fs::write(&c_path, format!("{allocator}\n{tracked}\n{probe}")).unwrap();
     for optimization in ["-O0", "-O2"] {

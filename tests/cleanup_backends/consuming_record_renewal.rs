@@ -89,7 +89,14 @@ int main(void) {{
                 std::env::temp_dir().join(format!("{stem}{}", std::env::consts::EXE_SUFFIX));
             std::fs::write(&c, format!("{OBSERVER}\n{generated}\n{probe}")).unwrap();
             let compilation = Command::new("clang")
-                .args(["-std=c11", optimization, "-Wall", "-Wextra", "-Werror"])
+                .args([
+                    "-std=c11",
+                    optimization,
+                    "-Wall",
+                    "-Wextra",
+                    "-Werror",
+                    "-DSPX_NO_ENTRY_WRAPPER",
+                ])
                 .arg(&c)
                 .arg("-o")
                 .arg(&executable)
