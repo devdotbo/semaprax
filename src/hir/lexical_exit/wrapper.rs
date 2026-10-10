@@ -3,7 +3,6 @@ use super::validate_latch;
 use crate::diagnostic::Diagnostic;
 use crate::hir::*;
 pub(crate) struct SourceForWrapper<'a> {
-    pub(crate) region: &'a ResolvedExpr,
     pub(crate) authored_body: &'a ResolvedExpr,
     /// A consuming traversal's hidden Step must settle before leaving this region.
     pub(crate) iterator_step: Option<&'a ResolvedBinding>,
@@ -89,7 +88,6 @@ pub(crate) fn source_for_wrapper<'a>(
             return Err(fail());
         }
         return Ok(Some(SourceForWrapper {
-            region,
             authored_body: proof.authored_body,
             iterator_step: Some(step),
         }));
@@ -197,7 +195,6 @@ pub(crate) fn source_for_wrapper<'a>(
         _ => return Err(fail()),
     }
     Ok(Some(SourceForWrapper {
-        region,
         authored_body,
         iterator_step: None,
     }))

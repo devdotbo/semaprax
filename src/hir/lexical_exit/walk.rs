@@ -4,7 +4,7 @@ use crate::hir::{ResolvedExpr, ResolvedExprKind as K, ResolvedFunction};
 
 pub(crate) fn child(expr: &ResolvedExpr, index: usize) -> Option<&ResolvedExpr> {
     match &expr.kind {
-        K::LexicalExit { value, .. } => (index == 0).then(|| value.as_deref()).flatten(),
+        K::LexicalExit { value, .. } => (index == 0).then_some(value.as_deref()).flatten(),
         K::Closure { captures, body, .. } => captures
             .get(index)
             .map(|capture| &capture.value)

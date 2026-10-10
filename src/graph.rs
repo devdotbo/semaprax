@@ -50,9 +50,9 @@ mod generic_instances;
 mod generic_mapping;
 mod owned_collection_records;
 mod owned_nested_outcome;
-mod scoped_vec_field;
 mod owned_string_byte_view;
 mod projected_string_view;
+mod scoped_vec_field;
 use filesystem::string_array;
 use generic_instances::legacy_graph_json;
 pub(crate) use generic_instances::to_legacy_hir_json;
@@ -67,13 +67,13 @@ mod nested_owned;
 mod prelude_binding;
 #[path = "graph/revision_digest.rs"]
 mod revision_digest;
+pub(crate) use native_import::view_relation as native_view_relation;
+pub(crate) use native_import::{reject_native_rust_imports, reject_source_native_rust_imports};
 use nested_owned::{
     graph_schema_includes_loans, graph_schema_includes_modern_composite_facts,
     graph_schema_includes_projected_provenance,
 };
 pub(crate) use prelude_binding::revision_from_canonical_program;
-pub(crate) use native_import::view_relation as native_view_relation;
-pub(crate) use native_import::{reject_native_rust_imports, reject_source_native_rust_imports};
 pub(crate) use scoped_vec_field::{
     graph_schema, graph_schema_from_parts_and_instances,
     graph_schema_from_parts_and_instances_with_renewal_authority, legacy_graph_schema,
@@ -1059,7 +1059,9 @@ fn collect_result_propagations<'a>(
             propagations.push(expression);
             collect_result_propagations(operand, propagations);
         }
-        ResolvedExprKind::Call { args, .. } | ResolvedExprKind::LiteralFormat { args, .. } | ResolvedExprKind::VecFieldRead { args, .. } => {
+        ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. } => {
             for argument in args {
                 collect_result_propagations(argument, propagations);
             }
@@ -1081,9 +1083,11 @@ fn collect_result_propagations<'a>(
             collect_result_propagations(start, propagations);
             collect_result_propagations(end, propagations);
         }
-        ResolvedExprKind::LexicalExit { value, .. } => { if let Some(value) = value {
-            collect_result_propagations(value, propagations);
-        } },
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            if let Some(value) = value {
+                collect_result_propagations(value, propagations);
+            }
+        }
         ResolvedExprKind::Unary { value, .. }
         | ResolvedExprKind::Project { base: value, .. }
         | ResolvedExprKind::Upcast { source: value }
@@ -1226,13 +1230,13 @@ fn expression_has_byte_range(expression: &ResolvedExpr) -> bool {
                 pending.extend(args);
             }
             ResolvedExprKind::ByteRange { .. } => return true,
-            ResolvedExprKind::Call { args, .. } | ResolvedExprKind::LiteralFormat { args, .. } | ResolvedExprKind::VecFieldRead { args, .. } => {
-                pending.extend(args)
-            }
+            ResolvedExprKind::Call { args, .. }
+            | ResolvedExprKind::LiteralFormat { args, .. }
+            | ResolvedExprKind::VecFieldRead { args, .. } => pending.extend(args),
             ResolvedExprKind::NativeRustImportCall(call) => pending.extend(&call.args),
             ResolvedExprKind::HostCommandCall(call) => pending.extend(&call.args),
             ResolvedExprKind::LexicalExit { value, .. } => pending.extend(value.as_deref()),
-        ResolvedExprKind::Unary { value, .. }
+            ResolvedExprKind::Unary { value, .. }
             | ResolvedExprKind::Try { operand: value, .. }
             | ResolvedExprKind::TryOption { operand: value, .. }
             | ResolvedExprKind::Project { base: value, .. }
@@ -1328,7 +1332,9 @@ fn expression_has_explicit_match_mode(expression: &ResolvedExpr) -> bool {
                         || expression_has_explicit_match_mode(&arm.value)
                 })
         }
-        ResolvedExprKind::Call { args, .. } | ResolvedExprKind::LiteralFormat { args, .. } | ResolvedExprKind::VecFieldRead { args, .. } => {
+        ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. } => {
             args.iter().any(expression_has_explicit_match_mode)
         }
         ResolvedExprKind::NativeRustImportCall(call) => {
@@ -1344,7 +1350,9 @@ fn expression_has_explicit_match_mode(expression: &ResolvedExpr) -> bool {
                 || expression_has_explicit_match_mode(start)
                 || expression_has_explicit_match_mode(end)
         }
-        ResolvedExprKind::LexicalExit { value, .. } => value.as_deref().is_some_and(|value| expression_has_explicit_match_mode(value)),
+        ResolvedExprKind::LexicalExit { value, .. } => value
+            .as_deref()
+            .is_some_and(expression_has_explicit_match_mode),
         ResolvedExprKind::Unary { value, .. }
         | ResolvedExprKind::Project { base: value, .. }
         | ResolvedExprKind::Try { operand: value, .. }
@@ -1641,9 +1649,9 @@ fn expression_has_usize(expression: &ResolvedExpr) -> bool {
                     .any(|index| statement.child(index).is_some_and(expression_has_usize))
             }) || expression_has_usize(tail)
         }
-        ResolvedExprKind::Call { args, .. } | ResolvedExprKind::LiteralFormat { args, .. } | ResolvedExprKind::VecFieldRead { args, .. } => {
-            args.iter().any(expression_has_usize)
-        }
+        ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. } => args.iter().any(expression_has_usize),
         ResolvedExprKind::NativeRustImportCall(call) => call.args.iter().any(expression_has_usize),
         ResolvedExprKind::HostCommandCall(call) => call.args.iter().any(expression_has_usize),
         ResolvedExprKind::ByteRange {
@@ -1651,7 +1659,9 @@ fn expression_has_usize(expression: &ResolvedExpr) -> bool {
         } => {
             expression_has_usize(source) || expression_has_usize(start) || expression_has_usize(end)
         }
-        ResolvedExprKind::LexicalExit { value, .. } => value.as_deref().is_some_and(|value| expression_has_usize(value)),
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            value.as_deref().is_some_and(expression_has_usize)
+        }
         ResolvedExprKind::Unary { value, .. }
         | ResolvedExprKind::Try { operand: value, .. }
         | ResolvedExprKind::TryOption { operand: value, .. }
@@ -1730,12 +1740,14 @@ fn expression_has_while(expression: &ResolvedExpr) -> bool {
                     .any(|index| statement.child(index).is_some_and(expression_has_while)),
             }) || expression_has_while(tail)
         }
-        ResolvedExprKind::Call { args, .. } | ResolvedExprKind::LiteralFormat { args, .. } | ResolvedExprKind::VecFieldRead { args, .. } => {
-            args.iter().any(expression_has_while)
-        }
+        ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. } => args.iter().any(expression_has_while),
         ResolvedExprKind::NativeRustImportCall(call) => call.args.iter().any(expression_has_while),
         ResolvedExprKind::HostCommandCall(call) => call.args.iter().any(expression_has_while),
-        ResolvedExprKind::LexicalExit { value, .. } => value.as_deref().is_some_and(|value| expression_has_while(value)),
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            value.as_deref().is_some_and(expression_has_while)
+        }
         ResolvedExprKind::Unary { value, .. }
         | ResolvedExprKind::Try { operand: value, .. }
         | ResolvedExprKind::TryOption { operand: value, .. }
@@ -1788,7 +1800,8 @@ fn expression_has_while(expression: &ResolvedExpr) -> bool {
 
 fn expression_has_stdout_write(expression: &ResolvedExpr) -> bool {
     match &expression.kind {
-        ResolvedExprKind::VecFieldRead { args, .. } | ResolvedExprKind::LiteralFormat { args, .. } => {
+        ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. } => {
             args.iter().any(expression_has_stdout_write)
         }
         ResolvedExprKind::Call { callee, args, .. } => {
@@ -1801,7 +1814,9 @@ fn expression_has_stdout_write(expression: &ResolvedExpr) -> bool {
         ResolvedExprKind::HostCommandCall(call) => {
             call.args.iter().any(expression_has_stdout_write)
         }
-        ResolvedExprKind::LexicalExit { value, .. } => value.as_deref().is_some_and(|value| expression_has_stdout_write(value)),
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            value.as_deref().is_some_and(expression_has_stdout_write)
+        }
         ResolvedExprKind::Unary { value, .. }
         | ResolvedExprKind::Try { operand: value, .. }
         | ResolvedExprKind::TryOption { operand: value, .. }
@@ -1874,13 +1889,15 @@ fn expression_has_command_io(expression: &ResolvedExpr) -> bool {
                 || expression_has_command_io(start)
                 || expression_has_command_io(end)
         }
-        ResolvedExprKind::Call { args, .. } | ResolvedExprKind::LiteralFormat { args, .. } | ResolvedExprKind::VecFieldRead { args, .. } => {
-            args.iter().any(expression_has_command_io)
-        }
+        ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. } => args.iter().any(expression_has_command_io),
         ResolvedExprKind::NativeRustImportCall(call) => {
             call.args.iter().any(expression_has_command_io)
         }
-        ResolvedExprKind::LexicalExit { value, .. } => value.as_deref().is_some_and(|value| expression_has_command_io(value)),
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            value.as_deref().is_some_and(expression_has_command_io)
+        }
         ResolvedExprKind::Unary { value, .. }
         | ResolvedExprKind::Try { operand: value, .. }
         | ResolvedExprKind::TryOption { operand: value, .. }
@@ -1982,7 +1999,9 @@ fn expression_has_record_pattern(expression: &ResolvedExpr) -> bool {
                 || expression_has_record_pattern(start)
                 || expression_has_record_pattern(end)
         }
-        ResolvedExprKind::Call { args, .. } | ResolvedExprKind::LiteralFormat { args, .. } | ResolvedExprKind::VecFieldRead { args, .. } => {
+        ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. } => {
             args.iter().any(expression_has_record_pattern)
         }
         ResolvedExprKind::NativeRustImportCall(call) => {
@@ -1991,7 +2010,9 @@ fn expression_has_record_pattern(expression: &ResolvedExpr) -> bool {
         ResolvedExprKind::HostCommandCall(call) => {
             call.args.iter().any(expression_has_record_pattern)
         }
-        ResolvedExprKind::LexicalExit { value, .. } => value.as_deref().is_some_and(|value| expression_has_record_pattern(value)),
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            value.as_deref().is_some_and(expression_has_record_pattern)
+        }
         ResolvedExprKind::Unary { value, .. }
         | ResolvedExprKind::Try { operand: value, .. }
         | ResolvedExprKind::TryOption { operand: value, .. }
@@ -2090,7 +2111,9 @@ fn expression_has_refutable_match(expression: &ResolvedExpr) -> bool {
                 })
             }) || expression_has_refutable_match(tail)
         }
-        ResolvedExprKind::Call { args, .. } | ResolvedExprKind::LiteralFormat { args, .. } | ResolvedExprKind::VecFieldRead { args, .. } => {
+        ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. } => {
             args.iter().any(expression_has_refutable_match)
         }
         ResolvedExprKind::NativeRustImportCall(call) => {
@@ -2099,7 +2122,9 @@ fn expression_has_refutable_match(expression: &ResolvedExpr) -> bool {
         ResolvedExprKind::HostCommandCall(call) => {
             call.args.iter().any(expression_has_refutable_match)
         }
-        ResolvedExprKind::LexicalExit { value, .. } => value.as_deref().is_some_and(|value| expression_has_refutable_match(value)),
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            value.as_deref().is_some_and(expression_has_refutable_match)
+        }
         ResolvedExprKind::Unary { value, .. }
         | ResolvedExprKind::Try { operand: value, .. }
         | ResolvedExprKind::TryOption { operand: value, .. }
@@ -2251,7 +2276,9 @@ fn collect_agent_contract_values(expression: &ResolvedExpr, values: &mut BTreeSe
         ResolvedExprKind::BorrowPlace { place, .. } => {
             values.insert(place.root.clone());
         }
-        ResolvedExprKind::Call { args, .. } | ResolvedExprKind::LiteralFormat { args, .. } | ResolvedExprKind::VecFieldRead { args, .. } => {
+        ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. } => {
             for argument in args {
                 collect_agent_contract_values(argument, values);
             }
@@ -2266,7 +2293,11 @@ fn collect_agent_contract_values(expression: &ResolvedExpr, values: &mut BTreeSe
                 collect_agent_contract_values(argument, values);
             }
         }
-        ResolvedExprKind::LexicalExit { value, .. } => { if let Some(value) = value { collect_agent_contract_values(value, values); } },
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            if let Some(value) = value {
+                collect_agent_contract_values(value, values);
+            }
+        }
         ResolvedExprKind::Unary { value, .. } => collect_agent_contract_values(value, values),
         ResolvedExprKind::Binary { left, right, .. } => {
             collect_agent_contract_values(left, values);
@@ -4746,7 +4777,9 @@ fn visit_expr_call_instances(
         | ResolvedExprKind::RepeatArrayU8 { .. }
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. } => {}
-        ResolvedExprKind::Call { args, .. } | ResolvedExprKind::LiteralFormat { args, .. } | ResolvedExprKind::VecFieldRead { args, .. } => {
+        ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. } => {
             for argument in args {
                 visit_expr_call_instances(argument, visit);
             }
@@ -4761,9 +4794,11 @@ fn visit_expr_call_instances(
                 visit_expr_call_instances(argument, visit);
             }
         }
-        ResolvedExprKind::LexicalExit { value, .. } => { if let Some(value) = value {
-            visit_expr_call_instances(value, visit);
-        } },
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            if let Some(value) = value {
+                visit_expr_call_instances(value, visit);
+            }
+        }
         ResolvedExprKind::Unary { value, .. } | ResolvedExprKind::Project { base: value, .. } => {
             visit_expr_call_instances(value, visit);
         }
@@ -4859,7 +4894,8 @@ fn visit_expr_calls(expression: &ResolvedExpr, visit: &mut impl FnMut(&Declarati
                 visit_expr_calls(argument, visit);
             }
         }
-        ResolvedExprKind::VecFieldRead { args, .. } | ResolvedExprKind::LiteralFormat { args, .. } => {
+        ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. } => {
             for argument in args {
                 visit_expr_calls(argument, visit);
             }
@@ -4874,7 +4910,11 @@ fn visit_expr_calls(expression: &ResolvedExpr, visit: &mut impl FnMut(&Declarati
                 visit_expr_calls(argument, visit);
             }
         }
-        ResolvedExprKind::LexicalExit { value, .. } => { if let Some(value) = value { visit_expr_calls(value, visit); } },
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            if let Some(value) = value {
+                visit_expr_calls(value, visit);
+            }
+        }
         ResolvedExprKind::Unary { value, .. } => visit_expr_calls(value, visit),
         ResolvedExprKind::Upcast { source: value } | ResolvedExprKind::Yield { request: value } => {
             visit_expr_calls(value, visit)
@@ -4989,7 +5029,9 @@ fn collect_expr_type_declarations(
         | ResolvedExprKind::RepeatArrayU8 { .. }
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. } => {}
-        ResolvedExprKind::Call { args, .. } | ResolvedExprKind::LiteralFormat { args, .. } | ResolvedExprKind::VecFieldRead { args, .. } => {
+        ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. } => {
             for argument in args {
                 collect_expr_type_declarations(argument, declarations);
             }
@@ -5004,9 +5046,11 @@ fn collect_expr_type_declarations(
                 collect_expr_type_declarations(argument, declarations);
             }
         }
-        ResolvedExprKind::LexicalExit { value, .. } => { if let Some(value) = value {
-            collect_expr_type_declarations(value, declarations);
-        } },
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            if let Some(value) = value {
+                collect_expr_type_declarations(value, declarations);
+            }
+        }
         ResolvedExprKind::Unary { value, .. } => {
             collect_expr_type_declarations(value, declarations);
         }
@@ -5275,7 +5319,9 @@ fn collect_expr_types(expression: &ResolvedExpr, types: &mut BTreeMap<String, Re
         | ResolvedExprKind::RepeatArrayU8 { .. }
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. } => {}
-        ResolvedExprKind::Call { args, .. } | ResolvedExprKind::LiteralFormat { args, .. } | ResolvedExprKind::VecFieldRead { args, .. } => {
+        ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. } => {
             for argument in args {
                 collect_expr_types(argument, types);
             }
@@ -5290,7 +5336,11 @@ fn collect_expr_types(expression: &ResolvedExpr, types: &mut BTreeMap<String, Re
                 collect_expr_types(argument, types);
             }
         }
-        ResolvedExprKind::LexicalExit { value, .. } => { if let Some(value) = value { collect_expr_types(value, types); } },
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            if let Some(value) = value {
+                collect_expr_types(value, types);
+            }
+        }
         ResolvedExprKind::Unary { value, .. } => collect_expr_types(value, types),
         ResolvedExprKind::Upcast { source: value } | ResolvedExprKind::Yield { request: value } => {
             collect_expr_types(value, types)

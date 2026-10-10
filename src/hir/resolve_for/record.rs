@@ -260,6 +260,8 @@ pub(in crate::hir) fn lower(
     statement
 }
 
+type PreparedTraversal = (ResolvedBinding, ResolvedType, Rc<BTreeMap<String, Binding>>);
+
 #[allow(clippy::too_many_arguments)]
 fn prepare(
     resolver: &Resolver<'_>,
@@ -271,10 +273,7 @@ fn prepare(
     values: &crate::ast::Expr,
     body: &crate::ast::Expr,
     statement_path: &str,
-) -> Result<
-    (ResolvedBinding, ResolvedType, Rc<BTreeMap<String, Binding>>),
-    crate::diagnostic::Diagnostic,
-> {
+) -> Result<PreparedTraversal, crate::diagnostic::Diagnostic> {
     let fail = || {
         resolver.error("SPX-H006", "borrowed record traversal requires an immutable named Vec of an admitted explicit record", values.span)
     };

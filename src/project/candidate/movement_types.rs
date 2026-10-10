@@ -883,7 +883,7 @@ impl<'a> Node<'a> {
             },
             Self::Expression(e) => match &e.kind {
                 E::LexicalExit { value, .. } => (index == 0)
-                    .then(|| value.as_deref())
+                    .then_some(value.as_deref())
                     .flatten()
                     .map(Self::Expression),
                 E::Closure { captures, .. } => captures

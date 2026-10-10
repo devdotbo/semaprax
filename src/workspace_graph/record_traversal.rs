@@ -518,10 +518,10 @@ fn walk<'a>(
             }
             child!(body, "closure.body", bindings, None)?;
         }
-        ExprKind::MethodCall { .. } | ExprKind::SuperMethod { .. } => {
-            if has_traversal(expression) || row.is_some() {
-                return Err(refusal());
-            }
+        ExprKind::MethodCall { .. } | ExprKind::SuperMethod { .. }
+            if has_traversal(expression) || row.is_some() =>
+        {
+            return Err(refusal());
         }
         _ => {}
     }

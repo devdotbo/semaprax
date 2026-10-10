@@ -238,11 +238,10 @@ fn lower_expr(expr: &mut Expr, substitutions: &mut HashMap<String, Expr>) {
                 lower_expr(arg, substitutions);
             }
         }
-        ExprKind::LexicalExit { value, .. } => {
-            if let Some(value) = value {
-                lower_expr(value, substitutions);
-            }
-        }
+        ExprKind::LexicalExit {
+            value: Some(value), ..
+        } => lower_expr(value, substitutions),
+        ExprKind::LexicalExit { value: None, .. } => {}
         ExprKind::Unary { value, .. } => lower_expr(value, substitutions),
         ExprKind::Try { operand } => lower_expr(operand, substitutions),
         ExprKind::Binary { left, right, .. } => {

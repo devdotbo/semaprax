@@ -1240,7 +1240,9 @@ impl Expr {
 
     pub(crate) fn child(&self, index: usize) -> Option<&Expr> {
         match &self.kind {
-            ExprKind::LexicalExit { value, .. } => (index == 0).then(|| value.as_deref()).flatten(),
+            ExprKind::LexicalExit { value, .. } => {
+                (index == 0).then_some(value.as_deref()).flatten()
+            }
             ExprKind::Closure { body, .. } => (index == 0).then_some(body),
             ExprKind::Call { args, .. } => args.get(index),
             ExprKind::MethodCall { receiver, args, .. } => (index == 0)

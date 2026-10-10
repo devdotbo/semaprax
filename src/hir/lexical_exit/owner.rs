@@ -30,13 +30,11 @@ pub(crate) fn owner(
                 .map(|i| FunctionExecutionId::Generic(i.id.clone())),
         )
     {
-        if validate_owner(function, &candidate).is_ok() {
-            if found.replace(candidate).is_some() {
-                return Err(Diagnostic::io(
-                    "SPX-H006",
-                    "lexical function execution owner is ambiguous",
-                ));
-            }
+        if validate_owner(function, &candidate).is_ok() && found.replace(candidate).is_some() {
+            return Err(Diagnostic::io(
+                "SPX-H006",
+                "lexical function execution owner is ambiguous",
+            ));
         }
     }
     found.ok_or_else(|| {

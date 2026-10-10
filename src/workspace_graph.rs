@@ -4641,7 +4641,7 @@ impl<'a> CheckedValueNode<'a> {
             },
             Self::Expression(expression) => match &expression.kind {
                 E::LexicalExit { value, .. } => (index == 0)
-                    .then(|| value.as_deref())
+                    .then_some(value.as_deref())
                     .flatten()
                     .map(Self::Expression),
                 E::Closure {
