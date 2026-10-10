@@ -142,3 +142,106 @@ int main(void) {{
         assert!(run.status.success(), "{optimization}: {run:?}");
     }
 }
+
+const OWNED_BREAK: &str = r#"
+module test.lexical_owned_break;
+@id("app.main") fn main() -> i64 {
+    let outer = bytes_zeroed(7usize);
+    let first = vec_push<Bytes>(vec_with_capacity<Bytes>(2usize), bytes_zeroed(1usize));
+    let values = vec_push<Bytes>(first, bytes_zeroed(2usize));
+    let mut seen = 0;
+    for own item in vec_into_iter<Bytes>(values) {
+        let nested = bytes_zeroed(3usize);
+        seen = seen + 1;
+        if seen == 1 { break; };
+        0
+    }
+    if seen == 1 && byte_len(bytes_as_slice(outer)) == 7usize { 9 } else { 0 }
+}
+"#;
+
+#[test]
+fn owned_iterator_break_finishes_only_its_wrapper_and_preserves_parent_order() {
+    use semaprax::{ast::LexicalExitKind, cleanup_plan::ExitContinuation, hir};
+    let ast = semaprax::check(OWNED_BREAK, "owning-break.spx").expect("source admission");
+    let resolved = hir::resolve(&ast).expect("owning wrapper cleanup construction");
+    hir::validate(&resolved).expect("independent owning Break replay");
+    let function = resolved
+        .functions
+        .iter()
+        .find(|function| function.name == "main")
+        .unwrap();
+    let plan = &function.cleanup_plan;
+    let control = plan.lexical_control.as_ref().expect("lexical certificate");
+    let exits: Vec<_> = control
+        .exits
+        .iter()
+        .filter(|exit| exit.kind == LexicalExitKind::Break)
+        .collect();
+    assert_eq!(exits.len(), 1);
+    let site = exits[0];
+    let resume = site
+        .resume
+        .expect("owning Break completes its wrapper independently");
+    let domain = plan.lexical_resume(resume).expect("unique resume domain");
+    let exit = &plan.exits[site.exit.0 as usize];
+    let ExitContinuation::LoopBreak { edge, .. } = &exit.continuation else {
+        panic!("typed Break route");
+    };
+    assert_eq!(plan.edges[edge.0 as usize].to, resume);
+    assert!(
+        !exit.finalize_in_order.is_empty(),
+        "item/remainder/nested owner settlement"
+    );
+    assert!(plan
+        .exits
+        .iter()
+        .any(|exit| domain.blocks.contains(&exit.from)
+            && !exit.leaves_regions.is_empty()
+            && matches!(exit.continuation, ExitContinuation::Continue(_))));
+    let generated = semaprax::codegen::emit_c(&ast).expect("native owning Break route");
+    assert_eq!(generated, semaprax::codegen::emit_c(&ast).unwrap());
+}
+
+#[test]
+fn owning_break_replay_refuses_a_forged_nonzero_wrapper_tail() {
+    use semaprax::hir::{self, LoopLatchKind, ResolvedExpr, ResolvedExprKind, ResolvedStatement};
+    fn forge(expression: &mut ResolvedExpr) -> bool {
+        let ResolvedExprKind::Block { statements, tail } = &mut expression.kind else {
+            return false;
+        };
+        if matches!(
+            statements.last(),
+            Some(ResolvedStatement::LexicalWhile {
+                latch: LoopLatchKind::OwnedIteratorStep { .. },
+                ..
+            })
+        ) {
+            assert!(matches!(tail.kind, ResolvedExprKind::Int(0)));
+            tail.kind = ResolvedExprKind::Int(1);
+            return true;
+        }
+        for statement in statements {
+            if let ResolvedStatement::Let { value, .. } = statement {
+                if forge(value) {
+                    return true;
+                }
+            }
+        }
+        forge(tail)
+    }
+    let ast = semaprax::check(OWNED_BREAK, "owning-break-forged.spx").unwrap();
+    let mut resolved = hir::resolve(&ast).unwrap();
+    let function = resolved
+        .functions
+        .iter_mut()
+        .find(|function| function.name == "main")
+        .unwrap();
+    assert!(
+        forge(&mut function.body),
+        "authenticated generated wrapper retained"
+    );
+    let failure =
+        hir::validate(&resolved).expect_err("tail drift must not inherit wrapper authority");
+    assert_eq!(failure.code, "SPX-H006");
+}
