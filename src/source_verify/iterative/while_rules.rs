@@ -2,8 +2,8 @@
 //! rejection of expression forms that are not yet admitted inside a loop.
 
 use crate::ast::{Expr, ExprKind, ParamMode, Statement, Type};
-use crate::source_verify::diagnostics::error;
 use crate::source_verify::IterativeVerifier;
+use crate::source_verify::diagnostics::error;
 
 impl<'a, 'p> IterativeVerifier<'a, 'p> {
     pub(super) fn reject_for_body_disallowed(
@@ -258,9 +258,15 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             };
 
             match &expression.kind {
-                ExprKind::LexicalExit { value, .. } => {
+                ExprKind::LexicalExit { kind, value } => {
                     if let Some(value) = value {
-                        frames.push(Frame::Expression(value));
+                        if *kind == crate::ast::LexicalExitKind::Return
+                            && crate::hir::lexical_exit::return_operand::source_named_handoff(value)
+                        {
+                            results.push(Ok(()));
+                        } else {
+                            frames.push(Frame::Expression(value));
+                        }
                     } else {
                         results.push(Ok(()));
                     }

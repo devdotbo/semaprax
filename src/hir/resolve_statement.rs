@@ -12,7 +12,7 @@ use crate::source_verify::is_scalar_source_type;
 use super::expr_nodes::ResolvedExpr;
 use super::ids::{DeclarationId, FunctionExecutionId};
 use super::monomorphize::substitute_type;
-use super::nodes::{is_scalar_resolved_type, DeclarationKind, ResolvedBinding, ResolvedType};
+use super::nodes::{DeclarationKind, ResolvedBinding, ResolvedType, is_scalar_resolved_type};
 use super::{Binding, Resolver};
 
 impl Resolver<'_> {
@@ -208,9 +208,15 @@ impl Resolver<'_> {
             };
 
             match &expression.kind {
-                ExprKind::LexicalExit { value, .. } => {
+                ExprKind::LexicalExit { kind, value } => {
                     if let Some(value) = value {
-                        pending.push(Item::Expression(value));
+                        if *kind != crate::ast::LexicalExitKind::Return
+                            || !crate::hir::lexical_exit::return_operand::source_named_handoff(
+                                value,
+                            )
+                        {
+                            pending.push(Item::Expression(value));
+                        }
                     }
                 }
                 ExprKind::Closure { .. } => {}

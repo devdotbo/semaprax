@@ -40,12 +40,18 @@ impl HirValidator<'_> {
             match &expression.kind {
                 ResolvedExprKind::LexicalExit {
                     kind: crate::ast::LexicalExitKind::Return,
+                    value,
                     ..
                 } => {
-                    // Return operands execute once in the function result
-                    // domain, not the repeated iteration domain. Ordinary
-                    // expression and lexical-target validation authenticate
-                    // their type, ownership transfer and nearest function.
+                    if let Some(value) = value {
+                        // Only the direct whole-owner handoff belongs to the
+                        // once-only function result domain. Calls and every
+                        // other operand retain independent loop admission.
+                        if !crate::hir::lexical_exit::return_operand::resolved_owner_handoff(value)
+                        {
+                            pending.push(value);
+                        }
+                    }
                 }
                 ResolvedExprKind::LexicalExit { value, .. } => {
                     if let Some(value) = value {
@@ -371,7 +377,9 @@ impl HirValidator<'_> {
                             if args[0].ownership != OwnershipMode::Borrow
                                 || !matches!(&args[0].kind, ResolvedExprKind::Place(place) if place.projections.is_empty())
                             {
-                                return Err(hir_error("loop string_from_utf8 requires an authenticated borrowed slice"));
+                                return Err(hir_error(
+                                    "loop string_from_utf8 requires an authenticated borrowed slice",
+                                ));
                             }
                             continue;
                         }
