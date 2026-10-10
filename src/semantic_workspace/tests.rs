@@ -45,6 +45,7 @@ fn current_source_graph_schemas_are_admitted_without_widening_unknown_schemas() 
         "semaprax.graph.v73",
         "semaprax.graph.v74",
         "semaprax.graph.v75",
+        "semaprax.graph.v76",
     ] {
         assert!(is_source_graph_schema(schema));
     }

@@ -3,11 +3,13 @@ use super::*;
 
 impl<O: COutput> CEmitter<'_, O> {
     pub(super) fn lexical_variant_block(&self, block: &ResolvedExpr) -> Result<bool, Diagnostic> {
-        Ok(
-            self.function.cleanup_plan.schema == crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V18
-                && block.ownership == hir::OwnershipMode::Own
-                && variant_declaration_id(self.program, &block.ty)?.is_some(),
-        )
+        Ok(matches!(
+            self.function.cleanup_plan.schema,
+            crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V18
+                | crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V19
+        ) && self.function.cleanup_plan.lexical_control.is_some()
+            && block.ownership == hir::OwnershipMode::Own
+            && variant_declaration_id(self.program, &block.ty)?.is_some())
     }
 
     pub(super) fn emit_lexical_variant_block_result(

@@ -39,6 +39,10 @@ pub(super) fn build_scope_exits(
     by_flag: &BTreeMap<crate::cleanup::LivenessFlagId, ByteSlot>,
 ) -> Result<Vec<ScopeExit>, Diagnostic> {
     let plan = &function.cleanup_plan;
+    let lexical = matches!(
+        plan.schema,
+        crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V18 | crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V19
+    ) && plan.lexical_control.is_some();
     let mut arm_selected_by_region = BTreeMap::<CleanupRegionId, BTreeSet<ExpressionId>>::new();
     for edge in &plan.edges {
         let Some(block) = plan
@@ -57,7 +61,7 @@ pub(super) fn build_scope_exits(
     }
     let mut lexical_ends =
         BTreeMap::<CleanupRegionId, Vec<&crate::cleanup_plan::ExitTarget>>::new();
-    if plan.schema == crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V18 {
+    if lexical {
         for exit in &plan.exits {
             if let ([region], ExitContinuation::Continue(_)) =
                 (exit.leaves_regions.as_slice(), &exit.continuation)
@@ -95,7 +99,7 @@ pub(super) fn build_scope_exits(
         });
         if abrupt != 0 {
             if abrupt != 1
-                || plan.schema != crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V18
+                || !lexical
                 || plan.lexical_control.as_deref().is_none_or(|control| {
                     control.schema != crate::hir::lexical_exit::LEXICAL_CONTROL_FLOW_SCHEMA_V1
                 })
@@ -108,7 +112,7 @@ pub(super) fn build_scope_exits(
             }
             continue;
         }
-        let (ordinary, ends) = if plan.schema == crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V18 {
+        let (ordinary, ends) = if lexical {
             (
                 None,
                 lexical_ends.remove(&region.id).ok_or_else(|| {

@@ -36,11 +36,11 @@ pub enum TracePathOutcome {
 }
 
 #[cfg(test)]
-#[path = "trace_path_certificate/nested_owned_records_tests.rs"]
-mod nested_owned_records_tests;
-#[cfg(test)]
 #[path = "trace_path_certificate/lexical_tests.rs"]
 mod lexical_tests;
+#[cfg(test)]
+#[path = "trace_path_certificate/nested_owned_records_tests.rs"]
+mod nested_owned_records_tests;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct DfaState {
@@ -301,7 +301,11 @@ pub fn build_trace_path_certificate(
                             },
                         )?);
                         let outcome = match function.return_type {
-                            ResolvedType::Never => return Err(certificate_error("Never has no callable result carrier")),
+                            ResolvedType::Never => {
+                                return Err(certificate_error(
+                                    "Never has no callable result carrier",
+                                ))
+                            }
                             ResolvedType::Unit => TracePathOutcome::ScalarSuccess,
                             ResolvedType::I64
                             | ResolvedType::I32
@@ -354,7 +358,9 @@ pub fn build_trace_path_certificate(
                     ExitContinuation::LoopLatch { .. }
                     | ExitContinuation::LoopBreak { .. }
                     | ExitContinuation::FunctionReturn { .. } => {
-                        return Err(certificate_error("lexical continuation is outside finite trace-path v1"));
+                        return Err(certificate_error(
+                            "lexical continuation is outside finite trace-path v1",
+                        ));
                     }
                     ExitContinuation::ReturnUnit => {
                         return Err(certificate_error(
@@ -391,6 +397,7 @@ fn trace_path_schema_is_admitted(schema: &str) -> bool {
             | crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V16
             | crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V17
             | crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V18
+            | crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V19
     )
 }
 
@@ -882,4 +889,11 @@ mod tests {
             },
         }
     }
+}
+
+#[test]
+fn byte_helper_cleanup_remains_outside_frozen_trace_path_profile() {
+    assert!(!trace_path_schema_is_admitted(
+        crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V19
+    ));
 }

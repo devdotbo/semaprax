@@ -3,6 +3,7 @@ use super::{codec_enum, codec_struct, Codec, Decoder, Encoder, Result};
 use crate::cleanup_plan::{
     CleanupPlan, ExecutionBoundaryCertificate, ExecutionBoundaryKind, LexicalControlPlan,
     LexicalExitCertificate, LoopCertificate, ResumeCertificate, CLEANUP_PLAN_SCHEMA_V18,
+    CLEANUP_PLAN_SCHEMA_V19,
 };
 
 codec_struct!(LoopCertificate {
@@ -37,7 +38,9 @@ codec_struct!(LexicalControlPlan {
 
 impl Codec for CleanupPlan {
     fn encode(&self, out: &mut Encoder) -> Result<()> {
-        if (self.schema == CLEANUP_PLAN_SCHEMA_V18) != self.lexical_control.is_some() {
+        if self.schema != CLEANUP_PLAN_SCHEMA_V19
+            && (self.schema == CLEANUP_PLAN_SCHEMA_V18) != self.lexical_control.is_some()
+        {
             return Err(super::grammar(
                 "cleanup lexical certificate/schema mismatch",
             ));
@@ -52,7 +55,11 @@ impl Codec for CleanupPlan {
             self.edges.encode(out)?;
             self.regions.encode(out)?;
             self.exits.encode(out)?;
-            if let Some(control) = &self.lexical_control {
+            if self.schema == CLEANUP_PLAN_SCHEMA_V19 {
+                // v19 composes helper renewal with optional lexical authority.
+                // Earlier schemas retain their exact append-only encoding.
+                self.lexical_control.encode(out)?;
+            } else if let Some(control) = &self.lexical_control {
                 control.encode(out)?;
             }
             Ok(())
@@ -70,7 +77,9 @@ impl Codec for CleanupPlan {
             let edges = Codec::decode(input)?;
             let regions = Codec::decode(input)?;
             let exits = Codec::decode(input)?;
-            let lexical_control = if schema == CLEANUP_PLAN_SCHEMA_V18 {
+            let lexical_control = if schema == CLEANUP_PLAN_SCHEMA_V19 {
+                Codec::decode(input)?
+            } else if schema == CLEANUP_PLAN_SCHEMA_V18 {
                 Some(Codec::decode(input)?)
             } else {
                 None
@@ -100,3 +109,6 @@ codec_struct!(ExecutionBoundaryCertificate {
     leaves_regions,
     finalize_in_order
 });
+
+#[cfg(test)]
+mod byte_helper_tests;
