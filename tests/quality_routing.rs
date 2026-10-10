@@ -67,6 +67,8 @@ fn profiles_are_deterministic_and_broad_dispatch_files_force_full() {
     repository.write("src/graph/nested_owned.rs", "pub fn nested_owned() {}\n");
     repository.write("src/graph/work_counter.rs", "pub fn work_counter() {}\n");
     let additive_graph_modules = [
+        "src/graph/lexical_exit.rs",
+        "src/graph/operator_text.rs",
         "src/graph/byte_buffer_renewal.rs",
         "src/graph/filesystem_outcome.rs",
         "src/graph/owned_text_record_loans.rs",

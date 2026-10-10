@@ -15,7 +15,30 @@ fn private_native_ui_is_platform_real_feature_gated_and_source_locked() {
     let workflow = read(root, ".github/workflows/ci.yml");
     let diagnostics = format!(
         "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}",
-        read(root, "src/codegen.rs"),
+        [
+            read(root, "src/codegen.rs"),
+            read(root, "src/codegen/native_bytes.rs"),
+            read(root, "src/codegen/native_bytes/lexical_exit.rs"),
+            read(root, "src/codegen/native_bytes/origin.rs"),
+            read(root, "src/codegen/native_bytes/producer.rs"),
+            read(root, "src/codegen/native_bytes/view.rs"),
+            read(root, "src/codegen/native_bytes/nested_owned.rs"),
+            read(root, "src/codegen/native_bytes/owned_leaf.rs"),
+            read(root, "src/codegen/native_bytes/replacement.rs"),
+            read(root, "src/codegen/native_bytes/scalar_match_scope.rs"),
+            read(root, "src/codegen/native_bytes/scoped_vec_field.rs"),
+            read(root, "src/codegen/native_bytes/semantic_work.rs"),
+            read(root, "src/codegen/native_bytes/string_slots.rs"),
+            read(root, "src/codegen/native_emit/mod.rs"),
+            read(root, "src/codegen/native_emit/context.rs"),
+            read(root, "src/codegen/native_emit/lexical_epilogue.rs"),
+            read(root, "src/codegen/native_emit/expression.rs"),
+            read(root, "src/codegen/native_emit/expression/lexical_break.rs"),
+            read(root, "src/codegen/native_emit/expression/lexical_exit.rs"),
+            read(root, "src/codegen/native_emit/expression/lexical_lookup.rs"),
+            read(root, "src/codegen/native_emit/expression/scalar_match.rs"),
+        ]
+        .join("\n"),
         read(root, "src/codegen/native_emit/guarded_variant.rs"),
         read(root, "src/codegen/native_emit/indexed_reads.rs"),
         format_args!(
