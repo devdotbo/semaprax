@@ -298,9 +298,9 @@ fn main() -> i64
 }
 ```
 
-- A declaration's last field or case may omit its `,`; `fmt` writes it.
+- The last field or case may omit its `,`; `fmt` writes it.
 - Give every field and case its own `@id`. Cases without payload are
-  written `Name,` in the declaration and `Type::Name {}` everywhere else;
+  written `Name,` in declarations and `Type::Name {}` elsewhere;
   the `{}` may be omitted (`Type::Name`) and `fmt` writes it back.
 - Construct a generic variant as `Option<i64>::Some { value: v }`; match it
   as `Option::Some { value: v } => …`. `Some(v)` is invalid. Generic calls
@@ -317,9 +317,9 @@ fn main() -> i64
   `help language author:copy-record-vec` or `help language author:owned-data`.
   See [Owned Leaf Collections v1](OWNED-LEAF-COLLECTIONS-V1.md).
 - Import every named type in a function import's signature, including nested
-  types and inferred factory results. For example, import
-  `@id("std.pattern.matcher")` with `std.pattern.make`; `SPX-G172` names a
-  missing type identity.
+  types and inferred factory results. With `std.pattern.make`, add
+  `use type @id("std.pattern.matcher") from std.pattern as Matcher;`
+  `SPX-G172` names the missing type identity.
 - Classes hold fields and `fn name(self: Class, …)` methods, called as
   `value.method(args)`. `class Dog : Animal` inherits; `super.method()`
   dispatches to the parent. Records have no methods.
