@@ -123,7 +123,12 @@ fn result_source(function: &ResolvedFunction) -> CleanupResultSource {
         .iter()
         .find_map(|exit| match &exit.continuation {
             ExitContinuation::CommitResult { source } => Some(source.clone()),
+            // Lexical transfers remain internal control contours. Publication
+            // is authenticated by the root CommitResult after postconditions.
             ExitContinuation::Continue(_)
+            | ExitContinuation::LoopLatch { .. }
+            | ExitContinuation::LoopBreak { .. }
+            | ExitContinuation::FunctionReturn { .. }
             | ExitContinuation::ReturnFailure { .. }
             | ExitContinuation::ReturnUnit => None,
         })

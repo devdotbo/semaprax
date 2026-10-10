@@ -320,7 +320,10 @@ fn owning_break_replay_refuses_a_forged_step_renewal_reservation() {
         0,
         CleanupTransition::ReserveRenewal {
             at: assignment.clone(),
-            binding: CleanupPlace::whole(StorageId::Value(step.clone())),
+            binding: CleanupPlace {
+                storage: StorageId::Value(step.clone()),
+                projections: Vec::new(),
+            },
         },
     );
     let failure = hir::validate(&resolved)
