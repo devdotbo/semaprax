@@ -1,6 +1,5 @@
 //! Selective Graph v78: independently recovered finite iterator resource bounds.
 use super::*;
-use crate::bounded_output::BudgetedJoin as _;
 const SCHEMA: &str = "semaprax.graph.v78";
 pub(super) fn requires(program: &ResolvedProgram) -> bool {
     program

@@ -45,7 +45,7 @@ pub(in crate::wasm) fn emit_closed_list(
             "immutable List requires the closed pure Core Wasm profile",
         ));
     }
-    super::emit(program)
+    super::emit_profile(program, false, false)
 }
 
 pub(super) fn append_heap_global(globals: &mut Vec<u8>, enabled: bool, base: u32) -> Option<u32> {

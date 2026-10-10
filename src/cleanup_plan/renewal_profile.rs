@@ -2,19 +2,6 @@
 use crate::hir::{ExpressionId, ResolvedBinding, ResolvedFunction, ResolvedProgram};
 use std::collections::BTreeMap;
 
-pub(crate) fn binding<'a>(
-    program: &'a ResolvedProgram,
-    function: &'a ResolvedFunction,
-    at: &ExpressionId,
-) -> Option<&'a ResolvedBinding> {
-    crate::loop_calls::byte_writer::bindings(program, function)
-        .remove(at)
-        .or_else(|| crate::string_ops::replacement::binding(function, at))
-        .or_else(|| crate::byte_ops::same_owner_set_binding(function, at))
-        .or_else(|| crate::hir::vec_loop_renewal::binding_in(program, function, at))
-        .or_else(|| crate::hir::iterator_loop::renewal_binding(program, function, at))
-}
-
 /// A held phase index authenticates exact program and function membership.
 /// Standalone callers still derive their own fresh helper census.
 pub(crate) fn binding_with_index<'a>(

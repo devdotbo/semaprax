@@ -972,6 +972,7 @@ impl<'a> Node<'a> {
                 | E::Float64(_)
                 | E::Bool(_)
                 | E::String(_)
+                | E::BorrowedUtf8Literal(_)
                 | E::ArrayU8(_)
                 | E::RepeatArrayU8 { .. }
                 | E::BorrowPlace { .. }

@@ -303,7 +303,7 @@ fn provenance<'a>(
     let mut pushes = 0u32;
     loop {
         *work = work.checked_sub(1)?;
-        if !matches!(&expression.ty, ResolvedType::Nominal { declaration, arguments } if declaration.as_str() == crate::vec_ops::VEC_ID && arguments.as_slice() == [ResolvedType::Bytes])
+        if !matches!(&expression.ty, ResolvedType::Nominal { declaration, arguments } if declaration.as_str() == crate::prelude::VEC_ID && arguments.as_slice() == [ResolvedType::Bytes])
             || expression.ownership != OwnershipMode::Own
         {
             return None;

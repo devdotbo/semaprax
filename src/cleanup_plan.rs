@@ -26,7 +26,6 @@ mod owned_liveness;
 mod renewal_history;
 mod renewal_profile;
 mod replay;
-pub(crate) use renewal_profile::binding as renewal_binding;
 mod validate;
 
 pub(crate) use build::build_plan;

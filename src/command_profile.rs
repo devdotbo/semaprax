@@ -181,6 +181,7 @@ fn validate_function(
                 ))
             }
             ResolvedExprKind::String(_)
+            | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::LiteralFormat { .. }
             | ResolvedExprKind::VecFieldRead { .. }
             | ResolvedExprKind::NativeRustImportCall(_)
