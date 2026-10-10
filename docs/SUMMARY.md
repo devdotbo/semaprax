@@ -371,6 +371,7 @@ Audience: all documentation readers.
 - [Project Contract Change v1](PROJECT-CONTRACT-CHANGE-V1.md)
 - [Project Signature Evolution v1](PROJECT-SIGNATURE-EVOLUTION-V1.md)
 - [Owned String Borrowed View v1](OWNED-STRING-BORROWED-VIEW-V1.md)
+- [Static borrowed UTF-8 literals v1 — design proposal](RFC-STATIC-BORROWED-UTF8-LITERALS-V1.md)
 - [Project Expression Change v1](PROJECT-EXPRESSION-CHANGE-V1.md)
 - [Graph-operational programme ledger](GRAPH-OPERATIONAL-PROGRAMME.md)
 - [Semantic Retention Checkpoint v1](SEMANTIC-RETENTION-CHECKPOINT-V1.md)
