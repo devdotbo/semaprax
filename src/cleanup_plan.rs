@@ -17,6 +17,7 @@ mod owner_admission;
 // leave the Copy-scalar profile; every other owned or aggregate value still
 // keeps its existing SPX-T303/T305/T306 refusal.
 mod owned_liveness;
+mod renewal_history;
 mod renewal_profile;
 mod replay;
 pub(crate) use renewal_profile::binding as renewal_binding;

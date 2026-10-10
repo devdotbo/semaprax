@@ -127,6 +127,25 @@ impl PlanBuilder<'_> {
             }
             mapped
         };
+        for history in state.renewals.values_mut() {
+            history.stage(|flag| {
+                if !source_set.contains(&flag) {
+                    return None;
+                }
+                let source_leaf = &self.leaves[&flag].place;
+                let relative = &source_leaf.projections[source.projections.len()..];
+                destination_order
+                    .iter()
+                    .find(|candidate| {
+                        self.leaves[candidate]
+                            .place
+                            .projections
+                            .iter()
+                            .eq(destination.projections.iter().chain(relative))
+                    })
+                    .copied()
+            });
+        }
         state.append_distinct(destination_order);
         self.publish_string_append(&at, &destination, state)?;
         if let Some(history) = renewal {

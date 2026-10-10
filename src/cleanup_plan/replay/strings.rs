@@ -33,7 +33,10 @@ pub(super) fn reserve_append(
     if whole_value(source) && appends.contains_key(at) {
         if state
             .renewals
-            .insert(at.clone(), state.live_order.clone())
+            .insert(
+                at.clone(),
+                super::super::renewal_history::RenewalHistory::new(state.live_order.clone(), None),
+            )
             .is_some()
         {
             return Err(replay_error(
@@ -44,11 +47,13 @@ pub(super) fn reserve_append(
         return Ok(None);
     }
     match appends.iter().find(|(_, value)| *value == at) {
-        Some((operand, _)) if whole_value(destination) => {
-            state.renewals.remove(operand).map(Some).ok_or_else(|| {
+        Some((operand, _)) if whole_value(destination) => state
+            .renewals
+            .remove(operand)
+            .map(|history| Some(history.history))
+            .ok_or_else(|| {
                 replay_error(function, "string append publishes without a reserved owner")
-            })
-        }
+            }),
         _ => Ok(None),
     }
 }

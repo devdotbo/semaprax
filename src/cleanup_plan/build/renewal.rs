@@ -188,9 +188,18 @@ impl PlanBuilder<'_> {
                 "renewal reservation requires one live unreserved owner leaf",
             ));
         }
-        state
-            .renewals
-            .insert(value.id.clone(), state.live_order.clone());
+        state.renewals.insert(
+            value.id.clone(),
+            super::super::renewal_history::RenewalHistory::new(
+                state.live_order.clone(),
+                super::super::renewal_profile::consumes_owned_rhs(
+                    self.program,
+                    self.function,
+                    &value.id,
+                )
+                .then_some(flags[0]),
+            ),
+        );
         self.push_transition(
             block,
             CleanupTransition::ReserveRenewal {

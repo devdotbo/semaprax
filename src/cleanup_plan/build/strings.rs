@@ -50,7 +50,13 @@ impl PlanBuilder<'_> {
             && source.projections.is_empty()
             && state
                 .renewals
-                .insert(at.clone(), state.live_order.clone())
+                .insert(
+                    at.clone(),
+                    super::super::renewal_history::RenewalHistory::new(
+                        state.live_order.clone(),
+                        None,
+                    ),
+                )
                 .is_some()
         {
             return Err(plan_error("string append reserves its owner twice"));

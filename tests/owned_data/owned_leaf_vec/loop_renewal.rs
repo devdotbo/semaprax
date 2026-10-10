@@ -40,7 +40,9 @@ fn later_iteration_full_vector_failure_settles_both_cells_and_staged_string() {
         "vec_with_capacity<string>(2usize)",
         "vec_with_capacity<string>(1usize)",
     );
-    run_wasm(&body, 1, 0, "none");
+    // This private Core-Wasm host observes the raw capacity token 13;
+    // the compiler-owned Vec status domain normalizes that token to code 1.
+    run_wasm(&body, 13, 0, "none");
 }
 #[test]
 fn lazy_condition_failure_preserves_selected_arithmetic_status() {
@@ -55,4 +57,37 @@ fn lazy_condition_failure_preserves_selected_arithmetic_status() {
     semaprax::hir::validate(&resolved).unwrap();
     semaprax::codegen::emit_hir_c(&resolved).unwrap();
     semaprax::wasm::emit_resolved_module(&resolved).unwrap();
+}
+
+#[test]
+fn owned_record_argument_commit_preserves_later_cell_and_failed_argument_cleanup() {
+    let body = r#"@id("app.main") fn main()->i64 {
+ let mut words=vec_with_capacity<Row>(2usize);
+ let later=vec_with_capacity<Row>(1usize);
+ let mut index=0;
+ while index<2 {
+  let item=Row{priority:7,title:"ab",payload:bytes_zeroed(1usize)};
+  words=vec_push<Row>(words,item);
+  index=index+1; 0
+ }
+ if vec_len<Row>(words)==2usize && vec_len<Row>(later)==0usize {29}else{0}
+}
+"#;
+    let source = format!("{}{}", super::DECLARATION, body);
+    let checked = semaprax::check(&source, "owned-record-loop-commit.spx").unwrap();
+    let canonical = semaprax::format::canonical(&checked);
+    let roundtrip = semaprax::check(&canonical, "owned-record-loop-roundtrip.spx").unwrap();
+    assert_eq!(semaprax::format::canonical(&roundtrip), canonical);
+    let graph = semaprax::graph::to_json(&checked).unwrap();
+    semaprax::graph::verify_json(&checked, &graph).unwrap();
+    run_wasm(body, 0, 29, "none");
+    // The first argument is staged before the borrowed clone-out refuses its
+    // empty later vector. This private wire token is Vec index failure (14),
+    // not the public normalized domain code 2. Neither cell may leak.
+    let failed = body.replace(
+        "let item=Row{priority:7,title:\"ab\",payload:bytes_zeroed(1usize)};\n  words=vec_push<Row>(words,item);",
+        "words=vec_push<Row>(words,vec_clone_at<Row>(later,0usize));",
+    );
+    assert_ne!(failed, body);
+    run_wasm(&failed, 14, 0, "none");
 }

@@ -61,6 +61,15 @@ owners must retain their exact history; neither constructor nor replay sorts
 or repairs a vector. A branch that skips the update retains the same history.
 Zero iterations execute no update.
 
+For an admitted owned-element RHS, the constructor and independent replay
+retain private original-to-staged leaf provenance. Staging leaves the reserved
+history unchanged. Only the ordinary atomic call commit debits the exact
+consumed RHS owner leaves; the renewed Vec's original position remains reserved.
+The final equality still compares every surviving unrelated owner in exact
+order. A failing later argument keeps earlier staged owners live for ordinary
+failure cleanup. This private bookkeeping adds no serialized proof field,
+profile, physical finalizer, or downstream history repair.
+
 Failure cancels the reservation without resurrecting the old owner. Existing
 staged/committed ownership and failure cleanup settle the actual live values
 once, preserving the selected Vec status (1 capacity, 2 index, 3 allocation).

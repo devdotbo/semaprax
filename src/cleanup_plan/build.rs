@@ -426,8 +426,8 @@ fn flow_state_owned_capacity(state: &FlowState) -> usize {
             .iter()
             .map(|(at, history)| {
                 at.as_str().len()
-                    + history.capacity() * std::mem::size_of::<LivenessFlagId>()
-                    + std::mem::size_of::<(ExpressionId, Vec<LivenessFlagId>)>()
+                    + history.owned_capacity()
+                    + std::mem::size_of::<(ExpressionId, super::renewal_history::RenewalHistory)>()
             })
             .sum::<usize>()
 }
@@ -520,7 +520,7 @@ struct FlowState {
     /// order; an incomplete constructor intentionally retains actual field
     /// completion order.
     live_order: Vec<LivenessFlagId>,
-    renewals: BTreeMap<ExpressionId, Vec<LivenessFlagId>>,
+    renewals: BTreeMap<ExpressionId, super::renewal_history::RenewalHistory>,
     conditional_variants: Vec<ConditionalFlowVariant>,
 }
 
@@ -1622,7 +1622,11 @@ impl<'a> PlanBuilder<'a> {
                 "call commit at `{at}` consumes a non-live argument epoch"
             )));
         }
-        state.remove(&flags.into_iter().collect());
+        let consumed = flags.into_iter().collect();
+        for history in state.renewals.values_mut() {
+            history.commit(&consumed);
+        }
+        state.remove(&consumed);
         Ok(())
     }
 

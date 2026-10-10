@@ -91,6 +91,11 @@ canonical .spx source or held Project inputs
 
 Every backend passes source verification and validated HIR. Cleanup-plan vectors
 are canonical runtime order; projections and backends must never sort or repair them.
+`cleanup_plan/renewal_history.rs` owns private path-local staged-epoch tracking
+for authenticated owned-element Vec renewal. Builder and replay derive their
+own transfer mappings and exact atomic call commits; staging never debits the
+reserved history. This tracking retains no declaration index and changes no
+serialized proof authority or physical cleanup operation.
 
 `hir/validation/call_parameters.rs` owns validation-only byte-operation
 signature views and argument ownership checks. Byte views borrow the immutable

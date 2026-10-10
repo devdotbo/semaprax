@@ -223,7 +223,7 @@ struct CallFact {
 
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 struct PathState {
-    renewals: BTreeMap<ExpressionId, Vec<LivenessFlagId>>,
+    renewals: BTreeMap<ExpressionId, super::renewal_history::RenewalHistory>,
     live_order: Vec<LivenessFlagId>,
     conditional_variants: Vec<ReplayConditionalVariant>,
     pending_failure: Option<StatusSourceId>,
@@ -6996,6 +6996,9 @@ fn execute_replay_transition(
                     }
                 }
             }
+            for history in state.renewals.values_mut() {
+                history.commit(&consumed);
+            }
             state.live_order.retain(|flag| !consumed.contains(flag));
         }
         CleanupTransition::SelectFailure { source } => {
@@ -7116,6 +7119,9 @@ fn replay_transfer(
             .copied()
             .collect::<Vec<_>>()
     };
+    for history in state.renewals.values_mut() {
+        history.stage(|flag| mapping.get(&flag).copied());
+    }
     state.live_order.retain(|flag| !source_set.contains(flag));
     if destination.projections.is_empty() {
         state.live_order.extend(destination_flags);

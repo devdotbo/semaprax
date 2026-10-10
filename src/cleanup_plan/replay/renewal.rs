@@ -79,7 +79,14 @@ pub(super) fn reserve(
             "renewal reservation requires one live unreserved owner leaf",
         ));
     }
-    state.renewals.insert(at.clone(), state.live_order.clone());
+    state.renewals.insert(
+        at.clone(),
+        super::super::renewal_history::RenewalHistory::new(
+            state.live_order.clone(),
+            super::super::renewal_profile::consumes_owned_rhs(program, function, at)
+                .then_some(flags[0]),
+        ),
+    );
     Ok(())
 }
 pub(super) fn renew(
@@ -132,7 +139,7 @@ pub(super) fn renew(
             "renewal changed unrelated cleanup initialization history",
         ));
     }
-    state.live_order = history;
+    state.live_order = history.history;
     Ok(())
 }
 pub(super) fn prepend_reservation(
@@ -243,7 +250,7 @@ pub(super) fn retained_units(state: &PathState) -> usize {
     state.renewals.iter().fold(0usize, |total, (at, flags)| {
         total
             .saturating_add(at.as_str().len())
-            .saturating_add(flags.len())
+            .saturating_add(flags.retained_units())
             .saturating_add(1)
     })
 }
@@ -255,13 +262,27 @@ pub(super) fn charge_transition(
     budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
     let units = match transition {
-        CleanupTransition::ReserveRenewal { at, .. } => state
-            .live_order
-            .len()
-            .saturating_add(at.as_str().len())
-            .saturating_add(1),
+        CleanupTransition::ReserveRenewal { at, .. } => {
+            let owned_rhs = find_resolved_expression(function, at).is_some_and(|expression| {
+                matches!(&expression.kind, ResolvedExprKind::Call { callee, args, .. }
+                    if crate::vec_ops::by_id(callee.as_str()).is_some_and(|op| op.reopens_same_owner())
+                        && args.iter().skip(1).any(|arg| arg.ownership == OwnershipMode::Own))
+            });
+            state
+                .live_order
+                .len()
+                .saturating_mul(if owned_rhs { 3 } else { 1 })
+                .saturating_add(usize::from(owned_rhs))
+                .saturating_add(at.as_str().len())
+                .saturating_add(1)
+        }
         CleanupTransition::Renew { .. } => {
             retained_units(state).saturating_add(state.live_order.len())
+        }
+        CleanupTransition::Transfer { .. } | CleanupTransition::CallCommit { .. } => {
+            state.renewals.values().fold(0usize, |units, history| {
+                units.saturating_add(history.provenance_units())
+            })
         }
         _ => 0,
     };
@@ -729,3 +750,7 @@ fn main() -> i64
         }
     }
 }
+
+#[cfg(test)]
+#[path = "renewal/owned_commit.rs"]
+mod owned_commit;
