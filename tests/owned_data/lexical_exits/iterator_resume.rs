@@ -72,7 +72,7 @@ fn forged_resume_transfer_phase_refuses_before_interpreter_or_wasm() {
         .unwrap();
     match transfer {
         CleanupTransition::TransferVariant { at, .. } => {
-            *at = hir::ExpressionId::from_owned("forged.resume.phase".to_owned())
+            *at = serde_json::from_value(serde_json::Value::String("forged.resume.phase".to_owned())).unwrap()
         }
         _ => unreachable!(),
     }

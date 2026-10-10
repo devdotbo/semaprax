@@ -7,6 +7,7 @@ mod outcome;
 mod runtime;
 #[path = "copy_record_vec/sort_keys.rs"]
 mod sort_keys;
+#[path = "copy_record_vec/traversal.rs"]
 mod traversal;
 
 const DECL: &str = r#"module copy.records;
