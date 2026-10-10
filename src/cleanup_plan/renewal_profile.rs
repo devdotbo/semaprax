@@ -15,19 +15,33 @@ pub(crate) fn binding<'a>(
         .or_else(|| crate::hir::iterator_loop::renewal_binding(program, function, at))
 }
 
+pub(crate) struct RenewalBindings<'a> {
+    legacy: BTreeMap<ExpressionId, &'a ResolvedBinding>,
+    helpers: crate::loop_calls::byte_writer::HelperBindings<'a>,
+}
+impl<'a> RenewalBindings<'a> {
+    pub(crate) fn get(&self, at: &ExpressionId) -> Option<&'a ResolvedBinding> {
+        self.helpers
+            .get(at)
+            .or_else(|| self.legacy.get(at).copied())
+    }
+}
+
 /// Derive the per-function renewal lookup once for cleanup skeleton replay.
-/// `extend` order mirrors `binding`'s first-match order, including duplicate
-/// or forged expression IDs across profile maps.
+/// Legacy `extend` order remains unchanged. Borrowed helper membership wins
+/// first, matching `binding`, without allocating new opaque tree nodes.
 pub(crate) fn bindings<'a>(
     program: &'a ResolvedProgram,
     function: &'a ResolvedFunction,
-) -> BTreeMap<ExpressionId, &'a ResolvedBinding> {
+) -> RenewalBindings<'a> {
     let mut found = crate::hir::iterator_loop::renewal_bindings(program, function);
     found.extend(crate::hir::vec_loop_renewal::bindings_in(program, function));
     found.extend(crate::byte_ops::same_owner_set_bindings(function));
     found.extend(crate::string_ops::replacement::bindings(function));
-    found.extend(crate::loop_calls::byte_writer::bindings(program, function));
-    found
+    RenewalBindings {
+        legacy: found,
+        helpers: crate::loop_calls::byte_writer::bindings(program, function),
+    }
 }
 
 /// Called only after the site has independently passed renewal binding admission.

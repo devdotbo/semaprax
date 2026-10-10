@@ -8,8 +8,7 @@ use super::*;
 pub(super) struct SkeletonWork<'a, 'b> {
     pub(super) function: &'a ResolvedFunction,
     pub(super) budget: &'b mut ReplayBudget,
-    pub(super) renewal_bindings:
-        std::collections::BTreeMap<crate::hir::ExpressionId, &'a crate::hir::ResolvedBinding>,
+    pub(super) renewal_bindings: crate::cleanup_plan::renewal_profile::RenewalBindings<'a>,
     /// Authored same-owner append and direct literal-format String moves.
     pub(super) string_owner_moves: BTreeSet<ExpressionId>,
     pub(super) string_condition_reads: BTreeSet<ExpressionId>,
@@ -41,7 +40,7 @@ impl<'a, 'b> SkeletonWork<'a, 'b> {
         &self,
         at: &crate::hir::ExpressionId,
     ) -> Option<&'a crate::hir::ResolvedBinding> {
-        self.renewal_bindings.get(at).copied()
+        self.renewal_bindings.get(at)
     }
 }
 

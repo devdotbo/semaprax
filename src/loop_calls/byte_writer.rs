@@ -5,6 +5,8 @@ use crate::hir::{
     OwnershipMode, ResolvedBinding, ResolvedExpr, ResolvedExprKind, ResolvedFunction,
     ResolvedProgram, ResolvedType,
 };
+mod bindings;
+pub(crate) use bindings::HelperBindings;
 mod resolved;
 mod source;
 pub(crate) use resolved::{

@@ -123,6 +123,7 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         include_str!("../../../../../src/loop_calls/byte_writer.rs"),
         include_str!("../../../../../src/loop_calls/byte_writer/source.rs"),
         include_str!("../../../../../src/loop_calls/byte_writer/resolved.rs"),
+        include_str!("../../../../../src/loop_calls/byte_writer/bindings.rs"),
         include_str!("../../../../../src/hir.rs"),
         include_str!("../../../../../src/hir/lexical_exit.rs"),
         include_str!("../../../../../src/hir/lexical_exit/return_operand.rs"),
@@ -211,6 +212,7 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
     let hir_validator = concat!(
         include_str!("../../../../../src/loop_calls/byte_writer.rs"),
         include_str!("../../../../../src/loop_calls/byte_writer/resolved.rs"),
+        include_str!("../../../../../src/loop_calls/byte_writer/bindings.rs"),
         include_str!("../../../../../src/hir/validation.rs"),
         include_str!("../../../../../src/hir/validation/lexical_exit.rs"),
         include_str!("../../../../../src/hir/validation/call_parameters.rs"),

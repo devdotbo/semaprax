@@ -179,24 +179,21 @@ fn prove<'a>(
 pub(crate) fn bindings<'a>(
     program: &'a ResolvedProgram,
     function: &'a ResolvedFunction,
-) -> std::collections::BTreeMap<crate::hir::ExpressionId, &'a ResolvedBinding> {
+) -> HelperBindings<'a> {
     checked_bindings(program, function).unwrap_or_default()
 }
 
 pub(crate) fn checked_bindings<'a>(
     program: &'a ResolvedProgram,
     function: &'a ResolvedFunction,
-) -> Result<
-    std::collections::BTreeMap<crate::hir::ExpressionId, &'a ResolvedBinding>,
-    crate::diagnostic::Diagnostic,
-> {
+) -> Result<HelperBindings<'a>, crate::diagnostic::Diagnostic> {
     let error = || {
         crate::diagnostic::Diagnostic::io(
             "SPX-H006",
             "byte helper renewal census exceeds admitted scratch, work or depth",
         )
     };
-    let mut found = std::collections::BTreeMap::new();
+    let mut found = HelperBindings::default();
     // No new census applies to modules without a potentially relevant signature.
     if !program.functions.iter().any(|f| {
         f.return_type == ResolvedType::Bytes
@@ -229,7 +226,18 @@ pub(crate) fn checked_bindings<'a>(
                     } = statement
                     {
                         if assignment(program, binding, value) {
-                            found.insert(value.id.clone(), binding);
+                            // Binary search, insertion shift and replacement copy have
+                            // this bounded linear upper in the current site count.
+                            work = work
+                                .checked_sub(
+                                    found
+                                        .len()
+                                        .checked_mul(3)
+                                        .and_then(|n| n.checked_add(1))
+                                        .ok_or_else(error)?,
+                                )
+                                .ok_or_else(error)?;
+                            found.insert(&value.id, binding).ok_or_else(error)?;
                         }
                     }
                 }

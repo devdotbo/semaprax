@@ -70,3 +70,11 @@ It must retain actual identity and lookup backing charges, fail closed on stale
 source or typed facts, preserve old ordinary allocating-helper admission, and
 avoid treating attached cleanup plans as authority. This index is proposed,
 not implemented or measured by this batch.
+
+The helper-site census stores sorted borrowed identity/binding references in
+an explicitly grown Vec. Each replacement backing is reserved before its
+allocation while the previous backing remains charged; duplicate keys replace
+only the borrowed value and incur no growth reservation. Existing legacy
+renewal tree maps remain separate, so helper sites introduce no opaque tree
+nodes or copied identity backing. The checked census refuses before insertion
+when its backing reservation fails.

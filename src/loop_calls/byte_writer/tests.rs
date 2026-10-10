@@ -26,6 +26,39 @@ fn transitive_byte_helpers_reserve_exact_owners_inside_and_outside_loops() {
         2,
         "ordinary assignment and loop assignment are distinct sites"
     );
+    let (at, binding) = bindings(&program, main).into_iter().next().unwrap();
+    let first_backing = std::mem::size_of::<HelperBindings<'_>>()
+        + std::mem::size_of::<(&crate::hir::ExpressionId, &ResolvedBinding)>();
+    let ((exact, mut entry), overflowed, used) =
+        crate::bounded_output::with_limit_usage(first_backing, || {
+            let mut entry = HelperBindings::default();
+            let result = entry.insert(at, binding);
+            (result, entry)
+        });
+    assert!(exact.is_some());
+    assert!(!overflowed);
+    assert_eq!(used, first_backing);
+    assert_eq!(entry.backing_capacity(), 1);
+    let (duplicate, overflowed, used) =
+        crate::bounded_output::with_limit_usage(0, || entry.insert(at, binding));
+    assert!(duplicate.is_some());
+    assert!(!overflowed);
+    assert_eq!(used, 0);
+    let ((short, entry), overflowed, used) =
+        crate::bounded_output::with_limit_usage(first_backing - 1, || {
+            let mut entry = HelperBindings::default();
+            let result = entry.insert(at, binding);
+            (result, entry)
+        });
+    assert!(short.is_none());
+    assert!(overflowed);
+    assert_eq!(used, 0);
+    assert!(entry.is_empty());
+    assert_eq!(
+        entry.backing_capacity(),
+        0,
+        "refused insertion allocated no backing"
+    );
     assert_eq!(
         main.cleanup_plan.schema,
         crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V19
@@ -34,7 +67,7 @@ fn transitive_byte_helpers_reserve_exact_owners_inside_and_outside_loops() {
         assert_eq!(binding.name, "output");
         assert!(main.cleanup_plan.blocks.iter().flat_map(|block| &block.transitions).any(|transition| matches!(transition,
             crate::cleanup_plan::CleanupTransition::ReserveRenewal { at: site, binding: place }
-                if site == &at && *place == crate::cleanup_plan::CleanupPlace::whole(crate::cleanup_plan::StorageId::Value(binding.id.clone())))));
+                if site == at && *place == crate::cleanup_plan::CleanupPlace::whole(crate::cleanup_plan::StorageId::Value(binding.id.clone())))));
     }
 }
 #[test]
