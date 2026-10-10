@@ -199,13 +199,13 @@ pub(super) fn prepend_reservation(
     Ok(())
 }
 
-pub(super) fn validate_join_compatibility(
+pub(super) fn validate_join_compatibility<'a>(
     function: &ResolvedFunction,
-    existing: &BTreeSet<PathState>,
+    existing: impl Iterator<Item = &'a PathState> + Clone,
     incoming: &PathState,
     block: BlockId,
 ) -> Result<(), Diagnostic> {
-    if existing.iter().any(|state| {
+    if existing.clone().any(|state| {
         state.renewals != incoming.renewals
             || state.pending_failure != incoming.pending_failure
             || state.selected_failure != incoming.selected_failure
@@ -222,7 +222,6 @@ pub(super) fn validate_join_compatibility(
     }
 
     let histories = existing
-        .iter()
         .map(|state| &state.live_order)
         .chain(std::iter::once(&incoming.live_order))
         .collect::<Vec<_>>();
