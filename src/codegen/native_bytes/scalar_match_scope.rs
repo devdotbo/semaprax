@@ -55,6 +55,17 @@ pub(super) fn build_scope_exits(
                 .insert(scrutinee.clone());
         }
     }
+    let mut lexical_ends =
+        BTreeMap::<CleanupRegionId, Vec<&crate::cleanup_plan::ExitTarget>>::new();
+    if plan.schema == crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V18 {
+        for exit in &plan.exits {
+            if let ([region], ExitContinuation::Continue(_)) =
+                (exit.leaves_regions.as_slice(), &exit.continuation)
+            {
+                lexical_ends.entry(*region).or_default().push(exit);
+            }
+        }
+    }
     let mut exits = Vec::with_capacity(plan.regions.len());
     for region in &plan.regions {
         let storage = region
@@ -89,6 +100,7 @@ pub(super) fn build_scope_exits(
                     control.schema != crate::hir::lexical_exit::LEXICAL_CONTROL_FLOW_SCHEMA_V1
                 })
                 || region.normal_scope_end.0 != u32::MAX
+                || lexical_ends.contains_key(&region.id)
             {
                 return Err(error(
                     "native abrupt-only scope certificate is not canonical",
@@ -96,34 +108,55 @@ pub(super) fn build_scope_exits(
             }
             continue;
         }
-        let exit = plan
-            .exits
-            .get(region.normal_scope_end.0 as usize)
-            .filter(|exit| exit.id == region.normal_scope_end)
-            .ok_or_else(|| error("Bytes region has no canonical normal-scope exit"))?;
-        let ExitContinuation::Continue(continue_edge) = &exit.continuation else {
-            return Err(error("Bytes region normal-scope exit is not canonical"));
+        let (ordinary, ends) = if plan.schema == crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V18 {
+            (
+                None,
+                lexical_ends.remove(&region.id).ok_or_else(|| {
+                    error("native lexical region has no canonical scope completion")
+                })?,
+            )
+        } else {
+            (
+                Some(
+                    plan.exits
+                        .get(region.normal_scope_end.0 as usize)
+                        .filter(|exit| exit.id == region.normal_scope_end)
+                        .ok_or_else(|| error("Bytes region has no canonical normal-scope exit"))?,
+                ),
+                Vec::new(),
+            )
         };
-        if exit.leaves_regions.as_slice() != [region.id] {
-            return Err(error("Bytes region normal-scope exit is not canonical"));
+        let mut storage = Some(storage);
+        let mut ends = ordinary.into_iter().chain(ends).peekable();
+        while let Some(exit) = ends.next() {
+            let ExitContinuation::Continue(continue_edge) = &exit.continuation else {
+                return Err(error("Bytes region normal-scope exit is not canonical"));
+            };
+            if exit.leaves_regions.as_slice() != [region.id] {
+                return Err(error("Bytes region normal-scope exit is not canonical"));
+            }
+            let actions = exit
+                .finalize_in_order
+                .iter()
+                .filter_map(|action| by_flag.get(&action.guard_flag).cloned())
+                .collect::<Vec<_>>();
+            exits.push(ScopeExit {
+                region: region.id,
+                from: Some(exit.from),
+                parent: region.parent,
+                storage: if ends.peek().is_none() {
+                    storage.take().unwrap()
+                } else {
+                    storage.as_ref().unwrap().clone()
+                },
+                actions,
+                guard_branch: boolean_branch_expression(plan, *continue_edge)?,
+                parent_arm_selected_scrutinees: region
+                    .parent
+                    .and_then(|parent| arm_selected_by_region.get(&parent).cloned())
+                    .unwrap_or_default(),
+            });
         }
-        let actions = exit
-            .finalize_in_order
-            .iter()
-            .filter_map(|action| by_flag.get(&action.guard_flag).cloned())
-            .collect::<Vec<_>>();
-        exits.push(ScopeExit {
-            region: region.id,
-            from: Some(exit.from),
-            parent: region.parent,
-            storage,
-            actions,
-            guard_branch: boolean_branch_expression(plan, *continue_edge)?,
-            parent_arm_selected_scrutinees: region
-                .parent
-                .and_then(|parent| arm_selected_by_region.get(&parent).cloned())
-                .unwrap_or_default(),
-        });
     }
     Ok(exits)
 }

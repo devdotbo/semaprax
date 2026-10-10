@@ -571,3 +571,5 @@ fn metered_dispatch_refuses_invalid_limits_unmetered_profiles_and_cancellation_b
     authorization::StageSemanticProfile::admit(&program, ENTRY, 10)
         .expect("the direct-call and while-loop fixture is inside the metered profile");
 }
+
+mod lexical_exits;
