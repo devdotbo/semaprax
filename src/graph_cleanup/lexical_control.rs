@@ -1,0 +1,64 @@
+//! Render certificates verbatim; validation owns all semantic authentication.
+use super::{array_json, quote_json};
+use crate::cleanup_plan::{LexicalControlPlan, LexicalExitCertificate, LoopCertificate};
+use crate::hir::{ControlTarget, LoopLatchKind, SourceForKind};
+
+pub(super) fn target_json(target: &ControlTarget) -> String {
+    match target {
+        ControlTarget::Function(owner) => format!(
+            "{{\"kind\":\"function\",\"owner\":{}}}", quote_json(owner.as_str())
+        ),
+        ControlTarget::Loop { owner, site } => format!(
+            "{{\"kind\":\"loop\",\"owner\":{},\"site\":{}}}",
+            quote_json(owner.as_str()), quote_json(site.as_str())
+        ),
+    }
+}
+
+fn latch_json(latch: &LoopLatchKind) -> String {
+    match latch {
+        LoopLatchKind::Condition => "{\"kind\":\"condition\"}".to_owned(),
+        LoopLatchKind::SourceForStep { kind, step } => {
+            let kind = match kind {
+                SourceForKind::Copy => "copy",
+                SourceForKind::BorrowRecord => "borrow_record",
+                SourceForKind::OwnedIterator => "owned_iterator",
+            };
+            format!("{{\"kind\":\"source_for_step\",\"source_kind\":{},\"step\":{}}}",
+                quote_json(kind), quote_json(step.as_str()))
+        }
+        LoopLatchKind::OwnedIteratorStep { next, assignment, step, remainder } => format!(
+            "{{\"kind\":\"owned_iterator_step\",\"next\":{},\"assignment\":{},\"step\":{},\"remainder\":{}}}",
+            quote_json(next.as_str()), quote_json(assignment.as_str()),
+            quote_json(step.as_str()), quote_json(remainder.as_str())
+        ),
+    }
+}
+
+fn loop_json(item: &LoopCertificate) -> String {
+    format!(
+        "{{\"target\":{},\"condition\":{},\"body\":{},\"latch\":{},\"region\":{},\"condition_entry\":{},\"latch_entry\":{},\"iteration_end\":{},\"after\":{},\"entry_order\":{}}}",
+        target_json(&item.target), quote_json(item.condition.as_str()),
+        quote_json(item.body.as_str()), latch_json(&item.latch), item.region.0,
+        item.condition_entry.0,
+        item.latch_entry.map(|id| format!("{}", id.0)).unwrap_or_else(|| "null".to_owned()),
+        item.iteration_end.0, item.after.0,
+        array_json(&item.entry_order, |flag| format!("{}", flag.0))
+    )
+}
+
+fn exit_json(item: &LexicalExitCertificate) -> String {
+    let kind = match item.kind {
+        crate::ast::LexicalExitKind::Break => "break",
+        crate::ast::LexicalExitKind::Continue => "continue",
+        crate::ast::LexicalExitKind::Return => "return",
+    };
+    format!("{{\"site\":{},\"target\":{},\"kind\":{},\"exit\":{}}}",
+        quote_json(item.site.as_str()), target_json(&item.target), quote_json(kind), item.exit.0)
+}
+
+pub(super) fn member_json(control: &LexicalControlPlan) -> String {
+    format!(",\"lexical_control\":{{\"schema\":{},\"loops\":{},\"exits\":{}}}",
+        quote_json(control.schema), array_json(&control.loops, loop_json),
+        array_json(&control.exits, exit_json))
+}

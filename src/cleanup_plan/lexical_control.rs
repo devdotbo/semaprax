@@ -13,6 +13,12 @@ pub struct LoopCertificate {
     pub body: ExpressionId,
     pub latch: LoopLatchKind,
     pub region: CleanupRegionId,
+    /// Concrete condition evaluation entry for physical structured execution.
+    pub condition_entry: BlockId,
+    /// Generated advancement entry; absent for an ordinary While condition.
+    pub latch_entry: Option<BlockId>,
+    /// Normal completed iteration; distinct from an authored Continue exit.
+    pub iteration_end: ExitTargetId,
     pub after: BlockId,
     /// Structural entry inventory. Replay additionally checks its full private
     /// ownership state, including conditional cases and reserved/staged epochs.

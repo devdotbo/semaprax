@@ -5,7 +5,8 @@ use crate::cleanup_plan::{
     CLEANUP_PLAN_SCHEMA_V18,
 };
 
-codec_struct!(LoopCertificate { target, condition, body, latch, region, after, entry_order });
+codec_struct!(LoopCertificate { target, condition, body, latch, region, condition_entry,
+    latch_entry, iteration_end, after, entry_order });
 codec_struct!(LexicalExitCertificate { site, target, kind, exit });
 codec_struct!(LexicalControlPlan { schema, loops, exits });
 
