@@ -254,3 +254,49 @@ fn owning_wrapper<'a>(
     }
     found.ok_or_else(|| plan_error("owning Break wrapper identity is absent"))
 }
+
+#[cfg(test)]
+mod capacity_tests {
+    use super::*;
+    #[test]
+    fn pending_wrapper_break_counts_spare_flow_and_each_retained_identity_backing() {
+        let ast = crate::parse(
+            "module capacity.wrapper; @id(\"main\") fn main()->i64{0}",
+            "capacity-wrapper.spx",
+        )
+        .unwrap();
+        let program = crate::hir::resolve(&ast).unwrap();
+        let step = program.functions[0].result_id.clone();
+        let identity = |text: &str, capacity| {
+            let mut backing = String::with_capacity(capacity);
+            backing.push_str(text);
+            ExpressionId::from_untrimmed_backing_for_test(backing)
+        };
+        let wrapper = identity("wrapper", 149);
+        let assignment = identity("assignment", 173);
+        let flow = FlowState {
+            live_order: Vec::with_capacity(23),
+            renewals: BTreeMap::new(),
+            conditional_variants: Vec::with_capacity(31),
+        };
+        let expected = wrapper.owned_allocation_bytes().unwrap()
+            + assignment.owned_allocation_bytes().unwrap()
+            + step.as_str().len()
+            + super::super::lexical_control::capacity::flow_capacity(&flow);
+        let pending = PendingWrapperBreak {
+            entry: BlockId(0),
+            wrapper,
+            region: CleanupRegionId(0),
+            state: flow,
+            step,
+            assignment,
+        };
+        assert_eq!(pending.owned_capacity(), expected);
+        assert!(
+            pending.owned_capacity()
+                > pending.wrapper.as_str().len()
+                    + pending.assignment.as_str().len()
+                    + pending.step.as_str().len()
+        );
+    }
+}
