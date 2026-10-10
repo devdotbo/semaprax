@@ -74,8 +74,8 @@ output=bytes_set(output,cursor,93u8);cursor=cursor+1usize;"
     }
     writeln!(
         out,
-        "output=bytes_set(output,cursor,125u8);let text=string_from_utf8(bytes_as_slice(output));
-{name}JsonCollectionResponseEncode::Encoded{{text:text}}
+        "output=bytes_set(output,cursor,125u8);
+{name}JsonCollectionResponseEncode::Encoded{{text:string_from_utf8(bytes_as_slice(output))}}
 }}
 }}"
     )

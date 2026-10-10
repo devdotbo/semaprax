@@ -176,7 +176,10 @@ remain unchanged. Helpers never grow, replace, or clone the payload buffer.
 
 `string_from_utf8(bytes_as_slice(finished))` performs the final checked copy into
 an owned String. This is one buffer reservation plus one String materialization,
-not a zero-copy or single-allocation result. Buffer zero-fill, per-byte stores,
+not a zero-copy or single-allocation result. The generated Encoded field contains the
+constructor directly, rather than rereading a temporary owning String binding.
+This gives a future selected constructor proof one exact field-transfer site;
+it does not select a recoverable allocator or a new release contract. Buffer zero-fill, per-byte stores,
 final payload copy and allocator/header work are distinct costs. Current native
 `string_concat` already uses one allocation; OPT-737 targets repeated prefix
 copying and temporary materialization, not a historical double-buffer claim.

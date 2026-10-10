@@ -18,7 +18,7 @@ pub(super) fn source(root: &TypeDeclaration, record: &Record<'_>, bound: usize) 
 let required=json_{name}_nested_response_encoded_len(value);
 if required=={INVALID} || required>output_limit {{{name}JsonNestedResponseEncode::Refused{{required:required}}}}else{{
 let output=bytes_zeroed_bounded(required,131072usize);let finished=json_{name}_nested_response_object_render_0(value,0usize,output);
-let text=string_from_utf8(bytes_as_slice(finished));{name}JsonNestedResponseEncode::Encoded{{text:text}}
+{name}JsonNestedResponseEncode::Encoded{{text:string_from_utf8(bytes_as_slice(finished))}}
 }}
 }}" ).unwrap();
     out

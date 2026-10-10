@@ -102,6 +102,10 @@ fn collection_response_is_closed_ordered_and_canonical_without_source_authority(
     assert!(output.contains("required>output_limit"));
     assert_eq!(output.matches("bytes_zeroed_bounded(").count(), 1);
     assert_eq!(output.matches("string_from_utf8(").count(), 1);
+    // Construct directly into the owned field: an ordinary owning String
+    // Place read can clone before the canonical aggregate field transfer.
+    assert!(output.contains("ReportJsonCollectionResponseEncode::Encoded{text:string_from_utf8(bytes_as_slice(output))}"));
+    assert!(!output.contains("let text=string_from_utf8("));
     assert!(!output.contains("string_concat"));
     assert!(!output.contains("string_from_i64"));
     assert!(!output.contains("string_from_usize"));

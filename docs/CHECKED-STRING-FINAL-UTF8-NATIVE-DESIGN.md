@@ -39,6 +39,13 @@ The borrowed Bytes argument remains live on failure and is settled by the
 existing canonical failure contour. Success initializes the temporary String,
 then executes the existing exact result-transfer/publication contour.
 
+The collection and nested response generators now place the constructor directly
+in the Encoded String field. They do not route that owner through an ordinary
+owning String Place read. This is an authored closed-constructor prerequisite,
+not measured allocation reduction: the current native move classifier and the
+actual generated physical witness remain the authority for default-profile work.
+The existing byte-exact output, bounds, preflight and ownership gates still apply.
+
 The raw public String/Encoded result currently leaves through a native boundary
 whose release contract is the default String runtime. Replacing just its
 constructor would let a callback-allocated owner escape to default free. This
