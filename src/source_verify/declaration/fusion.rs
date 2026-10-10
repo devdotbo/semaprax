@@ -7,10 +7,44 @@ mod consumers;
 #[cfg(test)]
 mod tests;
 
-pub(super) fn refusal_help(program: &Program) -> Option<String> {
-    let inventory = inventory(program)?;
-    Some(format!("Finite construction candidate in `{}`: {} `{}` rows, {} Bytes-producing executions of width {} ({} payload bytes), {} owned UTF-8 bytes; constructor line {}. This remains SPX-T267: source recognition is not fusion or partition authority. OPT #746/#747 require independent HIR replay and a complete selected owner-domain executor; the legacy 32-event limit is unchanged.", inventory.function.stable_id, inventory.count, inventory.record.name, inventory.count, inventory.width, inventory.payload_bytes, inventory.string_bytes, inventory.byte_site.span.line))
+const MAX_HELP_BYTES: usize = 1024;
+const MAX_IDENTITY_BYTES: usize = 128;
+struct Help(String);
+impl std::fmt::Write for Help {
+    fn write_str(&mut self, value: &str) -> std::fmt::Result {
+        if self
+            .0
+            .len()
+            .checked_add(value.len())
+            .is_none_or(|len| len > MAX_HELP_BYTES)
+        {
+            return Err(std::fmt::Error);
+        }
+        self.0.push_str(value);
+        Ok(())
+    }
 }
+pub(super) fn refusal_help(program: &Program) -> Option<String> {
+    use std::fmt::Write;
+    let inventory = inventory(program)?;
+    if inventory.function.stable_id.len() > MAX_IDENTITY_BYTES
+        || inventory.record.name.len() > MAX_IDENTITY_BYTES
+    {
+        return None;
+    }
+    let debit = MAX_HELP_BYTES.checked_add(std::mem::size_of::<Help>())?;
+    if !crate::bounded_output::reserve_active_preserving(debit, 0) {
+        return None;
+    }
+    let mut help = Help(String::new());
+    help.0.try_reserve_exact(MAX_HELP_BYTES).ok()?;
+    if help.0.capacity() != MAX_HELP_BYTES {
+        return None;
+    }
+    write!(&mut help, "Finite source candidate `{}`: {} `{}` rows; {} Bytes-producing executions, width {}, payload {} bytes, owned UTF-8 {} bytes (line {}). Still SPX-T267: source recognition is not fusion or partition authority. Keep the original fixture; #746/#747 need independent HIR proof and a complete selected executor. The legacy 32-event limit is unchanged.", inventory.function.stable_id, inventory.count, inventory.record.name, inventory.count, inventory.width, inventory.payload_bytes, inventory.string_bytes, inventory.byte_site.span.line).ok()?;
+    Some(help.0)
+}
+
 struct Inventory<'a> {
     function: &'a Function,
     record: &'a TypeDeclaration,

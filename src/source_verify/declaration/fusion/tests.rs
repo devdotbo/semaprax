@@ -43,6 +43,23 @@ fn original_maximum_inventory_is_exact_borrowed_source_and_remains_refused() {
         "optional help must not replace the selected refusal"
     );
     assert_eq!(used, 0);
+    let (help, overflowed, debit) =
+        crate::bounded_output::with_limit_usage(usize::MAX, || refusal_help(&program));
+    assert!(!overflowed);
+    assert!(help.unwrap().len() <= MAX_HELP_BYTES);
+    let (help, overflowed, _) =
+        crate::bounded_output::with_limit_usage(debit - 1, || refusal_help(&program));
+    assert!(
+        help.is_none(),
+        "one-short output budget refuses optional formatting"
+    );
+    assert!(!overflowed);
+    let mut oversized = parsed(SOURCE);
+    oversized.functions[0].stable_id = "x".repeat(MAX_IDENTITY_BYTES + 1);
+    assert!(refusal_help(&oversized).is_none());
+    let large_name = "LongRow".repeat(MAX_IDENTITY_BYTES);
+    let oversized = parsed(&SOURCE.replace("Row", &large_name));
+    assert!(refusal_help(&oversized).is_none());
 }
 
 #[test]
