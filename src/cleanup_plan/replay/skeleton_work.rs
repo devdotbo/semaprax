@@ -29,7 +29,7 @@ impl<'a, 'b> SkeletonWork<'a, 'b> {
             renewal_bindings: crate::cleanup_plan::renewal_bindings(program, function),
             string_owner_moves: crate::literal_format::moving_string_operands(function),
             string_condition_reads: crate::string_ops::conditions::function_reads(function),
-            owner: if crate::hir::lexical_exit::requires(function).unwrap_or(false) {
+            owner: if super::lexical_cert::requires_lexical(function) {
                 crate::hir::lexical_exit::owner(program, function).ok()
             } else {
                 None

@@ -422,7 +422,7 @@ fn validate_structure_with_budget(
         ));
     }
 
-    if crate::hir::lexical_exit::requires(function)? {
+    if lexical_cert::requires_lexical(function) {
         return lexical_replay::validate(program, function, budget);
     }
     if plan.lexical_control.is_some() {
@@ -1059,7 +1059,7 @@ fn skeleton_work_upper(
     program: &ResolvedProgram,
     function: &ResolvedFunction,
 ) -> Result<usize, Diagnostic> {
-    if crate::hir::lexical_exit::requires(function)? {
+    if lexical_cert::requires_lexical(function) {
         return lexical_census::skeleton_work_upper(program, function);
     }
     if status_only_paths_can_be_summarized(function)

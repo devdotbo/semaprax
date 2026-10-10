@@ -10,7 +10,7 @@ pub(crate) fn selected_schema(
 ) -> Result<&'static str, Diagnostic> {
     // Independently replayed lexical exits select the lexical certificate
     // profile regardless of any attached inventory or plan.
-    if crate::hir::lexical_exit::requires(function)? {
+    if lexical_cert::requires_lexical(function) {
         return Ok(CLEANUP_PLAN_SCHEMA_V18);
     }
     let inventory = crate::cleanup::build_inventory(program, function)?;

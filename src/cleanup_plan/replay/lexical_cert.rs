@@ -18,6 +18,14 @@ pub(super) struct LexicalAuth {
     pub(super) loops: BTreeMap<ExpressionId, usize>,
 }
 
+/// `true` when typed HIR contains a lexical exit. A tree deeper than the HIR
+/// lexical scan ceiling cannot be resolver-admitted lexical output; it keeps its
+/// legacy classification, and every legacy check still fails closed on it: a
+/// lexical exit needs certificate-only continuations a legacy plan cannot hold.
+pub(super) fn requires_lexical(function: &ResolvedFunction) -> bool {
+    crate::hir::lexical_exit::requires(function).unwrap_or(false)
+}
+
 /// Entry of the generated advancement fragment a certified `continue` hands to.
 pub(super) fn latch_resume(plan: &CleanupPlan, exit: ExitTargetId) -> Option<BlockId> {
     let control = plan.lexical_control.as_deref()?;
