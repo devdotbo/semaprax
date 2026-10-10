@@ -174,6 +174,7 @@ pub(super) fn assert_operation(program: &ResolvedProgram, wanted: &str) {
                 | E::Float64(_)
                 | E::Bool(_)
                 | E::String(_)
+                | E::BorrowedUtf8Literal(_)
                 | E::Place(_)
                 | E::BorrowPlace { .. }
                 | E::FunctionReference { .. } => {}

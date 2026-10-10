@@ -57,9 +57,6 @@ impl<'a> HelperBindings<'a> {
     pub(crate) fn is_empty(&self) -> bool {
         self.entries.is_empty()
     }
-    pub(crate) fn contains_key(&self, at: &ExpressionId) -> bool {
-        self.get(at).is_some()
-    }
     pub(crate) fn get_exact(&self, at: &ExpressionId) -> Option<&'a ResolvedBinding> {
         let index = self
             .entries

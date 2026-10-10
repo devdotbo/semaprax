@@ -221,6 +221,7 @@ fn children(expression: &hir::ResolvedExpr) -> Vec<&hir::ResolvedExpr> {
         | hir::ResolvedExprKind::Float64(_)
         | hir::ResolvedExprKind::Bool(_)
         | hir::ResolvedExprKind::String(_)
+        | hir::ResolvedExprKind::BorrowedUtf8Literal(_)
         | hir::ResolvedExprKind::Place(_)
         | hir::ResolvedExprKind::BorrowPlace { .. } => Vec::new(),
     }

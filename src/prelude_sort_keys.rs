@@ -51,6 +51,3 @@ pub(crate) fn selection(program: &crate::ast::Program) -> (bool, bool) {
     }
     selected
 }
-pub(crate) fn program_uses(program: &crate::ast::Program) -> bool {
-    selection(program).0
-}

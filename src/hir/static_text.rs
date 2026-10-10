@@ -60,22 +60,6 @@ fn function_roots(function: &super::ResolvedFunction) -> impl Iterator<Item = &R
         .chain(&function.ensures)
 }
 
-pub(crate) fn visit_functions<'a>(
-    functions: impl IntoIterator<Item = &'a super::ResolvedFunction>,
-    visit: impl FnMut(&ResolvedExpr, &str, bool) -> Result<(), Diagnostic>,
-) -> Result<(), Diagnostic> {
-    visit_roots(
-        functions.into_iter().flat_map(|function| {
-            function
-                .requires
-                .iter()
-                .chain(std::iter::once(&function.body))
-                .chain(&function.ensures)
-        }),
-        visit,
-    )
-}
-
 pub(crate) fn visit_roots<'a>(
     roots: impl IntoIterator<Item = &'a ResolvedExpr>,
     visit: impl FnMut(&ResolvedExpr, &str, bool) -> Result<(), Diagnostic>,

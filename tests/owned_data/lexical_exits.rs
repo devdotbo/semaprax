@@ -120,6 +120,7 @@ fn successful_contract_temporaries_settle_before_selected_return_publication() {
     crate::owned_vec_bytes_runtime::run_wasm_expected(source, 0, 2, "none", 29);
 }
 
+#[path = "lexical_exits/finite_scratch.rs"]
 mod finite_scratch;
 #[path = "lexical_exits/graph_projection.rs"]
 mod graph_projection;
