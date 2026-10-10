@@ -306,8 +306,8 @@ impl DeclarationIndex {
 
     /// Computes the recursive semantic facts shared by ownership and backends.
     ///
-    /// `None` is reserved for unresolved type parameters and future malformed
-    /// HIR. Every type produced for today's verified language has facts.
+    /// `None` covers unresolved type parameters, malformed HIR, and the
+    /// non-storable `Never` completion marker. Verified value types have facts.
     pub fn type_facts(&self, ty: &ResolvedType) -> Option<TypeFacts> {
         self.type_facts_by_id
             .get(&ty.identity_key())

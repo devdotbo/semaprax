@@ -35,7 +35,7 @@ pub(in crate::project::json_codec) fn literal_write(
         .join(",");
     // A fixed Copy array is ordinary stack data, not an owned String/Bytes
     // payload. Its borrow remains inside this statement's checked call.
-    format!("let _={{let key=[{bytes}];{output}={prefix}_writer_bytes(array_as_slice(key),{position},{output});{position}={position}+{}usize;true}};\n",value.len())
+    format!("{output}={{let key=[{bytes}];{prefix}_writer_bytes(array_as_slice(key),{position},{output})}};{position}={position}+{}usize;\n",value.len())
 }
 
 #[cfg(test)]

@@ -5454,6 +5454,9 @@ fn collect_record_pattern_types(
 }
 
 fn collect_type(ty: &ResolvedType, types: &mut BTreeMap<String, ResolvedType>) {
+    if matches!(ty, ResolvedType::Never) {
+        return;
+    }
     if let ResolvedType::Function { parameters, result } = ty {
         for p in parameters {
             collect_type(p, types);

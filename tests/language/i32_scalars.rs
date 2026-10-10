@@ -119,6 +119,9 @@ fn i32_programs_round_trip_canonically_and_hash_stably() {
 /// Collects every direct child expression of a resolved expression.
 fn children(expression: &hir::ResolvedExpr) -> Vec<&hir::ResolvedExpr> {
     match &expression.kind {
+        hir::ResolvedExprKind::LexicalExit { value, .. } => {
+            value.iter().map(|value| value.as_ref()).collect()
+        }
         hir::ResolvedExprKind::Closure { captures, body, .. } => captures
             .iter()
             .map(|capture| &capture.value)

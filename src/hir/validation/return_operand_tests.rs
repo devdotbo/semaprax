@@ -59,6 +59,9 @@ fn direct_outer_owner_return_retains_ordinary_source_and_hir_authentication() {
         .unwrap()
         .validate_while_admission(exit)
         .unwrap();
+    let projection = crate::graph::to_json(&source).unwrap();
+    assert!(projection.contains(r#""kind":"completion","name":"never""#));
+    assert!(!projection.contains(r#""id":"never:lexical-exit:v1","type""#));
     let canonical = crate::format::canonical(&source);
     let roundtrip = crate::check(&canonical, "return-owner-roundtrip.spx").unwrap();
     assert_eq!(

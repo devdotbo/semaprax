@@ -132,7 +132,7 @@ fn loop_break_cannot_hide_an_outer_owner_transfer_before_later_read() {
     assert!(
         diagnostics
             .iter()
-            .any(|d| matches!(d.code.as_str(), "SPX-O101" | "SPX-O104" | "SPX-T252"))
+            .any(|d| matches!(d.code, "SPX-O101" | "SPX-O104" | "SPX-T252"))
             || hir::resolve(&program)
                 .err()
                 .is_some_and(|errors| errors.iter().any(|d| d.code == "SPX-H006")),

@@ -212,8 +212,8 @@ fn nested_codec_keeps_marker_like_authored_names_and_identities_opaque() {
             ),
             (
                 super::super::utf8::response_text(root, 16),
-                "collection-response.quoted-render",
-                format!("json_{name}_response_utf8_quote"),
+                "collection-response.owned-valid",
+                format!("json_{name}_response_owned_valid"),
             ),
         ] {
             // response_text is a declaration fragment, whereas derive already

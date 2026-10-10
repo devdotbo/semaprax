@@ -168,3 +168,6 @@ advantage or issue closure follows this adoption.
 Owning contracts: RFC-0003-CLEANUP-AND-RESOURCE-ABI.md (return staging and publication),
 WHILE-LOOPS-V1.md, GENERIC-OWNED-RESULT-V1.md, ACYCLIC-GUARD-RETURNS-V1.md,
 SCOPED-RECORD-VEC-TRAVERSAL-V2.md and the exact OPT #734 acceptance.
+
+The graph projects the `Never` completion marker on exit expressions but omits it
+from the value type-facts registry: completion has no storage or ABI facts.

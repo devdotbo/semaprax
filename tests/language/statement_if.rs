@@ -17,6 +17,7 @@ use semaprax::interpreter::{self, InterpreterOptions};
 use semaprax::{format, graph, hir, parse, verify};
 use serde_json::Value;
 
+#[path = "statement_if/guard_return.rs"]
 mod guard_return;
 
 static NEXT_ID: AtomicU64 = AtomicU64::new(0);
