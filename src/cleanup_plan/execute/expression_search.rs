@@ -89,7 +89,7 @@ pub(super) fn find_expression_by<'a>(
         | hir::ResolvedExprKind::Float32(_)
         | hir::ResolvedExprKind::Float64(_)
         | hir::ResolvedExprKind::Bool(_)
-        | hir::ResolvedExprKind::String(_)
+        | hir::ResolvedExprKind::String(_) | hir::ResolvedExprKind::BorrowedUtf8Literal(_)
         | hir::ResolvedExprKind::Place(_)
         | hir::ResolvedExprKind::BorrowPlace { .. } => None,
     }

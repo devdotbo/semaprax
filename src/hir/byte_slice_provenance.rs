@@ -474,6 +474,7 @@ pub(super) fn derive_byte_slice_provenance(
                 | ResolvedExprKind::Float64(_)
                 | ResolvedExprKind::Bool(_)
                 | ResolvedExprKind::String(_)
+                | ResolvedExprKind::BorrowedUtf8Literal(_)
                 | ResolvedExprKind::Place(_)
                 | ResolvedExprKind::BorrowPlace { .. } => {}
             }
@@ -493,13 +494,15 @@ pub(super) fn derive_byte_slice_provenance(
             break;
         }
     }
-    let vector_strings = vec_field::string_origins(&vector_strings, declarations);
+    let vector_string_origins = vec_field::string_origins(&vector_strings, declarations);
     let mut unresolved = aliases;
     loop {
+        let mut static_error = None;
         let before = unresolved.len();
         unresolved.retain(|(binding, mutable, value)| {
+            let mut static_origin = None;
             if !*mutable {
-                if let Some(provenance) = vec_field::origin(value, declarations, &vector_strings) {
+                if let Some(provenance) = vec_field::origin(value, declarations, &vector_string_origins) {
                     facts.insert(binding.id.clone(), provenance);
                     return false;
                 }
@@ -546,7 +549,20 @@ pub(super) fn derive_byte_slice_provenance(
                         root_ty.clone(),
                     ),
                     ResolvedType::Str => {
-                        if command_argument_views.contains(&place.root) {
+                        match super::static_text::str_origin(&place.root, &vector_strings) {
+                            Ok(origin) => static_origin = origin,
+                            Err(error) => {
+                                static_error = Some(error);
+                                return true;
+                            }
+                        }
+                        if let Some(origin) = &static_origin {
+                            (
+                                ByteSliceRootKind::SourceExprStatic,
+                                ByteSliceExtent::Constant(origin.length),
+                                ResolvedType::Str,
+                            )
+                        } else if command_argument_views.contains(&place.root) {
                             (
                                 ByteSliceRootKind::CommandArguments,
                                 ByteSliceExtent::ValueLength,
@@ -605,7 +621,9 @@ pub(super) fn derive_byte_slice_provenance(
                     binding.id.clone(),
                     ByteSliceProvenance {
                         vector_field: None,
-                        root: if environment_views.contains(&place.root) {
+                        root: if let Some(origin) = &static_origin {
+                            origin.descriptor.clone()
+                        } else if environment_views.contains(&place.root) {
                             environment_root.clone()
                         } else if root_kind == ByteSliceRootKind::CommandArguments {
                             command_argument_root.clone()
@@ -618,7 +636,12 @@ pub(super) fn derive_byte_slice_provenance(
                         root_length,
                         offset: ByteSliceExtent::Constant(0),
                         length: root_length,
-                        producer: Some(value.id.clone()),
+                        producer: Some(
+                            static_origin
+                                .as_ref()
+                                .map_or(&value.id, |origin| origin.producer)
+                                .clone(),
+                        ),
                         ranges: Vec::new(),
                     },
                 );
@@ -684,6 +707,7 @@ pub(super) fn derive_byte_slice_provenance(
             facts.insert(binding.id.clone(), source);
             false
         });
+        if let Some(error) = static_error { return Err(error); }
         if unresolved.is_empty() {
             return Ok(facts);
         }

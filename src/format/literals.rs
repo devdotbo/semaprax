@@ -45,8 +45,17 @@ pub(crate) fn write_joined(output: &mut impl std::fmt::Write, values: &[String],
 }
 
 pub(super) fn write_text_literal(output: &mut impl std::fmt::Write, value: &str, borrowed: bool) {
-    if borrowed { output.write_str("str").unwrap(); }
+    if borrowed {
+        output.write_str("str").unwrap();
+    }
     output.write_char('"').unwrap();
     super::write_string_escaped(output, value);
     output.write_char('"').unwrap();
+}
+
+/// Explicit static spelling; ordinary canonical_string remains owning.
+pub(crate) fn canonical_borrowed_utf8_literal(value: &str) -> String {
+    let mut output = crate::bounded_output::CappedString::new();
+    write_text_literal(&mut output, value, true);
+    output.into_string()
 }

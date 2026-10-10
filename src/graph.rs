@@ -59,7 +59,8 @@ pub(crate) use generic_instances::to_legacy_hir_json;
 pub use generic_instances::{legacy_context_json, to_legacy_json, verify_json};
 pub(crate) use generic_mapping::requires_v35;
 mod byte_helper_renewal;
-use byte_helper_renewal::graph_json;
+mod static_text;
+use static_text::graph_json;
 #[path = "graph/native_import.rs"]
 mod native_import;
 #[path = "graph/nested_owned.rs"]
@@ -76,9 +77,10 @@ use nested_owned::{
 };
 pub(crate) use prelude_binding::revision_from_canonical_program;
 pub(crate) use scoped_vec_field::{
-    graph_schema, graph_schema_from_parts_and_instances,
-    graph_schema_from_parts_and_instances_with_renewal_authority, legacy_graph_schema,
+    graph_schema_from_parts_and_instances,
+    graph_schema_from_parts_and_instances_with_renewal_authority,
 };
+pub(crate) use static_text::{graph_schema, legacy_graph_schema};
 /// Hash the canonical human-readable source projection and implicit prelude.
 ///
 /// This revision intentionally does not depend on HIR spans, display metadata,
@@ -1149,7 +1151,7 @@ fn collect_result_propagations<'a>(
         | ResolvedExprKind::Float32(_)
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::String(_)
+        | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::ArrayU8(_)
         | ResolvedExprKind::RepeatArrayU8 { .. }
         | ResolvedExprKind::Place(_)
@@ -1295,7 +1297,7 @@ fn expression_has_byte_range(expression: &ResolvedExpr) -> bool {
             | ResolvedExprKind::Float32(_)
             | ResolvedExprKind::Float64(_)
             | ResolvedExprKind::Bool(_)
-            | ResolvedExprKind::String(_)
+            | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::Place(_)
             | ResolvedExprKind::BorrowPlace { .. } => {}
         }
@@ -1401,7 +1403,7 @@ fn expression_has_explicit_match_mode(expression: &ResolvedExpr) -> bool {
         | ResolvedExprKind::Float32(_)
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::String(_)
+        | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. } => false,
     }
@@ -1707,7 +1709,7 @@ fn expression_has_usize(expression: &ResolvedExpr) -> bool {
         | ResolvedExprKind::Float32(_)
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::String(_)
+        | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::ArrayU8(_)
         | ResolvedExprKind::RepeatArrayU8 { .. }
         | ResolvedExprKind::Place(_)
@@ -1791,7 +1793,7 @@ fn expression_has_while(expression: &ResolvedExpr) -> bool {
         | ResolvedExprKind::Float32(_)
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::String(_)
+        | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::ArrayU8(_)
         | ResolvedExprKind::RepeatArrayU8 { .. }
         | ResolvedExprKind::Place(_)
@@ -1953,7 +1955,7 @@ fn expression_has_command_io(expression: &ResolvedExpr) -> bool {
         | ResolvedExprKind::Float32(_)
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::String(_)
+        | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::ArrayU8(_)
         | ResolvedExprKind::RepeatArrayU8 { .. }
         | ResolvedExprKind::Place(_)
@@ -2072,7 +2074,7 @@ fn expression_has_record_pattern(expression: &ResolvedExpr) -> bool {
         | ResolvedExprKind::Float32(_)
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::String(_)
+        | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::ArrayU8(_)
         | ResolvedExprKind::RepeatArrayU8 { .. }
         | ResolvedExprKind::Place(_)
@@ -2175,7 +2177,7 @@ fn expression_has_refutable_match(expression: &ResolvedExpr) -> bool {
         | ResolvedExprKind::Float32(_)
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::String(_)
+        | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::ArrayU8(_)
         | ResolvedExprKind::RepeatArrayU8 { .. }
         | ResolvedExprKind::Place(_)
@@ -2268,7 +2270,7 @@ fn collect_agent_contract_values(expression: &ResolvedExpr, values: &mut BTreeSe
         | ResolvedExprKind::Float32(_)
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::String(_)
+        | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::ArrayU8(_)
         | ResolvedExprKind::RepeatArrayU8 { .. } => {}
         ResolvedExprKind::Place(place) => {
@@ -2419,6 +2421,7 @@ pub(crate) fn agent_contract_expr_json(expression: &ResolvedExpr) -> Result<Stri
             quote_json(&crate::format::canonical_f64_bits(*bits))
         ),
         ResolvedExprKind::Bool(value) => format!("{{\"kind\":\"bool\",\"value\":{value}}}"),
+        ResolvedExprKind::BorrowedUtf8Literal(value) => static_text::literal_json(value),
         ResolvedExprKind::String(value) => format!(
             "{{\"kind\":\"string\",\"value\":{},\"display\":{}}}",
             quote_json(value),
@@ -3650,6 +3653,7 @@ fn byte_slice_fact_json(
 ) -> String {
     let root_kind = match provenance.root_kind {
         ByteSliceRootKind::FunctionParameter => "function_parameter",
+        ByteSliceRootKind::SourceExprStatic => "source_expr_static",
         ByteSliceRootKind::OwnedBytes => "owned_bytes",
         ByteSliceRootKind::OwnedString => "owned_string",
         ByteSliceRootKind::OwnedVectorField => "owned_vector_field",
@@ -4773,7 +4777,7 @@ fn visit_expr_call_instances(
         | ResolvedExprKind::Float32(_)
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::String(_)
+        | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::ArrayU8(_)
         | ResolvedExprKind::RepeatArrayU8 { .. }
         | ResolvedExprKind::Place(_)
@@ -4884,7 +4888,7 @@ fn visit_expr_calls(expression: &ResolvedExpr, visit: &mut impl FnMut(&Declarati
         | ResolvedExprKind::Float32(_)
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::String(_)
+        | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::ArrayU8(_)
         | ResolvedExprKind::RepeatArrayU8 { .. }
         | ResolvedExprKind::Place(_)
@@ -5025,7 +5029,7 @@ fn collect_expr_type_declarations(
         | ResolvedExprKind::Float32(_)
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::String(_)
+        | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::ArrayU8(_)
         | ResolvedExprKind::RepeatArrayU8 { .. }
         | ResolvedExprKind::Place(_)
@@ -5315,7 +5319,7 @@ fn collect_expr_types(expression: &ResolvedExpr, types: &mut BTreeMap<String, Re
         | ResolvedExprKind::Float32(_)
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::String(_)
+        | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::ArrayU8(_)
         | ResolvedExprKind::RepeatArrayU8 { .. }
         | ResolvedExprKind::Place(_)

@@ -472,7 +472,7 @@ fn walk(
         | E::Float32(_)
         | E::Float64(_)
         | E::Bool(_)
-        | E::String(_)
+        | E::String(_) | E::BorrowedUtf8Literal(_)
         | E::Place(_)
         | E::BorrowPlace { .. }
         | E::FunctionReference { .. } => {}

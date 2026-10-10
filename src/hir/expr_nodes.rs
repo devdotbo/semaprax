@@ -70,6 +70,8 @@ pub enum ResolvedExprKind {
     Bool(bool),
     /// A string literal held as its exact owned UTF-8 contents.
     String(String),
+    /// Immutable decoded module bytes; a nonescaping view, never an owner.
+    BorrowedUtf8Literal(super::StaticUtf8),
     Place(Place),
     /// A compiler-owned, non-consuming view of one exact authenticated place.
     BorrowPlace {

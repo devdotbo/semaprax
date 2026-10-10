@@ -1161,6 +1161,7 @@ fn hir_kind(kind: &ResolvedExprKind) -> &'static str {
         ResolvedExprKind::Float64(_) => "f64",
         ResolvedExprKind::Bool(_) => "bool",
         ResolvedExprKind::String(_) => "string",
+        ResolvedExprKind::BorrowedUtf8Literal(_) => "borrowed_utf8_literal",
         ResolvedExprKind::Place(_) => "place",
         ResolvedExprKind::FunctionReference { .. } => "function_reference",
         ResolvedExprKind::Invoke { .. } => "invoke",

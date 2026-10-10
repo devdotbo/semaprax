@@ -97,7 +97,7 @@ pub(crate) fn child(expr: &ResolvedExpr, index: usize) -> Option<&ResolvedExpr> 
         | K::Float32(_)
         | K::Float64(_)
         | K::Bool(_)
-        | K::String(_)
+        | K::String(_) | K::BorrowedUtf8Literal(_)
         | K::Place(_)
         | K::BorrowPlace { .. } => None,
     }

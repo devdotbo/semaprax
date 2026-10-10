@@ -46,6 +46,9 @@ pub(super) fn render_expr(
         ResolvedExprKind::Bool(value) => {
             output.push_str(if *value { "true" } else { "false" });
         }
+        ResolvedExprKind::BorrowedUtf8Literal(value) => {
+            output.push_str(&crate::format::canonical_borrowed_utf8_literal(value));
+        }
         ResolvedExprKind::String(value) => {
             output.push_str(&crate::format::canonical_string(value));
         }

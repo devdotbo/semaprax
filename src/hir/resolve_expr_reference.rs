@@ -148,7 +148,7 @@ impl Resolver<'_> {
                 OwnershipMode::Value,
             ),
             ExprKind::String(value) => static_text::owned_string(value),
-            ExprKind::BorrowedUtf8Literal(_) => return Err(self.error("SPX-H006", crate::source_verify::static_text::MESSAGE, expr.span)),
+            ExprKind::BorrowedUtf8Literal(value) => (ResolvedExprKind::BorrowedUtf8Literal(super::StaticUtf8::from_text(value)), ResolvedType::Str, OwnershipMode::Borrow),
             ExprKind::Var(name) => {
                 if bindings
                     .get(name)

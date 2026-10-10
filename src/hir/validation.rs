@@ -21,7 +21,7 @@ mod native_borrow;
 mod nominal_facts;
 mod owned_buffer;
 mod owned_result_try;
-mod owner_renewal;
+pub(super) mod owner_renewal;
 mod proof_return;
 mod record_traversal;
 mod stdin_stream;
@@ -44,6 +44,7 @@ use unsafe_scan::contains_unsafe_boundary;
 #[derive(Clone)]
 pub(super) struct HirValidator<'a> {
     program: &'a ResolvedProgram,
+    static_text: std::cell::Cell<(bool, usize)>,
     byte_helpers: Option<&'a crate::loop_calls::byte_writer::ModuleIndex<'a>>,
     nominal_facts: nominal_facts::Lookup<'a>,
     functions: BTreeMap<DeclarationId, &'a ResolvedFunction>,
@@ -64,32 +65,6 @@ pub(super) struct HirValidator<'a> {
     canonical_loan_liveness: BTreeMap<(ExpressionId, LoanPointPhase, LoanId), Place>,
 }
 impl<'a> HirValidator<'a> {
-    fn binding_has_live_overlapping_loans(
-        &self,
-        binding: &ValidationBinding,
-        requested: &Place,
-        expression: &ExpressionId,
-        phase: LoanPointPhase,
-    ) -> Result<bool, Diagnostic> {
-        for loan in &binding.active_loans {
-            if let Some(origin) =
-                self.canonical_loan_liveness
-                    .get(&(expression.clone(), phase, *loan))
-            {
-                if origin.root != requested.root {
-                    return Err(hir_error(
-                        "active shared-loan provenance disagrees with its owner binding",
-                    ));
-                }
-                if path_is_prefix(&origin.projections, &requested.projections)
-                    || path_is_prefix(&requested.projections, &origin.projections)
-                {
-                    return Ok(true);
-                }
-            }
-        }
-        Ok(false)
-    }
     fn exact_loan_id(
         &self,
         execution: &FunctionExecutionId,
@@ -215,6 +190,7 @@ impl<'a> HirValidator<'a> {
         }
         Ok(Self {
             program,
+            static_text: std::cell::Cell::new((false, 0)),
             byte_helpers: None,
             nominal_facts: nominal_facts::Lookup::default(),
             functions,
@@ -229,7 +205,7 @@ impl<'a> HirValidator<'a> {
             canonical_loan_liveness,
         })
     }
-    fn validate(mut self) -> Result<(), Diagnostic> {
+    fn validate(mut self) -> Result<bool, Diagnostic> {
         let entrypoint = self
             .functions
             .get(&self.program.entrypoint)
@@ -1360,7 +1336,7 @@ impl<'a> HirValidator<'a> {
         // Rebuild the target-neutral storage/call-flow projection from the
         // hostile HIR rather than trusting Graph or backend-attached totals.
         analyze_byte_data_capacity(self.program)?;
-        Ok(())
+        self.finish_static_pool()
     }
 
     fn validate_template_expr_with_context(
@@ -1422,7 +1398,7 @@ impl<'a> HirValidator<'a> {
             | ResolvedExprKind::Float32(_)
             | ResolvedExprKind::Float64(_)
             | ResolvedExprKind::Bool(_)
-            | ResolvedExprKind::String(_) => {}
+            | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_) => {}
             ResolvedExprKind::Place(place) => {
                 if generic_template::projected_place_type(self.program, place, values)?
                     != expression.ty
@@ -3135,7 +3111,12 @@ impl<'a> HirValidator<'a> {
                             )?;
                             scopes.push(scope);
                         }
-                        ResolvedExprKind::String(_) => {
+                        ResolvedExprKind::BorrowedUtf8Literal(value) => {
+                            self.finish_static_text(expression, value)?;
+                            scopes.push(scope);
+                        }
+                        ResolvedExprKind::String(value) => {
+                            self.record_static_pool(value.len(), false)?;
                             self.finish_expr(
                                 expression,
                                 &ResolvedType::String,
@@ -3421,6 +3402,7 @@ impl<'a> HirValidator<'a> {
                             });
                         }
                         ResolvedExprKind::LiteralFormat { template, args } => {
+                            self.record_static_pool(template.len(), false)?;
                             self.validate_literal_format_arguments(function, template, args)?;
                             frames.push(Frame::CallNext {
                                 expression,
@@ -4550,7 +4532,7 @@ impl<'a> HirValidator<'a> {
                             )?);
                         }
                     } else if binding.ty == ResolvedType::Str {
-                        let (origin, creates_loan) = self.borrowed_str_let_origin(value)?;
+                        let (origin, creates_loan) = self.borrowed_str_let_origin(value, binding)?;
                         if *mutable {
                             return Err(hir_error(
                                 "borrowed-str local alias must be immutable and unprojected",
@@ -6271,7 +6253,11 @@ impl<'a> HirValidator<'a> {
                 self.finish_affine_invocation(expression, scope, allow_moves)?;
                 (expression.ty.clone(), OwnershipMode::Value)
             }
-            ResolvedExprKind::String(_) => (ResolvedType::String, OwnershipMode::Own),
+            ResolvedExprKind::BorrowedUtf8Literal(value) => {
+                self.finish_static_text(expression, value)?;
+                (ResolvedType::Str, OwnershipMode::Borrow)
+            }
+            ResolvedExprKind::String(value) => { self.record_static_pool(value.len(), false)?; (ResolvedType::String, OwnershipMode::Own) },
             ResolvedExprKind::Int(_) => (ResolvedType::I64, OwnershipMode::Value),
             ResolvedExprKind::Int32(_) => (ResolvedType::I32, OwnershipMode::Value),
             ResolvedExprKind::Char(value) => {
@@ -6438,6 +6424,7 @@ impl<'a> HirValidator<'a> {
                 (ty, ownership)
             }
             ResolvedExprKind::LiteralFormat { template, args } => {
+                self.record_static_pool(template.len(), false)?;
                 let pieces = crate::literal_format::scan(template)
                     .map_err(|reason| hir_error(reason.message()))?;
                 if crate::literal_format::field_count(&pieces) != args.len() {
@@ -6944,7 +6931,7 @@ impl<'a> HirValidator<'a> {
                                     )?);
                                 }
                             } else if binding.ty == ResolvedType::Str {
-                                let (origin, creates_loan) = self.borrowed_str_let_origin(value)?;
+                                let (origin, creates_loan) = self.borrowed_str_let_origin(value, binding)?;
                                 if *mutable {
                                     return Err(hir_error(
                                         "borrowed-str local alias must be immutable and unprojected",
@@ -8588,7 +8575,7 @@ impl<'a> HirValidator<'a> {
                     | ResolvedExprKind::Float32(_)
                     | ResolvedExprKind::Float64(_)
                     | ResolvedExprKind::Bool(_)
-                    | ResolvedExprKind::String(_)
+                    | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
                     | ResolvedExprKind::ArrayU8(_)
                     | ResolvedExprKind::RepeatArrayU8 { .. }
                     | ResolvedExprKind::BorrowPlace { .. }

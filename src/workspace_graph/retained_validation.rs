@@ -456,7 +456,7 @@ fn visit_resolved_calls<'a>(
             visit_resolved_calls(left, visit);
             visit_resolved_calls(right, visit);
         }
-        hir::ResolvedExprKind::String(_) => {}
+        hir::ResolvedExprKind::String(_) | hir::ResolvedExprKind::BorrowedUtf8Literal(_) => {}
         hir::ResolvedExprKind::ArrayU8(_)
         | hir::ResolvedExprKind::RepeatArrayU8 { .. }
         | hir::ResolvedExprKind::BorrowPlace { .. } => {}
@@ -868,7 +868,7 @@ fn collect_resolved_expression_type_sites<'a>(
                 out,
             )?;
         }
-        hir::ResolvedExprKind::String(_) => {}
+        hir::ResolvedExprKind::String(_) | hir::ResolvedExprKind::BorrowedUtf8Literal(_) => {}
         hir::ResolvedExprKind::ArrayU8(_)
         | hir::ResolvedExprKind::RepeatArrayU8 { .. }
         | hir::ResolvedExprKind::BorrowPlace { .. }

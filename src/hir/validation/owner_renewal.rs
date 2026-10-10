@@ -47,6 +47,10 @@ impl<'a> HirValidator<'a> {
 /// Independent cleanup-plan replayers use this boundary to avoid circularly
 /// trusting the canonical cleanup-plan builder as their oracle.
 pub(crate) fn validate_core(program: &ResolvedProgram) -> Result<(), Diagnostic> {
+    validate_with_static_text(program).map(|_| ())
+}
+
+pub(crate) fn validate_with_static_text(program: &ResolvedProgram) -> Result<bool, Diagnostic> {
     let helpers = crate::loop_calls::byte_writer::ModuleIndex::new(program)?;
     HirValidator::new(program)?
         .with_helpers(&helpers)

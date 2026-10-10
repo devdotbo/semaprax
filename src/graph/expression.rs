@@ -53,6 +53,10 @@ pub(super) fn expr_json(
         ResolvedExprKind::Bool(value) => {
             format!("{{{header},\"kind\":\"bool\",\"value\":{value}}}")
         }
+        ResolvedExprKind::BorrowedUtf8Literal(value) => format!(
+            "{{{header},\"kind\":\"borrowed_utf8_literal\",\"root_kind\":\"source_expr_static\",\"byte_length\":{},\"value\":{},\"display\":{}}}",
+            value.len(), quote_json(value), quote_json(&crate::format::canonical_borrowed_utf8_literal(value))
+        ),
         ResolvedExprKind::String(value) => format!(
             "{{{header},\"kind\":\"string\",\"value\":{},\"display\":{}}}",
             quote_json(value),

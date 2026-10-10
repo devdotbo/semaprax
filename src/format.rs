@@ -23,6 +23,7 @@ mod iterative_tests;
 mod kernel_zero_tokens;
 #[path = "format/literals.rs"]
 mod literals;
+pub(crate) use literals::canonical_borrowed_utf8_literal;
 #[path = "format/session_protocol.rs"]
 mod session_protocol;
 #[path = "format/statement_if.rs"]

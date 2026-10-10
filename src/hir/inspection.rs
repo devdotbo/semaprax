@@ -10,12 +10,16 @@ use super::*;
 /// breaks identities, lexical scope, or current type rules. A versioned wire
 /// schema for constructing HIR outside the compiler is future work.
 pub fn validate(program: &ResolvedProgram) -> Result<(), Diagnostic> {
-    validate_core(program)?;
+    validate_with_static_text(program).map(|_| ())
+}
+
+pub(super) fn validate_with_static_text(program: &ResolvedProgram) -> Result<bool, Diagnostic> {
+    let selected = super::validation::owner_renewal::validate_with_static_text(program)?;
     super::function_value::validate_program(program)?;
     validate_attached_identity_references(program)?;
     crate::cleanup::validate_program(program)?;
     crate::cleanup_plan::validate_program(program)?;
-    Ok(())
+    Ok(selected)
 }
 
 pub(super) fn validate_nul_free_identities(program: &ResolvedProgram) -> Result<(), Diagnostic> {
@@ -261,7 +265,7 @@ fn audit_resolved_expression(root: &ResolvedExpr) -> Result<(), Diagnostic> {
             | ResolvedExprKind::Float32(_)
             | ResolvedExprKind::Float64(_)
             | ResolvedExprKind::Bool(_)
-            | ResolvedExprKind::String(_) => {}
+            | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_) => {}
             ResolvedExprKind::Place(place) => audit_hir_place(place)?,
             ResolvedExprKind::BorrowPlace { operation, place } => {
                 reject_nul_identity("resolved byte-view operation", operation.as_str())?;
@@ -1027,7 +1031,7 @@ pub(crate) fn visit_resolved_calls(
         | ResolvedExprKind::Float32(_)
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::String(_)
+        | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. } => {}
     }
@@ -1186,7 +1190,7 @@ pub(crate) fn visit_workspace_call_sites<'a, E>(
             | ResolvedExprKind::Float32(_)
             | ResolvedExprKind::Float64(_)
             | ResolvedExprKind::Bool(_)
-            | ResolvedExprKind::String(_)
+            | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::Place(_)
             | ResolvedExprKind::BorrowPlace { .. } => {}
         }

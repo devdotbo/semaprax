@@ -110,7 +110,7 @@ impl Resolver<'_> {
                         kind: ResolvedExprKind::Int(*value),
                         span: expr.span,
                     }),
-                    ExprKind::BorrowedUtf8Literal(_) => return Err(self.error("SPX-H006", crate::source_verify::static_text::MESSAGE, expr.span)),
+                    ExprKind::BorrowedUtf8Literal(value) => results.push(ResolvedExpr { id: ExpressionId::new(function, &path), ty: ResolvedType::Str, ownership: OwnershipMode::Borrow, kind: ResolvedExprKind::BorrowedUtf8Literal(super::StaticUtf8::from_text(value)), span: expr.span }),
                     ExprKind::String(value) => {
                         let ty = ResolvedType::String;
                         results.push(ResolvedExpr {

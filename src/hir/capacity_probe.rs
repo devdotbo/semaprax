@@ -378,6 +378,9 @@ pub(super) fn resolved_expr_owned_capacity(expression: &ResolvedExpr) -> usize {
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
         | ResolvedExprKind::String(_) => {}
+        ResolvedExprKind::BorrowedUtf8Literal(value) => {
+            bytes = bytes.saturating_add(value.owned_allocation_bytes().unwrap_or(usize::MAX));
+        }
     }
     bytes
 }

@@ -362,7 +362,7 @@ fn push_children<'a>(expression: &'a ResolvedExpr, pending: &mut Vec<&'a Resolve
         | ResolvedExprKind::Float32(_)
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::String(_)
+        | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. } => {}
         ResolvedExprKind::ByteRange {
@@ -722,6 +722,7 @@ fn expression_kind(kind: &ResolvedExprKind) -> &'static str {
         ResolvedExprKind::Float64(_) => "f64",
         ResolvedExprKind::Bool(_) => "bool",
         ResolvedExprKind::String(_) => "string",
+        ResolvedExprKind::BorrowedUtf8Literal(_) => "borrowed_utf8_literal",
         ResolvedExprKind::Place(_) => "place",
         ResolvedExprKind::BorrowPlace { .. } => "borrow_place",
         ResolvedExprKind::ByteRange { .. } => "byte_range",
