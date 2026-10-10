@@ -56,3 +56,17 @@ ordinary/loop reservation, contract allocation and recursion refusal, hostile
 actual-owner substitution, canonical and graph projections, physical native
 O0/O2 and private Core-Wasm settlement, and protected-result postcondition
 failure. Definitions are not current-source execution evidence.
+
+Compiler census cost is selective at the module signature level: a module with
+no `Bytes` result plus `own Bytes` parameter signature skips the new binding
+cursor. A module containing a potentially relevant signature performs the
+bounded per-function census even when that particular function has no proven
+helper-renewal site. Prior schemas and graph bytes remain unchanged in that
+case; zero additional compiler work or scratch is not claimed.
+
+The remaining OPT #737 compiler-efficiency follow-up is a single independently
+proved, budgeted module closure/site index reused by all per-function consumers.
+It must retain actual identity and lookup backing charges, fail closed on stale
+source or typed facts, preserve old ordinary allocating-helper admission, and
+avoid treating attached cleanup plans as authority. This index is proposed,
+not implemented or measured by this batch.

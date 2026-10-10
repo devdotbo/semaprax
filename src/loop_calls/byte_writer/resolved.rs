@@ -263,7 +263,7 @@ pub(crate) fn checked_bindings<'a>(
                 } else if let Some(arm) = arms.get(next - 1) {
                     if sub == 0 && arm.guard.is_some() {
                         frames[depth - 1].2 = 1;
-                        arm.guard.as_ref()
+                        arm.guard.as_deref()
                     } else {
                         frames[depth - 1] = (expression, next + 1, 0);
                         Some(&arm.value)
