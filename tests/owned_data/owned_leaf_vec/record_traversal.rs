@@ -21,7 +21,7 @@ fn run(body: &str, expected: i64) {
         result.envelope
     );
     super::super::scoped_vec_field_native::run(&source, 0, expected);
-    run_wasm(body, 0, expected, "field-no-allocation");
+    run_wasm(body, 0, expected, "none");
 }
 
 #[test]
