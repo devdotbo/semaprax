@@ -63,7 +63,7 @@ fn higher_consuming_schema_cannot_mask_forged_record_origin_layout_or_cleanup() 
                 .push('!'),
             3 => {
                 build.hir.modules[0].functions[0].cleanup_plan.schema =
-                    crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V13.to_owned()
+                    crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V13
             }
             _ => {
                 let record = build.hir.modules[0].types[0].clone();

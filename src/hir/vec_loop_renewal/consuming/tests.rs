@@ -45,7 +45,7 @@ fn consuming_row_reuses_canonical_reservation_and_replays_missing_or_forged_epoc
         let mut forged = program.clone();
         let plan = &mut forged.functions[0].cleanup_plan;
         if mutation == 3 {
-            plan.schema = crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V13.to_owned();
+            plan.schema = crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V13;
         }
         for block in &mut plan.blocks {
             if mutation == 0 {
