@@ -85,6 +85,8 @@ mod agent_nodes;
 mod agent_validation;
 mod byte_capacity;
 mod byte_slice_provenance;
+pub(crate) mod static_text;
+pub use static_text::StaticUtf8;
 #[cfg(test)]
 mod capacity_probe;
 pub mod closure;
@@ -148,9 +150,14 @@ pub(crate) use workspace_link::native_owner::{
 pub fn validate(program: &ResolvedProgram) -> Result<(), Diagnostic> {
     #[cfg(feature = "unstable-workflow-profiling")]
     let _workflow_span = crate::workflow_profile::span(crate::workflow_profile::Stage::HirValidate);
+    validate_with_static_text(program).map(|_| ())
+}
+
+pub(crate) fn validate_with_static_text(program: &ResolvedProgram) -> Result<bool, Diagnostic> {
     agent_validation::validate(program)?;
-    inspection::validate(program)?;
-    crate::loan_plan::validate_program(program)
+    let selected = inspection::validate_with_static_text(program)?;
+    crate::loan_plan::validate_program(program)?;
+    Ok(selected)
 }
 
 /// Classify an attached loan only after the ordinary HIR/LoanPlan validation

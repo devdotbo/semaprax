@@ -51,7 +51,7 @@ fn feature_free_program_keeps_its_existing_graph_schema_and_wire() {
         &revision,
         &selected_functions,
         &selected_types,
-        &GraphView::Module,
+        &GraphView::Module { static_text: false },
     )
     .unwrap();
     assert_eq!(
@@ -60,7 +60,7 @@ fn feature_free_program_keeps_its_existing_graph_schema_and_wire() {
             &revision,
             &selected_functions,
             &selected_types,
-            &GraphView::Module
+            &GraphView::Module { static_text: false }
         )
         .unwrap(),
         before

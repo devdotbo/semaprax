@@ -2201,7 +2201,7 @@ impl<'a> PlanBuilder<'a> {
                     | ResolvedExprKind::Float32(_)
                     | ResolvedExprKind::Float64(_)
                     | ResolvedExprKind::Bool(_)
-                    | ResolvedExprKind::String(_) => results.push(EvalResult {
+                    | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_) => results.push(EvalResult {
                         block,
                         state,
                         owned_source: None,
@@ -4510,7 +4510,7 @@ impl<'a> PlanBuilder<'a> {
             | ResolvedExprKind::Float32(_)
             | ResolvedExprKind::Float64(_)
             | ResolvedExprKind::Bool(_)
-            | ResolvedExprKind::String(_) => Ok(EvalResult {
+            | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_) => Ok(EvalResult {
                 block,
                 state,
                 owned_source: None,

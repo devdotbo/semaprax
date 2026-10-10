@@ -85,8 +85,8 @@ impl Evaluator<'_> {
                     Value::BorrowedSlice(BorrowedSliceValue::whole(place.root.clone(), contents))
                 } else {
                     Value::BorrowedStr(BorrowedStrValue {
-                        invocation_root: place.root.clone(),
-                        bytes: contents,
+                        invocation_root: place.root.clone().into(),
+                        bytes: contents.into(),
                     })
                 }
             }

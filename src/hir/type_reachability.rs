@@ -313,7 +313,7 @@ fn collect_expression(expression: &ResolvedExpr, declarations: &mut BTreeSet<Dec
         | ResolvedExprKind::Float32(_)
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::String(_)
+        | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. } => {}
     }

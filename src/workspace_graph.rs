@@ -2500,7 +2500,7 @@ fn resolved_function_imports(function: &hir::ResolvedFunction) -> BTreeSet<hir::
             | hir::ResolvedExprKind::Float32(_)
             | hir::ResolvedExprKind::Float64(_)
             | hir::ResolvedExprKind::Bool(_)
-            | hir::ResolvedExprKind::String(_)
+            | hir::ResolvedExprKind::String(_) | hir::ResolvedExprKind::BorrowedUtf8Literal(_)
             | hir::ResolvedExprKind::ArrayU8(_)
             | hir::ResolvedExprKind::RepeatArrayU8 { .. }
             | hir::ResolvedExprKind::BorrowPlace { .. }

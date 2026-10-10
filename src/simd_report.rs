@@ -609,7 +609,7 @@ impl Walker<'_> {
             ResolvedExprKind::Bool(_) => {
                 self.push_ineligible(expr, REASON_BOOL_MIXING);
             }
-            ResolvedExprKind::String(_) => {
+            ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_) => {
                 self.push_ineligible(expr, REASON_SCALAR_LEAF);
             }
             ResolvedExprKind::ArrayU8(_)

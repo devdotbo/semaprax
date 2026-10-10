@@ -194,6 +194,7 @@ fn forbid_nested_yield(expr: &Expr, path: &str) -> Result<(), Diagnostic> {
         | ExprKind::Float64(_)
         | ExprKind::Bool(_)
         | ExprKind::String(_)
+| ExprKind::BorrowedUtf8Literal(_)
         | ExprKind::Var(_) => Ok(()),
         ExprKind::Closure { body, .. } => forbid_nested_yield(body, path),
         ExprKind::Call { args, .. } => args

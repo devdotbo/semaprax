@@ -352,8 +352,11 @@ impl Evaluator<'_> {
                     invocation_root: crate::hir::ValueId::intrinsic_parameter(
                         crate::environment_ops::ARENA_ID,
                         usize::MAX,
-                    ),
-                    bytes: state.entry(index, call.operation == Operation::EnvValueUtf8)?,
+                    )
+                    .into(),
+                    bytes: state
+                        .entry(index, call.operation == Operation::EnvValueUtf8)?
+                        .into(),
                 }))
             }
             _ => Err(Flow::Guard("unknown environment operation")),

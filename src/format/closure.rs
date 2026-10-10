@@ -92,6 +92,7 @@ pub(super) fn contains_record_construction(value: &Expr) -> bool {
             | ExprKind::Float64(_)
             | ExprKind::Bool(_)
             | ExprKind::String(_)
+| ExprKind::BorrowedUtf8Literal(_)
             | ExprKind::Var(_) => None,
         }
     }

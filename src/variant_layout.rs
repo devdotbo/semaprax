@@ -768,7 +768,7 @@ fn collect_expr_variant_types(
             | ResolvedExprKind::Float32(_)
             | ResolvedExprKind::Float64(_)
             | ResolvedExprKind::Bool(_)
-            | ResolvedExprKind::String(_)
+            | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::ArrayU8(_)
             | ResolvedExprKind::RepeatArrayU8 { .. }
             | ResolvedExprKind::BorrowPlace { .. }

@@ -51,7 +51,7 @@ codec_struct!(Declaration {
     identity_origin,
     owner
 });
-codec_enum!(ByteSliceRootKind {0=>FunctionParameter,1=>OwnedBytes,2=>FixedArray,3=>BorrowedStr,4=>CommandArguments,5=>StdinStreamReader,6=>OwnedString,7=>OwnedVectorField});
+codec_enum!(ByteSliceRootKind {0=>FunctionParameter,1=>OwnedBytes,2=>FixedArray,3=>BorrowedStr,4=>CommandArguments,5=>StdinStreamReader,6=>OwnedString,7=>OwnedVectorField,8=>SourceExprStatic});
 codec_enum!(ByteSliceExtent {0=>Constant(value),1=>ParameterLength,2=>ValueLength});
 codec_struct!(ByteSliceRangeStep {
     source,
@@ -59,7 +59,11 @@ codec_struct!(ByteSliceRangeStep {
     start,
     end
 });
-codec_struct!(VectorFieldProvenance { element, field, index });
+codec_struct!(VectorFieldProvenance {
+    element,
+    field,
+    index
+});
 codec_struct!(ByteSliceProvenance {
     vector_field,
     root,
@@ -287,7 +291,7 @@ codec_enum!(ResolvedExprKind {
     24=>Try{operand,result,ok_case,ok_field,err_case,err_field,residual_type},
     25=>TryOption{operand,option,some_case,some_field,none_case,residual_type},
     26=>UpdateRecord{base,record,fields},27=>Project{base,field},28=>Upcast{source},29=>FunctionReference{target},30=>Invoke{callable,args},31=>Closure{parameters,captures,body},
-    32=>Yield{request},33=>LiteralFormat{template,args},34=>VecFieldRead{element,field,bytes,args},35=>LexicalExit{kind,target,value}
+    32=>Yield{request},33=>LiteralFormat{template,args},34=>VecFieldRead{element,field,bytes,args},35=>LexicalExit{kind,target,value},36=>BorrowedUtf8Literal(value)
 });
 codec_struct!(ResolvedMatchArm {
     pattern,
@@ -310,3 +314,27 @@ mod tests;
 
 #[cfg(test)]
 mod record_traversal_tests;
+
+impl Codec for super::StaticUtf8 {
+    fn encode(&self, encoder: &mut Encoder) -> crate::cache_codec::Result<()> {
+        encoder.nested(|encoder| match self.cached_text() {
+            Some(text) => text.encode(encoder),
+            None => Err(crate::cache_codec::capacity(
+                "static text backing allocation was refused",
+            )),
+        })
+    }
+    fn decode(decoder: &mut Decoder<'_>) -> crate::cache_codec::Result<Self> {
+        decoder.nested(|decoder| {
+            let text = String::decode(decoder)?;
+            decoder.allocate(Self::OWNED_ALLOCATION_CARRIER_BYTES)?;
+            let value = Self::from_owned(text);
+            if !value.is_backed() {
+                return Err(crate::cache_codec::capacity(
+                    "static text backing allocation was refused",
+                ));
+            }
+            Ok(value)
+        })
+    }
+}

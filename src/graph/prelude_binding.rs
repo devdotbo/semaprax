@@ -378,3 +378,11 @@ module iterator.binding;
         assert!(crate::graph::verify_json(&program, &downgraded).is_err());
     }
 }
+
+// Selection comes from the mandatory validator at the outer projection boundary.
+pub(super) fn schema_selected(program: &ResolvedProgram, selected: bool) -> &'static str {
+    if selected { prelude::SCHEMA_V16 } else { schema(program) }
+}
+pub(super) fn digest_selected(program: &ResolvedProgram, selected: bool) -> String {
+    if selected { prelude::static_text::digest_text() } else { digest(program) }
+}

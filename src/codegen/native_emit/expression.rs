@@ -1,7 +1,7 @@
 use super::{
-    CBinding, CEmitter, COutput, CValue, backend_error, c_case_symbol, c_field_symbol, c_i32,
-    c_i64, c_pattern_literal, c_string, c_value_type, is_aggregate_type, is_direct_plan_owned,
-    record_declaration_id, variant_declaration_id,
+    backend_error, c_case_symbol, c_field_symbol, c_i32, c_i64, c_pattern_literal, c_string,
+    c_value_type, is_aggregate_type, is_direct_plan_owned, record_declaration_id,
+    variant_declaration_id, CBinding, CEmitter, COutput, CValue,
 };
 use crate::aggregate_layout::AggregateLayout;
 use crate::ast::{BinaryOp, UnaryOp};
@@ -405,6 +405,21 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                     ty: ResolvedType::Bool,
                 }
             }
+            ResolvedExprKind::BorrowedUtf8Literal(value) => {
+                self.require_type(
+                    &expr.ty,
+                    &ResolvedType::Str,
+                    "static borrowed UTF-8 literal",
+                )?;
+                CValue {
+                    code: format!(
+                        "(spx_str_v1){{ .data = (const uint8_t *)\"{}\", .len = UINT64_C({}) }}",
+                        c_string(value.as_str()),
+                        value.len()
+                    ),
+                    ty: ResolvedType::Str,
+                }
+            }
             ResolvedExprKind::String(value) => {
                 self.require_type(&expr.ty, &ResolvedType::String, "string literal")?;
                 let temporary = self
@@ -588,6 +603,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             | ResolvedExprKind::Float64(_)
             | ResolvedExprKind::Bool(_)
             | ResolvedExprKind::String(_)
+            | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::Place(_)
             | ResolvedExprKind::BorrowPlace { .. } => self.emit_leaf_expr(expr),
             ResolvedExprKind::VecFieldRead {

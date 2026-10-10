@@ -110,6 +110,7 @@ fn expression_json(
         ResolvedExprKind::Bool(value) => {
             bf!("{{{header},\"kind\":\"bool\",\"value\":{value}}}")
         }
+        ResolvedExprKind::BorrowedUtf8Literal(_) => return Err(projection_error("static borrowed literals are outside package contract v2")),
         ResolvedExprKind::String(value) => bf!(
             "{{{header},\"kind\":\"string\",\"value\":{}}}",
             quote_json(value)

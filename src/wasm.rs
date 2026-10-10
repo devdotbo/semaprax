@@ -287,6 +287,7 @@ fn functions_use_strings<'a>(
             | ResolvedExprKind::ArrayU8(_)
             | ResolvedExprKind::RepeatArrayU8 { .. }
             | ResolvedExprKind::String(_)
+            | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::Place(_)
             | ResolvedExprKind::BorrowPlace { .. }
             | ResolvedExprKind::FunctionReference { .. } => {}
@@ -323,7 +324,8 @@ fn program_uses_byte_data(program: &ResolvedProgram) -> bool {
             ResolvedType::SliceU8 | ResolvedType::Bytes | ResolvedType::ArrayU8(_)
         ) || matches!(
             expression.kind,
-            ResolvedExprKind::ArrayU8(_)
+            ResolvedExprKind::BorrowedUtf8Literal(_)
+                | ResolvedExprKind::ArrayU8(_)
                 | ResolvedExprKind::RepeatArrayU8 { .. }
                 | ResolvedExprKind::BorrowPlace { .. }
         ) || crate::hir::yield_aggregate::has_bytes_leaf(&program.declarations, &expression.ty)
@@ -413,6 +415,7 @@ fn program_uses_byte_data(program: &ResolvedProgram) -> bool {
             | ResolvedExprKind::ArrayU8(_)
             | ResolvedExprKind::RepeatArrayU8 { .. }
             | ResolvedExprKind::String(_)
+            | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::Place(_)
             | ResolvedExprKind::BorrowPlace { .. }
             | ResolvedExprKind::FunctionReference { .. } => {}
@@ -513,6 +516,7 @@ fn program_uses_string_ops(program: &ResolvedProgram) -> bool {
             | ResolvedExprKind::ArrayU8(_)
             | ResolvedExprKind::RepeatArrayU8 { .. }
             | ResolvedExprKind::String(_)
+            | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::Place(_)
             | ResolvedExprKind::BorrowPlace { .. }
             | ResolvedExprKind::FunctionReference { .. } => {}
@@ -635,6 +639,7 @@ fn collect_string_data(program: &ResolvedProgram) -> StringData {
             | ResolvedExprKind::ArrayU8(_)
             | ResolvedExprKind::RepeatArrayU8 { .. }
             | ResolvedExprKind::String(_)
+            | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::Place(_)
             | ResolvedExprKind::BorrowPlace { .. }
             | ResolvedExprKind::FunctionReference { .. } => {}
@@ -964,7 +969,13 @@ fn emit_resolved_module_internal(
     aggregate::string_runtime::refuse_unimplemented_collections(program)?;
     let has_public_profile = !scalar_exports.is_empty() || !text_exports.is_empty();
     if aggregate::map_collections::uses(program) {
-        hir::validate(program)?;
+        let static_utf8 = hir::validate_with_static_text(program)?;
+        if static_utf8 && has_public_profile {
+            return Err(Diagnostic::io(
+                "SPX-W119",
+                "static borrowed UTF-8 does not widen public export profiles",
+            ));
+        }
         aggregate::conversions::validate_public_profile(program, has_public_profile)?;
         if program
             .interfaces
@@ -984,9 +995,9 @@ fn emit_resolved_module_internal(
             ));
         }
         return if scalar_exports.is_empty() {
-            aggregate::emit(program)
+            aggregate::emit_with_static_text(program, static_utf8)
         } else {
-            aggregate::emit_scalar_exports(program, scalar_exports)
+            aggregate::emit_scalar_exports_with_static_text(program, scalar_exports, static_utf8)
         };
     }
     aggregate::conversions::validate_public_profile(program, has_public_profile)?;
@@ -1010,7 +1021,13 @@ fn emit_resolved_module_internal(
             "Native Rust imports are unavailable for WebAssembly targets",
         ));
     }
-    hir::validate(program)?;
+    let static_utf8 = hir::validate_with_static_text(program)?;
+    if static_utf8 && has_public_profile {
+        return Err(Diagnostic::io(
+            "SPX-W119",
+            "static borrowed UTF-8 does not widen public export profiles",
+        ));
+    }
     if hir::closure::requires_runtime_closures(program) {
         if !text_exports.is_empty() {
             return Err(Diagnostic::io(
@@ -1019,9 +1036,9 @@ fn emit_resolved_module_internal(
             ));
         }
         return if scalar_exports.is_empty() {
-            aggregate::emit(program)
+            aggregate::emit_with_static_text(program, static_utf8)
         } else {
-            aggregate::emit_scalar_exports(program, scalar_exports)
+            aggregate::emit_scalar_exports_with_static_text(program, scalar_exports, static_utf8)
         };
     }
     let concrete_variants = VariantLayoutCache::build(program, VariantTarget::Wasm32)?;
@@ -1036,7 +1053,8 @@ fn emit_resolved_module_internal(
             .declaration(&declaration.id)
             .is_some_and(|item| item.identity_origin == IdentityOrigin::CompilerOwned)
     });
-    if has_authored_aggregate
+    if static_utf8
+        || has_authored_aggregate
         || !concrete_variants.is_empty()
         || program_uses_byte_data(program)
         || program_uses_vec(program)
@@ -1050,14 +1068,18 @@ fn emit_resolved_module_internal(
                 && has_authored_aggregate
                 && concrete_variants.is_empty()
             {
-                return aggregate::emit_scalar_exports(program, scalar_exports);
+                return aggregate::emit_scalar_exports_with_static_text(
+                    program,
+                    scalar_exports,
+                    static_utf8,
+                );
             }
             return Err(Diagnostic::io(
                 "SPX-W115",
                 "Public Scalar Export Profile v1 does not admit aggregate or variant lowering",
             ));
         }
-        return aggregate::emit(program);
+        return aggregate::emit_with_static_text(program, static_utf8);
     }
     let owned_plans = owned::plan(program)?;
     if has_public_profile && !owned_plans.is_empty() {

@@ -491,6 +491,16 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         include_str!("../../../../../src/source_verify/owned_buffer.rs"),
         include_str!("../../../../../src/source_verify/variant_or.rs"),
         include_str!("../../../../../src/source_verify/record_invariants.rs"),
+        include_str!("../../../../../src/hir/resolve_expr_reference/static_text.rs"),
+        include_str!("../../../../../src/source_verify/static_text.rs"),
+        include_str!("../../../../../src/source_verify/declaration/functions/traversal_scope.rs"),
+        include_str!("../../../../../src/source_verify/declared_type/collection_outcome/nested.rs"),
+        include_str!("../../../../../src/source_verify/declared_type/collection_outcome/owned.rs"),
+        include_str!(
+            "../../../../../src/source_verify/declared_type/collection_outcome/stream_input.rs"
+        ),
+        include_str!("../../../../../src/source_verify/declared_type/copy_record_collection.rs"),
+        include_str!("../../../../../src/source_verify/declared_type/owned_record_collection.rs"),
     );
     let cleanup = concat!(
         include_str!("../../../../../src/cleanup.rs"),

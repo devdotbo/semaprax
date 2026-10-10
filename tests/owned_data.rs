@@ -122,3 +122,6 @@ mod lexical_exits;
 
 #[path = "owned_data/byte_helper_renewal.rs"]
 mod byte_helper_renewal;
+
+#[path = "owned_data/static_utf8.rs"]
+mod static_utf8;

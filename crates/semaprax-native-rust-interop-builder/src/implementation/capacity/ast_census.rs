@@ -81,6 +81,7 @@ pub(in crate::implementation) fn scan_ast_capacity<'a>(
                     | crate::ast::ExprKind::Float64(_)
                     | crate::ast::ExprKind::Bool(_)
                     | crate::ast::ExprKind::String(_)
+| crate::ast::ExprKind::BorrowedUtf8Literal(_)
                     | crate::ast::ExprKind::Var(_) => 0,
                 };
                 stats.max_indexed_children = stats.max_indexed_children.max(indexed_children);

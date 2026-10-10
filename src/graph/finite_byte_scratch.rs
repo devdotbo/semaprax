@@ -11,7 +11,7 @@ pub(super) fn requires(program: &ResolvedProgram) -> bool {
 }
 pub(crate) fn graph_schema(program: &ResolvedProgram) -> Result<&'static str, Diagnostic> {
     if !requires(program) {
-        return super::byte_helper_renewal::graph_schema(program);
+        return super::static_text::graph_schema(program);
     }
     hir::validate(program)?;
     crate::loan_plan::validate_program(program)?;
@@ -25,7 +25,7 @@ pub(crate) fn legacy_graph_schema(program: &ResolvedProgram) -> Result<&'static 
             "finite owned-iterator scratch requires Graph v78",
         ));
     }
-    super::scoped_vec_field::legacy_graph_schema(program)
+    super::static_text::legacy_graph_schema(program)
 }
 pub(super) fn graph_json(
     program: &ResolvedProgram,
@@ -34,8 +34,7 @@ pub(super) fn graph_json(
     types: &BTreeSet<DeclarationId>,
     view: &GraphView<'_>,
 ) -> Result<String, Diagnostic> {
-    let mut graph =
-        super::byte_helper_renewal::graph_json(program, revision, functions, types, view)?;
+    let mut graph = super::static_text::graph_json(program, revision, functions, types, view)?;
     if !requires(program) {
         return Ok(graph);
     }

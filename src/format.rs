@@ -23,6 +23,7 @@ mod iterative_tests;
 mod kernel_zero_tokens;
 #[path = "format/literals.rs"]
 mod literals;
+pub(crate) use literals::canonical_borrowed_utf8_literal;
 #[path = "format/session_protocol.rs"]
 mod session_protocol;
 #[path = "format/statement_if.rs"]
@@ -706,11 +707,8 @@ fn write_format_frames(
                         output.write_str(&canonical_f64_bits(*bits)).unwrap()
                     }
                     ExprKind::Bool(value) => output.write_str(&canonical_bool(*value)).unwrap(),
-                    ExprKind::String(value) => {
-                        output.write_char('"').unwrap();
-                        write_string_escaped(&mut output, value);
-                        output.write_char('"').unwrap();
-                    }
+                    ExprKind::String(value) => literals::write_text_literal(&mut output, value, false),
+                    ExprKind::BorrowedUtf8Literal(value) => literals::write_text_literal(&mut output, value, true),
                     ExprKind::Var(name) => output.write_str(name).unwrap(),
                     ExprKind::Closure {
                         params,

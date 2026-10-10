@@ -970,7 +970,8 @@ pub(super) fn cleanup_retained_stats(
                     | crate::ast::ExprKind::Float32(_)
                     | crate::ast::ExprKind::Float64(_)
                     | crate::ast::ExprKind::Bool(_)
-                    | crate::ast::ExprKind::String(_) => CleanupTypeKey::Scalar,
+                    | crate::ast::ExprKind::String(_)
+| crate::ast::ExprKind::BorrowedUtf8Literal(_) => CleanupTypeKey::Scalar,
                     crate::ast::ExprKind::Var(name) => {
                         variable_key(program, function, name, &traversal, stack_len, &results)?
                     }

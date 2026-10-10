@@ -65,7 +65,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         .with_help(crate::source_verify::hints::SHADOW_HELP),
                     );
                 } else if let Some(actual) = actual {
-                    if actual.ty == Type::SliceU8 && *mutable {
+                    if matches!(actual.ty, Type::SliceU8 | Type::Str) && *mutable {
                         self.diagnostics.push(error(
                             self.program,
                             "SPX-T264",
@@ -107,7 +107,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         }
                         if exact || upcast {
                             binding_ty = declared_ty.clone();
-                            binding_mode = if *declared_ty == Type::SliceU8 {
+                            binding_mode = if matches!(declared_ty, Type::SliceU8 | Type::Str) {
                                 ParamMode::Borrow
                             } else if self.types.needs_drop(declared_ty)
                                 || declared_ty.is_uniquely_owned()

@@ -556,6 +556,7 @@ fn render_expr(
         ResolvedExprKind::Float32(bits) => render_float(f64::from(f32::from_bits(*bits)), "f32"),
         ResolvedExprKind::Float64(bits) => render_float(f64::from_bits(*bits), "f64"),
         ResolvedExprKind::Bool(value) => Ok(value.to_string()),
+        ResolvedExprKind::BorrowedUtf8Literal(_) => Err(package_error("static borrowed literals are outside semantic recipe v8")),
         ResolvedExprKind::String(value) => bounded_string_literal(value, MAX_RECIPE_BYTES),
         ResolvedExprKind::Place(place) => render_place(place, names, values),
         ResolvedExprKind::BorrowPlace { operation, place } => {

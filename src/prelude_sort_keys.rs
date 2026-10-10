@@ -15,8 +15,9 @@ pub(crate) fn digest_text() -> String {
         crate::digest_hex::LowerHex(Sha256::digest(contract_bytes()))
     )
 }
-pub(crate) fn program_uses(program: &crate::ast::Program) -> bool {
-    let uses = |function: &crate::ast::Function| {
+pub(crate) fn selection(program: &crate::ast::Program) -> (bool, bool) {
+    let mut selected = (false, false);
+    let mut uses = |function: &crate::ast::Function| {
         let mut pending = function
             .requires
             .iter()
@@ -26,7 +27,10 @@ pub(crate) fn program_uses(program: &crate::ast::Program) -> bool {
         while let Some(expr) = pending.pop() {
             if matches!(&expr.kind, crate::ast::ExprKind::Call {name,..} if name == crate::vec_ops::sort_keys::NAME)
             {
-                return true;
+                selected.0 = true;
+            }
+            if matches!(&expr.kind, crate::ast::ExprKind::BorrowedUtf8Literal(_)) {
+                selected.1 = true;
             }
             let mut i = 0;
             while let Some(child) = expr.child(i) {
@@ -34,8 +38,19 @@ pub(crate) fn program_uses(program: &crate::ast::Program) -> bool {
                 i += 1;
             }
         }
-        false
     };
-    program.functions.iter().any(uses) || program.types.iter().any(|ty|
-        matches!(&ty.kind, crate::ast::TypeDeclarationKind::Class {methods,..} if methods.iter().any(uses)))
+    for function in &program.functions {
+        uses(function);
+    }
+    for ty in &program.types {
+        if let crate::ast::TypeDeclarationKind::Class { methods, .. } = &ty.kind {
+            for function in methods {
+                uses(function);
+            }
+        }
+    }
+    selected
+}
+pub(crate) fn program_uses(program: &crate::ast::Program) -> bool {
+    selection(program).0
 }

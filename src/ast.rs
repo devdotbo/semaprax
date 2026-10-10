@@ -48,7 +48,8 @@ pub enum Type {
     /// One uniquely owned immutable byte buffer.
     Bytes,
     /// A borrowed UTF-8 view. Source functions may receive it only through
-    /// an explicit `borrow str` parameter; it has no literal or owned form.
+    /// an explicit `borrow str` parameter or an immutable static UTF-8 literal.
+    /// It has no owned form.
     Str,
     /// A non-escaping immutable byte view rooted in one external invocation
     /// input. It is written exactly `Slice<u8>` and has no owned form.
@@ -329,6 +330,7 @@ impl Drop for Program {
                 | ExprKind::Float64(_)
                 | ExprKind::Bool(_)
                 | ExprKind::String(_)
+| ExprKind::BorrowedUtf8Literal(_)
                 | ExprKind::Var(_) => {}
             }
         }
@@ -900,6 +902,8 @@ pub enum ExprKind {
     Float64(u64),
     Bool(bool),
     String(String),
+    /// Explicit borrowed UTF-8 spelling; frontend-only until static-root admission.
+    BorrowedUtf8Literal(String),
     Var(String),
     Call {
         name: String,
@@ -1308,6 +1312,7 @@ impl Expr {
             | ExprKind::Float64(_)
             | ExprKind::Bool(_)
             | ExprKind::String(_)
+| ExprKind::BorrowedUtf8Literal(_)
             | ExprKind::Var(_) => None,
         }
     }

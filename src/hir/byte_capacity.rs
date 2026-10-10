@@ -212,7 +212,7 @@ pub(super) fn byte_slice_transcript_source(
                             ByteSliceRootKind::CommandArguments => {
                                 TranscriptSource::CommandArguments
                             }
-                            ByteSliceRootKind::FixedArray => match fact.length {
+                            ByteSliceRootKind::FixedArray | ByteSliceRootKind::SourceExprStatic => match fact.length {
                                 ByteSliceExtent::Constant(length) => {
                                     TranscriptSource::Fixed(length)
                                 }
@@ -368,7 +368,7 @@ pub(crate) fn push_resolved_expression_children_in_authored_order<'a>(
         | ResolvedExprKind::Float32(_)
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::String(_)
+        | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. } => {}
     }
@@ -974,7 +974,7 @@ pub(super) fn byte_capacity_expression(
                     | ResolvedExprKind::Float32(_)
                     | ResolvedExprKind::Float64(_)
                     | ResolvedExprKind::Bool(_)
-                    | ResolvedExprKind::String(_)
+                    | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
                     | ResolvedExprKind::Place(_)
                     | ResolvedExprKind::BorrowPlace { .. } => results.push(CapacityFlow::Empty),
                 }

@@ -306,6 +306,7 @@ pub(super) fn expression_uses_name(expression: &Expr, name: &str) -> bool {
             | ExprKind::Float64(_)
             | ExprKind::Bool(_)
             | ExprKind::String(_)
+| ExprKind::BorrowedUtf8Literal(_)
             | ExprKind::Var(_) => {}
         }
     }

@@ -199,6 +199,7 @@ pub(in crate::source_verify) fn reject_with_scratch(
         // Owned String Loops v1: a literal allocates one owned String in the
         // per-iteration body region.
         ExprKind::String(_) => Ok(()),
+        ExprKind::BorrowedUtf8Literal(text) => match crate::source_verify::static_text::checked(program, expression.span, text) { Ok(_) => Ok(()), Err(error) => { diagnostics.push(error); Err(()) } },
         ExprKind::Unary { value, .. } => {
             reject_with_scratch(program, value, functions, types, diagnostics, scratch)
         }

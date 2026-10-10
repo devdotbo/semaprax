@@ -725,7 +725,7 @@ fn expression_path_counts_with_while(
             | ResolvedExprKind::Float32(_)
             | ResolvedExprKind::Float64(_)
             | ResolvedExprKind::Bool(_)
-            | ResolvedExprKind::String(_)
+            | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::Place(_)
             | ResolvedExprKind::BorrowPlace { .. } => None,
             ResolvedExprKind::Unary { value, .. }
@@ -856,7 +856,7 @@ fn expression_path_counts_with_while(
                     | ResolvedExprKind::Float32(_)
                     | ResolvedExprKind::Float64(_)
                     | ResolvedExprKind::Bool(_)
-                    | ResolvedExprKind::String(_)
+                    | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
                     | ResolvedExprKind::Place(_)
                     | ResolvedExprKind::BorrowPlace { .. } => HirPathCounts::ONE,
                     ResolvedExprKind::Unary { op, .. } => {
@@ -1161,7 +1161,7 @@ fn expression_skeleton_work_upper(
                 | ResolvedExprKind::Float32(_)
                 | ResolvedExprKind::Float64(_)
                 | ResolvedExprKind::Bool(_)
-                | ResolvedExprKind::String(_) => 2,
+                | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_) => 2,
                 ResolvedExprKind::Place(place) => place.projections.len().saturating_mul(2) + 8,
                 ResolvedExprKind::BorrowPlace { place, .. } => {
                     place.projections.len().saturating_mul(2) + 8
@@ -1972,7 +1972,7 @@ fn collect_expression_statuses(
             | ResolvedExprKind::Float32(_)
             | ResolvedExprKind::Float64(_)
             | ResolvedExprKind::Bool(_)
-            | ResolvedExprKind::String(_)
+            | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::Place(_)
             | ResolvedExprKind::BorrowPlace { .. } => {}
         }
@@ -3679,7 +3679,7 @@ fn expression_skeleton(
                     | ResolvedExprKind::Float32(_)
                     | ResolvedExprKind::Float64(_)
                     | ResolvedExprKind::Bool(_)
-                    | ResolvedExprKind::String(_) => {
+                    | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_) => {
                         produced =
                             Some(work.singleton_path(empty_expr_path(), "literal skeleton path")?);
                     }

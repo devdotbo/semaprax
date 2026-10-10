@@ -49,10 +49,12 @@ mod owned_try;
 mod post_transitions;
 mod process_io;
 mod provider_lowering;
+mod static_text_profile;
 mod string_replacement;
+pub(super) use static_text_profile::{emit_scalar_exports_with_static_text, emit_with_static_text};
 pub(super) mod text_toolkit;
 pub(super) use provider_lowering::{
-    PUBLIC_GENERIC_PROVIDER_SOURCE_INDEX_MIN, lower_public_generic_provider_closure,
+    lower_public_generic_provider_closure, PUBLIC_GENERIC_PROVIDER_SOURCE_INDEX_MIN,
 };
 pub(crate) fn owned_arena_capacity(
     program: &ResolvedProgram,
@@ -64,8 +66,8 @@ pub(crate) fn owned_arena_capacity(
 mod numeric_conversions;
 
 use super::{
-    F32, F64, I32, I64, SCALAR_IMPORT_COUNT, Signature, function_import, intern_type, section,
-    write_bytes, write_i64, write_name, write_u32,
+    function_import, intern_type, section, write_bytes, write_i64, write_name, write_u32,
+    Signature, F32, F64, I32, I64, SCALAR_IMPORT_COUNT,
 };
 use crate::aggregate_layout::{AggregateLayout, AggregateLayoutCache, AggregateTarget};
 use crate::ast::{BinaryOp, UnaryOp};
@@ -112,6 +114,7 @@ const OWNED_UTF8_LITERAL_BASE: u32 = 196_608;
 #[derive(Default)]
 struct OwnedUtf8Literals {
     base: Option<u32>,
+    static_pool: bool,
     offsets: HashMap<String, u32>,
     bytes: Vec<u8>,
 }
@@ -123,6 +126,11 @@ impl OwnedUtf8Literals {
     fn intern(&mut self, value: &str) -> Result<(u32, u32), Diagnostic> {
         if let Some(offset) = self.offsets.get(value) {
             return Ok((*offset, value.len() as u32));
+        }
+        if self.static_pool && value.is_empty() {
+            let offset = self.base();
+            self.offsets.insert(value.to_owned(), offset);
+            return Ok((offset, 0));
         }
         let relative = u32::try_from(self.bytes.len())
             .map_err(|_| error("owned UTF-8 literal table overflows u32"))?;
@@ -1158,20 +1166,6 @@ pub(super) fn lower_selected_function_instances(
     })
 }
 
-pub(super) fn emit(program: &ResolvedProgram) -> Result<Vec<u8>, Diagnostic> {
-    emit_profile(program, false, false)
-}
-
-/// Emit the frozen public scalar wrappers over the aggregate lane's internal
-/// result-pointer/status ABI. Admission remains wholly owned by
-/// `scalar_exports::prepare`; this function only transports its exact plan.
-pub(super) fn emit_scalar_exports(
-    program: &ResolvedProgram,
-    plans: &[super::scalar_exports::ScalarExportPlan],
-) -> Result<Vec<u8>, Diagnostic> {
-    emit_profile_with_scalar_exports(program, false, false, plans)
-}
-
 #[cfg(test)]
 pub(super) fn emit_stdout_transcript(program: &ResolvedProgram) -> Result<Vec<u8>, Diagnostic> {
     emit_profile(program, false, true)
@@ -1243,9 +1237,16 @@ fn emit_byte_exports_profile(
             .iter()
             .map(|body| (body, FunctionExecutionId::Monomorphic(body.id.clone()))),
     );
-    let has_owned_utf8 = (command_io
-        .is_some_and(super::command_io::CommandPlan::is_environment_command)
-        && super::program_uses_strings(program))
+    let static_utf8 = crate::hir::validate_with_static_text(program)?;
+    if static_utf8 && (!plans.is_empty() || !owned_plans.is_empty()) {
+        return Err(Diagnostic::io(
+            "SPX-W119",
+            "static borrowed UTF-8 does not widen public data export profiles",
+        ));
+    }
+    let has_owned_utf8 = static_utf8
+        || (command_io.is_some_and(super::command_io::CommandPlan::is_environment_command)
+            && super::program_uses_strings(program))
         || owned_plans
             .iter()
             .any(|plan| plan.result == super::owned_data_exports::ResultLayout::Utf8)
@@ -1266,8 +1267,9 @@ fn emit_byte_exports_profile(
     let uses_str_ops = program_uses_str_ops(program);
     let text_helper_count = if uses_str_ops { 2_u32 } else { 0 };
     let mut owned_utf8_literals = OwnedUtf8Literals {
+        static_pool: static_utf8,
         base: command_io
-            .filter(|plan| plan.is_environment_command())
+            .filter(|plan| static_utf8 || plan.is_environment_command())
             .map(|_| 393_216),
         ..Default::default()
     };
@@ -1688,17 +1690,18 @@ fn emit_byte_exports_profile(
 
     let mut memory = Vec::new();
     write_u32(&mut memory, 1);
-    let base_memory_pages = if has_owned_utf8 && environment_io {
-        7
-    } else if has_owned_utf8 {
-        4
-    } else if command_io.is_some() {
-        6
-    } else if host_output {
-        super::host_output::MEMORY_PAGES
-    } else {
-        super::data_exports::FIXED_MEMORY_PAGES
-    };
+    let base_memory_pages =
+        if has_owned_utf8 && (environment_io || static_utf8 && command_io.is_some()) {
+            7
+        } else if has_owned_utf8 {
+            4
+        } else if command_io.is_some() {
+            6
+        } else if host_output {
+            super::host_output::MEMORY_PAGES
+        } else {
+            super::data_exports::FIXED_MEMORY_PAGES
+        };
     let memory_pages = base_memory_pages;
     memory.extend([0x01, memory_pages, memory_pages]);
     section(&mut module, 5, memory);
@@ -2012,12 +2015,13 @@ fn emit_byte_exports_profile(
 /// Every body a module lowers: the monomorphic closure in canonical order,
 /// then each checked generic instance under its generic execution identity. A
 /// template is never executable.
+#[cfg(test)]
 fn emit_profile(
     program: &ResolvedProgram,
     test_exports: bool,
     host_output: bool,
 ) -> Result<Vec<u8>, Diagnostic> {
-    emit_profile_with_scalar_exports(program, test_exports, host_output, &[])
+    emit_profile_with_scalar_exports(program, test_exports, host_output, &[], None)
 }
 
 fn emit_profile_with_scalar_exports(
@@ -2025,6 +2029,7 @@ fn emit_profile_with_scalar_exports(
     test_exports: bool,
     host_output: bool,
     scalar_exports: &[super::scalar_exports::ScalarExportPlan],
+    checked_static_utf8: Option<bool>,
 ) -> Result<Vec<u8>, Diagnostic> {
     string_runtime::refuse_unimplemented_collections(program)?;
     let uses_string_runtime = string_runtime::program_uses_runtime(program);
@@ -2617,16 +2622,31 @@ fn emit_profile_with_scalar_exports(
         write_u32(&mut tables, function_value_plan.targets.len() as u32);
         section(&mut module, 4, tables);
     }
-    let owned_utf8 = super::program_uses_strings(program);
-    let mut utf8_literals = OwnedUtf8Literals::default();
+    let static_utf8 = match checked_static_utf8 {
+        Some(selected) => selected,
+        None => crate::hir::static_text::validate_pool(program)?,
+    };
+    let owned_utf8 = static_utf8 || super::program_uses_strings(program);
+    let mut utf8_literals = OwnedUtf8Literals {
+        static_pool: static_utf8,
+        ..Default::default()
+    };
     let mut memory = Vec::new();
     write_u32(&mut memory, 1);
     if uses_byte_data {
         if host_output {
             memory.extend([
                 0x01,
-                super::host_output::MEMORY_PAGES,
-                super::host_output::MEMORY_PAGES,
+                if static_utf8 {
+                    4
+                } else {
+                    super::host_output::MEMORY_PAGES
+                },
+                if static_utf8 {
+                    4
+                } else {
+                    super::host_output::MEMORY_PAGES
+                },
             ]);
         } else {
             let pages = if owned_utf8 { 4 } else { 2 };
@@ -4518,6 +4538,33 @@ impl Emitter<'_> {
                 Ok(Value::Scalar {
                     local: destination,
                     ty: ResolvedType::Bool,
+                })
+            }
+            ResolvedExprKind::BorrowedUtf8Literal(value) => {
+                if self.standalone_strings {
+                    return Err(error(
+                        "static borrowed UTF-8 is outside the standalone String arena profile",
+                    ));
+                }
+                let literals = self
+                    .owned_utf8_literals
+                    .as_deref_mut()
+                    .filter(|table| table.static_pool)
+                    .ok_or_else(|| {
+                        error("static borrowed UTF-8 lacks an authenticated literal pool")
+                    })?;
+                let (offset, length) = literals.intern(value.as_str())?;
+                let destination = self.plan.expr_scalar(expr)?;
+                self.output.push(0x42);
+                write_i64(
+                    self.output,
+                    ((u64::from(offset) << 32) | u64::from(length)) as i64,
+                );
+                self.output.push(0x21);
+                write_u32(self.output, destination);
+                Ok(Value::Scalar {
+                    local: destination,
+                    ty: ResolvedType::Str,
                 })
             }
             ResolvedExprKind::String(value) => {
@@ -6642,6 +6689,9 @@ impl Emitter<'_> {
                         self.emit_indexed_byte_get(expr, &values)
                     }
                 }
+                crate::hir::ByteSliceRootKind::SourceExprStatic => Err(error(
+                    "static borrowed UTF-8 is outside the standalone String arena profile",
+                )),
                 crate::hir::ByteSliceRootKind::OwnedVectorField => {
                     Err(error("standalone byte view excludes owned vector fields"))
                 }
@@ -7315,9 +7365,31 @@ impl Emitter<'_> {
         self.output.extend([0x42, 0x20, 0x88, 0xa7, 0xad, 0x42]);
         write_i64(self.output, 131_072);
         self.get_scalar(value);
-        self.output.extend([
-            0xa7, 0xad, 0x7d, 0x58, 0x72, 0x71, 0x45, 0x04, 0x40, 0x00, 0x0b,
-        ]);
+        self.output.extend([0xa7, 0xad, 0x7d, 0x58]);
+        if let Some(base) = self
+            .owned_utf8_literals
+            .as_deref()
+            .filter(|table| table.static_pool)
+            .map(OwnedUtf8Literals::base)
+        {
+            // Only this selected module owns this immutable constant interval.
+            // Foreign entry descriptors retain their independent admission fence.
+            self.get_scalar(value);
+            self.output.extend([0xa7, 0xad, 0x42]);
+            write_i64(self.output, 65_536);
+            self.output.push(0x58);
+            self.get_scalar(value);
+            self.output.extend([0x42, 0x20, 0x88, 0xa7, 0xad, 0x42]);
+            write_i64(self.output, i64::from(base));
+            self.output.extend([0x5a, 0x71]);
+            self.get_scalar(value);
+            self.output.extend([0x42, 0x20, 0x88, 0xa7, 0xad, 0x42]);
+            write_i64(self.output, i64::from(base) + 65_536);
+            self.get_scalar(value);
+            self.output.extend([0xa7, 0xad, 0x7d, 0x58, 0x71, 0x72]);
+        }
+        self.output
+            .extend([0x72, 0x71, 0x45, 0x04, 0x40, 0x00, 0x0b]);
         if self.plan.range_scratch.is_some() {
             self.output.push(0x0b);
         }

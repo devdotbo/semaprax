@@ -66,6 +66,9 @@ pub enum ByteSliceRootKind {
     /// A symbolic function-parameter root. Callers substitute the argument's
     /// existing root; only a concrete host entry turns it into external input.
     FunctionParameter,
+    /// The exact decoded literal expression in the held checked module image.
+    /// `root` identifies a scoped descriptor; `producer` authenticates the literal.
+    SourceExprStatic,
     OwnedBytes,
     /// Exact indexed field of a borrowed, generation-protected owned Vec.
     OwnedVectorField,

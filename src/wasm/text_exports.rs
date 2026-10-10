@@ -427,6 +427,7 @@ fn validate_function(
             | ResolvedExprKind::FunctionReference { .. }
             | ResolvedExprKind::Invoke { .. }
             | ResolvedExprKind::String(_)
+            | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::LiteralFormat { .. }
             | ResolvedExprKind::VecFieldRead { .. }
             | ResolvedExprKind::NativeRustImportCall(_)

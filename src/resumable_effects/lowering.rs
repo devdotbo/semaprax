@@ -656,7 +656,7 @@ fn relocate_expression(
         | ResolvedExprKind::Float32(_)
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::String(_) => {}
+        | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_) => {}
         ResolvedExprKind::Invoke { callable, args } => {
             relocate_expression(callable, execution, &format!("{path}.callable"), values)?;
             relocate_arguments(args, execution, path, "arg", values)?;

@@ -40,6 +40,7 @@ pub(crate) use declared_type::owned_leaf_collection::{
     source_admitted as owned_leaf_source_admitted,
 };
 mod diagnostics;
+pub(crate) mod static_text;
 pub(crate) mod function_value_inventory;
 mod generic_inference;
 mod hints;

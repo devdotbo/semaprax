@@ -46,7 +46,12 @@ pub(in crate::wasm) fn lower_public_generic_provider_closure(
     selected: &DeclarationId,
     source_function_index_base: u32,
 ) -> Result<SelectedAggregateLowering, Diagnostic> {
-    crate::hir::validate(program)?;
+    if crate::hir::validate_with_static_text(program)? {
+        return Err(crate::diagnostic::Diagnostic::io(
+            "SPX-W119",
+            "static borrowed UTF-8 does not widen the public generic provider profile",
+        ));
+    }
     if source_function_index_base < PUBLIC_GENERIC_PROVIDER_SOURCE_INDEX_MIN {
         return Err(error(format!(
             "public-generic provider source function base {source_function_index_base} overlaps the reserved internal byte runtime through index {}",

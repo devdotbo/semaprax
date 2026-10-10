@@ -68,6 +68,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             ExprKind::Float64(_) => self.values.push(Some(CheckedValue::value(Type::F64))),
             ExprKind::Bool(_) => self.values.push(Some(CheckedValue::value(Type::Bool))),
             ExprKind::String(_) => self.values.push(Some(CheckedValue::value(Type::String))),
+            ExprKind::BorrowedUtf8Literal(text) => self.values.push(Some(crate::source_verify::static_text::checked(self.program, expression.span, text)?)),
             ExprKind::Var(name) if name == "result" => {
                 let value = self
                     .result_type

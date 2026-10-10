@@ -20,6 +20,7 @@ mod call_admission_gate;
 mod owned_buffer;
 mod owned_result_hostile;
 mod scalar_exports;
+mod static_text;
 
 #[test]
 fn raw_two_owned_generic_variant_rejects_invalid_tag_before_payload_authority() {

@@ -281,6 +281,9 @@ fn prepare_profile(
                         ) => {}
                 ResolvedExprKind::BorrowPlace { operation, place }
                     if copy_variants && operation.as_str() == crate::byte_ops::ARRAY_AS_SLICE_ID && place.projections.is_empty() => {}
+                ResolvedExprKind::BorrowedUtf8Literal(_) => {
+                    return Err(error("static borrowed UTF-8 literals are outside the standalone String arena profile"));
+                }
                 ResolvedExprKind::String(value) => {
                     // The selected profile owns the fixed literal segment's
                     // admission. Match the emitter's exact UTF-8 deduplication
@@ -497,7 +500,8 @@ fn admits_owned_string_byte_view(
                         provenance.root == place.root
                             && provenance.projected_type == ResolvedType::Str
                     }
-                    crate::hir::ByteSliceRootKind::OwnedVectorField => false,
+                    crate::hir::ByteSliceRootKind::OwnedVectorField
+                    | crate::hir::ByteSliceRootKind::SourceExprStatic => false,
                     _ => false,
                 }
         })

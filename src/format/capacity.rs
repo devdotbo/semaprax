@@ -251,7 +251,8 @@ pub(super) fn legacy_expr_temporary_bytes(root: &Expr, root_precedence: u8) -> u
             | ExprKind::Float32(_)
             | ExprKind::Float64(_)
             | ExprKind::Bool(_)
-            | ExprKind::String(_) => {}
+            | ExprKind::String(_)
+| ExprKind::BorrowedUtf8Literal(_) => {}
             ExprKind::Var(name) => total = total.saturating_add(name.len()),
             ExprKind::MethodCall { receiver, args, .. } => {
                 let joined = joined_len(

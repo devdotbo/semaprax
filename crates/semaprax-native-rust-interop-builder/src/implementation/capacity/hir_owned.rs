@@ -560,6 +560,9 @@ pub(in crate::implementation) fn hir_expr_owned_capacity(
             | ResolvedExprKind::Float32(_)
             | ResolvedExprKind::Float64(_)
             | ResolvedExprKind::Bool(_) => {}
+            ResolvedExprKind::BorrowedUtf8Literal(contents) => {
+                total = total.checked_add(contents.owned_allocation_bytes().ok_or_else(|| b109("max_builder_bytes", MAX_BUILDER_BYTES))?).ok_or_else(|| b109("max_builder_bytes", MAX_BUILDER_BYTES))?;
+            }
             ResolvedExprKind::String(contents) => {
                 total = total
                     .checked_add(contents.capacity())

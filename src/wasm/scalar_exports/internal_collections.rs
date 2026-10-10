@@ -47,6 +47,7 @@ pub(super) fn validate_expression(
             | ResolvedExprKind::Float64(_)
             | ResolvedExprKind::Bool(_)
             | ResolvedExprKind::String(_)
+            | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::Unary { .. }
             | ResolvedExprKind::Binary { .. }
             | ResolvedExprKind::If { .. } => {}

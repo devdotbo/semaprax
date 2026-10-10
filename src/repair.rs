@@ -468,6 +468,7 @@ pub(crate) fn precheck_program(program: &Program) -> Result<(), Vec<Diagnostic>>
             | ExprKind::Float64(_)
             | ExprKind::Bool(_)
             | ExprKind::String(_)
+| ExprKind::BorrowedUtf8Literal(_)
             | ExprKind::ArrayU8(_)
             | ExprKind::RepeatArrayU8 { .. }
             | ExprKind::Var(_) => {}
@@ -618,6 +619,7 @@ fn scalar_expr(expression: &Expr) -> bool {
         | ExprKind::Float64(_)
         | ExprKind::Bool(_)
         | ExprKind::String(_)
+| ExprKind::BorrowedUtf8Literal(_)
         | ExprKind::Var(_) => true,
         ExprKind::ArrayU8(_) | ExprKind::RepeatArrayU8 { .. } => false,
         ExprKind::Call {
