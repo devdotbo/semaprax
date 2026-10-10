@@ -745,6 +745,7 @@ format: `Unreleased` then release buckets, grouped by impact.
 - Add a source-only stream UTF-8 owned request selector that requires the original stdin permit and reuses the unchanged incremental grammar normalizer, with native composition regressions for empty first arrays, Unicode/NUL and large legal whitespace; execution gates remain pending.
 
 - Add source implementation and owning regressions for opt-in bounded UTF-8 owned request codecs, with distinct Unicode scalar decoding, empty/repeated value admission and exact escaped-output preflight. Existing identifier selectors remain separate; execution and the full-bound three-backend gate are pending.
+- Refresh both semantic-change integration receipt KATs after complete historical/current byte proofs; retain exact replay, fixed-point accounting, shared locks, and no-write assertions.
 
 - Generated webapp self-tests stop their child through private parent IPC so Windows
   releases the writer claim before restart; forced-crash recovery stays explicit.
