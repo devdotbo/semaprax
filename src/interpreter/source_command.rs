@@ -153,7 +153,7 @@ pub(crate) fn evaluate_resolved_source_command(
             )
         }
         Err(Flow::Guard(detail)) => ResolvedEvaluationOutcome::GuardError(detail.to_owned()),
-        Err(Flow::Residual(_)) => {
+        Err(Flow::Residual(_) | Flow::Lexical(_)) => {
             ResolvedEvaluationOutcome::GuardError(owned_try::ESCAPED_RESIDUAL_GUARD.to_owned())
         }
     };

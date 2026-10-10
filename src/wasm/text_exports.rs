@@ -422,6 +422,7 @@ fn validate_function(
     let mut pending = vec![&function.body];
     while let Some(expression) = pending.pop() {
         match &expression.kind {
+            ResolvedExprKind::LexicalExit { value, .. } => pending.extend(value.as_deref()),
             ResolvedExprKind::Closure { .. }
             | ResolvedExprKind::FunctionReference { .. }
             | ResolvedExprKind::Invoke { .. }
@@ -476,6 +477,9 @@ fn validate_function(
             ResolvedExprKind::Block { statements, tail } => {
                 for statement in statements {
                     if let ResolvedStatement::While {
+                        condition, body, ..
+                    }
+                    | ResolvedStatement::LexicalWhile {
                         condition, body, ..
                     } = statement
                     {

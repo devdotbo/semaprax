@@ -104,7 +104,8 @@ pub(super) fn validate_expression(
                             field: None,
                             ..
                         } if internal_type(program, &binding.ty, binding.ownership) => {}
-                        ResolvedStatement::While { .. } => {}
+                        ResolvedStatement::While { .. }
+                        | ResolvedStatement::LexicalWhile { .. } => {}
                         _ => return Err(refuse()),
                     }
                 }

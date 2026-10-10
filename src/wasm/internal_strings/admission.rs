@@ -210,15 +210,25 @@ fn prepare_profile(
                 .ok_or_else(|| {
                     error("standalone String expression inventory exceeds 65536 nodes")
                 })?;
+            let lexical_bottom = expression.ty == ResolvedType::Never
+                && function.cleanup_plan.lexical_control.is_some()
+                && matches!(
+                    expression.kind,
+                    ResolvedExprKind::LexicalExit { .. }
+                        | ResolvedExprKind::Block { .. }
+                        | ResolvedExprKind::If { .. }
+                        | ResolvedExprKind::Match { .. }
+                );
             if depth > 256
-                || !expression_type(
-                    program,
-                    &expression.ty,
-                    copy_variants,
-                    toolkit,
-                    general_guards,
-                    literal_format,
-                )
+                || !(lexical_bottom
+                    || expression_type(
+                        program,
+                        &expression.ty,
+                        copy_variants,
+                        toolkit,
+                        general_guards,
+                        literal_format,
+                    ))
             {
                 return Err(error(
                     "standalone String expression depth or type is outside the profile",
@@ -240,6 +250,8 @@ fn prepare_profile(
                 return Err(error("general Copy variant guards require the explicit general-loop-match-v1 profile"));
             }
             match &expression.kind {
+                ResolvedExprKind::LexicalExit { kind, target, .. }
+                    if function.cleanup_plan.lexical_exit(&expression.id).is_some_and(|(certificate, _)| certificate.kind == *kind && certificate.target == *target) => {}
                 ResolvedExprKind::Float64(_) | ResolvedExprKind::Float32(_) | ResolvedExprKind::Int32(_) if toolkit || general_guards => {}
                 ResolvedExprKind::Int(_)
                 | ResolvedExprKind::Bool(_)
@@ -301,7 +313,7 @@ fn prepare_profile(
                         || copy_variants && matches!(crate::byte_ops::by_id(callee.as_str()), Some(crate::byte_ops::ByteOp::Len | crate::byte_ops::ByteOp::Get))) => {}
                 ResolvedExprKind::Block { statements, .. } => {
                     if !toolkit && statements.iter().any(|statement| matches!(statement,
-                        ResolvedStatement::While { condition, .. } if condition_allocates_string(condition))) {
+                        ResolvedStatement::While { condition, .. } | ResolvedStatement::LexicalWhile { condition, .. } if condition_allocates_string(condition))) {
                         return Err(error("String condition temporaries require text-toolkit-v1"));
                     }
                     if statements.iter().any(|statement| {

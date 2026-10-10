@@ -1012,7 +1012,7 @@ fn settle_step(
         Err(Flow::Exhausted) => EvaluatedStep::FuelExhausted,
         Err(Flow::DepthExceeded) => EvaluatedStep::CallDepthExceeded,
         Err(Flow::Guard(detail)) => EvaluatedStep::GuardError(detail.to_owned()),
-        Err(Flow::Residual(_)) => EvaluatedStep::GuardError(
+        Err(Flow::Residual(_) | Flow::Lexical(_)) => EvaluatedStep::GuardError(
             "owned postfix `?` residual escaped its function frame".to_owned(),
         ),
         Err(Flow::Cancelled { .. }) => {

@@ -12,6 +12,11 @@ pub(super) fn collect_locals(
     layout: &mut LocalLayout,
 ) -> Result<(), Diagnostic> {
     match &expr.kind {
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            if let Some(value) = value {
+                collect_locals(value, parameter_count, layout)?;
+            }
+        }
         ResolvedExprKind::Closure { captures, .. } => {
             for capture in captures {
                 collect_locals(&capture.value, parameter_count, layout)?;
@@ -35,7 +40,9 @@ pub(super) fn collect_locals(
                 ));
             }
         }
-        ResolvedExprKind::Call { args, .. } | ResolvedExprKind::LiteralFormat { args, .. } | ResolvedExprKind::VecFieldRead { args, .. } => {
+        ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. } => {
             for arg in args {
                 collect_locals(arg, parameter_count, layout)?;
             }
@@ -93,6 +100,9 @@ pub(super) fn collect_locals(
                         collect_locals(body, parameter_count, layout)?;
                     }
                     ResolvedStatement::While {
+                        condition, body, ..
+                    }
+                    | ResolvedStatement::LexicalWhile {
                         condition, body, ..
                     } => {
                         collect_locals(condition, parameter_count, layout)?;
@@ -252,6 +262,10 @@ pub(super) fn wasm_type(ty: &ResolvedType) -> Result<u8, Diagnostic> {
         | ResolvedType::SliceU8
         | ResolvedType::StringMap
         | ResolvedType::Bytes => Ok(I64),
+        ResolvedType::Never => Err(Diagnostic::io(
+            "SPX-W101",
+            "Never has no WebAssembly ABI or storage type",
+        )),
         ResolvedType::ArrayU8(_) => Err(Diagnostic::io(
             "SPX-W101",
             "fixed byte arrays require the aggregate WebAssembly path",

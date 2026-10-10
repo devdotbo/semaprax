@@ -3,10 +3,10 @@
 mod field_reads;
 #[path = "owned_leaf_vec/loop_renewal.rs"]
 mod loop_renewal;
-#[path = "owned_leaf_vec/sort_keys.rs"]
-mod sort_keys;
 #[path = "owned_leaf_vec/record_traversal.rs"]
 mod record_traversal;
+#[path = "owned_leaf_vec/sort_keys.rs"]
+mod sort_keys;
 
 use std::process::Command;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -447,3 +447,6 @@ fn legacy_record_new_ops_preserve_old_physical_carrier() {
         String::from_utf8_lossy(&output.stderr)
     );
 }
+
+#[path = "owned_leaf_vec/lexical_exits.rs"]
+mod lexical_exits;

@@ -8,6 +8,7 @@ mod cleanup;
 #[path = "closure.rs"]
 mod closure;
 mod collect_block;
+mod collect_expression;
 mod expressions;
 mod function_value;
 pub(super) mod semantic_work;
@@ -24,6 +25,7 @@ pub(super) mod conversions;
 mod filesystem_checked;
 mod filesystem_ops;
 mod filesystem_v2;
+mod lexical_control;
 mod literal_format;
 mod str_usage;
 use str_usage::program_uses_str_ops;
@@ -189,9 +191,20 @@ struct Pointer {
 
 #[derive(Clone)]
 enum Value {
-    Scalar { local: u32, ty: ResolvedType },
-    ScalarMemory { pointer: Pointer, ty: ResolvedType },
-    Aggregate { pointer: Pointer, ty: ResolvedType },
+    /// Emitter control completion only; no local, ABI or runtime value exists.
+    Bottom,
+    Scalar {
+        local: u32,
+        ty: ResolvedType,
+    },
+    ScalarMemory {
+        pointer: Pointer,
+        ty: ResolvedType,
+    },
+    Aggregate {
+        pointer: Pointer,
+        ty: ResolvedType,
+    },
 }
 
 struct VariantMatchEmission<'a> {
@@ -251,6 +264,7 @@ struct FunctionPlan {
     has_try: bool,
     result_out: u32,
     result_stage_scalar: Option<u32>,
+    lexical_return_resume: Option<u32>,
     result_stage_aggregate: Option<u32>,
     scalar_expressions: HashMap<ExpressionId, u32>,
     scalar_bindings: HashMap<ValueId, u32>,
@@ -427,8 +441,22 @@ impl FunctionPlan {
                 Ok::<_, Diagnostic>(locals)
             })
             .transpose()?;
-        let has_try = expressions::expression_has_try(&function.body);
+        let has_try = expressions::expression_has_try(&function.body)
+            || function.cleanup_plan.lexical_control.is_some();
         let result_staged = if has_try { Some(add_local(I32)?) } else { None };
+        let lexical_return_resume = if function
+            .cleanup_plan
+            .lexical_control
+            .as_deref()
+            .is_some_and(|control| {
+                control.exits.iter().any(|exit| {
+                    exit.kind == crate::hir::LexicalExitKind::Return && exit.resume.is_some()
+                })
+            }) {
+            Some(add_local(I32)?)
+        } else {
+            None
+        };
         let mut cleanup_flags = std::collections::BTreeMap::new();
         let mut cleanup_place_flags = std::collections::BTreeMap::new();
         let mut cleanup_storage_types = HashMap::new();
@@ -518,6 +546,7 @@ impl FunctionPlan {
             has_try,
             result_out,
             result_stage_scalar,
+            lexical_return_resume,
             result_stage_aggregate,
             scalar_expressions: HashMap::new(),
             scalar_bindings: HashMap::new(),
@@ -586,259 +615,6 @@ impl FunctionPlan {
             .checked_add(1)
             .and_then(|base| base.checked_add(relative))
             .ok_or_else(|| error("aggregate local index overflows u32"))
-    }
-
-    fn collect_expr(
-        &mut self,
-        program: &ResolvedProgram,
-        variant_layouts: &VariantLayoutCache,
-        expr: &ResolvedExpr,
-        parameter_count: u32,
-        frame: &mut FrameAllocator,
-    ) -> Result<(), Diagnostic> {
-        if is_aggregate(program, &expr.ty)? {
-            let (size, align) = aggregate_size_align(program, variant_layouts, &expr.ty)?;
-            let offset = frame.allocate(size, align)?;
-            if self
-                .aggregate_expressions
-                .insert(expr.id.clone(), offset)
-                .is_some()
-            {
-                return Err(error(format!(
-                    "duplicate aggregate expression identity `{}`",
-                    expr.id
-                )));
-            }
-        } else {
-            let ty = scalar_wasm_type(program, &expr.ty)?;
-            let local = self.add_local(parameter_count, ty)?;
-            if self
-                .scalar_expressions
-                .insert(expr.id.clone(), local)
-                .is_some()
-            {
-                return Err(error(format!(
-                    "duplicate scalar expression identity `{}`",
-                    expr.id
-                )));
-            }
-            if matches!(
-                expr.kind,
-                ResolvedExprKind::Call { .. }
-                    | ResolvedExprKind::LiteralFormat { .. }
-                    | ResolvedExprKind::HostCommandCall(_)
-                    | ResolvedExprKind::Invoke { .. }
-            ) {
-                let (size, align) = if matches!(&expr.kind,ResolvedExprKind::Call{callee,..} if crate::map_ops::by_id(callee.as_str()).is_some() || crate::string_ops::by_id(callee.as_str()).and_then(map_collections::legacy_op).is_some())
-                {
-                    (8, 8)
-                } else {
-                    scalar_size_align(program, &expr.ty)?
-                };
-                self.call_out
-                    .insert(expr.id.clone(), frame.allocate(size, align)?);
-            }
-        }
-        if matches!(expr.kind, ResolvedExprKind::ByteRange { .. }) {
-            let offset = frame.allocate(RANGE_DESCRIPTOR_SIZE, 8)?;
-            if self
-                .range_descriptors
-                .insert(expr.id.clone(), offset)
-                .is_some()
-            {
-                return Err(error(format!(
-                    "duplicate byte-range descriptor identity `{}`",
-                    expr.id
-                )));
-            }
-        }
-        if let ResolvedExprKind::Call {
-            callee,
-            type_arguments,
-            ..
-        } = &expr.kind
-        {
-            if (matches!(
-                crate::vec_ops::by_id(callee.as_str()),
-                Some(crate::vec_ops::VecOp::CloneAt)
-            ) || callee.as_str() == crate::iterator_ops::NEXT_ID)
-                && matches!(type_arguments.as_slice(), [element]
-                    if crate::hir::owned_leaf_collection::layout(&program.declarations, element).is_some()
-                        && (callee.as_str() != crate::iterator_ops::NEXT_ID
-                            || !crate::hir::owned_record_collection::is_admitted_owned_record_collection_element(
-                                &program.declarations, element)))
-            {
-                let bytes = if callee.as_str() == crate::iterator_ops::NEXT_ID {
-                    88
-                } else {
-                    64
-                };
-                self.owned_leaf_scratch
-                    .insert(expr.id.clone(), frame.allocate(bytes, 8)?);
-            }
-        }
-
-        self.collect_vec_field_scratch(expr, frame)?;
-        match &expr.kind {
-            ResolvedExprKind::Closure { captures, .. } => {
-                for capture in captures {
-                    self.collect_expr(
-                        program,
-                        variant_layouts,
-                        &capture.value,
-                        parameter_count,
-                        frame,
-                    )?;
-                }
-            }
-            ResolvedExprKind::Invoke { callable, args } => {
-                self.collect_expr(program, variant_layouts, callable, parameter_count, frame)?;
-                self.collect_exprs(program, variant_layouts, args, parameter_count, frame)?;
-                let local = self.add_local(parameter_count, I32)?;
-                if self
-                    .function_callables
-                    .insert(expr.id.clone(), local)
-                    .is_some()
-                {
-                    return Err(error("aggregate function invocation scratch repeats"));
-                }
-                for argument in args {
-                    let local =
-                        self.add_local(parameter_count, scalar_wasm_type(program, &argument.ty)?)?;
-                    if self
-                        .function_arguments
-                        .insert(argument.id.clone(), local)
-                        .is_some()
-                    {
-                        return Err(error(
-                            "aggregate function invocation argument scratch repeats",
-                        ));
-                    }
-                }
-            }
-            ResolvedExprKind::FunctionReference { .. } => {}
-            ResolvedExprKind::LiteralFormat { args, .. } => {
-                self.collect_literal_format(
-                    program,
-                    variant_layouts,
-                    expr,
-                    args,
-                    parameter_count,
-                    frame,
-                )?;
-            }
-            ResolvedExprKind::Call { args, .. } | ResolvedExprKind::VecFieldRead { args, .. } => {
-                self.collect_exprs(program, variant_layouts, args, parameter_count, frame)?
-            }
-            ResolvedExprKind::NativeRustImportCall(call) => {
-                self.collect_exprs(program, variant_layouts, &call.args, parameter_count, frame)?
-            }
-            ResolvedExprKind::HostCommandCall(call) => {
-                self.collect_exprs(program, variant_layouts, &call.args, parameter_count, frame)?
-            }
-            ResolvedExprKind::ByteRange {
-                source, start, end, ..
-            } => self.collect_byte_range(
-                program,
-                variant_layouts,
-                source,
-                start,
-                end,
-                parameter_count,
-                frame,
-            )?,
-            ResolvedExprKind::Unary { value, .. } => {
-                self.collect_expr(program, variant_layouts, value, parameter_count, frame)?;
-            }
-            ResolvedExprKind::Try { operand, .. } | ResolvedExprKind::TryOption { operand, .. } => {
-                self.collect_expr(program, variant_layouts, operand, parameter_count, frame)?;
-            }
-            ResolvedExprKind::Binary { left, right, .. } => self.collect_binary(
-                program,
-                variant_layouts,
-                left,
-                right,
-                parameter_count,
-                frame,
-            )?,
-            ResolvedExprKind::Block { statements, tail } => self.collect_block(
-                program,
-                variant_layouts,
-                statements,
-                tail,
-                parameter_count,
-                frame,
-            )?,
-            ResolvedExprKind::If {
-                condition,
-                then_branch,
-                else_branch,
-            } => self.collect_if(
-                program,
-                variant_layouts,
-                condition,
-                then_branch,
-                else_branch,
-                parameter_count,
-                frame,
-            )?,
-            ResolvedExprKind::ConstructRecord { fields, .. } => self.collect_record_fields(
-                program,
-                variant_layouts,
-                fields,
-                parameter_count,
-                frame,
-            )?,
-            ResolvedExprKind::ConstructVariant { fields, .. } => self.collect_variant_fields(
-                program,
-                variant_layouts,
-                fields,
-                parameter_count,
-                frame,
-            )?,
-            ResolvedExprKind::Match {
-                scrutinee, arms, ..
-            } => self.collect_match(
-                program,
-                variant_layouts,
-                scrutinee,
-                arms,
-                parameter_count,
-                frame,
-            )?,
-            ResolvedExprKind::Project { base, .. } => {
-                self.collect_expr(program, variant_layouts, base, parameter_count, frame)?;
-            }
-            ResolvedExprKind::Upcast { source } | ResolvedExprKind::Yield { request: source } => {
-                self.collect_expr(program, variant_layouts, source, parameter_count, frame)?;
-            }
-            ResolvedExprKind::UpdateRecord { base, fields, .. } => {
-                self.collect_expr(program, variant_layouts, base, parameter_count, frame)?;
-                for field in fields {
-                    self.collect_expr(
-                        program,
-                        variant_layouts,
-                        &field.value,
-                        parameter_count,
-                        frame,
-                    )?;
-                }
-            }
-            ResolvedExprKind::Int(_)
-            | ResolvedExprKind::Int32(_)
-            | ResolvedExprKind::Char(_)
-            | ResolvedExprKind::Uint8(_)
-            | ResolvedExprKind::Usize(_)
-            | ResolvedExprKind::Float32(_)
-            | ResolvedExprKind::Float64(_)
-            | ResolvedExprKind::Bool(_)
-            | ResolvedExprKind::ArrayU8(_)
-            | ResolvedExprKind::RepeatArrayU8 { .. }
-            | ResolvedExprKind::String(_)
-            | ResolvedExprKind::Place(_)
-            | ResolvedExprKind::BorrowPlace { .. } => {}
-        }
-        Ok(())
     }
 
     fn collect_exprs(
@@ -3308,6 +3084,8 @@ fn emit_function_profile(
         bindings,
         call_argument_values: HashMap::new(),
         control_depth: 0,
+        lexical_loops: Vec::new(),
+        lexical_resume: None,
         status_exit_extra_depth: 1,
         try_target_enabled: false,
         failure_expression: None,
@@ -3338,34 +3116,7 @@ fn emit_function_profile(
     }
     let result = emitter.emit_expr(&function.body)?;
     emitter.try_target_enabled = false;
-    let staged = if let Some(local) = plan.result_stage_scalar {
-        emitter.require_scalar(&result, &function.return_type, "function result")?;
-        emitter.get_scalar(&result);
-        emitter.output.push(0x21);
-        write_u32(emitter.output, local);
-        if owned_string_profile && function.return_type == ResolvedType::String
-            || crate::map_ops::is_collection(&function.return_type)
-        {
-            emitter.clear_scalar(&result)?;
-        }
-        Value::Scalar {
-            local,
-            ty: function.return_type.clone(),
-        }
-    } else {
-        let offset = plan
-            .result_stage_aggregate
-            .ok_or_else(|| error("missing aggregate result staging slot"))?;
-        let staged = Value::Aggregate {
-            pointer: Pointer {
-                local: plan.frame_base,
-                offset,
-            },
-            ty: function.return_type.clone(),
-        };
-        emitter.copy_value(&staged, &result, "function result")?;
-        staged
-    };
+    let staged = emitter.stage_function_result(&result)?;
     if let Some(result_staged) = plan.result_staged {
         emitter.output.extend([0x41, 0x01, 0x21]);
         write_u32(emitter.output, result_staged);
@@ -3378,16 +3129,20 @@ fn emit_function_profile(
     emitter
         .bindings
         .insert(function.result_id.clone(), staged.clone());
-    for contract in &function.ensures {
-        let condition = emitter.emit_expr(contract)?;
-        emitter.require_scalar(&condition, &ResolvedType::Bool, "postcondition")?;
-        emitter.get_scalar(&condition);
-        emitter.output.push(0x45);
-        emitter.failure_expression = Some(contract.id.clone());
-        emitter.fail_if_in_lane(STATUS_ENSURES_FALSE, StatusLane::ContractFalse)?;
-        emitter.failure_expression = None;
+    if function.cleanup_plan.lexical_control.is_some() {
+        emitter.emit_lexical_epilogues()?;
+    } else {
+        for contract in &function.ensures {
+            let condition = emitter.emit_expr(contract)?;
+            emitter.require_scalar(&condition, &ResolvedType::Bool, "postcondition")?;
+            emitter.get_scalar(&condition);
+            emitter.output.push(0x45);
+            emitter.failure_expression = Some(contract.id.clone());
+            emitter.fail_if_in_lane(STATUS_ENSURES_FALSE, StatusLane::ContractFalse)?;
+            emitter.failure_expression = None;
+        }
+        emitter.emit_success_cleanup(&function.cleanup_plan)?;
     }
-    emitter.emit_success_cleanup(&function.cleanup_plan)?;
     let caller = if is_aggregate(program, &function.return_type)? {
         Value::Aggregate {
             pointer: Pointer {
@@ -3543,6 +3298,8 @@ struct Emitter<'a> {
     /// Exact physical carriers for authenticated call-argument epochs.
     call_argument_values: HashMap<crate::cleanup_plan::StorageId, Value>,
     control_depth: u32,
+    lexical_loops: Vec<lexical_control::LoopLabel<'a>>,
+    lexical_resume: Option<crate::cleanup_plan::BlockId>,
     status_exit_extra_depth: u32,
     try_target_enabled: bool,
     failure_expression: Option<ExpressionId>,
@@ -3559,6 +3316,9 @@ struct Emitter<'a> {
 impl Emitter<'_> {
     fn emit_expr(&mut self, expr: &ResolvedExpr) -> Result<Value, Diagnostic> {
         let value = self.emit_expr_inner(expr)?;
+        if matches!(value, Value::Bottom) {
+            return Ok(value);
+        }
         let owned_match = matches!(
             expr.kind,
             ResolvedExprKind::Match {
@@ -3589,10 +3349,11 @@ impl Emitter<'_> {
         plan: &crate::cleanup_plan::CleanupPlan,
     ) -> Result<(), Diagnostic> {
         let mut commits = plan.exits.iter().filter(|exit| {
-            matches!(
-                exit.continuation,
-                crate::cleanup_plan::ExitContinuation::CommitResult { .. }
-            )
+            plan.lexical_block_in_context(self.lexical_resume, exit.from)
+                && matches!(
+                    exit.continuation,
+                    crate::cleanup_plan::ExitContinuation::CommitResult { .. }
+                )
         });
         let commit = commits
             .next()
@@ -3610,6 +3371,12 @@ impl Emitter<'_> {
     ) -> Result<(), Diagnostic> {
         let mut selected = None;
         for exit in &self.cleanup_plan.exits {
+            if !self
+                .cleanup_plan
+                .lexical_block_in_context(self.lexical_resume, exit.from)
+            {
+                continue;
+            }
             if let crate::cleanup_plan::ExitContinuation::ReturnFailure { source } =
                 &exit.continuation
             {
@@ -3639,6 +3406,7 @@ impl Emitter<'_> {
             .cleanup_plan
             .regions
             .iter()
+            .filter(|region| self.lexical_region_in_context(region.id))
             .filter(|region| region.slots.iter().any(|slot| anchors.contains(slot)))
             .collect::<Vec<_>>();
         let region = match matching.as_slice() {
@@ -3665,10 +3433,7 @@ impl Emitter<'_> {
             return Ok(());
         }
         let exit = self
-            .cleanup_plan
-            .exits
-            .get(region.normal_scope_end.0 as usize)
-            .filter(|exit| exit.id == region.normal_scope_end)
+            .lexical_scope_end(region)
             .ok_or_else(|| error("Bytes block region has no exact normal-scope exit"))?;
         if !matches!(
             exit.continuation,
@@ -3693,11 +3458,16 @@ impl Emitter<'_> {
         if storage.is_empty() {
             return Err(error("owned record match has no Bytes bindings"));
         }
-        let mut regions = self.cleanup_plan.regions.iter().filter(|region| {
-            storage
-                .iter()
-                .all(|candidate| region.slots.contains(candidate))
-        });
+        let mut regions = self
+            .cleanup_plan
+            .regions
+            .iter()
+            .filter(|region| self.lexical_region_in_context(region.id))
+            .filter(|region| {
+                storage
+                    .iter()
+                    .all(|candidate| region.slots.contains(candidate))
+            });
         let region = regions
             .next()
             .ok_or_else(|| error("owned record bindings have no CleanupPlan region"))?;
@@ -3707,10 +3477,7 @@ impl Emitter<'_> {
             ));
         }
         let exit = self
-            .cleanup_plan
-            .exits
-            .get(region.normal_scope_end.0 as usize)
-            .filter(|exit| exit.id == region.normal_scope_end)
+            .lexical_scope_end(region)
             .ok_or_else(|| error("owned record match region has no normal exit"))?;
         if !matches!(
             exit.continuation,
@@ -3883,6 +3650,7 @@ impl Emitter<'_> {
             ));
         }
         match value {
+            Value::Bottom => return Err(error("a bottom completion has no scalar storage")),
             Value::Scalar { local, .. } => {
                 self.output.extend([0x42, 0x00, 0x21]);
                 write_u32(self.output, *local);
@@ -4128,6 +3896,10 @@ impl Emitter<'_> {
             .cleanup_plan
             .blocks
             .iter()
+            .filter(|block| {
+                self.cleanup_plan
+                    .lexical_block_in_context(self.lexical_resume, block.id)
+            })
             .flat_map(|block| &block.transitions)
             .filter_map(|transition| match transition {
                 crate::cleanup_plan::CleanupTransition::CallCommit { call, arguments }
@@ -4162,6 +3934,10 @@ impl Emitter<'_> {
             .cleanup_plan
             .blocks
             .iter()
+            .filter(|block| {
+                self.cleanup_plan
+                    .lexical_block_in_context(self.lexical_resume, block.id)
+            })
             .flat_map(|block| &block.transitions)
             .filter_map(|transition| match transition {
                 crate::cleanup_plan::CleanupTransition::Transfer {
@@ -4388,6 +4164,10 @@ impl Emitter<'_> {
             .cleanup_plan
             .blocks
             .iter()
+            .filter(|block| {
+                self.cleanup_plan
+                    .lexical_block_in_context(self.lexical_resume, block.id)
+            })
             .flat_map(|block| &block.transitions)
             .filter(|transition| match transition {
                 crate::cleanup_plan::CleanupTransition::Initialize { at, destination } => {
@@ -4462,6 +4242,10 @@ impl Emitter<'_> {
             .cleanup_plan
             .blocks
             .iter()
+            .filter(|block| {
+                self.cleanup_plan
+                    .lexical_block_in_context(self.lexical_resume, block.id)
+            })
             .flat_map(|block| &block.transitions)
             .filter_map(|transition| match transition {
                 crate::cleanup_plan::CleanupTransition::TransferVariant {
@@ -4497,14 +4281,22 @@ impl Emitter<'_> {
         expression: &ExpressionId,
         selected: &DeclarationId,
     ) -> Result<(), Diagnostic> {
-        let mut blocks = self.cleanup_plan.blocks.iter().filter(|block| {
-            block.transitions.iter().any(|transition| {
-                matches!(transition,
+        let mut blocks = self
+            .cleanup_plan
+            .blocks
+            .iter()
+            .filter(|block| {
+                self.cleanup_plan
+                    .lexical_block_in_context(self.lexical_resume, block.id)
+            })
+            .filter(|block| {
+                block.transitions.iter().any(|transition| {
+                    matches!(transition,
                         crate::cleanup_plan::CleanupTransition::AuthenticateVariantCase {
                             at, case, ..
                         } if at == expression && case == selected)
-            })
-        });
+                })
+            });
         let block = blocks
             .next()
             .ok_or_else(|| error("owned Try success has no authenticated cleanup block"))?;
@@ -4571,6 +4363,10 @@ impl Emitter<'_> {
             .cleanup_plan
             .blocks
             .iter()
+            .filter(|block| {
+                self.cleanup_plan
+                    .lexical_block_in_context(self.lexical_resume, block.id)
+            })
             .flat_map(|block| &block.transitions)
             .filter_map(|transition| match transition {
                 crate::cleanup_plan::CleanupTransition::Transfer {
@@ -4606,6 +4402,9 @@ impl Emitter<'_> {
 
     fn emit_complex_expr(&mut self, expr: &ResolvedExpr) -> Result<Value, Diagnostic> {
         match &expr.kind {
+            ResolvedExprKind::LexicalExit { .. } => {
+                Err(error("lexical exit bypassed its typed emitter"))
+            }
             ResolvedExprKind::Closure { .. } => self.emit_closure(expr),
             ResolvedExprKind::FunctionReference { target } => {
                 self.emit_function_reference(expr, target)
@@ -4931,7 +4730,9 @@ impl Emitter<'_> {
                     let [arm] = arms.as_slice() else {
                         return Err(error("irrefutable record match must have exactly one arm"));
                     };
-                    let destination = if aggregate_result {
+                    let destination = if expr.ty == ResolvedType::Never {
+                        Value::Bottom
+                    } else if aggregate_result {
                         Value::Aggregate {
                             pointer: self.plan.expr_pointer(expr)?,
                             ty: expr.ty.clone(),
@@ -4993,7 +4794,9 @@ impl Emitter<'_> {
                     // dead before scope exit.
                     let value = self.emit_expr(&arm.value)?;
                     self.copy_value(&destination, &value, "record match arm result")?;
-                    if *mode == crate::hir::ResolvedMatchMode::Own {
+                    if *mode == crate::hir::ResolvedMatchMode::Own
+                        && !matches!(value, Value::Bottom)
+                    {
                         self.emit_owned_record_match_cleanup(&arm.pattern)?;
                         self.authenticate_record_match_phase(
                             &expr.id,
@@ -5027,7 +4830,9 @@ impl Emitter<'_> {
                 } else {
                     self.fail_if(STATUS_INTERNAL_INVALID_TAG)?;
                 }
-                let destination = if aggregate_result {
+                let destination = if expr.ty == ResolvedType::Never {
+                    Value::Bottom
+                } else if aggregate_result {
                     Value::Aggregate {
                         pointer: self.plan.expr_pointer(expr)?,
                         ty: expr.ty.clone(),
@@ -5549,6 +5354,9 @@ impl Emitter<'_> {
     }
 
     fn materialize(&mut self, expr: &ResolvedExpr, source: &Value) -> Result<Value, Diagnostic> {
+        if matches!(source, Value::Bottom) {
+            return Ok(Value::Bottom);
+        }
         let destination = if is_aggregate(self.program, &expr.ty)? {
             Value::Aggregate {
                 pointer: self.plan.expr_pointer(expr)?,
@@ -5634,7 +5442,7 @@ impl Emitter<'_> {
                 }
                 let value = self.emit_expr(&arm.value)?;
                 self.copy_value(destination, &value, "match arm result")?;
-                if mode == crate::hir::ResolvedMatchMode::Own {
+                if mode == crate::hir::ResolvedMatchMode::Own && !matches!(value, Value::Bottom) {
                     self.emit_owned_variant_match_cleanup(fields)?;
                 }
                 self.bindings = saved.clone();
@@ -5687,18 +5495,19 @@ impl Emitter<'_> {
         else {
             return Err(error("scalar match scrutinee is not scalar storage"));
         };
-        let destination =
-            if crate::variant_guards::copy_variant(&self.program.declarations, &expr.ty) {
-                Value::Aggregate {
-                    pointer: self.plan.expr_pointer(expr)?,
-                    ty: expr.ty.clone(),
-                }
-            } else {
-                Value::Scalar {
-                    local: self.plan.expr_scalar(expr)?,
-                    ty: expr.ty.clone(),
-                }
-            };
+        let destination = if expr.ty == ResolvedType::Never {
+            Value::Bottom
+        } else if crate::variant_guards::copy_variant(&self.program.declarations, &expr.ty) {
+            Value::Aggregate {
+                pointer: self.plan.expr_pointer(expr)?,
+                ty: expr.ty.clone(),
+            }
+        } else {
+            Value::Scalar {
+                local: self.plan.expr_scalar(expr)?,
+                ty: expr.ty.clone(),
+            }
+        };
         // block $done (void): selecting any arm jumps here after storing.
         self.output.extend([0x02, 0x40]);
         self.control_depth += 1;
@@ -5749,7 +5558,7 @@ impl Emitter<'_> {
             }
             let value = self.emit_expr(&arm.value)?;
             self.copy_value(&destination, &value, "refutable match arm result")?;
-            if !(arms.len() == 1 && arm.guard.is_none()) {
+            if !matches!(value, Value::Bottom) && !(arms.len() == 1 && arm.guard.is_none()) {
                 self.emit_scalar_match_value_cleanup(expr, &arm.value)?;
             }
             self.bindings = saved;
@@ -6251,6 +6060,7 @@ impl Emitter<'_> {
         self.apply_call_commit(&expr.id)?;
         for value in &values {
             match value {
+                Value::Bottom => return Err(error("Never cannot be passed through a call ABI")),
                 Value::Scalar { local, .. } => {
                     self.output.push(0x20);
                     write_u32(self.output, *local);
@@ -7600,39 +7410,6 @@ impl Emitter<'_> {
         })
     }
 
-    fn emit_if(
-        &mut self,
-        expr: &ResolvedExpr,
-        condition: &ResolvedExpr,
-        then_branch: &ResolvedExpr,
-        else_branch: &ResolvedExpr,
-    ) -> Result<Value, Diagnostic> {
-        let condition = self.emit_expr(condition)?;
-        self.require_scalar(&condition, &ResolvedType::Bool, "if condition")?;
-        let destination = if is_aggregate(self.program, &expr.ty)? {
-            Value::Aggregate {
-                pointer: self.plan.expr_pointer(expr)?,
-                ty: expr.ty.clone(),
-            }
-        } else {
-            Value::Scalar {
-                local: self.plan.expr_scalar(expr)?,
-                ty: expr.ty.clone(),
-            }
-        };
-        self.get_scalar(&condition);
-        self.output.extend([0x04, 0x40]);
-        self.control_depth += 1;
-        let then_value = self.emit_expr(then_branch)?;
-        self.copy_value(&destination, &then_value, "then branch")?;
-        self.output.push(0x05);
-        let else_value = self.emit_expr(else_branch)?;
-        self.copy_value(&destination, &else_value, "else branch")?;
-        self.control_depth -= 1;
-        self.output.push(0x0b);
-        Ok(destination)
-    }
-
     fn emit_checked_add(
         &mut self,
         left: &Value,
@@ -8106,8 +7883,12 @@ impl Emitter<'_> {
         source: &Value,
         context: &str,
     ) -> Result<(), Diagnostic> {
+        if matches!(source, Value::Bottom) {
+            return Ok(());
+        }
         require_type(value_type(source), value_type(destination), context)?;
         match destination {
+            Value::Bottom => return Err(error("a bottom completion cannot be stored")),
             Value::Scalar { local, ty } => {
                 if self.owned_utf8_literals.is_some() && *ty == ResolvedType::String {
                     owned_strings::emit_empty_guard(self.output, *local);
@@ -8284,6 +8065,7 @@ impl Emitter<'_> {
             ));
         }
         match destination {
+            Value::Bottom => return Err(error("a bottom completion cannot be stored")),
             Value::Scalar { local, .. } => {
                 self.get_scalar(source);
                 self.output.push(0x21);
@@ -8323,7 +8105,7 @@ impl Emitter<'_> {
                 self.emit_pointer(*pointer);
                 self.load_scalar(ty);
             }
-            Value::Aggregate { .. } => unreachable!("validated scalar value"),
+            Value::Aggregate { .. } | Value::Bottom => unreachable!("validated scalar value"),
         }
     }
 

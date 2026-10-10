@@ -58,6 +58,7 @@
 //! persistence, no hot reload, no debugger mapping, executes no target, and
 //! changes no source.
 mod api_admission;
+mod call_frame;
 mod closures;
 mod command_state;
 pub(crate) mod environment;
@@ -68,6 +69,7 @@ mod function_values;
 mod generic_owned;
 pub mod internal_strings;
 mod iterator;
+mod lexical_control;
 mod list;
 mod mutable_closure;
 mod nested_owned;
@@ -940,7 +942,7 @@ pub fn evaluate_resolved_owned_data(
                     Err(Flow::Guard(detail)) => {
                         OwnedDataEvaluationOutcome::GuardError(detail.to_owned())
                     }
-                    Err(Flow::Residual(_)) => OwnedDataEvaluationOutcome::GuardError(
+                    Err(Flow::Residual(_) | Flow::Lexical(_)) => OwnedDataEvaluationOutcome::GuardError(
                         owned_try::ESCAPED_RESIDUAL_GUARD.to_owned(),
                     ),
                 };
@@ -1162,9 +1164,11 @@ pub(crate) fn evaluate_resolved_public_api(
                     Err(Flow::Guard(detail)) => {
                         PublicApiEvaluationOutcome::GuardError(detail.to_owned())
                     }
-                    Err(Flow::Residual(_)) => PublicApiEvaluationOutcome::GuardError(
-                        owned_try::ESCAPED_RESIDUAL_GUARD.to_owned(),
-                    ),
+                    Err(Flow::Residual(_) | Flow::Lexical(_)) => {
+                        PublicApiEvaluationOutcome::GuardError(
+                            owned_try::ESCAPED_RESIDUAL_GUARD.to_owned(),
+                        )
+                    }
                 };
                 PublicApiEvaluation {
                     function_id: entry.id.clone(),
@@ -1374,9 +1378,11 @@ pub(crate) fn evaluate_resolved_flat_owned_record_api(
                     Err(Flow::Guard(detail)) => {
                         FlatOwnedRecordEvaluationOutcome::GuardError(detail.to_owned())
                     }
-                    Err(Flow::Residual(_)) => FlatOwnedRecordEvaluationOutcome::GuardError(
-                        owned_try::ESCAPED_RESIDUAL_GUARD.to_owned(),
-                    ),
+                    Err(Flow::Residual(_) | Flow::Lexical(_)) => {
+                        FlatOwnedRecordEvaluationOutcome::GuardError(
+                            owned_try::ESCAPED_RESIDUAL_GUARD.to_owned(),
+                        )
+                    }
                 };
                 FlatOwnedRecordEvaluation {
                     function_id: entry.id.clone(),
@@ -1588,9 +1594,11 @@ pub(crate) fn evaluate_resolved_owned_utf8_api(
                     Err(Flow::Guard(detail)) => {
                         OwnedUtf8ApiEvaluationOutcome::GuardError(detail.to_owned())
                     }
-                    Err(Flow::Residual(_)) => OwnedUtf8ApiEvaluationOutcome::GuardError(
-                        owned_try::ESCAPED_RESIDUAL_GUARD.to_owned(),
-                    ),
+                    Err(Flow::Residual(_) | Flow::Lexical(_)) => {
+                        OwnedUtf8ApiEvaluationOutcome::GuardError(
+                            owned_try::ESCAPED_RESIDUAL_GUARD.to_owned(),
+                        )
+                    }
                 };
                 OwnedUtf8ApiEvaluation {
                     function_id: entry.id.clone(),
@@ -2064,7 +2072,7 @@ fn interpret_on_current_thread(
                 )]);
             }
             Flow::Guard(detail) => return Err(vec![guard_error(detail)]),
-            Flow::Residual(_) => {
+            Flow::Residual(_) | Flow::Lexical(_) => {
                 return Err(vec![guard_error(owned_try::ESCAPED_RESIDUAL_GUARD)]);
             }
         },
@@ -2920,7 +2928,7 @@ pub(crate) fn evaluate_resolved_stdout_transcript(
             )
         }
         Err(Flow::Guard(detail)) => ResolvedEvaluationOutcome::GuardError(detail.to_owned()),
-        Err(Flow::Residual(_)) => {
+        Err(Flow::Residual(_) | Flow::Lexical(_)) => {
             ResolvedEvaluationOutcome::GuardError(owned_try::ESCAPED_RESIDUAL_GUARD.to_owned())
         }
     };
@@ -3081,7 +3089,7 @@ pub(crate) fn evaluate_resolved_language_command(
             "unexpected UTF-8 materialization limit in hosted command evaluation".to_owned(),
         ),
         Err(Flow::Guard(detail)) => CommandEvaluationOutcome::GuardError(detail.to_owned()),
-        Err(Flow::Residual(_)) => {
+        Err(Flow::Residual(_) | Flow::Lexical(_)) => {
             CommandEvaluationOutcome::GuardError(owned_try::ESCAPED_RESIDUAL_GUARD.to_owned())
         }
     };
@@ -3222,6 +3230,7 @@ fn borrowed_text(value: &Value) -> Option<&str> {
 
 #[derive(Debug)]
 enum Flow {
+    Lexical(lexical_control::ExitFlow),
     Failure(NormalizedStatus),
     /// Function-local early return synthesized by an authenticated owned
     /// postfix `?`. `call_frame_inner` catches it before postconditions.
@@ -3377,6 +3386,7 @@ fn normalize_byte_range(code: u32) -> NormalizedStatus {
 /// their suffix in structural order, so the index never needs to search or
 /// rebuild the retained prefix.
 struct Environment {
+    control: Option<Box<lexical_control::FrameControl>>,
     bindings: Vec<(ValueId, Value)>,
     slots: HashMap<ValueId, usize>,
 }
@@ -3388,7 +3398,11 @@ impl From<Vec<(ValueId, Value)>> for Environment {
             .enumerate()
             .map(|(index, (id, _))| (id.clone(), index))
             .collect();
-        Self { bindings, slots }
+        Self {
+            control: None,
+            bindings,
+            slots,
+        }
     }
 }
 
@@ -3835,79 +3849,6 @@ impl Evaluator<'_> {
         result
     }
 
-    fn call_frame_inner(
-        &mut self,
-        function: &ResolvedFunction,
-        values: Vec<(ValueId, Value)>,
-        depth: usize,
-    ) -> Result<Value, Flow> {
-        // Stage semantic work v1: one unit per admitted source frame.
-        self.semantic_charge()?;
-        let mut frame = Environment::from(values);
-        self.set_trace_phase(ResolvedTracePhase::Requires);
-        for (index, clause) in function.requires.iter().enumerate() {
-            self.charge()?;
-            match self.evaluate(clause, &mut frame, depth)? {
-                Value::Bool(true) => {}
-                Value::Bool(false) => {
-                    return Err(self.contract_failure(
-                        function,
-                        &frame,
-                        ContractPhase::Requires,
-                        index,
-                    ))
-                }
-                _ => return Err(Flow::Guard("non-boolean requires clause")),
-            }
-        }
-        self.set_trace_phase(ResolvedTracePhase::Body);
-        let mut value = match self.evaluate(&function.body, &mut frame, depth) {
-            Ok(value) | Err(Flow::Residual(value)) => value,
-            Err(flow) => return Err(flow),
-        };
-        let retained_result = !function.ensures.is_empty()
-            && (matches!(value, Value::OnceClosure(_))
-                || matches!(&value, Value::Closure(closure) if closure.mutable.is_some()));
-        if !function.ensures.is_empty() {
-            let result_value = if retained_result {
-                std::mem::replace(&mut value, Value::Moved)
-            } else {
-                self.clone_value(&value)?
-            };
-            frame.push((function.result_id.clone(), result_value));
-        }
-        self.set_trace_phase(ResolvedTracePhase::Ensures);
-        for (index, clause) in function.ensures.iter().enumerate() {
-            self.charge()?;
-            match self.evaluate(clause, &mut frame, depth)? {
-                Value::Bool(true) => {}
-                Value::Bool(false) => {
-                    return Err(self.contract_failure(
-                        function,
-                        &frame,
-                        ContractPhase::Ensures,
-                        index,
-                    ))
-                }
-                _ => return Err(Flow::Guard("non-boolean ensures clause")),
-            }
-        }
-        if retained_result {
-            take_owned_place(
-                &mut frame,
-                &crate::hir::Place {
-                    root: function.result_id.clone(),
-                    projections: Vec::new(),
-                },
-            )
-            .ok_or(Flow::Guard(
-                "affine provisional result was consumed by a contract",
-            ))
-        } else {
-            Ok(value)
-        }
-    }
-
     fn evaluate(
         &mut self,
         expression: &ResolvedExpr,
@@ -3916,6 +3857,18 @@ impl Evaluator<'_> {
     ) -> Result<Value, Flow> {
         self.begin_expression(expression, depth)?;
         match &expression.kind {
+            ResolvedExprKind::LexicalExit {
+                kind,
+                target,
+                value,
+            } => self.evaluate_lexical_exit(
+                expression,
+                *kind,
+                target,
+                value.as_deref(),
+                environment,
+                depth,
+            ),
             // Resumable Effects v1 (#204): `resumable::settle_yield` owns the
             // whole yield site -- refusal on every ordinary lane, suspension
             // on a fresh invocation, drift check + answer on a replayed one.
@@ -4623,6 +4576,9 @@ impl Evaluator<'_> {
                         }
                         ResolvedStatement::While {
                             condition, body, ..
+                        }
+                        | ResolvedStatement::LexicalWhile {
+                            condition, body, ..
                         } => {
                             if let Err(flow) =
                                 self.evaluate_while(condition, body, environment, depth)
@@ -4637,7 +4593,16 @@ impl Evaluator<'_> {
                     Some(flow) => Err(flow),
                     None => self.evaluate(tail, environment, depth),
                 };
-                environment.truncate(base);
+                let retain_root = matches!(
+                    &outcome,
+                    Ok(_) | Err(Flow::Lexical(lexical_control::ExitFlow::Return { .. }))
+                ) && environment
+                    .control
+                    .as_deref()
+                    .is_some_and(|control| control.body == expression.id);
+                if !retain_root {
+                    environment.truncate(base);
+                }
                 outcome
             }
             // Refutable Match v1: one scrutinee evaluation, arms tested in

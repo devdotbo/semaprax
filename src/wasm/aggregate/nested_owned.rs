@@ -184,6 +184,7 @@ pub(super) fn emit_update_scope_cleanup(
                 | crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V15
                 | "semaprax.cleanup-plan.v16"
                 | "semaprax.cleanup-plan.v17"
+                | crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V18
         )
     {
         return Err(super::error(
@@ -195,6 +196,7 @@ pub(super) fn emit_update_scope_cleanup(
         .cleanup_plan
         .regions
         .iter()
+        .filter(|region| emitter.lexical_region_in_context(region.id))
         .filter(|region| region.slots.contains(&anchor));
     let region = regions
         .next()
@@ -206,10 +208,7 @@ pub(super) fn emit_update_scope_cleanup(
         ));
     }
     let exit = emitter
-        .cleanup_plan
-        .exits
-        .get(region.normal_scope_end.0 as usize)
-        .filter(|exit| exit.id == region.normal_scope_end)
+        .lexical_scope_end(&region)
         .cloned()
         .ok_or_else(|| super::error("nested record update region has no normal exit"))?;
     if !matches!(

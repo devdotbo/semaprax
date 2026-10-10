@@ -4,6 +4,9 @@ use crate::hir::{ResolvedExpr, ResolvedExprKind};
 
 pub(super) fn child_expressions(expression: &ResolvedExpr) -> Vec<&ResolvedExpr> {
     match &expression.kind {
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            value.iter().map(|value| value.as_ref()).collect()
+        }
         ResolvedExprKind::Closure { captures, .. } => {
             captures.iter().map(|capture| &capture.value).collect()
         }

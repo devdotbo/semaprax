@@ -300,6 +300,7 @@ impl Emitter<'_> {
             .cleanup_plan
             .regions
             .iter()
+            .filter(|region| self.lexical_region_in_context(region.id))
             .filter(|region| region.slots.contains(storage))
             .map(|region| region.id)
             .collect::<Vec<_>>();
@@ -373,16 +374,11 @@ impl Emitter<'_> {
         Diagnostic,
     > {
         let region = self.cleanup_region(region)?;
-        let exit = self
-            .cleanup_plan
-            .exits
-            .get(region.normal_scope_end.0 as usize)
-            .filter(|exit| exit.id == region.normal_scope_end)
-            .ok_or_else(|| {
-                error(format!(
-                    "String match {child_kind} child has no normal-scope exit",
-                ))
-            })?;
+        let exit = self.lexical_scope_end(region).ok_or_else(|| {
+            error(format!(
+                "String match {child_kind} child has no normal-scope exit",
+            ))
+        })?;
         let crate::cleanup_plan::ExitContinuation::Continue(edge) = &exit.continuation else {
             return Err(error(format!(
                 "String match {child_kind} child normal-scope exit does not continue",

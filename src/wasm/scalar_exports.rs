@@ -482,6 +482,7 @@ fn validate_expression_profile(
             )));
         }
         match &expression.kind {
+            ResolvedExprKind::LexicalExit { value, .. } => pending.extend(value.as_deref()),
             ResolvedExprKind::Closure { captures, body, .. } => {
                 pending.push(body);
                 pending.extend(captures.iter().map(|capture| &capture.value));
@@ -628,6 +629,7 @@ fn scalar_type(ty: &ResolvedType) -> Option<ScalarType> {
         | ResolvedType::StringMap
         | ResolvedType::ArrayU8(_)
         | ResolvedType::Bytes
+        | ResolvedType::Never
         | ResolvedType::TypeParameter { .. }
         | ResolvedType::Nominal { .. }
         | ResolvedType::OnceFunction

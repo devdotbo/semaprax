@@ -17,12 +17,13 @@ pub(super) fn program_uses_string_ops_v2(program: &ResolvedProgram) -> bool {
             }
         }
         match &expression.kind {
+            ResolvedExprKind::LexicalExit { value, .. } => pending.extend(value.as_deref()),
             ResolvedExprKind::Closure { captures, .. } => {
                 pending.extend(captures.iter().map(|capture| &capture.value))
             }
-            ResolvedExprKind::Call { args, .. } | ResolvedExprKind::LiteralFormat { args, .. } | ResolvedExprKind::VecFieldRead { args, .. } => {
-                pending.extend(args.iter())
-            }
+            ResolvedExprKind::Call { args, .. }
+            | ResolvedExprKind::LiteralFormat { args, .. }
+            | ResolvedExprKind::VecFieldRead { args, .. } => pending.extend(args.iter()),
             ResolvedExprKind::Invoke { callable, args } => {
                 pending.push(callable);
                 pending.extend(args.iter());

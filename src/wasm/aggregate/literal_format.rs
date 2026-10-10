@@ -183,6 +183,10 @@ impl Emitter<'_> {
             .cleanup_plan
             .blocks
             .iter()
+            .filter(|block| {
+                self.cleanup_plan
+                    .lexical_block_in_context(self.lexical_resume, block.id)
+            })
             .flat_map(|block| &block.transitions)
             .filter_map(|transition| match transition {
                 crate::cleanup_plan::CleanupTransition::CallCommit { call, arguments }

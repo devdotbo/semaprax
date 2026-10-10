@@ -3,10 +3,14 @@ use super::*;
 
 fn expression_uses_str_ops(expression: &ResolvedExpr) -> bool {
     match &expression.kind {
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            value.as_deref().is_some_and(expression_uses_str_ops)
+        }
         ResolvedExprKind::Invoke { callable, args } => {
             expression_uses_str_ops(callable) || args.iter().any(expression_uses_str_ops)
         }
-        ResolvedExprKind::LiteralFormat { args, .. } | ResolvedExprKind::VecFieldRead { args, .. } => args.iter().any(expression_uses_str_ops),
+        ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. } => args.iter().any(expression_uses_str_ops),
         ResolvedExprKind::Call { callee, args, .. } => {
             crate::str_ops::by_id(callee.as_str()).is_some_and(|op| {
                 matches!(

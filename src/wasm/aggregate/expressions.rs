@@ -37,6 +37,11 @@ impl Emitter<'_> {
 
     pub(super) fn emit_expr_inner(&mut self, expr: &ResolvedExpr) -> Result<Value, Diagnostic> {
         match &expr.kind {
+            ResolvedExprKind::LexicalExit {
+                kind,
+                target,
+                value,
+            } => self.emit_lexical_exit(expr, *kind, target, value.as_deref()),
             ResolvedExprKind::Block { statements, tail } => self.emit_block(expr, statements, tail),
             ResolvedExprKind::Unary { op, value } => self.emit_unary(expr, *op, value),
             ResolvedExprKind::Binary { op, left, right } => {
@@ -90,6 +95,10 @@ impl Emitter<'_> {
             self.emit_block_statement(statement)?;
         }
         let tail = self.emit_expr(tail)?;
+        if matches!(tail, Value::Bottom) {
+            self.bindings = saved;
+            return Ok(Value::Bottom);
+        }
         let result = self.materialize(expr, &tail)?;
         self.emit_block_scope_cleanup(expr)?;
         self.bindings = saved;
@@ -155,9 +164,16 @@ impl Emitter<'_> {
         else {
             if let ResolvedStatement::While {
                 condition, body, ..
+            }
+            | ResolvedStatement::LexicalWhile {
+                condition, body, ..
             } = statement
             {
-                self.emit_while(condition, body)?;
+                self.emit_while(
+                    condition,
+                    body,
+                    matches!(statement, ResolvedStatement::LexicalWhile { .. }),
+                )?;
             } else {
                 self.emit_expr(statement.value())?;
             }
@@ -199,6 +215,9 @@ impl Emitter<'_> {
 /// Whether an aggregate expression may select the existing try status lane.
 pub(super) fn expression_has_try(expression: &ResolvedExpr) -> bool {
     match &expression.kind {
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            value.as_deref().is_some_and(expression_has_try)
+        }
         ResolvedExprKind::Try { .. } | ResolvedExprKind::TryOption { .. } => true,
         ResolvedExprKind::Call { args, .. }
         | ResolvedExprKind::LiteralFormat { args, .. }
@@ -300,6 +319,7 @@ impl Emitter<'_> {
         &mut self,
         condition: &ResolvedExpr,
         body: &ResolvedExpr,
+        lexical: bool,
     ) -> Result<(), Diagnostic> {
         if self.owned_utf8_literals.is_some() && body.ty == ResolvedType::String {
             return Err(error(
@@ -309,6 +329,9 @@ impl Emitter<'_> {
         self.output.extend([0x02, 0x40]); // block (empty) $exit
         self.output.extend([0x03, 0x40]); // loop (empty) $top
         self.control_depth += 2;
+        if lexical {
+            self.bind_lexical_loop(condition)?;
+        }
         let condition_value = self.emit_expr(condition)?;
         self.require_scalar(&condition_value, &ResolvedType::Bool, "while condition")?;
         self.emit_scalar_match_guard_cleanup(condition, condition)?;
@@ -317,6 +340,9 @@ impl Emitter<'_> {
         self.output.extend([0x0d, 0x01]); // br_if 1 -> $exit on false
         self.semantic_charge()?; // stage semantic work v1: metered builds only
         let _body_value = self.emit_expr(body)?;
+        if lexical {
+            self.lexical_loops.pop();
+        }
         self.control_depth -= 2;
         self.output.extend([0x0c, 0x00]); // br 0 -> $top
         self.output.push(0x0b); // end loop
@@ -385,7 +411,7 @@ pub(super) fn block_scope_anchors(
                 pending.push(value)
             }
             ResolvedStatement::Unsafe { body, .. } => pending.push(body),
-            ResolvedStatement::While { .. } => {}
+            ResolvedStatement::While { .. } | ResolvedStatement::LexicalWhile { .. } => {}
         }
     }
     while let Some(expression) = pending.pop() {

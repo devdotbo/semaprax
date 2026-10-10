@@ -1210,3 +1210,6 @@ fn record_owner_renewal_named_views_refuse_aliases_and_temporary_operands() {
 
 #[path = "while_loops/ascii_pattern_source.rs"]
 mod ascii_pattern_source;
+
+#[path = "while_loops/lexical_exits.rs"]
+mod lexical_exits;

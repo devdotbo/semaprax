@@ -26,7 +26,23 @@ impl Evaluator<'_> {
                 return Ok(());
             }
             self.semantic_charge()?;
-            self.evaluate(body, environment, depth)?;
+            match self.evaluate(body, environment, depth) {
+                Ok(_) => {}
+                Err(Flow::Lexical(lexical_control::ExitFlow::Break(target)))
+                    if matches!(&target, hir::ControlTarget::Loop { site, .. } if site == &condition.id)
+                        && environment.control.as_deref().is_some_and(|control| {
+                            lexical_control::target_owner(&target) == &control.owner
+                        }) =>
+                {
+                    return Ok(())
+                }
+                Err(Flow::Lexical(lexical_control::ExitFlow::Continue(target)))
+                    if matches!(&target, hir::ControlTarget::Loop { site, .. } if site == &condition.id)
+                        && environment.control.as_deref().is_some_and(|control| {
+                            lexical_control::target_owner(&target) == &control.owner
+                        }) => {}
+                Err(flow) => return Err(flow),
+            }
         }
     }
 }

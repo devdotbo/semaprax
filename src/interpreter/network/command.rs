@@ -196,7 +196,7 @@ pub(crate) fn evaluate_resolved_network_command(
                 .to_owned(),
         ),
         Err(Flow::Guard(detail)) => CommandEvaluationOutcome::GuardError(detail.to_owned()),
-        Err(Flow::Residual(_)) => CommandEvaluationOutcome::GuardError(
+        Err(Flow::Residual(_) | Flow::Lexical(_)) => CommandEvaluationOutcome::GuardError(
             "owned postfix `?` residual escaped its function frame".to_owned(),
         ),
     };

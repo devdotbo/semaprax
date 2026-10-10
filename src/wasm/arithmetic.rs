@@ -12,6 +12,7 @@ pub(super) fn needs_i32_wide_scratch(expression: &ResolvedExpr) -> bool {
     let mut pending = vec![expression];
     while let Some(expression) = pending.pop() {
         match &expression.kind {
+            ResolvedExprKind::LexicalExit { value, .. } => pending.extend(value.as_deref()),
             ResolvedExprKind::Unary { op, value } => {
                 if *op == UnaryOp::Neg && value.ty == ResolvedType::I32 {
                     return true;
@@ -32,7 +33,8 @@ pub(super) fn needs_i32_wide_scratch(expression: &ResolvedExpr) -> bool {
             ResolvedExprKind::Closure { captures, .. } => {
                 pending.extend(captures.iter().map(|capture| &capture.value))
             }
-            ResolvedExprKind::LiteralFormat { args, .. } | ResolvedExprKind::VecFieldRead { args, .. } => pending.extend(args.iter()),
+            ResolvedExprKind::LiteralFormat { args, .. }
+            | ResolvedExprKind::VecFieldRead { args, .. } => pending.extend(args.iter()),
             ResolvedExprKind::Call { callee, args, .. } => {
                 if crate::string_ops::by_id(callee.as_str())
                     .is_some_and(|op| op.is_integer_conversion())
@@ -125,6 +127,9 @@ pub(super) fn contains_usize_arithmetic(expression: &ResolvedExpr) -> bool {
 
 fn contains_checked_arithmetic(expression: &ResolvedExpr, target: &ResolvedType) -> bool {
     match &expression.kind {
+        ResolvedExprKind::LexicalExit { value, .. } => value
+            .as_deref()
+            .is_some_and(|value| contains_checked_arithmetic(value, target)),
         ResolvedExprKind::Binary { op, left, right: _ }
             if left.ty == *target
                 && matches!(
@@ -143,7 +148,9 @@ fn contains_checked_arithmetic(expression: &ResolvedExpr, target: &ResolvedType)
         | ResolvedExprKind::Project { base: value, .. }
         | ResolvedExprKind::Upcast { source: value }
         | ResolvedExprKind::Yield { request: value } => contains_checked_arithmetic(value, target),
-        ResolvedExprKind::Call { args, .. } | ResolvedExprKind::LiteralFormat { args, .. } | ResolvedExprKind::VecFieldRead { args, .. } => args
+        ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. } => args
             .iter()
             .any(|argument| contains_checked_arithmetic(argument, target)),
         ResolvedExprKind::Invoke { callable, args } => {

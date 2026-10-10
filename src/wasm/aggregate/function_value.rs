@@ -473,6 +473,7 @@ pub(super) fn executable_functions(
 
 pub(super) fn value_type(value: &super::Value) -> &ResolvedType {
     match value {
+        super::Value::Bottom => &ResolvedType::Never,
         super::Value::Scalar { ty, .. }
         | super::Value::ScalarMemory { ty, .. }
         | super::Value::Aggregate { ty, .. } => ty,
