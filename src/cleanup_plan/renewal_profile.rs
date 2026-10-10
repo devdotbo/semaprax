@@ -17,7 +17,19 @@ pub(crate) fn binding<'a>(
 
 pub(crate) struct RenewalBindings<'a> {
     legacy: BTreeMap<ExpressionId, &'a ResolvedBinding>,
-    helpers: crate::loop_calls::byte_writer::HelperBindings<'a>,
+    helpers: HelperSites<'a>,
+}
+enum HelperSites<'a> {
+    Owned(crate::loop_calls::byte_writer::HelperBindings<'a>),
+    Borrowed(&'a crate::loop_calls::byte_writer::HelperBindings<'a>),
+}
+impl<'a> HelperSites<'a> {
+    fn get(&self, at: &ExpressionId) -> Option<&'a ResolvedBinding> {
+        match self {
+            Self::Owned(sites) => sites.get(at),
+            Self::Borrowed(sites) => sites.get(at),
+        }
+    }
 }
 impl<'a> RenewalBindings<'a> {
     pub(crate) fn get(&self, at: &ExpressionId) -> Option<&'a ResolvedBinding> {
@@ -30,9 +42,17 @@ impl<'a> RenewalBindings<'a> {
 /// Derive the per-function renewal lookup once for cleanup skeleton replay.
 /// Legacy `extend` order remains unchanged. Borrowed helper membership wins
 /// first, matching `binding`, without allocating new opaque tree nodes.
+#[cfg(test)]
 pub(crate) fn bindings<'a>(
     program: &'a ResolvedProgram,
     function: &'a ResolvedFunction,
+) -> RenewalBindings<'a> {
+    bindings_with_index(program, function, None)
+}
+pub(crate) fn bindings_with_index<'a>(
+    program: &'a ResolvedProgram,
+    function: &'a ResolvedFunction,
+    index: Option<&'a crate::loop_calls::byte_writer::ModuleIndex<'a>>,
 ) -> RenewalBindings<'a> {
     let mut found = crate::hir::iterator_loop::renewal_bindings(program, function);
     found.extend(crate::hir::vec_loop_renewal::bindings_in(program, function));
@@ -40,7 +60,11 @@ pub(crate) fn bindings<'a>(
     found.extend(crate::string_ops::replacement::bindings(function));
     RenewalBindings {
         legacy: found,
-        helpers: crate::loop_calls::byte_writer::bindings(program, function),
+        helpers: match index.and_then(|index| index.function_sites(function)) {
+            Some(sites) => HelperSites::Borrowed(sites),
+            None if index.is_some() => HelperSites::Owned(Default::default()),
+            None => HelperSites::Owned(crate::loop_calls::byte_writer::bindings(program, function)),
+        },
     }
 }
 

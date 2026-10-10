@@ -7,7 +7,9 @@ use crate::hir::{
 };
 mod bindings;
 pub(crate) use bindings::HelperBindings;
+mod module_index;
 mod resolved;
+pub(crate) use module_index::ModuleIndex;
 mod source;
 pub(crate) use resolved::{
     bindings, checked_bindings, nonallocating as resolved_nonallocating,
@@ -135,9 +137,8 @@ pub(crate) fn assignment(
 ) -> bool {
     let ResolvedExprKind::Call {
         callee,
-        type_arguments,
         instance: None,
-        args,
+        ..
     } = &value.kind
     else {
         return false;
@@ -145,10 +146,34 @@ pub(crate) fn assignment(
     let Some(target) = program.resolve_call_target(callee, None) else {
         return false;
     };
+    assignment_with_target(
+        program,
+        binding,
+        value,
+        target,
+        resolved_target(program, target),
+    )
+}
+fn assignment_with_target(
+    _program: &ResolvedProgram,
+    binding: &ResolvedBinding,
+    value: &ResolvedExpr,
+    target: &ResolvedFunction,
+    proved: bool,
+) -> bool {
+    let ResolvedExprKind::Call {
+        type_arguments,
+        args,
+        instance: None,
+        ..
+    } = &value.kind
+    else {
+        return false;
+    };
     binding.ty == ResolvedType::Bytes && binding.ownership == OwnershipMode::Own
         && value.ty == ResolvedType::Bytes && value.ownership == OwnershipMode::Own
         && type_arguments.is_empty() && args.len() == target.params.len()
-        && resolved_target(program, target)
+        && proved
         && target.params.iter().zip(args).all(|(p, arg)| {
             p.ty == arg.ty && match p.ownership {
                 OwnershipMode::Own => arg.ownership == OwnershipMode::Own

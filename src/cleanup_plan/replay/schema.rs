@@ -8,9 +8,19 @@ pub(crate) fn selected_schema(
     program: &ResolvedProgram,
     function: &ResolvedFunction,
 ) -> Result<&'static str, Diagnostic> {
+    selected_schema_with_index(program, function, None)
+}
+pub(super) fn selected_schema_with_index(
+    program: &ResolvedProgram,
+    function: &ResolvedFunction,
+    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
+) -> Result<&'static str, Diagnostic> {
     // Independently replayed lexical exits select the lexical certificate
     // profile regardless of any attached inventory or plan.
-    if !crate::loop_calls::byte_writer::bindings(program, function).is_empty() {
+    if helpers.map_or_else(
+        || !crate::loop_calls::byte_writer::bindings(program, function).is_empty(),
+        |index| index.has_sites(function),
+    ) {
         return Ok(crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V19);
     }
     if lexical_cert::requires_lexical(function) {

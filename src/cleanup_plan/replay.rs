@@ -353,10 +353,11 @@ fn validate_structure(
 ) -> Result<(), Diagnostic> {
     let mut budget = ReplayBudget::new();
     reserve_program_skeleton_work(program, std::iter::once(function), &mut budget)?;
-    validate_structure_with_budget(program, function, &mut budget)
+    validate_structure_with_budget(program, function, &mut budget, None)
 }
 
 pub(super) fn validate_program(program: &ResolvedProgram) -> Result<(), Diagnostic> {
+    let helpers = crate::loop_calls::byte_writer::ModuleIndex::new(program)?;
     let mut budget = ReplayBudget::new();
     reserve_program_skeleton_work(
         program,
@@ -369,10 +370,10 @@ pub(super) fn validate_program(program: &ResolvedProgram) -> Result<(), Diagnost
         &mut budget,
     )?;
     for function in &program.functions {
-        validate_structure_with_budget(program, function, &mut budget)?;
+        validate_structure_with_budget(program, function, &mut budget, Some(&helpers))?;
     }
     for instance in &program.function_instances {
-        validate_structure_with_budget(program, &instance.function, &mut budget)?;
+        validate_structure_with_budget(program, &instance.function, &mut budget, Some(&helpers))?;
     }
     Ok(())
 }
@@ -410,9 +411,10 @@ fn validate_structure_with_budget(
     program: &ResolvedProgram,
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
+    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
 ) -> Result<(), Diagnostic> {
     let plan = &function.cleanup_plan;
-    let expected_schema = schema::selected_schema(program, function)?;
+    let expected_schema = schema::selected_schema_with_index(program, function, helpers)?;
     if plan.schema != expected_schema {
         return Err(replay_error(
             function,
@@ -424,7 +426,7 @@ fn validate_structure_with_budget(
     }
 
     if lexical_cert::requires_lexical(function) {
-        return lexical_replay::validate(program, function, budget);
+        return lexical_replay::validate_with_index(program, function, budget, helpers);
     }
     if plan.lexical_control.is_some() {
         return Err(replay_error(
@@ -456,7 +458,7 @@ fn validate_structure_with_budget(
         && !cleanup_inert_large_decisions_can_be_summarized(function)
     {
         validate_path_states(program, function, &storage, &leaves, budget, None)?;
-        validate_typed_control_skeleton(program, function, budget)?;
+        validate_typed_control_skeleton_with_index(program, function, budget, helpers)?;
     }
     Ok(())
 }
@@ -3095,17 +3097,18 @@ fn region_chain_to_root(
     Ok(chain)
 }
 
-fn validate_typed_control_skeleton(
+fn validate_typed_control_skeleton_with_index(
     program: &ResolvedProgram,
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
+    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
 ) -> Result<(), Diagnostic> {
     if function.cleanup_plan.lexical_control.is_none()
-        && factored::validate(program, function, budget)?
+        && factored::validate_with_index(program, function, budget, helpers)?
     {
         return Ok(());
     }
-    let mut expected = hir_skeleton_paths(program, function, budget)?;
+    let mut expected = hir_skeleton_paths_with_index(program, function, budget, helpers)?;
     let mut actual = plan_skeleton_paths(function, budget)?;
     expected.sort();
     actual.sort();
@@ -3126,12 +3129,21 @@ fn validate_typed_control_skeleton(
     Ok(())
 }
 
+#[cfg(test)]
 fn hir_skeleton_paths(
     program: &ResolvedProgram,
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
 ) -> Result<Vec<SkeletonPath>, Diagnostic> {
-    let mut work = SkeletonWork::new(program, function, budget);
+    hir_skeleton_paths_with_index(program, function, budget, None)
+}
+fn hir_skeleton_paths_with_index(
+    program: &ResolvedProgram,
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
+) -> Result<Vec<SkeletonPath>, Diagnostic> {
+    let mut work = SkeletonWork::with_index(program, function, budget, helpers);
     let mut paths = work.singleton_path(empty_expr_path(), "HIR root path")?;
     for contract in &function.requires {
         paths = sequence_expression(program, function, paths, contract, &mut work)?;

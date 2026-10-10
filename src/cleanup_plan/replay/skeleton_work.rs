@@ -17,15 +17,26 @@ pub(super) struct SkeletonWork<'a, 'b> {
 }
 
 impl<'a, 'b> SkeletonWork<'a, 'b> {
+    #[cfg(test)]
     pub(super) fn new(
         program: &'a crate::hir::ResolvedProgram,
         function: &'a ResolvedFunction,
         budget: &'b mut ReplayBudget,
     ) -> Self {
+        Self::with_index(program, function, budget, None)
+    }
+    pub(super) fn with_index(
+        program: &'a crate::hir::ResolvedProgram,
+        function: &'a ResolvedFunction,
+        budget: &'b mut ReplayBudget,
+        index: Option<&'a crate::loop_calls::byte_writer::ModuleIndex<'a>>,
+    ) -> Self {
         Self {
             function,
             budget,
-            renewal_bindings: crate::cleanup_plan::renewal_bindings(program, function),
+            renewal_bindings: crate::cleanup_plan::renewal_profile::bindings_with_index(
+                program, function, index,
+            ),
             string_owner_moves: crate::literal_format::moving_string_operands(function),
             string_condition_reads: crate::string_ops::conditions::function_reads(function),
             owner: if super::lexical_cert::requires_lexical(function) {

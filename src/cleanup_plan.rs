@@ -27,7 +27,6 @@ mod renewal_history;
 mod renewal_profile;
 mod replay;
 pub(crate) use renewal_profile::binding as renewal_binding;
-pub(crate) use renewal_profile::bindings as renewal_bindings;
 mod validate;
 
 pub(crate) use build::build_plan;

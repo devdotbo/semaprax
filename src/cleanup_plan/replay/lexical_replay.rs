@@ -10,10 +10,11 @@
 use super::*;
 use crate::ast::LexicalExitKind;
 
-pub(super) fn validate(
+pub(super) fn validate_with_index(
     program: &ResolvedProgram,
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
+    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
 ) -> Result<(), Diagnostic> {
     let plan = &function.cleanup_plan;
     let owner = crate::hir::lexical_exit::owner(program, function)?;
@@ -48,5 +49,5 @@ pub(super) fn validate(
     validate_reachable_acyclic_cfg(function)?;
     // Lexical functions always replay every path: no summary shortcut applies.
     validate_path_states(program, function, &storage, &leaves, budget, Some(&auth))?;
-    validate_typed_control_skeleton(program, function, budget)
+    validate_typed_control_skeleton_with_index(program, function, budget, helpers)
 }

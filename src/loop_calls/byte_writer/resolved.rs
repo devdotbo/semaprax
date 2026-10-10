@@ -20,6 +20,46 @@ pub(crate) fn nonallocating(program: &ResolvedProgram, target: &ResolvedFunction
             .saturating_add(program.function_instances.len()),
     )
 }
+pub(super) fn checked_target(
+    program: &ResolvedProgram,
+    target: &ResolvedFunction,
+) -> Result<bool, crate::diagnostic::Diagnostic> {
+    if target.return_type != ResolvedType::Bytes
+        || target
+            .params
+            .iter()
+            .filter(|p| p.ownership == OwnershipMode::Own && p.ty == ResolvedType::Bytes)
+            .count()
+            != 1
+        || !target
+            .params
+            .iter()
+            .all(|p| resolved_param(program, p.ownership, &p.ty))
+    {
+        return Ok(false);
+    }
+    if !crate::bounded_output::reserve_active_required(std::mem::size_of::<
+        [Option<Frame<'_>>; DEPTH],
+    >()) {
+        return Err(census_error());
+    }
+    Ok(prove(
+        target,
+        &|id, instance| program.resolve_call_target(id, instance),
+        &|_, mode, ty| resolved_param(program, mode, ty),
+        &|_, ty| {
+            crate::hir::is_scalar_resolved_type(ty)
+                || crate::hir::copy_record_collection::admitted(&program.declarations, ty)
+                || super::super::resolved_match_scrutinee_admitted(&program.declarations, ty)
+        },
+        program
+            .functions
+            .len()
+            .saturating_add(program.function_instances.len()),
+        false,
+    )
+    .is_some())
+}
 pub(crate) fn nonallocating_with<'a>(
     target: &'a ResolvedFunction,
     lookup: impl Fn(
@@ -30,7 +70,15 @@ pub(crate) fn nonallocating_with<'a>(
     result_admit: impl Fn(&ResolvedFunction, &ResolvedType) -> bool,
     lookup_work: usize,
 ) -> bool {
-    prove(target, &lookup, &param_admit, &result_admit, lookup_work).is_some()
+    prove(
+        target,
+        &lookup,
+        &param_admit,
+        &result_admit,
+        lookup_work,
+        true,
+    )
+    .is_some()
 }
 fn prove<'a>(
     target: &'a ResolvedFunction,
@@ -41,10 +89,13 @@ fn prove<'a>(
     param_admit: &impl Fn(&ResolvedFunction, OwnershipMode, &ResolvedType) -> bool,
     result_admit: &impl Fn(&ResolvedFunction, &ResolvedType) -> bool,
     lookup_work: usize,
+    reserve: bool,
 ) -> Option<()> {
-    if !crate::bounded_output::reserve_active_required(std::mem::size_of::<
-        [Option<Frame<'_>>; DEPTH],
-    >()) {
+    if reserve
+        && !crate::bounded_output::reserve_active_required(std::mem::size_of::<
+            [Option<Frame<'_>>; DEPTH],
+        >())
+    {
         return None;
     }
     let mut frames = [None; DEPTH];
@@ -187,31 +238,56 @@ pub(crate) fn checked_bindings<'a>(
     program: &'a ResolvedProgram,
     function: &'a ResolvedFunction,
 ) -> Result<HelperBindings<'a>, crate::diagnostic::Diagnostic> {
-    // Match the ordinary cleanup status traversal's 512-depth allowance,
-    // including its two framing slots. Transitive closure proof stays DEPTH.
-    const CENSUS_DEPTH: usize = 514;
-    let error = || {
-        crate::diagnostic::Diagnostic::io(
-            "SPX-H006",
-            "byte helper renewal census exceeds admitted scratch, work or depth",
-        )
-    };
-    let mut found = HelperBindings::default();
-    // No new census applies to modules without a potentially relevant signature.
-    if !program.functions.iter().any(|f| {
+    if !potential(program) {
+        return Ok(HelperBindings::default());
+    }
+    let mut cursor = CensusCursor::new(function)?;
+    checked_bindings_with(function, &mut cursor, |binding, value| {
+        Ok(assignment(program, binding, value))
+    })
+}
+const CENSUS_DEPTH: usize = 514;
+pub(super) fn census_error() -> crate::diagnostic::Diagnostic {
+    crate::diagnostic::Diagnostic::io(
+        "SPX-H006",
+        "byte helper renewal census exceeds admitted scratch, work or depth",
+    )
+}
+pub(super) fn potential(program: &ResolvedProgram) -> bool {
+    program.functions.iter().any(|f| {
         f.return_type == ResolvedType::Bytes
             && f.params
                 .iter()
                 .any(|p| p.ownership == OwnershipMode::Own && p.ty == ResolvedType::Bytes)
-    }) {
-        return Ok(found);
+    })
+}
+pub(super) struct CensusCursor<'a> {
+    frames: [(&'a ResolvedExpr, usize, usize); CENSUS_DEPTH],
+}
+impl<'a> CensusCursor<'a> {
+    pub(super) fn new(
+        function: &'a ResolvedFunction,
+    ) -> Result<Self, crate::diagnostic::Diagnostic> {
+        if !crate::bounded_output::reserve_active_required(std::mem::size_of::<Self>()) {
+            return Err(census_error());
+        }
+        Ok(Self {
+            frames: [(&function.body, 0, 0); CENSUS_DEPTH],
+        })
     }
-    if !crate::bounded_output::reserve_active_required(std::mem::size_of::<
-        [(&ResolvedExpr, usize, usize); CENSUS_DEPTH],
-    >()) {
-        return Err(error());
-    }
-    let mut frames = [(&function.body, 0usize, 0usize); CENSUS_DEPTH];
+}
+pub(super) fn checked_bindings_with<'a>(
+    function: &'a ResolvedFunction,
+    cursor: &mut CensusCursor<'a>,
+    mut admitted: impl FnMut(
+        &ResolvedBinding,
+        &ResolvedExpr,
+    ) -> Result<bool, crate::diagnostic::Diagnostic>,
+) -> Result<HelperBindings<'a>, crate::diagnostic::Diagnostic> {
+    let error = census_error;
+    let mut found = HelperBindings::default();
+    let frames = &mut cursor.frames;
+    frames[0] = (&function.body, 0, 0);
     let mut depth = 1usize;
     let mut work = WORK;
     while depth != 0 {
@@ -228,7 +304,7 @@ pub(crate) fn checked_bindings<'a>(
                         ..
                     } = statement
                     {
-                        if assignment(program, binding, value) {
+                        if admitted(binding, value)? {
                             // Binary search, insertion shift and replacement copy have
                             // this bounded linear upper in the current site count.
                             work = work

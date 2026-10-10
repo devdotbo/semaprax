@@ -47,6 +47,10 @@ impl<'a> HelperBindings<'a> {
     pub(crate) fn backing_capacity(&self) -> usize {
         self.entries.capacity()
     }
+    #[cfg(test)]
+    pub(crate) fn owned_capacity_bytes(&self) -> usize {
+        self.entries.capacity() * std::mem::size_of::<Entry<'_>>()
+    }
     pub(crate) fn len(&self) -> usize {
         self.entries.len()
     }
@@ -55,6 +59,13 @@ impl<'a> HelperBindings<'a> {
     }
     pub(crate) fn contains_key(&self, at: &ExpressionId) -> bool {
         self.get(at).is_some()
+    }
+    pub(crate) fn get_exact(&self, at: &ExpressionId) -> Option<&'a ResolvedBinding> {
+        let index = self
+            .entries
+            .binary_search_by(|entry| entry.0.cmp(at))
+            .ok()?;
+        std::ptr::eq(self.entries[index].0, at).then_some(self.entries[index].1)
     }
     pub(crate) fn get(&self, at: &ExpressionId) -> Option<&'a ResolvedBinding> {
         self.entries

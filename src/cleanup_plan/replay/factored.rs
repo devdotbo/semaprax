@@ -55,10 +55,19 @@ pub(super) fn selected(
 /// Run the factored comparison when it is selected. `Ok(true)` means the
 /// skeleton is authenticated; `Ok(false)` leaves the enumerating comparison
 /// in charge.
+#[cfg(test)]
 pub(super) fn validate(
     program: &ResolvedProgram,
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
+) -> Result<bool, Diagnostic> {
+    validate_with_index(program, function, budget, None)
+}
+pub(super) fn validate_with_index(
+    program: &ResolvedProgram,
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
 ) -> Result<bool, Diagnostic> {
     let cfg_paths = branch_sensitive_cfg_bounds(function)?.terminal_paths;
     let semantic_paths = hir_terminal_path_bound(function)?;
@@ -68,7 +77,7 @@ pub(super) fn validate(
         return Ok(false);
     }
     let saved = (budget.remaining, budget.skeleton_remaining);
-    match compare(program, function, budget) {
+    match compare_with_index(program, function, budget, helpers) {
         Ok(Some(true)) => Ok(true),
         Ok(Some(false)) => Err(skeleton_mismatch(function)),
         verdict => {
@@ -94,16 +103,25 @@ fn skeleton_mismatch(function: &ResolvedFunction) -> Diagnostic {
 }
 
 /// `Some(equal)`, or `None` when a path multiplicity overflows.
+#[cfg(test)]
 pub(super) fn compare(
     program: &ResolvedProgram,
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
 ) -> Result<Option<bool>, Diagnostic> {
+    compare_with_index(program, function, budget, None)
+}
+fn compare_with_index(
+    program: &ResolvedProgram,
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
+) -> Result<Option<bool>, Diagnostic> {
     // Lend the remaining program-wide budget to the merged skeleton walk.
     let skeleton_reserve = budget.skeleton_remaining;
     budget.skeleton_remaining = std::mem::take(&mut budget.remaining);
     budget.merge_paths = true;
-    let hir_paths = hir_skeleton_paths(program, function, budget);
+    let hir_paths = hir_skeleton_paths_with_index(program, function, budget, helpers);
     budget.merge_paths = false;
     budget.remaining = std::mem::replace(&mut budget.skeleton_remaining, skeleton_reserve);
     let hir_paths = hir_paths?;

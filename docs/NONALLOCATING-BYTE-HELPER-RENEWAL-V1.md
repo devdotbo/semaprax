@@ -70,12 +70,34 @@ census reserves 514 cursor slots, matching the ordinary cleanup traversal's
 512-depth allowance and framing slots. The separate transitive closure proof
 retains its stricter 256 combined function/expression frames.
 
-The remaining OPT #737 compiler-efficiency follow-up is a single independently
-proved, budgeted module closure/site index reused by all per-function consumers.
-It must retain actual identity and lookup backing charges, fail closed on stale
-source or typed facts, preserve old ordinary allocating-helper admission, and
-avoid treating attached cleanup plans as authority. This index is proposed,
-not implemented or measured by this batch.
+OPT #738 adds a phase-owned typed module index for HIR validation and the
+cleanup replay schema and typed skeleton consumers. Each phase independently
+constructs its index from the immutable resolved program. One 514-slot body
+cursor is reused across functions, and each directly selected helper target's
+complete transitive proof is performed once per index. Subtrees shared by
+different selected targets are still replayed within each complete proof, so
+the original combined 256-frame and closure-work bounds remain authoritative.
+Positive and negative
+results remain local to that program borrow; attached plans, graph schema and
+names supply no authority. A changed program requires a new index.
+
+The function/site carriers and temporary proof table reserve their exact Vec
+backing before allocation. Helper identity and binding references borrow the
+program; no identity Strings or opaque map nodes are introduced. All helper
+site backing remains charged, and the validator's retained-capacity probe
+includes the index. A module without a potentially relevant signature creates
+no new backing or cursor reservation. Index lookup construction has a bounded
+1,000,000-unit module budget in addition to the existing per-function census
+and per-target closure limits. Reservation failure is H006, not a legacy
+fallback. An allocating ordinary helper still supplies no renewal authority
+and retains the ordinary profile.
+
+Source verification, incremental resolver cleanup construction, standalone
+schema queries, and the cleanup path-state renewal checks retain their existing
+independent proof paths. They do not yet share this phase index. This batch
+therefore implements bounded reuse in the named consumers, rather than a global
+cache or complete elimination of repeated helper proof work. Construction,
+replay performance and accepted-task efficiency remain unmeasured.
 
 The helper-site census stores sorted borrowed identity/binding references in
 an explicitly grown Vec. Each replacement backing is reserved before its

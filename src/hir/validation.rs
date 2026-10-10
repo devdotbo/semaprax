@@ -33,6 +33,7 @@ mod vec_field;
 mod vec_intrinsic;
 use borrowed_argument::{hir_diagnostic_at_span, hir_error_at_span};
 use call_parameters::CallParameters;
+pub(crate) use owner_renewal::validate_core;
 pub(crate) use type_profiles::resolved_type_contains_owned_bytes;
 use type_profiles::{
     generic_instance_arguments_are_admitted, resolved_type_is_direct_owned_variant,
@@ -40,15 +41,10 @@ use type_profiles::{
     template_has_owned_record_slot, template_ownership, validate_nested_update_base_shape,
 };
 use unsafe_scan::contains_unsafe_boundary;
-/// Validate resolved meaning without consulting attached cleanup metadata.
-/// Independent cleanup-plan replayers use this boundary to avoid circularly
-/// trusting the canonical cleanup-plan builder as their oracle.
-pub(crate) fn validate_core(program: &ResolvedProgram) -> Result<(), Diagnostic> {
-    HirValidator::new(program)?.validate()
-}
 #[derive(Clone)]
 pub(super) struct HirValidator<'a> {
     program: &'a ResolvedProgram,
+    byte_helpers: Option<&'a crate::loop_calls::byte_writer::ModuleIndex<'a>>,
     nominal_facts: nominal_facts::Lookup<'a>,
     functions: BTreeMap<DeclarationId, &'a ResolvedFunction>,
     expression_ids: BTreeSet<ExpressionId>,
@@ -219,6 +215,7 @@ impl<'a> HirValidator<'a> {
         }
         Ok(Self {
             program,
+            byte_helpers: None,
             nominal_facts: nominal_facts::Lookup::default(),
             functions,
             expression_ids: BTreeSet::new(),
@@ -232,7 +229,6 @@ impl<'a> HirValidator<'a> {
             canonical_loan_liveness,
         })
     }
-
     fn validate(mut self) -> Result<(), Diagnostic> {
         let entrypoint = self
             .functions
@@ -243,7 +239,6 @@ impl<'a> HirValidator<'a> {
                 "resolved entry point must have type `fn main() -> i64`",
             ));
         }
-
         let type_ids = self
             .program
             .types
@@ -1679,7 +1674,7 @@ impl<'a> HirValidator<'a> {
         super::lexical_exit::validate_function(self.program, function, execution)?;
         super::declared_collection::validate_function(&self.program.declarations, function)?;
         crate::hir::iterator_loop::validate_function(function)?;
-        owner_renewal::validate_function(self.program, function)?;
+        owner_renewal::validate_function(self.program, self.byte_helpers, function)?;
         super::yield_aggregate::check_bytes_request_site_count(
             &self.program.declarations,
             function,
@@ -2885,6 +2880,9 @@ impl<'a> HirValidator<'a> {
                     + frames.iter().map(frame_owned_capacity).sum::<usize>()
                     + frame_owned_capacity(&frame)
                     + self.nominal_facts.owned_capacity()
+                    + self
+                        .byte_helpers
+                        .map_or(0, |index| index.owned_capacity_bytes())
                     + self.expression_ids.len()
                         * (std::mem::size_of::<ExpressionId>()
                             + std::mem::size_of::<BTreeSet<ExpressionId>>())
@@ -4691,6 +4689,7 @@ impl<'a> HirValidator<'a> {
                                 && !crate::string_ops::replacement::admitted(binding, assigned)
                                 && !owner_renewal::assignment_is_admitted(
                                     self.program,
+                                    self.byte_helpers,
                                     binding,
                                     assigned,
                                 )
@@ -7081,6 +7080,7 @@ impl<'a> HirValidator<'a> {
                                         )
                                         && !owner_renewal::assignment_is_admitted(
                                             self.program,
+                                            self.byte_helpers,
                                             binding,
                                             assigned,
                                         )
