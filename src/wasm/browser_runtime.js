@@ -621,6 +621,7 @@ export const imports = {
       if (code === 34) throw new SpxSemanticFailure("semaprax.string-format.v1", 1, "SEMAPRAX checked literal format failure");
       if (code === 11) throw new SpxSemanticFailure("semaprax.byte-range.v1", 1, "SEMAPRAX byte range failure");
       if (code === 12) throw new SpxSemanticFailure("semaprax.byte-range.v1", 2, "SEMAPRAX byte range failure");
+      if (code === 35) throw new SpxSemanticFailure("semaprax.byte-buffer.v1", 2, "SEMAPRAX owned byte buffer capacity exceeded");
       if (code === 16) throw new SpxSemanticFailure("semaprax.byte-buffer.v1", 1, "SEMAPRAX owned byte buffer failure");
       if (code >= 26 && code <= 29) throw new SpxSemanticFailure("semaprax.map.v1", code - 25, "SEMAPRAX checked map failure");
       if (code >= 30 && code <= 33) throw new SpxSemanticFailure("semaprax.map.v2", code - 29, "SEMAPRAX checked collection failure");

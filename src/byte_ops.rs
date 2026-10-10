@@ -27,8 +27,9 @@ pub(crate) const RANGE_END_OUT_OF_BOUNDS_CODE: u32 = 2;
 /// separate from `semaprax.byte-range.v1` because it belongs to the owned
 /// buffer family rather than to borrowed sub-view construction.
 pub(crate) const SET_STATUS_DOMAIN: &str = "semaprax.byte-buffer.v1";
-/// The single admitted `semaprax.byte-buffer.v1` code.
+/// Element-bound failure; bounded allocation independently uses code 2.
 pub(crate) const SET_INDEX_OUT_OF_BOUNDS_CODE: u32 = 1;
+pub(crate) const CAPACITY_EXCEEDED_CODE: u32 = 2;
 pub(crate) const COPY_NAME: &str = "bytes_copy";
 pub(crate) const COPY_ID: &str = "core.bytes.copy";
 pub(crate) const BYTES_AS_SLICE_NAME: &str = "bytes_as_slice";
@@ -41,6 +42,8 @@ pub(crate) const STRING_AS_STR_NAME: &str = "string_as_str";
 pub(crate) const STRING_AS_STR_ID: &str = "core.string.as-str";
 pub(crate) const ZEROED_NAME: &str = "bytes_zeroed";
 pub(crate) const ZEROED_ID: &str = "core.bytes.zeroed";
+pub(crate) const ZEROED_BOUNDED_NAME: &str = "bytes_zeroed_bounded";
+pub(crate) const ZEROED_BOUNDED_ID: &str = "core.bytes.zeroed-bounded";
 pub(crate) const SET_NAME: &str = "bytes_set";
 pub(crate) const SET_ID: &str = "core.bytes.set";
 pub(crate) const SET5_NAME: &str = "bytes_set5";
@@ -86,6 +89,8 @@ pub(crate) enum ByteOp {
     /// Owned Bounded Byte Buffer v1: allocate one zeroed owned buffer whose
     /// capacity is a literal at this allocation site.
     Zeroed,
+    /// Exact runtime length, independently bounded by its literal second operand.
+    ZeroedBounded,
     /// Owned Bounded Byte Buffer v1: consume the buffer, store one byte at a
     /// literal index below the chain capacity, and return the same owner.
     Set,
@@ -101,7 +106,7 @@ pub(crate) enum ByteOp {
 }
 
 impl ByteOp {
-    pub(crate) const ALL: [Self; 13] = [
+    pub(crate) const ALL: [Self; 14] = [
         Self::Len,
         Self::Get,
         Self::Range,
@@ -111,6 +116,7 @@ impl ByteOp {
         Self::StrAsBytes,
         Self::StringAsStr,
         Self::Zeroed,
+        Self::ZeroedBounded,
         Self::Set,
         Self::Set5,
         Self::Set1Or5,
@@ -128,6 +134,7 @@ impl ByteOp {
             Self::StrAsBytes => STR_AS_BYTES_NAME,
             Self::StringAsStr => STRING_AS_STR_NAME,
             Self::Zeroed => ZEROED_NAME,
+            Self::ZeroedBounded => ZEROED_BOUNDED_NAME,
             Self::Set => SET_NAME,
             Self::Set5 => SET5_NAME,
             Self::Set1Or5 => SET1_OR5_NAME,
@@ -145,6 +152,7 @@ impl ByteOp {
             Self::StrAsBytes => STR_AS_BYTES_ID,
             Self::StringAsStr => STRING_AS_STR_ID,
             Self::Zeroed => ZEROED_ID,
+            Self::ZeroedBounded => ZEROED_BOUNDED_ID,
             Self::Set => SET_ID,
             Self::Set5 => SET5_ID,
             Self::Set1Or5 => SET1_OR5_ID,
@@ -154,7 +162,7 @@ impl ByteOp {
     pub(crate) const fn arity(self) -> usize {
         match self {
             Self::Len => 1,
-            Self::Get => 2,
+            Self::Get | Self::ZeroedBounded => 2,
             Self::Range | Self::Set => 3,
             Self::Set5 => 7,
             Self::Set1Or5 | Self::Set1Or6Or48 => 5,
@@ -181,6 +189,7 @@ impl ByteOp {
             Self::StrAsBytes => &[ResolvedType::Str],
             Self::StringAsStr => &[ResolvedType::String],
             Self::Zeroed => &[ResolvedType::Usize],
+            Self::ZeroedBounded => &[ResolvedType::Usize, ResolvedType::Usize],
             Self::Set => &[ResolvedType::Bytes, ResolvedType::Usize, ResolvedType::U8],
             Self::Set5 => &[
                 ResolvedType::Bytes,
@@ -217,6 +226,7 @@ impl ByteOp {
             Self::Range => ResolvedType::SliceU8,
             Self::Copy
             | Self::Zeroed
+            | Self::ZeroedBounded
             | Self::Set
             | Self::Set5
             | Self::Set1Or5
@@ -235,6 +245,7 @@ impl ByteOp {
             Self::Range => Type::SliceU8,
             Self::Copy
             | Self::Zeroed
+            | Self::ZeroedBounded
             | Self::Set
             | Self::Set5
             | Self::Set1Or5
@@ -255,7 +266,7 @@ impl ByteOp {
             (Self::ArrayAsSlice, 0) => matches!(ty, ResolvedType::ArrayU8(_)),
             (Self::StrAsBytes, 0) => *ty == ResolvedType::Str,
             (Self::StringAsStr, 0) => *ty == ResolvedType::String,
-            (Self::Zeroed, 0) => *ty == ResolvedType::Usize,
+            (Self::Zeroed, 0) | (Self::ZeroedBounded, 0 | 1) => *ty == ResolvedType::Usize,
             (Self::Set, 0) => *ty == ResolvedType::Bytes,
             (Self::Set, 1) => *ty == ResolvedType::Usize,
             (Self::Set, 2) => *ty == ResolvedType::U8,
@@ -285,7 +296,7 @@ impl ByteOp {
             (Self::ArrayAsSlice, 0) => matches!(ty, Type::ArrayU8(_)),
             (Self::StrAsBytes, 0) => *ty == Type::Str,
             (Self::StringAsStr, 0) => *ty == Type::String,
-            (Self::Zeroed, 0) => *ty == Type::Usize,
+            (Self::Zeroed, 0) | (Self::ZeroedBounded, 0 | 1) => *ty == Type::Usize,
             (Self::Set, 0) => *ty == Type::Bytes,
             (Self::Set, 1) => *ty == Type::Usize,
             (Self::Set, 2) => *ty == Type::U8,
@@ -315,7 +326,12 @@ impl ByteOp {
     pub(crate) const fn is_owned_buffer_chain(self) -> bool {
         matches!(
             self,
-            Self::Zeroed | Self::Set | Self::Set5 | Self::Set1Or5 | Self::Set1Or6Or48
+            Self::Zeroed
+                | Self::ZeroedBounded
+                | Self::Set
+                | Self::Set5
+                | Self::Set1Or5
+                | Self::Set1Or6Or48
         )
     }
 
@@ -330,6 +346,7 @@ impl ByteOp {
             self,
             Self::StringAsStr
                 | Self::StrAsBytes
+                | Self::ArrayAsSlice
                 | Self::Len
                 | Self::Get
                 | Self::Range
@@ -340,16 +357,16 @@ impl ByteOp {
         )
     }
 
-    /// `true` for the one byte operation that can select a runtime failure.
+    /// `true` for byte operations that can select a normalized runtime failure.
     ///
     /// `bytes_set` admits a computed element index, so the store is checked
     /// against the transferred buffer's length before the owner is committed.
-    /// Every other operation in this family is total after HIR admission, and
+    /// Bounded allocation checks its request before reserving any payload;
     /// physical allocation failure stays invariant fail-stop.
     pub(crate) const fn is_fallible(self) -> bool {
         matches!(
             self,
-            Self::Set | Self::Set5 | Self::Set1Or5 | Self::Set1Or6Or48
+            Self::ZeroedBounded | Self::Set | Self::Set5 | Self::Set1Or5 | Self::Set1Or6Or48
         )
     }
 
@@ -366,6 +383,7 @@ impl ByteOp {
             | Self::StrAsBytes
             | Self::StringAsStr => &["value"],
             Self::Zeroed => &["count"],
+            Self::ZeroedBounded => &["requested", "bound"],
             Self::Set => &["buffer", "index", "value"],
             Self::Set5 => &[
                 "buffer", "index", "first", "second", "third", "fourth", "fifth",
@@ -382,7 +400,8 @@ impl ByteOp {
         match (self, index) {
             (Self::Set | Self::Set5 | Self::Set1Or5 | Self::Set1Or6Or48, 0) => OwnershipMode::Own,
             (Self::Set1Or5 | Self::Set1Or6Or48, 3) => OwnershipMode::Borrow,
-            (Self::Zeroed, _) | (Self::Set | Self::Set5 | Self::Set1Or5 | Self::Set1Or6Or48, _) => {
+            (Self::Zeroed | Self::ZeroedBounded, _)
+            | (Self::Set | Self::Set5 | Self::Set1Or5 | Self::Set1Or6Or48, _) => {
                 OwnershipMode::Value
             }
             (_, 0) => OwnershipMode::Borrow,
@@ -402,6 +421,7 @@ pub(crate) fn by_name(name: &str) -> Option<ByteOp> {
         STR_AS_BYTES_NAME => Some(ByteOp::StrAsBytes),
         STRING_AS_STR_NAME => Some(ByteOp::StringAsStr),
         ZEROED_NAME => Some(ByteOp::Zeroed),
+        ZEROED_BOUNDED_NAME => Some(ByteOp::ZeroedBounded),
         SET_NAME => Some(ByteOp::Set),
         SET5_NAME => Some(ByteOp::Set5),
         SET1_OR5_NAME => Some(ByteOp::Set1Or5),
@@ -420,6 +440,7 @@ pub(crate) fn by_id(id: &str) -> Option<ByteOp> {
         STR_AS_BYTES_ID => Some(ByteOp::StrAsBytes),
         STRING_AS_STR_ID => Some(ByteOp::StringAsStr),
         ZEROED_ID => Some(ByteOp::Zeroed),
+        ZEROED_BOUNDED_ID => Some(ByteOp::ZeroedBounded),
         SET_ID => Some(ByteOp::Set),
         SET5_ID => Some(ByteOp::Set5),
         SET1_OR5_ID => Some(ByteOp::Set1Or5),
@@ -471,6 +492,15 @@ pub(crate) fn owned_buffer_chain_capacity(expression: &Expr) -> Option<u64> {
                     return None;
                 };
                 return (*capacity <= MAX_BUFFER_CAPACITY_BYTES).then_some(*capacity);
+            }
+            ByteOp::ZeroedBounded => {
+                let (ExprKind::Usize(requested), ExprKind::Usize(bound)) =
+                    (&args[0].kind, &args[1].kind)
+                else {
+                    return None;
+                };
+                return (*requested <= *bound && *bound <= MAX_BUFFER_CAPACITY_BYTES)
+                    .then_some(*requested);
             }
             ByteOp::Set | ByteOp::Set5 | ByteOp::Set1Or5 | ByteOp::Set1Or6Or48 => {
                 links += usize::try_from(if op == ByteOp::Set1Or6Or48 {

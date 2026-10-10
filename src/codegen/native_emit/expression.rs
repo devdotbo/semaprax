@@ -1,7 +1,7 @@
 use super::{
-    backend_error, c_case_symbol, c_field_symbol, c_i32, c_i64, c_pattern_literal, c_string,
-    c_value_type, is_aggregate_type, is_direct_plan_owned, record_declaration_id,
-    variant_declaration_id, CBinding, CEmitter, COutput, CValue,
+    CBinding, CEmitter, COutput, CValue, backend_error, c_case_symbol, c_field_symbol, c_i32,
+    c_i64, c_pattern_literal, c_string, c_value_type, is_aggregate_type, is_direct_plan_owned,
+    record_declaration_id, variant_declaration_id,
 };
 use crate::aggregate_layout::AggregateLayout;
 use crate::ast::{BinaryOp, UnaryOp};
@@ -241,6 +241,9 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                     &arguments[1].code,
                     &temporary,
                 )?;
+            }
+            crate::byte_ops::ByteOp::ZeroedBounded => {
+                self.emit_owned_buffer_bounded_allocation(&arguments, &temporary)?;
             }
             crate::byte_ops::ByteOp::Copy | crate::byte_ops::ByteOp::Zeroed => {
                 let (allocator, context) = self.output_profile.byte_allocator(op);
@@ -542,6 +545,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                     | crate::byte_ops::ByteOp::Range
                     | crate::byte_ops::ByteOp::Copy
                     | crate::byte_ops::ByteOp::Zeroed
+                    | crate::byte_ops::ByteOp::ZeroedBounded
                     | crate::byte_ops::ByteOp::Set
                     | crate::byte_ops::ByteOp::Set5
                     | crate::byte_ops::ByteOp::Set1Or5
@@ -902,7 +906,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                     _ => {
                         return Err(backend_error(
                             "owned call argument lacks validated ownership classification",
-                        ))
+                        ));
                     }
                 }
             } else if is_aggregate_type(self.program, expected)? {

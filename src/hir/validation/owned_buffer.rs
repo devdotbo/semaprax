@@ -17,6 +17,25 @@ pub(super) fn require_admitted_chain(
     reopen: bool,
 ) -> Result<(), Diagnostic> {
     match op {
+        crate::byte_ops::ByteOp::ZeroedBounded => match args {
+            [
+                requested,
+                ResolvedExpr {
+                    kind: ResolvedExprKind::Usize(bound),
+                    ty: ResolvedType::Usize,
+                    ownership: OwnershipMode::Value,
+                    ..
+                },
+            ] if requested.ty == ResolvedType::Usize
+                && requested.ownership == OwnershipMode::Value
+                && *bound <= crate::byte_ops::MAX_BUFFER_CAPACITY_BYTES =>
+            {
+                Ok(())
+            }
+            _ => Err(hir_error(
+                "bounded byte allocation requires a usize request and exact literal bound within 131072 bytes",
+            )),
+        },
         crate::byte_ops::ByteOp::Zeroed => {
             if chain_capacity(args, false)?.is_none() {
                 return Err(hir_error(
@@ -85,8 +104,8 @@ pub(super) fn require_admitted_chain(
                         .map_or(true, |end| end >= capacity) =>
                 {
                     Err(hir_error(format!(
-                    "owned byte buffer element index {index} is outside the capacity {capacity}"
-                )))
+                        "owned byte buffer element index {index} is outside the capacity {capacity}"
+                    )))
                 }
                 ResolvedExprKind::Usize(_) => Ok(()),
                 _ if capacity == 0 => Err(hir_error(
@@ -149,6 +168,27 @@ fn chain_capacity(args: &[ResolvedExpr], reopen: bool) -> Result<Option<u64>, Di
             })?;
         if !type_arguments.is_empty() || inner.len() != op.arity() {
             return Err(hir_error("owned byte buffer chain link has a forged shape"));
+        }
+        if op == crate::byte_ops::ByteOp::ZeroedBounded {
+            return match inner.as_slice() {
+                [
+                    ResolvedExpr {
+                        kind: ResolvedExprKind::Usize(requested),
+                        ..
+                    },
+                    ResolvedExpr {
+                        kind: ResolvedExprKind::Usize(bound),
+                        ..
+                    },
+                ] if *requested <= *bound
+                    && *bound <= crate::byte_ops::MAX_BUFFER_CAPACITY_BYTES =>
+                {
+                    Ok(Some(*requested))
+                }
+                _ => Err(hir_error(
+                    "dynamic bounded allocation must be bound before same-owner writes",
+                )),
+            };
         }
         if matches!(
             op,
@@ -308,3 +348,7 @@ pub(super) fn require_admitted_while_operation(
     }
     Ok(())
 }
+
+#[cfg(test)]
+#[path = "owned_buffer/bounded_tests.rs"]
+mod bounded_tests;

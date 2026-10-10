@@ -716,6 +716,19 @@ pub(super) fn byte_capacity_expression(
                                 conservative_payload_bytes:
                                     crate::byte_ops::MAX_OWNED_BYTE_VALUE_BYTES,
                             })
+                        } else if callee.as_str() == crate::byte_ops::ZEROED_BOUNDED_ID {
+                            let conservative_payload_bytes = args
+                                .get(1)
+                                .and_then(|arg| match &arg.kind {
+                                    ResolvedExprKind::Usize(bound) => Some(*bound),
+                                    _ => None,
+                                })
+                                .unwrap_or(crate::byte_ops::MAX_BUFFER_CAPACITY_BYTES)
+                                .min(crate::byte_ops::MAX_BUFFER_CAPACITY_BYTES);
+                            Some(CapacityFlow::BytesCopy {
+                                site: expression.id.as_str().to_owned(),
+                                conservative_payload_bytes,
+                            })
                         } else if callee.as_str() == crate::byte_ops::ZEROED_ID {
                             let conservative_payload_bytes = args
                                 .first()

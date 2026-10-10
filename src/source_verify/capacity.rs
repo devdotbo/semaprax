@@ -1003,6 +1003,12 @@ fn source_capacity_expr(
                                 conservative_payload_bytes:
                                     crate::byte_ops::MAX_OWNED_BYTE_VALUE_BYTES,
                             })
+                        } else if name == crate::byte_ops::ZEROED_BOUNDED_NAME {
+                            Some(CapacityFlow::BytesCopy {
+                                site: path.clone(),
+                                conservative_payload_bytes:
+                                    super::owned_buffer::bounded_allocation_payload_bytes(args),
+                            })
                         } else if name == crate::byte_ops::ZEROED_NAME {
                             Some(CapacityFlow::BytesCopy {
                                 site: path.clone(),

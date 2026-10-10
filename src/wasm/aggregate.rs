@@ -21,12 +21,12 @@ pub(in crate::wasm) use function_value::{
 use function_value::{executable_functions, hex_execution_identity, program_uses_byte_range};
 mod binary_ops;
 mod borrowed_call;
+mod contract_scope;
 pub(super) mod conversions;
 mod filesystem_checked;
 mod filesystem_ops;
 mod filesystem_v2;
 mod lexical_control;
-mod contract_scope;
 mod literal_format;
 mod str_usage;
 use str_usage::program_uses_str_ops;
@@ -52,7 +52,7 @@ mod provider_lowering;
 mod string_replacement;
 pub(super) mod text_toolkit;
 pub(super) use provider_lowering::{
-    lower_public_generic_provider_closure, PUBLIC_GENERIC_PROVIDER_SOURCE_INDEX_MIN,
+    PUBLIC_GENERIC_PROVIDER_SOURCE_INDEX_MIN, lower_public_generic_provider_closure,
 };
 pub(crate) fn owned_arena_capacity(
     program: &ResolvedProgram,
@@ -64,8 +64,8 @@ pub(crate) fn owned_arena_capacity(
 mod numeric_conversions;
 
 use super::{
-    function_import, intern_type, section, write_bytes, write_i64, write_name, write_u32,
-    Signature, F32, F64, I32, I64, SCALAR_IMPORT_COUNT,
+    F32, F64, I32, I64, SCALAR_IMPORT_COUNT, Signature, function_import, intern_type, section,
+    write_bytes, write_i64, write_name, write_u32,
 };
 use crate::aggregate_layout::{AggregateLayout, AggregateLayoutCache, AggregateTarget};
 use crate::ast::{BinaryOp, UnaryOp};
@@ -171,6 +171,7 @@ pub(super) const STATUS_VEC_PUSH_FULL: i32 = 13;
 pub(super) const STATUS_VEC_GET_OUT_OF_BOUNDS: i32 = 14;
 pub(super) const STATUS_VEC_ALLOCATION_FAILURE: i32 = 15;
 pub(super) const STATUS_BYTE_BUFFER_INDEX_OUT_OF_BOUNDS: i32 = 16;
+pub(super) const STATUS_BYTE_BUFFER_CAPACITY_EXCEEDED: i32 = 35;
 pub(super) const STATUS_BOX_ALLOCATION_FAILURE: i32 = 17;
 pub(super) const STATUS_STRING_FORMAT_FAILURE: i32 = 34;
 pub(super) const STATUS_LIST_LENGTH_LIMIT: i32 = 19;
@@ -3339,11 +3340,17 @@ impl Emitter<'_> {
         );
         if !owned_match {
             if !owned_try {
-                if self.cleanup_plan.lexical_control.is_some() && matches!(expr.kind, ResolvedExprKind::Block { .. }) {
+                if self.cleanup_plan.lexical_control.is_some()
+                    && matches!(expr.kind, ResolvedExprKind::Block { .. })
+                {
                     // The block-result handoff preceded its canonical scope end.
                     // Remaining at-anchor continuations occur after that boundary.
-                    self.apply_post_transitions_storage(&expr.id, &value,
-                        &crate::cleanup_plan::StorageId::Temporary(expr.id.clone()), false)?;
+                    self.apply_post_transitions_storage(
+                        &expr.id,
+                        &value,
+                        &crate::cleanup_plan::StorageId::Temporary(expr.id.clone()),
+                        false,
+                    )?;
                 } else {
                     self.apply_post_transitions(&expr.id, &value)?;
                 }
@@ -6576,7 +6583,9 @@ impl Emitter<'_> {
             require_type(value_type(&value), expected, "byte operation argument")?;
             values.push(value);
         }
-        if op == crate::byte_ops::ByteOp::Set {
+        if op == crate::byte_ops::ByteOp::ZeroedBounded {
+            self.emit_owned_buffer_capacity_failure(&expr.id, &values[0], &values[1])?;
+        } else if op == crate::byte_ops::ByteOp::Set {
             // The element bound is checked in generated code before the owner
             // transfer commits, so a failed store runs the canonical failure
             // cleanup with the buffer still in its call-argument slot. The
@@ -6639,7 +6648,10 @@ impl Emitter<'_> {
                 _ => Err(error("standalone byte view has an unsupported root")),
             };
         }
-        if op != crate::byte_ops::ByteOp::Zeroed {
+        if !matches!(
+            op,
+            crate::byte_ops::ByteOp::Zeroed | crate::byte_ops::ByteOp::ZeroedBounded
+        ) {
             self.validate_byte_slice(&values[0]);
         }
         require_type(&expr.ty, &op.return_type(), "byte operation result")?;
@@ -6690,7 +6702,7 @@ impl Emitter<'_> {
             crate::byte_ops::ByteOp::Range => Err(error(
                 "byte range must lower from authenticated ByteRange HIR",
             )),
-            crate::byte_ops::ByteOp::Zeroed => {
+            crate::byte_ops::ByteOp::Zeroed | crate::byte_ops::ByteOp::ZeroedBounded => {
                 let local = self.plan.expr_scalar(expr)?;
                 self.get_scalar(&values[0]);
                 self.output.push(0x10);

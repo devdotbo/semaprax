@@ -535,6 +535,13 @@ fn main() -> i64
   The detached owner preserves NUL/BOM/noncharacters without normalization or
   replacement. Malformed input fails with `semaprax.convert.v1` code 1.
   No new public ABI/capability; closed public adapters keep their own admission.
+- Exact dynamic allocation: `bytes_zeroed_bounded(requested, 131072usize)` returns
+  `Bytes` of exactly `requested` bytes. Its second operand must be a literal
+  bound at most 131072 (`SPX-T271`); capacity analysis charges that full bound.
+  A request exceeding it fails before allocation with
+  `semaprax.byte-buffer.v1` code 2 (`capacity_exceeded`). Bind the returned owner
+  before same-owner filling. Allocation stays outside bounded loops; physical
+  allocation exhaustion retains the existing fail-stop contract.
 - Buffer chains: `bytes_zeroed` requires a literal `usize` capacity;
   `bytes_set` takes the prior link, `usize` index, and byte. A bound chain
   freezes for borrowed reads.
@@ -634,6 +641,7 @@ fn main() -> i64
 | `byte_range` | `(v: borrow Slice<u8>, start: usize, end: usize) -> Slice<u8>` |
 | `bytes_copy` | `(v: borrow Slice<u8>) -> Bytes` |
 | `bytes_zeroed` | `(count: usize) -> Bytes` literal capacity |
+| `bytes_zeroed_bounded` | `(requested: usize, bound: usize) -> Bytes` exact dynamic length, literal bound |
 | `bytes_set` | `(b: own Bytes, i: usize, v: u8) -> Bytes` write-once chain |
 | `bytes_as_slice` | `(b: borrow Bytes) -> Slice<u8>` |
 | `array_as_slice` | `(a: borrow [u8; N]) -> Slice<u8>` |

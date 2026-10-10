@@ -1,7 +1,9 @@
 use super::*;
 
 pub(super) fn refusal() -> Diagnostic {
-    backend_error("authenticated-native-allocating.v1 requires a closed checked Bytes body, bounded direct callees and literal boolean contracts")
+    backend_error(
+        "authenticated-native-allocating.v1 requires a closed checked Bytes body, bounded direct callees and literal boolean contracts",
+    )
 }
 
 pub(super) fn check(
@@ -175,6 +177,10 @@ fn expression(
             }
             // Independent local invariant, even though HIR validation also
             // enforces the literal-capacity language rule.
+            // This sealed public profile retains its literal-only allocation rule.
+            if callee.as_str() == crate::byte_ops::ZEROED_BOUNDED_ID {
+                return false;
+            }
             if callee.as_str() == crate::byte_ops::ZEROED_ID {
                 return matches!(args.as_slice(), [ResolvedExpr { kind: ResolvedExprKind::Usize(count), .. }]
                     if *count <= crate::byte_ops::MAX_OWNED_BYTE_VALUE_BYTES);

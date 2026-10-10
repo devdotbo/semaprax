@@ -181,7 +181,22 @@ static __attribute__((unused)) spx_bytes_v1 spx_bytes_zeroed(uint64_t count) {
 
 "#;
 
-const BYTE_DATA_OPERATIONS_C: &str = r#"/* The element index is any admitted `usize` expression, so the bound is
+const BYTE_DATA_OPERATIONS_C: &str = r#"static __attribute__((unused)) spx_status_token spx_bytes_bounded_check_v1(
+    struct spx_context *spx_ctx, uint64_t requested, uint64_t bound
+) {
+    if (bound > SPX_OWNED_BYTES_MAX_BYTES) {
+        spx_runtime_invariant_failure("forged bounded byte allocation extent");
+    }
+    if (requested <= bound) return SPX_STATUS_SUCCESS;
+    spx_status_token token = SPX_STATUS_SUCCESS;
+    if (!spx_status_record_adapter(spx_ctx, "semaprax.byte-buffer.v1", UINT32_C(2),
+        SPX_STATUS_CLASS_ADAPTER, SPX_RETRYABILITY_FALSE, &token)) {
+        spx_runtime_invariant_failure("bounded byte allocation status could not be recorded");
+    }
+    return token;
+}
+
+/* The element index is any admitted `usize` expression, so the bound is
    checked before the owner transfer commits. A failed store selects the single
    `semaprax.byte-buffer.v1` failure and writes nothing; the buffer is still
    held by its canonical cleanup-plan call-argument slot, which frees it on the
@@ -452,7 +467,10 @@ mod tests {
         ] {
             let program = crate::check(source, "byte-runtime-additive.spx").unwrap();
             let emitted = crate::codegen::emit_c(&program).unwrap();
-            assert!(emitted.contains(invoked), "missing selected helper for {invoked}");
+            assert!(
+                emitted.contains(invoked),
+                "missing selected helper for {invoked}"
+            );
             assert!(emitted.contains("spx_bytes_set5_check_v1"));
             assert!(emitted.contains("spx_bytes_set1_or5_check_v1"));
             assert!(emitted.contains("spx_bytes_set1_or6_or48_check_v1"));

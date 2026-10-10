@@ -46,6 +46,12 @@ pub(super) fn check_call(
         return diagnostics;
     }
     match op {
+        ByteOp::ZeroedBounded => {
+            if !matches!(&args[1].kind,ExprKind::Usize(bound) if *bound<=byte_ops::MAX_BUFFER_CAPACITY_BYTES)
+            {
+                diagnostics.push(error(program,"SPX-T271","bytes_zeroed_bounded requires a usize literal bound of at most 131072 bytes",args[1].span).with_help("supply a literal bound; the runtime request is checked before allocation"));
+            }
+        }
         ByteOp::Zeroed => {
             if byte_ops::owned_buffer_chain_capacity(expression).is_none() {
                 diagnostics.push(
@@ -153,6 +159,14 @@ pub(super) fn allocation_payload_bytes(args: &[Expr]) -> u64 {
         Some(ExprKind::Usize(capacity)) => {
             (*capacity).min(crate::byte_ops::MAX_BUFFER_CAPACITY_BYTES)
         }
+        _ => crate::byte_ops::MAX_BUFFER_CAPACITY_BYTES,
+    }
+}
+
+/// Static accounting charges the bound, never the smaller runtime request.
+pub(super) fn bounded_allocation_payload_bytes(args: &[Expr]) -> u64 {
+    match args.get(1).map(|argument| &argument.kind) {
+        Some(ExprKind::Usize(bound)) => (*bound).min(crate::byte_ops::MAX_BUFFER_CAPACITY_BYTES),
         _ => crate::byte_ops::MAX_BUFFER_CAPACITY_BYTES,
     }
 }

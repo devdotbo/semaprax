@@ -7,7 +7,7 @@
 use crate::conformance::{NormalizedStatus, Retryability, StatusClass};
 use crate::hir::DeclarationId;
 
-use super::{invariant, CleanupExecutionError};
+use super::{CleanupExecutionError, invariant};
 
 pub(super) fn validate_propagated_status(
     callee: &DeclarationId,
@@ -21,6 +21,18 @@ pub(super) fn validate_propagated_status(
         {
             return Err(invariant(
                 "scoped vector read supplied a status outside its exact normalized failure domain",
+            ));
+        }
+        return Ok(());
+    }
+    if callee.as_str() == crate::byte_ops::ZEROED_BOUNDED_ID {
+        if status.domain_id() != crate::byte_ops::SET_STATUS_DOMAIN
+            || status.code() != crate::byte_ops::CAPACITY_EXCEEDED_CODE
+            || status.class() != StatusClass::Adapter
+            || status.retryability() != Retryability::Known(false)
+        {
+            return Err(invariant(
+                "bounded byte allocation supplied a forged normalized status",
             ));
         }
         return Ok(());
