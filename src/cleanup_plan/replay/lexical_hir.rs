@@ -36,6 +36,8 @@ pub(super) struct LexicalFacts<'a> {
     /// Condition identity of every reachable loop (ordinary or lexical) in
     /// lowering (pre-)order. Each owns one per-iteration execution boundary.
     pub(super) boundaries: Vec<&'a ExpressionId>,
+    pub(super) requires_boundaries: Vec<&'a ExpressionId>,
+    pub(super) ensures_boundaries: Vec<&'a ExpressionId>,
 }
 
 /// Maximum nesting this scan admits; the HIR lexical validator bounds the same
@@ -49,9 +51,46 @@ pub(super) fn collect<'a>(function: &'a ResolvedFunction) -> Result<LexicalFacts
         body_completes: true,
         tries: 0,
         boundaries: Vec::new(),
+        requires_boundaries: Vec::new(),
+        ensures_boundaries: Vec::new(),
     };
+    for clause in &function.requires {
+        facts
+            .requires_boundaries
+            .extend(contract_boundaries(function, clause)?);
+    }
+    for clause in &function.ensures {
+        facts
+            .ensures_boundaries
+            .extend(contract_boundaries(function, clause)?);
+    }
     facts.body_completes = scan(function, &function.body, &mut facts, 0)?;
     Ok(facts)
+}
+
+// Contracts retain ordinary loop semantics, but never admit lexical exits or
+// generated lexical latches across the contract evaluation boundary.
+fn contract_boundaries<'a>(
+    function: &'a ResolvedFunction,
+    clause: &'a ResolvedExpr,
+) -> Result<Vec<&'a ExpressionId>, Diagnostic> {
+    let mut facts = LexicalFacts {
+        exits: Vec::new(),
+        loops: Vec::new(),
+        body_completes: true,
+        tries: 0,
+        boundaries: Vec::new(),
+        requires_boundaries: Vec::new(),
+        ensures_boundaries: Vec::new(),
+    };
+    let completes = scan(function, clause, &mut facts, 0)?;
+    if !completes || !facts.exits.is_empty() || !facts.loops.is_empty() || facts.tries != 0 {
+        return Err(replay_error(
+            function,
+            "contract crosses the statement lexical-control boundary",
+        ));
+    }
+    Ok(facts.boundaries)
 }
 
 /// Evaluate `expression` in authored order. Returns whether it can complete

@@ -12,6 +12,9 @@ mod factored;
 #[path = "replay_tests/transition_mutations.rs"]
 mod transition_mutations;
 
+#[path = "replay_tests/lexical_boundary.rs"]
+mod lexical_boundary;
+
 const SOURCE: &str = r#"module test.replay_paths;
 
 @id("token.type")

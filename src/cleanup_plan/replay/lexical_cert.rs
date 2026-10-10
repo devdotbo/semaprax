@@ -26,7 +26,7 @@ pub(super) struct LexicalAuth {
     /// remainder (outside the exit's leaves regions).
     pub(super) item_disposals: BTreeMap<ExitTargetId, BTreeSet<StorageId>>,
     /// Execution-boundary certificate index by its exact block.
-    pub(super) boundaries: BTreeMap<BlockId, usize>,
+    pub(super) boundaries: BTreeMap<BlockId, super::lexical_boundary::BoundaryAuth>,
 }
 
 /// `true` when typed HIR contains a lexical exit. A tree deeper than the HIR
@@ -215,6 +215,13 @@ pub(super) fn authenticate(
                 .saturating_mul(plan.regions.len()),
         )
         .saturating_add(plan.edges.len().saturating_mul(plan.regions.len()))
+        .saturating_add(
+            plan.regions.len().saturating_mul(
+                plan.blocks
+                    .len()
+                    .saturating_add(plan.exits.len().saturating_mul(plan.regions.len())),
+            ),
+        )
         .saturating_add(
             plan.edges
                 .len()
@@ -669,7 +676,7 @@ pub(super) fn authenticate(
     }
 
     validate_normal_ends(function, control, &domains)?;
-    let boundaries = super::lexical_boundary::authenticate(function, facts, &domains)?;
+    let boundaries = super::lexical_boundary::authenticate(function, facts, &domains, budget)?;
     Ok(LexicalAuth {
         loops,
         exact_joins,
@@ -766,9 +773,48 @@ fn validate_normal_ends(
             let exit = &plan.exits[region.normal_scope_end.0 as usize];
             if !matches!(exit.continuation, ExitContinuation::Continue(_))
                 || exit.leaves_regions != [region.id]
-                || domains[exit.from.0 as usize].is_some()
             {
                 return Err(fail("region normal scope end is not its own scope exit"));
+            }
+            if let Some(domain) = domains[exit.from.0 as usize] {
+                // Authored ensures reuse their exact source-region identity in
+                // every Return domain. Original body/Yield regions cannot
+                // borrow a normal endpoint from any generated continuation.
+                let entry = control.resumes[domain].entry;
+                let is_return = |entry| {
+                    control.exits.iter().any(|certificate| {
+                        certificate.kind == LexicalExitKind::Return
+                            && certificate.resume == Some(entry)
+                    })
+                };
+                let typed_ensures_scope = plan.exits.iter().any(|failure| {
+                    let ExitContinuation::ReturnFailure { source } = &failure.continuation else {
+                        return false;
+                    };
+                    source.lane == StatusLane::ContractFalse
+                        && function
+                            .ensures
+                            .iter()
+                            .any(|clause| clause.id == source.expression)
+                        && chain_contains(
+                            function,
+                            exit.from,
+                            plan.blocks[failure.from.0 as usize].region,
+                        )
+                        .unwrap_or(false)
+                });
+                if !is_return(entry)
+                    || !typed_ensures_scope
+                    || plan.blocks.iter().any(|block| {
+                        block.region == region.id
+                            && domains[block.id.0 as usize]
+                                .is_some_and(|other| !is_return(control.resumes[other].entry))
+                    })
+                {
+                    return Err(fail(
+                        "region normal scope end crosses its typed ensures Return domains",
+                    ));
+                }
             }
             continue;
         }

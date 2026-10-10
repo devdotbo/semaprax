@@ -10,56 +10,139 @@
 use super::lexical_cert::LexicalAuth;
 use super::lexical_hir::LexicalFacts;
 use super::*;
-use crate::cleanup_plan::ExecutionBoundaryKind;
+use crate::cleanup_plan::{ExecutionBoundaryKind, ExitTargetId};
 
-/// Structural authentication: kind, site, block, region and region chain.
+/// An exact boundary and the independently authenticated return that owns its
+/// postcondition domain; no return state is admitted in any other phase.
+pub(super) struct BoundaryAuth {
+    index: usize,
+    returned: Option<ExitTargetId>,
+}
+
+/// Structural authentication: authored phase/order, exact proof domain,
+/// complementary condition edges, iteration block and region chain.
 pub(super) fn authenticate(
     function: &ResolvedFunction,
     facts: &LexicalFacts<'_>,
     domains: &[Option<usize>],
-) -> Result<BTreeMap<BlockId, usize>, Diagnostic> {
+    budget: &mut ReplayBudget,
+) -> Result<BTreeMap<BlockId, BoundaryAuth>, Diagnostic> {
     let plan = &function.cleanup_plan;
     let fail = |message: &str| replay_error(function, message.to_owned());
     let control = plan
         .lexical_control
         .as_deref()
         .ok_or_else(|| fail("execution boundaries have no lexical-control certificate"))?;
-    if control.execution_boundaries.len() != facts.boundaries.len() + 1 {
+    let returns = facts
+        .exits
+        .iter()
+        .filter(|fact| fact.kind == crate::ast::LexicalExitKind::Return)
+        .count();
+    let ordinary = facts.body_completes || facts.tries > 0;
+    let expected = 1usize
+        .saturating_add(facts.requires_boundaries.len())
+        .saturating_add(facts.boundaries.len())
+        .saturating_add(
+            facts
+                .ensures_boundaries
+                .len()
+                .saturating_mul(returns + usize::from(ordinary)),
+        );
+    budget.charge(
+        function,
+        expected.saturating_mul(
+            plan.edges
+                .len()
+                .saturating_add(plan.exits.len())
+                .saturating_add(plan.regions.len()),
+        ),
+        "lexical execution boundary phase replay",
+    )?;
+    if control.execution_boundaries.len() != expected {
         return Err(fail(
-            "execution boundaries do not cover exactly the entry and every reachable loop",
+            "execution boundaries do not cover exactly the entry and every typed phase loop",
         ));
     }
     let mut by_block = BTreeMap::new();
-    for (index, item) in control.execution_boundaries.iter().enumerate() {
-        let (kind, site, block) = if index == 0 {
-            (
-                ExecutionBoundaryKind::FunctionEntry,
-                &function.body.id,
-                plan.entry,
-            )
+    let mut index = 0usize;
+    let mut admit = |site: &ExpressionId,
+                     domain: Option<usize>,
+                     returned: Option<ExitTargetId>,
+                     entry: bool|
+     -> Result<(), Diagnostic> {
+        let (kind, block) = if entry {
+            (ExecutionBoundaryKind::FunctionEntry, plan.entry)
         } else {
-            let site = facts.boundaries[index - 1];
-            let (_, yes, _) = super::lexical_cert::loop_branch(function, site)?;
-            (
-                ExecutionBoundaryKind::LoopIteration,
-                site,
-                plan.edges[yes.0 as usize].to,
-            )
+            let mut yes = None;
+            let mut no = None;
+            for edge in &plan.edges {
+                if domains[edge.from.0 as usize] != domain {
+                    continue;
+                }
+                if let EdgeCondition::BooleanResult(expression, value) = &edge.condition {
+                    if expression == site {
+                        let target = if *value { &mut yes } else { &mut no };
+                        if target.replace(edge).is_some() {
+                            return Err(fail("phase loop condition repeats a Boolean edge"));
+                        }
+                    }
+                }
+            }
+            let (Some(yes), Some(no)) = (yes, no) else {
+                return Err(fail("phase loop lacks complementary Boolean edges"));
+            };
+            if yes.from != no.from
+                || domains[yes.to.0 as usize] != domain
+                || domains[no.to.0 as usize] != domain
+            {
+                return Err(fail("phase loop condition crosses its exact proof domain"));
+            }
+            (ExecutionBoundaryKind::LoopIteration, yes.to)
         };
-        if item.kind != kind || &item.site != site || item.block != block {
-            return Err(fail(
-                "execution boundary kind, site or block differs from typed HIR",
-            ));
-        }
+        let item = &control.execution_boundaries[index];
         let region = plan.blocks[block.0 as usize].region;
-        if item.region != region
+        if item.kind != kind
+            || &item.site != site
+            || item.block != block
+            || item.region != region
             || item.leaves_regions != region_chain_to_root(function, region)?
-            || domains[block.0 as usize].is_some()
-            || by_block.insert(block, index).is_some()
+            || domains[block.0 as usize] != domain
+            || by_block
+                .insert(block, BoundaryAuth { index, returned })
+                .is_some()
         {
             return Err(fail(
-                "execution boundary region, contour or proof domain is not canonical",
+                "execution boundary differs from its typed phase, block or canonical contour",
             ));
+        }
+        index += 1;
+        Ok(())
+    };
+    admit(&function.body.id, None, None, true)?;
+    for site in &facts.requires_boundaries {
+        admit(site, None, None, false)?;
+    }
+    for site in &facts.boundaries {
+        admit(site, None, None, false)?;
+    }
+    if ordinary {
+        for site in &facts.ensures_boundaries {
+            admit(site, None, None, false)?;
+        }
+    }
+    // Builder-independent authored Return order. Each return certificate was
+    // already checked against this exact typed exit and operand by lexical_cert.
+    for (fact, certificate) in facts.exits.iter().zip(&control.exits) {
+        if fact.kind != crate::ast::LexicalExitKind::Return {
+            continue;
+        }
+        let entry = certificate
+            .resume
+            .ok_or_else(|| fail("return postconditions have no exact domain"))?;
+        let domain = domains[entry.0 as usize]
+            .ok_or_else(|| fail("return postconditions belong to the ordinary domain"))?;
+        for site in &facts.ensures_boundaries {
+            admit(site, Some(domain), Some(certificate.exit), false)?;
         }
     }
     Ok(by_block)
@@ -78,23 +161,49 @@ pub(super) fn check(
     storage_regions: &BTreeMap<StorageId, CleanupRegionId>,
     leaves: &Leaves,
 ) -> Result<(), Diagnostic> {
-    let Some(index) = auth.boundaries.get(&block) else {
+    let Some(boundary) = auth.boundaries.get(&block) else {
         return Ok(());
     };
     let item = function
         .cleanup_plan
         .lexical_control
         .as_deref()
-        .and_then(|control| control.execution_boundaries.get(*index))
+        .and_then(|control| control.execution_boundaries.get(boundary.index))
         .ok_or_else(|| replay_error(function, "execution boundary has no certificate"))?;
-    if state.pending_failure.is_some()
-        || state.selected_failure.is_some()
-        || state.published
-        || state.returned.is_some()
-    {
+    if state.pending_failure.is_some() || state.selected_failure.is_some() || state.published {
         return Err(replay_error(
             function,
-            "execution boundary is reached with failure, return or publication state",
+            "execution boundary is reached with failure or publication state",
+        ));
+    }
+    let return_matches = match (&state.returned, boundary.returned) {
+        (None, None) => true,
+        (Some(returned), Some(id)) => match (
+            returned,
+            &function.cleanup_plan.exits[id.0 as usize].continuation,
+        ) {
+            (
+                ReturnedSource::Scalar(actual),
+                ExitContinuation::FunctionReturn {
+                    source: CleanupResultSource::Scalar { expression },
+                    ..
+                },
+            ) => actual == expression,
+            (
+                ReturnedSource::Owned(actual),
+                ExitContinuation::FunctionReturn {
+                    source: CleanupResultSource::Owned { storage },
+                    ..
+                },
+            ) => actual == storage,
+            _ => false,
+        },
+        _ => false,
+    };
+    if !return_matches {
+        return Err(replay_error(
+            function,
+            "execution boundary carries another phase's returned result",
         ));
     }
     validate_finalizer_actions(function, &item.finalize_in_order, storage, leaves)?;
