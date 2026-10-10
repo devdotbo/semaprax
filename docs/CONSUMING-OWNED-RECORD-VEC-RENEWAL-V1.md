@@ -18,6 +18,24 @@ fallible owned row, such as `vec_clone_at<Row>(later, 0usize)`. This does not
 permit otherwise closed constructors or allocation in a source loop: every
 argument retains its existing source/HIR/effect/ownership checks.
 
+The first refusal-only resource fact covers `vec_clone_at<Row>(empty, index)` with a `usize` literal index
+as that push's row operand. `empty` must be a direct immutable local initialized
+before the loop by `vec_with_capacity<Row>(capacity)` with an ordinary admitted literal capacity,
+of the same authenticated
+owned-leaf record type. No alias, capture, mutation, replacement or escape is
+accepted; only exact typed `vec_len` and literal-index `vec_clone_at` reads may use
+it. Source and HIR independently inspect the complete current function and the
+actual consuming renewal site. The fact is local and is not serialized as a
+supplied empty-vector certificate. Copied call expressions carry no authority.
+
+The ordinary runtime clone still performs its length/index check and selects
+`semaprax.vec.v1` code 2 before any payload copy; private Core-Wasm token 14
+remains the same. Staging, failure selection, loans, cleanup and publication are
+unchanged. Only unreachable clone payload work is excluded from the capacity
+flow. Unknown/nonempty carriers, aliases, computed indices and allocating
+helpers retain conservative charges and `SPX-T267` in loops. The cumulative
+32-event and 2MiB caps are unchanged; there is no refund.
+
 Independent classification recovers the actual initialized mutable Step slot,
 exact Done/Yield cases and field identities, owned yielded row, remainder and
 one `iter_next` latch from the generated iterator structure. The receiver is an

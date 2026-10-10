@@ -594,8 +594,18 @@ pub(super) mod value_index_counters {
     }
 }
 
-pub(super) fn byte_capacity_expression(
+#[cfg(test)]
+fn byte_capacity_expression(
     facts: &ValueFactIndex<'_>,
+    expression: &ResolvedExpr,
+    slots: &mut Vec<crate::byte_data_capacity::ArrayStorageSlot>,
+    direct_destination: bool,
+) -> Result<crate::byte_data_capacity::CapacityFlow, Diagnostic> {
+    byte_capacity_expression_in(facts, None, expression, slots, direct_destination)
+}
+fn byte_capacity_expression_in(
+    facts: &ValueFactIndex<'_>,
+    function: Option<&ResolvedFunction>,
     expression: &ResolvedExpr,
     slots: &mut Vec<crate::byte_data_capacity::ArrayStorageSlot>,
     direct_destination: bool,
@@ -706,7 +716,13 @@ pub(super) fn byte_capacity_expression(
                         args,
                         ..
                     } => {
-                        let effect = if let Some(flow) =
+                        let effect = if function.is_some_and(|function| {
+                            super::vec_loop_renewal::consuming::empty_clone::refused(
+                                program, function, expression,
+                            )
+                        }) {
+                            Some(CapacityFlow::Empty)
+                        } else if let Some(flow) =
                             super::owned_leaf_collection::clone_capacity_flow(program, expression)
                         {
                             Some(flow)
@@ -1109,10 +1125,19 @@ pub(crate) fn byte_data_capacity_inputs(
             let mut execution = function
                 .requires
                 .iter()
-                .map(|expression| byte_capacity_expression(&facts, expression, &mut slots, false))
+                .map(|expression| {
+                    byte_capacity_expression_in(
+                        &facts,
+                        Some(function),
+                        expression,
+                        &mut slots,
+                        false,
+                    )
+                })
                 .collect::<Result<Vec<_>, _>>()?;
-            execution.push(byte_capacity_expression(
+            execution.push(byte_capacity_expression_in(
                 &facts,
+                Some(function),
                 &function.body,
                 &mut slots,
                 true,
@@ -1122,7 +1147,13 @@ pub(crate) fn byte_data_capacity_inputs(
                     .ensures
                     .iter()
                     .map(|expression| {
-                        byte_capacity_expression(&facts, expression, &mut slots, false)
+                        byte_capacity_expression_in(
+                            &facts,
+                            Some(function),
+                            expression,
+                            &mut slots,
+                            false,
+                        )
                     })
                     .collect::<Result<Vec<_>, _>>()?,
             );

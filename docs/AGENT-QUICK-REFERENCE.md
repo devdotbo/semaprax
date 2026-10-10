@@ -1369,6 +1369,11 @@ record in `while` is `SPX-T267`. See `help language author:owned-data` and the
 [v27](STREAM-DATA-COMMAND-V1.md), [v29](STREAM-DATA-COMMAND-V2.md),
 [v30](STREAM-OWNED-DATA-COMMAND-V1.md) references. The String-plus-scalar
 [owned-leaf-command](../examples/owned-leaf-command-project/README.md) gate is pending.
+An outer owned-record Vec can renew with `out=vec_push<Row>(out,item)` in
+`for own`. The narrow immutable-empty literal-index clone refusal is independently
+rederived before charging unreachable payload copies; it grants no loop
+allocation or resource refund. See
+[Consuming owned-record renewal](CONSUMING-OWNED-RECORD-VEC-RENEWAL-V1.md).
 
 Project v31 `language-command-io.collection-record.v1` adds private typed
 records with admitted Vec shapes; command/entry stay `fn() -> i64`. Prefer

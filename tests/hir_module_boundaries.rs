@@ -41,6 +41,7 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/hir/iterator_loop/renewal.rs"),
         include_str!("../src/hir/vec_loop_renewal.rs"),
         include_str!("../src/hir/vec_loop_renewal/consuming.rs"),
+        include_str!("../src/hir/vec_loop_renewal/consuming/empty_clone.rs"),
         include_str!("../src/hir/vec_loop_renewal/consuming/tests.rs"),
         include_str!("../src/hir/vec_loop_renewal/tests.rs"),
         include_str!("../src/hir/validation/callable_types.rs"),

@@ -233,6 +233,8 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         concat!(
             include_str!("../../../../../src/hir/byte_capacity.rs"),
             "\n",
+            include_str!("../../../../../src/hir/vec_loop_renewal/consuming/empty_clone.rs"),
+            "\n",
             include_str!("../../../../../src/finite_byte_scratch.rs"),
             "\n",
             include_str!("../../../../../src/finite_byte_scratch/source.rs"),
@@ -270,6 +272,7 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         include_str!("../../../../../src/hir/owned_record_collection.rs"),
         include_str!("../../../../../src/hir/vec_loop_renewal.rs"),
         include_str!("../../../../../src/hir/vec_loop_renewal/consuming.rs"),
+        include_str!("../../../../../src/hir/vec_loop_renewal/consuming/empty_clone.rs"),
         include_str!("../../../../../src/hir/vec_loop_renewal/consuming/tests.rs"),
         include_str!("../../../../../src/hir/vec_loop_renewal/tests.rs"),
         include_str!("../../../../../src/hir/generic_mapping.rs"),
@@ -359,6 +362,8 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
             "\n",
             concat!(
                 include_str!("../../../../../src/source_verify/capacity.rs"),
+                "\n",
+                include_str!("../../../../../src/source_verify/capacity/empty_clone.rs"),
                 "\n",
                 include_str!("../../../../../src/finite_byte_scratch.rs"),
                 "\n",

@@ -59,9 +59,10 @@ pub(super) fn lookup(query: &str) -> Result<String, String> {
             "vec_clone_at deep-copies an element; vec_replace, vec_reserve_owned and vec_sort_owned transfer the collection owner. Consuming traversal uses for own and vec_into_iter.\n",
             "Source spells String as lowercase string. Write an owning parameter as text: string (not text: own string, SPX-O002); give each user record and field its own @id. Vec<string> push consumes the String.\n",
             "Use string_from_utf8(bytes: borrow Slice<u8>) -> string (core.string.from_utf8) to copy exact strict UTF-8 into a detached String. NUL, BOM and noncharacters stay; malformed UTF-8 fails semaprax.convert.v1 code 1, never replacement or normalization. This adds no public ABI, carrier layout or capability.\n",
-            "Bytes-bearing allocation/deep copy stays refused in loops, including vec_clone_at<Record> when Record has Bytes and transitive helpers (SPX-T267). Stage payloads and clones outside loops; checked String-bearing loops remain distinct.\n",
+            "Bytes allocation/copy stays refused in loops (SPX-T267), except independently proved empty Vec clone refusal before copying. Unknown/nonempty clones and allocating helpers stay closed; stage clones outside loops. Checked String loops remain distinct.\n",
             "V27 and v29 stay closed to these owned carriers, including unused helpers. No public nominal ABI, ambient grant or Web/Wasm/npm command route is added.\n",
             "For the exact strict byte-to-String shape and refusal domain: help language author:string-from-utf8.\n",
+            "Outer Row Vec renewal: out=vec_push<Row>(out,item) in for own. Contract: docs/CONSUMING-OWNED-RECORD-VEC-RENEWAL-V1.md.\n",
             "Exact source shapes, admission, cleanup and gates: docs/STREAM-OWNED-DATA-COMMAND-V1.md and docs/OWNED-LEAF-COLLECTIONS-V1.md.\n"
         ).to_owned()),
         "author:string-from-utf8" => Ok(concat!(
@@ -723,6 +724,8 @@ mod tests {
         assert!(owned.contains("language-command-io.owned-data.v1"));
         assert!(owned.contains("including unused helpers"));
         assert!(owned.contains("SPX-T267"));
+        assert!(owned.contains("CONSUMING-OWNED-RECORD-VEC-RENEWAL-V1.md"));
+        assert!(owned.contains("Unknown/nonempty clones"));
         assert!(owned.contains("fn() -> i64"));
         assert!(owned.contains("Choose v30 when private helpers need owned-leaf Vec/Iter runtime"));
         assert!(owned.contains("string_from_utf8(bytes: borrow Slice<u8>) -> string"));

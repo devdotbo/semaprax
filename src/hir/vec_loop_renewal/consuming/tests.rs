@@ -1,7 +1,7 @@
 use super::*;
 use crate::cleanup_plan::CleanupTransition;
 
-const SOURCE: &str = r#"module owned_renewal;
+pub(super) const SOURCE: &str = r#"module owned_renewal;
 @id("row") record Row {@id("row.n") n:i64,@id("row.text") text:string,@id("row.bytes") bytes:Bytes,}
 @id("main") fn main()->i64 {
  let mut words=vec_with_capacity<Row>(2usize);

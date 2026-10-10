@@ -4,6 +4,7 @@ use super::{
     ResolvedFunction, ResolvedStatement, ResolvedType,
 };
 use std::collections::BTreeMap;
+pub(crate) mod empty_clone;
 
 #[derive(Clone, Copy)]
 pub(crate) struct Site<'a> {

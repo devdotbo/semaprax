@@ -2,7 +2,7 @@
 use super::*;
 
 mod command_io;
-
+mod empty_clone;
 mod functions;
 pub(super) use functions::{source_array_payload, source_capacity_functions};
 
@@ -993,8 +993,8 @@ fn source_capacity_expr(
                     ExprKind::Call { name, args, .. } => {
                         let target = context.ordinary.get(name.as_str()).copied();
                         let effect = if let Some(flow) =
-                            super::declared_type::owned_leaf_collection::clone_capacity_flow(
-                                context.types,
+                            empty_clone::clone_capacity_flow(
+                                context,
                                 expression,
                                 &path,
                             ) {
