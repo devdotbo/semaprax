@@ -10,7 +10,7 @@ use std::path::Path;
 use sha2::{Digest, Sha256};
 
 use crate::ast::{Expr, ExprKind, ParamMode, Program, Type};
-use crate::diagnostic::{Diagnostic, quote_json};
+use crate::diagnostic::{quote_json, Diagnostic};
 use crate::hir::{
     self, DeclarationId, ExpressionId, IdentityOrigin, ResolvedBinding, ResolvedExpr,
     ResolvedExprKind, ResolvedFunction, ResolvedStatement, ValueId,
@@ -481,6 +481,7 @@ pub(crate) fn precheck_program(program: &Program) -> Result<(), Vec<Diagnostic>>
                 }
                 expressions.extend(args);
             }
+            ExprKind::LexicalExit { value, .. } => expressions.extend(value.as_deref()),
             ExprKind::Unary { value, .. } => expressions.push(value),
             ExprKind::Binary { left, right, .. } => {
                 expressions.push(right);

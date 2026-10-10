@@ -76,6 +76,7 @@ pub(super) fn push_children<'a>(
         | ResolvedExprKind::LiteralFormat { .. }
         | ResolvedExprKind::NativeRustImportCall(_)
         | ResolvedExprKind::HostCommandCall(_)
+        | ResolvedExprKind::LexicalExit { .. }
         | ResolvedExprKind::Unary { .. }
         | ResolvedExprKind::Binary { .. }
         | ResolvedExprKind::Block { .. }

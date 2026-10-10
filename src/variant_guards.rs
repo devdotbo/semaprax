@@ -51,7 +51,8 @@ pub(crate) fn guard_shape(guard: &ResolvedExpr) -> bool {
     while let Some(expression) = pending.pop() {
         if matches!(
             expression.kind,
-            ResolvedExprKind::Closure { .. }
+            ResolvedExprKind::LexicalExit { .. }
+                | ResolvedExprKind::Closure { .. }
                 | ResolvedExprKind::FunctionReference { .. }
                 | ResolvedExprKind::Invoke { .. }
                 | ResolvedExprKind::Yield { .. }

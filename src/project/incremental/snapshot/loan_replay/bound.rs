@@ -304,7 +304,11 @@ fn walk(
                 walk(program, argument, inventory, depth + 1)?;
             }
         }
-        ResolvedExprKind::Unary { value, .. }
+        ResolvedExprKind::LexicalExit { value: None, .. } => {}
+        ResolvedExprKind::LexicalExit {
+            value: Some(value), ..
+        }
+        | ResolvedExprKind::Unary { value, .. }
         | ResolvedExprKind::Try { operand: value, .. }
         | ResolvedExprKind::TryOption { operand: value, .. }
         | ResolvedExprKind::Project { base: value, .. }
@@ -330,7 +334,8 @@ fn walk(
                         }
                     }
                     crate::hir::ResolvedStatement::Unsafe { .. }
-                    | crate::hir::ResolvedStatement::While { .. } => {}
+                    | crate::hir::ResolvedStatement::While { .. }
+                    | crate::hir::ResolvedStatement::LexicalWhile { .. } => {}
                 }
                 for index in 0..statement.child_count() {
                     if let Some(child) = statement.child(index) {
@@ -404,12 +409,14 @@ fn walk(
 fn edge_entries(expression: &ResolvedExpr) -> Result<usize> {
     use crate::ast::BinaryOp;
     let children = match &expression.kind {
+        ResolvedExprKind::LexicalExit { value, .. } => return Ok(usize::from(value.is_some()) + 2),
+
         ResolvedExprKind::Block { statements, .. } => {
             let mut edges = 2usize;
             for statement in statements {
                 add(
                     &mut edges,
-                    if matches!(statement, crate::hir::ResolvedStatement::While { .. }) {
+                    if crate::hir::lexical_exit::is_loop_statement(statement) {
                         3
                     } else {
                         1

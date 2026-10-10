@@ -602,7 +602,10 @@ pub(super) fn validate(programs: &[Program], modules: &[WorkspaceResolvedModule]
                         {
                             return Err(refusal());
                         }
-                        let Some(hir::ResolvedStatement::While { body, .. }) = statements.get(2)
+                        let Some(
+                            hir::ResolvedStatement::While { body, .. }
+                            | hir::ResolvedStatement::LexicalWhile { body, .. },
+                        ) = statements.get(2)
                         else {
                             return Err(refusal());
                         };

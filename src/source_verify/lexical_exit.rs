@@ -21,7 +21,14 @@ fn check_function(program: &Program, function: &Function, diagnostics: &mut Vec<
     for contract in function.requires.iter().chain(&function.ensures) {
         walk(program, contract, false, 0, 0, diagnostics);
     }
-    walk(program, &function.body, true, 0, 0, diagnostics);
+    walk(
+        program,
+        &function.body,
+        function.yields.is_none(),
+        0,
+        0,
+        diagnostics,
+    );
 }
 fn walk(
     program: &Program,

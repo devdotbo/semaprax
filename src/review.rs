@@ -652,6 +652,7 @@ fn precheck_program(program: &Program) -> Result<AstUsage, Vec<Diagnostic>> {
                 }
                 stack.extend(args);
             }
+            ExprKind::LexicalExit { value, .. } => stack.extend(value.as_deref()),
             ExprKind::Unary { value, .. }
             | ExprKind::Try { operand: value }
             | ExprKind::Yield { request: value }

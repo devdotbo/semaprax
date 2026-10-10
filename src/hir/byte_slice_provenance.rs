@@ -355,6 +355,7 @@ pub(super) fn derive_byte_slice_provenance(
                 }
                 ResolvedExprKind::NativeRustImportCall(call) => pending.extend(&call.args),
                 ResolvedExprKind::HostCommandCall(call) => pending.extend(&call.args),
+                ResolvedExprKind::LexicalExit { value, .. } => pending.extend(value.as_deref()),
                 ResolvedExprKind::Unary { value, .. }
                 | ResolvedExprKind::Try { operand: value, .. }
                 | ResolvedExprKind::TryOption { operand: value, .. }

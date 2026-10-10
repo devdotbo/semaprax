@@ -607,6 +607,7 @@ fn expression_reaches_import(root: &ResolvedExpr) -> bool {
             ResolvedExprKind::ByteRange {
                 source, start, end, ..
             } => pending.extend([source.as_ref(), start.as_ref(), end.as_ref()]),
+            ResolvedExprKind::LexicalExit { value, .. } => pending.extend(value.as_deref()),
             ResolvedExprKind::Unary { value, .. }
             | ResolvedExprKind::Try { operand: value, .. }
             | ResolvedExprKind::TryOption { operand: value, .. }

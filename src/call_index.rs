@@ -262,6 +262,9 @@ impl PersistentCallIndex {
                 } => [source.as_ref(), start.as_ref(), end.as_ref()]
                     .get(index)
                     .copied(),
+                ResolvedExprKind::LexicalExit { value, .. } => {
+                    (index == 0).then(|| value.as_deref()).flatten()
+                }
                 ResolvedExprKind::Unary { value, .. }
                 | ResolvedExprKind::Project { base: value, .. }
                 | ResolvedExprKind::Try { operand: value, .. }

@@ -2421,7 +2421,11 @@ fn resolved_function_imports(function: &hir::ResolvedFunction) -> BTreeSet<hir::
                     visit(argument, imports);
                 }
             }
-            hir::ResolvedExprKind::Unary { value, .. }
+            hir::ResolvedExprKind::LexicalExit { value: None, .. } => {}
+            hir::ResolvedExprKind::LexicalExit {
+                value: Some(value), ..
+            }
+            | hir::ResolvedExprKind::Unary { value, .. }
             | hir::ResolvedExprKind::Try { operand: value, .. }
             | hir::ResolvedExprKind::TryOption { operand: value, .. }
             | hir::ResolvedExprKind::Project { base: value, .. }

@@ -94,6 +94,7 @@ const REASON_RECORD_UPDATE: &str = "record_update";
 const REASON_RECORD_PROJECTION: &str = "record_projection";
 const REASON_MATCH_EXPRESSION: &str = "match_expression";
 const REASON_TRY_EXPRESSION: &str = "try_expression";
+const REASON_LEXICAL_EXIT_EXPRESSION: &str = "lexical_exit_expression";
 const REASON_YIELD_EXPRESSION: &str = "yield_expression";
 const REASON_GENERIC_CALL: &str = "generic_call";
 const REASON_UNSUPPORTED_CALLEE: &str = "unsupported_callee";
@@ -452,6 +453,7 @@ impl ScanState<'_> {
             ExprKind::MethodCall { .. } | ExprKind::SuperMethod { .. } => Some(REASON_METHOD_CALL),
             ExprKind::Match { .. } => Some(REASON_MATCH_EXPRESSION),
             ExprKind::Try { .. } => Some(REASON_TRY_EXPRESSION),
+            ExprKind::LexicalExit { .. } => Some(REASON_LEXICAL_EXIT_EXPRESSION),
             ExprKind::Yield { .. } => Some(REASON_YIELD_EXPRESSION),
         }
     }

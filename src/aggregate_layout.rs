@@ -915,6 +915,9 @@ fn collect_expr_record_types(
                 pending.push(Work::Expression(start));
                 pending.push(Work::Expression(source));
             }
+            ResolvedExprKind::LexicalExit { value, .. } => {
+                pending.extend(value.as_deref().map(Work::Expression))
+            }
             ResolvedExprKind::Unary { value, .. }
             | ResolvedExprKind::Project { base: value, .. }
             | ResolvedExprKind::Upcast { source: value }

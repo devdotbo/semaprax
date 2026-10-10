@@ -144,7 +144,11 @@ fn collect_calls(
                 collect_calls(argument, known, calls, call_sites);
             }
         }
-        ResolvedExprKind::Unary { value, .. } => collect_calls(value, known, calls, call_sites),
+        ResolvedExprKind::LexicalExit { value: None, .. } => {}
+        ResolvedExprKind::LexicalExit {
+            value: Some(value), ..
+        }
+        | ResolvedExprKind::Unary { value, .. } => collect_calls(value, known, calls, call_sites),
         ResolvedExprKind::Binary { left, right, .. } => {
             collect_calls(left, known, calls, call_sites);
             collect_calls(right, known, calls, call_sites);

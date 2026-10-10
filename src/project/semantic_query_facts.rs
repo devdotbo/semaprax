@@ -380,6 +380,7 @@ fn push_children<'a>(expression: &'a ResolvedExpr, pending: &mut Vec<&'a Resolve
         | ResolvedExprKind::HostCommandCall(crate::hir::ResolvedHostCommandCall { args, .. }) => {
             pending.extend(args.iter().rev());
         }
+        ResolvedExprKind::LexicalExit { value, .. } => pending.extend(value.as_deref()),
         ResolvedExprKind::Unary { value, .. }
         | ResolvedExprKind::Project { base: value, .. }
         | ResolvedExprKind::Upcast { source: value }
@@ -731,6 +732,7 @@ fn expression_kind(kind: &ResolvedExprKind) -> &'static str {
         ResolvedExprKind::VecFieldRead { .. } => "vec_field_read",
         ResolvedExprKind::NativeRustImportCall(_) => "native_import_call",
         ResolvedExprKind::HostCommandCall(_) => "host_command_call",
+        ResolvedExprKind::LexicalExit { .. } => "lexical_exit",
         ResolvedExprKind::Unary { .. } => "unary",
         ResolvedExprKind::Binary { .. } => "binary",
         ResolvedExprKind::Block { .. } => "block",

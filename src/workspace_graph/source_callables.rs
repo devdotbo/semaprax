@@ -150,7 +150,11 @@ pub(super) fn visit_ast_call_expressions(
             }
         }
         ExprKind::ArrayU8(_) | ExprKind::RepeatArrayU8 { .. } => {}
-        ExprKind::Unary { value, .. } => {
+        ExprKind::LexicalExit { value: None, .. } => {}
+        ExprKind::LexicalExit {
+            value: Some(value), ..
+        }
+        | ExprKind::Unary { value, .. } => {
             visit_ast_call_expressions(
                 value,
                 &crate::bounded_output::budgeted_format(format_args!("{path}.value")),

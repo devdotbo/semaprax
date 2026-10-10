@@ -235,6 +235,7 @@ pub(super) fn expression_uses_name(expression: &Expr, name: &str) -> bool {
                 pending.push(receiver);
                 pending.extend(args);
             }
+            ExprKind::LexicalExit { value, .. } => pending.extend(value.as_deref()),
             ExprKind::Unary { value, .. }
             | ExprKind::Try { operand: value }
             | ExprKind::Yield { request: value }

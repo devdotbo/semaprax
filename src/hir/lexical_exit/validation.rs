@@ -96,7 +96,7 @@ pub(crate) fn validate_function(
         function,
         owner,
         &function.body,
-        true,
+        function.yields.is_none(),
         None,
         None,
         0,

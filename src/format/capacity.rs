@@ -285,6 +285,10 @@ pub(super) fn legacy_expr_temporary_bytes(root: &Expr, root_precedence: u8) -> u
                 total = total.saturating_add(joined).saturating_add(rendered);
                 stack.extend(args.iter().rev().map(|argument| (argument, 0)));
             }
+            ExprKind::LexicalExit { value, .. } => {
+                total = total.saturating_add(rendered);
+                stack.extend(value.iter().map(|value| (value.as_ref(), 0)));
+            }
             ExprKind::Unary { value, .. } => {
                 total = total.saturating_add(rendered);
                 stack.push((value, 7));

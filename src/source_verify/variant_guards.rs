@@ -53,7 +53,10 @@ pub(super) fn guard_shape(guard: &Expr, bindings: &HashMap<String, Binding>) -> 
     while let Some(expression) = pending.pop() {
         if matches!(
             expression.kind,
-            ExprKind::Closure { .. } | ExprKind::Yield { .. } | ExprKind::Try { .. }
+            ExprKind::LexicalExit { .. }
+                | ExprKind::Closure { .. }
+                | ExprKind::Yield { .. }
+                | ExprKind::Try { .. }
         ) {
             return false;
         }
