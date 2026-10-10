@@ -6,7 +6,7 @@
 use semaprax::{codegen, hir};
 
 #[path = "owned_leaf_collections/native.rs"]
-mod native;
+pub(super) mod native;
 #[path = "owned_leaf_collections/sort_keys.rs"]
 mod sort_keys;
 

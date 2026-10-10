@@ -5,13 +5,13 @@ use std::sync::atomic::{AtomicU64, Ordering};
 static NEXT: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Clone, Copy, Debug)]
-pub(super) enum Failure {
+pub(crate) enum Failure {
     None,
     CloneLeaf(u32),
     Realloc,
 }
 
-pub(super) fn run(source: &str, code: u32, expected: i64, failure: Failure) {
+pub(crate) fn run(source: &str, code: u32, expected: i64, failure: Failure) {
     let ast = semaprax::check(source, "owned-leaf-native.spx").expect("source admission");
     let resolved = hir::resolve(&ast).expect("resolved admission");
     hir::validate(&resolved).expect("independent ownership replay");

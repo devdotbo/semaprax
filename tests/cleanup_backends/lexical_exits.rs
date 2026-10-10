@@ -261,17 +261,20 @@ fn owning_break_replay_refuses_a_forged_nonzero_wrapper_tail() {
     assert_eq!(failure.code, "SPX-H006");
 }
 
-#[allow(clippy::duplicate_mod)]
-#[path = "owned_leaf_collections/native.rs"]
-mod owning_break_native;
-
 #[test]
 fn native_owning_loop_normal_then_continue_then_break_settles_every_owner_o0_o2() {
     if Command::new("clang").arg("--version").output().is_err() {
         return;
     }
-    let source = OWNED_BREAK.replace("@id(\"app.main\")", "@id(\"owned.leaf.main\")");
-    owning_break_native::run(&source, 0, 9, owning_break_native::Failure::None);
+    let entry = r#"@id("app.main")"#;
+    assert_eq!(OWNED_BREAK.matches(entry).count(), 1);
+    let source = OWNED_BREAK.replace(entry, r#"@id("owned.leaf.main")"#);
+    super::owned_leaf_collections::native::run(
+        &source,
+        0,
+        9,
+        super::owned_leaf_collections::native::Failure::None,
+    );
 }
 
 #[test]
