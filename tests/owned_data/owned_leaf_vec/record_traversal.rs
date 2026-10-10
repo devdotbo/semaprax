@@ -86,9 +86,17 @@ fn malformed_host_row_refuses_before_scalar_or_view_publication() {
 #[test]
 fn maximum_admitted_owned_rows_preserve_views_order_and_nonallocating_reentry() {
     const SOURCE: &str = include_str!("../../fixtures/record-traversal-maximum.spx");
-    let declaration = semaprax::format::canonical(
-        &semaprax::parse(DECLARATION, "maximum-row-declaration.spx").unwrap(),
-    );
+    // Parsing a complete module requires a function. Keep the audited record
+    // prefix exact by removing only this parser anchor before formatting.
+    let mut prefix = semaprax::parse(
+        &format!("{DECLARATION} @id(\"maximum.prefix.anchor\") fn anchor()->i64{{0}}"),
+        "maximum-row-declaration.spx",
+    )
+    .unwrap();
+    assert_eq!(prefix.functions.len(), 1);
+    assert_eq!(prefix.functions[0].stable_id, "maximum.prefix.anchor");
+    prefix.functions.clear();
+    let declaration = semaprax::format::canonical(&prefix);
     let body = SOURCE
         .strip_prefix(&declaration)
         .expect("exact canonical owning Row declaration, including stable fields and types");
