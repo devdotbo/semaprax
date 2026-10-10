@@ -20,6 +20,12 @@ fn place(e: &E, binding: &ResolvedBinding) -> bool {
     typed(e, &binding.ty, binding.ownership)
         && matches!(&e.kind, K::Place(p) if p.root == binding.id && p.projections.is_empty())
 }
+fn same_binding(left: &ResolvedBinding, right: &ResolvedBinding) -> bool {
+    left.id == right.id
+        && left.name == right.name
+        && left.ty == right.ty
+        && left.ownership == right.ownership
+}
 fn integer(e: &E, value: i64) -> bool {
     typed(e, &T::I64, O::Value) && matches!(e.kind,K::Int(v) if v==value)
 }
@@ -194,8 +200,8 @@ fn inspect(program: &ResolvedProgram) -> Option<Proof<'_>> {
         || item.id == counter.id
         || item.ty != *element
         || item.ownership != O::Own
-        || destination != vector
-        || latch != counter
+        || !same_binding(destination, vector)
+        || !same_binding(latch, counter)
         || !integer(zero, 0)
         || !typed(body, &T::I64, O::Value)
         || !typed(constructor, element, O::Own)
