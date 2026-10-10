@@ -2015,7 +2015,6 @@ fn emit_byte_exports_profile(
 /// Every body a module lowers: the monomorphic closure in canonical order,
 /// then each checked generic instance under its generic execution identity. A
 /// template is never executable.
-#[cfg(test)]
 fn emit_profile(
     program: &ResolvedProgram,
     test_exports: bool,
