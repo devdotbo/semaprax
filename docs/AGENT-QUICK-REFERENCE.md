@@ -1473,7 +1473,10 @@ ordinary String/general variant joins do not gain that authority.
 
 A streamed decoder owns its `Ready` payload. Use nested `match own` bindings
 to move its records, Strings and Vecs; keep borrowed views within the owner's
-lifetime. The checked example
+lifetime. The success arm is `Outcome::Ready { value } => match own value`,
+followed by the exact record pattern `OrderRequest { configuration, lines, urgent }`
+and an owning match on `configuration`. Consume these owners once; do not retain
+a borrowed Ready byte slice beyond its owner. The checked example
 `examples/stream-nested-order-json-project/src/app.command.spx` shows success,
 stderr errors and output status. Do not substitute dummy owners. A normalizer's
 `Ready { bytes, length }` branch passes exactly

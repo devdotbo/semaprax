@@ -105,9 +105,18 @@ fn identity_validation_preserves_frozen_graph_bytes_and_rejects_forged_hir() {
         }
         let error = crate::hir::validate(&forged).unwrap_err();
         assert_eq!(error.code, "SPX-H006");
+        let expected_identity_error = match role {
+            "expression" | "result" => {
+                // The independently checked execution owner now rejects the
+                // forged root/result before the ordinary identity walker.
+                "lexical function owner differs from canonical result/body identities"
+            }
+            "parameter" => "non-canonical identity",
+            _ => unreachable!(),
+        };
         assert!(
-            error.message.contains("non-canonical identity")
-                || error.message.contains("non-canonical result identity")
+            error.message.contains(expected_identity_error),
+            "{role}: {error:?}"
         );
         assert_eq!(
             crate::graph::to_hir_json(&forged, &revision)

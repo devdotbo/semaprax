@@ -1,5 +1,10 @@
 //! Independent source-derived synthetic callee replay at exact source paths.
-use super::*;
+use crate::ast::{Expr, ExprKind, ModuleUseKind, Program, Type};
+use crate::bounded_output::budgeted_format;
+use crate::diagnostic::Diagnostic;
+use crate::hir;
+use crate::workspace_graph::{graph_error, reserve_builder_structure, AuthoredDeclaration};
+use std::collections::BTreeMap;
 pub(super) fn verify(
     program: &Program,
     resolved: &hir::ResolvedProgram,
@@ -201,7 +206,9 @@ fn contains_resolved_sort(expression: &hir::ResolvedExpr) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::verify;
+    use crate::hir;
+    use std::collections::BTreeMap;
     #[test]
     fn absent_sort_census_allocates_no_paths_but_injected_sort_still_refuses() {
         let ast = crate::check(

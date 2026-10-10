@@ -1,5 +1,10 @@
 //! Cross-file type references introduced by authenticated row-field lowering.
-use super::*;
+use crate::ast::{Function, ModuleUseKind, Program, TypeDeclaration};
+use crate::bounded_output::budgeted_format;
+use crate::diagnostic::Diagnostic;
+use crate::hir;
+use crate::workspace_graph::{graph_error, push_edge, AuthoredDeclaration, WorkspaceEdge};
+use std::collections::BTreeMap;
 
 pub(super) fn collect_edges(
     program: &Program,

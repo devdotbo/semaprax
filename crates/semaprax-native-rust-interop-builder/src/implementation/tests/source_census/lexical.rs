@@ -2,7 +2,7 @@ use super::*;
 #[test]
 fn lexical_source_refuses_before_legacy_builder_reservation() {
     let source = semaprax::parse(
-        "module capacity.lexical; @id(\"app.main\") fn main()->i64 { return 7; }",
+        "module capacity.lexical; @id(\"app.main\") fn main()->i64 { while false { break; } 7 }",
         "lexical.spx",
     )
     .unwrap();
@@ -15,6 +15,18 @@ fn lexical_source_refuses_before_legacy_builder_reservation() {
     )
     .unwrap();
     validate_native_rust_source_expression_budget(&ordinary).unwrap();
+    for source in [
+        "module capacity.legacy; @id(\"app.main\") fn main()->i64 { return 7; }",
+        "module capacity.legacy; @id(\"app.main\") fn main()->i64 { if false { return 3; } return 7; }",
+    ] {
+        let normalized = semaprax::check(source, "guard-return.spx").unwrap();
+        validate_native_rust_source_expression_budget(&normalized).unwrap();
+        let resolved = semaprax::hir::resolve(&normalized).unwrap();
+        phase_a::validate_selected_scalar_closure(&[&resolved.functions[0]]).unwrap();
+        let calls = expression_call_site_census(&resolved.functions[0].body).unwrap();
+        assert_eq!(calls.function_sites, 0);
+        assert_eq!(calls.import_sites, 0);
+    }
 }
 
 #[test]

@@ -187,10 +187,12 @@ fn validate_rows(rows: &[serde_json::Value], lengths: &[(u64, usize)]) -> Result
 #[test]
 #[ignore = "explicit native physical work: fresh external SEMAPRAX_COLLECTION_WRITER_OUTPUT required"]
 fn generated_collection_response_exact_physical_work() {
-    let build_head = option_env!("SEMAPRAX_COLLECTION_WRITER_BUILD_HEAD")
-        .expect("recompile with mandatory SEMAPRAX_COLLECTION_WRITER_BUILD_HEAD binding");
-    let build_tree = option_env!("SEMAPRAX_COLLECTION_WRITER_BUILD_TREE")
-        .expect("recompile with mandatory SEMAPRAX_COLLECTION_WRITER_BUILD_TREE binding");
+    let (Some(build_head), Some(build_tree)) = (
+        option_env!("SEMAPRAX_COLLECTION_WRITER_BUILD_HEAD"),
+        option_env!("SEMAPRAX_COLLECTION_WRITER_BUILD_TREE"),
+    ) else {
+        panic!("recompile with mandatory SEMAPRAX_COLLECTION_WRITER_BUILD_HEAD/TREE bindings");
+    };
     assert_eq!(
         build_head,
         git(&["rev-parse", "HEAD"]),

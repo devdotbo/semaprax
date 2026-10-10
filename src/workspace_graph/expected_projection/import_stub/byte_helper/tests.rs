@@ -1,4 +1,7 @@
-use super::*;
+use super::{provider, ProviderProofs};
+use crate::ast::Program;
+use crate::workspace_graph::{AuthoredDeclaration, AuthoredKind};
+use std::collections::BTreeMap;
 fn programs() -> Vec<Program> {
     [
         (
