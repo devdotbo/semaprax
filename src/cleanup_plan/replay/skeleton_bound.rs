@@ -147,7 +147,13 @@ pub(super) fn plan_skeleton_block_weight(plan: &CleanupPlan, block: &CleanupBloc
             // Condition clones, history clone, observation push, queue push.
             sum.saturating_add(edge_weight(*edge) + 3)
         }),
-        CleanupTerminator::Exit(_) => 1, // Continue queues; terminal exits push.
+        CleanupTerminator::Exit(exit) => match &plan.exits[exit.0 as usize].continuation {
+            // Marker clones and push, then a queued continuation or terminal path.
+            ExitContinuation::LoopBreak { .. }
+            | ExitContinuation::FunctionReturn { .. }
+            | ExitContinuation::LoopLatch { .. } => 5,
+            _ => 1, // Continue queues; terminal exits push.
+        },
     };
     weight.saturating_add(terminator)
 }

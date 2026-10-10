@@ -52,6 +52,9 @@ fn validate_canonical_plan(
     if actual.exits != expected.exits {
         return Err(noncanonical(function, "exit sequence"));
     }
+    if actual.lexical_control != expected.lexical_control {
+        return Err(noncanonical(function, "lexical-control certificate"));
+    }
     Ok(())
 }
 

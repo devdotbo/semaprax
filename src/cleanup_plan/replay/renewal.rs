@@ -179,6 +179,7 @@ pub(super) fn validate_join_compatibility(
             || state.pending_failure != incoming.pending_failure
             || state.selected_failure != incoming.selected_failure
             || state.published != incoming.published
+            || state.returned != incoming.returned
     }) {
         return Err(replay_error(
             function,

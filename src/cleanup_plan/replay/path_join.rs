@@ -8,9 +8,13 @@ pub(super) fn validate_path_states(
     storage: &BTreeSet<StorageId>,
     leaves: &Leaves,
     budget: &mut ReplayBudget,
+    lexical: Option<&lexical_cert::LexicalAuth>,
 ) -> Result<(), Diagnostic> {
     let plan = &function.cleanup_plan;
     let storage_regions = storage_regions(function)?;
+    // Exact ownership state each lexical loop body must restore, captured once
+    // from the state on its true-condition edge.
+    let mut loop_entries = BTreeMap::<usize, PathState>::new();
     let contract_sources = plan
         .status_sources
         .iter()
@@ -26,6 +30,7 @@ pub(super) fn validate_path_states(
         selected_failure: None,
         staged_copy_result: None,
         published: false,
+        returned: None,
     };
     for place in &plan.entry_state.live_owned_parameters {
         let flags = validate_place(function, place, storage, leaves)?;
@@ -95,6 +100,7 @@ pub(super) fn validate_path_states(
                 Option<StatusSourceId>,
                 Option<StagedCopyResultSource>,
                 bool,
+                Option<ReturnedSource>,
             ),
             BTreeSet<PathState>,
         >::new();
@@ -105,6 +111,7 @@ pub(super) fn validate_path_states(
                     state.selected_failure.clone(),
                     state.staged_copy_result.clone(),
                     state.published,
+                    state.returned.clone(),
                 ))
                 .or_default()
                 .insert(state);
@@ -153,17 +160,57 @@ pub(super) fn validate_path_states(
                             &edge.condition,
                             &contract_sources,
                         )?;
+                        if let Some(auth) = lexical {
+                            lexical_flow::capture_loop_entry(
+                                function,
+                                auth,
+                                &edge.condition,
+                                &next,
+                                &mut loop_entries,
+                            )?;
+                        }
                         incoming[edge.to.0 as usize].insert(next);
                     }
                 }
                 CleanupTerminator::Exit(exit_id) => {
                     let exit = &plan.exits[exit_id.0 as usize];
                     match replay_exit(function, exit, state, &storage_regions, storage, leaves)? {
-                        Some((edge, continued)) => {
+                        ExitFlow::Edge(edge, continued) => {
                             let target = plan.edges[edge.0 as usize].to;
+                            if let Some(auth) = lexical {
+                                lexical_flow::check_break(
+                                    function,
+                                    auth,
+                                    exit,
+                                    &continued,
+                                    &loop_entries,
+                                )?;
+                            }
                             incoming[target.0 as usize].insert(continued);
                         }
-                        None => {
+                        ExitFlow::Latch(latched) => {
+                            let auth = lexical.ok_or_else(|| {
+                                replay_error(function, "loop latch outside the lexical profile")
+                            })?;
+                            if let Some(entry) = lexical_cert::latch_resume(plan, exit.id) {
+                                // A certified continue enters its finite generated
+                                // advancement fragment, whose own latch checks entry.
+                                incoming[entry.0 as usize].insert(latched);
+                            } else {
+                                lexical_flow::check_latch(
+                                    function,
+                                    auth,
+                                    exit,
+                                    &latched,
+                                    &loop_entries,
+                                )?;
+                                terminal_paths =
+                                    terminal_paths.checked_add(1).ok_or_else(|| {
+                                        replay_error(function, "too many terminal cleanup paths")
+                                    })?;
+                            }
+                        }
+                        ExitFlow::Terminal => {
                             terminal_paths = terminal_paths.checked_add(1).ok_or_else(|| {
                                 replay_error(function, "too many terminal cleanup paths")
                             })?;

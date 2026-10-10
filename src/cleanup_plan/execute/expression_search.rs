@@ -9,6 +9,9 @@ pub(super) fn find_expression_by<'a>(
         return Some(expression);
     }
     match &expression.kind {
+        hir::ResolvedExprKind::LexicalExit { value, .. } => value
+            .as_deref()
+            .and_then(|operand| find_expression_by(operand, predicate)),
         hir::ResolvedExprKind::Closure { captures, .. } => captures
             .iter()
             .find_map(|capture| find_expression_by(&capture.value, predicate)),

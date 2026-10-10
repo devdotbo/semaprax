@@ -2,12 +2,17 @@
 //! Attached inventories and plans carry no authority for this selection.
 
 use super::*;
-use crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V17;
+use crate::cleanup_plan::{CLEANUP_PLAN_SCHEMA_V17, CLEANUP_PLAN_SCHEMA_V18};
 
 pub(crate) fn selected_schema(
     program: &ResolvedProgram,
     function: &ResolvedFunction,
 ) -> Result<&'static str, Diagnostic> {
+    // Independently replayed lexical exits select the lexical certificate
+    // profile regardless of any attached inventory or plan.
+    if crate::hir::lexical_exit::requires(function)? {
+        return Ok(CLEANUP_PLAN_SCHEMA_V18);
+    }
     let inventory = crate::cleanup::build_inventory(program, function)?;
     let has_nested_owned_bytes = inventory.slots.iter().try_fold(false, |nested, slot| {
         crate::cleanup::cleanup_shape_profile(&slot.shape)

@@ -125,6 +125,12 @@ pub(super) fn compare(
         let terminal = match path.terminal {
             SkeletonTerminal::Success => success,
             SkeletonTerminal::Failure => failure,
+            SkeletonTerminal::LoopLatch => {
+                return Err(replay_error(
+                    function,
+                    "factored skeleton comparison does not admit lexical loop latches",
+                ));
+            }
         };
         automaton.nodes[end].epsilon.push(terminal);
     }
@@ -329,6 +335,14 @@ impl Automaton {
                             success
                         }
                         ExitContinuation::ReturnFailure { .. } => failure,
+                        ExitContinuation::LoopLatch { .. }
+                        | ExitContinuation::LoopBreak { .. }
+                        | ExitContinuation::FunctionReturn { .. } => {
+                            return Err(replay_error(
+                                function,
+                                "factored skeleton comparison does not admit lexical exits",
+                            ));
+                        }
                     };
                     self.nodes[node].epsilon.push(target);
                 }

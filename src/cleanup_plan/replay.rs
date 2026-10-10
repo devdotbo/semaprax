@@ -51,6 +51,12 @@ use skeleton_work::{empty_expr_path, Observations, SkeletonWork};
 #[cfg(test)]
 mod copy_success_result_tests;
 mod guarded_variant;
+mod lexical_census;
+mod lexical_cert;
+mod lexical_flow;
+mod lexical_hir;
+mod lexical_replay;
+mod lexical_skeleton;
 #[cfg(test)]
 mod mixed_result_tests;
 mod nested_shape;
@@ -58,8 +64,13 @@ mod path_join;
 mod renewal;
 mod string_replacement;
 mod strings;
+mod transition;
 use renewal::validate_join_compatibility;
 use strings::temporary_place;
+use transition::{
+    append_dead_flags, execute_replay_transition, find_resolved_expression, replay_exit,
+    replay_transfer, require_normal_flow_state, state_for_edge, validate_staged_target, ExitFlow,
+};
 mod record_destructure;
 mod resolved_call;
 mod supplemental;
@@ -77,6 +88,9 @@ use resolved_call::{
 };
 pub(crate) use schema::selected_schema;
 
+/// Provisional normal-scope end of a region whose independently proven flow has
+/// no normal completion. Only the lexical certificate replay may accept it.
+const UNRESOLVED_NORMAL_END: super::ExitTargetId = super::ExitTargetId(u32::MAX);
 const MAX_REPLAY_PATHS: usize = 65_536;
 const MAX_REPLAY_WORK_UNITS: usize = 32_000_000;
 
@@ -230,6 +244,16 @@ struct PathState {
     selected_failure: Option<StatusSourceId>,
     staged_copy_result: Option<StagedCopyResultSource>,
     published: bool,
+    /// Result source a lexical `return` handed to its per-return postcondition
+    /// domain. A commit in that domain must publish exactly this source.
+    returned: Option<ReturnedSource>,
+}
+
+/// Orderable image of a `CleanupResultSource` carried through one return domain.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+enum ReturnedSource {
+    Scalar(ExpressionId),
+    Owned(CleanupPlace),
 }
 
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
@@ -278,12 +302,24 @@ enum SkeletonObservation {
         success: bool,
     },
     StageCopyResult(StagedCopyResultSource),
+    /// A lexical `return`, `break` or `continue` that left its contour.
+    LexicalExit {
+        site: ExpressionId,
+        kind: crate::ast::LexicalExitKind,
+        target: crate::hir::ControlTarget,
+    },
+    /// A finite iteration witness reached its authenticated runtime latch.
+    LoopLatch {
+        target: crate::hir::ControlTarget,
+    },
 }
 
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 enum SkeletonTerminal {
     Success,
     Failure,
+    /// Normal iteration end or `continue` handing off to the loop latch.
+    LoopLatch,
 }
 
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
@@ -386,6 +422,15 @@ fn validate_structure_with_budget(
         ));
     }
 
+    if crate::hir::lexical_exit::requires(function)? {
+        return lexical_replay::validate(program, function, budget);
+    }
+    if plan.lexical_control.is_some() {
+        return Err(replay_error(
+            function,
+            "function without lexical exits carries a lexical-control certificate",
+        ));
+    }
     validate_replay_size_budget(function)?;
     budget.charge(
         function,
@@ -402,14 +447,14 @@ fn validate_structure_with_budget(
     validate_regions(function, &storage)?;
     validate_entry(function, &storage, &leaves)?;
     validate_blocks_and_edges(program, function, &expression_facts, &storage, &leaves)?;
-    validate_exits(program, function, &storage, &leaves)?;
+    validate_exits(program, function, &storage, &leaves, &BTreeSet::new())?;
     validate_reference_coverage(function)?;
     validate_reachable_acyclic_cfg(function)?;
     if !cleanup_inert_path_product_can_be_summarized(function)?
         && !status_only_paths_can_be_summarized(function)
         && !cleanup_inert_large_decisions_can_be_summarized(function)
     {
-        validate_path_states(program, function, &storage, &leaves, budget)?;
+        validate_path_states(program, function, &storage, &leaves, budget, None)?;
         validate_typed_control_skeleton(program, function, budget)?;
     }
     Ok(())
@@ -463,11 +508,22 @@ fn branch_sensitive_cfg_bounds(function: &ResolvedFunction) -> Result<CfgReplayB
                     .ok_or_else(invalid)?
                     .continuation
                 {
-                    ExitContinuation::Continue(edge) => plan
+                    ExitContinuation::Continue(edge)
+                    | ExitContinuation::LoopBreak { edge, .. }
+                    | ExitContinuation::FunctionReturn { edge, .. } => plan
                         .edges
                         .get(edge.0 as usize)
                         .map(|edge| vec![edge.to.0 as usize])
                         .ok_or_else(invalid)?,
+                    ExitContinuation::LoopLatch { .. } => {
+                        match lexical_cert::latch_resume(plan, *exit) {
+                            Some(entry) => vec![entry.0 as usize],
+                            None => {
+                                terminal[index] = true;
+                                Vec::new()
+                            }
+                        }
+                    }
                     ExitContinuation::CommitResult { .. }
                     | ExitContinuation::ReturnUnit
                     | ExitContinuation::ReturnFailure { .. } => {
@@ -644,6 +700,9 @@ fn expression_path_counts_with_while(
             return args.get(index);
         }
         match &expression.kind {
+            ResolvedExprKind::LexicalExit { value, .. } => {
+                (index == 0).then(|| value.as_deref()).flatten()
+            }
             ResolvedExprKind::Closure { .. }
             | ResolvedExprKind::FunctionReference { .. }
             | ResolvedExprKind::Int(_)
@@ -805,6 +864,16 @@ fn expression_path_counts_with_while(
                     ResolvedExprKind::Upcast { .. }
                     | ResolvedExprKind::Yield { .. }
                     | ResolvedExprKind::Project { .. } => children[0],
+                    // Lexical profile functions never reach the legacy census;
+                    // a stray exit conservatively terminates its operand paths.
+                    ResolvedExprKind::LexicalExit { .. } => {
+                        let operand = children.first().copied().unwrap_or(HirPathCounts::ONE);
+                        HirPathCounts {
+                            normal: 0,
+                            failed: operand.failed.saturating_add(operand.normal).max(1),
+                            residual: operand.residual,
+                        }
+                    }
                     ResolvedExprKind::Binary { op, .. } => {
                         let left = children[0];
                         let right = children[1];
@@ -990,6 +1059,9 @@ fn skeleton_work_upper(
     program: &ResolvedProgram,
     function: &ResolvedFunction,
 ) -> Result<usize, Diagnostic> {
+    if crate::hir::lexical_exit::requires(function)? {
+        return lexical_census::skeleton_work_upper(program, function);
+    }
     if status_only_paths_can_be_summarized(function)
         || cleanup_inert_large_decisions_can_be_summarized(function)
     {
@@ -1144,6 +1216,7 @@ fn expression_skeleton_work_upper(
                 ResolvedExprKind::Try { .. } | ResolvedExprKind::TryOption { .. } => 10,
                 ResolvedExprKind::Project { .. } | ResolvedExprKind::Upcast { .. } => 6,
                 ResolvedExprKind::Yield { .. } => 6,
+                ResolvedExprKind::LexicalExit { .. } => 16,
                 ResolvedExprKind::If { .. } => 10,
                 ResolvedExprKind::Match { arms, .. } => {
                     // Guards recurse as separate sub-skeletons, so each arm
@@ -1868,6 +1941,7 @@ fn collect_expression_statuses(
                 }
             }
             ResolvedExprKind::Block { .. }
+            | ResolvedExprKind::LexicalExit { .. }
             | ResolvedExprKind::If { .. }
             | ResolvedExprKind::ConstructRecord { .. }
             | ResolvedExprKind::ConstructVariant { .. }
@@ -2239,9 +2313,12 @@ fn validate_regions(
                 ));
             }
         }
-        if usize::try_from(region.normal_scope_end.0)
-            .ok()
-            .is_none_or(|exit| exit >= plan.exits.len())
+        let unresolved =
+            plan.lexical_control.is_some() && region.normal_scope_end == UNRESOLVED_NORMAL_END;
+        if !unresolved
+            && usize::try_from(region.normal_scope_end.0)
+                .ok()
+                .is_none_or(|exit| exit >= plan.exits.len())
         {
             return Err(replay_error(
                 function,
@@ -2474,7 +2551,10 @@ fn validate_blocks_and_edges(
                             "call commit does not name a call expression",
                         ));
                     };
-                    if !committed_calls.insert(call.clone()) {
+                    // Lexical return domains duplicate postcondition bodies, so one
+                    // call legitimately commits once per proof domain; the typed
+                    // skeleton comparison counts those per-domain commits exactly.
+                    if !committed_calls.insert(call.clone()) && plan.lexical_control.is_none() {
                         return Err(replay_error(
                             function,
                             "call has more than one atomic commit",
@@ -2623,6 +2703,7 @@ fn validate_blocks_and_edges(
                             | CLEANUP_PLAN_SCHEMA_V15
                             | CLEANUP_PLAN_SCHEMA_V16
                             | super::CLEANUP_PLAN_SCHEMA_V17
+                            | super::CLEANUP_PLAN_SCHEMA_V18
                             | CLEANUP_PLAN_SCHEMA_V14
                     ) && matches!(
                         plan.edges[edge.0 as usize].condition,
@@ -2672,7 +2753,9 @@ fn validate_blocks_and_edges(
         .iter()
         .filter_map(|(expression, fact)| fact.as_ref().map(|_| expression.clone()))
         .collect::<BTreeSet<_>>();
-    if committed_calls != expected_calls {
+    // Control-flow-dead calls after an abrupt exit are never lowered, so the
+    // lexical profile checks commit coverage in the typed skeleton instead.
+    if plan.lexical_control.is_none() && committed_calls != expected_calls {
         return Err(replay_error(
             function,
             "cleanup plan does not contain exactly one atomic commit for every call",
@@ -2686,6 +2769,7 @@ fn validate_exits(
     function: &ResolvedFunction,
     storage: &BTreeSet<StorageId>,
     leaves: &Leaves,
+    return_operands: &BTreeSet<ExpressionId>,
 ) -> Result<(), Diagnostic> {
     let plan = &function.cleanup_plan;
     let statuses = plan
@@ -2695,6 +2779,19 @@ fn validate_exits(
         .collect::<BTreeSet<_>>();
     let mut continuation_edges = BTreeSet::new();
     for (index, exit) in plan.exits.iter().enumerate() {
+        if plan.lexical_control.is_none()
+            && matches!(
+                exit.continuation,
+                ExitContinuation::LoopLatch { .. }
+                    | ExitContinuation::LoopBreak { .. }
+                    | ExitContinuation::FunctionReturn { .. }
+            )
+        {
+            return Err(replay_error(
+                function,
+                "lexical exit continuation has no lexical-control certificate",
+            ));
+        }
         if exit.id.0 != u32_index(function, index, "cleanup exit")?
             || !block_exists(function, exit.from)
         {
@@ -2782,53 +2879,29 @@ fn validate_exits(
                     ));
                 }
             }
-            ExitContinuation::CommitResult { source } => match source {
-                CleanupResultSource::Scalar { expression } => {
-                    if type_needs_drop(program, function, &function.return_type)? {
-                        return Err(replay_error(
-                            function,
-                            "droppable function result uses a scalar result commit",
-                        ));
-                    }
-                    if expression != &function.body.id {
-                        return Err(replay_error(
-                            function,
-                            "scalar result commit does not publish the function body",
-                        ));
-                    }
+            ExitContinuation::CommitResult { source } => {
+                validate_result_source(program, function, source, storage, leaves, return_operands)?
+            }
+            ExitContinuation::FunctionReturn { edge, source, .. } => {
+                validate_owned_edge(function, exit.from, *edge, &mut continuation_edges)?;
+                if !matches!(plan.edges[edge.0 as usize].condition, EdgeCondition::Always) {
+                    return Err(replay_error(
+                        function,
+                        "function-return continuation edge is conditional",
+                    ));
                 }
-                CleanupResultSource::Owned { storage: result } => {
-                    if !matches!(
-                        function.return_type,
-                        ResolvedType::Nominal { .. }
-                            | ResolvedType::Bytes
-                            | ResolvedType::String
-                            | ResolvedType::StringMap
-                            | ResolvedType::OnceFunction
-                            | ResolvedType::OnceFunctionI64
-                            | ResolvedType::OnceFunctionI64Pair
-                    ) || !type_needs_drop(program, function, &function.return_type)?
-                        || result.storage != StorageId::ProvisionalResult
-                        || !result.projections.is_empty()
-                    {
-                        return Err(replay_error(
-                            function,
-                            "owned result commit must publish the whole droppable provisional result",
-                        ));
-                    }
-                    validate_place(function, result, storage, leaves)?;
-                    let provisional_leaves = leaves
-                        .values()
-                        .filter(|leaf| leaf.place.storage == StorageId::ProvisionalResult)
-                        .count();
-                    if provisional_leaves == 0 {
-                        return Err(replay_error(
-                            function,
-                            "owned result commit has no provisional-result leaves",
-                        ));
-                    }
+                validate_result_source(program, function, source, storage, leaves, return_operands)?
+            }
+            ExitContinuation::LoopBreak { edge, .. } => {
+                validate_owned_edge(function, exit.from, *edge, &mut continuation_edges)?;
+                if !matches!(plan.edges[edge.0 as usize].condition, EdgeCondition::Always) {
+                    return Err(replay_error(
+                        function,
+                        "loop-break continuation edge is conditional",
+                    ));
                 }
-            },
+            }
+            ExitContinuation::LoopLatch { .. } => {}
             ExitContinuation::ReturnFailure { source } => {
                 require_status(function, &statuses, source)?;
                 let selected = plan.blocks[exit.from.0 as usize]
@@ -2855,12 +2928,75 @@ fn validate_exits(
         }
     }
     for region in &plan.regions {
+        if plan.lexical_control.is_some() && region.normal_scope_end == UNRESOLVED_NORMAL_END {
+            // Authenticated as abrupt-only by the lexical certificate replay.
+            continue;
+        }
         let exit = &plan.exits[region.normal_scope_end.0 as usize];
         if !exit.leaves_regions.contains(&region.id) {
             return Err(replay_error(
                 function,
                 "region normal-scope exit does not leave that region",
             ));
+        }
+    }
+    Ok(())
+}
+
+/// Shared by the ordinary commit and every lexical function-return source.
+fn validate_result_source(
+    program: &ResolvedProgram,
+    function: &ResolvedFunction,
+    source: &CleanupResultSource,
+    storage: &BTreeSet<StorageId>,
+    leaves: &Leaves,
+    return_operands: &BTreeSet<ExpressionId>,
+) -> Result<(), Diagnostic> {
+    match source {
+        CleanupResultSource::Scalar { expression } => {
+            if type_needs_drop(program, function, &function.return_type)? {
+                return Err(replay_error(
+                    function,
+                    "droppable function result uses a scalar result commit",
+                ));
+            }
+            if expression != &function.body.id && !return_operands.contains(expression) {
+                return Err(replay_error(
+                    function,
+                    "scalar result commit does not publish the function body",
+                ));
+            }
+        }
+        CleanupResultSource::Owned { storage: result } => {
+            if !matches!(
+                function.return_type,
+                ResolvedType::Nominal { .. }
+                    | ResolvedType::Bytes
+                    | ResolvedType::String
+                    | ResolvedType::StringMap
+                    | ResolvedType::OnceFunction
+                    | ResolvedType::OnceFunctionI64
+                    | ResolvedType::OnceFunctionI64Pair
+            ) || !type_needs_drop(program, function, &function.return_type)?
+                || result.storage != StorageId::ProvisionalResult
+                || !result.projections.is_empty()
+            {
+                return Err(replay_error(
+                    function,
+                    "owned result commit must publish the whole droppable provisional result",
+                ));
+            }
+            validate_place(function, result, storage, leaves)?;
+            let provisional_leaves = leaves
+                .values()
+                .filter(|leaf| leaf.place.storage == StorageId::ProvisionalResult)
+                .count();
+            if provisional_leaves == 0 {
+                return Err(replay_error(
+                    function,
+                    "owned result commit has no provisional-result leaves",
+                ));
+            }
         }
     }
     Ok(())
@@ -2878,7 +3014,24 @@ fn expected_exit_regions(
         .region;
     let source_chain = region_chain_to_root(function, source_region)?;
     match &exit.continuation {
-        ExitContinuation::Continue(edge) => {
+        ExitContinuation::LoopLatch { target } => {
+            let region = lexical_cert::loop_region(plan, target).ok_or_else(|| {
+                replay_error(function, "loop latch names an unknown lexical loop")
+            })?;
+            if !source_chain.contains(&region) {
+                return Err(replay_error(
+                    function,
+                    "loop latch exit does not originate inside its loop region",
+                ));
+            }
+            Ok(source_chain
+                .into_iter()
+                .take_while(|candidate| *candidate != region)
+                .collect())
+        }
+        ExitContinuation::Continue(edge)
+        | ExitContinuation::LoopBreak { edge, .. }
+        | ExitContinuation::FunctionReturn { edge, .. } => {
             let target = plan
                 .edges
                 .get(edge.0 as usize)
@@ -2928,7 +3081,9 @@ fn validate_typed_control_skeleton(
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
-    if factored::validate(program, function, budget)? {
+    if function.cleanup_plan.lexical_control.is_none()
+        && factored::validate(program, function, budget)?
+    {
         return Ok(());
     }
     let mut expected = hir_skeleton_paths(program, function, budget)?;
@@ -3021,21 +3176,21 @@ fn hir_skeleton_paths(
             }
         }
     }
+    // A lexical `return` has already staged its result and left its contour;
+    // it now runs every postcondition exactly like a normally completed body.
+    lexical_skeleton::release_returns(&mut paths);
     for contract in &function.ensures {
         paths = sequence_expression(program, function, paths, contract, &mut work)?;
         paths = split_contract(paths, contract, &mut work)?;
     }
     let mut completed = Vec::new();
     for path in paths {
+        let terminal = lexical_skeleton::terminal(&path);
         work.push_skeleton_path(
             &mut completed,
             SkeletonPath {
                 observations: path.observations,
-                terminal: if path.failed {
-                    SkeletonTerminal::Failure
-                } else {
-                    SkeletonTerminal::Success
-                },
+                terminal,
             },
             "completed HIR skeleton path",
         )?;
@@ -3175,6 +3330,33 @@ fn expression_skeleton(
             true_prefixes: Vec<ExprSkeletonPath>,
             false_prefixes: Vec<ExprSkeletonPath>,
         },
+        LexicalReturn {
+            expression: &'a ResolvedExpr,
+        },
+        ContinueAdvance {
+            expression: &'a ResolvedExpr,
+            step: Option<(&'a ResolvedExpr, &'a crate::hir::ResolvedBinding)>,
+        },
+        LexicalLoopCondition {
+            prefixes: Vec<ExprSkeletonPath>,
+            expression: &'a ResolvedExpr,
+            statements: &'a [ResolvedStatement],
+            tail: &'a ResolvedExpr,
+            index: usize,
+            condition: &'a ResolvedExpr,
+            body: &'a ResolvedExpr,
+            latch: &'a crate::hir::LoopLatchKind,
+        },
+        LexicalLoopBody {
+            expression: &'a ResolvedExpr,
+            statements: &'a [ResolvedStatement],
+            tail: &'a ResolvedExpr,
+            index: usize,
+            results: Vec<ExprSkeletonPath>,
+            true_prefixes: Vec<ExprSkeletonPath>,
+            false_prefixes: Vec<ExprSkeletonPath>,
+            condition: &'a ResolvedExpr,
+        },
         VariantField {
             expression: &'a ResolvedExpr,
             case: &'a DeclarationId,
@@ -3310,6 +3492,27 @@ fn expression_skeleton(
                     )?;
                     push(frames, Frame::Eval(condition))?;
                 }
+                ResolvedStatement::LexicalWhile {
+                    condition,
+                    body,
+                    latch,
+                    ..
+                } => {
+                    push(
+                        frames,
+                        Frame::LexicalLoopCondition {
+                            prefixes: paths,
+                            expression,
+                            statements,
+                            tail,
+                            index: next,
+                            condition,
+                            body,
+                            latch,
+                        },
+                    )?;
+                    push(frames, Frame::Eval(condition))?;
+                }
                 _ => {
                     push(
                         frames,
@@ -3337,6 +3540,14 @@ fn expression_skeleton(
     let mut frames = Vec::with_capacity(515);
     push_frame!(frames, Frame::Eval(expression));
     let mut produced: Option<Vec<ExprSkeletonPath>> = None;
+    /// Lexical loops whose body is being evaluated, innermost last. A `continue`
+    /// reads its loop's generated advancement from here.
+    struct ActiveLoop<'a> {
+        condition: &'a ExpressionId,
+        advance: Option<&'a ResolvedExpr>,
+        step: Option<(&'a ResolvedExpr, &'a crate::hir::ResolvedBinding)>,
+    }
+    let mut active_loops: Vec<ActiveLoop<'_>> = Vec::new();
     while let Some(frame) = frames.pop() {
         match frame {
             Frame::RenewalPrefix(expression) => {
@@ -3358,6 +3569,54 @@ fn expression_skeleton(
                 }
 
                 match &expression.kind {
+                    ResolvedExprKind::LexicalExit {
+                        kind,
+                        target,
+                        value,
+                    } => match (kind, value) {
+                        (crate::ast::LexicalExitKind::Return, Some(operand)) => {
+                            push_frame!(frames, Frame::LexicalReturn { expression });
+                            push_frame!(frames, Frame::Eval(operand));
+                        }
+                        (crate::ast::LexicalExitKind::Break, None) => {
+                            produced = Some(lexical_skeleton::exit_paths(expression, work)?);
+                        }
+                        (crate::ast::LexicalExitKind::Continue, None) => {
+                            let crate::hir::ControlTarget::Loop { site, .. } = target else {
+                                return Err(replay_error(
+                                    function,
+                                    "continue does not target a lexical loop",
+                                ));
+                            };
+                            let active = active_loops
+                                .iter()
+                                .rev()
+                                .find(|active| active.condition == site)
+                                .ok_or_else(|| {
+                                    replay_error(function, "continue names no active lexical loop")
+                                })?;
+                            let (advance, step) = (active.advance, active.step);
+                            match advance {
+                                None => {
+                                    produced =
+                                        Some(lexical_skeleton::exit_paths(expression, work)?);
+                                }
+                                Some(advance) => {
+                                    push_frame!(
+                                        frames,
+                                        Frame::ContinueAdvance { expression, step }
+                                    );
+                                    push_frame!(frames, Frame::Eval(advance));
+                                }
+                            }
+                        }
+                        _ => {
+                            return Err(replay_error(
+                                function,
+                                "lexical exit has an inconsistent kind or operand",
+                            ));
+                        }
+                    },
                     ResolvedExprKind::Closure { .. } if !expression.ty.is_once_function() => {
                         produced = Some(
                             work.singleton_path(empty_expr_path(), "copy closure skeleton path")?,
@@ -3761,6 +4020,27 @@ fn expression_skeleton(
                                             index: 0,
                                             condition,
                                             body,
+                                        }
+                                    );
+                                    push_frame!(frames, Frame::Eval(condition));
+                                }
+                                ResolvedStatement::LexicalWhile {
+                                    condition,
+                                    body,
+                                    latch,
+                                    ..
+                                } => {
+                                    push_frame!(
+                                        frames,
+                                        Frame::LexicalLoopCondition {
+                                            prefixes: paths,
+                                            expression,
+                                            statements,
+                                            tail,
+                                            index: 0,
+                                            condition,
+                                            body,
+                                            latch,
                                         }
                                     );
                                     push_frame!(frames, Frame::Eval(condition));
@@ -4171,6 +4451,124 @@ fn expression_skeleton(
                 // The skip branch joins the body branch at the loop continuation without further observations.
                 for path in joined.into_iter().chain(false_prefixes) {
                     work.push_expr_path(&mut results, path, "while join path")?;
+                }
+                if let Some(settled) = advance_block_value(
+                    function,
+                    &mut frames,
+                    work,
+                    expression,
+                    statements,
+                    tail,
+                    index,
+                    results,
+                )? {
+                    produced = Some(settled);
+                }
+            }
+            Frame::LexicalReturn { expression } => {
+                let mut paths = produced.take().expect("return operand path retained");
+                if type_needs_drop(program, function, &function.return_type)? {
+                    // The owned result moves into provisional storage at the exit
+                    // site, before any contour cleanup or postcondition runs.
+                    let at = work.clone_owned(&expression.id, "lexical return site clone")?;
+                    paths = transfer_completed_paths(
+                        function,
+                        paths,
+                        at,
+                        CleanupPlace::whole(StorageId::ProvisionalResult),
+                        "owned lexical return",
+                        work,
+                    )?;
+                }
+                produced = Some(lexical_skeleton::mark_return(paths, expression, work)?);
+            }
+            Frame::ContinueAdvance { expression, step } => {
+                let advance = produced.take().expect("continue advancement path retained");
+                let ResolvedExprKind::LexicalExit { target, .. } = &expression.kind else {
+                    return Err(replay_error(
+                        function,
+                        "continue advancement frame lost its exit",
+                    ));
+                };
+                let prefix = lexical_skeleton::continue_prefix(expression, work)?;
+                let mut advanced = sequence_skeleton_paths(prefix, &advance, work)?;
+                if let Some((assignment, binding)) = step {
+                    // Only the Yield tail runs, then the exact Step renewal.
+                    let at = work.clone_owned(&assignment.id, "step renewal expression clone")?;
+                    let binding = work.clone_owned(&binding.id, "step renewal binding clone")?;
+                    advanced = transfer_completed_paths(
+                        function,
+                        advanced,
+                        at,
+                        CleanupPlace::whole(StorageId::Value(binding)),
+                        "owned iterator step renewal",
+                        work,
+                    )?;
+                }
+                produced = Some(lexical_skeleton::finish_continue(advanced, target, work)?);
+            }
+            Frame::LexicalLoopCondition {
+                prefixes,
+                expression,
+                statements,
+                tail,
+                index,
+                condition,
+                body,
+                latch,
+            } => {
+                let condition_paths = produced.take().expect("loop condition path retained");
+                let prefixed = sequence_skeleton_paths(prefixes, &condition_paths, work)?;
+                let (results, true_prefixes, false_prefixes) =
+                    split_boolean_prefixes(prefixed, &condition.id, work)?;
+                active_loops.push(ActiveLoop {
+                    condition: &condition.id,
+                    advance: lexical_hir::generated_advance(body, latch),
+                    step: if matches!(latch, crate::hir::LoopLatchKind::OwnedIteratorStep { .. }) {
+                        lexical_hir::owned_step_assignment(body)
+                    } else {
+                        None
+                    },
+                });
+                push_frame!(
+                    frames,
+                    Frame::LexicalLoopBody {
+                        expression,
+                        statements,
+                        tail,
+                        index,
+                        results,
+                        true_prefixes,
+                        false_prefixes,
+                        condition,
+                    }
+                );
+                push_frame!(frames, Frame::Eval(body));
+            }
+            Frame::LexicalLoopBody {
+                expression,
+                statements,
+                tail,
+                index,
+                mut results,
+                true_prefixes,
+                false_prefixes,
+                condition,
+            } => {
+                active_loops.pop();
+                let body_paths = produced.take().expect("loop body path retained");
+                let joined = sequence_skeleton_paths(true_prefixes, &body_paths, work)?;
+                let owner = work
+                    .owner
+                    .clone()
+                    .ok_or_else(|| replay_error(function, "lexical loop has no execution owner"))?;
+                let target = crate::hir::ControlTarget::Loop {
+                    owner,
+                    site: work.clone_owned(&condition.id, "loop target site clone")?,
+                };
+                let settled = lexical_skeleton::settle_loop_body(joined, &target, work)?;
+                for path in settled.into_iter().chain(false_prefixes) {
+                    work.push_expr_path(&mut results, path, "lexical loop join path")?;
                 }
                 if let Some(settled) = advance_block_value(
                     function,
@@ -6693,7 +7091,69 @@ fn plan_skeleton_paths(
             }
             CleanupTerminator::Exit(exit) => {
                 let exit = &plan.exits[exit.0 as usize];
-                match exit.continuation {
+                match &exit.continuation {
+                    ExitContinuation::LoopBreak { edge, .. }
+                    | ExitContinuation::FunctionReturn { edge, .. } => {
+                        if let Some(marker) =
+                            lexical_skeleton::plan_exit_observation(budget, function, exit.id)?
+                        {
+                            skeleton_push(
+                                budget,
+                                function,
+                                &mut observations,
+                                marker,
+                                "plan lexical exit observation push",
+                            )?;
+                        }
+                        skeleton_queue_push(
+                            budget,
+                            function,
+                            &mut queue,
+                            (plan.edges[edge.0 as usize].to, observations),
+                            "plan lexical continuation state push",
+                        )?;
+                    }
+                    ExitContinuation::LoopLatch { target } => {
+                        let marker = match lexical_skeleton::plan_exit_observation(
+                            budget, function, exit.id,
+                        )? {
+                            Some(marker) => marker,
+                            None => SkeletonObservation::LoopLatch {
+                                target: skeleton_clone(
+                                    budget,
+                                    function,
+                                    target,
+                                    "plan loop-latch target clone",
+                                )?,
+                            },
+                        };
+                        skeleton_push(
+                            budget,
+                            function,
+                            &mut observations,
+                            marker,
+                            "plan loop-latch observation push",
+                        )?;
+                        match lexical_cert::latch_resume(plan, exit.id) {
+                            Some(entry) => skeleton_queue_push(
+                                budget,
+                                function,
+                                &mut queue,
+                                (entry, observations),
+                                "plan generated-latch state push",
+                            )?,
+                            None => skeleton_push(
+                                budget,
+                                function,
+                                &mut paths,
+                                SkeletonPath {
+                                    observations: observations.into(),
+                                    terminal: SkeletonTerminal::LoopLatch,
+                                },
+                                "plan loop-latch path push",
+                            )?,
+                        }
+                    }
                     ExitContinuation::Continue(edge) => {
                         skeleton_queue_push(
                             budget,
@@ -6747,790 +7207,6 @@ fn storage_regions(
         }
     }
     Ok(regions)
-}
-
-fn execute_replay_transition(
-    program: &ResolvedProgram,
-    function: &ResolvedFunction,
-    transition: &CleanupTransition,
-    state: &mut PathState,
-    storage: &BTreeSet<StorageId>,
-    leaves: &Leaves,
-) -> Result<(), Diagnostic> {
-    if state.published {
-        return Err(replay_error(
-            function,
-            "cleanup transition occurs after result publication",
-        ));
-    }
-    if state.selected_failure.is_some()
-        && !matches!(transition, CleanupTransition::SelectFailure { .. })
-    {
-        return Err(replay_error(
-            function,
-            "ordinary cleanup transition occurs after failure selection",
-        ));
-    }
-    if state.pending_failure.is_some()
-        && !matches!(transition, CleanupTransition::SelectFailure { .. })
-    {
-        return Err(replay_error(
-            function,
-            "operation failure is not selected before another transition",
-        ));
-    }
-
-    match transition {
-        CleanupTransition::Initialize { destination, .. } => {
-            let flags = validate_place(function, destination, storage, leaves)?;
-            append_dead_flags(function, state, flags, "initialize transition")?;
-        }
-        CleanupTransition::ReserveRenewal { at, binding } => {
-            renewal::reserve(program, function, at, binding, state, storage, leaves)?
-        }
-        CleanupTransition::Renew {
-            at,
-            source,
-            destination,
-        } => renewal::renew(
-            program,
-            function,
-            at,
-            (source, destination),
-            state,
-            storage,
-            leaves,
-        )?,
-        CleanupTransition::Transfer {
-            at,
-            source,
-            destination,
-        } => {
-            renewal::reject_unmarked_finish(program, function, at, destination)?;
-            let append = strings::reserve_append(function, at, source, destination, state)?;
-            replay_transfer(function, state, source, destination, storage, leaves)?;
-            seal_try_residual(program, function, at, destination, state, storage, leaves)?;
-            strings::publish_append(function, append, state)?;
-        }
-        CleanupTransition::TransferVariant {
-            source,
-            destination,
-            variant,
-            ..
-        } => {
-            if !state
-                .conditional_variants
-                .iter()
-                .any(|conditional| conditional.root == *source)
-            {
-                materialize_constructed_variant(
-                    program, function, state, source, variant, storage, leaves,
-                )?;
-            }
-            replay_transfer(function, state, source, destination, storage, leaves)?;
-        }
-        CleanupTransition::InitializeVariant {
-            destination,
-            variant,
-            ..
-        } => {
-            let flags = validate_place(function, destination, storage, leaves)?;
-            if flags.iter().any(|flag| {
-                state.live_order.contains(flag)
-                    || state.conditional_variants.iter().any(|conditional| {
-                        conditional
-                            .cases
-                            .iter()
-                            .any(|(_, case_flags)| case_flags.contains(flag))
-                    })
-            }) {
-                return Err(replay_error(
-                    function,
-                    "variant initialization targets a live cleanup place",
-                ));
-            }
-            let slot = function
-                .cleanup_plan
-                .slots
-                .iter()
-                .find(|slot| slot.storage == destination.storage)
-                .ok_or_else(|| replay_error(function, "variant initialization has no slot"))?;
-            let FieldLivenessShape::Variant { cases, .. } = &slot.field_liveness_shape else {
-                return Err(replay_error(
-                    function,
-                    "variant initialization destination is not conditional storage",
-                ));
-            };
-            let conditional_cases = cases
-                .iter()
-                .map(|case| {
-                    let prefix = destination
-                        .projections
-                        .iter()
-                        .chain(std::iter::once(&case.case))
-                        .cloned()
-                        .collect::<Vec<_>>();
-                    let case_flags = flags
-                        .iter()
-                        .filter(|flag| leaves[flag].place.projections.starts_with(&prefix))
-                        .copied()
-                        .collect::<Vec<_>>();
-                    (case.case.clone(), case_flags)
-                })
-                .collect();
-            state.conditional_variants.push(ReplayConditionalVariant {
-                root: destination.clone(),
-                variant: variant.clone(),
-                cases: conditional_cases,
-            });
-        }
-        CleanupTransition::AuthenticateVariantCase {
-            source,
-            variant,
-            case,
-            ..
-        } => {
-            if !state
-                .conditional_variants
-                .iter()
-                .any(|entry| entry.root == *source)
-            {
-                materialize_constructed_variant(
-                    program, function, state, source, variant, storage, leaves,
-                )?;
-            }
-            if let Some(index) = state
-                .conditional_variants
-                .iter()
-                .position(|candidate| candidate.root == *source && candidate.variant == *variant)
-            {
-                let conditional = state.conditional_variants.remove(index);
-                let flags = conditional
-                    .cases
-                    .into_iter()
-                    .find_map(|(candidate, flags)| (candidate == *case).then_some(flags))
-                    .ok_or_else(|| {
-                        replay_error(function, "conditional state omits authenticated case")
-                    })?;
-                let flags = if flags.is_empty() {
-                    let prefix = source.projected(case.clone()).projections;
-                    validate_place(function, source, storage, leaves)?
-                        .into_iter()
-                        .filter(|flag| leaves[flag].place.projections.starts_with(&prefix))
-                        .collect()
-                } else {
-                    flags
-                };
-                // A valid selected case may carry only Copy fields. Its authenticated case state is consumed even though there are no cleanup flags to
-                // materialize.
-                if !flags.is_empty() {
-                    append_dead_flags(function, state, flags, "variant authentication")?;
-                }
-            }
-            let prefix = source
-                .projections
-                .iter()
-                .chain(std::iter::once(case))
-                .cloned()
-                .collect::<Vec<_>>();
-            if validate_place(function, source, storage, leaves)?
-                .iter()
-                .any(|flag| {
-                    state.live_order.contains(flag)
-                        && !leaves[flag].place.projections.starts_with(&prefix)
-                })
-            {
-                return Err(replay_error(
-                    function,
-                    "variant authentication retains a live inactive-case payload",
-                ));
-            }
-        }
-        CleanupTransition::CallCommit { call, arguments } => {
-            let mut consumed = BTreeSet::new();
-            let mut consumed_conditional_roots = BTreeSet::new();
-            for argument in arguments {
-                if let Some(index) = state
-                    .conditional_variants
-                    .iter()
-                    .position(|variant| variant.root == argument.source)
-                {
-                    if !consumed_conditional_roots.insert(argument.source.clone()) {
-                        return Err(replay_error(
-                            function,
-                            format!("call `{call}` atomically consumes a variant epoch twice"),
-                        ));
-                    }
-                    let conditional = state.conditional_variants.remove(index);
-                    for flag in conditional.cases.into_iter().flat_map(|(_, flags)| flags) {
-                        if !consumed.insert(flag) {
-                            return Err(replay_error(
-                                function,
-                                format!(
-                                    "call `{call}` atomically consumes argument flag {} twice",
-                                    flag.0
-                                ),
-                            ));
-                        }
-                    }
-                    continue;
-                }
-                for flag in validate_place(function, &argument.source, storage, leaves)? {
-                    if !state.live_order.contains(&flag) {
-                        return Err(replay_error(
-                            function,
-                            format!(
-                                "call `{call}` atomically consumes dead argument flag {}",
-                                flag.0
-                            ),
-                        ));
-                    }
-                    if !consumed.insert(flag) {
-                        return Err(replay_error(
-                            function,
-                            format!(
-                                "call `{call}` atomically consumes argument flag {} twice",
-                                flag.0
-                            ),
-                        ));
-                    }
-                }
-            }
-            for history in state.renewals.values_mut() {
-                history.commit(&consumed);
-            }
-            state.live_order.retain(|flag| !consumed.contains(flag));
-        }
-        CleanupTransition::SelectFailure { source } => {
-            state.renewals.clear();
-            if state.selected_failure.is_some() {
-                return Err(replay_error(
-                    function,
-                    "failure selection is not write-once during path replay",
-                ));
-            }
-            if state.pending_failure.as_ref() != Some(source) {
-                return Err(replay_error(
-                    function,
-                    format!(
-                        "selected failure `{}` does not match the pending failing edge",
-                        source.expression
-                    ),
-                ));
-            }
-            state.pending_failure = None;
-            state.selected_failure = Some(source.clone());
-        }
-        CleanupTransition::StageCopyResult { source } => {
-            if state.staged_copy_result.is_some() {
-                return Err(replay_error(
-                    function,
-                    "Copy aggregate result is staged more than once on one path",
-                ));
-            }
-            if !state.live_order.is_empty() || !state.conditional_variants.is_empty() {
-                return Err(replay_error(
-                    function,
-                    "Copy aggregate result staging carries resource liveness",
-                ));
-            }
-            state.staged_copy_result = Some(source.clone());
-        }
-    }
-    Ok(())
-}
-
-fn replay_transfer(
-    function: &ResolvedFunction,
-    state: &mut PathState,
-    source: &CleanupPlace,
-    destination: &CleanupPlace,
-    storage: &BTreeSet<StorageId>,
-    leaves: &Leaves,
-) -> Result<(), Diagnostic> {
-    let source_flags = validate_place(function, source, storage, leaves)?;
-    let destination_flags = validate_place(function, destination, storage, leaves)?;
-    let source_set = source_flags.iter().copied().collect::<BTreeSet<_>>();
-    let destination_set = destination_flags.iter().copied().collect::<BTreeSet<_>>();
-    if source_set.len() != destination_set.len() || !source_set.is_disjoint(&destination_set) {
-        return Err(replay_error(
-            function,
-            "cleanup transfer does not have disjoint equal-size ownership epochs",
-        ));
-    }
-    if let Some(index) = state
-        .conditional_variants
-        .iter()
-        .position(|variant| variant.root == *source)
-    {
-        let mapping = transfer_mapping(function, source, destination, leaves)?;
-        let variant = state.conditional_variants.remove(index);
-        let cases = variant
-            .cases
-            .into_iter()
-            .map(|(case, flags)| {
-                flags
-                    .into_iter()
-                    .map(|flag| {
-                        mapping.get(&flag).copied().ok_or_else(|| {
-                            replay_error(function, "conditional cleanup transfer omits a case leaf")
-                        })
-                    })
-                    .collect::<Result<Vec<_>, Diagnostic>>()
-                    .map(|flags| (case, flags))
-            })
-            .collect::<Result<Vec<_>, Diagnostic>>()?;
-        state.conditional_variants.push(ReplayConditionalVariant {
-            root: destination.clone(),
-            variant: variant.variant,
-            cases,
-        });
-        return Ok(());
-    }
-    if source_set
-        .iter()
-        .any(|flag| !state.live_order.contains(flag))
-    {
-        return Err(replay_error(
-            function,
-            "cleanup transfer reads a dead source leaf",
-        ));
-    }
-    if destination_set
-        .iter()
-        .any(|flag| state.live_order.contains(flag))
-    {
-        return Err(replay_error(
-            function,
-            "cleanup transfer initializes a live destination leaf",
-        ));
-    }
-
-    let mapping = transfer_mapping(function, source, destination, leaves)?;
-    // A whole-source transfer is a completed aggregate boundary, authenticated by the typed control skeleton. Filling every owned destination field is not:
-    // later Copy initializers can still fail, so preserve their preceding field-initialization history until the constructor actually completes.
-    let source_history = if source.projections.is_empty() {
-        source_flags
-    } else {
-        state
-            .live_order
-            .iter()
-            .filter(|flag| source_set.contains(flag))
-            .copied()
-            .collect::<Vec<_>>()
-    };
-    for history in state.renewals.values_mut() {
-        history.stage(|flag| mapping.get(&flag).copied());
-    }
-    state.live_order.retain(|flag| !source_set.contains(flag));
-    if destination.projections.is_empty() {
-        state.live_order.extend(destination_flags);
-    } else {
-        for source_flag in source_history {
-            state.live_order.push(mapping[&source_flag]);
-        }
-    }
-    Ok(())
-}
-
-fn find_resolved_expression<'a>(
-    function: &'a ResolvedFunction,
-    identity: &ExpressionId,
-) -> Option<&'a ResolvedExpr> {
-    let mut stack = function
-        .requires
-        .iter()
-        .chain(std::iter::once(&function.body))
-        .chain(&function.ensures)
-        .collect::<Vec<_>>();
-    while let Some(expression) = stack.pop() {
-        if expression.id == *identity {
-            return Some(expression);
-        }
-        let mut index = 0;
-        while let Some(child) = replay_expression_child(expression, index) {
-            stack.push(child);
-            index += 1;
-        }
-    }
-    None
-}
-
-fn transfer_mapping(
-    function: &ResolvedFunction,
-    source: &CleanupPlace,
-    destination: &CleanupPlace,
-    leaves: &Leaves,
-) -> Result<BTreeMap<LivenessFlagId, LivenessFlagId>, Diagnostic> {
-    let mut mapping = BTreeMap::new();
-    let mut destinations = BTreeSet::new();
-    for (source_flag, source_leaf) in leaves.iter().filter(|(_, leaf)| {
-        leaf.place.storage == source.storage
-            && leaf.place.projections.starts_with(&source.projections)
-    }) {
-        let relative = source_leaf
-            .place
-            .projections
-            .strip_prefix(source.projections.as_slice())
-            .ok_or_else(|| replay_error(function, "transfer source is not a projection prefix"))?;
-        let projections = destination
-            .projections
-            .iter()
-            .chain(relative)
-            .cloned()
-            .collect::<Vec<_>>();
-        let Some((destination_flag, destination_leaf)) = leaves.iter().find(|(_, leaf)| {
-            leaf.place.storage == destination.storage && leaf.place.projections == projections
-        }) else {
-            return Err(replay_error(
-                function,
-                "cleanup transfer leaf shapes do not correspond",
-            ));
-        };
-        if source_leaf.lifecycle != destination_leaf.lifecycle
-            || !destinations.insert(*destination_flag)
-        {
-            return Err(replay_error(
-                function,
-                "cleanup transfer changes a leaf lifecycle or aliases its destination",
-            ));
-        }
-        mapping.insert(*source_flag, *destination_flag);
-    }
-    if mapping.is_empty() {
-        return Err(replay_error(
-            function,
-            "cleanup transfer has no mapped ownership leaves",
-        ));
-    }
-    Ok(mapping)
-}
-
-fn append_dead_flags(
-    function: &ResolvedFunction,
-    state: &mut PathState,
-    flags: Vec<LivenessFlagId>,
-    operation: &str,
-) -> Result<(), Diagnostic> {
-    if flags.is_empty()
-        || flags.iter().any(|flag| {
-            state.live_order.contains(flag)
-                || state.conditional_variants.iter().any(|variant| {
-                    variant
-                        .cases
-                        .iter()
-                        .any(|(_, case_flags)| case_flags.contains(flag))
-                })
-        })
-    {
-        return Err(replay_error(
-            function,
-            format!("{operation} initializes an empty or live cleanup place"),
-        ));
-    }
-    state.live_order.extend(flags);
-    Ok(())
-}
-
-fn state_for_edge(
-    function: &ResolvedFunction,
-    mut state: PathState,
-    condition: &EdgeCondition,
-    contract_sources: &BTreeMap<ExpressionId, StatusSourceId>,
-) -> Result<PathState, Diagnostic> {
-    if state.pending_failure.is_some() || state.selected_failure.is_some() || state.published {
-        return Err(replay_error(
-            function,
-            "conditional edge follows pending, selected, or published state",
-        ));
-    }
-    match condition {
-        EdgeCondition::Always => {}
-        EdgeCondition::BooleanResult(expression, false) => {
-            if let Some(source) = contract_sources.get(expression) {
-                state.pending_failure = Some(source.clone());
-            }
-        }
-        EdgeCondition::BooleanResult(_, true)
-        | EdgeCondition::VariantCase { .. }
-        | EdgeCondition::ArmSelected { .. }
-        | EdgeCondition::StatusZero(_) => {}
-        EdgeCondition::StatusNonzero(source) => {
-            state.pending_failure = Some(source.clone());
-        }
-    }
-    Ok(state)
-}
-
-fn replay_exit(
-    function: &ResolvedFunction,
-    exit: &ExitTarget,
-    mut state: PathState,
-    storage_regions: &BTreeMap<StorageId, CleanupRegionId>,
-    storage: &BTreeSet<StorageId>,
-    leaves: &Leaves,
-) -> Result<Option<(EdgeId, PathState)>, Diagnostic> {
-    if state.published {
-        return Err(replay_error(function, "cleanup exit follows publication"));
-    }
-    let leaving = exit.leaves_regions.iter().copied().collect::<BTreeSet<_>>();
-    let protected_result = match &exit.continuation {
-        ExitContinuation::CommitResult {
-            source: CleanupResultSource::Owned { storage: result },
-        } => validate_place(function, result, storage, leaves)?
-            .into_iter()
-            .collect::<BTreeSet<_>>(),
-        _ => BTreeSet::new(),
-    };
-    let expected = state
-        .live_order
-        .iter()
-        .rev()
-        .filter_map(|flag| {
-            let leaf = &leaves[flag];
-            let region = storage_regions[&leaf.place.storage];
-            (leaving.contains(&region) && !protected_result.contains(flag)).then_some(*flag)
-        })
-        .collect::<Vec<_>>();
-    let mut expected_conditional = Vec::new();
-    for variant in state.conditional_variants.iter().rev() {
-        let region = storage_regions[&variant.root.storage];
-        let protected = matches!(
-            &exit.continuation,
-            ExitContinuation::CommitResult {
-                source: CleanupResultSource::Owned { storage },
-            } if storage == &variant.root
-        );
-        if !leaving.contains(&region) || protected {
-            continue;
-        }
-        for (case, flags) in variant.cases.iter().rev() {
-            for flag in flags.iter().rev() {
-                expected_conditional.push((
-                    *flag,
-                    super::VariantCaseGuard {
-                        storage: variant.root.storage.clone(),
-                        variant: variant.variant.clone(),
-                        case: case.clone(),
-                    },
-                ));
-            }
-        }
-    }
-    let actual = exit
-        .finalize_in_order
-        .iter()
-        .filter_map(|action| {
-            state
-                .live_order
-                .contains(&action.guard_flag)
-                .then_some(action.guard_flag)
-        })
-        .collect::<Vec<_>>();
-    if actual != expected {
-        return Err(replay_error(
-            function,
-            format!(
-                "exit {} does not finalize its live region leaves in reverse initialization order",
-                exit.id.0
-            ),
-        ));
-    }
-    let actual_conditional = exit
-        .finalize_in_order
-        .iter()
-        .filter_map(|action| {
-            action
-                .active_case
-                .as_ref()
-                .map(|condition| (action.guard_flag, condition.clone()))
-        })
-        .collect::<Vec<_>>();
-    if actual_conditional != expected_conditional {
-        return Err(replay_error(
-            function,
-            "exit does not preserve exact conditional variant finalizers",
-        ));
-    }
-    let finalized = expected.into_iter().collect::<BTreeSet<_>>();
-    state.live_order.retain(|flag| !finalized.contains(flag));
-    state.conditional_variants.retain(|variant| {
-        !leaving.contains(&storage_regions[&variant.root.storage])
-            || matches!(
-                &exit.continuation,
-                ExitContinuation::CommitResult {
-                    source: CleanupResultSource::Owned { storage },
-                } if storage == &variant.root
-            )
-    });
-    if state.live_order.iter().any(|flag| {
-        let leaf = &leaves[flag];
-        leaving.contains(&storage_regions[&leaf.place.storage]) && !protected_result.contains(flag)
-    }) {
-        return Err(replay_error(
-            function,
-            "cleanup exit retains a live non-result leaf in a region it leaves",
-        ));
-    }
-
-    match &exit.continuation {
-        ExitContinuation::Continue(edge) => {
-            if state.pending_failure.is_some() || state.selected_failure.is_some() {
-                return Err(replay_error(
-                    function,
-                    "normal cleanup continuation carries a failure state",
-                ));
-            }
-            Ok(Some((*edge, state)))
-        }
-        ExitContinuation::ReturnFailure { source } => {
-            if state.pending_failure.is_some()
-                || state.selected_failure.as_ref() != Some(source)
-                || !state.live_order.is_empty()
-                || !state.conditional_variants.is_empty()
-            {
-                return Err(replay_error(
-                    function,
-                    "failure return changes status or retains live ownership",
-                ));
-            }
-            Ok(None)
-        }
-        ExitContinuation::CommitResult { source } => {
-            if state.pending_failure.is_some() || state.selected_failure.is_some() {
-                return Err(replay_error(
-                    function,
-                    "result commit follows a pending or selected failure",
-                ));
-            }
-            match source {
-                CleanupResultSource::Scalar { .. } => {
-                    if !state.live_order.is_empty() || !state.conditional_variants.is_empty() {
-                        return Err(replay_error(
-                            function,
-                            "scalar result commits before non-result cleanup completes",
-                        ));
-                    }
-                    if expression_has_try(&function.body) {
-                        let staged = state.staged_copy_result.take().ok_or_else(|| {
-                            replay_error(
-                                function,
-                                "Copy Result commit has no authenticated staged producer",
-                            )
-                        })?;
-                        validate_staged_target(function, &staged)?;
-                    } else if state.staged_copy_result.is_some() {
-                        return Err(replay_error(
-                            function,
-                            "non-try scalar result carries a staged Copy aggregate",
-                        ));
-                    }
-                }
-                CleanupResultSource::Owned { storage: result } => {
-                    if let Some(index) = state
-                        .conditional_variants
-                        .iter()
-                        .position(|variant| variant.root == *result)
-                    {
-                        if !state.live_order.is_empty() || state.conditional_variants.len() != 1 {
-                            return Err(replay_error(
-                                function,
-                                "conditional owned result retains non-result ownership",
-                            ));
-                        }
-                        state.conditional_variants.remove(index);
-                    } else {
-                        let result_flags = validate_place(function, result, storage, leaves)?;
-                        if result_flags
-                            .iter()
-                            .any(|flag| !state.live_order.contains(flag))
-                            || state.live_order.len() != result_flags.len()
-                        {
-                            return Err(replay_error(
-                            function,
-                            "owned result commit has incomplete result or remaining non-result ownership",
-                        ));
-                        }
-                        let result_flags = result_flags.into_iter().collect::<BTreeSet<_>>();
-                        state.live_order.retain(|flag| !result_flags.contains(flag));
-                    }
-                }
-            }
-            state.published = true;
-            if !state.live_order.is_empty() || !state.conditional_variants.is_empty() {
-                return Err(replay_error(
-                    function,
-                    "result publication leaves cleanup ownership live",
-                ));
-            }
-            Ok(None)
-        }
-        ExitContinuation::ReturnUnit => {
-            if state.pending_failure.is_some()
-                || state.selected_failure.is_some()
-                || !state.live_order.is_empty()
-                || !state.conditional_variants.is_empty()
-            {
-                return Err(replay_error(
-                    function,
-                    "unit return follows failure or incomplete cleanup",
-                ));
-            }
-            state.published = true;
-            Ok(None)
-        }
-    }
-}
-
-fn require_normal_flow_state(
-    function: &ResolvedFunction,
-    state: &PathState,
-    block: BlockId,
-) -> Result<(), Diagnostic> {
-    if state.pending_failure.is_none() && state.selected_failure.is_none() && !state.published {
-        Ok(())
-    } else {
-        Err(replay_error(
-            function,
-            format!(
-                "block {} continues ordinary control flow with failure or publication state",
-                block.0
-            ),
-        ))
-    }
-}
-
-fn validate_staged_target(
-    function: &ResolvedFunction,
-    source: &StagedCopyResultSource,
-) -> Result<(), Diagnostic> {
-    let target = match source {
-        StagedCopyResultSource::Body {
-            expression,
-            instance,
-        } => {
-            if expression != &function.body.id {
-                return Err(replay_error(
-                    function,
-                    "body result staging references another expression",
-                ));
-            }
-            instance
-        }
-        StagedCopyResultSource::TryResidual {
-            target_instance, ..
-        }
-        | StagedCopyResultSource::TryOptionNone {
-            target_instance, ..
-        } => target_instance,
-    };
-    if target != &function.return_type {
-        return Err(replay_error(
-            function,
-            "staged Copy result targets another concrete function result",
-        ));
-    }
-    Ok(())
 }
 
 fn expression_has_kind(
@@ -7680,11 +7356,17 @@ fn validate_reference_coverage(function: &ResolvedFunction) -> Result<(), Diagno
     }
     for exit in &plan.exits {
         match &exit.continuation {
-            ExitContinuation::Continue(edge) => edge_references[edge.0 as usize] += 1,
+            ExitContinuation::Continue(edge)
+            | ExitContinuation::LoopBreak { edge, .. }
+            | ExitContinuation::FunctionReturn { edge, .. } => {
+                edge_references[edge.0 as usize] += 1
+            }
             ExitContinuation::ReturnFailure { source } => {
                 status_references.insert(source.clone());
             }
-            ExitContinuation::CommitResult { .. } | ExitContinuation::ReturnUnit => {}
+            ExitContinuation::CommitResult { .. }
+            | ExitContinuation::ReturnUnit
+            | ExitContinuation::LoopLatch { .. } => {}
         }
     }
     if edge_references.iter().any(|count| *count != 1) {
@@ -7719,7 +7401,16 @@ fn block_successors(function: &ResolvedFunction, block: BlockId) -> Vec<BlockId>
         CleanupTerminator::Goto(edge) => vec![*edge],
         CleanupTerminator::Branch(edges) => edges.clone(),
         CleanupTerminator::Exit(exit) => match &plan.exits[exit.0 as usize].continuation {
-            ExitContinuation::Continue(edge) => vec![*edge],
+            ExitContinuation::Continue(edge)
+            | ExitContinuation::LoopBreak { edge, .. }
+            | ExitContinuation::FunctionReturn { edge, .. } => vec![*edge],
+            ExitContinuation::LoopLatch { .. } => {
+                // A generated advancement proof fragment has no CFG edge; its
+                // certified entry is the only implicit successor.
+                return lexical_cert::latch_resume(plan, *exit)
+                    .into_iter()
+                    .collect();
+            }
             ExitContinuation::CommitResult { .. }
             | ExitContinuation::ReturnFailure { .. }
             | ExitContinuation::ReturnUnit => Vec::new(),

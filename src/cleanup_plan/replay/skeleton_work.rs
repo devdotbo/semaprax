@@ -13,6 +13,8 @@ pub(super) struct SkeletonWork<'a, 'b> {
     /// Authored same-owner append and direct literal-format String moves.
     pub(super) string_owner_moves: BTreeSet<ExpressionId>,
     pub(super) string_condition_reads: BTreeSet<ExpressionId>,
+    /// Authenticated execution identity of a lexical-profile function.
+    pub(super) owner: Option<crate::hir::FunctionExecutionId>,
 }
 
 impl<'a, 'b> SkeletonWork<'a, 'b> {
@@ -27,6 +29,11 @@ impl<'a, 'b> SkeletonWork<'a, 'b> {
             renewal_bindings: crate::cleanup_plan::renewal_bindings(program, function),
             string_owner_moves: crate::literal_format::moving_string_operands(function),
             string_condition_reads: crate::string_ops::conditions::function_reads(function),
+            owner: if crate::hir::lexical_exit::requires(function).unwrap_or(false) {
+                crate::hir::lexical_exit::owner(program, function).ok()
+            } else {
+                None
+            },
         }
     }
 

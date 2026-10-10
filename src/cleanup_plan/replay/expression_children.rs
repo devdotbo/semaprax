@@ -9,6 +9,9 @@ pub(super) fn replay_expression_child(
         return args.get(index);
     }
     match &expression.kind {
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            (index == 0).then(|| value.as_deref()).flatten()
+        }
         ResolvedExprKind::Closure { captures, .. } => {
             captures.get(index).map(|capture| &capture.value)
         }

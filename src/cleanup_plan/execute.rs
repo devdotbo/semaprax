@@ -220,6 +220,7 @@ pub fn execute_for_conformance(
     Executor::new(program, function, scenario)?.run()
 }
 
+mod lexical;
 mod result_admission;
 use result_admission::validate_public_result_type;
 
@@ -233,6 +234,11 @@ fn collect_variant_domains(
         domains: &mut BTreeMap<ExpressionId, BTreeSet<DeclarationId>>,
     ) -> Result<(), CleanupExecutionError> {
         match &expression.kind {
+            hir::ResolvedExprKind::LexicalExit { value, .. } => {
+                if let Some(operand) = value {
+                    visit(program, operand, domains)?;
+                }
+            }
             hir::ResolvedExprKind::Int(_)
             | hir::ResolvedExprKind::Int32(_)
             | hir::ResolvedExprKind::Char(_)
@@ -786,9 +792,15 @@ impl<'a> Executor<'a> {
                 CleanupTerminator::Exit(exit) => {
                     let exit = self.exit(exit, current)?.clone();
                     self.execute_finalizers(&exit)?;
+                    let exit_id = exit.id;
                     match exit.continuation {
-                        ExitContinuation::Continue(edge) => {
+                        ExitContinuation::Continue(edge)
+                        | ExitContinuation::LoopBreak { edge, .. }
+                        | ExitContinuation::FunctionReturn { edge, .. } => {
                             current = self.follow_goto(current, edge)?;
+                        }
+                        ExitContinuation::LoopLatch { .. } => {
+                            current = self.latch_successor(exit_id)?;
                         }
                         ExitContinuation::CommitResult { source } => {
                             break (self.commit_result(source)?, TerminalKind::CommitResult);
