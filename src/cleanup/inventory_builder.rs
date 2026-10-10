@@ -13,7 +13,7 @@ pub(crate) fn build_inventory(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
 ) -> Result<CleanupInventory, Diagnostic> {
-    build_inventory_inner(program, function, None)
+    build_inventory_inner(program, function, None, false)
 }
 
 /// Selected physical constructor only: direct primitive owned resources and
@@ -26,16 +26,29 @@ pub(crate) fn build_inventory_with_reservation<'a>(
     function: &ResolvedFunction,
     physical: &'a mut ReplayPhysicalReservation,
 ) -> Result<CleanupInventory, Diagnostic> {
-    build_inventory_inner(program, function, Some(RefCell::new(physical)))
+    build_inventory_inner(program, function, Some(RefCell::new(physical)), false)
+}
+
+// Kept private to the constructor module until source-bound record replay's
+// entire structural and typed-skeleton allocation closure is available.
+#[cfg(test)]
+fn build_flat_record_inventory_with_reservation<'a>(
+    program: &'a dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+    physical: &'a mut ReplayPhysicalReservation,
+) -> Result<CleanupInventory, Diagnostic> {
+    build_inventory_inner(program, function, Some(RefCell::new(physical)), true)
 }
 
 fn build_inventory_inner<'a>(
     program: &'a dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     physical: Option<RefCell<&'a mut ReplayPhysicalReservation>>,
+    flat_records: bool,
 ) -> Result<CleanupInventory, Diagnostic> {
     let mut builder = InventoryBuilder {
         physical,
+        flat_records,
         program,
         slots: Vec::new(),
         flags: Vec::new(),
@@ -109,6 +122,7 @@ fn build_inventory_inner<'a>(
 }
 
 pub(super) struct InventoryBuilder<'a> {
+    pub(super) flat_records: bool,
     pub(super) physical: Option<RefCell<&'a mut ReplayPhysicalReservation>>,
     pub(super) program: &'a dyn crate::cleanup::ReplayContext,
     pub(super) slots: Vec<CleanupStorageSlot>,
@@ -120,7 +134,11 @@ pub(super) struct InventoryBuilder<'a> {
 impl InventoryBuilder<'_> {
     pub(super) fn needs_drop(&self, ty: &ResolvedType) -> Result<bool, Diagnostic> {
         if self.physical.is_some() {
-            return selected::needs_drop_in(self.program, ty);
+            return if self.flat_records {
+                selected::needs_drop_in(self.program, ty)
+            } else {
+                selected::needs_drop(ty)
+            };
         }
         type_needs_resource_cleanup(self.program, ty).map_err(cleanup_error)
     }

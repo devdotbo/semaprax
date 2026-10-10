@@ -23,8 +23,21 @@ fn flat_record_inventory_preserves_legacy_order_at_exact_and_one_short_backing()
     let program = program();
     let function = identity(&program);
     let legacy = build_inventory(&program, function).unwrap();
+    let mut primitive = ReplayPhysicalReservation::new(usize::MAX);
+    assert_eq!(
+        build_inventory_with_reservation(&program, function, &mut primitive)
+            .unwrap_err()
+            .code,
+        "SPX-H006"
+    );
+    assert_eq!(
+        primitive.charged(),
+        0,
+        "the primitive profile remains independently closed"
+    );
     let mut physical = ReplayPhysicalReservation::new(usize::MAX);
-    let selected = build_inventory_with_reservation(&program, function, &mut physical).unwrap();
+    let selected =
+        build_flat_record_inventory_with_reservation(&program, function, &mut physical).unwrap();
     assert_eq!(selected, legacy);
     assert!(!selected.flags.is_empty());
     for slot in &selected.slots {
@@ -45,7 +58,7 @@ fn flat_record_inventory_preserves_legacy_order_at_exact_and_one_short_backing()
     let required = physical.charged();
     assert!(required > 0);
     let (exact, refused, used) = crate::bounded_output::with_limit_usage(required, || {
-        build_inventory_with_reservation(
+        build_flat_record_inventory_with_reservation(
             &program,
             function,
             &mut ReplayPhysicalReservation::new(required),
@@ -55,7 +68,7 @@ fn flat_record_inventory_preserves_legacy_order_at_exact_and_one_short_backing()
     assert_eq!(used, required);
     assert_eq!(exact.unwrap(), legacy);
     let mut short = ReplayPhysicalReservation::new(required - 1);
-    let result = build_inventory_with_reservation(&program, function, &mut short);
+    let result = build_flat_record_inventory_with_reservation(&program, function, &mut short);
     assert_eq!(result.unwrap_err().code, "SPX-H006");
     assert!(
         short.reserve(0).is_err(),
@@ -89,7 +102,11 @@ fn malformed_flat_record_identity_layout_and_recursive_carriers_refuse_before_ba
             _ => record.name.push('x'),
         }
         let mut physical = ReplayPhysicalReservation::new(usize::MAX);
-        let result = build_inventory_with_reservation(&program, identity(&program), &mut physical);
+        let result = build_flat_record_inventory_with_reservation(
+            &program,
+            identity(&program),
+            &mut physical,
+        );
         assert_eq!(result.unwrap_err().code, "SPX-H006");
         assert_eq!(
             physical.charged(),

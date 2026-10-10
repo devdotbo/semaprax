@@ -98,7 +98,11 @@ impl InventoryBuilder<'_> {
         storage: CleanupStorageId,
     ) -> Result<FieldLivenessShape, Diagnostic> {
         let program = self.program;
-        if let Some((declaration, fields)) = flat_record::fields(program, ty)? {
+        if let Some((declaration, fields)) = if self.flat_records {
+            flat_record::fields(program, ty)?
+        } else {
+            None
+        } {
             if !fields
                 .iter()
                 .any(|field| matches!(field.ty, ResolvedType::String | ResolvedType::Bytes))
