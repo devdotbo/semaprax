@@ -1,5 +1,11 @@
 # Changelog
 
+- Author a separate selected-file resource profile with 256 raw argv and the
+  existing v28 String/output envelope. Add a LogLens reference whose source
+  owns usage and whose wrapper grants only the selected file, plus an opt-in
+  capability-authenticated future setup. Preserve original CLI49, retained
+  tests, historical evidence and TypeScript task; qualification remains pending.
+
 - Add an invocation-selected native64 Unix file-input profile with an optional
   host selector that preserves complete application argv. The first checked
   read lazily acquires one held regular-file descriptor under an explicit

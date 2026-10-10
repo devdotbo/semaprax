@@ -595,6 +595,7 @@ pub use profile::{
     PROJECT_PROFILE_OWNED_UTF8_API_V1, PROJECT_PROFILE_PROCESS_IO_V1,
     PROJECT_PROFILE_PUBLIC_GENERIC_WASM_PROVIDER_V1,
     PROJECT_PROFILE_SOURCE_COMMAND_RESOURCE_OUTPUT_V1,
+    PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_RESOURCE_V1,
     PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_V1, PROJECT_PROFILE_SOURCE_COMMAND_V1,
     PROJECT_PROFILE_SOURCE_LOCAL_FUTURE_V1,
     PROJECT_PROFILE_STDIN_STREAM_COLLECTION_RECORD_COMMAND_IO_V1,
@@ -606,8 +607,9 @@ pub use profile::{
     PROJECT_PROFILE_STDIN_STREAM_TEXT_COMMAND_IO_V1, PROJECT_PROFILE_USEFUL_DATA_COMMAND_V1,
     PROJECT_PROFILE_USEFUL_DATA_COMMAND_V2, PROJECT_PROFILE_USEFUL_DATA_V1,
     PROJECT_PROFILE_USEFUL_DATA_V2, PROJECT_PROFILE_USEFUL_TEXT_CONSUMER_V1, PROJECT_SCHEMA_V31,
-    PROJECT_SCHEMA_V32, PROJECT_SCHEMA_V33, PROJECT_SOURCE_COMMAND_INPUT_V1,
+    PROJECT_SCHEMA_V32, PROJECT_SCHEMA_V33, PROJECT_SCHEMA_V34, PROJECT_SOURCE_COMMAND_INPUT_V1,
     PROJECT_SOURCE_COMMAND_SELECTED_FILE_INPUT_V1,
+    PROJECT_SOURCE_COMMAND_SELECTED_FILE_RESOURCE_INPUT_V1,
 };
 pub use public_api::{
     derive_public_api_descriptor, replay_public_api_descriptor, PublicApiDescriptor,
@@ -1171,6 +1173,9 @@ impl ProjectSnapshot {
         let prepared = match profile {
             ProjectProfile::SourceCommandSelectedFileV1 => {
                 crate::codegen::emit_hir_c_with_selected_file_command(&self.entry_program)
+            }
+            ProjectProfile::SourceCommandSelectedFileResourceV1 => {
+                crate::codegen::emit_hir_c_with_selected_file_resource_command(&self.entry_program)
             }
             ProjectProfile::SourceCommandV1 => {
                 crate::codegen::emit_hir_c_with_source_command(&self.entry_program)

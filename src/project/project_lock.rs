@@ -90,6 +90,9 @@ pub fn render_project_lock(snapshot: &ProjectSnapshot) -> Result<String, Vec<Dia
             ),
         ),
         ProjectProfile::SourceCommandV1 => ("source-command.v1", None),
+        ProjectProfile::SourceCommandSelectedFileResourceV1 => {
+            ("source-command.selected-file.resource-output.v1", None)
+        }
         ProjectProfile::SourceCommandSelectedFileV1 => ("source-command.selected-file.v1", None),
         ProjectProfile::SourceCommandResourceOutputV1 => {
             ("source-command.resource-output.v1", None)

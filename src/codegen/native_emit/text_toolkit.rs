@@ -70,6 +70,7 @@ impl<O: COutput> CEmitter<'_, O> {
                     self.output_profile,
                     super::NativeOutputProfile::SourceCommand
                         | super::NativeOutputProfile::SourceSelectedFileCommand
+                        | super::NativeOutputProfile::SourceSelectedFileResourceCommand
                         | super::NativeOutputProfile::SourceResourceCommand
                 ) {
                     return Err(backend_error(

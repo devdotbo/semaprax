@@ -61,6 +61,7 @@ pub(super) enum PreparedProjectAdmission {
     ProcessIoV1,
     SourceCommandV1,
     SourceCommandSelectedFileV1,
+    SourceCommandSelectedFileResourceV1,
     SourceCommandResourceOutputV1,
     /// An authenticated no-export alloc-tier standard package retains its
     /// internal owned closure without constructing a public descriptor.
@@ -107,6 +108,9 @@ impl PreparedProjectAdmission {
             Self::ProcessIoV1 => ProjectProfile::ProcessIoV1,
             Self::SourceCommandV1 => ProjectProfile::SourceCommandV1,
             Self::SourceCommandSelectedFileV1 => ProjectProfile::SourceCommandSelectedFileV1,
+            Self::SourceCommandSelectedFileResourceV1 => {
+                ProjectProfile::SourceCommandSelectedFileResourceV1
+            }
             Self::SourceCommandResourceOutputV1 => ProjectProfile::SourceCommandResourceOutputV1,
             Self::FilesystemIoV2 => ProjectProfile::FilesystemIoV2,
             Self::FilesystemIoV3 => ProjectProfile::FilesystemIoV3,
@@ -185,6 +189,10 @@ pub(super) fn prepare(
         ProjectProfile::SourceCommandSelectedFileV1 => {
             super::source_command::admit(program, manifest)?;
             Ok(PreparedProjectAdmission::SourceCommandSelectedFileV1)
+        }
+        ProjectProfile::SourceCommandSelectedFileResourceV1 => {
+            super::source_command::admit(program, manifest)?;
+            Ok(PreparedProjectAdmission::SourceCommandSelectedFileResourceV1)
         }
         ProjectProfile::SourceCommandV1 => {
             super::source_command::admit(program, manifest)?;

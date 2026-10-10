@@ -4028,6 +4028,14 @@ Project graphs, semantic evidence or retained linker metadata. Qualification
 is pending; the owning `project::source_command::selected_file` tests define
 O0/O2 usage, authority, descriptor substitution, drift and settlement gates.
 
+The additive [selected-file resource profile](INVOCATION-SELECTED-FILE-RESOURCE-V1.md)
+selects v34, a separate 256-argv carrier and selected-file resource launcher.
+The exact native resource classifier covers v28/v34 String-derived views and
+checked output helpers; v33's provider, launcher and bounds remain frozen.
+The new LogLens reference owns source-level usage and delegates only explicit
+file selection to the host. Capability-authenticated future prompt setup adds
+no oracle or historical acceptance authority. Executable qualification is pending.
+
 The additive [Project v28 resource-output source command](PROJECT-MANIFEST-V28.md)
 reuses that exact argv/file provider and native publication boundary. Its
 separate native output profile owns the 1 MiB per-String/authenticated

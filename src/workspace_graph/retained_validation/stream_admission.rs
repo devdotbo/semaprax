@@ -121,6 +121,7 @@ pub(in crate::workspace_graph) fn stream_test_program(
     match profile {
         crate::project::ProjectProfile::SourceCommandV1
         | crate::project::ProjectProfile::SourceCommandSelectedFileV1
+        | crate::project::ProjectProfile::SourceCommandSelectedFileResourceV1
         | crate::project::ProjectProfile::SourceCommandResourceOutputV1 => {
             build.linked_source_command_test_program(test_module)
         }

@@ -24,9 +24,11 @@ use crate::project::profile::{
 };
 use crate::project::profile::{
     PROJECT_PROFILE_SOURCE_COMMAND_RESOURCE_OUTPUT_V1,
+    PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_RESOURCE_V1,
     PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_V1, PROJECT_PROFILE_SOURCE_COMMAND_V1,
-    PROJECT_SCHEMA_V33, PROJECT_SOURCE_COMMAND_INPUT_V1,
+    PROJECT_SCHEMA_V33, PROJECT_SCHEMA_V34, PROJECT_SOURCE_COMMAND_INPUT_V1,
     PROJECT_SOURCE_COMMAND_SELECTED_FILE_INPUT_V1,
+    PROJECT_SOURCE_COMMAND_SELECTED_FILE_RESOURCE_INPUT_V1,
 };
 use profiles::{lower_profile, profile_by_name};
 
@@ -520,6 +522,7 @@ fn structural_diagnostics(tables: &[Table<'_>], law_layout: bool) -> Vec<Diagnos
             | PROJECT_PROFILE_PROCESS_IO_V1
             | PROJECT_PROFILE_SOURCE_COMMAND_V1
             | PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_V1
+            | PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_RESOURCE_V1
             | PROJECT_PROFILE_SOURCE_COMMAND_RESOURCE_OUTPUT_V1
     );
     if command_profile {
@@ -551,6 +554,9 @@ fn structural_diagnostics(tables: &[Table<'_>], law_layout: bool) -> Vec<Diagnos
         }
         let expected_input = match profile {
             PROJECT_PROFILE_SOURCE_COMMAND_V1 => Some(PROJECT_SOURCE_COMMAND_INPUT_V1),
+            PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_RESOURCE_V1 => {
+                Some(PROJECT_SOURCE_COMMAND_SELECTED_FILE_RESOURCE_INPUT_V1)
+            }
             PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_V1 => {
                 Some(PROJECT_SOURCE_COMMAND_SELECTED_FILE_INPUT_V1)
             }
@@ -598,7 +604,11 @@ fn structural_diagnostics(tables: &[Table<'_>], law_layout: bool) -> Vec<Diagnos
             if if profile == PROJECT_PROFILE_SOURCE_COMMAND_V1 {
                 !crate::source_command::selects(required)
                     || !required.windows(2).all(|v| v[0] < v[1])
-            } else if profile == PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_V1 {
+            } else if matches!(
+                profile,
+                PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_V1
+                    | PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_RESOURCE_V1
+            ) {
                 !crate::source_command::selects(required)
                     || !required.iter().any(|v| v == "fs.read")
                     || !required.iter().any(|v| v == "process.args.read")
@@ -618,7 +628,11 @@ fn structural_diagnostics(tables: &[Table<'_>], law_layout: bool) -> Vec<Diagnos
             } {
                 let message = if profile == PROJECT_PROFILE_SOURCE_COMMAND_V1 {
                     "source-command.v1 requires a sorted nonempty subset of fs.read, process.args.read, process.stderr.write, process.stdout.write, other than stdout alone".to_owned()
-                } else if profile == PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_V1 {
+                } else if matches!(
+                    profile,
+                    PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_V1
+                        | PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_RESOURCE_V1
+                ) {
                     "source-command.selected-file.v1 requires sorted source-command capabilities including fs.read and process.args.read".to_owned()
                 } else if profile == PROJECT_PROFILE_SOURCE_COMMAND_RESOURCE_OUTPUT_V1 {
                     "source-command.resource-output.v1 requires a sorted nonempty subset of fs.read, process.args.read, process.stderr.write, process.stdout.write, other than stdout alone".to_owned()
@@ -696,6 +710,7 @@ fn structural_diagnostics(tables: &[Table<'_>], law_layout: bool) -> Vec<Diagnos
                         | PROJECT_PROFILE_PROCESS_IO_V1
                         | PROJECT_PROFILE_SOURCE_COMMAND_V1
                         | PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_V1
+                        | PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_RESOURCE_V1
                         | PROJECT_PROFILE_SOURCE_COMMAND_RESOURCE_OUTPUT_V1
                 ))
         {
@@ -727,6 +742,7 @@ fn structural_diagnostics(tables: &[Table<'_>], law_layout: bool) -> Vec<Diagnos
                     | PROJECT_PROFILE_PROCESS_IO_V1
                     | PROJECT_PROFILE_SOURCE_COMMAND_V1
                     | PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_V1
+                    | PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_RESOURCE_V1
                     | PROJECT_PROFILE_SOURCE_COMMAND_RESOURCE_OUTPUT_V1
             )
         }) {

@@ -150,6 +150,7 @@ fn emit_hir_c_with_options(
     if output_profile.is_command()
         || output_profile == NativeOutputProfile::SourceCommand
         || output_profile == NativeOutputProfile::SourceSelectedFileCommand
+        || output_profile == NativeOutputProfile::SourceSelectedFileResourceCommand
         || output_profile == NativeOutputProfile::SourceResourceCommand
         || crate::string_ops::program_uses_op(program, crate::string_ops::StringOp::FileReadText)
     {
@@ -196,6 +197,8 @@ fn emit_hir_c_with_options(
     } else if output_profile == NativeOutputProfile::LanguageCommandIo {
         native_host_output::emit_language_command_runtime(&mut output);
         native_command_io::emit_runtime(&mut output);
+    } else if output_profile == NativeOutputProfile::SourceSelectedFileResourceCommand {
+        super::native_selected_file_command::emit_resource_runtime(&mut output);
     } else if output_profile == NativeOutputProfile::SourceSelectedFileCommand {
         super::native_selected_file_command::emit_runtime(&mut output, program);
     } else if output_profile == NativeOutputProfile::SourceCommand {
@@ -321,6 +324,10 @@ fn emit_hir_c_with_options(
             .symbol;
         if output_profile == NativeOutputProfile::StdoutTranscript {
             native_host_output::emit_root_wrapper(&mut output, symbol);
+            return Ok(output.into_string());
+        }
+        if output_profile == NativeOutputProfile::SourceSelectedFileResourceCommand {
+            super::native_selected_file_command::emit_resource_process_adapter(&mut output, symbol);
             return Ok(output.into_string());
         }
         if output_profile == NativeOutputProfile::SourceSelectedFileCommand {

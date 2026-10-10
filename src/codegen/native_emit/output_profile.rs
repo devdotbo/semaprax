@@ -22,6 +22,7 @@ pub(crate) enum NativeOutputProfile {
     /// directory, all supplied by the generated process adapter.
     SourceCommand,
     SourceSelectedFileCommand,
+    SourceSelectedFileResourceCommand,
     /// Project v28 source command with additive heap-backed String and output
     /// capacities. The v26 SourceCommand projection remains frozen.
     SourceResourceCommand,
@@ -116,15 +117,17 @@ impl NativeOutputProfile {
                 command_carriers: true,
                 resource_strings: false,
             },
-            Self::SourceResourceCommand => StringRuntimeSelection {
-                length_delimited: true,
-                provider_carriers: false,
-                include_instances: true,
-                reserved_bytes: false,
-                stream_epochs: false,
-                command_carriers: true,
-                resource_strings: true,
-            },
+            Self::SourceResourceCommand | Self::SourceSelectedFileResourceCommand => {
+                StringRuntimeSelection {
+                    length_delimited: true,
+                    provider_carriers: false,
+                    include_instances: true,
+                    reserved_bytes: false,
+                    stream_epochs: false,
+                    command_carriers: true,
+                    resource_strings: true,
+                }
+            }
             Self::OwnedUtf8Provider => StringRuntimeSelection {
                 length_delimited: true,
                 provider_carriers: true,
@@ -187,6 +190,7 @@ impl NativeOutputProfile {
                 | Self::StdoutTranscript
                 | Self::SourceCommand
                 | Self::SourceSelectedFileCommand
+                | Self::SourceSelectedFileResourceCommand
                 | Self::SourceResourceCommand
                 | Self::OwnedDataProvider
                 | Self::StdinStreamTextCommandIo
@@ -205,6 +209,7 @@ impl NativeOutputProfile {
             Self::StdoutTranscript
                 | Self::SourceCommand
                 | Self::SourceSelectedFileCommand
+                | Self::SourceSelectedFileResourceCommand
                 | Self::SourceResourceCommand
                 | Self::UsefulDataCommand
                 | Self::LanguageCommandIo
@@ -244,6 +249,13 @@ impl NativeOutputProfile {
 
     /// Profiles whose semantic functions see the Language Command I/O v1
     /// context (argument, stdin, and two-channel output carriers).
+    pub(super) const fn is_source_resource(self) -> bool {
+        matches!(
+            self,
+            Self::SourceResourceCommand | Self::SourceSelectedFileResourceCommand
+        )
+    }
+
     pub(super) const fn is_language_command(self) -> bool {
         matches!(
             self,
@@ -259,6 +271,7 @@ impl NativeOutputProfile {
                 | Self::ProcessCommandIo
                 | Self::SourceCommand
                 | Self::SourceSelectedFileCommand
+                | Self::SourceSelectedFileResourceCommand
                 | Self::SourceResourceCommand
         )
     }

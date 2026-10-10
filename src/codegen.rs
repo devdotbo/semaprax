@@ -1,3 +1,7 @@
+/// Read-only constructor inventory; never selects an allocation or drop profile.
+pub mod checked_final_utf8_preflight;
+#[cfg(test)]
+mod checked_string_allocation;
 #[cfg(test)]
 mod checked_string_allocation;
 mod native_adapter_abi;
@@ -43,10 +47,6 @@ mod native_module_lease;
 mod native_owned_data_provider;
 mod native_resource;
 mod native_runtime;
-#[cfg(test)]
-mod checked_string_allocation;
-/// Read-only constructor inventory; never selects an allocation or drop profile.
-pub mod checked_final_utf8_preflight;
 mod native_scalar_runtime;
 mod native_selected_file_command;
 #[cfg(any(test, feature = "unstable-native-host-internal"))]
@@ -210,7 +210,9 @@ pub fn emit_hir_c_with_source_command(program: &ResolvedProgram) -> Result<Strin
     )
 }
 
-pub use native_selected_file_command::emit_hir_c_with_selected_file_command;
+pub use native_selected_file_command::{
+    emit_hir_c_with_selected_file_command, emit_hir_c_with_selected_file_resource_command,
+};
 
 /// Emit the additive Project-v28 source command with resource-sized Strings
 /// and a heap-backed staged output envelope.

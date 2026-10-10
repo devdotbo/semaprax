@@ -1,3 +1,9 @@
+/// Selected held file with v28 resources and 256 raw application arguments.
+pub const PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_RESOURCE_V1: &str =
+    "source-command.selected-file.resource-output.v1";
+pub const PROJECT_SOURCE_COMMAND_SELECTED_FILE_RESOURCE_INPUT_V1: &str =
+    "argv-utf8-256+selected-file.follow.v1";
+pub const PROJECT_SCHEMA_V34: &str = "semaprax.project.v34";
 /// Invocation-selected held file with lazy acquisition and explicit follow policy.
 pub const PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_V1: &str = "source-command.selected-file.v1";
 pub const PROJECT_SOURCE_COMMAND_SELECTED_FILE_INPUT_V1: &str = "argv-utf8+selected-file.follow.v1";
@@ -167,6 +173,7 @@ pub enum ProjectProfile {
     ProcessIoV1,
     SourceCommandV1,
     SourceCommandSelectedFileV1,
+    SourceCommandSelectedFileResourceV1,
     SourceCommandResourceOutputV1,
     OwnedDataApiV1,
     FlatOwnedRecordApiV1,
@@ -211,6 +218,7 @@ impl ProjectProfile {
                 | Self::ProcessIoV1
                 | Self::SourceCommandV1
                 | Self::SourceCommandSelectedFileV1
+                | Self::SourceCommandSelectedFileResourceV1
                 | Self::SourceCommandResourceOutputV1
                 | Self::OwnedDataApiV1
                 | Self::FlatOwnedRecordApiV1
@@ -234,6 +242,7 @@ impl ProjectProfile {
             self,
             Self::SourceCommandV1
                 | Self::SourceCommandSelectedFileV1
+                | Self::SourceCommandSelectedFileResourceV1
                 | Self::SourceCommandResourceOutputV1
         )
     }
@@ -272,6 +281,9 @@ impl ProjectProfile {
             Self::EnvironmentIoV1 => Some(PROJECT_PROFILE_ENVIRONMENT_IO_V1),
             Self::ProcessIoV1 => Some(PROJECT_PROFILE_PROCESS_IO_V1),
             Self::SourceCommandV1 => Some(PROJECT_PROFILE_SOURCE_COMMAND_V1),
+            Self::SourceCommandSelectedFileResourceV1 => {
+                Some(PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_RESOURCE_V1)
+            }
             Self::SourceCommandSelectedFileV1 => {
                 Some(PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_V1)
             }

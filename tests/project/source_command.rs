@@ -2,6 +2,9 @@
 #[cfg(unix)]
 #[path = "source_command/selected_file.rs"]
 mod selected_file;
+#[cfg(unix)]
+#[path = "source_command/selected_file_resource.rs"]
+mod selected_file_resource;
 use semaprax::project::{self, ProjectExecutionOptions, ProjectManifest, ProjectProfile};
 use std::path::PathBuf;
 use std::process::Command;

@@ -354,6 +354,7 @@ fn derive_source_interface(
         ProjectProfile::ProcessIoV1
         | ProjectProfile::SourceCommandV1
         | ProjectProfile::SourceCommandSelectedFileV1
+        | ProjectProfile::SourceCommandSelectedFileResourceV1
         | ProjectProfile::SourceCommandResourceOutputV1 => return Ok(None),
     };
     let canonical_bytes = String::from_utf8(bytes)

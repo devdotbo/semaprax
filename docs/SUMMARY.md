@@ -241,6 +241,7 @@ Audience: all documentation readers.
 - [Project Manifest v26: linked native source commands](PROJECT-MANIFEST-V26.md)
 - [Project Manifest v28: resource source commands](PROJECT-MANIFEST-V28.md)
 - [Invocation-selected File Input v1](INVOCATION-SELECTED-FILE-INPUT-V1.md)
+- [Invocation-selected File Resource Input v1](INVOCATION-SELECTED-FILE-RESOURCE-V1.md)
 - [Package Manifest v1](PACKAGE-MANIFEST-V1.md)
 - [Package Manifest v2: explicit native law sources](PACKAGE-MANIFEST-V2.md)
 - [Native Law Declarations v1](NATIVE-LAW-DECLARATIONS-V1.md)

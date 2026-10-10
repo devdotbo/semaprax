@@ -31,7 +31,9 @@ pub(super) fn admit(
     }
     // Replay HIR, complete reachable authority and native feature admission in
     // Phase A; no destination or filesystem provider is acquired here.
-    if manifest.project_profile() == ProjectProfile::SourceCommandSelectedFileV1 {
+    if manifest.project_profile() == ProjectProfile::SourceCommandSelectedFileResourceV1 {
+        crate::codegen::emit_hir_c_with_selected_file_resource_command(program).map(drop)
+    } else if manifest.project_profile() == ProjectProfile::SourceCommandSelectedFileV1 {
         crate::codegen::emit_hir_c_with_selected_file_command(program).map(drop)
     } else if manifest.project_profile() == ProjectProfile::SourceCommandResourceOutputV1 {
         crate::source_command::validate_resource_output_authority(program)?;

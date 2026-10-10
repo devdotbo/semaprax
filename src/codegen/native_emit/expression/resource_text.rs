@@ -3,7 +3,7 @@
 use crate::diagnostic::Diagnostic;
 use crate::hir::{self, ResolvedExpr, ResolvedExprKind, ResolvedType};
 
-use super::super::{CEmitter, COutput, CValue, NativeOutputProfile};
+use super::super::{CEmitter, COutput, CValue};
 
 impl<O: COutput> CEmitter<'_, O> {
     pub(super) fn emit_str_as_bytes_view(
@@ -37,7 +37,7 @@ impl<O: COutput> CEmitter<'_, O> {
     /// Select widened helpers only for retained HIR provenance produced from
     /// an immutable borrowed `str`. Carrier shape cannot upgrade Slice/Bytes.
     pub(super) fn is_resource_text_slice(&self, expression: &ResolvedExpr) -> bool {
-        if self.output_profile != NativeOutputProfile::SourceResourceCommand {
+        if !self.output_profile.is_source_resource() {
             return false;
         }
         let provenance = match &expression.kind {
@@ -81,7 +81,7 @@ impl<O: COutput> CEmitter<'_, O> {
     }
 
     pub(super) fn produces_resource_text_view(&self, expression: &ResolvedExpr) -> bool {
-        if self.output_profile != NativeOutputProfile::SourceResourceCommand {
+        if !self.output_profile.is_source_resource() {
             return false;
         }
         match &expression.kind {
@@ -124,7 +124,7 @@ impl<O: COutput> CEmitter<'_, O> {
         value: &str,
         result: &str,
     ) -> Result<(), Diagnostic> {
-        if self.output_profile == NativeOutputProfile::SourceResourceCommand {
+        if self.output_profile.is_source_resource() {
             let helper = if self.is_resource_text_slice(expression) {
                 "spx_host_command_stdout_write_resource_str_checked_v1"
             } else {
@@ -151,7 +151,7 @@ impl<O: COutput> CEmitter<'_, O> {
         value: &str,
         result: &str,
     ) -> Result<(), Diagnostic> {
-        if self.output_profile == NativeOutputProfile::SourceResourceCommand {
+        if self.output_profile.is_source_resource() {
             let helper = if self.is_resource_text_slice(expression) {
                 "spx_host_command_stderr_write_resource_str_checked_v1"
             } else {
