@@ -2,7 +2,8 @@
 
 Status: normative design and private native allocator-kernel precursor.
 Production selection, source/HIR/cleanup integration and cross-backend
-qualification are pending. This does not complete [OPT #724](https://github.com/wavect/semaprax/issues/724).
+qualification are pending. A test-owned native status-arena adapter precursor
+is authored separately from production emission. This does not complete [OPT #724](https://github.com/wavect/semaprax/issues/724).
 The native gate is authored and unexecuted in this batch.
 
 ## Selection and compatibility
@@ -174,3 +175,103 @@ Owners: [String Operations](STRING-OPS-V1.md),
 [Native Inline String Settlement](NATIVE-INLINE-STRING-SETTLEMENT-V1.md),
 [RFC 0003](RFC-0003-CLEANUP-AND-RESOURCE-ABI.md),
 [Application JSON Codecs](APPLICATION-JSON-CODECS-V1.md).
+
+
+## Private u32 adapter precursor
+
+The test-owned compiler emitter `codegen::checked_string_allocation` emits the
+existing ordinary native status runtime, the unchanged private kernel, and
+`native_emit/checked_string_allocation/status_adapter.c`. Emission defines
+`SPX_CHECKED_STRING_KERNEL_ONLY_V1`; this flag explicitly identifies a private
+constructor-protocol probe. It is not `semaprax.checked-string-allocation.v1`,
+a source/manifest selector, proof schema or permission to execute a checked
+SEMAPRAX closure. The module is compiled only into the existing lib test harness.
+Default production emission, String drop, graph/cache and cleanup bytes do not
+change.
+
+A fresh canonically zero adapter binds one ordinary initialized invocation
+context and its caller-provided status arena, plus one explicit allocation/release
+pair. Initialization refuses a full arena or an already initialized adapter;
+there is no allocator-replacement API. The host must keep one arena slot available
+until the selected failure is registered and keep its nonthrowing allocator pair
+bound through every outstanding owner. Unexpected arena exhaustion remains an
+invariant failure, not an invented language status.
+
+Each of the nine borrowed constructors first checks the adapter's selected u32
+token. It constructs into a private candidate cell; success alone assigns the
+caller's out-cell. On kernel refusal it independently checks the closed record
+set (allocation codes 1/2 or conversion code 1, Adapter, nonretryable), registers
+that immutable record with `spx_status_record_adapter`, and retains the returned
+context-local token. Later calls return that same token without allocating,
+reading borrowed payloads or touching the out-cell. They do not append duplicate
+records. A prior unrelated arena record makes the selected token differ from
+its normalized domain code. This is selection within this private adapter;
+it does not reconstruct the emitted function's ordinary sticky-failure local.
+
+Owners still use `spx_checked_string_drop_v1` with that same explicit kernel
+context. No ordinary `spx_string_drop`, ambient allocator, canonical cleanup
+inference or allocator-compatible public String claim is added. The result
+assignment is constructor success only; it is not the final function publication
+that must follow postconditions and non-result cleanup.
+
+Two authored lib tests own this precursor: deterministic emission/signature
+inventory and a real C O0/O2 status-arena probe. The probe refuses NULL at each
+of the nine constructor allocations, retains poisoned cells and borrowed input
+bytes, checks immutable normalized records and distinct u32 tokens, verifies
+reverse matching release/reentry, and checks overflow and malformed UTF-8 before
+allocator calls. It also rejects full-arena and live-adapter reinitialization.
+The observer counters remain cumulative across fresh invocations. These tests
+are unexecuted and provide no current-head/native recovery qualification.
+
+## Exact next native source-execution integration plan
+
+The remaining boundary is semantic, not a runtime helper-name substitution:
+
+1. Select the allocation profile in authenticated preparation input, bind it
+   to exact checked closure/source bytes, and independently refuse mixed default
+   and checked materialization. Assign the selective cleanup/graph/cache version
+   together; this design does not reserve or guess the next schema number.
+2. Derive source and HIR materialization sites independently: String literals,
+   implicit owning-place clones, char/i64/usize/str/UTF-8 conversions, consuming
+   concat, and scalar collection-leaf clones. Bind exact expression identity,
+   lexical/return/contract domain, operation and live owner state. A runtime name,
+   source span or kernel presence supplies no admission authority.
+3. Add each site's allocation failure source before initialization. Ordinary
+   literal and owning-place nodes currently initialize their temporary directly;
+   they do not have an allocation `OperationFailure` exit. Reusing their success
+   exit or another call's failure exit is forbidden. Source/HIR types alone do
+   not authorize this branch.
+4. Preserve left-to-right staging and `CallCommit`. Concat's kernel borrows its
+   inputs, whereas its source call consumes a committed input group. The exact
+   selected failure contour must own and settle that committed group; pre-commit
+   refusal stays caller-owned. No kernel-side free or caller reacquisition may
+   substitute for canonical cleanup.
+5. Bind every selected String owner to the explicit allocator context in typed
+   finalizer proof and all replay/graph/cache/backend projections. Ordinary
+   `core.string.drop` currently emits `spx_string_drop`/free; it cannot release a
+   custom-allocator checked owner. Either authenticate a new selective drop
+   descriptor retaining that context through all moves, or independently prove
+   one compatible allocator contract. A raw pointer/header resemblance is not
+   proof. Context lifetime must outlive provisional results and every return
+   postcondition domain.
+6. Native lowering may call this adapter only after independent proof validation,
+   branch through the site's exact canonical selected-failure exit before the
+   owner flag is initialized, and initialize the success leaf only after status
+   zero. Final result publication still follows ensures and non-result cleanup.
+7. Cover every hidden String constructor in the selected closure before enabling
+   it: slice/trim, map keys, aggregate/record/Vec clone prefixes, closure captures,
+   defaults and replicated contracts. Until these have exact failure inventory
+   and partial-owner cleanup, their actual reachability must refuse selection;
+   a scalar-leaf constructor is not an aggregate rollback proof.
+8. Authenticate the new status domain/codes in propagated-status replay and the
+   ordinary command adapter after cleanup. Do not convert allocation failure into
+   a codec `Error`/`Refused` carrier or add source catchability implicitly.
+9. Author independent missing-edge, false-owner-initialization, wrong allocator,
+   swapped failure-domain and cross-return-contour regressions; preserve old
+   unselected source/graph/cache/native byte pins. Then run physical Nth-failure
+   probes on actual generated closures, including late arguments, partial owner
+   prefixes, provisional results and postconditions, before promotion.
+
+Interpreter and versioned Core-Wasm status/out-cell integration remain separate
+required parts of the complete profile. This native precursor neither supplies
+those backends nor completes the composed codec/application obligations of #724.

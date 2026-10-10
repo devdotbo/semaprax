@@ -41,6 +41,8 @@ mod native_module_lease;
 mod native_owned_data_provider;
 mod native_resource;
 mod native_runtime;
+#[cfg(test)]
+mod checked_string_allocation;
 mod native_scalar_runtime;
 #[cfg(any(test, feature = "unstable-native-host-internal"))]
 mod native_settlement_derivation;
