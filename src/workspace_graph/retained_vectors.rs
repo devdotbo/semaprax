@@ -160,7 +160,10 @@ pub(super) fn filter_owned_vec_accounted<T>(
                 .ok_or_else(limit_error)?;
         }
     }
-    reserve_builder_structure(sidecars)?;
+    crate::bounded_output::with_reservation_stage(
+        crate::bounded_output::ReservationStage::RetainedLoanSidecars,
+        || reserve_builder_structure(sidecars),
+    )?;
     if reuse_full_carrier::<T>(items.len(), items.capacity(), selected, fixed_element_bytes)? {
         return Ok(items);
     }

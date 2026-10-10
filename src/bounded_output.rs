@@ -22,6 +22,8 @@ pub(crate) enum ReservationStage {
     FreshResolution,
     RetainedModule,
     LoanIdentityInventory,
+    RetainedLoanScratch,
+    RetainedLoanSidecars,
 }
 
 impl ReservationStage {
@@ -33,6 +35,8 @@ impl ReservationStage {
             Self::FreshResolution => "fresh HIR resolution",
             Self::RetainedModule => "resolved module retention",
             Self::LoanIdentityInventory => "loan identity inventory",
+            Self::RetainedLoanScratch => "retained loan scratch allocation",
+            Self::RetainedLoanSidecars => "retained loan sidecar capacity",
         }
     }
 }

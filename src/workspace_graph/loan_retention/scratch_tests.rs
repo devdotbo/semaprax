@@ -81,10 +81,11 @@ fn scratch_growth_reserves_the_whole_new_carrier_and_refuses_one_short() {
     let bytes = metadata(&small) + metadata(&larger);
     for limit in [bytes, bytes - 1] {
         let mut scratch = RetentionScratch::default();
-        let (value, overflow, debit) = bounded_output::with_limit_usage(limit, || {
-            scratch.measure(&small)?;
-            scratch.measure(&larger)
-        });
+        let (value, overflow, debit, refusal) =
+            bounded_output::with_limit_usage_refusal(limit, || {
+                scratch.measure(&small)?;
+                scratch.measure(&larger)
+            });
         if limit == bytes {
             assert_eq!(value.unwrap(), expected);
             assert!(!overflow);
@@ -93,6 +94,10 @@ fn scratch_growth_reserves_the_whole_new_carrier_and_refuses_one_short() {
             let errors = value.unwrap_err();
             assert_eq!(errors[0].code, "SPX-G171");
             assert!(overflow);
+            assert_eq!(
+                refusal.unwrap().stage,
+                Some(bounded_output::ReservationStage::RetainedLoanScratch)
+            );
             // The refused replacement allocates no keys. Its diagnostic still
             // appends the complete message to the same cumulative ledger.
             assert_eq!(
@@ -223,11 +228,9 @@ module generic.scratch;
     crate::hir::validate(&resolved).unwrap();
     let instances = resolved.function_instances;
     assert_eq!(instances.len(), 2);
-    assert!(
-        instances
-            .iter()
-            .all(|instance| !instance.function.loan_plan.loans.is_empty())
-    );
+    assert!(instances
+        .iter()
+        .all(|instance| !instance.function.loan_plan.loans.is_empty()));
     let programs = vec![program];
     let authored = super::super::index_authored(&programs).unwrap();
     let wires = instances

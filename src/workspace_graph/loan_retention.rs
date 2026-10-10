@@ -259,6 +259,13 @@ fn distinct_keys<I: Iterator<Item = usize>>(
 }
 
 fn allocate_candidates(count: usize) -> Result<RetentionScratch> {
+    crate::bounded_output::with_reservation_stage(
+        crate::bounded_output::ReservationStage::RetainedLoanScratch,
+        || allocate_candidates_at_stage(count),
+    )
+}
+
+fn allocate_candidates_at_stage(count: usize) -> Result<RetentionScratch> {
     // Reserve both requested carriers before either is allocated. Charge any
     // allocator capacity excess too; replacing them never refunds old charges.
     let bytes = count
@@ -278,6 +285,13 @@ fn allocate_candidates(count: usize) -> Result<RetentionScratch> {
 }
 
 fn allocate_keys(count: usize) -> Result<Vec<usize>> {
+    crate::bounded_output::with_reservation_stage(
+        crate::bounded_output::ReservationStage::RetainedLoanScratch,
+        || allocate_keys_at_stage(count),
+    )
+}
+
+fn allocate_keys_at_stage(count: usize) -> Result<Vec<usize>> {
     let bytes = count
         .checked_mul(std::mem::size_of::<usize>())
         .ok_or_else(refusal)?;
