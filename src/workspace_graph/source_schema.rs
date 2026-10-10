@@ -2,6 +2,7 @@
 //! Frozen from-parts selectors do not acquire this authority.
 use super::*;
 use std::fmt::{self, Write};
+mod byte_helper;
 
 struct MatchText<'a>(&'a str);
 impl Write for MatchText<'_> {
@@ -177,6 +178,9 @@ pub(super) fn schema(
 ) -> Result<&'static str, Vec<Diagnostic>> {
     if module.native_law {
         return Ok("semaprax.native-law.v1");
+    }
+    if let Some(schema) = byte_helper::schema(module, modules, facts)? {
+        return Ok(schema);
     }
     let authority = |function: &hir::ResolvedFunction| {
         hir::vec_loop_renewal::requires_with_admission(function, |operation, element| {
