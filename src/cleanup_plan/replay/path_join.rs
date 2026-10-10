@@ -10,6 +10,19 @@ pub(super) fn validate_path_states(
     budget: &mut ReplayBudget,
     lexical: Option<&lexical_cert::LexicalAuth>,
 ) -> Result<(), Diagnostic> {
+    // Authenticate the absence once before path traversal. The source/HIR
+    // wrapper certificate identifies a conditional Step transfer, which must
+    // never acquire the one-leaf renewal authority of another profile.
+    if let Some(auth) = lexical {
+        for assignment in auth.wrapper_cancels.values() {
+            if crate::cleanup_plan::renewal_binding(program, function, assignment).is_some() {
+                return Err(replay_error(
+                    function,
+                    "owning Break conditional Step has unexpected renewal authority",
+                ));
+            }
+        }
+    }
     let plan = &function.cleanup_plan;
     let storage_regions = storage_regions(function)?;
     // Exact ownership state each lexical loop body must restore, captured once
@@ -208,18 +221,17 @@ pub(super) fn validate_path_states(
                         leaves,
                         extra,
                     )? {
-                        ExitFlow::Edge(edge, mut continued) => {
+                        ExitFlow::Edge(edge, continued) => {
                             let target = plan.edges[edge.0 as usize].to;
                             if let Some(assignment) =
                                 lexical.and_then(|auth| auth.wrapper_cancels.get(exit_id))
                             {
-                                // Leaving the wrapper cancels the exact Step renewal
-                                // reservation; nothing else may be repaired.
-                                if continued.renewals.remove(assignment).is_none() {
-                                    return Err(replay_error(
-                                        function,
-                                        "owning break has no exact Step renewal reservation",
-                                    ));
+                                // The authenticated hidden Step has no
+                                // one-leaf reservation. Preserve every unrelated
+                                // history; unexpected authority fails closed.
+                                if continued.renewals.contains_key(assignment) {
+                                    return Err(replay_error(function,
+                                        "owning Break conditional Step has unexpected renewal history"));
                                 }
                             }
                             if let Some(auth) = lexical {

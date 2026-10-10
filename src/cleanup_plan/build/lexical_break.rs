@@ -145,22 +145,26 @@ impl PlanBuilder<'_> {
                 .expect("lexical profile retained")
                 .building_resume = true;
             let completion = (|| {
-                let mut evaluated = self.lower_expr(tail, pending.entry, pending.state, region)?;
+                let evaluated = self.lower_expr(tail, pending.entry, pending.state, region)?;
                 if self.flow_is_closed(evaluated.block) || evaluated.owned_source.is_some() {
                     return Err(plan_error(
                         "owning Break wrapper zero tail did not complete normally",
                     ));
                 }
-                // This reservation belongs to the exited Step assignment, not
-                // to a renewed owner. Cancel it only at the wrapper's leave.
-                if evaluated
-                    .state
-                    .renewals
-                    .remove(&pending.assignment)
-                    .is_none()
+                // Hidden Step assignment is an authenticated conditional
+                // variant handoff, not a one-leaf ReserveRenewal. An attached
+                // reservation would be forged authority; never cancel it to
+                // repair the surrounding state.
+                if crate::cleanup_plan::renewal_binding(
+                    self.program,
+                    self.function,
+                    &pending.assignment,
+                )
+                .is_some()
+                    || evaluated.state.renewals.contains_key(&pending.assignment)
                 {
                     return Err(plan_error(
-                        "owning Break has no exact Step renewal reservation",
+                        "owning Break conditional Step has unexpected renewal authority",
                     ));
                 }
                 let (block, state) = self.exit_scope(evaluated.block, evaluated.state, region)?;

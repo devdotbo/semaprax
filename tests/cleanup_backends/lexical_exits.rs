@@ -273,3 +273,54 @@ fn native_owning_loop_normal_then_continue_then_break_settles_every_owner_o0_o2(
     let source = OWNED_BREAK.replace("@id(\"app.main\")", "@id(\"owned.leaf.main\")");
     owning_break_native::run(&source, 0, 9, owning_break_native::Failure::None);
 }
+
+#[test]
+fn owning_break_replay_refuses_a_forged_step_renewal_reservation() {
+    use semaprax::{
+        cleanup_plan::{CleanupPlace, CleanupTransition, StorageId},
+        hir::{self, LoopLatchKind},
+    };
+    let ast = semaprax::check(OWNED_BREAK, "owning-break-reservation-forged.spx").unwrap();
+    let mut resolved = hir::resolve(&ast).unwrap();
+    let function = resolved
+        .functions
+        .iter_mut()
+        .find(|function| function.name == "main")
+        .unwrap();
+    let loops = &function
+        .cleanup_plan
+        .lexical_control
+        .as_ref()
+        .unwrap()
+        .loops;
+    let owned: Vec<_> = loops
+        .iter()
+        .filter_map(|item| match &item.latch {
+            LoopLatchKind::OwnedIteratorStep {
+                assignment, step, ..
+            } => Some((item.condition_entry, assignment.clone(), step.clone())),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(owned.len(), 1, "exact generated owning wrapper");
+    let (entry, assignment, step) = &owned[0];
+    let block = &mut function.cleanup_plan.blocks[entry.0 as usize];
+    assert_eq!(block.id, *entry);
+    assert!(!block
+        .transitions
+        .iter()
+        .any(|transition| matches!(transition,
+        CleanupTransition::ReserveRenewal { at, .. } if at == assignment)));
+    // Retain source, identities, loop/exit certificates and every original
+    // transition. Only the purported one-leaf authority is forged.
+    block.transitions.insert(
+        0,
+        CleanupTransition::ReserveRenewal {
+            at: assignment.clone(),
+            binding: CleanupPlace::whole(StorageId::Value(step.clone())),
+        },
+    );
+    let failure = hir::validate(&resolved)
+        .expect_err("conditional Step cannot borrow one-leaf renewal authority");
+    assert_eq!(failure.code, "SPX-H006");
+}
