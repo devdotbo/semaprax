@@ -7664,3 +7664,6 @@ mod nested_owned_records_tests;
 #[cfg(test)]
 #[path = "nested_record_destructure_tests.rs"]
 mod nested_record_destructure_tests;
+
+#[cfg(test)]
+pub(super) mod phase_measurement;

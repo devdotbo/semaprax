@@ -145,3 +145,67 @@ only the borrowed value and incur no growth reservation. Existing legacy
 renewal tree maps remain separate, so helper sites introduce no opaque tree
 nodes or copied identity backing. The checked census refuses before insertion
 when its backing reservation fails.
+
+## Deferred paired construction and replay measurement (OPT #738)
+
+`scripts/measure_helper_phases.py` prepares one actual CollectionResponse
+replacement through the ordinary authenticated Project derivation and replay
+APIs. Its application calls both generated preflight and encoding, and includes
+an actual generic instance. Setup, source checking, resolution and canonical
+serialization are outside the measured intervals. Both routes use the same
+complete immutable typed program, including monomorphic functions and retained
+instances, and the same already attached plans. The owning definition checks
+exact canonical plan bytes against production construction and independent
+validation before collecting samples.
+
+The private test-only construction control preserves old-plan overlap census,
+staging reservation and complete delayed-publication carrier on both routes.
+The indexed route builds a fresh module index inside each timed sample; the
+independent route uses the existing per-function proof path. Both omit the
+production test-only observational capacity-high-water probe. Replay likewise
+uses one shared global budget over the complete program on each route, selecting
+only whether fresh helper facts are shared or independently reconstructed.
+The existing per-builder test-only capacity probes remain enabled on both
+routes, including their route-dependent backing census. Reported construction
+time is therefore instrumented test-harness phase wall time, not uninstrumented
+production compiler latency; the aggregate staged-plan observation is excluded
+on both controls. Returned plan destruction and canonical serialization are
+outside both timed intervals. These controls expose no runtime switch and confer
+no authority on cached plans.
+
+After the owning definitions are qualified, run from a clean committed checkout:
+
+```sh
+python3 scripts/measure_helper_phases.py --root "$PWD" \
+  --output /absolute/new/result-directory --warmup 2 --samples 10
+```
+
+The driver builds the owning release library test binary with all features,
+locked offline dependencies, one Cargo job, and a private target directory under
+this worktree. Compilation is separately logged and never included in phase
+latency. Each iteration rotates indexed/independent ordering. Warmup records
+remain in the raw JSONL and are excluded only from the median summary. Every
+requested construction/replay pair must succeed; missing/duplicate samples,
+source or binary drift, or mismatched generated/application source digests leave
+the run unqualified. Raw stdout, stderr, build messages, actual source bytes,
+toolchain, source revision, binary digest and all sample records are retained.
+
+`elapsed_ns` is compiler-phase wall time. `reservation_ledger_bytes` is the
+actual sticky reservation ledger debit under the unchanged 67,108,864-byte
+measurement reservation limit; it is not measured heap use, allocation count
+or RSS. Replay reports its existing work and skeleton budget debits separately
+(including conservative skeleton preflight, rather than a complete count of all
+helper proof node visits);
+construction has no corresponding complete work counter and reports null.
+Fixed harness/process context is not live application cost. This measures
+cleanup construction and replay, not source verification or resolution, physical
+JSON execution, kernel crossings (OPT #708), billing, or accepted-task efficiency.
+No measurement result or improvement is claimed before this driver is run.
+
+The normal owning definition is
+`cleanup_plan::phase_measurement::paired_routes_preserve_complete_program_plans_and_independent_replay`.
+The ignored measurement definition is
+`cleanup_plan::phase_measurement::generated_codec_construction_and_replay_measurement`.
+Both are authored in the existing library harness; the driver selects only the
+latter by its exact name. The regular qualification selector must exclude the
+ignored body from executed-success counts.

@@ -6672,3 +6672,6 @@ interface HostEcho permits { host.echo } {
         assert_eq!(canonical_digest.len(), 71);
     }
 }
+
+#[cfg(test)]
+pub(super) mod phase_measurement;

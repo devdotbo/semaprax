@@ -308,3 +308,10 @@ thread_local! {
 mod attached_capacity;
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+pub(super) fn attached_capacity_for_measurement(
+    program: &ResolvedProgram,
+) -> Result<usize, Diagnostic> {
+    attached_capacity::program(program)
+}

@@ -1,0 +1,5 @@
+module consumer.schema;
+@id("work.row") record Row {@id("work.row.text") text:string,@id("work.row.number") number:i64,}
+@id("work.metrics") record Metrics {@id("work.metrics.count") count:usize,@id("work.metrics.ok") ok:bool,}
+@id("work.report") record Report {@id("work.report.metrics") metrics:Metrics,@id("work.report.rows") rows:Vec<Row>,}
+@id("work.anchor") fn anchor()->i64{0}
