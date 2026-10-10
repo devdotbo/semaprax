@@ -35,7 +35,9 @@ pub(in crate::project::json_codec) fn literal_write(
         .join(",");
     // A fixed Copy array is ordinary stack data, not an owned String/Bytes
     // payload. Its borrow remains inside this statement's checked call.
-    format!("{output}={{let key=[{bytes}];{prefix}_writer_bytes(array_as_slice(key),{position},{output})}};{position}={position}+{}usize;\n",value.len())
+    // Keep the owned renewal itself an exact direct Call. A Block-valued RHS
+    // would consume the owner without carrying that ordinary renewal authority.
+    format!("{{let key=[{bytes}];{output}={prefix}_writer_bytes(array_as_slice(key),{position},{output});0}};{position}={position}+{}usize;\n",value.len())
 }
 
 #[cfg(test)]
@@ -71,6 +73,72 @@ mod tests {
             .stable_id
             .starts_with("response.row.json.collection-response.writer.")));
     }
+    #[test]
+    fn scoped_literal_writes_admit_exact_helpers_inside_and_outside_loops() {
+        let schema = crate::parse(
+            "module schema;@id(\"response.row\") record Row{@id(\"response.row.x\")x:i64,}@id(\"schema.main\") fn main()->i64{0}",
+            "schema.spx",
+        ).unwrap();
+        let helpers = source(&schema.types[0], "collection-response", "response");
+        let bytes_helper = helpers
+            .split("@id(\"response.row.json.collection-response.writer.digit\")")
+            .next()
+            .unwrap();
+        let first = literal_write("json_Row_response", "output", "cursor", "\"first\":");
+        let second = literal_write("json_Row_response", "output", "cursor", ",\"second\":");
+        let text = format!(
+            "module writer;\n{bytes_helper}\n@id(\"writer.main\") fn main()->i64{{
+let mut output=bytes_zeroed(128usize);let mut cursor=0usize;
+{first}let mut at=0usize;
+while at<2usize{{{first}{second}at=at+1usize;0}}
+if cursor==44usize{{1}}else{{0}}}}\n"
+        );
+        let checked = crate::check(&text, "scoped-writer.spx").unwrap();
+        let canonical = crate::format::canonical(&checked);
+        let checked_again = crate::check(&canonical, "scoped-writer-canonical.spx").unwrap();
+        assert_eq!(canonical, crate::format::canonical(&checked_again));
+        let helper = checked_again
+            .functions
+            .iter()
+            .find(|f| f.name == "json_Row_response_writer_bytes")
+            .unwrap();
+        assert!(crate::loop_calls::byte_writer::source_target(
+            &checked_again,
+            helper
+        ));
+        let resolved = crate::hir::resolve(&checked_again).unwrap();
+        crate::hir::validate(&resolved).unwrap();
+        crate::cleanup_plan::validate_program(&resolved).unwrap();
+        let main = resolved
+            .functions
+            .iter()
+            .find(|f| f.id.as_str() == "writer.main")
+            .unwrap();
+        assert_eq!(
+            main.cleanup_plan.schema,
+            crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V19
+        );
+        assert_eq!(
+            crate::loop_calls::byte_writer::checked_bindings(&resolved, main)
+                .unwrap()
+                .len(),
+            3
+        );
+        // Arbitrary Block-valued ownership assignment still has no direct-call
+        // authority; correcting the generator must not broaden that boundary.
+        let old_rhs = first
+            .replace("{let key=", "output={let key=")
+            .replace(
+                ";output=json_Row_response_writer_bytes",
+                ";json_Row_response_writer_bytes",
+            )
+            .replace(";0};", "};");
+        let hostile = text.replacen(&first, &old_rhs, 1);
+        let errors = crate::check(&hostile, "block-rhs-writer.spx").unwrap_err();
+        assert!(errors.iter().any(|e| e.code == "SPX-U105"));
+        assert!(errors.iter().any(|e| e.code == "SPX-O101"));
+    }
+
     #[test]
     fn literal_keys_use_copy_arrays_without_generated_source_expansion() {
         let key = format!("\"{}\":", "k".repeat(64));

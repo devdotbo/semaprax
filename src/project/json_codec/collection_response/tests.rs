@@ -41,11 +41,11 @@ fn json_Row_response_object_render(value:borrow Row,position:usize,output:own By
 requires json_Row_response_object_len(value)!=18446744073709551615usize && position<=byte_len(bytes_as_slice(output)) && json_Row_response_object_len(value)<=byte_len(bytes_as_slice(output))-position {
 let mut next=output;let mut cursor=position;
 next=bytes_set(next,cursor,123u8);cursor=cursor+1usize;
-let _={let key=[34u8,110u8,117u8,109u8,98u8,101u8,114u8,34u8,58u8];next=json_Row_response_writer_bytes(array_as_slice(key),cursor,next);cursor=cursor+9usize;true};
+{let key=[34u8,110u8,117u8,109u8,98u8,101u8,114u8,34u8,58u8];next=json_Row_response_writer_bytes(array_as_slice(key),cursor,next);0};cursor=cursor+9usize;
 next=json_Row_response_writer_i64(value.number,cursor,next);cursor=cursor+(usize_from_i64(jv_i64_len(value.number)));
-let _={let key=[44u8,34u8,108u8,97u8,98u8,101u8,108u8,34u8,58u8];next=json_Row_response_writer_bytes(array_as_slice(key),cursor,next);cursor=cursor+9usize;true};
+{let key=[44u8,34u8,108u8,97u8,98u8,101u8,108u8,34u8,58u8];next=json_Row_response_writer_bytes(array_as_slice(key),cursor,next);0};cursor=cursor+9usize;
 next=json_Row_response_writer_quote(string_as_str(value.label),cursor,next);cursor=cursor+(json_Row_response_utf8_quoted_len(string_as_str(value.label)));
-let _={let key=[44u8,34u8,97u8,99u8,116u8,105u8,118u8,101u8,34u8,58u8];next=json_Row_response_writer_bytes(array_as_slice(key),cursor,next);cursor=cursor+10usize;true};
+{let key=[44u8,34u8,97u8,99u8,116u8,105u8,118u8,101u8,34u8,58u8];next=json_Row_response_writer_bytes(array_as_slice(key),cursor,next);0};cursor=cursor+10usize;
 next=json_Row_response_writer_bool(value.active,cursor,next);cursor=cursor+(if value.active{4usize}else{5usize});
 next=bytes_set(next,cursor,125u8);cursor=cursor+1usize;
 next}

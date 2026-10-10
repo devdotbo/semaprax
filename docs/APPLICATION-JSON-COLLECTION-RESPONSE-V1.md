@@ -120,7 +120,11 @@ The full existing preflight runs before reserving the buffer. Invalid schema
 values and exact-size-minus-one caller limits return the original `Refused`
 outcome without reservation or publication. Every helper additionally checks its
 own exact length and remaining capacity before its first write. Keys are fixed
-Copy byte arrays in short scopes, without temporary owned Strings. Numeric digits
+Copy byte arrays in short scopes, without temporary owned Strings. Each key
+write is a direct helper-call assignment inside a Copy statement block; the
+owned assignment RHS does not wrap the call in another block. This preserves
+ordinary helper-renewal authority and ends the key borrow before the next write.
+Numeric digits
 are written directly, including the minimum signed value without negating it;
 booleans and JSON punctuation retain their exact spelling. Valid UTF-8 bytes are
 copied directly, with the existing short escapes and lowercase `\u00xx` controls.
