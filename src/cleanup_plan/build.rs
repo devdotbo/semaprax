@@ -277,16 +277,7 @@ fn edge_condition_owned_capacity(condition: &EdgeCondition) -> usize {
 
 #[cfg(test)]
 fn exit_continuation_owned_capacity(continuation: &ExitContinuation) -> usize {
-    match continuation {
-        ExitContinuation::CommitResult {
-            source: CleanupResultSource::Scalar { expression },
-        } => expression.as_str().len(),
-        ExitContinuation::CommitResult {
-            source: CleanupResultSource::Owned { storage },
-        } => cleanup_place_owned_capacity(storage),
-        ExitContinuation::ReturnFailure { source } => status_source_id_owned_capacity(source),
-        ExitContinuation::Continue(_) | ExitContinuation::ReturnUnit => 0,
-    }
+    lexical_control::exit_capacity(continuation)
 }
 
 #[cfg(test)]

@@ -12,6 +12,21 @@ pub(super) struct PendingWrapperBreak {
     assignment: ExpressionId,
 }
 
+#[cfg(test)]
+impl PendingWrapperBreak {
+    pub(super) fn owned_capacity(&self) -> usize {
+        self.wrapper
+            .owned_allocation_bytes()
+            .expect("identity census")
+            + self
+                .assignment
+                .owned_allocation_bytes()
+                .expect("identity census")
+            + self.step.as_str().len()
+            + super::lexical_control::capacity::flow_capacity(&self.state)
+    }
+}
+
 impl PlanBuilder<'_> {
     pub(super) fn lower_owned_iterator_break(
         &mut self,

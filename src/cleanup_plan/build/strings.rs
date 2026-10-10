@@ -304,9 +304,14 @@ impl PlanBuilder<'_> {
 /// replay's materialization-operation counter remains a separate contract.
 #[cfg(test)]
 pub(super) fn derived_metadata_capacity(builder: &PlanBuilder<'_>) -> usize {
-    builder.string_appends.len()
-        * (std::mem::size_of::<(ExpressionId, ExpressionId)>()
-            + std::mem::size_of::<BTreeMap<ExpressionId, ExpressionId>>())
+    let lexical = builder
+        .lexical
+        .as_ref()
+        .map_or(0, |state| state.owned_capacity());
+    lexical
+        + builder.string_appends.len()
+            * (std::mem::size_of::<(ExpressionId, ExpressionId)>()
+                + std::mem::size_of::<BTreeMap<ExpressionId, ExpressionId>>())
         + builder
             .string_appends
             .iter()

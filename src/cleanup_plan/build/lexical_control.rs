@@ -1,6 +1,10 @@
 //! Explicit execution context for the selective lexical cleanup profile.
 use super::*;
 use crate::hir::FunctionExecutionId;
+#[cfg(test)]
+pub(super) mod capacity;
+#[cfg(test)]
+pub(super) use capacity::exit_capacity;
 
 #[derive(Clone)]
 pub(super) struct LexicalBuildState {

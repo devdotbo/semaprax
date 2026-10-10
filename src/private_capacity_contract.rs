@@ -8,6 +8,8 @@
 #[path = "private_capacity_contract/lexical.rs"]
 mod lexical;
 pub(crate) use lexical::{control_target_owned_capacity, latch_owned_capacity};
+#[cfg(test)]
+pub(crate) use lexical::plan_owned_capacity as lexical_plan_owned_capacity;
 
 pub(crate) const PRELUDE_CAPACITY_IDENTITIES: [&str; 10] = [
     "core.option",

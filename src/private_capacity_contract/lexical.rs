@@ -37,7 +37,7 @@ pub(crate) fn latch_owned_capacity(latch: &LoopLatchKind) -> Option<usize> {
     }
 }
 
-pub(super) fn plan_owned_capacity(control: Option<&LexicalControlPlan>) -> Option<usize> {
+pub(crate) fn plan_owned_capacity(control: Option<&LexicalControlPlan>) -> Option<usize> {
     let Some(control) = control else {
         return Some(0);
     };
