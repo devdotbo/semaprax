@@ -35,6 +35,22 @@ pub struct LexicalControlPlan {
 }
 
 impl CleanupPlan {
+    pub fn lexical_loop(&self, condition: &ExpressionId) -> Option<&LoopCertificate> {
+        let control = self.lexical_control.as_deref()?;
+        if self.schema != super::CLEANUP_PLAN_SCHEMA_V18 || control.schema != SCHEMA {
+            return None;
+        }
+        let mut matches = control.loops.iter().filter(|item| &item.condition == condition);
+        let certificate = matches.next()?;
+        if matches.next().is_some() {
+            return None;
+        }
+        match &certificate.target {
+            ControlTarget::Loop { site, .. } if site == condition => Some(certificate),
+            _ => None,
+        }
+    }
+
     /// Exact lookup after ordinary HIR/plan validation. A duplicate site or
     /// noncanonical exit index fails closed even for an unvalidated caller.
     pub fn lexical_exit(&self, site: &ExpressionId) -> Option<(&LexicalExitCertificate, &ExitTarget)> {

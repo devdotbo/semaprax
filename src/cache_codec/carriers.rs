@@ -475,7 +475,9 @@ mod plan {
         case
     });
     codec_enum!(ExitContinuation {
-        0 => Continue(edge), 1 => CommitResult { source }, 2 => ReturnFailure { source }, 3 => ReturnUnit
+        0 => Continue(edge), 1 => CommitResult { source }, 2 => ReturnFailure { source }, 3 => ReturnUnit,
+        4 => LoopLatch { target }, 5 => LoopBreak { target, edge },
+        6 => FunctionReturn { target, edge, source }
     });
     codec_enum!(CleanupResultSource { 0 => Scalar { expression }, 1 => Owned { storage } });
     codec_struct!(ExitTarget {
@@ -484,17 +486,6 @@ mod plan {
         leaves_regions,
         finalize_in_order,
         continuation
-    });
-    codec_struct!(CleanupPlan {
-        schema,
-        entry,
-        entry_state,
-        slots,
-        status_sources,
-        blocks,
-        edges,
-        regions,
-        exits
     });
 }
 

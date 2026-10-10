@@ -23,6 +23,7 @@ use crate::diagnostic::Diagnostic;
 use std::collections::{BTreeMap, BTreeSet};
 
 mod carriers;
+mod lexical_cleanup;
 
 pub(crate) const MAX_BYTES: usize = 128 * 1024 * 1024;
 pub(crate) const MAX_ALLOCATION: usize = 128 * 1024 * 1024;
@@ -286,6 +287,8 @@ fn static_token(value: &str) -> Result<&'static str> {
         "semaprax.cleanup-plan.v15" => Ok("semaprax.cleanup-plan.v15"),
         "semaprax.cleanup-plan.v16" => Ok("semaprax.cleanup-plan.v16"),
         "semaprax.cleanup-plan.v17" => Ok("semaprax.cleanup-plan.v17"),
+        "semaprax.cleanup-plan.v18" => Ok("semaprax.cleanup-plan.v18"),
+        "semaprax.lexical-control-flow.v1" => Ok("semaprax.lexical-control-flow.v1"),
         "semaprax.loan-plan.v1" => Ok("semaprax.loan-plan.v1"),
         "semaprax.loan-plan.v2" => Ok("semaprax.loan-plan.v2"),
         "callee" => Ok("callee"),

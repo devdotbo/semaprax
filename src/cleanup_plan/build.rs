@@ -978,6 +978,7 @@ impl<'a> PlanBuilder<'a> {
             edges: self.edges,
             regions: self.regions,
             exits: self.exits,
+            lexical_control: None,
         })
     }
 
