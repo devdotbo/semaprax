@@ -1,5 +1,7 @@
 # Changelog
 
+- Propose the unimplemented OPT #746 owned Bytes consume-and-partition contract: bounded disjoint leases, exact staged transfer and selected-domain lifetime, without changing existing allocation quotas or admitting the maximum-row constructor loop.
+
 - Authored consuming owned-record outer Vec renewal with independently recovered
   iterator authority, existing v15 reservation replay and selective Graph v79;
   native/Core-Wasm and hostile regression definitions await qualification.
