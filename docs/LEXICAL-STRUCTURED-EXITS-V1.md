@@ -12,7 +12,7 @@ ambient capability, label, closure escape or new generic/aggregate family.
 
 An exit is a terminal block tail with no normal value. It is not an integer
 zero, searching Boolean, discarded value or source-only/backend-only jump.
-`LexicalExitKind` is Break, Continue or Return. The proposed AST and HIR node is
+`LexicalExitKind` is Break, Continue or Return. The authored AST and HIR node is
 `LexicalExit { kind, value }`, with the HIR also retaining `target: ControlTarget`.
 Break/continue have no value; return has exactly one evaluated value. Source
 syntax cannot mint a target. Parsing rejects statements after an unconditional
@@ -41,10 +41,25 @@ then condition/next-item evaluation. Dropping the latch would silently turn a
 continue into an infinite loop or repeat an item. SourceForStep carries its exact
 step ExpressionId; it is not identified by generated variable spelling.
 
+## Authoring and diagnostics
+
+A guard may end its selected arm with `if skip { continue; };` or
+`if done { break; };`. Other paths continue normally. Do not add a dummy value
+following an unconditional exit. Keep the loop's ordinary tail on paths that
+complete normally. No labeled exit or valued break is admitted.
+
+`SPX-T312` rejects a lexical exit crossing an initializer, argument, aggregate,
+return operand, closure, unsafe or yields boundary. `SPX-T313` requires an
+actual enclosing loop for break/continue. `SPX-T103` and `SPX-O104` preserve the
+function's declared result and owning transfer. Independent HIR validation uses
+`SPX-H006` for forged function/nearest-loop targets, latch identities or stored
+bottom types. A returned call may fail through the ordinary staged-argument
+failure route; that does not authorize another lexical exit in its argument.
+
 ## Finite cleanup proof
 
-The selective proof is `semaprax.lexical-control-flow.v1`, joined with the next
-explicit cleanup schema reserved by the owning cleanup implementation. Functions
+The selective proof is `semaprax.lexical-control-flow.v1`, joined with selective
+cleanup v18 and loan-plan v3. Functions
 without lexical exits keep their prior graph/cache/cleanup schemas and bytes.
 Older proof profiles refuse new exit nodes rather than guessing an interpretation.
 

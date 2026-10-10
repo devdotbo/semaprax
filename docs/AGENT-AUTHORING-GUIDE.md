@@ -34,4 +34,7 @@ Choose an application route with `semaprax help language author:routes`.
 Find library declarations with `semaprax help language find:<word>:0`;
 each bounded page prints its exact continuation.
 
+For statement-tail break/continue/return and their closed contexts, use
+`semaprax help language author:lexical-exits`; executable qualification is pending.
+
 Help grants no capability or profile.

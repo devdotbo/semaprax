@@ -68,8 +68,17 @@ fn main() -> i64
   guard `if condition { return value; }` before its remaining statements.
   A terminal `match` may use block arms that explicitly return on every path.
   These [acyclic returns](ACYCLIC-GUARD-RETURNS-V1.md) normalize to ordinary
-  value `if`s and `match` arms. Loop exits, expression statements, tuples and unit values stay
-  outside this profile.
+  value `if`s and `match` arms. The separate [lexical exits](LEXICAL-STRUCTURED-EXITS-V1.md)
+  profile admits `break;`, `continue;` and ordinary `return value;` as direct
+  function/loop/control-block tails; executable qualification is pending.
+  Use `if skip { continue; };` or `if done { break; };` inside a loop.
+  An unconditional exit ends its block: do not add a dummy tail or unreachable
+  effects. Continue advances an admitted source `for` exactly once; break/continue
+  target only the nearest loop (`SPX-T313` otherwise). Exit crossings through
+  initializers, arguments, aggregate fields, return operands, closures, unsafe or
+  yields functions refuse (`SPX-T312`). Return must keep the declared result type
+  and owning transfer (`SPX-T103`/`SPX-O104`). Expression statements, tuples and
+  public unit/bottom values remain closed. See `help language author:lexical-exits`.
 - Source blocks, delimiters, unary chains, and expression trees may nest at
   most 128 levels; `SPX-P207` asks you to extract a named helper.
 - Canonical layout puts the function body's `{` on its own line and each
@@ -979,11 +988,11 @@ module app.habit;
 @id("app.main")
 fn main() -> i64
 {
-    return 42;
+    return;
 }
 ```
 
-No `return`. Make the value the block's tail expression: `42`.
+A return needs a value: write `return 42;` or use the tail expression `42`.
 
 <!-- expect: SPX-P203 -->
 ```semaprax

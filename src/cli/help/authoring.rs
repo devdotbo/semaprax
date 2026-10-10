@@ -2,7 +2,7 @@
 use std::fmt::Write as _;
 
 const MAX_BYTES: usize = 2_048;
-const ROUTES: &str = "Authoring routes (complete):\n  author:stdin-json               v27 bounded native stream command\n  author:stream-data-v2           v29 private record/Vec stream command\n  author:owned-data               v30 private owned-leaf collections\n  author:collection-records       v31 nested records containing Vec\n  author:nested-outcomes         v32 typed nested success/error carriers\n  author:file-text                native UTF-8 file command\n  author:source-web               single-source web build\n  author:literal-format           checked literal String rendering\n  author:string-from-utf8         strict owned String construction from bytes\n  author:copy-record-vec          flat Copy-record vectors\n  author:record-sort-keys         explicit stable field sort policies\n  author:record-field-views       borrowed record and Vec field reads\n  author:record-traversal         scoped borrowed rows and optional indices\n  author:json-codec               checked source JSON codec derivation\n  author:json-identifier-views    one identifier as a token view\n  author:json-request-views       bounded identifier and record arrays\n  author:json-stream-request-views bounded native stream request view\n  author:json-owned-request      bounded owning request collections\n  author:json-utf8-owned-request bounded UTF-8 string values\n  author:json-stream-utf8-owned-request bounded UTF-8 stdin requests\n  author:json-collection-response bounded nested collection encoder\n  author:json-nested-request      bounded finite nested request decoder\n  author:json-stream-nested-request bounded finite nested stdin decoder\n  author:json-nested-response     bounded finite nested borrowed encoder\n  author:json-request-response    typed request/response composition boundaries\nLibrary-only search: help language find:<word>:0\nExact card sections: help language topics\n";
+const ROUTES: &str = "Authoring routes (complete):\n  author:lexical-exits            statement-tail break/continue/return\n  author:stdin-json               v27 bounded native stream command\n  author:stream-data-v2           v29 private record/Vec stream command\n  author:owned-data               v30 private owned-leaf collections\n  author:collection-records       v31 nested records containing Vec\n  author:nested-outcomes         v32 typed nested success/error carriers\n  author:file-text                native UTF-8 file command\n  author:source-web               single-source web build\n  author:literal-format           checked literal String rendering\n  author:string-from-utf8         strict owned String construction from bytes\n  author:copy-record-vec          flat Copy-record vectors\n  author:record-sort-keys         explicit stable field sort policies\n  author:record-field-views       borrowed record and Vec field reads\n  author:record-traversal         scoped borrowed rows and optional indices\n  author:json-codec               checked source JSON codec derivation\n  author:json-identifier-views    one identifier as a token view\n  author:json-request-views       bounded identifier and record arrays\n  author:json-stream-request-views bounded native stream request view\n  author:json-owned-request      bounded owning request collections\n  author:json-utf8-owned-request bounded UTF-8 string values\n  author:json-stream-utf8-owned-request bounded UTF-8 stdin requests\n  author:json-collection-response bounded nested collection encoder\n  author:json-nested-request      bounded finite nested request decoder\n  author:json-stream-nested-request bounded finite nested stdin decoder\n  author:json-nested-response     bounded finite nested borrowed encoder\n  author:json-request-response    typed request/response composition boundaries\nLibrary-only search: help language find:<word>:0\nExact card sections: help language topics\n";
 
 #[cfg(test)]
 pub(super) fn assert_guide_contract() {
@@ -22,6 +22,15 @@ pub(super) fn assert_guide_contract() {
 pub(super) fn lookup(query: &str) -> Result<String, String> {
     match query {
         "author:routes" => Ok(ROUTES.to_owned()),
+        "author:lexical-exits" => Ok(concat!(
+            "Lexical structured exits v1: source implementation; executable qualification pending.\n",
+            "Inside an admitted loop: if skip { continue; }; if done { break; }; followed by the ordinary body tail. An unconditional exit ends its block: do not append dummy 0 or unreachable effects.\n",
+            "break; and continue; target the nearest loop. while continue checks its condition; for/for borrow/for own continue advances the authenticated iterator exactly once without running the body suffix. for own break settles remaining items. No labels or valued break.\n",
+            "return value; targets this function and must have its exact declared result type. Ordinary accepted acyclic guard/terminal returns keep their existing value projection.\n",
+            "Exits are direct function/loop/control-block statement tails, never inside initializers, call arguments, aggregates, return operands, closures, unsafe or yields functions. SPX-T312: move the exit to a statement guard. SPX-T313: break/continue need an enclosing loop. SPX-T103/O104: preserve exact result type and owner transfer.\n",
+            "Owned returns stage the result before inner cleanup; root locals remain through ensures. Failure never publishes a result; existing staged-argument failure rules remain. A moved outer owner cannot be revived by break/continue.\n",
+            "No public bottom type, ABI, capability, new carrier or old report-profile admission. H006 refuses forged target/latch identities. Cleanup v18 and loan v3 are selective; old functions retain their schemas. Contract and pending gates: docs/LEXICAL-STRUCTURED-EXITS-V1.md.\n"
+        ).to_owned()),
         "author:stdin-json" => Ok(concat!(
             "Native stream data route (complete guidance; exact library lookup follows):\n",
             "new app --template stdin-stream-data\n",
@@ -356,15 +365,18 @@ mod tests {
         ] {
             assert!(card.contains(text), "{text}");
         }
-        assert!(lookup("author:routes")
-            .unwrap()
-            .contains("author:record-sort-keys"));
+        assert!(
+            lookup("author:routes")
+                .unwrap()
+                .contains("author:record-sort-keys")
+        );
     }
 
     #[test]
     fn routes_and_search_are_bounded_exact_and_have_complete_continuations() {
         for route in [
             "author:routes",
+            "author:lexical-exits",
             "author:stdin-json",
             "author:stream-data-v2",
             "author:owned-data",
@@ -407,12 +419,32 @@ mod tests {
         ] {
             assert!(lookup(bad).is_err(), "{bad}");
         }
+        let exits = lookup("author:lexical-exits").unwrap();
+        for text in [
+            "SPX-T312",
+            "SPX-T313",
+            "SPX-T103/O104",
+            "H006",
+            "exactly once",
+            "Failure never publishes",
+            "qualification pending",
+            "LEXICAL-STRUCTURED-EXITS-V1.md",
+        ] {
+            assert!(exits.contains(text), "{text}");
+        }
+        assert!(
+            lookup("author:routes")
+                .unwrap()
+                .contains("author:lexical-exits")
+        );
         let codec = lookup("author:json-codec").unwrap();
         assert!(codec.contains("--profile <selector>"));
         assert!(codec.contains("--max-string-bytes 1..64"));
         assert!(codec.contains("Omit --profile for the default flat scalar record"));
         assert!(codec.contains("author:json-identifier-views"));
-        assert!(codec.contains("Declared Vec<string> in a request-view schema is description only"));
+        assert!(
+            codec.contains("Declared Vec<string> in a request-view schema is description only")
+        );
         assert!(codec.contains("post-Ready request/schema errors use normalized-input offsets"));
         let identifier_views = lookup("author:json-identifier-views").unwrap();
         assert!(identifier_views.contains("exactly one string identifier"));

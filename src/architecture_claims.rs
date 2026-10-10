@@ -554,6 +554,11 @@ fn walk_for_edges(root: &ResolvedExpr, walked: &mut usize, node: &mut NodeFacts)
                 pending.push(start);
                 pending.push(end);
             }
+            ResolvedExprKind::LexicalExit { value, .. } => {
+                if let Some(value) = value {
+                    pending.push(value);
+                }
+            }
             ResolvedExprKind::Unary { value, .. }
             | ResolvedExprKind::Project { base: value, .. }
             | ResolvedExprKind::Upcast { source: value }

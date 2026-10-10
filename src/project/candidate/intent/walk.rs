@@ -66,6 +66,11 @@ fn expression(
                 self::expression(arg, next, nodes, visit)?;
             }
         }
+        ExprKind::LexicalExit { value, .. } => {
+            if let Some(value) = value {
+                self::expression(value, next, nodes, visit)?;
+            }
+        }
         ExprKind::Unary { value, .. }
         | ExprKind::Try { operand: value }
         | ExprKind::Yield { request: value }

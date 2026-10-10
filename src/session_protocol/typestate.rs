@@ -190,6 +190,11 @@ fn collect_bindings(expr: &Expr, names: &mut HashSet<String>) {
                 collect_bindings(arg, names);
             }
         }
+        ExprKind::LexicalExit { value, .. } => {
+            if let Some(value) = value {
+                collect_bindings(value, names);
+            }
+        }
         ExprKind::Unary { value, .. }
         | ExprKind::Project { base: value, .. }
         | ExprKind::Try { operand: value }
@@ -340,6 +345,9 @@ fn contains_via_call(expr: &Expr, via_names: &BTreeSet<&str>) -> bool {
         ExprKind::SuperMethod { args, .. } => {
             args.iter().any(|arg| contains_via_call(arg, via_names))
         }
+        ExprKind::LexicalExit { value, .. } => value
+            .as_ref()
+            .is_some_and(|value| contains_via_call(value, via_names)),
         ExprKind::Unary { value, .. }
         | ExprKind::Project { base: value, .. }
         | ExprKind::Try { operand: value }
@@ -605,6 +613,12 @@ fn walk_expr(
                 }
             })
         }
+        ExprKind::LexicalExit { .. } => Err(k_error(
+            context.program,
+            "SPX-K109",
+            "session protocol typestate does not admit lexical exits".to_owned(),
+            expr.span,
+        )),
         ExprKind::Unary { value, .. } => walk_expr(context, value, states),
         ExprKind::Binary { left, right, op } => {
             let states = walk_expr(context, left, states)?;

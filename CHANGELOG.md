@@ -1,5 +1,12 @@
 # Changelog
 
+- Author statement-tail lexical break, continue and return with independently
+  bound function/nearest-loop targets, source-for latches, selective cleanup v18
+  and loan v3. Preserve accepted acyclic returns and old schema bytes; keep
+  initializer/argument/aggregate/closure/unsafe/yields crossings closed. Add
+  bounded `help language author:lexical-exits` and source/HIR hostile definitions.
+  Executable qualification and full OPT #734 acceptance remain pending.
+
 - Eliminate zero-argument nominal identity traversal carriers and duplicate
   retained-key allocations through an exact bounded stack probe. Charge its
   scratch storage and keep generic/oversized identity handling, retained facts

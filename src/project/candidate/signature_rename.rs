@@ -227,6 +227,11 @@ impl Rename<'_> {
                     self.expression(arg, scope, next)?;
                 }
             }
+            ExprKind::LexicalExit { value, .. } => {
+                if let Some(value) = value {
+                    self.expression(value, scope, next)?;
+                }
+            }
             ExprKind::Unary { value, .. }
             | ExprKind::Try { operand: value }
             | ExprKind::Yield { request: value }

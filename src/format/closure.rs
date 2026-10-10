@@ -6,6 +6,13 @@ pub(super) fn contains_record_construction(value: &Expr) -> bool {
         match &value.kind {
             ExprKind::Closure { body, .. } => (index == 0).then_some(body),
             ExprKind::Call { args, .. } => args.get(index),
+            ExprKind::LexicalExit { value, .. } => {
+                if index == 0 {
+                    value.as_deref()
+                } else {
+                    None
+                }
+            }
             ExprKind::Unary { value, .. }
             | ExprKind::Try { operand: value }
             | ExprKind::Yield { request: value }
