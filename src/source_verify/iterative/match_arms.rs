@@ -395,7 +395,8 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         let arm_value = self.values.pop().unwrap_or(None);
         let exits = arm_value
             .as_ref()
-            .is_some_and(|value| value.ty == Type::Never);
+            .is_some_and(|value| value.ty == Type::Never)
+            && crate::ast::returns_only(&arm.value);
         let collection_result = |ty: &Type, mode: ParamMode| {
             state.variant_name.as_ref().is_some_and(|name| {
                 crate::source_verify::declared_type::collection_outcome::match_result(
@@ -629,7 +630,8 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         let arm_value = self.values.pop().unwrap_or(None);
         let exits = arm_value
             .as_ref()
-            .is_some_and(|value| value.ty == Type::Never);
+            .is_some_and(|value| value.ty == Type::Never)
+            && crate::ast::returns_only(&arm.value);
         if let Some(value) = &arm_value {
             reject_native_unit_value(self.program, &arm.value, value, self.diagnostics);
             reject_aggregate_match_result(self.program, &arm.value, value, self.diagnostics);

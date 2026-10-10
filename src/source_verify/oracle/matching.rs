@@ -268,7 +268,7 @@ pub(super) fn oracle_match(
                 reject_native_unit_value(program, &arm.value, value, diagnostics);
                 reject_aggregate_match_result(program, &arm.value, value, diagnostics);
             }
-            if !arm_value.as_ref().is_some_and(|v| v.ty == Type::Never) {
+            if !crate::ast::returns_only(&arm.value) {
                 merge_moved(&mut joined, variables, &outer_names);
             }
             if let Some(arm_value) = arm_value {
@@ -886,7 +886,7 @@ pub(super) fn oracle_match(
                 reject_aggregate_match_result(program, &arm.value, value, diagnostics);
             }
         }
-        let exits = arm_value.as_ref().is_some_and(|v| v.ty == Type::Never);
+        let exits = crate::ast::returns_only(&arm.value);
         if let Some(arm_value) = arm_value {
             if arm_value.ty != Type::Never
                 && variant_needs_drop

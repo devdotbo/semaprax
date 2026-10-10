@@ -431,10 +431,12 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             .bindings;
         let then_exits = then_value
             .as_ref()
-            .is_some_and(|value| value.ty == Type::Never);
+            .is_some_and(|value| value.ty == Type::Never)
+            && crate::ast::returns_only(then_branch);
         let else_exits = else_value
             .as_ref()
-            .is_some_and(|value| value.ty == Type::Never);
+            .is_some_and(|value| value.ty == Type::Never)
+            && crate::ast::returns_only(else_branch);
         for name in &baseline_names {
             if let Some(binding) = self.scopes[scope].bindings.get_mut(name) {
                 if then_exits != else_exits {

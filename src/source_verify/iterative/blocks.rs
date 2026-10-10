@@ -581,7 +581,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             .pop()
             .flatten()
             .is_some_and(|value| value.ty == Type::Never);
-        if exits {
+        if exits && crate::ast::returns_only(statements[index].child(1).expect("while body")) {
             for name in &baseline_names {
                 if let Some(before) = baseline_bindings.get(name) {
                     self.scopes[block_scope]

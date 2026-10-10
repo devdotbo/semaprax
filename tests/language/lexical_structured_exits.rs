@@ -165,3 +165,30 @@ fn selective_parse_rollback_preserves_authored_and_prior_discard_names() {
     );
     assert!(verify::verify(&program).is_empty());
 }
+
+#[test]
+fn loop_exit_branches_keep_outer_owner_transfers_and_function_returns_discard_them() {
+    for body in [
+        "let consumed=consume(value); continue;",
+        "if true {let consumed=consume(value);break;};0",
+        "if true {let consumed=consume(value);continue;};0",
+        "match true {true=>{let consumed=consume(value);break;},false=>{0}}",
+    ] {
+        let source = format!("module app.owner_join; @id(\"consume\") fn consume(value:own string)->i64 {{0}} @id(\"main\") fn main()->i64 {{let value=\"owner\"; while true {{{body}}} consume(value)}}");
+        let program = parse(&source, "moved-before-exit-branch.spx").unwrap();
+        assert!(
+            verify::verify(&program)
+                .iter()
+                .any(|d| matches!(d.code, "SPX-O101" | "SPX-O104" | "SPX-T252")),
+            "{body}"
+        );
+        assert!(
+            hir::resolve(&program).is_err(),
+            "independent HIR must retain transfer on {body}"
+        );
+    }
+    let source = "module app.return_join; @id(\"main\") fn main()->string {let value=\"owner\"; while true {return value;} value}";
+    let program = semaprax::check(source, "whole-function-return.spx").unwrap();
+    let resolved = hir::resolve(&program).unwrap();
+    hir::validate(&resolved).unwrap();
+}

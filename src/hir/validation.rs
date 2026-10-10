@@ -4444,13 +4444,11 @@ impl<'a> HirValidator<'a> {
                     path,
                     entry,
                 } => {
-                    // The body block validated like any nested block. Because
-                    // zero or more iterations run, its merged ownership state
-                    // must equal the loop-entry state exactly; admission keeps
-                    // every loop binding Copy-scalar so nothing can drift.
+                    // Zero or more iterations run: every route reaching the
+                    // continuation must preserve the loop-entry ownership state.
                     let after = scopes.pop().expect("while body scope retained");
                     let body = statements[index].child(1).expect("loop body");
-                    if body.ty != ResolvedType::Never && after != entry {
+                    if !super::lexical_exit::returns_only(body) && after != entry {
                         return Err(hir_error("while loop body changes ownership liveness"));
                     }
                     frames.push(Frame::BlockNext {
@@ -5685,7 +5683,7 @@ impl<'a> HirValidator<'a> {
                         ));
                     }
                     self.join_lexical_match(&mut result, &arm.value)?;
-                    if arm.value.ty != ResolvedType::Never {
+                    if !super::lexical_exit::returns_only(&arm.value) {
                         arm_scopes.push(arm_scope);
                     }
                     frames.push(Frame::VariantMatchNext {
@@ -5905,7 +5903,7 @@ impl<'a> HirValidator<'a> {
                     let arm_scope = scopes.pop().expect("scalar match arm scope retained");
                     let arm = &arms[index];
                     self.join_lexical_match(&mut result, &arm.value)?;
-                    if arm.value.ty != ResolvedType::Never {
+                    if !super::lexical_exit::returns_only(&arm.value) {
                         arm_scopes.push(arm_scope);
                     }
                     frames.push(Frame::ScalarMatchNext {
@@ -7159,7 +7157,9 @@ impl<'a> HirValidator<'a> {
                                 allow_moves,
                                 allowed_effects,
                             )?;
-                            if body.ty != ResolvedType::Never && block_scope != entry_scope {
+                            if !super::lexical_exit::returns_only(body)
+                                && block_scope != entry_scope
+                            {
                                 return Err(hir_error(
                                     "while loop body changes ownership liveness",
                                 ));
@@ -8004,7 +8004,7 @@ impl<'a> HirValidator<'a> {
                         ));
                     }
                     self.join_lexical_match(&mut result, &arm.value)?;
-                    if arm.value.ty != ResolvedType::Never {
+                    if !super::lexical_exit::returns_only(&arm.value) {
                         arm_scopes.push(arm_scope);
                     }
                 }

@@ -29,18 +29,20 @@ impl HirValidator<'_> {
         right_scope: &BTreeMap<ValueId, ValidationBinding>,
         ids: &[ValueId],
     ) -> Result<(), Diagnostic> {
+        match (
+            super::super::lexical_exit::returns_only(left),
+            super::super::lexical_exit::returns_only(right),
+        ) {
+            (true, false) => Self::merge_availability(outer, right_scope, ids),
+            (false, true) => Self::merge_availability(outer, left_scope, ids),
+            _ => Self::join_branches(outer, left_scope, right_scope, ids),
+        }
         let normal = match (
             left.ty == ResolvedType::Never,
             right.ty == ResolvedType::Never,
         ) {
-            (true, false) => {
-                Self::merge_availability(outer, right_scope, ids);
-                right
-            }
-            (false, true) => {
-                Self::merge_availability(outer, left_scope, ids);
-                left
-            }
+            (true, false) => right,
+            (false, true) => left,
             (a, b) => {
                 if !a && !b {
                     self.require_type(&left.ty, &right.ty, "if branches")?;
@@ -48,7 +50,6 @@ impl HirValidator<'_> {
                         return Err(hir_error("if branches have inconsistent ownership"));
                     }
                 }
-                Self::join_branches(outer, left_scope, right_scope, ids);
                 left
             }
         };

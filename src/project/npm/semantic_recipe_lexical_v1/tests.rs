@@ -25,6 +25,15 @@ fn lexical_selection_replays_statement_guards_and_exact_wasm() {
     assert!(
         recipe.contains("continue;") && recipe.contains("break;") && recipe.contains("return ")
     );
+    assert!(
+        !recipe.contains("else 0"),
+        "absent statement alternative is syntax, not an expression branch"
+    );
+    crate::parse(
+        recipe.strip_prefix(HEADER).unwrap(),
+        "lexical-recipe-parse.spx",
+    )
+    .unwrap();
     let replayed = replay_against(&linked, &recipe).unwrap();
     assert_eq!(render(&replayed).unwrap(), recipe);
     assert!(legacy::render(&linked).is_err());

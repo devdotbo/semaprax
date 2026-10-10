@@ -60,6 +60,11 @@ fn direct_outer_owner_return_retains_ordinary_source_and_hir_authentication() {
         .validate_while_admission(exit)
         .unwrap();
     let projection = crate::graph::to_json(&source).unwrap();
+    // The public graph is pretty JSON; compare the exact structural pair in
+    // compact JSON rather than requiring adjacent bytes across whitespace.
+    let projection =
+        serde_json::to_string(&serde_json::from_str::<serde_json::Value>(&projection).unwrap())
+            .unwrap();
     assert!(projection.contains(r#""kind":"completion","name":"never""#));
     assert!(!projection.contains(r#""id":"never:lexical-exit:v1","type""#));
     let canonical = crate::format::canonical(&source);

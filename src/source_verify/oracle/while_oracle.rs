@@ -95,7 +95,7 @@ pub(super) fn check_while_statement(
             diagnostics,
         )
     });
-    if body_value.as_ref().is_some_and(|v| v.ty == Type::Never) {
+    if body_value.as_ref().is_some_and(|v| v.ty == Type::Never) && crate::ast::returns_only(body) {
         for (name, before) in &baseline {
             variables.insert(name.clone(), before.clone());
         }

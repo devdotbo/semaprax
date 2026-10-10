@@ -745,7 +745,26 @@ fn render_block(
                             "lexical recipe admits only statement-if guards",
                         ));
                     }
-                    rendered.push_str(&render_expr(value, names, values, local_index)?);
+                    let ResolvedExprKind::If {
+                        condition,
+                        then_branch,
+                        else_branch,
+                    } = &value.kind
+                    else {
+                        unreachable!("statement guard checked above");
+                    };
+                    // A statement-if's absent alternative is a synthesized scalar,
+                    // not an authored expression branch. Emit the admitted guard
+                    // spelling so replay reconstructs that same scalar and IDs.
+                    if matches!(else_branch.kind, ResolvedExprKind::Int(0)) {
+                        rendered.push_str(&format!(
+                            "if {} {}",
+                            render_expr(condition, names, values, local_index)?,
+                            render_expr(then_branch, names, values, local_index)?
+                        ));
+                    } else {
+                        rendered.push_str(&render_expr(value, names, values, local_index)?);
+                    }
                     rendered.push_str("; ");
                     continue;
                 }

@@ -120,3 +120,69 @@ fn copy_record_read_borrows_do_not_authorize_consuming_vector_calls() {
     );
     crate::hir::validate(&original).unwrap();
 }
+
+#[test]
+fn owned_leaf_snapshot_reads_borrow_without_authorizing_transfer() {
+    let source = SOURCE
+        .replace("right:i64", "right:string")
+        .replace("right:9", "right:\"leaf\"")
+        .replace(
+            "row.left+row.right+i64_from_usize(index)",
+            "row.left+i64_from_usize(index)",
+        );
+    let ast = crate::check(&source, "owned-record-freeze.spx").unwrap();
+    let program = crate::hir::resolve(&ast).unwrap();
+    crate::hir::validate(&program).unwrap();
+    let function = program
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "app.main")
+        .unwrap();
+    assert_eq!(function.loan_plan.schema, LOAN_PLAN_SCHEMA_V2);
+    assert!(function
+        .loan_plan
+        .loans
+        .iter()
+        .any(|loan| loan.cause == LoanCause::TraversalFreeze));
+    let mut pending = vec![&function.body];
+    let mut snapshots = 0;
+    while let Some(expression) = pending.pop() {
+        if let ResolvedExprKind::Call { callee, args, .. } = &expression.kind {
+            if callee.as_str() == crate::vec_ops::LEN_ID {
+                assert!(record_vec_borrow::argument(
+                    &program, expression, 0, &args[0]
+                ));
+                let mut consuming = expression.clone();
+                let ResolvedExprKind::Call { callee, .. } = &mut consuming.kind else {
+                    unreachable!()
+                };
+                *callee = crate::hir::DeclarationId::new(crate::vec_ops::CLEAR_ID);
+                assert!(!record_vec_borrow::argument(
+                    &program, &consuming, 0, &args[0]
+                ));
+                snapshots += 1;
+            }
+        }
+        push_children(expression, &mut pending);
+    }
+    assert_eq!(snapshots, 1);
+    let mut missing = program.clone();
+    missing
+        .functions
+        .iter_mut()
+        .find(|f| f.id == function.id)
+        .unwrap()
+        .loan_plan
+        .loans
+        .clear();
+    assert_eq!(crate::hir::validate(&missing).unwrap_err().code, "SPX-H006");
+    let roundtrip = crate::check(
+        &crate::format::canonical(&ast),
+        "owned-record-freeze-roundtrip.spx",
+    )
+    .unwrap();
+    assert_eq!(
+        crate::graph::to_json(&ast).unwrap(),
+        crate::graph::to_json(&roundtrip).unwrap()
+    );
+}

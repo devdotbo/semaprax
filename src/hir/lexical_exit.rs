@@ -72,7 +72,7 @@ mod latch;
 pub(crate) use latch::validate_latch;
 
 mod wrapper;
-pub(crate) use wrapper::{SourceForWrapper, source_for_wrapper};
+pub(crate) use wrapper::{source_for_wrapper, SourceForWrapper};
 
 mod validation;
 pub(crate) use validation::validate_function;
@@ -92,3 +92,30 @@ pub(crate) fn is_loop_statement(statement: &super::ResolvedStatement) -> bool {
 }
 
 pub(crate) mod return_operand;
+
+/// Only function exits can discard ownership state at a loop join. Break and
+/// continue still reach that loop's continuation and must retain moved owners.
+pub(crate) fn returns_only(expr: &super::ResolvedExpr) -> bool {
+    fn visit(expr: &super::ResolvedExpr, depth: usize) -> bool {
+        if depth > crate::cache_codec::MAX_DEPTH {
+            return false;
+        }
+        match &expr.kind {
+            super::ResolvedExprKind::LexicalExit {
+                kind: LexicalExitKind::Return,
+                ..
+            } => true,
+            super::ResolvedExprKind::Block { tail, .. } => visit(tail, depth + 1),
+            super::ResolvedExprKind::If {
+                then_branch,
+                else_branch,
+                ..
+            } => visit(then_branch, depth + 1) && visit(else_branch, depth + 1),
+            super::ResolvedExprKind::Match { arms, .. } => {
+                !arms.is_empty() && arms.iter().all(|arm| visit(&arm.value, depth + 1))
+            }
+            _ => false,
+        }
+    }
+    visit(expr, 0)
+}
