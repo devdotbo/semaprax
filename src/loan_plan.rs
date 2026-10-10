@@ -1435,7 +1435,7 @@ mod tests;
 // borrowed calls. The declared parameter mode is authoritative; a named owned
 // argument remains an owned Place node while the invocation borrows it.
 fn borrowed_call_arguments<'a>(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     expression: &'a ResolvedExpr,
 ) -> Vec<(usize, &'a ResolvedExpr)> {
     match &expression.kind {
@@ -1473,7 +1473,7 @@ fn borrowed_call_arguments<'a>(
         }
         ResolvedExprKind::NativeRustImportCall(call) => {
             let target = program
-                .interfaces
+                .interfaces()
                 .iter()
                 .flat_map(|i| &i.imports)
                 .find(|i| i.id == call.import);

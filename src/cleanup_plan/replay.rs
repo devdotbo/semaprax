@@ -24,6 +24,7 @@ use super::{
     CLEANUP_PLAN_SCHEMA_V7, CLEANUP_PLAN_SCHEMA_V8, CLEANUP_PLAN_SCHEMA_V9,
 };
 use crate::ast::{BinaryOp, UnaryOp};
+use crate::cleanup::ReplayContext;
 use crate::cleanup::{CleanupStorageOrigin, FieldLivenessShape, LivenessFlagId};
 use crate::diagnostic::Diagnostic;
 use crate::hir::{
@@ -48,6 +49,8 @@ use path_summary::{
 use path_summary::{cleanup_plan_requires_path_replay, STATUS_ONLY_PATH_SUMMARY_THRESHOLD};
 use skeleton_work::{empty_expr_path, Observations, SkeletonWork};
 
+#[cfg(test)]
+mod context_tests;
 #[cfg(test)]
 mod copy_success_result_tests;
 mod guarded_variant;
@@ -348,7 +351,7 @@ type CallSkeletonState = (ExprSkeletonPath, Vec<(u32, CleanupPlace)>);
 /// rebuilding it from HIR.
 #[cfg(test)]
 fn validate_structure(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
 ) -> Result<(), Diagnostic> {
     let mut budget = ReplayBudget::new();
@@ -361,25 +364,25 @@ pub(super) fn validate_program(program: &ResolvedProgram) -> Result<(), Diagnost
     let mut budget = ReplayBudget::new();
     reserve_program_skeleton_work(
         program,
-        program.functions.iter().chain(
+        program.functions().iter().chain(
             program
-                .function_instances
+                .function_instances()
                 .iter()
                 .map(|instance| &instance.function),
         ),
         &mut budget,
     )?;
-    for function in &program.functions {
+    for function in program.functions() {
         validate_structure_with_budget(program, function, &mut budget, Some(&helpers))?;
     }
-    for instance in &program.function_instances {
+    for instance in program.function_instances() {
         validate_structure_with_budget(program, &instance.function, &mut budget, Some(&helpers))?;
     }
     Ok(())
 }
 
 fn reserve_program_skeleton_work<'a>(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     functions: impl IntoIterator<Item = &'a ResolvedFunction>,
     budget: &mut ReplayBudget,
 ) -> Result<usize, Diagnostic> {
@@ -408,12 +411,22 @@ fn reserve_program_skeleton_work<'a>(
 }
 
 fn validate_structure_with_budget(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
 ) -> Result<(), Diagnostic> {
     let plan = &function.cleanup_plan;
+    if helpers.is_some_and(|index| {
+        !program
+            .full_program()
+            .is_some_and(|full| index.matches_program(full))
+    }) {
+        return Err(replay_error(
+            function,
+            "cleanup replay helper index belongs to a different typed program",
+        ));
+    }
     let expected_schema = schema::selected_schema_with_index(program, function, helpers)?;
     if plan.schema != expected_schema {
         return Err(replay_error(
@@ -725,7 +738,8 @@ fn expression_path_counts_with_while(
             | ResolvedExprKind::Float32(_)
             | ResolvedExprKind::Float64(_)
             | ResolvedExprKind::Bool(_)
-            | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
+            | ResolvedExprKind::String(_)
+            | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::Place(_)
             | ResolvedExprKind::BorrowPlace { .. } => None,
             ResolvedExprKind::Unary { value, .. }
@@ -856,7 +870,8 @@ fn expression_path_counts_with_while(
                     | ResolvedExprKind::Float32(_)
                     | ResolvedExprKind::Float64(_)
                     | ResolvedExprKind::Bool(_)
-                    | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
+                    | ResolvedExprKind::String(_)
+                    | ResolvedExprKind::BorrowedUtf8Literal(_)
                     | ResolvedExprKind::Place(_)
                     | ResolvedExprKind::BorrowPlace { .. } => HirPathCounts::ONE,
                     ResolvedExprKind::Unary { op, .. } => {
@@ -1066,7 +1081,7 @@ fn hir_terminal_path_bound(function: &ResolvedFunction) -> Result<usize, Diagnos
 }
 
 fn skeleton_work_upper(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
 ) -> Result<usize, Diagnostic> {
     if lexical_cert::requires_lexical(function) {
@@ -1131,7 +1146,7 @@ fn skeleton_work_upper(
 }
 
 fn expression_skeleton_work_upper(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     root: &ResolvedExpr,
 ) -> Result<usize, Diagnostic> {
@@ -1161,7 +1176,8 @@ fn expression_skeleton_work_upper(
                 | ResolvedExprKind::Float32(_)
                 | ResolvedExprKind::Float64(_)
                 | ResolvedExprKind::Bool(_)
-                | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_) => 2,
+                | ResolvedExprKind::String(_)
+                | ResolvedExprKind::BorrowedUtf8Literal(_) => 2,
                 ResolvedExprKind::Place(place) => place.projections.len().saturating_mul(2) + 8,
                 ResolvedExprKind::BorrowPlace { place, .. } => {
                     place.projections.len().saturating_mul(2) + 8
@@ -1476,7 +1492,7 @@ fn expression_path_counts(
 }
 
 fn validate_inventory_coverage(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
 ) -> Result<(), Diagnostic> {
     let plan = &function.cleanup_plan;
@@ -1691,7 +1707,7 @@ fn inventory_storage_id(origin: &CleanupStorageOrigin) -> StorageId {
 }
 
 fn validate_required_status_sources(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
 ) -> Result<(), Diagnostic> {
     let mut expected = Vec::new();
@@ -1734,7 +1750,7 @@ fn validate_required_status_sources(
 }
 
 fn collect_expression_statuses(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
     statuses: &mut Vec<StatusSource>,
@@ -1972,7 +1988,8 @@ fn collect_expression_statuses(
             | ResolvedExprKind::Float32(_)
             | ResolvedExprKind::Float64(_)
             | ResolvedExprKind::Bool(_)
-            | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
+            | ResolvedExprKind::String(_)
+            | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::Place(_)
             | ResolvedExprKind::BorrowPlace { .. } => {}
         }
@@ -2371,7 +2388,7 @@ fn validate_entry(
 }
 
 fn validate_blocks_and_edges(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expressions: &BTreeMap<ExpressionId, Option<CallFact>>,
     storage: &BTreeSet<StorageId>,
@@ -2460,7 +2477,7 @@ fn validate_blocks_and_edges(
                 } => {
                     require_expression(function, expressions, at)?;
                     validate_place(function, source, storage, leaves)?;
-                    let Some(cases) = program.declarations.variant_cases(variant) else {
+                    let Some(cases) = program.declarations().variant_cases(variant) else {
                         return Err(replay_error(
                             function,
                             "variant authentication references a non-variant declaration",
@@ -2777,7 +2794,7 @@ fn validate_blocks_and_edges(
 }
 
 fn validate_exits(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     storage: &BTreeSet<StorageId>,
     leaves: &Leaves,
@@ -2969,7 +2986,7 @@ fn validate_finalizer_actions(
 
 /// Shared by the ordinary commit and every lexical function-return source.
 fn validate_result_source(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     source: &CleanupResultSource,
     storage: &BTreeSet<StorageId>,
@@ -3106,7 +3123,7 @@ fn region_chain_to_root(
 }
 
 fn validate_typed_control_skeleton_with_index(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
@@ -3139,14 +3156,14 @@ fn validate_typed_control_skeleton_with_index(
 
 #[cfg(test)]
 fn hir_skeleton_paths(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
 ) -> Result<Vec<SkeletonPath>, Diagnostic> {
     hir_skeleton_paths_with_index(program, function, budget, None)
 }
 fn hir_skeleton_paths_with_index(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
@@ -3238,7 +3255,7 @@ fn hir_skeleton_paths_with_index(
 }
 
 fn sequence_expression(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     prefixes: Vec<ExprSkeletonPath>,
     expression: &ResolvedExpr,
@@ -3294,7 +3311,7 @@ fn sequence_skeleton_paths(
 use path_summary::has_active_paths;
 
 fn expression_skeleton(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
     work: &mut SkeletonWork<'_, '_>,
@@ -3679,7 +3696,8 @@ fn expression_skeleton(
                     | ResolvedExprKind::Float32(_)
                     | ResolvedExprKind::Float64(_)
                     | ResolvedExprKind::Bool(_)
-                    | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_) => {
+                    | ResolvedExprKind::String(_)
+                    | ResolvedExprKind::BorrowedUtf8Literal(_) => {
                         produced =
                             Some(work.singleton_path(empty_expr_path(), "literal skeleton path")?);
                     }
@@ -3925,7 +3943,7 @@ fn expression_skeleton(
                                     "bounded Vec skeleton call has incorrect type arity",
                                 ));
                             };
-                            crate::vec_ops::resolved_params_in(&program.declarations, op, element)
+                            crate::vec_ops::resolved_params_in(program.declarations(), op, element)
                         } else if let Some(op) = box_intrinsic {
                             let [element] = type_arguments.as_slice() else {
                                 return Err(replay_error(
@@ -5116,7 +5134,7 @@ fn expression_skeleton(
                                 }
                                 // Declaration order independently authenticates transfers.
                                 let declarations = program
-                                    .declarations
+                                    .declarations()
                                     .record_fields(record)
                                     .ok_or_else(|| {
                                         replay_error(
@@ -5225,7 +5243,7 @@ fn expression_skeleton(
 
 #[allow(clippy::too_many_arguments)]
 fn authenticated_try_stage_source(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
     operand: &ResolvedExpr,
@@ -5249,7 +5267,7 @@ fn authenticated_try_stage_source(
         ));
     }
     for id in [result, ok_case, ok_field, err_case, err_field] {
-        let declaration = program.declarations.declaration(id).ok_or_else(|| {
+        let declaration = program.declarations().declaration(id).ok_or_else(|| {
             replay_error(function, format!("postfix `?` references unknown `{id}`"))
         })?;
         if declaration.identity_origin != IdentityOrigin::CompilerOwned {
@@ -5279,7 +5297,7 @@ fn authenticated_try_stage_source(
         ));
     }
     for ty in [&operand.ty, residual_type] {
-        let facts = program.declarations.type_facts(ty).ok_or_else(|| {
+        let facts = program.declarations().type_facts(ty).ok_or_else(|| {
             replay_error(function, "postfix `?` Result instance has no type facts")
         })?;
         let valid = if exact_owned {
@@ -5323,7 +5341,7 @@ fn authenticated_try_stage_source(
 
 #[allow(clippy::too_many_arguments)]
 fn authenticated_try_option_stage_source(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
     operand: &ResolvedExpr,
@@ -5345,7 +5363,7 @@ fn authenticated_try_option_stage_source(
         ));
     }
     for id in [option, some_case, some_field, none_case] {
-        let declaration = program.declarations.declaration(id).ok_or_else(|| {
+        let declaration = program.declarations().declaration(id).ok_or_else(|| {
             replay_error(
                 function,
                 format!("Option postfix `?` references unknown `{id}`"),
@@ -5375,7 +5393,7 @@ fn authenticated_try_option_stage_source(
         ));
     }
     for ty in [&operand.ty, residual_type] {
-        let facts = program.declarations.type_facts(ty).ok_or_else(|| {
+        let facts = program.declarations().type_facts(ty).ok_or_else(|| {
             replay_error(function, "Option postfix `?` instance has no type facts")
         })?;
         if !facts.copy || !facts.sized || facts.contains_resource || facts.needs_drop {
@@ -5443,7 +5461,7 @@ fn replay_option_arguments<'a>(
 }
 
 fn validate_match_skeleton_shape(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
     scrutinee: &ResolvedExpr,
@@ -5471,7 +5489,7 @@ fn validate_match_skeleton_shape(
 
     let is_record = match &scrutinee.ty {
         ResolvedType::Nominal { declaration, .. } => program
-            .declarations
+            .declarations()
             .declaration(declaration)
             .is_some_and(|item| item.kind == DeclarationKind::Record),
         ResolvedType::Unit
@@ -5504,7 +5522,7 @@ fn validate_match_skeleton_shape(
     };
     let is_variant = match &scrutinee.ty {
         ResolvedType::Nominal { declaration, .. } => program
-            .declarations
+            .declarations()
             .declaration(declaration)
             .is_some_and(|item| item.kind == DeclarationKind::Variant),
         _ => false,
@@ -5583,9 +5601,12 @@ fn validate_match_skeleton_shape(
                 }
                 crate::hir::ResolvedMatchMode::Value => unreachable!(),
             };
-            let declarations = program.declarations.record_fields(record).ok_or_else(|| {
-                replay_error(function, "explicit record match has no field inventory")
-            })?;
+            let declarations = program
+                .declarations()
+                .record_fields(record)
+                .ok_or_else(|| {
+                    replay_error(function, "explicit record match has no field inventory")
+                })?;
             let ResolvedMatchPattern::Record { instance, .. } = &arm.pattern else {
                 unreachable!("record pattern matched above")
             };
@@ -5705,7 +5726,7 @@ fn validate_match_skeleton_shape(
 
 #[allow(clippy::too_many_arguments)]
 fn finish_match_arm(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
     scrutinee: &ResolvedExpr,
@@ -5847,7 +5868,7 @@ fn finish_match_arm(
 }
 
 fn prepare_selected_match_path(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
     arm: &ResolvedMatchArm,
@@ -5902,7 +5923,7 @@ fn prepare_selected_match_path(
 /// everything unconditionally, mirroring the canonical builder exactly.
 #[allow(clippy::too_many_arguments)]
 fn finish_scalar_match_skeleton(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
     scrutinee: &ResolvedExpr,
@@ -6051,7 +6072,7 @@ fn finish_scalar_match_skeleton(
 /// publishes the conditional-result transfer for owned values.
 #[allow(clippy::too_many_arguments)]
 fn append_scalar_arm_value(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
     arm: &ResolvedMatchArm,
@@ -6152,7 +6173,7 @@ fn finish_record_paths(
 
 #[allow(clippy::too_many_arguments)]
 fn finish_update_paths(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
     base: &ResolvedExpr,
@@ -6167,12 +6188,15 @@ fn finish_update_paths(
     }
     let staged_base = temporary_place(base, work)?;
     let destination = temporary_place(expression, work)?;
-    let declarations = program.declarations.record_fields(record).ok_or_else(|| {
-        replay_error(
-            function,
-            format!("record update has unknown record `{record}`"),
-        )
-    })?;
+    let declarations = program
+        .declarations()
+        .record_fields(record)
+        .ok_or_else(|| {
+            replay_error(
+                function,
+                format!("record update has unknown record `{record}`"),
+            )
+        })?;
     let arguments = record_destructure::update::concrete_arguments(function, expression, record)?;
     for field in declarations {
         let field_ty = crate::hir::substitute_type(&field.ty, record, arguments)?;
@@ -6211,7 +6235,7 @@ fn finish_update_paths(
 }
 
 fn finish_try_paths(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
     operand_paths: Vec<ExprSkeletonPath>,
@@ -6414,7 +6438,7 @@ fn split_boolean_prefixes(
 }
 
 fn finish_conditional_result(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
     paths: Vec<ExprSkeletonPath>,
@@ -6474,7 +6498,7 @@ fn call_states_have_active(states: &[CallSkeletonState]) -> bool {
 
 #[allow(clippy::too_many_arguments)]
 fn sequence_call_argument(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
     parameter: &crate::hir::ResolvedParam,
@@ -6552,7 +6576,7 @@ fn sequence_call_argument(
 }
 
 fn finish_call_states(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
     states: Vec<CallSkeletonState>,

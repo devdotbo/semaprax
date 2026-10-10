@@ -76,7 +76,7 @@ fn storage_has_bottom(ty: &ResolvedType, depth: usize) -> bool {
     }
 }
 pub(crate) fn validate_function(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     owner: &FunctionExecutionId,
 ) -> Result<(), Diagnostic> {
@@ -103,7 +103,7 @@ pub(crate) fn validate_function(
     )
 }
 fn walk<'a>(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     owner: &FunctionExecutionId,
     expression: &'a ResolvedExpr,

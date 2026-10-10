@@ -206,14 +206,17 @@ fn regex_result_resource(ty: &ResolvedType) -> Option<&DeclarationId> {
         .then_some(resource)
 }
 
-pub(crate) fn admitted_ri06_regex_result(program: &ResolvedProgram, ty: &ResolvedType) -> bool {
+pub(crate) fn admitted_ri06_regex_result(
+    program: &dyn crate::cleanup::ReplayContext,
+    ty: &ResolvedType,
+) -> bool {
     let Some(resource) = regex_result_resource(ty) else {
         return false;
     };
     program
-        .types
+        .types()
         .iter()
-        .any(|d| &d.id == resource && admitted_ri06_regex_resource(d, &program.interfaces))
+        .any(|d| &d.id == resource && admitted_ri06_regex_resource(d, program.interfaces()))
 }
 
 pub(in crate::hir) fn resolver_ri06_regex_result(

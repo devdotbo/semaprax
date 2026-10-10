@@ -5,7 +5,7 @@
 use super::*;
 
 pub(super) fn execute_replay_transition(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     transition: &CleanupTransition,
     state: &mut PathState,

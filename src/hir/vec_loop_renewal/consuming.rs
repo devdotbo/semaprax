@@ -185,13 +185,13 @@ fn reserve_entry<T>(id: &ExpressionId) -> bool {
 }
 
 pub(crate) fn sites<'a>(
-    program: &super::ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &'a ResolvedFunction,
 ) -> BTreeMap<ExpressionId, Site<'a>> {
     let mut found = BTreeMap::new();
     let complete = scan(
         function,
-        &|op, element| super::element_mode(&program.declarations, op, element),
+        &|op, element| super::element_mode(program.declarations(), op, element),
         |site| {
             if !found.contains_key(&site.at.id) && reserve_entry::<Site<'_>>(&site.at.id) {
                 found.insert(site.at.id.clone(), site);
@@ -205,7 +205,7 @@ pub(crate) fn sites<'a>(
 }
 
 pub(super) fn append_bindings<'a>(
-    program: &super::ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &'a ResolvedFunction,
     found: &mut BTreeMap<ExpressionId, &'a ResolvedBinding>,
 ) {
@@ -213,14 +213,14 @@ pub(super) fn append_bindings<'a>(
     // partially authorized renewal entries in the held cleanup index.
     if !scan(
         function,
-        &|op, element| super::element_mode(&program.declarations, op, element),
+        &|op, element| super::element_mode(program.declarations(), op, element),
         |_| {},
     ) {
         return;
     }
     scan(
         function,
-        &|op, element| super::element_mode(&program.declarations, op, element),
+        &|op, element| super::element_mode(program.declarations(), op, element),
         |site| {
             if !found.contains_key(&site.at.id) && reserve_entry::<&ResolvedBinding>(&site.at.id) {
                 found.insert(site.at.id.clone(), site.binding);
@@ -236,9 +236,12 @@ pub(crate) fn requires_with_admission(
     let mut found = false;
     scan(function, &admission, |_| found = true) && found
 }
-pub(crate) fn requires(program: &super::ResolvedProgram, function: &ResolvedFunction) -> bool {
+pub(crate) fn requires(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+) -> bool {
     requires_with_admission(function, |op, element| {
-        super::element_mode(&program.declarations, op, element)
+        super::element_mode(program.declarations(), op, element)
     })
 }
 pub(crate) fn candidate(function: &ResolvedFunction) -> bool {

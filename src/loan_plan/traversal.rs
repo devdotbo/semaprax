@@ -24,7 +24,7 @@ fn scalar(binding: &ResolvedBinding) -> bool {
 }
 
 pub(crate) fn inspect<'a>(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     region: &'a ResolvedExpr,
 ) -> Result<Option<Proof<'a>>, Diagnostic> {
     inspect_counted(
@@ -35,7 +35,7 @@ pub(crate) fn inspect<'a>(
 }
 
 fn inspect_counted<'a>(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     region: &'a ResolvedExpr,
     work: &mut WorkCounter,
 ) -> Result<Option<Proof<'a>>, Diagnostic> {
@@ -104,8 +104,8 @@ fn inspect_counted<'a>(
         || !owner.projections.is_empty()
         || source.ty != crate::vec_ops::resolved_vec(element.clone())
         || !matches!(source.ownership, OwnershipMode::Own | OwnershipMode::Borrow)
-        || !(crate::hir::copy_record_collection::admitted(&program.declarations, element)
-            || crate::hir::owned_leaf_collection::layout(&program.declarations, element)
+        || !(crate::hir::copy_record_collection::admitted(program.declarations(), element)
+            || crate::hir::owned_leaf_collection::layout(program.declarations(), element)
                 .is_some_and(|layout| layout.fields.is_some()))
         || length_value.ty != ResolvedType::Usize
         || length_value.ownership != OwnershipMode::Value
@@ -191,7 +191,7 @@ fn inspect_counted<'a>(
                             || !matches!(&vector.kind, ResolvedExprKind::Place(place) if place == owner)
                             || read_element != element
                             || !place_is(index, row_index)
-                            || crate::hir::vec_field::field(&program.declarations, element, field)
+                            || crate::hir::vec_field::field(program.declarations(), element, field)
                                 .and_then(|selected| selected.result_type(*bytes))
                                 != Some(expression.ty.clone())
                         {
@@ -223,7 +223,7 @@ fn inspect_counted<'a>(
                                 && (args.len() != 2
                                     || !place_is(&args[1], row_index)
                                     || !crate::hir::copy_record_collection::admitted(
-                                        &program.declarations,
+                                        program.declarations(),
                                         element,
                                     )))
                             || (callee.as_str() == crate::vec_ops::LEN_ID && args.len() != 1)
@@ -261,7 +261,7 @@ fn inspect_counted<'a>(
 }
 
 pub(super) fn draft(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     expression: &ResolvedExpr,
     cfg: &Cfg<'_>,
     work: &mut WorkCounter,

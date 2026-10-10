@@ -1,11 +1,13 @@
 //! Renewal site identity is derived from HIR, independently of attached transitions.
-use crate::hir::{ExpressionId, ResolvedBinding, ResolvedFunction, ResolvedProgram};
+#[cfg(test)]
+use crate::hir::ResolvedProgram;
+use crate::hir::{ExpressionId, ResolvedBinding, ResolvedFunction};
 use std::collections::BTreeMap;
 
 /// A held phase index authenticates exact program and function membership.
 /// Standalone callers still derive their own fresh helper census.
 pub(crate) fn binding_with_index<'a>(
-    program: &'a ResolvedProgram,
+    program: &'a dyn crate::cleanup::ReplayContext,
     function: &'a ResolvedFunction,
     at: &ExpressionId,
     index: Option<&crate::loop_calls::byte_writer::ModuleIndex<'a>>,
@@ -17,13 +19,19 @@ pub(crate) fn binding_with_index<'a>(
         .or_else(|| crate::hir::iterator_loop::renewal_binding(program, function, at))
 }
 pub(crate) fn helper_binding_with_index<'a>(
-    program: &'a ResolvedProgram,
+    program: &'a dyn crate::cleanup::ReplayContext,
     function: &'a ResolvedFunction,
     at: &ExpressionId,
     index: Option<&crate::loop_calls::byte_writer::ModuleIndex<'a>>,
 ) -> Option<&'a ResolvedBinding> {
     match index {
-        Some(index) if index.matches_program(program) => index.function_sites(function)?.get(at),
+        Some(index)
+            if program
+                .full_program()
+                .is_some_and(|program| index.matches_program(program)) =>
+        {
+            index.function_sites(function)?.get(at)
+        }
         Some(_) => None,
         None => crate::loop_calls::byte_writer::bindings(program, function).remove(at),
     }
@@ -58,13 +66,13 @@ impl<'a> RenewalBindings<'a> {
 /// first, matching `binding`, without allocating new opaque tree nodes.
 #[cfg(test)]
 pub(crate) fn bindings<'a>(
-    program: &'a ResolvedProgram,
+    program: &'a dyn crate::cleanup::ReplayContext,
     function: &'a ResolvedFunction,
 ) -> RenewalBindings<'a> {
     bindings_with_index(program, function, None)
 }
 pub(crate) fn bindings_with_index<'a>(
-    program: &'a ResolvedProgram,
+    program: &'a dyn crate::cleanup::ReplayContext,
     function: &'a ResolvedFunction,
     index: Option<&'a crate::loop_calls::byte_writer::ModuleIndex<'a>>,
 ) -> RenewalBindings<'a> {

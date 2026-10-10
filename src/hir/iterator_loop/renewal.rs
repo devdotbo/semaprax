@@ -6,13 +6,13 @@ pub(crate) fn function_requires_renewal(function: &ResolvedFunction) -> bool {
     !bindings(&function.body, None).is_empty()
 }
 pub(crate) fn function_requires_record_renewal(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
 ) -> bool {
     !record_bindings(program, &function.body).is_empty()
 }
 pub(crate) fn function_has_record_renewal_outside_loop(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
 ) -> bool {
     let mut pending = vec![(&function.body, false)];
@@ -66,7 +66,7 @@ pub(crate) fn template_requires_renewal(template: &ResolvedFunctionTemplate) -> 
         .is_empty()
 }
 pub(crate) fn renewal_binding<'a>(
-    program: &'a ResolvedProgram,
+    program: &'a dyn crate::cleanup::ReplayContext,
     function: &'a ResolvedFunction,
     at: &ExpressionId,
 ) -> Option<&'a ResolvedBinding> {
@@ -76,7 +76,7 @@ pub(crate) fn renewal_binding<'a>(
 }
 
 pub(crate) fn renewal_bindings<'a>(
-    program: &'a ResolvedProgram,
+    program: &'a dyn crate::cleanup::ReplayContext,
     function: &'a ResolvedFunction,
 ) -> BTreeMap<ExpressionId, &'a ResolvedBinding> {
     let mut found = record_bindings(program, &function.body);
@@ -122,7 +122,7 @@ fn has_record_renewal_candidate(body: &ResolvedExpr) -> bool {
 }
 
 fn record_bindings<'a>(
-    program: &'a ResolvedProgram,
+    program: &'a dyn crate::cleanup::ReplayContext,
     body: &'a ResolvedExpr,
 ) -> BTreeMap<ExpressionId, &'a ResolvedBinding> {
     let mut found = BTreeMap::new();
@@ -143,7 +143,7 @@ fn record_bindings<'a>(
 }
 
 fn collect_record_bindings<'a>(
-    program: &'a ResolvedProgram,
+    program: &'a dyn crate::cleanup::ReplayContext,
     body: &'a ResolvedExpr,
     found: &mut BTreeMap<ExpressionId, &'a ResolvedBinding>,
 ) {
@@ -195,14 +195,14 @@ pub(crate) fn is_owner_renewal_record(declarations: &DeclarationIndex, ty: &Reso
 }
 
 pub(crate) fn is_record_owner_renewal(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     binding: &ResolvedBinding,
     value: &ResolvedExpr,
 ) -> bool {
     if binding.ownership != OwnershipMode::Own
         || value.ownership != OwnershipMode::Own
         || binding.ty != value.ty
-        || !is_owner_renewal_record(&program.declarations, &binding.ty)
+        || !is_owner_renewal_record(program.declarations(), &binding.ty)
     {
         return false;
     }
@@ -247,7 +247,7 @@ pub(crate) fn is_record_owner_renewal(
                             OwnershipMode::Own | OwnershipMode::Borrow
                         ) && matches!(&argument.kind, ResolvedExprKind::Place(place)
                                 if place.projections.is_empty())
-                            && (is_owner_renewal_record(&program.declarations, &parameter.ty)
+                            && (is_owner_renewal_record(program.declarations(), &parameter.ty)
                                 || (argument.ownership == OwnershipMode::Borrow
                                     && crate::loop_calls::resolved_renewal_view(&parameter.ty)))
                     }

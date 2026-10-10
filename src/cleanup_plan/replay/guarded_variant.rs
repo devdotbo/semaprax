@@ -2,7 +2,7 @@
 use super::*;
 #[allow(clippy::too_many_arguments)]
 pub(super) fn finish_arm(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
     scrutinee: &ResolvedExpr,
@@ -22,7 +22,7 @@ pub(super) fn finish_arm(
         .ok_or_else(|| replay_error(function, "guarded variant arm lost its guard"))?;
     if final_arm
         || !crate::variant_guards::admitted(
-            &program.declarations,
+            program.declarations(),
             &scrutinee.ty,
             *mode,
             &arm.pattern,
@@ -147,7 +147,7 @@ module test.general_guard_replay;
             &crate::parse(SOURCE, Path::new("general-guard-replay.spx")).unwrap(),
         )
         .unwrap();
-        for function in &program.functions {
+        for function in program.functions() {
             validate_structure(&program, function).unwrap();
             crate::cleanup_plan::build::assert_expression_lowering_oracle(
                 &program,
@@ -163,7 +163,7 @@ module test.general_guard_replay;
         )
         .unwrap();
         let original = program
-            .functions
+            .functions()
             .iter()
             .find(|f| f.id.as_str() == "g.main")
             .unwrap();

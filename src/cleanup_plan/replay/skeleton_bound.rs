@@ -8,7 +8,7 @@ use super::*;
 use crate::cleanup_plan::{CleanupBlock, CleanupPlan};
 
 pub(super) fn constructor_work_upper(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     fields: &[crate::hir::ResolvedFieldInitializer],
 ) -> Result<usize, Diagnostic> {
@@ -34,7 +34,7 @@ pub(super) fn constructor_work_upper(
 }
 
 pub(super) fn update_work_upper(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
     record: &DeclarationId,
@@ -71,7 +71,7 @@ pub(super) fn update_work_upper(
 }
 
 fn untouched_update_field_work_upper(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
     record: &DeclarationId,
@@ -82,12 +82,15 @@ fn untouched_update_field_work_upper(
     {
         return Ok(0);
     }
-    let declarations = program.declarations.record_fields(record).ok_or_else(|| {
-        replay_error(
-            function,
-            format!("record update has unknown record `{record}`"),
-        )
-    })?;
+    let declarations = program
+        .declarations()
+        .record_fields(record)
+        .ok_or_else(|| {
+            replay_error(
+                function,
+                format!("record update has unknown record `{record}`"),
+            )
+        })?;
     let arguments = record_destructure::update::concrete_arguments(function, expression, record)?;
     let mut untouched_droppable = 0usize;
     for field in declarations {
@@ -193,7 +196,7 @@ mod tests {
     fn per_transition_cfg_weight_covers_materialized_branch_and_call() {
         let program = program();
         let function = program
-            .functions
+            .functions()
             .iter()
             .find(|function| function.id.as_str() == "weight.choose")
             .unwrap();
@@ -210,7 +213,7 @@ mod tests {
     fn hostile_wide_call_is_counted_before_any_skeleton_materialization() {
         let mut program = program();
         let function = program
-            .functions
+            .functions()
             .iter_mut()
             .find(|function| function.id.as_str() == "weight.choose")
             .unwrap();
@@ -228,7 +231,7 @@ mod tests {
         let repeated = arguments[0].clone();
         arguments.extend(std::iter::repeat_n(repeated, 64));
         let function = program
-            .functions
+            .functions()
             .iter()
             .find(|function| function.id.as_str() == "weight.choose")
             .unwrap();

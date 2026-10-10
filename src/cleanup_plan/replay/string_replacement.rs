@@ -80,7 +80,7 @@ module test.string_replacement_replay;
         let parsed = crate::parse(SOURCE, Path::new("string-replacement-replay.spx")).unwrap();
         let program = crate::hir::resolve(&parsed).unwrap();
         for function in program
-            .functions
+            .functions()
             .iter()
             .filter(|f| crate::string_ops::replacement::requires(f))
         {
@@ -100,7 +100,7 @@ module test.string_replacement_replay;
         )
         .unwrap();
         let original = program
-            .functions
+            .functions()
             .iter()
             .find(|f| f.id.as_str() == "renew.literal")
             .unwrap();

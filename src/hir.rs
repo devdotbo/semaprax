@@ -321,11 +321,11 @@ pub(crate) fn is_exact_materialized_function_instance(
 }
 
 pub(crate) fn bounded_owned_record_template_for_function<'a>(
-    program: &'a ResolvedProgram,
+    program: &'a dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
 ) -> Option<&'a ResolvedFunctionTemplate> {
     let mut matched = None;
-    for template in &program.function_templates {
+    for template in program.function_templates() {
         let owned = template
             .params
             .iter()
@@ -333,14 +333,14 @@ pub(crate) fn bounded_owned_record_template_for_function<'a>(
             .collect::<Vec<_>>();
         let exact_relay = !owned.is_empty()
             && type_reachability::is_nested_owned_byte_record_template(
-                &program.declarations,
+                program.declarations(),
                 &template.return_type,
                 &template.id,
                 template.type_parameters.len(),
             )
             && owned.iter().all(|parameter| {
                 type_reachability::is_nested_owned_byte_record_template(
-                    &program.declarations,
+                    program.declarations(),
                     &parameter.ty,
                     &template.id,
                     template.type_parameters.len(),
@@ -349,7 +349,7 @@ pub(crate) fn bounded_owned_record_template_for_function<'a>(
         if !exact_relay || !(1..=2).contains(&template.type_parameters.len()) {
             continue;
         }
-        let exact = program.function_instances.iter().any(|instance| {
+        let exact = program.function_instances().iter().any(|instance| {
             instance.template == template.id
                 && same_function_meaning(&instance.function, function)
                 && is_exact_materialized_function_instance(template, instance)

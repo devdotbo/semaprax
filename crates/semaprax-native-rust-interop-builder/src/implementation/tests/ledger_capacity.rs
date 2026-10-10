@@ -515,6 +515,7 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
     );
     let cleanup = concat!(
         include_str!("../../../../../src/cleanup.rs"),
+        include_str!("../../../../../src/cleanup/replay_context.rs"),
         include_str!("../../../../../src/cleanup/generic_record.rs"),
         include_str!("../../../../../src/cleanup/iterator.rs"),
         include_str!("../../../../../src/cleanup/owned_capacity.rs"),

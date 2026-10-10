@@ -3,7 +3,7 @@
 use crate::diagnostic::Diagnostic;
 use crate::hir::{
     DeclarationId, FunctionInstanceId, OwnershipMode, ResolvedExpr, ResolvedExprKind,
-    ResolvedParam, ResolvedProgram, ResolvedType, ValueId,
+    ResolvedParam, ResolvedType, ValueId,
 };
 
 // A borrowed native target can refuse its dynamic loan guard or panic. Its
@@ -16,11 +16,11 @@ pub(super) fn owns(expression: &ResolvedExpr) -> bool {
 }
 
 pub(super) fn params(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     callee: &DeclarationId,
 ) -> Result<Vec<ResolvedParam>, Diagnostic> {
     let import = program
-        .interfaces
+        .interfaces()
         .iter()
         .flat_map(|interface| &interface.imports)
         .find(|import| import.native_rust && &import.id == callee)

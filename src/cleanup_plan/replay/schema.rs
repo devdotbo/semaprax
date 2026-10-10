@@ -5,22 +5,23 @@ use super::*;
 use crate::cleanup_plan::{CLEANUP_PLAN_SCHEMA_V17, CLEANUP_PLAN_SCHEMA_V18};
 
 pub(crate) fn selected_schema(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
 ) -> Result<&'static str, Diagnostic> {
     selected_schema_with_index(program, function, None)
 }
 pub(super) fn selected_schema_with_index(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
 ) -> Result<&'static str, Diagnostic> {
     // Independently replayed lexical exits select the lexical certificate
     // profile regardless of any attached inventory or plan.
-    if helpers.map_or_else(
-        || !crate::loop_calls::byte_writer::bindings(program, function).is_empty(),
-        |index| index.has_sites(function),
-    ) {
+    let helper_sites = match helpers {
+        Some(index) => index.has_sites(function),
+        None => !crate::loop_calls::byte_writer::checked_bindings(program, function)?.is_empty(),
+    };
+    if helper_sites {
         return Ok(crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V19);
     }
     if lexical_cert::requires_lexical(function) {
@@ -43,7 +44,7 @@ pub(super) fn selected_schema_with_index(
     } else if function_has_owner_admission(program, function)? {
         CLEANUP_PLAN_SCHEMA_V14
     } else if crate::iterator_ops::function_uses_owned_iterator(function)
-        || crate::iterator_ops::function_uses_record_iterator_in(&program.declarations, function)
+        || crate::iterator_ops::function_uses_record_iterator_in(program.declarations(), function)
     {
         CLEANUP_PLAN_SCHEMA_V13
     } else if crate::hir::iterator_loop::function_requires_renewal(function)
@@ -103,7 +104,7 @@ pub(super) fn selected_schema_with_index(
 }
 
 fn function_has_owner_admission(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
 ) -> Result<bool, Diagnostic> {
     for root in function

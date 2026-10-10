@@ -1,13 +1,14 @@
 //! Callee-scoped admission for the checked native owner family.
 //! This decision comes from HIR import/type facts, never an attached plan.
-use crate::hir::{
-    OwnershipMode, ResolvedExpr, ResolvedExprKind, ResolvedImportResultKind, ResolvedProgram,
-};
+use crate::hir::{OwnershipMode, ResolvedExpr, ResolvedExprKind, ResolvedImportResultKind};
 
 pub(super) const STATUS_DOMAIN: &str = "semaprax.native-rust-owner-admission.v1";
 pub(super) const REFUSED: u32 = 7;
 
-pub(super) fn required(program: &ResolvedProgram, expression: &ResolvedExpr) -> bool {
+pub(super) fn required(
+    program: &dyn crate::cleanup::ReplayContext,
+    expression: &ResolvedExpr,
+) -> bool {
     let Some(call) = super::native_rust::parts(expression) else {
         return false;
     };
@@ -21,7 +22,7 @@ pub(super) fn required(program: &ResolvedProgram, expression: &ResolvedExpr) -> 
     call.args.iter().any(|argument| {
         argument.ownership == OwnershipMode::Own
             && program
-                .interfaces
+                .interfaces()
                 .iter()
                 .flat_map(|i| &i.imports)
                 .any(|import| {
@@ -38,7 +39,7 @@ pub(super) fn required(program: &ResolvedProgram, expression: &ResolvedExpr) -> 
                         && import
                             .result
                             .kind
-                            .value_type(&program.declarations)
+                            .value_type(program.declarations())
                             .ok()
                             .as_ref()
                             == Some(&argument.ty)

@@ -5,7 +5,7 @@ use crate::cleanup_plan::{
 };
 
 pub(super) fn validate_binding(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     at: &ExpressionId,
     place: &CleanupPlace,
@@ -61,7 +61,7 @@ pub(super) fn validate_binding(
     Ok(())
 }
 pub(super) fn reject_unmarked_finish(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     at: &ExpressionId,
     destination: &CleanupPlace,
@@ -81,7 +81,7 @@ pub(super) fn reject_unmarked_finish(
 }
 #[allow(clippy::too_many_arguments)] // Keep the independently held phase index explicit.
 pub(super) fn reserve(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     at: &ExpressionId,
     binding: &CleanupPlace,
@@ -121,7 +121,7 @@ pub(super) fn reserve(
 }
 #[allow(clippy::too_many_arguments)] // Keep the independently held phase index explicit.
 pub(super) fn renew(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     at: &ExpressionId,
     (source, destination): (&CleanupPlace, &CleanupPlace),
@@ -339,7 +339,7 @@ module test.iterator_renewal;
             .expect("renewal source checks");
         let program = crate::hir::resolve(&source).expect("conditional renewal resolves");
         let function = program
-            .functions
+            .functions()
             .iter()
             .find(|function| function.id.as_str() == "app.main")
             .expect("main");
@@ -412,7 +412,7 @@ fn main() -> i64
             .expect("record renewal source checks");
         let program = crate::hir::resolve(&source).expect("record renewal resolves");
         let function = program
-            .functions
+            .functions()
             .iter()
             .find(|function| function.id.as_str() == "app.main")
             .expect("main");
@@ -527,7 +527,7 @@ fn main() -> i64
         .unwrap();
         let program = crate::hir::resolve(&source).unwrap();
         let function = program
-            .functions
+            .functions()
             .iter()
             .find(|f| f.id.as_str() == "matcher.run")
             .unwrap();
@@ -644,7 +644,7 @@ fn main() -> i64
         )
         .unwrap();
         let program = crate::hir::resolve(&source).unwrap();
-        let function = &program.functions[0];
+        let function = &program.functions()[0];
         assert_eq!(function.cleanup_plan.schema, CLEANUP_PLAN_SCHEMA_V15);
         validate_structure(&program, function).unwrap();
         for mode in 0..6 {
@@ -723,7 +723,7 @@ fn main() -> i64
         )
         .unwrap();
         let program = crate::hir::resolve(&source).unwrap();
-        let function = &program.functions[0];
+        let function = &program.functions()[0];
         assert_eq!(function.cleanup_plan.schema, CLEANUP_PLAN_SCHEMA_V17);
         validate_structure(&program, function).unwrap();
         for mode in 0..6 {

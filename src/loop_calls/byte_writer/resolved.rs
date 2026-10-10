@@ -4,24 +4,27 @@ enum Frame<'a> {
     Function(&'a ResolvedFunction, usize),
     Expression(&'a ResolvedFunction, &'a ResolvedExpr, usize),
 }
-pub(crate) fn nonallocating(program: &ResolvedProgram, target: &ResolvedFunction) -> bool {
+pub(crate) fn nonallocating(
+    program: &dyn crate::cleanup::ReplayContext,
+    target: &ResolvedFunction,
+) -> bool {
     nonallocating_with(
         target,
         |id, instance| program.resolve_call_target(id, instance),
         |_, mode, ty| resolved_param(program, mode, ty),
         |_, ty| {
             crate::hir::is_scalar_resolved_type(ty)
-                || crate::hir::copy_record_collection::admitted(&program.declarations, ty)
-                || super::super::resolved_match_scrutinee_admitted(&program.declarations, ty)
+                || crate::hir::copy_record_collection::admitted(program.declarations(), ty)
+                || super::super::resolved_match_scrutinee_admitted(program.declarations(), ty)
         },
         program
-            .functions
+            .functions()
             .len()
-            .saturating_add(program.function_instances.len()),
+            .saturating_add(program.function_instances().len()),
     )
 }
 pub(super) fn checked_target<'a>(
-    program: &'a ResolvedProgram,
+    program: &'a dyn crate::cleanup::ReplayContext,
     target: &'a ResolvedFunction,
     cursor: &mut Option<ProofCursor<'a>>,
 ) -> Result<bool, crate::diagnostic::Diagnostic> {
@@ -48,13 +51,13 @@ pub(super) fn checked_target<'a>(
         |_, mode, ty| resolved_param(program, mode, ty),
         |_, ty| {
             crate::hir::is_scalar_resolved_type(ty)
-                || crate::hir::copy_record_collection::admitted(&program.declarations, ty)
-                || super::super::resolved_match_scrutinee_admitted(&program.declarations, ty)
+                || crate::hir::copy_record_collection::admitted(program.declarations(), ty)
+                || super::super::resolved_match_scrutinee_admitted(program.declarations(), ty)
         },
         program
-            .functions
+            .functions()
             .len()
-            .saturating_add(program.function_instances.len()),
+            .saturating_add(program.function_instances().len()),
         cursor.as_mut().ok_or_else(census_error)?,
     ))
 }
@@ -286,14 +289,14 @@ fn prove_with_frames<'a>(
     Some(())
 }
 pub(crate) fn bindings<'a>(
-    program: &'a ResolvedProgram,
+    program: &'a dyn crate::cleanup::ReplayContext,
     function: &'a ResolvedFunction,
 ) -> HelperBindings<'a> {
     checked_bindings(program, function).unwrap_or_default()
 }
 
 pub(crate) fn checked_bindings<'a>(
-    program: &'a ResolvedProgram,
+    program: &'a dyn crate::cleanup::ReplayContext,
     function: &'a ResolvedFunction,
 ) -> Result<HelperBindings<'a>, crate::diagnostic::Diagnostic> {
     if !potential(program) {
@@ -311,8 +314,8 @@ pub(super) fn census_error() -> crate::diagnostic::Diagnostic {
         "byte helper renewal census exceeds admitted scratch, work or depth",
     )
 }
-pub(super) fn potential(program: &ResolvedProgram) -> bool {
-    program.functions.iter().any(|f| {
+pub(super) fn potential(program: &dyn crate::cleanup::ReplayContext) -> bool {
+    program.functions().iter().any(|f| {
         f.return_type == ResolvedType::Bytes
             && f.params
                 .iter()
