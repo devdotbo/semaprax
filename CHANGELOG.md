@@ -258,6 +258,24 @@
 - Attach the final resolved-core builder phase's first sticky reservation
   evidence to SPX-G171 help, preserving the exact message, ledger behavior,
   independent retry budgets, and unknown inner-operation attribution.
+- Refresh workspace artifact KATs only after exact byte reconstruction of 62
+  complete historical documents, including nested operations and review inputs;
+  retain every limit, domain, replay, no-write and hostile assertion.
+
+- Bind the hostile cleanup capacity pin to the measured shared-identity layout;
+  complete canonical HIR, cleanup, and loan proof bytes remain unchanged.
+
+- Refresh target and patch-evidence KATs after full native-byte reconstruction
+  reproduces all 18 prior pins from only the result initialization relocation
+  and authenticated digest consequences; retain validator and replay hostiles.
+
+- Refresh freestanding artifact pins after byte-for-byte proof of the native
+  result initialization relocation and its authenticated envelope consequences.
+
+- Preserve exact cold/warm workspace graph accounting by measuring only loan
+  capacities that can shrink on HIR clone. Keep immutable identity storage and
+  full census scratch charged by their owning retention/replay paths; invalidate
+  prior cache capacity metadata with checked-HIR compatibility v6.
 
 - Reduce validation allocation by borrowing byte-operation signatures and
   retained zero-argument nominal facts, constructing byte-slot labels only

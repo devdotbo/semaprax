@@ -16,7 +16,7 @@ pub(crate) fn owned_capacity_bytes_excluding(
     if covered_hir_keys.windows(2).any(|pair| pair[0] >= pair[1]) {
         return None;
     }
-    structural_capacity_bytes(plan)?.checked_add(shared_identity_bytes(plan, covered_hir_keys)?)
+    clone_capacity_bytes(plan)?.checked_add(shared_identity_bytes(plan, covered_hir_keys)?)
 }
 
 /// Final uncached retention reuses its charged candidate-key and state vectors.
@@ -43,10 +43,11 @@ pub(crate) fn owned_capacity_bytes_partitioned(
             states[index] = 2;
         }
     }
-    structural_capacity_bytes(plan)?.checked_add(shared_bytes)
+    clone_capacity_bytes(plan)?.checked_add(shared_bytes)
 }
 
-fn structural_capacity_bytes(plan: &LoanPlan) -> Option<usize> {
+/// Capacity that can shrink on clone; immutable identity backing is charged separately.
+pub(crate) fn clone_capacity_bytes(plan: &LoanPlan) -> Option<usize> {
     fn add(total: &mut usize, bytes: usize) -> Option<()> {
         *total = total.checked_add(bytes)?;
         Some(())
