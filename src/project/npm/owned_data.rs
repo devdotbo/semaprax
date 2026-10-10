@@ -63,7 +63,7 @@ pub(super) fn prepare(
         return Err(package_error("owned-data descriptor replay disagrees"));
     }
     let semantic_recipe = super::render_owned_data_semantic_recipe(program)?;
-    let replayed_program = super::semantic_recipe_v8::replay_against(program, &semantic_recipe)?;
+    let replayed_program = super::replay_owned_data_semantic_recipe(program, &semantic_recipe)?;
     let replayed_descriptor = replay_public_api_descriptor(
         &replayed_program,
         &selected,
@@ -181,7 +181,7 @@ pub(super) fn validate_replayed(
         return Err(package_error("owned-data API metadata identity disagrees"));
     }
     let descriptor_bytes = super::json_string(object, "descriptor")?.as_bytes();
-    let program = super::semantic_recipe_v8::replay(identity.semantic_recipe)?;
+    let program = super::semantic_recipe_lexical_v1::replay(identity.semantic_recipe)?;
     let descriptor_value: serde_json::Value = serde_json::from_slice(descriptor_bytes)
         .map_err(|_| package_error("owned-data descriptor metadata is invalid"))?;
     let exports_value = descriptor_value

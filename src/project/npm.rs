@@ -20,6 +20,7 @@ mod publication_plan;
 pub use publication_plan::ProjectNpmPublication;
 #[cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))]
 mod publication;
+mod semantic_recipe_lexical_v1;
 mod semantic_recipe_v8;
 mod validation;
 
@@ -462,14 +463,14 @@ pub(super) fn render_semantic_recipe(
 pub(crate) fn render_owned_data_semantic_recipe(
     program: &crate::hir::ResolvedProgram,
 ) -> Result<String, Diagnostic> {
-    semantic_recipe_v8::render(program)
+    semantic_recipe_lexical_v1::render(program)
 }
 
 pub(crate) fn replay_owned_data_semantic_recipe(
     linked: &crate::hir::ResolvedProgram,
     recipe: &str,
 ) -> Result<crate::hir::ResolvedProgram, Diagnostic> {
-    semantic_recipe_v8::replay_against(linked, recipe)
+    semantic_recipe_lexical_v1::replay_against(linked, recipe)
 }
 
 fn render_semantic_recipe_profile(

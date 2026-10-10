@@ -288,3 +288,9 @@ network-disabled container. Production files and artifact known answers are
 unchanged. Those local counts do not describe Windows, the pinned browser matrix or native
 allocation runs. The implemented v0.4.0 release corpus has the accepted
 hosted-green baseline; later code changes require their own evidence.
+
+The selective [lexical semantic recipe v1](OWNED-NPM-LEXICAL-RECIPE-V1.md)
+retains ordinary checked statement exits during pathless owned-data package
+replay. It changes neither this invocation state machine nor frozen recipe-v8
+admission. Explicit source replay selection remains bound by the complete
+carrier digest and independent descriptor/artifact replay.

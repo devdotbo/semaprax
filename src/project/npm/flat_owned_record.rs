@@ -51,7 +51,7 @@ pub(super) fn prepare(
         return Err(package_error("flat record descriptor replay disagrees"));
     }
     let recipe = super::render_owned_data_semantic_recipe(program)?;
-    let replayed_program = super::semantic_recipe_v8::replay_against(program, &recipe)?;
+    let replayed_program = super::replay_owned_data_semantic_recipe(program, &recipe)?;
     let replayed_descriptor = crate::project::replay_flat_owned_record_api_descriptor(
         &replayed_program,
         &selected,
@@ -133,7 +133,7 @@ pub(super) fn validate_replayed(
         .get("descriptor_digest")
         .and_then(serde_json::Value::as_str)
         .ok_or_else(|| package_error("flat record digest is absent"))?;
-    let program = super::semantic_recipe_v8::replay(identity.semantic_recipe)?;
+    let program = super::semantic_recipe_lexical_v1::replay(identity.semantic_recipe)?;
     let descriptor_value: serde_json::Value = serde_json::from_slice(descriptor_bytes)
         .map_err(|_| package_error("flat record descriptor is invalid"))?;
     let selected = descriptor_value

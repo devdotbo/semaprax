@@ -51,7 +51,7 @@ pub(super) fn prepare(
         return Err(package_error("nested record descriptor replay disagrees"));
     }
     let recipe = super::render_owned_data_semantic_recipe(program)?;
-    let replayed_program = super::semantic_recipe_v8::replay_against(program, &recipe)?;
+    let replayed_program = super::replay_owned_data_semantic_recipe(program, &recipe)?;
     let replayed_descriptor = crate::project::replay_nested_owned_record_api_descriptor(
         &replayed_program,
         &selected,
@@ -144,7 +144,7 @@ pub(super) fn validate_replayed(
                 .ok_or_else(|| package_error("nested record export is invalid"))
         })
         .collect::<Result<Vec<_>, _>>()?;
-    let program = super::semantic_recipe_v8::replay(identity.semantic_recipe)?;
+    let program = super::semantic_recipe_lexical_v1::replay(identity.semantic_recipe)?;
     let subject = PublicApiSubject {
         project_schema: identity.project_schema,
         project_revision: identity.project_revision,
