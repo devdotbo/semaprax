@@ -62,7 +62,10 @@ no `Bytes` result plus `own Bytes` parameter signature skips the new binding
 cursor. A module containing a potentially relevant signature performs the
 bounded per-function census even when that particular function has no proven
 helper-renewal site. Prior schemas and graph bytes remain unchanged in that
-case; zero additional compiler work or scratch is not claimed.
+case; zero additional compiler work or scratch is not claimed. This body
+census reserves 514 cursor slots, matching the ordinary cleanup traversal's
+512-depth allowance and framing slots. The separate transitive closure proof
+retains its stricter 256 combined function/expression frames.
 
 The remaining OPT #737 compiler-efficiency follow-up is a single independently
 proved, budgeted module closure/site index reused by all per-function consumers.

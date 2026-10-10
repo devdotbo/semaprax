@@ -187,6 +187,9 @@ pub(crate) fn checked_bindings<'a>(
     program: &'a ResolvedProgram,
     function: &'a ResolvedFunction,
 ) -> Result<HelperBindings<'a>, crate::diagnostic::Diagnostic> {
+    // Match the ordinary cleanup status traversal's 512-depth allowance,
+    // including its two framing slots. Transitive closure proof stays DEPTH.
+    const CENSUS_DEPTH: usize = 514;
     let error = || {
         crate::diagnostic::Diagnostic::io(
             "SPX-H006",
@@ -204,11 +207,11 @@ pub(crate) fn checked_bindings<'a>(
         return Ok(found);
     }
     if !crate::bounded_output::reserve_active_required(std::mem::size_of::<
-        [(&ResolvedExpr, usize, usize); DEPTH],
+        [(&ResolvedExpr, usize, usize); CENSUS_DEPTH],
     >()) {
         return Err(error());
     }
-    let mut frames = [(&function.body, 0usize, 0usize); DEPTH];
+    let mut frames = [(&function.body, 0usize, 0usize); CENSUS_DEPTH];
     let mut depth = 1usize;
     let mut work = WORK;
     while depth != 0 {
@@ -286,7 +289,7 @@ pub(crate) fn checked_bindings<'a>(
             }
         };
         if let Some(child) = child {
-            if depth == DEPTH {
+            if depth == CENSUS_DEPTH {
                 return Err(error());
             }
             frames[depth] = (child, 0, 0);

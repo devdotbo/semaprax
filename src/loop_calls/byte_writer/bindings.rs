@@ -1,7 +1,7 @@
 //! Borrowed exact-key census: no opaque tree allocation or identity clone.
 use crate::hir::{ExpressionId, ResolvedBinding};
 type Entry<'a> = (&'a ExpressionId, &'a ResolvedBinding);
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub(crate) struct HelperBindings<'a> {
     entries: Vec<Entry<'a>>,
 }

@@ -67,7 +67,7 @@ fn transitive_byte_helpers_reserve_exact_owners_inside_and_outside_loops() {
         assert_eq!(binding.name, "output");
         assert!(main.cleanup_plan.blocks.iter().flat_map(|block| &block.transitions).any(|transition| matches!(transition,
             crate::cleanup_plan::CleanupTransition::ReserveRenewal { at: site, binding: place }
-                if site == at && *place == crate::cleanup_plan::CleanupPlace::whole(crate::cleanup_plan::StorageId::Value(binding.id.clone())))));
+                if site == at && place.storage == crate::cleanup_plan::StorageId::Value(binding.id.clone()) && place.projections.is_empty())));
     }
 }
 #[test]
@@ -153,4 +153,63 @@ fn helper_renewal_replay_refuses_a_different_actual_owner() {
     };
     place.root = other;
     assert_eq!(crate::hir::validate(&program).unwrap_err().code, "SPX-H006");
+}
+
+#[test]
+fn legacy_allocating_helper_census_preserves_ordinary_depth_and_refuses_one_extra_frame() {
+    let checked = crate::check(
+        r#"module census.depth;
+@id("census.old") fn old(input:own Bytes)->Bytes {
+ let length=byte_len(bytes_as_slice(input)); bytes_zeroed(1usize)
+}
+@id("census.main") fn main()->i64 {0}
+"#,
+        "legacy-byte-census-depth.spx",
+    )
+    .unwrap();
+    let mut program = crate::hir::resolve(&checked).unwrap();
+    crate::hir::validate(&program).unwrap();
+    let main = program
+        .functions
+        .iter_mut()
+        .find(|f| f.id.as_str() == "census.main")
+        .unwrap();
+    // Preserve the actual typed source body and its identities, as the existing
+    // exact-depth HIR admission oracle does. This census creates no new sites.
+    let template = main.body.clone();
+    for _ in 0..512 {
+        let mut outer = template.clone();
+        let ResolvedExprKind::Block { tail, .. } = &mut outer.kind else {
+            panic!("ordinary source block");
+        };
+        *tail = Box::new(std::mem::replace(&mut main.body, template.clone()));
+        main.body = outer;
+    }
+    let main = program
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "census.main")
+        .unwrap();
+    assert!(checked_bindings(&program, main).unwrap().is_empty());
+    let main = program
+        .functions
+        .iter_mut()
+        .find(|f| f.id.as_str() == "census.main")
+        .unwrap();
+    let mut outer = template;
+    let ResolvedExprKind::Block { tail, .. } = &mut outer.kind else {
+        panic!("source block");
+    };
+    // Move the existing body under exactly one additional source-shaped frame.
+    *tail = Box::new(main.body.clone());
+    main.body = outer;
+    let main = program
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "census.main")
+        .unwrap();
+    assert_eq!(
+        checked_bindings(&program, main).unwrap_err().code,
+        "SPX-H006"
+    );
 }
