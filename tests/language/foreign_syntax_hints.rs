@@ -1,9 +1,9 @@
 //! Parser fix hints for habits carried over from other languages.
 //!
 //! Each case is the first thing a newcomer or a coding agent tends to write.
-//! The grammar already rejected every one of them; these regressions pin the
-//! stable code the rejection keeps, the fix the diagnostic now carries, and
-//! the invariant that no hint admits new syntax.
+//! Rejected habits retain stable diagnostics and fixes. Lexical exits are
+//! explicitly admitted now; their original inputs remain executable positive
+//! controls rather than obsolete grammar refusals.
 
 use std::path::Path;
 
@@ -37,9 +37,39 @@ fn missing_module_header_shows_the_first_line() {
     );
 }
 
+fn admitted_lexical(source: &str, expected: &str, stem: &str) {
+    let program = semaprax::check(source, "habit.spx").unwrap();
+    let canonical = semaprax::format::canonical(&program);
+    let roundtrip = semaprax::check(&canonical, "habit.spx").unwrap();
+    assert_eq!(canonical, semaprax::format::canonical(&roundtrip));
+    assert_eq!(
+        semaprax::graph::to_json(&program).unwrap(),
+        semaprax::graph::to_json(&roundtrip).unwrap()
+    );
+    semaprax::hir::validate(&semaprax::hir::resolve(&program).unwrap()).unwrap();
+    let directory = std::env::temp_dir().join(format!(
+        "semaprax-foreign-habit-{}-{stem}",
+        std::process::id()
+    ));
+    std::fs::create_dir_all(&directory).unwrap();
+    let path = directory.join("main.spx");
+    std::fs::write(&path, source).unwrap();
+    let result = semaprax::interpreter::internal_strings::interpret(
+        &path,
+        "main",
+        &[],
+        &semaprax::interpreter::InterpreterOptions::default(),
+    )
+    .unwrap();
+    let envelope: serde_json::Value = serde_json::from_str(&result.envelope).unwrap();
+    assert_eq!(envelope["payload"]["outcome"]["kind"], "returned");
+    assert_eq!(envelope["payload"]["outcome"]["value"], expected);
+    std::fs::remove_dir_all(directory).unwrap();
+}
+
 #[test]
-fn loop_return_still_names_the_tail_expression_rule() {
-    let diagnostic = rejection(
+fn loop_return_is_checked_and_value_boundary_crossings_remain_closed() {
+    admitted_lexical(
         r#"
 module habit.ret;
 @id("app.main")
@@ -49,17 +79,24 @@ fn main() -> i64
     0
 }
 "#,
+        "42",
+        "loop-return",
     );
-    assert_eq!(diagnostic.code, "SPX-P106");
-    assert!(diagnostic.message.contains("`return`"), "{diagnostic}");
-    assert!(
-        help(&diagnostic).contains("last expression"),
-        "{diagnostic}"
-    );
-    assert_eq!(
-        diagnostic.span.map(|span| (span.line, span.column)),
-        Some((6, 18))
-    );
+    for body in [
+        "let value={while false {0} return 42;};value",
+        "let call=fn()->i64 {while false {0} return 42;};0",
+    ] {
+        let source = main_body(body);
+        let program = parse(&source, Path::new("habit-crossing.spx")).unwrap();
+        let diagnostics = semaprax::verify::verify(&program);
+        let diagnostic = diagnostics
+            .iter()
+            .find(|d| d.code == "SPX-T312")
+            .expect("value boundary stays closed");
+        assert!(help(diagnostic).contains(
+            "initializer, argument, aggregate, return-operand, yield and closure crossings"
+        ));
+    }
 }
 
 #[test]
@@ -448,6 +485,16 @@ fn main_body(body: &str) -> String {
 
 #[test]
 fn operators_and_statements_from_other_languages_name_the_admitted_form() {
+    admitted_lexical(
+        &main_body("    let mut i = 0;\n    while true { i = i + 1; break; }\n    i"),
+        "1",
+        "loop-break",
+    );
+    admitted_lexical(
+        &main_body("    let mut i = 0;\n    while i < 2 { i = i + 1; continue; }\n    i"),
+        "2",
+        "loop-continue",
+    );
     let cases = [
         (
             "    let x = 1;\n    x > 0 ? 1 : 2",
@@ -468,11 +515,6 @@ fn operators_and_statements_from_other_languages_name_the_admitted_form() {
             "    let a = true or false;\n    0",
             "SPX-P106",
             "logical or is `||`",
-        ),
-        (
-            "    let mut i = 0;\n    while true { i = i + 1; break; }\n    i",
-            "SPX-P106",
-            "no `break` or `continue`",
         ),
         (
             "    let f = |x: i64| x + 1;\n    0",

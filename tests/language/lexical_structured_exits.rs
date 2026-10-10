@@ -172,7 +172,7 @@ fn loop_exit_branches_keep_outer_owner_transfers_and_function_returns_discard_th
         "let consumed=consume(value); continue;",
         "if true {let consumed=consume(value);break;};0",
         "if true {let consumed=consume(value);continue;};0",
-        "match true {true=>{let consumed=consume(value);break;},false=>{0}}",
+        "match true {true=>{let consumed=consume(value);break;},false=>{0},}",
     ] {
         let source = format!("module app.owner_join; @id(\"consume\") fn consume(value:own string)->i64 {{0}} @id(\"main\") fn main()->i64 {{let value=\"owner\"; while true {{{body}}} consume(value)}}");
         let program = parse(&source, "moved-before-exit-branch.spx").unwrap();
@@ -187,7 +187,7 @@ fn loop_exit_branches_keep_outer_owner_transfers_and_function_returns_discard_th
             "independent HIR must retain transfer on {body}"
         );
     }
-    let source = "module app.return_join; @id(\"main\") fn main()->string {let value=\"owner\"; while true {return value;} value}";
+    let source = "module app.return_join; @id(\"main\") fn probe()->string {let value=\"owner\"; while true {return value;} value} @id(\"entry.main\") fn main()->i64 {0}";
     let program = semaprax::check(source, "whole-function-return.spx").unwrap();
     let resolved = hir::resolve(&program).unwrap();
     hir::validate(&resolved).unwrap();
@@ -196,7 +196,7 @@ fn loop_exit_branches_keep_outer_owner_transfers_and_function_returns_discard_th
 #[test]
 fn guarded_loop_transfers_cannot_hide_behind_a_later_function_return() {
     for exit in ["break", "continue"] {
-        let source = format!("module app.guarded_exit; @id(\"consume\") fn consume(value:string)->i64 {{0}} @id(\"main\") fn main(flag:bool)->i64 {{let value=\"owner\"; while true {{if flag {{let consumed=consume(value);{exit};}};return 0;}} consume(value)}}");
+        let source = format!("module app.guarded_exit; @id(\"consume\") fn consume(value:string)->i64 {{0}} @id(\"main\") fn probe(flag:bool)->i64 {{let value=\"owner\"; while true {{if flag {{let consumed=consume(value);{exit};}};return 0;}} consume(value)}} @id(\"entry.main\") fn main()->i64 {{0}}");
         let ast = parse(&source, "guarded-transfer-return.spx").unwrap();
         let errors = verify::verify(&ast);
         assert!(
@@ -210,7 +210,7 @@ fn guarded_loop_transfers_cannot_hide_behind_a_later_function_return() {
             .iter()
             .any(|d| d.code == "SPX-H006"));
     }
-    let source = "module app.nested_return; @id(\"main\") fn main()->string {let value=\"owner\";while true {while true {break;}return value;} value}";
+    let source = "module app.nested_return; @id(\"main\") fn probe()->string {let value=\"owner\";while true {while true {break;}return value;} value} @id(\"entry.main\") fn main()->i64 {0}";
     let ast = semaprax::check(source, "local-break-then-return.spx").unwrap();
     let program = hir::resolve(&ast).unwrap();
     hir::validate(&program).unwrap();

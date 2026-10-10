@@ -60,13 +60,39 @@ fn direct_outer_owner_return_retains_ordinary_source_and_hir_authentication() {
         .validate_while_admission(exit)
         .unwrap();
     let projection = crate::graph::to_json(&source).unwrap();
-    // The public graph is pretty JSON; compare the exact structural pair in
-    // compact JSON rather than requiring adjacent bytes across whitespace.
-    let projection =
-        serde_json::to_string(&serde_json::from_str::<serde_json::Value>(&projection).unwrap())
-            .unwrap();
-    assert!(projection.contains(r#""kind":"completion","name":"never""#));
-    assert!(!projection.contains(r#""id":"never:lexical-exit:v1","type""#));
+    let projection: serde_json::Value = serde_json::from_str(&projection).unwrap();
+    fn contains_object(
+        value: &serde_json::Value,
+        predicate: &impl Fn(&serde_json::Map<String, serde_json::Value>) -> bool,
+    ) -> bool {
+        match value {
+            serde_json::Value::Object(object) => {
+                predicate(object)
+                    || object
+                        .values()
+                        .any(|value| contains_object(value, predicate))
+            }
+            serde_json::Value::Array(values) => {
+                values.iter().any(|value| contains_object(value, predicate))
+            }
+            _ => false,
+        }
+    }
+    let completion = ResolvedType::Never.identity_key();
+    // Expression headers carry exact type identities; Never is intentionally
+    // absent from the graph's public/storage type-declaration inventory.
+    assert!(contains_object(&projection, &|object| object
+        .get("kind")
+        .is_some_and(|kind| kind == "lexical_exit")
+        && object
+            .get("type_id")
+            .is_some_and(|ty| ty == completion.as_str())
+        && object
+            .get("ownership_mode")
+            .is_some_and(|mode| mode == "value")));
+    assert!(!contains_object(&projection, &|object| object
+        .get("id")
+        .is_some_and(|id| id == completion.as_str())));
     let canonical = crate::format::canonical(&source);
     let roundtrip = crate::check(&canonical, "return-owner-roundtrip.spx").unwrap();
     assert_eq!(
@@ -114,7 +140,7 @@ fn return_operand_cannot_hide_closed_allocation_or_owning_call_from_loop_admissi
 
 #[test]
 fn cached_guarded_loop_exit_before_return_retains_the_moved_outer_owner() {
-    const SOURCE: &str = "module test.guarded_return;@id(\"consume\") fn consume(value:string)->i64 {0}@id(\"main\") fn main(flag:bool)->i64 {let value=\"owner\";while true {if flag {let consumed=consume(value);return consumed;};return 0;}consume(value)}";
+    const SOURCE: &str = "module test.guarded_return;@id(\"consume\") fn consume(value:string)->i64 {0}@id(\"main\") fn probe(flag:bool)->i64 {let value=\"owner\";while true {if flag {let consumed=consume(value);return consumed;};return 0;}consume(value)} @id(\"entry.main\") fn main()->i64 {0}";
     let ast = crate::check(SOURCE, "guard-return-source.spx").unwrap();
     let program = crate::hir::resolve(&ast).unwrap();
     crate::hir::validate(&program).unwrap();
@@ -174,7 +200,7 @@ fn cached_guarded_loop_exit_before_return_retains_the_moved_outer_owner() {
 
 #[test]
 fn nested_loop_exit_is_local_but_foreign_loop_target_is_not_a_function_return() {
-    let ast = crate::check("module nested;@id(\"main\") fn main()->string {let value=\"owner\";while true {while true {break;}return value;}value}", "nested-local-exit.spx").unwrap();
+    let ast = crate::check("module nested;@id(\"main\") fn probe()->string {let value=\"owner\";while true {while true {break;}return value;}value} @id(\"entry.main\") fn main()->i64 {0}", "nested-local-exit.spx").unwrap();
     let program = crate::hir::resolve(&ast).unwrap();
     crate::hir::validate(&program).unwrap();
     let function = program

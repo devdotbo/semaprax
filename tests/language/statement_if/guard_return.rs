@@ -181,16 +181,53 @@ fn returns_reject_unreachable_code_mixed_arms_and_unadmitted_contexts() {
         ("return 1; let later = 2; later", "SPX-P209"),
         ("if true { return 1; } else { 2 }", "SPX-P210"),
         ("if true { return 1; } else { return 2; } 3", "SPX-P209"),
-        ("while true { return 1; } 0", "SPX-P106"),
         ("let value = { return 1; }; value", "SPX-P106"),
         ("let call = fn() -> i64 { return 1; }; call()", "SPX-P106"),
-        ("while true { break; 0 } 0", "SPX-P106"),
-        ("while true { continue; 0 } 0", "SPX-P106"),
+        ("while true { break; 0 } 0", "SPX-P209"),
+        ("while true { continue; 0 } 0", "SPX-P209"),
     ] {
         let source = format!("module guard.refusal; @id(\"main\") fn main() -> i64 {{ {body} }}");
         let error = parse(&source, Path::new("guard-refusal.spx")).unwrap_err();
         assert_eq!(error.code, code, "{source}: {error}");
         assert!(error.help.is_some(), "{source}: {error}");
+    }
+    // This original loop-return input is admitted by the explicit lexical
+    // profile. Keep its actual returned value and canonical projection pinned.
+    let source =
+        "module guard.refusal; @id(\"main\") fn main() -> i64 { while true { return 1; } 0 }";
+    let program = semaprax::check(source, "guard-loop-return.spx").unwrap();
+    let canonical = format::canonical(&program);
+    let roundtrip = semaprax::check(&canonical, "guard-loop-return-roundtrip.spx").unwrap();
+    assert_eq!(canonical, format::canonical(&roundtrip));
+    assert_eq!(
+        graph::to_json(&program).unwrap(),
+        graph::to_json(&roundtrip).unwrap()
+    );
+    hir::validate(&hir::resolve(&program).unwrap()).unwrap();
+    let path = super::write_source("old-loop-return", source);
+    let result = semaprax::interpreter::internal_strings::interpret(
+        &path,
+        "main",
+        &[],
+        &semaprax::interpreter::InterpreterOptions::default(),
+    )
+    .unwrap();
+    let envelope: serde_json::Value = serde_json::from_str(&result.envelope).unwrap();
+    assert_eq!(envelope["payload"]["outcome"]["kind"], "returned");
+    assert_eq!(envelope["payload"]["outcome"]["value"], "1");
+    std::fs::remove_dir_all(path.parent().unwrap()).unwrap();
+    for body in [
+        "let value={while false {0} return 1;};value",
+        "let call=fn()->i64 {while false {0} return 1;};0",
+    ] {
+        let source = format!("module guard.crossing;@id(\"main\") fn main()->i64 {{{body}}}");
+        let program = parse(&source, Path::new("guard-crossing.spx")).unwrap();
+        assert!(
+            verify::verify(&program)
+                .iter()
+                .any(|d| d.code == "SPX-T312"),
+            "{source}"
+        );
     }
 }
 

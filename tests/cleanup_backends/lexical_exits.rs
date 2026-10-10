@@ -25,7 +25,7 @@ fn run(fail: bool) -> i64
     return if index == 4 { 9 } else { 0 };
 }
 @id("lexical.take")
-fn take(own payload: string) -> i64 ensures result == 9 {
+fn take(payload: own string) -> i64 ensures result == 9 {
     while false { break; }
     return 9;
 }
