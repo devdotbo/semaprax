@@ -34,16 +34,56 @@ enum Injection {
     Continue,
 }
 
+const OWNED_SOURCE: &str = r#"module test.lexical_owned;
+
+@id("lex.token")
+resource Token {
+    @id("lex.token.drop")
+    drop trivial;
+}
+
+@id("lex.hold")
+fn hold(n: i64, token: own Token) -> Token {
+    let mut i = 0;
+    while i < n {
+        i = i + 1;
+    }
+    token
+}
+
+@id("app.main")
+fn main() -> i64 { 0 }
+"#;
+
 /// A resolved program whose `lex.count` loop is a lexical loop with one guarded
 /// exit, and the function carrying its freshly built v18 plan.
 fn fixture(injection: Injection) -> (ResolvedProgram, ResolvedFunction) {
     let parsed = parse(LEXICAL_SOURCE, Path::new("cleanup-replay-lexical.spx")).unwrap();
     let program = hir::resolve(&parsed).unwrap();
-    let mut func = function(&program, "lex.count");
+    let func = function(&program, "lex.count");
+    install(program, func, injection)
+}
+
+/// The same guarded exit over an owned result: a returned `Token` moves into
+/// provisional storage at the exit site before any contour cleanup.
+fn owned_fixture() -> (ResolvedProgram, ResolvedFunction) {
+    let parsed = parse(OWNED_SOURCE, Path::new("cleanup-replay-lexical-owned.spx")).unwrap();
+    let program = hir::resolve(&parsed).unwrap();
+    let func = function(&program, "lex.hold");
+    install(program, func, Injection::Return)
+}
+
+fn install(
+    program: ResolvedProgram,
+    mut func: ResolvedFunction,
+    injection: Injection,
+) -> (ResolvedProgram, ResolvedFunction) {
     let execution = FunctionExecutionId::Monomorphic(func.id.clone());
-    let ResolvedExprKind::Block { statements, .. } = &mut func.body.kind else {
+    let ResolvedExprKind::Block { statements, tail } = &mut func.body.kind else {
         panic!("fixture body is a block")
     };
+    // A returned operand repeats the function's own tail value.
+    let operand_template = (**tail).clone();
     let ResolvedStatement::Let { binding, span, .. } = &statements[0] else {
         panic!("fixture starts with the counter binding")
     };
@@ -79,7 +119,10 @@ fn fixture(injection: Injection) -> (ResolvedProgram, ResolvedFunction) {
         Injection::Return => (
             LexicalExitKind::Return,
             ControlTarget::Function(execution.clone()),
-            Some(Box::new(counter("lex.exit.operand"))),
+            Some(Box::new(ResolvedExpr {
+                id: id("lex.exit.operand"),
+                ..operand_template
+            })),
         ),
         Injection::Break | Injection::Continue => (
             if matches!(injection, Injection::Break) {
@@ -342,4 +385,59 @@ fn legacy_function_cannot_carry_lexical_control_or_the_v18_schema() {
     let mut legacy = function(&program, "lex.count");
     legacy.cleanup_plan.schema = CLEANUP_PLAN_SCHEMA_V18;
     assert_rejected(&program, &legacy, "schema");
+}
+
+#[test]
+fn owned_return_stages_its_result_at_the_exit_site_and_replays() {
+    let (program, func) = owned_fixture();
+    validate_structure(&program, &func).expect("owned lexical return plan replays");
+    let control = func.cleanup_plan.lexical_control.as_deref().unwrap();
+    let site = control.exits[0].site.clone();
+    assert!(func.cleanup_plan.exits.iter().any(|exit| matches!(
+        &exit.continuation,
+        ExitContinuation::FunctionReturn {
+            source: CleanupResultSource::Owned { .. },
+            ..
+        }
+    )));
+    // The owned result moves into provisional storage at the exit site itself,
+    // before the exit's contour cleanup runs.
+    assert!(func
+        .cleanup_plan
+        .blocks
+        .iter()
+        .flat_map(|block| &block.transitions)
+        .any(|transition| matches!(
+            transition,
+            CleanupTransition::Transfer { at, destination, .. }
+                if at == &site && destination.storage == StorageId::ProvisionalResult
+        )));
+}
+
+#[test]
+fn owned_return_cannot_drop_its_staging_transfer_or_downgrade_to_scalar() {
+    let (program, mut func) = owned_fixture();
+    let site = func.cleanup_plan.lexical_control.as_deref().unwrap().exits[0]
+        .site
+        .clone();
+    for block in &mut func.cleanup_plan.blocks {
+        block.transitions.retain(|transition| {
+            !matches!(transition, CleanupTransition::Transfer { at, .. } if at == &site)
+        });
+    }
+    assert_independent_replay_rejects(&program, &func);
+
+    let (program, mut func) = owned_fixture();
+    let body = func.body.id.clone();
+    let source = func
+        .cleanup_plan
+        .exits
+        .iter_mut()
+        .find_map(|exit| match &mut exit.continuation {
+            ExitContinuation::FunctionReturn { source, .. } => Some(source),
+            _ => None,
+        })
+        .expect("fixture has a function return exit");
+    *source = CleanupResultSource::Scalar { expression: body };
+    assert_independent_replay_rejects(&program, &func);
 }
