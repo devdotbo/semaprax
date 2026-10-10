@@ -29,6 +29,7 @@ pub(super) fn capture_loop_entry(
     condition: &EdgeCondition,
     state: &PathState,
     entries: &mut BTreeMap<usize, PathState>,
+    budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
     let EdgeCondition::BooleanResult(expression, true) = condition else {
         return Ok(());
@@ -48,13 +49,20 @@ pub(super) fn capture_loop_entry(
             "loop certificate entry order differs from the replayed entry ownership",
         ));
     }
-    match entries.insert(index, state.clone()) {
-        Some(previous) if previous != *state => Err(replay_error(
-            function,
-            "loop is entered with two different ownership states",
-        )),
-        _ => Ok(()),
+    if let Some(previous) = entries.get(&index) {
+        return if previous == state {
+            Ok(())
+        } else {
+            Err(replay_error(
+                function,
+                "loop is entered with two different ownership states",
+            ))
+        };
     }
+    budget.reserve_btree_node::<usize, PathState>(function, "lexical loop snapshot node")?;
+    path_join::storage::reserve_state_clone(function, state, budget, "lexical loop snapshot")?;
+    entries.insert(index, state.clone());
+    Ok(())
 }
 
 /// A loop latch ends one iteration: it must restore the exact entry state.

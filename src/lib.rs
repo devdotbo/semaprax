@@ -13,6 +13,9 @@
 // sources name this crate as `semaprax`.
 extern crate self as semaprax;
 
+#[cfg(test)]
+mod test_allocation_observer;
+
 pub mod abi_report;
 pub mod agent_definition;
 pub mod agent_deployment;

@@ -11,6 +11,9 @@ pub(super) fn validate_binding(
     place: &CleanupPlace,
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
 ) -> Result<(), Diagnostic> {
+    if let Some(sites) = program.primitive_renewals(function) {
+        return validate_binding_selected(function, at, place, sites);
+    }
     if !matches!(
         function.cleanup_plan.schema,
         CLEANUP_PLAN_SCHEMA_V12
@@ -60,6 +63,29 @@ pub(super) fn validate_binding(
     }
     Ok(())
 }
+pub(super) fn validate_binding_selected(
+    function: &ResolvedFunction,
+    at: &ExpressionId,
+    place: &CleanupPlace,
+    sites: &crate::cleanup_plan::ReplayRenewalBindings<'_>,
+) -> Result<(), Diagnostic> {
+    if !matches!(
+        function.cleanup_plan.schema,
+        CLEANUP_PLAN_SCHEMA_V18 | CLEANUP_PLAN_SCHEMA_V19
+    ) || sites.is_helper(at) && function.cleanup_plan.schema != CLEANUP_PLAN_SCHEMA_V19
+        || !sites.get(at).is_some_and(|binding| {
+            matches!(&place.storage, StorageId::Value(id) if id == &binding.id)
+                && place.projections.is_empty()
+        })
+    {
+        return Err(replay_error(
+            function,
+            "renewal is outside an exact authenticated same-owner assignment",
+        ));
+    }
+    Ok(())
+}
+
 pub(super) fn reject_unmarked_finish(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
@@ -89,9 +115,10 @@ pub(super) fn reserve(
     storage: &BTreeSet<StorageId>,
     leaves: &Leaves,
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
+    budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
     validate_binding(program, function, at, binding, helpers)?;
-    let flags = validate_place(function, binding, storage, leaves)?;
+    let flags = path_join::storage::validate_place(function, binding, storage, leaves, budget)?;
     if flags.len() != 1
         || !state.live_order.contains(&flags[0])
         || state.renewals.contains_key(at)
@@ -108,14 +135,28 @@ pub(super) fn reserve(
             "renewal reservation requires one live unreserved owner leaf",
         ));
     }
+    let protected = find_resolved_expression(function, at)
+        .is_some_and(super::super::renewal_profile::owned_rhs_provenance)
+        .then_some(flags[0]);
+    budget.reserve_array::<LivenessFlagId>(
+        function,
+        state.live_order.len(),
+        "renewal original history",
+    )?;
+    if protected.is_some() {
+        budget.reserve_array::<(LivenessFlagId, LivenessFlagId)>(
+            function,
+            state.live_order.len(),
+            "renewal staged epochs",
+        )?;
+    }
+    budget.reserve_btree_node::<ExpressionId, super::super::renewal_history::RenewalHistory>(
+        function,
+        "renewal reservation node",
+    )?;
     state.renewals.insert(
         at.clone(),
-        super::super::renewal_history::RenewalHistory::new(
-            state.live_order.clone(),
-            find_resolved_expression(function, at)
-                .is_some_and(super::super::renewal_profile::owned_rhs_provenance)
-                .then_some(flags[0]),
-        ),
+        super::super::renewal_history::RenewalHistory::new(state.live_order.clone(), protected),
     );
     Ok(())
 }
@@ -129,21 +170,24 @@ pub(super) fn renew(
     storage: &BTreeSet<StorageId>,
     leaves: &Leaves,
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
+    budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
     validate_binding(program, function, at, destination, helpers)?;
     let history = state
         .renewals
         .remove(at)
         .ok_or_else(|| replay_error(function, "renewal has no reservation"))?;
-    let flags = validate_place(function, destination, storage, leaves)?;
+    let flags = path_join::storage::validate_place(function, destination, storage, leaves, budget)?;
     if flags.len() != 1 {
         return Err(replay_error(
             function,
             "renewal destination is not one owner leaf",
         ));
     }
-    if crate::string_ops::replacement::binding(function, at).is_some() {
-        let source_flags = validate_place(function, source, storage, leaves)?;
+    if budget.physical.is_none() && crate::string_ops::replacement::binding(function, at).is_some()
+    {
+        let source_flags =
+            path_join::storage::validate_place(function, source, storage, leaves, budget)?;
         if source_flags == flags {
             return Err(replay_error(
                 function,
@@ -152,9 +196,18 @@ pub(super) fn renew(
         }
         state.live_order.retain(|flag| !flags.contains(flag));
     }
-    replay_transfer(function, state, source, destination, storage, leaves)?;
+    replay_transfer(
+        function,
+        state,
+        source,
+        destination,
+        storage,
+        leaves,
+        budget,
+    )?;
     let flag = flags[0];
-    if crate::string_ops::replacement::binding(function, at).is_some() {
+    if budget.physical.is_none() && crate::string_ops::replacement::binding(function, at).is_some()
+    {
         return string_replacement::finish(function, flag, &history, state);
     }
     if !history.contains(&flag)
@@ -193,8 +246,11 @@ pub(super) fn prepend_reservation(
             "renewal prefix insertion",
         )?;
         note_skeleton_materialization();
-        path.observations
-            .insert_front(SkeletonObservation::ReserveRenewal { at, binding }.into());
+        work.insert_front_observation(
+            &mut path.observations,
+            SkeletonObservation::ReserveRenewal { at, binding },
+            "renewal prefix storage",
+        )?;
     }
     Ok(())
 }
@@ -204,6 +260,7 @@ pub(super) fn validate_join_compatibility<'a>(
     existing: impl Iterator<Item = &'a PathState> + Clone,
     incoming: &PathState,
     block: BlockId,
+    budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
     if existing.clone().any(|state| {
         state.renewals != incoming.renewals
@@ -221,37 +278,62 @@ pub(super) fn validate_join_compatibility<'a>(
         ));
     }
 
-    let histories = existing
-        .map(|state| &state.live_order)
-        .chain(std::iter::once(&incoming.live_order))
-        .collect::<Vec<_>>();
-    let flags = histories
-        .iter()
-        .flat_map(|history| history.iter().copied())
-        .collect::<BTreeSet<_>>();
-    let mut successors = flags
-        .iter()
-        .map(|flag| (*flag, BTreeSet::new()))
-        .collect::<BTreeMap<_, _>>();
-    let mut indegree = flags
-        .iter()
-        .map(|flag| (*flag, 0_usize))
-        .collect::<BTreeMap<_, _>>();
+    let count = existing.clone().count().saturating_add(1);
+    budget.reserve_array::<&Vec<LivenessFlagId>>(function, count, "join history references")?;
+    let mut histories = Vec::with_capacity(count);
+    histories.extend(existing.map(|state| &state.live_order));
+    histories.push(&incoming.live_order);
+    let mut flags = BTreeSet::new();
+    for flag in histories.iter().flat_map(|history| history.iter().copied()) {
+        path_join::storage::insert_set(function, &mut flags, flag, budget, "join union flags")?;
+    }
+    let mut successors = BTreeMap::new();
+    let mut indegree = BTreeMap::new();
+    for flag in &flags {
+        path_join::storage::insert_map(
+            function,
+            &mut successors,
+            *flag,
+            BTreeSet::new(),
+            budget,
+            "join successor roots",
+        )?;
+        path_join::storage::insert_map(
+            function,
+            &mut indegree,
+            *flag,
+            0usize,
+            budget,
+            "join indegrees",
+        )?;
+    }
     for history in histories {
         for pair in history.windows(2) {
-            if successors
-                .get_mut(&pair[0])
-                .expect("replayed live flag is indexed")
-                .insert(pair[1])
-            {
+            if path_join::storage::insert_set(
+                function,
+                successors
+                    .get_mut(&pair[0])
+                    .expect("replayed live flag is indexed"),
+                pair[1],
+                budget,
+                "join history edges",
+            )? {
                 indegree.entry(pair[1]).and_modify(|degree| *degree += 1);
             }
         }
     }
-    let mut ready = indegree
-        .iter()
-        .filter_map(|(flag, degree)| (*degree == 0).then_some(*flag))
-        .collect::<BTreeSet<_>>();
+    let mut ready = BTreeSet::new();
+    for (flag, degree) in &indegree {
+        if *degree == 0 {
+            path_join::storage::insert_set(
+                function,
+                &mut ready,
+                *flag,
+                budget,
+                "join ready flags",
+            )?;
+        }
+    }
     let mut visited = 0_usize;
     while let Some(flag) = ready.pop_first() {
         visited += 1;
@@ -261,7 +343,13 @@ pub(super) fn validate_join_compatibility<'a>(
                 .expect("replayed successor flag is indexed");
             *degree -= 1;
             if *degree == 0 {
-                ready.insert(*successor);
+                path_join::storage::insert_set(
+                    function,
+                    &mut ready,
+                    *successor,
+                    budget,
+                    "join ready flags",
+                )?;
             }
         }
     }

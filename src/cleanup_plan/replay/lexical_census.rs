@@ -312,6 +312,18 @@ pub(super) fn validate_size_budget(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
 ) -> Result<(), Diagnostic> {
+    validate_size_budget_with_expression_count(program, function, || {
+        Ok(expression_facts(function)?.len())
+    })
+}
+
+/// Construct and authenticate a selected fact owner at exactly the legacy
+/// census stage, then let its caller retain and reuse it for complete replay.
+pub(super) fn validate_size_budget_with_expression_count(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+    count: impl FnOnce() -> Result<usize, Diagnostic>,
+) -> Result<(), Diagnostic> {
     let structure_units = plan_structure_units(&function.cleanup_plan);
     if structure_units > MAX_REPLAY_WORK_UNITS {
         return Err(replay_error(
@@ -322,7 +334,7 @@ pub(super) fn validate_size_budget(
     let cfg = branch_sensitive_cfg_bounds(function)?;
     let (semantic_paths, _) = bounds(program, function)?;
     path_budget_errors(function, cfg.terminal_paths, semantic_paths)?;
-    let expression_units = expression_facts(function)?.len();
+    let expression_units = count()?;
     if cfg.work.saturating_add(expression_units) > MAX_REPLAY_WORK_UNITS {
         return Err(replay_error(
             function,

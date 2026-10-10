@@ -2,6 +2,9 @@
 //! A schema token or stored selection bit is never literal-root authority.
 use super::*;
 use std::fmt::Write;
+mod primitive;
+pub(super) use primitive::replay as replay_lexical;
+
 const WORK: usize = 1_048_576;
 
 fn fail() -> Vec<Diagnostic> {

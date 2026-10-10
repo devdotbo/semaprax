@@ -105,11 +105,17 @@ pub(super) fn authenticate(
             || &item.site != site
             || item.block != block
             || item.region != region
-            || item.leaves_regions != region_chain_to_root(function, region)?
+            || item.leaves_regions
+                != super::lexical_cert::storage::region_chain(function, region, budget)?
             || domains[block.0 as usize] != domain
-            || by_block
-                .insert(block, BoundaryAuth { index, returned })
-                .is_some()
+            || super::lexical_cert::storage::insert(
+                function,
+                budget,
+                &mut by_block,
+                block,
+                BoundaryAuth { index, returned },
+            )?
+            .is_some()
         {
             return Err(fail(
                 "execution boundary differs from its typed phase, block or canonical contour",
@@ -160,6 +166,7 @@ pub(super) fn check(
     storage: &BTreeSet<StorageId>,
     storage_regions: &BTreeMap<StorageId, CleanupRegionId>,
     leaves: &Leaves,
+    budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
     let Some(boundary) = auth.boundaries.get(&block) else {
         return Ok(());
@@ -206,7 +213,41 @@ pub(super) fn check(
             "execution boundary carries another phase's returned result",
         ));
     }
-    validate_finalizer_actions(function, &item.finalize_in_order, storage, leaves)?;
+    super::lexical_cert::storage::finalizer_actions(
+        function,
+        &item.finalize_in_order,
+        storage,
+        leaves,
+        budget,
+    )?;
+    if budget.physical.is_some() {
+        if !state.conditional_variants.is_empty()
+            || item
+                .finalize_in_order
+                .iter()
+                .any(|action| action.active_case.is_some())
+        {
+            return Err(replay_error(
+                function,
+                "selected lexical boundary conditional ownership is outside the primitive profile",
+            ));
+        }
+        let actual = item.finalize_in_order.iter().filter_map(|action| {
+            state
+                .live_order
+                .contains(&action.guard_flag)
+                .then_some(action.guard_flag)
+        });
+        if actual.ne(state.live_order.iter().rev().copied())
+            || item.finalize_in_order.len() != state.live_order.len()
+        {
+            return Err(replay_error(
+                function,
+                "execution boundary finalizers differ from the replayed live ownership contour",
+            ));
+        }
+        return Ok(());
+    }
     let expected = state.live_order.iter().rev().copied().collect::<Vec<_>>();
     let mut expected_conditional = Vec::new();
     for variant in state.conditional_variants.iter().rev() {

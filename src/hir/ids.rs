@@ -125,6 +125,17 @@ impl ValueId {
         Self::new(format!("{operation}.param.{index}"))
     }
 
+    /// Selected replay reserves both the exact temporary string and Arc backing.
+    /// This constructor keeps the ordinary identity bytes without format spare.
+    pub(crate) fn intrinsic_parameter_exact(operation: &str, index: usize) -> Self {
+        let digits = decimal_digits(index);
+        let mut value = String::with_capacity(operation.len() + 7 + digits);
+        value.push_str(operation);
+        value.push_str(".param.");
+        write!(&mut value, "{index}").expect("write into reserved String");
+        Self::new(value)
+    }
+
     pub(crate) fn parameter(function: &FunctionExecutionId, index: usize) -> Self {
         Self::new(scoped_identity(function, "value:param", &index.to_string()))
     }

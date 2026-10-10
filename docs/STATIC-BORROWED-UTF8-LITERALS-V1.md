@@ -104,16 +104,32 @@ Authored owning definitions, not executed in this tranche:
 - The `static_utf8::` Project definition authenticates the held source,
   executes the existing writer, and refuses drift at final recheck.
 
-Retained source-schema composition of static literals with lexical v18 byte,
-String or Vec renewal remains closed. The complete Program route independently
-validates the lexical plan, but the retained selector currently applies legacy
-renewal-tag equality to the composite. Admitting it requires bounded borrowed
-namespace/call/type context APIs for independent lexical status and ownership
-replay; a certificate presence bit or attached v18 tag is insufficient. An
-owning definition records the direct byte-renewal success, forged-certificate
-and typed-root refusals, and the current retained SPX-G410 refusal.
+A selected retained composition now has authored implementation and regression
+definitions for module-local primitive signatures, static literals and lexical
+Bytes renewal. Its private inventory is captured only at the checked AST-to-HIR
+boundary, binds exact authenticated source bytes, and stores a domain-separated
+SHA-256 projection of every function's complete typed requires/body/ensures,
+identities, calls, operands, types and spans. Later replay compares current
+namespace/signature/body facts, rebuilds a minimal declaration index, and
+independently validates the complete cleanup, status, loan and ownership route.
+Attached certificates and graph versions grant no authority. The legacy route
+without that inventory still refuses the composition with SPX-G410.
 
-Remaining completion obligations include that retained lexical-renewal
-composition, current-source execution of retained source/HIR and normal
+The selected replay cumulatively reserves constructor backing before growth;
+work-budget resets cannot refund the byte reservation. The tree-node upper
+bound is tied to the pinned Rust standard-library layout and Global allocation
+request contract, with separate test-only allocator observations; it is not a
+universal Rust layout or RSS guarantee. Refusal diagnostics allocate separately
+and are reported separately in the owning observation definitions. Exact and
+one-short tests establish preconstruction refusal, not a claim that diagnostics
+fit inside a tiny failed replay budget.
+
+Imports, templates/instances, nominal aggregates, Vec/variant carriers and
+dynamic callable providers remain closed in this selected retained route.
+Their full physical replay constructor closure remains an OPT #745 obligation.
+All new definitions are unexecuted in this implementation tranche.
+
+Remaining completion obligations include the remaining retained lexical-renewal
+shapes, current-source execution of retained source/HIR and normal
 Project definitions, final producer bindings, and the complete owning gate. No efficiency or cost improvement is
 claimed without paired measurements.

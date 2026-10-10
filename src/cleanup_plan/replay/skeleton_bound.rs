@@ -213,7 +213,7 @@ mod tests {
     fn hostile_wide_call_is_counted_before_any_skeleton_materialization() {
         let mut program = program();
         let function = program
-            .functions
+            .functions()
             .iter_mut()
             .find(|function| function.id.as_str() == "weight.choose")
             .unwrap();
@@ -248,6 +248,7 @@ mod tests {
             remaining: bound - 1,
             skeleton_remaining: 0,
             merge_paths: false,
+            physical: None,
         };
         let error =
             reserve_program_skeleton_work(&program, std::iter::once(function), &mut insufficient)

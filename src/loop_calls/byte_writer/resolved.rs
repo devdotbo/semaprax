@@ -1,4 +1,6 @@
 use super::*;
+mod selected;
+pub(crate) use selected::checked_bindings_with_reservation;
 #[derive(Clone, Copy)]
 enum Frame<'a> {
     Function(&'a ResolvedFunction, usize),
@@ -345,6 +347,25 @@ pub(super) fn checked_bindings_with<'a>(
         &ResolvedExpr,
     ) -> Result<bool, crate::diagnostic::Diagnostic>,
 ) -> Result<HelperBindings<'a>, crate::diagnostic::Diagnostic> {
+    checked_bindings_with_storage(
+        function,
+        cursor,
+        &mut (),
+        |binding, value, _| admitted(binding, value),
+        |bytes, _| crate::bounded_output::reserve_active_required(bytes),
+    )
+}
+fn checked_bindings_with_storage<'a, S>(
+    function: &'a ResolvedFunction,
+    cursor: &mut CensusCursor<'a>,
+    storage: &mut S,
+    mut admitted: impl FnMut(
+        &ResolvedBinding,
+        &ResolvedExpr,
+        &mut S,
+    ) -> Result<bool, crate::diagnostic::Diagnostic>,
+    mut reserve: impl FnMut(usize, &mut S) -> bool,
+) -> Result<HelperBindings<'a>, crate::diagnostic::Diagnostic> {
     let error = census_error;
     let mut found = HelperBindings::default();
     let frames = &mut cursor.frames;
@@ -365,7 +386,7 @@ pub(super) fn checked_bindings_with<'a>(
                         ..
                     } = statement
                     {
-                        if admitted(binding, value)? {
+                        if admitted(binding, value, storage)? {
                             // Binary search, insertion shift and replacement copy have
                             // this bounded linear upper in the current site count.
                             work = work
@@ -377,7 +398,9 @@ pub(super) fn checked_bindings_with<'a>(
                                         .ok_or_else(error)?,
                                 )
                                 .ok_or_else(error)?;
-                            found.insert(&value.id, binding).ok_or_else(error)?;
+                            found
+                                .insert_with(&value.id, binding, |bytes| reserve(bytes, storage))
+                                .ok_or_else(error)?;
                         }
                     }
                 }

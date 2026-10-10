@@ -1,15 +1,15 @@
-use std::path::Path;
+use super::*;
 use crate::cleanup_plan::{CleanupBlock, CleanupEdge};
 use crate::{hir, parse};
-use super::*;
+use std::path::Path;
 #[path = "replay_tests/block_work.rs"]
 mod block_work;
 #[path = "replay_tests/factored.rs"]
 mod factored;
-#[path = "replay_tests/transition_mutations.rs"]
-mod transition_mutations;
 #[path = "replay_tests/lexical_boundary.rs"]
 mod lexical_boundary;
+#[path = "replay_tests/transition_mutations.rs"]
+mod transition_mutations;
 const SOURCE: &str = r#"module test.replay_paths;
 
 @id("token.type")
@@ -963,6 +963,7 @@ fn replay_budget_exhaustion_is_a_deterministic_diagnostic() {
         remaining: 1,
         skeleton_remaining: 0,
         merge_paths: false,
+        physical: None,
     };
     let diagnostic = budget.charge(&function, 2, "hostile test").unwrap_err();
     assert_eq!(diagnostic.code, "SPX-H006");
@@ -992,6 +993,7 @@ fn assert_program_skeleton_authority(program: &ResolvedProgram) -> usize {
         remaining: independently_summed,
         skeleton_remaining: 0,
         merge_paths: false,
+        physical: None,
     };
     assert_eq!(
         reserve_program_skeleton_work(program, functions(), &mut exact).unwrap(),
@@ -1006,6 +1008,7 @@ fn assert_program_skeleton_authority(program: &ResolvedProgram) -> usize {
         remaining: independently_summed - 1,
         skeleton_remaining: 0,
         merge_paths: false,
+        physical: None,
     };
     let diagnostic =
         reserve_program_skeleton_work(program, functions(), &mut one_less).unwrap_err();

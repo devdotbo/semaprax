@@ -1,0 +1,68 @@
+//! One immutable selected replay invocation. The lease owns freshly rebuilt
+//! renewal sites and borrows the current provider for its whole lifetime.
+use super::*;
+use crate::cleanup::ReplayContext;
+pub(super) struct Context<'a> {
+    source: &'a dyn ReplayContext,
+    function: &'a ResolvedFunction,
+    renewals: crate::cleanup_plan::ReplayRenewalBindings<'a>,
+}
+impl<'a> Context<'a> {
+    pub(super) fn new(
+        source: &'a dyn ReplayContext,
+        function: &'a ResolvedFunction,
+        budget: &mut ReplayBudget,
+    ) -> Result<Self, Diagnostic> {
+        selected_profile::validate(source, function, budget)?;
+        selected_owner::owner(source, function, budget)?;
+        budget.reserve_array::<Self>(function, 1, "selected immutable replay lease")?;
+        let physical = budget.physical.as_deref_mut().ok_or_else(|| {
+            replay_error(
+                function,
+                "selected replay lease requires its physical reservation",
+            )
+        })?;
+        let renewals = crate::cleanup_plan::renewal_profile::bindings_with_reservation(
+            source, function, physical,
+        )?;
+        if (function.cleanup_plan.schema == super::super::CLEANUP_PLAN_SCHEMA_V19)
+            != renewals.has_helpers()
+        {
+            return Err(replay_error(
+                function,
+                "selected lexical schema disagrees with independently proved helper renewal",
+            ));
+        }
+        Ok(Self {
+            source,
+            function,
+            renewals,
+        })
+    }
+}
+impl ReplayContext for Context<'_> {
+    fn declarations(&self) -> &crate::hir::DeclarationIndex {
+        self.source.declarations()
+    }
+    fn types(&self) -> &[crate::hir::ResolvedTypeDeclaration] {
+        self.source.types()
+    }
+    fn interfaces(&self) -> &[crate::hir::ResolvedInterface] {
+        self.source.interfaces()
+    }
+    fn functions(&self) -> &[ResolvedFunction] {
+        self.source.functions()
+    }
+    fn function_templates(&self) -> &[crate::hir::ResolvedFunctionTemplate] {
+        self.source.function_templates()
+    }
+    fn function_instances(&self) -> &[crate::hir::ResolvedFunctionInstance] {
+        self.source.function_instances()
+    }
+    fn primitive_renewals<'a>(
+        &'a self,
+        function: &ResolvedFunction,
+    ) -> Option<&'a crate::cleanup_plan::ReplayRenewalBindings<'a>> {
+        std::ptr::eq(self.function, function).then_some(&self.renewals)
+    }
+}

@@ -9,6 +9,7 @@ pub(super) struct SkeletonWork<'a, 'b> {
     pub(super) function: &'a ResolvedFunction,
     pub(super) budget: &'b mut ReplayBudget,
     pub(super) renewal_bindings: crate::cleanup_plan::renewal_profile::RenewalBindings<'a>,
+    held_renewals: Option<&'a crate::cleanup_plan::renewal_profile::RenewalBindings<'a>>,
     /// Authored same-owner append and direct literal-format String moves.
     pub(super) string_owner_moves: BTreeSet<ExpressionId>,
     pub(super) string_condition_reads: BTreeSet<ExpressionId>,
@@ -34,6 +35,7 @@ impl<'a, 'b> SkeletonWork<'a, 'b> {
         Self {
             function,
             budget,
+            held_renewals: None,
             renewal_bindings: crate::cleanup_plan::renewal_profile::bindings_with_index(
                 program, function, index,
             ),
@@ -47,11 +49,45 @@ impl<'a, 'b> SkeletonWork<'a, 'b> {
         }
     }
 
+    pub(super) fn checked_with_index(
+        program: &'a dyn crate::cleanup::ReplayContext,
+        function: &'a ResolvedFunction,
+        budget: &'b mut ReplayBudget,
+        index: Option<&'a crate::loop_calls::byte_writer::ModuleIndex<'a>>,
+    ) -> Result<Self, Diagnostic> {
+        if budget.physical.is_none() {
+            return Ok(Self::with_index(program, function, budget, index));
+        }
+        selected_profile::validate(program, function, budget)?;
+        let owner = selected_owner::owner(program, function, budget)?;
+        let held_renewals = program.primitive_renewals(function).ok_or_else(|| {
+            replay_error(
+                function,
+                "selected skeleton requires its independently rebuilt phase site inventory",
+            )
+        })?;
+        // The selected entry independently excludes literal formatting and
+        // owned String condition-place reads before this constructor. Those
+        // specialized legacy indexes must not be constructed then discarded.
+        Ok(Self {
+            function,
+            budget,
+            renewal_bindings: crate::cleanup_plan::renewal_profile::RenewalBindings::empty(),
+            held_renewals: Some(held_renewals),
+            string_owner_moves: BTreeSet::new(),
+            string_condition_reads: BTreeSet::new(),
+            owner: Some(owner),
+        })
+    }
+
     pub(super) fn renewal_binding(
         &self,
         at: &crate::hir::ExpressionId,
     ) -> Option<&'a crate::hir::ResolvedBinding> {
-        self.renewal_bindings.get(at)
+        match self.held_renewals {
+            Some(sites) => sites.get(at),
+            None => self.renewal_bindings.get(at),
+        }
     }
 }
 
@@ -60,13 +96,48 @@ impl SkeletonWork<'_, '_> {
         self.budget.charge_skeleton(self.function, units, phase)
     }
 
-    pub(super) fn clone_owned<T: Clone>(
+    /// Preserve legacy sequencing/work counters for a previously uncharged
+    /// move, while reserving selected vector growth before that move occurs.
+    pub(super) fn push_existing_path(
+        &mut self,
+        target: &mut Vec<ExprSkeletonPath>,
+        path: ExprSkeletonPath,
+        phase: &str,
+    ) -> Result<(), Diagnostic> {
+        self.budget.reserve_vec(self.function, target, 1, phase)?;
+        target.push(path);
+        Ok(())
+    }
+    pub(super) fn extend_existing_paths(
+        &mut self,
+        target: &mut Vec<ExprSkeletonPath>,
+        paths: Vec<ExprSkeletonPath>,
+        phase: &str,
+    ) -> Result<(), Diagnostic> {
+        self.budget
+            .reserve_vec(self.function, target, paths.len(), phase)?;
+        target.extend(paths);
+        Ok(())
+    }
+
+    pub(super) fn clone_owned<T: Clone + ClonePayload>(
         &mut self,
         value: &T,
         phase: &str,
     ) -> Result<T, Diagnostic> {
         self.charge(1, phase)?;
+        self.budget.reserve_clone(self.function, value, phase)?;
         note_skeleton_materialization();
+        Ok(value.clone())
+    }
+
+    /// Meter an existing uncharged clone without changing its legacy work count.
+    pub(super) fn clone_payload<T: Clone + ClonePayload>(
+        &mut self,
+        value: &T,
+        phase: &str,
+    ) -> Result<T, Diagnostic> {
+        self.budget.reserve_clone(self.function, value, phase)?;
         Ok(value.clone())
     }
 
@@ -78,6 +149,7 @@ impl SkeletonWork<'_, '_> {
     ) -> Result<(), Diagnostic> {
         self.charge(1, phase)?;
         note_skeleton_materialization();
+        self.budget.reserve_vec(self.function, paths, 1, phase)?;
         paths.push(path);
         Ok(())
     }
@@ -90,6 +162,7 @@ impl SkeletonWork<'_, '_> {
     ) -> Result<(), Diagnostic> {
         self.charge(1, phase)?;
         note_skeleton_materialization();
+        self.budget.reserve_vec(self.function, paths, 1, phase)?;
         paths.push(path);
         Ok(())
     }
@@ -110,6 +183,7 @@ impl SkeletonWork<'_, '_> {
         phase: &str,
     ) -> Result<ExprSkeletonPath, Diagnostic> {
         self.charge(1, phase)?;
+        self.budget.reserve_clone(self.function, path, phase)?;
         note_skeleton_materialization();
         Ok(path.clone())
     }
@@ -120,6 +194,8 @@ impl SkeletonWork<'_, '_> {
         phase: &str,
     ) -> Result<Observations, Diagnostic> {
         self.charge(1, phase)?;
+        self.budget
+            .reserve_clone(self.function, observations, phase)?;
         note_skeleton_materialization();
         Ok(observations.clone())
     }
@@ -132,6 +208,20 @@ impl SkeletonWork<'_, '_> {
     ) -> Result<(), Diagnostic> {
         self.charge(1, phase)?;
         note_skeleton_materialization();
+        if self.budget.physical.is_some() {
+            if target.prefix.is_some() || observations.prefix.is_some() {
+                return Err(replay_error(
+                    self.function,
+                    "selected lexical replay requires flat observations",
+                ));
+            }
+            self.budget.reserve_vec(
+                self.function,
+                &mut target.items,
+                observations.items.len(),
+                phase,
+            )?;
+        }
         target.extend(observations);
         Ok(())
     }
@@ -144,7 +234,36 @@ impl SkeletonWork<'_, '_> {
     ) -> Result<(), Diagnostic> {
         self.charge(1, phase)?;
         note_skeleton_materialization();
+        if self.budget.physical.is_some() && path.observations.prefix.is_some() {
+            return Err(replay_error(
+                self.function,
+                "selected lexical replay requires flat observations",
+            ));
+        }
+        self.budget
+            .reserve_vec(self.function, &mut path.observations.items, 1, phase)?;
+        self.budget
+            .reserve_bytes(self.function, physical_clone::observation_rc_bytes(), phase)?;
         path.observations.push(observation.into());
+        Ok(())
+    }
+    pub(super) fn insert_front_observation(
+        &mut self,
+        observations: &mut Observations,
+        observation: SkeletonObservation,
+        phase: &str,
+    ) -> Result<(), Diagnostic> {
+        if self.budget.physical.is_some() && observations.prefix.is_some() {
+            return Err(replay_error(
+                self.function,
+                "selected lexical replay requires flat observations",
+            ));
+        }
+        self.budget
+            .reserve_vec(self.function, &mut observations.items, 1, phase)?;
+        self.budget
+            .reserve_bytes(self.function, physical_clone::observation_rc_bytes(), phase)?;
+        observations.insert_front(observation.into());
         Ok(())
     }
 }

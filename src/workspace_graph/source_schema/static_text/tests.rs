@@ -138,9 +138,7 @@ fn retained_generic_literals_match_template_and_concrete_execution_sites() {
     refused(&duplicate);
 }
 
-#[test]
-fn lexical_byte_renewal_has_direct_proof_and_retained_composition_stays_closed() {
-    let source = r#"module static.writer;
+const LEXICAL_SOURCE: &str = r#"module static.writer;
 @id("static.lexical") fn run()->i64 {
  let key=str"x"; let mut output=bytes_zeroed(1usize); let mut at=0;
  while at<3 {
@@ -151,6 +149,9 @@ fn lexical_byte_renewal_has_direct_proof_and_retained_composition_stays_closed()
 }
 @id("app.main") fn main()->i64 {run()}
 "#;
+#[test]
+fn lexical_byte_renewal_has_direct_proof_and_retained_composition_stays_closed() {
+    let source = LEXICAL_SOURCE;
     let ast = crate::check(source, "writer.spx").unwrap();
     let canonical = format::canonical(&ast);
     let ast = crate::check(&canonical, "writer.spx").unwrap();
@@ -211,12 +212,111 @@ fn lexical_byte_renewal_has_direct_proof_and_retained_composition_stays_closed()
         }
         assert_eq!(hir::validate(&candidate).unwrap_err().code, "SPX-H006");
     }
-    // Retained source-schema replay cannot yet reconstruct full lexical
-    // status/ownership flow from a borrowed namespace context. Keep the honest
-    // refusal until that API exists; v18 presence itself grants no authority.
-    let retained = build(&canonical);
+    // The legacy route without an authenticated primitive source inventory
+    // remains closed: v18 presence itself grants no authority.
+    let mut retained = build(&canonical);
+    // The legacy detached route has no source-derived primitive declaration context.
+    writer_mut(&mut retained)
+        .static_text
+        .as_mut()
+        .unwrap()
+        .lexical = None;
     let errors = retained
         .source_graph_schemas()
         .expect_err("retained composite schema route remains explicitly closed");
     assert!(errors.iter().any(|error| error.code == "SPX-G410"));
+}
+
+#[test]
+fn retained_primitive_static_lexical_replays_graph_and_runtime() {
+    let retained = build(LEXICAL_SOURCE);
+    assert_eq!(
+        retained.source_graph_schemas().unwrap()["writer.spx"],
+        "semaprax.graph.v77"
+    );
+    let ast = crate::check(LEXICAL_SOURCE, "writer.spx").unwrap();
+    let canonical = format::canonical(&ast);
+    let current = crate::check(&canonical, "writer.spx").unwrap();
+    assert_eq!(format::canonical(&current), canonical);
+    let resolved = hir::resolve(&current).unwrap();
+    let evaluated =
+        crate::interpreter::evaluate_resolved_zero_arg_i64(&resolved, "app.main", 10000).unwrap();
+    assert!(matches!(
+        evaluated.outcome,
+        crate::interpreter::ResolvedEvaluationOutcome::ReturnedI64(1)
+    ));
+}
+
+#[test]
+fn retained_primitive_lexical_rejects_source_signature_schema_and_certificate_drift() {
+    for attack in 0..10 {
+        let mut retained = build(LEXICAL_SOURCE);
+        let module = writer_mut(&mut retained);
+        let function = module
+            .functions
+            .iter_mut()
+            .find(|f| f.id.as_str() == "static.lexical")
+            .unwrap();
+        match attack {
+            0 => function.name.push('x'),
+            1 => function.return_type = hir::ResolvedType::Bool,
+            2 => function.cleanup_plan.schema = crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V19,
+            3 => {
+                function
+                    .cleanup_plan
+                    .lexical_control
+                    .as_mut()
+                    .unwrap()
+                    .exits[0]
+                    .site = function.body.id.clone()
+            }
+            4 => module
+                .static_text
+                .as_mut()
+                .unwrap()
+                .lexical
+                .as_mut()
+                .unwrap()
+                .functions[0]
+                .name
+                .push('x'),
+            _ => {
+                // These preserve the captured source and function signatures.
+                // Every expected body digest remains private and unchanged.
+                let condition = match &function.body.kind {
+                    hir::ResolvedExprKind::Block { statements, .. } => statements
+                        .iter()
+                        .find_map(|statement| match statement {
+                            hir::ResolvedStatement::LexicalWhile { condition, .. } => {
+                                Some(condition.as_ref().clone())
+                            }
+                            _ => None,
+                        })
+                        .unwrap(),
+                    _ => panic!("source block"),
+                };
+                let main = module
+                    .functions
+                    .iter_mut()
+                    .find(|f| f.id.as_str() == "app.main")
+                    .unwrap();
+                match attack {
+                    5 => main.body.kind = hir::ResolvedExprKind::Int(7),
+                    6 => {
+                        let hir::ResolvedExprKind::Block { tail, .. } = &mut main.body.kind else {
+                            panic!("source main block")
+                        };
+                        let hir::ResolvedExprKind::Call { callee, .. } = &mut tail.kind else {
+                            panic!("source call")
+                        };
+                        *callee = main.id.clone();
+                    }
+                    7 => main.requires.push(condition),
+                    8 => main.body.ty = hir::ResolvedType::Bool,
+                    _ => main.span.end = main.span.end.checked_add(1).unwrap(),
+                }
+            }
+        }
+        refused(&retained);
+    }
 }

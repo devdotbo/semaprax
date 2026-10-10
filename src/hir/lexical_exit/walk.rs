@@ -2,6 +2,111 @@
 use crate::diagnostic::Diagnostic;
 use crate::hir::{ResolvedExpr, ResolvedExprKind as K, ResolvedFunction};
 
+/// Borrowed authored-order child enumeration. The cursor has no heap backing.
+/// Block statements and match arms are visited once rather than rescanned for
+/// each flattened child index. Consumers retain their own depth/work bounds.
+#[derive(Clone, Copy)]
+pub(crate) struct ChildCursor<'a> {
+    expression: &'a ResolvedExpr,
+    position: Position,
+    started: bool,
+}
+#[derive(Clone, Copy)]
+enum Position {
+    Indexed(usize),
+    Block { statement: usize, child: usize },
+    Match { arm: usize, guard: bool },
+}
+impl<'a> ChildCursor<'a> {
+    pub(crate) fn new(expression: &'a ResolvedExpr) -> Self {
+        let position = match &expression.kind {
+            K::Block { .. } => Position::Block {
+                statement: 0,
+                child: 0,
+            },
+            K::Match { .. } => Position::Match {
+                arm: 0,
+                guard: true,
+            },
+            _ => Position::Indexed(0),
+        };
+        Self {
+            expression,
+            position,
+            started: false,
+        }
+    }
+    pub(crate) fn expression(&self) -> &'a ResolvedExpr {
+        self.expression
+    }
+    pub(crate) fn is_started(&self) -> bool {
+        self.started
+    }
+}
+impl<'a> Iterator for ChildCursor<'a> {
+    type Item = &'a ResolvedExpr;
+    fn next(&mut self) -> Option<Self::Item> {
+        let first = !self.started;
+        self.started = true;
+        match (&self.expression.kind, &mut self.position) {
+            (
+                K::Block { statements, tail },
+                Position::Block {
+                    statement,
+                    child: index,
+                },
+            ) => {
+                while let Some(item) = statements.get(*statement) {
+                    if *index < item.child_count() {
+                        let result = item.child(*index);
+                        *index += 1;
+                        return result;
+                    }
+                    *statement += 1;
+                    *index = 0;
+                }
+                if *index == 0 {
+                    *index = 1;
+                    Some(tail)
+                } else {
+                    None
+                }
+            }
+            (
+                K::Match {
+                    scrutinee, arms, ..
+                },
+                Position::Match { arm, guard },
+            ) => {
+                if first {
+                    return Some(scrutinee);
+                }
+                if let Some(item) = arms.get(*arm) {
+                    if *guard {
+                        *guard = false;
+                        if let Some(value) = &item.guard {
+                            return Some(value);
+                        }
+                    }
+                    *arm += 1;
+                    *guard = true;
+                    return Some(&item.value);
+                }
+                None
+            }
+            (_, Position::Indexed(index)) => {
+                let result = child(self.expression, *index);
+                if result.is_some() {
+                    *index += 1;
+                }
+                result
+            }
+            _ => unreachable!("child cursor position matches its immutable expression"),
+        }
+    }
+}
+impl std::iter::FusedIterator for ChildCursor<'_> {}
+
 pub(crate) fn child(expr: &ResolvedExpr, index: usize) -> Option<&ResolvedExpr> {
     match &expr.kind {
         K::LexicalExit { value, .. } => (index == 0).then_some(value.as_deref()).flatten(),
@@ -97,7 +202,8 @@ pub(crate) fn child(expr: &ResolvedExpr, index: usize) -> Option<&ResolvedExpr> 
         | K::Float32(_)
         | K::Float64(_)
         | K::Bool(_)
-        | K::String(_) | K::BorrowedUtf8Literal(_)
+        | K::String(_)
+        | K::BorrowedUtf8Literal(_)
         | K::Place(_)
         | K::BorrowPlace { .. } => None,
     }
@@ -113,22 +219,24 @@ pub(crate) fn requires(function: &ResolvedFunction) -> Result<bool, Diagnostic> 
         .chain(std::iter::once(&function.body))
         .chain(&function.ensures)
     {
-        stack[0] = Some((root, 0usize));
+        stack[0] = Some(ChildCursor::new(root));
         let mut len = 1usize;
         while len != 0 {
-            let (expr, index) = stack[len - 1].expect("occupied lexical scan frame");
-            if index == 0 && matches!(&expr.kind, K::LexicalExit { .. }) {
+            let frame = stack[len - 1]
+                .as_mut()
+                .expect("occupied lexical scan frame");
+            let expr = frame.expression();
+            if !frame.is_started() && matches!(&expr.kind, K::LexicalExit { .. }) {
                 return Ok(true);
             }
-            if let Some(next) = child(expr, index) {
+            if let Some(next) = frame.next() {
                 if len == stack.len() {
                     return Err(Diagnostic::io(
                         "SPX-H006",
                         "lexical control scan exceeds admitted expression depth",
                     ));
                 }
-                stack[len - 1] = Some((expr, index + 1));
-                stack[len] = Some((next, 0));
+                stack[len] = Some(ChildCursor::new(next));
                 len += 1;
             } else {
                 stack[len - 1] = None;
@@ -142,19 +250,19 @@ pub(crate) fn requires(function: &ResolvedFunction) -> Result<bool, Diagnostic> 
 /// Admitted resolver output already obeys the HIR depth bound.
 pub(crate) fn contains(root: &ResolvedExpr) -> bool {
     let mut stack = [None; crate::cache_codec::MAX_DEPTH + 1];
-    stack[0] = Some((root, 0usize));
+    stack[0] = Some(ChildCursor::new(root));
     let mut len = 1;
     while len != 0 {
-        let (expr, index) = stack[len - 1].expect("occupied lexical frame");
-        if index == 0 && matches!(expr.kind, K::LexicalExit { .. }) {
+        let frame = stack[len - 1].as_mut().expect("occupied lexical frame");
+        let expr = frame.expression();
+        if !frame.is_started() && matches!(expr.kind, K::LexicalExit { .. }) {
             return true;
         }
-        if let Some(next) = child(expr, index) {
+        if let Some(next) = frame.next() {
             if len == stack.len() {
                 return true;
             } // fail closed: independent HIR depth replay rejects it
-            stack[len - 1] = Some((expr, index + 1));
-            stack[len] = Some((next, 0));
+            stack[len] = Some(ChildCursor::new(next));
             len += 1;
         } else {
             len -= 1;
@@ -163,3 +271,6 @@ pub(crate) fn contains(root: &ResolvedExpr) -> bool {
     }
     false
 }
+
+#[cfg(test)]
+mod tests;

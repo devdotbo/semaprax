@@ -64,6 +64,17 @@ impl RenewalHistory {
     pub(super) fn retained_units(&self) -> usize {
         self.history.len().saturating_add(self.provenance_units())
     }
+    /// Actual buffers created by Clone; protected is inline, not a work byte.
+    pub(super) fn clone_payload_bytes(&self) -> Option<usize> {
+        self.history
+            .len()
+            .checked_mul(std::mem::size_of::<LivenessFlagId>())?
+            .checked_add(
+                self.epochs
+                    .len()
+                    .checked_mul(std::mem::size_of::<(LivenessFlagId, LivenessFlagId)>())?,
+            )
+    }
     #[cfg(test)]
     pub(super) fn owned_capacity(&self) -> usize {
         self.history.capacity() * std::mem::size_of::<LivenessFlagId>()

@@ -198,6 +198,7 @@ pub(super) fn schema_with_proofs<'a>(
         return Ok("semaprax.native-law.v1");
     }
     let static_schema = static_text::schema(module, facts)?;
+    let lexical_static = static_schema.is_some() && static_text::replay_lexical(module, facts)?;
     let helper_schema = byte_helper::schema_with_proofs(module, modules, facts, proofs)?;
     let finite_scratch = module
         .functions
@@ -243,6 +244,9 @@ pub(super) fn schema_with_proofs<'a>(
             .iter()
             .map(|instance| &instance.function),
     ) {
+        if lexical_static && hir::lexical_exit::requires(function).map_err(|error| vec![error])? {
+            continue;
+        }
         if helper_schema.is_some()
             && function.cleanup_plan.schema == crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V19
         {

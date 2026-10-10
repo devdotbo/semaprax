@@ -3,6 +3,8 @@
 use super::*;
 use std::fmt::Write;
 
+pub(super) mod primitive;
+
 const DEPTH: usize = 514;
 const WORK: usize = 1_048_576;
 
@@ -48,6 +50,7 @@ pub(super) struct Inventory {
     pub(super) module: String,
     pub(super) path: String,
     pub(super) sites: Vec<Site>,
+    pub(super) lexical: Option<Box<primitive::Inventory>>,
 }
 pub(super) struct Site {
     pub(super) owner: hir::DeclarationId,
@@ -148,12 +151,15 @@ pub(super) fn retain(
     program: &Program,
     resolved: &hir::ResolvedProgram,
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+    authenticated_sources: Option<&[WorkspaceSource]>,
 ) -> Result<Option<Box<Inventory>>, Vec<Diagnostic>> {
     let mut cursor = AstCursor::new()?;
     let mut count = 0usize;
+    let mut lexical = false;
     for function in &program.functions {
         for root in roots(function) {
             cursor.visit(root, |expression| {
+                lexical |= matches!(expression.kind, ExprKind::LexicalExit { .. });
                 if matches!(expression.kind, ExprKind::BorrowedUtf8Literal(_)) {
                     count = count.checked_add(1).ok_or_else(capacity)?;
                 }
@@ -312,12 +318,18 @@ pub(super) fn retain(
     if sites.len() != count || source.iter().any(|site| !site.seen) {
         return Err(fail());
     }
+    let lexical = if lexical {
+        primitive::capture(program, resolved, authored, authenticated_sources)?
+    } else {
+        None
+    };
     let module = crate::bounded_output::budgeted_clone(&program.module);
     let path = crate::bounded_output::budgeted_clone(&program.path);
     Ok(Some(Box::new(Inventory {
         module,
         path,
         sites,
+        lexical,
     })))
 }
 
