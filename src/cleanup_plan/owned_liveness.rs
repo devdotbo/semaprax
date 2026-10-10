@@ -744,7 +744,7 @@ fn scalar_branch_join(flag: bool) -> i64 {
                         | ResolvedStatement::Assign { binding, value, .. } => {
                             (Some(binding), Some(value), None)
                         }
-                        ResolvedStatement::While { body, .. } => (None, None, Some(body.as_ref())),
+                        ResolvedStatement::While { body, .. } | ResolvedStatement::LexicalWhile { body, .. } => (None, None, Some(body.as_ref())),
                         ResolvedStatement::Unsafe { body, .. } => (None, None, Some(body.as_ref())),
                     };
                     if let Some(binding) = binding {
@@ -806,6 +806,7 @@ fn scalar_branch_join(flag: bool) -> i64 {
                             ResolvedStatement::Let { value, .. }
                             | ResolvedStatement::Assign { value, .. } => Some(value),
                             ResolvedStatement::While { body, .. }
+                            | ResolvedStatement::LexicalWhile { body, .. }
                             | ResolvedStatement::Unsafe { body, .. } => Some(body.as_ref()),
                         };
                         if let Some(nested) = nested {

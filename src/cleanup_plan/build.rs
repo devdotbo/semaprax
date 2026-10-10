@@ -4620,6 +4620,9 @@ impl<'a> PlanBuilder<'a> {
             return self.initialize_string(expression, block, state);
         }
         match &expression.kind {
+            ResolvedExprKind::LexicalExit { .. } => Err(plan_error(
+                "legacy recursive cleanup reference does not admit lexical exits",
+            )),
             ResolvedExprKind::Int(_)
             | ResolvedExprKind::Int32(_)
             | ResolvedExprKind::Char(_)
@@ -5025,6 +5028,9 @@ impl<'a> PlanBuilder<'a> {
                 continue;
             }
             let (binding, value) = match statement {
+                ResolvedStatement::LexicalWhile { .. } => return Err(plan_error(
+                    "legacy recursive cleanup reference does not admit lexical loops",
+                )),
                 ResolvedStatement::Let { binding, value, .. }
                 | ResolvedStatement::Assign { binding, value, .. } => (binding, value),
                 // Unsafe boundaries bind nothing: their ordinary block body lowers like any nested block expression.
@@ -6064,11 +6070,8 @@ impl<'a> PlanBuilder<'a> {
             | ResolvedType::SliceU8
             | ResolvedType::StringMap
             | ResolvedType::TypeParameter { .. }
-            | ResolvedType::OnceFunction
-            | ResolvedType::OnceFunctionI64
-            | ResolvedType::OnceFunctionI64Pair
-            | ResolvedType::MutFunctionI64
             | ResolvedType::Function { .. } => false,
+            ResolvedType::Never => return Err(plan_error("match scrutinee cannot have terminal flow type")),
         };
         if is_record {
             let [arm] = arms else {

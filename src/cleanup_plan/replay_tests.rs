@@ -2,17 +2,14 @@ use std::path::Path;
 use crate::cleanup_plan::{CleanupBlock, CleanupEdge};
 use crate::{hir, parse};
 use super::*;
-
 #[path = "replay_tests/block_work.rs"]
 mod block_work;
 #[path = "replay_tests/factored.rs"]
 mod factored;
 #[path = "replay_tests/transition_mutations.rs"]
 mod transition_mutations;
-
 #[path = "replay_tests/lexical_boundary.rs"]
 mod lexical_boundary;
-
 const SOURCE: &str = r#"module test.replay_paths;
 
 @id("token.type")
@@ -931,7 +928,10 @@ fn replay_preflight_rejects_every_invalid_cfg_target_and_cycles_without_panickin
             ExitContinuation::Continue(edge) => Some(edge),
             ExitContinuation::CommitResult { .. }
             | ExitContinuation::ReturnFailure { .. }
-            | ExitContinuation::ReturnUnit => None,
+            | ExitContinuation::ReturnUnit
+            | ExitContinuation::LoopLatch { .. }
+            | ExitContinuation::LoopBreak { .. }
+            | ExitContinuation::FunctionReturn { .. } => None,
         })
         .expect("fixture must contain a continuing exit");
     *continuation = EdgeId(u32::MAX);

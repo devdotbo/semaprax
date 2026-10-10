@@ -299,7 +299,8 @@ fn shared_or_forged_continue_resume_is_rejected() {
 #[test]
 fn forged_resume_inventory_and_wrapper_tail_are_rejected() {
     let (program, mut func) = fixture(OWNING_FOR, "lex.sum");
-    let entry = control(&mut func).exits[kinds(&func, LexicalExitKind::Break)[0]]
+    let break_index = kinds(&func, LexicalExitKind::Break)[0];
+    let entry = control(&mut func).exits[break_index]
         .resume
         .unwrap();
     let resume = control(&mut func)
@@ -326,7 +327,8 @@ fn forged_resume_inventory_and_wrapper_tail_are_rejected() {
 fn owning_break_cannot_join_the_loop_continuation_or_skip_the_exact_join() {
     let (program, mut func) = fixture(OWNING_FOR, "lex.sum");
     let after = control(&mut func).loops[0].after;
-    let exit = control(&mut func).exits[kinds(&func, LexicalExitKind::Break)[0]].exit;
+    let break_index = kinds(&func, LexicalExitKind::Break)[0];
+    let exit = control(&mut func).exits[break_index].exit;
     let ExitContinuation::LoopBreak { edge, .. } = func.cleanup_plan.exits[exit.0 as usize]
         .continuation
         .clone()
