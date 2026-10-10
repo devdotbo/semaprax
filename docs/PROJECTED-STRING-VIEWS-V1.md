@@ -1,5 +1,7 @@
 # Rooted record String views v1
 
+Audience: coding agents, compiler contributors and reviewers.
+
 Status: source implementation and owning regressions authored for OPT-728;
 execution, public qualification and application adoption are pending.
 

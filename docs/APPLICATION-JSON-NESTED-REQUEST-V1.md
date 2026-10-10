@@ -1,5 +1,8 @@
 # Bounded nested application request JSON v1
 
+Status: authored bounded contract; executable qualification remains separately gated.
+Audience: coding agents, compiler contributors and reviewers.
+
 This additive checked-source selector is `bounded-nested-request.v1`, tracked by
 #724 and built on the ordinary owning outcome prerequisite #729. Source and
 owning regressions are authored; execution and application qualification remain

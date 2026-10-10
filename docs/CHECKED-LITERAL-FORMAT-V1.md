@@ -1,5 +1,7 @@
 # Checked Literal Format v1
 
+Audience: coding agents, compiler contributors and reviewers.
+
 Status: source implementation; current-head executable gate pending.
 
 `string_format(template, values...) -> string` is a compiler-owned operation.

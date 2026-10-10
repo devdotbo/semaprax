@@ -1,5 +1,7 @@
 # Copy Record Collections v1
 
+Audience: coding agents, compiler contributors and reviewers.
+
 Status: implementation and executable regressions authored; focused execution,
 hosted qualification and matched agent campaigns remain pending. This is the
 ordinary pure-core tranche of OPT-723, not closure of that issue or proof of

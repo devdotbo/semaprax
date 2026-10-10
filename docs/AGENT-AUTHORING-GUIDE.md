@@ -1,5 +1,8 @@
 # SEMAPRAX authoring guide
 
+Status: authored bounded contract; executable qualification remains separately gated.
+Audience: coding agents, compiler contributors and reviewers.
+
 ## One source file
 
 Use `semaprax fmt <file>`, then `semaprax check <file>`.

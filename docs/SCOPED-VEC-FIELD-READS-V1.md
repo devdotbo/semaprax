@@ -1,5 +1,7 @@
 # Scoped owned-vector field reads v1
 
+Audience: coding agents, compiler contributors and reviewers.
+
 Status: partial source batch for OPT-730; owning executable gates are authored. No owning execution,
 application qualification or agent-efficiency result is claimed.
 

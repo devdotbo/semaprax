@@ -1,5 +1,8 @@
 # Selective owned npm lexical semantic recipe v1
 
+Status: authored bounded contract; executable qualification remains separately gated.
+Audience: coding agents, compiler contributors and reviewers.
+
 The pathless owned-data npm construction used by the AgentLifecycle Core Wasm
 executor can select `semaprax.owned-data-semantic-recipe.lexical.v1` for linked
 functions containing explicit lexical control. This is a source replay profile,

@@ -1,5 +1,7 @@
 # Stream Data Command v2 (Project v29)
 
+Audience: coding agents, compiler contributors and reviewers.
+
 Status: implementation and focused gates authored, not yet executed or hosted
 qualified. OPT-723 and OPT-724 remain open through application acceptance and
 matched agent benchmark evidence.

@@ -1,5 +1,7 @@
 # Stream Owned Data Command v1
 
+Audience: coding agents, compiler contributors and reviewers.
+
 Status: source implementation; focused current-head execution is pending.
 This document defines Project v30 routing, not qualifying runtime evidence.
 

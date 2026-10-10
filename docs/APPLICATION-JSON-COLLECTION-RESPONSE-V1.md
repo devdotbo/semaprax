@@ -1,5 +1,8 @@
 # Bounded application collection response source v1
 
+Status: authored bounded contract; executable qualification remains separately gated.
+Audience: coding agents, compiler contributors and reviewers.
+
 This additive **encoder-only source selector** is
 `bounded-collection-response.v1`, selected with a canonical decimal
 `--max-string-bytes` from 1 through 64. The API profile is

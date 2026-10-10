@@ -1,5 +1,7 @@
 # Lexical structured exits v1
 
+Audience: coding agents, compiler contributors and reviewers.
+
 Status: implementation in progress. No source, HIR, cache, cleanup, interpreter,
 native or Wasm qualification is asserted by this design. OPT #734 remains Partial.
 

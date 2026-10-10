@@ -1,5 +1,7 @@
 # Bulk UTF-8 String v1
 
+Audience: coding agents, compiler contributors and reviewers.
+
 Status: source implementation and focused regressions authored; execution and
 application qualification pending. OPT-731 remains open. Source-derived copy
 counts do not establish runtime, agent-token, or accepted-task cost savings.

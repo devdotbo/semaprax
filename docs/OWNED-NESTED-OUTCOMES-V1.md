@@ -1,5 +1,8 @@
 # Owned Nested Outcomes v1
 
+Status: authored bounded contract; executable qualification remains separately gated.
+Audience: coding agents, compiler contributors and reviewers.
+
 This is the compiler prerequisite tracked by #729 for finite application JSON
 construction in #724. Source implementation is staged; the executable gates
 below have not yet qualified it. No token, cost, or acceptance advantage is

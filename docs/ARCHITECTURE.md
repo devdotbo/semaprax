@@ -2988,6 +2988,12 @@ not authenticate provider semantics; root HIR/codegen replay alone owns that
 proof. No route exposes a target aggregate layout. See [Public Flat Owned
 Record API v1](PUBLIC-FLAT-OWNED-RECORD-API-V1.md).
 
+The selective `src/project/npm/semantic_recipe_lexical_v1.rs` wraps the frozen
+recipe renderer for authenticated condition-latched lexical control. It validates
+linked and replayed HIR, preserves exact canonical source and inventory replay,
+and leaves headerless v8 admission unchanged. It grants no publication authority.
+See [lexical npm recipe v1](OWNED-NPM-LEXICAL-RECIPE-V1.md).
+
 The compiler-private `src/project/npm/semantic_recipe_v8.rs` is shared by
 owned-data npm and Project Rust replay. Its collision-only type-name projection
 retains original presentation facts, then reconstructs the resolved declaration

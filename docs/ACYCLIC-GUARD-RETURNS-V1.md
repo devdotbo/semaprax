@@ -1,5 +1,7 @@
 # Acyclic guard returns v1
 
+Audience: coding agents, compiler contributors and reviewers.
+
 Status: implementation authored; focused execution pending. The general
 control-flow completion row and OPT #734 remain Partial.
 

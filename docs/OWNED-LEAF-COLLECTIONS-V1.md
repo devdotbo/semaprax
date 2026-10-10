@@ -1,5 +1,7 @@
 # Owned leaf collections v1
 
+Audience: coding agents, compiler contributors and reviewers.
+
 Status: implementation in progress for the remaining runtime portion of #723.
 This document records the proposed additive contract; no executable completion
 or agent-efficiency result is claimed. The earlier Copy-record implementation

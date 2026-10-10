@@ -1,5 +1,7 @@
 # Declared Text Collections v1
 
+Audience: coding agents, compiler contributors and reviewers.
+
 Status: declaration checking and hostile gates authored; execution/profile and
 application qualification pending. This is a logical type declaration rule,
 not runtime support for `Vec<string>` or a String-bearing record vector.

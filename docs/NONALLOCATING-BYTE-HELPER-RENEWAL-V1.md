@@ -1,5 +1,8 @@
 # Nonallocating Byte Helper Renewal v1
 
+Status: authored bounded contract; executable qualification remains separately gated.
+Audience: coding agents, compiler contributors and reviewers.
+
 This additive implementation profile addresses OPT #737. Owning regression
 bodies are authored; execution and efficiency qualification remain pending.
 It introduces no operation, allocation exemption, capacity increase, public

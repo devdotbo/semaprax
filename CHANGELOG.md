@@ -1,5 +1,11 @@
 # Changelog
 
+- Correct lexical completion graph facts, exact iterator argument-slot reuse,
+  scoped literal JSON writes and admitted workspace/cache fixtures. Add a
+  selective authenticated lexical npm recipe while retaining frozen v8 bytes
+  and refusals. Document the grouped contracts in the specification catalog;
+  focused executable qualification remains pending.
+
 - Render derived application JSON responses through ordinary functional Bytes
   writers after complete length preflight. Add exact runtime-sized bounded
   allocation, independently proved nonallocating helper renewal, selective

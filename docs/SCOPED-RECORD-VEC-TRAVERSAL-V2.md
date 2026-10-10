@@ -1,5 +1,8 @@
 # Scoped Record Vec Traversal v2
 
+Status: authored bounded contract; executable qualification remains separately gated.
+Audience: coding agents, compiler contributors and reviewers.
+
 This is the source implementation contract for OPT #733. Executable
 qualification is pending. It extends the existing bounded scalar `for`
 contract with a separate borrowed-record spelling; older syntax, admitted

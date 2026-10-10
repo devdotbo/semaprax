@@ -1,5 +1,7 @@
 # Checked String Allocation v1
 
+Audience: coding agents, compiler contributors and reviewers.
+
 Status: normative design and private native allocator-kernel precursor.
 Production selection, source/HIR/cleanup integration and cross-backend
 qualification are pending. A test-owned native status-arena adapter precursor

@@ -1,5 +1,8 @@
 # Explicit Record Sort Keys v1
 
+Status: authored bounded contract; executable qualification remains separately gated.
+Audience: coding agents, compiler contributors and reviewers.
+
 `vec_sort_by<Row>(rows, "priority:desc,arrival:asc")` is a consuming operation
 on an already admitted flat Copy-record or directly owned String/Bytes-record
 Vec. It consumes one owner and returns that owner at exactly its next generation.

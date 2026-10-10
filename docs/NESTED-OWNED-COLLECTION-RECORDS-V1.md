@@ -1,5 +1,7 @@
 # Nested owned collection records v1
 
+Audience: coding agents, compiler contributors and reviewers.
+
 Status: coherent source batch and owning regressions authored; executable
 qualification and public delivery remain pending. This is a compiler prerequisite for generic
 application JSON composition in #724, not completion of that request.

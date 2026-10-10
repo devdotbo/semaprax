@@ -1,5 +1,7 @@
 # Checked-source application JSON codecs v1
 
+Audience: coding agents, compiler contributors and reviewers.
+
 Status: first source implementation for #724; focused execution and repository
 gates pending. This does not close the broader application JSON codec issue.
 

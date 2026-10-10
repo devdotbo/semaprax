@@ -1,5 +1,7 @@
 # Bounded nested application response JSON v1
 
+Audience: coding agents, compiler contributors and reviewers.
+
 Status: ordinary source implementation and owning regression definitions for
 OPT-724; executable qualification is pending. No application acceptance or agent
 cost/token advantage is established by this source batch.

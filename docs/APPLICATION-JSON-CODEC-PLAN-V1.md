@@ -1,5 +1,7 @@
 # Application JSON codec plan v1
 
+Audience: coding agents, compiler contributors and reviewers.
+
 Status: source implementation; focused execution and repository gates pending.
 
 `semaprax json-codec <project> --plan <plan-json> --output <new-bundle>`
