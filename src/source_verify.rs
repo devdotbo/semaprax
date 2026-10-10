@@ -265,3 +265,7 @@ pub(crate) use declared_type::generic_collection::profile as generic_collection_
 pub(crate) fn generic_variant_profile(program: &Program, function: &Function) -> bool {
     declared_type::generic_variant::profile(function, &type_table::TypeTable::new(program))
 }
+
+/// Physical shared source-verifier frame layout, without executing a verifier.
+#[doc(hidden)]
+pub const VERIFIER_FRAME_BYTES: usize = std::mem::size_of::<scope::VerifierFrame<'static>>();

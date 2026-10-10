@@ -230,7 +230,8 @@ pub(crate) fn resolved_type_contains_owned_bytes(
                     ResolvedTypeDeclarationKind::Resource { .. } => {}
                 }
             }
-            ResolvedType::Unit
+            ResolvedType::Never
+            | ResolvedType::Unit
             | ResolvedType::I64
             | ResolvedType::I32
             | ResolvedType::Char

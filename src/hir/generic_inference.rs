@@ -262,6 +262,7 @@ impl Resolver<'_> {
             | ResolvedType::OnceFunctionI64Pair
             | ResolvedType::MutFunctionI64
             | ResolvedType::Function { .. }
+            | ResolvedType::Never
             | ResolvedType::Unit => None,
             ResolvedType::I64 => Some(Type::I64),
             ResolvedType::I32 => Some(Type::I32),

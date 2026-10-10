@@ -686,3 +686,10 @@ pub(crate) mod vec_loop_renewal;
 pub(crate) mod generic_mapping;
 
 pub(crate) mod generic_variant;
+
+/// Physical shared resolver frame layout, authenticated by this compiled crate.
+#[doc(hidden)]
+pub const RESOLVER_FRAME_BYTES: usize = std::mem::size_of::<resolve_expr_frame::Frame<'static>>();
+/// The iterative validator independently asserts this exact physical layout.
+#[doc(hidden)]
+pub const VALIDATOR_FRAME_BYTES: usize = 288;

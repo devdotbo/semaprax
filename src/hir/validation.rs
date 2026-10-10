@@ -2589,7 +2589,7 @@ impl<'a> HirValidator<'a> {
             },
         }
 
-        const { assert!(std::mem::size_of::<Frame<'static>>() == 288) };
+        const { assert!(std::mem::size_of::<Frame<'static>>() == super::VALIDATOR_FRAME_BYTES) };
         #[cfg(test)]
         fn frame_owned_capacity(frame: &Frame<'_>) -> usize {
             let ids = |values: &Vec<ValueId>| {
