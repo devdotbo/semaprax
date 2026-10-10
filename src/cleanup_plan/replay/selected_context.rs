@@ -59,6 +59,13 @@ impl ReplayContext for Context<'_> {
     fn function_instances(&self) -> &[crate::hir::ResolvedFunctionInstance] {
         self.source.function_instances()
     }
+    fn resolve_call_target(
+        &self,
+        callee: &crate::hir::DeclarationId,
+        instance: Option<&crate::hir::FunctionInstanceId>,
+    ) -> Option<&ResolvedFunction> {
+        self.source.resolve_call_target(callee, instance)
+    }
     fn primitive_renewals<'a>(
         &'a self,
         function: &ResolvedFunction,

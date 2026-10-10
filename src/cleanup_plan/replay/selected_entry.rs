@@ -31,7 +31,8 @@ pub(crate) fn validate_retained_lexical_with_reservation(
     }
     let mut budget = ReplayBudget::from_reservation(function, physical)?;
     {
-        let context = selected_context::Context::new(program, function, &mut budget)?;
+        let indexed = selected_callees::Context::new(program, function, &mut budget)?;
+        let context = selected_context::Context::new(&indexed, function, &mut budget)?;
         lexical_replay::validate_with_index(&context, function, &mut budget, None)?;
     }
     // All per-function constructors have dropped before the ledger is returned.
