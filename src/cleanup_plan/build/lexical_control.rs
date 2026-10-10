@@ -662,3 +662,28 @@ impl PlanBuilder<'_> {
         }
     }
 }
+
+impl PlanBuilder<'_> {
+    /// A generated advancement completes a scope already entered by the
+    /// authored loop. Its exact route is selected by the resume certificate;
+    /// it never overwrites the ordinary source projection's scope endpoint.
+    pub(super) fn record_lexical_scope_end(
+        &mut self,
+        region: CleanupRegionId,
+        exit: ExitTargetId,
+    ) -> Result<(), Diagnostic> {
+        if self
+            .lexical
+            .as_ref()
+            .is_some_and(|control| control.building_resume)
+        {
+            return Ok(());
+        }
+        let normal_end = &mut self.regions[region.0 as usize].normal_scope_end;
+        if *normal_end != UNRESOLVED_EXIT {
+            return Err(plan_error("cleanup region has multiple normal scope ends"));
+        }
+        *normal_end = exit;
+        Ok(())
+    }
+}

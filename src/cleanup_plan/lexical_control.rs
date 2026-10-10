@@ -73,10 +73,16 @@ impl CleanupPlan {
     /// proof domain. Ordinary emission excludes all duplicated resume bodies.
     pub fn lexical_block_in_context(&self, entry: Option<BlockId>, block: BlockId) -> bool {
         if let Some(entry) = entry {
-            return self.lexical_resume(entry).is_some_and(|resume| resume.blocks.contains(&block));
+            return self
+                .lexical_resume(entry)
+                .is_some_and(|resume| resume.blocks.contains(&block));
         }
-        !self.lexical_control.as_deref().is_some_and(|control|
-            control.resumes.iter().any(|resume| resume.blocks.contains(&block)))
+        !self.lexical_control.as_deref().is_some_and(|control| {
+            control
+                .resumes
+                .iter()
+                .any(|resume| resume.blocks.contains(&block))
+        })
     }
 
     pub fn lexical_loop(&self, condition: &ExpressionId) -> Option<&LoopCertificate> {
@@ -84,7 +90,10 @@ impl CleanupPlan {
         if self.schema != super::CLEANUP_PLAN_SCHEMA_V18 || control.schema != SCHEMA {
             return None;
         }
-        let mut matches = control.loops.iter().filter(|item| &item.condition == condition);
+        let mut matches = control
+            .loops
+            .iter()
+            .filter(|item| &item.condition == condition);
         let certificate = matches.next()?;
         if matches.next().is_some() {
             return None;
@@ -97,7 +106,10 @@ impl CleanupPlan {
 
     /// Exact lookup after ordinary HIR/plan validation. A duplicate site or
     /// noncanonical exit index fails closed even for an unvalidated caller.
-    pub fn lexical_exit(&self, site: &ExpressionId) -> Option<(&LexicalExitCertificate, &ExitTarget)> {
+    pub fn lexical_exit(
+        &self,
+        site: &ExpressionId,
+    ) -> Option<(&LexicalExitCertificate, &ExitTarget)> {
         let control = self.lexical_control.as_deref()?;
         if self.schema != super::CLEANUP_PLAN_SCHEMA_V18 || control.schema != SCHEMA {
             return None;
@@ -109,5 +121,35 @@ impl CleanupPlan {
         }
         let exit = self.exits.get(certificate.exit.0 as usize)?;
         (exit.id == certificate.exit).then_some((certificate, exit))
+    }
+}
+
+impl CleanupPlan {
+    /// Exact scope completion for the selected finite execution domain. No
+    /// finalizer vectors are combined, sorted, or reconstructed downstream.
+    pub fn lexical_scope_end(
+        &self,
+        region: CleanupRegionId,
+        resume: Option<BlockId>,
+    ) -> Option<&ExitTarget> {
+        if self.schema != super::CLEANUP_PLAN_SCHEMA_V18 {
+            if resume.is_some() {
+                return None;
+            }
+            let scope = self.regions.get(region.0 as usize)?;
+            let exit = self.exits.get(scope.normal_scope_end.0 as usize)?;
+            return (scope.id == region && exit.id == scope.normal_scope_end).then_some(exit);
+        }
+        let mut ends = self.exits.iter().filter(|exit| {
+            exit.leaves_regions.as_slice() == [region]
+                && matches!(exit.continuation, super::ExitContinuation::Continue(_))
+                && self.lexical_block_in_context(resume, exit.from)
+        });
+        let end = ends.next()?;
+        if ends.next().is_some() {
+            None
+        } else {
+            Some(end)
+        }
     }
 }

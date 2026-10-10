@@ -459,6 +459,7 @@ fn resolved_type_owned_capacity(ty: &ResolvedType) -> usize {
         | ResolvedType::OnceFunctionI64
         | ResolvedType::OnceFunctionI64Pair
         | ResolvedType::MutFunctionI64
+        | ResolvedType::Never
         | ResolvedType::Unit
         | ResolvedType::I64
         | ResolvedType::I32
@@ -938,6 +939,7 @@ impl<'a> PlanBuilder<'a> {
             };
             self.finish_success(current, state, root, result)?;
         }
+        self.finish_terminal_try_paths()?;
         self.finish_lexical_returns()?;
 
         #[cfg(test)]
@@ -1594,11 +1596,7 @@ impl<'a> PlanBuilder<'a> {
             finalizers,
             ExitContinuation::Continue(edge),
         )?;
-        let normal_end = &mut self.regions[region.0 as usize].normal_scope_end;
-        if *normal_end != UNRESOLVED_EXIT {
-            return Err(plan_error("cleanup region has multiple normal scope ends"));
-        }
-        *normal_end = exit;
+        self.record_lexical_scope_end(region, exit)?;
         Ok((continuation_block, state))
     }
 
