@@ -31,6 +31,11 @@ pub(super) struct LexicalFacts<'a> {
     pub(super) loops: Vec<LoopFact<'a>>,
     /// `false` when the function body has no normal completion.
     pub(super) body_completes: bool,
+    /// Reachable postfix `?` nodes; each can end a terminal residual path.
+    pub(super) tries: usize,
+    /// Condition identity of every reachable loop (ordinary or lexical) in
+    /// lowering (pre-)order. Each owns one per-iteration execution boundary.
+    pub(super) boundaries: Vec<&'a ExpressionId>,
 }
 
 /// Maximum nesting this scan admits; the HIR lexical validator bounds the same
@@ -42,6 +47,8 @@ pub(super) fn collect<'a>(function: &'a ResolvedFunction) -> Result<LexicalFacts
         exits: Vec::new(),
         loops: Vec::new(),
         body_completes: true,
+        tries: 0,
+        boundaries: Vec::new(),
     };
     facts.body_completes = scan(function, &function.body, &mut facts, 0)?;
     Ok(facts)
@@ -97,6 +104,7 @@ fn scan<'a>(
                         condition, body, ..
                     } => {
                         let entered = scan(function, condition, facts, depth + 1)?;
+                        facts.boundaries.push(&condition.id);
                         scan(function, body, facts, depth + 1)?;
                         entered
                     }
@@ -107,6 +115,7 @@ fn scan<'a>(
                         ..
                     } => {
                         let entered = scan(function, condition, facts, depth + 1)?;
+                        facts.boundaries.push(&condition.id);
                         let body_completes = scan(function, body, facts, depth + 1)?;
                         facts.loops.push(LoopFact {
                             condition,
@@ -151,6 +160,12 @@ fn scan<'a>(
             Ok(completes)
         }
         _ => {
+            if matches!(
+                expression.kind,
+                ResolvedExprKind::Try { .. } | ResolvedExprKind::TryOption { .. }
+            ) {
+                facts.tries += 1;
+            }
             let mut index = 0;
             while let Some(child) = replay_expression_child(expression, index) {
                 if !scan(function, child, facts, depth + 1)? {
@@ -217,4 +232,38 @@ pub(super) fn owned_step_assignment<'a>(
         return None;
     };
     Some((value, binding))
+}
+
+/// The owned item binding of an owning traversal's Yield arm, if any. It is
+/// disposed (not retained) when a `continue` advances the iterator.
+pub(super) fn yield_item<'a>(body: &'a ResolvedExpr) -> Option<&'a crate::hir::ResolvedBinding> {
+    let ResolvedExprKind::Block { statements, .. } = &body.kind else {
+        return None;
+    };
+    let [ResolvedStatement::Assign { value, .. }] = statements.as_slice() else {
+        return None;
+    };
+    let ResolvedExprKind::Match { arms, .. } = &value.kind else {
+        return None;
+    };
+    let ResolvedMatchPattern::Variant { fields, .. } = &arms.get(1)?.pattern else {
+        return None;
+    };
+    fields.first().map(|field| &field.binding)
+}
+
+/// The Yield arm block and the match whose arm it is.
+pub(super) fn yield_arm<'a>(
+    body: &'a ResolvedExpr,
+) -> Option<(&'a ResolvedExpr, &'a ResolvedExpr)> {
+    let ResolvedExprKind::Block { statements, .. } = &body.kind else {
+        return None;
+    };
+    let [ResolvedStatement::Assign { value, .. }] = statements.as_slice() else {
+        return None;
+    };
+    let ResolvedExprKind::Match { arms, .. } = &value.kind else {
+        return None;
+    };
+    Some((value, &arms.get(1)?.value))
 }

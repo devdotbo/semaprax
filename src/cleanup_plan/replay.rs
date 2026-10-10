@@ -51,6 +51,7 @@ use skeleton_work::{empty_expr_path, Observations, SkeletonWork};
 #[cfg(test)]
 mod copy_success_result_tests;
 mod guarded_variant;
+mod lexical_boundary;
 mod lexical_census;
 mod lexical_cert;
 mod lexical_flow;
@@ -2825,50 +2826,7 @@ fn validate_exits(
             }
             prior = Some(item.id);
         }
-        let mut finalized = BTreeSet::new();
-        for action in &exit.finalize_in_order {
-            let under = validate_place(function, &action.source, storage, leaves)?;
-            if under.len() != 1
-                || under[0] != action.guard_flag
-                || leaves[&action.guard_flag].place != action.source
-            {
-                return Err(replay_error(
-                    function,
-                    "finalizer guard does not name its exact cleanup leaf",
-                ));
-            }
-            let leaf = leaves
-                .get(&action.guard_flag)
-                .expect("validated cleanup flag");
-            if leaf.lifecycle != action.lifecycle_id || !finalized.insert(action.guard_flag) {
-                return Err(replay_error(
-                    function,
-                    "finalizer lifecycle or guard is invalid or repeated",
-                ));
-            }
-            if let Some(condition) = &action.active_case {
-                if condition.storage != action.source.storage
-                    || action.source.projections.first() != Some(&condition.case)
-                    || function
-                        .cleanup_plan
-                        .slots
-                        .iter()
-                        .find(|slot| slot.storage == condition.storage)
-                        .is_none_or(|slot| {
-                            !matches!(
-                                &slot.ty,
-                                ResolvedType::Nominal { declaration, .. }
-                                    if declaration == &condition.variant
-                            )
-                        })
-                {
-                    return Err(replay_error(
-                        function,
-                        "conditional finalizer does not bind its exact variant case path",
-                    ));
-                }
-            }
-        }
+        validate_finalizer_actions(function, &exit.finalize_in_order, storage, leaves)?;
         match &exit.continuation {
             ExitContinuation::Continue(edge) => {
                 validate_owned_edge(function, exit.from, *edge, &mut continuation_edges)?;
@@ -2938,6 +2896,61 @@ fn validate_exits(
                 function,
                 "region normal-scope exit does not leave that region",
             ));
+        }
+    }
+    Ok(())
+}
+
+/// Each finalizer names its exact cleanup leaf, lifecycle and variant case path.
+/// Shared by exits and lexical execution-boundary certificates.
+fn validate_finalizer_actions(
+    function: &ResolvedFunction,
+    actions: &[super::FinalizeAction],
+    storage: &BTreeSet<StorageId>,
+    leaves: &Leaves,
+) -> Result<(), Diagnostic> {
+    let mut finalized = BTreeSet::new();
+    for action in actions {
+        let under = validate_place(function, &action.source, storage, leaves)?;
+        if under.len() != 1
+            || under[0] != action.guard_flag
+            || leaves[&action.guard_flag].place != action.source
+        {
+            return Err(replay_error(
+                function,
+                "finalizer guard does not name its exact cleanup leaf",
+            ));
+        }
+        let leaf = leaves
+            .get(&action.guard_flag)
+            .expect("validated cleanup flag");
+        if leaf.lifecycle != action.lifecycle_id || !finalized.insert(action.guard_flag) {
+            return Err(replay_error(
+                function,
+                "finalizer lifecycle or guard is invalid or repeated",
+            ));
+        }
+        if let Some(condition) = &action.active_case {
+            if condition.storage != action.source.storage
+                || action.source.projections.first() != Some(&condition.case)
+                || function
+                    .cleanup_plan
+                    .slots
+                    .iter()
+                    .find(|slot| slot.storage == condition.storage)
+                    .is_none_or(|slot| {
+                        !matches!(
+                            &slot.ty,
+                            ResolvedType::Nominal { declaration, .. }
+                                if declaration == &condition.variant
+                        )
+                    })
+            {
+                return Err(replay_error(
+                    function,
+                    "conditional finalizer does not bind its exact variant case path",
+                ));
+            }
         }
     }
     Ok(())
@@ -3015,6 +3028,11 @@ fn expected_exit_regions(
     let source_chain = region_chain_to_root(function, source_region)?;
     match &exit.continuation {
         ExitContinuation::LoopLatch { target } => {
+            if let Some(leaves) =
+                lexical_cert::owned_continue_leaves(function, exit.id, &source_chain)?
+            {
+                return Ok(leaves);
+            }
             let region = lexical_cert::loop_region(plan, target).ok_or_else(|| {
                 replay_error(function, "loop latch names an unknown lexical loop")
             })?;
@@ -3335,7 +3353,7 @@ fn expression_skeleton(
         },
         ContinueAdvance {
             expression: &'a ResolvedExpr,
-            step: Option<(&'a ResolvedExpr, &'a crate::hir::ResolvedBinding)>,
+            step: OwnedStep<'a>,
         },
         LexicalLoopCondition {
             prefixes: Vec<ExprSkeletonPath>,
@@ -3545,8 +3563,15 @@ fn expression_skeleton(
     struct ActiveLoop<'a> {
         condition: &'a ExpressionId,
         advance: Option<&'a ResolvedExpr>,
-        step: Option<(&'a ResolvedExpr, &'a crate::hir::ResolvedBinding)>,
+        step: OwnedStep<'a>,
     }
+    /// An owning traversal's Step assignment: the match, its renewed binding and
+    /// the Yield arm block that evaluates the certified Next tail.
+    type OwnedStep<'a> = Option<(
+        &'a ResolvedExpr,
+        &'a crate::hir::ResolvedBinding,
+        &'a ResolvedExpr,
+    )>;
     let mut active_loops: Vec<ActiveLoop<'_>> = Vec::new();
     while let Some(frame) = frames.pop() {
         match frame {
@@ -4492,8 +4517,22 @@ fn expression_skeleton(
                 };
                 let prefix = lexical_skeleton::continue_prefix(expression, work)?;
                 let mut advanced = sequence_skeleton_paths(prefix, &advance, work)?;
-                if let Some((assignment, binding)) = step {
-                    // Only the Yield tail runs, then the exact Step renewal.
+                if let Some((assignment, binding, arm)) = step {
+                    // Only the Yield tail runs. Its owned Step moves into the
+                    // Yield block at the arm identity, then into the match at the
+                    // same identity, then renews the Step binding at the match.
+                    let arm_at =
+                        work.clone_owned(&arm.id, "yield block transfer identity clone")?;
+                    let arm_place = temporary_place(arm, work)?;
+                    advanced = transfer_completed_paths(
+                        function,
+                        advanced,
+                        arm_at,
+                        arm_place,
+                        "owning continue Yield block",
+                        work,
+                    )?;
+                    advanced = finish_owned(program, function, assignment, arm, advanced, work)?;
                     let at = work.clone_owned(&assignment.id, "step renewal expression clone")?;
                     let binding = work.clone_owned(&binding.id, "step renewal binding clone")?;
                     advanced = transfer_completed_paths(
@@ -4525,7 +4564,12 @@ fn expression_skeleton(
                     condition: &condition.id,
                     advance: lexical_hir::generated_advance(body, latch),
                     step: if matches!(latch, crate::hir::LoopLatchKind::OwnedIteratorStep { .. }) {
-                        lexical_hir::owned_step_assignment(body)
+                        lexical_hir::owned_step_assignment(body).and_then(
+                            |(assignment, binding)| {
+                                lexical_hir::yield_arm(body)
+                                    .map(|(_, arm)| (assignment, binding, arm))
+                            },
+                        )
                     } else {
                         None
                     },

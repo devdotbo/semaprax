@@ -10,12 +10,23 @@
 use super::*;
 use crate::ast::LexicalExitKind;
 use crate::cleanup_plan::{CleanupPlan, ExitTargetId};
-use crate::hir::{ControlTarget, FunctionExecutionId};
+use crate::hir::{ControlTarget, FunctionExecutionId, LoopLatchKind};
 
 /// Facts the flow replay needs after the certificates are authenticated.
 pub(super) struct LexicalAuth {
     /// Loop certificate index by the condition expression its target names.
     pub(super) loops: BTreeMap<ExpressionId, usize>,
+    /// Blocks where an owning-break fragment rejoins ordinary flow. Every
+    /// incoming state must agree exactly; no merge may repair history.
+    pub(super) exact_joins: BTreeSet<BlockId>,
+    /// The fragment exit that leaves the wrapper cancels the exact Step
+    /// renewal reservation of this assignment.
+    pub(super) wrapper_cancels: BTreeMap<ExitTargetId, ExpressionId>,
+    /// Owned item storage an owning `continue` disposes beside its retained
+    /// remainder (outside the exit's leaves regions).
+    pub(super) item_disposals: BTreeMap<ExitTargetId, BTreeSet<StorageId>>,
+    /// Execution-boundary certificate index by its exact block.
+    pub(super) boundaries: BTreeMap<BlockId, usize>,
 }
 
 /// `true` when typed HIR contains a lexical exit. A tree deeper than the HIR
@@ -54,6 +65,7 @@ fn reach(
     start: BlockId,
     avoid: Option<BlockId>,
     stop: &BTreeSet<BlockId>,
+    excluded: Option<&[bool]>,
 ) -> Vec<bool> {
     let mut seen = vec![false; function.cleanup_plan.blocks.len()];
     if Some(start) == avoid {
@@ -64,7 +76,11 @@ fn reach(
     while let Some(block) = stack.pop() {
         for next in block_successors(function, block) {
             let index = next.0 as usize;
-            if seen[index] || Some(next) == avoid || stop.contains(&next) {
+            if seen[index]
+                || Some(next) == avoid
+                || stop.contains(&next)
+                || excluded.is_some_and(|excluded| excluded[index])
+            {
                 continue;
             }
             seen[index] = true;
@@ -83,10 +99,78 @@ fn chain_contains(
     Ok(region_chain_to_root(function, start)?.contains(&region))
 }
 
+/// How a certified exit enters its finite proof fragment.
+#[derive(Clone, Copy)]
+enum Entry {
+    /// A lexical `return` hands its result to a per-return postcondition domain.
+    Return,
+    /// An owning source-For `break`, by loop index: wrapper completion fragment.
+    Break(usize),
+    /// A generated-advancement `continue`, by loop index.
+    Latch(usize),
+}
+
 enum Domain {
     Ordinary,
     Return,
-    Latch(usize),
+    Break(usize),
+    Latch(usize, usize),
+}
+
+/// A certified owning `continue` advances while retaining the Yield child, arm
+/// and body scopes that bind the remainder. Its leaves regions are exactly the
+/// regions strictly inside the Yield child scope, derived from the plan's own
+/// region tree and the remainder's owning region.
+pub(super) fn owned_continue_leaves(
+    function: &ResolvedFunction,
+    exit: ExitTargetId,
+    chain: &[CleanupRegionId],
+) -> Result<Option<Vec<CleanupRegionId>>, Diagnostic> {
+    let plan = &function.cleanup_plan;
+    let Some(control) = plan.lexical_control.as_deref() else {
+        return Ok(None);
+    };
+    let Some(certificate) = control
+        .exits
+        .iter()
+        .find(|certificate| certificate.exit == exit)
+    else {
+        return Ok(None);
+    };
+    if certificate.kind != LexicalExitKind::Continue {
+        return Ok(None);
+    }
+    let Some(lp) = control
+        .loops
+        .iter()
+        .find(|lp| lp.target == certificate.target)
+    else {
+        return Ok(None);
+    };
+    let LoopLatchKind::OwnedIteratorStep { remainder, .. } = &lp.latch else {
+        return Ok(None);
+    };
+    let storage = StorageId::Value(remainder.clone());
+    let mut owners = chain.iter().enumerate().filter(|(_, region)| {
+        plan.regions
+            .get(region.0 as usize)
+            .is_some_and(|region| region.slots.contains(&storage))
+    });
+    let fail = |message: &str| replay_error(function, message.to_owned());
+    let (index, arm) = owners
+        .next()
+        .map(|(index, region)| (index, *region))
+        .ok_or_else(|| fail("owning continue remainder has no active Yield scope"))?;
+    if owners.next().is_some() || index == 0 {
+        return Err(fail("owning continue remainder scope is ambiguous"));
+    }
+    let body = plan.regions[arm.0 as usize]
+        .parent
+        .ok_or_else(|| fail("owning continue Yield scope has no body parent"))?;
+    if plan.regions[body.0 as usize].parent != Some(lp.region) {
+        return Err(fail("owning continue retained scope chain differs"));
+    }
+    Ok(Some(chain[..index - 1].to_vec()))
 }
 
 pub(super) fn authenticate(
@@ -108,7 +192,8 @@ pub(super) fn authenticate(
     // Charge every graph traversal below before the first one runs: two per loop
     // (dominance and reach), one per resume, one ordinary reach, each visiting
     // every block, edge and exit and scanning the exit certificates, plus the
-    // per-edge region-chain walks of each abrupt-only region.
+    // per-edge region-chain walks of each abrupt-only region and the one
+    // dominance walk per execution boundary.
     let graph = plan
         .blocks
         .len()
@@ -118,7 +203,7 @@ pub(super) fn authenticate(
         .loops
         .len()
         .saturating_mul(2)
-        .saturating_add(control.resumes.len())
+        .saturating_add(control.resumes.len().saturating_mul(2))
         .saturating_add(1);
     let units = traversals
         .saturating_mul(graph.saturating_mul(control.exits.len().saturating_add(1)))
@@ -129,7 +214,12 @@ pub(super) fn authenticate(
                 .saturating_mul(plan.edges.len())
                 .saturating_mul(plan.regions.len()),
         )
-        .saturating_add(plan.edges.len().saturating_mul(plan.regions.len()));
+        .saturating_add(plan.edges.len().saturating_mul(plan.regions.len()))
+        .saturating_add(
+            plan.edges
+                .len()
+                .saturating_mul(control.execution_boundaries.len()),
+        );
     budget.charge(function, units, "lexical certificate replay")?;
     let owned_result = type_needs_drop(program, function, &function.return_type)?;
 
@@ -149,11 +239,12 @@ pub(super) fn authenticate(
         if !known_region
             || !block_exists(function, certificate.condition_entry)
             || !block_exists(function, certificate.after)
-            || certificate
-                .latch_entry
-                .is_some_and(|entry| !block_exists(function, entry))
         {
             return Err(fail("loop certificate names an unknown region or block"));
+        }
+        // Every continue owns its own fragment; no shared latch entry exists.
+        if certificate.latch_entry.is_some() {
+            return Err(fail("loop certificate carries a shared latch entry"));
         }
     }
     for resume in &control.resumes {
@@ -207,8 +298,9 @@ pub(super) fn authenticate(
             plan.entry,
             Some(certificate.condition_entry),
             &none,
+            None,
         )[branch.0 as usize]
-            || !reach(function, certificate.condition_entry, None, &none)[branch.0 as usize]
+            || !reach(function, certificate.condition_entry, None, &none, None)[branch.0 as usize]
         {
             return Err(fail(
                 "loop condition entry does not dominate its condition branch",
@@ -223,8 +315,8 @@ pub(super) fn authenticate(
         ));
     }
     let mut certified = BTreeSet::new();
-    let mut return_entries = Vec::new();
-    let mut continues = BTreeMap::<usize, Vec<Option<BlockId>>>::new();
+    let mut entries = BTreeMap::<BlockId, Entry>::new();
+    let mut item_disposals = BTreeMap::<ExitTargetId, BTreeSet<StorageId>>::new();
     for (certificate, fact) in control.exits.iter().zip(&facts.exits) {
         if certificate.site != fact.expression.id
             || certificate.kind != fact.kind
@@ -267,20 +359,31 @@ pub(super) fn authenticate(
                     || certificate.target != expected_target
                     || !source_matches
                     || certificate.resume != Some(entry)
+                    || entries.insert(entry, Entry::Return).is_some()
                 {
                     return Err(fail(
                         "function return exit disagrees with its operand, result source or resume",
                     ));
                 }
-                return_entries.push(entry);
             }
             (LexicalExitKind::Break, ExitContinuation::LoopBreak { target, edge }) => {
                 let index = loop_index(&loops, owner, &certificate.target)
                     .ok_or_else(|| fail("loop break names an unknown loop"))?;
+                let lp = &control.loops[index];
+                let to = plan.edges[edge.0 as usize].to;
+                // An owning traversal completes its wrapper in a finite proof
+                // fragment; every other loop joins the loop continuation.
+                let owning = matches!(lp.latch, LoopLatchKind::OwnedIteratorStep { .. });
+                let route_ok = if owning {
+                    certificate.resume == Some(to)
+                        && to != lp.after
+                        && entries.insert(to, Entry::Break(index)).is_none()
+                } else {
+                    certificate.resume.is_none() && to == lp.after
+                };
                 if target != &certificate.target
-                    || plan.edges[edge.0 as usize].to != control.loops[index].after
-                    || certificate.resume.is_some()
-                    || !chain_contains(function, exit.from, control.loops[index].region)?
+                    || !route_ok
+                    || !chain_contains(function, exit.from, lp.region)?
                 {
                     return Err(fail("loop break exit disagrees with its loop join"));
                 }
@@ -291,7 +394,32 @@ pub(super) fn authenticate(
                 if target != &certificate.target {
                     return Err(fail("loop continue exit names another target"));
                 }
-                continues.entry(index).or_default().push(certificate.resume);
+                let generated = lexical_hir::generated_advance(
+                    facts.loops[index].body,
+                    facts.loops[index].latch,
+                )
+                .is_some();
+                match (generated, certificate.resume) {
+                    (false, None) => {}
+                    (true, Some(entry)) => {
+                        if entries.insert(entry, Entry::Latch(index)).is_some() {
+                            return Err(fail("continue exits share one generated fragment"));
+                        }
+                        if let Some(item) = lexical_hir::yield_item(facts.loops[index].body) {
+                            if item.ownership == OwnershipMode::Own {
+                                item_disposals.insert(
+                                    certificate.exit,
+                                    BTreeSet::from([StorageId::Value(item.id.clone())]),
+                                );
+                            }
+                        }
+                    }
+                    _ => {
+                        return Err(fail(
+                            "continue resume disagrees with its generated advancement",
+                        ));
+                    }
+                }
             }
             _ => {
                 return Err(fail(
@@ -301,33 +429,9 @@ pub(super) fn authenticate(
         }
     }
 
-    // Latch entries and normal iteration ends, per loop.
+    // Normal iteration ends, per loop.
     let mut iteration_ends = BTreeSet::new();
-    let mut latch_entries = BTreeMap::<BlockId, usize>::new();
-    for (index, (certificate, fact)) in control.loops.iter().zip(&facts.loops).enumerate() {
-        let generated = lexical_hir::generated_advance(fact.body, fact.latch).is_some();
-        let resumes = continues.get(&index).map(Vec::as_slice).unwrap_or(&[]);
-        match (generated && !resumes.is_empty(), certificate.latch_entry) {
-            (true, Some(entry)) => {
-                if resumes.iter().any(|resume| *resume != Some(entry))
-                    || latch_entries.insert(entry, index).is_some()
-                {
-                    return Err(fail(
-                        "continue exits do not share their loop's generated latch entry",
-                    ));
-                }
-            }
-            (false, None) => {
-                if resumes.iter().any(Option::is_some) {
-                    return Err(fail("ordinary loop continue carries a generated resume"));
-                }
-            }
-            _ => {
-                return Err(fail(
-                    "loop latch entry disagrees with its generated advancement",
-                ));
-            }
-        }
+    for (certificate, fact) in control.loops.iter().zip(&facts.loops) {
         if fact.body_completes {
             let exit = plan
                 .exits
@@ -353,39 +457,26 @@ pub(super) fn authenticate(
     }
 
     // Resume inventories: exact reconstructed membership, disjoint domains.
-    let mut entries = BTreeSet::new();
+    // Correspondence is derived from the exits, never from vector order.
+    let mut cert_entries = BTreeSet::new();
     for resume in &control.resumes {
-        if !entries.insert(resume.entry) {
+        if !cert_entries.insert(resume.entry) {
             return Err(fail("resume certificate entry is repeated"));
         }
     }
-    let expected_entries = return_entries
-        .iter()
-        .copied()
-        .chain(latch_entries.keys().copied())
-        .collect::<BTreeSet<_>>();
-    if entries != expected_entries
-        || expected_entries.len() != return_entries.len() + latch_entries.len()
-    {
+    if cert_entries.len() != entries.len() || entries.keys().any(|e| !cert_entries.contains(e)) {
         return Err(fail(
-            "resume certificates do not cover exactly the return and latch entries",
+            "resume certificates do not cover exactly the certified exit entries",
         ));
     }
-    let ordered_returns = control
-        .resumes
-        .iter()
-        .map(|resume| resume.entry)
-        .filter(|entry| return_entries.contains(entry))
-        .collect::<Vec<_>>();
-    if ordered_returns != return_entries {
-        return Err(fail("return resume certificates are not in return order"));
-    }
     let block_count = plan.blocks.len();
+    let stop = entries.keys().copied().collect::<BTreeSet<_>>();
+    let ordinary = reach(function, plan.entry, None, &stop, None);
     let mut domains = vec![None::<usize>; block_count];
-    let ordinary = reach(function, plan.entry, None, &entries);
+    let mut exact_joins = BTreeSet::new();
     for (index, resume) in control.resumes.iter().enumerate() {
         let none = BTreeSet::new();
-        let seen = reach(function, resume.entry, None, &none);
+        let seen = reach(function, resume.entry, None, &none, Some(&ordinary));
         let mut inventory = vec![resume.entry];
         inventory.extend(
             seen.iter()
@@ -404,17 +495,50 @@ pub(super) fn authenticate(
                 return Err(fail("lexical proof domains overlap"));
             }
         }
+        // A fragment is closed except one authenticated rejoin of a break.
+        let leaving = plan
+            .edges
+            .iter()
+            .filter(|edge| seen[edge.from.0 as usize] && !seen[edge.to.0 as usize])
+            .collect::<Vec<_>>();
+        match entries[&resume.entry] {
+            Entry::Break(lp_index) => {
+                let [edge] = leaving.as_slice() else {
+                    return Err(fail(
+                        "owning break fragment does not end in exactly one parent join",
+                    ));
+                };
+                let parent = plan.regions[control.loops[lp_index].region.0 as usize].parent;
+                if !ordinary[edge.to.0 as usize]
+                    || !matches!(edge.condition, EdgeCondition::Always)
+                    || plan.blocks[edge.from.0 as usize].terminator
+                        != CleanupTerminator::Goto(edge.id)
+                    || Some(plan.blocks[edge.to.0 as usize].region) != parent
+                {
+                    return Err(fail(
+                        "owning break fragment does not rejoin its wrapper's parent exactly",
+                    ));
+                }
+                exact_joins.insert(edge.to);
+            }
+            Entry::Return | Entry::Latch(_) => {
+                if !leaving.is_empty() {
+                    return Err(fail("terminal lexical fragment has an outgoing edge"));
+                }
+            }
+        }
     }
     if (0..block_count).any(|block| !ordinary[block] && domains[block].is_none()) {
         return Err(fail("cleanup block belongs to no lexical proof domain"));
     }
 
     // Domain entry discipline: only certified exits reach a resume.
-    let return_edges = plan
+    let entry_edges = plan
         .exits
         .iter()
         .filter_map(|exit| match &exit.continuation {
-            ExitContinuation::FunctionReturn { edge, .. } => Some((*edge, exit.from)),
+            ExitContinuation::FunctionReturn { edge, .. }
+            | ExitContinuation::LoopBreak { edge, .. } => Some((*edge, exit.from)),
             _ => None,
         })
         .collect::<BTreeMap<_, _>>();
@@ -424,7 +548,7 @@ pub(super) fn authenticate(
         };
         let inside = domains[edge.from.0 as usize] == Some(target);
         let certified_entry = control.resumes[target].entry == edge.to
-            && return_edges.get(&edge.id) == Some(&edge.from);
+            && entry_edges.get(&edge.id) == Some(&edge.from);
         if !inside && !certified_entry {
             return Err(fail(
                 "an edge enters a lexical resume outside its certified exit",
@@ -436,15 +560,35 @@ pub(super) fn authenticate(
     let mut ordinary_commits = 0usize;
     let mut resume_commits = vec![0usize; control.resumes.len()];
     let mut resume_latches = vec![0usize; control.resumes.len()];
+    let mut resume_cancels = vec![0usize; control.resumes.len()];
+    let mut wrapper_cancels = BTreeMap::new();
     let mut commit_exits = Vec::new();
     for exit in &plan.exits {
         let domain = match domains[exit.from.0 as usize] {
             None => Domain::Ordinary,
-            Some(index) if return_entries.contains(&control.resumes[index].entry) => Domain::Return,
-            Some(index) => Domain::Latch(index),
+            Some(index) => match entries[&control.resumes[index].entry] {
+                Entry::Return => Domain::Return,
+                Entry::Break(_) => Domain::Break(index),
+                Entry::Latch(lp) => Domain::Latch(index, lp),
+            },
         };
         let accounted = certified.contains(&exit.id) || iteration_ends.contains(&exit.id);
         match (&domain, &exit.continuation) {
+            (Domain::Break(index), ExitContinuation::Continue(_)) => {
+                let Entry::Break(lp) = entries[&control.resumes[*index].entry] else {
+                    unreachable!("break domain entry");
+                };
+                let region = control.loops[lp].region;
+                if exit.leaves_regions == [region] {
+                    let LoopLatchKind::OwnedIteratorStep { assignment, .. } =
+                        &control.loops[lp].latch
+                    else {
+                        return Err(fail("owning break fragment has no owning latch"));
+                    };
+                    resume_cancels[*index] += 1;
+                    wrapper_cancels.insert(exit.id, assignment.clone());
+                }
+            }
             (_, ExitContinuation::Continue(_) | ExitContinuation::ReturnFailure { .. }) => {}
             (Domain::Ordinary, ExitContinuation::CommitResult { .. }) => {
                 ordinary_commits += 1;
@@ -460,12 +604,8 @@ pub(super) fn authenticate(
                 | ExitContinuation::FunctionReturn { .. }
                 | ExitContinuation::LoopLatch { .. },
             ) if accounted => {}
-            (Domain::Latch(index), ExitContinuation::LoopLatch { target }) if !accounted => {
-                let owner_loop = latch_entries
-                    .get(&control.resumes[*index].entry)
-                    .copied()
-                    .ok_or_else(|| fail("latch fragment has no loop"))?;
-                if target != &control.loops[owner_loop].target {
+            (Domain::Latch(index, lp), ExitContinuation::LoopLatch { target }) if !accounted => {
+                if target != &control.loops[*lp].target {
                     return Err(fail("latch fragment ends at another loop's latch"));
                 }
                 resume_latches[*index] += 1;
@@ -477,18 +617,33 @@ pub(super) fn authenticate(
             }
         }
     }
-    if ordinary_commits != usize::from(facts.body_completes) {
+    // A terminal residual `?` path and the normal body path share one epilogue.
+    if ordinary_commits != usize::from(facts.body_completes || facts.tries > 0) {
         return Err(fail(
             "ordinary success exits disagree with the body's normal completion",
         ));
     }
     for (index, resume) in control.resumes.iter().enumerate() {
-        let is_return = return_entries.contains(&resume.entry);
-        if (is_return && (resume_commits[index] != 1 || resume_latches[index] != 0))
-            || (!is_return && (resume_latches[index] != 1 || resume_commits[index] != 0))
-        {
+        let shape_ok = match entries[&resume.entry] {
+            Entry::Return => {
+                resume_commits[index] == 1
+                    && resume_latches[index] == 0
+                    && resume_cancels[index] == 0
+            }
+            Entry::Latch(_) => {
+                resume_latches[index] == 1
+                    && resume_commits[index] == 0
+                    && resume_cancels[index] == 0
+            }
+            Entry::Break(_) => {
+                resume_cancels[index] == 1
+                    && resume_commits[index] == 0
+                    && resume_latches[index] == 0
+            }
+        };
+        if !shape_ok {
             return Err(fail(
-                "resume proof domain does not end in exactly one terminal exit",
+                "resume proof domain does not end in its exact terminal exit",
             ));
         }
     }
@@ -513,8 +668,15 @@ pub(super) fn authenticate(
         ));
     }
 
-    validate_normal_ends(function, control)?;
-    Ok(LexicalAuth { loops })
+    validate_normal_ends(function, control, &domains)?;
+    let boundaries = super::lexical_boundary::authenticate(function, facts, &domains)?;
+    Ok(LexicalAuth {
+        loops,
+        exact_joins,
+        wrapper_cancels,
+        item_disposals,
+        boundaries,
+    })
 }
 
 fn loop_index(
@@ -532,7 +694,7 @@ fn loop_index(
 }
 
 /// The unique `Branch` whose Boolean edges decide the loop condition.
-fn loop_branch(
+pub(super) fn loop_branch(
     function: &ResolvedFunction,
     condition: &ExpressionId,
 ) -> Result<(BlockId, EdgeId, EdgeId), Diagnostic> {
@@ -567,10 +729,13 @@ fn loop_branch(
 }
 
 /// Normal scope ends are real scope exits; a provisional end must be an
-/// abrupt-only region whose subtree has no normal continuation or escape.
+/// abrupt-only region whose ordinary subtree has no normal continuation or
+/// escape. Proof fragments complete scopes already entered by authored flow and
+/// never own a region's normal end, so only ordinary-domain flow is considered.
 fn validate_normal_ends(
     function: &ResolvedFunction,
     control: &crate::cleanup_plan::LexicalControlPlan,
+    domains: &[Option<usize>],
 ) -> Result<(), Diagnostic> {
     let plan = &function.cleanup_plan;
     let fail = |message: &str| replay_error(function, message.to_owned());
@@ -601,6 +766,7 @@ fn validate_normal_ends(
             let exit = &plan.exits[region.normal_scope_end.0 as usize];
             if !matches!(exit.continuation, ExitContinuation::Continue(_))
                 || exit.leaves_regions != [region.id]
+                || domains[exit.from.0 as usize].is_some()
             {
                 return Err(fail("region normal scope end is not its own scope exit"));
             }
@@ -609,12 +775,14 @@ fn validate_normal_ends(
         for exit in &plan.exits {
             if matches!(exit.continuation, ExitContinuation::Continue(_))
                 && exit.leaves_regions == [region.id]
+                && domains[exit.from.0 as usize].is_none()
             {
                 return Err(fail("abrupt-only region has a normal scope exit"));
             }
         }
         for edge in &plan.edges {
-            if chain_contains(function, edge.from, region.id)?
+            if domains[edge.from.0 as usize].is_none()
+                && chain_contains(function, edge.from, region.id)?
                 && !chain_contains(function, edge.to, region.id)?
                 && !lexical_edges.contains(&edge.id)
             {

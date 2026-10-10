@@ -79,8 +79,10 @@ fn count(
         let free = expression_path_counts(function, expression)?;
         let counts = Counts {
             normal: free.normal,
-            failed: free.failed.saturating_add(free.residual),
-            returned: 0,
+            failed: free.failed,
+            // A residual `?` path reaches the shared epilogue and runs every
+            // postcondition, exactly like a returning path.
+            returned: free.residual,
         };
         if counts.total() > MAX_REPLAY_PATHS {
             path_budget_errors(function, 0, counts.total())?;

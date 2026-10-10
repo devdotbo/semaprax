@@ -184,13 +184,8 @@ pub(super) fn settle_loop_body(
 ) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
     let mut settled = Vec::new();
     for mut path in joined {
-        if path.residual {
-            return Err(replay_error(
-                work.function,
-                "postfix `?` residual inside a lexical loop is not admitted",
-            ));
-        }
-        if !path.failed {
+        // A residual `?` path is already terminal for this loop and passes through.
+        if !path.failed && !path.residual {
             push_latch(&mut path, target, work)?;
         } else if matches!(
             marker(&path),

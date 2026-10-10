@@ -15,6 +15,7 @@ pub(super) fn validate_path_states(
     // Exact ownership state each lexical loop body must restore, captured once
     // from the state on its true-condition edge.
     let mut loop_entries = BTreeMap::<usize, PathState>::new();
+    let no_extra_disposal = BTreeSet::<StorageId>::new();
     let contract_sources = plan
         .status_sources
         .iter()
@@ -118,6 +119,16 @@ pub(super) fn validate_path_states(
         }
         let block = &plan.blocks[block_id.0 as usize];
         for states in groups.into_values() {
+            // An owning break's fragment rejoins its wrapper's parent: every
+            // incoming state must agree exactly, with no ownership or history
+            // repair by the generic join below.
+            if lexical.is_some_and(|auth| auth.exact_joins.contains(&block_id)) && states.len() != 1
+            {
+                return Err(replay_error(
+                    function,
+                    "owning break fragment does not rejoin its parent with exact ownership state",
+                ));
+            }
             let mut checked = BTreeSet::new();
             for state in &states {
                 validate_join_compatibility(function, &checked, state, block_id)?;
@@ -131,6 +142,17 @@ pub(super) fn validate_path_states(
                 .expect("replay control group is non-empty");
             state.live_order = live_order;
             state.conditional_variants = conditional_variants;
+            if let Some(auth) = lexical {
+                lexical_boundary::check(
+                    function,
+                    auth,
+                    block_id,
+                    &state,
+                    storage,
+                    &storage_regions,
+                    leaves,
+                )?;
+            }
             for transition in &block.transitions {
                 renewal::charge_transition(function, transition, &state, budget)?;
                 execute_replay_transition(
@@ -174,9 +196,32 @@ pub(super) fn validate_path_states(
                 }
                 CleanupTerminator::Exit(exit_id) => {
                     let exit = &plan.exits[exit_id.0 as usize];
-                    match replay_exit(function, exit, state, &storage_regions, storage, leaves)? {
-                        ExitFlow::Edge(edge, continued) => {
+                    let extra = lexical
+                        .and_then(|auth| auth.item_disposals.get(exit_id))
+                        .unwrap_or(&no_extra_disposal);
+                    match replay_exit(
+                        function,
+                        exit,
+                        state,
+                        &storage_regions,
+                        storage,
+                        leaves,
+                        extra,
+                    )? {
+                        ExitFlow::Edge(edge, mut continued) => {
                             let target = plan.edges[edge.0 as usize].to;
+                            if let Some(assignment) =
+                                lexical.and_then(|auth| auth.wrapper_cancels.get(exit_id))
+                            {
+                                // Leaving the wrapper cancels the exact Step renewal
+                                // reservation; nothing else may be repaired.
+                                if continued.renewals.remove(assignment).is_none() {
+                                    return Err(replay_error(
+                                        function,
+                                        "owning break has no exact Step renewal reservation",
+                                    ));
+                                }
+                            }
                             if let Some(auth) = lexical {
                                 lexical_flow::check_break(
                                     function,
@@ -184,6 +229,7 @@ pub(super) fn validate_path_states(
                                     exit,
                                     &continued,
                                     &loop_entries,
+                                    leaves,
                                 )?;
                             }
                             incoming[target.0 as usize].insert(continued);

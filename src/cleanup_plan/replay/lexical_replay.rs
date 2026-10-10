@@ -18,18 +18,6 @@ pub(super) fn validate(
     let plan = &function.cleanup_plan;
     let owner = crate::hir::lexical_exit::owner(program, function)?;
     crate::hir::lexical_exit::validate_function(program, function, &owner)?;
-    if function
-        .requires
-        .iter()
-        .chain(std::iter::once(&function.body))
-        .chain(&function.ensures)
-        .any(|expression| expression_has_try(expression) || expression_has_option_try(expression))
-    {
-        return Err(replay_error(
-            function,
-            "postfix `?` inside a lexical-profile function is not admitted by cleanup plan v18",
-        ));
-    }
     lexical_census::validate_size_budget(program, function)?;
     budget.charge(
         function,

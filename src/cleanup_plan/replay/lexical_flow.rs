@@ -81,16 +81,17 @@ pub(super) fn check_latch(
     }
 }
 
-/// A `break` joins the loop continuation. Counter and Copy loops own nothing
-/// across the loop, so the join must equal the entry state exactly; an owned
-/// iterator additionally settles its wrapper step, which the join check at the
-/// continuation block compares against the parent state.
+/// A `break` of a counter or Copy loop joins the loop continuation, so its state
+/// must equal the entry state exactly. An owning traversal enters its wrapper
+/// fragment instead: the consumed hidden Step must be dead here, and the exact
+/// parent join is checked where the fragment rejoins ordinary flow.
 pub(super) fn check_break(
     function: &ResolvedFunction,
     auth: &LexicalAuth,
     exit: &ExitTarget,
     state: &PathState,
     entries: &BTreeMap<usize, PathState>,
+    leaves: &Leaves,
 ) -> Result<(), Diagnostic> {
     let ExitContinuation::LoopBreak { target, .. } = &exit.continuation else {
         return Ok(());
@@ -103,7 +104,24 @@ pub(super) fn check_break(
         .as_deref()
         .and_then(|control| control.loops.get(index))
         .ok_or_else(|| replay_error(function, "loop break has no certificate"))?;
-    if matches!(certificate.latch, LoopLatchKind::OwnedIteratorStep { .. }) {
+    if let LoopLatchKind::OwnedIteratorStep { step, .. } = &certificate.latch {
+        // The hidden Step was consumed entering Yield; it cannot reappear on a
+        // break path merely to agree with the loop's false-condition branch.
+        let step = StorageId::Value(step.clone());
+        let live = state
+            .live_order
+            .iter()
+            .any(|flag| leaves[flag].place.storage == step)
+            || state
+                .conditional_variants
+                .iter()
+                .any(|variant| variant.root.storage == step);
+        if live {
+            return Err(replay_error(
+                function,
+                "owning break retains a live hidden Step",
+            ));
+        }
         return Ok(());
     }
     let entry = entries

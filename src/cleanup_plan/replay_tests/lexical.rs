@@ -1,40 +1,80 @@
-//! Cleanup-plan v18 replay: lexical `return`, `break` and `continue` certificates.
+//! Cleanup-plan v18 replay: lexical `return`, `break` and `continue` certificates,
+//! per-exit generated-advancement fragments, owning wrapper breaks, execution
+//! boundaries and terminal postfix `?` residual paths.
 //!
-//! The parser does not yet spell lexical exits, so each fixture resolves an
-//! ordinary bounded `while`, then installs the typed HIR a lexical source would
-//! resolve to: a `LexicalWhile` with a guarded exit statement. Plans are built
-//! for the authenticated execution identity and replayed independently.
+//! Every fixture is authored source resolved by the ordinary pipeline; the plan
+//! under test is the one attached at resolution. Hostile cases mutate that plan
+//! (or its certificates) and must be refused by independent replay.
 use super::*;
-use crate::ast::{BinaryOp, LexicalExitKind};
-use crate::cleanup_plan::{build_plan_for_execution, ExitTargetId, CLEANUP_PLAN_SCHEMA_V18};
-use crate::hir::{
-    ControlTarget, ExpressionId, FunctionExecutionId, LoopLatchKind, OwnershipMode, Place,
-    ResolvedBinding, ResolvedType, ValueId,
-};
+use crate::ast::LexicalExitKind;
+use crate::cleanup_plan::{ExecutionBoundaryKind, ExitTargetId, CLEANUP_PLAN_SCHEMA_V18};
+use crate::hir::ControlTarget;
 
-const LEXICAL_SOURCE: &str = r#"module test.lexical_replay;
+const SCALAR: &str = r#"module test.lexical_scalar;
 
 @id("lex.count")
 fn count(n: i64) -> i64 {
     let mut i = 0;
+    let mut total = 0;
     while i < n {
         i = i + 1;
+        if i == 2 { continue; };
+        if i == 3 { continue; };
+        if i == 5 { break; };
+        total = total + i;
+        0
     }
-    i
+    if total == 99 { return 1; };
+    return total;
 }
 
 @id("app.main")
 fn main() -> i64 { 0 }
 "#;
 
-#[derive(Clone, Copy)]
-enum Injection {
-    Return,
-    Break,
-    Continue,
+const COPY_FOR: &str = r#"module test.lexical_copy_for;
+
+@id("lex.copy")
+fn copy(limit: i64) -> i64 {
+    let mut building = vec_with_capacity<i64>(4usize);
+    building = vec_push<i64>(building, 1);
+    building = vec_push<i64>(building, 2);
+    building = vec_push<i64>(building, 3);
+    let values = building;
+    let mut total = 0;
+    for item in values {
+        if item == 2 { continue; };
+        if item == 3 { continue; };
+        if item == limit { break; };
+        total = total + item;
+        0
+    }
+    return total;
 }
 
-const OWNED_SOURCE: &str = r#"module test.lexical_owned;
+@id("app.main")
+fn main() -> i64 { 0 }
+"#;
+
+const OWNING_FOR: &str = r#"module test.lexical_owning_for;
+
+@id("lex.sum")
+fn sum(values: own Vec<i64>, stop: i64) -> i64 {
+    let mut total = 0;
+    for own item in vec_into_iter<i64>(values) {
+        if item == 2 { continue; };
+        if item == stop { break; };
+        total = total + item;
+        0
+    }
+    return total;
+}
+
+@id("app.main")
+fn main() -> i64 { 0 }
+"#;
+
+const OWNED_RESULT: &str = r#"module test.lexical_owned_result;
 
 @id("lex.token")
 resource Token {
@@ -43,164 +83,48 @@ resource Token {
 }
 
 @id("lex.hold")
-fn hold(n: i64, token: own Token) -> Token {
+fn hold(n: i64, token: own Token) -> Token
+    ensures true
+{
     let mut i = 0;
     while i < n {
         i = i + 1;
+        if i == 3 { return token; };
+        0
     }
-    token
+    return token;
 }
 
 @id("app.main")
 fn main() -> i64 { 0 }
 "#;
 
-/// A resolved program whose `lex.count` loop is a lexical loop with one guarded
-/// exit, and the function carrying its freshly built v18 plan.
-fn fixture(injection: Injection) -> (ResolvedProgram, ResolvedFunction) {
-    let parsed = parse(LEXICAL_SOURCE, Path::new("cleanup-replay-lexical.spx")).unwrap();
-    let program = hir::resolve(&parsed).unwrap();
-    let func = function(&program, "lex.count");
-    install(program, func, injection)
+const TERMINAL_TRY: &str = r#"module test.lexical_try;
+
+@id("lex.try")
+fn forward(value: Result<i64, bool>, n: i64) -> Result<bool, bool>
+    ensures true
+{
+    let mut i = 0;
+    while i < n {
+        i = i + 1;
+        if i == 2 { return Result<bool, bool>::Ok { value: false }; };
+        0
+    }
+    let number = value?;
+    return Result<bool, bool>::Ok { value: true };
 }
 
-/// The same guarded exit over an owned result: a returned `Token` moves into
-/// provisional storage at the exit site before any contour cleanup.
-fn owned_fixture() -> (ResolvedProgram, ResolvedFunction) {
-    let parsed = parse(OWNED_SOURCE, Path::new("cleanup-replay-lexical-owned.spx")).unwrap();
-    let program = hir::resolve(&parsed).unwrap();
-    let func = function(&program, "lex.hold");
-    install(program, func, Injection::Return)
-}
+@id("app.main")
+fn main() -> i64 { 0 }
+"#;
 
-fn install(
-    program: ResolvedProgram,
-    mut func: ResolvedFunction,
-    injection: Injection,
-) -> (ResolvedProgram, ResolvedFunction) {
-    let execution = FunctionExecutionId::Monomorphic(func.id.clone());
-    let ResolvedExprKind::Block { statements, tail } = &mut func.body.kind else {
-        panic!("fixture body is a block")
-    };
-    // A returned operand repeats the function's own tail value.
-    let operand_template = (**tail).clone();
-    let ResolvedStatement::Let { binding, span, .. } = &statements[0] else {
-        panic!("fixture starts with the counter binding")
-    };
-    let (binding, span) = (binding.clone(), *span);
-    let ResolvedStatement::While {
-        condition,
-        mut body,
-        ..
-    } = statements.remove(1)
-    else {
-        panic!("fixture has a while statement")
-    };
-
-    let id = |path: &str| ExpressionId::new(&execution, path);
-    let counter = |path: &str| ResolvedExpr {
-        id: id(path),
-        ty: ResolvedType::I64,
-        ownership: OwnershipMode::Value,
-        kind: ResolvedExprKind::Place(Place {
-            root: binding.id.clone(),
-            projections: Vec::new(),
-        }),
-        span,
-    };
-    let literal = |path: &str, value: i64| ResolvedExpr {
-        id: id(path),
-        ty: ResolvedType::I64,
-        ownership: OwnershipMode::Value,
-        kind: ResolvedExprKind::Int(value),
-        span,
-    };
-    let (kind, target, value) = match injection {
-        Injection::Return => (
-            LexicalExitKind::Return,
-            ControlTarget::Function(execution.clone()),
-            Some(Box::new(ResolvedExpr {
-                id: id("lex.exit.operand"),
-                ..operand_template
-            })),
-        ),
-        Injection::Break | Injection::Continue => (
-            if matches!(injection, Injection::Break) {
-                LexicalExitKind::Break
-            } else {
-                LexicalExitKind::Continue
-            },
-            ControlTarget::Loop {
-                owner: execution.clone(),
-                site: condition.id.clone(),
-            },
-            None,
-        ),
-    };
-    let exit = ResolvedExpr {
-        id: id("lex.exit"),
-        ty: ResolvedType::Never,
-        ownership: OwnershipMode::Value,
-        kind: ResolvedExprKind::LexicalExit {
-            kind,
-            target,
-            value,
-        },
-        span,
-    };
-    let guard_condition = ResolvedExpr {
-        id: id("lex.guard.condition"),
-        ty: ResolvedType::Bool,
-        ownership: OwnershipMode::Value,
-        kind: ResolvedExprKind::Binary {
-            op: BinaryOp::Eq,
-            left: Box::new(counter("lex.guard.left")),
-            right: Box::new(literal("lex.guard.right", 3)),
-        },
-        span,
-    };
-    let guarded = ResolvedExpr {
-        id: id("lex.guard"),
-        ty: ResolvedType::I64,
-        ownership: OwnershipMode::Value,
-        kind: ResolvedExprKind::If {
-            condition: Box::new(guard_condition),
-            then_branch: Box::new(exit),
-            else_branch: Box::new(literal("lex.guard.else", 0)),
-        },
-        span,
-    };
-    let guard = ResolvedStatement::Let {
-        binding: ResolvedBinding {
-            id: ValueId::local(&execution, "lex.guard.binding"),
-            name: "guard".to_owned(),
-            ownership: OwnershipMode::Value,
-            ty: ResolvedType::I64,
-            span,
-        },
-        mutable: false,
-        value: guarded,
-        span,
-    };
-    let ResolvedExprKind::Block {
-        statements: loop_statements,
-        ..
-    } = &mut body.kind
-    else {
-        panic!("while body is a block")
-    };
-    loop_statements.insert(0, guard);
-    statements.insert(
-        1,
-        ResolvedStatement::LexicalWhile {
-            condition,
-            body,
-            latch: LoopLatchKind::Condition,
-            span,
-        },
-    );
-    func.cleanup_plan = build_plan_for_execution(&program, &func, &execution)
-        .expect("lexical fixture plan builds for its authenticated execution");
+fn fixture(source: &str, id: &str) -> (ResolvedProgram, ResolvedFunction) {
+    let program =
+        hir::resolve(&parse(source, Path::new("cleanup-replay-lexical.spx")).unwrap()).unwrap();
+    let func = function(&program, id);
+    assert_eq!(func.cleanup_plan.schema, CLEANUP_PLAN_SCHEMA_V18);
+    validate_structure(&program, &func).expect("canonical lexical plan replays");
     (program, func)
 }
 
@@ -211,130 +135,263 @@ fn control(func: &mut ResolvedFunction) -> &mut crate::cleanup_plan::LexicalCont
         .expect("v18 fixture carries a lexical-control certificate")
 }
 
-fn assert_rejected(program: &ResolvedProgram, func: &ResolvedFunction, needle: &str) {
+fn certificate(func: &ResolvedFunction) -> &crate::cleanup_plan::LexicalControlPlan {
+    func.cleanup_plan.lexical_control.as_deref().unwrap()
+}
+
+fn assert_rejected(program: &ResolvedProgram, func: &ResolvedFunction) {
     let diagnostic = validate_structure(program, func).unwrap_err();
     assert_eq!(diagnostic.code, "SPX-H006");
     assert!(
         diagnostic.message.contains("failed independent replay"),
         "{diagnostic:?}"
     );
-    assert!(diagnostic.message.contains(needle), "{diagnostic:?}");
+}
+
+fn kinds(func: &ResolvedFunction, kind: LexicalExitKind) -> Vec<usize> {
+    certificate(func)
+        .exits
+        .iter()
+        .enumerate()
+        .filter(|(_, exit)| exit.kind == kind)
+        .map(|(index, _)| index)
+        .collect()
 }
 
 #[test]
-fn lexical_return_certificate_replays_with_per_return_success_domain() {
-    let (program, func) = fixture(Injection::Return);
-    assert_eq!(func.cleanup_plan.schema, CLEANUP_PLAN_SCHEMA_V18);
-    validate_structure(&program, &func).expect("canonical lexical return plan replays");
-    let control = func.cleanup_plan.lexical_control.as_deref().unwrap();
-    assert_eq!(control.loops.len(), 1);
-    assert_eq!(control.exits.len(), 1);
-    assert_eq!(control.resumes.len(), 1);
-    // The ordinary completion and the one return each publish exactly once.
+fn scalar_loop_with_two_continues_break_and_returns_replays_independently() {
+    let (_, func) = fixture(SCALAR, "lex.count");
+    let control = certificate(&func);
+    assert_eq!(kinds(&func, LexicalExitKind::Continue).len(), 2);
+    assert_eq!(kinds(&func, LexicalExitKind::Break).len(), 1);
+    assert_eq!(kinds(&func, LexicalExitKind::Return).len(), 2);
+    // An ordinary `while` latch needs no generated advancement fragment.
+    assert!(control.loops.iter().all(|lp| lp.latch_entry.is_none()));
+    // The body ends in a return, so only the two returns publish a success.
     assert_eq!(control.function_success_exits.len(), 2);
+    // Function entry plus one iteration boundary for the one loop.
+    assert_eq!(control.execution_boundaries.len(), 2);
+    assert_eq!(
+        control.execution_boundaries[0].kind,
+        ExecutionBoundaryKind::FunctionEntry
+    );
+    assert_eq!(
+        control.execution_boundaries[1].kind,
+        ExecutionBoundaryKind::LoopIteration
+    );
 }
 
 #[test]
-fn lexical_break_and_continue_certificates_replay_without_a_back_edge() {
-    for injection in [Injection::Break, Injection::Continue] {
-        let (program, func) = fixture(injection);
-        validate_structure(&program, &func).expect("canonical loop exit plan replays");
-        let control = func.cleanup_plan.lexical_control.as_deref().unwrap();
-        assert_eq!(control.exits.len(), 1);
-        assert!(control.resumes.is_empty());
-        assert_eq!(control.function_success_exits.len(), 1);
-        // Latches are terminal exits: the proof CFG has no back edge.
-        validate_reachable_acyclic_cfg(&func).expect("lexical proof CFG is acyclic");
+fn each_copy_for_continue_owns_one_separate_advancement_domain() {
+    let (_, func) = fixture(COPY_FOR, "lex.copy");
+    let control = certificate(&func);
+    let continues = kinds(&func, LexicalExitKind::Continue);
+    assert_eq!(continues.len(), 2);
+    let entries = continues
+        .iter()
+        .map(|index| control.exits[*index].resume.expect("generated fragment"))
+        .collect::<BTreeSet<_>>();
+    assert_eq!(entries.len(), 2, "continue exits never share a fragment");
+    assert!(control.loops.iter().all(|lp| lp.latch_entry.is_none()));
+    for entry in entries {
+        assert!(control.resumes.iter().any(|resume| resume.entry == entry));
     }
 }
 
 #[test]
-fn forged_exit_target_is_rejected() {
-    let (program, mut func) = fixture(Injection::Return);
-    let site = func.body.id.clone();
-    control(&mut func).exits[0].target = ControlTarget::Loop {
-        owner: FunctionExecutionId::Monomorphic(func.id.clone()),
-        site,
+fn owning_for_continue_retains_remainder_and_break_completes_its_wrapper() {
+    let (_, func) = fixture(OWNING_FOR, "lex.sum");
+    let control = certificate(&func);
+    let continue_entry = control.exits[kinds(&func, LexicalExitKind::Continue)[0]]
+        .resume
+        .expect("owning continue advances through a fragment");
+    let break_certificate = &control.exits[kinds(&func, LexicalExitKind::Break)[0]];
+    let break_entry = break_certificate
+        .resume
+        .expect("owning break completes its wrapper in a fragment");
+    assert_ne!(continue_entry, break_entry);
+    let ExitContinuation::LoopBreak { edge, .. } =
+        &func.cleanup_plan.exits[break_certificate.exit.0 as usize].continuation
+    else {
+        panic!("break exit is a loop break")
     };
-    assert_rejected(&program, &func, "exit certificate");
+    // The break enters its wrapper fragment, never the loop's `after` block.
+    assert_eq!(func.cleanup_plan.edges[edge.0 as usize].to, break_entry);
+    assert_ne!(break_entry, control.loops[0].after);
 }
 
 #[test]
-fn forged_exit_kind_is_rejected() {
-    let (program, mut func) = fixture(Injection::Break);
-    control(&mut func).exits[0].kind = LexicalExitKind::Continue;
-    assert_rejected(&program, &func, "exit certificate");
+fn owned_result_returns_run_exact_per_return_postconditions() {
+    let (_, func) = fixture(OWNED_RESULT, "lex.hold");
+    let control = certificate(&func);
+    let returns = kinds(&func, LexicalExitKind::Return);
+    assert_eq!(returns.len(), 2);
+    let entries = returns
+        .iter()
+        .map(|index| control.exits[*index].resume.unwrap())
+        .collect::<BTreeSet<_>>();
+    assert_eq!(entries.len(), 2);
+    assert_eq!(control.function_success_exits.len(), 2);
+    assert!(func.cleanup_plan.exits.iter().any(|exit| matches!(
+        &exit.continuation,
+        ExitContinuation::FunctionReturn {
+            source: CleanupResultSource::Owned { .. },
+            ..
+        }
+    )));
 }
 
 #[test]
-fn forged_loop_condition_and_latch_are_rejected() {
-    let (program, mut func) = fixture(Injection::Break);
+fn lexical_return_and_terminal_try_residual_share_one_ordinary_epilogue() {
+    let (_, func) = fixture(TERMINAL_TRY, "lex.try");
+    let control = certificate(&func);
+    assert_eq!(kinds(&func, LexicalExitKind::Return).len(), 2);
+    // The residual path and the normal path publish through one ordinary exit.
+    assert_eq!(
+        control.function_success_exits.len(),
+        1 + kinds(&func, LexicalExitKind::Return).len()
+    );
+}
+
+#[test]
+fn forged_exit_target_kind_and_site_are_rejected() {
+    let (program, mut func) = fixture(SCALAR, "lex.count");
+    let mut swapped = func.clone();
+    let continues = kinds(&func, LexicalExitKind::Continue);
+    let first = control(&mut swapped).exits[continues[0]].target.clone();
+    control(&mut swapped).exits[continues[0]].target = ControlTarget::Function(
+        crate::hir::FunctionExecutionId::Monomorphic(func.id.clone()),
+    );
+    assert_ne!(first, control(&mut swapped).exits[continues[0]].target);
+    assert_rejected(&program, &swapped);
+
+    control(&mut func).exits[continues[0]].kind = LexicalExitKind::Break;
+    assert_rejected(&program, &func);
+
+    let (program, mut func) = fixture(SCALAR, "lex.count");
     let other = func.body.id.clone();
-    control(&mut func).loops[0].condition = other;
-    assert_independent_replay_rejects(&program, &func);
-
-    let (program, mut func) = fixture(Injection::Break);
-    let step = func.body.id.clone();
-    control(&mut func).loops[0].latch = LoopLatchKind::SourceForStep {
-        kind: crate::hir::SourceForKind::Copy,
-        step,
-    };
-    assert_rejected(&program, &func, "loop certificate");
+    control(&mut func).exits[0].site = other;
+    assert_rejected(&program, &func);
 }
 
 #[test]
-fn forged_contour_resume_inventory_is_rejected() {
-    let (program, mut func) = fixture(Injection::Return);
+fn shared_or_forged_continue_resume_is_rejected() {
+    let (program, mut func) = fixture(COPY_FOR, "lex.copy");
+    let continues = kinds(&func, LexicalExitKind::Continue);
+    let first = control(&mut func).exits[continues[0]].resume;
+    control(&mut func).exits[continues[1]].resume = first;
+    assert_rejected(&program, &func);
+
+    let (program, mut func) = fixture(COPY_FOR, "lex.copy");
+    let continues = kinds(&func, LexicalExitKind::Continue);
+    let entry = func.cleanup_plan.entry;
+    control(&mut func).exits[continues[0]].resume = Some(entry);
+    assert_rejected(&program, &func);
+
+    let (program, mut func) = fixture(COPY_FOR, "lex.copy");
+    control(&mut func).loops[0].latch_entry = control(&mut func).resumes[0].blocks.first().copied();
+    assert_rejected(&program, &func);
+}
+
+#[test]
+fn forged_resume_inventory_and_wrapper_tail_are_rejected() {
+    let (program, mut func) = fixture(OWNING_FOR, "lex.sum");
+    let entry = control(&mut func).exits[kinds(&func, LexicalExitKind::Break)[0]]
+        .resume
+        .unwrap();
+    let resume = control(&mut func)
+        .resumes
+        .iter_mut()
+        .find(|resume| resume.entry == entry)
+        .unwrap();
+    // Dropping the wrapper's final (join) block leaves the fragment unfinished.
+    resume.blocks.pop();
+    assert_rejected(&program, &func);
+
+    let (program, mut func) = fixture(OWNING_FOR, "lex.sum");
     let entry = func.cleanup_plan.entry;
     control(&mut func).resumes[0].blocks.push(entry);
-    assert_rejected(&program, &func, "resume certificate");
+    assert_rejected(&program, &func);
 
-    let (program, mut func) = fixture(Injection::Return);
-    control(&mut func).resumes[0].blocks.clear();
-    assert_rejected(&program, &func, "resume");
+    let (program, mut func) = fixture(OWNING_FOR, "lex.sum");
+    let break_index = kinds(&func, LexicalExitKind::Break)[0];
+    control(&mut func).exits[break_index].resume = None;
+    assert_rejected(&program, &func);
 }
 
 #[test]
-fn forged_success_exit_order_is_rejected() {
-    let (program, mut func) = fixture(Injection::Return);
-    control(&mut func).function_success_exits.reverse();
-    assert_rejected(&program, &func, "success exits");
-
-    let (program, mut func) = fixture(Injection::Return);
-    control(&mut func).function_success_exits.pop();
-    assert_rejected(&program, &func, "success exits");
+fn owning_break_cannot_join_the_loop_continuation_or_skip_the_exact_join() {
+    let (program, mut func) = fixture(OWNING_FOR, "lex.sum");
+    let after = control(&mut func).loops[0].after;
+    let exit = control(&mut func).exits[kinds(&func, LexicalExitKind::Break)[0]].exit;
+    let ExitContinuation::LoopBreak { edge, .. } = func.cleanup_plan.exits[exit.0 as usize]
+        .continuation
+        .clone()
+    else {
+        panic!("break exit is a loop break")
+    };
+    func.cleanup_plan.edges[edge.0 as usize].to = after;
+    assert_rejected(&program, &func);
 }
 
 #[test]
-fn abrupt_iteration_sentinel_is_rejected_for_a_completing_loop() {
-    let (program, mut func) = fixture(Injection::Break);
-    control(&mut func).loops[0].iteration_end = ExitTargetId(u32::MAX);
-    assert_rejected(&program, &func, "iteration");
+fn forged_or_missing_execution_boundaries_are_rejected() {
+    let (program, mut func) = fixture(OWNED_RESULT, "lex.hold");
+    control(&mut func).execution_boundaries.pop();
+    assert_rejected(&program, &func);
+
+    let (program, mut func) = fixture(OWNED_RESULT, "lex.hold");
+    let duplicate = certificate(&func).execution_boundaries[1].clone();
+    control(&mut func).execution_boundaries.push(duplicate);
+    assert_rejected(&program, &func);
+
+    let (program, mut func) = fixture(OWNED_RESULT, "lex.hold");
+    control(&mut func).execution_boundaries[1].kind = ExecutionBoundaryKind::FunctionEntry;
+    assert_rejected(&program, &func);
+
+    let (program, mut func) = fixture(OWNED_RESULT, "lex.hold");
+    let other = func.body.id.clone();
+    control(&mut func).execution_boundaries[1].site = other;
+    assert_rejected(&program, &func);
+
+    // An out-of-domain boundary: the loop-iteration boundary moved into a resume.
+    let (program, mut func) = fixture(OWNED_RESULT, "lex.hold");
+    let resume = certificate(&func).resumes[0].entry;
+    control(&mut func).execution_boundaries[1].block = resume;
+    assert_rejected(&program, &func);
 }
 
 #[test]
-fn provisional_region_end_requires_the_abrupt_only_certificate() {
-    let (program, mut func) = fixture(Injection::Return);
-    let region = func
-        .cleanup_plan
-        .regions
-        .iter_mut()
-        .skip(1)
-        .find(|region| region.normal_scope_end != ExitTargetId(u32::MAX))
-        .expect("fixture has a region with a real normal scope end");
-    region.normal_scope_end = ExitTargetId(u32::MAX);
-    assert_rejected(&program, &func, "abrupt-only");
+fn forged_boundary_finalizer_contour_and_order_are_rejected() {
+    // The owned parameter is live at function entry: its finalizer is mandatory.
+    let (program, mut func) = fixture(OWNED_RESULT, "lex.hold");
+    assert!(!certificate(&func).execution_boundaries[0]
+        .finalize_in_order
+        .is_empty());
+    control(&mut func).execution_boundaries[0]
+        .finalize_in_order
+        .clear();
+    assert_rejected(&program, &func);
 
-    let (program, mut func) = fixture(Injection::Return);
-    control(&mut func)
-        .abrupt_only_regions
-        .push(CleanupRegionId(1));
-    assert_rejected(&program, &func, "abrupt-only");
+    // A repeated finalizer would release the same leaf twice at a guard failure.
+    let (program, mut func) = fixture(OWNED_RESULT, "lex.hold");
+    let first = certificate(&func).execution_boundaries[0].finalize_in_order[0].clone();
+    control(&mut func).execution_boundaries[0]
+        .finalize_in_order
+        .push(first);
+    assert_rejected(&program, &func);
+
+    // A truncated region chain hides outer scopes from the guard contour.
+    let (program, mut func) = fixture(OWNED_RESULT, "lex.hold");
+    control(&mut func).execution_boundaries[1]
+        .leaves_regions
+        .pop();
+    assert_rejected(&program, &func);
 }
 
 #[test]
-fn forged_return_result_source_is_rejected() {
-    let (program, mut func) = fixture(Injection::Return);
+fn forged_return_result_source_and_domain_commit_are_rejected() {
+    let (program, mut func) = fixture(OWNED_RESULT, "lex.hold");
     let body = func.body.id.clone();
     let source = func
         .cleanup_plan
@@ -346,12 +403,9 @@ fn forged_return_result_source_is_rejected() {
         })
         .expect("fixture has a function return exit");
     *source = CleanupResultSource::Scalar { expression: body };
-    assert_rejected(&program, &func, "function return");
-}
+    assert_rejected(&program, &func);
 
-#[test]
-fn return_domain_cannot_publish_another_exits_result() {
-    let (program, mut func) = fixture(Injection::Return);
+    let (program, mut func) = fixture(SCALAR, "lex.count");
     let body = func.body.id.clone();
     let commit = func
         .cleanup_plan
@@ -362,82 +416,47 @@ fn return_domain_cannot_publish_another_exits_result() {
             ExitContinuation::CommitResult { source } => Some(source),
             _ => None,
         })
-        .expect("the return domain ends in a result commit");
+        .expect("a return domain ends in a result commit");
     *commit = CleanupResultSource::Scalar { expression: body };
-    assert_independent_replay_rejects(&program, &func);
+    assert_rejected(&program, &func);
 }
 
 #[test]
-fn continue_resume_into_the_plan_entry_is_a_rejected_proof_cycle() {
-    let (program, mut func) = fixture(Injection::Continue);
-    let entry = func.cleanup_plan.entry;
-    control(&mut func).exits[0].resume = Some(entry);
-    assert_independent_replay_rejects(&program, &func);
-}
+fn abrupt_iteration_sentinel_and_provisional_regions_are_independently_proven() {
+    let (program, mut func) = fixture(SCALAR, "lex.count");
+    control(&mut func).loops[0].iteration_end = ExitTargetId(u32::MAX);
+    assert_rejected(&program, &func);
 
-#[test]
-fn legacy_function_cannot_carry_lexical_control_or_the_v18_schema() {
-    let (program, lexical) = fixture(Injection::Break);
-    let mut legacy = function(&program, "lex.count");
-    legacy.cleanup_plan.lexical_control = lexical.cleanup_plan.lexical_control.clone();
-    assert_rejected(&program, &legacy, "lexical-control certificate");
-
-    let mut legacy = function(&program, "lex.count");
-    legacy.cleanup_plan.schema = CLEANUP_PLAN_SCHEMA_V18;
-    assert_rejected(&program, &legacy, "schema");
-}
-
-#[test]
-fn owned_return_stages_its_result_at_the_exit_site_and_replays() {
-    let (program, func) = owned_fixture();
-    validate_structure(&program, &func).expect("owned lexical return plan replays");
-    let control = func.cleanup_plan.lexical_control.as_deref().unwrap();
-    let site = control.exits[0].site.clone();
-    assert!(func.cleanup_plan.exits.iter().any(|exit| matches!(
-        &exit.continuation,
-        ExitContinuation::FunctionReturn {
-            source: CleanupResultSource::Owned { .. },
-            ..
-        }
-    )));
-    // The owned result moves into provisional storage at the exit site itself,
-    // before the exit's contour cleanup runs.
-    assert!(func
+    let (program, mut func) = fixture(SCALAR, "lex.count");
+    let region = func
         .cleanup_plan
-        .blocks
-        .iter()
-        .flat_map(|block| &block.transitions)
-        .any(|transition| matches!(
-            transition,
-            CleanupTransition::Transfer { at, destination, .. }
-                if at == &site && destination.storage == StorageId::ProvisionalResult
-        )));
-}
-
-#[test]
-fn owned_return_cannot_drop_its_staging_transfer_or_downgrade_to_scalar() {
-    let (program, mut func) = owned_fixture();
-    let site = func.cleanup_plan.lexical_control.as_deref().unwrap().exits[0]
-        .site
-        .clone();
-    for block in &mut func.cleanup_plan.blocks {
-        block.transitions.retain(|transition| {
-            !matches!(transition, CleanupTransition::Transfer { at, .. } if at == &site)
-        });
-    }
-    assert_independent_replay_rejects(&program, &func);
-
-    let (program, mut func) = owned_fixture();
-    let body = func.body.id.clone();
-    let source = func
-        .cleanup_plan
-        .exits
+        .regions
         .iter_mut()
-        .find_map(|exit| match &mut exit.continuation {
-            ExitContinuation::FunctionReturn { source, .. } => Some(source),
-            _ => None,
-        })
-        .expect("fixture has a function return exit");
-    *source = CleanupResultSource::Scalar { expression: body };
-    assert_independent_replay_rejects(&program, &func);
+        .skip(1)
+        .find(|region| region.normal_scope_end != ExitTargetId(u32::MAX))
+        .expect("fixture has a region with a real normal scope end");
+    region.normal_scope_end = ExitTargetId(u32::MAX);
+    assert_rejected(&program, &func);
+
+    let (program, mut func) = fixture(SCALAR, "lex.count");
+    control(&mut func)
+        .abrupt_only_regions
+        .push(CleanupRegionId(1));
+    assert_rejected(&program, &func);
+}
+
+#[test]
+fn success_exit_order_and_legacy_substitution_are_rejected() {
+    let (program, mut func) = fixture(SCALAR, "lex.count");
+    control(&mut func).function_success_exits.reverse();
+    assert_rejected(&program, &func);
+
+    let (program, lexical) = fixture(SCALAR, "lex.count");
+    let mut legacy = function(&program, "app.main");
+    legacy.cleanup_plan.lexical_control = lexical.cleanup_plan.lexical_control.clone();
+    assert_rejected(&program, &legacy);
+
+    let mut legacy = function(&program, "app.main");
+    legacy.cleanup_plan.schema = CLEANUP_PLAN_SCHEMA_V18;
+    assert_rejected(&program, &legacy);
 }

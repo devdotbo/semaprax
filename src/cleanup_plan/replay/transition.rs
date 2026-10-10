@@ -524,6 +524,7 @@ pub(super) fn replay_exit(
     storage_regions: &BTreeMap<StorageId, CleanupRegionId>,
     storage: &BTreeSet<StorageId>,
     leaves: &Leaves,
+    extra_disposed: &BTreeSet<StorageId>,
 ) -> Result<ExitFlow, Diagnostic> {
     if state.published {
         return Err(replay_error(function, "cleanup exit follows publication"));
@@ -544,7 +545,9 @@ pub(super) fn replay_exit(
         .filter_map(|flag| {
             let leaf = &leaves[flag];
             let region = storage_regions[&leaf.place.storage];
-            (leaving.contains(&region) && !protected_result.contains(flag)).then_some(*flag)
+            ((leaving.contains(&region) || extra_disposed.contains(&leaf.place.storage))
+                && !protected_result.contains(flag))
+            .then_some(*flag)
         })
         .collect::<Vec<_>>();
     let mut expected_conditional = Vec::new();
@@ -556,7 +559,9 @@ pub(super) fn replay_exit(
                 source: CleanupResultSource::Owned { storage },
             } if storage == &variant.root
         );
-        if !leaving.contains(&region) || protected {
+        if !(leaving.contains(&region) || extra_disposed.contains(&variant.root.storage))
+            || protected
+        {
             continue;
         }
         for (case, flags) in variant.cases.iter().rev() {
@@ -610,7 +615,8 @@ pub(super) fn replay_exit(
     let finalized = expected.into_iter().collect::<BTreeSet<_>>();
     state.live_order.retain(|flag| !finalized.contains(flag));
     state.conditional_variants.retain(|variant| {
-        !leaving.contains(&storage_regions[&variant.root.storage])
+        !(leaving.contains(&storage_regions[&variant.root.storage])
+            || extra_disposed.contains(&variant.root.storage))
             || matches!(
                 &exit.continuation,
                 ExitContinuation::CommitResult {
@@ -739,7 +745,7 @@ pub(super) fn replay_exit(
                             "scalar result commits before non-result cleanup completes",
                         ));
                     }
-                    if expression_has_try(&function.body) {
+                    if state.returned.is_none() && expression_has_try(&function.body) {
                         let staged = state.staged_copy_result.take().ok_or_else(|| {
                             replay_error(
                                 function,
