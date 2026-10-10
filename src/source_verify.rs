@@ -32,6 +32,8 @@ mod capacity;
 pub(crate) mod closure;
 mod declaration;
 mod declared_type;
+pub(crate) use declared_type::copy_record_collection::declaration_admitted as copy_record_declaration_admitted;
+pub(crate) use declared_type::owned_leaf_collection::declaration_admitted as owned_leaf_declaration_admitted;
 pub(crate) use declared_type::owned_leaf_collection::{
     legacy_source_element as owned_leaf_legacy_source_element,
     resolved_source_admitted as owned_leaf_resolved_source_admitted,
