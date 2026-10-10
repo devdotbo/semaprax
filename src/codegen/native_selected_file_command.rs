@@ -17,6 +17,22 @@ pub fn emit_hir_c_with_selected_file_command(
     program: &crate::hir::ResolvedProgram,
 ) -> Result<String, crate::diagnostic::Diagnostic> {
     crate::hir::validate(program)?;
+    if ![
+        crate::string_ops::FILE_READ_TEXT_EFFECT,
+        crate::command_io_ops::ARGS_READ_EFFECT,
+    ]
+    .iter()
+    .all(|required| {
+        program
+            .permits
+            .iter()
+            .any(|permit| permit.as_str() == *required)
+    }) {
+        return Err(crate::diagnostic::Diagnostic::io(
+            "SPX-T273",
+            "single-file command-line program authority mismatch: source-command.selected-file.v1 requires both fs.read and process.args.read",
+        ));
+    }
     crate::source_command::validate_authority(program)?;
     if !cfg!(all(unix, target_pointer_width = "64")) {
         return Err(crate::diagnostic::Diagnostic::io(
@@ -32,3 +48,6 @@ pub fn emit_hir_c_with_selected_file_command(
         None,
     )
 }
+
+#[cfg(test)]
+mod tests;
