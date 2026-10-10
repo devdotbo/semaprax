@@ -23,7 +23,7 @@ fn loop_return(function: &ResolvedFunction) -> &ResolvedExpr {
             _ => None,
         })
         .expect("lexical loop");
-    let mut pending = vec![body];
+    let mut pending: Vec<&ResolvedExpr> = vec![body.as_ref()];
     while let Some(expression) = pending.pop() {
         if matches!(
             &expression.kind,
