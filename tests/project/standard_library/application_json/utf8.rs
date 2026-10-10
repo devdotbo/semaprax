@@ -106,10 +106,7 @@ fn wasm_run(root: &std::path::Path, status: u32, value: i64, refusal: &str) {
 
 fn qualify(root: &std::path::Path) {
     project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
-        assert!(snapshot
-            .retain_revision()
-            .semantic_graph()
-            .contains("core.num.char_from_i64"));
+        super::builtin_calls::assert_operation(snapshot.entry_program(), "core.num.char_from_i64");
         semaprax::hir::validate(snapshot.entry_program()).map_err(|error| vec![error])?;
         // Large admitted payloads use the existing configurable fuel ceiling;
         // the codec does not change the default fuel or any physical capacity.

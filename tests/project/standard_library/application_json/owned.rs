@@ -169,7 +169,7 @@ fn qualify(root: &std::path::Path) {
     project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
         let revision = snapshot.retain_revision();
         assert!(revision.semantic_graph().contains("json.owned.decode"));
-        assert!(revision.semantic_graph().contains("core.vec.clone-at"));
+        super::builtin_calls::assert_operation(snapshot.entry_program(), "core.vec.clone-at");
         semaprax::hir::validate(snapshot.entry_program()).map_err(|error| vec![error])?;
         assert_eq!(
             snapshot

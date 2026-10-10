@@ -7,7 +7,7 @@ use type @id("catalog.request") from catalog.request_schema as Request;
 use type @id("catalog.request.json.stream-input") from catalog.request_schema as StreamInput;
 use type @id("catalog.request.json.utf8.owned-result") from catalog.request_schema as Decode;
 use type @id("catalog.report.json.collection-response.encode-result") from catalog.response_schema as Encoded;
-use type @id("catalog.result") from catalog.model as Result;
+use type @id("catalog.result") from catalog.model as CatalogResult;
 use type @id("catalog.report_parts") from catalog.publication as ReportParts;
 use function @id("catalog.request.json.stream.normalize") from catalog.request_schema as normalize;
 use function @id("catalog.request.json.utf8.owned.decode") from catalog.request_schema as decode;

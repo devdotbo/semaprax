@@ -4,7 +4,7 @@ use type @id("catalog.metrics") from catalog.response_schema as Metrics;
 use type @id("catalog.input_item") from catalog.request_schema as InputItem;
 use type @id("catalog.request") from catalog.request_schema as Request;
 use type @id("catalog.output_item") from catalog.response_schema as Item;
-use type @id("catalog.result") from catalog.model as Result;
+use type @id("catalog.result") from catalog.model as CatalogResult;
 use function @id("catalog.run") from catalog.restock as run;
 
 @id("catalog.tests.main")

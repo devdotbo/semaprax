@@ -88,7 +88,7 @@ fn request_identifier_views_revalidate_spans_and_encode_exact_arrays_on_three_ba
         let graph=snapshot.retain_revision();
         assert!(graph.semantic_graph().contains("application.request.json.request.decode"));
         assert!(graph.semantic_graph().contains("application.patient.json.view"));
-        assert!(graph.semantic_graph().contains("core.vec.push"));
+        super::builtin_calls::assert_operation(snapshot.entry_program(), "core.vec.push");
         semaprax::hir::validate(snapshot.entry_program()).map_err(|error|vec![error])?;
         assert_eq!(snapshot.execute_entry(&project::ProjectExecutionOptions::default())?.outcome(),&project::ProjectExecutionOutcome::Returned(725));
         let c=codegen::emit_hir_c(snapshot.entry_program()).map_err(|error|vec![error])?;

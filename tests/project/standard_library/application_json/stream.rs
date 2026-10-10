@@ -85,7 +85,7 @@ fn generated_application_json_composes_with_record_vectors_in_v29_stream_command
         assert!(graph
             .semantic_graph()
             .contains("application.patient.json.decode"));
-        assert!(graph.semantic_graph().contains("core.vec.push"));
+        super::builtin_calls::assert_operation(snapshot.entry_program(), "core.vec.push");
         snapshot.build_native(&binary)
     })
     .unwrap();

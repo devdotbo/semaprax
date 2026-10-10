@@ -11,6 +11,8 @@ mod collection_response;
 mod nested_request;
 #[path = "application_json/nested_response.rs"]
 mod nested_response;
+#[path = "application_json/builtin_calls.rs"]
+mod builtin_calls;
 #[path = "application_json/owned.rs"]
 mod owned;
 #[path = "application_json/plan.rs"]
