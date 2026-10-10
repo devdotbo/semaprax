@@ -43,33 +43,91 @@ pub(super) fn validate_with_index(
         Some(facts) => facts,
         None => expression_facts(function)?,
     };
-    validate_inventory_coverage(program, function)?;
-    validate_required_status_sources(program, function)?;
-    let storage = validate_slots(function)?;
-    let leaves = collect_leaves(function)?;
-    validate_status_sources(function, &expression_facts)?;
-    validate_regions(function, &storage)?;
-    validate_entry(function, &storage, &leaves)?;
-    validate_blocks_and_edges(
-        program,
-        function,
-        &expression_facts,
-        &storage,
-        &leaves,
-        helpers,
-    )?;
+    let selected = budget.physical.is_some();
+    let (storage, leaves) = if selected {
+        inventory_coverage::validate_inventory_coverage(program, function, budget)?;
+        status_construction::validate_required_status_sources(program, function, budget)?;
+        let storage = structural_maps::validate_slots(function, budget)?;
+        let leaves = structural_maps::collect_leaves(function, budget)?;
+        status_validation::validate_status_sources(function, &expression_facts, budget)?;
+        structural_maps::validate_regions(function, &storage, budget)?;
+        structural_control::validate_entry(function, &storage, &leaves, budget)?;
+        let renewals = program.primitive_renewals(function).ok_or_else(|| {
+            replay_error(
+                function,
+                "selected replay lacks its independently rebuilt renewal lease",
+            )
+        })?;
+        structural_control::validate_blocks_and_edges(
+            program,
+            function,
+            &expression_facts,
+            &storage,
+            &leaves,
+            renewals,
+            budget,
+        )?;
+        (storage, leaves)
+    } else {
+        validate_inventory_coverage(program, function)?;
+        validate_required_status_sources(program, function)?;
+        let storage = validate_slots(function)?;
+        let leaves = collect_leaves(function)?;
+        validate_status_sources(function, &expression_facts)?;
+        validate_regions(function, &storage)?;
+        validate_entry(function, &storage, &leaves)?;
+        validate_blocks_and_edges(
+            program,
+            function,
+            &expression_facts,
+            &storage,
+            &leaves,
+            helpers,
+        )?;
+        (storage, leaves)
+    };
 
     let facts = lexical_hir::collect(function, budget)?;
-    let return_operands = facts
-        .exits
-        .iter()
-        .filter(|exit| exit.kind == LexicalExitKind::Return)
-        .filter_map(|exit| exit.value.map(|operand| operand.id.clone()))
-        .collect::<BTreeSet<_>>();
-    validate_exits(program, function, &storage, &leaves, &return_operands)?;
+    let return_operands = if selected {
+        let mut operands = BTreeSet::new();
+        for operand in facts
+            .exits
+            .iter()
+            .filter(|exit| exit.kind == LexicalExitKind::Return)
+            .filter_map(|exit| exit.value)
+        {
+            if !operands.contains(&operand.id) {
+                budget.reserve_btree_node::<ExpressionId, ()>(
+                    function,
+                    "return operand identity index",
+                )?;
+            }
+            operands.insert(operand.id.clone());
+        }
+        structural_control::validate_exits(
+            program, function, &storage, &leaves, &operands, budget,
+        )?;
+        operands
+    } else {
+        let operands = facts
+            .exits
+            .iter()
+            .filter(|exit| exit.kind == LexicalExitKind::Return)
+            .filter_map(|exit| exit.value.map(|operand| operand.id.clone()))
+            .collect::<BTreeSet<_>>();
+        validate_exits(program, function, &storage, &leaves, &operands)?;
+        operands
+    };
+    // Keep the independently validated operand inventory live through certificate authentication.
+    let _return_operands = return_operands;
     let auth = lexical_cert::authenticate(program, function, &owner, &facts, budget)?;
-    validate_reference_coverage(function)?;
-    validate_reachable_acyclic_cfg(function)?;
+    if selected {
+        structural_maps::validate_reference_coverage(function, budget)?;
+        structural_control::validate_reachable_acyclic_cfg(function, budget)?;
+    } else {
+        validate_reference_coverage(function)?;
+        validate_reachable_acyclic_cfg(function)?;
+    }
     // Lexical functions always replay every path: no summary shortcut applies.
     validate_path_states(
         program,

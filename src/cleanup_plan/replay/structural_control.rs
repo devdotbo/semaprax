@@ -1,7 +1,10 @@
 //! Selected structural validation borrows immutable plan facts and reserves
 //! every retained scratch constructor before allocation. Legacy routes stay exact.
 use super::*;
+mod blocks;
+mod calls;
 mod cfg;
+pub(super) use blocks::validate_blocks_and_edges;
 mod entry;
 mod exits;
 pub(super) use cfg::validate_reachable_acyclic_cfg;

@@ -3,13 +3,21 @@ mod constructed_variant;
 use constructed_variant::materialize_constructed_variant;
 mod expression_children;
 mod expression_facts;
+mod inventory_coverage;
 mod physical_budget;
 mod physical_clone;
 mod physical_storage;
 mod selected_context;
-mod status_validation;
+mod selected_entry;
+mod status_construction;
+mod structural_control;
+mod structural_maps;
+#[cfg(test)]
+pub(crate) use selected_entry::validate_retained_lexical_with_limit;
+pub(crate) use selected_entry::validate_retained_lexical_with_reservation;
 mod selected_owner;
 mod selected_profile;
+mod status_validation;
 pub(crate) use physical_clone::ClonePayload;
 pub(crate) use physical_storage::{
     btree_node_upper as replay_btree_node_upper, replay_reserve_vec, PhysicalReservation,
@@ -6148,7 +6156,11 @@ fn finish_scalar_match_skeleton(
                     &when_false,
                     work,
                 )?;
-                work.extend_existing_paths(&mut with_false, prefixed, "scalar match path extension")?;
+                work.extend_existing_paths(
+                    &mut with_false,
+                    prefixed,
+                    "scalar match path extension",
+                )?;
             }
             let mut with_terminal = Vec::new();
             for prefix in &selected_paths {
@@ -6158,13 +6170,29 @@ fn finish_scalar_match_skeleton(
                     &terminal,
                     work,
                 )?;
-                work.extend_existing_paths(&mut with_terminal, prefixed, "scalar match path extension")?;
+                work.extend_existing_paths(
+                    &mut with_terminal,
+                    prefixed,
+                    "scalar match path extension",
+                )?;
             }
             let with_true = sequence_skeleton_paths(selected_paths, &when_true, work)?;
             // False guards and failed guard evaluations fall through.
-            work.extend_existing_paths(&mut rejected_paths, with_false, "scalar match path extension")?;
-            work.extend_existing_paths(&mut rejected_paths, with_terminal, "scalar match path extension")?;
-            work.extend_existing_paths(&mut remaining, rejected_paths, "scalar match path extension")?;
+            work.extend_existing_paths(
+                &mut rejected_paths,
+                with_false,
+                "scalar match path extension",
+            )?;
+            work.extend_existing_paths(
+                &mut rejected_paths,
+                with_terminal,
+                "scalar match path extension",
+            )?;
+            work.extend_existing_paths(
+                &mut remaining,
+                rejected_paths,
+                "scalar match path extension",
+            )?;
             for selected in with_true {
                 append_scalar_arm_value(
                     program,
@@ -6177,7 +6205,11 @@ fn finish_scalar_match_skeleton(
                 )?;
             }
         } else {
-            work.extend_existing_paths(&mut remaining, rejected_paths, "scalar match path extension")?;
+            work.extend_existing_paths(
+                &mut remaining,
+                rejected_paths,
+                "scalar match path extension",
+            )?;
             for selected in selected_paths {
                 append_scalar_arm_value(
                     program,
@@ -6776,10 +6808,7 @@ fn finish_call_states(
             let arguments = work.clone_payload(&commits, "call-commit argument payload")?;
             work.push_observation(
                 &mut path,
-                SkeletonObservation::CallCommit {
-                    call,
-                    arguments,
-                },
+                SkeletonObservation::CallCommit { call, arguments },
                 "call-commit observation",
             )?;
         }

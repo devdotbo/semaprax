@@ -25,6 +25,14 @@ impl<'a> Context<'a> {
         let renewals = crate::cleanup_plan::renewal_profile::bindings_with_reservation(
             source, function, physical,
         )?;
+        if (function.cleanup_plan.schema == super::super::CLEANUP_PLAN_SCHEMA_V19)
+            != renewals.has_helpers()
+        {
+            return Err(replay_error(
+                function,
+                "selected lexical schema disagrees with independently proved helper renewal",
+            ));
+        }
         Ok(Self {
             source,
             function,

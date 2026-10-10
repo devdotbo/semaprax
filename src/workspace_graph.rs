@@ -4145,6 +4145,7 @@ fn build_owned_inner(
                     &module_paths,
                     &dependency_depths,
                     &authored,
+                    Some(&sources),
                     frontend.as_deref_mut(),
                     compact_layout
                         .as_ref()
@@ -4299,6 +4300,7 @@ fn build_resolved_core(
     module_paths: &BTreeMap<&str, &str>,
     dependency_depths: &BTreeMap<&str, usize>,
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+    authenticated_sources: Option<&[WorkspaceSource]>,
     mut frontend: Option<&mut crate::project::incremental::FrontendPass>,
     compact_order: Option<&[usize]>,
 ) -> Result<ResolvedCore, Vec<Diagnostic>> {
@@ -4441,6 +4443,7 @@ fn build_resolved_core(
                     authored,
                     Some(&mut loan_scratch),
                     static_text,
+                    authenticated_sources,
                 )
             )?;
             owned_generics::merge_imported_vec_instances(
@@ -4484,7 +4487,8 @@ fn build_resolved_core(
                     programs,
                     authored,
                     None,
-                    selected_static_modules.contains(module_index)
+                    selected_static_modules.contains(module_index),
+                    authenticated_sources,
                 )
             )?;
             owned_generics::merge_imported_vec_instances(

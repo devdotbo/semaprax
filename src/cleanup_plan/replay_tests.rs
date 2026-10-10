@@ -1,15 +1,15 @@
-use std::path::Path;
+use super::*;
 use crate::cleanup_plan::{CleanupBlock, CleanupEdge};
 use crate::{hir, parse};
-use super::*;
+use std::path::Path;
 #[path = "replay_tests/block_work.rs"]
 mod block_work;
 #[path = "replay_tests/factored.rs"]
 mod factored;
-#[path = "replay_tests/transition_mutations.rs"]
-mod transition_mutations;
 #[path = "replay_tests/lexical_boundary.rs"]
 mod lexical_boundary;
+#[path = "replay_tests/transition_mutations.rs"]
+mod transition_mutations;
 const SOURCE: &str = r#"module test.replay_paths;
 
 @id("token.type")

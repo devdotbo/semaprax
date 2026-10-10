@@ -2,6 +2,7 @@
 use super::*;
 mod linked_owned_data;
 mod owned_builtin;
+mod primitive_replay;
 mod projection;
 use owned_builtin::owned_builtin_facts;
 /// A deterministic, display-name-to-identity index.
@@ -27,7 +28,6 @@ pub struct DeclarationIndex {
     pub(super) class_parents: BTreeMap<DeclarationId, DeclarationId>,
     pub(super) byte_slice_roots: BTreeMap<ValueId, ByteSliceProvenance>,
 }
-
 impl DeclarationIndex {
     pub(super) fn contains_declaration_id(&self, id: &DeclarationId) -> bool {
         self.declarations.contains_key(id)

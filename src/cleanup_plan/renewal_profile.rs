@@ -68,6 +68,12 @@ impl<'a> RenewalBindings<'a> {
             helpers: HelperSites::Owned(Default::default()),
         }
     }
+    pub(crate) fn has_helpers(&self) -> bool {
+        match &self.helpers {
+            HelperSites::Owned(sites) => !sites.is_empty(),
+            HelperSites::Borrowed(sites) => !sites.is_empty(),
+        }
+    }
     pub(crate) fn is_helper(&self, at: &ExpressionId) -> bool {
         self.helpers.get(at).is_some()
     }

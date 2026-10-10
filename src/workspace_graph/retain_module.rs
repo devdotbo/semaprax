@@ -9,9 +9,10 @@ pub(super) fn retain_workspace_module(
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
     mut loan_scratch: Option<&mut loan_retention::RetentionScratch>,
     selected_static_text: bool,
+    authenticated_sources: Option<&[WorkspaceSource]>,
 ) -> Result<(WorkspaceResolvedModule, Vec<hir::ResolvedFunctionInstance>), Vec<Diagnostic>> {
     let static_text = if selected_static_text {
-        static_text::retain(program, &resolved, authored)?
+        static_text::retain(program, &resolved, authored, authenticated_sources)?
     } else {
         None
     };

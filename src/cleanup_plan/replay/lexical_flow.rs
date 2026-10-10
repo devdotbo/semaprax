@@ -50,8 +50,14 @@ pub(super) fn capture_loop_entry(
         ));
     }
     if let Some(previous) = entries.get(&index) {
-        return if previous == state { Ok(()) } else { Err(replay_error(
-            function, "loop is entered with two different ownership states")) };
+        return if previous == state {
+            Ok(())
+        } else {
+            Err(replay_error(
+                function,
+                "loop is entered with two different ownership states",
+            ))
+        };
     }
     budget.reserve_btree_node::<usize, PathState>(function, "lexical loop snapshot node")?;
     path_join::storage::reserve_state_clone(function, state, budget, "lexical loop snapshot")?;

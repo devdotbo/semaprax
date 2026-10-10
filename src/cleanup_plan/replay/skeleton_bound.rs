@@ -248,7 +248,7 @@ mod tests {
             remaining: bound - 1,
             skeleton_remaining: 0,
             merge_paths: false,
-        physical: None,
+            physical: None,
         };
         let error =
             reserve_program_skeleton_work(&program, std::iter::once(function), &mut insufficient)

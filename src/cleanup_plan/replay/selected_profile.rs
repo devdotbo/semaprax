@@ -59,7 +59,12 @@ pub(super) fn validate(
                     ResolvedExprKind::Place(_) if expression.ty == ResolvedType::String => {
                         return Err(replay_error(function, "selected lexical replay String-place condition indexes are not reserved"));
                     }
-                    ResolvedExprKind::LiteralFormat { .. }
+                    ResolvedExprKind::ConstructRecord { .. }
+                    | ResolvedExprKind::ConstructVariant { .. }
+                    | ResolvedExprKind::Project { .. }
+                    | ResolvedExprKind::UpdateRecord { .. }
+                    | ResolvedExprKind::Upcast { .. }
+                    | ResolvedExprKind::LiteralFormat { .. }
                     | ResolvedExprKind::Try { .. }
                     | ResolvedExprKind::TryOption { .. }
                     | ResolvedExprKind::Closure { .. }
@@ -91,6 +96,20 @@ pub(super) fn validate(
                         )?;
                         for statement in statements {
                             match statement {
+                                crate::hir::ResolvedStatement::Let { binding, .. }
+                                | crate::hir::ResolvedStatement::Assign { binding, .. }
+                                    if !primitive(&binding.ty) =>
+                                {
+                                    return Err(replay_error(
+                                        function,
+                                        "selected block binding requires unsupported storage",
+                                    ));
+                                }
+                                crate::hir::ResolvedStatement::Assign {
+                                    field: Some(_), ..
+                                } => {
+                                    return Err(replay_error(function, "selected primitive assignment cannot target a nominal field"));
+                                }
                                 crate::hir::ResolvedStatement::LexicalWhile { latch, .. }
                                     if *latch != crate::hir::LoopLatchKind::Condition =>
                                 {
@@ -109,6 +128,11 @@ pub(super) fn validate(
                                 }
                                 _ => {}
                             }
+                        }
+                    }
+                    ResolvedExprKind::Match { arms, .. } => {
+                        for arm in arms {
+                            validate_pattern(function, &arm.pattern, budget, 0)?;
                         }
                     }
                     ResolvedExprKind::Call {
@@ -174,4 +198,35 @@ pub(super) fn validate(
         }
     }
     Ok(())
+}
+
+fn validate_pattern(
+    function: &ResolvedFunction,
+    pattern: &ResolvedMatchPattern,
+    budget: &mut ReplayBudget,
+    depth: usize,
+) -> Result<(), Diagnostic> {
+    budget.charge(function, 1, "selected primitive match pattern")?;
+    if depth > 256 {
+        return Err(replay_error(
+            function,
+            "selected match pattern exceeds depth",
+        ));
+    }
+    match pattern {
+        ResolvedMatchPattern::Wildcard | ResolvedMatchPattern::Literal(_) => Ok(()),
+        ResolvedMatchPattern::Binding(binding) if primitive(&binding.ty) => Ok(()),
+        ResolvedMatchPattern::Or(alternatives) => {
+            for pattern in alternatives {
+                validate_pattern(function, pattern, budget, depth + 1)?;
+            }
+            Ok(())
+        }
+        ResolvedMatchPattern::Binding(_)
+        | ResolvedMatchPattern::Variant { .. }
+        | ResolvedMatchPattern::Record { .. } => Err(replay_error(
+            function,
+            "selected match pattern requires unsupported storage",
+        )),
+    }
 }
