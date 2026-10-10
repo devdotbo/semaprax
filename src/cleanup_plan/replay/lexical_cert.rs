@@ -8,6 +8,7 @@
 //! and the only edge-free continuation is a generated advancement fragment
 //! entered from a certified `continue`.
 use super::*;
+pub(super) mod storage;
 use crate::ast::LexicalExitKind;
 use crate::cleanup_plan::{CleanupPlan, ExitTargetId};
 use crate::hir::{ControlTarget, FunctionExecutionId, LoopLatchKind};
@@ -273,6 +274,7 @@ pub(super) fn authenticate(
     }
     let mut loops = BTreeMap::new();
     for (index, (certificate, fact)) in control.loops.iter().zip(&facts.loops).enumerate() {
+        budget.reserve_clone(function, owner, "lexical loop owner")?;
         let expected = ControlTarget::Loop {
             owner: owner.clone(),
             site: fact.condition.id.clone(),
@@ -284,7 +286,15 @@ pub(super) fn authenticate(
         {
             return Err(fail("loop certificate disagrees with its typed HIR loop"));
         }
-        if loops.insert(certificate.condition.clone(), index).is_some() {
+        if storage::insert(
+            function,
+            budget,
+            &mut loops,
+            certificate.condition.clone(),
+            index,
+        )?
+        .is_some()
+        {
             return Err(fail("loop certificate condition is repeated"));
         }
         let (branch, true_edge, false_edge) = loop_branch(function, &certificate.condition)?;
@@ -300,14 +310,22 @@ pub(super) fn authenticate(
         }
         // The concrete head must dominate the branch and reach it.
         let none = BTreeSet::new();
-        if reach(
+        if storage::reach(
             function,
             plan.entry,
             Some(certificate.condition_entry),
             &none,
             None,
-        )[branch.0 as usize]
-            || !reach(function, certificate.condition_entry, None, &none, None)[branch.0 as usize]
+            budget,
+        )?[branch.0 as usize]
+            || !storage::reach(
+                function,
+                certificate.condition_entry,
+                None,
+                &none,
+                None,
+                budget,
+            )?[branch.0 as usize]
         {
             return Err(fail(
                 "loop condition entry does not dominate its condition branch",
@@ -336,7 +354,7 @@ pub(super) fn authenticate(
             .get(certificate.exit.0 as usize)
             .filter(|exit| exit.id == certificate.exit)
             .ok_or_else(|| fail("exit certificate names an unknown exit"))?;
-        if !certified.insert(certificate.exit) {
+        if !storage::insert_set(function, budget, &mut certified, certificate.exit)? {
             return Err(fail("exit certificate names a repeated exit"));
         }
         match (fact.kind, &exit.continuation) {
@@ -351,6 +369,7 @@ pub(super) fn authenticate(
                 let operand = fact
                     .value
                     .ok_or_else(|| fail("function return has no operand"))?;
+                budget.reserve_clone(function, owner, "lexical return owner")?;
                 let expected_target = ControlTarget::Function(owner.clone());
                 let source_matches = match source {
                     CleanupResultSource::Scalar { expression } => {
@@ -366,7 +385,8 @@ pub(super) fn authenticate(
                     || certificate.target != expected_target
                     || !source_matches
                     || certificate.resume != Some(entry)
-                    || entries.insert(entry, Entry::Return).is_some()
+                    || storage::insert(function, budget, &mut entries, entry, Entry::Return)?
+                        .is_some()
                 {
                     return Err(fail(
                         "function return exit disagrees with its operand, result source or resume",
@@ -384,13 +404,19 @@ pub(super) fn authenticate(
                 let route_ok = if owning {
                     certificate.resume == Some(to)
                         && to != lp.after
-                        && entries.insert(to, Entry::Break(index)).is_none()
+                        && storage::insert(function, budget, &mut entries, to, Entry::Break(index))?
+                            .is_none()
                 } else {
                     certificate.resume.is_none() && to == lp.after
                 };
                 if target != &certificate.target
                     || !route_ok
-                    || !chain_contains(function, exit.from, lp.region)?
+                    || !storage::chain_contains(
+                        function,
+                        exit.from,
+                        lp.region,
+                        budget.physical.is_some(),
+                    )?
                 {
                     return Err(fail("loop break exit disagrees with its loop join"));
                 }
@@ -409,15 +435,33 @@ pub(super) fn authenticate(
                 match (generated, certificate.resume) {
                     (false, None) => {}
                     (true, Some(entry)) => {
-                        if entries.insert(entry, Entry::Latch(index)).is_some() {
+                        if storage::insert(
+                            function,
+                            budget,
+                            &mut entries,
+                            entry,
+                            Entry::Latch(index),
+                        )?
+                        .is_some()
+                        {
                             return Err(fail("continue exits share one generated fragment"));
                         }
                         if let Some(item) = lexical_hir::yield_item(facts.loops[index].body) {
                             if item.ownership == OwnershipMode::Own {
-                                item_disposals.insert(
+                                let mut disposal = BTreeSet::new();
+                                storage::insert_set(
+                                    function,
+                                    budget,
+                                    &mut disposal,
+                                    StorageId::Value(item.id.clone()),
+                                )?;
+                                storage::insert(
+                                    function,
+                                    budget,
+                                    &mut item_disposals,
                                     certificate.exit,
-                                    BTreeSet::from([StorageId::Value(item.id.clone())]),
-                                );
+                                    disposal,
+                                )?;
                             }
                         }
                     }
@@ -449,7 +493,12 @@ pub(super) fn authenticate(
                 &exit.continuation,
                 ExitContinuation::LoopLatch { target } if target == &certificate.target
             ) || certified.contains(&certificate.iteration_end)
-                || !iteration_ends.insert(certificate.iteration_end)
+                || !storage::insert_set(
+                    function,
+                    budget,
+                    &mut iteration_ends,
+                    certificate.iteration_end,
+                )?
             {
                 return Err(fail(
                     "loop iteration end is not its own uncertified latch exit",
@@ -467,7 +516,7 @@ pub(super) fn authenticate(
     // Correspondence is derived from the exits, never from vector order.
     let mut cert_entries = BTreeSet::new();
     for resume in &control.resumes {
-        if !cert_entries.insert(resume.entry) {
+        if !storage::insert_set(function, budget, &mut cert_entries, resume.entry)? {
             return Err(fail("resume certificate entry is repeated"));
         }
     }
@@ -477,14 +526,26 @@ pub(super) fn authenticate(
         ));
     }
     let block_count = plan.blocks.len();
-    let stop = entries.keys().copied().collect::<BTreeSet<_>>();
-    let ordinary = reach(function, plan.entry, None, &stop, None);
+    let mut stop = BTreeSet::new();
+    for entry in entries.keys() {
+        storage::insert_set(function, budget, &mut stop, *entry)?;
+    }
+    let ordinary = storage::reach(function, plan.entry, None, &stop, None, budget)?;
+    budget.reserve_array::<Option<usize>>(function, block_count, "lexical proof domains")?;
     let mut domains = vec![None::<usize>; block_count];
     let mut exact_joins = BTreeSet::new();
     for (index, resume) in control.resumes.iter().enumerate() {
         let none = BTreeSet::new();
-        let seen = reach(function, resume.entry, None, &none, Some(&ordinary));
-        let mut inventory = vec![resume.entry];
+        let seen = storage::reach(function, resume.entry, None, &none, Some(&ordinary), budget)?;
+        let count = 1usize.saturating_add(
+            seen.iter()
+                .enumerate()
+                .filter(|(block, seen)| **seen && *block != resume.entry.0 as usize)
+                .count(),
+        );
+        budget.reserve_array::<BlockId>(function, count, "lexical resume inventory")?;
+        let mut inventory = Vec::with_capacity(count);
+        inventory.push(resume.entry);
         inventory.extend(
             seen.iter()
                 .enumerate()
@@ -503,11 +564,18 @@ pub(super) fn authenticate(
             }
         }
         // A fragment is closed except one authenticated rejoin of a break.
-        let leaving = plan
-            .edges
-            .iter()
-            .filter(|edge| seen[edge.from.0 as usize] && !seen[edge.to.0 as usize])
-            .collect::<Vec<_>>();
+        let leaving_edges = || {
+            plan.edges
+                .iter()
+                .filter(|edge| seen[edge.from.0 as usize] && !seen[edge.to.0 as usize])
+        };
+        budget.reserve_array::<&crate::cleanup_plan::CleanupEdge>(
+            function,
+            leaving_edges().count(),
+            "lexical leaving edges",
+        )?;
+        let mut leaving = Vec::with_capacity(leaving_edges().count());
+        leaving.extend(leaving_edges());
         match entries[&resume.entry] {
             Entry::Break(lp_index) => {
                 let [edge] = leaving.as_slice() else {
@@ -526,7 +594,7 @@ pub(super) fn authenticate(
                         "owning break fragment does not rejoin its wrapper's parent exactly",
                     ));
                 }
-                exact_joins.insert(edge.to);
+                storage::insert_set(function, budget, &mut exact_joins, edge.to)?;
             }
             Entry::Return | Entry::Latch(_) => {
                 if !leaving.is_empty() {
@@ -540,15 +608,15 @@ pub(super) fn authenticate(
     }
 
     // Domain entry discipline: only certified exits reach a resume.
-    let entry_edges = plan
-        .exits
-        .iter()
-        .filter_map(|exit| match &exit.continuation {
+    let mut entry_edges = BTreeMap::new();
+    for exit in &plan.exits {
+        let edge = match &exit.continuation {
             ExitContinuation::FunctionReturn { edge, .. }
-            | ExitContinuation::LoopBreak { edge, .. } => Some((*edge, exit.from)),
-            _ => None,
-        })
-        .collect::<BTreeMap<_, _>>();
+            | ExitContinuation::LoopBreak { edge, .. } => *edge,
+            _ => continue,
+        };
+        storage::insert(function, budget, &mut entry_edges, edge, exit.from)?;
+    }
     for edge in &plan.edges {
         let Some(target) = domains[edge.to.0 as usize] else {
             continue;
@@ -565,8 +633,11 @@ pub(super) fn authenticate(
 
     // Per-domain exit shapes, uncertified latches and success exits.
     let mut ordinary_commits = 0usize;
+    budget.reserve_array::<usize>(function, control.resumes.len(), "lexical resume commits")?;
     let mut resume_commits = vec![0usize; control.resumes.len()];
+    budget.reserve_array::<usize>(function, control.resumes.len(), "lexical resume latches")?;
     let mut resume_latches = vec![0usize; control.resumes.len()];
+    budget.reserve_array::<usize>(function, control.resumes.len(), "lexical resume cancels")?;
     let mut resume_cancels = vec![0usize; control.resumes.len()];
     let mut wrapper_cancels = BTreeMap::new();
     let mut commit_exits = Vec::new();
@@ -593,16 +664,34 @@ pub(super) fn authenticate(
                         return Err(fail("owning break fragment has no owning latch"));
                     };
                     resume_cancels[*index] += 1;
-                    wrapper_cancels.insert(exit.id, assignment.clone());
+                    storage::insert(
+                        function,
+                        budget,
+                        &mut wrapper_cancels,
+                        exit.id,
+                        assignment.clone(),
+                    )?;
                 }
             }
             (_, ExitContinuation::Continue(_) | ExitContinuation::ReturnFailure { .. }) => {}
             (Domain::Ordinary, ExitContinuation::CommitResult { .. }) => {
                 ordinary_commits += 1;
+                budget.reserve_vec(
+                    function,
+                    &mut commit_exits,
+                    1,
+                    "lexical success exit inventory",
+                )?;
                 commit_exits.push(exit.id);
             }
             (Domain::Return, ExitContinuation::CommitResult { .. }) => {
                 resume_commits[domains[exit.from.0 as usize].expect("return domain")] += 1;
+                budget.reserve_vec(
+                    function,
+                    &mut commit_exits,
+                    1,
+                    "lexical success exit inventory",
+                )?;
                 commit_exits.push(exit.id);
             }
             (
@@ -675,7 +764,7 @@ pub(super) fn authenticate(
         ));
     }
 
-    validate_normal_ends(function, control, &domains)?;
+    validate_normal_ends(function, control, &domains, budget)?;
     let boundaries = super::lexical_boundary::authenticate(function, facts, &domains, budget)?;
     Ok(LexicalAuth {
         loops,
@@ -743,21 +832,24 @@ fn validate_normal_ends(
     function: &ResolvedFunction,
     control: &crate::cleanup_plan::LexicalControlPlan,
     domains: &[Option<usize>],
+    budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
     let plan = &function.cleanup_plan;
     let fail = |message: &str| replay_error(function, message.to_owned());
-    let lexical_edges = plan
-        .exits
-        .iter()
-        .filter_map(|exit| match &exit.continuation {
+    let mut lexical_edges = BTreeSet::new();
+    for exit in &plan.exits {
+        let edge = match &exit.continuation {
             ExitContinuation::LoopBreak { edge, .. }
-            | ExitContinuation::FunctionReturn { edge, .. } => Some(*edge),
-            _ => None,
-        })
-        .collect::<BTreeSet<_>>();
+            | ExitContinuation::FunctionReturn { edge, .. } => *edge,
+            _ => continue,
+        };
+        storage::insert_set(function, budget, &mut lexical_edges, edge)?;
+    }
     let mut listed = BTreeSet::new();
     for region in &control.abrupt_only_regions {
-        if region.0 == 0 || plan.regions.get(region.0 as usize).is_none() || !listed.insert(*region)
+        if region.0 == 0
+            || plan.regions.get(region.0 as usize).is_none()
+            || !storage::insert_set(function, budget, &mut listed, *region)?
         {
             return Err(fail("abrupt-only region list is invalid or repeated"));
         }
@@ -796,10 +888,11 @@ fn validate_normal_ends(
                             .ensures
                             .iter()
                             .any(|clause| clause.id == source.expression)
-                        && chain_contains(
+                        && storage::chain_contains(
                             function,
                             exit.from,
                             plan.blocks[failure.from.0 as usize].region,
+                            budget.physical.is_some(),
                         )
                         .unwrap_or(false)
                 });
@@ -828,8 +921,18 @@ fn validate_normal_ends(
         }
         for edge in &plan.edges {
             if domains[edge.from.0 as usize].is_none()
-                && chain_contains(function, edge.from, region.id)?
-                && !chain_contains(function, edge.to, region.id)?
+                && storage::chain_contains(
+                    function,
+                    edge.from,
+                    region.id,
+                    budget.physical.is_some(),
+                )?
+                && !storage::chain_contains(
+                    function,
+                    edge.to,
+                    region.id,
+                    budget.physical.is_some(),
+                )?
                 && !lexical_edges.contains(&edge.id)
             {
                 return Err(fail(

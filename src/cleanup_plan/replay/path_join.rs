@@ -221,6 +221,7 @@ pub(super) fn validate_path_states(
                     storage,
                     &storage_regions,
                     leaves,
+                    budget,
                 )?;
             }
             for transition in &block.transitions {
