@@ -2,6 +2,7 @@
 //! or revision-global cache supplies authority; every new phase builds its own.
 use super::*;
 use crate::diagnostic::Diagnostic;
+use crate::hir::ResolvedProgram;
 type Sites<'a> = (&'a ResolvedFunction, HelperBindings<'a>);
 #[derive(Debug, Default)]
 pub(crate) struct ModuleIndex<'a> {

@@ -63,7 +63,7 @@ fn ast_param(program: &Program, mode: ParamMode, ty: &Type) -> bool {
         ParamMode::Borrow => {
             super::ast_param_admitted(program, mode, ty)
                 || matches!(ty, Type::Named { name, arguments } if arguments.is_empty()
-                && program.types().iter().any(|d| d.name == *name && matches!(d.kind, crate::ast::TypeDeclarationKind::Record { .. })))
+                && program.types.iter().any(|d| d.name == *name && matches!(d.kind, crate::ast::TypeDeclarationKind::Record { .. })))
         }
         ParamMode::Shared => false,
     }
@@ -91,7 +91,7 @@ pub(crate) fn source_assignment(program: &Program, binding: &str, value: &Expr) 
     else {
         return false;
     };
-    let Some(target) = program.functions().iter().find(|f| f.name == *name) else {
+    let Some(target) = program.functions.iter().find(|f| f.name == *name) else {
         return false;
     };
     type_arguments.is_empty()
