@@ -83,6 +83,11 @@ fn collect_operations(
         operations.push(call.operation);
     }
     match &expression.kind {
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            if let Some(value) = value {
+                collect_operations(value, operations);
+            }
+        }
         ResolvedExprKind::FunctionReference { .. } => {}
         ResolvedExprKind::Invoke { callable, args } => {
             collect_operations(callable, operations);
@@ -95,7 +100,9 @@ fn collect_operations(
                 collect_operations(argument, operations);
             }
         }
-        ResolvedExprKind::Call { args, .. } => {
+        ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. } => {
             for argument in args {
                 collect_operations(argument, operations);
             }
