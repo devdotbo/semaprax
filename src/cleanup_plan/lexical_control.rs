@@ -53,6 +53,8 @@ pub struct LexicalControlPlan {
     pub abrupt_only_regions: Vec<CleanupRegionId>,
     /// Exact root success exits for the ordinary and each Return domain.
     pub function_success_exits: Vec<ExitTargetId>,
+    /// Exact guard contours, independent of physical status selection.
+    pub execution_boundaries: Vec<super::ExecutionBoundaryCertificate>,
 }
 
 impl CleanupPlan {

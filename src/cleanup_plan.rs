@@ -8,6 +8,8 @@
 mod build;
 mod deferred_commit;
 mod execute;
+mod execution_boundary;
+pub use execution_boundary::{ExecutionBoundaryCertificate, ExecutionBoundaryKind};
 mod lexical_control;
 pub use lexical_control::{
     LexicalControlPlan, LexicalExitCertificate, LoopCertificate, ResumeCertificate,

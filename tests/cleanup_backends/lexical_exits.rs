@@ -19,8 +19,13 @@ fn run(fail: bool) -> i64 ensures result == 9 {
     if fail { return 8; };
     return if index == 4 { 9 } else { 0 };
 }
+@id("lexical.take")
+fn take(own payload: string) -> i64 ensures result == 9 {
+    while false { break; }
+    return 9;
+}
 @id("app.main")
-fn main() -> i64 { run(false) }
+fn main() -> i64 { run(false) + take("kept") }
 "#;
 
 #[test]
@@ -37,6 +42,13 @@ fn native_lexical_loops_return_cleanup_and_failed_ensures_preserve_reentry_o0_o2
     let symbol = format!(
         "spx_decl_{}",
         "lexical.run"
+            .bytes()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>()
+    );
+    let take_symbol = format!(
+        "spx_decl_{}",
+        "lexical.take"
             .bytes()
             .map(|byte| format!("{byte:02x}"))
             .collect::<String>()
@@ -76,6 +88,25 @@ int main(void) {{
         }} else if (status != SPX_STATUS_SUCCESS || result != INT64_C(9)) return 12;
         if (spx_test_allocated - allocated_before != 5 || spx_test_freed - freed_before != 5) return 13;
     }}
+    // The ABI already transferred this owner to the callee. Entry refusal
+    // must settle it once before publication, without entering or decrementing
+    // a frame that was never admitted.
+    context.call_depth = UINT32_C(256);
+    int64_t result = INT64_C(1234567);
+    size_t allocated_before = spx_test_allocated;
+    size_t freed_before = spx_test_freed;
+    char *payload = spx_string_from_literal("held", UINT64_C(4));
+    spx_status_token status = {take_symbol}(&context, payload, &result);
+    const struct spx_normalized_status *selected = spx_status_resolve(&context, status);
+    if (status == SPX_STATUS_SUCCESS || selected == NULL || strcmp(selected->domain_id, "semaprax.runtime.v1") != 0 || selected->code != UINT32_C(1) || result != INT64_C(1234567) || context.call_depth != UINT32_C(256)) return 14;
+    if (spx_test_allocated - allocated_before != 1 || spx_test_freed - freed_before != 1) return 15;
+    context.call_depth = UINT32_C(0);
+    allocated_before = spx_test_allocated;
+    freed_before = spx_test_freed;
+    payload = spx_string_from_literal("again", UINT64_C(5));
+    status = {take_symbol}(&context, payload, &result);
+    if (status != SPX_STATUS_SUCCESS || result != INT64_C(9) || context.call_depth != UINT32_C(0)) return 16;
+    if (spx_test_allocated - allocated_before != 1 || spx_test_freed - freed_before != 1) return 17;
     return 0;
 }}
 "#

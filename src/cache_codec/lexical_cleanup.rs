@@ -1,21 +1,46 @@
 //! Selective append-only cleanup cache projection; legacy bytes stay exact.
-use super::{codec_struct, Codec, Decoder, Encoder, Result};
+use super::{codec_enum, codec_struct, Codec, Decoder, Encoder, Result};
 use crate::cleanup_plan::{
-    CleanupPlan, LexicalControlPlan, LexicalExitCertificate, LoopCertificate, ResumeCertificate,
-    CLEANUP_PLAN_SCHEMA_V18,
+    CleanupPlan, ExecutionBoundaryCertificate, ExecutionBoundaryKind, LexicalControlPlan,
+    LexicalExitCertificate, LoopCertificate, ResumeCertificate, CLEANUP_PLAN_SCHEMA_V18,
 };
 
-codec_struct!(LoopCertificate { target, condition, body, latch, region, condition_entry,
-    latch_entry, iteration_end, after, entry_order });
-codec_struct!(LexicalExitCertificate { site, target, kind, exit, resume });
+codec_struct!(LoopCertificate {
+    target,
+    condition,
+    body,
+    latch,
+    region,
+    condition_entry,
+    latch_entry,
+    iteration_end,
+    after,
+    entry_order
+});
+codec_struct!(LexicalExitCertificate {
+    site,
+    target,
+    kind,
+    exit,
+    resume
+});
 codec_struct!(ResumeCertificate { entry, blocks });
-codec_struct!(LexicalControlPlan { schema, loops, exits, resumes, abrupt_only_regions,
-    function_success_exits });
+codec_struct!(LexicalControlPlan {
+    schema,
+    loops,
+    exits,
+    resumes,
+    abrupt_only_regions,
+    function_success_exits,
+    execution_boundaries
+});
 
 impl Codec for CleanupPlan {
     fn encode(&self, out: &mut Encoder) -> Result<()> {
         if (self.schema == CLEANUP_PLAN_SCHEMA_V18) != self.lexical_control.is_some() {
-            return Err(super::grammar("cleanup lexical certificate/schema mismatch"));
+            return Err(super::grammar(
+                "cleanup lexical certificate/schema mismatch",
+            ));
         }
         out.nested(|out| {
             self.schema.encode(out)?;
@@ -50,8 +75,28 @@ impl Codec for CleanupPlan {
             } else {
                 None
             };
-            Ok(Self { schema, entry, entry_state, slots, status_sources, blocks,
-                edges, regions, exits, lexical_control })
+            Ok(Self {
+                schema,
+                entry,
+                entry_state,
+                slots,
+                status_sources,
+                blocks,
+                edges,
+                regions,
+                exits,
+                lexical_control,
+            })
         })
     }
 }
+
+codec_enum!(ExecutionBoundaryKind {0=>FunctionEntry,1=>LoopIteration});
+codec_struct!(ExecutionBoundaryCertificate {
+    kind,
+    site,
+    block,
+    region,
+    leaves_regions,
+    finalize_in_order
+});

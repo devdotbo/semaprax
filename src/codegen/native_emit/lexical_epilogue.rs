@@ -147,3 +147,36 @@ impl<O: COutput> CEmitter<'_, O> {
         self.failure_jump_at(site, StatusLane::OperationFailure)
     }
 }
+
+impl<O: COutput> CEmitter<'_, O> {
+    pub(super) fn emit_execution_boundary_failure(
+        &mut self,
+        kind: crate::cleanup_plan::ExecutionBoundaryKind,
+        site: &ExpressionId,
+    ) -> Result<(), Diagnostic> {
+        if self.function.cleanup_plan.lexical_control.is_none() {
+            self.line("goto spx_epilogue;");
+            return Ok(());
+        }
+        let boundary = self
+            .function
+            .cleanup_plan
+            .execution_boundary(kind, site, self.cleanup_resume)
+            .ok_or_else(|| backend_error("native execution guard has no exact cleanup boundary"))?;
+        let cleanup = match self.bytes_plan {
+            Some(plan) => plan.finalizers_in_order(&boundary.finalize_in_order, true)?,
+            None if boundary.finalize_in_order.is_empty() => String::new(),
+            None => {
+                return Err(backend_error(
+                    "native execution guard lacks physical cleanup slots",
+                ))
+            }
+        };
+        for line in cleanup.lines() {
+            self.line(line);
+        }
+        self.line("spx_canonical_cleanup_done = true;");
+        self.line("goto spx_epilogue;");
+        Ok(())
+    }
+}

@@ -1992,13 +1992,19 @@ fn emit_function(
     emitter.line("if (spx_ctx->call_depth >= SPX_MAX_CALL_DEPTH) {");
     emitter.indent += 1;
     emitter.line("spx_status = spx_rt_call_depth_failure(spx_ctx);");
-    emitter.line("goto spx_epilogue;");
+    emitter.emit_execution_boundary_failure(
+        crate::cleanup_plan::ExecutionBoundaryKind::FunctionEntry,
+        &function.body.id,
+    )?;
     emitter.indent -= 1;
     emitter.line("}");
     emitter.line("++spx_ctx->call_depth;");
     emitter.line("spx_call_entered = true;");
     emitter.semantic_metered = semantic_ordinal.is_some();
-    emitter.semantic_charge();
+    emitter.semantic_charge(
+        crate::cleanup_plan::ExecutionBoundaryKind::FunctionEntry,
+        &function.body.id,
+    )?;
     // An owned-Bytes result moves field by field, and a contract-failure lane
     // leaves even that unreached, so the slot can go unnamed in valid C.
     if owned(&function.return_type) || emitter.record_contains_owned_bytes(&function.return_type)? {

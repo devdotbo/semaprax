@@ -17,8 +17,15 @@ impl NativeBytesPlan {
         exit: &crate::cleanup_plan::ExitTarget,
         terminal: bool,
     ) -> Result<String, Diagnostic> {
+        self.finalizers_in_order(&exit.finalize_in_order, terminal)
+    }
+    pub(in crate::codegen) fn finalizers_in_order(
+        &self,
+        actions: &[crate::cleanup_plan::FinalizeAction],
+        terminal: bool,
+    ) -> Result<String, Diagnostic> {
         let mut output = String::new();
-        for action in &exit.finalize_in_order {
+        for action in actions {
             let slot = self
                 .slots
                 .get(&action.source)

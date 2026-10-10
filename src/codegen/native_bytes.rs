@@ -233,7 +233,7 @@ impl NativeBytesPlan {
                 },
             );
         }
-        for transition in transitions.values().flatten() {
+        for transition in transitions.all() {
             match transition {
                 CleanupTransition::Initialize { destination, .. }
                 | CleanupTransition::InitializeVariant { destination, .. } => {
@@ -303,6 +303,13 @@ impl NativeBytesPlan {
                         .iter()
                         .map(|action| action.source.clone()),
                 );
+            }
+        }
+        if let Some(control) = function.cleanup_plan.lexical_control.as_deref() {
+            for boundary in &control.execution_boundaries {
+                for action in &boundary.finalize_in_order {
+                    mark_referenced_under(&mut referenced_places, &storage_leaves, &action.source);
+                }
             }
         }
         referenced_places.extend(finalizers.iter().map(|slot| slot.place.clone()));
@@ -782,7 +789,7 @@ fn mark_referenced_under(
 fn reachable_variant_cases(
     function: &ResolvedFunction,
     domains: &BTreeMap<StorageId, BTreeSet<DeclarationId>>,
-    transitions: &BTreeMap<ExpressionId, Vec<CleanupTransition>>,
+    transitions: &origin::Index<ExpressionId>,
 ) -> BTreeMap<StorageId, BTreeSet<DeclarationId>> {
     let mut reachable = BTreeMap::<StorageId, BTreeSet<DeclarationId>>::new();
     let mut pending = function
@@ -813,7 +820,7 @@ fn reachable_variant_cases(
 
     let mut transfer_edges = Vec::new();
     let mut transfer_destinations = BTreeSet::new();
-    for transition in transitions.values().flatten() {
+    for transition in transitions.all() {
         match transition {
             CleanupTransition::InitializeVariant { destination, .. } => {
                 if let Some(domain) = domains.get(&destination.storage) {

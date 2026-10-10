@@ -75,6 +75,20 @@ in the return expression or ensures never publishes; cleanup cannot replace the
 selected status or reacquire arguments committed to a callee. Borrowed publication
 uses the existing independent lifetime law, with no new borrowing privilege.
 
+### Backend execution guards
+
+Selective v18 also records proof-only function-entry and successful loop-condition
+boundaries. Each binds the exact expression, canonical block and region, exited
+region chain, and complete ordered finalizer vector from the authenticated live
+builder state. Independent replay reconstructs every boundary, including repeated
+resume domains. Native call-depth refusal and private Agent-stage semantic-fuel
+exhaustion retain their existing status domains, stickiness and charge points;
+they settle only the selected boundary before the common ABI failure epilogue.
+Parameter carriers and flags are initialized before entry settlement. A boundary
+is neither a new ordinary StatusSource nor owner-admission or ABI authority. It
+does not make fatal String allocator failure recoverable or establish an OOM
+recovery or production measurement claim.
+
 ## Consumers and trust boundaries
 
 Interpreter flow carries exact Break/Continue/Return targets separately from

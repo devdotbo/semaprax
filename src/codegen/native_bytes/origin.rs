@@ -14,6 +14,9 @@ impl<K: Ord> Default for Index<K> {
     }
 }
 impl<K: Ord> Index<K> {
+    pub(super) fn all(&self) -> impl Iterator<Item = &CleanupTransition> {
+        self.0.values().flatten().map(|row| &row.transition)
+    }
     pub(super) fn push(&mut self, key: K, row: Tagged) {
         self.0.entry(key).or_default().push(row);
     }
