@@ -276,7 +276,7 @@ fn utf8_owned_request_all_264_values_at_64_decoded_bytes_obey_existing_limits() 
         let manifest = MANIFEST
             .replace("owned-data-api.v1", "language-command-io.owned-data.v1")
             .replace("web = []", "web = [\"consumer.command\"]")
-            + "\n[command]\nfunction=\"consumer.command\"\ninput=\"argv-utf8+stdin-stream.v1\"\n[capabilities]\nrequired=[\"process.args.read\",\"process.stderr.write\",\"process.stdin.read\",\"process.stdout.write\"]\n";
+            + "\n[command]\nfunction = \"consumer.command\"\ninput = \"argv-utf8+stdin-stream.v1\"\n[capabilities]\nrequired = [\"process.args.read\",\"process.stderr.write\",\"process.stdin.read\",\"process.stdout.write\"]\n";
         std::fs::write(root.join("semaprax.toml"), manifest).unwrap();
         qualify(&root);
         std::fs::remove_dir_all(root).unwrap();
