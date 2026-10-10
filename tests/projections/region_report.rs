@@ -189,6 +189,11 @@ fn reported_binding_ids_equal_the_resolved_hir_inventory() {
 
     fn collect_expr(expression: &hir::ResolvedExpr, ids: &mut Vec<String>) {
         match &expression.kind {
+            hir::ResolvedExprKind::LexicalExit { value, .. } => {
+                if let Some(value) = value {
+                    collect_expr(value, ids);
+                }
+            }
             hir::ResolvedExprKind::Block { statements, tail } => {
                 for statement in statements {
                     ids.push(statement.binding().id.as_str().to_owned());
@@ -293,6 +298,7 @@ fn reported_binding_ids_equal_the_resolved_hir_inventory() {
             | hir::ResolvedExprKind::Float64(_)
             | hir::ResolvedExprKind::Bool(_)
             | hir::ResolvedExprKind::String(_)
+            | hir::ResolvedExprKind::BorrowedUtf8Literal(_)
             | hir::ResolvedExprKind::Place(_)
             | hir::ResolvedExprKind::BorrowPlace { .. } => {}
         }
