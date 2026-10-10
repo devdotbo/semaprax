@@ -299,13 +299,15 @@ mod ast {
         alternative
     });
     codec_enum!(BranchTail { 0 => Absent, 1 => Retained, 2 => Discarded });
+    codec_struct!(TraversalIndex { name, span });
     codec_enum!(Statement {
         0 => Let { name, name_span, mutable, declared, value, span, syntax },
         1 => Assign { name, name_span, field, value, span },
         2 => Unsafe { audit, audit_span, body, span },
         3 => While { condition, body, span },
         4 => For { item, item_span, values, body, span },
-        5 => ForOwn { item, item_span, values, body, span }
+        5 => ForOwn { item, item_span, values, body, span },
+        6 => ForBorrow { item, item_span, index, values, body, span }
     });
     codec_enum!(UnaryOp { 0 => Neg, 1 => Not });
     codec_enum!(BinaryOp {
@@ -503,7 +505,7 @@ mod loan {
     codec_tuple!(LoanId(0));
     codec_enum!(LoanPointPhase { 0 => Before, 1 => After });
     codec_struct!(LoanProgramPoint { expression, phase });
-    codec_enum!(LoanCause { 0 => SliceView, 1 => BorrowedCall { argument }, 2 => MatchBorrow { arm }, 3 => StrView });
+    codec_enum!(LoanCause { 0 => SliceView, 1 => BorrowedCall { argument }, 2 => MatchBorrow { arm }, 3 => StrView, 4 => TraversalFreeze });
     codec_struct!(Loan {
         id,
         site,

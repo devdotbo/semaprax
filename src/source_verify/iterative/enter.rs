@@ -64,6 +64,13 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 self.values.push(value);
             }
             ExprKind::Var(name) => {
+                if self.scopes[scope]
+                    .bindings
+                    .get(name)
+                    .is_some_and(|binding| binding.traversal_row.is_some())
+                {
+                    return Err(error(self.program, "SPX-T284", "record traversal row cannot escape or materialize aggregate storage; select a field", expression.span));
+                }
                 let value = self.scopes[scope].bindings.get(name).map(|binding| {
                     crate::source_verify::owning_closure::reject_escaping_read(
                         self.program,
@@ -964,6 +971,13 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         body,
                         ..
                     }
+                    | Statement::ForBorrow {
+                        item,
+                        item_span,
+                        values,
+                        body,
+                        ..
+                    }
                     | Statement::ForOwn {
                         item,
                         item_span,
@@ -1038,6 +1052,29 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 });
             }
             ExprKind::Project { base, field, .. } => {
+                if let Some((root, value)) = crate::source_verify::record_traversal::project(
+                    expression,
+                    &self.scopes[scope].bindings,
+                    self.types,
+                ) {
+                    let owner = Expr {
+                        kind: ExprKind::Var(root),
+                        span: expression.span,
+                    };
+                    if let Some(place) =
+                        source_place(&owner, &self.scopes[scope].bindings, self.types)
+                    {
+                        check_source_place_availability(
+                            self.program,
+                            &place,
+                            &self.scopes[scope].bindings,
+                            expression.span,
+                            self.diagnostics,
+                        );
+                    }
+                    self.values.push(Some(value));
+                    return Ok(());
+                }
                 let rooted_string_view = matches!(
                     self.frames.last(),
                     Some(VerifierFrame::ResumeCallArgument {

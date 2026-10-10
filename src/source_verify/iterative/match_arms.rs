@@ -261,6 +261,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         self.scopes[arm_scope].bindings.insert(
                             field.binding.clone(),
                             Binding {
+                                traversal_row: None,
                                 ty: binding_ty,
                                 mode: binding_mode,
                                 availability: Availability::Available,
@@ -524,6 +525,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     self.scopes[arm_scope].bindings.insert(
                         name.clone(),
                         Binding {
+                            traversal_row: None,
                             ty: state.scrutinee_ty.clone(),
                             mode: ParamMode::Value,
                             availability: Availability::Available,

@@ -176,7 +176,9 @@ pub(super) fn ast_expr_cost(
                 }
                 if matches!(
                     statement,
-                    crate::ast::Statement::For { .. } | crate::ast::Statement::ForOwn { .. }
+                    crate::ast::Statement::For { .. }
+                        | crate::ast::Statement::ForBorrow { .. }
+                        | crate::ast::Statement::ForOwn { .. }
                 ) {
                     cost.add_identity_carriers(16)?;
                 }
@@ -193,6 +195,12 @@ pub(super) fn ast_expr_cost(
                     crate::ast::Statement::While { .. } => cost.string("")?,
                     crate::ast::Statement::For { item, .. }
                     | crate::ast::Statement::ForOwn { item, .. } => cost.embedded_string(item)?,
+                    crate::ast::Statement::ForBorrow { item, index, .. } => {
+                        cost.embedded_string(item)?;
+                        if let Some(index) = index {
+                            cost.embedded_string(&index.name)?;
+                        }
+                    }
                     crate::ast::Statement::Let { name, .. }
                     | crate::ast::Statement::Assign { name, .. } => cost.embedded_string(name)?,
                 }

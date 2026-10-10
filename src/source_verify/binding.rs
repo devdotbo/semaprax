@@ -7,6 +7,7 @@ use std::collections::{BTreeSet, HashMap, HashSet};
 
 #[derive(Clone, Debug)]
 pub(super) struct Binding {
+    pub(super) traversal_row: Option<Box<super::record_traversal::Row>>,
     pub(super) ty: Type,
     pub(super) mode: ParamMode,
     pub(super) availability: Availability,

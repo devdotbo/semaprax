@@ -582,6 +582,7 @@ module test.hir_inference_bounds;
         bindings.insert(
             "value".to_owned(),
             Binding {
+                traversal_row: None,
                 id: ValueId::local(&caller, "test.value"),
                 ty: ResolvedType::TypeParameter {
                     owner: DeclarationId::new("app.outer"),

@@ -910,6 +910,7 @@ fn substitute_forwarded_call_arguments(
                         substitute_forwarded_call_arguments(function, arguments, body)?;
                     }
                     crate::ast::Statement::For { values, body, .. }
+                    | crate::ast::Statement::ForBorrow { values, body, .. }
                     | crate::ast::Statement::ForOwn { values, body, .. } => {
                         substitute_forwarded_call_arguments(function, arguments, values)?;
                         substitute_forwarded_call_arguments(function, arguments, body)?;
@@ -1331,6 +1332,7 @@ pub(super) fn check_record_pattern(
                             variables.insert(
                                 name.clone(),
                                 Binding {
+                                    traversal_row: None,
                                     mode: if types.needs_drop(&field_ty) {
                                         match mode {
                                             MatchMode::Own => ParamMode::Own,

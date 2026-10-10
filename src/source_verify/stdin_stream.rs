@@ -388,13 +388,16 @@ fn expression_open_bound(
                         for statement in statements {
                             let count = match statement {
                                 Statement::While { .. } => 2,
-                                Statement::For { .. } | Statement::ForOwn { .. } => 2,
+                                Statement::For { .. }
+                                | Statement::ForBorrow { .. }
+                                | Statement::ForOwn { .. } => 2,
                                 _ => 1,
                             };
                             if matches!(
                                 statement,
                                 Statement::While { .. }
                                     | Statement::For { .. }
+                                    | Statement::ForBorrow { .. }
                                     | Statement::ForOwn { .. }
                             ) && children[child..child + count]
                                 .iter()

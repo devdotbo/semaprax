@@ -406,6 +406,7 @@ fn push_children<'e>(expression: &'e mut Expr, pending: &mut Vec<&'e mut Expr>) 
                         pending.push(body);
                     }
                     Statement::For { values, body, .. }
+                    | Statement::ForBorrow { values, body, .. }
                     | Statement::ForOwn { values, body, .. } => {
                         pending.push(values);
                         pending.push(body);

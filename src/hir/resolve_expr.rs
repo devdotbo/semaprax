@@ -29,6 +29,7 @@ mod capacity;
 mod finish;
 mod literal_format;
 mod sort_keys;
+mod variable;
 mod vec_field;
 
 impl Resolver<'_> {
@@ -155,25 +156,7 @@ impl Resolver<'_> {
                         span: expr.span,
                     }),
                     ExprKind::Var(name) => {
-                        if let Some(reference) =
-                            self.function_reference(function, expr, &bindings, &path)?
-                        {
-                            results.push(reference);
-                            continue;
-                        }
-                        let binding = bindings.get(name).ok_or_else(|| {
-                            self.error("SPX-H002", format!("unresolved value `{name}`"), expr.span)
-                        })?;
-                        results.push(ResolvedExpr {
-                            id: ExpressionId::new(function, &path),
-                            ty: binding.ty.clone(),
-                            ownership: binding.ownership,
-                            kind: ResolvedExprKind::Place(Place {
-                                root: binding.id.clone(),
-                                projections: Vec::new(),
-                            }),
-                            span: expr.span,
-                        });
+                        results.push(self.named_value(function, expr, &bindings, &path, name)?)
                     }
                     ExprKind::Call {
                         name,
@@ -702,6 +685,12 @@ impl Resolver<'_> {
                         });
                     }
                     ExprKind::Project { base, field, .. } => {
+                        if let Some(value) = super::resolve_for::record::project(
+                            self, function, expr, &bindings, &path,
+                        )? {
+                            results.push(value);
+                            continue;
+                        }
                         frames.push(Frame::FinishProject {
                             span: expr.span,
                             path: path.clone(),
@@ -1423,6 +1412,18 @@ impl Resolver<'_> {
                                 values,
                                 body,
                             )?,
+                            Statement::ForBorrow { .. } => super::resolve_for::record::schedule(
+                                self,
+                                function,
+                                &mut frames,
+                                span,
+                                &path,
+                                statements,
+                                tail,
+                                index,
+                                scope,
+                                resolved,
+                            )?,
                         }
                     }
                 }
@@ -1520,6 +1521,7 @@ impl Resolver<'_> {
                     Rc::make_mut(&mut scope).insert(
                         name.clone(),
                         Binding {
+                            traversal_row: None,
                             id: binding.id.clone(),
                             ty: binding.ty.clone(),
                             ownership: binding.ownership,
@@ -2229,6 +2231,7 @@ impl Resolver<'_> {
                                     Rc::make_mut(&mut arm_bindings).insert(
                                         field.binding.clone(),
                                         Binding {
+                                            traversal_row: None,
                                             id: binding.id.clone(),
                                             ty: field_ty,
                                             ownership,
@@ -2409,6 +2412,7 @@ impl Resolver<'_> {
                                 Rc::make_mut(&mut arm_bindings).insert(
                                     name.clone(),
                                     Binding {
+                                        traversal_row: None,
                                         id: binding.id.clone(),
                                         ty: binding.ty.clone(),
                                         ownership: OwnershipMode::Value,

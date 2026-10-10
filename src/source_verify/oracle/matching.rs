@@ -126,6 +126,7 @@ pub(super) fn oracle_match(
                         variables.insert(
                             name.clone(),
                             Binding {
+                                traversal_row: None,
                                 ty: scrutinee_value.ty.clone(),
                                 mode: ParamMode::Value,
                                 availability: Availability::Available,
@@ -735,6 +736,7 @@ pub(super) fn oracle_match(
                         arm_variables.insert(
                             field.binding.clone(),
                             Binding {
+                                traversal_row: None,
                                 ty: binding_ty,
                                 mode: binding_mode,
                                 availability: Availability::Available,

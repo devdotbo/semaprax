@@ -5,6 +5,8 @@ mod field_reads;
 mod loop_renewal;
 #[path = "owned_leaf_vec/sort_keys.rs"]
 mod sort_keys;
+#[path = "owned_leaf_vec/record_traversal.rs"]
+mod record_traversal;
 
 use std::process::Command;
 use std::sync::atomic::{AtomicU64, Ordering};

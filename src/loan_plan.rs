@@ -11,6 +11,7 @@ use crate::hir::{
 };
 
 pub const LOAN_PLAN_SCHEMA_V1: &str = "semaprax.loan-plan.v1";
+pub const LOAN_PLAN_SCHEMA_V2: &str = "semaprax.loan-plan.v2";
 pub const MAX_LOANS_PER_FUNCTION_V1: usize = 256;
 pub const MAX_LOAN_ENDPOINTS_V1: usize = 4_096;
 pub const MAX_LOAN_EDGES_V1: usize = 4_096;
@@ -33,6 +34,7 @@ mod native_view;
 pub(crate) mod owned_capacity;
 #[cfg(test)]
 mod shared_identity_tests;
+pub(crate) mod traversal;
 mod work;
 
 pub(crate) use work::{REACHABILITY_BYTES_PER_EXPRESSION, REACHABILITY_FIXED_BYTES};
@@ -47,6 +49,7 @@ pub struct LoanProgramPoint {
 pub enum LoanCause {
     SliceView,
     StrView,
+    TraversalFreeze,
     BorrowedCall { argument: u16 },
     MatchBorrow { arm: u16 },
 }
@@ -210,6 +213,13 @@ fn has_own_root_candidate(
 
     let mut root_ownership = BTreeMap::<ValueId, bool>::new();
     for expression in expressions {
+        if let Some(proof) = traversal::inspect(program, expression)? {
+            if expression_place(proof.source)
+                .is_some_and(|place| ownership.get(&place.root) == Some(&OwnershipMode::Own))
+            {
+                return Ok(true);
+            }
+        }
         let view = match &expression.kind {
             ResolvedExprKind::BorrowPlace { place, .. } => Some(place.clone()),
             ResolvedExprKind::VecFieldRead { args, .. }
@@ -384,6 +394,9 @@ fn build_cfg_plan_counted(
     let mut drafts = Vec::<CfgDraft>::new();
     for expression in &cfg.expressions {
         charge(work)?;
+        if let Some(draft) = traversal::draft(program, expression, &cfg, work)? {
+            drafts.push(draft);
+        }
         let view = match &expression.kind {
             ResolvedExprKind::BorrowPlace { place, .. } => Some(place.clone()),
             ResolvedExprKind::VecFieldRead { args, .. }
@@ -1061,31 +1074,30 @@ fn materialize_cfg_plan(
     edge_live: Vec<Vec<LoanId>>,
     termination_edges: Vec<Vec<u16>>,
 ) -> Result<LoanPlan, Diagnostic> {
-    let loans = drafts
-        .iter()
-        .enumerate()
-        .map(|(index, draft)| {
-            let end_edges = termination_edges[index].clone();
-            if end_edges.is_empty() {
-                return Err(error("loan has no bounded CFG termination edge"));
-            }
-            let mut ends = end_edges
-                .iter()
-                .map(|edge| cfg.points[cfg.edges[*edge as usize].1 as usize].clone())
-                .collect::<Vec<_>>();
-            ends.dedup();
-            Ok(Loan {
-                id: LoanId(index as u16),
-                site: draft.site.clone(),
-                origin: draft.origin.clone(),
-                parent: parents[index],
-                start: cfg.points[draft.start as usize].clone(),
-                ends,
-                end_edges,
-                cause: draft.cause.clone(),
-            })
-        })
-        .collect::<Result<Vec<_>, Diagnostic>>()?;
+    // The draft count is exact. Result collection need not retain spare
+    // geometric capacity in the authoritative physical loan inventory.
+    let mut loans = Vec::with_capacity(drafts.len());
+    for (index, draft) in drafts.iter().enumerate() {
+        let end_edges = termination_edges[index].clone();
+        if end_edges.is_empty() {
+            return Err(error("loan has no bounded CFG termination edge"));
+        }
+        let mut ends = end_edges
+            .iter()
+            .map(|edge| cfg.points[cfg.edges[*edge as usize].1 as usize].clone())
+            .collect::<Vec<_>>();
+        ends.dedup();
+        loans.push(Loan {
+            id: LoanId(index as u16),
+            site: draft.site.clone(),
+            origin: draft.origin.clone(),
+            parent: parents[index],
+            start: cfg.points[draft.start as usize].clone(),
+            ends,
+            end_edges,
+            cause: draft.cause.clone(),
+        });
+    }
     let mut starts = vec![Vec::<LoanId>::new(); cfg.points.len()];
     let mut kills = vec![Vec::<LoanId>::new(); cfg.points.len()];
     for loan in &loans {
@@ -1127,8 +1139,16 @@ fn materialize_cfg_plan(
             live: compact_ids::from_vec(live)?,
         });
     }
+    let schema = if loans
+        .iter()
+        .any(|loan| loan.cause == LoanCause::TraversalFreeze)
+    {
+        LOAN_PLAN_SCHEMA_V2
+    } else {
+        LOAN_PLAN_SCHEMA_V1
+    };
     Ok(LoanPlan {
-        schema: LOAN_PLAN_SCHEMA_V1,
+        schema,
         loans,
         endpoints,
         edges,

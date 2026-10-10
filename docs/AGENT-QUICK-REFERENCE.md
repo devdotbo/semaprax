@@ -939,6 +939,14 @@ reassign the vector inside the body. Computed iterable expressions, owned elemen
 consuming traversal, and `break`/`continue` remain outside this `for` form. See
 [Owned Bounded Vec For Traversal v1](OWNED-BOUNDED-VEC-FOR-TRAVERSAL-V1.md).
 
+`for borrow row at index in rows { body }` adds a scoped field-only row view
+for an immutable named vector of an admitted Copy record or flat owned-leaf
+record. Omit `at index` when no index is needed. Scalars copy; `row.text` and
+`row.bytes` borrow their stored String/Bytes until the iteration ends. The whole
+vector stays frozen through the loop, including Copy-only reads. Qualification
+is pending; see `help language author:record-traversal` and
+[Scoped Record Vec Traversal v2](SCOPED-RECORD-VEC-TRAVERSAL-V2.md).
+
 ### Consuming scalar iterators
 
 `vec_into_iter<T>(values)` moves a scalar vector into a non-Copy `Iter<T>`.

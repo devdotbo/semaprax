@@ -360,7 +360,7 @@ pub(crate) use nodes::{
     LinkedDeclarationFact, LinkedOwnedDataParts, LinkedScalarFunction,
 };
 pub use nodes::{
-    ByteSliceExtent, ByteSliceProvenance, ByteSliceRangeStep, ByteSliceRootKind, VectorFieldProvenance, Declaration,
+    ByteSliceExtent, ByteSliceProvenance, ByteSliceRangeStep, ByteSliceRootKind, Declaration,
     DeclarationKind, IdentityOrigin, OwnershipMode, ResolvedBinding, ResolvedFieldDeclaration,
     ResolvedFunction, ResolvedFunctionInstance, ResolvedFunctionTemplate, ResolvedHostCommandCall,
     ResolvedHostCommandOperation, ResolvedImport, ResolvedImportFailure, ResolvedImportParameter,
@@ -368,7 +368,7 @@ pub use nodes::{
     ResolvedNativeRustImportCall, ResolvedParam, ResolvedProgram, ResolvedResourceDrop,
     ResolvedResourceDropKind, ResolvedType, ResolvedTypeDeclaration, ResolvedTypeDeclarationKind,
     ResolvedTypeParameterDeclaration, ResolvedVariantCaseDeclaration, ResolvedYieldsClause,
-    TypeFacts,
+    TypeFacts, VectorFieldProvenance,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -388,6 +388,7 @@ pub enum PlaceProjection {
 
 #[derive(Clone)]
 struct Binding {
+    traversal_row: Option<Box<resolve_for::record::Row>>,
     id: ValueId,
     ty: ResolvedType,
     ownership: OwnershipMode,

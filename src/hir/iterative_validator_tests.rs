@@ -134,6 +134,7 @@ interface HostEcho permits { host.echo } {
                 (
                     source.name.clone(),
                     Binding {
+                        traversal_row: None,
                         id: resolved.id.clone(),
                         ty: resolved.ty.clone(),
                         ownership: resolved.ownership,

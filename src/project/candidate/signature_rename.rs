@@ -182,12 +182,21 @@ impl Rename<'_> {
                         Statement::For {
                             item, values, body, ..
                         }
+                        | Statement::ForBorrow {
+                            item, values, body, ..
+                        }
                         | Statement::ForOwn {
                             item, values, body, ..
                         } => {
                             self.expression(values, &local, next)?;
                             let mut body_scope = local.clone();
                             self.binding(item, &mut body_scope)?;
+                            if let Statement::ForBorrow {
+                                index: Some(index), ..
+                            } = statement
+                            {
+                                self.binding(&index.name, &mut body_scope)?;
+                            }
                             self.expression(body, &body_scope, next)?;
                         }
                     }

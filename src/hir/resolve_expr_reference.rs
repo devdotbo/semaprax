@@ -139,6 +139,12 @@ impl Resolver<'_> {
                 OwnershipMode::Own,
             ),
             ExprKind::Var(name) => {
+                if bindings
+                    .get(name)
+                    .is_some_and(|binding| binding.traversal_row.is_some())
+                {
+                    return Err(self.error("SPX-H006", "record traversal row cannot escape or materialize aggregate storage; select a field", expr.span));
+                }
                 let binding = bindings.get(name).ok_or_else(|| {
                     self.error("SPX-H002", format!("unresolved value `{name}`"), expr.span)
                 })?;
@@ -901,6 +907,7 @@ impl Resolver<'_> {
                             scope.insert(
                                 name.clone(),
                                 Binding {
+                                    traversal_row: None,
                                     id: binding.id.clone(),
                                     ty: binding.ty.clone(),
                                     ownership: binding.ownership,
@@ -1028,14 +1035,17 @@ impl Resolver<'_> {
                                 span: condition.span.merge(*span),
                             });
                         }
-                        Statement::ForOwn { .. } | Statement::For { .. } => resolved_statements
-                            .push(super::resolve_for_own::resolve_statement_reference(
+                        Statement::ForOwn { .. }
+                        | Statement::For { .. }
+                        | Statement::ForBorrow { .. } => resolved_statements.push(
+                            super::resolve_for_own::resolve_statement_reference(
                                 self,
                                 function,
                                 &scope,
                                 &statement_path,
                                 statement,
-                            )?),
+                            )?,
+                        ),
                     }
                 }
                 let tail = self.resolve_expr_recursive_reference(
@@ -1315,6 +1325,7 @@ impl Resolver<'_> {
                                 arm_bindings.insert(
                                     name.clone(),
                                     Binding {
+                                        traversal_row: None,
                                         id: binding.id.clone(),
                                         ty: binding.ty.clone(),
                                         ownership: OwnershipMode::Value,
@@ -1601,6 +1612,7 @@ impl Resolver<'_> {
                                 arm_bindings.insert(
                                     field.binding.clone(),
                                     Binding {
+                                        traversal_row: None,
                                         id: binding.id.clone(),
                                         ty: field_ty,
                                         ownership,
@@ -1835,6 +1847,11 @@ impl Resolver<'_> {
                 ));
             }
             ExprKind::Project { base, field, .. } => {
+                if let Some(value) =
+                    super::resolve_for::record::project(self, function, expr, bindings, path)?
+                {
+                    return Ok(value);
+                }
                 self.resolve_projection_reference(function, expr, base, field, bindings, path)?
             }
         };

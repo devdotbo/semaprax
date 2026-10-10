@@ -511,7 +511,9 @@ pub(super) fn reject_while_disallowed_statement_oracle(
             let body = reject_while_disallowed_oracle(program, body, functions, types, diagnostics);
             condition.and(body)
         }
-        Statement::For { span, .. } | Statement::ForOwn { span, .. } => {
+        Statement::For { span, .. }
+        | Statement::ForBorrow { span, .. }
+        | Statement::ForOwn { span, .. } => {
             diagnostics.push(error(
                 program,
                 "SPX-T284",

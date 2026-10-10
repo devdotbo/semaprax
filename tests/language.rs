@@ -27,12 +27,12 @@ mod borrowed_text_byte_at;
 mod byte_widening;
 #[path = "language/character_scalars.rs"]
 mod character_scalars;
+#[path = "language/checked_literal_format.rs"]
+mod checked_literal_format;
 #[path = "language/class_declarations.rs"]
 mod class_declarations;
 #[path = "language/class_inheritance.rs"]
 mod class_inheritance;
-#[path = "language/checked_literal_format.rs"]
-mod checked_literal_format;
 #[path = "language/collection_law_pack.rs"]
 mod collection_law_pack;
 #[path = "language/control_flow.rs"]
@@ -105,6 +105,8 @@ mod property_widen;
 mod record_invariants;
 #[path = "language/record_patterns.rs"]
 mod record_patterns;
+#[path = "language/record_vec_traversal.rs"]
+mod record_vec_traversal;
 #[path = "language/records_semantics.rs"]
 mod records_semantics;
 #[path = "language/records_syntax.rs"]

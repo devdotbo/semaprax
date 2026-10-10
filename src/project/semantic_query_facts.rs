@@ -682,6 +682,7 @@ fn loan_value(loan: &crate::loan_plan::Loan) -> Value {
     let cause = match &loan.cause {
         LoanCause::SliceView => json!({"kind":"slice_view"}),
         LoanCause::StrView => json!({"kind":"str_view"}),
+        LoanCause::TraversalFreeze => json!({"kind":"traversal_freeze"}),
         LoanCause::BorrowedCall { argument } => json!({"argument":argument,"kind":"borrowed_call"}),
         LoanCause::MatchBorrow { arm } => json!({"arm":arm,"kind":"match_borrow"}),
     };

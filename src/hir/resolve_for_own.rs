@@ -77,6 +77,7 @@ pub(super) fn resume<'a>(
         Rc::make_mut(&mut scope).insert(
             item.clone(),
             Binding {
+                traversal_row: None,
                 id: ValueId::local(
                     function,
                     &format!("{statement_path}.value.s1.body.s0.value.arm.1.binding.0"),
@@ -417,6 +418,7 @@ pub(super) fn resolve_reference(
     scope.insert(
         item.to_owned(),
         Binding {
+            traversal_row: None,
             id: ValueId::local(
                 function,
                 &format!("{path}.value.s1.body.s0.value.arm.1.binding.0"),
@@ -513,6 +515,9 @@ pub(super) fn resolve_statement_reference(
             span,
         } => super::resolve_for::resolve_reference(
             resolver, function, scope, path, item, *item_span, values, body, *span,
+        ),
+        crate::ast::Statement::ForBorrow { .. } => super::resolve_for::record::resolve_reference(
+            resolver, function, scope, path, statement,
         ),
         _ => unreachable!(),
     }

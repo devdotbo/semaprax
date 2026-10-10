@@ -205,7 +205,8 @@ pub(super) fn visit_ast_call_expressions(
                             visit,
                         )?;
                     }
-                    crate::ast::Statement::For { values, body, .. } => {
+                    crate::ast::Statement::For { values, body, .. }
+                    | crate::ast::Statement::ForBorrow { values, body, .. } => {
                         // Bounded `for` traversal is lowered, so its authored
                         // children do not sit at `.values` and `.body`.
                         // `hir::resolve_for::lower` desugars the statement at

@@ -546,21 +546,10 @@ pub(super) fn check_generic_function_cycles<'p>(
     }
 }
 
-const MAX_STATIC_MAPPING_DEPTH: usize = 128;
+mod traversal_scope;
+use traversal_scope::static_binding;
 
-fn static_binding(ty: Type) -> Binding {
-    Binding {
-        ty,
-        mode: ParamMode::Value,
-        availability: Availability::Available,
-        moved_places: HashMap::new(),
-        definitely_partial: HashSet::new(),
-        native_unit_discard: false,
-        mutable: false,
-        active_loans: BTreeSet::new(),
-        borrow_origin: None,
-    }
-}
+const MAX_STATIC_MAPPING_DEPTH: usize = 128;
 
 /// Carries the lexical scope, declaration table, and bounded traversal state
 /// required to authenticate an omitted symbolic mapping before body checking.
@@ -715,6 +704,9 @@ fn check_omitted_generic_mappings(
                     Statement::For {
                         item, values, body, ..
                     }
+                    | Statement::ForBorrow {
+                        item, values, body, ..
+                    }
                     | Statement::ForOwn {
                         item, values, body, ..
                     } => {
@@ -730,6 +722,12 @@ fn check_omitted_generic_mappings(
                         );
                         let mut body_scope = scope.clone();
                         body_scope.remove(item);
+                        if let Statement::ForBorrow {
+                            index: Some(index), ..
+                        } = statement
+                        {
+                            body_scope.remove(&index.name);
+                        }
                         check_omitted_generic_mappings(
                             program,
                             current,
@@ -1130,6 +1128,7 @@ pub(super) fn check_function_bodies<'p>(
                     .insert(
                         param.name.clone(),
                         Binding {
+                            traversal_row: None,
                             ty: param.ty.clone(),
                             mode: binding_mode,
                             availability: Availability::Available,

@@ -29,6 +29,7 @@ mod owned_generics;
 mod package;
 mod prelude_binding;
 mod project_render;
+mod record_traversal;
 mod retained_validation;
 mod retained_vectors;
 mod session_protocol_decl;
@@ -1846,7 +1847,9 @@ impl WorkspaceGraphBuild {
             if !explicit || !command.params.is_empty() || command.return_type != return_type {
                 return Err(vec![graph_error(
                     "SPX-G172",
-                    format!("command I/O profile command must have an explicit identity and exact signature fn() -> {signature}"),
+                    format!(
+                        "command I/O profile command must have an explicit identity and exact signature fn() -> {signature}"
+                    ),
                 )]);
             }
         }
@@ -4279,7 +4282,13 @@ fn build_resolved_core(
     let mut loan_scratch = loan_retention::RetentionScratch::default();
     let mut expected_edges = Vec::new();
     for program in programs {
-        collect_expected_edges(program, module_paths, authored, &mut expected_edges)?;
+        collect_expected_edges(
+            program,
+            programs,
+            module_paths,
+            authored,
+            &mut expected_edges,
+        )?;
     }
     reserve_builder_structure(
         programs

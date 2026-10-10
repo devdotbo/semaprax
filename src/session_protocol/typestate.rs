@@ -268,6 +268,9 @@ fn collect_statement_bindings(statement: &Statement, names: &mut HashSet<String>
         Statement::For {
             item, values, body, ..
         }
+        | Statement::ForBorrow {
+            item, values, body, ..
+        }
         | Statement::ForOwn {
             item, values, body, ..
         } => {
@@ -406,7 +409,9 @@ fn statement_contains_via_call(statement: &Statement, via_names: &BTreeSet<&str>
         Statement::While {
             condition, body, ..
         } => contains_via_call(condition, via_names) || contains_via_call(body, via_names),
-        Statement::For { values, body, .. } | Statement::ForOwn { values, body, .. } => {
+        Statement::For { values, body, .. }
+        | Statement::ForBorrow { values, body, .. }
+        | Statement::ForOwn { values, body, .. } => {
             contains_via_call(values, via_names) || contains_via_call(body, via_names)
         }
     }
@@ -685,6 +690,9 @@ fn walk_statement(
             }
         }
         Statement::For {
+            values, body, span, ..
+        }
+        | Statement::ForBorrow {
             values, body, span, ..
         }
         | Statement::ForOwn {

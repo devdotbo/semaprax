@@ -165,6 +165,7 @@ pub(crate) fn capture_names_scoped(
 
 fn scalar_binding(ty: Type) -> Binding {
     Binding {
+        traversal_row: None,
         ty,
         mode: ParamMode::Value,
         availability: Availability::Available,

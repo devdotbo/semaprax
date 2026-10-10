@@ -870,7 +870,9 @@ impl<'a> Analyzer<'a> {
                                 }
                             }
                         },
-                        Statement::For { .. } | Statement::ForOwn { .. } => {
+                        Statement::For { .. }
+                        | Statement::ForBorrow { .. }
+                        | Statement::ForOwn { .. } => {
                             interrupted = Some(Outcome::Unsupported(REASON_ILL_TYPED_EXPRESSION));
                             break;
                         }

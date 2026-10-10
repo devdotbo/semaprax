@@ -37,8 +37,10 @@ mod import_stub;
 mod local_identity;
 #[path = "expected_projection/sort_keys.rs"]
 mod sort_keys;
+#[path = "expected_projection/record_traversal.rs"]
+mod record_traversal;
 #[path = "expected_projection/statement_segment.rs"]
-mod statement_segment;
+pub(super) mod statement_segment;
 #[path = "expected_projection/type_rewrite.rs"]
 mod type_rewrite;
 #[path = "expected_projection/uncached_peak.rs"]
@@ -888,6 +890,7 @@ pub(super) fn rewrite_type(
 }
 pub(super) fn collect_expected_edges(
     program: &Program,
+    programs: &[Program],
     module_paths: &BTreeMap<&str, &str>,
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
     edges: &mut Vec<WorkspaceEdge>,
@@ -1137,6 +1140,7 @@ pub(super) fn collect_expected_edges(
             }
         }
     }
+    record_traversal::collect_edges(program, programs, module_paths, authored, edges)?;
     for (ordinal, module_use) in program.module_uses.iter().enumerate() {
         if module_use.kind == ModuleUseKind::Protocol {
             continue;

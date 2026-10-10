@@ -159,12 +159,21 @@ fn visit(
                     Statement::For {
                         item, values, body, ..
                     }
+                    | Statement::ForBorrow {
+                        item, values, body, ..
+                    }
                     | Statement::ForOwn {
                         item, values, body, ..
                     } => {
                         visit(values, &mut block, functions, output, universe);
                         let mut loop_scope = block.clone();
                         loop_scope.insert(item, Binding::Shadow);
+                        if let Statement::ForBorrow {
+                            index: Some(index), ..
+                        } = statement
+                        {
+                            loop_scope.insert(&index.name, Binding::Shadow);
+                        }
                         visit(body, &mut loop_scope, functions, output, universe);
                     }
                 }

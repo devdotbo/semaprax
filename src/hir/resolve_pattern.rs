@@ -285,6 +285,7 @@ impl Resolver<'_> {
                             bindings.insert(
                                 name.clone(),
                                 Binding {
+                                    traversal_row: None,
                                     id: binding.id.clone(),
                                     ty: field_ty,
                                     ownership,

@@ -2,7 +2,7 @@
 use std::fmt::Write as _;
 
 const MAX_BYTES: usize = 2_048;
-const ROUTES: &str = "Authoring routes (complete):\n  author:stdin-json               v27 bounded native stream command\n  author:stream-data-v2           v29 private record/Vec stream command\n  author:owned-data               v30 private owned-leaf collections\n  author:collection-records       v31 nested records containing Vec\n  author:nested-outcomes         v32 typed nested success/error carriers\n  author:file-text                native UTF-8 file command\n  author:source-web               single-source web build\n  author:literal-format           checked literal String rendering\n  author:string-from-utf8         strict owned String construction from bytes\n  author:copy-record-vec          flat Copy-record vectors\n  author:record-sort-keys         explicit stable field sort policies\n  author:record-field-views       borrowed record and Vec field reads\n  author:json-codec               checked source JSON codec derivation\n  author:json-identifier-views    one identifier as a token view\n  author:json-request-views       bounded identifier and record arrays\n  author:json-stream-request-views bounded native stream request view\n  author:json-owned-request      bounded owning request collections\n  author:json-utf8-owned-request bounded UTF-8 string values\n  author:json-stream-utf8-owned-request bounded UTF-8 stdin requests\n  author:json-collection-response bounded nested collection encoder\n  author:json-nested-request      bounded finite nested request decoder\n  author:json-stream-nested-request bounded finite nested stdin decoder\n  author:json-nested-response     bounded finite nested borrowed encoder\n  author:json-request-response    typed request/response composition boundaries\nLibrary-only search: help language find:<word>:0\nExact card sections: help language topics\n";
+const ROUTES: &str = "Authoring routes (complete):\n  author:stdin-json               v27 bounded native stream command\n  author:stream-data-v2           v29 private record/Vec stream command\n  author:owned-data               v30 private owned-leaf collections\n  author:collection-records       v31 nested records containing Vec\n  author:nested-outcomes         v32 typed nested success/error carriers\n  author:file-text                native UTF-8 file command\n  author:source-web               single-source web build\n  author:literal-format           checked literal String rendering\n  author:string-from-utf8         strict owned String construction from bytes\n  author:copy-record-vec          flat Copy-record vectors\n  author:record-sort-keys         explicit stable field sort policies\n  author:record-field-views       borrowed record and Vec field reads\n  author:record-traversal         scoped borrowed rows and optional indices\n  author:json-codec               checked source JSON codec derivation\n  author:json-identifier-views    one identifier as a token view\n  author:json-request-views       bounded identifier and record arrays\n  author:json-stream-request-views bounded native stream request view\n  author:json-owned-request      bounded owning request collections\n  author:json-utf8-owned-request bounded UTF-8 string values\n  author:json-stream-utf8-owned-request bounded UTF-8 stdin requests\n  author:json-collection-response bounded nested collection encoder\n  author:json-nested-request      bounded finite nested request decoder\n  author:json-stream-nested-request bounded finite nested stdin decoder\n  author:json-nested-response     bounded finite nested borrowed encoder\n  author:json-request-response    typed request/response composition boundaries\nLibrary-only search: help language find:<word>:0\nExact card sections: help language topics\n";
 
 #[cfg(test)]
 pub(super) fn assert_guide_contract() {
@@ -106,8 +106,15 @@ pub(super) fn lookup(query: &str) -> Result<String, String> {
         "author:copy-record-vec" => Ok(concat!(
             "Flat Copy-record Vec source implementation; cross-engine and application qualification pending.\n",
             "R is an explicit monomorphic record with 1..8 direct Copy-scalar fields. Vec<R> uses typed vec_*<R> operations; get copies R, mutations transfer the Vec owner.\n",
-            "Capacity is bounded by 8192 scalar words divided by R's field count. Private pure helpers may borrow Vec<R> and pass R by value; generic wrappers, nested/owned records and for traversal remain closed.\n",
+            "Capacity is bounded by 8192 scalar words divided by R's field count. Private pure helpers may borrow Vec<R> and pass R by value; generic wrappers and nested records remain closed; scoped record traversal uses author:record-traversal.\n",
             "Core interpreter/native/Wasm contracts and exact status: docs/COPY-RECORD-COLLECTIONS-V1.md. Native v29 private command transport: help language author:stream-data-v2.\n"
+        ).to_owned()),
+        "author:record-traversal" => Ok(concat!(
+            "Scoped record traversal source implementation; executable qualification pending.\n",
+            "Use for borrow row in rows or for borrow row at index in rows. rows is an immutable named Vec of an existing admitted explicit monomorphic Copy record or flat owned-leaf record. The length is read once and indices ascend from zero; the optional index is immutable usize.\n",
+            "Select row.field: Copy scalars copy, String returns borrow str, Bytes returns borrow Slice<u8>. The row has no aggregate runtime storage and cannot escape. Field views expire within the iteration. Moving, rebinding or mutating the whole Vec inside the loop is refused even for Copy-only rows.\n",
+            "Nested for loops, computed/projected iterable roots, generic rows, primitive Vec<string>, row shadowing and break/continue remain closed. Existing vector capacities and cleanup order are unchanged.\n",
+            "Exact contract and pending gates: docs/SCOPED-RECORD-VEC-TRAVERSAL-V2.md. Scalar for retains docs/OWNED-BOUNDED-VEC-FOR-TRAVERSAL-V1.md.\n"
         ).to_owned()),
         "author:record-field-views" => Ok(concat!(
             "Authenticated borrowed record and Vec field views; current-head executable qualification pending.\n",
@@ -370,6 +377,7 @@ mod tests {
             "author:copy-record-vec",
             "author:record-sort-keys",
             "author:record-field-views",
+            "author:record-traversal",
             "author:json-codec",
             "author:json-identifier-views",
             "author:json-request-views",
@@ -656,6 +664,7 @@ mod tests {
         for selector in [
             "author:string-from-utf8",
             "author:record-field-views",
+            "author:record-traversal",
             "author:collection-records",
             "author:nested-outcomes",
             "author:json-identifier-views",

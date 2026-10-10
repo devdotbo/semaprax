@@ -287,6 +287,7 @@ fn static_token(value: &str) -> Result<&'static str> {
         "semaprax.cleanup-plan.v16" => Ok("semaprax.cleanup-plan.v16"),
         "semaprax.cleanup-plan.v17" => Ok("semaprax.cleanup-plan.v17"),
         "semaprax.loan-plan.v1" => Ok("semaprax.loan-plan.v1"),
+        "semaprax.loan-plan.v2" => Ok("semaprax.loan-plan.v2"),
         "callee" => Ok("callee"),
         "success_only" => Ok("success_only"),
         "final_zero_status_commit" => Ok("final_zero_status_commit"),

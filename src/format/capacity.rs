@@ -343,6 +343,20 @@ pub(super) fn legacy_expr_temporary_bytes(root: &Expr, root_precedence: u8) -> u
                             .len()
                             .saturating_add(cached_rendered(values, 0))
                             .saturating_add(9),
+                        Statement::ForBorrow {
+                            item,
+                            index,
+                            values,
+                            ..
+                        } => item
+                            .len()
+                            .saturating_add(cached_rendered(values, 0))
+                            .saturating_add(16)
+                            .saturating_add(
+                                index
+                                    .as_ref()
+                                    .map_or(0, |index| index.name.len().saturating_add(4)),
+                            ),
                         Statement::ForOwn { item, values, .. } => item
                             .len()
                             .saturating_add(cached_rendered(values, 0))

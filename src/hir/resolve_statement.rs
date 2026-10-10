@@ -12,7 +12,7 @@ use crate::source_verify::is_scalar_source_type;
 use super::expr_nodes::ResolvedExpr;
 use super::ids::{DeclarationId, FunctionExecutionId};
 use super::monomorphize::substitute_type;
-use super::nodes::{DeclarationKind, ResolvedBinding, ResolvedType, is_scalar_resolved_type};
+use super::nodes::{is_scalar_resolved_type, DeclarationKind, ResolvedBinding, ResolvedType};
 use super::{Binding, Resolver};
 
 impl Resolver<'_> {
@@ -194,7 +194,9 @@ impl Resolver<'_> {
                         pending.push(Item::Expression(condition));
                         continue;
                     }
-                    Statement::For { span, .. } | Statement::ForOwn { span, .. } => {
+                    Statement::For { span, .. }
+                    | Statement::ForBorrow { span, .. }
+                    | Statement::ForOwn { span, .. } => {
                         return Err(self.error(
                             "SPX-H006",
                             "nested for traversal reached bounded-loop HIR admission",

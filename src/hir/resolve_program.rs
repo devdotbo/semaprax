@@ -721,6 +721,7 @@ impl Resolver<'_> {
                 bindings.insert(
                     param.name.clone(),
                     Binding {
+                        traversal_row: None,
                         id: id.clone(),
                         ty: ty.clone(),
                         ownership,
@@ -757,6 +758,7 @@ impl Resolver<'_> {
         ensures_bindings.insert(
             "result".to_owned(),
             Binding {
+                traversal_row: None,
                 id: result_id.clone(),
                 ty: return_type.clone(),
                 ownership: if (transparent_vec_wrapper.is_some() && return_type.is_uniquely_owned())
@@ -924,6 +926,7 @@ impl Resolver<'_> {
                 bindings.insert(
                     param.name.clone(),
                     Binding {
+                        traversal_row: None,
                         id: id.clone(),
                         ty: ty.clone(),
                         ownership,
@@ -985,6 +988,7 @@ impl Resolver<'_> {
         ensures_bindings.insert(
             "result".to_owned(),
             Binding {
+                traversal_row: None,
                 id: result_id.clone(),
                 ty: return_type.clone(),
                 ownership: self.expression_ownership(

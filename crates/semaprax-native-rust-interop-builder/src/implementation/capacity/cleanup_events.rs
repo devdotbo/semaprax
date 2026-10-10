@@ -32,7 +32,7 @@ fn desugared_statement_identity_upper(
         .enumerate()
         .try_fold(0usize, |bytes, (index, statement)| {
             let (count, suffix) = match statement {
-                crate::ast::Statement::For { .. } => (
+                crate::ast::Statement::For { .. } | crate::ast::Statement::ForBorrow { .. } => (
                     FOR_GENERATED_EXPRESSION_COUNT,
                     ".value.s2.body.s0.value.arg.1",
                 ),

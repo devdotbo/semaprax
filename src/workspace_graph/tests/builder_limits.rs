@@ -270,9 +270,12 @@ fn a_for_item_binding_is_charged_exactly_like_a_let_binding() {
 fn core_retry_fixture() -> Vec<WorkspaceSource> {
     let sources = |count| {
         vec![
-        stub_charge_provider(count),
-        canonical_source("stub/consumer.spx", "module stub.consumer; use function @id(\"stub.wide\") from stub.provider as wide; @id(\"stub.consumer.main\") fn main() -> i64 { wide(0) }"),
-    ]
+            stub_charge_provider(count),
+            canonical_source(
+                "stub/consumer.spx",
+                "module stub.consumer; use function @id(\"stub.wide\") from stub.provider as wide; @id(\"stub.consumer.main\") fn main() -> i64 { wide(0) }",
+            ),
+        ]
     };
     let fits = |count| {
         let programs = parsed_sources(&sources(count));
@@ -566,7 +569,7 @@ fn import_free_edge_replay_does_not_materialize_unused_paths() {
         let resolved = hir::resolve(&synthetic).unwrap();
         let (result, overflow, consumed) = crate::bounded_output::with_limit_usage(0, || {
             let mut edges = Vec::new();
-            collect_expected_edges(program, &paths, &authored, &mut edges)?;
+            collect_expected_edges(program, &programs, &paths, &authored, &mut edges)?;
             assert!(edges.is_empty());
             verify_resolved_call_edges(program, &resolved, &authored)
         });

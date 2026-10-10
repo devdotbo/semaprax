@@ -993,15 +993,13 @@ fn write_format_frames(
                         Statement::For {
                             item, values, body, ..
                         }
+                        | Statement::ForBorrow {
+                            item, values, body, ..
+                        }
                         | Statement::ForOwn {
                             item, values, body, ..
                         } => {
-                            let prefix = if matches!(statement, Statement::ForOwn { .. }) {
-                                "for own"
-                            } else {
-                                "for"
-                            };
-                            write!(output, "{prefix} {item} in ").unwrap();
+                            block_statement::write_traversal_header(output, statement, item);
                             frames.push(Frame::BlockNextAfterWhile(statements, tail, index + 1));
                             frames.push(Frame::WhileBody(body));
                             frames.push(Frame::Expr(values, 0));
@@ -1487,6 +1485,7 @@ fn statement_start(statement: &Statement) -> usize {
         | Statement::Unsafe { span, .. }
         | Statement::While { span, .. }
         | Statement::For { span, .. }
+        | Statement::ForBorrow { span, .. }
         | Statement::ForOwn { span, .. } => span.start,
     }
 }

@@ -87,6 +87,7 @@ pub(super) fn check_record_invariants(
                 (
                     field.name.clone(),
                     Binding {
+                        traversal_row: None,
                         ty: field.ty.clone(),
                         mode,
                         availability: Availability::Available,

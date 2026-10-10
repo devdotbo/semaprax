@@ -138,6 +138,7 @@ impl Resolver<'_> {
                 (
                     p.name.clone(),
                     Binding {
+                        traversal_row: None,
                         id: p.id.clone(),
                         ty: p.ty.clone(),
                         ownership: p.ownership,

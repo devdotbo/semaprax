@@ -126,7 +126,9 @@ fn scan_top_level_statement(
             forbid_nested_yield(condition, path)?;
             scan_block(body, Level::Nested, found, path)
         }
-        Statement::For { values, body, .. } | Statement::ForOwn { values, body, .. } => {
+        Statement::For { values, body, .. }
+        | Statement::ForBorrow { values, body, .. }
+        | Statement::ForOwn { values, body, .. } => {
             forbid_nested_yield(values, path)?;
             forbid_nested_yield(body, path)
         }
@@ -269,7 +271,9 @@ fn forbid_nested_yield_statement(statement: &Statement, path: &str) -> Result<()
             forbid_nested_yield(condition, path)?;
             forbid_nested_yield(body, path)
         }
-        Statement::For { values, body, .. } | Statement::ForOwn { values, body, .. } => {
+        Statement::For { values, body, .. }
+        | Statement::ForBorrow { values, body, .. }
+        | Statement::ForOwn { values, body, .. } => {
             forbid_nested_yield(values, path)?;
             forbid_nested_yield(body, path)
         }

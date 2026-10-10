@@ -24,6 +24,7 @@ mod owned_buffer;
 mod owned_result_try;
 mod owner_renewal;
 mod proof_return;
+mod record_traversal;
 mod stdin_stream;
 mod string_intrinsic;
 mod type_profiles;
@@ -3493,6 +3494,7 @@ impl<'a> HirValidator<'a> {
                             });
                         }
                         ResolvedExprKind::Block { statements, tail } => {
+                            self.validate_record_traversal(expression, &scope)?;
                             let outer_ids = scope.keys().cloned().collect();
                             let outer = scope.clone();
                             frames.push(Frame::BlockNext {
@@ -6780,6 +6782,7 @@ impl<'a> HirValidator<'a> {
                 (output, OwnershipMode::Value)
             }
             ResolvedExprKind::Block { statements, tail } => {
+                self.validate_record_traversal(expression, scope)?;
                 let mut block_scope = scope.clone();
                 for (index, statement) in statements.iter().enumerate() {
                     match statement {

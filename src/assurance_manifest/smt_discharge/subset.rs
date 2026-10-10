@@ -258,7 +258,9 @@ pub fn statement_reason(statement: &Statement) -> Option<UnsupportedReason> {
         Statement::Assign { .. } => Some(UnsupportedReason::NonLetStatement { what: "assign" }),
         Statement::Unsafe { .. } => Some(UnsupportedReason::NonLetStatement { what: "unsafe" }),
         Statement::While { .. } => Some(UnsupportedReason::NonLetStatement { what: "while" }),
-        Statement::For { .. } => Some(UnsupportedReason::NonLetStatement { what: "for" }),
+        Statement::For { .. } | Statement::ForBorrow { .. } => {
+            Some(UnsupportedReason::NonLetStatement { what: "for" })
+        }
         // Any further statement variants this crate may add later are
         // conservatively unsupported until explicitly admitted.
         #[allow(unreachable_patterns)]

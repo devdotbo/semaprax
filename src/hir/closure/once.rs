@@ -147,6 +147,7 @@ impl Resolver<'_> {
         let mut bindings = BTreeMap::from([(
             captured.clone(),
             Binding {
+                traversal_row: None,
                 id: binding.id,
                 ty: binding.ty,
                 ownership: OwnershipMode::Own,
@@ -165,6 +166,7 @@ impl Resolver<'_> {
             bindings.insert(
                 name,
                 Binding {
+                    traversal_row: None,
                     id: binding.id.clone(),
                     ty: binding.ty.clone(),
                     ownership: OwnershipMode::Value,

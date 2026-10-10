@@ -3,13 +3,13 @@
 
 use crate::ast::{Expr, ParamMode, Span, Statement, Type};
 use crate::diagnostic::Diagnostic;
-use crate::source_verify::IterativeVerifier;
 use crate::source_verify::binding::{Availability, Binding};
 use crate::source_verify::diagnostics::{error, is_scalar_source_type, reject_native_unit_value};
 use crate::source_verify::loans::{
     activate_local_loan, has_active_overlapping_loan, local_borrow_origin,
     mark_value_sources_moved, merge_moved, release_dead_local_loans,
 };
+use crate::source_verify::IterativeVerifier;
 use std::collections::{BTreeSet, HashMap, HashSet};
 
 impl<'a, 'p> IterativeVerifier<'a, 'p> {
@@ -184,6 +184,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     self.scopes[block_scope].bindings.insert(
                         name.clone(),
                         Binding {
+                            traversal_row: None,
                             ty: binding_ty,
                             mode: binding_mode,
                             availability: Availability::Available,
@@ -474,7 +475,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             }
             // While statements never route through this frame:
             // they complete through ResumeWhileBody instead.
-            Statement::While { .. } | Statement::For { .. } | Statement::ForOwn { .. } => {}
+            Statement::While { .. }
+            | Statement::For { .. }
+            | Statement::ForBorrow { .. }
+            | Statement::ForOwn { .. } => {}
         }
         // Most blocks have no borrowed local at all. Avoid rescanning every
         // accumulated scalar binding after each statement in that common
@@ -631,6 +635,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
     ) -> Result<(), Diagnostic> {
         let actual = self.values.pop().unwrap_or(None);
         let consuming = matches!(statements[index], Statement::ForOwn { .. });
+        let borrowing = matches!(statements[index], Statement::ForBorrow { .. });
         let source = match &values.kind {
             crate::ast::ExprKind::Var(name) if !consuming => Some(name.as_str()),
             _ => None,
@@ -638,7 +643,8 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         let element = actual.as_ref().and_then(|actual| match &actual.ty {
             Type::Named { name, arguments }
                 if name == (if consuming { "Iter" } else { "Vec" })
-                    && matches!(arguments.as_slice(), [ty] if crate::vec_ops::ast_element_is_admitted(ty)
+                    && matches!(arguments.as_slice(), [ty] if crate::vec_ops::ast_element_is_admitted(ty) && !borrowing
+                        || (borrowing && crate::source_verify::record_traversal::admitted(self.types, ty))
                         || (consuming && (*ty == Type::Bytes
                             || crate::source_verify::declared_type::owned_leaf_collection::runtime_element(self.types, ty)
                             || crate::source_verify::declared_type::generic_collection::slot(self.current, &actual.ty))))
@@ -709,7 +715,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             if let Some(element) = element {
                 self.scopes[block_scope].bindings.insert(
                     item.to_owned(),
-                    Binding {
+                    Binding { traversal_row: None,
                         mode: if consuming
                             && (element == Type::Bytes
                                 || crate::source_verify::declared_type::owned_leaf_collection::runtime_element(
@@ -731,6 +737,101 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         borrow_origin: None,
                     },
                 );
+            }
+        }
+        if borrowing && item_inserted {
+            if let Some(source) = source {
+                let selected_index = match &statements[index] {
+                    Statement::ForBorrow {
+                        index: Some(selected),
+                        ..
+                    } => Some(selected.name.as_str()),
+                    _ => None,
+                };
+                if let Some(span) = crate::source_verify::record_traversal::body_binding_conflict(
+                    body,
+                    source,
+                    item,
+                    selected_index,
+                ) {
+                    self.diagnostics.push(error(
+                        self.program,
+                        "SPX-T284",
+                        "record traversal cannot shadow its carrier, row or index binding",
+                        span,
+                    ));
+                }
+
+                if let Some(binding) = self.scopes[block_scope].bindings.get_mut(item) {
+                    binding.mode = ParamMode::Borrow;
+                    binding.traversal_row =
+                        Some(Box::new(crate::source_verify::record_traversal::Row {
+                            root: source.to_owned(),
+                            element: binding.ty.clone(),
+                            index_inserted: false,
+                            freeze: crate::source_verify::binding::SourceLoanId {
+                                borrower: item.to_owned(),
+                                start: values.span.start,
+                                end: body.span.end,
+                            },
+                        }));
+                }
+            }
+            if let Some(row) = self.scopes[block_scope]
+                .bindings
+                .get(item)
+                .and_then(|binding| binding.traversal_row.as_deref())
+                .cloned()
+            {
+                if let Some(owner) = self.scopes[block_scope].bindings.get_mut(&row.root) {
+                    owner
+                        .active_loans
+                        .insert(crate::source_verify::binding::SourceLoan {
+                            id: row.freeze,
+                            projections: Vec::new(),
+                        });
+                }
+            }
+            if let Statement::ForBorrow {
+                index: Some(selected),
+                ..
+            } = &statements[index]
+            {
+                if selected.name == item
+                    || self.scopes[block_scope]
+                        .bindings
+                        .contains_key(&selected.name)
+                {
+                    self.diagnostics.push(error(
+                        self.program,
+                        "SPX-T209",
+                        "record traversal index must be a fresh distinct binding",
+                        selected.span,
+                    ));
+                } else {
+                    self.scopes[block_scope].bindings.insert(
+                        selected.name.clone(),
+                        Binding {
+                            ty: Type::Usize,
+                            mode: ParamMode::Value,
+                            availability: Availability::Available,
+                            moved_places: HashMap::new(),
+                            definitely_partial: HashSet::new(),
+                            native_unit_discard: false,
+                            mutable: false,
+                            active_loans: BTreeSet::new(),
+                            borrow_origin: None,
+                            traversal_row: None,
+                        },
+                    );
+                    if let Some(row) = self.scopes[block_scope]
+                        .bindings
+                        .get_mut(item)
+                        .and_then(|binding| binding.traversal_row.as_deref_mut())
+                    {
+                        row.index_inserted = true;
+                    }
+                }
             }
         }
         self.frames
@@ -784,8 +885,34 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         {
             self.owned_iterator_items.pop();
         }
+        if let Some(row) = self.scopes[block_scope]
+            .bindings
+            .get(item)
+            .and_then(|binding| binding.traversal_row.as_deref())
+            .cloned()
+        {
+            if let Some(owner) = self.scopes[block_scope].bindings.get_mut(&row.root) {
+                owner.active_loans.retain(|loan| loan.id != row.freeze);
+            }
+        }
+        let index_inserted = self.scopes[block_scope]
+            .bindings
+            .get(item)
+            .and_then(|binding| binding.traversal_row.as_deref())
+            .is_some_and(|row| row.index_inserted);
         if item_inserted {
             self.scopes[block_scope].bindings.remove(item);
+        }
+        if let Statement::ForBorrow {
+            index: Some(selected),
+            ..
+        } = &statements[index]
+        {
+            // Remove only a successfully inserted index. A hostile collision
+            // leaves the authoritative outer binding in place.
+            if index_inserted {
+                self.scopes[block_scope].bindings.remove(&selected.name);
+            }
         }
         if let Some(baseline) = baseline {
             let mut names = baseline.keys().collect::<Vec<_>>();

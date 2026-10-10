@@ -205,6 +205,7 @@ impl Checker<'_> {
                             self.opaque(body, flow)?;
                         }
                         Statement::For { values, body, .. }
+                        | Statement::ForBorrow { values, body, .. }
                         | Statement::ForOwn { values, body, .. } => {
                             self.opaque(values, flow)?;
                             self.opaque(body, flow)?;

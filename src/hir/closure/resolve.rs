@@ -142,6 +142,7 @@ impl Resolver<'_> {
             bindings.insert(
                 name,
                 Binding {
+                    traversal_row: None,
                     id: binding.id.clone(),
                     ty: binding.ty.clone(),
                     ownership,
@@ -175,6 +176,7 @@ impl Resolver<'_> {
             bindings.insert(
                 param.name.clone(),
                 Binding {
+                    traversal_row: None,
                     id: binding.id.clone(),
                     ty: binding.ty.clone(),
                     ownership: OwnershipMode::Value,

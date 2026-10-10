@@ -2,6 +2,9 @@ use super::*;
 use checked_value_retention::{retain_checked_nominal_type, retain_checked_value_types};
 #[path = "tests/builder_limits.rs"]
 mod builder_limits;
+#[path = "tests/record_traversal.rs"]
+mod record_traversal;
+use record_traversal::canonical_source;
 #[path = "tests/source_repair.rs"]
 mod source_repair;
 #[path = "tests/static_protocol.rs"]
@@ -154,13 +157,6 @@ fn source(path: &str, source: &str) -> WorkspaceSource {
         source: source.to_owned(),
     }
 }
-fn canonical_source(path: &str, source: &str) -> WorkspaceSource {
-    let program = crate::parse(source, Path::new(path)).expect("test source must parse");
-    WorkspaceSource {
-        path: path.to_owned(),
-        source: format::canonical(&program),
-    }
-}
 #[test]
 fn scalar_linker_uses_real_provider_bodies_for_two_closures() {
     let provider = canonical_source(
@@ -213,10 +209,12 @@ fn main() -> i64 { answer() + 2 }
     };
     assert!(matches!(tail.kind, hir::ResolvedExprKind::Int(41)));
     assert_eq!(entry_answer.body, test_answer.body);
-    assert!(entry.functions.iter().all(|function| !function
-        .id
-        .as_str()
-        .starts_with("workspace.synthetic.main.")));
+    assert!(entry.functions.iter().all(|function| {
+        !function
+            .id
+            .as_str()
+            .starts_with("workspace.synthetic.main.")
+    }));
     assert_eq!(entry.entrypoint.as_str(), "app.main");
     assert_eq!(test.entrypoint.as_str(), "test.main");
 }
@@ -1201,8 +1199,8 @@ fn indexed_proof_replays_many_permits_and_zero_effect_calls() {
         "module lib.core;\npermit {{ {permits} }}\n\n@id(\"lib.zero\")\nfn zero() -> i64 {{ 0 }}\n"
     );
     let mut app = format!(
-            "module app.main;\nuse function @id(\"lib.zero\") from lib.core as zero;\npermit {{ {permits} }}\n\n@id(\"app.main\")\nfn main() -> i64 {{\n"
-        );
+        "module app.main;\nuse function @id(\"lib.zero\") from lib.core as zero;\npermit {{ {permits} }}\n\n@id(\"app.main\")\nfn main() -> i64 {{\n"
+    );
     for index in 0..CALLS {
         app.push_str(&format!("    let value_{index} = zero();\n"));
     }
@@ -2011,7 +2009,9 @@ fn long_identity_many_calls_and_deep_paths_replay_deterministically() {
         "long/lib.spx",
         &format!("module long.lib;\n@id(\"{target}\") fn value(input: i64) -> i64 {{ input }}\n"),
     );
-    let mut app = format!("module long.app;\nuse function @id(\"{target}\") from long.lib as value;\n@id(\"long.app.main\") fn main() -> i64 {{\n");
+    let mut app = format!(
+        "module long.app;\nuse function @id(\"{target}\") from long.lib as value;\n@id(\"long.app.main\") fn main() -> i64 {{\n"
+    );
     for index in 0..CALLS {
         app.push_str(&format!("let value_{index} = value(0);\n"));
     }
@@ -2251,11 +2251,11 @@ fn long_nominal_and_child_id_repetition_is_rejected_by_builder_preflight() {
     let type_id = format!("long.type.{}", "t".repeat(2048));
     let field_id = format!("long.field.{}", "f".repeat(2048));
     let provider = canonical_source(
-            "long-type/provider.spx",
-            &format!(
-                "module long_type.provider;\n@id(\"{type_id}\") record Long {{ @id(\"{field_id}\") value: i64, }}\n@id(\"long.type.local\") fn local() -> i64 {{ 0 }}\n"
-            ),
-        );
+        "long-type/provider.spx",
+        &format!(
+            "module long_type.provider;\n@id(\"{type_id}\") record Long {{ @id(\"{field_id}\") value: i64, }}\n@id(\"long.type.local\") fn local() -> i64 {{ 0 }}\n"
+        ),
+    );
     let mut consumer = format!(
         "module long_type.consumer;\nuse type @id(\"{type_id}\") from long_type.provider as L;\n"
     );

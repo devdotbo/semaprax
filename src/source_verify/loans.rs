@@ -26,6 +26,20 @@ pub(super) fn local_borrow_origin(
                 |origin| Some((origin.root, origin.projections, Some(origin.loan))),
             )?
         }
+        ExprKind::Project { .. } => {
+            let (root, value) = super::record_traversal::project(expression, variables, types)?;
+            if !matches!(value.ty, Type::Str | Type::SliceU8) {
+                return None;
+            }
+            let ExprKind::Project { base, .. } = &expression.kind else {
+                unreachable!()
+            };
+            let ExprKind::Var(row) = &base.kind else {
+                unreachable!()
+            };
+            let parent = variables.get(row)?.traversal_row.as_deref()?.freeze.clone();
+            (root, Vec::new(), Some(parent))
+        }
         ExprKind::Call { name, args, .. }
             if program
                 .interfaces
@@ -135,6 +149,16 @@ pub(super) fn local_borrow_origin(
                         } else {
                             source_place(source, variables, types)?
                         }
+                    } else if let Some((root, _)) =
+                        super::record_traversal::project(source, variables, types)
+                    {
+                        super::place::SourcePlace {
+                            root_span: source.span,
+                            ty: variables.get(&root)?.ty.clone(),
+                            mode: variables.get(&root)?.mode,
+                            root,
+                            projections: Vec::new(),
+                        }
                     } else {
                         source_place(source, variables, types)?
                     }
@@ -234,6 +258,7 @@ pub(super) fn expression_uses_name(expression: &Expr, name: &str) -> bool {
                             pending.push(body);
                         }
                         Statement::For { values, body, .. }
+                        | Statement::ForBorrow { values, body, .. }
                         | Statement::ForOwn { values, body, .. } => {
                             pending.push(values);
                             pending.push(body);
@@ -303,7 +328,9 @@ pub(super) fn release_dead_local_loans(
                 Statement::While {
                     condition, body, ..
                 } => expression_uses_name(condition, name) || expression_uses_name(body, name),
-                Statement::For { values, body, .. } | Statement::ForOwn { values, body, .. } => {
+                Statement::For { values, body, .. }
+                | Statement::ForBorrow { values, body, .. }
+                | Statement::ForOwn { values, body, .. } => {
                     expression_uses_name(values, name) || expression_uses_name(body, name)
                 }
             }) || expression_uses_name(tail, name);

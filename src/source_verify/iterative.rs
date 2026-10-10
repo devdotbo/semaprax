@@ -124,6 +124,13 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             body,
             ..
         }
+        | Statement::ForBorrow {
+            item,
+            item_span,
+            values,
+            body,
+            ..
+        }
         | Statement::ForOwn {
             item,
             item_span,

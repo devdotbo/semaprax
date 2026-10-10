@@ -65,9 +65,16 @@ pub(super) fn discount_with_imports(
                                     Statement::Let { name, .. }
                                     | Statement::Assign { name, .. } => Some(name),
                                     Statement::For { item, .. }
+                                    | Statement::ForBorrow { item, .. }
                                     | Statement::ForOwn { item, .. } => Some(item),
                                     _ => None,
                                 };
+                                if let Statement::ForBorrow {
+                                    index: Some(index), ..
+                                } = statement
+                                {
+                                    shadowed.insert(&index.name);
+                                }
                                 if let Some(name) = name {
                                     shadowed.insert(name);
                                 }
@@ -306,8 +313,18 @@ mod tests {
     }
     #[test]
     fn identity_prebound_scalar_calls_keep_callee_and_opaque_results() {
-        assert_eq!(count("module calls; @id(\"calls.scalar\") fn scalar()->i64{1} @id(\"calls.main\") fn main()->i64{scalar()}"), 2);
-        assert_eq!(count("module calls; @id(\"calls.scalar\") fn scalar<T>(x:T)->i64{1} @id(\"calls.main\") fn main()->i64{scalar<i64>(0)}"), 0);
+        assert_eq!(
+            count(
+                "module calls; @id(\"calls.scalar\") fn scalar()->i64{1} @id(\"calls.main\") fn main()->i64{scalar()}"
+            ),
+            2
+        );
+        assert_eq!(
+            count(
+                "module calls; @id(\"calls.scalar\") fn scalar<T>(x:T)->i64{1} @id(\"calls.main\") fn main()->i64{scalar<i64>(0)}"
+            ),
+            0
+        );
         assert_eq!(
             count("module calls; @id(\"calls.main\") fn main()->usize{byte_len(input)}"),
             2
@@ -354,7 +371,12 @@ mod tests {
                 "expression and binding ValueId remain charged for {ty}"
             );
         }
-        assert_eq!(count("module calls; @id(\"calls.read\") fn read(value:i64)->i64 requires value>=0 ensures result>=value {value}"), 3);
+        assert_eq!(
+            count(
+                "module calls; @id(\"calls.read\") fn read(value:i64)->i64 requires value>=0 ensures result>=value {value}"
+            ),
+            3
+        );
         for signature in [
             "value:own Bytes",
             "value:borrow Slice<u8>",
@@ -396,8 +418,18 @@ mod tests {
                 "{body}"
             );
         }
-        assert_eq!(count("module calls; @id(\"calls.main\") fn main()->i64 {let first=1; let second=first; second+first}"), 3);
-        assert_eq!(count("module calls; @id(\"calls.scalar\") fn scalar()->i64{1} @id(\"calls.main\") fn main()->i64 {let value=scalar();value}"), 3);
+        assert_eq!(
+            count(
+                "module calls; @id(\"calls.main\") fn main()->i64 {let first=1; let second=first; second+first}"
+            ),
+            3
+        );
+        assert_eq!(
+            count(
+                "module calls; @id(\"calls.scalar\") fn scalar()->i64{1} @id(\"calls.main\") fn main()->i64 {let value=scalar();value}"
+            ),
+            3
+        );
     }
 
     #[test]

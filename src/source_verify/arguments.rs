@@ -309,6 +309,11 @@ pub(super) fn source_byte_view_place_is_admitted(
     types: &TypeTable<'_>,
 ) -> bool {
     if operation == crate::byte_ops::ByteOp::StrAsBytes {
+        if super::record_traversal::project(expression, variables, types)
+            .is_some_and(|(_, value)| value.ty == Type::Str)
+        {
+            return true;
+        }
         if let ExprKind::Call {
             name,
             type_arguments,

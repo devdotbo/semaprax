@@ -216,6 +216,7 @@ fn compare_scalar_body(source: &str) {
         oracle_scope.insert(
             parameter.name.clone(),
             Binding {
+                traversal_row: None,
                 ty: parameter.ty.clone(),
                 mode: parameter.mode,
                 availability: Availability::Available,

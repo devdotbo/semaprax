@@ -48,6 +48,7 @@ mod owned_buffer;
 mod owning_closure;
 mod place;
 mod record_invariants;
+mod record_traversal;
 mod scope;
 mod sort_keys;
 mod stdin_stream;

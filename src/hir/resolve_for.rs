@@ -1,5 +1,7 @@
 //! Canonical lowering for bounded `for item in values` Vec traversal.
 
+pub(super) mod record;
+
 use crate::ast::{BinaryOp, Span};
 use std::collections::BTreeMap;
 use std::rc::Rc;
@@ -89,6 +91,7 @@ pub(super) fn schedule<'expr>(
     Rc::make_mut(&mut body_scope).insert(
         item.to_owned(),
         Binding {
+            traversal_row: None,
             id: ValueId::local(function, &format!("{statement_path}.value.s2.body.s0")),
             ty: element.clone(),
             ownership: OwnershipMode::Value,
@@ -130,25 +133,42 @@ pub(super) fn resume<'expr>(
     element: ResolvedType,
 ) {
     let authored_body = results.pop().expect("for body result retained");
-    let crate::ast::Statement::For {
-        item,
-        item_span,
-        span,
-        ..
-    } = &statements[index]
-    else {
-        unreachable!("for frame resumes at a for statement")
-    };
-    resolved.push(lower(
-        function,
-        &format!("{block_path}.s{index}"),
-        item,
-        *item_span,
-        &source,
-        element,
-        authored_body,
-        *span,
-    ));
+    let path = format!("{block_path}.s{index}");
+    resolved.push(match &statements[index] {
+        crate::ast::Statement::For {
+            item,
+            item_span,
+            span,
+            ..
+        } => lower(
+            function,
+            &path,
+            item,
+            *item_span,
+            &source,
+            element,
+            authored_body,
+            *span,
+        ),
+        crate::ast::Statement::ForBorrow {
+            item,
+            item_span,
+            index,
+            span,
+            ..
+        } => record::lower(
+            function,
+            &path,
+            item,
+            *item_span,
+            index.as_ref(),
+            &source,
+            element,
+            authored_body,
+            *span,
+        ),
+        _ => unreachable!("for frame resumes at a traversal statement"),
+    });
     frames.push(Frame::BlockNext {
         span: block_span,
         path: block_path,
@@ -234,6 +254,7 @@ pub(super) fn resolve_reference(
     body_scope.insert(
         item.to_owned(),
         Binding {
+            traversal_row: None,
             id: ValueId::local(function, &format!("{statement_path}.value.s2.body.s0")),
             ty: element.clone(),
             ownership: OwnershipMode::Value,

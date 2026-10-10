@@ -196,6 +196,7 @@ pub(super) fn require_bool(
             contract_variables.insert(
                 "result".to_owned(),
                 Binding {
+                    traversal_row: None,
                     ty: ty.clone(),
                     mode: ParamMode::Own,
                     availability: Availability::Available,

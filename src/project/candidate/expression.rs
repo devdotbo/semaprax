@@ -4,7 +4,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 
 use crate::ast::{self, Expr, ExprKind, Span, Statement};
 use crate::diagnostic::Diagnostic;
@@ -14,7 +14,7 @@ use crate::hir::{
 };
 use crate::project::{ProjectRevision, ProjectSource};
 
-use super::{ProjectCandidate, intent, parse_revision, wire};
+use super::{intent, parse_revision, wire, ProjectCandidate};
 
 const MAX_EXPRESSIONS: usize = 4096;
 const MAX_DEPTH: usize = 256;
@@ -1045,6 +1045,7 @@ fn ast_children_mut(expression: &mut Expr) -> Vec<&mut Expr> {
                         children.push(body.as_mut());
                     }
                     Statement::For { values, body, .. }
+                    | Statement::ForBorrow { values, body, .. }
                     | Statement::ForOwn { values, body, .. } => {
                         children.push(values.as_mut());
                         children.push(body.as_mut());

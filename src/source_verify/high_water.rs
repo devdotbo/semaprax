@@ -29,6 +29,12 @@ pub(super) fn note_capacity_high_water(bytes: usize) {
 
 #[cfg(test)]
 pub(super) fn binding_owned_capacity(binding: &Binding) -> usize {
+    let row = binding.traversal_row.as_ref().map_or(0usize, |row| {
+        std::mem::size_of::<super::record_traversal::Row>()
+            + row.root.capacity()
+            + ast_type_owned_capacity(&row.element)
+            + row.freeze.borrower.capacity()
+    });
     let moved = binding
         .moved_places
         .iter()
@@ -78,6 +84,7 @@ pub(super) fn binding_owned_capacity(binding: &Binding) -> usize {
                 .saturating_mul(std::mem::size_of::<Vec<String>>()),
         )
         .saturating_add(ast_type_owned_capacity(&binding.ty))
+        .saturating_add(row)
         .saturating_add(moved)
         .saturating_add(partial)
         .saturating_add(

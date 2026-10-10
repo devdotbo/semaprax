@@ -3,7 +3,7 @@ use std::process::Command;
 use std::sync::atomic::{AtomicU64, Ordering};
 static SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
-fn run(source: &str, expected_code: u32, expected_value: i64) {
+pub(super) fn run(source: &str, expected_code: u32, expected_value: i64) {
     let program = semaprax::check(source, "scoped-vec-field-native.spx").unwrap();
     let resolved = semaprax::hir::resolve(&program).unwrap();
     let generated = semaprax::codegen::emit_hir_c(&resolved).unwrap();

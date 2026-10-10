@@ -713,6 +713,7 @@ pub(super) fn source_transcript_source_from_roots(
                         Statement::Unsafe { .. }
                         | Statement::While { .. }
                         | Statement::For { .. }
+                        | Statement::ForBorrow { .. }
                         | Statement::ForOwn { .. } => {}
                     }
                 }
@@ -1400,6 +1401,7 @@ fn source_capacity_expr(
                             ..
                         }
                         | Statement::For { values, body, .. }
+                        | Statement::ForBorrow { values, body, .. }
                         | Statement::ForOwn { values, body, .. } => {
                             frames.push(Frame::BlockAfter {
                                 statements,

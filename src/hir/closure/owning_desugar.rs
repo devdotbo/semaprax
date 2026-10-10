@@ -137,7 +137,9 @@ fn statement_has_owning_closure(statement: &Statement) -> bool {
         Statement::While {
             condition, body, ..
         } => expr_has_owning_closure(condition) || expr_has_owning_closure(body),
-        Statement::For { values, body, .. } | Statement::ForOwn { values, body, .. } => {
+        Statement::For { values, body, .. }
+        | Statement::ForBorrow { values, body, .. }
+        | Statement::ForOwn { values, body, .. } => {
             expr_has_owning_closure(values) || expr_has_owning_closure(body)
         }
     }
@@ -331,6 +333,22 @@ fn lower_statements(statements: &mut Vec<Statement>, substitutions: &mut HashMap
         } => {
             lower_expr(values, substitutions);
             lower_scoped(body, substitutions, [item.as_str()]);
+            true
+        }
+        Statement::ForBorrow {
+            item,
+            index,
+            values,
+            body,
+            ..
+        } => {
+            lower_expr(values, substitutions);
+            lower_scoped(
+                body,
+                substitutions,
+                std::iter::once(item.as_str())
+                    .chain(index.as_ref().map(|index| index.name.as_str())),
+            );
             true
         }
     });

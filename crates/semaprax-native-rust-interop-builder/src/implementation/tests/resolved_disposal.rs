@@ -562,6 +562,11 @@ fn every_expression_shape_resolves_at_exact_depth_512_and_rejects_513() {
                         body,
                         ..
                     }
+                    | crate::ast::Statement::ForBorrow {
+                        values: condition,
+                        body,
+                        ..
+                    }
                     | crate::ast::Statement::ForOwn {
                         values: condition,
                         body,

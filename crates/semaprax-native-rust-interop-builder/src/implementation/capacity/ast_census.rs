@@ -105,6 +105,12 @@ pub(in crate::implementation) fn scan_ast_capacity<'a>(
                                 | crate::ast::Statement::ForOwn { item, .. } => {
                                     Some((count.checked_add(1)?, bytes.checked_add(item.len())?))
                                 }
+                                crate::ast::Statement::ForBorrow { item, index, .. } => Some((
+                                    count.checked_add(1 + usize::from(index.is_some()))?,
+                                    bytes.checked_add(item.len())?.checked_add(
+                                        index.as_ref().map_or(0, |index| index.name.len()),
+                                    )?,
+                                )),
                                 crate::ast::Statement::Unsafe { .. }
                                 | crate::ast::Statement::While { .. } => Some((count, bytes)),
                             },
