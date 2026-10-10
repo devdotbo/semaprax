@@ -1,5 +1,9 @@
 # Changelog
 
+- Authored consuming owned-record outer Vec renewal with independently recovered
+  iterator authority, existing v15 reservation replay and selective Graph v79;
+  native/Core-Wasm and hostile regression definitions await qualification.
+
 - Author a separate selected-file resource profile with 256 raw argv and the
   existing v28 String/output envelope. Add a LogLens reference whose source
   owns usage and whose wrapper grants only the selected file, plus an opt-in

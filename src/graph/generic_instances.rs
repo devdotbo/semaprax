@@ -130,6 +130,7 @@ pub(super) fn pre_filesystem_graph_json(
         && !super::scoped_vec_field::requires(program)
         && !super::byte_helper_renewal::requires(program)
         && !super::finite_byte_scratch::requires(program)
+        && !super::consuming_vec_renewal::requires(program)
         && !view.static_text()
         && !program
             .declarations

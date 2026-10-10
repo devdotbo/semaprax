@@ -59,11 +59,14 @@ pub(crate) use generic_instances::to_legacy_hir_json;
 pub use generic_instances::{legacy_context_json, to_legacy_json, verify_json};
 pub(crate) use generic_mapping::requires_v35;
 mod byte_helper_renewal;
+mod consuming_vec_renewal;
+mod facts_object;
+use facts_object::facts_object;
 mod finite_byte_scratch;
 mod static_text;
 mod view_render;
-use finite_byte_scratch::graph_json;
-pub(crate) use finite_byte_scratch::{graph_schema, legacy_graph_schema};
+use consuming_vec_renewal::graph_json;
+pub(crate) use consuming_vec_renewal::{graph_schema, legacy_graph_schema};
 use view_render::view_json;
 #[path = "graph/native_import.rs"]
 mod native_import;
@@ -5578,17 +5581,6 @@ fn facts_json(program: &ResolvedProgram, ty: &ResolvedType) -> Result<String, Di
                 ),
             )
         })
-}
-
-fn facts_object(facts: &TypeFacts) -> String {
-    format!(
-        "{{\"copy\":{},\"contains_resource\":{},\"sized\":{},\"needs_drop\":{},\"layout_key\":{}}}",
-        facts.copy,
-        facts.contains_resource,
-        facts.sized,
-        facts.needs_drop,
-        quote_json(&facts.layout_key)
-    )
 }
 
 fn ownership_text(ownership: OwnershipMode) -> &'static str {

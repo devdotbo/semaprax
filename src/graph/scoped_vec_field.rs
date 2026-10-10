@@ -53,6 +53,16 @@ pub(crate) fn graph_schema_from_parts_and_instances_with_renewal_authority(
     instances: &[hir::ResolvedFunctionInstance],
     renewal_authority: Option<&dyn Fn(&ResolvedFunction) -> bool>,
 ) -> Result<&'static str, Diagnostic> {
+    if functions
+        .iter()
+        .chain(instances.iter().map(|i| &i.function))
+        .any(hir::vec_loop_renewal::consuming::candidate)
+    {
+        return Err(Diagnostic::io(
+            "SPX-G410",
+            "consuming owned-record renewal needs complete typed source/HIR authority",
+        ));
+    }
     super::static_text::reject_frozen(
         functions
             .iter()

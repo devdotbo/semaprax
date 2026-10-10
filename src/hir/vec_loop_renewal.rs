@@ -1,6 +1,7 @@
 //! Exact same-cell admitted Vec renewal in ordinary while bodies (not iterator lowering).
 use super::*;
 use std::collections::{BTreeMap, BTreeSet};
+pub(crate) mod consuming;
 
 pub(crate) fn requires(function: &ResolvedFunction) -> bool {
     !bindings(function).is_empty()
@@ -14,10 +15,12 @@ pub(crate) fn bindings_in<'a>(
     program: &ResolvedProgram,
     function: &'a ResolvedFunction,
 ) -> BTreeMap<ExpressionId, &'a ResolvedBinding> {
-    collect(
+    let mut found = collect(
         function,
         Some(&|op, element| element_mode(&program.declarations, op, element)),
-    )
+    );
+    consuming::append_bindings(program, function, &mut found);
+    found
 }
 pub(crate) fn requires_in(program: &ResolvedProgram, function: &ResolvedFunction) -> bool {
     !bindings_in(program, function).is_empty()
@@ -40,6 +43,7 @@ pub(crate) fn requires_with_admission(
     admitted: impl Fn(crate::vec_ops::VecOp, &ResolvedType) -> Option<OwnershipMode>,
 ) -> bool {
     !collect(function, Some(&admitted)).is_empty()
+        || consuming::requires_with_admission(function, admitted)
 }
 
 fn element_mode(
