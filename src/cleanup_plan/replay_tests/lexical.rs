@@ -59,12 +59,13 @@ fn main() -> i64 { 0 }
 const OWNING_FOR: &str = r#"module test.lexical_owning_for;
 
 @id("lex.sum")
-fn sum(values: own Vec<i64>, stop: i64) -> i64 {
+fn sum(values: own Vec<Bytes>, stop: usize) -> i64 {
     let mut total = 0;
-    for own item in vec_into_iter<i64>(values) {
-        if item == 2 { continue; };
-        if item == stop { break; };
-        total = total + item;
+    for own item in vec_into_iter<Bytes>(values) {
+        let length = byte_len(bytes_as_slice(item));
+        if length == 2usize { continue; };
+        if length == stop { break; };
+        total = total + 1;
         0
     }
     return total;
@@ -120,8 +121,10 @@ fn main() -> i64 { 0 }
 "#;
 
 fn fixture(source: &str, id: &str) -> (ResolvedProgram, ResolvedFunction) {
-    let program =
-        hir::resolve(&parse(source, Path::new("cleanup-replay-lexical.spx")).unwrap()).unwrap();
+    // Source admission precedes HIR/proof construction: guessed syntax or a
+    // closed source profile must fail here, not acquire authority through HIR.
+    let parsed = crate::check(source, Path::new("cleanup-replay-lexical.spx")).unwrap();
+    let program = hir::resolve(&parsed).unwrap();
     let func = function(&program, id);
     assert_eq!(func.cleanup_plan.schema, CLEANUP_PLAN_SCHEMA_V18);
     validate_structure(&program, &func).expect("canonical lexical plan replays");
