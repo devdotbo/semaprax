@@ -717,6 +717,7 @@ Audience: all documentation readers.
 - [Bulk UTF-8 String v1](BULK-UTF8-STRING-V1.md)
 - [Checked Literal Format v1](CHECKED-LITERAL-FORMAT-V1.md)
 - [Checked String Allocation v1](CHECKED-STRING-ALLOCATION-V1.md)
+- [Checked final UTF-8 native integration design](CHECKED-STRING-FINAL-UTF8-NATIVE-DESIGN.md)
 - [Copy Record Collections v1](COPY-RECORD-COLLECTIONS-V1.md)
 - [Declared Text Collections v1](DECLARED-TEXT-COLLECTIONS-V1.md)
 - [Explicit Record Sort Keys v1](EXPLICIT-RECORD-SORT-KEYS-V1.md)

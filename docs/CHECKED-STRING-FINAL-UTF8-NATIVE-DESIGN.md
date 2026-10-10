@@ -5,6 +5,8 @@ No selected production emission, allocation-failure recovery, public native ABI,
 interpreter or Wasm support is granted by this tranche. OPT #724 and #737 remain
 open. The owning contract is [Checked String Allocation v1](CHECKED-STRING-ALLOCATION-V1.md).
 
+Audience: compiler and native ownership implementers.
+
 ## First implemented boundary
 
 `codegen::checked_final_utf8_preflight::inspect` independently invokes ordinary
