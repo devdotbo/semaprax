@@ -1,8 +1,20 @@
-//! Provisional semantic refusal: syntax alone cannot grant a static text root.
-use crate::ast::{Program, Span};
+//! Explicit immutable literal-root source admission. Ordinary String is unchanged.
+use crate::ast::{ParamMode, Program, Span, Type};
 use crate::diagnostic::Diagnostic;
-pub(crate) const MESSAGE: &str = "borrowed UTF-8 literal syntax has no authenticated static-root implementation yet";
-pub(super) fn unsupported(program: &Program, span: Span) -> Diagnostic {
-    super::diagnostics::error(program, "SPX-T314", MESSAGE, span)
-        .with_help("Keep this future spelling out of executable source until source/HIR, lifetime and backend qualification are complete; ordinary String literals retain their existing ownership rules")
+pub(crate) const MESSAGE: &str = "static UTF-8 literal exceeds 65536 decoded bytes";
+pub(super) fn checked(
+    program: &Program,
+    span: Span,
+    text: &str,
+) -> Result<super::binding::CheckedValue, Diagnostic> {
+    if text.len() > crate::hir::static_text::MAX_POOL_BYTES {
+        return Err(super::diagnostics::error(
+            program, "SPX-T314", MESSAGE, span,
+        ));
+    }
+    Ok(super::binding::CheckedValue {
+        ty: Type::Str,
+        mode: ParamMode::Borrow,
+        native_unit: false,
+    })
 }

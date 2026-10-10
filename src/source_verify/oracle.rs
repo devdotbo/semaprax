@@ -85,7 +85,7 @@ pub(super) fn check_expr(
         ExprKind::Float64(_) => Some(CheckedValue::value(Type::F64)),
         ExprKind::Bool(_) => Some(CheckedValue::value(Type::Bool)),
         ExprKind::String(_) => Some(CheckedValue::value(Type::String)),
-        ExprKind::BorrowedUtf8Literal(_) => { diagnostics.push(super::static_text::unsupported(program, expr.span)); None },
+        ExprKind::BorrowedUtf8Literal(text) => match super::static_text::checked(program, expr.span, text) { Ok(value) => Some(value), Err(error) => { diagnostics.push(error); None } },
         // This walker only traverses generic-function and contract
         // expressions; `super` is meaningful only inside a class-method
         // override, whose body is resolved by the HIR layer instead.
@@ -1092,6 +1092,7 @@ pub(super) fn check_expr(
                         name,
                         name_span,
                         value,
+                        mutable,
                         ..
                     } => {                        if !source_identifier(name) {
                             diagnostics.push(hints::reserved_local_binding(
@@ -1121,6 +1122,7 @@ pub(super) fn check_expr(
                             continue;
                         }
                         if let Some(actual) = actual {
+                            if actual.ty == Type::Str && *mutable { diagnostics.push(error(program, "SPX-T264", format!("byte-slice alias `{name}` must be immutable and cannot be reassigned"), *name_span)); }
                             if types.needs_drop(&actual.ty)
                                 && actual.mode == ParamMode::Own
                             {

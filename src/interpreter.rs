@@ -62,6 +62,8 @@ mod call_frame;
 mod closures;
 mod command_state;
 mod copy_projection;
+mod static_text;
+use static_text::{BorrowedRoot, Utf8Backing};
 pub(crate) mod environment;
 mod expression_children;
 mod failure_detail;
@@ -3166,20 +3168,24 @@ enum Value {
 
 #[derive(Clone, Debug, PartialEq)]
 struct BorrowedStrValue {
-    invocation_root: ValueId,
-    bytes: Arc<[u8]>,
+    invocation_root: BorrowedRoot,
+    bytes: Utf8Backing,
 }
 
 #[derive(Clone, Debug, PartialEq)]
 struct BorrowedSliceValue {
-    invocation_root: ValueId,
-    backing: Arc<[u8]>,
+    invocation_root: BorrowedRoot,
+    backing: Utf8Backing,
     start: usize,
     end: usize,
 }
 
 impl BorrowedSliceValue {
     fn whole(invocation_root: ValueId, backing: Arc<[u8]>) -> Self {
+        Self::from_view(invocation_root.into(), backing.into())
+    }
+
+    fn from_view(invocation_root: BorrowedRoot, backing: Utf8Backing) -> Self {
         let end = backing.len();
         Self {
             invocation_root,
@@ -3196,7 +3202,7 @@ impl BorrowedSliceValue {
     fn range(&self, start: usize, end: usize) -> Self {
         Self {
             invocation_root: self.invocation_root.clone(),
-            backing: Arc::clone(&self.backing),
+            backing: self.backing.clone(),
             start: self.start + start,
             end: self.start + end,
         }
@@ -3811,8 +3817,8 @@ impl Evaluator<'_> {
                 (ResolvedType::Bool, ArgumentValue::Bool(inner)) => Value::Bool(*inner),
                 (ResolvedType::Str, ArgumentValue::BorrowedStr(inner)) => {
                     Value::BorrowedStr(BorrowedStrValue {
-                        invocation_root: param.id.clone(),
-                        bytes: Arc::from(inner.as_bytes()),
+                        invocation_root: param.id.clone().into(),
+                        bytes: Arc::<[u8]>::from(inner.as_bytes()).into(),
                     })
                 }
                 (ResolvedType::SliceU8, ArgumentValue::BorrowedSlice(inner)) => {
@@ -3910,6 +3916,13 @@ impl Evaluator<'_> {
                     .map_err(|_| Flow::Guard("fixed byte array length does not fit host usize"))?;
                 Ok(Value::ArrayU8(Arc::from(vec![*value; length])))
             }
+            ResolvedExprKind::BorrowedUtf8Literal(value) => {
+                if !value.is_backed() { return Err(Flow::Guard("static text backing is absent")); }
+                Ok(Value::BorrowedStr(BorrowedStrValue {
+                    invocation_root: BorrowedRoot::SourceExprStatic(expression.id.clone()),
+                    bytes: Utf8Backing::Static(value.clone()),
+                }))
+            }
             ResolvedExprKind::String(value) => {
                 Ok(Value::String(self.materialize_utf8_copy(value)?))
             }
@@ -3966,7 +3979,7 @@ impl Evaluator<'_> {
                         Value::BorrowedSlice(BorrowedSliceValue::whole(place.root.clone(), bytes)),
                     ),
                     (crate::byte_ops::ByteOp::StrAsBytes, Value::BorrowedStr(value)) => {
-                        Ok(Value::BorrowedSlice(BorrowedSliceValue::whole(
+                        Ok(Value::BorrowedSlice(BorrowedSliceValue::from_view(
                             value.invocation_root,
                             value.bytes,
                         )))
@@ -4125,8 +4138,8 @@ impl Evaluator<'_> {
                         invocation_root: ValueId::intrinsic_parameter(
                             crate::command_io_ops::ARG_UTF8_ID,
                             usize::MAX,
-                        ),
-                        bytes,
+                        ).into(),
+                        bytes: bytes.into(),
                     }))
                 }
                 Operation::StdinRead => {
@@ -6435,8 +6448,8 @@ fn inspect(value: borrow Either<Bytes, Bytes>) -> i64 {
     fn borrowed_str_clones_preserve_invocation_root_and_shared_evidence() {
         let root = ValueId::intrinsic_parameter("test.borrowed.root", 0);
         let original = Value::BorrowedStr(BorrowedStrValue {
-            invocation_root: root.clone(),
-            bytes: Arc::from("aé\0z".as_bytes()),
+            invocation_root: root.clone().into(),
+            bytes: Arc::<[u8]>::from("aé\0z".as_bytes()).into(),
         });
         let Value::BorrowedStr(value) = &original else {
             unreachable!("constructed borrowed string value")
@@ -6446,9 +6459,10 @@ fn inspect(value: borrow Either<Bytes, Bytes>) -> i64 {
         else {
             panic!("borrowed values retain their distinct runtime form")
         };
-        assert_eq!(original.invocation_root, root);
-        assert_eq!(forwarded.invocation_root, root);
-        assert!(Arc::ptr_eq(&original.bytes, &forwarded.bytes));
+        assert_eq!(original.invocation_root, BorrowedRoot::Invocation(root.clone()));
+        assert_eq!(forwarded.invocation_root, BorrowedRoot::Invocation(root));
+        let (Utf8Backing::Invocation(left), Utf8Backing::Invocation(right)) = (&original.bytes, &forwarded.bytes) else { panic!("foreign input keeps its invocation backing") };
+        assert!(Arc::ptr_eq(left, right));
     }
 
     #[test]

@@ -60,6 +60,8 @@ pub use generic_instances::{legacy_context_json, to_legacy_json, verify_json};
 pub(crate) use generic_mapping::requires_v35;
 mod byte_helper_renewal;
 mod static_text;
+mod view_render;
+use view_render::view_json;
 use static_text::graph_json;
 #[path = "graph/native_import.rs"]
 mod native_import;
@@ -499,6 +501,7 @@ struct AgentRenderSelection<'a> {
 struct SourceGraphIdentity<'a> {
     schema: &'a str,
     revision: &'a str,
+    static_text: bool,
 }
 
 fn agent_context_hir_json(
@@ -512,6 +515,7 @@ fn agent_context_hir_json(
     let source_identity = SourceGraphIdentity {
         schema: source_graph_schema,
         revision: source_revision,
+        static_text: false,
     };
     let Some(root) = find_context_root(program, symbol) else {
         return Ok(None);
@@ -623,11 +627,12 @@ fn agent_context_v2_hir_json(
     symbol: &str,
     options: &AgentContextV2Options,
 ) -> Result<Option<String>, Diagnostic> {
-    hir::validate(program)?;
-    let source_graph_schema = graph_schema(program)?;
+    let static_text = hir::validate_with_static_text(program)?;
+    let source_graph_schema = static_text::graph_schema_validated(program, static_text)?;
     let source_identity = SourceGraphIdentity {
         schema: source_graph_schema,
         revision: source_revision,
+        static_text,
     };
     let Some(root) = find_context_root(program, symbol) else {
         return Ok(None);
@@ -3163,8 +3168,8 @@ fn render_agent_context(
             "{{\"schema\":\"semaprax.agent-context.v1\",\"source_graph_schema\":{},\"revision\":{},\"prelude\":{{\"schema\":{},\"digest\":{}}},\"module\":{},\"root\":{},\"query\":{{\"depth\":{},\"max_bytes\":{},\"max_nodes\":{},\"filters\":[{}]}},\"filter_support\":{{\"included\":[{}],\"unavailable\":[{}]}},\"budget\":{{\"used_bytes\":{},\"used_nodes\":{},\"max_depth_used\":{}}},\"truncation\":{{\"truncated\":{},\"reasons\":[{}],\"omitted_known_nodes\":{},\"deferred_known_nodes\":{},\"omitted_fact_bytes\":{},\"unavailable_filter_count\":{}}},\"resume_contract\":{{\"depth\":\"query.depth\",\"max_nodes\":\"query.max_nodes\",\"filters\":\"query.filters\",\"max_bytes\":\"frontier.resume.min_bytes\"}}{},\"frontier\":[{}],\"facts\":[{}]}}",
             quote_json(source_identity.schema),
             quote_json(source_identity.revision),
-            quote_json(prelude_binding::schema(program)),
-            quote_json(&prelude_binding::digest(program)),
+            quote_json(prelude_binding::schema_selected(program, source_identity.static_text)),
+            quote_json(&prelude_binding::digest_selected(program, source_identity.static_text)),
             quote_json(&program.module),
             quote_json(root.as_str()),
             options.depth,
@@ -3404,8 +3409,8 @@ fn render_agent_context_v2(
             "{{\"schema\":\"semaprax.agent-context.v2\",\"source_graph_schema\":{},\"revision\":{},\"prelude\":{{\"schema\":{},\"digest\":{}}},\"module\":{},\"root\":{},\"query\":{{\"direction\":{},\"depth\":{},\"max_bytes\":{},\"max_nodes\":{},\"filters\":[{}]}},\"filter_support\":{{\"included\":[{}],\"unavailable\":[{}]}},\"budget\":{{\"used_bytes\":{},\"used_nodes\":{},\"max_depth_used\":{}}},\"truncation\":{{\"truncated\":{},\"reasons\":[{}],\"omitted_known_nodes\":{},\"deferred_known_nodes\":{},\"omitted_fact_bytes\":{},\"unavailable_filter_count\":{}}},\"reference_closure\":{{\"referenced_unselected_nodes\":{}}},\"resume_contract\":{{\"direction\":\"query.direction\",\"depth\":\"query.depth\",\"max_nodes\":\"query.max_nodes\",\"filters\":\"query.filters\",\"max_bytes\":{{\"traversal\":\"frontier.resume.min_bytes\",\"reference\":\"reference_frontier.resume.min_bytes\"}}}}{},\"frontier\":[{}],\"reference_frontier\":[{}],\"facts\":[{}]}}",
             quote_json(source_identity.schema),
             quote_json(source_identity.revision),
-            quote_json(prelude_binding::schema(program)),
-            quote_json(&prelude_binding::digest(program)),
+            quote_json(prelude_binding::schema_selected(program, source_identity.static_text)),
+            quote_json(&prelude_binding::digest_selected(program, source_identity.static_text)),
             quote_json(&program.module),
             quote_json(root.as_str()),
             quote_json(options.direction().name()),
@@ -3493,7 +3498,7 @@ pub(crate) fn to_hir_json(
     program: &ResolvedProgram,
     source_revision: &str,
 ) -> Result<String, Diagnostic> {
-    hir::validate(program)?;
+    let static_text = hir::validate_with_static_text(program)?;
     let selected_functions = program
         .functions
         .iter()
@@ -3515,7 +3520,7 @@ pub(crate) fn to_hir_json(
         source_revision,
         &selected_functions,
         &selected_types,
-        &GraphView::Module,
+        &GraphView::Module { static_text },
     )
 }
 
@@ -3526,7 +3531,8 @@ fn context_hir_json(
     depth: usize,
     legacy: bool,
 ) -> Result<Option<String>, Diagnostic> {
-    hir::validate(program)?;
+    let static_text = hir::validate_with_static_text(program)?;
+    if legacy && static_text { return Err(Diagnostic::io("SPX-G410", "static text requires current Graph authority")); }
 
     // Exact declaration identity is authoritative if another function or
     // template's display name happens to contain the same text.
@@ -3619,6 +3625,7 @@ fn context_hir_json(
         &selected,
         &selected_types,
         &GraphView::Context {
+            static_text,
             root: &root,
             depth,
             frontier: &frontier,
@@ -3628,8 +3635,9 @@ fn context_hir_json(
 }
 
 enum GraphView<'a> {
-    Module,
+    Module { static_text: bool },
     Context {
+        static_text: bool,
         root: &'a DeclarationId,
         depth: usize,
         frontier: &'a BTreeSet<DeclarationId>,
@@ -3955,7 +3963,7 @@ fn render_graph_json(
         selected_types.remove(&DeclarationId::new(crate::list_ops::STEP_ID));
     }
     let mut selected_interfaces = match view {
-        GraphView::Module => program
+        GraphView::Module { .. } => program
             .interfaces
             .iter()
             .map(|interface| interface.id.clone())
@@ -4009,7 +4017,7 @@ fn render_graph_json(
     let schema = if concrete_ownership {
         nested_owned::generic_payload_schema(program)?
     } else {
-        legacy_graph_schema(program)?
+        scoped_vec_field::legacy_graph_schema(program)?
     };
     let mut output = crate::bounded_output::CappedString::new();
     write!(
@@ -4017,8 +4025,8 @@ fn render_graph_json(
         "{{\"schema\":{},\"revision\":{},\"prelude\":{{\"schema\":{},\"digest\":{}}},\"view\":{},\"identity\":{{\"declarations\":\"explicit-persistent-or-automatic-unstable\",\"values\":\"revision-scoped-structural\",\"expressions\":\"revision-scoped-structural\",\"match_arms\":\"revision-scoped-structural\",\"patterns\":\"revision-scoped-structural\",\"type_parameters\":\"owner-and-index-stable\"}}{},\"module\":{},\"permits\":{},\"entrypoint\":{},\"type_facts\":[{}],\"nodes\":[",
         quote_json(schema),
         quote_json(source_revision),
-        quote_json(prelude_binding::schema(program)),
-        quote_json(&prelude_binding::digest(program)),
+        quote_json(prelude_binding::schema_selected(program, view.static_text())),
+        quote_json(&prelude_binding::digest_selected(program, view.static_text())),
         view_json(view),
         portable_indexed_byte_data_json(schema, program)?,
         quote_json(&program.module),
@@ -4683,25 +4691,6 @@ fn result_ownership(
         })
 }
 
-fn view_json(view: &GraphView<'_>) -> String {
-    match view {
-        GraphView::Module => "{\"kind\":\"module\"}".to_owned(),
-        GraphView::Context {
-            root,
-            depth,
-            frontier,
-        } => format!(
-            "{{\"kind\":\"context\",\"root\":{},\"depth\":{depth},\"truncated\":{},\"frontier\":[{}]}}",
-            quote_json(root.as_str()),
-            !frontier.is_empty(),
-            frontier
-                .iter()
-                .map(|id| quote_json(id.as_str()))
-                .collect::<Vec<_>>()
-                .budgeted_join(",")
-        ),
-    }
-}
 
 fn identity_origin(
     program: &ResolvedProgram,

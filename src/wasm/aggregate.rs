@@ -1237,7 +1237,7 @@ fn emit_byte_exports_profile(
             .iter()
             .map(|body| (body, FunctionExecutionId::Monomorphic(body.id.clone()))),
     );
-    let static_utf8 = crate::hir::static_text::validate_pool(program)?;
+    let static_utf8 = crate::hir::validate_with_static_text(program)?;
     if static_utf8 && (!plans.is_empty() || !owned_plans.is_empty()) {
         return Err(Diagnostic::io(
             "SPX-W119",

@@ -1397,8 +1397,9 @@ impl<'a> HirValidator<'a> {
             | ResolvedExprKind::RepeatArrayU8 { .. }
             | ResolvedExprKind::Float32(_)
             | ResolvedExprKind::Float64(_)
-            | ResolvedExprKind::Bool(_)
-            | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_) => {}
+            | ResolvedExprKind::Bool(_) => {}
+            ResolvedExprKind::String(value) => self.record_static_pool(value.len(), false)?,
+            ResolvedExprKind::BorrowedUtf8Literal(value) => self.finish_static_text(expression, value)?,
             ResolvedExprKind::Place(place) => {
                 if generic_template::projected_place_type(self.program, place, values)?
                     != expression.ty

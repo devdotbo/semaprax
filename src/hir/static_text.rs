@@ -30,17 +30,54 @@ pub(crate) fn visit_literals(
     program: &ResolvedProgram,
     visit: impl FnMut(&ResolvedExpr, &str, bool) -> Result<(), Diagnostic>,
 ) -> Result<(), Diagnostic> {
-    visit_functions(
+    visit_roots(
         program
             .functions
             .iter()
-            .chain(program.function_instances.iter().map(|i| &i.function)),
+            .flat_map(function_roots)
+            .chain(program.function_templates.iter().flat_map(|template| {
+                template
+                    .requires
+                    .iter()
+                    .chain(std::iter::once(&template.body))
+                    .chain(&template.ensures)
+            }))
+            .chain(
+                program
+                    .function_instances
+                    .iter()
+                    .flat_map(|instance| function_roots(&instance.function)),
+            ),
         visit,
     )
 }
 
+fn function_roots(function: &super::ResolvedFunction) -> impl Iterator<Item = &ResolvedExpr> {
+    function
+        .requires
+        .iter()
+        .chain(std::iter::once(&function.body))
+        .chain(&function.ensures)
+}
+
 pub(crate) fn visit_functions<'a>(
     functions: impl IntoIterator<Item = &'a super::ResolvedFunction>,
+    visit: impl FnMut(&ResolvedExpr, &str, bool) -> Result<(), Diagnostic>,
+) -> Result<(), Diagnostic> {
+    visit_roots(
+        functions.into_iter().flat_map(|function| {
+            function
+                .requires
+                .iter()
+                .chain(std::iter::once(&function.body))
+                .chain(&function.ensures)
+        }),
+        visit,
+    )
+}
+
+pub(crate) fn visit_roots<'a>(
+    roots: impl IntoIterator<Item = &'a ResolvedExpr>,
     mut visit: impl FnMut(&ResolvedExpr, &str, bool) -> Result<(), Diagnostic>,
 ) -> Result<(), Diagnostic> {
     type Frame<'a> = Option<(&'a ResolvedExpr, usize)>;
@@ -51,68 +88,61 @@ pub(crate) fn visit_functions<'a>(
     }
     let mut frames: [Frame<'_>; DEPTH] = [None; DEPTH];
     let mut work = WORK;
-    for function in functions {
-        for root in function
-            .requires
-            .iter()
-            .chain(std::iter::once(&function.body))
-            .chain(&function.ensures)
-        {
-            frames[0] = Some((root, usize::MAX));
-            let mut depth = 1;
-            while depth != 0 {
-                work = work
-                    .checked_sub(1)
-                    .ok_or_else(|| hir_error("static UTF-8 literal census exceeds work limit"))?;
-                let (expression, next) = frames[depth - 1].expect("live bounded literal cursor");
-                if next == usize::MAX {
-                    match &expression.kind {
-                        ResolvedExprKind::BorrowedUtf8Literal(value) => {
-                            if expression.ty != ResolvedType::Str
-                                || expression.ownership != OwnershipMode::Borrow
-                            {
-                                return Err(hir_error(
-                                    "static UTF-8 producer has invalid type or ownership",
-                                ));
-                            }
-                            if !value.is_backed() {
-                                return Err(hir_error("static UTF-8 literal backing was refused"));
-                            }
-                            validate_literal(value)?;
-                            visit(expression, value, true)?;
+    for root in roots {
+        frames[0] = Some((root, usize::MAX));
+        let mut depth = 1;
+        while depth != 0 {
+            work = work
+                .checked_sub(1)
+                .ok_or_else(|| hir_error("static UTF-8 literal census exceeds work limit"))?;
+            let (expression, next) = frames[depth - 1].expect("live bounded literal cursor");
+            if next == usize::MAX {
+                match &expression.kind {
+                    ResolvedExprKind::BorrowedUtf8Literal(value) => {
+                        if expression.ty != ResolvedType::Str
+                            || expression.ownership != OwnershipMode::Borrow
+                        {
+                            return Err(hir_error(
+                                "static UTF-8 producer has invalid type or ownership",
+                            ));
                         }
-                        ResolvedExprKind::String(value)
-                        | ResolvedExprKind::LiteralFormat {
-                            template: value, ..
-                        } => visit(expression, value, false)?,
-                        _ => {}
+                        if !value.is_backed() {
+                            return Err(hir_error("static UTF-8 literal backing was refused"));
+                        }
+                        validate_literal(value)?;
+                        visit(expression, value, true)?;
                     }
-                    frames[depth - 1] = Some((expression, 0));
-                    continue;
+                    ResolvedExprKind::String(value)
+                    | ResolvedExprKind::LiteralFormat {
+                        template: value, ..
+                    } => visit(expression, value, false)?,
+                    _ => {}
                 }
-                // The open child accessor scans statement/arm prefixes. Charge
-                // their full width on every lookup before performing that work.
-                let lookup = match &expression.kind {
-                    ResolvedExprKind::Block { statements, .. } => statements.len(),
-                    ResolvedExprKind::Match { arms, .. } => arms.len(),
-                    _ => 0,
-                };
-                work = work
-                    .checked_sub(lookup)
-                    .ok_or_else(|| hir_error("static UTF-8 literal census exceeds work limit"))?;
-                if let Some(child) = super::lexical_exit::child(expression, next) {
-                    if depth == DEPTH {
-                        return Err(hir_error(
-                            "static UTF-8 literal census exceeds ordinary HIR depth",
-                        ));
-                    }
-                    frames[depth - 1] = Some((expression, next + 1));
-                    frames[depth] = Some((child, usize::MAX));
-                    depth += 1;
-                } else {
-                    frames[depth - 1] = None;
-                    depth -= 1;
+                frames[depth - 1] = Some((expression, 0));
+                continue;
+            }
+            // The open child accessor scans statement/arm prefixes. Charge
+            // their full width on every lookup before performing that work.
+            let lookup = match &expression.kind {
+                ResolvedExprKind::Block { statements, .. } => statements.len(),
+                ResolvedExprKind::Match { arms, .. } => arms.len(),
+                _ => 0,
+            };
+            work = work
+                .checked_sub(lookup)
+                .ok_or_else(|| hir_error("static UTF-8 literal census exceeds work limit"))?;
+            if let Some(child) = super::lexical_exit::child(expression, next) {
+                if depth == DEPTH {
+                    return Err(hir_error(
+                        "static UTF-8 literal census exceeds ordinary HIR depth",
+                    ));
                 }
+                frames[depth - 1] = Some((expression, next + 1));
+                frames[depth] = Some((child, usize::MAX));
+                depth += 1;
+            } else {
+                frames[depth - 1] = None;
+                depth -= 1;
             }
         }
     }
@@ -138,3 +168,6 @@ pub(crate) fn validate_pool(program: &ResolvedProgram) -> Result<bool, Diagnosti
     }
     Ok(selected)
 }
+
+#[cfg(test)]
+mod tests;

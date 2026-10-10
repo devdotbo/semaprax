@@ -265,7 +265,7 @@ pub(super) fn source_capacity_expr_type(
         ExprKind::Float64(_) => Some(Type::F64),
         ExprKind::Bool(_) => Some(Type::Bool),
         ExprKind::String(_) => Some(Type::String),
-        ExprKind::BorrowedUtf8Literal(_) => None,
+        ExprKind::BorrowedUtf8Literal(_) => Some(Type::Str),
         ExprKind::Var(name) => bindings.get(name).cloned(),
         ExprKind::Call { name, .. } => crate::byte_ops::by_name(name)
             .map(crate::byte_ops::ByteOp::ast_return_type)

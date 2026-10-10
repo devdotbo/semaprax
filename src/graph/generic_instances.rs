@@ -27,7 +27,7 @@ pub fn to_legacy_json(program: &Program) -> Result<String, Vec<Diagnostic>> {
         &revision(program),
         &functions,
         &types,
-        &GraphView::Module,
+        &GraphView::Module { static_text: false },
     )
     .map_err(|e| vec![e])
 }
@@ -62,7 +62,7 @@ pub(crate) fn to_legacy_hir_json(
         source_revision,
         &functions,
         &types,
-        &GraphView::Module,
+        &GraphView::Module { static_text: false },
     )
 }
 

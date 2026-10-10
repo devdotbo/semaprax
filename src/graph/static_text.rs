@@ -3,16 +3,22 @@ use super::*;
 pub(crate) const SCHEMA: &str = "semaprax.graph.v77";
 
 pub(crate) fn graph_schema(program: &ResolvedProgram) -> Result<&'static str, Diagnostic> {
-    if !hir::static_text::validate_pool(program)? {
-        return super::byte_helper_renewal::graph_schema(program);
+    graph_schema_validated(program, hir::validate_with_static_text(program)?)
+}
+
+pub(crate) fn graph_schema_validated(
+    program: &ResolvedProgram,
+    selected: bool,
+) -> Result<&'static str, Diagnostic> {
+    if selected {
+        Ok(SCHEMA)
+    } else {
+        super::byte_helper_renewal::graph_schema(program)
     }
-    hir::validate(program)?;
-    crate::loan_plan::validate_program(program)?;
-    Ok(SCHEMA)
 }
 
 pub(crate) fn legacy_graph_schema(program: &ResolvedProgram) -> Result<&'static str, Diagnostic> {
-    if hir::static_text::validate_pool(program)? {
+    if hir::validate_with_static_text(program)? {
         return Err(Diagnostic::io(
             "SPX-G410",
             "static borrowed UTF-8 literals require Graph v77",
@@ -47,10 +53,10 @@ pub(super) fn graph_json(
 ) -> Result<String, Diagnostic> {
     let mut graph =
         super::byte_helper_renewal::graph_json(program, revision, functions, types, view)?;
-    if !hir::static_text::validate_pool(program)? {
+    if !view.static_text() {
         return Ok(graph);
     }
-    graph_schema(program)?;
+    graph_schema_validated(program, true)?;
     let mut count = 0usize;
     hir::static_text::visit_literals(program, |_, _, literal| {
         if literal {
