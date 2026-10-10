@@ -6,12 +6,12 @@ use crate::cleanup_plan::{CleanupPlace, StorageId};
 use crate::diagnostic::Diagnostic;
 use crate::hir::{
     DeclarationId, ExpressionId, FunctionInstanceId, IdentityOrigin, ResolvedExprKind,
-    ResolvedFunction, ResolvedParam, ResolvedProgram, ResolvedType,
+    ResolvedFunction, ResolvedParam, ResolvedType,
 };
 
 use super::{
-    Leaves, PathState, ReplayConditionalVariant, find_resolved_expression, replay_error,
-    validate_place,
+    find_resolved_expression, replay_error, validate_place, Leaves, PathState,
+    ReplayConditionalVariant,
 };
 
 pub(super) fn exact_owned_try(source: &[ResolvedType], target: &[ResolvedType]) -> bool {
@@ -68,7 +68,7 @@ pub(super) fn owned_try_residual_places(
 }
 
 pub(super) fn seal_changed_success_try_residual(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     at: &ExpressionId,
     destination: &CleanupPlace,
@@ -117,7 +117,7 @@ pub(super) fn seal_changed_success_try_residual(
         root,
         variant: result.clone(),
         cases: program
-            .declarations
+            .declarations()
             .variant_cases(result)
             .ok_or_else(|| replay_error(function, "changed-success Result has no case domain"))?
             .iter()
@@ -142,7 +142,7 @@ pub(super) fn seal_changed_success_try_residual(
 }
 
 fn authenticated_changed_success_result<'a>(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &'a crate::hir::ResolvedExpr,
     destination: &CleanupPlace,
@@ -191,12 +191,12 @@ fn authenticated_changed_success_result<'a>(
             .iter()
             .any(|id| {
                 program
-                    .declarations
+                    .declarations()
                     .declaration(id)
                     .is_none_or(|item| item.identity_origin != IdentityOrigin::CompilerOwned)
             })
         || program
-            .declarations
+            .declarations()
             .variant_cases(result)
             .is_none_or(|cases| {
                 cases.len() != 2
@@ -206,11 +206,11 @@ fn authenticated_changed_success_result<'a>(
                     || !cases.iter().any(|case| case.id == *err_case)
             })
         || program
-            .declarations
+            .declarations()
             .case_fields(ok_case)
             .is_none_or(|fields| !matches!(fields, [field] if field.id == *ok_field))
         || program
-            .declarations
+            .declarations()
             .case_fields(err_case)
             .is_none_or(|fields| !matches!(fields, [field] if field.id == *err_field))
         || source != result
@@ -226,7 +226,7 @@ fn authenticated_changed_success_result<'a>(
 }
 
 pub(super) fn owned_try_residual_result_place(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &crate::hir::ResolvedExpr,
     destination: &CleanupPlace,
@@ -247,7 +247,7 @@ pub(super) fn owned_try_residual_result_place(
 /// their reserved identity instead of an authored declaration and use their
 /// synthetic parameters.
 pub(super) fn resolved_call_params(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &crate::hir::ResolvedExpr,
     callee: &DeclarationId,
@@ -270,7 +270,7 @@ pub(super) fn resolved_call_params(
         let [source, index] = args.as_slice() else {
             return Err(replay_error(function, "scoped vector read arity mismatch"));
         };
-        let selected = crate::hir::vec_field::field(&program.declarations, element, field)
+        let selected = crate::hir::vec_field::field(program.declarations(), element, field)
             .and_then(|f| f.result_type(*bytes));
         if instance.is_some()
             || !type_arguments.is_empty()
@@ -399,8 +399,10 @@ pub(super) fn resolved_call_params(
                     "iterator call has incorrect type arity",
                 ));
             };
-            if !crate::iterator_ops::resolved_element_is_admitted_in(&program.declarations, element)
-            {
+            if !crate::iterator_ops::resolved_element_is_admitted_in(
+                program.declarations(),
+                element,
+            ) {
                 return Err(replay_error(
                     function,
                     "iterator call has unsupported element",
@@ -416,7 +418,7 @@ pub(super) fn resolved_call_params(
                 ));
             };
             if !crate::hir::owned_leaf_collection::vec_operation_admitted(
-                &program.declarations,
+                program.declarations(),
                 op,
                 element,
             ) {
@@ -426,7 +428,7 @@ pub(super) fn resolved_call_params(
                 ));
             }
             return Ok(crate::vec_ops::resolved_params_in(
-                &program.declarations,
+                program.declarations(),
                 op,
                 element,
             ));
@@ -443,7 +445,7 @@ pub(super) fn resolved_call_params(
     }
     if instance.is_none()
         && program
-            .interfaces
+            .interfaces()
             .iter()
             .flat_map(|interface| &interface.imports)
             .any(|import| import.native_rust && &import.id == callee)

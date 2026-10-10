@@ -63,7 +63,7 @@ const CONTINUE_WORK: usize = 160;
 const LOOP_STATEMENT_WORK: usize = 40;
 
 fn count(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
     weight: &mut usize,
@@ -281,7 +281,7 @@ fn count(
 
 /// Terminal semantic paths and HIR skeleton work of one lexical function.
 fn bounds(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
 ) -> Result<(usize, usize), Diagnostic> {
     let mut weight = 0usize;
@@ -309,7 +309,7 @@ fn bounds(
 }
 
 pub(super) fn validate_size_budget(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
 ) -> Result<(), Diagnostic> {
     let structure_units = plan_structure_units(&function.cleanup_plan);
@@ -335,7 +335,7 @@ pub(super) fn validate_size_budget(
 /// Program-wide reservation for one lexical function's skeleton comparison.
 /// Mirrors the legacy formula, with the lexical path census above.
 pub(super) fn skeleton_work_upper(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
 ) -> Result<usize, Diagnostic> {
     let (semantic_paths, hir_weight) = bounds(program, function)?;

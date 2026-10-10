@@ -174,7 +174,7 @@ pub(super) fn owned_continue_leaves(
 }
 
 pub(super) fn authenticate(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     owner: &FunctionExecutionId,
     facts: &lexical_hir::LexicalFacts<'_>,

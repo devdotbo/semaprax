@@ -11,7 +11,7 @@ use super::*;
 use crate::ast::LexicalExitKind;
 
 pub(super) fn validate_with_index(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,

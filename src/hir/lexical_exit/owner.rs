@@ -1,6 +1,6 @@
 //! Execution identity comes from the authenticated invocation, never the declaration alone.
 use crate::diagnostic::Diagnostic;
-use crate::hir::{FunctionExecutionId, ResolvedFunction, ResolvedProgram};
+use crate::hir::{FunctionExecutionId, ResolvedFunction};
 pub(crate) fn validate_owner(
     function: &ResolvedFunction,
     owner: &FunctionExecutionId,
@@ -15,17 +15,17 @@ pub(crate) fn validate_owner(
     }
 }
 pub(crate) fn owner(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
 ) -> Result<FunctionExecutionId, Diagnostic> {
     let mut found = None;
     for candidate in program
-        .functions
+        .functions()
         .iter()
         .map(|f| FunctionExecutionId::Monomorphic(f.id.clone()))
         .chain(
             program
-                .function_instances
+                .function_instances()
                 .iter()
                 .map(|i| FunctionExecutionId::Generic(i.id.clone())),
         )

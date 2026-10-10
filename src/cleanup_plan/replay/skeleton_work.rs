@@ -19,14 +19,14 @@ pub(super) struct SkeletonWork<'a, 'b> {
 impl<'a, 'b> SkeletonWork<'a, 'b> {
     #[cfg(test)]
     pub(super) fn new(
-        program: &'a crate::hir::ResolvedProgram,
+        program: &'a dyn crate::cleanup::ReplayContext,
         function: &'a ResolvedFunction,
         budget: &'b mut ReplayBudget,
     ) -> Self {
         Self::with_index(program, function, budget, None)
     }
     pub(super) fn with_index(
-        program: &'a crate::hir::ResolvedProgram,
+        program: &'a dyn crate::cleanup::ReplayContext,
         function: &'a ResolvedFunction,
         budget: &'b mut ReplayBudget,
         index: Option<&'a crate::loop_calls::byte_writer::ModuleIndex<'a>>,

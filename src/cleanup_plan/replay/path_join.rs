@@ -4,7 +4,7 @@ use super::*;
 
 #[allow(clippy::too_many_arguments)] // Keep the independently held phase index explicit.
 pub(super) fn validate_path_states(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     storage: &BTreeSet<StorageId>,
     leaves: &Leaves,
@@ -314,7 +314,7 @@ pub(super) fn validate_path_states(
 }
 
 fn joined_ownership_state(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     states: &BTreeSet<PathState>,
 ) -> Result<(Vec<LivenessFlagId>, Vec<ReplayConditionalVariant>), Diagnostic> {
@@ -390,7 +390,7 @@ fn join_live_orders(
 }
 
 fn join_conditional_variants(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     left: &[ReplayConditionalVariant],
     right: &[ReplayConditionalVariant],
@@ -431,7 +431,7 @@ fn join_conditional_variants(
             .map(|(case, flags)| (case, flags))
             .collect::<BTreeMap<_, _>>();
         let domain = program
-            .declarations
+            .declarations()
             .variant_cases(&left_variant.variant)
             .ok_or_else(|| replay_error(function, "cleanup join variant has no closed domain"))?;
         let mut cases = Vec::new();

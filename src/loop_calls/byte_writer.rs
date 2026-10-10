@@ -1,9 +1,10 @@
 //! Bounded transitive proof for ordinary same-owner byte-writing helpers.
 //! Declaration spelling, attached cleanup and generated names carry no authority.
 use crate::ast::{Expr, ExprKind, Function, ParamMode, Program, Type};
+#[cfg(test)]
+use crate::hir::ResolvedProgram;
 use crate::hir::{
-    OwnershipMode, ResolvedBinding, ResolvedExpr, ResolvedExprKind, ResolvedFunction,
-    ResolvedProgram, ResolvedType,
+    OwnershipMode, ResolvedBinding, ResolvedExpr, ResolvedExprKind, ResolvedFunction, ResolvedType,
 };
 mod bindings;
 pub(crate) use bindings::HelperBindings;
@@ -62,7 +63,7 @@ fn ast_param(program: &Program, mode: ParamMode, ty: &Type) -> bool {
         ParamMode::Borrow => {
             super::ast_param_admitted(program, mode, ty)
                 || matches!(ty, Type::Named { name, arguments } if arguments.is_empty()
-                && program.types.iter().any(|d| d.name == *name && matches!(d.kind, crate::ast::TypeDeclarationKind::Record { .. })))
+                && program.types().iter().any(|d| d.name == *name && matches!(d.kind, crate::ast::TypeDeclarationKind::Record { .. })))
         }
         ParamMode::Shared => false,
     }
@@ -90,7 +91,7 @@ pub(crate) fn source_assignment(program: &Program, binding: &str, value: &Expr) 
     else {
         return false;
     };
-    let Some(target) = program.functions.iter().find(|f| f.name == *name) else {
+    let Some(target) = program.functions().iter().find(|f| f.name == *name) else {
         return false;
     };
     type_arguments.is_empty()
@@ -100,23 +101,30 @@ pub(crate) fn source_assignment(program: &Program, binding: &str, value: &Expr) 
             p.mode != ParamMode::Own || matches!(&arg.kind, ExprKind::Var(name) if name == binding)
         })
 }
-fn resolved_param(program: &ResolvedProgram, mode: OwnershipMode, ty: &ResolvedType) -> bool {
+fn resolved_param(
+    program: &dyn crate::cleanup::ReplayContext,
+    mode: OwnershipMode,
+    ty: &ResolvedType,
+) -> bool {
     match mode {
         OwnershipMode::Own => *ty == ResolvedType::Bytes,
         OwnershipMode::Value => {
             crate::hir::is_scalar_resolved_type(ty)
-                || crate::hir::copy_record_collection::admitted(&program.declarations, ty)
-                || super::resolved_match_scrutinee_admitted(&program.declarations, ty)
+                || crate::hir::copy_record_collection::admitted(program.declarations(), ty)
+                || super::resolved_match_scrutinee_admitted(program.declarations(), ty)
         }
         OwnershipMode::Borrow => {
-            super::resolved_param_admitted(&program.declarations, mode, ty)
-                || matches!(ty, ResolvedType::Nominal { declaration, arguments } if arguments.is_empty() && program.declarations.record_fields(declaration).is_some())
-                || crate::hir::owned_collection_record::admitted(ty, &program.declarations)
+            super::resolved_param_admitted(program.declarations(), mode, ty)
+                || matches!(ty, ResolvedType::Nominal { declaration, arguments } if arguments.is_empty() && program.declarations().record_fields(declaration).is_some())
+                || crate::hir::owned_collection_record::admitted(ty, program.declarations())
         }
         OwnershipMode::Shared => false,
     }
 }
-pub(crate) fn resolved_target(program: &ResolvedProgram, target: &ResolvedFunction) -> bool {
+pub(crate) fn resolved_target(
+    program: &dyn crate::cleanup::ReplayContext,
+    target: &ResolvedFunction,
+) -> bool {
     target.return_type == ResolvedType::Bytes
         && target
             .params
@@ -131,7 +139,7 @@ pub(crate) fn resolved_target(program: &ResolvedProgram, target: &ResolvedFuncti
         && resolved_nonallocating(program, target)
 }
 pub(crate) fn assignment(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     binding: &ResolvedBinding,
     value: &ResolvedExpr,
 ) -> bool {
@@ -155,7 +163,7 @@ pub(crate) fn assignment(
     )
 }
 fn assignment_with_target(
-    _program: &ResolvedProgram,
+    _program: &dyn crate::cleanup::ReplayContext,
     binding: &ResolvedBinding,
     value: &ResolvedExpr,
     target: &ResolvedFunction,

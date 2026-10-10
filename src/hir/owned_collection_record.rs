@@ -239,7 +239,7 @@ pub(crate) fn projected_field(
 }
 
 pub(crate) fn borrowed_vec_argument(
-    program: &super::ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     call: &super::ResolvedExpr,
     position: usize,
     argument: &super::ResolvedExpr,
@@ -260,9 +260,9 @@ pub(crate) fn borrowed_vec_argument(
         return false;
     };
     op.param_ownership_for(position, element) == super::OwnershipMode::Borrow
-        && vector(&program.declarations, &argument.ty)
+        && vector(program.declarations(), &argument.ty)
         && matches!(&argument.kind, super::ResolvedExprKind::Place(place)
-            if projected_field(&program.declarations, place, &argument.ty))
+            if projected_field(program.declarations(), place, &argument.ty))
 }
 
 #[cfg(test)]

@@ -49,7 +49,7 @@ fn owned_element_renewal_replays_exact_staging_commit_and_unrelated_history() {
     let graph = crate::graph::to_json(&checked).unwrap();
     crate::graph::verify_json(&checked, &graph).unwrap();
     let program = crate::hir::resolve(&checked).unwrap();
-    let function = &program.functions[0];
+    let function = &program.functions()[0];
     validate_structure(&program, function).unwrap();
     let at = crate::hir::vec_loop_renewal::bindings_in(&program, function)
         .keys()
@@ -119,7 +119,7 @@ fn failing_later_owned_argument_keeps_the_staged_vector_and_unrelated_owner() {
     let checked = crate::check(&source, "owned-rhs-failure.spx").unwrap();
     let program = crate::hir::resolve(&checked).unwrap();
     let function = program
-        .functions
+        .functions()
         .iter()
         .find(|function| function.id.as_str() == "app.main")
         .unwrap();

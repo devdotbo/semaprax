@@ -1,8 +1,6 @@
 use crate::cleanup::{FieldLiveness, FieldLivenessShape, LivenessFlagId};
 use crate::diagnostic::Diagnostic;
-use crate::hir::{
-    DeclarationId, ResolvedFunction, ResolvedProgram, ResolvedType, ResolvedTypeDeclarationKind,
-};
+use crate::hir::{DeclarationId, ResolvedFunction, ResolvedType, ResolvedTypeDeclarationKind};
 
 use super::replay_error;
 use crate::cleanup_plan::{
@@ -39,7 +37,7 @@ struct Budget {
 }
 
 pub(super) fn expected_shape_for_type(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     ty: &ResolvedType,
     next_flag: &mut u32,
@@ -57,7 +55,7 @@ pub(super) fn expected_shape_for_type(
 /// left to right, and liveness flags are therefore still allocated in
 /// depth-first order.
 fn derive(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     root: &ResolvedType,
     next_flag: &mut u32,
@@ -101,11 +99,11 @@ fn derive(
                 }
                 if crate::cleanup::is_owned_bounded_vec_type(&ty)
                     || crate::hir::owned_record_collection::is_owned_record_vec_type(
-                        &program.declarations,
+                        program.declarations(),
                         &ty,
                     )
                     || crate::hir::owned_leaf_collection::is_copy_or_leaf_vec(
-                        &program.declarations,
+                        program.declarations(),
                         &ty,
                     )
                 {
@@ -161,7 +159,7 @@ fn derive(
                     ));
                 };
                 let item = program
-                    .types
+                    .types()
                     .iter()
                     .find(|item| item.id == *declaration)
                     .ok_or_else(|| {
@@ -395,7 +393,7 @@ fn charge_fields(
 }
 
 pub(super) fn type_needs_drop(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     ty: &ResolvedType,
 ) -> Result<bool, Diagnostic> {

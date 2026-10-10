@@ -6,8 +6,8 @@ use std::collections::{BTreeMap, VecDeque};
 use crate::diagnostic::Diagnostic;
 use crate::hir::{
     DeclarationId, OwnershipMode, ResolvedExpr, ResolvedExprKind, ResolvedFunction,
-    ResolvedMatchArm, ResolvedMatchMode, ResolvedMatchPattern, ResolvedProgram,
-    ResolvedRecordMatchFieldPattern, ResolvedRecordMatchPatternField, ResolvedType, ValueId,
+    ResolvedMatchArm, ResolvedMatchMode, ResolvedMatchPattern, ResolvedRecordMatchFieldPattern,
+    ResolvedRecordMatchPatternField, ResolvedType, ValueId,
 };
 
 pub(super) mod update;
@@ -17,7 +17,7 @@ const OWNED_LEAF_LIMIT: usize = 256;
 const FIELD_WORK_LIMIT: usize = 4_096;
 
 pub(super) fn admits_owned_match_result(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
     scrutinee: &ResolvedExpr,
@@ -31,7 +31,7 @@ pub(super) fn admits_owned_match_result(
                 arm.value.ty == ResolvedType::String && arm.value.ownership == OwnershipMode::Own
             });
     }
-    if crate::hir::collection_outcome::match_join(&program.declarations, expression) {
+    if crate::hir::collection_outcome::match_join(program.declarations(), expression) {
         return expression.ownership == OwnershipMode::Own;
     }
     if let ResolvedExprKind::Match { mode, .. } = expression.kind {
@@ -51,7 +51,10 @@ pub(super) fn admits_owned_match_result(
     }
     let generic =
         crate::hir::bounded_owned_record_template_for_function(program, function).is_some();
-    let ordinary = program.functions.iter().any(|item| item.id == function.id);
+    let ordinary = program
+        .functions()
+        .iter()
+        .any(|item| item.id == function.id);
     if !generic && !ordinary {
         return false;
     }
@@ -66,21 +69,23 @@ pub(super) fn admits_owned_match_result(
         return false;
     };
     let ordinary_shape = ordinary
-        && (crate::hir::is_admitted_nested_owned_byte_record(&program.declarations, &scrutinee.ty)
-            || crate::hir::owned_text_record::runtime_admitted(
-                &scrutinee.ty,
-                &program.declarations,
-            ))
+        && (crate::hir::is_admitted_nested_owned_byte_record(
+            program.declarations(),
+            &scrutinee.ty,
+        ) || crate::hir::owned_text_record::runtime_admitted(
+            &scrutinee.ty,
+            program.declarations(),
+        ))
         && (matches!(expression.ty, ResolvedType::Bytes | ResolvedType::String)
             || crate::map_ops::is_collection(&expression.ty)
-            || crate::hir::owned_collection_record::vector(&program.declarations, &expression.ty)
+            || crate::hir::owned_collection_record::vector(program.declarations(), &expression.ty)
             || crate::hir::is_admitted_nested_owned_byte_record(
-                &program.declarations,
+                program.declarations(),
                 &expression.ty,
             )
             || crate::hir::owned_text_record::runtime_admitted(
                 &expression.ty,
-                &program.declarations,
+                program.declarations(),
             ));
     *mode == ResolvedMatchMode::Own
         && expression.ty == arm.value.ty
@@ -93,13 +98,13 @@ pub(super) fn admits_owned_match_result(
         && (ordinary_shape
             || (generic
                 && crate::hir::is_admitted_nested_owned_byte_record(
-                    &program.declarations,
+                    program.declarations(),
                     &expression.ty,
                 )))
 }
 
 pub(super) fn finish_owned_match_result(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
     arm_value: &ResolvedExpr,
@@ -167,7 +172,7 @@ struct Pending<'a> {
 }
 
 pub(super) fn replay(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &crate::hir::ResolvedFunction,
     record: &DeclarationId,
     instance: &ResolvedType,
@@ -211,7 +216,7 @@ pub(super) fn replay(
             ));
         }
         let declarations = program
-            .declarations
+            .declarations()
             .record_fields(pending.record)
             .ok_or_else(|| {
                 super::replay_error(function, "nested record destructure has no declaration")
@@ -271,7 +276,10 @@ pub(super) fn replay(
                     }
                     non_byte_owned_terminal |= needs_drop
                         && !matches!(ty, ResolvedType::Bytes | ResolvedType::String)
-                        && !crate::hir::owned_collection_record::vector(&program.declarations, &ty);
+                        && !crate::hir::owned_collection_record::vector(
+                            program.declarations(),
+                            &ty,
+                        );
                     if needs_drop
                         && mode == ResolvedMatchMode::Own
                         && (bindings.len() >= OWNED_LEAF_LIMIT

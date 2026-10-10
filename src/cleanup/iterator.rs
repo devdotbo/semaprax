@@ -2,28 +2,28 @@
 use crate::hir::{DeclarationId, ResolvedType};
 
 pub(crate) fn variant_record_field(
-    program: &crate::hir::ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     container: &ResolvedType,
     case: &DeclarationId,
     field: &DeclarationId,
     ty: &ResolvedType,
 ) -> bool {
     crate::hir::collection_outcome::nested::record_field(
-        &program.declarations,
+        program.declarations(),
         container,
         case,
         field,
         ty,
-    ) || (crate::iterator_ops::step_shape(&program.declarations, container)
+    ) || (crate::iterator_ops::step_shape(program.declarations(), container)
         && case.as_str() == crate::iterator_ops::YIELD_ID
         && field.as_str() == crate::iterator_ops::ITEM_ID
         && crate::iterator_ops::element(container) == Some(ty)
         && matches!(ty, ResolvedType::Nominal { .. })
-        && crate::hir::owned_leaf_collection::runtime_element(&program.declarations, ty))
+        && crate::hir::owned_leaf_collection::runtime_element(program.declarations(), ty))
 }
 
 pub(crate) fn variant_leaf_lifecycle<'a>(
-    program: &'a crate::hir::ResolvedProgram,
+    program: &'a dyn crate::cleanup::ReplayContext,
     container: &ResolvedType,
     case: &DeclarationId,
     field: &DeclarationId,
@@ -32,11 +32,11 @@ pub(crate) fn variant_leaf_lifecycle<'a>(
     if let Some(lifecycle) = primitive_leaf_lifecycle(ty) {
         return Some(lifecycle);
     }
-    if crate::hir::collection_outcome::runtime_admitted(&program.declarations, container)
-        && crate::hir::collection_outcome::field_admitted(&program.declarations, ty)
+    if crate::hir::collection_outcome::runtime_admitted(program.declarations(), container)
+        && crate::hir::collection_outcome::field_admitted(program.declarations(), ty)
         && matches!(container, ResolvedType::Nominal { declaration, arguments }
             if arguments.is_empty()
-                && program.declarations.variant_cases(declaration).is_some_and(|cases|
+                && program.declarations().variant_cases(declaration).is_some_and(|cases|
                     cases.iter().any(|candidate| &candidate.id == case
                         && candidate.fields.iter().any(|candidate|
                             &candidate.id == field && &candidate.ty == ty))))
@@ -63,7 +63,7 @@ pub(crate) fn variant_leaf_lifecycle<'a>(
         if !arguments.is_empty() {
             return None;
         }
-        return program.types.iter().find_map(|item| match &item.kind {
+        return program.types().iter().find_map(|item| match &item.kind {
             crate::hir::ResolvedTypeDeclarationKind::Resource { drop }
                 if &item.id == declaration =>
             {

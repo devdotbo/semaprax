@@ -15,6 +15,8 @@ use crate::hir::{
     ResolvedTypeDeclarationKind, ValueId,
 };
 
+mod replay_context;
+pub(crate) use replay_context::ReplayContext;
 mod generic_record;
 mod iterator;
 #[cfg(test)]
@@ -374,7 +376,7 @@ pub struct CleanupPlace {
 }
 
 pub(crate) fn build_inventory(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
 ) -> Result<CleanupInventory, Diagnostic> {
     let mut builder = InventoryBuilder {
@@ -446,14 +448,14 @@ pub(crate) fn build_inventory(
 /// plan. Owned strings use the compiler-owned string lifecycle; borrowed views
 /// carry no cleanup authority.
 pub(crate) fn type_needs_resource_cleanup(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     ty: &ResolvedType,
 ) -> Result<bool, String> {
     let mut pending = vec![ty.clone()];
     let mut visited = BTreeSet::new();
     while let Some(ty) = pending.pop() {
         let facts = program
-            .declarations
+            .declarations()
             .type_facts(&ty)
             .ok_or_else(|| format!("type `{}` has no cleanup facts", ty.identity_key()))?;
         if !facts.needs_drop || !visited.insert(ty.clone()) {
@@ -482,7 +484,7 @@ pub(crate) fn type_needs_resource_cleanup(
                 if declaration.as_str() == crate::iterator_ops::ITER_ID
                     && matches!(arguments.as_slice(), [element]
                     if crate::iterator_ops::resolved_element_is_admitted_in(
-                        &program.declarations,
+                        program.declarations(),
                         element,
                     ))
                 {
@@ -496,17 +498,17 @@ pub(crate) fn type_needs_resource_cleanup(
                 if declaration.as_str() == crate::prelude::VEC_ID
                     && arguments.len() == 1
                     && (crate::vec_ops::resolved_vec_element_is_admitted(&arguments[0])
-                        || crate::hir::owned_leaf_collection::copy_or_leaf_admitted(&program.declarations, &arguments[0])
+                        || crate::hir::owned_leaf_collection::copy_or_leaf_admitted(program.declarations(), &arguments[0])
                         || crate::hir::owned_record_collection::
                             is_admitted_owned_record_collection_element(
-                                &program.declarations,
+                                program.declarations(),
                                 &arguments[0],
                             ))
                 {
                     return Ok(true);
                 }
                 let item = program
-                    .types
+                    .types()
                     .iter()
                     .find(|item| item.id == declaration)
                     .ok_or_else(|| format!("unknown cleanup type `{declaration}`"))?;
@@ -593,7 +595,7 @@ fn shape_contains_variant(shape: &FieldLivenessShape) -> bool {
 }
 
 pub(crate) fn validate_program(program: &ResolvedProgram) -> Result<(), Diagnostic> {
-    for function in &program.functions {
+    for function in program.functions() {
         let expected = build_inventory(program, function)?;
         if !inventories_equal(&function.cleanup, &expected)? {
             return Err(cleanup_error(format!(
@@ -602,7 +604,7 @@ pub(crate) fn validate_program(program: &ResolvedProgram) -> Result<(), Diagnost
             )));
         }
     }
-    for instance in &program.function_instances {
+    for instance in program.function_instances() {
         let expected = build_inventory(program, &instance.function)?;
         if !inventories_equal(&instance.function.cleanup, &expected)? {
             return Err(cleanup_error(format!(
@@ -730,7 +732,7 @@ pub(crate) fn field_liveness_shapes_equal(
 }
 
 struct InventoryBuilder<'a> {
-    program: &'a ResolvedProgram,
+    program: &'a dyn crate::cleanup::ReplayContext,
     slots: Vec<CleanupStorageSlot>,
     flags: Vec<CleanupFlag>,
     live_owned_parameters: Vec<CleanupStorageId>,
@@ -854,11 +856,11 @@ impl InventoryBuilder<'_> {
                     }
                     if is_owned_bounded_vec_type(ty)
                         || crate::hir::owned_record_collection::is_owned_record_vec_type(
-                            &self.program.declarations,
+                            self.program.declarations(),
                             ty,
                         )
                         || crate::hir::owned_leaf_collection::is_copy_or_leaf_vec(
-                            &self.program.declarations,
+                            self.program.declarations(),
                             ty,
                         )
                         || crate::iterator_ops::is_iter(ty)
@@ -910,7 +912,7 @@ impl InventoryBuilder<'_> {
                     };
                     let declaration_item = self
                         .program
-                        .types
+                        .types()
                         .iter()
                         .find(|item| item.id == *declaration)
                         .ok_or_else(|| {
@@ -1305,7 +1307,8 @@ impl InventoryBuilder<'_> {
                         | ResolvedExprKind::Float32(_)
                         | ResolvedExprKind::Float64(_)
                         | ResolvedExprKind::Bool(_)
-                        | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
+                        | ResolvedExprKind::String(_)
+                        | ResolvedExprKind::BorrowedUtf8Literal(_)
                         | ResolvedExprKind::Place(_)
                         | ResolvedExprKind::BorrowPlace { .. } => {}
                     }
@@ -1379,7 +1382,7 @@ impl InventoryBuilder<'_> {
                 Item::Pattern(ResolvedMatchPattern::Record { record, fields, .. }) => {
                     let declared = self
                         .program
-                        .declarations
+                        .declarations()
                         .record_fields(record)
                         .ok_or_else(|| cleanup_error("record pattern has no field inventory"))?;
                     for declaration in declared.iter().rev() {
@@ -1426,13 +1429,13 @@ impl InventoryBuilder<'_> {
                     fields,
                     ..
                 }) => {
-                    let declared =
-                        self.program
-                            .declarations
-                            .record_fields(record)
-                            .ok_or_else(|| {
-                                cleanup_error("nested record pattern has no field inventory")
-                            })?;
+                    let declared = self
+                        .program
+                        .declarations()
+                        .record_fields(record)
+                        .ok_or_else(|| {
+                            cleanup_error("nested record pattern has no field inventory")
+                        })?;
                     for declaration in declared.iter().rev() {
                         let field = fields
                             .iter()

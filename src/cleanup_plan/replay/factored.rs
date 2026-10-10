@@ -57,14 +57,14 @@ pub(super) fn selected(
 /// in charge.
 #[cfg(test)]
 pub(super) fn validate(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
 ) -> Result<bool, Diagnostic> {
     validate_with_index(program, function, budget, None)
 }
 pub(super) fn validate_with_index(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
@@ -105,14 +105,14 @@ fn skeleton_mismatch(function: &ResolvedFunction) -> Diagnostic {
 /// `Some(equal)`, or `None` when a path multiplicity overflows.
 #[cfg(test)]
 pub(super) fn compare(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
 ) -> Result<Option<bool>, Diagnostic> {
     compare_with_index(program, function, budget, None)
 }
 fn compare_with_index(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
@@ -649,7 +649,7 @@ impl<'a> Canonicalizer<'a> {
 /// Test builds compare the factored verdict with the enumerating one on every
 /// function small enough to enumerate.
 #[cfg(test)]
-fn cross_check(program: &ResolvedProgram, function: &ResolvedFunction) {
+fn cross_check(program: &dyn crate::cleanup::ReplayContext, function: &ResolvedFunction) {
     let saved = SKELETON_MATERIALIZATIONS.with(Cell::get);
     let mut enumerating = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
     let enumerated = hir_skeleton_paths(program, function, &mut enumerating).and_then(|mut hir| {

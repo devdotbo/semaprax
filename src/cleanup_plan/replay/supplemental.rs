@@ -2,7 +2,7 @@
 use super::*;
 
 pub(super) fn collect_supplemental_slots(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
     next_flag: &mut u32,
@@ -24,8 +24,14 @@ pub(super) fn collect_supplemental_slots(
                     type_arguments,
                 }) = parts(expression, function)?
                 {
-                    let params =
-                        resolved_call_params(program, function, expression, callee, instance, type_arguments)?;
+                    let params = resolved_call_params(
+                        program,
+                        function,
+                        expression,
+                        callee,
+                        instance,
+                        type_arguments,
+                    )?;
                     if params.len() != args.len() {
                         return Err(replay_error(
                             function,
@@ -64,8 +70,14 @@ pub(super) fn collect_supplemental_slots(
                 else {
                     unreachable!("call-argument continuation retains a call");
                 };
-                let params =
-                    resolved_call_params(program, function, expression, callee, instance, type_arguments)?;
+                let params = resolved_call_params(
+                    program,
+                    function,
+                    expression,
+                    callee,
+                    instance,
+                    type_arguments,
+                )?;
                 let argument = &args[index];
                 let parameter = &params[index];
                 if parameter.ownership == OwnershipMode::Own

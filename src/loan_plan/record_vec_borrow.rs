@@ -3,7 +3,7 @@
 use super::*;
 
 pub(super) fn argument(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     call: &ResolvedExpr,
     position: usize,
     argument: &ResolvedExpr,
@@ -29,11 +29,11 @@ pub(super) fn argument(
         _ => return false,
     };
     position == 0
-        && (crate::hir::copy_record_collection::admitted(&program.declarations, element)
+        && (crate::hir::copy_record_collection::admitted(program.declarations(), element)
             || (matches!(
                 op,
                 crate::vec_ops::VecOp::Len | crate::vec_ops::VecOp::Capacity
-            ) && crate::hir::owned_leaf_collection::layout(&program.declarations, element)
+            ) && crate::hir::owned_leaf_collection::layout(program.declarations(), element)
                 .is_some_and(|layout| layout.fields.is_some())))
         && op.param_ownership_for(position, element) == OwnershipMode::Borrow
         && op.accepts_resolved(position, &argument.ty, element)

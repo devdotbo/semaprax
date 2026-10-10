@@ -26,7 +26,7 @@ fn place(value: &ResolvedExpr, binding: &ResolvedBinding) -> bool {
         && matches!(&value.kind,ResolvedExprKind::Place(p) if p.root==binding.id && p.projections.is_empty())
 }
 pub(crate) fn source_for_wrapper<'a>(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     region: &'a ResolvedExpr,
 ) -> Result<Option<SourceForWrapper<'a>>, Diagnostic> {
     let ResolvedExprKind::Block { statements, tail } = &region.kind else {

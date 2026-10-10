@@ -11,19 +11,22 @@ pub(crate) fn bindings(function: &ResolvedFunction) -> BTreeMap<ExpressionId, &R
 /// Existing Copy and owned-element collection admission composes the same-cell
 /// protocol. Element shape and call ownership are re-derived from declarations.
 pub(crate) fn bindings_in<'a>(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &'a ResolvedFunction,
 ) -> BTreeMap<ExpressionId, &'a ResolvedBinding> {
     collect(
         function,
-        Some(&|op, element| element_mode(&program.declarations, op, element)),
+        Some(&|op, element| element_mode(program.declarations(), op, element)),
     )
 }
-pub(crate) fn requires_in(program: &ResolvedProgram, function: &ResolvedFunction) -> bool {
+pub(crate) fn requires_in(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+) -> bool {
     !bindings_in(program, function).is_empty()
 }
 pub(crate) fn binding_in<'a>(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &'a ResolvedFunction,
     at: &ExpressionId,
 ) -> Option<&'a ResolvedBinding> {
