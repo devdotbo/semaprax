@@ -301,7 +301,7 @@ codec_struct!(ResolvedMatchPatternField { field, binding });
 codec_struct!(ResolvedRecordMatchPatternField { field, pattern });
 codec_enum!(ResolvedRecordMatchFieldPattern {0=>Binding(binding),1=>Wildcard,2=>Record{record,instance,fields}});
 codec_struct!(ResolvedFieldInitializer { field, value });
-codec_enum!(ResolvedStatement {0=>Let{binding,mutable,value,span},1=>Assign{binding,field,value,span},2=>Unsafe{audit,body,span},3=>While{condition,body,span}});
+codec_enum!(ResolvedStatement {0=>Let{binding,mutable,value,span},1=>Assign{binding,field,value,span},2=>Unsafe{audit,body,span},3=>While{condition,body,span},4=>LexicalWhile{condition,body,latch,span}});
 codec_struct!(Place { root, projections });
 codec_enum!(PlaceProjection {0=>Field(field),1=>VariantField{case,field}});
 

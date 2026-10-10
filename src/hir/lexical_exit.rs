@@ -59,3 +59,6 @@ pub enum LoopLatchKind {
         remainder: ValueId,
     },
 }
+
+mod walk;
+pub(crate) use walk::{child, requires};

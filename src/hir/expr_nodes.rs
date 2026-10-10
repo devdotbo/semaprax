@@ -354,6 +354,12 @@ pub enum ResolvedStatement {
     /// Bounded While-Loops v1: `while <condition> { <body> }`. The condition
     /// must be exactly `bool` and the body is an ordinary checked block whose
     /// value is discarded. The statement produces no value.
+    LexicalWhile {
+        condition: Box<ResolvedExpr>,
+        body: Box<ResolvedExpr>,
+        latch: super::lexical_exit::LoopLatchKind,
+        span: Span,
+    },
     While {
         condition: Box<ResolvedExpr>,
         body: Box<ResolvedExpr>,
@@ -369,7 +375,7 @@ impl ResolvedStatement {
         match self {
             Self::Let { value, .. } | Self::Assign { value, .. } => value,
             Self::Unsafe { body, .. } => body,
-            Self::While { .. } => {
+            Self::While { .. } | Self::LexicalWhile { .. } => {
                 panic!("while statements expose condition and body children")
             }
         }
@@ -380,7 +386,7 @@ impl ResolvedStatement {
         match self {
             Self::Let { value, .. } | Self::Assign { value, .. } => value,
             Self::Unsafe { body, .. } => body,
-            Self::While { .. } => {
+            Self::While { .. } | Self::LexicalWhile { .. } => {
                 panic!("while statements expose condition and body children")
             }
         }
@@ -391,7 +397,7 @@ impl ResolvedStatement {
     pub fn binding(&self) -> &ResolvedBinding {
         match self {
             Self::Let { binding, .. } | Self::Assign { binding, .. } => binding,
-            Self::Unsafe { .. } | Self::While { .. } => {
+            Self::Unsafe { .. } | Self::While { .. } | Self::LexicalWhile { .. } => {
                 panic!("only let and assignment statements declare a binding")
             }
         }
@@ -416,7 +422,7 @@ impl ResolvedStatement {
     pub fn child_count(&self) -> usize {
         match self {
             Self::Let { .. } | Self::Assign { .. } | Self::Unsafe { .. } => 1,
-            Self::While { .. } => 2,
+            Self::While { .. } | Self::LexicalWhile { .. } => 2,
         }
     }
 
@@ -426,6 +432,9 @@ impl ResolvedStatement {
             Self::Let { value, .. } | Self::Assign { value, .. } => (index == 0).then_some(value),
             Self::Unsafe { body, .. } => (index == 0).then_some(body.as_ref()),
             Self::While {
+                condition, body, ..
+            }
+            | Self::LexicalWhile {
                 condition, body, ..
             } => [condition.as_ref(), body.as_ref()].get(index).copied(),
         }
