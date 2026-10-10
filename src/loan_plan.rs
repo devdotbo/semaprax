@@ -1306,6 +1306,9 @@ fn charge(work: &mut WorkCounter) -> Result<(), Diagnostic> {
 
 fn push_children<'a>(expression: &'a ResolvedExpr, pending: &mut Vec<&'a ResolvedExpr>) {
     match &expression.kind {
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            pending.extend(value.as_deref());
+        }
         ResolvedExprKind::Closure { captures, .. } => {
             pending.extend(captures.iter().rev().map(|capture| &capture.value))
         }

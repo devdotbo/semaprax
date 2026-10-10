@@ -7,7 +7,10 @@
 
 #[path = "private_capacity_contract/lexical.rs"]
 mod lexical;
-pub(crate) use lexical::{control_target_owned_capacity, latch_owned_capacity};
+pub(crate) use lexical::control_target_owned_capacity;
+// The path-included private builder uses this export; the root crate does not.
+#[allow(unused_imports)]
+pub(crate) use lexical::latch_owned_capacity;
 #[cfg(test)]
 pub(crate) use lexical::plan_owned_capacity as lexical_plan_owned_capacity;
 

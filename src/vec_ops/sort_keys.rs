@@ -287,11 +287,11 @@ pub(crate) fn source(declaration: &crate::ast::TypeDeclaration, value: &str) -> 
     {
         return None;
     }
-    let copy = crate::source_verify::declared_type::copy_record_collection::declaration_admitted(
+    let copy = crate::source_verify::copy_record_declaration_admitted(
         declaration,
     );
     if !copy
-        && !crate::source_verify::declared_type::owned_leaf_collection::declaration_admitted(
+        && !crate::source_verify::owned_leaf_declaration_admitted(
             declaration,
         )
     {

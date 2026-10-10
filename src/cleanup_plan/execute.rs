@@ -1514,7 +1514,7 @@ impl<'a> Executor<'a> {
                 | ResolvedType::MutFunctionI64
                 | ResolvedType::Function { .. },
             )
-            | (_, ResolvedType::TypeParameter { .. }) => false,
+            | (_, ResolvedType::TypeParameter { .. } | ResolvedType::Never) => false,
         };
         if !matches_type || !source_matches {
             return Err(invariant(

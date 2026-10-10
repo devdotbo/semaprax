@@ -3820,11 +3820,10 @@ impl<'a> PlanBuilder<'a> {
                         | ResolvedType::SliceU8
                         | ResolvedType::StringMap
                         | ResolvedType::TypeParameter { .. }
-                        | ResolvedType::OnceFunction
-                        | ResolvedType::OnceFunctionI64
-                        | ResolvedType::OnceFunctionI64Pair
-                        | ResolvedType::MutFunctionI64
                         | ResolvedType::Function { .. } => false,
+                        ResolvedType::Never => {
+                            return Err(plan_error("match scrutinee cannot have terminal flow type"));
+                        }
                     };
                     if is_record {
                         let [arm] = arms else {

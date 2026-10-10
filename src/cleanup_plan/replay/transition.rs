@@ -568,7 +568,7 @@ pub(super) fn replay_exit(
             for flag in flags.iter().rev() {
                 expected_conditional.push((
                     *flag,
-                    super::VariantCaseGuard {
+                    crate::cleanup_plan::VariantCaseGuard {
                         storage: variant.root.storage.clone(),
                         variant: variant.variant.clone(),
                         case: case.clone(),

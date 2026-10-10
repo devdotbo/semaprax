@@ -257,6 +257,9 @@ fn find_in_block(
             }
             ResolvedStatement::While {
                 condition, body, ..
+            }
+            | ResolvedStatement::LexicalWhile {
+                condition, body, ..
             } => {
                 if find_in_block(body, false, site, executed)? {
                     return Ok(true);

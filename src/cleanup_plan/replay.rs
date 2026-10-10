@@ -5474,6 +5474,9 @@ fn validate_match_skeleton_shape(
         | ResolvedType::OnceFunctionI64Pair
         | ResolvedType::MutFunctionI64
         | ResolvedType::Function { .. } => false,
+        ResolvedType::Never => {
+            return Err(replay_error(function, "match scrutinee cannot have terminal flow type"));
+        }
     };
     let is_variant = match &scrutinee.ty {
         ResolvedType::Nominal { declaration, .. } => program
