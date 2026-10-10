@@ -17,6 +17,7 @@ use std::collections::BTreeSet;
 mod box_ops;
 mod host_command;
 mod iterator_ops;
+mod lexical_break;
 mod lexical_exit;
 mod lexical_lookup;
 mod list_ops;
@@ -1342,6 +1343,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                     self.apply_owned_plan_at_value(&expr.id, &tail)?;
                 }
                 self.emit_block_plan_scope_exit(expr)?;
+                self.emit_owned_break_join_label(expr)?;
                 self.variables = saved;
                 self.resource_text_views = saved_resource_text_views;
                 tail

@@ -144,3 +144,27 @@ pub(super) fn iterator_tail<'a>(
     }
     selected.ok_or_else(|| backend_error("native iterator latch is not an exact arm tail"))
 }
+
+pub(super) fn owning_wrapper<'a>(
+    program: &ResolvedProgram,
+    root: &'a ResolvedExpr,
+    condition: &ExpressionId,
+) -> Result<&'a ResolvedExpr, Diagnostic> {
+    let mut found = None;
+    walk(root, |expression| {
+        if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+            if matches!(statements.last(), Some(ResolvedStatement::LexicalWhile { condition: candidate, .. }) if &candidate.id == condition)
+            {
+                if found.replace(expression).is_some()
+                    || hir::lexical_exit::source_for_wrapper(program, expression)?.is_none()
+                {
+                    return Err(backend_error(
+                        "native owning Break wrapper is ambiguous or unauthenticated",
+                    ));
+                }
+            }
+        }
+        Ok(())
+    })?;
+    found.ok_or_else(|| backend_error("native owning Break wrapper is absent"))
+}

@@ -18,7 +18,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             self.require_type(actual, expected, context)
         }
     }
-    fn lexical_loop_index(&self, target: &ControlTarget) -> Result<usize, Diagnostic> {
+    pub(super) fn lexical_loop_index(&self, target: &ControlTarget) -> Result<usize, Diagnostic> {
         let plan = self
             .function
             .cleanup_plan
@@ -133,9 +133,35 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 self.in_cleanup_resume(entry, |emitter| {
                     let result = emitter.emit_expr(next)?;
                     emitter.require_type(&result.ty, &binding.ty, "iterator latch result")?;
+                    let layout = emitter.variant_layout(&binding.ty)?;
                     for block in blocks[..block_count].iter().rev().flatten() {
-                        emitter.apply_owned_plan_at_value(&block.id, &result)?;
+                        let phase = emitter
+                            .bytes_plan
+                            .ok_or_else(|| {
+                                backend_error("native iterator resume lacks producer slots")
+                            })?
+                            .apply_variant_into_at(
+                                &block.id,
+                                &result.code,
+                                &layout,
+                                &crate::cleanup_plan::StorageId::Temporary(block.id.clone()),
+                            )?;
+                        for line in phase.lines() {
+                            emitter.line(line);
+                        }
                         emitter.emit_block_plan_scope_exit(block)?;
+                    }
+                    let phase = emitter
+                        .bytes_plan
+                        .ok_or_else(|| backend_error("native iterator resume lacks join slots"))?
+                        .apply_variant_into_at(
+                            &arm.value.id,
+                            &result.code,
+                            &layout,
+                            &crate::cleanup_plan::StorageId::Temporary(join.id.clone()),
+                        )?;
+                    for line in phase.lines() {
+                        emitter.line(line);
                     }
                     let carrier = emitter.temporary(&binding.ty)?;
                     emitter.copy_variant_join_carrier(&carrier, &result.code, &binding.ty)?;
@@ -180,7 +206,17 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                         .ok_or_else(|| backend_error("native iterator latch step is absent"))?
                         .name
                         .clone();
-                    emitter.copy_variant_join_carrier(&name, &carrier, &binding.ty)
+                    emitter.copy_variant_join_carrier(&name, &carrier, &binding.ty)?;
+                    let loop_body = emitter
+                        .function
+                        .cleanup_plan
+                        .lexical_loop(condition)
+                        .ok_or_else(|| backend_error("native iterator resume lost its loop"))?
+                        .body
+                        .clone();
+                    let loop_body =
+                        super::lexical_lookup::expression(&emitter.function.body, &loop_body)?;
+                    emitter.emit_block_plan_scope_exit(loop_body)
                 })?;
             }
         }
@@ -277,8 +313,26 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             }
             LexicalExitKind::Continue => self.emit_lexical_advance(target, resume)?,
             LexicalExitKind::Break => {
-                let label = self.lexical_loop_label(target, false)?;
-                self.line(&format!("goto {label};"));
+                if let Some(entry) = resume {
+                    let ExitContinuation::LoopBreak { edge, .. } = continuation else {
+                        return Err(backend_error("native owning Break lacks typed edge"));
+                    };
+                    if self
+                        .function
+                        .cleanup_plan
+                        .edges
+                        .get(edge.0 as usize)
+                        .is_none_or(|edge| edge.to != entry)
+                    {
+                        return Err(backend_error(
+                            "native owning Break edge differs from its resume",
+                        ));
+                    }
+                    self.emit_owned_wrapper_break(target, entry)?;
+                } else {
+                    let label = self.lexical_loop_label(target, false)?;
+                    self.line(&format!("goto {label};"));
+                }
             }
         }
         Ok(CValue {
@@ -322,7 +376,18 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 })
         };
         let has_continue = references(LexicalExitKind::Continue);
-        let has_break = references(LexicalExitKind::Break);
+        let has_break = self
+            .function
+            .cleanup_plan
+            .lexical_control
+            .as_deref()
+            .is_some_and(|control| {
+                control.exits.iter().any(|item| {
+                    item.target == target
+                        && item.kind == LexicalExitKind::Break
+                        && item.resume.is_none()
+                })
+            });
         self.line("for (;;) {");
         self.indent += 1;
         if has_continue {

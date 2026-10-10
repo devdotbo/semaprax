@@ -210,13 +210,18 @@ fn owning_wrapper<'a>(
     let mut work = 0usize;
     let mut found = None;
     while used != 0 {
-        work += 1;
-        if work > 1_000_000 {
-            return Err(plan_error(
-                "owning Break wrapper lookup exceeds bounded work",
-            ));
-        }
         let (expression, index) = stack[used - 1].expect("occupied wrapper lookup frame");
+        // child() scans prefixes; charge the full possible scan before each
+        // lookup, including unsuccessful calls, rather than only found nodes.
+        let width = match &expression.kind {
+            ResolvedExprKind::Block { statements, .. } => statements.len(),
+            ResolvedExprKind::Match { arms, .. } => arms.len(),
+            _ => 0,
+        };
+        work = work
+            .checked_add(width + 1)
+            .filter(|value| *value <= 1_000_000)
+            .ok_or_else(|| plan_error("owning Break wrapper lookup exceeds bounded work"))?;
         if index == 0 {
             if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
                 if matches!(statements.last(), Some(ResolvedStatement::LexicalWhile { condition, .. }) if &condition.id == site)

@@ -153,10 +153,11 @@ module test.lexical_owned_break;
     for own item in vec_into_iter<Bytes>(values) {
         let nested = bytes_zeroed(3usize);
         seen = seen + 1;
-        if seen == 1 { break; };
+        if seen == 1 { continue; };
+        if seen == 2 { break; };
         0
     }
-    if seen == 1 && byte_len(bytes_as_slice(outer)) == 7usize { 9 } else { 0 }
+    if seen == 2 && byte_len(bytes_as_slice(outer)) == 7usize { 9 } else { 0 }
 }
 "#;
 
@@ -173,6 +174,15 @@ fn owned_iterator_break_finishes_only_its_wrapper_and_preserves_parent_order() {
         .unwrap();
     let plan = &function.cleanup_plan;
     let control = plan.lexical_control.as_ref().expect("lexical certificate");
+    assert_eq!(
+        control
+            .exits
+            .iter()
+            .filter(|exit| exit.kind == LexicalExitKind::Continue && exit.resume.is_some())
+            .count(),
+        1,
+        "owning Continue has an independent advance domain"
+    );
     let exits: Vec<_> = control
         .exits
         .iter()

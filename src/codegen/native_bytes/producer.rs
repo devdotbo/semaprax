@@ -182,6 +182,43 @@ pub(in crate::codegen) trait NativeBytesProducer: Sized {
         }
         Ok(output)
     }
+    /// One independently staged variant transfer phase. A repeated expression
+    /// anchor may bracket a scope exit; destination identity selects the exact
+    /// canonical transition without applying its later phase early.
+    fn apply_variant_into_at(
+        &self,
+        at: &ExpressionId,
+        carrier: &str,
+        layout: &VariantLayout,
+        destination_storage: &StorageId,
+    ) -> Result<String, Diagnostic> {
+        let mut found =
+            self.transitions()
+                .get(at)
+                .into_iter()
+                .flatten()
+                .filter_map(|row| match row {
+                    CleanupTransition::TransferVariant {
+                        source,
+                        destination,
+                        variant,
+                        ..
+                    } if &destination.storage == destination_storage => {
+                        Some((source, destination, variant))
+                    }
+                    _ => None,
+                });
+        let (source, destination, variant) = found
+            .next()
+            .ok_or_else(|| error("variant phase has no exact canonical destination"))?;
+        if found.next().is_some() || variant != &layout.variant {
+            return Err(error(
+                "variant phase destination is ambiguous or has wrong layout",
+            ));
+        }
+        self.base()
+            .emit_variant_transfer(source, destination, carrier, layout)
+    }
     fn result_at(&self, at: &ExpressionId) -> Option<&str> {
         result_at(self.base(), self.transitions(), at)
     }
