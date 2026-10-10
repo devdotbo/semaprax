@@ -1019,7 +1019,7 @@ fn assert_program_skeleton_authority(program: &ResolvedProgram) -> usize {
     let mut actual = ReplayBudget::new();
     let derived = reserve_program_skeleton_work(program, functions(), &mut actual).unwrap();
     for function in functions() {
-        validate_structure_with_budget(program, function, &mut actual).unwrap();
+        validate_structure_with_budget(program, function, &mut actual, None).unwrap();
     }
     let charged = derived - actual.skeleton_remaining;
     assert!(charged <= derived);
@@ -1132,7 +1132,7 @@ fn wide_resource_update_untouched_fields_are_inside_charge_first_authority() {
 
     reset_skeleton_materializations();
     let mut budget = ReplayBudget::with_skeleton_limit(derived);
-    validate_structure_with_budget(&program, function, &mut budget).unwrap();
+    validate_structure_with_budget(&program, function, &mut budget, None).unwrap();
     let charged = derived - budget.skeleton_remaining;
     assert!(charged <= derived);
     assert!(skeleton_materializations() <= charged);
