@@ -33,6 +33,7 @@ mod bounded_box;
 mod bounded_vec;
 #[cfg(test)]
 mod call_reference;
+mod execution_boundary;
 mod finish_call;
 mod generic_variant;
 mod guarded_variant;
@@ -40,6 +41,7 @@ mod guarded_variant;
 mod hostile_tests;
 mod iterator;
 pub(super) mod lexical_control;
+mod lexical_iterator;
 mod owned_try;
 mod record_destructure;
 mod renewal;
@@ -839,6 +841,7 @@ impl<'a> PlanBuilder<'a> {
         let root = CleanupRegionId(0);
         let mut current = BlockId(0);
         let mut state = self.initial_state.clone();
+        self.record_function_entry_boundary(current, &state, root)?;
         for (ordinal, contract) in self.function.requires.iter().enumerate() {
             let continued = self.lower_contract_expression(
                 contract,

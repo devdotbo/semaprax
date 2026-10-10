@@ -68,6 +68,13 @@ impl PlanBuilder<'_> {
 
         // The body is an ordinary checked block; lowering it once yields the
         // exact per-iteration ownership events of any iteration count.
+        self.record_execution_boundary(
+            super::super::ExecutionBoundaryKind::LoopIteration,
+            &condition.id,
+            body_entry,
+            &evaluated_condition.state,
+            region,
+        )?;
         let evaluated_body =
             self.lower_expr(body, body_entry, evaluated_condition.state.clone(), region)?;
         if evaluated_body.state != evaluated_condition.state

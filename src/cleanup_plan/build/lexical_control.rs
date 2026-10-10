@@ -40,6 +40,7 @@ pub(crate) fn build_plan_for_execution(
                 resumes: Vec::new(),
                 abrupt_only_regions: Vec::new(),
                 function_success_exits: Vec::new(),
+                execution_boundaries: Vec::new(),
             },
         }));
     }
@@ -82,15 +83,15 @@ impl PlanBuilder<'_> {
             .iter()
             .flat_map(|region| self.regions[region.0 as usize].slots.iter().cloned())
             .collect();
-        if storages
+        let finalizers = self.finalizers_for(state, |place| storages.contains(&place.storage));
+        if finalizers
             .iter()
-            .any(|storage| !matches!(storage, StorageId::Value(_)))
+            .any(|action| !matches!(action.source.storage, StorageId::Value(_)))
         {
             return Err(plan_error(
-                "lexical success contour contains unstaged temporary or call argument storage",
+                "lexical success contour contains live unstaged temporary or call argument storage",
             ));
         }
-        let finalizers = self.finalizers_for(state, |place| storages.contains(&place.storage));
         let flags = state
             .live_order
             .iter()
@@ -247,13 +248,13 @@ impl PlanBuilder<'_> {
 }
 
 #[derive(Clone)]
-struct LoopContext {
-    target: crate::hir::ControlTarget,
-    region: CleanupRegionId,
-    body: ExpressionId,
-    latch: crate::hir::LoopLatchKind,
-    entry: FlowState,
-    after: BlockId,
+pub(super) struct LoopContext {
+    pub(super) target: crate::hir::ControlTarget,
+    pub(super) region: CleanupRegionId,
+    pub(super) body: ExpressionId,
+    pub(super) latch: crate::hir::LoopLatchKind,
+    pub(super) entry: FlowState,
+    pub(super) after: BlockId,
 }
 
 impl PlanBuilder<'_> {
@@ -326,6 +327,13 @@ impl PlanBuilder<'_> {
                 entry: state.clone(),
                 after,
             });
+        self.record_execution_boundary(
+            super::super::ExecutionBoundaryKind::LoopIteration,
+            &condition.id,
+            body_entry,
+            &state,
+            region,
+        )?;
         let evaluated = self.lower_expr(body, body_entry, state.clone(), region)?;
         self.lexical
             .as_mut()
@@ -397,12 +405,24 @@ impl PlanBuilder<'_> {
         if *target != context.target {
             return Err(plan_error("loop exit targets a different lexical contour"));
         }
-        let leaves_regions: Vec<_> = self
-            .region_chain(region)
-            .into_iter()
-            .take_while(|region| *region != context.region)
-            .collect();
-        let finalizers = self.settle_lexical_contour(&mut state, &leaves_regions)?;
+        let owned_continue = *kind == crate::ast::LexicalExitKind::Continue
+            && matches!(
+                context.latch,
+                crate::hir::LoopLatchKind::OwnedIteratorStep { .. }
+            );
+        let (leaves_regions, finalizers, owned_resume) = if owned_continue {
+            let (regions, actions, entry) =
+                self.lower_owned_iterator_continue(&context, &mut state, region)?;
+            (regions, actions, Some(entry))
+        } else {
+            let regions: Vec<_> = self
+                .region_chain(region)
+                .into_iter()
+                .take_while(|region| *region != context.region)
+                .collect();
+            let actions = self.settle_lexical_contour(&mut state, &regions)?;
+            (regions, actions, None)
+        };
         let (continuation, resume) = match kind {
             crate::ast::LexicalExitKind::Break => {
                 if state != context.entry {
@@ -420,8 +440,12 @@ impl PlanBuilder<'_> {
                 )
             }
             crate::ast::LexicalExitKind::Continue => {
-                let resume = self.lower_continue_advance(&context, &state)?;
-                if state != context.entry {
+                let resume = if let Some(entry) = owned_resume {
+                    Some(entry)
+                } else {
+                    self.lower_continue_advance(&context, &state)?
+                };
+                if !owned_continue && state != context.entry {
                     return Err(plan_error(
                         "loop continue does not restore exact entry ownership",
                     ));
@@ -546,7 +570,7 @@ pub(super) fn build_registered_plan(
 
 /// Locate an exact authenticated identity with a fixed-depth cursor, without
 /// cloning HIR or constructing an unbounded expression frontier.
-fn expression_at<'e>(
+pub(super) fn expression_at<'e>(
     root: &'e ResolvedExpr,
     id: &ExpressionId,
 ) -> Result<&'e ResolvedExpr, Diagnostic> {

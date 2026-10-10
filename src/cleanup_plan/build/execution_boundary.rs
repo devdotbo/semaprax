@@ -51,3 +51,21 @@ impl PlanBuilder<'_> {
         Ok(())
     }
 }
+
+impl PlanBuilder<'_> {
+    pub(super) fn record_function_entry_boundary(
+        &mut self,
+        block: BlockId,
+        state: &FlowState,
+        region: CleanupRegionId,
+    ) -> Result<(), Diagnostic> {
+        let function = self.function;
+        self.record_execution_boundary(
+            ExecutionBoundaryKind::FunctionEntry,
+            &function.body.id,
+            block,
+            state,
+            region,
+        )
+    }
+}
