@@ -184,26 +184,26 @@ impl<'a> PlanBuilder<'a> {
             pending_try_residuals: Vec::new(),
             lexical: None,
             schema: if has_byte_helpers {
-                super::CLEANUP_PLAN_SCHEMA_V19
+                crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V19
             } else if crate::byte_ops::requires_same_owner_set(function) {
-                super::CLEANUP_PLAN_SCHEMA_V17
+                crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V17
             } else if crate::string_ops::replacement::requires(function) {
-                super::CLEANUP_PLAN_SCHEMA_V16
+                crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V16
             } else if crate::hir::vec_loop_renewal::requires_in(program, function) {
-                super::CLEANUP_PLAN_SCHEMA_V15
+                crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V15
             } else if crate::iterator_ops::function_uses_owned_iterator(function)
                 || crate::iterator_ops::function_uses_record_iterator_in(
                     &program.declarations,
                     function,
                 )
             {
-                super::CLEANUP_PLAN_SCHEMA_V13
+                crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V13
             } else if crate::hir::iterator_loop::function_requires_renewal(function)
                 || crate::hir::iterator_loop::function_requires_record_renewal(program, function)
             {
-                super::CLEANUP_PLAN_SCHEMA_V12
+                crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V12
             } else if crate::hir::iterator_loop::function_contains(function) {
-                super::CLEANUP_PLAN_SCHEMA_V11
+                crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V11
             } else {
                 schema::initial(&function.cleanup)?
             },

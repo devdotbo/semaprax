@@ -77,9 +77,17 @@ fn irrelevant_modules_have_no_new_backing_and_allocating_legacy_helpers_keep_old
     let legacy = program(
         r#"module index.legacy;
 @id("old") fn old(input:own Bytes)->Bytes { let length=byte_len(bytes_as_slice(input)); bytes_zeroed(1usize) }
-@id("main") fn main()->i64 { let mut output=bytes_zeroed(1usize); output=old(output); if byte_len(bytes_as_slice(output))==1usize {1}else{0} }
+@id("main") fn main()->i64 { let mut output=bytes_zeroed(1usize); let next=old(output); if byte_len(bytes_as_slice(next))==1usize {1}else{0} }
 "#,
     );
+    let rejected = crate::check(
+        r#"module index.legacy;
+@id("old") fn old(input:own Bytes)->Bytes { let length=byte_len(bytes_as_slice(input)); bytes_zeroed(1usize) }
+@id("main") fn main()->i64 { let mut output=bytes_zeroed(1usize); output=old(output); 0 }
+"#,
+        "allocating-renewal.spx",
+    ).unwrap_err();
+    assert!(rejected.iter().any(|error| error.code == "SPX-U105"));
     let index = ModuleIndex::new(&legacy).unwrap();
     assert_eq!(index.proof_count, 1);
     assert!(legacy
