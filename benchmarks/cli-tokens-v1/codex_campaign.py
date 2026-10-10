@@ -27,6 +27,7 @@ import cli_typescript_bootstrap as ts_bootstrap
 import campaign_resources as resources
 import live_campaign_common as common
 import compiler_input_capture as compiler_capture
+import selected_file_setup
 
 BENCHMARK = Path(__file__).resolve().parent
 REPO = BENCHMARK.parents[1]
@@ -49,6 +50,7 @@ HARNESS_SOURCE_FILES = (
     "benchmarks/cli-tokens-v1/measurement_evidence.py",
     "benchmarks/cli-tokens-v1/oracle.py",
     "benchmarks/cli-tokens-v1/qualification.py",
+    "benchmarks/cli-tokens-v1/selected_file_setup.py",
     "benchmarks/live_campaign_common.py",
     "benchmarks/campaign_resources.py",
     "benchmarks/compiler_input_capture.py",
@@ -482,7 +484,7 @@ def plan(args: argparse.Namespace) -> dict[str, Any]:
                    "dependency_helper_sha256": receipt["dependency_helper_sha256"],
                    "node_binary": args.node_binary,
                    "npm_binary": args.npm_binary}
-    return {
+    settings = {
         "adapter": "codex-matched-loglens-v1", "round": ROUND, "repository_commit": commit,
         "compiler_source_commit": compiler_source_commit,
         "seed_files_sha256": hashes, "artifacts": str(artifacts), "model_requested": args.model,
@@ -514,6 +516,10 @@ def plan(args: argparse.Namespace) -> dict[str, Any]:
                         "model_request_count": "trace-backed only; never inferred from item counts"},
         "capabilities": capabilities(args.codex_binary),
     }
+
+    if getattr(args, "selected_file_resource_v1", False):
+        settings["selected_file_setup"] = selected_file_setup.capability(Path(args.semaprax_bin).resolve(strict=True))
+    return settings
 
 
 def copy_task_rollout(thread_ids: list[str], workspace: Path, destination: Path,
@@ -606,6 +612,9 @@ def launch_trial(repo: Path, artifacts: Path, commit: str, trial: dict[str, Any]
     with compiler_capture.authoring_compiler(arm, candidate, workspace, artifacts, label,
                                              settings, semaprax_bin, row) as authoring_binary:
         prompt = legacy.prompt_for(arm, candidate, authoring_binary)
+        selected_note = selected_file_setup.prompt_note(settings, arm, semaprax_bin)
+        if selected_note:
+            prompt += "\n\n" + selected_note
         if tooling:
             prompt += "\n\n" + ts_bootstrap.prompt_note(receipt)
         (artifacts / "prompts").mkdir(parents=True, exist_ok=True)
@@ -718,6 +727,8 @@ def main() -> int:
         current.add_argument("--compiler-build-receipt", required=True,
                              help="external receipt binding selected compiler source, binary, command, and build log")
         current.add_argument("--tokenizer-dir", required=True)
+        current.add_argument("--selected-file-resource-v1", action="store_true",
+                             help="opt in to capability-authenticated selected-file guidance; keep frozen CLI49 and TypeScript task")
         current.add_argument("--typescript-bootstrap-receipt", default=None)
         current.add_argument("--node-binary", default="node"); current.add_argument("--npm-binary", default="npm")
         current.add_argument("--codex-binary", default="codex"); current.add_argument("--model", default=MODEL)

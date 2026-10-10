@@ -22,9 +22,9 @@ Checked source alone validates complete application usage before the first
 The selected spelling remains bounded at 4096 bytes. Acquisition/read/UTF-8,
 regular-file, metadata drift, sticky failure, held descriptor, symlink policy,
 no-reopen, reservation and settlement rules are identical to v33. File text
-remains 65536 bytes, attempts at most64 and reserved reads at most1048576 bytes.
-The source String and authenticated String-derived byte-view limit is1048576
-bytes. Combined staged stdout/stderr is1048576 bytes, allocated as the existing
+remains 65536 bytes, attempts at most 64 and reserved reads at most 1048576 bytes.
+The source String and authenticated String-derived byte-view limit is 1048576
+bytes. Combined staged stdout/stderr is 1048576 bytes, allocated as the existing
 v28 two-channel heap envelope; owning Bytes and ordinary Slice bounds remain
 frozen. Staging is erased and released after settlement and publication or
 failure. Provider close failure cannot replace a selected root status. Output
@@ -35,7 +35,7 @@ The new native output classifier uses the exact same resource-provenance and
 checked output helpers as v28. No new borrowed representation, public provider
 ABI, persistent grant, filesystem write capability or optimistic metadata is
 introduced. Interpreter, Wasm, Web, npm and non-native64 Unix hosts refuse.
-V33 keeps its16 argv/65536 output bounds; v26/v28 keep their16 argv and existing
+V33 keeps its 16 argv/65536 output bounds; v26/v28 keep their 16 argv and existing
 relative-root no-follow provider bytes. Profile selection is explicit in the
 canonical manifest, graph, Project revision, lock and retained workspace route.
 
@@ -43,16 +43,16 @@ canonical manifest, graph, Project revision, lock and retained workspace route.
 
 `experiments/selected-file-input/loglens/` is a new adaptation of the preserved
 qualified LogLens source. Its wrapper only locates its executable and grants
-application argv0. Source takes over the prior shell's filename-flag and ASCII
+application argv 0. Source takes over the prior shell's filename-flag and ASCII
 positive-top validation. Decimal arithmetic, parsing, reporting and every
-retained assertion remain intact, including the33000-digit report and30
+retained assertion remain intact, including the 33000-digit report and 30
 repeated options. The finite physical invocation bounds do not impose a numeric
 byte-count ceiling inside the admitted file. Historical acceptance is retained
 provenance, never acceptance for this adaptation or evidence of savings.
 
 `project::source_command::selected_file_resource` owns O0/O2 raw argv order,
 66000-byte output and exact v33 refusal controls; `loglens_selected_file` owns
-the unchanged historical33 plus16 independent SPEC boundary qualification,
+the unchanged historical 33 plus 16 independent SPEC boundary qualification,
 retained candidate tests and additive selected-path controls. The optional
 future Codex setup flag `--selected-file-resource-v1` authenticates compiler
 help, appends only SEMAPRAX capability guidance, leaves TypeScript prompts and

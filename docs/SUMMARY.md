@@ -735,3 +735,5 @@ Audience: all documentation readers.
 - [Stream Data Command v2 (Project v29)](STREAM-DATA-COMMAND-V2.md)
 - [Stream Owned Data Command v1](STREAM-OWNED-DATA-COMMAND-V1.md)
 - [Unicode Scalar Conversion v1](UNICODE-SCALAR-CONVERSION-V1.md)
+
+- [Selected-file LogLens adoption](../experiments/selected-file-input/loglens/README.md)
