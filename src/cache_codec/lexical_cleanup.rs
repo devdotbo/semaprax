@@ -9,7 +9,8 @@ codec_struct!(LoopCertificate { target, condition, body, latch, region, conditio
     latch_entry, iteration_end, after, entry_order });
 codec_struct!(LexicalExitCertificate { site, target, kind, exit, resume });
 codec_struct!(ResumeCertificate { entry, blocks });
-codec_struct!(LexicalControlPlan { schema, loops, exits, resumes });
+codec_struct!(LexicalControlPlan { schema, loops, exits, resumes, abrupt_only_regions,
+    function_success_exits });
 
 impl Codec for CleanupPlan {
     fn encode(&self, out: &mut Encoder) -> Result<()> {

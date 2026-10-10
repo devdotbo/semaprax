@@ -6,11 +6,11 @@ use crate::hir::{ControlTarget, LoopLatchKind, SourceForKind};
 pub(super) fn target_json(target: &ControlTarget) -> String {
     match target {
         ControlTarget::Function(owner) => format!(
-            "{{\"kind\":\"function\",\"owner\":{}}}", quote_json(owner.as_str())
+            "{{\"kind\":\"function\",\"owner\":{}}}", quote_json(&owner.identity_key())
         ),
         ControlTarget::Loop { owner, site } => format!(
             "{{\"kind\":\"loop\",\"owner\":{},\"site\":{}}}",
-            quote_json(owner.as_str()), quote_json(site.as_str())
+            quote_json(&owner.identity_key()), quote_json(site.as_str())
         ),
     }
 }
@@ -64,7 +64,9 @@ fn resume_json(item: &ResumeCertificate) -> String {
 }
 
 pub(super) fn member_json(control: &LexicalControlPlan) -> String {
-    format!(",\"lexical_control\":{{\"schema\":{},\"loops\":{},\"exits\":{},\"resumes\":{}}}",
+    format!(",\"lexical_control\":{{\"schema\":{},\"loops\":{},\"exits\":{},\"resumes\":{},\"abrupt_only_regions\":{},\"function_success_exits\":{}}}",
         quote_json(control.schema), array_json(&control.loops, loop_json),
-        array_json(&control.exits, exit_json), array_json(&control.resumes, resume_json))
+        array_json(&control.exits, exit_json), array_json(&control.resumes, resume_json),
+        array_json(&control.abrupt_only_regions, |id| format!("{}", id.0)),
+        array_json(&control.function_success_exits, |id| format!("{}", id.0)))
 }

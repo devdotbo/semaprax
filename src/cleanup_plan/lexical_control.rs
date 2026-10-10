@@ -49,6 +49,10 @@ pub struct LexicalControlPlan {
     pub loops: Vec<LoopCertificate>,
     pub exits: Vec<LexicalExitCertificate>,
     pub resumes: Vec<ResumeCertificate>,
+    /// Regions whose independently reconstructed flow has no normal endpoint.
+    pub abrupt_only_regions: Vec<CleanupRegionId>,
+    /// Exact root success exits for the ordinary and each Return domain.
+    pub function_success_exits: Vec<ExitTargetId>,
 }
 
 impl CleanupPlan {
