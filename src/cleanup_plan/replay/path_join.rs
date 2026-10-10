@@ -148,11 +148,7 @@ pub(super) fn validate_path_states(
                     "owning break fragment does not rejoin its parent with exact ownership state",
                 ));
             }
-            let mut checked = BTreeSet::new();
-            for state in &states {
-                validate_join_compatibility(function, &checked, state, block_id)?;
-                checked.insert(state.clone());
-            }
+            validate_control_group(function, &states, block_id)?;
             let (live_order, conditional_variants) =
                 joined_ownership_state(program, function, &states)?;
             let mut state = states
@@ -312,6 +308,23 @@ pub(super) fn validate_path_states(
     }
     Ok(())
 }
+
+/// The borrowed prefix is exactly the sorted set previously copied into
+/// `checked`. Keep the complete history union: pairwise checks alone miss a
+/// cycle assembled from three or more individually compatible histories.
+fn validate_control_group(
+    function: &ResolvedFunction,
+    states: &BTreeSet<PathState>,
+    block: BlockId,
+) -> Result<(), Diagnostic> {
+    for state in states {
+        validate_join_compatibility(function, states.range(..state), state, block)?;
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests;
 
 fn joined_ownership_state(
     program: &dyn crate::cleanup::ReplayContext,
