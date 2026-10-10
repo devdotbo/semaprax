@@ -129,8 +129,7 @@ pub(super) fn schema_with_proofs<'a>(
         }
         let required = function.cleanup_plan.schema == crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V19;
         let mut found = false;
-        let mut stack = [None; crate::cache_codec::MAX_DEPTH];
-        reserve_builder_structure(std::mem::size_of_val(&stack))?;
+        let mut stack = proofs.take_walk()?;
         stack[0] = Some((&function.body, 0usize));
         let mut depth = 1usize;
         let mut work = crate::cache_codec::MAX_NODES;
@@ -212,6 +211,7 @@ pub(super) fn schema_with_proofs<'a>(
                 depth -= 1;
             }
         }
+        proofs.restore_walk(stack);
         if found != (function.cleanup_plan.schema == crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V19) {
             return Err(fail());
         }

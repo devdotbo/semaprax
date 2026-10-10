@@ -2,6 +2,7 @@
 
 use super::*;
 
+#[allow(clippy::too_many_arguments)] // Keep the independently held phase index explicit.
 pub(super) fn validate_path_states(
     program: &ResolvedProgram,
     function: &ResolvedFunction,
@@ -9,13 +10,18 @@ pub(super) fn validate_path_states(
     leaves: &Leaves,
     budget: &mut ReplayBudget,
     lexical: Option<&lexical_cert::LexicalAuth>,
+    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
 ) -> Result<(), Diagnostic> {
     // Authenticate the absence once before path traversal. The source/HIR
     // wrapper certificate identifies a conditional Step transfer, which must
     // never acquire the one-leaf renewal authority of another profile.
     if let Some(auth) = lexical {
         for assignment in auth.wrapper_cancels.values() {
-            if crate::cleanup_plan::renewal_binding(program, function, assignment).is_some() {
+            if crate::cleanup_plan::renewal_profile::binding_with_index(
+                program, function, assignment, helpers,
+            )
+            .is_some()
+            {
                 return Err(replay_error(
                     function,
                     "owning Break conditional Step has unexpected renewal authority",
@@ -169,7 +175,7 @@ pub(super) fn validate_path_states(
             for transition in &block.transitions {
                 renewal::charge_transition(function, transition, &state, budget)?;
                 execute_replay_transition(
-                    program, function, transition, &mut state, storage, leaves,
+                    program, function, transition, &mut state, storage, leaves, helpers,
                 )?;
             }
             match &block.terminator {

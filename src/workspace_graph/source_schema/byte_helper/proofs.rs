@@ -1,11 +1,14 @@
 //! Positive proof reuse belongs only to one held immutable provider inventory.
 use super::*;
 
+pub(super) type Walk<'a> = [Option<(&'a hir::ResolvedExpr, usize)>; crate::cache_codec::MAX_DEPTH];
+
 pub(in crate::workspace_graph) struct Proofs<'a> {
     modules: &'a [WorkspaceResolvedModule],
     facts: &'a BTreeMap<String, WorkspaceDeclarationFact>,
     proved: Vec<&'a hir::ResolvedFunction>,
     cursor: Option<Box<crate::loop_calls::byte_writer::ProofCursor<'a>>>,
+    walk: Option<Box<Walk<'a>>>,
     work: usize,
     #[cfg(test)]
     pub(super) proof_count: usize,
@@ -20,10 +23,24 @@ impl<'a> Proofs<'a> {
             facts,
             proved: Vec::new(),
             cursor: None,
+            walk: None,
             work: crate::cache_codec::MAX_NODES,
             #[cfg(test)]
             proof_count: 0,
         }
+    }
+    /// One physical traversal backing reused inside this immutable phase.
+    /// Taking it grants no proof authority; every function is walked again.
+    pub(super) fn take_walk(&mut self) -> Result<Box<Walk<'a>>, Vec<Diagnostic>> {
+        if let Some(mut walk) = self.walk.take() {
+            walk.fill(None);
+            return Ok(walk);
+        }
+        reserve_builder_structure(std::mem::size_of::<Walk<'a>>())?;
+        Ok(Box::new([None; crate::cache_codec::MAX_DEPTH]))
+    }
+    pub(super) fn restore_walk(&mut self, walk: Box<Walk<'a>>) {
+        self.walk = Some(walk);
     }
     pub(super) fn prove(
         &mut self,

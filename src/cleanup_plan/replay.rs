@@ -449,7 +449,14 @@ fn validate_structure_with_budget(
     validate_status_sources(function, &expression_facts)?;
     validate_regions(function, &storage)?;
     validate_entry(function, &storage, &leaves)?;
-    validate_blocks_and_edges(program, function, &expression_facts, &storage, &leaves)?;
+    validate_blocks_and_edges(
+        program,
+        function,
+        &expression_facts,
+        &storage,
+        &leaves,
+        helpers,
+    )?;
     validate_exits(program, function, &storage, &leaves, &BTreeSet::new())?;
     validate_reference_coverage(function)?;
     validate_reachable_acyclic_cfg(function)?;
@@ -457,7 +464,7 @@ fn validate_structure_with_budget(
         && !status_only_paths_can_be_summarized(function)
         && !cleanup_inert_large_decisions_can_be_summarized(function)
     {
-        validate_path_states(program, function, &storage, &leaves, budget, None)?;
+        validate_path_states(program, function, &storage, &leaves, budget, None, helpers)?;
         validate_typed_control_skeleton_with_index(program, function, budget, helpers)?;
     }
     Ok(())
@@ -2369,6 +2376,7 @@ fn validate_blocks_and_edges(
     expressions: &BTreeMap<ExpressionId, Option<CallFact>>,
     storage: &BTreeSet<StorageId>,
     leaves: &Leaves,
+    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
 ) -> Result<(), Diagnostic> {
     let plan = &function.cleanup_plan;
     let statuses = plan
@@ -2411,7 +2419,7 @@ fn validate_blocks_and_edges(
                     validate_place(function, destination, storage, leaves)?;
                 }
                 CleanupTransition::ReserveRenewal { at, binding } => {
-                    renewal::validate_binding(program, function, at, binding)?;
+                    renewal::validate_binding(program, function, at, binding, helpers)?;
                     require_expression(function, expressions, at)?;
                     validate_place(function, binding, storage, leaves)?;
                 }
@@ -2420,7 +2428,7 @@ fn validate_blocks_and_edges(
                     source,
                     destination,
                 } => {
-                    renewal::validate_binding(program, function, at, destination)?;
+                    renewal::validate_binding(program, function, at, destination, helpers)?;
                     require_expression(function, expressions, at)?;
                     validate_place(function, source, storage, leaves)?;
                     validate_place(function, destination, storage, leaves)?;

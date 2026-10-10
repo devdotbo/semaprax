@@ -9,6 +9,7 @@ pub(super) fn validate_binding(
     function: &ResolvedFunction,
     at: &ExpressionId,
     place: &CleanupPlace,
+    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
 ) -> Result<(), Diagnostic> {
     if !matches!(
         function.cleanup_plan.schema,
@@ -42,11 +43,15 @@ pub(super) fn validate_binding(
                 function.cleanup_plan.schema,
                 CLEANUP_PLAN_SCHEMA_V17 | CLEANUP_PLAN_SCHEMA_V18 | CLEANUP_PLAN_SCHEMA_V19
             ))
-        || (crate::loop_calls::byte_writer::bindings(program, function).contains_key(at)
+        || (crate::cleanup_plan::renewal_profile::helper_binding_with_index(
+            program, function, at, helpers,
+        )
+        .is_some()
             && function.cleanup_plan.schema != CLEANUP_PLAN_SCHEMA_V19)
-        || !crate::cleanup_plan::renewal_binding(program, function, at).is_some_and(|binding| {
-            *place == CleanupPlace::whole(StorageId::Value(binding.id.clone()))
-        })
+        || !crate::cleanup_plan::renewal_profile::binding_with_index(program, function, at, helpers)
+            .is_some_and(|binding| {
+                *place == CleanupPlace::whole(StorageId::Value(binding.id.clone()))
+            })
     {
         return Err(replay_error(
             function,
@@ -60,10 +65,13 @@ pub(super) fn reject_unmarked_finish(
     function: &ResolvedFunction,
     at: &ExpressionId,
     destination: &CleanupPlace,
+    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
 ) -> Result<(), Diagnostic> {
-    if crate::cleanup_plan::renewal_binding(program, function, at).is_some_and(|binding| {
-        *destination == CleanupPlace::whole(StorageId::Value(binding.id.clone()))
-    }) {
+    if crate::cleanup_plan::renewal_profile::binding_with_index(program, function, at, helpers)
+        .is_some_and(|binding| {
+            *destination == CleanupPlace::whole(StorageId::Value(binding.id.clone()))
+        })
+    {
         return Err(replay_error(
             function,
             "authenticated renewal uses an ordinary transfer",
@@ -71,6 +79,7 @@ pub(super) fn reject_unmarked_finish(
     }
     Ok(())
 }
+#[allow(clippy::too_many_arguments)] // Keep the independently held phase index explicit.
 pub(super) fn reserve(
     program: &ResolvedProgram,
     function: &ResolvedFunction,
@@ -79,8 +88,9 @@ pub(super) fn reserve(
     state: &mut PathState,
     storage: &BTreeSet<StorageId>,
     leaves: &Leaves,
+    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
 ) -> Result<(), Diagnostic> {
-    validate_binding(program, function, at, binding)?;
+    validate_binding(program, function, at, binding, helpers)?;
     let flags = validate_place(function, binding, storage, leaves)?;
     if flags.len() != 1
         || !state.live_order.contains(&flags[0])
@@ -109,6 +119,7 @@ pub(super) fn reserve(
     );
     Ok(())
 }
+#[allow(clippy::too_many_arguments)] // Keep the independently held phase index explicit.
 pub(super) fn renew(
     program: &ResolvedProgram,
     function: &ResolvedFunction,
@@ -117,8 +128,9 @@ pub(super) fn renew(
     state: &mut PathState,
     storage: &BTreeSet<StorageId>,
     leaves: &Leaves,
+    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
 ) -> Result<(), Diagnostic> {
-    validate_binding(program, function, at, destination)?;
+    validate_binding(program, function, at, destination, helpers)?;
     let history = state
         .renewals
         .remove(at)

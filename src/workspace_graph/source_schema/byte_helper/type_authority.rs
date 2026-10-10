@@ -123,7 +123,7 @@ fn replay(
         let prefix = if crate::vec_ops::resolved_vec_element_is_admitted(element) {
             "vec"
         } else if *element == ResolvedType::String {
-            "owned-leaf-vector-v1"
+            "declared-vector-only"
         } else {
             vector_record(element, modules, facts)?
         };
@@ -304,6 +304,8 @@ fn vector_record(
         return None;
     }
     let mut owned = 0usize;
+    let mut strings = 0usize;
+    let mut bytes = 0usize;
     let mut explicit = true;
     for (position, field) in fields.iter().enumerate() {
         let origin = facts.get(field.id.as_str())?;
@@ -320,12 +322,22 @@ fn vector_record(
         explicit &= origin.origin == hir::IdentityOrigin::Explicit;
         if matches!(field.ty, ResolvedType::String | ResolvedType::Bytes) {
             owned += 1;
+            strings += usize::from(field.ty == ResolvedType::String);
+            bytes += usize::from(field.ty == ResolvedType::Bytes);
         } else {
+            if !crate::vec_ops::resolved_element_is_admitted(&field.ty) {
+                return None;
+            }
             scalar_layout(&field.ty)?;
         }
     }
-    if owned == 0 {
+    // Replay the *same priority* as DeclarationIndex::owned_builtin_facts.
+    // These layout tokens describe checked storage, not runtime admission.
+    // The declared one-String family precedes the owned-leaf family there.
+    if owned == 0 || (bytes == 2 && strings == 0 && fields.len() == 3) {
         Some("vec")
+    } else if strings == 1 && bytes == 0 {
+        Some("declared-vector-only")
     } else if explicit
         && fields.len() <= hir::owned_leaf_collection::MAX_FIELDS
         && owned <= hir::owned_leaf_collection::MAX_OWNED_FIELDS

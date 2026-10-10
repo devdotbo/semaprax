@@ -34,7 +34,14 @@ pub(super) fn validate_with_index(
     validate_status_sources(function, &expression_facts)?;
     validate_regions(function, &storage)?;
     validate_entry(function, &storage, &leaves)?;
-    validate_blocks_and_edges(program, function, &expression_facts, &storage, &leaves)?;
+    validate_blocks_and_edges(
+        program,
+        function,
+        &expression_facts,
+        &storage,
+        &leaves,
+        helpers,
+    )?;
 
     let facts = lexical_hir::collect(function)?;
     let return_operands = facts
@@ -48,6 +55,14 @@ pub(super) fn validate_with_index(
     validate_reference_coverage(function)?;
     validate_reachable_acyclic_cfg(function)?;
     // Lexical functions always replay every path: no summary shortcut applies.
-    validate_path_states(program, function, &storage, &leaves, budget, Some(&auth))?;
+    validate_path_states(
+        program,
+        function,
+        &storage,
+        &leaves,
+        budget,
+        Some(&auth),
+        helpers,
+    )?;
     validate_typed_control_skeleton_with_index(program, function, budget, helpers)
 }

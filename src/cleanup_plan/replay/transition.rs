@@ -11,6 +11,7 @@ pub(super) fn execute_replay_transition(
     state: &mut PathState,
     storage: &BTreeSet<StorageId>,
     leaves: &Leaves,
+    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
 ) -> Result<(), Diagnostic> {
     if state.published {
         return Err(replay_error(
@@ -40,9 +41,9 @@ pub(super) fn execute_replay_transition(
             let flags = validate_place(function, destination, storage, leaves)?;
             append_dead_flags(function, state, flags, "initialize transition")?;
         }
-        CleanupTransition::ReserveRenewal { at, binding } => {
-            renewal::reserve(program, function, at, binding, state, storage, leaves)?
-        }
+        CleanupTransition::ReserveRenewal { at, binding } => renewal::reserve(
+            program, function, at, binding, state, storage, leaves, helpers,
+        )?,
         CleanupTransition::Renew {
             at,
             source,
@@ -55,13 +56,14 @@ pub(super) fn execute_replay_transition(
             state,
             storage,
             leaves,
+            helpers,
         )?,
         CleanupTransition::Transfer {
             at,
             source,
             destination,
         } => {
-            renewal::reject_unmarked_finish(program, function, at, destination)?;
+            renewal::reject_unmarked_finish(program, function, at, destination, helpers)?;
             let append = strings::reserve_append(function, at, source, destination, state)?;
             replay_transfer(function, state, source, destination, storage, leaves)?;
             seal_try_residual(program, function, at, destination, state, storage, leaves)?;

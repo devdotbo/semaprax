@@ -15,6 +15,33 @@ pub(crate) fn binding<'a>(
         .or_else(|| crate::hir::iterator_loop::renewal_binding(program, function, at))
 }
 
+/// A held phase index authenticates exact program and function membership.
+/// Standalone callers still derive their own fresh helper census.
+pub(crate) fn binding_with_index<'a>(
+    program: &'a ResolvedProgram,
+    function: &'a ResolvedFunction,
+    at: &ExpressionId,
+    index: Option<&crate::loop_calls::byte_writer::ModuleIndex<'a>>,
+) -> Option<&'a ResolvedBinding> {
+    helper_binding_with_index(program, function, at, index)
+        .or_else(|| crate::string_ops::replacement::binding(function, at))
+        .or_else(|| crate::byte_ops::same_owner_set_binding(function, at))
+        .or_else(|| crate::hir::vec_loop_renewal::binding_in(program, function, at))
+        .or_else(|| crate::hir::iterator_loop::renewal_binding(program, function, at))
+}
+pub(crate) fn helper_binding_with_index<'a>(
+    program: &'a ResolvedProgram,
+    function: &'a ResolvedFunction,
+    at: &ExpressionId,
+    index: Option<&crate::loop_calls::byte_writer::ModuleIndex<'a>>,
+) -> Option<&'a ResolvedBinding> {
+    match index {
+        Some(index) if index.matches_program(program) => index.function_sites(function)?.get(at),
+        Some(_) => None,
+        None => crate::loop_calls::byte_writer::bindings(program, function).remove(at),
+    }
+}
+
 pub(crate) struct RenewalBindings<'a> {
     legacy: BTreeMap<ExpressionId, &'a ResolvedBinding>,
     helpers: HelperSites<'a>,
@@ -194,5 +221,45 @@ mod tests {
             );
         }
         assert_eq!(index.get(&byte_at).unwrap().name, "buffer");
+    }
+    #[test]
+    fn held_helper_index_replays_repeated_renewals_without_fresh_cursor_backing() {
+        let source = include_str!("../../tests/owned_data/byte_helper_renewal.spx");
+        let ast = crate::check(source, "held-renewal.spx").unwrap();
+        let program = crate::hir::resolve(&ast).unwrap();
+        let index = crate::loop_calls::byte_writer::ModuleIndex::new(&program).unwrap();
+        let function = program
+            .functions
+            .iter()
+            .find(|f| f.id.as_str() == "app.main")
+            .unwrap();
+        let sites = index.function_sites(function).unwrap();
+        let bindings: Vec<_> = crate::loop_calls::byte_writer::checked_bindings(&program, function)
+            .unwrap()
+            .into_iter()
+            .collect();
+        assert!(!bindings.is_empty());
+        let (valid, refused, bytes) = crate::bounded_output::with_limit_usage(0, || {
+            (0..64).all(|_| {
+                bindings.iter().all(|(at, binding)| {
+                    sites.get(at) == Some(*binding)
+                        && binding_with_index(&program, function, at, Some(&index))
+                            == Some(*binding)
+                        && helper_binding_with_index(&program, function, at, Some(&index))
+                            == Some(*binding)
+                })
+            })
+        });
+        assert!(valid);
+        assert!(!refused);
+        assert_eq!(bytes, 0);
+        let foreign = program.clone();
+        let other = crate::loop_calls::byte_writer::ModuleIndex::new(&foreign).unwrap();
+        for (at, _) in bindings {
+            assert!(helper_binding_with_index(&program, function, at, Some(&other)).is_none());
+            assert!(
+                helper_binding_with_index(&program, &function.clone(), at, Some(&index)).is_none()
+            );
+        }
     }
 }

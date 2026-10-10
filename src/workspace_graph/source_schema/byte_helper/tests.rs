@@ -499,3 +499,62 @@ fn helper_positive_proof_never_authenticates_changed_provider_body_or_facts() {
         refused(&changed);
     }
 }
+
+#[test]
+fn borrowed_text_row_vector_replays_the_checked_declared_layout_priority() {
+    let app = r#"module app.main;
+use type @id("row") from lib.leaf as Row;
+use function @id("bridge") from lib.bridge as fill;
+@id("main") fn main()->i64 {
+ let mut rows=vec_with_capacity<Row>(1usize);
+ rows=vec_push<Row>(rows,Row{label:"meta",index:0usize});
+ let mut output=bytes_zeroed(2usize);output=fill(output,rows);7
+}"#;
+    let bridge = BRIDGE.replace("row:borrow Row", "row:borrow Vec<Row>");
+    let leaf = LEAF
+        .replace("row:borrow Row", "row:borrow Vec<Row>")
+        .replace("next,row.index,65u8", "next,vec_len<Row>(row),65u8");
+    let checked = build(&[
+        ("app.spx", app),
+        ("bridge.spx", &bridge),
+        ("leaf.spx", &leaf),
+    ]);
+    assert_eq!(selected(&checked).unwrap(), Some("semaprax.graph.v76"));
+    let mut forged = checked;
+    let module = forged
+        .hir
+        .modules
+        .iter_mut()
+        .find(|m| m.module == "lib.leaf")
+        .unwrap();
+    let (_, facts) = module
+        .signature_types
+        .values_mut()
+        .find(|(_, facts)| facts.layout_key.starts_with("declared-vector-only:"))
+        .unwrap();
+    facts.layout_key =
+        facts
+            .layout_key
+            .replacen("declared-vector-only:", "owned-leaf-vector-v1:", 1);
+    refused(&forged);
+}
+
+#[test]
+fn retained_schema_walk_reuses_only_physical_backing_and_rechecks_claims() {
+    let checked = imported();
+    let modules = &checked.hir.modules;
+    let facts = &checked.hir.declarations;
+    let module = modules.iter().find(|m| m.module == "app.main").unwrap();
+    let mut proofs = Proofs::new(modules, facts);
+    assert_eq!(
+        schema_with_proofs(module, modules, facts, &mut proofs).unwrap(),
+        Some("semaprax.graph.v76")
+    );
+    let (result, refused, bytes) = crate::bounded_output::with_limit_usage(0, || {
+        schema_with_proofs(module, modules, facts, &mut proofs)
+    });
+    assert_eq!(result.unwrap(), Some("semaprax.graph.v76"));
+    assert!(!refused);
+    assert_eq!(bytes, 0);
+    assert_eq!(proofs.proof_count, 1);
+}
