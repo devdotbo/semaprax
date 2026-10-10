@@ -277,3 +277,11 @@ The remaining boundary is semantic, not a runtime helper-name substitution:
 Interpreter and versioned Core-Wasm status/out-cell integration remain separate
 required parts of the complete profile. This native precursor neither supplies
 those backends nor completes the composed codec/application obligations of #724.
+
+## Closed final-UTF8 integration tranche
+
+The [native final-UTF8 design](CHECKED-STRING-FINAL-UTF8-NATIVE-DESIGN.md)
+records the exact generated-writer route and selected allocator-lifetime,
+release-boundary and failure-proof obligations. Its production-compiled
+read-only constructor preflight is not production selection or allocation/drop
+authority. Existing native emission and String OOM semantics remain unchanged.

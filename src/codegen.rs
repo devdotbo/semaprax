@@ -43,6 +43,8 @@ mod native_resource;
 mod native_runtime;
 #[cfg(test)]
 mod checked_string_allocation;
+/// Read-only constructor inventory; never selects an allocation or drop profile.
+pub mod checked_final_utf8_preflight;
 mod native_scalar_runtime;
 #[cfg(any(test, feature = "unstable-native-host-internal"))]
 mod native_settlement_derivation;
