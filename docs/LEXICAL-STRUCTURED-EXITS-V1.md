@@ -139,11 +139,23 @@ forged target/region/certificate/schema; missing/extra/reordered finalizers; and
 outstanding renewal reservations. Every claimed backend must agree at native O0/O2,
 interpreter and Core Wasm with original immutable expected outputs/status/traces.
 
-Adopt structured exits in original ShiftSim schedule searching paths and command
-result routing only after all compiler consumers join, preserving every original
-case and output oracle. Bounded help must explain admitted targets, cleanup and
-closed contexts. A grouped focused check follows implementation, with later matched
-application measurement. No measured advantage or issue closure follows authorship.
+The authored `examples/shiftsim-typed-record-successor/src/schedule.spx` now uses
+nearest-loop break for the first waiting patient, first free server and exhausted
+dispatch pair. It preserves ascending scans, priority/arrival/identifier ordering,
+event advancement and the peak-queue observation before dispatch. Invalid requests
+return the unchanged invalid ScheduleResult before report construction; successful
+requests return the original report shape. The command source uses returning error
+guards before encoding and retains exactly one stdout write only after successful
+validation and encoding. Its acyclic guards may use the existing compatibility
+normalizer; the scheduler's actual loop breaks select the lexical profile.
+
+This is unqualified application authorship: the original ShiftSim SPEC, all15
+acceptance cases, hostile wire inputs, >65536-byte whitespace and independent exact
+output oracle remain unchanged. The owning typed ShiftSim fixture reads these real
+source files; canonical formatting, complete Project admission and same-source
+backend/application checks must execute after the batch joins. Bounded help and
+later matched application measurement remain separate obligations. No measured
+advantage or issue closure follows this adoption.
 
 Owning contracts: RFC-0003-CLEANUP-AND-RESOURCE-ABI.md (return staging and publication),
 WHILE-LOOPS-V1.md, GENERIC-OWNED-RESULT-V1.md, ACYCLIC-GUARD-RETURNS-V1.md,
