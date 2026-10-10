@@ -189,11 +189,7 @@ fn main() -> i64
     uses { fs.read, process.args.read, process.stderr.write, process.stdout.write }
 {
     let mut valid = args_len() > 0usize;
-    let file_flag = if valid {
-        let path = arg_utf8(0usize);
-        let spelling = string_from_str(path);
-        string_len(spelling) >= 2 && string_byte_at(spelling, 0) == 45 && string_byte_at(spelling, 1) == 45
-    } else { false };
+    let file_flag = if valid { let path = arg_utf8(0usize); let spelling = string_from_str(path); string_len(spelling) >= 2 && string_byte_at(spelling, 0) == 45 && string_byte_at(spelling, 1) == 45 } else { false };
     valid = valid && !file_flag;
     let mut top = 5;
     let mut json = false;
