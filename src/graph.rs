@@ -27,6 +27,7 @@ mod agent_query;
 mod byte_buffer_renewal;
 mod environment;
 mod expression;
+mod lexical_exit;
 mod operator_text;
 use operator_text::{binary_text, explicit_match_mode_json, unary_text};
 mod filesystem;
@@ -1080,6 +1081,9 @@ fn collect_result_propagations<'a>(
             collect_result_propagations(start, propagations);
             collect_result_propagations(end, propagations);
         }
+        ResolvedExprKind::LexicalExit { value, .. } => { if let Some(value) = value {
+            collect_result_propagations(value, propagations);
+        } },
         ResolvedExprKind::Unary { value, .. }
         | ResolvedExprKind::Project { base: value, .. }
         | ResolvedExprKind::Upcast { source: value }
@@ -1227,7 +1231,8 @@ fn expression_has_byte_range(expression: &ResolvedExpr) -> bool {
             }
             ResolvedExprKind::NativeRustImportCall(call) => pending.extend(&call.args),
             ResolvedExprKind::HostCommandCall(call) => pending.extend(&call.args),
-            ResolvedExprKind::Unary { value, .. }
+            ResolvedExprKind::LexicalExit { value, .. } => pending.extend(value.as_deref()),
+        ResolvedExprKind::Unary { value, .. }
             | ResolvedExprKind::Try { operand: value, .. }
             | ResolvedExprKind::TryOption { operand: value, .. }
             | ResolvedExprKind::Project { base: value, .. }
@@ -1339,6 +1344,7 @@ fn expression_has_explicit_match_mode(expression: &ResolvedExpr) -> bool {
                 || expression_has_explicit_match_mode(start)
                 || expression_has_explicit_match_mode(end)
         }
+        ResolvedExprKind::LexicalExit { value, .. } => value.as_deref().is_some_and(|value| expression_has_explicit_match_mode(value)),
         ResolvedExprKind::Unary { value, .. }
         | ResolvedExprKind::Project { base: value, .. }
         | ResolvedExprKind::Try { operand: value, .. }
@@ -1645,6 +1651,7 @@ fn expression_has_usize(expression: &ResolvedExpr) -> bool {
         } => {
             expression_has_usize(source) || expression_has_usize(start) || expression_has_usize(end)
         }
+        ResolvedExprKind::LexicalExit { value, .. } => value.as_deref().is_some_and(|value| expression_has_usize(value)),
         ResolvedExprKind::Unary { value, .. }
         | ResolvedExprKind::Try { operand: value, .. }
         | ResolvedExprKind::TryOption { operand: value, .. }
@@ -1718,7 +1725,7 @@ fn expression_has_while(expression: &ResolvedExpr) -> bool {
         }
         ResolvedExprKind::Block { statements, tail } => {
             statements.iter().any(|statement| match statement {
-                ResolvedStatement::While { .. } => true,
+                ResolvedStatement::While { .. } | ResolvedStatement::LexicalWhile { .. } => true,
                 _ => (0..statement.child_count())
                     .any(|index| statement.child(index).is_some_and(expression_has_while)),
             }) || expression_has_while(tail)
@@ -1728,6 +1735,7 @@ fn expression_has_while(expression: &ResolvedExpr) -> bool {
         }
         ResolvedExprKind::NativeRustImportCall(call) => call.args.iter().any(expression_has_while),
         ResolvedExprKind::HostCommandCall(call) => call.args.iter().any(expression_has_while),
+        ResolvedExprKind::LexicalExit { value, .. } => value.as_deref().is_some_and(|value| expression_has_while(value)),
         ResolvedExprKind::Unary { value, .. }
         | ResolvedExprKind::Try { operand: value, .. }
         | ResolvedExprKind::TryOption { operand: value, .. }
@@ -1793,6 +1801,7 @@ fn expression_has_stdout_write(expression: &ResolvedExpr) -> bool {
         ResolvedExprKind::HostCommandCall(call) => {
             call.args.iter().any(expression_has_stdout_write)
         }
+        ResolvedExprKind::LexicalExit { value, .. } => value.as_deref().is_some_and(|value| expression_has_stdout_write(value)),
         ResolvedExprKind::Unary { value, .. }
         | ResolvedExprKind::Try { operand: value, .. }
         | ResolvedExprKind::TryOption { operand: value, .. }
@@ -1871,6 +1880,7 @@ fn expression_has_command_io(expression: &ResolvedExpr) -> bool {
         ResolvedExprKind::NativeRustImportCall(call) => {
             call.args.iter().any(expression_has_command_io)
         }
+        ResolvedExprKind::LexicalExit { value, .. } => value.as_deref().is_some_and(|value| expression_has_command_io(value)),
         ResolvedExprKind::Unary { value, .. }
         | ResolvedExprKind::Try { operand: value, .. }
         | ResolvedExprKind::TryOption { operand: value, .. }
@@ -1981,6 +1991,7 @@ fn expression_has_record_pattern(expression: &ResolvedExpr) -> bool {
         ResolvedExprKind::HostCommandCall(call) => {
             call.args.iter().any(expression_has_record_pattern)
         }
+        ResolvedExprKind::LexicalExit { value, .. } => value.as_deref().is_some_and(|value| expression_has_record_pattern(value)),
         ResolvedExprKind::Unary { value, .. }
         | ResolvedExprKind::Try { operand: value, .. }
         | ResolvedExprKind::TryOption { operand: value, .. }
@@ -2088,6 +2099,7 @@ fn expression_has_refutable_match(expression: &ResolvedExpr) -> bool {
         ResolvedExprKind::HostCommandCall(call) => {
             call.args.iter().any(expression_has_refutable_match)
         }
+        ResolvedExprKind::LexicalExit { value, .. } => value.as_deref().is_some_and(|value| expression_has_refutable_match(value)),
         ResolvedExprKind::Unary { value, .. }
         | ResolvedExprKind::Try { operand: value, .. }
         | ResolvedExprKind::TryOption { operand: value, .. }
@@ -2254,6 +2266,7 @@ fn collect_agent_contract_values(expression: &ResolvedExpr, values: &mut BTreeSe
                 collect_agent_contract_values(argument, values);
             }
         }
+        ResolvedExprKind::LexicalExit { value, .. } => { if let Some(value) = value { collect_agent_contract_values(value, values); } },
         ResolvedExprKind::Unary { value, .. } => collect_agent_contract_values(value, values),
         ResolvedExprKind::Binary { left, right, .. } => {
             collect_agent_contract_values(left, values);
@@ -2336,6 +2349,8 @@ fn collect_agent_contract_values(expression: &ResolvedExpr, values: &mut BTreeSe
 
 pub(crate) fn agent_contract_expr_json(expression: &ResolvedExpr) -> Result<String, Diagnostic> {
     Ok(match &expression.kind {
+        ResolvedExprKind::LexicalExit { .. } => return Err(Diagnostic::io("SPX-H006", "lexical exits are not contract expressions")),
+
         ResolvedExprKind::Closure {..} | ResolvedExprKind::FunctionReference {..} | ResolvedExprKind::Invoke {..} => return Err(Diagnostic::io("SPX-G411","function values require Graph v36")),
         ResolvedExprKind::Int(value) => format!(
             "{{\"kind\":\"int\",\"value\":{}}}",
@@ -2479,6 +2494,7 @@ pub(crate) fn agent_contract_expr_json(expression: &ResolvedExpr) -> Result<Stri
                             quote_json(audit),
                             agent_contract_expr_json(body)?
                         ),
+                        ResolvedStatement::LexicalWhile { .. } => return Err(Diagnostic::io("SPX-H006", "lexical loops are not contract expressions")),
                         ResolvedStatement::While {
                             condition, body, ..
                         } => format!(
@@ -4745,6 +4761,9 @@ fn visit_expr_call_instances(
                 visit_expr_call_instances(argument, visit);
             }
         }
+        ResolvedExprKind::LexicalExit { value, .. } => { if let Some(value) = value {
+            visit_expr_call_instances(value, visit);
+        } },
         ResolvedExprKind::Unary { value, .. } | ResolvedExprKind::Project { base: value, .. } => {
             visit_expr_call_instances(value, visit);
         }
@@ -4855,6 +4874,7 @@ fn visit_expr_calls(expression: &ResolvedExpr, visit: &mut impl FnMut(&Declarati
                 visit_expr_calls(argument, visit);
             }
         }
+        ResolvedExprKind::LexicalExit { value, .. } => { if let Some(value) = value { visit_expr_calls(value, visit); } },
         ResolvedExprKind::Unary { value, .. } => visit_expr_calls(value, visit),
         ResolvedExprKind::Upcast { source: value } | ResolvedExprKind::Yield { request: value } => {
             visit_expr_calls(value, visit)
@@ -4984,6 +5004,9 @@ fn collect_expr_type_declarations(
                 collect_expr_type_declarations(argument, declarations);
             }
         }
+        ResolvedExprKind::LexicalExit { value, .. } => { if let Some(value) = value {
+            collect_expr_type_declarations(value, declarations);
+        } },
         ResolvedExprKind::Unary { value, .. } => {
             collect_expr_type_declarations(value, declarations);
         }
@@ -5267,6 +5290,7 @@ fn collect_expr_types(expression: &ResolvedExpr, types: &mut BTreeMap<String, Re
                 collect_expr_types(argument, types);
             }
         }
+        ResolvedExprKind::LexicalExit { value, .. } => { if let Some(value) = value { collect_expr_types(value, types); } },
         ResolvedExprKind::Unary { value, .. } => collect_expr_types(value, types),
         ResolvedExprKind::Upcast { source: value } | ResolvedExprKind::Yield { request: value } => {
             collect_expr_types(value, types)
@@ -5410,6 +5434,7 @@ fn type_json(ty: &ResolvedType) -> String {
         ResolvedType::Function { parameters, result } => {
             function_values::type_json(parameters, result)
         }
+        ResolvedType::Never => "{\"kind\":\"completion\",\"name\":\"never\"}".to_owned(),
         ResolvedType::Unit => "{\"kind\":\"primitive\",\"name\":\"unit\"}".to_owned(),
         ResolvedType::I64 => "{\"kind\":\"primitive\",\"name\":\"i64\"}".to_owned(),
         ResolvedType::I32 => "{\"kind\":\"primitive\",\"name\":\"i32\"}".to_owned(),

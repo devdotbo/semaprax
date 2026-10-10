@@ -46,6 +46,7 @@ pub(crate) fn substitute_type(
                     frames.push(Frame::Enter(result));
                     frames.extend(parameters.iter().rev().map(Frame::Enter));
                 }
+                ResolvedType::Never => resolved.push(ResolvedType::Never),
                 ResolvedType::Unit => resolved.push(ResolvedType::Unit),
                 ResolvedType::I64 => resolved.push(ResolvedType::I64),
                 ResolvedType::I32 => resolved.push(ResolvedType::I32),
@@ -152,6 +153,7 @@ pub(super) fn substitute_source_function_type(
                     frames.push(Frame::Enter(result));
                     frames.extend(parameters.iter().rev().map(Frame::Enter));
                 }
+                Type::Never => resolved.push(Type::Never),
                 Type::I64 => resolved.push(Type::I64),
                 Type::I32 => resolved.push(Type::I32),
                 Type::Char => resolved.push(Type::Char),
@@ -366,6 +368,32 @@ pub(super) fn materialize_template_expr(
     path: &str,
 ) -> Result<ResolvedExpr, Diagnostic> {
     let kind = match &expression.kind {
+        ResolvedExprKind::LexicalExit {
+            kind,
+            target,
+            value,
+        } => ResolvedExprKind::LexicalExit {
+            kind: *kind,
+            target: super::lexical_exit::rekey::target(
+                target,
+                &FunctionExecutionId::Monomorphic(template.id.clone()),
+                execution,
+            )?,
+            value: value
+                .as_ref()
+                .map(|operand| {
+                    materialize_template_expr(
+                        template,
+                        arguments,
+                        execution,
+                        operand,
+                        values,
+                        &format!("{path}.value"),
+                    )
+                    .map(Box::new)
+                })
+                .transpose()?,
+        },
         ResolvedExprKind::Closure { .. } => {
             super::closure::materialize(template, arguments, execution, expression, values, path)?
         }
@@ -632,30 +660,52 @@ pub(super) fn materialize_template_expr(
                         condition,
                         body,
                         span,
+                    }
+                    | ResolvedStatement::LexicalWhile {
+                        condition,
+                        body,
+                        span,
+                        ..
                     } => {
                         if !super::generic_collection::profile(template) {
                             return Err(hir_error(
                                 "generic loops require the bounded collection profile",
                             ));
                         }
-                        materialized.push(ResolvedStatement::While {
-                            condition: Box::new(materialize_template_expr(
-                                template,
-                                arguments,
-                                execution,
+                        let condition = Box::new(materialize_template_expr(
+                            template,
+                            arguments,
+                            execution,
+                            condition,
+                            &block_values,
+                            &format!("{statement_path}.condition"),
+                        )?);
+                        let body = Box::new(materialize_template_expr(
+                            template,
+                            arguments,
+                            execution,
+                            body,
+                            &block_values,
+                            &format!("{statement_path}.body"),
+                        )?);
+                        materialized.push(match statement {
+                            ResolvedStatement::LexicalWhile { latch, .. } => {
+                                ResolvedStatement::LexicalWhile {
+                                    condition,
+                                    body,
+                                    latch: super::lexical_exit::rekey::latch(
+                                        latch,
+                                        &FunctionExecutionId::Monomorphic(template.id.clone()),
+                                        execution,
+                                    )?,
+                                    span: *span,
+                                }
+                            }
+                            _ => ResolvedStatement::While {
                                 condition,
-                                &block_values,
-                                &format!("{statement_path}.condition"),
-                            )?),
-                            body: Box::new(materialize_template_expr(
-                                template,
-                                arguments,
-                                execution,
                                 body,
-                                &block_values,
-                                &format!("{statement_path}.body"),
-                            )?),
-                            span: *span,
+                                span: *span,
+                            },
                         });
                     }
                     ResolvedStatement::Unsafe { audit, body, span } => {

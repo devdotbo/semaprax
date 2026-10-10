@@ -47,6 +47,13 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     + diagnostics_owned_capacity(self.diagnostics),
             );
             match frame {
+                VerifierFrame::ResumeLexicalReturn {
+                    expression,
+                    operand,
+                    scope,
+                } => {
+                    self.resume_lexical_return(expression, operand, scope)?;
+                }
                 VerifierFrame::ResumeClosure { expression, scope } => {
                     self.resume_closure(expression, scope)?
                 }

@@ -19,6 +19,11 @@ syntax cannot mint a target. Parsing rejects statements after an unconditional
 exit instead of deleting their effects. A conditional with one exit alternative
 joins its other normal type; two exit alternatives have no normal completion.
 No bottom value may become a parameter, field, ABI slot, local or published result.
+The initial profile admits exits only on direct function/loop/control-block
+statement-tail routes. An exit cannot cross initializer, call argument, aggregate,
+return operand, yield, unsafe or closure evaluation. SPX-T312 owns that refusal;
+SPX-T313 rejects an absent enclosing loop. Ordinary failures inside a returned
+expression or staged call argument remain admitted with existing atomic cleanup.
 
 `ControlTarget::Function(FunctionExecutionId)` names the current ordinary
 function execution, including the exact generic instance. `ControlTarget::Loop

@@ -59,14 +59,30 @@ fn no_read(expression: &ResolvedExpr, id: &ValueId, depth: usize) -> bool {
     }
     true
 }
+fn storage_has_bottom(ty: &ResolvedType, depth: usize) -> bool {
+    if depth > crate::cache_codec::MAX_DEPTH {
+        return true;
+    }
+    match ty {
+        ResolvedType::Never => true,
+        ResolvedType::Function { parameters, result } => {
+            parameters.iter().any(|t| storage_has_bottom(t, depth + 1))
+                || storage_has_bottom(result, depth + 1)
+        }
+        ResolvedType::Nominal { arguments, .. } => {
+            arguments.iter().any(|t| storage_has_bottom(t, depth + 1))
+        }
+        _ => false,
+    }
+}
 pub(crate) fn validate_function(
     program: &ResolvedProgram,
     function: &ResolvedFunction,
     owner: &FunctionExecutionId,
 ) -> Result<(), Diagnostic> {
     validate_owner(function, owner)?;
-    if function.return_type == ResolvedType::Never
-        || function.params.iter().any(|p| p.ty == ResolvedType::Never)
+    if storage_has_bottom(&function.return_type, 0)
+        || function.params.iter().any(|p| storage_has_bottom(&p.ty, 0))
     {
         return Err(error(
             "lexical completion has no public signature or storage type",
@@ -163,7 +179,9 @@ fn walk<'a>(
                         condition, body, ..
                     } => {
                         if contains(body) {
-                            return Err(error("legacy while cannot contain lexical exit authority"));
+                            return Err(error(
+                                "legacy while cannot contain lexical exit authority",
+                            ));
                         }
                         walk(
                             program,

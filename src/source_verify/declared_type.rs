@@ -142,6 +142,15 @@ pub(super) fn check_declared_type(
 ) {
     let mut pending = vec![ty];
     while let Some(ty) = pending.pop() {
+        if *ty == Type::Never {
+            diagnostics.push(error(
+                program,
+                "SPX-T312",
+                "lexical completion marker cannot appear in a declaration or storage type",
+                span,
+            ));
+            continue;
+        }
         if *ty == Type::MutFunctionI64 {
             if !parameters.is_empty() {
                 diagnostics.push(error(

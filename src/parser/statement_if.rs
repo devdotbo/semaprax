@@ -102,7 +102,13 @@ impl Parser {
             && arms.iter().all(|arm| arm.body.tail.is_some());
         let tail_kind = |branch: &Branch| match &branch.tail {
             None => BranchTail::Absent,
-            Some(value) if valued || matches!(value.kind, ExprKind::Int(_)) => BranchTail::Retained,
+            Some(value)
+                if valued
+                    || matches!(value.kind, ExprKind::Int(_))
+                    || crate::ast::has_no_normal_completion(value) =>
+            {
+                BranchTail::Retained
+            }
             Some(_) => BranchTail::Discarded,
         };
         let syntax = LetSyntax::StatementIf(StatementIfSyntax {
@@ -110,6 +116,15 @@ impl Parser {
             alternative: otherwise.as_ref().map(tail_kind),
         });
         let expression = self.assemble(arms, otherwise, valued);
+        if valued && crate::ast::has_no_normal_completion(&expression) {
+            if !self.at(&TokenKind::RBrace) {
+                return Err(self.error_here(
+                    "SPX-P209",
+                    "code after an unconditional lexical exit is unreachable",
+                ));
+            }
+            return Ok(IfItem::Value(expression));
+        }
         if valued {
             let before = self.cursor;
             let expression = self.postfix(expression, true)?;
@@ -209,7 +224,13 @@ impl Parser {
         } = branch;
         let end = point(span);
         let tail = match tail {
-            Some(tail) if valued || matches!(tail.kind, ExprKind::Int(_)) => tail,
+            Some(tail)
+                if valued
+                    || matches!(tail.kind, ExprKind::Int(_))
+                    || crate::ast::has_no_normal_completion(&tail) =>
+            {
+                tail
+            }
             Some(value) => {
                 statements.push(self.discard(value.span, value, None, LetSyntax::BranchTail));
                 zero(end)

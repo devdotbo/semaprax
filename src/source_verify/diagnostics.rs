@@ -35,7 +35,7 @@ pub(super) fn reject_aggregate_match_result(
     }
     if !matches!(
         value.ty,
-        Type::I64
+        Type::Never | Type::I64
             | Type::I32
             | Type::U8
             | Type::Usize

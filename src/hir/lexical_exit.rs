@@ -76,3 +76,10 @@ pub(crate) use wrapper::{source_for_wrapper, SourceForWrapper};
 
 mod validation;
 pub(crate) use validation::validate_function;
+
+pub(crate) fn reachable_arm(arms: &[super::ResolvedMatchArm]) -> Option<&super::ResolvedMatchArm> {
+    arms.iter().find(|arm| arm.value.ty != ResolvedType::Never)
+}
+pub(crate) fn normal_arm(arms: &[super::ResolvedMatchArm]) -> Option<&super::ResolvedMatchArm> {
+    reachable_arm(arms).or_else(|| arms.first())
+}

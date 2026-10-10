@@ -294,6 +294,7 @@ fn layout_type(
         });
     }
     match ty {
+        ResolvedType::Never => Err(layout_error("lexical completion has no value layout")),
         ResolvedType::Unit => Err(layout_error("unit has no aggregate value layout")),
         ResolvedType::I64
         | ResolvedType::I32
@@ -678,7 +679,8 @@ fn bounded_layout_instance_is_admitted(
                 pending.push(Frame::Fields(declaration, fields, arguments, 0, depth));
             }
             Frame::Type(
-                ResolvedType::Unit
+                ResolvedType::Never
+                | ResolvedType::Unit
                 | ResolvedType::ArrayU8(_)
                 | ResolvedType::String
                 | ResolvedType::Str

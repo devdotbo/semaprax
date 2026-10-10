@@ -36,6 +36,7 @@ impl fmt::Display for Type {
         let mut frames = vec![Frame::Type(self)];
         while let Some(frame) = frames.pop() {
             match frame {
+                Frame::Type(Type::Never) => f.write_str("<lexical-exit>")?,
                 Frame::Type(Type::I64) => f.write_str("i64")?,
                 Frame::Type(Type::I32) => f.write_str("i32")?,
                 Frame::Type(Type::Char) => f.write_str("char")?,

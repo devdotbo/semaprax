@@ -202,3 +202,6 @@ mod wasm_text_toolkit_v1;
 
 #[path = "language/wasm_map_collections_v2.rs"]
 mod wasm_map_collections_v2;
+
+#[path = "language/lexical_structured_exits.rs"]
+mod lexical_structured_exits;

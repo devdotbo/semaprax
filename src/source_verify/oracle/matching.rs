@@ -111,7 +111,11 @@ pub(super) fn oracle_match(
     if scalar_scrutinee {
         let scrutinee_value = scrutinee_value.expect("scalar checked above");
         let mut result = None::<CheckedValue>;
+        let baseline = variables.clone();
+        let outer_names = variables.keys().cloned().collect::<HashSet<_>>();
+        let mut joined = baseline.clone();
         for arm in arms {
+            *variables = baseline.clone();
             match &arm.pattern {
                 MatchPattern::Wildcard { .. } => {}
                 MatchPattern::Binding { name, span } => {
@@ -264,9 +268,15 @@ pub(super) fn oracle_match(
                 reject_native_unit_value(program, &arm.value, value, diagnostics);
                 reject_aggregate_match_result(program, &arm.value, value, diagnostics);
             }
+            if !arm_value.as_ref().is_some_and(|v| v.ty == Type::Never) {
+                merge_moved(&mut joined, variables, &outer_names);
+            }
             if let Some(arm_value) = arm_value {
                 if let Some(expected) = &result {
-                    if expected.ty != arm_value.ty || expected.mode != arm_value.mode {
+                    if expected.ty != Type::Never
+                        && arm_value.ty != Type::Never
+                        && (expected.ty != arm_value.ty || expected.mode != arm_value.mode)
+                    {
                         diagnostics.push(error(
                             program,
                             "SPX-T259",
@@ -277,7 +287,8 @@ pub(super) fn oracle_match(
                             arm.value.span,
                         ));
                     }
-                } else {
+                }
+                if result.as_ref().is_none_or(|v| v.ty == Type::Never) {
                     result = Some(arm_value);
                 }
             }
@@ -296,6 +307,7 @@ pub(super) fn oracle_match(
                 last.span,
             ));
         }
+        *variables = joined;
         return result;
     }
     if arms.iter().any(|arm| {
@@ -469,12 +481,14 @@ pub(super) fn oracle_match(
         if let Some(value) = &result {
             reject_native_unit_value(program, &first.value, value, diagnostics);
         }
-        merge_moved(variables, &arm_variables, &outer_names);
+        if !result.as_ref().is_some_and(|v| v.ty == Type::Never) {
+            merge_moved(variables, &arm_variables, &outer_names);
+        }
         let generic_template = functions.get(current.name.as_str()).copied();
         let generic_owned_result = generic_template
             .is_some_and(|function| generic_function_has_owned_record_composition(function, types));
         if result.as_ref().is_some_and(|value| {
-            (!matches!(value.ty, Type::I64 | Type::Bool) || value.mode != ParamMode::Value)
+            value.ty != Type::Never && (!matches!(value.ty, Type::I64 | Type::Bool) || value.mode != ParamMode::Value)
                 && !(generic_template.is_some_and(|function| function.type_parameters.is_empty())
                     && (value.mode == ParamMode::Value
                         || (*mode == MatchMode::Own && scrutinee_value.mode == ParamMode::Own && types.is_nested_owned_byte_record(&scrutinee_value.ty)))
@@ -871,8 +885,10 @@ pub(super) fn oracle_match(
                 reject_aggregate_match_result(program, &arm.value, value, diagnostics);
             }
         }
+        let exits = arm_value.as_ref().is_some_and(|v| v.ty == Type::Never);
         if let Some(arm_value) = arm_value {
-            if variant_needs_drop
+            if arm_value.ty != Type::Never
+                && variant_needs_drop
                 && !scrutinee_value.as_ref().is_some_and(|input| {
                     crate::source_verify::declared_type::collection_outcome::match_result(
                         types,
@@ -901,7 +917,10 @@ pub(super) fn oracle_match(
                 ));
             }
             if let Some(expected) = &result {
-                if expected.ty != arm_value.ty || expected.mode != arm_value.mode {
+                if expected.ty != Type::Never
+                    && arm_value.ty != Type::Never
+                    && (expected.ty != arm_value.ty || expected.mode != arm_value.mode)
+                {
                     diagnostics.push(error(
                         program,
                         "SPX-T216",
@@ -912,11 +931,14 @@ pub(super) fn oracle_match(
                         arm.value.span,
                     ));
                 }
-            } else {
+            }
+            if result.as_ref().is_none_or(|v| v.ty == Type::Never) {
                 result = Some(arm_value);
             }
         }
-        arm_states.push(arm_variables);
+        if !exits {
+            arm_states.push(arm_variables);
+        }
     }
     if !wildcard_seen {
         if let (Some(variant_name), Some(cases)) = (&variant_name, declared_cases) {

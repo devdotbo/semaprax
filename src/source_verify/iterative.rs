@@ -17,6 +17,7 @@ use std::collections::HashMap;
 mod blocks;
 mod calls;
 mod enter;
+mod lexical_exit;
 mod match_arms;
 mod matching;
 mod operators;

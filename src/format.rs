@@ -660,6 +660,14 @@ fn write_format_frames(
                     ));
                 }
                 match &value.kind {
+                    ExprKind::LexicalExit { kind, value } => {
+                        output.write_str(kind.keyword()).unwrap();
+                        frames.push(Frame::Close(';'));
+                        if let Some(value) = value {
+                            output.write_char(' ').unwrap();
+                            frames.push(Frame::Expr(value, 0));
+                        }
+                    }
                     ExprKind::Int(number) => output.write_str(&canonical_int(*number)).unwrap(),
                     ExprKind::Int32(value) => {
                         // The explicit suffix keeps the declared width stable

@@ -25,6 +25,15 @@ use super::nodes::{
 use super::Binding;
 
 pub(super) enum Frame<'expr> {
+    EnterLoop(super::ControlTarget),
+    LeaveLoop,
+    FinishLexicalExit {
+        span: Span,
+        path: String,
+        kind: crate::ast::LexicalExitKind,
+        target: super::ControlTarget,
+        has_value: bool,
+    },
     ForOwn(Box<super::resolve_for_own::ForOwnFrame<'expr>>),
     Enter {
         expr: &'expr Expr,

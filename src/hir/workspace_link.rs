@@ -1096,7 +1096,13 @@ fn rebuild_cleanup_metadata(program: &mut ResolvedProgram) -> Result<(), Diagnos
     let cleanup_plans = program
         .functions
         .iter()
-        .map(|function| crate::cleanup_plan::build_plan(program, function))
+        .map(|function| {
+            crate::cleanup_plan::build_plan_for_execution(
+                program,
+                function,
+                &FunctionExecutionId::Monomorphic(function.id.clone()),
+            )
+        })
         .collect::<Result<Vec<_>, _>>()?;
     for (function, cleanup_plan) in program.functions.iter_mut().zip(cleanup_plans) {
         function.cleanup_plan = cleanup_plan;
@@ -1104,7 +1110,13 @@ fn rebuild_cleanup_metadata(program: &mut ResolvedProgram) -> Result<(), Diagnos
     let instance_cleanup_plans = program
         .function_instances
         .iter()
-        .map(|instance| crate::cleanup_plan::build_plan(program, &instance.function))
+        .map(|instance| {
+            crate::cleanup_plan::build_plan_for_execution(
+                program,
+                &instance.function,
+                &FunctionExecutionId::Generic(instance.id.clone()),
+            )
+        })
         .collect::<Result<Vec<_>, _>>()?;
     for (instance, cleanup_plan) in program
         .function_instances

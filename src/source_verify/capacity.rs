@@ -222,7 +222,8 @@ fn source_array_payload(types: &TypeTable<'_>, ty: &Type) -> Result<u32, ()> {
                     }
                 }
             }
-            Type::I64
+            Type::Never
+            | Type::I64
             | Type::I32
             | Type::Char
             | Type::U8

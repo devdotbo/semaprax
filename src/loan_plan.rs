@@ -12,6 +12,7 @@ use crate::hir::{
 
 pub const LOAN_PLAN_SCHEMA_V1: &str = "semaprax.loan-plan.v1";
 pub const LOAN_PLAN_SCHEMA_V2: &str = "semaprax.loan-plan.v2";
+pub const LOAN_PLAN_SCHEMA_V3: &str = "semaprax.loan-plan.v3";
 pub const MAX_LOANS_PER_FUNCTION_V1: usize = 256;
 pub const MAX_LOAN_ENDPOINTS_V1: usize = 4_096;
 pub const MAX_LOAN_EDGES_V1: usize = 4_096;
@@ -30,6 +31,7 @@ pub enum LoanPointPhase {
 mod boundary_tests;
 mod compact_ids;
 mod guidance;
+mod lexical_exit;
 mod native_view;
 pub(crate) mod owned_capacity;
 #[cfg(test)]
@@ -125,12 +127,21 @@ pub fn build_plan(
     program: &ResolvedProgram,
     function: &ResolvedFunction,
 ) -> Result<LoanPlan, Diagnostic> {
+    let lexical = crate::hir::lexical_exit::requires(function)?;
+    if lexical {
+        let owner = crate::hir::lexical_exit::owner(program, function)?;
+        crate::hir::lexical_exit::validate_function(program, function, &owner)?;
+    }
     has_own_root_candidate(program, function)
         .and_then(|candidate| {
             if candidate {
                 build_cfg_plan(program, function)
             } else {
-                Ok(LoanPlan::empty_v1())
+                let mut plan = LoanPlan::empty_v1();
+                if lexical {
+                    plan.schema = LOAN_PLAN_SCHEMA_V3;
+                }
+                Ok(plan)
             }
         })
         .map_err(|diagnostic| guidance::work_limit(diagnostic, function))
@@ -498,7 +509,15 @@ fn build_cfg_plan_counted(
     // heap-identical at this boundary and only real own-root loans carry the
     // endpoint/edge proof.
     if drafts.is_empty() {
-        return Ok(LoanPlan::empty_v1());
+        let mut plan = LoanPlan::empty_v1();
+        if cfg
+            .expressions
+            .iter()
+            .any(|e| matches!(e.kind, ResolvedExprKind::LexicalExit { .. }))
+        {
+            plan.schema = LOAN_PLAN_SCHEMA_V3;
+        }
+        return Ok(plan);
     }
     if drafts.len() > MAX_LOANS_PER_FUNCTION_V1 {
         return Err(error("function exceeds 256 shared loans"));
@@ -740,6 +759,23 @@ fn build_cfg<'a>(
         let before = node(expression, LoanPointPhase::Before)?;
         let after = node(expression, LoanPointPhase::After)?;
         match &expression.kind {
+            ResolvedExprKind::LexicalExit { kind, value, .. } => {
+                if let Some(value) = value {
+                    edge_set.insert((before, node(value, LoanPointPhase::Before)?));
+                    edge_set.insert((node(value, LoanPointPhase::After)?, after));
+                } else {
+                    edge_set.insert((before, after));
+                }
+                let destination = if *kind == crate::ast::LexicalExitKind::Return {
+                    root_after(expression)?
+                } else {
+                    node(
+                        lexical_exit::destination(expression, &expressions, work)?,
+                        LoanPointPhase::Before,
+                    )?
+                };
+                edge_set.insert((after, destination));
+            }
             ResolvedExprKind::Block { statements, tail } => {
                 let entry = statements
                     .first()
@@ -754,6 +790,9 @@ fn build_cfg<'a>(
                     match statement {
                         ResolvedStatement::While {
                             condition, body, ..
+                        }
+                        | ResolvedStatement::LexicalWhile {
+                            condition, body, ..
                         } => {
                             edge_set.insert((
                                 node(condition, LoanPointPhase::After)?,
@@ -763,10 +802,12 @@ fn build_cfg<'a>(
                                 node(condition, LoanPointPhase::After)?,
                                 node(next, LoanPointPhase::Before)?,
                             ));
-                            edge_set.insert((
-                                node(body, LoanPointPhase::After)?,
-                                node(condition, LoanPointPhase::Before)?,
-                            ));
+                            if body.ty != ResolvedType::Never {
+                                edge_set.insert((
+                                    node(body, LoanPointPhase::After)?,
+                                    node(condition, LoanPointPhase::Before)?,
+                                ));
+                            }
                         }
                         _ => {
                             edge_set.insert((
@@ -776,7 +817,9 @@ fn build_cfg<'a>(
                         }
                     }
                 }
-                edge_set.insert((node(tail, LoanPointPhase::After)?, after));
+                if tail.ty != ResolvedType::Never {
+                    edge_set.insert((node(tail, LoanPointPhase::After)?, after));
+                }
             }
             ResolvedExprKind::If {
                 condition,
@@ -792,8 +835,12 @@ fn build_cfg<'a>(
                     node(condition, LoanPointPhase::After)?,
                     node(else_branch, LoanPointPhase::Before)?,
                 ));
-                edge_set.insert((node(then_branch, LoanPointPhase::After)?, after));
-                edge_set.insert((node(else_branch, LoanPointPhase::After)?, after));
+                if then_branch.ty != ResolvedType::Never {
+                    edge_set.insert((node(then_branch, LoanPointPhase::After)?, after));
+                }
+                if else_branch.ty != ResolvedType::Never {
+                    edge_set.insert((node(else_branch, LoanPointPhase::After)?, after));
+                }
             }
             ResolvedExprKind::Binary {
                 op: BinaryOp::And | BinaryOp::Or,
@@ -831,7 +878,9 @@ fn build_cfg<'a>(
                             ));
                         }
                     }
-                    edge_set.insert((node(&arm.value, LoanPointPhase::After)?, after));
+                    if arm.value.ty != ResolvedType::Never {
+                        edge_set.insert((node(&arm.value, LoanPointPhase::After)?, after));
+                    }
                 }
             }
             ResolvedExprKind::Try { operand, .. } | ResolvedExprKind::TryOption { operand, .. } => {
@@ -891,7 +940,8 @@ fn statement_entry(statement: &ResolvedStatement) -> &ResolvedExpr {
     match statement {
         ResolvedStatement::Let { value, .. } | ResolvedStatement::Assign { value, .. } => value,
         ResolvedStatement::Unsafe { body, .. } => body,
-        ResolvedStatement::While { condition, .. } => condition,
+        ResolvedStatement::While { condition, .. }
+        | ResolvedStatement::LexicalWhile { condition, .. } => condition,
     }
 }
 
@@ -899,12 +949,15 @@ fn statement_exit(statement: &ResolvedStatement) -> &ResolvedExpr {
     match statement {
         ResolvedStatement::Let { value, .. } | ResolvedStatement::Assign { value, .. } => value,
         ResolvedStatement::Unsafe { body, .. } => body,
-        ResolvedStatement::While { body, .. } => body,
+        ResolvedStatement::While { body, .. } | ResolvedStatement::LexicalWhile { body, .. } => {
+            body
+        }
     }
 }
 
 fn evaluation_children(expression: &ResolvedExpr) -> Vec<&ResolvedExpr> {
     match &expression.kind {
+        ResolvedExprKind::LexicalExit { value, .. } => value.as_deref().into_iter().collect(),
         ResolvedExprKind::Closure { captures, .. } => {
             captures.iter().map(|capture| &capture.value).collect()
         }
@@ -1139,7 +1192,13 @@ fn materialize_cfg_plan(
             live: compact_ids::from_vec(live)?,
         });
     }
-    let schema = if loans
+    let schema = if cfg
+        .expressions
+        .iter()
+        .any(|e| matches!(e.kind, ResolvedExprKind::LexicalExit { .. }))
+    {
+        LOAN_PLAN_SCHEMA_V3
+    } else if loans
         .iter()
         .any(|loan| loan.cause == LoanCause::TraversalFreeze)
     {

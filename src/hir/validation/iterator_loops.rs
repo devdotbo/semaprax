@@ -38,6 +38,11 @@ impl HirValidator<'_> {
         let mut pending = vec![expression];
         while let Some(expression) = pending.pop() {
             match &expression.kind {
+                ResolvedExprKind::LexicalExit { value, .. } => {
+                    if let Some(value) = value {
+                        pending.push(value);
+                    }
+                }
                 ResolvedExprKind::Closure { captures, .. } => {
                     pending.extend(captures.iter().rev().map(|capture| &capture.value));
                 }

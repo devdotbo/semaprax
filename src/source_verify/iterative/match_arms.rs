@@ -54,7 +54,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             generic_function_has_owned_record_composition(function, self.types)
         });
         if result.as_ref().is_some_and(|value| {
-            (!matches!(value.ty, Type::I64 | Type::Bool) || value.mode != ParamMode::Value)
+            value.ty!=Type::Never && (!matches!(value.ty, Type::I64 | Type::Bool) || value.mode != ParamMode::Value)
                 && !(generic_template.is_some_and(|function| function.type_parameters.is_empty())
                     && (value.mode == ParamMode::Value || owns_record_input)
                     && crate::source_verify::declared_type::ordinary_record_match_result(&value.ty, value.mode, self.types))
@@ -393,6 +393,9 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             return Ok(());
         }
         let arm_value = self.values.pop().unwrap_or(None);
+        let exits = arm_value
+            .as_ref()
+            .is_some_and(|value| value.ty == Type::Never);
         let collection_result = |ty: &Type, mode: ParamMode| {
             state.variant_name.as_ref().is_some_and(|name| {
                 crate::source_verify::declared_type::collection_outcome::match_result(
@@ -409,7 +412,8 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         };
         if let Some(value) = &arm_value {
             reject_native_unit_value(self.program, &arm.value, value, self.diagnostics);
-            if !collection_result(&value.ty, value.mode)
+            if value.ty != Type::Never
+                && !collection_result(&value.ty, value.mode)
                 && !crate::source_verify::declared_type::generic_variant::match_result(
                     self.functions.get(self.current.name.as_str()).copied(),
                     self.types,
@@ -422,7 +426,8 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             }
         }
         if let Some(arm_value) = arm_value {
-            if state.needs_drop
+            if arm_value.ty != Type::Never
+                && state.needs_drop
                 && !collection_result(&arm_value.ty, arm_value.mode)
                 && !crate::source_verify::declared_type::generic_variant::match_result(
                     self.functions.get(self.current.name.as_str()).copied(),
@@ -443,7 +448,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 ));
             }
             if let Some(expected) = &state.result {
-                if expected.ty != arm_value.ty || expected.mode != arm_value.mode {
+                if expected.ty != Type::Never
+                    && arm_value.ty != Type::Never
+                    && (expected.ty != arm_value.ty || expected.mode != arm_value.mode)
+                {
                     self.diagnostics.push(error(
                         self.program,
                         "SPX-T216",
@@ -454,16 +462,23 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         arm.value.span,
                     ));
                 }
-            } else {
+            }
+            if state
+                .result
+                .as_ref()
+                .is_none_or(|value| value.ty == Type::Never)
+            {
                 state.result = Some(arm_value);
             }
         }
-        state.arm_states.push(
-            self.scopes
-                .pop()
-                .expect("variant arm scope is active")
-                .bindings,
-        );
+        let bindings = self
+            .scopes
+            .pop()
+            .expect("variant arm scope is active")
+            .bindings;
+        if !exits {
+            state.arm_states.push(bindings);
+        }
         state.index += 1;
         self.frames
             .push(VerifierFrame::PrepareVariantMatchArm(state));
@@ -612,13 +627,19 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         }
         let arm = &state.arms[state.index];
         let arm_value = self.values.pop().unwrap_or(None);
+        let exits = arm_value
+            .as_ref()
+            .is_some_and(|value| value.ty == Type::Never);
         if let Some(value) = &arm_value {
             reject_native_unit_value(self.program, &arm.value, value, self.diagnostics);
             reject_aggregate_match_result(self.program, &arm.value, value, self.diagnostics);
         }
         if let Some(arm_value) = arm_value {
             if let Some(expected) = &state.result {
-                if expected.ty != arm_value.ty || expected.mode != arm_value.mode {
+                if expected.ty != Type::Never
+                    && arm_value.ty != Type::Never
+                    && (expected.ty != arm_value.ty || expected.mode != arm_value.mode)
+                {
                     self.diagnostics.push(error(
                         self.program,
                         "SPX-T259",
@@ -629,16 +650,23 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         arm.value.span,
                     ));
                 }
-            } else {
+            }
+            if state
+                .result
+                .as_ref()
+                .is_none_or(|value| value.ty == Type::Never)
+            {
                 state.result = Some(arm_value);
             }
         }
-        state.arm_states.push(
-            self.scopes
-                .pop()
-                .expect("scalar arm scope is active")
-                .bindings,
-        );
+        let bindings = self
+            .scopes
+            .pop()
+            .expect("scalar arm scope is active")
+            .bindings;
+        if !exits {
+            state.arm_states.push(bindings);
+        }
         state.index += 1;
         self.frames
             .push(VerifierFrame::PrepareScalarMatchArm(state));

@@ -83,7 +83,8 @@ pub(super) fn inline_array_payload_bytes(
                     pending.push(substitute_type(&field.ty, &declaration.id, &arguments)?);
                 }
             }
-            ResolvedType::Unit
+            ResolvedType::Never
+            | ResolvedType::Unit
             | ResolvedType::I64
             | ResolvedType::I32
             | ResolvedType::Char

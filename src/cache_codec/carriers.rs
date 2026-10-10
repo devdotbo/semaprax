@@ -17,7 +17,7 @@ mod ast {
         5 => ArrayU8(length), 6 => F32, 7 => F64, 8 => Bool,
         9 => String, 10 => Bytes, 11 => Str, 12 => SliceU8,
         13 => Named { name, arguments }, 14 => Function { parameters, result }, 15 => OnceFunction, 16 => OnceFunctionI64, 17 => OnceFunctionI64Pair, 18 => MutFunctionI64,
-        19 => StringMap
+        19 => StringMap, 20 => Never
     });
     codec_enum!(LexicalExitKind { 0 => Break, 1 => Continue, 2 => Return });
     codec_enum!(ParamMode { 0 => Value, 1 => Own, 2 => Borrow, 3 => Shared });

@@ -418,6 +418,7 @@ impl DeclarationIndex {
                             });
                             continue;
                         }
+                        ResolvedType::Never => None,
                         ResolvedType::Unit => {
                             Some((true, false, false, "native-rust-import-result:unit"))
                         }
@@ -1424,6 +1425,11 @@ impl DeclarationIndex {
                 Frame::Enter(ty) => match ty {
                     ty @ Type::Function { .. } => {
                         resolved.push(super::function_value::resolve::source_type(ty)?)
+                    }
+                    Type::Never => {
+                        return Err(hir_error(
+                            "lexical completion marker is not a declared type",
+                        ))
                     }
                     Type::I64 => resolved.push(ResolvedType::I64),
                     Type::I32 => resolved.push(ResolvedType::I32),

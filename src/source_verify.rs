@@ -42,6 +42,7 @@ pub(crate) mod function_value_inventory;
 mod generic_inference;
 mod hints;
 mod iterative;
+mod lexical_exit;
 mod loans;
 mod mutable_closure;
 mod owned_buffer;

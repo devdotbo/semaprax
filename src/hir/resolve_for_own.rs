@@ -89,11 +89,16 @@ pub(super) fn resume<'a>(
         );
         frame.source = Some(source);
         frames.push(Frame::ForOwn(Box::new(frame)));
+        frames.push(Frame::LeaveLoop);
         frames.push(Frame::Enter {
             expr: body,
             bindings: scope,
             path: format!("{statement_path}.value.s1.body.s0.value.arm.1.value.s0.value"),
         });
+        frames.push(Frame::EnterLoop(super::ControlTarget::Loop {
+            owner: function.clone(),
+            site: ExpressionId::new(function, &format!("{statement_path}.value.s1.condition")),
+        }));
     } else {
         let body = results.pop().expect("consuming traversal body retained");
         let source = frame
@@ -375,11 +380,17 @@ fn lower(
                         value: next(&format!("{sp}.value"), source),
                         span,
                     },
-                    ResolvedStatement::While {
-                        condition: Box::new(condition),
-                        body: Box::new(body),
+                    super::resolve_expr::lexical_exit::loop_statement(
+                        Box::new(condition),
+                        Box::new(body),
+                        super::LoopLatchKind::OwnedIteratorStep {
+                            next: ExpressionId::new(function, &format!("{yp}.tail")),
+                            assignment: ExpressionId::new(function, &mp),
+                            step: ValueId::local(function, &sp),
+                            remainder: ValueId::local(function, &format!("{mp}.arm.1.binding.1")),
+                        },
                         span,
-                    },
+                    ),
                 ],
                 tail: Box::new(zero(&format!("{vp}.tail"))),
             },
@@ -428,11 +439,15 @@ pub(super) fn resolve_reference(
             mutable: false,
         },
     );
-    let body = resolver.resolve_expr_recursive_reference(
+    let body = resolver.resolve_expr_recursive_reference_inner(
         function,
         body,
         &scope,
         &format!("{path}.value.s1.body.s0.value.arm.1.value.s0.value"),
+        Some(&crate::hir::ControlTarget::Loop {
+            owner: function.clone(),
+            site: ExpressionId::new(function, &format!("{path}.value.s1.condition")),
+        }),
     )?;
     Ok(lower(
         function, path, item, item_span, source, element, body, span,

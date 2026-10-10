@@ -12,7 +12,8 @@ impl HirValidator<'_> {
         while let Some(frame) = frames.pop() {
             match frame {
                 Frame::Enter(
-                    ResolvedType::Unit
+                    ResolvedType::Never
+                    | ResolvedType::Unit
                     | ResolvedType::I64
                     | ResolvedType::I32
                     | ResolvedType::Char

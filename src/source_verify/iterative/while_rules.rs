@@ -258,6 +258,13 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             };
 
             match &expression.kind {
+                ExprKind::LexicalExit { value, .. } => {
+                    if let Some(value) = value {
+                        frames.push(Frame::Expression(value));
+                    } else {
+                        results.push(Ok(()));
+                    }
+                }
                 ExprKind::Closure { .. } => results.push(Ok(())),
 
                 ExprKind::Int(_)

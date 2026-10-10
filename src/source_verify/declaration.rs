@@ -124,6 +124,7 @@ pub(crate) fn verify(program: &Program) -> Vec<Diagnostic> {
         .collect::<HashSet<_>>();
     check_generic_function_cycles(program, &call_graph, &generic_functions, &mut diagnostics);
 
+    super::lexical_exit::validate(program, &mut diagnostics);
     check_function_bodies(program, &functions, &import_keys, &types, &mut diagnostics);
     crate::source_verify::record_invariants::check_record_invariants(
         program,

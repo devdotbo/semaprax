@@ -574,7 +574,20 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         // loop, every outer binding must be exactly as available
         // as it was on entry; any drift means a move happened
         // inside the loop and is rejected fail-closed.
-        let _ = self.values.pop();
+        let exits = self
+            .values
+            .pop()
+            .flatten()
+            .is_some_and(|value| value.ty == Type::Never);
+        if exits {
+            for name in &baseline_names {
+                if let Some(before) = baseline_bindings.get(name) {
+                    self.scopes[block_scope]
+                        .bindings
+                        .insert(name.clone(), before.clone());
+                }
+            }
+        }
         self.loop_depth = self.loop_depth.saturating_sub(1);
         for name in &baseline_names {
             let drifted = match (

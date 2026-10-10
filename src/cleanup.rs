@@ -551,13 +551,13 @@ pub(crate) fn type_needs_resource_cleanup(
                     }
                 }
             }
-            // Preserve the existing unsupported-generic cleanup path: the
-            // shape builder will issue its more specific diagnostic.
+            // Preserve the shape builder's unsupported-generic diagnostic.
             ResolvedType::TypeParameter { .. } => return Ok(true),
             ResolvedType::OnceFunction
             | ResolvedType::OnceFunctionI64
             | ResolvedType::OnceFunctionI64Pair
             | ResolvedType::MutFunctionI64
+            | ResolvedType::Never
             | ResolvedType::Unit
             | ResolvedType::I64
             | ResolvedType::I32
@@ -1196,6 +1196,9 @@ impl InventoryBuilder<'_> {
                         | ResolvedExprKind::Yield { request: value } => {
                             enter = (index == 0).then_some(value.as_ref());
                         }
+                        ResolvedExprKind::LexicalExit { value, .. } => {
+                            enter = value.as_deref().filter(|_| index == 0);
+                        }
                         ResolvedExprKind::Binary { left, right, .. } => {
                             enter = match index {
                                 0 => Some(left),
@@ -1204,9 +1207,7 @@ impl InventoryBuilder<'_> {
                             };
                         }
                         ResolvedExprKind::Block { statements, tail } => {
-                            // Only let statements need a trailing binding step.
-                            // A no-op step for assignment/unsafe/while would
-                            // end this traversal before later storage or tail.
+                            // Only lets add a trailing binding step; other statements keep walking.
                             let per_statement = |statement: &ResolvedStatement| {
                                 statement.child_count().saturating_add(usize::from(matches!(
                                     statement,

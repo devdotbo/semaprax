@@ -109,11 +109,16 @@ pub(super) fn schedule<'expr>(
         source,
         element,
     });
+    frames.push(Frame::LeaveLoop);
     frames.push(Frame::Enter {
         expr: body,
         bindings: body_scope,
         path: format!("{statement_path}.value.s2.body.s1.value"),
     });
+    frames.push(Frame::EnterLoop(super::ControlTarget::Loop {
+        owner: function.clone(),
+        site: ExpressionId::new(function, &format!("{statement_path}.value.s2.condition")),
+    }));
     Ok(())
 }
 
@@ -261,11 +266,15 @@ pub(super) fn resolve_reference(
             mutable: false,
         },
     );
-    let authored_body = resolver.resolve_expr_recursive_reference(
+    let authored_body = resolver.resolve_expr_recursive_reference_inner(
         function,
         body,
         &body_scope,
         &format!("{statement_path}.value.s2.body.s1.value"),
+        Some(&crate::hir::ControlTarget::Loop {
+            owner: function.clone(),
+            site: ExpressionId::new(function, &format!("{statement_path}.value.s2.condition")),
+        }),
     )?;
     Ok(lower(
         function,
@@ -488,11 +497,15 @@ pub(super) fn lower(
                     value: usize_literal(function, &format!("{index_path}.value"), 0, span),
                     span,
                 },
-                ResolvedStatement::While {
-                    condition: Box::new(condition),
-                    body: Box::new(while_body),
+                super::resolve_expr::lexical_exit::loop_statement(
+                    Box::new(condition),
+                    Box::new(while_body),
+                    super::LoopLatchKind::SourceForStep {
+                        kind: super::SourceForKind::Copy,
+                        step: ExpressionId::new(function, &format!("{while_body_path}.s2.value")),
+                    },
                     span,
-                },
+                ),
             ],
             tail: Box::new(usize_literal(
                 function,

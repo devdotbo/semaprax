@@ -82,7 +82,7 @@ pub(super) fn check_while_statement(
             ));
         }
     }
-    let _ = super::matching::in_loop(|| {
+    let body_value = super::matching::in_loop(|| {
         check_expr(
             program,
             current,
@@ -95,6 +95,11 @@ pub(super) fn check_while_statement(
             diagnostics,
         )
     });
+    if body_value.as_ref().is_some_and(|v| v.ty == Type::Never) {
+        for (name, before) in &baseline {
+            variables.insert(name.clone(), before.clone());
+        }
+    }
     for (name, before) in &baseline {
         let drifted = match variables.get(name) {
             Some(now) => {
@@ -128,6 +133,12 @@ pub(in crate::source_verify) fn reject_while_disallowed_oracle(
     diagnostics: &mut Vec<Diagnostic>,
 ) -> Result<(), ()> {
     match &expression.kind {
+        ExprKind::LexicalExit { value, .. } => match value {
+            Some(value) => {
+                reject_while_disallowed_oracle(program, value, functions, types, diagnostics)
+            }
+            None => Ok(()),
+        },
         ExprKind::Closure { .. } => Ok(()),
 
         ExprKind::Int(_)

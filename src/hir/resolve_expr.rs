@@ -1,7 +1,4 @@
-//! The iterative expression resolver.
-//!
-//! One explicit frame stack lowers an AST expression tree into HIR
-//! without recursing on the host stack.
+//! Iterative expression resolution without host recursion.
 
 use std::collections::BTreeMap;
 use std::rc::Rc;
@@ -27,6 +24,7 @@ mod byte_view;
 #[cfg(test)]
 mod capacity;
 mod finish;
+pub(super) mod lexical_exit;
 mod literal_format;
 mod sort_keys;
 mod variable;
@@ -47,16 +45,53 @@ impl Resolver<'_> {
             path: path.to_owned(),
         }];
         let mut results = Vec::new();
+        let mut loop_targets: [Option<super::ControlTarget>; crate::cache_codec::MAX_DEPTH + 1] =
+            std::array::from_fn(|_| None);
+        let mut loop_depth = 0usize;
 
         while let Some(frame) = frames.pop() {
             #[cfg(test)]
             capacity::note(&frames, &results, &frame);
             match frame {
+                Frame::EnterLoop(target) => {
+                    lexical_exit::enter_loop(&mut loop_targets, &mut loop_depth, target)?
+                }
+                Frame::LeaveLoop => {
+                    loop_depth -= 1;
+                    loop_targets[loop_depth] = None;
+                }
+                Frame::FinishLexicalExit {
+                    span,
+                    path,
+                    kind,
+                    target,
+                    has_value,
+                } => {
+                    let value = has_value
+                        .then(|| Box::new(results.pop().expect("lexical operand retained")));
+                    results.push(lexical_exit::finish(
+                        function, span, &path, kind, target, value,
+                    ));
+                }
                 Frame::Enter {
                     expr,
                     bindings,
                     path,
                 } => match &expr.kind {
+                    ExprKind::LexicalExit { kind, value } => {
+                        lexical_exit::schedule(
+                            function,
+                            expr,
+                            *kind,
+                            value.as_deref(),
+                            &bindings,
+                            &path,
+                            loop_targets
+                                .get(loop_depth.wrapping_sub(1))
+                                .and_then(Option::as_ref),
+                            &mut frames,
+                        )?;
+                    }
                     ExprKind::Call { name, .. }
                         if crate::stdin_stream_ops::pure_by_name(name).is_some() =>
                     {
@@ -1179,23 +1214,7 @@ impl Resolver<'_> {
                 }
                 Frame::FinishUnary { span, path, op } => {
                     let value = results.pop().expect("unary child result retained");
-                    let ty = match (&op, &value.ty) {
-                        (UnaryOp::Neg, ResolvedType::F32) => ResolvedType::F32,
-                        (UnaryOp::Neg, ResolvedType::F64) => ResolvedType::F64,
-                        (UnaryOp::Neg, ResolvedType::I32) => ResolvedType::I32,
-                        (UnaryOp::Neg, _) => ResolvedType::I64,
-                        (UnaryOp::Not, _) => ResolvedType::Bool,
-                    };
-                    results.push(ResolvedExpr {
-                        id: ExpressionId::new(function, &path),
-                        ty,
-                        ownership: OwnershipMode::Value,
-                        kind: ResolvedExprKind::Unary {
-                            op,
-                            value: Box::new(value),
-                        },
-                        span,
-                    });
+                    results.push(finish::finish_unary(function, span, path, op, value));
                 }
                 Frame::FinishBinary { span, path, op } => {
                     let mut children = take_results(&mut results, 2).into_iter();
@@ -1668,6 +1687,10 @@ impl Resolver<'_> {
                             condition.span,
                         ));
                     }
+                    let target = super::ControlTarget::Loop {
+                        owner: function.clone(),
+                        site: evaluated.id.clone(),
+                    };
                     frames.push(Frame::BlockWhileBody {
                         span,
                         path: path.clone(),
@@ -1679,11 +1702,13 @@ impl Resolver<'_> {
                         condition: Box::new(evaluated),
                         condition_span: condition.span,
                     });
+                    frames.push(Frame::LeaveLoop);
                     frames.push(Frame::Enter {
                         expr: body,
                         bindings: scope.clone(),
                         path: format!("{path}.s{index}.body"),
                     });
+                    frames.push(Frame::EnterLoop(target));
                 }
                 Frame::BlockWhileBody {
                     span,
@@ -1704,11 +1729,12 @@ impl Resolver<'_> {
                     else {
                         unreachable!("while frame resumes at a while statement")
                     };
-                    resolved.push(ResolvedStatement::While {
+                    resolved.push(lexical_exit::loop_statement(
                         condition,
-                        body: Box::new(body),
-                        span: condition_span.merge(*statement_span),
-                    });
+                        Box::new(body),
+                        super::LoopLatchKind::Condition,
+                        condition_span.merge(*statement_span),
+                    ));
                     frames.push(Frame::BlockNext {
                         span,
                         path,
@@ -1735,37 +1761,11 @@ impl Resolver<'_> {
                     statements,
                 } => {
                     let tail = results.pop().expect("block tail result retained");
-                    let ty = tail.ty.clone();
-                    let ownership = tail.ownership;
-                    results.push(ResolvedExpr {
-                        id: ExpressionId::new(function, &path),
-                        ty,
-                        ownership,
-                        kind: ResolvedExprKind::Block {
-                            statements,
-                            tail: Box::new(tail),
-                        },
-                        span,
-                    });
+                    results.push(finish::finish_block(function, span, path, statements, tail));
                 }
                 Frame::FinishIf { span, path } => {
-                    let mut children = take_results(&mut results, 3).into_iter();
-                    let condition = children.next().expect("if condition retained");
-                    let then_branch = children.next().expect("if then branch retained");
-                    let else_branch = children.next().expect("if else branch retained");
-                    let ty = then_branch.ty.clone();
-                    let ownership = then_branch.ownership;
-                    results.push(ResolvedExpr {
-                        id: ExpressionId::new(function, &path),
-                        ty,
-                        ownership,
-                        kind: ResolvedExprKind::If {
-                            condition: Box::new(condition),
-                            then_branch: Box::new(then_branch),
-                            else_branch: Box::new(else_branch),
-                        },
-                        span,
-                    });
+                    let children = take_results(&mut results, 3);
+                    results.push(finish::finish_if(function, span, path, children));
                 }
                 Frame::AfterIfCondition {
                     span,
@@ -2119,22 +2119,9 @@ impl Resolver<'_> {
                     resolved,
                 } => {
                     if index == arms.len() {
-                        let first = resolved.first().ok_or_else(|| {
-                            self.error("SPX-H006", "resolved match has no arms", span)
-                        })?;
-                        let ty = first.value.ty.clone();
-                        let ownership = first.value.ownership;
-                        results.push(ResolvedExpr {
-                            id: ExpressionId::new(function, &path),
-                            ty,
-                            ownership,
-                            kind: ResolvedExprKind::Match {
-                                mode,
-                                scrutinee: Box::new(scrutinee),
-                                arms: resolved,
-                            },
-                            span,
-                        });
+                        results.push(self.finish_lexical_match(
+                            function, span, path, mode, scrutinee, resolved,
+                        )?);
                     } else {
                         let arm = &arms[index];
                         let mut arm_bindings = bindings.clone();
@@ -2376,21 +2363,9 @@ impl Resolver<'_> {
                     resolved,
                 } => {
                     if index == arms.len() {
-                        // SPX-T257 already guaranteed a trailing catch-all
-                        // during admission, so at least one arm exists and
-                        // all arm values unified to one type.
-                        let ty = resolved[0].value.ty.clone();
-                        results.push(ResolvedExpr {
-                            id: ExpressionId::new(function, &path),
-                            ty,
-                            ownership: resolved[0].value.ownership,
-                            kind: ResolvedExprKind::Match {
-                                mode,
-                                scrutinee: Box::new(scrutinee),
-                                arms: resolved,
-                            },
-                            span,
-                        });
+                        results.push(self.finish_lexical_match(
+                            function, span, path, mode, scrutinee, resolved,
+                        )?);
                     } else {
                         let arm = &arms[index];
                         let mut arm_bindings = bindings.clone();
@@ -2509,8 +2484,11 @@ impl Resolver<'_> {
                             ));
                         }
                     }
-                    if let Some(first) = resolved.first() {
-                        if first.value.ty != value.ty || first.value.ownership != value.ownership {
+                    if let Some(first) = super::lexical_exit::reachable_arm(&resolved) {
+                        if value.ty != ResolvedType::Never
+                            && (first.value.ty != value.ty
+                                || first.value.ownership != value.ownership)
+                        {
                             return Err(self.error(
                                 "SPX-T259",
                                 format!(

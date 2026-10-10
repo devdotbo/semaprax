@@ -47,3 +47,102 @@ impl Resolver<'_> {
         })
     }
 }
+
+pub(super) fn finish_if(
+    function: &FunctionExecutionId,
+    span: crate::ast::Span,
+    path: String,
+    children: Vec<ResolvedExpr>,
+) -> ResolvedExpr {
+    let mut children = children.into_iter();
+    let condition = children.next().expect("if condition retained");
+    let then_branch = children.next().expect("if then branch retained");
+    let else_branch = children.next().expect("if else branch retained");
+    let normal = if then_branch.ty == ResolvedType::Never {
+        &else_branch
+    } else {
+        &then_branch
+    };
+    ResolvedExpr {
+        id: ExpressionId::new(function, &path),
+        ty: normal.ty.clone(),
+        ownership: normal.ownership,
+        kind: ResolvedExprKind::If {
+            condition: Box::new(condition),
+            then_branch: Box::new(then_branch),
+            else_branch: Box::new(else_branch),
+        },
+        span,
+    }
+}
+
+pub(super) fn finish_block(
+    function: &FunctionExecutionId,
+    span: crate::ast::Span,
+    path: String,
+    statements: Vec<ResolvedStatement>,
+    tail: ResolvedExpr,
+) -> ResolvedExpr {
+    ResolvedExpr {
+        id: ExpressionId::new(function, &path),
+        ty: tail.ty.clone(),
+        ownership: tail.ownership,
+        kind: ResolvedExprKind::Block {
+            statements,
+            tail: Box::new(tail),
+        },
+        span,
+    }
+}
+
+pub(super) fn finish_unary(
+    function: &FunctionExecutionId,
+    span: crate::ast::Span,
+    path: String,
+    op: UnaryOp,
+    value: ResolvedExpr,
+) -> ResolvedExpr {
+    let ty = match (&op, &value.ty) {
+        (UnaryOp::Neg, ResolvedType::F32) => ResolvedType::F32,
+        (UnaryOp::Neg, ResolvedType::F64) => ResolvedType::F64,
+        (UnaryOp::Neg, ResolvedType::I32) => ResolvedType::I32,
+        (UnaryOp::Neg, _) => ResolvedType::I64,
+        (UnaryOp::Not, _) => ResolvedType::Bool,
+    };
+    ResolvedExpr {
+        id: ExpressionId::new(function, &path),
+        ty,
+        ownership: OwnershipMode::Value,
+        kind: ResolvedExprKind::Unary {
+            op,
+            value: Box::new(value),
+        },
+        span,
+    }
+}
+
+impl Resolver<'_> {
+    pub(super) fn finish_lexical_match(
+        &self,
+        function: &FunctionExecutionId,
+        span: crate::ast::Span,
+        path: String,
+        mode: ResolvedMatchMode,
+        scrutinee: ResolvedExpr,
+        arms: Vec<ResolvedMatchArm>,
+    ) -> Result<ResolvedExpr, Diagnostic> {
+        let first = super::super::lexical_exit::normal_arm(&arms)
+            .ok_or_else(|| self.error("SPX-H006", "resolved match has no arms", span))?;
+        Ok(ResolvedExpr {
+            id: ExpressionId::new(function, &path),
+            ty: first.value.ty.clone(),
+            ownership: first.value.ownership,
+            kind: ResolvedExprKind::Match {
+                mode,
+                scrutinee: Box::new(scrutinee),
+                arms,
+            },
+            span,
+        })
+    }
+}

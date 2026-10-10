@@ -111,6 +111,7 @@ fn resolved_type_owned_capacity(ty: &crate::hir::ResolvedType) -> Option<usize> 
         | crate::hir::ResolvedType::OnceFunctionI64
         | crate::hir::ResolvedType::OnceFunctionI64Pair
         | crate::hir::ResolvedType::MutFunctionI64
+        | crate::hir::ResolvedType::Never
         | crate::hir::ResolvedType::Unit
         | crate::hir::ResolvedType::I64
         | crate::hir::ResolvedType::I32

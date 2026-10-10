@@ -54,11 +54,19 @@ pub(in crate::hir) fn schedule<'expr>(
         source,
         element: element.clone(),
     });
+    frames.push(Frame::LeaveLoop);
     frames.push(Frame::Enter {
         expr: body,
         bindings: body_scope,
         path: format!("{block_path}.s{position}.value.s2.body.s1.value"),
     });
+    frames.push(Frame::EnterLoop(super::super::ControlTarget::Loop {
+        owner: function.clone(),
+        site: ExpressionId::new(
+            function,
+            &format!("{block_path}.s{position}.value.s2.condition"),
+        ),
+    }));
     Ok(())
 }
 
@@ -222,8 +230,16 @@ pub(in crate::hir) fn lower(
         unreachable!()
     };
     let counter = counter.clone();
-    let ResolvedStatement::While { body, .. } = &mut statements[2] else {
-        unreachable!()
+    let body = match &mut statements[2] {
+        ResolvedStatement::While { body, .. } => body,
+        ResolvedStatement::LexicalWhile { body, latch, .. } => {
+            *latch = crate::hir::LoopLatchKind::SourceForStep {
+                kind: crate::hir::SourceForKind::BorrowRecord,
+                step: ExpressionId::new(function, &format!("{path}.value.s2.body.s2.value")),
+            };
+            body
+        }
+        _ => unreachable!(),
     };
     let ResolvedExprKind::Block { statements, .. } = &mut body.kind else {
         unreachable!()
@@ -380,11 +396,15 @@ pub(in crate::hir) fn resolve_reference(
         body,
         path,
     )?;
-    let body = resolver.resolve_expr_recursive_reference(
+    let body = resolver.resolve_expr_recursive_reference_inner(
         function,
         body,
         &body_scope,
         &format!("{path}.value.s2.body.s1.value"),
+        Some(&crate::hir::ControlTarget::Loop {
+            owner: function.clone(),
+            site: ExpressionId::new(function, &format!("{path}.value.s2.condition")),
+        }),
     )?;
     Ok(lower(
         function,

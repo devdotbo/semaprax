@@ -533,7 +533,13 @@ impl Resolver<'_> {
         let cleanup_plans = resolved
             .functions
             .iter()
-            .map(|function| crate::cleanup_plan::build_plan(&resolved, function))
+            .map(|function| {
+                crate::cleanup_plan::build_plan_for_execution(
+                    &resolved,
+                    function,
+                    &FunctionExecutionId::Monomorphic(function.id.clone()),
+                )
+            })
             .collect::<Result<Vec<_>, _>>()?;
         for (function, cleanup_plan) in resolved.functions.iter_mut().zip(cleanup_plans) {
             function.cleanup_plan = cleanup_plan;
@@ -541,7 +547,13 @@ impl Resolver<'_> {
         let instance_cleanup_plans = resolved
             .function_instances
             .iter()
-            .map(|instance| crate::cleanup_plan::build_plan(&resolved, &instance.function))
+            .map(|instance| {
+                crate::cleanup_plan::build_plan_for_execution(
+                    &resolved,
+                    &instance.function,
+                    &FunctionExecutionId::Generic(instance.id.clone()),
+                )
+            })
             .collect::<Result<Vec<_>, _>>()?;
         for (instance, cleanup_plan) in resolved
             .function_instances

@@ -100,7 +100,8 @@ pub(super) fn binding_owned_capacity(binding: &Binding) -> usize {
 #[cfg(test)]
 pub(super) fn ast_type_owned_capacity(ty: &Type) -> usize {
     match ty {
-        Type::I64
+        Type::Never
+        | Type::I64
         | Type::I32
         | Type::Char
         | Type::U8

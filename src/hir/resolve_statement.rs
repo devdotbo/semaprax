@@ -208,6 +208,11 @@ impl Resolver<'_> {
             };
 
             match &expression.kind {
+                ExprKind::LexicalExit { value, .. } => {
+                    if let Some(value) = value {
+                        pending.push(Item::Expression(value));
+                    }
+                }
                 ExprKind::Closure { .. } => {}
 
                 ExprKind::Int(_)

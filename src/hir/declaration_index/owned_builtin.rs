@@ -49,13 +49,10 @@ pub(super) fn resource_result_shape(index: &DeclarationIndex, ty: &ResolvedType)
     else {
         return false;
     };
-    let [
-        ResolvedType::Nominal {
-            declaration: resource,
-            arguments: resource_arguments,
-        },
-        ResolvedType::I64,
-    ] = arguments.as_slice()
+    let [ResolvedType::Nominal {
+        declaration: resource,
+        arguments: resource_arguments,
+    }, ResolvedType::I64] = arguments.as_slice()
     else {
         return false;
     };

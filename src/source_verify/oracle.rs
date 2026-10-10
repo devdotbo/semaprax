@@ -34,6 +34,7 @@ use std::collections::{BTreeSet, HashMap, HashSet};
 
 mod calls;
 mod for_traversal;
+mod lexical_exit;
 mod matching;
 mod stdin_stream;
 pub(super) mod while_oracle;
@@ -52,6 +53,7 @@ pub(super) fn check_expr(
     diagnostics: &mut Vec<Diagnostic>,
 ) -> Option<CheckedValue> {
     match &expr.kind {
+        ExprKind::LexicalExit{..}=>lexical_exit::check(program,current,expr,variables,functions,types,result_type,allow_moves,diagnostics),
         ExprKind::Closure {
             owning: true,
             return_type,
@@ -1362,8 +1364,13 @@ pub(super) fn check_expr(
                 allow_moves,
                 diagnostics,
             );
+            let then_exits=then_value.as_ref().is_some_and(|value|value.ty==Type::Never);
+            let else_exits=else_value.as_ref().is_some_and(|value|value.ty==Type::Never);
             for name in &original_names {
                 if let Some(binding) = variables.get_mut(name) {
+                    if then_exits!=else_exits {
+                        if let Some(state)=(if then_exits {&else_variables}else{&then_variables}).get(name) {*binding=state.clone();} continue;
+                    }
                     let then_state = then_variables
                         .get(name)
                         .map_or(Availability::Available, |value| value.availability);
@@ -1386,6 +1393,8 @@ pub(super) fn check_expr(
                 }
             }
             match (then_value, else_value) {
+                (Some(left),Some(right)) if left.ty==Type::Never=>Some(right),
+                (Some(left),Some(right)) if right.ty==Type::Never=>Some(left),
                 (Some(then_value), Some(else_value)) => {
                     if then_value.native_unit || else_value.native_unit {
                         reject_native_unit_value(

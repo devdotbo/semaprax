@@ -22,6 +22,7 @@ mod entry;
 mod for_loop;
 mod hints;
 mod interface;
+mod lexical_exit;
 mod lookahead;
 mod patterns;
 mod return_flow;
@@ -37,6 +38,7 @@ pub struct Parser {
     path: String,
     /// Names already given to statement-`if` discards in this file.
     discards: statement_if::DiscardNames,
+    explicit_lexical_exits: bool,
 }
 
 impl Parser {
@@ -1233,6 +1235,11 @@ impl Parser {
         let mut statements = Vec::new();
         let mut trailing_if = None;
         loop {
+            if self.explicit_lexical_exits && self.at_lexical_exit() {
+                let tail = self.lexical_exit_tail()?;
+                let end = self.return_end()?;
+                return Ok((statements, Some(tail), end));
+            }
             if self.at_keyword("if") {
                 let checkpoint = self.cursor;
                 match self.statement_if()? {

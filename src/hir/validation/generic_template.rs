@@ -96,7 +96,8 @@ pub(super) fn body_type_requires_validation(
     template: &ResolvedFunctionTemplate,
     ty: &ResolvedType,
 ) -> bool {
-    ty != &ResolvedType::Char
+    ty != &ResolvedType::Never
+        && ty != &ResolvedType::Char
         && ty != &ResolvedType::Str
         && !(ty == &ResolvedType::Bytes && has_owned_record_composition(program, template))
 }
@@ -887,6 +888,9 @@ impl HirValidator<'_> {
                 )
             }
             ResolvedStatement::While {
+                condition, body, ..
+            }
+            | ResolvedStatement::LexicalWhile {
                 condition, body, ..
             } => {
                 if condition.ty != ResolvedType::Bool

@@ -1198,7 +1198,10 @@ pub(super) fn check_function_bodies<'p>(
                 if actual.native_unit {
                     reject_native_unit_value(program, &function.body, &actual, diagnostics);
                 }
-                if !actual.native_unit && actual.ty != function.return_type {
+                if !actual.native_unit
+                    && actual.ty != Type::Never
+                    && actual.ty != function.return_type
+                {
                     diagnostics.push(error(
                         program,
                         "SPX-T103",
@@ -1209,7 +1212,10 @@ pub(super) fn check_function_bodies<'p>(
                         function.body.span,
                     ));
                 }
-                if types.needs_drop(&function.return_type) && actual.mode != ParamMode::Own {
+                if actual.ty != Type::Never
+                    && types.needs_drop(&function.return_type)
+                    && actual.mode != ParamMode::Own
+                {
                     diagnostics.push(
                         error(
                             program,

@@ -20,6 +20,7 @@ impl Parser {
             cursor: 0,
             path,
             discards: Default::default(),
+            explicit_lexical_exits: false,
         })
     }
 
@@ -38,6 +39,7 @@ impl Parser {
             cursor: 0,
             path,
             discards: Default::default(),
+            explicit_lexical_exits: false,
         }
         .parse()?;
         Ok((program, comments))

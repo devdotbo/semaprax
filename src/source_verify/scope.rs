@@ -19,6 +19,11 @@ pub(super) struct VerifierScope {
 }
 
 pub(super) enum VerifierFrame<'a> {
+    ResumeLexicalReturn {
+        expression: &'a Expr,
+        operand: &'a Expr,
+        scope: usize,
+    },
     ResumeClosure {
         expression: &'a Expr,
         scope: usize,

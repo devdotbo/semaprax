@@ -30,6 +30,28 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         scope: usize,
     ) -> Result<(), Diagnostic> {
         match &expression.kind {
+            ExprKind::LexicalExit { kind, value } => {
+                if let Some(operand) = value {
+                    self.frames.push(VerifierFrame::ResumeLexicalReturn {
+                        expression,
+                        operand,
+                        scope,
+                    });
+                    self.frames.push(VerifierFrame::Enter {
+                        expression: operand,
+                        scope,
+                    });
+                } else if *kind != crate::ast::LexicalExitKind::Return {
+                    self.values.push(Some(CheckedValue::value(Type::Never)));
+                } else {
+                    return Err(error(
+                        self.program,
+                        "SPX-T312",
+                        "return requires an operand",
+                        expression.span,
+                    ));
+                }
+            }
             ExprKind::Closure { .. } => self.enter_closure(expression, scope)?,
             ExprKind::Int(_) => self.values.push(Some(CheckedValue::value(Type::I64))),
             ExprKind::Int32(_) => self.values.push(Some(CheckedValue::value(Type::I32))),

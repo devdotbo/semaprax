@@ -63,7 +63,8 @@ pub fn closure_function(
     };
     function.loan_plan = crate::loan_plan::build_plan(program, &function)?;
     function.cleanup = crate::cleanup::build_inventory(program, &function)?;
-    function.cleanup_plan = crate::cleanup_plan::build_plan(program, &function)?;
+    function.cleanup_plan =
+        crate::cleanup_plan::build_plan_for_execution(program, &function, &execution)?;
     Ok(function)
 }
 

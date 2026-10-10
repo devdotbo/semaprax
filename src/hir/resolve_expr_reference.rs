@@ -1,7 +1,4 @@
-//! Test-only recursive expression resolver.
-//!
-//! Differential reference for the iterative resolver; never used in production.
-
+//! Test-only differential recursive resolver; never used in production.
 use super::expr_nodes::{
     PatternValue, ResolvedExpr, ResolvedExprKind, ResolvedFieldInitializer, ResolvedMatchArm,
     ResolvedMatchPattern, ResolvedMatchPatternField, ResolvedStatement,
@@ -19,6 +16,7 @@ use crate::ast::{BinaryOp, Expr, ExprKind, MatchPattern, Statement, TypeDeclarat
 use crate::diagnostic::Diagnostic;
 use std::collections::BTreeMap;
 
+mod control;
 mod literal_format;
 mod projection;
 
@@ -31,6 +29,16 @@ impl Resolver<'_> {
         expr: &Expr,
         bindings: &BTreeMap<String, Binding>,
         path: &str,
+    ) -> Result<ResolvedExpr, Diagnostic> {
+        self.resolve_expr_recursive_reference_inner(function, expr, bindings, path, None)
+    }
+    pub(super) fn resolve_expr_recursive_reference_inner(
+        &self,
+        function: &FunctionExecutionId,
+        expr: &Expr,
+        bindings: &BTreeMap<String, Binding>,
+        path: &str,
+        nearest: Option<&super::ControlTarget>,
     ) -> Result<ResolvedExpr, Diagnostic> {
         if let Some(inspect) = self.resolve_stdin_inspection(function, expr, bindings, path)? {
             return Ok(inspect);
@@ -59,11 +67,12 @@ impl Resolver<'_> {
                     .iter()
                     .enumerate()
                     .map(|(i, arg)| {
-                        self.resolve_expr_recursive_reference(
+                        self.resolve_expr_recursive_reference_inner(
                             function,
                             arg,
                             bindings,
                             &format!("{path}.arg.{i}"),
+                            nearest,
                         )
                     })
                     .collect::<Result<_, _>>()?;
@@ -79,6 +88,10 @@ impl Resolver<'_> {
         }
         let id = ExpressionId::new(function, path);
         let (kind, ty, ownership) = match &expr.kind {
+            ExprKind::LexicalExit { .. } => {
+                control::exit(self, function, expr, bindings, path, nearest)?
+            }
+
             ExprKind::Closure { .. } => unreachable!("handled above"),
             ExprKind::Int(value) => (
                 ResolvedExprKind::Int(*value),
@@ -181,11 +194,12 @@ impl Resolver<'_> {
                         .iter()
                         .enumerate()
                         .map(|(index, argument)| {
-                            self.resolve_expr_recursive_reference(
+                            self.resolve_expr_recursive_reference_inner(
                                 function,
                                 argument,
                                 bindings,
                                 &format!("{path}.native-rust-arg.{index}"),
+                                nearest,
                             )
                         })
                         .collect::<Result<Vec<_>, _>>()?;
@@ -218,11 +232,12 @@ impl Resolver<'_> {
                 if name == crate::vec_ops::sort_keys::NAME {
                     let (element, callee) =
                         self.prepare_sort_by(function, expr, type_arguments, args)?;
-                    let value = self.resolve_expr_recursive_reference(
+                    let value = self.resolve_expr_recursive_reference_inner(
                         function,
                         &args[0],
                         bindings,
                         &format!("{path}.arg.0"),
+                        nearest,
                     )?;
                     return self.finish_sort_by(
                         function,
@@ -240,11 +255,12 @@ impl Resolver<'_> {
                         .iter()
                         .enumerate()
                         .map(|(index, arg)| {
-                            self.resolve_expr_recursive_reference(
+                            self.resolve_expr_recursive_reference_inner(
                                 function,
                                 arg,
                                 bindings,
                                 &format!("{path}.arg.{index}"),
+                                nearest,
                             )
                         })
                         .collect::<Result<Vec<_>, _>>()?;
@@ -288,11 +304,12 @@ impl Resolver<'_> {
                         .iter()
                         .enumerate()
                         .map(|(index, argument)| {
-                            self.resolve_expr_recursive_reference(
+                            self.resolve_expr_recursive_reference_inner(
                                 function,
                                 argument,
                                 bindings,
                                 &format!("{path}.arg.{index}"),
+                                nearest,
                             )
                         })
                         .collect::<Result<Vec<_>, _>>()?;
@@ -351,11 +368,12 @@ impl Resolver<'_> {
                         .iter()
                         .enumerate()
                         .map(|(index, argument)| {
-                            self.resolve_expr_recursive_reference(
+                            self.resolve_expr_recursive_reference_inner(
                                 function,
                                 argument,
                                 bindings,
                                 &format!("{path}.arg.{index}"),
+                                nearest,
                             )
                         })
                         .collect::<Result<Vec<_>, _>>()?;
@@ -414,11 +432,12 @@ impl Resolver<'_> {
                         .iter()
                         .enumerate()
                         .map(|(index, argument)| {
-                            self.resolve_expr_recursive_reference(
+                            self.resolve_expr_recursive_reference_inner(
                                 function,
                                 argument,
                                 bindings,
                                 &format!("{path}.arg.{index}"),
+                                nearest,
                             )
                         })
                         .collect::<Result<Vec<_>, _>>()?;
@@ -531,11 +550,12 @@ impl Resolver<'_> {
                         .iter()
                         .enumerate()
                         .map(|(index, argument)| {
-                            self.resolve_expr_recursive_reference(
+                            self.resolve_expr_recursive_reference_inner(
                                 function,
                                 argument,
                                 bindings,
                                 &format!("{path}.arg.{index}"),
+                                nearest,
                             )
                         })
                         .collect::<Result<Vec<_>, _>>()?;
@@ -578,11 +598,12 @@ impl Resolver<'_> {
                         .iter()
                         .enumerate()
                         .map(|(index, argument)| {
-                            self.resolve_expr_recursive_reference(
+                            self.resolve_expr_recursive_reference_inner(
                                 function,
                                 argument,
                                 bindings,
                                 &format!("{path}.arg.{index}"),
+                                nearest,
                             )
                         })
                         .collect::<Result<Vec<_>, _>>()?;
@@ -624,11 +645,12 @@ impl Resolver<'_> {
                     .iter()
                     .enumerate()
                     .map(|(index, argument)| {
-                        self.resolve_expr_recursive_reference(
+                        self.resolve_expr_recursive_reference_inner(
                             function,
                             argument,
                             bindings,
                             &format!("{path}.arg.{index}"),
+                            nearest,
                         )
                     })
                     .collect::<Result<_, _>>()?;
@@ -665,11 +687,12 @@ impl Resolver<'_> {
                         expr.span,
                     ));
                 }
-                let receiver = self.resolve_expr_recursive_reference(
+                let receiver = self.resolve_expr_recursive_reference_inner(
                     function,
                     receiver,
                     bindings,
                     &format!("{path}.arg.0"),
+                    nearest,
                 )?;
                 let ResolvedType::Nominal {
                     declaration: class_id,
@@ -773,11 +796,12 @@ impl Resolver<'_> {
                     .zip(method_ast.params.iter().skip(1))
                     .enumerate()
                 {
-                    let resolved = self.resolve_expr_recursive_reference(
+                    let resolved = self.resolve_expr_recursive_reference_inner(
                         function,
                         argument,
                         bindings,
                         &format!("{path}.arg.{}", index + 1),
+                        nearest,
                     )?;
                     let param_ty = self.resolve_type(&param.ty, param.span)?;
                     if resolved.ty != param_ty {
@@ -815,8 +839,9 @@ impl Resolver<'_> {
                     leaf = value;
                     leaf_path.push_str(".value");
                 }
-                let mut resolved =
-                    self.resolve_expr_recursive_reference(function, leaf, bindings, &leaf_path)?;
+                let mut resolved = self.resolve_expr_recursive_reference_inner(
+                    function, leaf, bindings, &leaf_path, nearest,
+                )?;
                 for (op, span, unary_path) in unary.into_iter().rev() {
                     let ty = match (&op, &resolved.ty) {
                         (UnaryOp::Neg, ResolvedType::F32) => ResolvedType::F32,
@@ -839,17 +864,19 @@ impl Resolver<'_> {
                 return Ok(resolved);
             }
             ExprKind::Binary { op, left, right } => {
-                let left = self.resolve_expr_recursive_reference(
+                let left = self.resolve_expr_recursive_reference_inner(
                     function,
                     left,
                     bindings,
                     &format!("{path}.left"),
+                    nearest,
                 )?;
-                let right = self.resolve_expr_recursive_reference(
+                let right = self.resolve_expr_recursive_reference_inner(
                     function,
                     right,
                     bindings,
                     &format!("{path}.right"),
+                    nearest,
                 )?;
                 let ty = match op {
                     BinaryOp::Add
@@ -891,11 +918,12 @@ impl Resolver<'_> {
                             value,
                             span,
                         } => {
-                            let value = self.resolve_expr_recursive_reference(
+                            let value = self.resolve_expr_recursive_reference_inner(
                                 function,
                                 value,
                                 &scope,
                                 &format!("{statement_path}.value"),
+                                nearest,
                             )?;
                             let binding = ResolvedBinding {
                                 id: ValueId::local(function, &statement_path),
@@ -945,11 +973,12 @@ impl Resolver<'_> {
                                 }
                                 None => None,
                             };
-                            let value = self.resolve_expr_recursive_reference(
+                            let value = self.resolve_expr_recursive_reference_inner(
                                 function,
                                 value,
                                 &scope,
                                 &format!("{statement_path}.value"),
+                                nearest,
                             )?;
                             match &target_field {
                                 Some((_, field_ty)) => {
@@ -981,11 +1010,12 @@ impl Resolver<'_> {
                         Statement::Unsafe {
                             audit, body, span, ..
                         } => {
-                            let body = self.resolve_expr_recursive_reference(
+                            let body = self.resolve_expr_recursive_reference_inner(
                                 function,
                                 body,
                                 &scope,
                                 &format!("{statement_path}.body"),
+                                nearest,
                             )?;
                             if body.ownership != OwnershipMode::Value
                                 || !is_scalar_resolved_type(&body.ty)
@@ -1007,34 +1037,16 @@ impl Resolver<'_> {
                             body,
                             span,
                             ..
-                        } => {
-                            self.reject_while_disallowed_scoped(condition, Some(function))?;
-                            self.reject_while_disallowed_scoped(body, Some(function))?;
-                            let resolved_condition = self.resolve_expr_recursive_reference(
-                                function,
-                                condition,
-                                &scope,
-                                &format!("{statement_path}.condition"),
-                            )?;
-                            if resolved_condition.ty != ResolvedType::Bool {
-                                return Err(self.error(
-                                    "SPX-T251",
-                                    "`while` condition must be bool",
-                                    condition.span,
-                                ));
-                            }
-                            let resolved_body = self.resolve_expr_recursive_reference(
-                                function,
-                                body,
-                                &scope,
-                                &format!("{statement_path}.body"),
-                            )?;
-                            resolved_statements.push(ResolvedStatement::While {
-                                condition: Box::new(resolved_condition),
-                                body: Box::new(resolved_body),
-                                span: condition.span.merge(*span),
-                            });
-                        }
+                        } => resolved_statements.push(control::while_loop(
+                            self,
+                            function,
+                            condition,
+                            body,
+                            &scope,
+                            &statement_path,
+                            *span,
+                            nearest,
+                        )?),
                         Statement::ForOwn { .. }
                         | Statement::For { .. }
                         | Statement::ForBorrow { .. } => resolved_statements.push(
@@ -1048,11 +1060,12 @@ impl Resolver<'_> {
                         ),
                     }
                 }
-                let tail = self.resolve_expr_recursive_reference(
+                let tail = self.resolve_expr_recursive_reference_inner(
                     function,
                     tail,
                     &scope,
                     &format!("{path}.tail"),
+                    nearest,
                 )?;
                 let ty = tail.ty.clone();
                 let ownership = tail.ownership;
@@ -1065,40 +1078,8 @@ impl Resolver<'_> {
                     ownership,
                 )
             }
-            ExprKind::If {
-                condition,
-                then_branch,
-                else_branch,
-            } => {
-                let condition = self.resolve_expr_recursive_reference(
-                    function,
-                    condition,
-                    bindings,
-                    &format!("{path}.condition"),
-                )?;
-                let then_branch = self.resolve_expr_recursive_reference(
-                    function,
-                    then_branch,
-                    bindings,
-                    &format!("{path}.then"),
-                )?;
-                let else_branch = self.resolve_expr_recursive_reference(
-                    function,
-                    else_branch,
-                    bindings,
-                    &format!("{path}.else"),
-                )?;
-                let ty = then_branch.ty.clone();
-                let ownership = then_branch.ownership;
-                (
-                    ResolvedExprKind::If {
-                        condition: Box::new(condition),
-                        then_branch: Box::new(then_branch),
-                        else_branch: Box::new(else_branch),
-                    },
-                    ty,
-                    ownership,
-                )
+            ExprKind::If { .. } => {
+                control::if_expression(self, function, expr, bindings, path, nearest)?
             }
             ExprKind::ConstructRecord {
                 type_name,
@@ -1159,11 +1140,12 @@ impl Resolver<'_> {
                                 initializer.name_span,
                             )
                         })?;
-                    let value = self.resolve_expr_recursive_reference(
+                    let value = self.resolve_expr_recursive_reference_inner(
                         function,
                         &initializer.value,
                         bindings,
                         &format!("{path}.field.{index}.value"),
+                        nearest,
                     )?;
                     resolved_fields.push(ResolvedFieldInitializer { field, value });
                 }
@@ -1237,11 +1219,12 @@ impl Resolver<'_> {
                                 initializer.name_span,
                             )
                         })?;
-                    let value = self.resolve_expr_recursive_reference(
+                    let value = self.resolve_expr_recursive_reference_inner(
                         function,
                         &initializer.value,
                         bindings,
                         &format!("{path}.field.{index}.value"),
+                        nearest,
                     )?;
                     resolved_fields.push(ResolvedFieldInitializer { field, value });
                 }
@@ -1276,11 +1259,12 @@ impl Resolver<'_> {
                 arms,
             } => {
                 let mode = ResolvedMatchMode::from(*mode);
-                let scrutinee = self.resolve_expr_recursive_reference(
+                let scrutinee = self.resolve_expr_recursive_reference_inner(
                     function,
                     scrutinee,
                     bindings,
                     &format!("{path}.scrutinee"),
+                    nearest,
                 )?;
                 if matches!(
                     scrutinee.ty,
@@ -1360,11 +1344,12 @@ impl Resolver<'_> {
                         };
                         let guard = match &arm.guard {
                             Some(guard) => {
-                                let resolved_guard = self.resolve_expr_recursive_reference(
+                                let resolved_guard = self.resolve_expr_recursive_reference_inner(
                                     function,
                                     guard.as_ref(),
                                     &arm_bindings,
                                     &format!("{path}.arm.{arm_index}.guard"),
+                                    nearest,
                                 )?;
                                 if resolved_guard.ty != ResolvedType::Bool {
                                     return Err(self.error(
@@ -1380,15 +1365,17 @@ impl Resolver<'_> {
                             }
                             None => None,
                         };
-                        let value = self.resolve_expr_recursive_reference(
+                        let value = self.resolve_expr_recursive_reference_inner(
                             function,
                             &arm.value,
                             &arm_bindings,
                             &format!("{path}.arm.{arm_index}.value"),
+                            nearest,
                         )?;
-                        if let Some(first) = resolved_arms.first() {
-                            if first.value.ty != value.ty
-                                || first.value.ownership != value.ownership
+                        if let Some(first) = super::lexical_exit::reachable_arm(&resolved_arms) {
+                            if value.ty != ResolvedType::Never
+                                && (first.value.ty != value.ty
+                                    || first.value.ownership != value.ownership)
                             {
                                 return Err(self.error(
                                     "SPX-T259",
@@ -1407,10 +1394,12 @@ impl Resolver<'_> {
                             span: arm.span,
                         });
                     }
+                    let normal =
+                        super::lexical_exit::normal_arm(&resolved_arms).expect("match has arms");
                     return Ok(ResolvedExpr {
                         id: ExpressionId::new(function, path),
-                        ty: resolved_arms[0].value.ty.clone(),
-                        ownership: resolved_arms[0].value.ownership,
+                        ty: normal.value.ty.clone(),
+                        ownership: normal.value.ownership,
                         kind: ResolvedExprKind::Match {
                             mode,
                             scrutinee: Box::new(scrutinee),
@@ -1680,11 +1669,12 @@ impl Resolver<'_> {
                         &arm_bindings,
                         &format!("{path}.arm.{arm_index}.guard"),
                     )?;
-                    let value = self.resolve_expr_recursive_reference(
+                    let value = self.resolve_expr_recursive_reference_inner(
                         function,
                         &arm.value,
                         &arm_bindings,
                         &format!("{path}.arm.{arm_index}.value"),
+                        nearest,
                     )?;
                     resolved_arms.push(ResolvedMatchArm {
                         pattern,
@@ -1693,7 +1683,7 @@ impl Resolver<'_> {
                         span: arm.span,
                     });
                 }
-                let first = resolved_arms.first().ok_or_else(|| {
+                let first = super::lexical_exit::normal_arm(&resolved_arms).ok_or_else(|| {
                     self.error("SPX-H006", "resolved match has no arms", expr.span)
                 })?;
                 let ty = first.value.ty.clone();
@@ -1709,11 +1699,12 @@ impl Resolver<'_> {
                 )
             }
             ExprKind::Try { operand } => {
-                let operand = self.resolve_expr_recursive_reference(
+                let operand = self.resolve_expr_recursive_reference_inner(
                     function,
                     operand,
                     bindings,
                     &format!("{path}.operand"),
+                    nearest,
                 )?;
                 let operand_type = operand.ty.clone();
                 let ResolvedType::Nominal {
@@ -1757,11 +1748,12 @@ impl Resolver<'_> {
             // response type read from its AST `yields` clause (request type if none resolves), and `hir::resolve_yield` still checks and retags every site
             // once resolution finishes.
             ExprKind::Yield { request } => {
-                let request = self.resolve_expr_recursive_reference(
+                let request = self.resolve_expr_recursive_reference_inner(
                     function,
                     request,
                     bindings,
                     &format!("{path}.request"),
+                    nearest,
                 )?;
                 let ty = self.yield_answer_type(function, &request.ty);
                 (
@@ -1773,11 +1765,12 @@ impl Resolver<'_> {
                 )
             }
             ExprKind::UpdateRecord { base, fields } => {
-                let base = self.resolve_expr_recursive_reference(
+                let base = self.resolve_expr_recursive_reference_inner(
                     function,
                     base,
                     bindings,
                     &format!("{path}.base"),
+                    nearest,
                 )?;
                 let ResolvedType::Nominal {
                     declaration: record,
@@ -1818,11 +1811,12 @@ impl Resolver<'_> {
                                 initializer.name_span,
                             )
                         })?;
-                    let value = self.resolve_expr_recursive_reference(
+                    let value = self.resolve_expr_recursive_reference_inner(
                         function,
                         &initializer.value,
                         bindings,
                         &format!("{path}.field.{index}.value"),
+                        nearest,
                     )?;
                     resolved_fields.push(ResolvedFieldInitializer { field, value });
                 }

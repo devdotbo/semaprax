@@ -12,6 +12,7 @@ pub(super) fn expr_json(
         quote_json(ownership_text(expression.ownership))
     );
     let output = match &expression.kind {
+        ResolvedExprKind::LexicalExit { kind, target, value } => lexical_exit::expression_json(program, &header, kind, target, value.as_deref())?,
         ResolvedExprKind::Closure {..} | ResolvedExprKind::FunctionReference {..} | ResolvedExprKind::Invoke {..} => function_values::expression_json(program,expression,&header)?,
         ResolvedExprKind::Int(value) => {
             format!(
@@ -400,6 +401,7 @@ fn statement_json(
             quote_json(audit),
             expr_json(program, body)?
         )),
+        ResolvedStatement::LexicalWhile { condition, body, latch, .. } => lexical_exit::statement_json(program, condition, body, latch)?,
         ResolvedStatement::While {
             condition, body, ..
         } => Ok(format!(

@@ -31,6 +31,8 @@ impl Span {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Type {
+    /// Compiler-only no-normal-completion marker, never authored storage or ABI.
+    Never,
     I64,
     I32,
     Char,
@@ -248,6 +250,7 @@ impl Drop for Program {
                 | ExprKind::Try { operand: value }
                 | ExprKind::Project { base: value, .. }
                 | ExprKind::Yield { request: value } => expressions.push(*value),
+                ExprKind::LexicalExit { value, .. } => expressions.extend(value.map(|v| *v)),
                 ExprKind::Binary { left, right, .. } => {
                     expressions.push(*left);
                     expressions.push(*right);
@@ -1137,7 +1140,7 @@ pub struct FieldTarget {
 }
 
 mod lexical_exit;
-pub use lexical_exit::LexicalExitKind;
+pub use lexical_exit::{has_no_normal_completion, LexicalExitKind};
 mod statement;
 pub use statement::{Statement, TraversalIndex};
 
@@ -1235,6 +1238,7 @@ impl Expr {
 
     pub(crate) fn child(&self, index: usize) -> Option<&Expr> {
         match &self.kind {
+            ExprKind::LexicalExit { value, .. } => (index == 0).then(|| value.as_deref()).flatten(),
             ExprKind::Closure { body, .. } => (index == 0).then_some(body),
             ExprKind::Call { args, .. } => args.get(index),
             ExprKind::MethodCall { receiver, args, .. } => (index == 0)

@@ -429,8 +429,25 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             .pop()
             .expect("active else scope index checked above")
             .bindings;
+        let then_exits = then_value
+            .as_ref()
+            .is_some_and(|value| value.ty == Type::Never);
+        let else_exits = else_value
+            .as_ref()
+            .is_some_and(|value| value.ty == Type::Never);
         for name in &baseline_names {
             if let Some(binding) = self.scopes[scope].bindings.get_mut(name) {
+                if then_exits != else_exits {
+                    let normal = if then_exits {
+                        &else_bindings
+                    } else {
+                        &then_bindings
+                    };
+                    if let Some(state) = normal.get(name) {
+                        *binding = state.clone();
+                    }
+                    continue;
+                }
                 let then_state = then_bindings
                     .get(name)
                     .map_or(Availability::Available, |value| value.availability);
@@ -465,6 +482,12 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         else_value: Option<CheckedValue>,
     ) {
         let output = match (then_value, else_value) {
+            (Some(then_value), Some(else_value)) if then_value.ty == Type::Never => {
+                Some(else_value)
+            }
+            (Some(then_value), Some(else_value)) if else_value.ty == Type::Never => {
+                Some(then_value)
+            }
             (Some(then_value), Some(else_value)) => {
                 if then_value.native_unit || else_value.native_unit {
                     reject_native_unit_value(

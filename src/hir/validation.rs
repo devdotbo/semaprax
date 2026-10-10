@@ -18,6 +18,7 @@ mod closure;
 mod generic_record_composition;
 mod generic_template;
 mod host_command;
+mod lexical_exit;
 mod native_borrow;
 mod nominal_facts;
 mod owned_buffer;
@@ -1398,6 +1399,15 @@ impl<'a> HirValidator<'a> {
             ));
         }
         match &expression.kind {
+            ResolvedExprKind::LexicalExit { value, .. } => self.validate_template_lexical_exit(
+                template,
+                execution,
+                expression,
+                value.as_deref(),
+                values,
+                path,
+            )?,
+
             ResolvedExprKind::Closure { .. } => {
                 self.validate_template_closure(template, execution, expression, values, path)?
             }
@@ -1561,13 +1571,15 @@ impl<'a> HirValidator<'a> {
                                 &format!("{statement_path}.body"),
                             )?;
                         }
-                        ResolvedStatement::While { .. } => self.validate_template_mutation(
-                            template,
-                            execution,
-                            statement,
-                            &mut block_values,
-                            &statement_path,
-                        )?,
+                        ResolvedStatement::While { .. }
+                        | ResolvedStatement::LexicalWhile { .. } => self
+                            .validate_template_mutation(
+                                template,
+                                execution,
+                                statement,
+                                &mut block_values,
+                                &statement_path,
+                            )?,
                     }
                 }
                 self.validate_template_expr_with_context(
@@ -1661,6 +1673,7 @@ impl<'a> HirValidator<'a> {
         function: &ResolvedFunction,
         execution: &FunctionExecutionId,
     ) -> Result<(), Diagnostic> {
+        super::lexical_exit::validate_function(self.program, function, execution)?;
         super::declared_collection::validate_function(&self.program.declarations, function)?;
         crate::hir::iterator_loop::validate_function(function)?;
         owner_renewal::validate_function(self.program, function)?;
@@ -1860,9 +1873,11 @@ impl<'a> HirValidator<'a> {
             true,
             Some(&declared_effects),
         )?;
-        self.require_type(&function.body.ty, &function.return_type, "function body")?;
+        if function.body.ty != ResolvedType::Never {
+            self.require_type(&function.body.ty, &function.return_type, "function body")?;
+        }
         let returned = self.expected_ownership(&function.return_type, OwnershipMode::Own)?;
-        if function.body.ownership != returned {
+        if function.body.ty != ResolvedType::Never && function.body.ownership != returned {
             return Err(hir_error(format!(
                 "function `{}` body has invalid return ownership",
                 function.id
@@ -2239,6 +2254,10 @@ impl<'a> HirValidator<'a> {
         allowed_effects: Option<&BTreeSet<String>>,
     ) -> Result<(), Diagnostic> {
         enum Frame<'e> {
+            LexicalReturn {
+                expression: &'e ResolvedExpr,
+                operand: &'e ResolvedExpr,
+            },
             InvokeNext {
                 expression: &'e ResolvedExpr,
                 index: usize,
@@ -2955,6 +2974,26 @@ impl<'a> HirValidator<'a> {
                     }
                     self.validate_type(&expression.ty)?;
                     match &expression.kind {
+                        ResolvedExprKind::LexicalExit { value, .. } => {
+                            if let Some(operand) = value {
+                                frames.push(Frame::LexicalReturn {
+                                    expression,
+                                    operand,
+                                });
+                                frames.push(Frame::Enter {
+                                    expression: operand,
+                                    scope,
+                                    path: format!("{path}.value"),
+                                });
+                            } else {
+                                self.finish_expr(
+                                    expression,
+                                    &ResolvedType::Never,
+                                    OwnershipMode::Value,
+                                )?;
+                                scopes.push(scope);
+                            }
+                        }
                         ResolvedExprKind::Closure { .. } => {
                             self.validate_closure(
                                 function,
@@ -4084,6 +4123,15 @@ impl<'a> HirValidator<'a> {
                     self.finish_expr(expression, &output, OwnershipMode::Value)?;
                     scopes.push(scope);
                 }
+                Frame::LexicalReturn {
+                    expression,
+                    operand,
+                } => {
+                    let mut scope = scopes.pop().expect("return operand scope retained");
+                    self.validate_lexical_return_operand(operand, &mut scope)?;
+                    self.finish_expr(expression, &ResolvedType::Never, OwnershipMode::Value)?;
+                    scopes.push(scope);
+                }
                 Frame::IfCondition {
                     expression,
                     then_branch,
@@ -4143,8 +4191,6 @@ impl<'a> HirValidator<'a> {
                     outer_ids,
                 } => {
                     let else_scope = scopes.pop().expect("if else scope retained");
-                    Self::join_branches(&mut outer, &then_scope, &else_scope, &outer_ids);
-                    publication.publish(&outer);
                     let ResolvedExprKind::If {
                         then_branch,
                         else_branch,
@@ -4153,11 +4199,16 @@ impl<'a> HirValidator<'a> {
                     else {
                         unreachable!()
                     };
-                    self.require_type(&then_branch.ty, &else_branch.ty, "if branches")?;
-                    if then_branch.ownership != else_branch.ownership {
-                        return Err(hir_error("if branches have inconsistent ownership"));
-                    }
-                    self.finish_expr(expression, &then_branch.ty, then_branch.ownership)?;
+                    self.finish_lexical_if(
+                        expression,
+                        then_branch,
+                        else_branch,
+                        &mut outer,
+                        &then_scope,
+                        &else_scope,
+                        &outer_ids,
+                    )?;
+                    publication.publish(&outer);
                     scopes.push(outer);
                 }
                 Frame::BlockNext {
@@ -4266,6 +4317,9 @@ impl<'a> HirValidator<'a> {
                             }
                             ResolvedStatement::While {
                                 condition, body, ..
+                            }
+                            | ResolvedStatement::LexicalWhile {
+                                condition, body, ..
                             } => {
                                 // Bounded While-Loops v1: re-check admission
                                 // at the trust boundary and require an exact
@@ -4346,7 +4400,9 @@ impl<'a> HirValidator<'a> {
                     // exactly `bool` because it re-evaluates before every
                     // iteration.
                     let scope = scopes.pop().expect("while condition scope retained");
-                    let ResolvedStatement::While { condition, .. } = &statements[index] else {
+                    let (ResolvedStatement::While { condition, .. }
+                    | ResolvedStatement::LexicalWhile { condition, .. }) = &statements[index]
+                    else {
                         unreachable!("while condition frame resumes at a while statement")
                     };
                     if scope != entry {
@@ -4389,7 +4445,8 @@ impl<'a> HirValidator<'a> {
                     // must equal the loop-entry state exactly; admission keeps
                     // every loop binding Copy-scalar so nothing can drift.
                     let after = scopes.pop().expect("while body scope retained");
-                    if after != entry {
+                    let body = statements[index].child(1).expect("loop body");
+                    if body.ty != ResolvedType::Never && after != entry {
                         return Err(hir_error("while loop body changes ownership liveness"));
                     }
                     frames.push(Frame::BlockNext {
@@ -5608,27 +5665,22 @@ impl<'a> HirValidator<'a> {
                         }
                     }
                     let arm = &arms[index];
-                    if !super::collection_outcome::match_arm_execution(
-                        self.program,
-                        function,
-                        expression,
-                        &arm.value,
-                    ) {
+                    if arm.value.ty != ResolvedType::Never
+                        && !super::collection_outcome::match_arm_execution(
+                            self.program,
+                            function,
+                            expression,
+                            &arm.value,
+                        )
+                    {
                         return Err(hir_error(
                             "resolved owned variant match arm must produce a Copy scalar",
                         ));
                     }
-                    if let Some((ty, ownership)) = &result {
-                        self.require_type(&arm.value.ty, ty, "match arm")?;
-                        if arm.value.ownership != *ownership {
-                            return Err(hir_error(
-                                "resolved match arms have inconsistent ownership",
-                            ));
-                        }
-                    } else {
-                        result = Some((arm.value.ty.clone(), arm.value.ownership));
+                    self.join_lexical_match(&mut result, &arm.value)?;
+                    if arm.value.ty != ResolvedType::Never {
+                        arm_scopes.push(arm_scope);
                     }
-                    arm_scopes.push(arm_scope);
                     frames.push(Frame::VariantMatchNext {
                         expression,
                         arms,
@@ -5844,17 +5896,10 @@ impl<'a> HirValidator<'a> {
                 } => {
                     let arm_scope = scopes.pop().expect("scalar match arm scope retained");
                     let arm = &arms[index];
-                    if let Some((ty, ownership)) = &result {
-                        self.require_type(&arm.value.ty, ty, "match arm")?;
-                        if arm.value.ownership != *ownership {
-                            return Err(hir_error(
-                                "resolved match arms have inconsistent ownership",
-                            ));
-                        }
-                    } else {
-                        result = Some((arm.value.ty.clone(), arm.value.ownership));
+                    self.join_lexical_match(&mut result, &arm.value)?;
+                    if arm.value.ty != ResolvedType::Never {
+                        arm_scopes.push(arm_scope);
                     }
-                    arm_scopes.push(arm_scope);
                     frames.push(Frame::ScalarMatchNext {
                         expression,
                         arms,
@@ -6174,6 +6219,21 @@ impl<'a> HirValidator<'a> {
         self.validate_type(&expression.ty)?;
 
         let (ty, ownership) = match &expression.kind {
+            ResolvedExprKind::LexicalExit { value, .. } => {
+                if let Some(operand) = value {
+                    self.validate_expr_recursive_reference(
+                        function,
+                        operand,
+                        scope,
+                        &format!("{path}.value"),
+                        allow_moves,
+                        allowed_effects,
+                    )?;
+                    self.validate_lexical_return_operand(operand, scope)?;
+                }
+                (ResolvedType::Never, OwnershipMode::Value)
+            }
+
             ResolvedExprKind::Closure { .. } => {
                 self.validate_closure(function, expression, scope, path, allow_moves)?;
                 (expression.ty.clone(), expression.ownership)
@@ -7056,6 +7116,9 @@ impl<'a> HirValidator<'a> {
                         }
                         ResolvedStatement::While {
                             condition, body, ..
+                        }
+                        | ResolvedStatement::LexicalWhile {
+                            condition, body, ..
                         } => {
                             // Bounded While-Loops v1: mirror the iterative
                             // admission re-check, condition typing, body
@@ -7086,11 +7149,12 @@ impl<'a> HirValidator<'a> {
                                 allow_moves,
                                 allowed_effects,
                             )?;
-                            if block_scope != entry_scope {
+                            if body.ty != ResolvedType::Never && block_scope != entry_scope {
                                 return Err(hir_error(
                                     "while loop body changes ownership liveness",
                                 ));
                             }
+                            block_scope = entry_scope;
                         }
                     }
                 }
@@ -7139,12 +7203,16 @@ impl<'a> HirValidator<'a> {
                     allow_moves,
                     allowed_effects,
                 )?;
-                Self::join_branches(scope, &then_scope, &else_scope, &outer_ids);
-                self.require_type(&then_branch.ty, &else_branch.ty, "if branches")?;
-                if then_branch.ownership != else_branch.ownership {
-                    return Err(hir_error("if branches have inconsistent ownership"));
-                }
-                (then_branch.ty.clone(), then_branch.ownership)
+                self.finish_lexical_if(
+                    expression,
+                    then_branch,
+                    else_branch,
+                    scope,
+                    &then_scope,
+                    &else_scope,
+                    &outer_ids,
+                )?;
+                (expression.ty.clone(), expression.ownership)
             }
             ResolvedExprKind::ConstructRecord { record, fields } => {
                 if crate::map_ops::is_declaration(record.as_str())
@@ -7911,27 +7979,22 @@ impl<'a> HirValidator<'a> {
                             }
                         }
                     }
-                    if !super::collection_outcome::match_arm_execution(
-                        self.program,
-                        function,
-                        expression,
-                        &arm.value,
-                    ) {
+                    if arm.value.ty != ResolvedType::Never
+                        && !super::collection_outcome::match_arm_execution(
+                            self.program,
+                            function,
+                            expression,
+                            &arm.value,
+                        )
+                    {
                         return Err(hir_error(
                             "resolved owned variant match arm must produce a Copy scalar",
                         ));
                     }
-                    if let Some((expected_ty, expected_ownership)) = &result {
-                        self.require_type(&arm.value.ty, expected_ty, "match arm")?;
-                        if arm.value.ownership != *expected_ownership {
-                            return Err(hir_error(
-                                "resolved match arms have inconsistent ownership",
-                            ));
-                        }
-                    } else {
-                        result = Some((arm.value.ty.clone(), arm.value.ownership));
+                    self.join_lexical_match(&mut result, &arm.value)?;
+                    if arm.value.ty != ResolvedType::Never {
+                        arm_scopes.push(arm_scope);
                     }
-                    arm_scopes.push(arm_scope);
                 }
                 if !wildcard_seen && covered.len() != cases.len() {
                     return Err(hir_error("resolved match is not exhaustive"));
@@ -8372,6 +8435,9 @@ impl<'a> HirValidator<'a> {
         ty: &ResolvedType,
         ownership: OwnershipMode,
     ) -> Result<bool, Diagnostic> {
+        if *ty == ResolvedType::Never {
+            return Ok(false);
+        }
         self.borrowed_type_facts(ty)?
             .map(|facts| !facts.copy && ownership == OwnershipMode::Own)
             .ok_or_else(|| {
@@ -8598,6 +8664,9 @@ impl<'a> HirValidator<'a> {
         ty: &ResolvedType,
         non_copy: OwnershipMode,
     ) -> Result<OwnershipMode, Diagnostic> {
+        if *ty == ResolvedType::Never {
+            return Ok(OwnershipMode::Value);
+        }
         self.borrowed_type_facts(ty)?
             .map(|facts| {
                 if facts.copy {
