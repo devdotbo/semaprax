@@ -268,3 +268,10 @@ native O0/O2 and Core-Wasm regressions require execution before qualification;
 prior evidence above does not qualify this additive operation.
 
 The selective [Finite Owned Iterator Byte Scratch v1](FINITE-OWNED-ITERATOR-BYTE-SCRATCH-V1.md) separately authenticates a bounded consuming iterator and iteration-local literal scratch. It does not change this arbitrary-while refusal or the cumulative allocation limits; its owning gates remain pending.
+
+The existing inline indexed-read exception for `array_as_slice(named_array)`
+authenticates both the old Call form and the resolver's BorrowPlace form. The
+latter rederives the whole named Copy-array type and 65,536-byte bound from the
+current typed program; ordinary HIR scope/availability replay remains required.
+Computed arrays, projections, owned roots and borrowed Bytes/String conversions
+gain no inline-loop admission from this exception.

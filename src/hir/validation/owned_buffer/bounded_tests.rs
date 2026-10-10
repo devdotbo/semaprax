@@ -89,8 +89,25 @@ fn inline_fixed_copy_array_views_replay_without_granting_computed_or_owned_views
     let view = &args[0];
     let validator = HirValidator::new(&program).unwrap();
     validator.validate_while_admission(view).unwrap();
+    let ResolvedExprKind::BorrowPlace { operation, place } = &view.kind else {
+        panic!("named array view lowers to an authenticated BorrowPlace")
+    };
+    assert_eq!(operation.as_str(), crate::byte_ops::ARRAY_AS_SLICE_ID);
+    let mut legacy_view = view.clone();
+    let mut legacy_root = view.clone();
+    legacy_root.kind = ResolvedExprKind::Place(place.clone());
+    legacy_root.ty = ResolvedType::ArrayU8(2);
+    legacy_root.ownership = OwnershipMode::Value;
+    legacy_view.kind = ResolvedExprKind::Call {
+        callee: operation.clone(),
+        type_arguments: Vec::new(),
+        instance: None,
+        args: vec![legacy_root],
+    };
+    validator.validate_while_admission(&legacy_view).unwrap();
+    // Retain every original forged Call-form control too.
     for hostile in 0..4 {
-        let mut changed = view.clone();
+        let mut changed = legacy_view.clone();
         let ResolvedExprKind::Call {
             callee,
             type_arguments,
@@ -106,6 +123,30 @@ fn inline_fixed_copy_array_views_replay_without_granting_computed_or_owned_views
             2 => args[0].ownership = OwnershipMode::Own,
             3 => args[0].kind = ResolvedExprKind::ArrayU8(vec![65, 66]),
             _ => unreachable!(),
+        }
+        assert_eq!(
+            validator
+                .validate_while_admission(&changed)
+                .unwrap_err()
+                .code,
+            "SPX-H006"
+        );
+    }
+    for hostile in 0..4 {
+        let mut changed = view.clone();
+        if hostile == 0 {
+            changed.ownership = OwnershipMode::Own;
+        } else if hostile == 1 {
+            changed.ty = ResolvedType::Str;
+        } else {
+            let ResolvedExprKind::BorrowPlace { operation, place } = &mut changed.kind else {
+                unreachable!()
+            };
+            if hostile == 2 {
+                *operation = DeclarationId::new(crate::byte_ops::BYTES_AS_SLICE_ID);
+            } else {
+                place.root = ValueId::new("foreign.array.root".to_owned());
+            }
         }
         assert_eq!(
             validator
@@ -137,11 +178,8 @@ fn inline_fixed_copy_array_views_replay_without_granting_computed_or_owned_views
     let ResolvedExprKind::Call { args, .. } = &mut value.kind else {
         panic!("byte_get")
     };
-    let ResolvedExprKind::Call { args, .. } = &mut args[0].kind else {
-        panic!("array view")
-    };
-    let ResolvedExprKind::Place(place) = &mut args[0].kind else {
-        panic!("named array")
+    let ResolvedExprKind::BorrowPlace { place, .. } = &mut args[0].kind else {
+        panic!("named array view")
     };
     place.root = ValueId::new("forged.array.owner".to_owned());
     assert_eq!(crate::hir::validate(&forged).unwrap_err().code, "SPX-H006");

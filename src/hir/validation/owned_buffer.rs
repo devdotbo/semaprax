@@ -224,7 +224,15 @@ fn chain_capacity(args: &[ResolvedExpr], reopen: bool) -> Result<Option<u64>, Di
 // Fixed byte arrays are Copy storage. This exact nonallocating view is the
 // existing inline indexed-read exception; ordinary HIR validation independently
 // authenticates the named binding, its declared extent and availability.
-fn fixed_array_view(expression: &ResolvedExpr) -> bool {
+fn fixed_array_view(validator: &HirValidator<'_>, expression: &ResolvedExpr) -> bool {
+    if let ResolvedExprKind::BorrowPlace { operation, place } = &expression.kind {
+        return operation.as_str() == crate::byte_ops::ARRAY_AS_SLICE_ID
+            && expression.ty == ResolvedType::SliceU8
+            && expression.ownership == OwnershipMode::Borrow
+            && place.projections.is_empty()
+            && matches!(crate::hir::byte_capacity::resolved_value_type(validator.program, &place.root),
+                Some(ResolvedType::ArrayU8(n)) if u64::from(n) <= crate::byte_data_capacity::MAX_ARRAY_BYTES);
+    }
     let ResolvedExprKind::Call {
         callee,
         type_arguments,
@@ -264,7 +272,7 @@ pub(super) fn require_admitted_while_operation(
     args: &[ResolvedExpr],
 ) -> Result<(), Diagnostic> {
     if operation == crate::byte_ops::ByteOp::ArrayAsSlice {
-        return if fixed_array_view(expression) {
+        return if fixed_array_view(validator, expression) {
             Ok(())
         } else {
             Err(hir_error(
@@ -350,7 +358,7 @@ pub(super) fn require_admitted_while_operation(
         )));
     }
     let slice = &args[0];
-    if fixed_array_view(slice) {
+    if fixed_array_view(validator, slice) {
         return Ok(());
     }
     let ResolvedExprKind::Place(place) = &slice.kind else {
