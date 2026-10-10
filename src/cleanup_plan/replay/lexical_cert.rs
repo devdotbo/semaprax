@@ -19,8 +19,8 @@ pub(super) struct LexicalAuth {
     /// Blocks where an owning-break fragment rejoins ordinary flow. Every
     /// incoming state must agree exactly; no merge may repair history.
     pub(super) exact_joins: BTreeSet<BlockId>,
-    /// The fragment exit that leaves the wrapper cancels the exact Step
-    /// renewal reservation of this assignment.
+    /// The fragment exit that leaves the wrapper must prove this generated
+    /// conditional Step assignment has no authored renewal reservation.
     pub(super) wrapper_cancels: BTreeMap<ExitTargetId, ExpressionId>,
     /// Owned item storage an owning `continue` disposes beside its retained
     /// remainder (outside the exit's leaves regions).
