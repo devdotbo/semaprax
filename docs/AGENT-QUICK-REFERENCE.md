@@ -484,6 +484,26 @@ fn main() -> i64
   v1](SESSION-PROTOCOL-TYPES-V1.md) for the full model, including what a
   declaration explicitly does not claim.
 
+## Static borrowed UTF-8 literals
+
+Use adjacent `str"..."` for immutable `borrow str`: `let key = str"é\u{0}";`
+then `let view = str_as_bytes(key);` gives three exact UTF-8 bytes. Named
+immutable aliases and synchronous borrowed-text calls follow existing loans;
+literal evaluation shares module-held bytes without an owning String constructor.
+Ordinary `"..."` still owns a String; use `string_as_str(owner)` where the existing
+String profile admits it. Neither form implicitly converts to the other.
+
+Empty, NUL, Unicode and escapes preserve decoded bytes. There is no interpolation,
+mutable alias, aggregate storage, borrowed return or view escape. Each static
+literal is bounded to 65536 decoded bytes (`SPX-T314`); selected HIR also bounds
+the combined represented static/owned literals and format templates to 65536
+(`SPX-H006`), without a deduplication discount. Native/internal aggregate Core-Wasm
+and authenticated command Project definitions are authored; template/Project
+execution qualification is pending. Public scalar/text/data adapters, standalone
+String arenas and selected-final-UTF8 certificates refuse the static root.
+See `help language author:static-utf8` and the
+[owning contract](STATIC-BORROWED-UTF8-LITERALS-V1.md).
+
 ## Strings and bytes
 
 Use `string_format` for literal templates such as `"id={}"`. See

@@ -2,7 +2,7 @@
 use std::fmt::Write as _;
 
 const MAX_BYTES: usize = 2_048;
-const ROUTES: &str = "Authoring routes (complete):\n  author:lexical-exits            statement-tail break/continue/return\n  author:stdin-json               v27 bounded native stream command\n  author:stream-data-v2           v29 private record/Vec stream command\n  author:owned-data               v30 private owned-leaf collections\n  author:collection-records       v31 nested records containing Vec\n  author:nested-outcomes         v32 typed nested success/error carriers\n  author:file-text                native UTF-8 file command\n  author:selected-file            native file; :selected-file-resource for v34\n  author:source-web               single-source web build\n  author:literal-format           checked literal String rendering\n  author:string-from-utf8         strict owned String construction from bytes\n  author:copy-record-vec          flat Copy-record vectors\n  author:record-sort-keys         explicit stable field sort policies\n  author:record-field-views       borrowed record and Vec field reads\n  author:record-traversal         scoped borrowed rows and optional indices\n  author:json-codec               checked source JSON codec derivation\n  author:json-identifier-views    one identifier as a token view\n  author:json-request-views       bounded identifier and record arrays\n  author:json-stream-request-views bounded native stream request view\n  author:json-owned-request      bounded owning request collections\n  author:json-utf8-owned-request bounded UTF-8 string values\n  author:json-stream-utf8-owned-request bounded UTF-8 stdin requests\n  author:json-collection-response bounded nested collection encoder\n  author:json-nested-request      bounded finite nested request decoder\n  author:json-stream-nested-request bounded finite nested stdin decoder\n  author:json-nested-response     bounded finite nested borrowed encoder\n  author:json-request-response    typed request/response composition boundaries\nLibrary-only search: help language find:<word>:0\nExact card sections: help language topics\n";
+const ROUTES: &str = "Authoring routes (complete):\n  author:lexical-exits            statement-tail break/continue/return\n  author:stdin-json               v27 bounded native stream command\n  author:stream-data-v2           v29 private record/Vec stream command\n  author:owned-data               v30 private owned-leaf collections\n  author:collection-records       v31 nested records containing Vec\n  author:nested-outcomes         v32 typed nested success/error carriers\n  author:file-text                native UTF-8 file command\n  author:selected-file            native file; :selected-file-resource for v34\n  author:source-web               single-source web build\n  author:literal-format           checked literal String rendering\n  author:static-utf8              borrowed UTF-8\n  author:string-from-utf8         strict owned String construction from bytes\n  author:copy-record-vec          flat Copy-record vectors\n  author:record-sort-keys         explicit stable field sort policies\n  author:record-field-views       borrowed record and Vec field reads\n  author:record-traversal         scoped borrowed rows and optional indices\n  author:json-codec               checked source JSON codec derivation\n  author:json-identifier-views    one identifier as a token view\n  author:json-request-views       bounded identifier and record arrays\n  author:json-stream-request-views bounded native stream request view\n  author:json-owned-request      bounded owning request collections\n  author:json-utf8-owned-request bounded UTF-8 string values\n  author:json-stream-utf8-owned-request bounded UTF-8 stdin requests\n  author:json-collection-response bounded nested collection encoder\n  author:json-nested-request      bounded finite nested request decoder\n  author:json-stream-nested-request bounded finite nested stdin decoder\n  author:json-nested-response     bounded finite nested borrowed encoder\n  author:json-request-response    typed request/response composition boundaries\nLibrary-only search: help language find:<word>:0\nExact card sections: help language topics\n";
 
 #[cfg(test)]
 pub(super) fn assert_guide_contract() {
@@ -97,6 +97,15 @@ pub(super) fn lookup(query: &str) -> Result<String, String> {
             "A nested decoder returns Ready{value} or Error{code,offset,field}. Use match own outcome, then match own value to move payload fields; end each arm with a comma inside its match braces. Borrow views only while the bound payload is live; a variant is not a record field root. Error cases need no dummy record.\n",
             "Keep command arms Copy-valued. An owning match result must independently fit the finite collection-outcome join; arbitrary String/record/variant returns are not admitted by a generated name.\n",
             "Example: examples/stream-nested-order-json-project. Contracts: docs/OWNED-NESTED-OUTCOMES-V1.md, docs/PROJECT-V32-NESTED-OUTCOME-COMMAND-V1.md. Codec: author:json-nested-request or author:json-stream-nested-request.\n"
+        ).to_owned()),
+        "author:static-utf8" => Ok(concat!(
+            "Static borrowed UTF-8 source implementation; executable qualification pending.\n",
+            "let key = str\"é\\u{0}\"; let view = str_as_bytes(key); byte_len(view) == 3usize. Adjacent str\"...\" is immutable borrow str; str \"...\" is not a literal.\n",
+            "Named immutable aliases and synchronous borrowed-text calls use existing loan rules, including otherwise admitted loops. Literal evaluation shares module-held bytes; str_as_bytes creates a checked view, not an owning String or payload copy.\n",
+            "Empty, NUL, Unicode, quotes and backslashes preserve decoded UTF-8 bytes; no interpolation or normalization. Each literal <=65536 decoded bytes (SPX-T314). If selected, independent HIR bounds all represented static/owned literals and format templates together to 65536 bytes (SPX-H006); no deduplication discount.\n",
+            "Use ordinary \"...\" for an owning String and string_as_str(owner) for its view where the existing String profile admits it. No implicit conversion, borrowed return, aggregate storage, mutable alias or view escape.\n",
+            "Native/internal aggregate Core-Wasm and authenticated command Project definitions are authored; template/Project execution qualification pending. Public scalar/text/data adapters, standalone String arenas and selected-final-UTF8 certificates refuse this root. No new capability or foreign-input allowance.\n",
+            "Contract and owning gates: docs/STATIC-BORROWED-UTF8-LITERALS-V1.md.\n"
         ).to_owned()),
         "author:literal-format" => Ok(concat!(
             "Checked literal format source implementation; current-head executable qualification pending.\n",
@@ -432,6 +441,45 @@ mod tests {
     }
 
     #[test]
+    fn static_utf8_card_preserves_borrowed_scope_and_qualification_boundaries() {
+        let card = lookup("author:static-utf8").unwrap();
+        assert_eq!(card, lookup("author:static-utf8").unwrap());
+        assert!(card.len() <= MAX_BYTES);
+        for fact in [
+            "str\"é\\u{0}\"",
+            "3usize",
+            "immutable borrow str",
+            "module-held bytes",
+            "SPX-T314",
+            "SPX-H006",
+            "no deduplication discount",
+            "string_as_str(owner)",
+            "No implicit conversion",
+            "view escape",
+            "Project execution qualification pending",
+            "certificates refuse",
+            "docs/STATIC-BORROWED-UTF8-LITERALS-V1.md",
+        ] {
+            assert!(card.contains(fact), "static UTF-8 guidance omits {fact}");
+        }
+        assert!(lookup("author:routes")
+            .unwrap()
+            .contains("author:static-utf8"));
+        let source = r#"module help.static_text;
+@id("help.static_text.main") fn main()->i64 {
+ let key=str"é\u{0}";
+ let alias=key;
+ let view=str_as_bytes(alias);
+ if byte_len(view)==3usize {42}else{0}
+}"#;
+        let checked = semaprax::check(source, "help-static-text.spx").unwrap();
+        let canonical = semaprax::format::canonical(&checked);
+        let replay = semaprax::check(&canonical, "help-static-text.spx").unwrap();
+        assert_eq!(canonical, semaprax::format::canonical(&replay));
+        semaprax::hir::validate(&semaprax::hir::resolve(&replay).unwrap()).unwrap();
+    }
+
+    #[test]
     fn explicit_sort_card_is_bounded_and_names_closed_literal_authority() {
         let card = lookup("author:record-sort-keys").unwrap();
         assert!(card.len() <= 4096);
@@ -468,6 +516,7 @@ mod tests {
             "author:selected-file-resource",
             "author:source-web",
             "author:literal-format",
+            "author:static-utf8",
             "author:string-from-utf8",
             "author:copy-record-vec",
             "author:record-sort-keys",

@@ -74,3 +74,10 @@ preflight refusal, and the explicit primitive `Vec<string>` refusal. The
 [nested response contract](APPLICATION-JSON-NESTED-RESPONSE-V1.md) owns the
 schema and limits. These cards describe authoring contracts; their bytes and
 selector assertions do not establish application qualification or efficiency.
+
+`author:static-utf8` explains adjacent `str"..."`, immutable borrowed scope,
+exact decoded UTF-8/NUL bytes, named `str_as_bytes` views, and ordinary owning
+String fallback. Its independent source/canonical/HIR assertion and CLI selector
+checks are owning definitions pending execution. The card preserves the shared
+65536-byte admission bound, closed escape/public adapters, and pending
+Project/template qualification from the [static literal contract](STATIC-BORROWED-UTF8-LITERALS-V1.md).

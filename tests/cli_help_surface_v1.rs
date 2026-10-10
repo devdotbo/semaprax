@@ -365,6 +365,7 @@ fn standalone_scoped_help_is_exhaustive_exact_capability_aware_and_inert() {
         "author:nested-outcomes",
         "author:record-field-views",
         "author:string-from-utf8",
+        "author:static-utf8",
         "author:json-nested-response",
         "author:file-text",
         "author:source-web",
