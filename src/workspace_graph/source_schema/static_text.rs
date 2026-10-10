@@ -180,7 +180,13 @@ pub(super) fn schema(
         return Err(fail());
     }
     for instance in &module.function_instances {
-        matching_work = matching_work.checked_sub(count).ok_or_else(fail)?;
+        // The same precharged carrier authenticates the exact template-site
+        // bijection for every instance. Charge reset, expected-site census and
+        // final bijection comparison before any of those walks.
+        matching_work = matching_work
+            .checked_sub(count.checked_mul(3).ok_or_else(fail)?)
+            .ok_or_else(fail)?;
+        seen.fill(0);
         if instance.function.id != instance.template {
             return Err(fail());
         }
@@ -216,18 +222,27 @@ pub(super) fn schema(
                 matching_work = matching_work.checked_sub(count).ok_or_else(|| {
                     graph_error("SPX-G410", "static instance replay exceeds work limit")
                 })?;
-                let mut matches = inventory.sites.iter().filter(|site| {
+                let mut matches = inventory.sites.iter().enumerate().filter(|(_, site)| {
                     site.owner == instance.template
                         && site.span == expression.span
                         && site.text.as_str() == text
                         && instance_site(&expression.id, &instance.id, &site.path)
                 });
-                if matches.next().is_none() || matches.next().is_some() {
+                let Some((index, _)) = matches.next() else {
+                    return Err(graph_error(
+                        "SPX-G410",
+                        "static generic producer lacks authenticated template site",
+                    ));
+                };
+                if matches.next().is_some() {
                     return Err(graph_error(
                         "SPX-G410",
                         "static generic producer lacks exact authenticated template site",
                     ));
                 }
+                seen[index] = seen[index].checked_add(1).ok_or_else(|| {
+                    graph_error("SPX-G410", "static instance site count overflows")
+                })?;
                 observed = observed
                     .checked_add(1)
                     .ok_or_else(|| graph_error("SPX-G410", "static instance count overflows"))?;
@@ -235,7 +250,13 @@ pub(super) fn schema(
             },
         )
         .map_err(|e| vec![e])?;
-        if expected != observed {
+        if expected != observed
+            || inventory
+                .sites
+                .iter()
+                .zip(&seen)
+                .any(|(site, seen)| *seen != usize::from(site.owner == instance.template))
+        {
             return Err(fail());
         }
     }

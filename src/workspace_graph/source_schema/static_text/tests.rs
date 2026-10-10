@@ -98,7 +98,7 @@ fn source_inventory_content_identity_namespace_and_presence_fail_closed() {
 }
 #[test]
 fn retained_generic_literals_match_template_and_concrete_execution_sites() {
-    let source = "module static.writer; @id(\"generic\") fn generic<T>(value:T)->T {let key=str\"é\";value} @id(\"app.main\") fn main()->i64 {generic<i64>(42)}";
+    let source = "module static.writer; @id(\"generic\") fn generic<T>(value:T)->T {let key=str\"é\";let second=str\"x\";value} @id(\"app.main\") fn main()->i64 {generic<i64>(42)}";
     let mut build = build(source);
     let module = writer(&build);
     assert_eq!(
@@ -118,4 +118,117 @@ fn retained_generic_literals_match_template_and_concrete_execution_sites() {
     };
     value.id = replacement;
     refused(&build);
+    let mut duplicate = self::build(source);
+    let module = writer_mut(&mut duplicate);
+    let hir::ResolvedExprKind::Block { statements, .. } =
+        &mut module.function_instances[0].function.body.kind
+    else {
+        panic!("generic body")
+    };
+    let hir::ResolvedStatement::Let { value: first, .. } = &statements[0] else {
+        panic!("first literal")
+    };
+    let repeated = first.clone();
+    let hir::ResolvedStatement::Let { value: second, .. } = &mut statements[1] else {
+        panic!("second literal")
+    };
+    *second = repeated;
+    // Even exact duplicate ID/span/content cannot substitute for the omitted
+    // second source site; this selector proves its own per-instance bijection.
+    refused(&duplicate);
+}
+
+#[test]
+fn lexical_byte_renewal_has_direct_proof_and_retained_composition_stays_closed() {
+    let source = r#"module static.writer;
+@id("static.lexical") fn run()->i64 {
+ let key=str"x"; let mut output=bytes_zeroed(1usize); let mut at=0;
+ while at<3 {
+  output=bytes_set(output,0usize,65u8); at=at+1;
+  if at==1 {continue;}; 0
+ }
+ return str_len_bytes(key);
+}
+@id("app.main") fn main()->i64 {run()}
+"#;
+    let ast = crate::check(source, "writer.spx").unwrap();
+    let canonical = format::canonical(&ast);
+    let ast = crate::check(&canonical, "writer.spx").unwrap();
+    assert_eq!(format::canonical(&ast), canonical);
+    let resolved = hir::resolve(&ast).unwrap();
+    hir::validate(&resolved).unwrap();
+    let function = resolved
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "static.lexical")
+        .unwrap();
+    assert!(crate::byte_ops::requires_same_owner_set(function));
+    assert_eq!(
+        function.cleanup_plan.schema,
+        crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V18
+    );
+    assert!(hir::lexical_exit::requires(function).unwrap());
+    let graph = graph::to_json(&ast).unwrap();
+    graph::verify_json(&ast, &graph).unwrap();
+    let changed = crate::check(&canonical.replace("str\"x\"", "str\"y\""), "writer.spx").unwrap();
+    assert_eq!(
+        graph::verify_json(&changed, &graph).unwrap_err()[0].code,
+        "SPX-G411"
+    );
+    for attack in 0..5 {
+        let mut candidate = resolved.clone();
+        let function = candidate
+            .functions
+            .iter_mut()
+            .find(|f| f.id.as_str() == "static.lexical")
+            .unwrap();
+        let unrelated = function.body.id.clone();
+        match attack {
+            0 => function.cleanup_plan.schema = crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V17,
+            1 => {
+                function
+                    .cleanup_plan
+                    .lexical_control
+                    .as_mut()
+                    .unwrap()
+                    .loops[0]
+                    .condition = unrelated.clone()
+            }
+            _ => {
+                let hir::ResolvedExprKind::Block { statements, .. } = &mut function.body.kind
+                else {
+                    panic!("block")
+                };
+                let hir::ResolvedStatement::Let { value, .. } = &mut statements[0] else {
+                    panic!("literal")
+                };
+                match attack {
+                    2 => value.ty = hir::ResolvedType::String,
+                    3 => value.ownership = hir::OwnershipMode::Own,
+                    _ => value.id = unrelated.clone(),
+                }
+            }
+        }
+        assert_eq!(hir::validate(&candidate).unwrap_err().code, "SPX-H006");
+    }
+    // Retained source-schema replay cannot yet reconstruct full lexical
+    // status/ownership flow from a borrowed namespace context. Keep the honest
+    // refusal until that API exists; v18 presence itself grants no authority.
+    let sources = [
+        ("writer.spx", canonical),
+        (
+            "support.spx",
+            "module support.ready; @id(\"ready\") fn ready()->i64 {0}".to_owned(),
+        ),
+    ]
+    .into_iter()
+    .map(|(path, source)| WorkspaceSource {
+        path: path.to_owned(),
+        source: format::canonical(&crate::parse(&source, path).unwrap()),
+    })
+    .collect();
+    let errors = build_owned_retaining_sources_for_change(sources, MAX_CHANGE_BUILDER_BYTES)
+        .err()
+        .expect("retained composite route remains explicitly closed");
+    assert!(errors.iter().any(|error| error.code == "SPX-G410"));
 }

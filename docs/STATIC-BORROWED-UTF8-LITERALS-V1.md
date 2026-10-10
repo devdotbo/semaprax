@@ -1,7 +1,8 @@
 # Static borrowed UTF-8 literals v1
 
-Status: authored direct-source implementation for OPT #740; qualification pending.
-The retained Workspace/Project route is still closed. This is not a completed
+Status: authored direct-source and retained Project adapter for OPT #740;
+qualification pending. Retained static literals combined with lexical renewal
+still have a closed composition route, described below. This is not a completed
 issue, hosted gate, physical allocation receipt, or public provider profile.
 
 The adjacent form `str"priority"` denotes immutable UTF-8 with type `borrow str`.
@@ -96,13 +97,23 @@ Authored owning definitions, not executed in this tranche:
   `static_utf8_writer.spx` helper before and inside loops.
 - `wasm::aggregate::tests::static_text::`: exact pool and empty-literal placement.
 - `workspace_graph::source_schema::static_text::tests::`: retained writer,
-  stale source content/identity/namespace/presence and concrete generic sites.
+  stale source content/identity/namespace/presence, exact per-instance site
+  bijection, and the explicit retained lexical-renewal composition gap.
 - `workspace_graph::static_text::tests::`: exact/one-short cursor reservation
   and absence without selected backing.
 - The `static_utf8::` Project definition authenticates the held source,
   executes the existing writer, and refuses drift at final recheck.
 
-Remaining completion obligations include current-source execution of the
-retained source/HIR and normal Project definitions, final producer bindings,
-and the complete owning gate. No efficiency or cost improvement is
+Retained source-schema composition of static literals with lexical v18 byte,
+String or Vec renewal remains closed. The complete Program route independently
+validates the lexical plan, but the retained selector currently applies legacy
+renewal-tag equality to the composite. Admitting it requires bounded borrowed
+namespace/call/type context APIs for independent lexical status and ownership
+replay; a certificate presence bit or attached v18 tag is insufficient. An
+owning definition records the direct byte-renewal success, forged-certificate
+and typed-root refusals, and the current retained SPX-G410 refusal.
+
+Remaining completion obligations include that retained lexical-renewal
+composition, current-source execution of retained source/HIR and normal
+Project definitions, final producer bindings, and the complete owning gate. No efficiency or cost improvement is
 claimed without paired measurements.
