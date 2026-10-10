@@ -19,6 +19,7 @@ mod ast {
         13 => Named { name, arguments }, 14 => Function { parameters, result }, 15 => OnceFunction, 16 => OnceFunctionI64, 17 => OnceFunctionI64Pair, 18 => MutFunctionI64,
         19 => StringMap
     });
+    codec_enum!(LexicalExitKind { 0 => Break, 1 => Continue, 2 => Return });
     codec_enum!(ParamMode { 0 => Value, 1 => Own, 2 => Borrow, 3 => Shared });
     codec_enum!(MatchMode { 0 => Value, 1 => Own, 2 => Borrow });
     codec_enum!(AgentTypeRole {
@@ -253,7 +254,8 @@ mod ast {
         21 => Match { mode, scrutinee, arms }, 22 => Try { operand },
         23 => UpdateRecord { base, fields }, 24 => Project { base, field, field_span },
         25 => Closure { params, return_type, body, owning, retained, mutable },
-        26 => Yield { request }
+        26 => Yield { request },
+        27 => LexicalExit { kind, value }
     });
     codec_struct!(MatchArm {
         pattern,

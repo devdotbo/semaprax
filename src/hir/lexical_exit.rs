@@ -1,6 +1,6 @@
 //! Typed target interfaces for independently replayed lexical control flow.
 //! A target identifies meaning, never a backend label or permission to jump.
-use super::{ExpressionId, FunctionExecutionId, ResolvedType};
+use super::{ExpressionId, FunctionExecutionId, ResolvedType, ValueId};
 pub use crate::ast::LexicalExitKind;
 
 pub const LEXICAL_CONTROL_FLOW_SCHEMA_V1: &str = "semaprax.lexical-control-flow.v1";
@@ -50,5 +50,12 @@ pub enum LoopLatchKind {
     SourceForStep {
         kind: SourceForKind,
         step: ExpressionId,
+    },
+    /// Only the authenticated Yield-arm tail runs; never re-enter the authored body.
+    OwnedIteratorStep {
+        next: ExpressionId,
+        assignment: ExpressionId,
+        step: ValueId,
+        remainder: ValueId,
     },
 }

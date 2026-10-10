@@ -39,6 +39,9 @@ impl Codec for ExpressionId {
     }
 }
 codec_enum!(FunctionExecutionId {0=>Monomorphic(value),1=>Generic(value)});
+codec_enum!(ControlTarget {0=>Function(value),1=>Loop{owner,site}});
+codec_enum!(SourceForKind {0=>Copy,1=>BorrowRecord,2=>OwnedIterator});
+codec_enum!(LoopLatchKind {0=>Condition,1=>SourceForStep{kind,step},2=>OwnedIteratorStep{next,assignment,step,remainder}});
 codec_enum!(DeclarationKind {0=>Resource,1=>ResourceDrop,2=>Record,3=>Field,4=>Class,5=>Variant,6=>VariantCase,7=>CaseField,8=>Interface,9=>Import,10=>Function});
 codec_enum!(IdentityOrigin {0=>Explicit,1=>Automatic,2=>CompilerOwned});
 codec_struct!(Declaration {
@@ -69,7 +72,7 @@ codec_struct!(ByteSliceProvenance {
     producer,
     ranges
 });
-codec_enum!(ResolvedType {0=>Unit,1=>I64,2=>I32,3=>Char,4=>U8,5=>Usize,6=>ArrayU8(length),7=>F32,8=>F64,9=>Bool,10=>String,11=>Bytes,12=>Str,13=>SliceU8,14=>TypeParameter{owner,index},15=>Nominal{declaration,arguments},16=>Function{parameters,result},17=>OnceFunction,18=>OnceFunctionI64,19=>OnceFunctionI64Pair,20=>MutFunctionI64,21=>StringMap});
+codec_enum!(ResolvedType {0=>Unit,1=>I64,2=>I32,3=>Char,4=>U8,5=>Usize,6=>ArrayU8(length),7=>F32,8=>F64,9=>Bool,10=>String,11=>Bytes,12=>Str,13=>SliceU8,14=>TypeParameter{owner,index},15=>Nominal{declaration,arguments},16=>Function{parameters,result},17=>OnceFunction,18=>OnceFunctionI64,19=>OnceFunctionI64Pair,20=>MutFunctionI64,21=>StringMap,22=>Never});
 codec_struct!(TypeFacts {
     copy,
     contains_resource,
@@ -284,7 +287,7 @@ codec_enum!(ResolvedExprKind {
     24=>Try{operand,result,ok_case,ok_field,err_case,err_field,residual_type},
     25=>TryOption{operand,option,some_case,some_field,none_case,residual_type},
     26=>UpdateRecord{base,record,fields},27=>Project{base,field},28=>Upcast{source},29=>FunctionReference{target},30=>Invoke{callable,args},31=>Closure{parameters,captures,body},
-    32=>Yield{request},33=>LiteralFormat{template,args},34=>VecFieldRead{element,field,bytes,args}
+    32=>Yield{request},33=>LiteralFormat{template,args},34=>VecFieldRead{element,field,bytes,args},35=>LexicalExit{kind,target,value}
 });
 codec_struct!(ResolvedMatchArm {
     pattern,
