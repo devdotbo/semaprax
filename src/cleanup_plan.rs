@@ -26,6 +26,10 @@ mod owned_liveness;
 mod renewal_history;
 mod renewal_profile;
 mod replay;
+pub(crate) use replay::{
+    replay_reserve_vec, ClonePayload as ReplayClonePayload,
+    PhysicalReservation as ReplayPhysicalReservation,
+};
 mod validate;
 
 pub(crate) use build::build_plan;

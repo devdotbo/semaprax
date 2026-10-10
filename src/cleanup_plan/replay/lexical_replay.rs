@@ -19,14 +19,29 @@ pub(super) fn validate_with_index(
     let plan = &function.cleanup_plan;
     let owner = crate::hir::lexical_exit::owner(program, function)?;
     crate::hir::lexical_exit::validate_function(program, function, &owner)?;
-    lexical_census::validate_size_budget(program, function)?;
+    let held_facts = if let Some(physical) = budget.physical.as_deref_mut() {
+        let mut held = None;
+        lexical_census::validate_size_budget_with_expression_count(program, function, || {
+            let facts = expression_facts::expression_facts_with_reservation(function, physical)?;
+            let count = facts.len();
+            held = Some(facts);
+            Ok(count)
+        })?;
+        held
+    } else {
+        lexical_census::validate_size_budget(program, function)?;
+        None
+    };
     budget.charge(
         function,
         plan_structure_units(plan),
         "structural validation",
     )?;
 
-    let expression_facts = expression_facts(function)?;
+    let expression_facts = match held_facts {
+        Some(facts) => facts,
+        None => expression_facts(function)?,
+    };
     validate_inventory_coverage(program, function)?;
     validate_required_status_sources(program, function)?;
     let storage = validate_slots(function)?;

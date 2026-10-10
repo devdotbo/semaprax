@@ -3,6 +3,11 @@ mod constructed_variant;
 use constructed_variant::materialize_constructed_variant;
 mod expression_children;
 mod expression_facts;
+mod physical_storage;
+mod physical_budget;
+mod physical_clone;
+pub(crate) use physical_clone::ClonePayload;
+pub(crate) use physical_storage::{replay_reserve_vec, PhysicalReservation};
 use expression_children::replay_expression_child;
 use expression_facts::expression_facts;
 
@@ -103,6 +108,8 @@ struct ReplayBudget {
     skeleton_remaining: usize,
     /// Factored replay: merge equal-state skeleton paths (`skeleton_work`).
     merge_paths: bool,
+    /// Present only for the selected retained lexical replay entry.
+    physical: Option<Box<physical_storage::PhysicalReservation>>,
 }
 
 impl ReplayBudget {
@@ -111,6 +118,7 @@ impl ReplayBudget {
             remaining: MAX_REPLAY_WORK_UNITS,
             skeleton_remaining: 0,
             merge_paths: false,
+            physical: None,
         }
     }
     #[cfg(test)]
@@ -119,6 +127,7 @@ impl ReplayBudget {
             remaining: MAX_REPLAY_WORK_UNITS,
             skeleton_remaining: limit,
             merge_paths: false,
+            physical: None,
         }
     }
 
@@ -188,13 +197,14 @@ fn skeleton_materializations() -> usize {
     SKELETON_MATERIALIZATIONS.with(Cell::get)
 }
 
-fn skeleton_clone<T: Clone>(
+fn skeleton_clone<T: Clone + ClonePayload>(
     budget: &mut ReplayBudget,
     function: &ResolvedFunction,
     value: &T,
     phase: &str,
 ) -> Result<T, Diagnostic> {
     budget.charge_skeleton(function, 1, phase)?;
+    budget.reserve_clone(function, value, phase)?;
     note_skeleton_materialization();
     Ok(value.clone())
 }
@@ -203,11 +213,13 @@ fn skeleton_push<T>(
     budget: &mut ReplayBudget,
     function: &ResolvedFunction,
     target: &mut Vec<T>,
-    value: impl Into<T>,
+    value: impl physical_clone::IntoReplay<T>,
     phase: &str,
 ) -> Result<(), Diagnostic> {
     budget.charge_skeleton(function, 1, phase)?;
     note_skeleton_materialization();
+    budget.reserve_vec(function, target, 1, phase)?;
+    budget.reserve_bytes(function, physical_clone::conversion_bytes::<T, _>(&value), phase)?;
     target.push(value.into());
     Ok(())
 }
@@ -221,6 +233,7 @@ fn skeleton_queue_push<T>(
 ) -> Result<(), Diagnostic> {
     budget.charge_skeleton(function, 1, phase)?;
     note_skeleton_materialization();
+    budget.reserve_deque(function, target, 1, phase)?;
     target.push_back(value);
     Ok(())
 }

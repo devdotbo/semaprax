@@ -109,6 +109,7 @@ fn budget_exhausted_factored_comparison_keeps_the_path_budget_diagnostic() {
         remaining: 64,
         skeleton_remaining: 0,
         merge_paths: false,
+        physical: None,
     };
     let error = super::super::factored::validate(&program, &main, &mut starved).unwrap_err();
     assert_eq!(error.code, "SPX-H006");

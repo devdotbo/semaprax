@@ -60,13 +60,24 @@ impl SkeletonWork<'_, '_> {
         self.budget.charge_skeleton(self.function, units, phase)
     }
 
-    pub(super) fn clone_owned<T: Clone>(
+    pub(super) fn clone_owned<T: Clone + ClonePayload>(
         &mut self,
         value: &T,
         phase: &str,
     ) -> Result<T, Diagnostic> {
         self.charge(1, phase)?;
+        self.budget.reserve_clone(self.function, value, phase)?;
         note_skeleton_materialization();
+        Ok(value.clone())
+    }
+
+    /// Meter an existing uncharged clone without changing its legacy work count.
+    pub(super) fn clone_payload<T: Clone + ClonePayload>(
+        &mut self,
+        value: &T,
+        phase: &str,
+    ) -> Result<T, Diagnostic> {
+        self.budget.reserve_clone(self.function, value, phase)?;
         Ok(value.clone())
     }
 
@@ -78,6 +89,7 @@ impl SkeletonWork<'_, '_> {
     ) -> Result<(), Diagnostic> {
         self.charge(1, phase)?;
         note_skeleton_materialization();
+        self.budget.reserve_vec(self.function, paths, 1, phase)?;
         paths.push(path);
         Ok(())
     }
@@ -90,6 +102,7 @@ impl SkeletonWork<'_, '_> {
     ) -> Result<(), Diagnostic> {
         self.charge(1, phase)?;
         note_skeleton_materialization();
+        self.budget.reserve_vec(self.function, paths, 1, phase)?;
         paths.push(path);
         Ok(())
     }
@@ -110,6 +123,7 @@ impl SkeletonWork<'_, '_> {
         phase: &str,
     ) -> Result<ExprSkeletonPath, Diagnostic> {
         self.charge(1, phase)?;
+        self.budget.reserve_clone(self.function, path, phase)?;
         note_skeleton_materialization();
         Ok(path.clone())
     }
@@ -120,6 +134,8 @@ impl SkeletonWork<'_, '_> {
         phase: &str,
     ) -> Result<Observations, Diagnostic> {
         self.charge(1, phase)?;
+        self.budget
+            .reserve_clone(self.function, observations, phase)?;
         note_skeleton_materialization();
         Ok(observations.clone())
     }
@@ -132,6 +148,20 @@ impl SkeletonWork<'_, '_> {
     ) -> Result<(), Diagnostic> {
         self.charge(1, phase)?;
         note_skeleton_materialization();
+        if self.budget.physical.is_some() {
+            if target.prefix.is_some() || observations.prefix.is_some() {
+                return Err(replay_error(
+                    self.function,
+                    "selected lexical replay requires flat observations",
+                ));
+            }
+            self.budget.reserve_vec(
+                self.function,
+                &mut target.items,
+                observations.items.len(),
+                phase,
+            )?;
+        }
         target.extend(observations);
         Ok(())
     }
@@ -144,7 +174,36 @@ impl SkeletonWork<'_, '_> {
     ) -> Result<(), Diagnostic> {
         self.charge(1, phase)?;
         note_skeleton_materialization();
+        if self.budget.physical.is_some() && path.observations.prefix.is_some() {
+            return Err(replay_error(
+                self.function,
+                "selected lexical replay requires flat observations",
+            ));
+        }
+        self.budget
+            .reserve_vec(self.function, &mut path.observations.items, 1, phase)?;
+        self.budget
+            .reserve_bytes(self.function, physical_clone::observation_rc_bytes(), phase)?;
         path.observations.push(observation.into());
+        Ok(())
+    }
+    pub(super) fn insert_front_observation(
+        &mut self,
+        observations: &mut Observations,
+        observation: SkeletonObservation,
+        phase: &str,
+    ) -> Result<(), Diagnostic> {
+        if self.budget.physical.is_some() && observations.prefix.is_some() {
+            return Err(replay_error(
+                self.function,
+                "selected lexical replay requires flat observations",
+            ));
+        }
+        self.budget
+            .reserve_vec(self.function, &mut observations.items, 1, phase)?;
+        self.budget
+            .reserve_bytes(self.function, physical_clone::observation_rc_bytes(), phase)?;
+        observations.insert_front(observation.into());
         Ok(())
     }
 }

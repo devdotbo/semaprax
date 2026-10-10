@@ -5,20 +5,20 @@
 //! and reserve before construction. It neither estimates nor allocates storage.
 //! Resetting a work allowance never restores this ledger or its enclosing debit.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) enum PhysicalRefusal {
+pub(crate) enum PhysicalRefusal {
     Overflow,
     LocalLimit,
     EnclosingBudget,
 }
 
-pub(super) struct PhysicalReservation {
+pub(crate) struct PhysicalReservation {
     remaining: usize,
     charged: usize,
     refusal: Option<PhysicalRefusal>,
 }
 
 impl PhysicalReservation {
-    pub(super) fn new(limit: usize) -> Self {
+    pub(crate) fn new(limit: usize) -> Self {
         Self {
             remaining: limit,
             charged: 0,
@@ -28,7 +28,7 @@ impl PhysicalReservation {
 
     /// No allocation or refund occurs here. Failed requests cannot subsequently
     /// authorize even a zero-byte construction through this ledger.
-    pub(super) fn reserve(&mut self, bytes: usize) -> Result<(), PhysicalRefusal> {
+    pub(crate) fn reserve(&mut self, bytes: usize) -> Result<(), PhysicalRefusal> {
         if let Some(refusal) = self.refusal {
             return Err(refusal);
         }
@@ -50,7 +50,7 @@ impl PhysicalReservation {
 
     /// `T` describes the actual allocated element, including its padding. Nested
     /// String/Vec/map/identity backing is separate and must be charged by callers.
-    pub(super) fn reserve_array<T>(&mut self, count: usize) -> Result<(), PhysicalRefusal> {
+    pub(crate) fn reserve_array<T>(&mut self, count: usize) -> Result<(), PhysicalRefusal> {
         if let Some(refusal) = self.refusal {
             return Err(refusal);
         }
@@ -64,6 +64,56 @@ impl PhysicalReservation {
         self.refusal = Some(refusal);
         Err(refusal)
     }
+}
+
+/// Exact selected vector replacement, reserved while the old backing is live.
+pub(crate) fn replay_reserve_vec<T>(
+    reservation: &mut PhysicalReservation,
+    values: &mut Vec<T>,
+    additional: usize,
+) -> Result<(), PhysicalRefusal> {
+    reservation.reserve(0)?;
+    let Some(required) = values.len().checked_add(additional) else {
+        return reservation.fail(PhysicalRefusal::Overflow);
+    };
+    if required <= values.capacity() {
+        return reservation.reserve(0);
+    }
+    reservation.reserve_array::<T>(required)?;
+    if values.try_reserve_exact(additional).is_err() {
+        return reservation.fail(PhysicalRefusal::LocalLimit);
+    }
+    if values.capacity() != required {
+        return reservation.fail(PhysicalRefusal::LocalLimit);
+    }
+    Ok(())
+}
+
+/// Pinned alloc B-tree upper: B=6, eleven key/value slots and twelve
+/// child pointers per internal node. Charge the maximum internal layout for
+/// every new key (and one potentially retained empty root for a held map).
+/// Each field is independently rounded to the maximum alignment, so this
+/// upper does not depend on Rust's unspecified field-reordering decisions.
+pub(crate) fn btree_node_upper<K, V>() -> Option<usize> {
+    use std::mem::{align_of, size_of};
+    let alignment = align_of::<K>()
+        .max(align_of::<V>())
+        .max(align_of::<usize>());
+    let rounded = |bytes: usize| {
+        bytes
+            .checked_add(alignment - 1)
+            .map(|n| n / alignment * alignment)
+    };
+    [
+        size_of::<Option<std::ptr::NonNull<()>>>(),
+        size_of::<u16>(),
+        size_of::<u16>(),
+        size_of::<K>().checked_mul(11)?,
+        size_of::<V>().checked_mul(11)?,
+        size_of::<usize>().checked_mul(12)?,
+    ]
+    .into_iter()
+    .try_fold(0usize, |total, field| total.checked_add(rounded(field)?))
 }
 
 #[cfg(test)]
