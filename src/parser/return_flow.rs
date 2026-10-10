@@ -9,7 +9,9 @@ use crate::ast::{Expr, ExprKind, Span, Statement};
 use crate::diagnostic::Diagnostic;
 use crate::lexer::TokenKind;
 
-use super::{Parser, for_loop, statement_if};
+use super::{for_loop, statement_if, Parser};
+
+mod match_tail;
 
 impl Parser {
     pub(super) fn function_return_body(&mut self) -> Result<Expr, Diagnostic> {
@@ -76,6 +78,27 @@ impl Parser {
                     }
                 }
                 continue;
+            }
+            if self.at_keyword("match") {
+                let match_start = self.bump().span;
+                let (value, returning) = self.return_match_tail(match_start, depth + 1)?;
+                if returning {
+                    let end = self.return_end()?;
+                    return Ok(block(start.merge(end), statements, value));
+                }
+                if require_return {
+                    return Err(self.required_guard_return());
+                }
+                // A suffix match with no explicit returns keeps the complete
+                // ordinary postfix/binary tail grammar; it is parsed once.
+                let value = self.postfix(value, true)?;
+                let value = self.binary_continuation(value, 0, true)?;
+                let (_, value, end) = self.block_tail_end(Vec::new(), value)?;
+                return Ok(block(
+                    start.merge(end),
+                    statements,
+                    value.expect("value tail"),
+                ));
             }
             let statement = if self.at_keyword("let") {
                 self.let_statement()?

@@ -22,6 +22,13 @@ return on every path. A missing `else` moves the enclosing suffix into the
 non-returning alternative exactly once. Ordinary non-returning statement
 `if`s continue to use their existing grammar.
 
+A terminal `match` may also use block arms that explicitly return on every
+path. Mixed returning and ordinary arms are refused with `SPX-P210`; a suffix
+after the terminal match is unreachable (`SPX-P209`). Match mode, scrutinee,
+patterns, guards and exhaustiveness use the existing grammar and independent
+source/HIR checks. Returning arms become ordinary value blocks, including
+nested returning guards. This adds no general jump or loop-exit authority.
+
 Canonical source intentionally projects this profile as existing value
 control flow:
 
@@ -67,7 +74,8 @@ initializers remain refused with the existing contextual `SPX-P106` hint.
 control-flow proof schemas are not part of v1. This profile does not close
 #734 or claim its owned loop-exit obligations.
 
-`src/parser/return_flow.rs` owns normalization. The existing `language`
+`src/parser/return_flow.rs` owns normalization; its `match_tail` child reuses
+the ordinary match-arm parser with an explicit returning-arm callback. The existing `language`
 harness child `statement_if::guard_return` owns source/canonical/graph and
 cleanup-plan equivalence, scalar and owned runtime paths, interpreter/native
 and Core-Wasm behavior, terminal/nested guards, contextual refusal,

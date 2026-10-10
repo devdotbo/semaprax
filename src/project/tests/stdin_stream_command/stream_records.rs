@@ -239,7 +239,13 @@ fn stream_record_logical_schema_is_source_bound_and_cannot_hide_unused_runtime_u
     let invalid = crate::format::canonical(&crate::parse(&invalid, "b/jobs.spx").unwrap());
     std::fs::write(&path, &invalid).unwrap();
     let errors = with_authenticated_project(&root.join(MANIFEST_FILE), |_| Ok(())).unwrap_err();
-    assert!(errors.iter().any(|d| d.code == "SPX-T281"), "{errors:?}");
+    // The collection-record language profile now admits this runtime shape.
+    // The frozen v29 Project route must still reject its uncalled source use
+    // before cropping; pin the independently selected profile refusal.
+    assert!(errors.iter().any(|d| {
+        d.code == "SPX-G172"
+            && d.message == "nested collection-record runtime requires the explicitly selected language-command-io.collection-record.v1 profile"
+    }), "{errors:?}");
     assert_eq!(std::fs::read_to_string(&path).unwrap(), invalid);
     let _ = std::fs::remove_file(output);
     let _ = std::fs::remove_dir_all(root);

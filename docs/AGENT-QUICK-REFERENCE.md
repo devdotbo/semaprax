@@ -66,8 +66,9 @@ fn main() -> i64
   `while`, `for`, `unsafe`) and one final expression. That expression supplies the block's
   value. A function may also end with `return value;`, or use a returning
   guard `if condition { return value; }` before its remaining statements.
+  A terminal `match` may use block arms that explicitly return on every path.
   These [acyclic returns](ACYCLIC-GUARD-RETURNS-V1.md) normalize to ordinary
-  value `if`s. Loop exits, expression statements, tuples and unit values stay
+  value `if`s and `match` arms. Loop exits, expression statements, tuples and unit values stay
   outside this profile.
 - Source blocks, delimiters, unary chains, and expression trees may nest at
   most 128 levels; `SPX-P207` asks you to extract a named helper.

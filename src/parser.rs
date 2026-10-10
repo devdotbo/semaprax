@@ -1538,6 +1538,14 @@ impl Parser {
     }
 
     fn match_expression(&mut self, start: Span) -> Result<Expr, Diagnostic> {
+        self.match_expression_with_arm(start, |parser| parser.expression(0))
+    }
+
+    fn match_expression_with_arm(
+        &mut self,
+        start: Span,
+        mut arm_value: impl FnMut(&mut Self) -> Result<Expr, Diagnostic>,
+    ) -> Result<Expr, Diagnostic> {
         let mode = self.contextual_match_mode()?;
         let scrutinee = self.expression_with_record_literals(0, false)?;
         self.expect(&TokenKind::LBrace, "`{` before match arms")?;
@@ -1559,7 +1567,7 @@ impl Parser {
                 return Err(diagnostic);
             }
             self.expect(&TokenKind::FatArrow, "`=>` after match pattern")?;
-            let value = self.expression(0)?;
+            let value = arm_value(self)?;
             let pattern_end = guard
                 .as_ref()
                 .map_or(pattern.span(), |guard| pattern.span().merge(guard.span));

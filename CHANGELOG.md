@@ -1,6 +1,13 @@
 # Changelog
 
-- Normalize acyclic function guard returns to independently verified value
+- Eliminate zero-argument nominal identity traversal carriers and duplicate
+  retained-key allocations through an exact bounded stack probe. Charge its
+  scratch storage and keep generic/oversized identity handling, retained facts
+  and encoded identities unchanged. Correct the grouped fixtures and private
+  String-view host, and preserve authenticated cleanup-history debits at call
+  commit. Executable verification remains pending.
+
+- Normalize acyclic function guard and terminal match returns to independently verified value
   control flow, moving each continuation once and retaining contextual loop
   and closure refusal. Add canonical, graph, ownership-plan, runtime and
   failure regressions for the grouped implementation batch. Execution is

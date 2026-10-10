@@ -256,3 +256,58 @@ fn return_expression_failure_precedes_postcondition_failure() {
     }
     std::fs::remove_dir_all(source_path.parent().unwrap()).unwrap();
 }
+
+#[test]
+fn terminal_match_returns_preserve_ordinary_match_authority() {
+    let source = r#"module test.match_return;
+@id("choice") variant Choice { @id("choice.one") One { @id("choice.value") value:i64, }, @id("choice.zero") Zero, }
+@id("choose") fn choose(input:Choice)->i64 ensures result>=0 {
+    match input {
+        Choice::One{value} => { if value<0 { return 0; } return value; },
+        Choice::Zero{} => { return 7; },
+    }
+}
+@id("main") fn main()->i64 { choose(Choice::One{value:9}) }
+"#;
+    let lowered = r#"module test.match_return;
+@id("choice") variant Choice { @id("choice.one") One { @id("choice.value") value:i64, }, @id("choice.zero") Zero, }
+@id("choose") fn choose(input:Choice)->i64 ensures result>=0 {
+    match input {
+        Choice::One{value} => { if value<0 { 0 } else { value } },
+        Choice::Zero{} => { 7 },
+    }
+}
+@id("main") fn main()->i64 { choose(Choice::One{value:9}) }
+"#;
+    let path = Path::new("match-return.spx");
+    let source = parse(source, path).unwrap();
+    let lowered = parse(lowered, path).unwrap();
+    assert_eq!(format::canonical(&source), format::canonical(&lowered));
+    assert!(verify::verify(&source).is_empty());
+    let actual = hir::resolve(&source).unwrap();
+    let expected = hir::resolve(&lowered).unwrap();
+    hir::validate(&actual).unwrap();
+    assert_eq!(graph::to_json(&source).unwrap(), graph::to_json(&lowered).unwrap());
+    for (actual, expected) in actual.functions.iter().zip(&expected.functions) {
+        assert_eq!(actual.cleanup_plan, expected.cleanup_plan);
+        assert_eq!(actual.loan_plan, expected.loan_plan);
+    }
+}
+
+#[test]
+fn terminal_match_returns_refuse_mixed_arms_and_unreachable_suffixes() {
+    let prefix = "module match.refusal; @id(\"main\") fn main()->i64 ";
+    for (body, code) in [
+        ("{ match true { true=>{return 1;}, false=>2, } }", "SPX-P210"),
+        ("{ match true { true=>{return 1;}, false=>{return 2;}, } 3 }", "SPX-P209"),
+    ] {
+        let errors = parse(&format!("{prefix}{body}"), Path::new("match-refusal.spx")).unwrap_err();
+        assert_eq!(errors.code, code, "{errors:?}");
+    }
+    // A match suffix with no return retains its binary continuation grammar
+    // even when an earlier returning guard selects normalization for the body.
+    let source = format!("{prefix}{{if false {{return 0;}} match true {{true=>1,false=>2,}} + 3}}");
+    let lowered = format!("{prefix}{{if false {{0}} else {{match true {{true=>1,false=>2,}} + 3}}}}");
+    let path = Path::new("match-continuation.spx");
+    assert_eq!(format::canonical(&parse(&source, path).unwrap()), format::canonical(&parse(&lowered, path).unwrap()));
+}
