@@ -26,7 +26,13 @@ fn copied_prefix(
 ) -> Result<(), Diagnostic> {
     let mut checked = BTreeSet::new();
     for state in states {
-        super::validate_join_compatibility(function, checked.iter(), state, BlockId(7))?;
+        super::validate_join_compatibility(
+            function,
+            checked.iter(),
+            state,
+            BlockId(7),
+            &mut super::ReplayBudget::new(),
+        )?;
         checked.insert(state.clone());
     }
     Ok(())

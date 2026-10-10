@@ -193,8 +193,11 @@ pub(super) fn prepend_reservation(
             "renewal prefix insertion",
         )?;
         note_skeleton_materialization();
-        path.observations
-            .insert_front(SkeletonObservation::ReserveRenewal { at, binding }.into());
+        work.insert_front_observation(
+            &mut path.observations,
+            SkeletonObservation::ReserveRenewal { at, binding },
+            "renewal prefix storage",
+        )?;
     }
     Ok(())
 }
@@ -204,6 +207,7 @@ pub(super) fn validate_join_compatibility<'a>(
     existing: impl Iterator<Item = &'a PathState> + Clone,
     incoming: &PathState,
     block: BlockId,
+    budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
     if existing.clone().any(|state| {
         state.renewals != incoming.renewals
@@ -221,37 +225,62 @@ pub(super) fn validate_join_compatibility<'a>(
         ));
     }
 
-    let histories = existing
-        .map(|state| &state.live_order)
-        .chain(std::iter::once(&incoming.live_order))
-        .collect::<Vec<_>>();
-    let flags = histories
-        .iter()
-        .flat_map(|history| history.iter().copied())
-        .collect::<BTreeSet<_>>();
-    let mut successors = flags
-        .iter()
-        .map(|flag| (*flag, BTreeSet::new()))
-        .collect::<BTreeMap<_, _>>();
-    let mut indegree = flags
-        .iter()
-        .map(|flag| (*flag, 0_usize))
-        .collect::<BTreeMap<_, _>>();
+    let count = existing.clone().count().saturating_add(1);
+    budget.reserve_array::<&Vec<LivenessFlagId>>(function, count, "join history references")?;
+    let mut histories = Vec::with_capacity(count);
+    histories.extend(existing.map(|state| &state.live_order));
+    histories.push(&incoming.live_order);
+    let mut flags = BTreeSet::new();
+    for flag in histories.iter().flat_map(|history| history.iter().copied()) {
+        path_join::storage::insert_set(function, &mut flags, flag, budget, "join union flags")?;
+    }
+    let mut successors = BTreeMap::new();
+    let mut indegree = BTreeMap::new();
+    for flag in &flags {
+        path_join::storage::insert_map(
+            function,
+            &mut successors,
+            *flag,
+            BTreeSet::new(),
+            budget,
+            "join successor roots",
+        )?;
+        path_join::storage::insert_map(
+            function,
+            &mut indegree,
+            *flag,
+            0usize,
+            budget,
+            "join indegrees",
+        )?;
+    }
     for history in histories {
         for pair in history.windows(2) {
-            if successors
-                .get_mut(&pair[0])
-                .expect("replayed live flag is indexed")
-                .insert(pair[1])
-            {
+            if path_join::storage::insert_set(
+                function,
+                successors
+                    .get_mut(&pair[0])
+                    .expect("replayed live flag is indexed"),
+                pair[1],
+                budget,
+                "join history edges",
+            )? {
                 indegree.entry(pair[1]).and_modify(|degree| *degree += 1);
             }
         }
     }
-    let mut ready = indegree
-        .iter()
-        .filter_map(|(flag, degree)| (*degree == 0).then_some(*flag))
-        .collect::<BTreeSet<_>>();
+    let mut ready = BTreeSet::new();
+    for (flag, degree) in &indegree {
+        if *degree == 0 {
+            path_join::storage::insert_set(
+                function,
+                &mut ready,
+                *flag,
+                budget,
+                "join ready flags",
+            )?;
+        }
+    }
     let mut visited = 0_usize;
     while let Some(flag) = ready.pop_first() {
         visited += 1;
@@ -261,7 +290,13 @@ pub(super) fn validate_join_compatibility<'a>(
                 .expect("replayed successor flag is indexed");
             *degree -= 1;
             if *degree == 0 {
-                ready.insert(*successor);
+                path_join::storage::insert_set(
+                    function,
+                    &mut ready,
+                    *successor,
+                    budget,
+                    "join ready flags",
+                )?;
             }
         }
     }
