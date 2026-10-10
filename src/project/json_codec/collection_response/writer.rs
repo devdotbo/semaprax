@@ -44,7 +44,7 @@ mod tests {
     #[test]
     fn functional_writer_is_ordinary_deterministic_and_minimum_safe() {
         let program = crate::parse(
-            "module schema;@id(\"response.row\") record Row{@id(\"response.row.x\")x:i64,}",
+            "module schema;@id(\"response.row\") record Row{@id(\"response.row.x\")x:i64,}@id(\"schema.main\") fn main()->i64{0}",
             "schema.spx",
         )
         .unwrap();

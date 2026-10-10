@@ -179,7 +179,7 @@ final payload copy and allocator/header work are distinct costs. Current native
 `string_concat` already uses one allocation; OPT-737 targets repeated prefix
 copying and temporary materialization, not a historical double-buffer claim.
 
-Ordinary normalized Bytes allocation/write failure still follows canonical
+Ordinary normalized bounds/write failure still follows canonical
 sticky-status cleanup. Fatal native String allocation remains outside that
 recoverable channel. Preflight does not make native String OOM recoverable or
 prove zero-leak settlement there; that OPT-724 obligation remains open.
