@@ -127,6 +127,17 @@ fit inside a tiny failed replay budget.
 Imports, templates/instances, nominal aggregates, Vec/variant carriers and
 dynamic callable providers remain closed in this selected retained route.
 Their full physical replay constructor closure remains an OPT #745 obligation.
+A separate private inventory constructor tranche supports exact current
+nongeneric flat records with 1..8 direct Copy/String/Bytes fields, under a
+32-declaration lookup bound. It compares declaration and field identities,
+owners, names, types, order and ordinals to the current checked declaration
+index before cloning. Field carriers, identities, lifecycle strings, flag and
+projection vectors are reserved before construction. This adds constructor
+support only: source-captured record layout binding, record digest projection,
+structural leaves and typed constructor/projection skeleton accounting must
+all be complete before retained record replay can be admitted. Existing
+primitive selected admission continues to reject nominal record contexts.
+
 All new definitions are unexecuted in this implementation tranche.
 
 Remaining completion obligations include the remaining retained lexical-renewal

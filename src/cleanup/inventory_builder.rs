@@ -17,9 +17,10 @@ pub(crate) fn build_inventory(
 }
 
 /// Selected physical constructor only: direct primitive owned resources and
-/// Copy/borrowed traversal. Owned nominal records, variants, Vec/Box/generic
+/// Copy/borrowed traversal, plus independently checked direct flat records with
+/// Copy/String/Bytes fields. Other nominal carriers, variants, Vec/Box/generic
 /// carriers, function types and type parameters refuse before delegated type
-/// classification. This is not authority to enable complete retained replay.
+/// classification. Constructor support grants no retained replay admission.
 pub(crate) fn build_inventory_with_reservation<'a>(
     program: &'a dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
@@ -119,7 +120,7 @@ pub(super) struct InventoryBuilder<'a> {
 impl InventoryBuilder<'_> {
     pub(super) fn needs_drop(&self, ty: &ResolvedType) -> Result<bool, Diagnostic> {
         if self.physical.is_some() {
-            return selected::needs_drop(ty);
+            return selected::needs_drop_in(self.program, ty);
         }
         type_needs_resource_cleanup(self.program, ty).map_err(cleanup_error)
     }

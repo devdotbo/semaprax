@@ -1,6 +1,8 @@
 //! Initial complete selected inventory constructor closure: direct primitive
-//! cleanup leaves and Copy/borrowed traversal. Nominal carriers stay closed.
+//! cleanup leaves and Copy/borrowed traversal. A separate borrowed flat-record
+//! constructor closes its own backing; retained replay admission stays primitive.
 use super::*;
+mod flat_record;
 
 type Physical<'a> = Option<RefCell<&'a mut ReplayPhysicalReservation>>;
 pub(super) fn reserve<T>(
@@ -57,6 +59,17 @@ pub(super) fn needs_drop(ty: &ResolvedType) -> Result<bool, Diagnostic> {
         )),
     }
 }
+pub(super) fn needs_drop_in(
+    program: &dyn crate::cleanup::ReplayContext,
+    ty: &ResolvedType,
+) -> Result<bool, Diagnostic> {
+    if let Some((_, fields)) = flat_record::fields(program, ty)? {
+        return Ok(fields
+            .iter()
+            .any(|field| matches!(field.ty, ResolvedType::String | ResolvedType::Bytes)));
+    }
+    needs_drop(ty)
+}
 impl InventoryBuilder<'_> {
     pub(super) fn clone_owned<T: Clone + ReplayClonePayload>(
         &self,
@@ -84,6 +97,24 @@ impl InventoryBuilder<'_> {
         ty: &ResolvedType,
         storage: CleanupStorageId,
     ) -> Result<FieldLivenessShape, Diagnostic> {
+        let program = self.program;
+        if let Some((declaration, fields)) = flat_record::fields(program, ty)? {
+            if !fields
+                .iter()
+                .any(|field| matches!(field.ty, ResolvedType::String | ResolvedType::Bytes))
+            {
+                return Ok(FieldLivenessShape::NoDrop);
+            }
+            return self.selected_flat_record_shape(declaration, fields, storage);
+        }
+        self.selected_leaf_shape(ty, storage, None)
+    }
+    pub(super) fn selected_leaf_shape(
+        &mut self,
+        ty: &ResolvedType,
+        storage: CleanupStorageId,
+        projection: Option<&DeclarationId>,
+    ) -> Result<FieldLivenessShape, Diagnostic> {
         if !needs_drop(ty)? {
             return Ok(FieldLivenessShape::NoDrop);
         }
@@ -104,12 +135,17 @@ impl InventoryBuilder<'_> {
             .map_err(|_| cleanup_error("selected inventory lifecycle reservation refused"))?;
         let lifecycle = DeclarationId::new(id);
         let flag_lifecycle = self.clone_owned(&lifecycle)?;
+        let mut projections = Vec::new();
+        if let Some(projection) = projection {
+            reserve(&self.physical, &mut projections, 1)?;
+            projections.push(self.clone_owned(projection)?);
+        }
         reserve(&self.physical, &mut self.flags, 1)?;
         self.flags.push(CleanupFlag {
             id: flag,
             place: CleanupPlace {
                 storage,
-                projections: Vec::new(),
+                projections,
             },
             lifecycle: flag_lifecycle,
         });

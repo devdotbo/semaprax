@@ -524,6 +524,7 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         include_str!("../../../../../src/cleanup/replay_context.rs"),
         include_str!("../../../../../src/cleanup/inventory_builder.rs"),
         include_str!("../../../../../src/cleanup/inventory_builder/selected.rs"),
+        include_str!("../../../../../src/cleanup/inventory_builder/selected/flat_record.rs"),
         include_str!("../../../../../src/cleanup/generic_record.rs"),
         include_str!("../../../../../src/cleanup/iterator.rs"),
         include_str!("../../../../../src/cleanup/owned_capacity.rs"),

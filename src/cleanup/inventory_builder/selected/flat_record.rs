@@ -1,0 +1,94 @@
+//! Allocation-free exact flat-record classification and charged shape backing.
+//! This is constructor support only; source-bound replay admission is separate.
+use super::*;
+use crate::hir::{DeclarationKind, ResolvedFieldDeclaration};
+
+// A fixed constructor tranche; no recursive type substitution or identity keys.
+const MAX_DECLARATIONS: usize = 32;
+const MAX_FIELDS: usize = 8;
+pub(super) fn fields<'a>(
+    program: &'a dyn crate::cleanup::ReplayContext,
+    ty: &'a ResolvedType,
+) -> Result<Option<(&'a DeclarationId, &'a [ResolvedFieldDeclaration])>, Diagnostic> {
+    let ResolvedType::Nominal {
+        declaration,
+        arguments,
+    } = ty
+    else {
+        return Ok(None);
+    };
+    let fail = || {
+        cleanup_error("selected flat-record inventory has unauthenticated or unsupported fields")
+    };
+    if !arguments.is_empty() || program.types().len() > MAX_DECLARATIONS {
+        return Err(fail());
+    }
+    let mut matching = program
+        .types()
+        .iter()
+        .filter(|item| item.id == *declaration);
+    let record = matching.next().ok_or_else(fail)?;
+    if matching.next().is_some() || !record.type_parameters.is_empty() {
+        return Err(fail());
+    }
+    let ResolvedTypeDeclarationKind::Record { fields } = &record.kind else {
+        return Err(fail());
+    };
+    if !(1..=MAX_FIELDS).contains(&fields.len()) {
+        return Err(fail());
+    }
+    let index = program.declarations();
+    let declared = index.declaration(declaration).ok_or_else(fail)?;
+    if declared.kind != DeclarationKind::Record
+        || declared.owner.is_some()
+        || declared.name != record.name
+        || index.record_fields(declaration) != Some(fields.as_slice())
+    {
+        return Err(fail());
+    }
+    for (position, field) in fields.iter().enumerate() {
+        let field_fact = index.declaration(&field.id).ok_or_else(fail)?;
+        if field.index as usize != position
+            || field_fact.kind != DeclarationKind::Field
+            || field_fact.owner.as_ref() != Some(declaration)
+            || field_fact.name != field.name
+            || fields[..position]
+                .iter()
+                .any(|old| old.id == field.id || old.name == field.name)
+            || !(crate::hir::is_scalar_resolved_type(&field.ty)
+                || matches!(field.ty, ResolvedType::String | ResolvedType::Bytes))
+        {
+            return Err(fail());
+        }
+    }
+    Ok(Some((declaration, fields)))
+}
+impl InventoryBuilder<'_> {
+    pub(super) fn selected_flat_record_shape(
+        &mut self,
+        declaration: &DeclarationId,
+        fields: &[ResolvedFieldDeclaration],
+        storage: CleanupStorageId,
+    ) -> Result<FieldLivenessShape, Diagnostic> {
+        let declaration = self.clone_owned(declaration)?;
+        let mut shapes = Vec::new();
+        reserve(&self.physical, &mut shapes, fields.len())?;
+        for field in fields {
+            // Every field ID clone, lifecycle, flag and projection carrier is
+            // reserved before its constructor. Copy fields create no live flag.
+            let field_id = self.clone_owned(&field.id)?;
+            let shape = self.selected_leaf_shape(&field.ty, storage, Some(&field.id))?;
+            shapes.push(FieldLiveness {
+                field: field_id,
+                field_index: field.index,
+                shape,
+            });
+        }
+        Ok(FieldLivenessShape::Record {
+            declaration,
+            fields: shapes,
+        })
+    }
+}
+#[cfg(test)]
+mod tests;
