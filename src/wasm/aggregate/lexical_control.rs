@@ -383,6 +383,7 @@ impl<'a> Emitter<'a> {
             self.failure_expression = Some(contract.id.clone());
             self.fail_if_in_lane(STATUS_ENSURES_FALSE, StatusLane::ContractFalse)?;
             self.failure_expression = None;
+            self.emit_contract_scope_success(&contract.id)?;
         }
         self.emit_success_cleanup(&function.cleanup_plan)
     }

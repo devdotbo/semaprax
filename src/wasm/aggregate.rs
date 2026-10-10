@@ -26,6 +26,7 @@ mod filesystem_checked;
 mod filesystem_ops;
 mod filesystem_v2;
 mod lexical_control;
+mod contract_scope;
 mod literal_format;
 mod str_usage;
 use str_usage::program_uses_str_ops;
@@ -3108,6 +3109,7 @@ fn emit_function_profile(
         emitter.failure_expression = Some(contract.id.clone());
         emitter.fail_if_in_lane(STATUS_REQUIRES_FALSE, StatusLane::ContractFalse)?;
         emitter.failure_expression = None;
+        emitter.emit_contract_scope_success(&contract.id)?;
     }
     if plan.has_try {
         emitter.output.extend([0x02, 0x40]);

@@ -100,3 +100,22 @@ fn returned_variant_payload_uses_its_case_qualified_finalizer() {
 
 #[path = "lexical_exits/iterator_resume.rs"]
 mod iterator_resume;
+
+#[test]
+fn successful_contract_temporaries_settle_before_selected_return_publication() {
+    let source = r#"module lexical.contract.scopes;
+@id("app.main") fn main()->i64
+ requires byte_len(bytes_as_slice(bytes_zeroed(2usize)))==2usize
+ ensures byte_len(bytes_as_slice(bytes_zeroed(3usize)))==3usize
+ ensures result==29 {
+ return 29;
+}
+"#;
+    interpret(source, 29, false);
+    crate::owned_vec_bytes_runtime::run_wasm_expected(source, 0, 2, "none", 29);
+    let failed = source.replace("return 29;", "return 28;");
+    interpret(&failed, 0, true);
+    crate::owned_vec_bytes_runtime::run_wasm_expected(&failed, 10, 2, "none", 0);
+    interpret(source, 29, false);
+    crate::owned_vec_bytes_runtime::run_wasm_expected(source, 0, 2, "none", 29);
+}
