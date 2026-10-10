@@ -16,17 +16,18 @@ use super::native_emit::c_case_symbol;
 
 mod nested_owned;
 mod owned_leaf;
+#[cfg(test)]
+mod projected_vec_tests;
 mod record_if;
 mod replacement;
 mod scalar_match_scope;
-mod semantic_work;
 mod scoped_vec_field;
+mod semantic_work;
 mod string_slots;
 mod variant_match;
-#[cfg(test)]
-mod projected_vec_tests;
 use owned_leaf::{emit_transfer, ByteSlot, OwnedLeafKind};
 use scalar_match_scope::ScopeExit;
+mod lexical_exit;
 
 #[derive(Clone, Debug)]
 pub(super) struct NativeBytesPlan {
@@ -48,17 +49,28 @@ impl NativeBytesPlan {
         call: &ExpressionId,
         args: &[crate::hir::ResolvedExpr],
     ) -> Result<(), Diagnostic> {
-        let mut commits = self.transitions.get(call).into_iter().flatten().filter_map(|transition| {
-            match transition {
-                CleanupTransition::CallCommit { call: owner, arguments } if owner == call => Some(arguments),
-                _ => None,
-            }
-        });
-        let arguments = commits.next().ok_or_else(|| error("literal format lacks canonical CallCommit"))?;
+        let mut commits =
+            self.transitions
+                .get(call)
+                .into_iter()
+                .flatten()
+                .filter_map(|transition| match transition {
+                    CleanupTransition::CallCommit {
+                        call: owner,
+                        arguments,
+                    } if owner == call => Some(arguments),
+                    _ => None,
+                });
+        let arguments = commits
+            .next()
+            .ok_or_else(|| error("literal format lacks canonical CallCommit"))?;
         if commits.next().is_some() {
             return Err(error("literal format has duplicate CallCommit"));
         }
-        let expected = args.iter().enumerate().filter(|(_, argument)| argument.ty == crate::hir::ResolvedType::String)
+        let expected = args
+            .iter()
+            .enumerate()
+            .filter(|(_, argument)| argument.ty == crate::hir::ResolvedType::String)
             .collect::<Vec<_>>();
         if arguments.len() != expected.len() {
             return Err(error("literal format CallCommit ownership disagrees"));
@@ -70,7 +82,9 @@ impl NativeBytesPlan {
                     StorageId::CallArgument { call: owner, parameter_index, value_expression }
                     if owner == call && *parameter_index == index as u32 && value_expression == &argument.id)
             {
-                return Err(error("literal format CallCommit is not source-authenticated"));
+                return Err(error(
+                    "literal format CallCommit is not source-authenticated",
+                ));
             }
         }
         Ok(())
@@ -105,9 +119,7 @@ impl NativeBytesPlan {
                         crate::stdin_stream_ops::DROP_ID if place.projections.is_empty() => {
                             OwnedLeafKind::StdinReader
                         }
-                        crate::cleanup::VEC_DROP_LIFECYCLE_ID => {
-                            OwnedLeafKind::Vec
-                        }
+                        crate::cleanup::VEC_DROP_LIFECYCLE_ID => OwnedLeafKind::Vec,
                         crate::cleanup::BOX_DROP_LIFECYCLE_ID if place.projections.is_empty() => {
                             OwnedLeafKind::Box
                         }
@@ -200,6 +212,9 @@ impl NativeBytesPlan {
                 !matches!(
                     exit.continuation,
                     crate::cleanup_plan::ExitContinuation::Continue(_)
+                        | crate::cleanup_plan::ExitContinuation::LoopLatch { .. }
+                        | crate::cleanup_plan::ExitContinuation::LoopBreak { .. }
+                        | crate::cleanup_plan::ExitContinuation::FunctionReturn { .. }
                 )
             })
             .map(|exit| {
@@ -302,6 +317,20 @@ impl NativeBytesPlan {
                 CleanupTransition::AuthenticateVariantCase { .. }
                 | CleanupTransition::SelectFailure { .. }
                 | CleanupTransition::StageCopyResult { .. } => {}
+            }
+        }
+        for exit in &function.cleanup_plan.exits {
+            if matches!(
+                exit.continuation,
+                ExitContinuation::LoopLatch { .. }
+                    | ExitContinuation::LoopBreak { .. }
+                    | ExitContinuation::FunctionReturn { .. }
+            ) {
+                referenced_places.extend(
+                    exit.finalize_in_order
+                        .iter()
+                        .map(|action| action.source.clone()),
+                );
             }
         }
         referenced_places.extend(finalizers.iter().map(|slot| slot.place.clone()));

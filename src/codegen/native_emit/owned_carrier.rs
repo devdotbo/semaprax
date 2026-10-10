@@ -55,6 +55,11 @@ pub(super) fn c_value_type(
     resource_abi: &native_resource::NativeResourceAbi,
     ty: &ResolvedType,
 ) -> Result<String, Diagnostic> {
+    if *ty == ResolvedType::Never {
+        return Err(backend_error(
+            "Never has no native value or ABI representation",
+        ));
+    }
     if crate::map_ops::is_typed_collection(ty) {
         Ok("spx_map_v2 *".to_owned())
     } else if crate::stdin_stream_ops::is_reader(ty) {

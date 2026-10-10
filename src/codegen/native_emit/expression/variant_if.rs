@@ -48,7 +48,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         };
 
         while let Some(continuation) = continuations.pop() {
-            self.require_type(&value.ty, &continuation.expr.ty, "then branch")?;
+            self.require_flow_type(&value.ty, &continuation.expr.ty, "then branch")?;
             self.assign_branch_result(
                 continuation.expr,
                 continuation.then_branch,
@@ -59,7 +59,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             self.line("} else {");
             self.indent += 1;
             let else_value = self.emit_expr(continuation.else_branch)?;
-            self.require_type(&else_value.ty, &continuation.expr.ty, "else branch")?;
+            self.require_flow_type(&else_value.ty, &continuation.expr.ty, "else branch")?;
             self.assign_branch_result(
                 continuation.expr,
                 continuation.else_branch,
@@ -68,7 +68,9 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             )?;
             self.indent -= 1;
             self.line("}");
-            self.finish_variant_join(continuation.expr, &continuation.temporary)?;
+            if continuation.expr.ty != ResolvedType::Never {
+                self.finish_variant_join(continuation.expr, &continuation.temporary)?;
+            }
             value = CValue {
                 code: continuation.temporary,
                 ty: continuation.expr.ty.clone(),
@@ -92,6 +94,9 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         temporary: &str,
         value: &CValue,
     ) -> Result<(), Diagnostic> {
+        if value.ty == ResolvedType::Never {
+            return Ok(());
+        }
         if self.plan_owned_leaf_result(&expr.ty) {
             let plan = self
                 .bytes_plan

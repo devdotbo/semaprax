@@ -43,6 +43,7 @@ impl NativeResourceAbi {
         ty: &ResolvedType,
     ) -> Result<&'a str, Diagnostic> {
         match ty {
+            ResolvedType::Never => Err(resource_error("Never has no native resource ABI")),
             ResolvedType::Unit => Err(resource_error(
                 "unit has no ordinary native value representation",
             )),

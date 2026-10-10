@@ -56,6 +56,8 @@ mod executable_aggregate;
 mod executable_generic_function;
 #[path = "cleanup_backends/executable_generic_record.rs"]
 mod executable_generic_record;
+#[path = "cleanup_backends/lexical_exits.rs"]
+mod lexical_exits;
 #[path = "cleanup_backends/executable_owning_closure.rs"]
 mod executable_owning_closure;
 #[path = "cleanup_backends/executable_record_pattern.rs"]

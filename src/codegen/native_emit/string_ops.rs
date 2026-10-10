@@ -9,6 +9,9 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         &mut self,
         ty: &ResolvedType,
     ) -> Result<String, Diagnostic> {
+        if *ty == ResolvedType::Never {
+            return Ok(String::new());
+        }
         if matches!(ty, ResolvedType::ArrayU8(0)) {
             return Ok("UINT8_C(0)".to_owned());
         }

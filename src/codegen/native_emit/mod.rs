@@ -29,6 +29,7 @@ mod mutable;
 mod once;
 mod read_snapshot;
 use contract_status::{contract_label, emit_contract_status};
+mod context;
 mod expression;
 mod filesystem_io;
 mod filesystem_io_v2;
@@ -1902,6 +1903,7 @@ fn emit_function(
         &mut function_body,
         variables,
         function,
+        execution,
         emission,
         bytes_plan.as_ref(),
         borrowed_aggregate_bytes,
@@ -1953,8 +1955,7 @@ fn emit_function(
         .map(|(index, _)| index)
         .collect::<Vec<_>>();
     if !borrowed_params.is_empty() || !borrowed_byte_params.is_empty() {
-        emitter
-            .line("const bool spx_borrowed_str_root = spx_ctx->call_depth == UINT32_C(0);");
+        emitter.line("const bool spx_borrowed_str_root = spx_ctx->call_depth == UINT32_C(0);");
         emitter.line("if (spx_ctx->borrowed_str_depth == UINT32_MAX) spx_runtime_invariant_failure(\"borrowed str call depth exhausted\");");
         emitter.line("if (spx_borrowed_str_root) {");
         emitter.indent += 1;
@@ -2019,16 +2020,31 @@ fn emit_function(
     emitter.try_target_enabled = true;
     let body = emitter.emit_expr(&function.body)?;
     emitter.try_target_enabled = false;
-    emitter.require_type(&body.ty, &function.return_type, "function body")?;
-    if matches!(body.ty, ResolvedType::String) && emitter.owned_strings.is_some() {
-        emitter.string_move("spx_result", &body.code);
-    } else if !owned(&body.ty) && emitter.record_contains_owned_bytes(&body.ty)? {
-        emitter.move_owned_record_fields("spx_result", &body.code, &body.ty)?;
-    } else if !owned(&body.ty) {
-        emitter.line(&format!("spx_result = {};", body.code));
+    emitter.require_flow_type(&body.ty, &function.return_type, "function body")?;
+    if body.ty != ResolvedType::Never {
+        if matches!(body.ty, ResolvedType::String) && emitter.owned_strings.is_some() {
+            emitter.string_move("spx_result", &body.code);
+        } else if !owned(&body.ty) && emitter.record_contains_owned_bytes(&body.ty)? {
+            emitter.move_owned_record_fields("spx_result", &body.code, &body.ty)?;
+        } else if !owned(&body.ty) {
+            emitter.line(&format!("spx_result = {};", body.code));
+        }
     }
     if has_try {
         emitter.line("spx_result_staged = true;");
+    }
+    if has_try
+        || function
+            .cleanup_plan
+            .lexical_control
+            .as_deref()
+            .is_some_and(|control| {
+                control
+                    .exits
+                    .iter()
+                    .any(|exit| exit.kind == crate::ast::LexicalExitKind::Return)
+            })
+    {
         emitter.label("spx_postconditions");
     }
 
@@ -2383,6 +2399,7 @@ struct CEmitter<'a, O: COutput> {
     /// String. Carrier shape alone never enters this set.
     resource_text_views: BTreeSet<ValueId>,
     function: &'a ResolvedFunction,
+    execution: &'a FunctionExecutionId,
     functions: &'a HashMap<FunctionExecutionId, CFunction>,
     record_layouts: &'a AggregateLayoutCache,
     variant_layouts: &'a VariantLayoutCache,
@@ -2400,40 +2417,6 @@ struct CEmitter<'a, O: COutput> {
 }
 
 impl<'a, O: COutput> CEmitter<'a, O> {
-    fn new(
-        output: &'a mut O,
-        variables: HashMap<ValueId, CBinding>,
-        function: &'a ResolvedFunction,
-        emission: &'a NativeEmissionContext<'a>,
-        bytes_plan: Option<&'a native_bytes::NativeBytesPlan>,
-        borrowed_aggregate_bytes: HashMap<(ValueId, Vec<DeclarationId>), String>,
-        track_strings: bool,
-    ) -> Self {
-        Self {
-            output,
-            program: emission.program,
-            resource_abi: emission.resource_abi,
-            variables,
-            mutable_bindings: BTreeSet::new(),
-            resource_text_views: BTreeSet::new(),
-            function,
-            functions: emission.functions,
-            record_layouts: emission.record_layouts,
-            variant_layouts: emission.variant_layouts,
-            return_type: &function.return_type,
-            bytes_plan,
-            borrowed_aggregate_bytes,
-            output_profile: emission.output_profile,
-            semantic_metered: false,
-            owned_strings: track_strings.then(owned_strings::OwnedStrings::default),
-            try_target_enabled: false,
-            string_owner_moves: crate::literal_format::moving_string_operands(function),
-            string_condition_reads: crate::string_ops::conditions::function_reads(function),
-            next_local: 0,
-            indent: 1,
-        }
-    }
-
     fn line(&mut self, value: &str) {
         for _ in 0..self.indent {
             self.output.push_str("    ");

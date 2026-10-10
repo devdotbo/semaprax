@@ -34,7 +34,7 @@ pub(super) fn block_anchors(
                 Some(value)
             }
             ResolvedStatement::Unsafe { body, .. } => Some(body.as_ref()),
-            ResolvedStatement::While { .. } => None,
+            ResolvedStatement::While { .. } | ResolvedStatement::LexicalWhile { .. } => None,
         };
         if let Some(value) = value {
             let storage = StorageId::Temporary(value.id.clone());
