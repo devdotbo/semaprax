@@ -386,3 +386,94 @@ pub(super) fn transfer(
     }
     Ok(())
 }
+
+/// Compare finalizers directly with borrowed live history. No ownership set,
+/// conditional guard copies, or replacement cleanup order is materialized.
+#[allow(clippy::too_many_arguments)]
+pub(super) fn exit(
+    function: &ResolvedFunction,
+    exit: &ExitTarget,
+    mut state: PathState,
+    storage_regions: &BTreeMap<StorageId, CleanupRegionId>,
+    storage: &BTreeSet<StorageId>,
+    leaves: &Leaves,
+    extra_disposed: &BTreeSet<StorageId>,
+    budget: &mut ReplayBudget,
+) -> Result<ExitFlow, Diagnostic> {
+    if state.published {
+        return Err(replay_error(function, "cleanup exit follows publication"));
+    }
+    if !state.conditional_variants.is_empty() {
+        return Err(replay_error(
+            function,
+            "selected primitive exit has conditional ownership",
+        ));
+    }
+    let protected = match &exit.continuation {
+        ExitContinuation::CommitResult {
+            source: CleanupResultSource::Owned { storage },
+        } => Some(storage),
+        _ => None,
+    };
+    if let Some(result) = protected {
+        // Preserve ordinary unknown/empty-place refusal before finalizer checks.
+        path_join::storage::validate_place(function, result, storage, leaves, budget)?;
+    }
+    let protects = |flag: &LivenessFlagId| {
+        protected.is_some_and(|place| {
+            let leaf = &leaves[flag];
+            leaf.place.storage == place.storage
+                && leaf.place.projections.starts_with(&place.projections)
+        })
+    };
+    let leaves_region = |flag: &LivenessFlagId| {
+        let leaf = &leaves[flag];
+        exit.leaves_regions
+            .contains(&storage_regions[&leaf.place.storage])
+            || extra_disposed.contains(&leaf.place.storage)
+    };
+    let expected = state
+        .live_order
+        .iter()
+        .rev()
+        .filter(|flag| leaves_region(flag) && !protects(flag));
+    let actual = exit.finalize_in_order.iter().filter_map(|action| {
+        state
+            .live_order
+            .contains(&action.guard_flag)
+            .then_some(&action.guard_flag)
+    });
+    if expected.ne(actual) {
+        return Err(replay_error(
+            function,
+            format!(
+                "exit {} does not finalize its live region leaves in reverse initialization order",
+                exit.id.0
+            ),
+        ));
+    }
+    if exit
+        .finalize_in_order
+        .iter()
+        .any(|action| action.active_case.is_some())
+    {
+        return Err(replay_error(
+            function,
+            "exit does not preserve exact conditional variant finalizers",
+        ));
+    }
+    state
+        .live_order
+        .retain(|flag| !(leaves_region(flag) && !protects(flag)));
+    if state.live_order.iter().any(|flag| {
+        exit.leaves_regions
+            .contains(&storage_regions[&leaves[flag].place.storage])
+            && !protects(flag)
+    }) {
+        return Err(replay_error(
+            function,
+            "cleanup exit retains a live non-result leaf in a region it leaves",
+        ));
+    }
+    transition::finish_exit(function, exit, state, storage, leaves, budget)
+}

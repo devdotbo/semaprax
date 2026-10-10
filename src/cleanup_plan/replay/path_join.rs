@@ -284,6 +284,7 @@ pub(super) fn validate_path_states(
                         storage,
                         leaves,
                         extra,
+                        budget,
                     )? {
                         ExitFlow::Edge(edge, continued) => {
                             let target = plan.edges[edge.0 as usize].to;

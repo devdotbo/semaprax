@@ -26,6 +26,8 @@ impl PhysicalReservation {
         }
     }
 
+    pub(crate) fn charged(&self) -> usize { self.charged }
+
     /// No allocation or refund occurs here. Failed requests cannot subsequently
     /// authorize even a zero-byte construction through this ledger.
     pub(crate) fn reserve(&mut self, bytes: usize) -> Result<(), PhysicalRefusal> {

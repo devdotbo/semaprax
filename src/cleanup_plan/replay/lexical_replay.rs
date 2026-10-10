@@ -58,7 +58,7 @@ pub(super) fn validate_with_index(
         helpers,
     )?;
 
-    let facts = lexical_hir::collect(function)?;
+    let facts = lexical_hir::collect(function, budget)?;
     let return_operands = facts
         .exits
         .iter()

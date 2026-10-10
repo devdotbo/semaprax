@@ -562,7 +562,20 @@ pub(super) fn replay_exit(
     storage: &BTreeSet<StorageId>,
     leaves: &Leaves,
     extra_disposed: &BTreeSet<StorageId>,
+    budget: &mut ReplayBudget,
 ) -> Result<ExitFlow, Diagnostic> {
+    if budget.physical.is_some() {
+        return transition_storage::exit(
+            function,
+            exit,
+            state,
+            storage_regions,
+            storage,
+            leaves,
+            extra_disposed,
+            budget,
+        );
+    }
     if state.published {
         return Err(replay_error(function, "cleanup exit follows publication"));
     }
@@ -671,6 +684,17 @@ pub(super) fn replay_exit(
         ));
     }
 
+    finish_exit(function, exit, state, storage, leaves, budget)
+}
+
+pub(super) fn finish_exit(
+    function: &ResolvedFunction,
+    exit: &ExitTarget,
+    mut state: PathState,
+    storage: &BTreeSet<StorageId>,
+    leaves: &Leaves,
+    budget: &mut ReplayBudget,
+) -> Result<ExitFlow, Diagnostic> {
     match &exit.continuation {
         ExitContinuation::Continue(edge) | ExitContinuation::LoopBreak { edge, .. } => {
             if state.pending_failure.is_some() || state.selected_failure.is_some() {
@@ -717,7 +741,9 @@ pub(super) fn replay_exit(
                     {
                         true
                     } else {
-                        let flags = validate_place(function, result, storage, leaves)?;
+                        let flags = path_join::storage::validate_place(
+                            function, result, storage, leaves, budget,
+                        )?;
                         flags.iter().all(|flag| state.live_order.contains(flag))
                     };
                     if !held {
@@ -726,6 +752,7 @@ pub(super) fn replay_exit(
                             "owned function return has an incomplete provisional result",
                         ));
                     }
+                    budget.reserve_clone(function, result, "returned provisional place")?;
                     ReturnedSource::Owned(result.clone())
                 }
             });
@@ -782,7 +809,10 @@ pub(super) fn replay_exit(
                             "scalar result commits before non-result cleanup completes",
                         ));
                     }
-                    if state.returned.is_none() && expression_has_try(&function.body) {
+                    if state.returned.is_none()
+                        && budget.physical.is_none()
+                        && expression_has_try(&function.body)
+                    {
                         let staged = state.staged_copy_result.take().ok_or_else(|| {
                             replay_error(
                                 function,
@@ -811,7 +841,9 @@ pub(super) fn replay_exit(
                         }
                         state.conditional_variants.remove(index);
                     } else {
-                        let result_flags = validate_place(function, result, storage, leaves)?;
+                        let result_flags = path_join::storage::validate_place(
+                            function, result, storage, leaves, budget,
+                        )?;
                         if result_flags
                             .iter()
                             .any(|flag| !state.live_order.contains(flag))
@@ -822,8 +854,12 @@ pub(super) fn replay_exit(
                             "owned result commit has incomplete result or remaining non-result ownership",
                         ));
                         }
-                        let result_flags = result_flags.into_iter().collect::<BTreeSet<_>>();
-                        state.live_order.retain(|flag| !result_flags.contains(flag));
+                        if budget.physical.is_some() {
+                            state.live_order.clear();
+                        } else {
+                            let result_flags = result_flags.into_iter().collect::<BTreeSet<_>>();
+                            state.live_order.retain(|flag| !result_flags.contains(flag));
+                        }
                     }
                 }
             }

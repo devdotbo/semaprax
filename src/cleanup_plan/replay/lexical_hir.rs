@@ -44,7 +44,10 @@ pub(super) struct LexicalFacts<'a> {
 /// resolved tree, so a deeper tree fails closed here rather than recursing.
 const MAX_SCAN_DEPTH: usize = 512;
 
-pub(super) fn collect<'a>(function: &'a ResolvedFunction) -> Result<LexicalFacts<'a>, Diagnostic> {
+pub(super) fn collect<'a>(
+    function: &'a ResolvedFunction,
+    budget: &mut ReplayBudget,
+) -> Result<LexicalFacts<'a>, Diagnostic> {
     let mut facts = LexicalFacts {
         exits: Vec::new(),
         loops: Vec::new(),
@@ -55,16 +58,26 @@ pub(super) fn collect<'a>(function: &'a ResolvedFunction) -> Result<LexicalFacts
         ensures_boundaries: Vec::new(),
     };
     for clause in &function.requires {
-        facts
-            .requires_boundaries
-            .extend(contract_boundaries(function, clause)?);
+        let boundaries = contract_boundaries(function, clause, budget)?;
+        budget.reserve_vec(
+            function,
+            &mut facts.requires_boundaries,
+            boundaries.len(),
+            "required contract boundaries",
+        )?;
+        facts.requires_boundaries.extend(boundaries);
     }
     for clause in &function.ensures {
-        facts
-            .ensures_boundaries
-            .extend(contract_boundaries(function, clause)?);
+        let boundaries = contract_boundaries(function, clause, budget)?;
+        budget.reserve_vec(
+            function,
+            &mut facts.ensures_boundaries,
+            boundaries.len(),
+            "ensured contract boundaries",
+        )?;
+        facts.ensures_boundaries.extend(boundaries);
     }
-    facts.body_completes = scan(function, &function.body, &mut facts, 0)?;
+    facts.body_completes = scan(function, &function.body, &mut facts, 0, budget)?;
     Ok(facts)
 }
 
@@ -73,6 +86,7 @@ pub(super) fn collect<'a>(function: &'a ResolvedFunction) -> Result<LexicalFacts
 fn contract_boundaries<'a>(
     function: &'a ResolvedFunction,
     clause: &'a ResolvedExpr,
+    budget: &mut ReplayBudget,
 ) -> Result<Vec<&'a ExpressionId>, Diagnostic> {
     let mut facts = LexicalFacts {
         exits: Vec::new(),
@@ -83,7 +97,7 @@ fn contract_boundaries<'a>(
         requires_boundaries: Vec::new(),
         ensures_boundaries: Vec::new(),
     };
-    let completes = scan(function, clause, &mut facts, 0)?;
+    let completes = scan(function, clause, &mut facts, 0, budget)?;
     if !completes || !facts.exits.is_empty() || !facts.loops.is_empty() || facts.tries != 0 {
         return Err(replay_error(
             function,
@@ -100,12 +114,16 @@ fn scan<'a>(
     expression: &'a ResolvedExpr,
     facts: &mut LexicalFacts<'a>,
     depth: usize,
+    budget: &mut ReplayBudget,
 ) -> Result<bool, Diagnostic> {
     if depth > MAX_SCAN_DEPTH {
         return Err(replay_error(
             function,
             "lexical flow scan exceeds the admitted expression depth",
         ));
+    }
+    if budget.physical.is_some() {
+        budget.charge(function, 1, "selected lexical HIR facts")?;
     }
     match &expression.kind {
         ResolvedExprKind::LexicalExit {
@@ -114,13 +132,14 @@ fn scan<'a>(
             value,
         } => {
             if let Some(operand) = value {
-                if !scan(function, operand, facts, depth + 1)? {
+                if !scan(function, operand, facts, depth + 1, budget)? {
                     return Err(replay_error(
                         function,
                         "lexical exit operand has no normal completion",
                     ));
                 }
             }
+            budget.reserve_vec(function, &mut facts.exits, 1, "lexical exit facts")?;
             facts.exits.push(ExitFact {
                 expression,
                 kind: *kind,
@@ -134,17 +153,23 @@ fn scan<'a>(
                 let completes = match statement {
                     ResolvedStatement::Let { value, .. }
                     | ResolvedStatement::Assign { value, .. } => {
-                        scan(function, value, facts, depth + 1)?
+                        scan(function, value, facts, depth + 1, budget)?
                     }
                     ResolvedStatement::Unsafe { body, .. } => {
-                        scan(function, body, facts, depth + 1)?
+                        scan(function, body, facts, depth + 1, budget)?
                     }
                     ResolvedStatement::While {
                         condition, body, ..
                     } => {
-                        let entered = scan(function, condition, facts, depth + 1)?;
+                        let entered = scan(function, condition, facts, depth + 1, budget)?;
+                        budget.reserve_vec(
+                            function,
+                            &mut facts.boundaries,
+                            1,
+                            "lexical loop boundaries",
+                        )?;
                         facts.boundaries.push(&condition.id);
-                        scan(function, body, facts, depth + 1)?;
+                        scan(function, body, facts, depth + 1, budget)?;
                         entered
                     }
                     ResolvedStatement::LexicalWhile {
@@ -153,9 +178,16 @@ fn scan<'a>(
                         latch,
                         ..
                     } => {
-                        let entered = scan(function, condition, facts, depth + 1)?;
+                        let entered = scan(function, condition, facts, depth + 1, budget)?;
+                        budget.reserve_vec(
+                            function,
+                            &mut facts.boundaries,
+                            1,
+                            "lexical loop boundaries",
+                        )?;
                         facts.boundaries.push(&condition.id);
-                        let body_completes = scan(function, body, facts, depth + 1)?;
+                        let body_completes = scan(function, body, facts, depth + 1, budget)?;
+                        budget.reserve_vec(function, &mut facts.loops, 1, "lexical loop facts")?;
                         facts.loops.push(LoopFact {
                             condition,
                             body,
@@ -169,32 +201,32 @@ fn scan<'a>(
                     return Ok(false);
                 }
             }
-            scan(function, tail, facts, depth + 1)
+            scan(function, tail, facts, depth + 1, budget)
         }
         ResolvedExprKind::If {
             condition,
             then_branch,
             else_branch,
         } => {
-            if !scan(function, condition, facts, depth + 1)? {
+            if !scan(function, condition, facts, depth + 1, budget)? {
                 return Ok(false);
             }
-            let then_completes = scan(function, then_branch, facts, depth + 1)?;
-            let else_completes = scan(function, else_branch, facts, depth + 1)?;
+            let then_completes = scan(function, then_branch, facts, depth + 1, budget)?;
+            let else_completes = scan(function, else_branch, facts, depth + 1, budget)?;
             Ok(then_completes || else_completes)
         }
         ResolvedExprKind::Match {
             scrutinee, arms, ..
         } => {
-            if !scan(function, scrutinee, facts, depth + 1)? {
+            if !scan(function, scrutinee, facts, depth + 1, budget)? {
                 return Ok(false);
             }
             let mut completes = false;
             for arm in arms {
                 if let Some(guard) = &arm.guard {
-                    scan(function, guard, facts, depth + 1)?;
+                    scan(function, guard, facts, depth + 1, budget)?;
                 }
-                completes |= scan(function, &arm.value, facts, depth + 1)?;
+                completes |= scan(function, &arm.value, facts, depth + 1, budget)?;
             }
             Ok(completes)
         }
@@ -207,7 +239,7 @@ fn scan<'a>(
             }
             let mut index = 0;
             while let Some(child) = replay_expression_child(expression, index) {
-                if !scan(function, child, facts, depth + 1)? {
+                if !scan(function, child, facts, depth + 1, budget)? {
                     return Ok(false);
                 }
                 index += 1;
