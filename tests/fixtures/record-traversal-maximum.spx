@@ -16,7 +16,7 @@ module app.leaf;
  let mut count=0; let mut total=0; let mut good=true;
  for borrow row at index in rows {
   let text=row.title; let data=row.payload; let utf8=str_as_bytes(text);
-  good=good && row.priority==i64_from_usize(index) && str_len_bytes(text)==3 && byte_len(data)==3usize && byte_get(utf8,0usize)==195u8 && byte_get(utf8,1usize)==169u8 && byte_get(utf8,2usize)==0u8 && byte_get(data,0usize)==0u8 && byte_get(data,2usize)==0u8;
+  good=good && row.priority==i64_from_usize(index) && str_len_bytes(text)==3 && byte_len(data)==3usize && (match byte_get(utf8,0usize) { Option::Some { value } => value==195u8, Option::None {} => false, }) && (match byte_get(utf8,1usize) { Option::Some { value } => value==169u8, Option::None {} => false, }) && (match byte_get(utf8,2usize) { Option::Some { value } => value==0u8, Option::None {} => false, }) && (match byte_get(data,0usize) { Option::Some { value } => value==0u8, Option::None {} => false, }) && (match byte_get(data,2usize) { Option::Some { value } => value==0u8, Option::None {} => false, });
   total=total+row.priority; count=count+1; 0
  }
  let renewed=vec_sort_owned<Row>(rows);
