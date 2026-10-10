@@ -47,6 +47,35 @@ impl<'a, 'b> SkeletonWork<'a, 'b> {
         }
     }
 
+    pub(super) fn checked_with_index(
+        program: &'a dyn crate::cleanup::ReplayContext,
+        function: &'a ResolvedFunction,
+        budget: &'b mut ReplayBudget,
+        index: Option<&'a crate::loop_calls::byte_writer::ModuleIndex<'a>>,
+    ) -> Result<Self, Diagnostic> {
+        if budget.physical.is_none() {
+            return Ok(Self::with_index(program, function, budget, index));
+        }
+        let owner = selected_owner::owner(program, function, budget)?;
+        let physical = budget.physical.as_deref_mut().ok_or_else(|| {
+            replay_error(function, "selected skeleton has no physical reservation")
+        })?;
+        let renewal_bindings = crate::cleanup_plan::renewal_profile::bindings_with_reservation(
+            program, function, physical,
+        )?;
+        // The selected entry independently excludes literal formatting and
+        // owned String condition-place reads before this constructor. Those
+        // specialized legacy indexes must not be constructed then discarded.
+        Ok(Self {
+            function,
+            budget,
+            renewal_bindings,
+            string_owner_moves: BTreeSet::new(),
+            string_condition_reads: BTreeSet::new(),
+            owner: Some(owner),
+        })
+    }
+
     pub(super) fn renewal_binding(
         &self,
         at: &crate::hir::ExpressionId,

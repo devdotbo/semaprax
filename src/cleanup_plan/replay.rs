@@ -3186,7 +3186,7 @@ fn hir_skeleton_paths_with_index(
     budget: &mut ReplayBudget,
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
 ) -> Result<Vec<SkeletonPath>, Diagnostic> {
-    let mut work = SkeletonWork::with_index(program, function, budget, helpers);
+    let mut work = SkeletonWork::checked_with_index(program, function, budget, helpers)?;
     let mut paths = work.singleton_path(empty_expr_path(), "HIR root path")?;
     for contract in &function.requires {
         paths = sequence_expression(program, function, paths, contract, &mut work)?;
