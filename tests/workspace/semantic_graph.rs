@@ -461,6 +461,7 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
         // These helpers are deliberately visible only inside workspace_graph;
         // the exact list prevents the analysis facade from growing silently.
         "pub(super) mod cost;",
+        "pub(super) mod statement_segment;",
         "pub(super) mod uncached_peak;",
         "pub(super) use uncached_peak::{",
         "pub(super) struct SyntheticBuilderCosts {",
@@ -480,6 +481,8 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
         "pub(super) fn rewrite_type(",
         "pub(super) fn collect_expected_edges(",
         "pub(super) fn verify_resolved_call_edges(",
+        "pub(super) fn collect_edges(",
+        "pub(super) fn verify(",
     ];
     assert_eq!(
         projection_root

@@ -26,7 +26,7 @@ record SortItem {
 }
 
 @id("catalog.result")
-record Result {
+record CatalogResult {
     @id("catalog.result.valid")
     valid: bool,
     @id("catalog.result.report")
