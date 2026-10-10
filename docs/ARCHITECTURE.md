@@ -1067,6 +1067,18 @@ use `vec_get`; owning-record reads use scoped `vec_field` borrows. Nested helper
 keep the admitted root borrow and exact field paths rather than staging a
 projected nominal record argument. Generated helper names grant no HIR authority.
 
+`collection_response/writer` owns shared ordinary source helpers for both finite
+response selectors. They write literals, decimal integers and escaped UTF-8 into
+one exactly sized bounded Bytes owner, then perform the ordinary final UTF-8
+String copy. The compiler admits helper renewal from a bounded transitive
+source/HIR closure proof in `src/loop_calls/byte_writer`, independently of codec
+names. `graph/byte_helper_renewal` projects distinct Graph v76 authority;
+`workspace_graph/source_schema/byte_helper` replays retained declaration and
+callee bodies without cloning an entire program. Cleanup v19 composes helper
+renewal with optional lexical certificates; `cache_codec/lexical_cleanup`
+retains all earlier byte encodings and appends that optional control only for
+v19. The grouped executable gates remain pending.
+
 ### Semantic graph
 
 `src/graph.rs` and `src/graph_cleanup.rs` project validated program and cleanup
@@ -1170,6 +1182,15 @@ builder and replay; CleanupPlan v17 restores the binding's reserved history
 without changing v15 or v16 meaning. `src/graph/byte_buffer_renewal.rs` composes
 Graph v70 and projects the exact function, expression, and binding identities.
 [Same-Owner Byte-Buffer Renewal v1](BYTE-BUFFER-RENEWAL-V1.md) owns the boundary.
+
+The separate `bytes_zeroed_bounded` operation keeps its literal upper bound in
+source/HIR capacity authority and checks the computed requested length before
+allocation. Native and Core-Wasm lowering reuse the existing zeroed allocator
+only after the normalized bounds failure gate. Physical allocator exhaustion
+remains fail-stop on the production String/Bytes routes. The explicit-context
+C kernel under `native_emit/checked_string_allocation` is a private precursor:
+its registered native probe and [allocation contract](CHECKED-STRING-ALLOCATION-V1.md)
+do not confer production cleanup, status-token or application-outcome authority.
 
 `src/graph/owned_string_byte_view.rs` selects additive Graph v71 only when
 validated byte-slice provenance has the exact fused owned-String root kind;

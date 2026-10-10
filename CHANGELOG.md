@@ -1,5 +1,23 @@
 # Changelog
 
+- Render derived application JSON responses through ordinary functional Bytes
+  writers after complete length preflight. Add exact runtime-sized bounded
+  allocation, independently proved nonallocating helper renewal, selective
+  cleanup v19 and graph v76, and retained-workspace/cache/backend composition.
+  Preserve wire ordering, escaping, limits, source authority and old profiles.
+  Grouped executable qualification and physical/task-cost measurements remain
+  pending; no measured efficiency improvement is claimed.
+
+- Repair Copy-record Vec shared-read classification, authored multi-key sort
+  renewal arity, absent-sort workspace allocation, exact scratch-refusal
+  witnesses and lexical latch replay order. Retain fixed budgets and independent
+  hostile checks; replace malformed fixtures with admitted source cases.
+
+- Specify recoverable String allocation and author a private explicit-context C
+  kernel plus physical failure probes. Production proof, code generation,
+  interpreter/Wasm injection and typed application outcome integration remain
+  open; this private precursor does not complete OPT #724.
+
 - Author statement-tail lexical break, continue and return with independently
   bound function/nearest-loop targets, source-for latches, selective cleanup v18
   and loan v3. Preserve accepted acyclic returns and old schema bytes; keep
