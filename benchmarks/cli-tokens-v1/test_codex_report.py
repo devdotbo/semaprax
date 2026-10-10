@@ -2,7 +2,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
-from codex_report import recount, summarize
+from codex_report import acceptance_times, recount, summarize
 
 
 def row(arm, number, status='accepted', cost=1):
@@ -13,6 +13,24 @@ def row(arm, number, status='accepted', cost=1):
 
 
 class ReportTests(unittest.TestCase):
+    def test_acceptance_subprocess_sum_does_not_claim_full_wall(self):
+        receipt = {'acceptance': {'build': {'seconds': 2}, 'candidate_tests': {'seconds': 3},
+            'checks': [{'seconds': 4}], 'boundary_checks': [{'seconds': 5}]}}
+        self.assertEqual(acceptance_times(receipt), (None, 14))
+        receipt['acceptance_elapsed_seconds'] = 17
+        self.assertEqual(acceptance_times(receipt), (17, 14))
+        del receipt['acceptance']['checks'][0]['seconds']
+        self.assertEqual(acceptance_times(receipt), (17, None))
+
+    def test_per_accepted_wall_includes_rejected_attempts_and_unknown_is_null(self):
+        data = {'campaign': {'trial_order': ['semaprax', 'typescript', 'typescript', 'semaprax']}}
+        rows = [row('semaprax', 1), row('typescript', 1), row('typescript', 2), row('semaprax', 2, 'not_accepted')]
+        arm = summarize(data, rows)['arms']['semaprax']
+        self.assertEqual(arm['wall_seconds_per_accepted_task_including_failures']['agent_wall_seconds'], 20)
+        rows[-1]['acceptance_wall_seconds'] = None
+        arm = summarize(data, rows)['arms']['semaprax']
+        self.assertIsNone(arm['wall_seconds_per_accepted_task_including_failures']['acceptance_wall_seconds'])
+
     def test_interrupted_paid_row_keeps_unknown_usage_cost_and_wall_time(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / 'results.json'

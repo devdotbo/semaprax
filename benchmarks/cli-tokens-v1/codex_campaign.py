@@ -646,8 +646,10 @@ def launch_trial(repo: Path, artifacts: Path, commit: str, trial: dict[str, Any]
         if guard_error:
             legacy.invalidate_trial_acceptance(row, guard_error)
         else:
+            acceptance_started = time.monotonic()
             row["acceptance"] = legacy.check_program_for_campaign(candidate, settings["timeout_seconds"],
                 env, settings, arm, artifacts / "qualification" / label)
+            row["acceptance_elapsed_seconds"] = time.monotonic() - acceptance_started
             row["status"] = "accepted" if row["acceptance"]["accepted"] else "not_accepted"
             if row["status"] != "accepted": row["failure"] = "candidate failed independent acceptance"
     if tooling:

@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import statistics
 from pathlib import Path
 import codex_campaign as campaign
@@ -16,6 +17,20 @@ def digest(path: Path) -> str:
 def require(condition: bool, message: str) -> None:
     if not condition:
         raise ValueError(message)
+
+
+def acceptance_times(original: dict) -> tuple[float | None, float | None]:
+    """Full measured harness wall and historical subprocess subtotal are distinct."""
+    def duration(value):
+        return value if isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value) and value >= 0 else None
+    acceptance = original.get('acceptance')
+    if not isinstance(acceptance, dict):
+        return None, None
+    phases = [acceptance.get(key) for key in ('build', 'candidate_tests')]
+    phases += acceptance.get('checks', []) + acceptance.get('boundary_checks', [])
+    times = [duration(phase.get('seconds')) if isinstance(phase, dict) else None for phase in phases]
+    subtotal = sum(times) if times and all(value is not None for value in times) else None
+    return duration(original.get('acceptance_elapsed_seconds')), subtotal
 
 
 def summarize(data: dict, rows: list[dict]) -> dict:
@@ -41,6 +56,11 @@ def summarize(data: dict, rows: list[dict]) -> dict:
             'conditional_api_equivalent_usd_all_attempts': total_cost,
             'conditional_api_equivalent_usd_per_accepted_task': total_cost / accepted if total_cost is not None and accepted else None,
             'actual_billed_usd_per_accepted_task': None,
+            'wall_seconds_per_accepted_task_including_failures': {
+                key: (sum(values) / accepted if accepted and values and all(value is not None for value in values) else None)
+                for key in ('agent_wall_seconds', 'acceptance_wall_seconds')
+                for values in ([row[key] for row in attempted],)
+            },
             'metrics_all_attempts': {key: metric(key) for key in (
                 'model_requests', 'raw_input_tokens', 'cached_input_tokens', 'cache_write_input_tokens',
                 'legacy_net_input_tokens', 'output_tokens', 'final_authored_tokens_proxy', 'agent_wall_seconds', 'acceptance_wall_seconds')},
@@ -89,6 +109,7 @@ def recount(path: Path) -> dict:
             for key in ('workspace_integrity_before_acceptance', 'workspace_integrity_before_archive', 'workspace_integrity_before_cleanup'):
                 require(original[key]['status'] == 'passed', f'{label}: accepted with failed integrity')
         usage = observed.get('request_usage_sum', {}) if observed.get('reconciled') else {}
+        acceptance_wall, acceptance_subprocess = acceptance_times(original)
         rows.append({
             'arm': original['arm'], 'number': original['number'], 'status': original['status'],
             'failure': original['failure'], 'resource_assessment': original.get('resource_assessment', {}),
@@ -99,9 +120,8 @@ def recount(path: Path) -> dict:
             'legacy_net_input_tokens': observed.get('legacy_net_input_tokens'),
             'final_authored_tokens_proxy': metrics.get('total_tokens'),
             'agent_wall_seconds': original.get('elapsed_seconds'),
-            'acceptance_wall_seconds': sum(original.get('acceptance', {}).get(key, {}).get('seconds', 0) for key in ('build', 'candidate_tests'))
-                + sum(check.get('seconds', 0) for check in original.get('acceptance', {}).get('checks', [])
-                    + original.get('acceptance', {}).get('boundary_checks', [])),
+            'acceptance_wall_seconds': acceptance_wall,
+            'acceptance_subprocess_seconds': acceptance_subprocess,
             'conditional_api_equivalent_usd': price['standard_short_context_api_equivalent_usd'],
             'evidence_sha256': {key: digest(value) for key, value in (('exec', stream), ('rollout', trace)) if value is not None and value.is_file()},
         })
@@ -122,6 +142,7 @@ def recount(path: Path) -> dict:
         },
         'fixed_harness_context_tokens': None,
         'fixed_harness_context_note': 'No per-request system/tool/task/history composition is exposed. Calibration is separate and is never subtracted.',
+        'acceptance_wall_note': 'Full harness monotonic duration only when recorded; historical subprocess subtotal is separate and cannot establish full wall time.',
         'calibration_separate': data['calibration'],
     })
     return result

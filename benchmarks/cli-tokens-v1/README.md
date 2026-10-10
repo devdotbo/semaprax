@@ -160,3 +160,11 @@ Fresh Codex plans require `--compiler-build-receipt` to bind the selected compil
 source, binary, actual build command and retained log. This is a byte binding;
 independent hosted-build provenance still needs verification. See
 [LIVE-CAMPAIGN.md](LIVE-CAMPAIGN.md). Saved historical recounts are unchanged.
+
+Future Codex attempts retain the full monotonic acceptance harness duration as
+`acceptance_elapsed_seconds`. Recounts call only this recorded duration
+`acceptance_wall_seconds`; historical build/test/check subprocess sums remain
+separate `acceptance_subprocess_seconds`, with missing phase measurements null.
+Wall per accepted task includes all attempted tasks, including rejected ones;
+a zero accepted denominator or incomplete measurements remains unavailable.
+These accounting fields do not revise any retained campaign or imply a gain.
