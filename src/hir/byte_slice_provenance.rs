@@ -19,6 +19,7 @@ use super::nodes::{
 };
 use super::{hir_error, DeclarationIndex, Place, PlaceProjection};
 
+mod inline_range;
 mod vec_field;
 
 const MAX_PATTERN_ORIGIN_FIELDS: usize = 64;
@@ -343,7 +344,8 @@ pub(super) fn derive_byte_slice_provenance(
                     pending.extend(args);
                 }
                 ResolvedExprKind::Call { args, .. }
-                | ResolvedExprKind::LiteralFormat { args, .. } | ResolvedExprKind::VecFieldRead { args, .. } => pending.extend(args),
+                | ResolvedExprKind::LiteralFormat { args, .. }
+                | ResolvedExprKind::VecFieldRead { args, .. } => pending.extend(args),
                 ResolvedExprKind::ByteRange {
                     source, start, end, ..
                 } => {
@@ -639,24 +641,29 @@ pub(super) fn derive_byte_slice_provenance(
                 {
                     return true;
                 }
-                let ResolvedExprKind::Place(place) = &source.kind else {
-                    return true;
-                };
-                if !place.projections.is_empty()
-                    || source.ty != ResolvedType::SliceU8
-                    || source.ownership != OwnershipMode::Borrow
-                {
+                if source.ty != ResolvedType::SliceU8 || source.ownership != OwnershipMode::Borrow {
                     return true;
                 }
-                let Some(mut provenance) = facts.get(&place.root).cloned() else {
-                    return true;
+                let (source_root, mut provenance) = match &source.kind {
+                    ResolvedExprKind::Place(place) if place.projections.is_empty() => {
+                        let Some(provenance) = facts.get(&place.root).cloned() else {
+                            return true;
+                        };
+                        (place.root.clone(), provenance)
+                    }
+                    _ => {
+                        let Some(provenance) = inline_range::origin(source, &root_types) else {
+                            return true;
+                        };
+                        (provenance.root.clone(), provenance)
+                    }
                 };
                 if provenance.ranges.len() >= crate::byte_ops::MAX_RANGE_DEPTH {
                     return true;
                 }
                 provenance.producer = Some(value.id.clone());
                 provenance.ranges.push(ByteSliceRangeStep {
-                    source: place.root.clone(),
+                    source: source_root,
                     producer: value.id.clone(),
                     start: start.id.clone(),
                     end: end.id.clone(),

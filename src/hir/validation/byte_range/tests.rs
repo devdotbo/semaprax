@@ -28,6 +28,43 @@ fn inline_owned_bytes_ranges_retain_named_alias_call_and_graph_origins() {
         .loans
         .iter()
         .any(|loan| loan.cause == crate::loan_plan::LoanCause::SliceView));
+    let ResolvedExprKind::Block { statements, .. } = &main.body.kind else {
+        panic!("main block")
+    };
+    let named = statements
+        .iter()
+        .filter_map(|statement| match statement {
+            ResolvedStatement::Let { binding, value, .. }
+                if binding.name == "view" || binding.name == "short" =>
+            {
+                Some((binding, value))
+            }
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    for (index, (binding, value)) in named.iter().enumerate() {
+        let provenance = program
+            .declarations
+            .byte_slice_provenance(&binding.id)
+            .unwrap();
+        assert_eq!(
+            provenance.root_kind,
+            crate::hir::ByteSliceRootKind::OwnedBytes
+        );
+        assert_eq!(provenance.projected_type, ResolvedType::Bytes);
+        assert_eq!(
+            provenance.root_length,
+            crate::hir::ByteSliceExtent::ValueLength
+        );
+        assert_eq!(provenance.ranges.len(), index + 1);
+        assert_eq!(provenance.producer.as_ref(), Some(&value.id));
+        if index == 0 {
+            assert_eq!(provenance.ranges[0].source, provenance.root);
+        } else {
+            assert_eq!(provenance.ranges[1].source, named[0].0.id);
+        }
+    }
+    assert_eq!(named.len(), 2);
     crate::codegen::emit_hir_c(&program).unwrap();
     let wasm = crate::wasm::emit_resolved_module(&program).unwrap();
     wasmparser::Validator::new().validate_all(&wasm).unwrap();
