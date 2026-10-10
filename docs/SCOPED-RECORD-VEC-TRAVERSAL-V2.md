@@ -40,6 +40,12 @@ are frozen throughout the loop, including loops that read only Copy fields.
 Mutation, transfer, rebinding and renewal of that carrier are refused inside
 the body. Ordinary owner use resumes after the loop and all view expiries.
 
+Statement-tail `break` and `continue` additionally use the selective
+[Lexical structured exits v1](LEXICAL-STRUCTURED-EXITS-V1.md) profile. Iteration
+views settle before `continue` advances the authenticated index exactly once;
+`break` ends the loop freeze before ordinary root use resumes. This composition
+retains pending executable qualification and the existing nested-for refusal.
+
 ## Independent proof and representation
 
 The additive source statement keeps its row/index spelling in canonical source
@@ -56,12 +62,12 @@ bounded by the same work limit. Workspace replay binds the authored field,
 carrier, index and loop identities to retained HIR, including imported record
 reference edges; replacing a same-typed field is not authorized by its layout.
 
-Only plans containing the new `TraversalFreeze` cause use
-`semaprax.loan-plan.v2`. Its graph cause is `{"kind":"traversal_freeze"}`.
+Without lexical exits, plans containing the new `TraversalFreeze` cause use
+`semaprax.loan-plan.v2`; the selective lexical composition uses loan-plan v3. Its graph cause is `{"kind":"traversal_freeze"}`.
 The origin is the exact whole Vec place, the start is before the complete
 lowered loop region, and its CFG-qualified end follows that region. The
 existing v1 loan count, point, edge and shared work limits remain unchanged.
-Unchanged functions keep `semaprax.loan-plan.v1`; borrowed-root empty plans
+Unchanged functions keep `semaprax.loan-plan.v1`; nonlexical borrowed-root empty plans
 also retain v1 while ordinary HIR proof still checks their traversal freeze.
 Canonical cleanup vectors are never reordered or repaired downstream.
 

@@ -953,8 +953,10 @@ capacity up front or use `vec_reserve_exact<T>(v, additional)`.
 length once, visits elements in ascending index order, and freezes `values`.
 The body result is discarded. Keep the item immutable; do not move, mutate, or
 reassign the vector inside the body. Computed iterable expressions, owned elements,
-consuming traversal, and `break`/`continue` remain outside this `for` form. See
-[Owned Bounded Vec For Traversal v1](OWNED-BOUNDED-VEC-FOR-TRAVERSAL-V1.md).
+and consuming traversal remain outside this `for` form. Statement-tail
+`break`/`continue` use the separate, qualification-pending
+[lexical profile](LEXICAL-STRUCTURED-EXITS-V1.md); `continue` advances once.
+See [Owned Bounded Vec For Traversal v1](OWNED-BOUNDED-VEC-FOR-TRAVERSAL-V1.md).
 
 `for borrow row at index in rows { body }` adds a scoped field-only row view
 for an immutable named vector of an admitted Copy record or flat owned-leaf

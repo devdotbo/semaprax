@@ -26,10 +26,10 @@ pub(super) fn lookup(query: &str) -> Result<String, String> {
             "Lexical structured exits v1: source implementation; executable qualification pending.\n",
             "Inside an admitted loop: if skip { continue; }; if done { break; }; followed by the ordinary body tail. An unconditional exit ends its block: do not append dummy 0 or unreachable effects.\n",
             "break; and continue; target the nearest loop. while continue checks its condition; for/for borrow/for own continue advances the authenticated iterator exactly once without running the body suffix. for own break settles remaining items. No labels or valued break.\n",
-            "return value; targets this function and must have its exact declared result type. Ordinary accepted acyclic guard/terminal returns keep their existing value projection.\n",
+            "return value; targets this function with its exact result type. A loop may hand off a whole named owner; its operand still follows ordinary loop operation/loan rules. Accepted acyclic guard/terminal returns keep their value projection.\n",
             "Exits are direct function/loop/control-block statement tails, never inside initializers, call arguments, aggregates, return operands, closures, unsafe or yields functions. SPX-T312: move the exit to a statement guard. SPX-T313: break/continue need an enclosing loop. SPX-T103/O104: preserve exact result type and owner transfer.\n",
             "Owned returns stage the result before inner cleanup; root locals remain through ensures. Failure never publishes a result; existing staged-argument failure rules remain. A moved outer owner cannot be revived by break/continue.\n",
-            "No public bottom type, ABI, capability, new carrier or old report-profile admission. H006 refuses forged target/latch identities. Cleanup v18 and loan v3 are selective; old functions retain their schemas. Contract and pending gates: docs/LEXICAL-STRUCTURED-EXITS-V1.md.\n"
+            "No public bottom type, ABI, capability, new carrier or old report-profile admission. H006 refuses forged target/latch identities. Cleanup v18 and loan v3 are selective; authenticated Bytes-helper renewal additionally selects v19. Old functions retain their schemas. Contract and pending gates: docs/LEXICAL-STRUCTURED-EXITS-V1.md.\n"
         ).to_owned()),
         "author:stdin-json" => Ok(concat!(
             "Native stream data route (complete guidance; exact library lookup follows):\n",
@@ -67,7 +67,7 @@ pub(super) fn lookup(query: &str) -> Result<String, String> {
         "author:string-from-utf8" => Ok(concat!(
             "Strict owned String construction; current-head executable qualification pending.\n",
             "let view = bytes_as_slice(bytes); let text = string_from_utf8(view);\n",
-            "For pre-sized output, bytes_zeroed_bounded(requested,131072usize) allocates exactly requested bytes; its second operand is a literal bound <=131072. Oversize requests fail before allocation with semaprax.byte-buffer.v1 code 2 (capacity_exceeded). Capacity analysis charges the full literal bound. Allocate outside loops, then fill the bound owner under ordinary replacement/loan rules; bytes_zeroed remains literal-only. Physical allocation exhaustion remains fail-stop. Contract: docs/OWNED-BOUNDED-BYTE-BUFFER-V1.md.\n",
+            "Pre-sized output: bytes_zeroed_bounded(requested,131072usize); literal bound <=131072, fully charged. Oversize fails before allocation with semaprax.byte-buffer.v1 code 2. Allocate outside loops, then fill by same-owner stores or authenticated nonallocating helpers (docs/NONALLOCATING-BYTE-HELPER-RENEWAL-V1.md). Native allocation exhaustion remains fail-stop; bytes_zeroed stays literal-only. Buffer: docs/OWNED-BOUNDED-BYTE-BUFFER-V1.md.\n",
             "The exact signature is string_from_utf8(input: borrow Slice<u8>) -> string (core.string.from_utf8). It reads the borrowed slice for this call and returns a fresh detached String; the input owner stays live only under the ordinary loan rules.\n",
             "Input must be strict UTF-8. Empty input and exact NUL, BOM, noncharacters, and 1/2/3/4-byte scalars are retained byte-for-byte. Overlong, lone-continuation, truncated, surrogate, and >U+10FFFF spellings fail semaprax.convert.v1 code 1 with no result; there is no replacement or normalization.\n",
             "For an admitted command that needs an owned String carrier, select language-command-io.owned-data.v1 (v30). This does not add a public/standalone adapter, ABI, carrier layout, capability, raw-input limit, or lossy conversion.\n",
@@ -123,7 +123,7 @@ pub(super) fn lookup(query: &str) -> Result<String, String> {
             "Scoped record traversal source implementation; executable qualification pending.\n",
             "Use for borrow row in rows or for borrow row at index in rows. rows is an immutable named Vec of an existing admitted explicit monomorphic Copy record or flat owned-leaf record. The length is read once and indices ascend from zero; the optional index is immutable usize.\n",
             "Select row.field: Copy scalars copy, String returns borrow str, Bytes returns borrow Slice<u8>. The row has no aggregate runtime storage and cannot escape. Field views expire within the iteration. Moving, rebinding or mutating the whole Vec inside the loop is refused even for Copy-only rows.\n",
-            "Nested for loops, computed/projected iterable roots, generic rows, primitive Vec<string>, row shadowing and break/continue remain closed. Existing vector capacities and cleanup order are unchanged.\n",
+            "Use statement guards if skip { continue; }; or if done { break; }; under author:lexical-exits. Views settle before continue advances exactly once or break releases the loop freeze. Qualification remains pending. Nested for loops, computed/projected iterable roots, generic rows, primitive Vec<string> and row shadowing remain closed. Existing capacities and cleanup order are unchanged.\n",
             "Exact contract and pending gates: docs/SCOPED-RECORD-VEC-TRAVERSAL-V2.md. Scalar for retains docs/OWNED-BOUNDED-VEC-FOR-TRAVERSAL-V1.md.\n"
         ).to_owned()),
         "author:record-field-views" => Ok(concat!(
@@ -358,6 +358,69 @@ fn footer(word: &str, next: usize, total: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn traversal_and_buffer_cards_match_selective_typed_profiles_without_promoting_qualification() {
+        let traversal = lookup("author:record-traversal").unwrap();
+        let exits = lookup("author:lexical-exits").unwrap();
+        let utf8 = lookup("author:string-from-utf8").unwrap();
+        for card in [&traversal, &exits, &utf8] {
+            assert!(card.len() <= MAX_BYTES);
+            assert!(card.contains("qualification pending"));
+        }
+        assert!(traversal.contains("author:lexical-exits"));
+        assert!(traversal.contains("continue advances exactly once"));
+        assert!(traversal.contains("break releases the loop freeze"));
+        assert!(!traversal.contains("break/continue remain closed"));
+        assert!(exits.contains("Bytes-helper renewal additionally selects v19"));
+        assert!(exits.contains("ordinary loop operation/loan rules"));
+        assert!(utf8.contains("NONALLOCATING-BYTE-HELPER-RENEWAL-V1.md"));
+        assert!(utf8.contains("Native allocation exhaustion remains fail-stop"));
+        assert!(utf8.contains("V10 refuses this intrinsic"));
+
+        // Authenticate the card's source shape through independent typed latch
+        // and freeze reconstruction, without asserting backend qualification.
+        let source = r#"module help.rows;
+@id("help.row") record Row { @id("help.row.priority") priority:i64, }
+@id("help.main") fn main()->i64 {
+ let rows=vec_push<Row>(vec_push<Row>(vec_with_capacity<Row>(2usize),Row{priority:3}),Row{priority:7});
+ let mut seen=0;
+ for borrow row at index in rows {
+  seen=seen+1;
+  if index==0usize {continue;};
+  if row.priority==7 {break;};
+  0
+ }
+ if vec_len<Row>(rows)==2usize {seen+2}else{seen}
+}"#;
+        let checked = semaprax::check(source, "help-record-exits.spx").unwrap();
+        let canonical = semaprax::format::canonical(&checked);
+        let replay = semaprax::check(&canonical, "help-record-exits.spx").unwrap();
+        assert_eq!(canonical, semaprax::format::canonical(&replay));
+        let resolved = semaprax::hir::resolve(&replay).unwrap();
+        semaprax::hir::validate(&resolved).unwrap();
+        let main = resolved
+            .functions
+            .iter()
+            .find(|f| f.id.as_str() == "help.main")
+            .unwrap();
+        let control = main.cleanup_plan.lexical_control.as_ref().unwrap();
+        assert!(control.loops.iter().any(|loop_| matches!(
+            &loop_.latch,
+            semaprax::hir::LoopLatchKind::SourceForStep {
+                kind: semaprax::hir::SourceForKind::BorrowRecord,
+                ..
+            }
+        )));
+        assert!(control
+            .exits
+            .iter()
+            .any(|exit| exit.kind == semaprax::hir::LexicalExitKind::Continue));
+        assert!(control
+            .exits
+            .iter()
+            .any(|exit| exit.kind == semaprax::hir::LexicalExitKind::Break));
+    }
 
     #[test]
     fn explicit_sort_card_is_bounded_and_names_closed_literal_authority() {
