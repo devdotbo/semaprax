@@ -125,3 +125,32 @@ fn owned_payload_renewal_requires_exact_element_mode_and_whole_source() {
         ));
     }
 }
+
+#[test]
+fn lexical_continue_retains_exact_owned_payload_renewal_authority() {
+    let source = SOURCE.replace("i=i+1; 0", "i=i+1; if i==1 { continue; }; 0");
+    let parsed = crate::check(&source, "lexical-owned-loop.spx").unwrap();
+    let program = crate::hir::resolve(&parsed).unwrap();
+    crate::hir::validate(&program).unwrap();
+    let function = &program.functions[0];
+    assert_eq!(bindings_in(&program, function).len(), 2);
+    assert!(
+        !requires(function),
+        "lexical control supplies no declaration authority"
+    );
+    assert!(!requires_with_admission(function, |_, _| None));
+    assert_eq!(
+        function.cleanup_plan.schema,
+        crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V18
+    );
+    assert_eq!(
+        function
+            .cleanup_plan
+            .blocks
+            .iter()
+            .flat_map(|block| &block.transitions)
+            .filter(|transition| matches!(transition, CleanupTransition::ReserveRenewal { .. }))
+            .count(),
+        2
+    );
+}

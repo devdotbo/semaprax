@@ -37,6 +37,9 @@ pub(crate) fn function_has_record_renewal_outside_loop(
                     ResolvedStatement::Unsafe { body, .. } => pending.push((body, in_loop)),
                     ResolvedStatement::While {
                         condition, body, ..
+                    }
+                    | ResolvedStatement::LexicalWhile {
+                        condition, body, ..
                     } => {
                         pending.push((condition, in_loop));
                         pending.push((body, true));
@@ -88,7 +91,9 @@ fn has_record_renewal_candidate(body: &ResolvedExpr) -> bool {
     while let Some(expression) = pending.pop() {
         if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
             for statement in statements {
-                if let ResolvedStatement::While { body, .. } = statement {
+                if let ResolvedStatement::While { body, .. }
+                | ResolvedStatement::LexicalWhile { body, .. } = statement
+                {
                     let mut loop_nodes = vec![body.as_ref()];
                     while let Some(node) = loop_nodes.pop() {
                         if let ResolvedExprKind::Block { statements, .. } = &node.kind {
@@ -125,7 +130,9 @@ fn record_bindings<'a>(
     while let Some(expression) = pending.pop() {
         if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
             for statement in statements {
-                if let ResolvedStatement::While { body, .. } = statement {
+                if let ResolvedStatement::While { body, .. }
+                | ResolvedStatement::LexicalWhile { body, .. } = statement
+                {
                     collect_record_bindings(program, body, &mut found);
                 }
             }
@@ -260,6 +267,9 @@ fn bindings<'a>(
             for statement in statements {
                 if let ResolvedStatement::While {
                     condition, body, ..
+                }
+                | ResolvedStatement::LexicalWhile {
+                    condition, body, ..
                 } = statement
                 {
                     if let Some(protocol) = recognize_scoped(condition, body, owner) {
@@ -342,3 +352,6 @@ fn same_owner(
         && type_arguments.as_slice() == [element.clone()]
         && args.first().is_some_and(|argument| place(argument, &binding.id) && argument.ty == binding.ty && argument.ownership == OwnershipMode::Own))
 }
+
+#[cfg(test)]
+mod tests;

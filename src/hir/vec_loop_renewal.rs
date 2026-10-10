@@ -106,6 +106,9 @@ fn collect<'a>(
                     }
                     ResolvedStatement::While {
                         condition, body, ..
+                    }
+                    | ResolvedStatement::LexicalWhile {
+                        condition, body, ..
                     } => {
                         // Source for-own lowers to a while with an authenticated protocol.
                         // Its v12 conditional renewal remains a separate frozen profile.
