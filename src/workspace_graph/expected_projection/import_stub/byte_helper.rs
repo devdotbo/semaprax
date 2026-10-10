@@ -164,14 +164,14 @@ fn parameter<'a>(
     }
 }
 
-pub(super) struct ProviderProofs<'a> {
+pub(in crate::workspace_graph::expected_projection) struct ProviderProofs<'a> {
     authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,
     programs: &'a [Program],
     proofs: crate::loop_calls::byte_writer::SourceProofs<'a>,
     carrier_charged: bool,
 }
 impl<'a> ProviderProofs<'a> {
-    pub(super) fn new(
+    pub(in crate::workspace_graph::expected_projection) fn new(
         authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,
         programs: &'a [Program],
     ) -> Self {
