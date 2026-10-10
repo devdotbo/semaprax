@@ -1205,6 +1205,17 @@ impl BinaryOp {
 }
 
 impl Expr {
+    /// Presence only: reuse the exhaustive structural visitor, including its
+    /// existing overflow route, without imposing the selective contour bound
+    /// on legacy source. This is not type, ownership or exit-target authority.
+    pub(crate) fn contains_lexical_exit(&self) -> bool {
+        let mut found = false;
+        self.visit_call_nodes(|expression| {
+            found |= matches!(expression.kind, ExprKind::LexicalExit { .. });
+        });
+        found
+    }
+
     fn visit_call_nodes(&self, mut visit: impl FnMut(&Expr)) {
         const FIXED_DEPTH: usize = 513;
         let mut stack = [None; FIXED_DEPTH];

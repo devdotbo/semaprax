@@ -215,6 +215,7 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
             "\n",
             include_str!("../../../../../src/hir/resolve_expr_reference/projection.rs")
         ),
+        include_str!("../../../../../src/hir/resolve_expr_reference/static_text.rs"),
         include_str!("../../../../../src/hir/resolve_for.rs"),
         include_str!("../../../../../src/hir/resolve_for/record.rs"),
         include_str!("../../../../../src/hir/resolve_for_own.rs"),
@@ -278,6 +279,7 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         include_str!("../../../../../src/hir/workspace_link/native_owner/url_view.rs"),
     );
     let hir_validator = concat!(
+        include_str!("../../../../../src/hir.rs"),
         include_str!("../../../../../src/loop_calls/byte_writer.rs"),
         include_str!("../../../../../src/loop_calls/byte_writer/resolved.rs"),
         include_str!("../../../../../src/loop_calls/byte_writer/bindings.rs"),
@@ -491,7 +493,6 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         include_str!("../../../../../src/source_verify/owned_buffer.rs"),
         include_str!("../../../../../src/source_verify/variant_or.rs"),
         include_str!("../../../../../src/source_verify/record_invariants.rs"),
-        include_str!("../../../../../src/hir/resolve_expr_reference/static_text.rs"),
         include_str!("../../../../../src/source_verify/static_text.rs"),
         include_str!("../../../../../src/source_verify/declaration/functions/traversal_scope.rs"),
         include_str!("../../../../../src/source_verify/declared_type/collection_outcome/nested.rs"),
@@ -545,7 +546,14 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
     let calls = include_str!("../../../../../src/call_index.rs");
     for (source, expected) in [
         (hir_resolver, "size_of::<Frame<'static>>() <= 592"),
-        (hir_validator, "size_of::<Frame<'static>>() == 288"),
+        (
+            hir_validator,
+            "size_of::<Frame<'static>>() == super::VALIDATOR_FRAME_BYTES",
+        ),
+        (
+            hir_validator,
+            "pub const VALIDATOR_FRAME_BYTES: usize = 288;",
+        ),
         (verifier, "size_of::<VerifierFrame<'static>>() == 320"),
         (verifier, "size_of::<VariantMatchState<'static>>() == 312"),
         (cleanup, "size_of::<Frame<'static>>() == 40"),

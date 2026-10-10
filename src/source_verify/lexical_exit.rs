@@ -18,6 +18,18 @@ pub(super) fn validate(program: &Program, diagnostics: &mut Vec<Diagnostic>) {
     }
 }
 fn check_function(program: &Program, function: &Function, diagnostics: &mut Vec<Diagnostic>) {
+    // Legacy ASTs keep their owning expression-depth admission. Only an actual
+    // exit selects this additional contour contract; presence is independently
+    // scanned through every structural child, including contracts and closures.
+    if !function.body.contains_lexical_exit()
+        && !function
+            .requires
+            .iter()
+            .chain(&function.ensures)
+            .any(Expr::contains_lexical_exit)
+    {
+        return;
+    }
     for contract in function.requires.iter().chain(&function.ensures) {
         walk(program, contract, false, 0, 0, diagnostics);
     }
@@ -190,5 +202,71 @@ fn walk(
                 index += 1;
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::validate;
+    use crate::ast::{Expr, ExprKind, LexicalExitKind, Program, UnaryOp};
+
+    fn fixture() -> Program {
+        crate::parse(
+            "@id(\"main\") fn main() -> i64 { 0 }",
+            "lexical-contour.spx",
+        )
+        .unwrap()
+    }
+
+    fn wrapped(mut expr: Expr, depth: usize) -> Expr {
+        for _ in 0..depth {
+            let span = expr.span;
+            expr = Expr {
+                span,
+                kind: ExprKind::Unary {
+                    op: UnaryOp::Neg,
+                    value: Box::new(expr),
+                },
+            };
+        }
+        expr
+    }
+
+    #[test]
+    fn legacy_depth_512_does_not_select_the_lexical_contour_contract() {
+        let mut program = fixture();
+        program.functions[0].body = wrapped(program.functions[0].body.clone(), 510);
+        let mut diagnostics = Vec::new();
+        validate(&program, &mut diagnostics);
+        assert!(diagnostics.is_empty());
+        assert!(!program.functions[0].body.contains_lexical_exit());
+    }
+
+    #[test]
+    fn lexical_presence_keeps_deep_contours_and_contract_crossings_closed() {
+        let mut program = fixture();
+        let value = program.functions[0].body.clone();
+        let exit = Expr {
+            span: value.span,
+            kind: ExprKind::LexicalExit {
+                kind: LexicalExitKind::Return,
+                value: Some(Box::new(value)),
+            },
+        };
+        program.functions[0].body = wrapped(exit.clone(), crate::cache_codec::MAX_DEPTH + 1);
+        let mut diagnostics = Vec::new();
+        validate(&program, &mut diagnostics);
+        assert!(diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == "SPX-P207"));
+        // Contracts select the same independent scan and cannot grant an exit
+        // merely because the function's ordinary body contains none.
+        program.functions[0].body = fixture().functions[0].body.clone();
+        program.functions[0].ensures.push(exit);
+        diagnostics.clear();
+        validate(&program, &mut diagnostics);
+        assert!(diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == "SPX-T312"));
     }
 }
