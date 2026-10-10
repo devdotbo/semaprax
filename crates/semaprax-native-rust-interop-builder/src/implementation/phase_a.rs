@@ -1218,6 +1218,9 @@ pub(super) fn validate_selected_scalar_closure(
             return Err(b107("scalar value signature required"));
         }
         match &expression.kind {
+            ResolvedExprKind::LexicalExit { .. } => {
+                return Err(b107("lexical control is outside the native Rust scalar profile"));
+            }
             ResolvedExprKind::Int(_)
             | ResolvedExprKind::Int32(_)
             | ResolvedExprKind::Char(_)
@@ -1251,7 +1254,7 @@ pub(super) fn validate_selected_scalar_closure(
                     let (binding, value) = match statement {
                         ResolvedStatement::Let { binding, value, .. }
                         | ResolvedStatement::Assign { binding, value, .. } => (binding, value),
-                        ResolvedStatement::Unsafe { .. } | ResolvedStatement::While { .. } => {
+                        ResolvedStatement::Unsafe { .. } | ResolvedStatement::While { .. } | ResolvedStatement::LexicalWhile { .. } => {
                             return Err(b107("scalar value signature required"));
                         }
                     };
@@ -1333,7 +1336,9 @@ pub(super) fn validate_native_unit_discard_bindings(
                         let (binding, value) = match statement {
                             ResolvedStatement::Let { binding, value, .. }
                             | ResolvedStatement::Assign { binding, value, .. } => (binding, value),
-                            ResolvedStatement::Unsafe { .. } | ResolvedStatement::While { .. } => {
+                            ResolvedStatement::Unsafe { .. }
+                            | ResolvedStatement::While { .. }
+                            | ResolvedStatement::LexicalWhile { .. } => {
                                 return Err(b107("scalar value signature required"));
                             }
                         };

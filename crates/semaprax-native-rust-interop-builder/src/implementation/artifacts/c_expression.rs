@@ -267,6 +267,11 @@ fn c_expression_linear(
         note_c_expression_scratch(mode, &frame, &frames, &values, &arguments, lines)?;
         match frame {
             CExpressionFrame::Enter(expression) => match &expression.kind {
+                ResolvedExprKind::LexicalExit { .. } => {
+                    return Err(b107(
+                        "lexical control is outside the native Rust scalar profile",
+                    ));
+                }
                 ResolvedExprKind::Int32(_)
                 | ResolvedExprKind::Char(_)
                 | ResolvedExprKind::Uint8(_)

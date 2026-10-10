@@ -152,6 +152,10 @@ pub(in crate::implementation) fn resolved_expression_child<'a>(
             };
             advance(index.checked_add(1)?, index, child)
         }
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            (index == 0).then_some(())?;
+            advance(1, 0, value.as_deref()?)
+        }
         ResolvedExprKind::Invoke { callable, args } => {
             let child = if index == 0 {
                 callable.as_ref()
@@ -196,9 +200,13 @@ pub(in crate::implementation) fn resolved_expression_child<'a>(
         ResolvedExprKind::Block { statements, tail } => {
             let has_while = complex
                 || (index == 0
-                    && statements
-                        .iter()
-                        .any(|statement| matches!(statement, ResolvedStatement::While { .. })));
+                    && statements.iter().any(|statement| {
+                        matches!(
+                            statement,
+                            ResolvedStatement::While { .. }
+                                | ResolvedStatement::LexicalWhile { .. }
+                        )
+                    }));
             if has_while {
                 if !complex {
                     *cursor = RESOLVED_COMPLEX_CURSOR;

@@ -240,6 +240,9 @@ fn drain_disposal_frames(
                     disposal_push(frames, ResolvedDisposeFrame::Captures(captures));
                     disposal_push(frames, ResolvedDisposeFrame::Bindings(parameters));
                 }
+                ResolvedExprKind::LexicalExit { value, .. } => {
+                    pending_expression = value.map(|value| *value);
+                }
                 ResolvedExprKind::FunctionReference { .. } => {}
                 ResolvedExprKind::Invoke { callable, args } => {
                     disposal_push(frames, ResolvedDisposeFrame::Exprs(args));
@@ -374,6 +377,9 @@ fn drain_disposal_frames(
                             pending_expression = Some(*body);
                         }
                         crate::hir::ResolvedStatement::While {
+                            condition, body, ..
+                        }
+                        | crate::hir::ResolvedStatement::LexicalWhile {
                             condition, body, ..
                         } => {
                             disposal_push(frames, ResolvedDisposeFrame::ExprBox(body));

@@ -74,6 +74,7 @@ pub(in crate::implementation) fn type_identity_metrics(
                     | ResolvedType::MutFunctionI64 => {
                         return Err(b107("scalar value signature required"));
                     }
+                    ResolvedType::Never => Some(leaf("never".len())),
                     ResolvedType::Unit => Some(leaf("unit".len())),
                     ResolvedType::I64 => Some(leaf("i64".len())),
                     ResolvedType::I32 => Some(leaf("i32".len())),
@@ -229,7 +230,8 @@ pub(in crate::implementation) fn fingerprint_type_identity(
                 | ResolvedType::MutFunctionI64 => {
                     return Err(b107("scalar value signature required"));
                 }
-                ResolvedType::Unit
+                ResolvedType::Never
+                | ResolvedType::Unit
                 | ResolvedType::I64
                 | ResolvedType::I32
                 | ResolvedType::Char
@@ -244,6 +246,7 @@ pub(in crate::implementation) fn fingerprint_type_identity(
                 | ResolvedType::SliceU8
                 | ResolvedType::StringMap => {
                     let text = match ty {
+                        ResolvedType::Never => "never",
                         ResolvedType::Unit => "unit",
                         ResolvedType::I64 => "i64",
                         ResolvedType::I32 => "i32",
@@ -490,6 +493,11 @@ pub(in crate::implementation) fn fingerprint_expression_types_scratch(
                         }
                         push(&mut stack, &mut stack_len, Frame::Expr(body, child_depth))?;
                     }
+                    ResolvedExprKind::LexicalExit { value, .. } => {
+                        if let Some(value) = value {
+                            push(&mut stack, &mut stack_len, Frame::Expr(value, child_depth))?;
+                        }
+                    }
                     ResolvedExprKind::FunctionReference { .. } => {}
                     ResolvedExprKind::Invoke { callable, args } => {
                         push(
@@ -681,6 +689,9 @@ pub(in crate::implementation) fn fingerprint_expression_types_scratch(
                             push(&mut stack, &mut stack_len, Frame::Expr(body, depth))?;
                         }
                         ResolvedStatement::While {
+                            condition, body, ..
+                        }
+                        | ResolvedStatement::LexicalWhile {
                             condition, body, ..
                         } => {
                             push(&mut stack, &mut stack_len, Frame::Expr(body, depth))?;

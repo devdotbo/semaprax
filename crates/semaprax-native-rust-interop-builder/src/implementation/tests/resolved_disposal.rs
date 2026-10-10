@@ -531,6 +531,9 @@ fn every_expression_shape_resolves_at_exact_depth_512_and_rejects_513() {
             return true;
         }
         match &mut expression.kind {
+            ExprKind::LexicalExit { value, .. } => value
+                .as_deref_mut()
+                .is_some_and(|value| replace_payload(value, replacement)),
             ExprKind::Closure { body, .. } => replace_payload(body, replacement),
             ExprKind::Call { args, .. } => args
                 .iter_mut()

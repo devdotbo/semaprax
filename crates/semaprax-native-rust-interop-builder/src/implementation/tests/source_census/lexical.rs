@@ -26,7 +26,7 @@ fn lexical_hir_census_counts_return_operand_and_target_backing() {
     .unwrap();
     let resolved = semaprax::hir::resolve(&checked).unwrap();
     let ordinary = resolved.functions[0].body.clone();
-    let ordinary_bytes = hir_expr_owned_capacity(&ordinary).unwrap();
+    let ordinary_bytes = capacity::hir_expr_owned_capacity(&ordinary).unwrap();
     let mut exit = ordinary.clone();
     exit.ty = ResolvedType::Never;
     exit.kind = ResolvedExprKind::LexicalExit {
@@ -38,8 +38,13 @@ fn lexical_hir_census_counts_return_operand_and_target_backing() {
         ),
         value: Some(Box::new(ordinary)),
     };
+    let mut cursor = 0;
+    let (index, operand) = resolved_expression_child(&exit, &mut cursor).unwrap();
+    assert_eq!(index, 0);
+    assert_eq!(operand.ty, ResolvedType::I64);
+    assert!(resolved_expression_child(&exit, &mut cursor).is_none());
     assert_eq!(
-        hir_expr_owned_capacity(&exit).unwrap() - ordinary_bytes,
+        capacity::hir_expr_owned_capacity(&exit).unwrap() - ordinary_bytes,
         std::mem::size_of::<ResolvedExpr>()
             + exit.id.owned_allocation_bytes().unwrap()
             + "capacity.target".len()

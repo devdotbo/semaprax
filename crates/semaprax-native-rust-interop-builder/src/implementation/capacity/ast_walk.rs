@@ -383,6 +383,10 @@ fn ast_type_identity_key_len(program: &Program, root: &crate::ast::Type) -> Opti
     while frame_len != 0 {
         frame_len -= 1;
         match frames[frame_len].take()? {
+            Frame::Enter(crate::ast::Type::Never) => {
+                results[result_len] = "never".len();
+                result_len = result_len.checked_add(1)?;
+            }
             Frame::Enter(crate::ast::Type::I64) => {
                 results[result_len] = "i64".len();
                 result_len = result_len.checked_add(1)?;

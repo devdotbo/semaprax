@@ -186,6 +186,11 @@ pub(in crate::implementation) fn hash_expr(
                         frame(hasher, ownership(binding.ownership));
                         actions.push(HirFingerprintAction::Expr(value, depth));
                     }
+                    ResolvedStatement::LexicalWhile { .. } => {
+                        return Err(b107(
+                            "lexical control is outside the native Rust scalar profile",
+                        ));
+                    }
                     ResolvedStatement::Unsafe { audit, body, .. } => {
                         frame(hasher, b"unsafe");
                         frame(hasher, audit.as_bytes());
@@ -439,6 +444,9 @@ pub(in crate::implementation) fn hash_expr(
                 frame(hasher, identity.as_bytes());
                 frame(hasher, ownership(expression.ownership));
                 match &expression.kind {
+                    ResolvedExprKind::LexicalExit { .. } => {
+                        return Err(b107("lexical control is outside the native Rust scalar profile"));
+                    }
                     ResolvedExprKind::Closure { .. }
                     | ResolvedExprKind::FunctionReference { .. }
                     | ResolvedExprKind::Invoke { .. }

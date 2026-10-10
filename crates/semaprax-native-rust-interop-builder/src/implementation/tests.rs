@@ -246,7 +246,8 @@ struct ObservedCleanupProof {
 
 fn observed_type_bytes(ty: &ResolvedType) -> usize {
     match ty {
-        ResolvedType::Unit
+        ResolvedType::Never
+        | ResolvedType::Unit
         | ResolvedType::I64
         | ResolvedType::I32
         | ResolvedType::Char

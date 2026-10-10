@@ -5,7 +5,8 @@ use super::*;
 
 pub(super) fn key_for_type(program: &Program, ty: &crate::ast::Type) -> CleanupTypeKey {
     match ty {
-        crate::ast::Type::I64
+        crate::ast::Type::Never
+        | crate::ast::Type::I64
         | crate::ast::Type::I32
         | crate::ast::Type::Char
         | crate::ast::Type::U8

@@ -675,6 +675,9 @@ fn cleanup_binding_flow<'a>(
                     child_index == 0 || (!is_guard && consume)
                 }
                 crate::ast::ExprKind::Try { .. } => true,
+                crate::ast::ExprKind::LexicalExit { kind, .. } => {
+                    *kind == crate::ast::LexicalExitKind::Return
+                }
                 // A closure body is structurally retained, but construction
                 // only snapshots its captures; the body has no creation-time
                 // ownership or failure effect.

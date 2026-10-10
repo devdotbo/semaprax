@@ -29,6 +29,7 @@ pub(in crate::implementation) fn scan_ast_capacity<'a>(
                     .ok_or_else(|| b109("max_builder_bytes", MAX_BUILDER_BYTES))?;
                 stats.max_depth = stats.max_depth.max(depth);
                 let indexed_children = match &expression.kind {
+                    crate::ast::ExprKind::LexicalExit { value, .. } => usize::from(value.is_some()),
                     crate::ast::ExprKind::Closure { .. } => 1,
                     crate::ast::ExprKind::Call { args, .. } => args.len(),
                     crate::ast::ExprKind::MethodCall { args, .. } => args.len() + 1,
@@ -414,7 +415,8 @@ fn ast_resource_leaf_count(
             .ok_or_else(|| b109("max_builder_bytes", MAX_BUILDER_BYTES))?
         {
             Frame::Enter(
-                crate::ast::Type::I64
+                crate::ast::Type::Never
+                | crate::ast::Type::I64
                 | crate::ast::Type::I32
                 | crate::ast::Type::Char
                 | crate::ast::Type::U8
