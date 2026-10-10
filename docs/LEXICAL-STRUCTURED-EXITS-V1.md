@@ -212,3 +212,24 @@ remains a separate obligation. Regression definitions cover source/HIR origin
 forgery, aliases, duplicate transfer, clause isolation, exact/+1 resource bounds,
 canonical/graph/cache replay, native O0/O2 cleanup and Core-Wasm/interpreter
 refusal/reentry. These definitions are authored, not evidence of a passing gate.
+
+## Retained primitive replay backing (OPT-745, OPT-749)
+
+The selected retained-replay constructors are authored; executable qualification
+is pending. They preserve ordinary cleanup order, source/HIR authentication and
+work limits. The first selected context is module-local and primitive; imports,
+nominal carriers, generic declarations and delegated runtime providers remain
+closed. This restriction is a replay boundary, not broader application support.
+
+Structural exit validation compares borrowed parent links and exact leave order
+without constructing an expected-region vector or ancestor tree. CFG traversal
+reads authenticated successors directly and reserves its colors and stack before
+construction. Selected vector growth requests `max(required, 2 * capacity)`
+through checked arithmetic, charging the complete replacement backing while the
+old backing remains charged. Spare capacity cannot refund or reset a refusal.
+Ordinary replay retains its existing allocation route.
+
+Owning regressions observe requested allocator Layout bytes and overlapping
+backing independently of reservation arithmetic. They retain exact/+1 source
+limits and one-short/sticky backing refusal; these observations do not establish
+RSS bounds or measured agent-token, billed-cost or application speed gains.
