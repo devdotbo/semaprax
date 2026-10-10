@@ -73,7 +73,6 @@ fn repeated_zero_argument_nominal_facts_reuse_the_exact_retained_entry() {
     assert_eq!(retained[&key].1.layout_key.as_ptr(), original_layout);
     assert_eq!(retained[&key].1, resolved.declarations.type_facts(&ty).unwrap());
 }
-
 #[test]
 fn retained_value_facts_keep_the_4096_cap_and_reject_missing_checked_facts() {
     let resolved = checked_value_fixture();
@@ -291,7 +290,6 @@ fn unselected(value: i64) -> i64 { value + 100 }
         .message
         .contains("does not name an authenticated function"));
 }
-
 #[test]
 fn owned_data_roots_retain_exact_private_aggregate_closure_and_authenticated_members() {
     let app = canonical_source(
@@ -413,7 +411,6 @@ fn unselected(value: i64) -> i64 {
     assert_eq!(error[0].code, "SPX-G173");
     assert!(error[0].message.contains("has no Phase-A fact"));
 }
-
 #[test]
 fn useful_data_cross_module_borrowed_slice_boundary_remains_admitted() {
     let app = canonical_source(
@@ -534,7 +531,6 @@ fn main() -> i64 { left_value() + right_value() }
     );
     hir::validate(&linked).unwrap();
 }
-
 #[test]
 fn scalar_linker_rejects_entry_and_test_main_signature_drift_before_linking() {
     let sources = || {
@@ -586,7 +582,6 @@ fn scalar_linker_rejects_entry_and_test_main_signature_drift_before_linking() {
         assert!(error[0].span.is_some());
     }
 }
-
 #[test]
 fn scalar_linker_names_and_locates_the_module_missing_main() {
     let source = |path: &str, module: &str, id: &str, name: &str| {
@@ -624,7 +619,6 @@ fn scalar_linker_names_and_locates_the_module_missing_main() {
         assert_eq!(error[0].span.unwrap().line, 1);
     }
 }
-
 #[test]
 fn scalar_linker_ignores_disconnected_nonscalar_modules_and_rejects_provider_mains() {
     let app = canonical_source(

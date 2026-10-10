@@ -36,7 +36,7 @@ pub(crate) fn parse(args: &[String]) -> Result<Options, u8> {
     let mut profile = None;
     let mut max_string_bytes = None;
     let mut max_array_items = None;
-    for pair in args[1..].chunks_exact(2) {
+    for pair in args[1..].as_chunks::<2>().0 {
         if pair[1].starts_with('-') || pair[1].is_empty() {
             return Err(fail());
         }

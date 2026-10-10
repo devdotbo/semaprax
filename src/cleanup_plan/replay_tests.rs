@@ -1,8 +1,6 @@
 use std::path::Path;
-
 use crate::cleanup_plan::{CleanupBlock, CleanupEdge};
 use crate::{hir, parse};
-
 use super::*;
 
 #[path = "replay_tests/block_work.rs"]

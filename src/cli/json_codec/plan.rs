@@ -50,7 +50,7 @@ pub(super) fn run(args: &[String], report: impl Fn(&[Diagnostic]) -> u8) -> Resu
     }
     let mut input = None;
     let mut output = None;
-    for pair in args[1..].chunks_exact(2) {
+    for pair in args[1..].as_chunks::<2>().0 {
         if pair[1].is_empty() || pair[1].starts_with('-') {
             return Err(usage());
         }
