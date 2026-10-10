@@ -4,7 +4,13 @@ use crate::cleanup_plan::{CleanupPlan, CLEANUP_PLAN_SCHEMA_V19};
 #[test]
 fn helper_renewal_cache_roundtrips_with_and_without_lexical_control() {
     for lexical in [false, true] {
-        let tail = if lexical { "return 7;" } else { "7" };
+        // Acyclic final returns normalize to ordinary tails. A return inside
+        // an admitted loop retains actual lexical authority.
+        let tail = if lexical {
+            "let mut index=0; while index<1 { index=index+1; if index==1 { return 7; }; 0 } 7"
+        } else {
+            "7"
+        };
         let source = format!(
             r#"module cache.byte_helper;
 @id("cache.fill") fn fill(output:own Bytes)->Bytes {{
@@ -36,10 +42,10 @@ fn helper_renewal_cache_roundtrips_with_and_without_lexical_control() {
 
 #[test]
 fn helper_cache_rejects_future_token_and_legacy_lexical_schema_mismatch() {
-    let future = super::super::encode(&"semaprax.cleanup-plan.v20").unwrap();
+    let future = super::super::encode(&"semaprax.cleanup-plan.v20".to_owned()).unwrap();
     assert!(super::super::decode::<&'static str>(&future).is_err());
     let ast = crate::check(
-        "module cache.legacy; @id(\"main\") fn main()->i64 {return 7;}",
+        "module cache.legacy; @id(\"main\") fn main()->i64 {let mut index=0; while index<1 {index=index+1; if index==1 {return 7;}; 0} 7}",
         "legacy-cache.spx",
     )
     .unwrap();

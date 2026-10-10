@@ -29,6 +29,13 @@ const LEAF: &str = r#"module lib.leaf;
 "#;
 
 fn build(sources: &[(&str, &str)]) -> WorkspaceGraphBuild {
+    let mut sources = sources.to_vec();
+    if sources.len() == 1 {
+        sources.push((
+            "support.spx",
+            "module support.fixture; @id(\"support.ready\") fn ready()->i64 {0}",
+        ));
+    }
     let sources = sources
         .iter()
         .map(|(path, text)| WorkspaceSource {
