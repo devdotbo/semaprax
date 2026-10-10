@@ -4014,6 +4014,17 @@ rechecks and fresh output ownership. This native-only profile acquires runtime
 argv/file authority only in its invocation adapter; representation linking and
 Project graph/lock facts carry no host authority.
 
+The additive [invocation-selected file input v1](INVOCATION-SELECTED-FILE-INPUT-V1.md)
+selects Project v33 and a distinct native64 Unix adapter in
+`codegen/native_selected_file_command.rs` and its `runtime.c`/`launcher.c`
+children. Its optional host prefix binds one application argv index; checked
+source reaches the read boundary before lazy acquisition. The invocation holds
+and settles one regular-file descriptor before staged output publication.
+Selected-path follow authority never enters the relative-root provider,
+Project graphs, semantic evidence or retained linker metadata. Qualification
+is pending; the owning `project::source_command::selected_file` tests define
+O0/O2 usage, authority, descriptor substitution, drift and settlement gates.
+
 The additive [Project v28 resource-output source command](PROJECT-MANIFEST-V28.md)
 reuses that exact argv/file provider and native publication boundary. Its
 separate native output profile owns the 1 MiB per-String/authenticated

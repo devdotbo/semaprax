@@ -1,4 +1,7 @@
 //! Project v26: ordinary bundled imports with the exact SourceCommand runtime.
+#[cfg(unix)]
+#[path = "source_command/selected_file.rs"]
+mod selected_file;
 use semaprax::project::{self, ProjectExecutionOptions, ProjectManifest, ProjectProfile};
 use std::path::PathBuf;
 use std::process::Command;

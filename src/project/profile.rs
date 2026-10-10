@@ -1,3 +1,7 @@
+/// Invocation-selected held file with lazy acquisition and explicit follow policy.
+pub const PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_V1: &str = "source-command.selected-file.v1";
+pub const PROJECT_SOURCE_COMMAND_SELECTED_FILE_INPUT_V1: &str = "argv-utf8+selected-file.follow.v1";
+pub const PROJECT_SCHEMA_V33: &str = "semaprax.project.v33";
 pub const PROJECT_PROFILE_ENVIRONMENT_IO_V1: &str = "environment-io.v1";
 pub const PROJECT_PROFILE_PROCESS_IO_V1: &str = "process-io.v1";
 /// Native argv and read-only text-file command with linked source dependencies.
@@ -162,6 +166,7 @@ pub enum ProjectProfile {
     EnvironmentIoV1,
     ProcessIoV1,
     SourceCommandV1,
+    SourceCommandSelectedFileV1,
     SourceCommandResourceOutputV1,
     OwnedDataApiV1,
     FlatOwnedRecordApiV1,
@@ -205,6 +210,7 @@ impl ProjectProfile {
                 | Self::EnvironmentIoV1
                 | Self::ProcessIoV1
                 | Self::SourceCommandV1
+                | Self::SourceCommandSelectedFileV1
                 | Self::SourceCommandResourceOutputV1
                 | Self::OwnedDataApiV1
                 | Self::FlatOwnedRecordApiV1
@@ -226,7 +232,9 @@ impl ProjectProfile {
     pub(crate) const fn is_source_command(self) -> bool {
         matches!(
             self,
-            Self::SourceCommandV1 | Self::SourceCommandResourceOutputV1
+            Self::SourceCommandV1
+                | Self::SourceCommandSelectedFileV1
+                | Self::SourceCommandResourceOutputV1
         )
     }
 
@@ -264,6 +272,9 @@ impl ProjectProfile {
             Self::EnvironmentIoV1 => Some(PROJECT_PROFILE_ENVIRONMENT_IO_V1),
             Self::ProcessIoV1 => Some(PROJECT_PROFILE_PROCESS_IO_V1),
             Self::SourceCommandV1 => Some(PROJECT_PROFILE_SOURCE_COMMAND_V1),
+            Self::SourceCommandSelectedFileV1 => {
+                Some(PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_V1)
+            }
             Self::SourceCommandResourceOutputV1 => {
                 Some(PROJECT_PROFILE_SOURCE_COMMAND_RESOURCE_OUTPUT_V1)
             }

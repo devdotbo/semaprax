@@ -1,5 +1,12 @@
 # Changelog
 
+- Add an invocation-selected native64 Unix file-input profile with an optional
+  host selector that preserves complete application argv. The first checked
+  read lazily acquires one held regular-file descriptor under an explicit
+  follow policy; settlement precedes staged output publication. Retain the
+  existing relative-root no-follow provider. Owning O0/O2 regressions are
+  authored; executable qualification and efficiency measurements are pending.
+
 - Correct lexical completion graph facts, exact iterator argument-slot reuse,
   scoped literal JSON writes and admitted workspace/cache fixtures. Add a
   selective authenticated lexical npm recipe while retaining frozen v8 bytes

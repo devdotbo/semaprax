@@ -2,10 +2,10 @@
 use super::*;
 
 #[cfg(test)]
-mod tests;
-#[cfg(test)]
 #[path = "profiles/nested_outcome.rs"]
 mod nested_outcome_tests;
+#[cfg(test)]
+mod tests;
 
 /// Check the profile-specific rules the frozen schemas encode positionally and
 /// return the frozen profile contract the manifest lowers to.
@@ -15,6 +15,18 @@ pub(super) fn lower_profile(
     input: Option<&str>,
     capabilities: &[String],
 ) -> Result<&'static str, Vec<Diagnostic>> {
+    if profile == ProjectProfile::SourceCommandSelectedFileV1 {
+        if command.is_none()
+            || input != Some(PROJECT_SOURCE_COMMAND_SELECTED_FILE_INPUT_V1)
+            || !crate::source_command::selects(capabilities)
+            || !capabilities.iter().any(|v| v == "fs.read")
+            || !capabilities.iter().any(|v| v == "process.args.read")
+            || !capabilities.windows(2).all(|v| v[0] < v[1])
+        {
+            return Err(grammar("source-command.selected-file.v1 requires an explicit command, argv-utf8+selected-file.follow.v1 input and sorted source-command capabilities including fs.read and process.args.read"));
+        }
+        return Ok(PROJECT_SCHEMA_V33);
+    }
     if profile == ProjectProfile::SourceCommandV1 {
         if command.is_none() || input != Some(PROJECT_SOURCE_COMMAND_INPUT_V1) {
             return Err(grammar("source-command.v1 requires an explicit command function and input = \"argv-utf8+file-text.v1\""));
@@ -63,7 +75,9 @@ pub(super) fn lower_profile(
                 None,
                 &PROJECT_FILESYSTEM_CAPABILITIES_V1,
             ),
-            ProjectProfile::SourceCommandV1 => unreachable!("handled above"),
+            ProjectProfile::SourceCommandSelectedFileV1 | ProjectProfile::SourceCommandV1 => {
+                unreachable!("handled above")
+            }
             ProjectProfile::SourceCommandResourceOutputV1 => unreachable!("handled above"),
             ProjectProfile::ScalarV1 => (PROJECT_SCHEMA, None, &[]),
             ProjectProfile::UsefulTextConsumerV1 => (PROJECT_SCHEMA_V2, None, &[]),
@@ -191,6 +205,9 @@ pub(super) fn lower_profile(
 pub(super) fn profile_by_name(name: &str) -> Option<ProjectProfile> {
     Some(match name {
         PROJECT_PROFILE_SOURCE_COMMAND_V1 => ProjectProfile::SourceCommandV1,
+        PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_V1 => {
+            ProjectProfile::SourceCommandSelectedFileV1
+        }
         PROJECT_PROFILE_SOURCE_COMMAND_RESOURCE_OUTPUT_V1 => {
             ProjectProfile::SourceCommandResourceOutputV1
         }

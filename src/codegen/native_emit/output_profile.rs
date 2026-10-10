@@ -21,6 +21,7 @@ pub(crate) enum NativeOutputProfile {
     /// two staged output channels, and `file_read_text` below the invocation
     /// directory, all supplied by the generated process adapter.
     SourceCommand,
+    SourceSelectedFileCommand,
     /// Project v28 source command with additive heap-backed String and output
     /// capacities. The v26 SourceCommand projection remains frozen.
     SourceResourceCommand,
@@ -106,7 +107,7 @@ impl NativeOutputProfile {
                     resource_strings: false,
                 }
             }
-            Self::SourceCommand => StringRuntimeSelection {
+            Self::SourceCommand | Self::SourceSelectedFileCommand => StringRuntimeSelection {
                 length_delimited: true,
                 provider_carriers: false,
                 include_instances: true,
@@ -185,6 +186,7 @@ impl NativeOutputProfile {
             Self::Legacy
                 | Self::StdoutTranscript
                 | Self::SourceCommand
+                | Self::SourceSelectedFileCommand
                 | Self::SourceResourceCommand
                 | Self::OwnedDataProvider
                 | Self::StdinStreamTextCommandIo
@@ -202,6 +204,7 @@ impl NativeOutputProfile {
             self,
             Self::StdoutTranscript
                 | Self::SourceCommand
+                | Self::SourceSelectedFileCommand
                 | Self::SourceResourceCommand
                 | Self::UsefulDataCommand
                 | Self::LanguageCommandIo
@@ -255,6 +258,7 @@ impl NativeOutputProfile {
                 | Self::EnvironmentCommandIo
                 | Self::ProcessCommandIo
                 | Self::SourceCommand
+                | Self::SourceSelectedFileCommand
                 | Self::SourceResourceCommand
         )
     }

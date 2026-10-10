@@ -2,7 +2,7 @@
 use std::fmt::Write as _;
 
 const MAX_BYTES: usize = 2_048;
-const ROUTES: &str = "Authoring routes (complete):\n  author:lexical-exits            statement-tail break/continue/return\n  author:stdin-json               v27 bounded native stream command\n  author:stream-data-v2           v29 private record/Vec stream command\n  author:owned-data               v30 private owned-leaf collections\n  author:collection-records       v31 nested records containing Vec\n  author:nested-outcomes         v32 typed nested success/error carriers\n  author:file-text                native UTF-8 file command\n  author:source-web               single-source web build\n  author:literal-format           checked literal String rendering\n  author:string-from-utf8         strict owned String construction from bytes\n  author:copy-record-vec          flat Copy-record vectors\n  author:record-sort-keys         explicit stable field sort policies\n  author:record-field-views       borrowed record and Vec field reads\n  author:record-traversal         scoped borrowed rows and optional indices\n  author:json-codec               checked source JSON codec derivation\n  author:json-identifier-views    one identifier as a token view\n  author:json-request-views       bounded identifier and record arrays\n  author:json-stream-request-views bounded native stream request view\n  author:json-owned-request      bounded owning request collections\n  author:json-utf8-owned-request bounded UTF-8 string values\n  author:json-stream-utf8-owned-request bounded UTF-8 stdin requests\n  author:json-collection-response bounded nested collection encoder\n  author:json-nested-request      bounded finite nested request decoder\n  author:json-stream-nested-request bounded finite nested stdin decoder\n  author:json-nested-response     bounded finite nested borrowed encoder\n  author:json-request-response    typed request/response composition boundaries\nLibrary-only search: help language find:<word>:0\nExact card sections: help language topics\n";
+const ROUTES: &str = "Authoring routes (complete):\n  author:lexical-exits            statement-tail break/continue/return\n  author:stdin-json               v27 bounded native stream command\n  author:stream-data-v2           v29 private record/Vec stream command\n  author:owned-data               v30 private owned-leaf collections\n  author:collection-records       v31 nested records containing Vec\n  author:nested-outcomes         v32 typed nested success/error carriers\n  author:file-text                native UTF-8 file command\n  author:selected-file            invocation-selected native file\n  author:source-web               single-source web build\n  author:literal-format           checked literal String rendering\n  author:string-from-utf8         strict owned String construction from bytes\n  author:copy-record-vec          flat Copy-record vectors\n  author:record-sort-keys         explicit stable field sort policies\n  author:record-field-views       borrowed record and Vec field reads\n  author:record-traversal         scoped borrowed rows and optional indices\n  author:json-codec               checked source JSON codec derivation\n  author:json-identifier-views    one identifier as a token view\n  author:json-request-views       bounded identifier and record arrays\n  author:json-stream-request-views bounded native stream request view\n  author:json-owned-request      bounded owning request collections\n  author:json-utf8-owned-request bounded UTF-8 string values\n  author:json-stream-utf8-owned-request bounded UTF-8 stdin requests\n  author:json-collection-response bounded nested collection encoder\n  author:json-nested-request      bounded finite nested request decoder\n  author:json-stream-nested-request bounded finite nested stdin decoder\n  author:json-nested-response     bounded finite nested borrowed encoder\n  author:json-request-response    typed request/response composition boundaries\nLibrary-only search: help language find:<word>:0\nExact card sections: help language topics\n";
 
 #[cfg(test)]
 pub(super) fn assert_guide_contract() {
@@ -231,6 +231,16 @@ pub(super) fn lookup(query: &str) -> Result<String, String> {
             "Exact dependency/profile/signatures: help library std.int.decimal; source imports: help language projects.\n",
             "Search: help language find:decimal:0. This route grants no ambient filesystem authority.\n"
         ).to_owned()),
+        "author:selected-file" => Ok(concat!(
+            "Invocation-selected file input v1: executable qualification pending.\n",
+            "Project profile source-command.selected-file.v1; input argv-utf8+selected-file.follow.v1; native64 Unix only.\n",
+            "Declare exact source-command effects including fs.read and process.args.read. Existing relative-root profiles retain their provider.\n",
+            "build app --target native -o app-bin; invoke ./app-bin --spx-selected-file-v1 INDEX -- <all original application arguments>. INDEX is canonical decimal 0..15 and selects an application argument.\n",
+            "Without the optional prefix, all arguments still reach source and no file grant exists. Checked source validates complete usage before file_read_text requests the exact selected argument spelling.\n",
+            "The first read follows selected symlinks and holds one regular-file descriptor until cleanup; later reads never reopen. Absolute, parent-relative and hidden filenames are supported. Other Strings confer no authority.\n",
+            "Limits: 16 argv, 65536 total argv bytes, 4096 path bytes, 65536 UTF-8 file bytes, 64 read attempts, 1 MiB reserved read bytes. Mutation detection is metadata-based, not an atomic snapshot.\n",
+            "Interpreter, Web, Wasm, npm and non-Unix hosts refuse this route. See docs/INVOCATION-SELECTED-FILE-INPUT-V1.md for normalized failures and lifetime.\n"
+        ).to_owned()),
         "author:source-web" => Ok(concat!(
             "Single-source web route (complete guidance):\n",
             "fmt app.spx; check app.spx; build app.spx --target web --profile internal-strings-v1 -o web.\n",
@@ -366,11 +376,9 @@ mod tests {
         ] {
             assert!(card.contains(text), "{text}");
         }
-        assert!(
-            lookup("author:routes")
-                .unwrap()
-                .contains("author:record-sort-keys")
-        );
+        assert!(lookup("author:routes")
+            .unwrap()
+            .contains("author:record-sort-keys"));
     }
 
     #[test]
@@ -384,6 +392,7 @@ mod tests {
             "author:collection-records",
             "author:nested-outcomes",
             "author:file-text",
+            "author:selected-file",
             "author:source-web",
             "author:literal-format",
             "author:string-from-utf8",
@@ -433,19 +442,15 @@ mod tests {
         ] {
             assert!(exits.contains(text), "{text}");
         }
-        assert!(
-            lookup("author:routes")
-                .unwrap()
-                .contains("author:lexical-exits")
-        );
+        assert!(lookup("author:routes")
+            .unwrap()
+            .contains("author:lexical-exits"));
         let codec = lookup("author:json-codec").unwrap();
         assert!(codec.contains("--profile <selector>"));
         assert!(codec.contains("--max-string-bytes 1..64"));
         assert!(codec.contains("Omit --profile for the default flat scalar record"));
         assert!(codec.contains("author:json-identifier-views"));
-        assert!(
-            codec.contains("Declared Vec<string> in a request-view schema is description only")
-        );
+        assert!(codec.contains("Declared Vec<string> in a request-view schema is description only"));
         assert!(codec.contains("post-Ready request/schema errors use normalized-input offsets"));
         let identifier_views = lookup("author:json-identifier-views").unwrap();
         assert!(identifier_views.contains("exactly one string identifier"));

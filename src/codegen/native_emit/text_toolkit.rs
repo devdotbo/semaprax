@@ -69,6 +69,7 @@ impl<O: COutput> CEmitter<'_, O> {
                 if !matches!(
                     self.output_profile,
                     super::NativeOutputProfile::SourceCommand
+                        | super::NativeOutputProfile::SourceSelectedFileCommand
                         | super::NativeOutputProfile::SourceResourceCommand
                 ) {
                     return Err(backend_error(

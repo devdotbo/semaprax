@@ -1,3 +1,5 @@
+#[cfg(test)]
+mod checked_string_allocation;
 mod native_adapter_abi;
 #[cfg(test)]
 pub(crate) mod native_aggregate;
@@ -46,6 +48,7 @@ mod checked_string_allocation;
 /// Read-only constructor inventory; never selects an allocation or drop profile.
 pub mod checked_final_utf8_preflight;
 mod native_scalar_runtime;
+mod native_selected_file_command;
 #[cfg(any(test, feature = "unstable-native-host-internal"))]
 mod native_settlement_derivation;
 mod native_source_command;
@@ -206,6 +209,8 @@ pub fn emit_hir_c_with_source_command(program: &ResolvedProgram) -> Result<Strin
         None,
     )
 }
+
+pub use native_selected_file_command::emit_hir_c_with_selected_file_command;
 
 /// Emit the additive Project-v28 source command with resource-sized Strings
 /// and a heap-backed staged output envelope.

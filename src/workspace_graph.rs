@@ -1507,6 +1507,7 @@ impl WorkspaceGraphBuild {
             | crate::project::ProjectProfile::EnvironmentIoV1
             | crate::project::ProjectProfile::ProcessIoV1
             | P::SourceCommandV1
+            | P::SourceCommandSelectedFileV1
             | P::SourceCommandResourceOutputV1
             | crate::project::ProjectProfile::OwnedDataApiV1
             | crate::project::ProjectProfile::PublicGenericWasmProviderV1
@@ -1770,6 +1771,7 @@ impl WorkspaceGraphBuild {
             | crate::project::ProjectProfile::EnvironmentIoV1
             | crate::project::ProjectProfile::ProcessIoV1
             | P::SourceCommandV1
+            | P::SourceCommandSelectedFileV1
             | P::SourceCommandResourceOutputV1
             | crate::project::ProjectProfile::OwnedDataApiV1
             | crate::project::ProjectProfile::PublicGenericWasmProviderV1
@@ -2139,6 +2141,7 @@ impl WorkspaceGraphBuild {
                     | crate::project::ProjectProfile::EnvironmentIoV1
                     | crate::project::ProjectProfile::ProcessIoV1
                     | P::SourceCommandV1
+                    | P::SourceCommandSelectedFileV1
                     | P::SourceCommandResourceOutputV1
                     | crate::project::ProjectProfile::OwnedDataApiV1
                     | crate::project::ProjectProfile::FlatOwnedRecordApiV1
@@ -2191,6 +2194,7 @@ impl WorkspaceGraphBuild {
                     | crate::project::ProjectProfile::EnvironmentIoV1
                     | crate::project::ProjectProfile::ProcessIoV1
                     | P::SourceCommandV1
+                    | P::SourceCommandSelectedFileV1
                     | P::SourceCommandResourceOutputV1
                     | crate::project::ProjectProfile::OwnedDataApiV1
                     | crate::project::ProjectProfile::PublicGenericWasmProviderV1
