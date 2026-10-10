@@ -531,38 +531,7 @@ impl Resolver<'_> {
         {
             instance.function.cleanup = inventory;
         }
-        let cleanup_plans = resolved
-            .functions
-            .iter()
-            .map(|function| {
-                crate::cleanup_plan::build_plan_for_execution(
-                    &resolved,
-                    function,
-                    &FunctionExecutionId::Monomorphic(function.id.clone()),
-                )
-            })
-            .collect::<Result<Vec<_>, _>>()?;
-        for (function, cleanup_plan) in resolved.functions.iter_mut().zip(cleanup_plans) {
-            function.cleanup_plan = cleanup_plan;
-        }
-        let instance_cleanup_plans = resolved
-            .function_instances
-            .iter()
-            .map(|instance| {
-                crate::cleanup_plan::build_plan_for_execution(
-                    &resolved,
-                    &instance.function,
-                    &FunctionExecutionId::Generic(instance.id.clone()),
-                )
-            })
-            .collect::<Result<Vec<_>, _>>()?;
-        for (instance, cleanup_plan) in resolved
-            .function_instances
-            .iter_mut()
-            .zip(instance_cleanup_plans)
-        {
-            instance.function.cleanup_plan = cleanup_plan;
-        }
+        crate::cleanup_plan::attach_program_plans(&mut resolved)?;
         for function in &resolved.functions {
             if let Some(yields) = &function.yields {
                 if crate::cleanup_plan::owned_frame_parameter(

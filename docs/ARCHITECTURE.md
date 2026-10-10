@@ -853,7 +853,10 @@ source-index, and repair qualification remains pending.
 `src/cleanup.rs` inventories structurally owned leaves.
 `src/cleanup_plan.rs` and `src/cleanup_plan/` own the target-neutral cleanup
 control-flow schema, builder, validation, execution model, and independent
-replay.
+replay. `cleanup_plan/build/helper_index.rs` owns immutable module construction
+helper-site authority and reserved all-function plan staging. Construction drops
+its borrowed index before attaching plans; validation and replay independently
+reconstruct current HIR authority.
 
 Current graph versions select the minimum schema needed by the admitted
 feature, from legacy scalar/Result meaning through Option, aggregates,

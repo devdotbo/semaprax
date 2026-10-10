@@ -155,12 +155,7 @@ impl PlanBuilder<'_> {
                 // variant handoff, not a one-leaf ReserveRenewal. An attached
                 // reservation would be forged authority; never cancel it to
                 // repair the surrounding state.
-                if crate::cleanup_plan::renewal_binding(
-                    self.program,
-                    self.function,
-                    &pending.assignment,
-                )
-                .is_some()
+                if self.renewal_binding(&pending.assignment).is_some()
                     || evaluated.state.renewals.contains_key(&pending.assignment)
                 {
                     return Err(plan_error(

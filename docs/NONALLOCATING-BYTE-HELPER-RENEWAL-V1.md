@@ -71,7 +71,8 @@ census reserves 514 cursor slots, matching the ordinary cleanup traversal's
 retains its stricter 256 combined function/expression frames.
 
 OPT #738 adds a phase-owned typed module index for HIR validation and the
-cleanup replay schema and typed skeleton consumers. Each phase independently
+cleanup replay schema, typed skeleton consumers, and complete module cleanup
+construction. Each phase independently
 constructs its index from the immutable resolved program. One 514-slot body
 cursor is reused across functions, and each directly selected helper target's
 complete transitive proof is performed once per index. Subtrees shared by
@@ -107,11 +108,22 @@ exhaustion is sticky G171 with no ordinary-profile fallback. An irrelevant
 signature creates no memo backing. These consumers do not reuse proofs across
 invocations, revisions or mutable source.
 
-Incremental resolver cleanup construction, standalone schema queries, and the
-cleanup path-state renewal checks retain their independent proof paths. This batch
-therefore implements bounded reuse in the named consumers, rather than a global
-cache or complete elimination of repeated helper proof work. Construction,
-replay performance and accepted-task efficiency remain unmeasured.
+Resolver and workspace-link construction hold one immutable typed index while
+building canonical plans for all ordinary functions and retained instances.
+Schema selection, renewal reservations and transfers reuse exact function-site
+facts; copied functions or another program cannot borrow that authority. The
+plan staging Vec is reserved before allocation, with the index, existing program
+backing and previously completed plans still live. Publication consumes this
+owned carrier only after the index borrow ends; construction failure replaces
+no attached plans. A module without a relevant signature still reserves its
+ordinary plan carrier but adds no helper index backing.
+
+Direct and detached cleanup construction, standalone schema queries, and cleanup
+path-state replay retain independent proof paths. The construction index does
+not substitute for validation or replay, which rebuild current HIR facts. This
+implements bounded reuse in the named consumers, rather than a global cache or
+complete elimination of repeated helper proof work. Construction and replay
+performance and accepted-task efficiency remain unmeasured.
 
 The helper-site census stores sorted borrowed identity/binding references in
 an explicitly grown Vec. Each replacement backing is reserved before its

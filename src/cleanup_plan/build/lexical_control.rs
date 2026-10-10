@@ -45,11 +45,41 @@ pub(crate) fn build_plan_for_execution(
     function: &ResolvedFunction,
     execution: &FunctionExecutionId,
 ) -> Result<CleanupPlan, Diagnostic> {
+    build_with_helpers(program, function, execution, None)
+}
+
+pub(super) fn build_with_index<'a>(
+    program: &'a ResolvedProgram,
+    function: &'a ResolvedFunction,
+    execution: &FunctionExecutionId,
+    index: &'a crate::loop_calls::byte_writer::ModuleIndex<'a>,
+) -> Result<CleanupPlan, Diagnostic> {
+    if !index.matches_program(program) {
+        return Err(plan_error(
+            "construction helper index belongs to another typed program",
+        ));
+    }
+    build_with_helpers(
+        program,
+        function,
+        execution,
+        (!index.is_empty()).then_some(index),
+    )
+}
+fn build_with_helpers<'a>(
+    program: &'a ResolvedProgram,
+    function: &'a ResolvedFunction,
+    execution: &FunctionExecutionId,
+    index: Option<&'a crate::loop_calls::byte_writer::ModuleIndex<'a>>,
+) -> Result<CleanupPlan, Diagnostic> {
     crate::hir::lexical_exit::validate_owner(function, execution)?;
     if crate::hir::lexical_exit::requires(function)? {
         crate::hir::lexical_exit::validate_function(program, function, execution)?;
     }
-    let mut builder = PlanBuilder::new(program, function)?;
+    let mut builder = match index {
+        Some(index) => PlanBuilder::with_index(program, function, index)?,
+        None => PlanBuilder::new(program, function)?,
+    };
     if crate::hir::lexical_exit::requires(function)? {
         if builder.schema != super::super::CLEANUP_PLAN_SCHEMA_V19 {
             builder.schema = super::super::CLEANUP_PLAN_SCHEMA_V18;

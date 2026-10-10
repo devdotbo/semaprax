@@ -1093,38 +1093,7 @@ fn rebuild_cleanup_metadata(program: &mut ResolvedProgram) -> Result<(), Diagnos
     {
         instance.function.cleanup = inventory;
     }
-    let cleanup_plans = program
-        .functions
-        .iter()
-        .map(|function| {
-            crate::cleanup_plan::build_plan_for_execution(
-                program,
-                function,
-                &FunctionExecutionId::Monomorphic(function.id.clone()),
-            )
-        })
-        .collect::<Result<Vec<_>, _>>()?;
-    for (function, cleanup_plan) in program.functions.iter_mut().zip(cleanup_plans) {
-        function.cleanup_plan = cleanup_plan;
-    }
-    let instance_cleanup_plans = program
-        .function_instances
-        .iter()
-        .map(|instance| {
-            crate::cleanup_plan::build_plan_for_execution(
-                program,
-                &instance.function,
-                &FunctionExecutionId::Generic(instance.id.clone()),
-            )
-        })
-        .collect::<Result<Vec<_>, _>>()?;
-    for (instance, cleanup_plan) in program
-        .function_instances
-        .iter_mut()
-        .zip(instance_cleanup_plans)
-    {
-        instance.function.cleanup_plan = cleanup_plan;
-    }
+    crate::cleanup_plan::attach_program_plans(program)?;
     for function in &program.functions {
         if let Some(yields) = &function.yields {
             crate::hir::yield_aggregate::check_bytes_request_site_count(

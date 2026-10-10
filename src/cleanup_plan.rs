@@ -30,6 +30,7 @@ pub(crate) use renewal_profile::binding as renewal_binding;
 mod validate;
 
 pub(crate) use build::build_plan;
+pub(crate) use build::helper_index::attach_program_plans;
 pub(crate) use build::lexical_control::build_plan_for_execution;
 pub use execute::{execute_for_conformance, CleanupExecutionError, CleanupScenario};
 pub(crate) use owned_liveness::{

@@ -5,6 +5,7 @@ use crate::diagnostic::Diagnostic;
 type Sites<'a> = (&'a ResolvedFunction, HelperBindings<'a>);
 #[derive(Debug, Default)]
 pub(crate) struct ModuleIndex<'a> {
+    program: Option<&'a ResolvedProgram>,
     sites: Vec<Sites<'a>>,
     #[cfg(test)]
     proof_count: usize,
@@ -12,7 +13,10 @@ pub(crate) struct ModuleIndex<'a> {
 impl<'a> ModuleIndex<'a> {
     pub(crate) fn new(program: &'a ResolvedProgram) -> Result<Self, Diagnostic> {
         if !resolved::potential(program) {
-            return Ok(Self::default());
+            return Ok(Self {
+                program: Some(program),
+                ..Self::default()
+            });
         }
         let error = resolved::census_error;
         let count = program
@@ -94,10 +98,18 @@ impl<'a> ModuleIndex<'a> {
             sites.push((function, bindings));
         }
         Ok(Self {
+            program: Some(program),
             sites,
             #[cfg(test)]
             proof_count: proofs.iter().filter(|proof| proof.is_some()).count(),
         })
+    }
+    pub(crate) fn matches_program(&self, program: &ResolvedProgram) -> bool {
+        self.program
+            .is_some_and(|actual| std::ptr::eq(actual, program))
+    }
+    pub(crate) fn is_empty(&self) -> bool {
+        self.sites.is_empty()
     }
     pub(crate) fn admits(&self, binding: &ResolvedBinding, value: &ResolvedExpr) -> bool {
         self.sites.iter().any(|(_, sites)| {

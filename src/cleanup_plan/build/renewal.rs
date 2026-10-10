@@ -169,8 +169,7 @@ impl PlanBuilder<'_> {
                 | super::super::CLEANUP_PLAN_SCHEMA_V17
                 | super::super::CLEANUP_PLAN_SCHEMA_V19
                 | super::super::CLEANUP_PLAN_SCHEMA_V18
-        ) || crate::cleanup_plan::renewal_binding(self.program, self.function, &value.id)
-            .is_none()
+        ) || self.renewal_binding(&value.id).is_none()
         {
             return Ok(());
         }

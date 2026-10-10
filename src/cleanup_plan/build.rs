@@ -37,6 +37,7 @@ mod execution_boundary;
 mod finish_call;
 mod generic_variant;
 mod guarded_variant;
+pub(super) mod helper_index;
 #[cfg(test)]
 mod hostile_tests;
 mod iterator;
@@ -342,6 +343,7 @@ fn builder_nested_capacity(builder: &PlanBuilder<'_>) -> usize {
         + exit_payload
         + status_payload
         + edge_payload
+        + builder.byte_helpers.owned_capacity_bytes()
         + strings::derived_metadata_capacity(builder)
         + flow_state_owned_capacity(&builder.initial_state)
         + builder.pending_try_residuals.capacity() * std::mem::size_of::<PendingTryResidual>()
@@ -606,6 +608,7 @@ struct LeafMetadata {
 struct PlanBuilder<'a> {
     program: &'a ResolvedProgram,
     function: &'a ResolvedFunction,
+    byte_helpers: helper_index::HelperSites<'a>,
     slots: Vec<CleanupSlot>,
     storage_to_slot: BTreeMap<StorageId, CleanupSlotId>,
     inventory_storage: BTreeMap<InventoryStorageId, StorageId>,
@@ -627,139 +630,6 @@ struct PlanBuilder<'a> {
 }
 
 impl<'a> PlanBuilder<'a> {
-    fn new(
-        program: &'a ResolvedProgram,
-        function: &'a ResolvedFunction,
-    ) -> Result<Self, Diagnostic> {
-        let byte_helpers = crate::loop_calls::byte_writer::checked_bindings(program, function)?;
-        let mut storage_to_slot = BTreeMap::new();
-        let mut inventory_storage = BTreeMap::new();
-        let mut slots = Vec::with_capacity(function.cleanup.slots.len());
-        for inventory_slot in &function.cleanup.slots {
-            let storage = match &inventory_slot.origin {
-                crate::cleanup::CleanupStorageOrigin::Parameter { value, .. }
-                | crate::cleanup::CleanupStorageOrigin::Binding { value }
-                | crate::cleanup::CleanupStorageOrigin::ProvisionalResult { value } => {
-                    if matches!(
-                        &inventory_slot.origin,
-                        crate::cleanup::CleanupStorageOrigin::ProvisionalResult { .. }
-                    ) {
-                        StorageId::ProvisionalResult
-                    } else {
-                        StorageId::Value(value.clone())
-                    }
-                }
-                crate::cleanup::CleanupStorageOrigin::Temporary { expression } => {
-                    StorageId::Temporary(expression.clone())
-                }
-            };
-            let id = CleanupSlotId(inventory_slot.id.0);
-            if storage_to_slot.insert(storage.clone(), id).is_some()
-                || inventory_storage
-                    .insert(inventory_slot.id, storage.clone())
-                    .is_some()
-            {
-                return Err(plan_error("cleanup inventory has conflicting storage"));
-            }
-            slots.push(CleanupSlot {
-                id,
-                storage,
-                ty: inventory_slot.ty.clone(),
-                storage_index: inventory_slot.discovery_index,
-                field_liveness_shape: inventory_slot.shape.clone(),
-            });
-        }
-        let mut leaves = BTreeMap::new();
-        for flag in &function.cleanup.flags {
-            let storage = inventory_storage
-                .get(&flag.place.storage)
-                .cloned()
-                .ok_or_else(|| plan_error("cleanup flag references unknown inventory storage"))?;
-            if leaves
-                .insert(
-                    flag.id,
-                    LeafMetadata {
-                        place: CleanupPlace {
-                            storage,
-                            projections: flag.place.projections.clone(),
-                        },
-                        lifecycle: flag.lifecycle.clone(),
-                    },
-                )
-                .is_some()
-            {
-                return Err(plan_error("cleanup inventory repeats a liveness flag"));
-            }
-        }
-        let next_flag = u32::try_from(leaves.len())
-            .map_err(|_| plan_error("too many cleanup liveness flags"))?;
-        let root = CleanupRegionId(0);
-        let entry = BlockId(0);
-        let mut builder = Self {
-            string_appends: crate::stdin_stream_ops::owner_reopens(function),
-            string_owner_moves: crate::literal_format::moving_string_operands(function),
-            string_condition_reads: crate::string_ops::conditions::function_reads(function),
-            program,
-            function,
-            slots,
-            storage_to_slot,
-            inventory_storage,
-            leaves,
-            next_flag,
-            status_sources: Vec::new(),
-            blocks: vec![OpenBlock {
-                id: entry,
-                region: root,
-                transitions: Vec::new(),
-                terminator: None,
-            }],
-            edges: Vec::new(),
-            regions: vec![CleanupRegion {
-                id: root,
-                parent: None,
-                slots: Vec::new(),
-                normal_scope_end: UNRESOLVED_EXIT,
-            }],
-            exits: Vec::new(),
-            entry_state: CleanupEntryState {
-                live_owned_parameters: Vec::new(),
-                conditional_owned_parameters: Vec::new(),
-            },
-            initial_state: FlowState {
-                renewals: BTreeMap::new(),
-                live_order: Vec::new(),
-                conditional_variants: Vec::new(),
-            },
-            pending_try_residuals: Vec::new(),
-            lexical: None,
-            schema: if !byte_helpers.is_empty() {
-                super::CLEANUP_PLAN_SCHEMA_V19
-            } else if crate::byte_ops::requires_same_owner_set(function) {
-                super::CLEANUP_PLAN_SCHEMA_V17
-            } else if crate::string_ops::replacement::requires(function) {
-                super::CLEANUP_PLAN_SCHEMA_V16
-            } else if crate::hir::vec_loop_renewal::requires_in(program, function) {
-                super::CLEANUP_PLAN_SCHEMA_V15
-            } else if crate::iterator_ops::function_uses_owned_iterator(function)
-                || crate::iterator_ops::function_uses_record_iterator_in(
-                    &program.declarations,
-                    function,
-                )
-            {
-                super::CLEANUP_PLAN_SCHEMA_V13
-            } else if crate::hir::iterator_loop::function_requires_renewal(function)
-                || crate::hir::iterator_loop::function_requires_record_renewal(program, function)
-            {
-                super::CLEANUP_PLAN_SCHEMA_V12
-            } else if crate::hir::iterator_loop::function_contains(function) {
-                super::CLEANUP_PLAN_SCHEMA_V11
-            } else {
-                schema::initial(&function.cleanup)?
-            },
-        };
-        builder.seed_entry(root)?;
-        Ok(builder)
-    }
     fn seed_entry(&mut self, root: CleanupRegionId) -> Result<(), Diagnostic> {
         for storage in &self.function.cleanup.entry_state.live_owned_parameters {
             let plan_storage = self
