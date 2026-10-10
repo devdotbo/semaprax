@@ -146,3 +146,29 @@ and explicit memcpy traffic for empty, 16/64-byte ASCII, Unicode, controls and
 quote/backslash inputs in one context. It is not a full application, full-row
 physical measurement, accepted fresh trial, billed cost, or an executed gain.
 Executable qualification and matched application trials remain pending.
+
+An opt-in physical-work definition lives in the existing native harness at
+`string_settlement::bulk_utf8::collection_writer::generated_collection_response_exact_physical_work`.
+It derives and verifies the actual selected codec, independently validates its
+linked HIR and repeats deterministic C emission. Native O0/O2 run the same
+emitted code and immutable byte oracle. Rows 0, 1, 8 and 256 cover empty,
+intermediate and actual maximum cardinality; all controls, NUL, quotes,
+backslashes and multi-byte Unicode occur in each nonempty row. Inputs are built
+before observation and remain alive across preflight, one-short refusal and
+exact encoding. No runtime allocation/fuel limit is reset.
+
+The probe observes exact Bytes reservation, ordinary String physical allocation,
+explicit `memcpy` traffic and the final buffer-to-String payload copy separately.
+Other carrier traffic is retained in total explicit-copy counts. Scalar byte
+stores are not labeled as measured copies; their count remains null. A second
+unmeasured authentic render checks retained input semantics, then canonical
+cleanup must balance the complete physical owner inventory. The external
+receipt retains source/test-executable hashes, generated source, independent
+oracles, compiler/run logs and actual metrics. This is an authored measurement
+route, not executed evidence or an old/current application comparison.
+
+Use a fresh external `SEMAPRAX_COLLECTION_WRITER_OUTPUT` directory and explicitly
+select this ignored owning test when the coordinated measurement phase is
+permitted. The ordinary fatal String OOM path prevents interpreting this probe
+as a returned-allocation fault matrix; production recovery obligations remain
+open under OPT-724. Application/cost qualification for OPT-737 remains separate.

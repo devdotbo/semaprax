@@ -180,3 +180,6 @@ mod epoch;
 
 #[path = "bulk_utf8/paired_physical.rs"]
 mod paired_physical;
+
+#[path = "bulk_utf8/collection_writer.rs"]
+mod collection_writer;
