@@ -100,6 +100,14 @@ impl Emitter<'_> {
             return Ok(Value::Bottom);
         }
         let result = self.materialize(expr, &tail)?;
+        if self.cleanup_plan.lexical_control.is_some() {
+            self.apply_post_transitions_storage(
+                &expr.id,
+                &result,
+                &crate::cleanup_plan::StorageId::Temporary(expr.id.clone()),
+                true,
+            )?;
+        }
         self.emit_block_scope_cleanup(expr)?;
         self.bindings = saved;
         Ok(result)
@@ -338,7 +346,10 @@ impl Emitter<'_> {
         self.get_scalar(&condition_value);
         self.output.push(0x45); // i32.eqz
         self.output.extend([0x0d, 0x01]); // br_if 1 -> $exit on false
-        self.semantic_charge()?; // stage semantic work v1: metered builds only
+        self.semantic_charge_at(
+            crate::cleanup_plan::ExecutionBoundaryKind::LoopIteration,
+            &condition.id,
+        )?; // stage semantic work v1: metered builds only
         let _body_value = self.emit_expr(body)?;
         if lexical {
             self.lexical_loops.pop();

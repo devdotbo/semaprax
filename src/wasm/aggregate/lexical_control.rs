@@ -261,17 +261,36 @@ impl<'a> Emitter<'a> {
                 // Complete only the authenticated Yield-arm tail and enclosing
                 // result handoffs. The authored arm prefix has already run.
                 let arm_result = self.materialize(&yielded.value, &produced)?;
-                self.apply_post_transitions(&yielded.value.id, &arm_result)?;
-                self.emit_block_scope_cleanup(&yielded.value)?;
+                let yield_storage =
+                    crate::cleanup_plan::StorageId::Temporary(yielded.value.id.clone());
+                let phase = self.lexical_transfer_block(&yielded.value.id, &yield_storage)?;
+                self.apply_post_transitions_storage(
+                    &yielded.value.id,
+                    &arm_result,
+                    &yield_storage,
+                    true,
+                )?;
+                self.emit_lexical_transfer_scope(phase)?;
                 let joined = self.materialize(value, &arm_result)?;
-                self.apply_post_transitions(assignment, &joined)?;
-                self.emit_owned_variant_match_cleanup(fields)?;
+                let match_storage = crate::cleanup_plan::StorageId::Temporary(assignment.clone());
+                let phase = self.lexical_transfer_block(&yielded.value.id, &match_storage)?;
+                self.apply_post_transitions_storage(
+                    &yielded.value.id,
+                    &joined,
+                    &match_storage,
+                    true,
+                )?;
+                self.emit_lexical_transfer_scope(phase)?;
+                let step_storage = crate::cleanup_plan::StorageId::Value(step.clone());
+                let phase = self.lexical_transfer_block(assignment, &step_storage)?;
+                self.apply_post_transitions_storage(assignment, &joined, &step_storage, true)?;
                 let destination = self
                     .bindings
                     .get(step)
                     .cloned()
                     .ok_or_else(|| error("owned latch Step carrier is absent"))?;
-                self.copy_value(&destination, &joined, "owned iterator latch")
+                self.copy_value(&destination, &joined, "owned iterator latch")?;
+                self.emit_lexical_transfer_scope(phase)
             }
         }
     }
@@ -446,5 +465,60 @@ impl<'a> Emitter<'a> {
         });
         let route = routes.next()?;
         routes.next().is_none().then_some(route)
+    }
+}
+
+impl Emitter<'_> {
+    fn lexical_transfer_block(
+        &self,
+        at: &ExpressionId,
+        destination: &crate::cleanup_plan::StorageId,
+    ) -> Result<crate::cleanup_plan::BlockId, Diagnostic> {
+        let mut blocks = self.cleanup_plan.blocks.iter().filter(|block| {
+            self.cleanup_plan.lexical_block_in_context(self.lexical_resume, block.id)
+                && block.transitions.iter().any(|transition| matches!(transition,
+                    crate::cleanup_plan::CleanupTransition::Transfer { at: anchor, destination: place, .. }
+                    | crate::cleanup_plan::CleanupTransition::TransferVariant { at: anchor, destination: place, .. }
+                    | crate::cleanup_plan::CleanupTransition::Renew { at: anchor, destination: place, .. }
+                    if anchor == at && &place.storage == destination))
+        });
+        let block = blocks
+            .next()
+            .ok_or_else(|| error("lexical transfer phase has no exact block"))?;
+        if blocks.next().is_some() {
+            return Err(error("lexical transfer phase repeats its exact block"));
+        }
+        Ok(block.id)
+    }
+    fn emit_lexical_transfer_scope(
+        &mut self,
+        block: crate::cleanup_plan::BlockId,
+    ) -> Result<(), Diagnostic> {
+        let region = self
+            .cleanup_plan
+            .blocks
+            .get(block.0 as usize)
+            .filter(|candidate| candidate.id == block)
+            .and_then(|candidate| self.cleanup_plan.regions.get(candidate.region.0 as usize))
+            .ok_or_else(|| error("lexical transfer scope block is absent"))?;
+        let exit = self
+            .lexical_scope_end(region)
+            .filter(|exit| exit.from == block)
+            .ok_or_else(|| error("lexical transfer scope is not its exact continuation"))?;
+        self.emit_cleanup_actions(&exit.finalize_in_order)
+    }
+}
+
+impl Emitter<'_> {
+    pub(super) fn emit_execution_boundary_cleanup(
+        &mut self,
+        kind: crate::cleanup_plan::ExecutionBoundaryKind,
+        site: &ExpressionId,
+    ) -> Result<(), Diagnostic> {
+        let boundary = self
+            .cleanup_plan
+            .execution_boundary(kind, site, self.lexical_resume)
+            .ok_or_else(|| error("execution guard has no exact cleanup boundary"))?;
+        self.emit_cleanup_actions(&boundary.finalize_in_order)
     }
 }

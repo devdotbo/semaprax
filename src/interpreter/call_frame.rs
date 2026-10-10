@@ -9,9 +9,17 @@ impl Evaluator<'_> {
         depth: usize,
     ) -> Result<Value, Flow> {
         // Stage semantic work v1: one unit per admitted source frame.
-        self.semantic_charge()?;
         let mut frame = Environment::from(values);
         frame.control = lexical_control::frame_control(function)?;
+        if let Err(failure) = self.semantic_charge() {
+            self.settle_execution_boundary(
+                function,
+                &mut frame,
+                crate::cleanup_plan::ExecutionBoundaryKind::FunctionEntry,
+                &function.body.id,
+            )?;
+            return Err(failure);
+        }
         self.set_trace_phase(ResolvedTracePhase::Requires);
         for (index, clause) in function.requires.iter().enumerate() {
             self.charge()?;

@@ -173,6 +173,18 @@ impl Emitter<'_> {
 
     /// Charge one semantic unit at the current point of a metered function.
     pub(super) fn semantic_charge(&mut self) -> Result<(), Diagnostic> {
+        let function = self.function;
+        self.semantic_charge_at(
+            crate::cleanup_plan::ExecutionBoundaryKind::FunctionEntry,
+            &function.body.id,
+        )
+    }
+
+    pub(super) fn semantic_charge_at(
+        &mut self,
+        kind: crate::cleanup_plan::ExecutionBoundaryKind,
+        site: &ExpressionId,
+    ) -> Result<(), Diagnostic> {
         let Some((_, base)) = self.semantic_site()? else {
             return Ok(());
         };
@@ -194,8 +206,12 @@ impl Emitter<'_> {
         write_i64(self.output, i64::from(SEMANTIC_FUEL_STATUS));
         self.output.push(0x21);
         write_u32(self.output, self.plan.status);
-        let actions = union_finalizer_order(self.cleanup_plan)?;
-        self.emit_cleanup_actions(&actions)?;
+        if self.cleanup_plan.lexical_control.is_some() {
+            self.emit_execution_boundary_cleanup(kind, site)?;
+        } else {
+            let actions = union_finalizer_order(self.cleanup_plan)?;
+            self.emit_cleanup_actions(&actions)?;
+        }
         self.output.push(0x0c);
         write_u32(
             self.output,

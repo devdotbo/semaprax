@@ -162,7 +162,7 @@ impl<'a> Evaluator<'a> {
     }
 }
 
-fn settle_actions(
+pub(super) fn settle_actions(
     environment: &mut Environment,
     actions: &[FinalizeAction],
     mut provisional: Option<&mut Value>,
@@ -305,6 +305,21 @@ impl<'a> Evaluator<'a> {
                 // Evaluate only the retained Yield tail. The authored body and
                 // whole own-match must never execute a second time.
                 let replacement = self.evaluate(tail, environment, depth)?;
+                // Each handoff has a distinct physical contour even when its
+                // expression anchor is shared. The local replacement protects
+                // the result while canonical non-result scopes settle.
+                self.settle_lexical_transfer_scope(
+                    function,
+                    environment,
+                    &yielded.value.id,
+                    &StorageId::Temporary(yielded.value.id.clone()),
+                )?;
+                self.settle_lexical_transfer_scope(
+                    function,
+                    environment,
+                    &yielded.value.id,
+                    &StorageId::Temporary(assignment.clone()),
+                )?;
                 let slot = environment
                     .get_mut(step)
                     .ok_or(Flow::Guard("owned latch Step slot is unavailable"))?;
@@ -314,7 +329,12 @@ impl<'a> Evaluator<'a> {
                     ));
                 }
                 *slot = replacement;
-                Ok(())
+                self.settle_lexical_transfer_scope(
+                    function,
+                    environment,
+                    assignment,
+                    &StorageId::Value(step.clone()),
+                )
             }
         }
     }
@@ -422,5 +442,71 @@ impl Evaluator<'_> {
             ));
         }
         settle_actions(environment, &route.finalize_in_order, provisional)
+    }
+}
+
+impl Evaluator<'_> {
+    fn settle_lexical_transfer_scope(
+        &self,
+        function: &ResolvedFunction,
+        environment: &mut Environment,
+        at: &hir::ExpressionId,
+        destination: &StorageId,
+    ) -> Result<(), Flow> {
+        let resume = environment
+            .control
+            .as_deref()
+            .and_then(|control| control.resume);
+        let plan = &function.cleanup_plan;
+        let mut blocks = plan.blocks.iter().filter(|block| {
+            plan.lexical_block_in_context(resume, block.id) && block.transitions.iter().any(|transition| matches!(transition,
+                crate::cleanup_plan::CleanupTransition::Transfer { at: anchor, destination: place, .. }
+                | crate::cleanup_plan::CleanupTransition::TransferVariant { at: anchor, destination: place, .. }
+                | crate::cleanup_plan::CleanupTransition::Renew { at: anchor, destination: place, .. }
+                if anchor == at && &place.storage == destination))
+        });
+        let block = blocks
+            .next()
+            .ok_or(Flow::Guard("lexical transfer phase has no exact block"))?;
+        if blocks.next().is_some() {
+            return Err(Flow::Guard("lexical transfer phase repeats its block"));
+        }
+        let mut exits = plan.exits.iter().filter(|exit| {
+            exit.from == block.id
+                && exit.leaves_regions.as_slice() == [block.region]
+                && matches!(exit.continuation, ExitContinuation::Continue(_))
+        });
+        let exit = exits.next().ok_or(Flow::Guard(
+            "lexical transfer phase lacks canonical scope completion",
+        ))?;
+        if exits.next().is_some() {
+            return Err(Flow::Guard(
+                "lexical transfer scope completion is duplicated",
+            ));
+        }
+        settle_actions(environment, &exit.finalize_in_order, None)
+    }
+}
+
+impl Evaluator<'_> {
+    pub(super) fn settle_execution_boundary(
+        &self,
+        function: &ResolvedFunction,
+        environment: &mut Environment,
+        kind: crate::cleanup_plan::ExecutionBoundaryKind,
+        site: &hir::ExpressionId,
+    ) -> Result<(), Flow> {
+        if function.cleanup_plan.lexical_control.is_none() {
+            return Ok(());
+        }
+        let resume = environment
+            .control
+            .as_deref()
+            .and_then(|control| control.resume);
+        let boundary = function
+            .cleanup_plan
+            .execution_boundary(kind, site, resume)
+            .ok_or(Flow::Guard("execution guard has no exact cleanup boundary"))?;
+        settle_actions(environment, &boundary.finalize_in_order, None)
     }
 }

@@ -25,7 +25,18 @@ impl Evaluator<'_> {
             if !flag {
                 return Ok(());
             }
-            self.semantic_charge()?;
+            if let Err(failure) = self.semantic_charge() {
+                if environment.control.is_some() {
+                    let function = self.lexical_function(environment)?;
+                    self.settle_execution_boundary(
+                        function,
+                        environment,
+                        crate::cleanup_plan::ExecutionBoundaryKind::LoopIteration,
+                        &condition.id,
+                    )?;
+                }
+                return Err(failure);
+            }
             match self.evaluate(body, environment, depth) {
                 Ok(_) => {}
                 Err(Flow::Lexical(lexical_control::ExitFlow::Break(target)))

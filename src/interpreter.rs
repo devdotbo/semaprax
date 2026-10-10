@@ -3833,6 +3833,12 @@ impl Evaluator<'_> {
         depth: usize,
     ) -> Result<Value, Flow> {
         if depth >= MAX_CALL_DEPTH {
+            if function.cleanup_plan.lexical_control.is_some() {
+                let mut frame = Environment::from(values);
+                frame.control = lexical_control::frame_control(function)?;
+                self.settle_execution_boundary(function, &mut frame,
+                    crate::cleanup_plan::ExecutionBoundaryKind::FunctionEntry, &function.body.id)?;
+            }
             return Err(Flow::DepthExceeded);
         }
         // Legacy evaluators do not record trace events. Keep their call path

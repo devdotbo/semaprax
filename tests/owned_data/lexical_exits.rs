@@ -97,3 +97,6 @@ fn returned_variant_payload_uses_its_case_qualified_finalizer() {
     interpret(&recovered, 29, false);
     crate::owned_vec_bytes_runtime::run_wasm_expected(&recovered, 0, 1, "none", 29);
 }
+
+#[path = "lexical_exits/iterator_resume.rs"]
+mod iterator_resume;

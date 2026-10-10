@@ -3337,7 +3337,14 @@ impl Emitter<'_> {
         );
         if !owned_match {
             if !owned_try {
-                self.apply_post_transitions(&expr.id, &value)?;
+                if self.cleanup_plan.lexical_control.is_some() && matches!(expr.kind, ResolvedExprKind::Block { .. }) {
+                    // The block-result handoff preceded its canonical scope end.
+                    // Remaining at-anchor continuations occur after that boundary.
+                    self.apply_post_transitions_storage(&expr.id, &value,
+                        &crate::cleanup_plan::StorageId::Temporary(expr.id.clone()), false)?;
+                } else {
+                    self.apply_post_transitions(&expr.id, &value)?;
+                }
             }
             nested_owned::emit_update_scope_cleanup(self, expr)?;
         }
