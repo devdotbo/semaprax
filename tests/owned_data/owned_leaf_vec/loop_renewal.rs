@@ -64,15 +64,34 @@ fn owned_record_argument_commit_preserves_later_cell_and_failed_argument_cleanup
     let body = r#"@id("app.main") fn main()->i64 {
  let mut words=vec_with_capacity<Row>(2usize);
  let later=vec_with_capacity<Row>(1usize);
+ let first=vec_push<Row>(vec_with_capacity<Row>(2usize),Row{priority:7,title:"ab",payload:bytes_zeroed(1usize)});
+ let inputs=vec_push<Row>(first,Row{priority:7,title:"ab",payload:bytes_zeroed(1usize)});
+ for own item in vec_into_iter<Row>(inputs) {
+  words=vec_push<Row>(words,item);
+  0
+ }
+ if vec_len<Row>(words)==2usize && vec_len<Row>(later)==0usize {29}else{0}
+}
+"#;
+    // Bytes allocation in a loop is intentionally closed. Preserve that
+    // refusal while the positive case transfers preconstructed whole records
+    // into distinct iteration-local owners and stages them at the same call.
+    let allocating = r#"@id("app.main") fn main()->i64 {
+ let mut words=vec_with_capacity<Row>(2usize);
  let mut index=0;
  while index<2 {
   let item=Row{priority:7,title:"ab",payload:bytes_zeroed(1usize)};
   words=vec_push<Row>(words,item);
   index=index+1; 0
  }
- if vec_len<Row>(words)==2usize && vec_len<Row>(later)==0usize {29}else{0}
-}
-"#;
+ 29
+}"#;
+    let errors = semaprax::check(
+        &format!("{}{}", super::DECLARATION, allocating),
+        "owned-record-loop-allocation.spx",
+    )
+    .unwrap_err();
+    assert!(errors.iter().any(|error| error.code == "SPX-T267"));
     let source = format!("{}{}", super::DECLARATION, body);
     let checked = semaprax::check(&source, "owned-record-loop-commit.spx").unwrap();
     let canonical = semaprax::format::canonical(&checked);
@@ -85,7 +104,7 @@ fn owned_record_argument_commit_preserves_later_cell_and_failed_argument_cleanup
     // empty later vector. This private wire token is Vec index failure (14),
     // not the public normalized domain code 2. Neither cell may leak.
     let failed = body.replace(
-        "let item=Row{priority:7,title:\"ab\",payload:bytes_zeroed(1usize)};\n  words=vec_push<Row>(words,item);",
+        "words=vec_push<Row>(words,item);",
         "words=vec_push<Row>(words,vec_clone_at<Row>(later,0usize));",
     );
     assert_ne!(failed, body);
