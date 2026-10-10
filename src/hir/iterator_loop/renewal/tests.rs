@@ -4,7 +4,7 @@ use super::*;
 fn lexical_continue_keeps_record_renewal_inside_its_actual_loop() {
     let source = r#"module record.renewal;
 @id("cursor") record Cursor { @id("cursor.bytes") bytes: Bytes, @id("cursor.index") index: usize, }
-@id("advance") fn advance(value: Cursor)->Cursor { value }
+@id("advance") fn advance(value: own Cursor)->Cursor { value }
 @id("main") fn main()->i64 {
  let mut cursor=Cursor{bytes:bytes_zeroed(0usize),index:0usize};
  while false { cursor=advance(cursor); continue; }

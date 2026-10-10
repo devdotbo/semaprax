@@ -81,3 +81,42 @@ fn changed_snapshot_and_missing_freeze_are_rejected_independently() {
     value.kind = ResolvedExprKind::Usize(1);
     assert_eq!(crate::hir::validate(&forged).unwrap_err().code, "SPX-H006");
 }
+
+#[test]
+fn copy_record_read_borrows_do_not_authorize_consuming_vector_calls() {
+    let original = resolved();
+    let function = original
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "app.main")
+        .unwrap();
+    let mut pending = vec![&function.body];
+    let mut reads = 0;
+    while let Some(expression) = pending.pop() {
+        if let ResolvedExprKind::Call { callee, args, .. } = &expression.kind {
+            if matches!(
+                callee.as_str(),
+                crate::vec_ops::LEN_ID | crate::vec_ops::GET_ID
+            ) {
+                assert!(record_vec_borrow::argument(
+                    &original, expression, 0, &args[0]
+                ));
+                let mut consuming = expression.clone();
+                let ResolvedExprKind::Call { callee, .. } = &mut consuming.kind else {
+                    unreachable!()
+                };
+                *callee = crate::hir::DeclarationId::new(crate::vec_ops::CLEAR_ID);
+                assert!(!record_vec_borrow::argument(
+                    &original, &consuming, 0, &args[0]
+                ));
+                reads += 1;
+            }
+        }
+        push_children(expression, &mut pending);
+    }
+    assert_eq!(
+        reads, 3,
+        "one length snapshot and two exact Copy field reads"
+    );
+    crate::hir::validate(&original).unwrap();
+}

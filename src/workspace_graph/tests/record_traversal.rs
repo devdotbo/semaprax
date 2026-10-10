@@ -14,6 +14,7 @@ fn sources() -> Vec<WorkspaceSource> {
             "library.spx",
             r#"module library;
 @id("library.row") record Row { @id("library.row.left") left:i64, @id("library.row.right") right:i64, }
+@id("library.zero") fn zero()->i64 { 0 }
 "#,
         ),
         canonical_source(

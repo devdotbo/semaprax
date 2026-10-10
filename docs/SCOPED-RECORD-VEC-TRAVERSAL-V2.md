@@ -62,6 +62,12 @@ Unchanged functions keep `semaprax.loan-plan.v1`; borrowed-root empty plans
 also retain v1 while ordinary HIR proof still checks their traversal freeze.
 Canonical cleanup vectors are never reordered or repaired downstream.
 
+Copy-record Vec length, capacity and element reads retain the existing
+compiler-owned borrow parameter contract. Loan discovery and overlap replay
+authenticate the exact operation, nominal element, whole carrier and argument
+shape even when the generated owner-place expression keeps `own` mode. This
+does not exempt consuming Vec calls or authorize a move during the freeze.
+
 ## Qualification definitions
 
 Owning definitions live in `tests/language/record_vec_traversal.rs`,

@@ -34,6 +34,7 @@ mod guidance;
 mod lexical_exit;
 mod native_view;
 pub(crate) mod owned_capacity;
+mod record_vec_borrow;
 #[cfg(test)]
 mod shared_identity_tests;
 pub(crate) mod traversal;
@@ -1423,20 +1424,21 @@ fn borrowed_call_arguments<'a>(
             args.iter()
                 .enumerate()
                 .filter(|(index, argument)| {
-                    target.map_or_else(
-                        || {
-                            argument.ownership == OwnershipMode::Borrow
-                                || crate::hir::owned_collection_record::borrowed_vec_argument(
-                                    program, expression, *index, argument,
-                                )
-                        },
-                        |target| {
-                            target
-                                .params
-                                .get(*index)
-                                .is_some_and(|p| p.ownership == OwnershipMode::Borrow)
-                        },
-                    )
+                    record_vec_borrow::argument(program, expression, *index, argument)
+                        || target.map_or_else(
+                            || {
+                                argument.ownership == OwnershipMode::Borrow
+                                    || crate::hir::owned_collection_record::borrowed_vec_argument(
+                                        program, expression, *index, argument,
+                                    )
+                            },
+                            |target| {
+                                target
+                                    .params
+                                    .get(*index)
+                                    .is_some_and(|p| p.ownership == OwnershipMode::Borrow)
+                            },
+                        )
                 })
                 .collect()
         }
