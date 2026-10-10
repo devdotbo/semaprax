@@ -455,6 +455,9 @@ impl Resolver<'_> {
                 }
             }
         }
+        if let Some(error) = self.byte_helpers.failure() {
+            return Err(error);
+        }
         let function_templates = self
             .program
             .functions
@@ -490,6 +493,9 @@ impl Resolver<'_> {
             functions,
             function_instances,
         };
+        if let Some(error) = self.byte_helpers.failure() {
+            return Err(error);
+        }
         analyze_byte_data_capacity(&resolved)?;
         let loan_plans = resolved
             .functions

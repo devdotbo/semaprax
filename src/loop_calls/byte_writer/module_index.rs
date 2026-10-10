@@ -7,6 +7,8 @@ type Sites<'a> = (&'a ResolvedFunction, HelperBindings<'a>);
 pub(crate) struct ModuleIndex<'a> {
     program: Option<&'a ResolvedProgram>,
     sites: Vec<Sites<'a>>,
+    // Only completed positive proofs become reusable target authority.
+    targets: Vec<&'a ResolvedFunction>,
     #[cfg(test)]
     proof_count: usize,
 }
@@ -53,6 +55,7 @@ impl<'a> ModuleIndex<'a> {
             return Err(error());
         };
         let mut cursor = resolved::CensusCursor::new(first)?;
+        let mut proof_cursor = None;
         let mut lookup_work = WORK;
         for function in program
             .functions
@@ -86,7 +89,8 @@ impl<'a> ModuleIndex<'a> {
                     let proved = match proofs[index] {
                         Some(proved) => proved,
                         None => {
-                            let proved = resolved::checked_target(program, target)?;
+                            let proved =
+                                resolved::checked_target(program, target, &mut proof_cursor)?;
                             proofs[index] = Some(proved);
                             proved
                         }
@@ -97,9 +101,29 @@ impl<'a> ModuleIndex<'a> {
                 })?;
             sites.push((function, bindings));
         }
+        let positive = proofs.iter().filter(|proof| **proof == Some(true)).count();
+        let target_bytes = positive
+            .checked_mul(std::mem::size_of::<&ResolvedFunction>())
+            .ok_or_else(error)?;
+        if !crate::bounded_output::reserve_active_required(target_bytes) {
+            return Err(error());
+        }
+        let mut targets = Vec::new();
+        targets.try_reserve_exact(positive).map_err(|_| error())?;
+        if targets.capacity() != positive {
+            return Err(error());
+        }
+        targets.extend(
+            program
+                .functions
+                .iter()
+                .zip(&proofs)
+                .filter_map(|(function, proof)| (*proof == Some(true)).then_some(function)),
+        );
         Ok(Self {
             program: Some(program),
             sites,
+            targets,
             #[cfg(test)]
             proof_count: proofs.iter().filter(|proof| proof.is_some()).count(),
         })
@@ -117,6 +141,30 @@ impl<'a> ModuleIndex<'a> {
                 .get_exact(&value.id)
                 .is_some_and(|actual| actual == binding)
         })
+    }
+    /// Reuse only a positive proof of this exact held callee. Targets absent
+    /// from the assignment census keep the independent proof fallback.
+    pub(crate) fn target(&self, target: &ResolvedFunction) -> bool {
+        let Some(program) = self.program else {
+            return false;
+        };
+        if !program
+            .functions
+            .iter()
+            .chain(
+                program
+                    .function_instances
+                    .iter()
+                    .map(|instance| &instance.function),
+            )
+            .any(|function| std::ptr::eq(function, target))
+        {
+            return false;
+        }
+        self.targets
+            .iter()
+            .any(|function| std::ptr::eq(*function, target))
+            || resolved_target(program, target)
     }
     pub(crate) fn function_sites(
         &self,
@@ -137,7 +185,8 @@ impl<'a> ModuleIndex<'a> {
     /// every retained Vec capacity, including empty function-site carriers.
     #[cfg(test)]
     pub(crate) fn owned_capacity_bytes(&self) -> usize {
-        self.sites.capacity() * std::mem::size_of::<Sites<'a>>()
+        self.targets.capacity() * std::mem::size_of::<&ResolvedFunction>()
+            + self.sites.capacity() * std::mem::size_of::<Sites<'a>>()
             + self
                 .sites
                 .iter()

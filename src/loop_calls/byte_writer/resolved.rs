@@ -20,9 +20,10 @@ pub(crate) fn nonallocating(program: &ResolvedProgram, target: &ResolvedFunction
             .saturating_add(program.function_instances.len()),
     )
 }
-pub(super) fn checked_target(
-    program: &ResolvedProgram,
-    target: &ResolvedFunction,
+pub(super) fn checked_target<'a>(
+    program: &'a ResolvedProgram,
+    target: &'a ResolvedFunction,
+    cursor: &mut Option<ProofCursor<'a>>,
 ) -> Result<bool, crate::diagnostic::Diagnostic> {
     if target.return_type != ResolvedType::Bytes
         || target
@@ -38,16 +39,14 @@ pub(super) fn checked_target(
     {
         return Ok(false);
     }
-    if !crate::bounded_output::reserve_active_required(std::mem::size_of::<
-        [Option<Frame<'_>>; DEPTH],
-    >()) {
-        return Err(census_error());
+    if cursor.is_none() {
+        *cursor = Some(ProofCursor::new()?);
     }
-    Ok(prove(
+    Ok(nonallocating_with_cursor(
         target,
-        &|id, instance| program.resolve_call_target(id, instance),
-        &|_, mode, ty| resolved_param(program, mode, ty),
-        &|_, ty| {
+        |id, instance| program.resolve_call_target(id, instance),
+        |_, mode, ty| resolved_param(program, mode, ty),
+        |_, ty| {
             crate::hir::is_scalar_resolved_type(ty)
                 || crate::hir::copy_record_collection::admitted(&program.declarations, ty)
                 || super::super::resolved_match_scrutinee_admitted(&program.declarations, ty)
@@ -56,9 +55,8 @@ pub(super) fn checked_target(
             .functions
             .len()
             .saturating_add(program.function_instances.len()),
-        false,
-    )
-    .is_some())
+        cursor.as_mut().ok_or_else(census_error)?,
+    ))
 }
 pub(crate) fn nonallocating_with<'a>(
     target: &'a ResolvedFunction,

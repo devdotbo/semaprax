@@ -427,6 +427,7 @@ mod tests {
     fn resolver(program: &crate::ast::Program) -> Resolver<'_> {
         Resolver {
             program,
+            byte_helpers: crate::loop_calls::byte_writer::SourceIndex::new(program),
             declarations: DeclarationIndex::from_verified(program).expect("declaration index"),
             reuse: None,
             function_work: super::super::FunctionResolutionWork::default(),

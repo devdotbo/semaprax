@@ -512,6 +512,7 @@ fn resolve_verified(
     let inventory_program = clause_program.as_ref().unwrap_or(program);
     let resolved = (Resolver {
         program: inventory_program,
+        byte_helpers: crate::loop_calls::byte_writer::SourceIndex::new(inventory_program),
         declarations: DeclarationIndex::from_verified(inventory_program)?,
         reuse: if clause_program.is_some() {
             None
@@ -526,6 +527,7 @@ fn resolve_verified(
     };
     (Resolver {
         program: &desugared,
+        byte_helpers: crate::loop_calls::byte_writer::SourceIndex::new(&desugared),
         declarations: DeclarationIndex::from_verified(&desugared)?,
         reuse: None,
         function_work: FunctionResolutionWork::default(),
@@ -598,6 +600,7 @@ struct FunctionReuse<'a> {
 
 struct Resolver<'a> {
     program: &'a Program,
+    byte_helpers: crate::loop_calls::byte_writer::SourceIndex<'a>,
     declarations: DeclarationIndex,
     reuse: Option<FunctionReuse<'a>>,
     function_work: FunctionResolutionWork,

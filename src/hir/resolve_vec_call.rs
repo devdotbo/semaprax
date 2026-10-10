@@ -397,7 +397,7 @@ fn byte_helper_renewal(
     binding.ty == super::ResolvedType::Bytes && value.ty == binding.ty
         && binding.ownership == OwnershipMode::Own && value.ownership == OwnershipMode::Own
         && type_arguments.is_empty() && args.len() == target.params.len()
-        && crate::loop_calls::byte_writer::source_target(resolver.program, target)
+        && resolver.byte_helpers.target(target)
         && target.params.iter().zip(args).all(|(p, arg)| {
             resolver.resolve_type(&p.ty, arg.span).is_ok_and(|ty| ty == arg.ty)
                 && (p.mode != crate::ast::ParamMode::Own || matches!(&arg.kind, ResolvedExprKind::Place(place) if place.root == binding.id && place.projections.is_empty()))

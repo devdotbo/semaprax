@@ -43,6 +43,20 @@ fn module_index_reuses_typed_target_proofs_and_preserves_each_exact_site() {
         !index.admits(binding, &value.clone()),
         "copied identities are not this immutable phase's site authority"
     );
+    let leaf = program
+        .functions
+        .iter()
+        .find(|function| function.name == "leaf")
+        .unwrap();
+    let (proved, overflowed, used) =
+        crate::bounded_output::with_limit_usage(0, || (0..1000).all(|_| index.target(leaf)));
+    assert!(proved);
+    assert!(!overflowed);
+    assert_eq!(used, 0);
+    assert!(
+        !index.target(&leaf.clone()),
+        "copied callee cannot reuse held proof authority"
+    );
     assert!(index.owned_capacity_bytes() > 0);
     crate::hir::validate(&program).unwrap();
     crate::cleanup_plan::validate_program(&program).unwrap();
@@ -89,7 +103,9 @@ fn irrelevant_modules_have_no_new_backing_and_allocating_legacy_helpers_keep_old
     ).unwrap_err();
     assert!(rejected.iter().any(|error| error.code == "SPX-U105"));
     let index = ModuleIndex::new(&legacy).unwrap();
-    assert_eq!(index.proof_count, 1);
+    // Immutable owned transfer is ordinary old-profile code, so no renewal
+    // candidate requires a closure proof in its assignment census.
+    assert_eq!(index.proof_count, 0);
     assert!(legacy
         .functions
         .iter()
@@ -98,6 +114,37 @@ fn irrelevant_modules_have_no_new_backing_and_allocating_legacy_helpers_keep_old
         |function| function.cleanup_plan.schema != crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V19
     ));
     crate::hir::validate(&legacy).unwrap();
+    // Keep the original one-proof negative oracle on an actual hostile typed
+    // assignment candidate. Its real allocating callee must grant no sites.
+    let mut hostile = legacy.clone();
+    let main = hostile
+        .functions
+        .iter_mut()
+        .find(|function| function.name == "main")
+        .unwrap();
+    let ResolvedExprKind::Block { statements, .. } = &mut main.body.kind else {
+        panic!("legacy main block")
+    };
+    let crate::hir::ResolvedStatement::Let { binding: owner, .. } = &statements[0] else {
+        panic!("named output owner")
+    };
+    let owner = owner.clone();
+    let crate::hir::ResolvedStatement::Let { value, span, .. } = statements[1].clone() else {
+        panic!("ordinary allocating transfer")
+    };
+    statements[1] = crate::hir::ResolvedStatement::Assign {
+        binding: owner,
+        field: None,
+        value,
+        span,
+    };
+    let hostile_index = ModuleIndex::new(&hostile).unwrap();
+    assert_eq!(hostile_index.proof_count, 1);
+    assert!(hostile
+        .functions
+        .iter()
+        .all(|function| !hostile_index.has_sites(function)));
+    assert!(crate::hir::validate(&hostile).is_err());
 }
 #[test]
 fn changed_contracts_cycles_and_missing_targets_cannot_reuse_prior_index_authority() {

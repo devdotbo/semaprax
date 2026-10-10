@@ -12,7 +12,7 @@ use crate::source_verify::is_scalar_source_type;
 use super::expr_nodes::ResolvedExpr;
 use super::ids::{DeclarationId, FunctionExecutionId};
 use super::monomorphize::substitute_type;
-use super::nodes::{DeclarationKind, ResolvedBinding, ResolvedType, is_scalar_resolved_type};
+use super::nodes::{is_scalar_resolved_type, DeclarationKind, ResolvedBinding, ResolvedType};
 use super::{Binding, Resolver};
 
 impl Resolver<'_> {
@@ -311,29 +311,28 @@ impl Resolver<'_> {
                         .iter()
                         .find(|function| function.name == *name);
                     if let Some(declared) = declared {
-                        let scalar_signature =
-                            crate::loop_calls::byte_writer::source_target(self.program, declared)
-                                || crate::stdin_stream_ops::ast_forward_signature(declared)
-                                || (crate::loop_calls::effects_admitted(&declared.effects)
-                                    && crate::loop_calls::ast_result_admitted(
+                        let scalar_signature = self.byte_helpers.target(declared)
+                            || crate::stdin_stream_ops::ast_forward_signature(declared)
+                            || (crate::loop_calls::effects_admitted(&declared.effects)
+                                && crate::loop_calls::ast_result_admitted(
+                                    self.program,
+                                    &declared.return_type,
+                                )
+                                && declared.params.iter().all(|param| {
+                                    crate::loop_calls::ast_param_admitted(
                                         self.program,
-                                        &declared.return_type,
-                                    )
-                                    && declared.params.iter().all(|param| {
-                                        crate::loop_calls::ast_param_admitted(
-                                self.program,
-                                param.mode,
-                                &param.ty,
-                            ) || (param.mode == crate::ast::ParamMode::Borrow
-                                && self
-                                    .resolve_type(&param.ty, expression.span)
-                                    .is_ok_and(|ty| {
-                                        crate::hir::iterator_loop::is_owner_renewal_record(
-                                            &self.declarations,
-                                            &ty,
-                                        )
-                                    }))
-                                    }));
+                                        param.mode,
+                                        &param.ty,
+                                    ) || (param.mode == crate::ast::ParamMode::Borrow
+                                        && self.resolve_type(&param.ty, expression.span).is_ok_and(
+                                            |ty| {
+                                                crate::hir::iterator_loop::is_owner_renewal_record(
+                                                    &self.declarations,
+                                                    &ty,
+                                                )
+                                            },
+                                        ))
+                                }));
                         if !scalar_signature {
                             return Err(self.error(
                                 "SPX-T252",
@@ -453,7 +452,7 @@ impl Resolver<'_> {
     }
 
     fn source_record_owner_renewal(&self, binding: &str, value: &Expr) -> bool {
-        if crate::loop_calls::byte_writer::source_assignment(self.program, binding, value) {
+        if self.byte_helpers.assignment(binding, value) {
             return true;
         }
         let ExprKind::Call {

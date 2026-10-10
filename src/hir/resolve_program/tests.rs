@@ -19,6 +19,7 @@ fn parsed(source: &str, path: &str) -> crate::ast::Program {
 fn resolver(program: &crate::ast::Program) -> Resolver<'_> {
     Resolver {
         program,
+        byte_helpers: crate::loop_calls::byte_writer::SourceIndex::new(program),
         declarations: DeclarationIndex::from_verified(program).expect("declarations index"),
         reuse: None,
         function_work: super::super::FunctionResolutionWork::default(),
@@ -421,4 +422,72 @@ fn resolved_function_carrier_is_exact_for_free_functions_and_class_methods() {
             .collect::<Vec<_>>(),
         ["zed", "alpha", "app.main", "counter.get", "counter.bump"]
     );
+}
+
+#[test]
+fn fresh_resolver_reuses_authenticated_writer_proofs_across_actual_loop_scans() {
+    let ast = crate::check(
+        include_str!("../../../tests/owned_data/byte_helper_renewal.spx"),
+        "resolver-writer-proof.spx",
+    )
+    .unwrap();
+    let resolver = resolver(&ast);
+    let main = ast
+        .functions
+        .iter()
+        .find(|function| function.name == "main")
+        .unwrap();
+    let (lowered, overflowed, used) =
+        crate::bounded_output::with_limit_usage(usize::MAX, || resolver.resolve_function(main));
+    let lowered = lowered.unwrap();
+    assert!(!overflowed);
+    assert!(used > 0);
+    assert!(resolver.byte_helpers.owned_capacity_bytes() > 0);
+    let crate::ast::ExprKind::Block { statements, .. } = &main.body.kind else {
+        panic!("authored main block")
+    };
+    let body = statements
+        .iter()
+        .find_map(|statement| match statement {
+            crate::ast::Statement::While { body, .. } => Some(body.as_ref()),
+            _ => None,
+        })
+        .unwrap();
+    let leaf = ast
+        .functions
+        .iter()
+        .find(|function| function.name == "leaf")
+        .unwrap();
+    let (reference, overflowed, reference_bytes) =
+        crate::bounded_output::with_limit_usage(usize::MAX, || {
+            crate::loop_calls::byte_writer::source_target(&ast, leaf)
+        });
+    assert!(reference);
+    assert!(!overflowed);
+    assert!(
+        reference_bytes > 0,
+        "independent proof still owns real scratch"
+    );
+    // Exercise the actual resolver admission route, not a direct memo lookup.
+    // Each scan used to reserve another complete depth-256 proof frame array.
+    let (admitted, overflowed, repeated) = crate::bounded_output::with_limit_usage(0, || {
+        (0..1000).try_for_each(|_| resolver.reject_while_disallowed(body))
+    });
+    admitted.unwrap();
+    assert!(!overflowed);
+    assert_eq!(repeated, 0);
+    assert!(resolver.byte_helpers.failure().is_none());
+    let complete = crate::hir::resolve(&ast).unwrap();
+    let actual = complete
+        .functions
+        .iter()
+        .find(|function| function.name == "main")
+        .unwrap();
+    assert_eq!(lowered.body, actual.body);
+    assert_eq!(lowered.params, actual.params);
+    let wire = crate::cache_codec::encode(&complete).unwrap();
+    let restored: ResolvedProgram = crate::cache_codec::decode(&wire).unwrap();
+    crate::hir::validate(&restored).unwrap();
+    crate::cleanup_plan::validate_program(&restored).unwrap();
+    assert_eq!(crate::cache_codec::encode(&restored).unwrap(), wire);
 }

@@ -218,10 +218,15 @@ impl HirValidator<'_> {
                             ..
                         } = statement
                         {
-                            (crate::loop_calls::byte_writer::assignment(
-                                self.program,
-                                binding,
-                                value,
+                            (self.byte_helpers.map_or_else(
+                                || {
+                                    crate::loop_calls::byte_writer::assignment(
+                                        self.program,
+                                        binding,
+                                        value,
+                                    )
+                                },
+                                |helpers| helpers.admits(binding, value),
                             ) || crate::hir::iterator_loop::is_record_owner_renewal(
                                 self.program,
                                 binding,
@@ -458,7 +463,11 @@ impl HirValidator<'_> {
                         }
                         continue;
                     }
-                    let scalar_signature = crate::loop_calls::byte_writer::resolved_target(self.program, target)
+                    let byte_helper = self.byte_helpers.map_or_else(
+                        || crate::loop_calls::byte_writer::resolved_target(self.program, target),
+                        |helpers| helpers.target(target),
+                    );
+                    let scalar_signature = byte_helper
                         || crate::loop_calls::effects_admitted(&target.effects)
                         && crate::loop_calls::resolved_result_admitted(&self.program.declarations, &target.return_type)
                         && target.params.iter().zip(args).all(|(param, argument)| {
@@ -481,7 +490,7 @@ impl HirValidator<'_> {
                         )));
                     }
                     for (argument, parameter) in args.iter().zip(&target.params).rev() {
-                        if crate::loop_calls::byte_writer::resolved_target(self.program, target) {
+                        if byte_helper {
                             pending.push(argument);
                             continue;
                         }

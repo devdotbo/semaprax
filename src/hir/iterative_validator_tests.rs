@@ -113,6 +113,7 @@ interface HostEcho permits { host.echo } {
     let resolved = hir::resolve(&parsed).unwrap();
     let resolver = Resolver {
         program: &parsed,
+        byte_helpers: crate::loop_calls::byte_writer::SourceIndex::new(&parsed),
         declarations: DeclarationIndex::from_verified(&parsed).unwrap(),
         reuse: None,
         function_work: FunctionResolutionWork::default(),
