@@ -224,7 +224,7 @@ fn chain_capacity(args: &[ResolvedExpr], reopen: bool) -> Result<Option<u64>, Di
 // Fixed byte arrays are Copy storage. This exact nonallocating view is the
 // existing inline indexed-read exception; ordinary HIR validation independently
 // authenticates the named binding, its declared extent and availability.
-fn fixed_array_view(validator: &HirValidator<'_>, expression: &ResolvedExpr) -> bool {
+pub(super) fn fixed_array_view(validator: &HirValidator<'_>, expression: &ResolvedExpr) -> bool {
     if let ResolvedExprKind::BorrowPlace { operation, place } = &expression.kind {
         return operation.as_str() == crate::byte_ops::ARRAY_AS_SLICE_ID
             && expression.ty == ResolvedType::SliceU8

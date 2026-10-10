@@ -151,7 +151,8 @@ impl HirValidator<'_> {
                             item.ty == ResolvedType::Bytes && item.id == place.root
                         }) || finite_scratch
                             .is_some_and(|proof| proof.borrowed_root(&place.root)));
-                    let exact_view = exact_byte
+                    let exact_view = owned_buffer::fixed_array_view(self, expression)
+                        || exact_byte
                         || (operation.as_str() == crate::byte_ops::STRING_AS_STR_ID
                             && expression.ty == ResolvedType::Str)
                         || (operation.as_str() == crate::byte_ops::STR_AS_BYTES_ID
