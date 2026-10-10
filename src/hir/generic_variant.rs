@@ -130,7 +130,7 @@ pub(crate) fn match_result_execution(
 ) -> bool {
     if let FunctionExecutionId::Monomorphic(id) = execution {
         if program
-            .functions
+            .functions()
             .iter()
             .find(|function| &function.id == id)
             .is_some_and(|function| monomorphic_list_result(function, mode, ty, ownership))
@@ -145,7 +145,7 @@ pub(crate) fn match_result_execution(
         return false;
     };
     program
-        .function_templates
+        .function_templates()
         .iter()
         .filter(|template| profile(program, template))
         .any(|template| {

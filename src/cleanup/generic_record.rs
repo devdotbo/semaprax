@@ -93,7 +93,7 @@ impl InventoryBuilder<'_> {
                     }
                     let item = self
                         .program
-                        .types
+                        .types()
                         .iter()
                         .find(|item| item.id == *declaration)
                         .ok_or_else(|| {
