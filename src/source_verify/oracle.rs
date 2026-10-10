@@ -1278,6 +1278,7 @@ pub(super) fn check_expr(
                             matching::in_loop(checked_body)
                         };
                         if item_inserted { scope.remove(item); }
+                        if crate::ast::returns_only(body) { scope=baseline.clone(); }
                         let mut names = baseline.keys().collect::<Vec<_>>();
                         names.sort();
                         for name in names {

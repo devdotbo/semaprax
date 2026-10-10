@@ -50,3 +50,87 @@ fn old_acyclic_return_projection_remains_identical() {
     let ordinary = parse(&source("if true { 7 } else { 9 }"), "old-return.spx").unwrap();
     assert_eq!(format::canonical(&authored), format::canonical(&ordinary));
 }
+
+fn checked_loop() -> hir::ResolvedProgram {
+    let program = parse(
+        &source("while true { continue; } return 7;"),
+        "target-replay.spx",
+    )
+    .unwrap();
+    assert!(verify::verify(&program).is_empty());
+    hir::resolve(&program).unwrap()
+}
+fn loop_parts(
+    program: &mut hir::ResolvedProgram,
+) -> (&mut hir::ResolvedExpr, &mut hir::LoopLatchKind) {
+    let hir::ResolvedExprKind::Block { statements, .. } = &mut program.functions[0].body.kind
+    else {
+        panic!("function block")
+    };
+    let hir::ResolvedStatement::LexicalWhile { body, latch, .. } = &mut statements[0] else {
+        panic!("selective lexical loop")
+    };
+    let hir::ResolvedExprKind::Block { tail, .. } = &mut body.kind else {
+        panic!("loop block")
+    };
+    (tail, latch)
+}
+#[test]
+fn hostile_loop_target_and_latch_are_independently_rejected() {
+    let mut program = checked_loop();
+    let (exit, _) = loop_parts(&mut program);
+    let hir::ResolvedExprKind::LexicalExit { target, .. } = &mut exit.kind else {
+        panic!("continue")
+    };
+    let hir::ControlTarget::Loop { owner, .. } = target else {
+        panic!("loop target")
+    };
+    *owner =
+        hir::FunctionExecutionId::Monomorphic(hir::DeclarationId::new("forged.owner".to_owned()));
+    assert_eq!(hir::validate(&program).unwrap_err().code, "SPX-H006");
+    let mut program = checked_loop();
+    let (exit, latch) = loop_parts(&mut program);
+    *latch = hir::LoopLatchKind::SourceForStep {
+        kind: hir::SourceForKind::Copy,
+        step: exit.id.clone(),
+    };
+    assert_eq!(hir::validate(&program).unwrap_err().code, "SPX-H006");
+}
+#[test]
+fn compiler_completion_is_not_a_public_result_or_storage_value() {
+    let mut program = checked_loop();
+    program.functions[0].return_type = hir::ResolvedType::Never;
+    assert_eq!(hir::validate(&program).unwrap_err().code, "SPX-H006");
+    let mut program = checked_loop();
+    let (exit, _) = loop_parts(&mut program);
+    exit.ownership = hir::OwnershipMode::Own;
+    assert_eq!(hir::validate(&program).unwrap_err().code, "SPX-H006");
+}
+#[test]
+fn lexical_return_keeps_exact_declared_result_type() {
+    let program = parse(
+        &source("while false { 0 } return true;"),
+        "wrong-return.spx",
+    )
+    .unwrap();
+    assert!(verify::verify(&program)
+        .iter()
+        .any(|d| d.code == "SPX-T103"));
+}
+
+#[test]
+fn loop_break_cannot_hide_an_outer_owner_transfer_before_later_read() {
+    let source = r#"module app.owner_exit;
+@id("consume") fn consume(value:own string)->i64 {0}
+@id("main") fn main()->i64 {
+    let value="owner";
+    while true { let consumed=consume(value); break; }
+    string_len(value)
+}"#;
+    let program = parse(source, "moved-before-break.spx").unwrap();
+    let diagnostics = verify::verify(&program);
+    assert!(
+        diagnostics.iter().any(|d| d.severity.is_error()) || hir::resolve(&program).is_err(),
+        "a lexical break must not republish an already transferred outer owner"
+    );
+}

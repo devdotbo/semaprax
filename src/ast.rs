@@ -1140,6 +1140,7 @@ pub struct FieldTarget {
 }
 
 mod lexical_exit;
+pub(crate) use lexical_exit::returns_only;
 pub use lexical_exit::{has_no_normal_completion, LexicalExitKind};
 mod statement;
 pub use statement::{Statement, TraversalIndex};

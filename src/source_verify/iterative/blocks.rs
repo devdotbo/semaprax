@@ -928,6 +928,17 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             }
         }
         if let Some(baseline) = baseline {
+            if statements[index]
+                .child(1)
+                .is_some_and(crate::ast::returns_only)
+            {
+                for (name, binding) in &baseline {
+                    self.scopes[block_scope]
+                        .bindings
+                        .insert(name.clone(), binding.clone());
+                }
+            }
+
             let mut names = baseline.keys().collect::<Vec<_>>();
             names.sort();
             for name in names {
