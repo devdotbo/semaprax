@@ -3,7 +3,7 @@
 //! dynamic provider, replacement, format or iterator constructors allocate.
 use super::*;
 const DEPTH: usize = 514;
-type Frame<'a> = Option<(&'a ResolvedExpr, usize)>;
+type Frame<'a> = Option<(crate::hir::lexical_exit::ChildCursor<'a>, bool)>;
 fn primitive(ty: &ResolvedType) -> bool {
     crate::hir::is_scalar_resolved_type(ty)
         || matches!(
@@ -45,13 +45,14 @@ pub(super) fn validate(
         .chain(std::iter::once(&function.body))
         .chain(&function.ensures)
     {
-        frames[0] = Some((root, usize::MAX));
+        frames[0] = Some((crate::hir::lexical_exit::ChildCursor::new(root), false));
         let mut depth = 1;
         while depth != 0 {
             budget.charge(function, 1, "selected primitive profile node")?;
-            let (expression, next) = frames[depth - 1]
+            let (cursor, entered) = frames[depth - 1]
                 .ok_or_else(|| replay_error(function, "selected profile cursor is empty"))?;
-            if next == usize::MAX {
+            let expression = cursor.expression();
+            if !entered {
                 if !primitive(&expression.ty) && expression.ty != ResolvedType::Never {
                     return Err(replay_error(function, "selected lexical replay does not admit nominal or callable expression storage"));
                 }
@@ -170,7 +171,7 @@ pub(super) fn validate(
                     }
                     _ => {}
                 }
-                frames[depth - 1] = Some((expression, 0));
+                frames[depth - 1] = Some((cursor, true));
                 continue;
             }
             let width = match &expression.kind {
@@ -179,18 +180,16 @@ pub(super) fn validate(
                 _ => 0,
             };
             budget.charge(function, width, "selected primitive child lookup")?;
-            if let Some(child) = crate::hir::lexical_exit::child(expression, next) {
+            let mut cursor = cursor;
+            if let Some(child) = cursor.next() {
                 if depth == DEPTH {
                     return Err(replay_error(
                         function,
                         "selected primitive profile exceeds ordinary HIR depth",
                     ));
                 }
-                let next = next.checked_add(1).ok_or_else(|| {
-                    replay_error(function, "selected primitive child index overflow")
-                })?;
-                frames[depth - 1] = Some((expression, next));
-                frames[depth] = Some((child, usize::MAX));
+                frames[depth - 1] = Some((cursor, true));
+                frames[depth] = Some((crate::hir::lexical_exit::ChildCursor::new(child), false));
                 depth += 1;
             } else {
                 depth -= 1;
@@ -228,5 +227,69 @@ fn validate_pattern(
             function,
             "selected match pattern requires unsupported storage",
         )),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    fn checked() -> crate::hir::ResolvedProgram {
+        let parsed = crate::parse(
+            "module app; @id(\"app.main\") fn main()->i64 {if true {0} else {1}}",
+            "selected-profile-cursor.spx",
+        )
+        .unwrap();
+        crate::hir::resolve(&parsed).unwrap()
+    }
+    fn budget(limit: usize) -> ReplayBudget {
+        let mut budget = ReplayBudget::new();
+        budget.physical = Some(Box::new(
+            super::super::physical_storage::PhysicalReservation::new(limit),
+        ));
+        budget
+    }
+    #[test]
+    fn child_cursor_frames_reserve_exact_and_one_short_before_profile_scan() {
+        let program = checked();
+        let function = program
+            .functions
+            .iter()
+            .find(|f| f.id.as_str() == "app.main")
+            .unwrap();
+        let bytes = std::mem::size_of::<[Frame<'_>; DEPTH]>();
+        let mut exact = budget(bytes);
+        validate(&program, function, &mut exact).unwrap();
+        assert_eq!(exact.physical.as_ref().unwrap().charged(), bytes);
+        let mut short = budget(bytes - 1);
+        assert_eq!(
+            validate(&program, function, &mut short).unwrap_err().code,
+            "SPX-H006"
+        );
+        assert!(short.physical.as_mut().unwrap().reserve(0).is_err());
+    }
+    #[test]
+    fn child_cursor_checks_the_late_branch_without_granting_hostile_nominal_storage() {
+        let program = checked();
+        let mut function = program
+            .functions
+            .iter()
+            .find(|f| f.id.as_str() == "app.main")
+            .unwrap()
+            .clone();
+        let ResolvedExprKind::Block { tail, .. } = &mut function.body.kind else {
+            panic!("body block")
+        };
+        let ResolvedExprKind::If { else_branch, .. } = &mut tail.kind else {
+            panic!("if tail")
+        };
+        else_branch.ty = ResolvedType::Nominal {
+            declaration: crate::hir::DeclarationId::new("forged.record"),
+            arguments: Vec::new(),
+        };
+        let error = validate(&program, &function, &mut budget(usize::MAX)).unwrap_err();
+        assert_eq!(error.code, "SPX-H006");
+        assert!(error
+            .message
+            .contains("nominal or callable expression storage"));
     }
 }
