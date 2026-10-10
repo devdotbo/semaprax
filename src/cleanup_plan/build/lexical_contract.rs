@@ -158,7 +158,7 @@ impl PlanBuilder<'_> {
                 .regions
                 .get(region.0 as usize)
                 .is_some_and(|owner| owner.id == region && owner.slots.contains(storage));
-        if shared && exact {
+        if exact && (shared || self.reuses_owned_iterator_argument(storage, region)?) {
             Ok(())
         } else {
             Err(plan_error(format!(

@@ -19,6 +19,24 @@ pub(super) struct LexicalBuildState {
     pub(super) current_ensure: Option<(usize, usize)>,
 }
 
+impl LexicalBuildState {
+    pub(super) fn owned_iterator_context(
+        &self,
+        call: &ExpressionId,
+    ) -> Result<Option<&LoopContext>, Diagnostic> {
+        let mut contexts = self.active_loops.iter().filter(|context| matches!(
+            &context.latch, crate::hir::LoopLatchKind::OwnedIteratorStep { next, .. } if next == call
+        ));
+        let context = contexts.next();
+        if contexts.next().is_some() {
+            return Err(plan_error(
+                "owning iterator argument has ambiguous active latch authority",
+            ));
+        }
+        Ok(context)
+    }
+}
+
 /// Fresh monomorphic functions and late generic instances supply their actual
 /// execution identity before registration. Legacy functions retain their exact
 /// construction path and wire schema.

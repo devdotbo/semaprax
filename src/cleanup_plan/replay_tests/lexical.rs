@@ -203,7 +203,7 @@ fn each_copy_for_continue_owns_one_separate_advancement_domain() {
 
 #[test]
 fn owning_for_continue_retains_remainder_and_break_completes_its_wrapper() {
-    let (_, func) = fixture(OWNING_FOR, "lex.sum");
+    let (program, func) = fixture(OWNING_FOR, "lex.sum");
     let control = certificate(&func);
     let continue_entry = control.exits[kinds(&func, LexicalExitKind::Continue)[0]]
         .resume
@@ -221,6 +221,37 @@ fn owning_for_continue_retains_remainder_and_break_completes_its_wrapper() {
     // The break enters its wrapper fragment, never the loop's `after` block.
     assert_eq!(func.cleanup_plan.edges[edge.0 as usize].to, break_entry);
     assert_ne!(break_entry, control.loops[0].after);
+    let crate::hir::LoopLatchKind::OwnedIteratorStep { next, .. } = &control.loops[0].latch else {
+        panic!("owning traversal has its authenticated Next latch");
+    };
+    let arguments = func
+        .cleanup_plan
+        .slots
+        .iter()
+        .filter(|slot| {
+            matches!(&slot.storage, StorageId::CallArgument {
+            call, parameter_index: 0, ..
+        } if call == next)
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(
+        arguments.len(),
+        1,
+        "ordinary and continued Next share one exact slot"
+    );
+    let argument = arguments[0];
+    assert_eq!(
+        func.cleanup_plan
+            .regions
+            .iter()
+            .filter(|region| { region.slots.contains(&argument.storage) })
+            .count(),
+        1,
+        "the Next argument retains one canonical owning region"
+    );
+    let mut changed = func.clone();
+    changed.cleanup_plan.slots[argument.id.0 as usize].ty = ResolvedType::Bool;
+    assert_rejected(&program, &changed);
 }
 
 #[test]

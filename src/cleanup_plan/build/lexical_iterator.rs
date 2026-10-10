@@ -5,6 +5,73 @@ use super::*;
 pub(super) mod lookup;
 
 impl PlanBuilder<'_> {
+    /// The same authored Next is lowered once per finite continuation domain
+    /// and once on its ordinary tail. All instances share one typed argument
+    /// slot in the original Yield block, not fresh storage or broader authority.
+    pub(super) fn reuses_owned_iterator_argument(
+        &self,
+        storage: &StorageId,
+        region: CleanupRegionId,
+    ) -> Result<bool, Diagnostic> {
+        let StorageId::CallArgument {
+            call,
+            parameter_index: 0,
+            value_expression,
+        } = storage
+        else {
+            return Ok(false);
+        };
+        let Some(context) = self
+            .lexical
+            .as_ref()
+            .map(|control| control.owned_iterator_context(call))
+            .transpose()?
+            .flatten()
+        else {
+            return Ok(false);
+        };
+        let crate::hir::LoopLatchKind::OwnedIteratorStep {
+            next, remainder, ..
+        } = &context.latch
+        else {
+            return Ok(false);
+        };
+        let expression = expression_at(&self.function.body, next)?;
+        let ResolvedExprKind::Call { args, .. } = &expression.kind else {
+            return Ok(false);
+        };
+        let [argument] = args.as_slice() else {
+            return Ok(false);
+        };
+        if &argument.id != value_expression
+            || argument.ownership != OwnershipMode::Own
+            || !matches!(&argument.kind, ResolvedExprKind::Place(place) if &place.root == remainder && place.projections.is_empty())
+        {
+            return Ok(false);
+        }
+        let Some(yield_region) = self
+            .regions
+            .get(region.0 as usize)
+            .filter(|r| r.id == region)
+        else {
+            return Ok(false);
+        };
+        let Some(arm_region) = yield_region
+            .parent
+            .and_then(|id| self.regions.get(id.0 as usize))
+            .filter(|r| r.slots.contains(&StorageId::Value(remainder.clone())))
+        else {
+            return Ok(false);
+        };
+        let Some(body_region) = arm_region
+            .parent
+            .and_then(|id| self.regions.get(id.0 as usize))
+        else {
+            return Ok(false);
+        };
+        Ok(body_region.parent == Some(context.region))
+    }
+
     /// Keep the entered Yield scopes and remainder until the certified Next
     /// call commits. Authored locals and the unmoved item end before Next.
     pub(super) fn lower_owned_iterator_continue(

@@ -111,18 +111,67 @@ fn contract_calls_cover_requires_ordinary_and_each_distinct_return_domain() {
     );
     let helper = super::function(&program, "check_loop");
     validate_structure(&program, &helper).unwrap();
-    let boundaries = &helper
-        .cleanup_plan
-        .lexical_control
-        .as_deref()
-        .unwrap()
-        .execution_boundaries;
-    assert_eq!(
-        boundaries.len(),
-        2,
-        "contract loops belong to the authenticated callee"
+    assert!(
+        helper.cleanup_plan.lexical_control.is_none(),
+        "ordinary terminal-return callee retains its legacy profile"
     );
-    assert_eq!(boundaries[1].kind, ExecutionBoundaryKind::LoopIteration);
+    let ResolvedExprKind::Call {
+        callee: required, ..
+    } = &function.requires[0].kind
+    else {
+        panic!("requires directly calls its checked helper");
+    };
+    let ResolvedExprKind::Call {
+        callee: ensured, ..
+    } = &function.ensures[0].kind
+    else {
+        panic!("ensures directly calls its checked helper");
+    };
+    assert_eq!(required, &helper.id);
+    assert_eq!(ensured, &helper.id);
+    let calls = plan
+        .status_sources
+        .iter()
+        .filter(|source| {
+            matches!(&source.producer,
+        StatusProducer::PropagatedCall { callee } if callee == &helper.id)
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(
+        calls.len(),
+        2,
+        "each authored call retains one exact propagated producer"
+    );
+    assert_eq!(
+        calls
+            .iter()
+            .filter(|source| source.id.expression == function.requires[0].id)
+            .count(),
+        1
+    );
+    assert_eq!(
+        calls
+            .iter()
+            .filter(|source| source.id.expression == function.ensures[0].id)
+            .count(),
+        1
+    );
+    for (expression, expected_count) in
+        [(&function.requires[0].id, 1), (&function.ensures[0].id, 3)]
+    {
+        assert_eq!(
+            plan.exits
+                .iter()
+                .filter(|exit| {
+                    matches!(&exit.continuation, ExitContinuation::ReturnFailure { source }
+                if &source.expression == expression
+                    && source.lane == crate::cleanup_plan::StatusLane::OperationFailure)
+                })
+                .count(),
+            expected_count,
+            "call failure routes retain each exact contract domain"
+        );
+    }
 }
 
 #[test]
@@ -205,8 +254,8 @@ fn requires_cannot_be_replaced_by_ensures_or_omitted_and_contract_loops_stay_clo
         assert!(errors.iter().any(|error| error.code == "SPX-T253"));
         assert!(errors.iter().any(|error| error.code == "SPX-U106"));
     }
-    let helper = super::function(&program, "check_loop");
-    let mut changed = helper.clone();
+    let caller = super::function(&program, "run");
+    let mut changed = caller.clone();
     changed
         .cleanup_plan
         .lexical_control
@@ -215,7 +264,7 @@ fn requires_cannot_be_replaced_by_ensures_or_omitted_and_contract_loops_stay_clo
         .execution_boundaries
         .swap(0, 1);
     assert!(validate_structure(&program, &changed).is_err());
-    let mut changed = helper;
+    let mut changed = caller;
     changed
         .cleanup_plan
         .lexical_control
@@ -240,12 +289,10 @@ fn owned_return_keeps_exact_provisional_result_in_its_postcondition_failure_cont
     validate_structure(&program, &baseline).unwrap();
     let failures = ensures_failures(&baseline);
     assert_eq!(failures.len(), 1);
-    assert!(
-        baseline.cleanup_plan.exits[failures[0]]
-            .finalize_in_order
-            .iter()
-            .any(|action| action.source.storage == StorageId::ProvisionalResult)
-    );
+    assert!(baseline.cleanup_plan.exits[failures[0]]
+        .finalize_in_order
+        .iter()
+        .any(|action| action.source.storage == StorageId::ProvisionalResult));
     let mut changed = baseline;
     changed.cleanup_plan.exits[failures[0]]
         .finalize_in_order
@@ -254,7 +301,7 @@ fn owned_return_keeps_exact_provisional_result_in_its_postcondition_failure_cont
 }
 
 #[test]
-fn two_return_postconditions_reuse_exact_owned_call_argument_and_local_slots() {
+fn two_return_postconditions_reuse_owned_temporaries_and_refuse_resource_transfers() {
     let source = r#"module test.owned_ensure_template;
 @id("measure") fn measure(first:own Bytes,second:own Bytes)->usize {
  byte_len(bytes_as_slice(first))+byte_len(bytes_as_slice(second))
@@ -273,21 +320,44 @@ fn two_return_postconditions_reuse_exact_owned_call_argument_and_local_slots() {
 }
 @id("main") fn main()->i64{0}
 "#;
-    let program = checked(source, "owned-ensure-template.spx");
+    let errors = crate::check(source, Path::new("closed-owning-contract.spx")).unwrap_err();
+    assert!(errors
+        .iter()
+        .any(|error| error.code == "SPX-O105" && error.message.contains("measure")));
+    assert!(errors
+        .iter()
+        .any(|error| error.code == "SPX-O105" && error.message.contains("local binding")));
+    let source = source.replace(
+        "let measured=measure(bytes_zeroed(2usize),bytes_zeroed(3usize));\n  let text=\"temporary\";\n  measured==5usize && string_len(text)==9",
+        "let measured=string_len(\"first\")+string_len(\"second\");\n  measured==11",
+    );
+    let program = checked(&source, "owned-ensure-template.spx");
     let baseline = function(&program, "run");
     validate_structure(&program, &baseline).unwrap();
     let plan = &baseline.cleanup_plan;
-    let arguments = plan
+    let mut expected = BTreeSet::new();
+    let mut pending = vec![&baseline.ensures[0]];
+    while let Some(expression) = pending.pop() {
+        if matches!(&expression.kind, ResolvedExprKind::String(_)) {
+            expected.insert(expression.id.clone());
+        }
+        hir::push_resolved_expression_children_in_authored_order(expression, &mut pending);
+    }
+    assert_eq!(expected.len(), 2);
+    let temporaries = plan
         .slots
         .iter()
-        .filter(|slot| matches!(slot.storage, StorageId::CallArgument { .. }))
+        .filter(|slot| {
+            matches!(&slot.storage,
+        StorageId::Temporary(expression) if expected.contains(expression))
+        })
         .collect::<Vec<_>>();
     assert_eq!(
-        arguments.len(),
+        temporaries.len(),
         2,
-        "each authored owning argument has one supplemental slot"
+        "each authored owned temporary has one exact slot across domains"
     );
-    for slot in arguments {
+    for slot in temporaries {
         assert_eq!(
             plan.regions
                 .iter()
@@ -318,7 +388,7 @@ fn two_return_postconditions_reuse_exact_owned_call_argument_and_local_slots() {
             region
                 .slots
                 .iter()
-                .any(|slot| matches!(slot, StorageId::CallArgument { .. }))
+                .any(|slot| matches!(slot, StorageId::Temporary(expression) if expected.contains(expression)))
         })
         .unwrap();
     let endpoint = region.normal_scope_end;
