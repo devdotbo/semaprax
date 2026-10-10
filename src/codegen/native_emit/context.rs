@@ -24,7 +24,11 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             record_layouts: emission.record_layouts,
             variant_layouts: emission.variant_layouts,
             return_type: &function.return_type,
-            bytes_plan,
+            bytes_plan: bytes_plan
+                .map(|plan| native_bytes::NativeBytesView::ordinary(plan, &function.cleanup_plan)),
+            cleanup_resume: None,
+            active_expression: None,
+            contract_labels: emission.contract_labels,
             borrowed_aggregate_bytes,
             output_profile: emission.output_profile,
             semantic_metered: false,
@@ -35,5 +39,29 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             next_local: 0,
             indent: 1,
         }
+    }
+}
+
+impl<'a, O: COutput> CEmitter<'a, O> {
+    pub(super) fn in_cleanup_resume<T>(
+        &mut self,
+        entry: crate::cleanup_plan::BlockId,
+        emit: impl FnOnce(&mut Self) -> Result<T, Diagnostic>,
+    ) -> Result<T, Diagnostic> {
+        if self.function.cleanup_plan.lexical_resume(entry).is_none() {
+            return Err(backend_error(
+                "native cleanup resume domain is absent or ambiguous",
+            ));
+        }
+        let previous_plan = self.bytes_plan;
+        let previous_resume = self.cleanup_resume;
+        self.bytes_plan = previous_plan
+            .map(|plan| plan.with_resume(entry))
+            .transpose()?;
+        self.cleanup_resume = Some(entry);
+        let result = emit(self);
+        self.bytes_plan = previous_plan;
+        self.cleanup_resume = previous_resume;
+        result
     }
 }

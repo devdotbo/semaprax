@@ -1,5 +1,6 @@
 //! Native lowering of the independently checked flat Copy-record Vec slice.
 use super::super::super::{backend_error, c_field_symbol, CEmitter, COutput, CValue};
+use crate::codegen::native_bytes::NativeBytesProducer as _;
 use crate::diagnostic::Diagnostic;
 use crate::hir::{ResolvedExpr, ResolvedType};
 
@@ -67,11 +68,12 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 "(void)spx_copy_vec_check(spx_ctx, &({}), UINT64_C({width}));",
                 values[0].code
             ));
-            self.line(&format!("if ({} >= spx_vec_len(spx_ctx, &({}), UINT32_C(1)) / UINT64_C({width})) {{ spx_status = spx_vec_failure(spx_ctx, UINT32_C(2)); goto spx_epilogue; }}", values[1].code,values[0].code));
+            let jump = self.operation_failure_jump()?;
+            self.line(&format!("if ({} >= spx_vec_len(spx_ctx, &({}), UINT32_C(1)) / UINT64_C({width})) {{ spx_status = spx_vec_failure(spx_ctx, UINT32_C(2)); {jump} }}", values[1].code,values[0].code));
             for (index, field) in fields.iter().enumerate() {
                 let bits = self.temporary(&ResolvedType::Usize)?;
                 self.line(&format!("spx_status = spx_vec_get(spx_ctx, &({}), UINT32_C(1), {} * UINT64_C({width}) + UINT64_C({index}), &{bits});",values[0].code,values[1].code));
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                self.emit_operation_failure_check()?;
                 let scalar = super::vec_bits_to_scalar(&bits, &field.ty)?;
                 self.line(&format!(
                     "{temporary}.{} = {scalar};",
@@ -124,7 +126,8 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                     self.line(&format!(
                         "(void)spx_copy_vec_check(spx_ctx, &{source}, UINT64_C({width}));"
                     ));
-                    self.line(&format!("if ({} > UINT64_C(8192) / UINT64_C({width})) {{ spx_status = spx_vec_failure(spx_ctx, UINT32_C(3)); goto spx_epilogue; }}",values[1].code));
+                    let jump = self.operation_failure_jump()?;
+                    self.line(&format!("if ({} > UINT64_C(8192) / UINT64_C({width})) {{ spx_status = spx_vec_failure(spx_ctx, UINT32_C(3)); {jump} }}",values[1].code));
                     self.line(&format!("spx_status = spx_vec_reserve_exact(spx_ctx, UINT32_C(1), &{source}, {} * UINT64_C({width}), &{destination});",values[1].code));
                 }
                 VecOp::Clear => self.line(&format!(
@@ -150,10 +153,10 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 }
                 _ => return Err(backend_error("Copy record Vec owner operation is invalid")),
             }
-            self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+            self.emit_operation_failure_check()?;
             self.line(&format!("{flag} = false;"));
         }
-        self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+        self.emit_operation_failure_check()?;
         for line in plan.apply_at(&expr.id)?.lines() {
             self.line(line);
         }

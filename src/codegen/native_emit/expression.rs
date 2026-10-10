@@ -6,6 +6,7 @@ use super::{
 use crate::aggregate_layout::AggregateLayout;
 use crate::ast::{BinaryOp, UnaryOp};
 use crate::bounded_output::BudgetedJoin as _;
+use crate::codegen::native_bytes::NativeBytesProducer as _;
 use crate::diagnostic::Diagnostic;
 use crate::hir::{
     self, DeclarationId, ExpressionId, FunctionExecutionId, PlaceProjection, ResolvedExpr,
@@ -17,6 +18,7 @@ mod box_ops;
 mod host_command;
 mod iterator_ops;
 mod lexical_exit;
+mod lexical_lookup;
 mod list_ops;
 mod nested_owned;
 mod owned_buffer;
@@ -555,6 +557,13 @@ impl<'a, O: COutput> CEmitter<'a, O> {
     }
 
     pub(super) fn emit_expr(&mut self, expr: &ResolvedExpr) -> Result<CValue, Diagnostic> {
+        let previous = self.active_expression.replace(expr.id.clone());
+        let result = self.emit_expr_in_context(expr);
+        self.active_expression = previous;
+        result
+    }
+
+    fn emit_expr_in_context(&mut self, expr: &ResolvedExpr) -> Result<CValue, Diagnostic> {
         self.emit_lexical_step_label(&expr.id)?;
         match &expr.kind {
             ResolvedExprKind::LexicalExit {
@@ -665,7 +674,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             "spx_status = {helper}(spx_ctx, {}, {}, {}, &{temporary});",
             source.code, start.code, end.code
         ));
-        self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+        self.emit_operation_failure_check()?;
         if let Some(plan) = self.bytes_plan {
             let transitions = plan.apply_at(&expr.id)?;
             for line in transitions.lines() {
@@ -993,7 +1002,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 }
             }
         }
-        self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+        self.emit_operation_failure_check_at(&expr.id)?;
         if matches!(target.return_type, ResolvedType::String)
             && !is_direct_plan_owned(self.program, &target.return_type)
         {
@@ -2458,7 +2467,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 "spx_status = {helper}(spx_ctx, {}, {}, &{temporary});",
                 left.code, right.code
             ));
-            self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+            self.emit_operation_failure_check()?;
         } else if usize_operand
             && matches!(
                 op,
@@ -2477,7 +2486,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 "spx_status = {helper}(spx_ctx, {}, {}, &{temporary});",
                 left.code, right.code
             ));
-            self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+            self.emit_operation_failure_check()?;
         } else if matches!(
             op,
             BinaryOp::Add | BinaryOp::Sub | BinaryOp::Mul | BinaryOp::Div | BinaryOp::Rem
@@ -2499,7 +2508,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 "spx_status = {helper}(spx_ctx, {}, {}, &{temporary});",
                 left.code, right.code
             ));
-            self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+            self.emit_operation_failure_check()?;
         } else {
             self.line(&format!(
                 "{temporary} = ({} {} {});",

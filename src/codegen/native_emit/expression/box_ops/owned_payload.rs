@@ -1,5 +1,6 @@
 //! Consuming Bytes payload boundaries for the v2 Box runtime.
 use super::*;
+use crate::codegen::native_bytes::NativeBytesProducer as _;
 
 impl<'a, O: COutput> CEmitter<'a, O> {
     pub(super) fn emit_box_bytes_op(
@@ -40,7 +41,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 self.line(&format!(
                     "spx_status = spx_box_bytes_new(spx_ctx, &{source}, &{destination});"
                 ));
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                self.emit_operation_failure_check()?;
             }
             crate::box_ops::BoxOp::IntoInner => {
                 self.line(&format!(

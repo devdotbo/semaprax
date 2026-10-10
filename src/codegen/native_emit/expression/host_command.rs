@@ -6,6 +6,7 @@
 //! network arm now delegates to `emit_network_command_expr` instead of
 //! failing closed.
 
+use crate::codegen::native_bytes::NativeBytesProducer as _;
 use crate::diagnostic::Diagnostic;
 use crate::hir::{self, ResolvedExpr, ResolvedExprKind, ResolvedType};
 
@@ -78,7 +79,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                                 value.code
                             ));
                         }
-                        self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                        self.emit_operation_failure_check()?;
                         if let Some(plan) = self.bytes_plan {
                             for line in plan.apply_at(&expr.id)?.lines() {
                                 self.line(line);
@@ -125,7 +126,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                         self.line(&format!(
                             "spx_status = spx_host_args_len_v1(spx_ctx, &{temporary});"
                         ));
-                        self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                        self.emit_operation_failure_check()?;
                         CValue {
                             code: temporary,
                             ty: ResolvedType::Usize,
@@ -142,7 +143,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                             "spx_status = spx_host_arg_utf8_v1(spx_ctx, {}, &{temporary});",
                             argument.code
                         ));
-                        self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                        self.emit_operation_failure_check()?;
                         CValue {
                             code: temporary,
                             ty: ResolvedType::Str,
@@ -161,7 +162,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                         self.line(&format!(
                             "spx_status = spx_host_stdin_read_v1(spx_ctx, &{temporary});"
                         ));
-                        self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                        self.emit_operation_failure_check()?;
                         let transitions = plan.apply_at(&expr.id)?;
                         for line in transitions.lines() {
                             self.line(line);
@@ -222,7 +223,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                             "spx_status = {helper}(spx_ctx, {}, &{temporary});",
                             value.code
                         ));
-                        self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                        self.emit_operation_failure_check()?;
                         if let Some(plan) = self.bytes_plan {
                             let transitions = plan.apply_at(&expr.id)?;
                             for line in transitions.lines() {
@@ -290,7 +291,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         self.line(&format!(
             "spx_status = {helper}(spx_ctx, {arguments}, &{temporary});"
         ));
-        self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+        self.emit_operation_failure_check()?;
         let transitions = plan.apply_at(&expr.id)?;
         for line in transitions.lines() {
             self.line(line);
@@ -337,7 +338,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         self.line(&format!(
             "spx_status = spx_host_process_run_v1(spx_ctx, {arguments}, &{temporary});"
         ));
-        self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+        self.emit_operation_failure_check()?;
         for line in plan.apply_at(&expr.id)?.lines() {
             self.line(line);
         }
@@ -457,7 +458,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             self.line(&format!(
                 "spx_status = {helper}(spx_ctx, {arguments}, &{temporary});"
             ));
-            self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+            self.emit_operation_failure_check()?;
             let transitions = plan.apply_at(&expr.id)?;
             for line in transitions.lines() {
                 self.line(line);
@@ -476,7 +477,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         self.line(&format!(
             "spx_status = {helper}(spx_ctx, {arguments}, &{temporary});"
         ));
-        self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+        self.emit_operation_failure_check()?;
         if let Some(plan) = self.bytes_plan {
             let transitions = plan.apply_at(&expr.id)?;
             for line in transitions.lines() {
@@ -546,7 +547,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             self.line(&format!(
                 "spx_status = {helper}(spx_ctx, {arguments}, &{temporary});"
             ));
-            self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+            self.emit_operation_failure_check()?;
             let transitions = plan.apply_at(&expr.id)?;
             for line in transitions.lines() {
                 self.line(line);
@@ -565,7 +566,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         self.line(&format!(
             "spx_status = {helper}(spx_ctx, {arguments}, &{temporary});"
         ));
-        self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+        self.emit_operation_failure_check()?;
         if let Some(plan) = self.bytes_plan {
             let transitions = plan.apply_at(&expr.id)?;
             for line in transitions.lines() {

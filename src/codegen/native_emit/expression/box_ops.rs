@@ -2,6 +2,7 @@
 
 mod owned_payload;
 
+use crate::codegen::native_bytes::NativeBytesProducer as _;
 use crate::diagnostic::Diagnostic;
 use crate::hir::{ResolvedExpr, ResolvedType};
 
@@ -47,7 +48,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 self.line(&format!(
                     "spx_status = spx_box_new(spx_ctx, UINT32_C({tag}), {bits}, &{destination});"
                 ));
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                self.emit_operation_failure_check()?;
                 for line in plan.apply_at(&expr.id)?.lines() {
                     self.line(line);
                 }

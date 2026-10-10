@@ -5,6 +5,7 @@ use super::{
     backend_error, c_string, is_direct_plan_owned, resolved_expr_children, CEmitter, COutput,
     CValue,
 };
+use crate::codegen::native_bytes::NativeBytesProducer as _;
 use crate::diagnostic::Diagnostic;
 use crate::hir::{OwnershipMode, ResolvedExpr, ResolvedExprKind, ResolvedProgram, ResolvedType};
 
@@ -194,7 +195,10 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 ));
             }
         }
-        self.line("goto spx_epilogue;");
+        let jump = self.operation_failure_jump()?;
+        for line in jump.lines() {
+            self.line(line);
+        }
         self.line(&format!("{done}:;"));
         if is_direct_plan_owned(self.program, &ResolvedType::String) {
             self.apply_owned_plan_at_value(

@@ -28,7 +28,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             "spx_status = spx_bytes_set_check_v1(spx_ctx, {}, {});",
             buffer, arguments[1].code
         ));
-        self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+        self.emit_operation_failure_check()?;
         self.line(&format!(
             "{temporary} = spx_bytes_set(spx_bytes_move(&{buffer}), {}, {});",
             arguments[1].code, arguments[2].code
@@ -59,7 +59,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             "spx_status = spx_bytes_set1_or5_check_v1(spx_ctx, {}, {}, {});",
             buffer, arguments[4].code, arguments[1].code
         ));
-        self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+        self.emit_operation_failure_check()?;
         self.line(&format!(
             "{temporary} = spx_bytes_set1_or5(spx_bytes_move(&{buffer}), {}, {}, {}, {});",
             arguments[1].code, arguments[2].code, arguments[3].code, arguments[4].code
@@ -87,7 +87,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             "spx_status = spx_bytes_set1_or6_or48_check_v1(spx_ctx, {}, {}, {});",
             buffer, arguments[4].code, arguments[1].code
         ));
-        self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+        self.emit_operation_failure_check()?;
         self.line(&format!(
             "{temporary} = spx_bytes_set1_or6_or48(spx_bytes_move(&{buffer}), {}, {}, {}, {});",
             arguments[1].code, arguments[2].code, arguments[3].code, arguments[4].code
@@ -115,7 +115,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             "spx_status = spx_bytes_set5_check_v1(spx_ctx, {}, {});",
             buffer, arguments[1].code
         ));
-        self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+        self.emit_operation_failure_check()?;
         self.line(&format!(
             "{temporary} = spx_bytes_set5(spx_bytes_move(&{buffer}), {}, {}, {}, {}, {}, {});",
             arguments[1].code,

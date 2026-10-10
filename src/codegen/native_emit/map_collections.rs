@@ -1,5 +1,6 @@
 //! Typed Map/Set lowering. Pointer owners obey the canonical call-commit plan.
 use super::*;
+use crate::codegen::native_bytes::NativeBytesProducer as _;
 use crate::map_ops::MapOp;
 pub(super) fn emit_runtime(output: &mut impl COutput, program: &ResolvedProgram) {
     if crate::map_ops::resolved_program_uses(program) {
@@ -93,7 +94,7 @@ impl<O: COutput> CEmitter<'_, O> {
                     value_tag,
                     arguments[0].code
                 ));
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                self.emit_operation_failure_check()?;
             }
             MapOp::Len | MapOp::SetLen => self.line(&format!("{temporary} = {}->len;", owner())),
             MapOp::Has | MapOp::SetHas => self.line(&format!(
@@ -122,7 +123,7 @@ impl<O: COutput> CEmitter<'_, O> {
                             "false"
                         }
                     ));
-                    self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                    self.emit_operation_failure_check()?;
                 }
                 self.line(&format!(
                     "{temporary} = {out_atom}.{};",
@@ -152,7 +153,7 @@ impl<O: COutput> CEmitter<'_, O> {
                         atom(2)?
                     };
                     self.line(&format!("spx_status = spx_collection_put_v2(spx_ctx, {source}, {}, {value}, {}, &{temporary});",atom(1)?,if op==MapOp::Add{"true"}else{"false"}));
-                    self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                    self.emit_operation_failure_check()?;
                 }
                 self.line(&format!("{flag} = false;"));
                 self.line(&format!("{source} = NULL;"));

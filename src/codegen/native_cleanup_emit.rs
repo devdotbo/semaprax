@@ -821,6 +821,61 @@ fn emit_continuation(
             );
             output.push_str("return spx_cleanup_selected_status;\n");
         }
+        ExitContinuation::LoopLatch { target } => {
+            let plan = index.canonical_plan();
+            let control = plan
+                .lexical_control
+                .as_deref()
+                .ok_or_else(|| cleanup_error("lexical latch lacks certificate"))?;
+            let mut matching = control.loops.iter().filter(|item| &item.target == target);
+            let certificate = matching
+                .next()
+                .ok_or_else(|| cleanup_error("lexical latch target absent"))?;
+            if matching.next().is_some()
+                || plan.lexical_loop(&certificate.condition) != Some(certificate)
+            {
+                return Err(cleanup_error(
+                    "lexical latch target ambiguous or unauthenticated",
+                ));
+            }
+            let destination = if exit.id == certificate.iteration_end {
+                certificate.condition_entry
+            } else {
+                let mut authored = control.exits.iter().filter(|item| item.exit == exit.id);
+                let site = authored
+                    .next()
+                    .ok_or_else(|| cleanup_error("lexical latch exit is not authored Continue"))?;
+                if authored.next().is_some()
+                    || site.target != *target
+                    || site.kind != crate::ast::LexicalExitKind::Continue
+                    || plan.lexical_exit(&site.site).map(|(_, actual)| actual.id) != Some(exit.id)
+                {
+                    return Err(cleanup_error("lexical latch exit certificate differs"));
+                }
+                site.resume.unwrap_or(certificate.condition_entry)
+            };
+            if index.block(destination).is_none() {
+                return Err(cleanup_error("lexical latch entry is absent"));
+            }
+            writeln!(output, "goto {};", block_label(destination))
+                .expect("writing to a string cannot fail");
+        }
+        ExitContinuation::LoopBreak { edge, .. }
+        | ExitContinuation::FunctionReturn { edge, .. } => {
+            let edge = index
+                .edge(*edge)
+                .ok_or_else(|| cleanup_error("lexical route edge absent"))?;
+            if edge.from != exit.from
+                || edge.condition != EdgeCondition::Always
+                || index.block(edge.to).is_none()
+            {
+                return Err(cleanup_error(
+                    "lexical route is not its authenticated unconditional edge",
+                ));
+            }
+            writeln!(output, "goto {};", block_label(edge.to))
+                .expect("writing to a string cannot fail");
+        }
         ExitContinuation::ReturnUnit => {
             return Err(cleanup_error(format!(
                 "exit {} uses unsupported unit return",
@@ -1066,6 +1121,13 @@ fn validate_bindings(
             }
             ExitContinuation::ReturnFailure { source } => {
                 expected_statuses.insert(source.clone());
+            }
+            ExitContinuation::LoopLatch { .. }
+            | ExitContinuation::LoopBreak { .. }
+            | ExitContinuation::FunctionReturn { .. } => {
+                return Err(cleanup_error(
+                    "lexical physical CFG targets require authenticated loop-entry mappings",
+                ));
             }
             ExitContinuation::ReturnUnit => {
                 return Err(cleanup_error(format!(

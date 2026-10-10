@@ -40,6 +40,7 @@ mod generic_variant;
 mod guarded_variant;
 mod http_io;
 mod indexed_reads;
+mod lexical_epilogue;
 mod literal_format;
 mod literals;
 mod map_collections;
@@ -1985,6 +1986,9 @@ fn emit_function(
         "{} spx_result = {{0}};",
         c_value_type(program, resource_abi, &function.return_type)?
     ));
+    if function.cleanup_plan.lexical_control.is_some() {
+        emitter.line("bool spx_canonical_cleanup_done = false;");
+    }
     emitter.line("if (spx_ctx->call_depth >= SPX_MAX_CALL_DEPTH) {");
     emitter.indent += 1;
     emitter.line("spx_status = spx_rt_call_depth_failure(spx_ctx);");
@@ -2013,41 +2017,10 @@ fn emit_function(
             "requires",
             contract_label(contract, contract_labels),
         );
-        emitter.line("goto spx_epilogue;");
+        emitter.emit_failure_at(&contract.id, crate::cleanup_plan::StatusLane::ContractFalse)?;
         emitter.indent -= 1;
         emitter.line("}");
     }
-    emitter.try_target_enabled = true;
-    let body = emitter.emit_expr(&function.body)?;
-    emitter.try_target_enabled = false;
-    emitter.require_flow_type(&body.ty, &function.return_type, "function body")?;
-    if body.ty != ResolvedType::Never {
-        if matches!(body.ty, ResolvedType::String) && emitter.owned_strings.is_some() {
-            emitter.string_move("spx_result", &body.code);
-        } else if !owned(&body.ty) && emitter.record_contains_owned_bytes(&body.ty)? {
-            emitter.move_owned_record_fields("spx_result", &body.code, &body.ty)?;
-        } else if !owned(&body.ty) {
-            emitter.line(&format!("spx_result = {};", body.code));
-        }
-    }
-    if has_try {
-        emitter.line("spx_result_staged = true;");
-    }
-    if has_try
-        || function
-            .cleanup_plan
-            .lexical_control
-            .as_deref()
-            .is_some_and(|control| {
-                control
-                    .exits
-                    .iter()
-                    .any(|exit| exit.kind == crate::ast::LexicalExitKind::Return)
-            })
-    {
-        emitter.label("spx_postconditions");
-    }
-
     if is_aggregate_type(program, &function.return_type)? {
         if let Some(plan) = &bytes_plan {
             for path in borrowed_aggregate_byte_paths(
@@ -2083,23 +2056,40 @@ fn emit_function(
             ty: function.return_type.clone(),
         },
     );
-    for contract in &function.ensures {
-        let condition = emitter.emit_expr(contract)?;
-        emitter.require_type(&condition.ty, &ResolvedType::Bool, "postcondition")?;
-        emitter.line(&format!("if (!({})) {{", condition.code));
-        emitter.indent += 1;
-        emit_contract_status(
-            &mut emitter,
-            function,
-            "SPX_STATUS_CONTRACT_ENSURES_FALSE",
-            "ensures",
-            contract_label(contract, contract_labels),
-        );
-        emitter.line("goto spx_epilogue;");
-        emitter.indent -= 1;
-        emitter.line("}");
+    emitter.try_target_enabled = true;
+    let body = emitter.emit_expr(&function.body)?;
+    emitter.try_target_enabled = false;
+    emitter.require_flow_type(&body.ty, &function.return_type, "function body")?;
+    if body.ty != ResolvedType::Never {
+        if matches!(body.ty, ResolvedType::String) && emitter.owned_strings.is_some() {
+            emitter.string_move("spx_result", &body.code);
+        } else if !owned(&body.ty) && emitter.record_contains_owned_bytes(&body.ty)? {
+            emitter.move_owned_record_fields("spx_result", &body.code, &body.ty)?;
+        } else if !owned(&body.ty) {
+            emitter.line(&format!("spx_result = {};", body.code));
+        }
     }
-    emitter.line("goto spx_epilogue;");
+    if has_try {
+        emitter.line("spx_result_staged = true;");
+    }
+    if has_try
+        || function
+            .cleanup_plan
+            .lexical_control
+            .as_deref()
+            .is_some_and(|control| {
+                control
+                    .exits
+                    .iter()
+                    .any(|exit| exit.kind == crate::ast::LexicalExitKind::Return)
+            })
+    {
+        emitter.label("spx_postconditions");
+    }
+
+    if body.ty != ResolvedType::Never || has_try {
+        emitter.emit_postconditions()?;
+    }
     let string_cells = emitter.owned_strings.take();
     drop(emitter);
     if let owned_strings::FunctionOutput::Staged(body) = function_body {
@@ -2136,7 +2126,13 @@ fn emit_function(
         }
     }
     if let Some(plan) = &bytes_plan {
+        if function.cleanup_plan.lexical_control.is_some() {
+            output.push_str("    if (!spx_canonical_cleanup_done) {\n");
+        }
         output.push_str(&plan.epilogue());
+        if function.cleanup_plan.lexical_control.is_some() {
+            output.push_str("    }\n");
+        }
     }
     if has_try {
         output.push_str("    if (spx_status == SPX_STATUS_SUCCESS && !spx_result_staged) spx_runtime_invariant_failure(\"unstaged function result\");\n");
@@ -2404,7 +2400,10 @@ struct CEmitter<'a, O: COutput> {
     record_layouts: &'a AggregateLayoutCache,
     variant_layouts: &'a VariantLayoutCache,
     return_type: &'a ResolvedType,
-    bytes_plan: Option<&'a native_bytes::NativeBytesPlan>,
+    bytes_plan: Option<native_bytes::NativeBytesView<'a>>,
+    cleanup_resume: Option<crate::cleanup_plan::BlockId>,
+    active_expression: Option<ExpressionId>,
+    contract_labels: &'a HashMap<ExpressionId, String>,
     borrowed_aggregate_bytes: HashMap<(ValueId, Vec<DeclarationId>), String>,
     output_profile: NativeOutputProfile,
     semantic_metered: bool,

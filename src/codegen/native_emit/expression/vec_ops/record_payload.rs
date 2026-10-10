@@ -8,6 +8,7 @@
 //! the runtime's one canonical element slot. Nothing here reinterprets or
 //! reorders a cleanup vector; the plan's own transitions are emitted verbatim.
 use super::*;
+use crate::codegen::native_bytes::NativeBytesProducer as _;
 
 impl<O: COutput> CEmitter<'_, O> {
     pub(super) fn emit_vec_record_op(
@@ -82,7 +83,7 @@ impl<O: COutput> CEmitter<'_, O> {
                         values[0].code
                     ));
                 }
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                self.emit_operation_failure_check()?;
             }
             crate::vec_ops::VecOp::Push => {
                 self.require_type(&values[0].ty, &carrier, "Vec push owner")?;
@@ -92,7 +93,7 @@ impl<O: COutput> CEmitter<'_, O> {
                 self.line(&format!(
                     "spx_status = spx_vec_record_push(spx_ctx, &{source}, &{element_slot}, &{destination});"
                 ));
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                self.emit_operation_failure_check()?;
                 self.line(&format!("{source_flag} = false;"));
             }
             crate::vec_ops::VecOp::Clear => {
@@ -101,7 +102,7 @@ impl<O: COutput> CEmitter<'_, O> {
                 self.line(&format!(
                     "spx_status = spx_vec_record_clear(spx_ctx, &{source}, &{destination});"
                 ));
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                self.emit_operation_failure_check()?;
                 self.line(&format!("{source_flag} = false;"));
             }
             crate::vec_ops::VecOp::Len | crate::vec_ops::VecOp::Capacity => {

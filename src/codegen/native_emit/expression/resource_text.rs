@@ -132,7 +132,7 @@ impl<O: COutput> CEmitter<'_, O> {
             self.line(&format!(
                 "spx_status = {helper}(spx_ctx, {value}, &{result});"
             ));
-            self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+            self.emit_operation_failure_check()?;
         } else {
             let helper = if self.output_profile.is_language_command() {
                 "spx_host_command_stdout_write_v1"
@@ -158,7 +158,7 @@ impl<O: COutput> CEmitter<'_, O> {
             self.line(&format!(
                 "spx_status = {helper}(spx_ctx, {value}, &{result});"
             ));
-            self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+            self.emit_operation_failure_check()?;
         } else {
             self.line(&format!(
                 "{result} = spx_host_command_stderr_write_v1(spx_ctx, {value});"

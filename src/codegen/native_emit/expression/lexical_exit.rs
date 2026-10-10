@@ -2,6 +2,7 @@
 use super::*;
 use crate::ast::LexicalExitKind;
 use crate::cleanup_plan::ExitContinuation;
+use crate::codegen::native_bytes::NativeBytesProducer as _;
 use crate::hir::{ControlTarget, LoopLatchKind};
 
 impl<'a, O: COutput> CEmitter<'a, O> {
@@ -54,20 +55,137 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         &mut self,
         site: &ExpressionId,
     ) -> Result<(), Diagnostic> {
-        let Some(control) = self.function.cleanup_plan.lexical_control.as_deref() else {
-            return Ok(());
+        // Generated Continue paths inline their exact certified advancement.
+        // The normal tail is never a shared resume label.
+        let _ = site;
+        Ok(())
+    }
+
+    fn emit_lexical_advance(
+        &mut self,
+        target: &ControlTarget,
+        resume: Option<crate::cleanup_plan::BlockId>,
+    ) -> Result<(), Diagnostic> {
+        let condition = match target {
+            ControlTarget::Loop { site, .. } => site,
+            _ => return Err(backend_error("native continue target is not a loop")),
         };
-        for certificate in &control.loops {
-            if (matches!(&certificate.latch, LoopLatchKind::SourceForStep { step, .. } if step == site)
-                || matches!(&certificate.latch, LoopLatchKind::OwnedIteratorStep { next, .. } if next == site))
-                && control.exits.iter().any(|exit| {
-                    exit.target == certificate.target && exit.kind == LexicalExitKind::Continue
-                })
-            {
-                let label = self.lexical_loop_label(&certificate.target, true)?;
-                self.label(&label);
+        let latch = self
+            .function
+            .cleanup_plan
+            .lexical_loop(condition)
+            .filter(|certificate| &certificate.target == target)
+            .ok_or_else(|| backend_error("native continue loop certificate is absent"))?
+            .latch
+            .clone();
+        match latch {
+            LoopLatchKind::Condition => {
+                if resume.is_some() {
+                    return Err(backend_error(
+                        "native condition continue has unexpected resume",
+                    ));
+                }
+            }
+            LoopLatchKind::SourceForStep { kind, step } => {
+                if !matches!(
+                    kind,
+                    hir::SourceForKind::Copy | hir::SourceForKind::BorrowRecord
+                ) {
+                    return Err(backend_error("native source-for step kind is not scalar"));
+                }
+                let (binding, value) =
+                    super::lexical_lookup::assignment(&self.function.body, &step)?;
+                let entry = resume
+                    .ok_or_else(|| backend_error("native source-for continue lacks resume"))?;
+                self.in_cleanup_resume(entry, |emitter| {
+                    let result = emitter.emit_expr(value)?;
+                    emitter.require_type(&result.ty, &binding.ty, "source-for latch assignment")?;
+                    let name = emitter
+                        .variables
+                        .get(&binding.id)
+                        .ok_or_else(|| backend_error("native source-for latch binding is absent"))?
+                        .name
+                        .clone();
+                    emitter.line(&format!("{name} = {};", result.code));
+                    Ok(())
+                })?;
+            }
+            LoopLatchKind::OwnedIteratorStep {
+                next,
+                assignment,
+                step,
+                remainder,
+            } => {
+                let (binding, join) =
+                    super::lexical_lookup::assignment(&self.function.body, &assignment)?;
+                let (arm, blocks, block_count) = super::lexical_lookup::iterator_tail(join, &next)?;
+                let next = super::lexical_lookup::expression(&self.function.body, &next)?;
+                if binding.id != step || !crate::iterator_ops::is_step(&binding.ty) {
+                    return Err(backend_error("native iterator latch binding differs"));
+                }
+                // Independent HIR validation binds this argument to the Yield
+                // remainder. The emitter also requires its live local carrier.
+                if !self.variables.contains_key(&remainder) {
+                    return Err(backend_error("native iterator latch remainder is absent"));
+                }
+                let entry =
+                    resume.ok_or_else(|| backend_error("native iterator continue lacks resume"))?;
+                self.in_cleanup_resume(entry, |emitter| {
+                    let result = emitter.emit_expr(next)?;
+                    emitter.require_type(&result.ty, &binding.ty, "iterator latch result")?;
+                    for block in blocks[..block_count].iter().rev().flatten() {
+                        emitter.apply_owned_plan_at_value(&block.id, &result)?;
+                        emitter.emit_block_plan_scope_exit(block)?;
+                    }
+                    let carrier = emitter.temporary(&binding.ty)?;
+                    emitter.copy_variant_join_carrier(&carrier, &result.code, &binding.ty)?;
+                    let hir::ResolvedMatchPattern::Variant { case, fields, .. } = &arm.pattern
+                    else {
+                        return Err(backend_error(
+                            "native iterator tail arm lacks variant bindings",
+                        ));
+                    };
+                    let anchors = fields
+                        .iter()
+                        .filter(|field| {
+                            is_direct_plan_owned(emitter.program, &field.binding.ty)
+                                || match &join.kind {
+                                    ResolvedExprKind::Match { scrutinee, .. } => {
+                                        super::record_iterator_item::is_exact(
+                                            emitter.program,
+                                            &scrutinee.ty,
+                                            case,
+                                            &field.field,
+                                            &field.binding.ty,
+                                        )
+                                    }
+                                    _ => false,
+                                }
+                        })
+                        .map(|field| {
+                            crate::cleanup_plan::StorageId::Value(field.binding.id.clone())
+                        })
+                        .collect();
+                    let cleanup = emitter
+                        .bytes_plan
+                        .ok_or_else(|| backend_error("native iterator resume lacks slots"))?
+                        .scope_exit(&anchors)?;
+                    for line in cleanup.lines() {
+                        emitter.line(line);
+                    }
+                    emitter.finish_variant_join(join, &carrier)?;
+                    let name = emitter
+                        .variables
+                        .get(&step)
+                        .ok_or_else(|| backend_error("native iterator latch step is absent"))?
+                        .name
+                        .clone();
+                    emitter.copy_variant_join_carrier(&name, &carrier, &binding.ty)
+                })?;
             }
         }
+        let label = self.lexical_loop_label(target, true)?;
+        self.line(&format!("goto {label};"));
         Ok(())
     }
 
@@ -92,6 +210,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             ));
         }
         let continuation = exit.continuation.clone();
+        let resume = certificate.resume;
         match (&continuation, kind, target) {
             (
                 ExitContinuation::LoopLatch { target: expected },
@@ -124,11 +243,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             if result.ty == ResolvedType::Never {
                 return Ok(result);
             }
-            if let Some(plan) = self.bytes_plan {
-                for line in plan.apply_at(&expression.id)?.lines() {
-                    self.line(line);
-                }
-            }
+            self.apply_owned_plan_at_value(&expression.id, &result)?;
             if result.ty == ResolvedType::String && self.owned_strings.is_some() {
                 self.string_move("spx_result", &result.code);
             } else if !is_direct_plan_owned(self.program, &result.ty) {
@@ -155,9 +270,14 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             self.line(line);
         }
         match kind {
-            LexicalExitKind::Return => self.line("goto spx_postconditions;"),
-            LexicalExitKind::Continue | LexicalExitKind::Break => {
-                let label = self.lexical_loop_label(target, kind == LexicalExitKind::Continue)?;
+            LexicalExitKind::Return => {
+                let entry = resume
+                    .ok_or_else(|| backend_error("native return lacks ensures resume domain"))?;
+                self.in_cleanup_resume(entry, |emitter| emitter.emit_postconditions())?;
+            }
+            LexicalExitKind::Continue => self.emit_lexical_advance(target, resume)?,
+            LexicalExitKind::Break => {
+                let label = self.lexical_loop_label(target, false)?;
                 self.line(&format!("goto {label};"));
             }
         }
@@ -189,8 +309,6 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 ));
             }
         }
-        let condition_latch =
-            certificate.is_some_and(|item| item.latch == LoopLatchKind::Condition);
         let references = |kind| {
             self.function
                 .cleanup_plan
@@ -207,7 +325,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         let has_break = references(LexicalExitKind::Break);
         self.line("for (;;) {");
         self.indent += 1;
-        if condition_latch && has_continue {
+        if has_continue {
             let label = self.lexical_loop_label(&target, true)?;
             self.label(&label);
         }

@@ -128,8 +128,8 @@ impl<'a, O: super::COutput> super::CEmitter<'a, O> {
     ) -> Result<(), crate::diagnostic::Diagnostic> {
         if let Some(plan) = self.bytes_plan {
             let cleanup = plan.block_scope_exit(
-                &block_anchors(self.program, plan, block),
-                &direct_block_anchors(self.program, plan, block),
+                &block_anchors(self.program, &plan, block),
+                &direct_block_anchors(self.program, &plan, block),
             )?;
             for line in cleanup.lines() {
                 self.line(line);

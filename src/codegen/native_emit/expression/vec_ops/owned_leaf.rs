@@ -1,6 +1,7 @@
 //! Typed pack/unpack at the canonical owning call boundary.
 use super::super::super::c_field_symbol;
 use super::*;
+use crate::codegen::native_bytes::NativeBytesProducer as _;
 
 impl<O: COutput> CEmitter<'_, O> {
     pub(super) fn emit_owned_leaf_vec(
@@ -77,7 +78,7 @@ impl<O: COutput> CEmitter<'_, O> {
                     "spx_status = spx_leaf_clone(spx_ctx, &({}), {descriptor}, {}, {row});",
                     values[0].code, values[1].code
                 ));
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                self.emit_operation_failure_check()?;
                 for (k, kind) in layout.kinds.iter().enumerate() {
                     let (code, ty) = if let Some(fields) = &fields {
                         (
@@ -114,7 +115,7 @@ impl<O: COutput> CEmitter<'_, O> {
                 };
                 let push = if op == VecOp::Push { "true" } else { "false" };
                 self.line(&format!("spx_status = spx_leaf_write_check(spx_ctx, &{source}, {descriptor}, {index}, {push});"));
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                self.emit_operation_failure_check()?;
                 let item_index = if op == VecOp::Push { 1 } else { 2 };
                 let item = &values[item_index];
                 if fields.is_some() {
@@ -178,12 +179,12 @@ impl<O: COutput> CEmitter<'_, O> {
                 self.line(&format!(
                     "spx_status = {helper}(spx_ctx, &{source}, {descriptor}, {additional}&{out});"
                 ));
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                self.emit_operation_failure_check()?;
                 self.line(&format!("{flag} = false;"));
             }
             _ => return Err(backend_error("unsupported owned leaf Vec operation")),
         }
-        self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+        self.emit_operation_failure_check()?;
         if op == VecOp::CloneAt && fields.is_some() {
             for line in plan.initialize_record_result_at(&expr.id, &out)?.lines() {
                 self.line(line);

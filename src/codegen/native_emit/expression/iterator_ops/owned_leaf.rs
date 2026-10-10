@@ -1,5 +1,6 @@
 //! Moving a compact row into the ordinary typed IterStep result projection.
 use super::*;
+use crate::codegen::native_bytes::NativeBytesProducer as _;
 
 impl<O: COutput> CEmitter<'_, O> {
     pub(super) fn emit_owned_leaf_iterator(
@@ -63,7 +64,7 @@ impl<O: COutput> CEmitter<'_, O> {
                 "spx_status = spx_leaf_iter_next(spx_ctx, &{source}, &{}, &{tag}, {row}, &{rest});",
                 layout.symbol
             ));
-            self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+            self.emit_operation_failure_check()?;
             self.line(&format!("({destination}).spx_tag = {tag};"));
             let case = super::super::super::c_case_symbol(&crate::hir::DeclarationId::new(
                 crate::iterator_ops::YIELD_ID,

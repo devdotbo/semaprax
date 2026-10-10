@@ -1,5 +1,6 @@
 //! Consuming Bytes payload boundaries for the native Vec v2 runtime.
 use super::*;
+use crate::codegen::native_bytes::NativeBytesProducer as _;
 
 impl<'a, O: COutput> CEmitter<'a, O> {
     pub(super) fn emit_vec_bytes_op(
@@ -52,7 +53,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                     "spx_status = spx_vec_bytes_with_capacity(spx_ctx, {}, &{destination});",
                     values[0].code
                 ));
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                self.emit_operation_failure_check()?;
             }
             crate::vec_ops::VecOp::Push => {
                 self.require_type(
@@ -66,7 +67,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 self.line(&format!(
                     "spx_status = spx_vec_bytes_push(spx_ctx, &{source}, &{value}, &{destination});"
                 ));
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                self.emit_operation_failure_check()?;
                 self.line(&format!("{source_flag} = false;"));
                 self.line(&format!("{value_flag} = false;"));
             }
@@ -83,7 +84,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 )?;
                 let (source, source_flag, _) = plan.call_argument(&expr.id, 0)?;
                 self.line(&format!("spx_status = spx_vec_bytes_reserve_exact(spx_ctx, &{source}, {}, &{destination});", values[1].code));
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                self.emit_operation_failure_check()?;
                 self.line(&format!("{source_flag} = false;"));
             }
             crate::vec_ops::VecOp::Set => {
@@ -97,7 +98,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 let (source, source_flag, _) = plan.call_argument(&expr.id, 0)?;
                 let (value, value_flag, _) = plan.call_argument(&expr.id, 2)?;
                 self.line(&format!("spx_status = spx_vec_bytes_set(spx_ctx, &{source}, {}, &{value}, &{destination});", values[1].code));
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                self.emit_operation_failure_check()?;
                 self.line(&format!("{source_flag} = false;"));
                 self.line(&format!("{value_flag} = false;"));
             }
@@ -111,7 +112,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 self.line(&format!(
                     "spx_status = spx_vec_bytes_clear(spx_ctx, &{source}, &{destination});"
                 ));
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                self.emit_operation_failure_check()?;
                 self.line(&format!("{source_flag} = false;"));
             }
             crate::vec_ops::VecOp::Len | crate::vec_ops::VecOp::Capacity => {

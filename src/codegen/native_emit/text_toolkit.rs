@@ -91,7 +91,7 @@ impl<O: COutput> CEmitter<'_, O> {
             _ => return Err(backend_error("operation is not part of Text Toolkit v1")),
         };
         self.line(&format!("spx_status = {fallible};"));
-        self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+        self.emit_operation_failure_check()?;
         Ok(())
     }
 

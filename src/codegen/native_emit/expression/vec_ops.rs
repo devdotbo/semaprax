@@ -7,6 +7,7 @@ mod owned_payload;
 mod record_payload;
 mod sort_keys;
 
+use crate::codegen::native_bytes::NativeBytesProducer as _;
 use crate::diagnostic::Diagnostic;
 use crate::hir::{ResolvedExpr, ResolvedType};
 
@@ -103,7 +104,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                     "spx_status = spx_vec_with_capacity(spx_ctx, UINT32_C({tag}), {}, &{destination});",
                     values[0].code
                 ));
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                self.emit_operation_failure_check()?;
                 for line in plan.apply_at(&expr.id)?.lines() {
                     self.line(line);
                 }
@@ -130,7 +131,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 self.line(&format!(
                     "spx_status = spx_vec_push(spx_ctx, UINT32_C({tag}), &{source}, {bits}, &{destination});"
                 ));
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                self.emit_operation_failure_check()?;
                 self.line(&format!("{source_flag} = false;"));
                 for line in plan.apply_at(&expr.id)?.lines() {
                     self.line(line);
@@ -162,7 +163,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                     "spx_status = spx_vec_reserve_exact(spx_ctx, UINT32_C({tag}), &{source}, {}, &{destination});",
                     values[1].code
                 ));
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                self.emit_operation_failure_check()?;
                 self.line(&format!("{source_flag} = false;"));
                 for line in plan.apply_at(&expr.id)?.lines() {
                     self.line(line);
@@ -192,7 +193,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                     "spx_status = spx_vec_set(spx_ctx, UINT32_C({tag}), &{source}, {}, {bits}, &{destination});",
                     values[1].code
                 ));
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                self.emit_operation_failure_check()?;
                 self.line(&format!("{source_flag} = false;"));
                 for line in plan.apply_at(&expr.id)?.lines() {
                     self.line(line);
@@ -223,7 +224,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 self.line(&format!(
                     "spx_status = {operation}(spx_ctx, UINT32_C({tag}), &{source}, &{destination});"
                 ));
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                self.emit_operation_failure_check()?;
                 self.line(&format!("{source_flag} = false;"));
                 for line in plan.apply_at(&expr.id)?.lines() {
                     self.line(line);
@@ -266,7 +267,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                     "spx_status = spx_vec_get(spx_ctx, &({}), UINT32_C({tag}), {}, &{bits});",
                     values[0].code, values[1].code
                 ));
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                self.emit_operation_failure_check()?;
                 Ok(CValue {
                     code: vec_bits_to_scalar(&bits, element)?,
                     ty: element.clone(),

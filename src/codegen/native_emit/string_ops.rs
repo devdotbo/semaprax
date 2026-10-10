@@ -1,6 +1,7 @@
 //! Native lowering for compiler-owned owned-string operations.
 
 use super::{backend_error, c_value_type, is_direct_plan_owned, CEmitter, COutput, CValue};
+use crate::codegen::native_bytes::NativeBytesProducer as _;
 use crate::diagnostic::Diagnostic;
 use crate::hir::{self, ExpressionId, ResolvedExpr, ResolvedType};
 
@@ -226,7 +227,8 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                     ));
                 }
                 self.line(&format!("if (({operand}).len > (uint64_t)SIZE_MAX || (({operand}).len != UINT64_C(0) && ({operand}).ptr == NULL)) spx_runtime_invariant_failure(\"invalid UTF-8 input slice\");"));
-                self.line(&format!("if (!spx_status_domain_is_utf8((const char *)({operand}).ptr, (size_t)({operand}).len)) {{ if (!spx_status_record_adapter(spx_ctx, \"{}\", UINT32_C(1), SPX_STATUS_CLASS_ADAPTER, SPX_RETRYABILITY_FALSE, &spx_status)) spx_runtime_invariant_failure(\"conversion status could not be recorded\"); goto spx_epilogue; }}", crate::string_ops::CONVERT_STATUS_DOMAIN));
+                let jump = self.operation_failure_jump()?;
+                self.line(&format!("if (!spx_status_domain_is_utf8((const char *)({operand}).ptr, (size_t)({operand}).len)) {{ if (!spx_status_record_adapter(spx_ctx, \"{}\", UINT32_C(1), SPX_STATUS_CLASS_ADAPTER, SPX_RETRYABILITY_FALSE, &spx_status)) spx_runtime_invariant_failure(\"conversion status could not be recorded\"); {jump} }}", crate::string_ops::CONVERT_STATUS_DOMAIN));
                 self.line(&format!("{temporary} = spx_string_from_literal((const char *)({operand}).ptr, ({operand}).len);"));
                 return Ok(());
             }
@@ -295,8 +297,9 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             )],
         };
         for (condition, code) in failures {
+            let jump = self.operation_failure_jump()?;
             self.line(&format!(
-                "if ({condition}) {{ if (!spx_status_record_adapter(spx_ctx, \"{}\", UINT32_C({code}), SPX_STATUS_CLASS_ADAPTER, SPX_RETRYABILITY_FALSE, &spx_status)) spx_runtime_invariant_failure(\"conversion status could not be recorded\"); goto spx_epilogue; }}",
+                "if ({condition}) {{ if (!spx_status_record_adapter(spx_ctx, \"{}\", UINT32_C({code}), SPX_STATUS_CLASS_ADAPTER, SPX_RETRYABILITY_FALSE, &spx_status)) spx_runtime_invariant_failure(\"conversion status could not be recorded\"); {jump} }}",
                 crate::string_ops::CONVERT_STATUS_DOMAIN
             ));
         }

@@ -15,16 +15,19 @@ use crate::variant_layout::VariantLayout;
 use super::native_emit::c_case_symbol;
 
 mod nested_owned;
+mod origin;
+mod producer;
+mod view;
+pub(super) use producer::NativeBytesProducer;
+pub(super) use view::NativeBytesView;
 mod owned_leaf;
 #[cfg(test)]
 mod projected_vec_tests;
-mod record_if;
 mod replacement;
 mod scalar_match_scope;
 mod scoped_vec_field;
 mod semantic_work;
 mod string_slots;
-mod variant_match;
 use owned_leaf::{emit_transfer, ByteSlot, OwnedLeafKind};
 use scalar_match_scope::ScopeExit;
 mod lexical_exit;
@@ -33,8 +36,8 @@ mod lexical_exit;
 pub(super) struct NativeBytesPlan {
     slots: BTreeMap<CleanupPlace, ByteSlot>,
     storage_leaves: BTreeMap<StorageId, Vec<CleanupPlace>>,
-    transitions: BTreeMap<ExpressionId, Vec<CleanupTransition>>,
-    variant_case_transitions: BTreeMap<(ExpressionId, DeclarationId), Vec<CleanupTransition>>,
+    transitions: origin::Index<ExpressionId>,
+    variant_case_transitions: origin::Index<(ExpressionId, DeclarationId)>,
     finalizers: Vec<ByteSlot>,
     scope_exits: Vec<ScopeExit>,
     referenced_places: BTreeSet<CleanupPlace>,
@@ -44,52 +47,6 @@ pub(super) struct NativeBytesPlan {
 }
 
 impl NativeBytesPlan {
-    pub(super) fn authenticate_literal_format_commit(
-        &self,
-        call: &ExpressionId,
-        args: &[crate::hir::ResolvedExpr],
-    ) -> Result<(), Diagnostic> {
-        let mut commits =
-            self.transitions
-                .get(call)
-                .into_iter()
-                .flatten()
-                .filter_map(|transition| match transition {
-                    CleanupTransition::CallCommit {
-                        call: owner,
-                        arguments,
-                    } if owner == call => Some(arguments),
-                    _ => None,
-                });
-        let arguments = commits
-            .next()
-            .ok_or_else(|| error("literal format lacks canonical CallCommit"))?;
-        if commits.next().is_some() {
-            return Err(error("literal format has duplicate CallCommit"));
-        }
-        let expected = args
-            .iter()
-            .enumerate()
-            .filter(|(_, argument)| argument.ty == crate::hir::ResolvedType::String)
-            .collect::<Vec<_>>();
-        if arguments.len() != expected.len() {
-            return Err(error("literal format CallCommit ownership disagrees"));
-        }
-        for (transfer, (index, argument)) in arguments.iter().zip(expected) {
-            if transfer.parameter_index != index as u32
-                || !transfer.source.projections.is_empty()
-                || !matches!(&transfer.source.storage,
-                    StorageId::CallArgument { call: owner, parameter_index, value_expression }
-                    if owner == call && *parameter_index == index as u32 && value_expression == &argument.id)
-            {
-                return Err(error(
-                    "literal format CallCommit is not source-authenticated",
-                ));
-            }
-        }
-        Ok(())
-    }
-
     pub(super) fn build(function: &ResolvedFunction) -> Result<Option<Self>, Diagnostic> {
         let mut slots = BTreeMap::new();
         let mut storage_leaves = BTreeMap::<StorageId, Vec<CleanupPlace>>::new();
@@ -155,9 +112,12 @@ impl NativeBytesPlan {
         if slots.is_empty() {
             return Ok(None);
         }
-        let mut transitions = BTreeMap::<ExpressionId, Vec<CleanupTransition>>::new();
-        let mut variant_case_transitions = BTreeMap::new();
+        let mut transitions = origin::Index::<ExpressionId>::default();
+        let mut variant_case_transitions = origin::Index::default();
         for block in &function.cleanup_plan.blocks {
+            let ordinary = function
+                .cleanup_plan
+                .lexical_block_in_context(None, block.id);
             for (at, case) in block
                 .transitions
                 .iter()
@@ -170,12 +130,17 @@ impl NativeBytesPlan {
                     .transitions
                     .iter()
                     .filter(|transition| nested_owned::transition_at(transition) == Some(at))
-                    .cloned()
+                    .map(|transition| origin::Tagged {
+                        block: block.id,
+                        ordinary,
+                        transition: transition.clone(),
+                    })
                     .collect();
-                if variant_case_transitions
-                    .insert((at.clone(), case.clone()), selected)
-                    .is_some()
-                {
+                if variant_case_transitions.insert_context(
+                    (at.clone(), case.clone()),
+                    selected,
+                    &function.cleanup_plan,
+                )? {
                     return Err(error("variant case transition block is duplicated"));
                 }
             }
@@ -193,10 +158,14 @@ impl NativeBytesPlan {
                     | CleanupTransition::StageCopyResult { .. } => None,
                 };
                 if let Some(at) = at {
-                    transitions
-                        .entry(at.clone())
-                        .or_default()
-                        .push(transition.clone());
+                    transitions.push(
+                        at.clone(),
+                        origin::Tagged {
+                            block: block.id,
+                            ordinary,
+                            transition: transition.clone(),
+                        },
+                    );
                 }
             }
         }
@@ -209,13 +178,16 @@ impl NativeBytesPlan {
             .exits
             .iter()
             .filter(|exit| {
-                !matches!(
-                    exit.continuation,
-                    crate::cleanup_plan::ExitContinuation::Continue(_)
-                        | crate::cleanup_plan::ExitContinuation::LoopLatch { .. }
-                        | crate::cleanup_plan::ExitContinuation::LoopBreak { .. }
-                        | crate::cleanup_plan::ExitContinuation::FunctionReturn { .. }
-                )
+                function
+                    .cleanup_plan
+                    .lexical_block_in_context(None, exit.from)
+                    && !matches!(
+                        exit.continuation,
+                        crate::cleanup_plan::ExitContinuation::Continue(_)
+                            | crate::cleanup_plan::ExitContinuation::LoopLatch { .. }
+                            | crate::cleanup_plan::ExitContinuation::LoopBreak { .. }
+                            | crate::cleanup_plan::ExitContinuation::FunctionReturn { .. }
+                    )
             })
             .map(|exit| {
                 exit.finalize_in_order
@@ -500,316 +472,7 @@ impl NativeBytesPlan {
     pub(super) fn has_variant_leaves(&self, storage: &StorageId) -> bool {
         self.variant_storage.contains(storage)
     }
-    pub(super) fn apply_at(&self, at: &ExpressionId) -> Result<String, Diagnostic> {
-        self.apply_transitions(self.transitions.get(at).into_iter().flatten())
-    }
-    fn apply_transitions<'a>(
-        &self,
-        transitions: impl Iterator<Item = &'a CleanupTransition>,
-    ) -> Result<String, Diagnostic> {
-        let mut output = String::new();
-        for transition in transitions {
-            match transition {
-                CleanupTransition::Transfer {
-                    source,
-                    destination,
-                    ..
-                }
-                | CleanupTransition::Renew {
-                    source,
-                    destination,
-                    ..
-                } => {
-                    for (source, destination) in self.transfer_pairs(source, destination)? {
-                        output.push_str(&self.release_replaced_string(transition, destination));
-                        output.push_str(&emit_transfer(source, destination, "plan transfer"));
-                    }
-                }
-                CleanupTransition::Initialize { destination, .. } => {
-                    if destination.projections.is_empty()
-                        && self.has_variant_leaves(&destination.storage)
-                    {
-                        // A variant root is conditionally initialized from its
-                        // authenticated runtime tag by the carrier bridge.
-                        continue;
-                    }
-                    for place in self.leaves_under(destination)? {
-                        let destination = &self.slots[place];
-                        output.push_str(&format!(
-                            "if ({}) spx_runtime_invariant_failure(\"Bytes plan initialize liveness\");\n{} = true;\n",
-                            destination.flag, destination.flag
-                        ));
-                    }
-                }
-                CleanupTransition::ReserveRenewal { .. }
-                | CleanupTransition::CallCommit { .. }
-                | CleanupTransition::InitializeVariant { .. }
-                | CleanupTransition::TransferVariant { .. }
-                | CleanupTransition::AuthenticateVariantCase { .. }
-                | CleanupTransition::SelectFailure { .. }
-                | CleanupTransition::StageCopyResult { .. } => {}
-            }
-        }
-        Ok(output)
-    }
-    pub(super) fn apply_variant_case_at(
-        &self,
-        at: &ExpressionId,
-        case: &DeclarationId,
-    ) -> Result<String, Diagnostic> {
-        self.apply_variant_case_at_inner(at, case, true)
-    }
-    pub(super) fn apply_try_variant_case_at(
-        &self,
-        at: &ExpressionId,
-        case: &DeclarationId,
-        transfer_residual: bool,
-    ) -> Result<String, Diagnostic> {
-        self.apply_variant_case_at_inner(at, case, transfer_residual)
-    }
-    fn apply_variant_case_at_inner(
-        &self,
-        at: &ExpressionId,
-        case: &DeclarationId,
-        include_variant_transfer: bool,
-    ) -> Result<String, Diagnostic> {
-        nested_owned::apply_variant_case_at(self, at, case, include_variant_transfer)
-    }
-    pub(super) fn authenticate_variant_case_at(
-        &self,
-        at: &ExpressionId,
-        selected: &DeclarationId,
-    ) -> Result<String, Diagnostic> {
-        nested_owned::authenticate_variant_case_at(self, at, selected)
-    }
-    pub(super) fn apply_variant_at(
-        &self,
-        at: &ExpressionId,
-        carrier: &str,
-        layout: &VariantLayout,
-    ) -> Result<String, Diagnostic> {
-        let mut output = self.apply_at(at)?;
-        let variant_transitions = self
-            .transitions
-            .get(at)
-            .into_iter()
-            .flatten()
-            .filter_map(|transition| match transition {
-                CleanupTransition::TransferVariant {
-                    source,
-                    destination,
-                    variant,
-                    ..
-                } => Some((source, destination, variant)),
-                _ => None,
-            })
-            .collect::<Vec<_>>();
-        let alternative_destinations = variant_transitions.iter().fold(
-            BTreeMap::<&CleanupPlace, usize>::new(),
-            |mut counts, row| {
-                *counts.entry(row.1).or_default() += 1;
-                counts
-            },
-        );
-        for (source, destination, variant) in variant_transitions {
-            // Variant-producing `if` branches are transferred while each
-            // branch is still selected. Reapplying their joined alternatives
-            // here would demand that both mutually exclusive sources be live.
-            if alternative_destinations[&destination] > 1 {
-                continue;
-            }
-            if variant != &layout.variant {
-                return Err(error("variant transfer identity disagrees with layout"));
-            }
-            output.push_str(&self.emit_variant_transfer(source, destination, carrier, layout)?);
-        }
-        Ok(output)
-    }
-    pub(super) fn result_at(&self, at: &ExpressionId) -> Option<&str> {
-        self.transitions.get(at).and_then(|transitions| {
-            transitions
-                .iter()
-                .rev()
-                .find_map(|transition| match transition {
-                    CleanupTransition::Initialize { destination, .. }
-                    | CleanupTransition::Transfer { destination, .. }
-                    | CleanupTransition::Renew { destination, .. } => {
-                        self.slots.get(destination).map(|slot| slot.value.as_str())
-                    }
-                    CleanupTransition::ReserveRenewal { .. }
-                    | CleanupTransition::CallCommit { .. }
-                    | CleanupTransition::InitializeVariant { .. }
-                    | CleanupTransition::TransferVariant { .. }
-                    | CleanupTransition::AuthenticateVariantCase { .. }
-                    | CleanupTransition::SelectFailure { .. }
-                    | CleanupTransition::StageCopyResult { .. } => None,
-                })
-        })
-    }
-    pub(super) fn apply_try_success_at(
-        &self,
-        at: &ExpressionId,
-        case: &DeclarationId,
-    ) -> Result<(String, Option<&str>), Diagnostic> {
-        let transitions = self
-            .variant_case_transitions
-            .get(&(at.clone(), case.clone()))
-            .ok_or_else(|| error("owned Result success has no authenticated cleanup block"))?;
-        let output = self.apply_transitions(transitions.iter())?;
-        let result = transitions
-            .iter()
-            .rev()
-            .find_map(nested_owned::transition_destination)
-            .and_then(|destination| self.slots.get(destination))
-            .map(|slot| slot.value.as_str());
-        Ok((output, result))
-    }
-    pub(super) fn transfer_field_at(
-        &self,
-        at: &ExpressionId,
-        source_value: &str,
-        destination: &CleanupPlace,
-    ) -> Result<String, Diagnostic> {
-        let mut matches =
-            self.transitions.get(at).into_iter().flatten().filter_map(
-                |transition| match transition {
-                    CleanupTransition::Transfer {
-                        source,
-                        destination: target,
-                        ..
-                    }
-                    | CleanupTransition::Renew {
-                        source,
-                        destination: target,
-                        ..
-                    } if target == destination => Some(source),
-                    _ => None,
-                },
-            );
-        let source = matches
-            .next()
-            .ok_or_else(|| error("owned Bytes field has no canonical initializer transfer"))?;
-        if matches.next().is_some() {
-            return Err(error("owned Bytes field initializer transfer is ambiguous"));
-        }
-        let source = self
-            .slots
-            .get(source)
-            .ok_or_else(|| error("owned Bytes field source is not indexed"))?;
-        let destination = self
-            .slots
-            .get(destination)
-            .ok_or_else(|| error("owned Bytes field destination is not indexed"))?;
-        // Calls and blocks may already have applied this exact transition.
-        // Places and branch values leave it to their consuming constructor.
-        if source_value == destination.value {
-            return Ok(String::new());
-        }
-        if source_value != source.value {
-            return Err(error(
-                "owned Bytes field value disagrees with its plan source",
-            ));
-        }
-        Ok(emit_transfer(
-            source,
-            destination,
-            "field initializer transfer",
-        ))
-    }
-    pub(super) fn transfer_scalar_match_arm(
-        &self,
-        match_id: &ExpressionId,
-        arm_value_id: &ExpressionId,
-    ) -> Result<String, Diagnostic> {
-        let source_storage = crate::cleanup_plan::StorageId::Temporary(arm_value_id.clone());
-        let dest_storage = crate::cleanup_plan::StorageId::Temporary(match_id.clone());
-        let mut matches = self
-            .transitions
-            .get(match_id)
-            .into_iter()
-            .flatten()
-            .filter_map(|transition| match transition {
-                CleanupTransition::Transfer {
-                    source,
-                    destination,
-                    ..
-                }
-                | CleanupTransition::Renew {
-                    source,
-                    destination,
-                    ..
-                } if source.storage == source_storage && destination.storage == dest_storage => {
-                    Some((source, destination))
-                }
-                _ => None,
-            });
-        let (source, destination) = matches.next().ok_or_else(|| {
-            error(format!(
-                "scalar match arm `{arm_value_id}` has no canonical transfer to match `{match_id}`"
-            ))
-        })?;
-        if matches.next().is_some() {
-            return Err(error("scalar match arm transfer is ambiguous"));
-        }
-        let source_slot = self
-            .slots
-            .get(source)
-            .ok_or_else(|| error("scalar match arm source is not indexed"))?;
-        let dest_slot = self
-            .slots
-            .get(destination)
-            .ok_or_else(|| error("scalar match destination is not indexed"))?;
-        Ok(super::native_bytes::emit_transfer(
-            source_slot,
-            dest_slot,
-            "scalar match arm transfer",
-        ))
-    }
 
-    pub(super) fn transfer_branch_at(
-        &self,
-        at: &ExpressionId,
-        source_value: &str,
-        destination: &CleanupPlace,
-    ) -> Result<String, Diagnostic> {
-        // Branch joins are anchored at the parent expression. Select only
-        // the reached branch's exact source/destination relation; never replay
-        // the other branch transitions sharing that parent anchor.
-        let mut matches =
-            self.transitions.get(at).into_iter().flatten().filter_map(
-                |transition| match transition {
-                    CleanupTransition::Transfer {
-                        source,
-                        destination: target,
-                        ..
-                    }
-                    | CleanupTransition::Renew {
-                        source,
-                        destination: target,
-                        ..
-                    } if target == destination => {
-                        let slot = self.slots.get(source)?;
-                        (slot.value == source_value).then_some(source)
-                    }
-                    _ => None,
-                },
-            );
-        let source = matches
-            .next()
-            .ok_or_else(|| error("Bytes branch source has no canonical result transfer"))?;
-        if matches.next().is_some() {
-            return Err(error("Bytes branch transfer is ambiguous"));
-        }
-        let source = self
-            .slots
-            .get(source)
-            .ok_or_else(|| error("Bytes branch source is not indexed"))?;
-        let destination = self
-            .slots
-            .get(destination)
-            .ok_or_else(|| error("Bytes branch destination is not indexed"))?;
-        Ok(emit_transfer(source, destination, "branch transfer"))
-    }
     pub(super) fn call_argument(
         &self,
         call: &ExpressionId,
@@ -930,44 +593,6 @@ impl NativeBytesPlan {
         layout: &VariantLayout,
     ) -> Result<String, Diagnostic> {
         nested_owned::materialize_variant_borrow_view(self, storage, carrier, discriminant, layout)
-    }
-
-    pub(super) fn initialize_record_result_at(
-        &self,
-        at: &ExpressionId,
-        carrier: &str,
-    ) -> Result<String, Diagnostic> {
-        let mut destinations = self.transitions.get(at).into_iter().flatten().filter_map(
-            |transition| match transition {
-                CleanupTransition::Initialize { destination, .. }
-                    if !destination.projections.is_empty()
-                        || self.storage_leaves.get(&destination.storage).is_some_and(
-                            |leaves| leaves.iter().any(|leaf| !leaf.projections.is_empty()),
-                        ) =>
-                {
-                    Some(destination)
-                }
-                _ => None,
-            },
-        );
-        let destination = destinations
-            .next()
-            .ok_or_else(|| error("owned record result has no canonical initialization"))?;
-        if destinations.next().is_some() {
-            return Err(error("owned record result initialization is ambiguous"));
-        }
-        let mut output = String::new();
-        for place in self.leaves_under(destination)? {
-            let relative = &place.projections[destination.projections.len()..];
-            let path = nested_owned::c_field_path(relative)?;
-            let slot = &self.slots[place];
-            output.push_str(&format!(
-                "{} = {};\n",
-                slot.value,
-                slot.kind.move_call(&format!("(({carrier}).{path})")),
-            ));
-        }
-        Ok(output)
     }
 
     pub(super) fn publish_record_result(&self, carrier: &str) -> Result<String, Diagnostic> {
@@ -1426,8 +1051,8 @@ mod tests {
             NativeBytesPlan {
                 slots,
                 storage_leaves,
-                transitions: BTreeMap::new(),
-                variant_case_transitions: BTreeMap::new(),
+                transitions: origin::Index::default(),
+                variant_case_transitions: origin::Index::default(),
                 finalizers: Vec::new(),
                 scope_exits: Vec::new(),
                 referenced_places: BTreeSet::new(),
@@ -1483,5 +1108,17 @@ mod tests {
                 },
             )
             .is_err());
+    }
+}
+
+impl NativeBytesProducer for NativeBytesPlan {
+    fn base(&self) -> &NativeBytesPlan {
+        self
+    }
+    fn transitions(&self) -> origin::Selection<'_, ExpressionId> {
+        self.transitions.select(None)
+    }
+    fn variant_cases(&self) -> origin::Selection<'_, (ExpressionId, DeclarationId)> {
+        self.variant_case_transitions.select(None)
     }
 }

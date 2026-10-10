@@ -1,5 +1,6 @@
 //! Checked owned-carrier Result propagation, with independently typed payloads.
 use super::*;
+use crate::codegen::native_bytes::NativeBytesProducer as _;
 
 impl<O: COutput> CEmitter<'_, O> {
     pub(super) fn emit_try_expr(&mut self, expr: &ResolvedExpr) -> Result<CValue, Diagnostic> {

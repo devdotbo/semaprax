@@ -1,5 +1,6 @@
 //! Fieldwise C lowering for validated acyclic owned-byte records.
 
+use crate::codegen::native_bytes::NativeBytesProducer as _;
 use std::collections::BTreeSet;
 
 use crate::diagnostic::Diagnostic;

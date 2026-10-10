@@ -19,6 +19,7 @@ use super::{error, ByteSlot, NativeBytesPlan};
 #[derive(Clone, Debug)]
 pub(super) struct ScopeExit {
     region: CleanupRegionId,
+    from: Option<crate::cleanup_plan::BlockId>,
     parent: Option<CleanupRegionId>,
     storage: BTreeSet<StorageId>,
     actions: Vec<ByteSlot>,
@@ -65,12 +66,34 @@ pub(super) fn build_scope_exits(
         if region.parent.is_none() {
             exits.push(ScopeExit {
                 region: region.id,
+                from: None,
                 parent: None,
                 storage,
                 actions: Vec::new(),
                 guard_branch: None,
                 parent_arm_selected_scrutinees: BTreeSet::new(),
             });
+            continue;
+        }
+        let abrupt = plan.lexical_control.as_deref().map_or(0, |control| {
+            control
+                .abrupt_only_regions
+                .iter()
+                .filter(|id| **id == region.id)
+                .count()
+        });
+        if abrupt != 0 {
+            if abrupt != 1
+                || plan.schema != crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V18
+                || plan.lexical_control.as_deref().is_none_or(|control| {
+                    control.schema != crate::hir::lexical_exit::LEXICAL_CONTROL_FLOW_SCHEMA_V1
+                })
+                || region.normal_scope_end.0 != u32::MAX
+            {
+                return Err(error(
+                    "native abrupt-only scope certificate is not canonical",
+                ));
+            }
             continue;
         }
         let exit = plan
@@ -91,6 +114,7 @@ pub(super) fn build_scope_exits(
             .collect::<Vec<_>>();
         exits.push(ScopeExit {
             region: region.id,
+            from: Some(exit.from),
             parent: region.parent,
             storage,
             actions,
@@ -166,9 +190,21 @@ impl NativeBytesPlan {
         &self,
         anchors: &BTreeSet<StorageId>,
     ) -> Result<String, Diagnostic> {
+        self.scope_exit_in_context(anchors, None)
+    }
+
+    pub(in crate::codegen) fn scope_exit_in_context(
+        &self,
+        anchors: &BTreeSet<StorageId>,
+        context: Option<(
+            &crate::cleanup_plan::CleanupPlan,
+            Option<crate::cleanup_plan::BlockId>,
+        )>,
+    ) -> Result<String, Diagnostic> {
         let mut matches = self
             .scope_exits
             .iter()
+            .filter(|scope| includes_scope(scope, context))
             .filter(|scope| scope.storage.iter().any(|slot| anchors.contains(slot)));
         let Some(scope) = matches.next() else {
             return if anchors.is_empty() {
@@ -193,13 +229,26 @@ impl NativeBytesPlan {
         anchors: &BTreeSet<StorageId>,
         direct: &BTreeSet<StorageId>,
     ) -> Result<String, Diagnostic> {
+        self.block_scope_exit_in_context(anchors, direct, None)
+    }
+
+    pub(in crate::codegen) fn block_scope_exit_in_context(
+        &self,
+        anchors: &BTreeSet<StorageId>,
+        direct: &BTreeSet<StorageId>,
+        context: Option<(
+            &crate::cleanup_plan::CleanupPlan,
+            Option<crate::cleanup_plan::BlockId>,
+        )>,
+    ) -> Result<String, Diagnostic> {
         let matching = self
             .scope_exits
             .iter()
+            .filter(|scope| includes_scope(scope, context))
             .filter(|scope| scope.storage.iter().any(|slot| anchors.contains(slot)))
             .collect::<Vec<_>>();
         if matching.len() <= 1 || direct.is_empty() {
-            return self.scope_exit(anchors);
+            return self.scope_exit_in_context(anchors, context);
         }
         let mut own = matching
             .into_iter()
@@ -215,7 +264,23 @@ impl NativeBytesPlan {
         guard: &ExpressionId,
         anchors: &BTreeSet<StorageId>,
     ) -> Result<String, Diagnostic> {
-        self.scalar_match_scope_exit(anchors, |scope| scope.guard_branch.as_ref() == Some(guard))
+        self.scalar_match_guard_scope_exit_in_context(guard, anchors, None)
+    }
+
+    pub(in crate::codegen) fn scalar_match_guard_scope_exit_in_context(
+        &self,
+        guard: &ExpressionId,
+        anchors: &BTreeSet<StorageId>,
+        context: Option<(
+            &crate::cleanup_plan::CleanupPlan,
+            Option<crate::cleanup_plan::BlockId>,
+        )>,
+    ) -> Result<String, Diagnostic> {
+        self.scalar_match_scope_exit(
+            anchors,
+            |scope| scope.guard_branch.as_ref() == Some(guard),
+            context,
+        )
     }
 
     pub(in crate::codegen) fn scalar_match_value_scope_exit(
@@ -223,15 +288,33 @@ impl NativeBytesPlan {
         scrutinee: &ExpressionId,
         anchors: &BTreeSet<StorageId>,
     ) -> Result<String, Diagnostic> {
-        self.scalar_match_scope_exit(anchors, |scope| {
-            scope.parent_arm_selected_scrutinees.contains(scrutinee)
-        })
+        self.scalar_match_value_scope_exit_in_context(scrutinee, anchors, None)
+    }
+
+    pub(in crate::codegen) fn scalar_match_value_scope_exit_in_context(
+        &self,
+        scrutinee: &ExpressionId,
+        anchors: &BTreeSet<StorageId>,
+        context: Option<(
+            &crate::cleanup_plan::CleanupPlan,
+            Option<crate::cleanup_plan::BlockId>,
+        )>,
+    ) -> Result<String, Diagnostic> {
+        self.scalar_match_scope_exit(
+            anchors,
+            |scope| scope.parent_arm_selected_scrutinees.contains(scrutinee),
+            context,
+        )
     }
 
     fn scalar_match_scope_exit(
         &self,
         anchors: &BTreeSet<StorageId>,
         matches: impl Fn(&ScopeExit) -> bool,
+        context: Option<(
+            &crate::cleanup_plan::CleanupPlan,
+            Option<crate::cleanup_plan::BlockId>,
+        )>,
     ) -> Result<String, Diagnostic> {
         if anchors.is_empty() {
             return Ok(String::new());
@@ -239,6 +322,7 @@ impl NativeBytesPlan {
         let by_region = self
             .scope_exits
             .iter()
+            .filter(|scope| includes_scope(scope, context))
             .map(|scope| (scope.region, scope))
             .collect::<BTreeMap<_, _>>();
         let mut selected = None;
@@ -246,6 +330,7 @@ impl NativeBytesPlan {
             let Some(start) = self
                 .scope_exits
                 .iter()
+                .filter(|scope| includes_scope(scope, context))
                 .find(|scope| scope.storage.contains(anchor))
             else {
                 return Err(error("String scalar-match anchor has no cleanup region"));
@@ -274,3 +359,16 @@ impl NativeBytesPlan {
 
 #[cfg(test)]
 mod tests;
+
+fn includes_scope(
+    scope: &ScopeExit,
+    context: Option<(
+        &crate::cleanup_plan::CleanupPlan,
+        Option<crate::cleanup_plan::BlockId>,
+    )>,
+) -> bool {
+    match (scope.from, context) {
+        (Some(block), Some((plan, resume))) => plan.lexical_block_in_context(resume, block),
+        _ => true,
+    }
+}

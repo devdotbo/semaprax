@@ -39,7 +39,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                     "spx_status = spx_list_cons(spx_ctx, {}, {}, &{destination});",
                     head.code, tail.code
                 ));
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                self.emit_operation_failure_check()?;
                 Ok(CValue {
                     code: destination,
                     ty: expr.ty.clone(),

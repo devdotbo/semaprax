@@ -74,7 +74,7 @@ impl<O: COutput> CEmitter<'_, O> {
             "spx_status = spx_leaf_read_field(spx_ctx, &({}), &{}, {}, UINT32_C({position}), &{slot});",
             source_value.code, layout.symbol, index_value.code
         ));
-        self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+        self.emit_operation_failure_check()?;
         let output = self.temporary(&result_type)?;
         match field_type {
             ResolvedType::String => {

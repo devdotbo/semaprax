@@ -1,5 +1,6 @@
 //! Explicit streaming-command lowering of the sealed reader and its views.
 
+use crate::codegen::native_bytes::NativeBytesProducer as _;
 use crate::diagnostic::Diagnostic;
 use crate::hir::{self, Place, ResolvedExpr, ResolvedHostCommandCall, ResolvedType};
 
@@ -122,7 +123,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 ))
             }
         }
-        self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+        self.emit_operation_failure_check()?;
         if call.operation == hir::ResolvedHostCommandOperation::StdinStreamNext {
             // The successful host call consumed the canonical staged argument.
             // Failure leaves that epoch live for the caller's cleanup plan.

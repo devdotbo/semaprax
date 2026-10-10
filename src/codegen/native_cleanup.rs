@@ -121,6 +121,10 @@ impl<'a> NativeCleanupIndex<'a> {
         self.admission.clone()
     }
 
+    pub(crate) fn canonical_plan(&self) -> &crate::cleanup_plan::CleanupPlan {
+        &self.canonical_function.cleanup_plan
+    }
+
     pub(crate) fn function_id(&self) -> &DeclarationId {
         self.function_id
     }
@@ -917,9 +921,8 @@ fn validate_expression(
                     ResolvedStatement::Unsafe { body, .. } => {
                         validate_expression(program, function, body)?;
                     }
-                    ResolvedStatement::While {
-                        condition, body, ..
-                    } => return Err(unsupported(
+                    ResolvedStatement::While { condition, body, .. }
+                    | ResolvedStatement::LexicalWhile { condition, body, .. } => return Err(unsupported(
                         function,
                         format!(
                             "does not support while statement `{}..{}` in the first native cleanup slice",
@@ -991,6 +994,12 @@ fn validate_expression(
                     expression.id
                 ),
             ));
+        }
+        ResolvedExprKind::LexicalExit { .. } => {
+            return Err(unsupported(
+                function,
+                "lexical exits remain outside the first native resource cleanup slice",
+            ))
         }
         ResolvedExprKind::TryOption { operand, .. } => {
             validate_expression(program, function, operand)?;

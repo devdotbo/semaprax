@@ -1,5 +1,6 @@
 //! Independent native admission for fully substituted generic record storage.
 
+use crate::codegen::native_bytes::NativeBytesProducer as _;
 use std::collections::BTreeSet;
 
 use crate::diagnostic::Diagnostic;

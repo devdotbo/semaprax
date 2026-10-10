@@ -1,5 +1,6 @@
 //! Copy only the active tag and Copy payload; canonical plans move owner leaves.
 use super::*;
+use crate::codegen::native_bytes::NativeBytesProducer as _;
 impl<'a, O: COutput> CEmitter<'a, O> {
     pub(super) fn match_result_is_admitted(
         &self,

@@ -186,7 +186,7 @@ pub(super) fn emit_invoke<O: COutput>(
             arguments
         ));
     }
-    emitter.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+    emitter.emit_operation_failure_check()?;
     emitter.require_type(&expr.ty, result, "function invocation result")?;
     Ok(CValue {
         code: temporary,
