@@ -128,8 +128,8 @@ fn identity_capacity(id: &ExpressionId) -> usize {
 
 // The legacy builder census remains byte-for-byte unchanged. New lexical
 // retained places charge full expression backing, including spare capacity.
-fn place_capacity(place: &CleanupPlace) -> usize {
-    let storage = match &place.storage {
+fn storage_capacity(storage: &StorageId) -> usize {
+    match storage {
         StorageId::Value(id) => id.as_str().len(),
         StorageId::Temporary(id) => identity_capacity(id),
         StorageId::CallArgument {
@@ -138,14 +138,57 @@ fn place_capacity(place: &CleanupPlace) -> usize {
             ..
         } => identity_capacity(call) + identity_capacity(value_expression),
         StorageId::ProvisionalResult => 0,
-    };
-    storage
+    }
+}
+fn place_capacity(place: &CleanupPlace) -> usize {
+    storage_capacity(&place.storage)
         + place.projections.capacity() * std::mem::size_of::<DeclarationId>()
         + place
             .projections
             .iter()
             .map(|id| id.as_str().len())
             .sum::<usize>()
+}
+
+/// The shared legacy exit census already charges carriers and Vec capacity.
+/// Add only the omitted lexical identity backing and active-case payloads.
+/// No identity pointer deduplication or discounted physical backing is used.
+pub(in crate::cleanup_plan::build) fn lexical_exit_payload_extra(
+    builder: &PlanBuilder<'_>,
+) -> usize {
+    if builder.lexical.is_none() {
+        return 0;
+    }
+    builder
+        .exits
+        .iter()
+        .map(|exit| {
+            let continuation = match &exit.continuation {
+                ExitContinuation::CommitResult { source } => result_capacity(source)
+                    .checked_sub(exit_capacity(&exit.continuation))
+                    .expect("full result covers legacy census"),
+                ExitContinuation::ReturnFailure { source } => identity_capacity(&source.expression)
+                    .checked_sub(exit_capacity(&exit.continuation))
+                    .expect("full status covers legacy census"),
+                _ => 0,
+            };
+            continuation
+                + exit
+                    .finalize_in_order
+                    .iter()
+                    .map(|action| {
+                        place_capacity(&action.source)
+                            .checked_sub(cleanup_place_owned_capacity(&action.source))
+                            .expect("full place covers legacy census")
+                            + action.active_case.as_ref().map_or(0, |guard| {
+                                storage_capacity(&guard.storage)
+                                    + guard.variant.as_str().len()
+                                    + guard.case.as_str().len()
+                            })
+                    })
+                    .sum::<usize>()
+        })
+        .sum()
 }
 
 #[cfg(test)]
@@ -321,6 +364,51 @@ mod tests {
         assert_eq!(
             state.owned_capacity(),
             initial + reserved + pending_bytes + status_bytes + blocks_bytes + context_bytes
+        );
+    }
+    #[test]
+    fn lexical_exit_extra_counts_spare_backing_and_guards_without_changing_legacy() {
+        let ast = crate::parse(
+            "module capacity.exits; @id(\"main\") fn main()->i64{0}",
+            "capacity-exits.spx",
+        )
+        .unwrap();
+        let program = crate::hir::resolve(&ast).unwrap();
+        let mut builder = PlanBuilder::new(&program, &program.functions[0]).unwrap();
+        let result = identity("result", 317);
+        let source = CleanupPlace::whole(StorageId::Temporary(identity("owner", 331)));
+        let guard = crate::cleanup_plan::VariantCaseGuard {
+            storage: StorageId::Temporary(identity("guard", 347)),
+            variant: DeclarationId::new("variant"),
+            case: DeclarationId::new("case"),
+        };
+        let expected = identity_capacity(&result) - result.as_str().len() + place_capacity(&source)
+            - cleanup_place_owned_capacity(&source)
+            + storage_capacity(&guard.storage)
+            + guard.variant.as_str().len()
+            + guard.case.as_str().len();
+        builder.exits.push(crate::cleanup_plan::ExitTarget {
+            id: crate::cleanup_plan::ExitTargetId(0),
+            from: BlockId(0),
+            leaves_regions: Vec::new(),
+            finalize_in_order: vec![FinalizeAction {
+                source,
+                lifecycle_id: DeclarationId::new("drop"),
+                guard_flag: LivenessFlagId(0),
+                active_case: Some(guard),
+            }],
+            continuation: ExitContinuation::CommitResult {
+                source: CleanupResultSource::Scalar { expression: result },
+            },
+        });
+        assert_eq!(lexical_exit_payload_extra(&builder), 0);
+        let legacy = builder_nested_capacity(&builder);
+        builder.lexical = Some(Box::new(lexical()));
+        assert_eq!(lexical_exit_payload_extra(&builder), expected);
+        let lexical_carrier = builder.lexical.as_ref().unwrap().owned_capacity();
+        assert_eq!(
+            builder_nested_capacity(&builder),
+            legacy + lexical_carrier + expected
         );
     }
 }

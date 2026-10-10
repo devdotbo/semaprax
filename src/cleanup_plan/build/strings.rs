@@ -304,10 +304,10 @@ impl PlanBuilder<'_> {
 /// replay's materialization-operation counter remains a separate contract.
 #[cfg(test)]
 pub(super) fn derived_metadata_capacity(builder: &PlanBuilder<'_>) -> usize {
-    let lexical = builder
-        .lexical
-        .as_ref()
-        .map_or(0, |state| state.owned_capacity());
+    let lexical = builder.lexical.as_ref().map_or(0, |state| {
+        state.owned_capacity()
+            + super::lexical_control::capacity::lexical_exit_payload_extra(builder)
+    });
     lexical
         + builder.string_appends.len()
             * (std::mem::size_of::<(ExpressionId, ExpressionId)>()
