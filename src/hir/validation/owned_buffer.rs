@@ -8,6 +8,8 @@
 //! computed index is admitted on both projections and checked at run time.
 
 use super::*;
+mod iterator_view;
+pub(super) use iterator_view::iterator_byte_view_is_admitted;
 
 /// Authenticate one `bytes_zeroed` or `bytes_set` call. The caller has already
 /// checked monomorphism and arity.
@@ -270,6 +272,8 @@ pub(super) fn require_admitted_while_operation(
     callee: &DeclarationId,
     operation: crate::byte_ops::ByteOp,
     args: &[ResolvedExpr],
+    owned_item: Option<&crate::hir::ResolvedBinding>,
+    finite_scratch: Option<&crate::finite_byte_scratch::ResolvedScratch<'_>>,
 ) -> Result<(), Diagnostic> {
     if operation == crate::byte_ops::ByteOp::ArrayAsSlice {
         return if fixed_array_view(validator, expression) {
@@ -358,7 +362,9 @@ pub(super) fn require_admitted_while_operation(
         )));
     }
     let slice = &args[0];
-    if fixed_array_view(validator, slice) {
+    if fixed_array_view(validator, slice)
+        || iterator_byte_view_is_admitted(slice, owned_item, finite_scratch)
+    {
         return Ok(());
     }
     let ResolvedExprKind::Place(place) = &slice.kind else {

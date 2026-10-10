@@ -55,7 +55,13 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/hir/validation/generic_variant.rs"),
         include_str!("../src/hir/validation/generic_record_composition.rs"),
         include_str!("../src/hir/validation/host_command.rs"),
-        include_str!("../src/hir/validation/owned_buffer.rs"),
+        concat!(
+            include_str!("../src/hir/validation/owned_buffer.rs"),
+            "\n",
+            include_str!("../src/hir/validation/owned_buffer/iterator_view.rs"),
+            "\n",
+            include_str!("../src/hir/validation/owned_buffer/iterator_view/tests.rs")
+        ),
         include_str!("../src/hir/validation/owned_result_try.rs"),
         include_str!("../src/hir/validation/owner_renewal.rs"),
         concat!(

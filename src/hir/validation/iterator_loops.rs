@@ -144,13 +144,11 @@ impl HirValidator<'_> {
                 ResolvedExprKind::BorrowPlace { operation, place } => {
                     // Ordinary expression replay independently authenticates
                     // the live String owner and its canonical shared loan.
-                    let exact_byte = operation.as_str() == crate::byte_ops::BYTES_AS_SLICE_ID
-                        && expression.ty == ResolvedType::SliceU8
-                        && place.projections.is_empty()
-                        && (owned_item.is_some_and(|item| {
-                            item.ty == ResolvedType::Bytes && item.id == place.root
-                        }) || finite_scratch
-                            .is_some_and(|proof| proof.borrowed_root(&place.root)));
+                    let exact_byte = owned_buffer::iterator_byte_view_is_admitted(
+                        expression,
+                        owned_item,
+                        finite_scratch,
+                    );
                     let exact_view = owned_buffer::fixed_array_view(self, expression)
                         || exact_byte
                         || (operation.as_str() == crate::byte_ops::STRING_AS_STR_ID
@@ -424,7 +422,13 @@ impl HirValidator<'_> {
                             continue;
                         }
                         owned_buffer::require_admitted_while_operation(
-                            self, expression, callee, operation, args,
+                            self,
+                            expression,
+                            callee,
+                            operation,
+                            args,
+                            owned_item,
+                            finite_scratch,
                         )?;
                         // Owned-buffer admission authenticates the moved owner
                         // and, for the one-or-five store, its distinct borrowed
