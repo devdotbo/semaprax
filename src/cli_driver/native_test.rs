@@ -8,6 +8,7 @@ use std::time::{Duration, Instant};
 
 use cli::execution::NativeTestLimits;
 
+#[path = "native_test/timing.rs"]
 mod timing;
 
 struct CaseResult {

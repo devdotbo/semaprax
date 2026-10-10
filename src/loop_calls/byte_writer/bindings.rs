@@ -6,6 +6,7 @@ pub(crate) struct HelperBindings<'a> {
     entries: Vec<Entry<'a>>,
 }
 impl<'a> HelperBindings<'a> {
+    #[cfg(test)]
     pub(crate) fn insert(
         &mut self,
         at: &'a ExpressionId,
