@@ -17,6 +17,8 @@ use semaprax::interpreter::{self, InterpreterOptions};
 use semaprax::{format, graph, hir, parse, verify};
 use serde_json::Value;
 
+mod guard_return;
+
 static NEXT_ID: AtomicU64 = AtomicU64::new(0);
 
 /// Copy-scalar statement `if`s in straight-line code and `while` bodies; the

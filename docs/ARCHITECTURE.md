@@ -741,6 +741,15 @@ statement spelling through the shared iterative formatter, including exact
 measurement of omitted normalization nodes. No alternate semantic tree is kept;
 [Statement If Canonical Source v1](STATEMENT-IF-CANONICAL-V1.md) owns the projection.
 
+`src/parser/return_flow.rs` owns additive acyclic function guard-return
+normalization. Returning arms become ordinary value blocks and a missing-else
+suffix moves once into the alternative. Conditions are parsed once through
+the shared statement-if entry. Canonical output uses existing value-if syntax;
+there is no retained exit marker, HIR authority or backend jump. Existing
+source, HIR, cleanup, loan and source-byte capsule checks remain independent.
+[Acyclic guard returns v1](ACYCLIC-GUARD-RETURNS-V1.md) owns its bounded admission
+and pending focused evidence; general loop exits remain separate work.
+
 Source is the canonical Git representation. A managed workspace publishes an
 immutable generated source set for cooperating readers; it does not rewrite the
 original files or grant atomic visibility to Git, editors, or arbitrary raw

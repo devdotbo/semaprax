@@ -1,5 +1,11 @@
 # Changelog
 
+- Normalize acyclic function guard returns to independently verified value
+  control flow, moving each continuation once and retaining contextual loop
+  and closure refusal. Add canonical, graph, ownership-plan, runtime and
+  failure regressions for the grouped implementation batch. Execution is
+  pending; general lexical exits and OPT #734 remain incomplete.
+
 - Derive bounded nested JSON responses with recursive length preflight, borrowed
   record paths and up to two existing Vec owners. Repair owned Vec renewal,
   projected Wasm borrow calls, stream-to-nested-result joins and independently

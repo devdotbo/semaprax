@@ -61,11 +61,24 @@ struct Arm {
 impl Parser {
     pub(super) fn statement_if(&mut self) -> Result<IfItem, Diagnostic> {
         let start = self.keyword("if")?.span;
+        let condition = self.expression_with_record_literals(0, false)?;
+        self.statement_if_after_condition(start, condition)
+    }
+
+    pub(super) fn statement_if_after_condition(
+        &mut self,
+        start: Span,
+        condition: Expr,
+    ) -> Result<IfItem, Diagnostic> {
+        let mut next_condition = Some(condition);
         let mut arms = Vec::new();
         let mut otherwise = None;
         let mut arm_start = start;
         loop {
-            let condition = self.expression_with_record_literals(0, false)?;
+            let condition = match next_condition.take() {
+                Some(condition) => condition,
+                None => self.expression_with_record_literals(0, false)?,
+            };
             let body = self.branch("`if` condition")?;
             arms.push(Arm {
                 start: arm_start,

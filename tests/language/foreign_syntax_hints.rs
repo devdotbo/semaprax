@@ -38,14 +38,15 @@ fn missing_module_header_shows_the_first_line() {
 }
 
 #[test]
-fn return_statement_names_the_tail_expression_rule() {
+fn loop_return_still_names_the_tail_expression_rule() {
     let diagnostic = rejection(
         r#"
 module habit.ret;
 @id("app.main")
 fn main() -> i64
 {
-    return 42;
+    while true { return 42; }
+    0
 }
 "#,
     );
@@ -57,7 +58,7 @@ fn main() -> i64
     );
     assert_eq!(
         diagnostic.span.map(|span| (span.line, span.column)),
-        Some((6, 5))
+        Some((6, 18))
     );
 }
 
@@ -220,10 +221,7 @@ fn main() -> i64
 fn empty_function_body_names_the_rule() {
     let diagnostic = rejection("module habit.empty;\n@id(\"app.main\")\nfn main() -> i64\n{\n}\n");
     assert_eq!(diagnostic.code, "SPX-P203");
-    assert!(
-        help(&diagnostic).contains("there is no `return`"),
-        "{diagnostic}"
-    );
+    assert!(help(&diagnostic).contains("return value;"), "{diagnostic}");
 }
 
 #[test]
@@ -481,12 +479,36 @@ fn operators_and_statements_from_other_languages_name_the_admitted_form() {
             "SPX-P106",
             "there is no `if let`",
         ),
-        ("    let x = 2;\n    match x { 0..=5 => 1, _ => 0, }", "SPX-P106", "guard the arm"),
-        ("    let s = format!(\"{}\", 1);\n    0", "SPX-P106", "there are no macros"),
-        ("    println!(\"hi\");\n    0", "SPX-P106", "there are no macros"),
-        ("    let mut i = 0;\n    i++;\n    i", "SPX-P201", "`i = i + 1;`"),
-        ("    let mut i = 0;\n    i--;\n    i", "SPX-P201", "`i = i + 1;`"),
-        ("    let x = 2;\n    match x { 1 => 10 _ => 0, }", "SPX-P106", "every match arm ends with `,`"),
+        (
+            "    let x = 2;\n    match x { 0..=5 => 1, _ => 0, }",
+            "SPX-P106",
+            "guard the arm",
+        ),
+        (
+            "    let s = format!(\"{}\", 1);\n    0",
+            "SPX-P106",
+            "there are no macros",
+        ),
+        (
+            "    println!(\"hi\");\n    0",
+            "SPX-P106",
+            "there are no macros",
+        ),
+        (
+            "    let mut i = 0;\n    i++;\n    i",
+            "SPX-P201",
+            "`i = i + 1;`",
+        ),
+        (
+            "    let mut i = 0;\n    i--;\n    i",
+            "SPX-P201",
+            "`i = i + 1;`",
+        ),
+        (
+            "    let x = 2;\n    match x { 1 => 10 _ => 0, }",
+            "SPX-P106",
+            "every match arm ends with `,`",
+        ),
         (
             "    println(\"hi\");\n    0",
             "SPX-P106",

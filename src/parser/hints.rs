@@ -17,12 +17,12 @@ use crate::lexer::TokenKind;
 
 use super::Parser;
 
-const RETURN_MESSAGE: &str = "`return` is not admitted; a block's value is its final expression";
+const RETURN_MESSAGE: &str =
+    "`return` is not admitted in this context; a block's value is its final expression";
 const RETURN_HELP: &str =
     "delete `return` and the trailing `;` so the value is the block's last expression";
 const LOOP_MESSAGE: &str = "only `while` loops are admitted";
-const LOOP_HELP: &str =
-    "write `while <condition> { <statements>; <tail> }`; the condition controls repetition and \
+const LOOP_HELP: &str = "write `while <condition> { <statements>; <tail> }`; the condition controls repetition and \
                          the required body tail is discarded";
 const EXPRESSION_STATEMENT_HELP: &str = "a block is statements followed by exactly one final value \
                                          expression; discard an intermediate call with `let _ = …;` \
@@ -36,11 +36,10 @@ const WHILE_BODY_HELP: &str = "end the `while` body with a final expression; its
                                discarded because the condition controls repetition";
 const FOR_BODY_HELP: &str = "end the `for` body with a final expression, such as `0`; its value \
                              is discarded";
-const BRANCH_HELP: &str =
-    "a statement `if` yields no value, so the enclosing block still ends with \
+const BRANCH_HELP: &str = "a statement `if` yields no value, so the enclosing block still ends with \
                            a final expression after it; to make the `if` the value, end every \
                            branch with a value and add an `else` branch";
-const FUNCTION_BODY_HELP: &str = "a function's value is its final expression; there is no `return`";
+const FUNCTION_BODY_HELP: &str = "end the function with a value expression or `return value;`; returning guards use `if condition { return value; }`";
 const MISSING_ELSE_HELP: &str = "`if` is an expression and always has an `else` branch";
 const CALL_PATTERN_HELP: &str =
     "variant patterns name the case and its fields: `Option::Some { value: v }`, not `Some(v)`";
@@ -64,8 +63,7 @@ const CAST_HELP: &str = "there is no `as`; convert with `f64_from_i64(x)`, `i64_
 const BREAK_HELP: &str = "there is no `break` or `continue`; put the exit test in the `while` \
                           condition, for example with a `let mut done = false;` flag";
 /// `|x| …` or `|| …` where an expression was expected: closure syntax.
-pub(super) const CLOSURE_HELP: &str =
-    "an anonymous function is `fn(x: i64) -> i64 { x + 1 }`; parameter and result types are required";
+pub(super) const CLOSURE_HELP: &str = "an anonymous function is `fn(x: i64) -> i64 { x + 1 }`; parameter and result types are required";
 const USE_HELP: &str = "`use` imports one declaration of a project module: `use function \
                         @id(\"stable.id\") from other.module as name;`; compiler-owned functions such \
                         as `string_concat` need no import";
@@ -223,7 +221,9 @@ impl Parser {
             "const" | "static" | "let" | "var" => {
                 "there are no module-level values; declare `fn name() -> i64 { value }` and call it"
             }
-            "trait" => "`class Child : Parent` inherits methods and `protocol` declares method requirements",
+            "trait" => {
+                "`class Child : Parent` inherits methods and `protocol` declares method requirements"
+            }
             "type" | "typedef" => "type aliases are not admitted; write the type at each use",
             _ => return None,
         };

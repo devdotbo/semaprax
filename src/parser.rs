@@ -24,6 +24,7 @@ mod hints;
 mod interface;
 mod lookahead;
 mod patterns;
+mod return_flow;
 pub(crate) mod session_protocol;
 mod signed_minimum;
 mod statement_if;
@@ -777,7 +778,7 @@ impl Parser {
                 break;
             }
         }
-        let body = self.block("function body")?;
+        let body = self.function_return_body()?;
         let end = body.span;
         let function = Function {
             stable_id,

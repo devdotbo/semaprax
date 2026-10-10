@@ -64,8 +64,11 @@ fn main() -> i64
 - The entry point is exactly `fn main() -> i64`. There is no other signature.
 - A function body has zero or more statements (`let`, assignment, `if`,
   `while`, `for`, `unsafe`) and one final expression. That expression supplies the block's
-  value. User code has no `return`, expression statement, tuple, or unit
-  value.
+  value. A function may also end with `return value;`, or use a returning
+  guard `if condition { return value; }` before its remaining statements.
+  These [acyclic returns](ACYCLIC-GUARD-RETURNS-V1.md) normalize to ordinary
+  value `if`s. Loop exits, expression statements, tuples and unit values stay
+  outside this profile.
 - Source blocks, delimiters, unary chains, and expression trees may nest at
   most 128 levels; `SPX-P207` asks you to extract a named helper.
 - Canonical layout puts the function body's `{` on its own line and each
