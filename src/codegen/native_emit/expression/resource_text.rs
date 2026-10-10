@@ -102,6 +102,17 @@ impl<O: COutput> CEmitter<'_, O> {
         }
     }
 
+    /// Reads retain the authenticated internal root's existing capacity. The
+    /// function-entry guard separately admits and charges foreign roots once;
+    /// using its smaller bound here reclassified forwarded owned Bytes views.
+    pub(super) fn resource_text_read_validator(&self, expression: &ResolvedExpr) -> &'static str {
+        if self.is_resource_text_slice(expression) {
+            "spx_source_resource_slice_require_valid_v1"
+        } else {
+            "spx_slice_u8_require_owned_view_valid"
+        }
+    }
+
     pub(super) fn resource_text_validator(&self, expression: &ResolvedExpr) -> &'static str {
         if self.is_resource_text_slice(expression) {
             "spx_source_resource_slice_require_valid_v1"

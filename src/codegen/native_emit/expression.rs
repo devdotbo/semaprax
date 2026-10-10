@@ -232,7 +232,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             }
             crate::byte_ops::ByteOp::Get => {
                 let slice = &arguments[0].code;
-                let validator = self.resource_text_validator(&args[0]);
+                let validator = self.resource_text_read_validator(&args[0]);
                 self.line(&format!("{validator}({slice});"));
                 self.emit_option_byte_read(
                     &return_type,

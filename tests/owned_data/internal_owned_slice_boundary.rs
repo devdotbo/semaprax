@@ -9,7 +9,11 @@ mod resource_settlement;
 static NEXT: AtomicU64 = AtomicU64::new(0);
 const SOURCE: &str = r#"module test.internal_owned_slice;
 @id("probe.inspect") fn inspect(value: borrow Slice<u8>) -> i64 {
-    if byte_len(value) == 131072usize { 9 } else { 3 }
+    let index = if byte_len(value) == 131072usize { 131071usize } else { 0usize };
+    match byte_get(value, index) {
+        Some byte => if byte == 0u8 { if byte_len(value) == 131072usize { 9 } else { 3 } } else { 0 },
+        None => 0,
+    }
 }
 @id("probe.pair") fn pair(text: borrow str, value: borrow Slice<u8>) -> i64 {
     if str_len_bytes(text) == 512 && byte_len(value) == 65024usize { 5 } else { 0 }

@@ -170,7 +170,10 @@ function. The first private helper with borrowed parameters is not an external
 entry merely because its caller had no borrowed parameters. In particular,
 an internally created owned buffer retains its existing 131,072-byte bound
 when forwarded to such a helper. Borrowed-frame depth still tracks balanced
-entry and cleanup; it does not establish foreign-input authority. The source
+entry and cleanup; it does not establish foreign-input authority. Byte reads
+likewise validate the existing internal view against its 131,072-byte capacity,
+including any selected stream epoch, after the separate external entry guard.
+They do not reapply the 65,536-byte foreign-root limit to an internal view. The source
 repair and focused cross-backend/root-bound regressions await execution.
 
 The exact source composition

@@ -85,7 +85,12 @@ fn generated_application_json_composes_with_record_vectors_in_v29_stream_command
         assert!(graph
             .semantic_graph()
             .contains("application.patient.json.decode"));
-        super::builtin_calls::assert_operation(snapshot.entry_program(), "core.vec.push");
+        // Native v29 emits the retained selected-command closure, whereas
+        // ordinary main is intentionally inert. Authenticate that exact HIR.
+        super::builtin_calls::assert_operation(
+            snapshot.retain_revision().public_api_program(),
+            "core.vec.push",
+        );
         snapshot.build_native(&binary)
     })
     .unwrap();
