@@ -216,6 +216,17 @@ impl<'a> PlanBuilder<'a> {
 pub(crate) fn build_program_plans(
     program: &ResolvedProgram,
 ) -> Result<Vec<CleanupPlan>, Diagnostic> {
+    // Delayed publication keeps the old attached inventories alive while every
+    // replacement is staged. Charge this additional overlap before any new
+    // index/staging/builder allocation. Attached metadata grants no authority.
+    let attached = attached_capacity::program(program)?;
+    if !crate::bounded_output::reserve_active_required(attached) {
+        return Err(plan_error(
+            "attached cleanup overlap exceeds admitted scratch",
+        ));
+    }
+    #[cfg(test)]
+    CONSTRUCTION_STARTED.with(|started| started.set(true));
     let index = ModuleIndex::new(program)?;
     let count = program
         .functions
@@ -269,7 +280,7 @@ pub(crate) fn build_program_plans(
                 },
             )
             .expect("staged physical capacity census fits usize");
-        note_lower_capacity_high_water(lower_capacity_high_water() + staged);
+        note_lower_capacity_high_water(lower_capacity_high_water() + staged + attached);
     }
     Ok(plans)
 }
@@ -290,5 +301,10 @@ pub(crate) fn attach_program_plans(program: &mut ResolvedProgram) -> Result<(), 
     Ok(())
 }
 
+#[cfg(test)]
+thread_local! {
+    static CONSTRUCTION_STARTED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+mod attached_capacity;
 #[cfg(test)]
 mod tests;

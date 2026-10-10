@@ -113,7 +113,11 @@ building canonical plans for all ordinary functions and retained instances.
 Schema selection, renewal reservations and transfers reuse exact function-site
 facts; copied functions or another program cannot borrow that authority. The
 plan staging Vec is reserved before allocation, with the index, existing program
-backing and previously completed plans still live. Publication consumes this
+backing and previously completed plans still live. The complete physical capacity
+of old attached plans is additionally reserved before index or builder creation,
+including spare backing kept alive by delayed publication. A fixed 514-frame
+cursor bounds old recursive type/shape census before its physical sum; attached
+plan contents supply no renewal authority. Publication consumes this
 owned carrier only after the index borrow ends; construction failure replaces
 no attached plans. A module without a relevant signature still reserves its
 ordinary plan carrier but adds no helper index backing.
@@ -123,7 +127,13 @@ path-state replay retain independent proof paths. The construction index does
 not substitute for validation or replay, which rebuild current HIR facts. This
 implements bounded reuse in the named consumers, rather than a global cache or
 complete elimination of repeated helper proof work. Construction and replay
-performance and accepted-task efficiency remain unmeasured.
+performance and accepted-task efficiency remain unmeasured. The direct phase's
+exact/one-short reservation contract covers helper indexes, census scratch,
+staging carriers and retained old-plan overlap; it does not enforce every nested
+PlanBuilder allocation. Existing workspace AST-to-HIR prebounds remain independent.
+Full direct nested construction accounting and a proof of that outer upper across
+all staged/old/new contours remain follow-up obligations; the test-only capacity
+upper is observational and cannot replace a preallocation reservation.
 
 The helper-site census stores sorted borrowed identity/binding references in
 an explicitly grown Vec. Each replacement backing is reserved before its

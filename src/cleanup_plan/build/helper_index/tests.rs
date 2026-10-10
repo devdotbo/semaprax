@@ -127,3 +127,46 @@ fn irrelevant_and_allocating_legacy_helpers_keep_old_schemas_and_canonical_order
         }
     }
 }
+
+#[test]
+fn old_attached_spare_backing_refuses_before_any_index_or_builder_starts() {
+    let mut program = program(SOURCE);
+    let main = program
+        .functions
+        .iter_mut()
+        .find(|function| function.id.as_str() == "app.main")
+        .unwrap();
+    main.cleanup_plan.blocks.reserve_exact(1024);
+    let before = program
+        .functions
+        .iter()
+        .map(|function| crate::cache_codec::encode(&function.cleanup_plan).unwrap())
+        .collect::<Vec<_>>();
+    let (overlap, overflowed, scratch) =
+        crate::bounded_output::with_limit_usage(usize::MAX, || {
+            attached_capacity::program(&program)
+        });
+    let overlap = overlap.unwrap();
+    assert!(!overflowed);
+    assert!(overlap >= 1024 * std::mem::size_of::<crate::cleanup_plan::CleanupBlock>());
+    CONSTRUCTION_STARTED.with(|started| started.set(false));
+    let (failure, overflowed, used) =
+        crate::bounded_output::with_limit_usage(scratch + overlap - 1, || {
+            attach_program_plans(&mut program)
+        });
+    assert_eq!(failure.unwrap_err().code, "SPX-H006");
+    assert!(overflowed);
+    assert_eq!(used, scratch);
+    assert!(
+        !CONSTRUCTION_STARTED.with(|started| started.get()),
+        "old-plan physical refusal must precede index/staging/builder allocations"
+    );
+    assert_eq!(
+        before,
+        program
+            .functions
+            .iter()
+            .map(|function| crate::cache_codec::encode(&function.cleanup_plan).unwrap())
+            .collect::<Vec<_>>()
+    );
+}
