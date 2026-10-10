@@ -9,6 +9,15 @@ pub(crate) trait ReplayContext {
     fn functions(&self) -> &[ResolvedFunction];
     fn function_templates(&self) -> &[ResolvedFunctionTemplate];
     fn function_instances(&self) -> &[ResolvedFunctionInstance];
+    /// Only the selected immutable replay lease implements this method. It
+    /// lends freshly rederived, budgeted sites for one exact held function;
+    /// ordinary and detached contexts never lend attached-plan authority.
+    fn primitive_renewals<'a>(
+        &'a self,
+        _function: &ResolvedFunction,
+    ) -> Option<&'a crate::cleanup_plan::ReplayRenewalBindings<'a>> {
+        None
+    }
     fn full_program(&self) -> Option<&ResolvedProgram> {
         None
     }

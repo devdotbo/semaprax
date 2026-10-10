@@ -294,7 +294,7 @@ pub(super) fn reserve_variant_identity(
 
 // Count through the existing ordered leaf index before its exact Vec copy.
 // Preserve the unknown-storage refusal before attempting any reservation.
-pub(super) fn validate_place(
+pub(in crate::cleanup_plan::replay) fn validate_place(
     function: &ResolvedFunction,
     place: &CleanupPlace,
     known: &BTreeSet<StorageId>,

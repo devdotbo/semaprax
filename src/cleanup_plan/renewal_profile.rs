@@ -14,6 +14,9 @@ pub(crate) fn binding_with_index<'a>(
     at: &ExpressionId,
     index: Option<&crate::loop_calls::byte_writer::ModuleIndex<'a>>,
 ) -> Option<&'a ResolvedBinding> {
+    if let Some(sites) = program.primitive_renewals(function) {
+        return sites.get(at);
+    }
     helper_binding_with_index(program, function, at, index)
         .or_else(|| crate::string_ops::replacement::binding(function, at))
         .or_else(|| crate::byte_ops::same_owner_set_binding(function, at))
@@ -26,6 +29,9 @@ pub(crate) fn helper_binding_with_index<'a>(
     at: &ExpressionId,
     index: Option<&crate::loop_calls::byte_writer::ModuleIndex<'a>>,
 ) -> Option<&'a ResolvedBinding> {
+    if let Some(sites) = program.primitive_renewals(function) {
+        return sites.helpers.get(at);
+    }
     match index {
         Some(index)
             if program
@@ -56,6 +62,15 @@ impl<'a> HelperSites<'a> {
     }
 }
 impl<'a> RenewalBindings<'a> {
+    pub(crate) fn empty() -> Self {
+        Self {
+            legacy: BTreeMap::new(),
+            helpers: HelperSites::Owned(Default::default()),
+        }
+    }
+    pub(crate) fn is_helper(&self, at: &ExpressionId) -> bool {
+        self.helpers.get(at).is_some()
+    }
     pub(crate) fn get(&self, at: &ExpressionId) -> Option<&'a ResolvedBinding> {
         self.helpers
             .get(at)

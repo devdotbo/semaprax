@@ -3,13 +3,16 @@ mod constructed_variant;
 use constructed_variant::materialize_constructed_variant;
 mod expression_children;
 mod expression_facts;
-mod physical_storage;
 mod physical_budget;
 mod physical_clone;
+mod physical_storage;
+mod selected_context;
 mod selected_owner;
 mod selected_profile;
 pub(crate) use physical_clone::ClonePayload;
-pub(crate) use physical_storage::{btree_node_upper as replay_btree_node_upper, replay_reserve_vec, PhysicalReservation};
+pub(crate) use physical_storage::{
+    btree_node_upper as replay_btree_node_upper, replay_reserve_vec, PhysicalReservation,
+};
 #[cfg(test)]
 mod physical_observation_tests;
 use expression_children::replay_expression_child;
@@ -225,7 +228,11 @@ fn skeleton_push<T>(
     budget.charge_skeleton(function, 1, phase)?;
     note_skeleton_materialization();
     budget.reserve_vec(function, target, 1, phase)?;
-    budget.reserve_bytes(function, physical_clone::conversion_bytes::<T, _>(&value), phase)?;
+    budget.reserve_bytes(
+        function,
+        physical_clone::conversion_bytes::<T, _>(&value),
+        phase,
+    )?;
     target.push(value.into());
     Ok(())
 }
@@ -6765,11 +6772,12 @@ fn finish_call_states(
         }
         if !defer_commit {
             let call = work.clone_owned(&expression.id, "call-commit identity clone")?;
+            let arguments = work.clone_payload(&commits, "call-commit argument payload")?;
             work.push_observation(
                 &mut path,
                 SkeletonObservation::CallCommit {
                     call,
-                    arguments: commits.clone(),
+                    arguments,
                 },
                 "call-commit observation",
             )?;

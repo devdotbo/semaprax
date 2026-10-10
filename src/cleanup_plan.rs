@@ -25,6 +25,7 @@ mod owner_admission;
 mod owned_liveness;
 mod renewal_history;
 mod renewal_profile;
+pub(crate) use renewal_profile::RenewalBindings as ReplayRenewalBindings;
 mod replay;
 pub(crate) use replay::{
     replay_btree_node_upper, replay_reserve_vec, ClonePayload as ReplayClonePayload,

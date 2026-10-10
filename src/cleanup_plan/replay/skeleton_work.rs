@@ -9,6 +9,7 @@ pub(super) struct SkeletonWork<'a, 'b> {
     pub(super) function: &'a ResolvedFunction,
     pub(super) budget: &'b mut ReplayBudget,
     pub(super) renewal_bindings: crate::cleanup_plan::renewal_profile::RenewalBindings<'a>,
+    held_renewals: Option<&'a crate::cleanup_plan::renewal_profile::RenewalBindings<'a>>,
     /// Authored same-owner append and direct literal-format String moves.
     pub(super) string_owner_moves: BTreeSet<ExpressionId>,
     pub(super) string_condition_reads: BTreeSet<ExpressionId>,
@@ -34,6 +35,7 @@ impl<'a, 'b> SkeletonWork<'a, 'b> {
         Self {
             function,
             budget,
+            held_renewals: None,
             renewal_bindings: crate::cleanup_plan::renewal_profile::bindings_with_index(
                 program, function, index,
             ),
@@ -58,19 +60,20 @@ impl<'a, 'b> SkeletonWork<'a, 'b> {
         }
         selected_profile::validate(program, function, budget)?;
         let owner = selected_owner::owner(program, function, budget)?;
-        let physical = budget.physical.as_deref_mut().ok_or_else(|| {
-            replay_error(function, "selected skeleton has no physical reservation")
+        let held_renewals = program.primitive_renewals(function).ok_or_else(|| {
+            replay_error(
+                function,
+                "selected skeleton requires its independently rebuilt phase site inventory",
+            )
         })?;
-        let renewal_bindings = crate::cleanup_plan::renewal_profile::bindings_with_reservation(
-            program, function, physical,
-        )?;
         // The selected entry independently excludes literal formatting and
         // owned String condition-place reads before this constructor. Those
         // specialized legacy indexes must not be constructed then discarded.
         Ok(Self {
             function,
             budget,
-            renewal_bindings,
+            renewal_bindings: crate::cleanup_plan::renewal_profile::RenewalBindings::empty(),
+            held_renewals: Some(held_renewals),
             string_owner_moves: BTreeSet::new(),
             string_condition_reads: BTreeSet::new(),
             owner: Some(owner),
@@ -81,7 +84,10 @@ impl<'a, 'b> SkeletonWork<'a, 'b> {
         &self,
         at: &crate::hir::ExpressionId,
     ) -> Option<&'a crate::hir::ResolvedBinding> {
-        self.renewal_bindings.get(at)
+        match self.held_renewals {
+            Some(sites) => sites.get(at),
+            None => self.renewal_bindings.get(at),
+        }
     }
 }
 

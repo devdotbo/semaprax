@@ -11,6 +11,9 @@ pub(super) fn validate_binding(
     place: &CleanupPlace,
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
 ) -> Result<(), Diagnostic> {
+    if let Some(sites) = program.primitive_renewals(function) {
+        return validate_binding_selected(function, at, place, sites);
+    }
     if !matches!(
         function.cleanup_plan.schema,
         CLEANUP_PLAN_SCHEMA_V12
@@ -60,6 +63,29 @@ pub(super) fn validate_binding(
     }
     Ok(())
 }
+pub(super) fn validate_binding_selected(
+    function: &ResolvedFunction,
+    at: &ExpressionId,
+    place: &CleanupPlace,
+    sites: &crate::cleanup_plan::ReplayRenewalBindings<'_>,
+) -> Result<(), Diagnostic> {
+    if !matches!(
+        function.cleanup_plan.schema,
+        CLEANUP_PLAN_SCHEMA_V18 | CLEANUP_PLAN_SCHEMA_V19
+    ) || sites.is_helper(at) && function.cleanup_plan.schema != CLEANUP_PLAN_SCHEMA_V19
+        || !sites.get(at).is_some_and(|binding| {
+            matches!(&place.storage, StorageId::Value(id) if id == &binding.id)
+                && place.projections.is_empty()
+        })
+    {
+        return Err(replay_error(
+            function,
+            "renewal is outside an exact authenticated same-owner assignment",
+        ));
+    }
+    Ok(())
+}
+
 pub(super) fn reject_unmarked_finish(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
@@ -158,7 +184,8 @@ pub(super) fn renew(
             "renewal destination is not one owner leaf",
         ));
     }
-    if crate::string_ops::replacement::binding(function, at).is_some() {
+    if budget.physical.is_none() && crate::string_ops::replacement::binding(function, at).is_some()
+    {
         let source_flags =
             path_join::storage::validate_place(function, source, storage, leaves, budget)?;
         if source_flags == flags {
@@ -179,7 +206,8 @@ pub(super) fn renew(
         budget,
     )?;
     let flag = flags[0];
-    if crate::string_ops::replacement::binding(function, at).is_some() {
+    if budget.physical.is_none() && crate::string_ops::replacement::binding(function, at).is_some()
+    {
         return string_replacement::finish(function, flag, &history, state);
     }
     if !history.contains(&flag)
