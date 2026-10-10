@@ -128,6 +128,7 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         include_str!("../../../../../src/loop_calls/byte_writer/module_index.rs"),
         concat!(
             include_str!("../../../../../src/hir.rs"),
+            include_str!("../../../../../src/hir/static_text.rs"),
             "\n",
             include_str!("../../../../../src/hir/owned_collection_record.rs"),
             "\n",
@@ -280,6 +281,7 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
     );
     let hir_validator = concat!(
         include_str!("../../../../../src/hir.rs"),
+        include_str!("../../../../../src/hir/static_text.rs"),
         include_str!("../../../../../src/loop_calls/byte_writer.rs"),
         include_str!("../../../../../src/loop_calls/byte_writer/resolved.rs"),
         include_str!("../../../../../src/loop_calls/byte_writer/bindings.rs"),

@@ -320,7 +320,12 @@ fn allocating_same_owner_call_outside_loop_retains_the_ordinary_profile() {
  let mut output=bytes_zeroed(1usize); let next=replace(output); 7
 }
 "#;
-    let build = build(&[("app.spx", source)]);
+    // Preserve the original dynamic-capacity refusal independently of the
+    // ordinary allocating-helper profile that this case exercises.
+    let dynamic = crate::check(source, "allocating-dynamic-capacity.spx").unwrap_err();
+    assert!(dynamic.iter().any(|error| error.code == "SPX-T271"));
+    let bounded = source.replace("bytes_zeroed(length)", "bytes_zeroed(1usize)");
+    let build = build(&[("app.spx", &bounded)]);
     assert_eq!(selected(&build).unwrap(), None);
     assert_ne!(
         super::super::schema(
@@ -344,6 +349,10 @@ fn allocating_same_owner_assignment_remains_outside_explicit_mutation_profile() 
 }
 "#;
     let errors = crate::check(source, "allocating-assignment.spx").unwrap_err();
+    assert!(errors.iter().any(|error| error.code == "SPX-U105"));
+    assert!(errors.iter().any(|error| error.code == "SPX-T271"));
+    let bounded = source.replace("bytes_zeroed(length)", "bytes_zeroed(1usize)");
+    let errors = crate::check(&bounded, "allocating-bounded-assignment.spx").unwrap_err();
     assert!(errors.iter().any(|error| error.code == "SPX-U105"));
 }
 
