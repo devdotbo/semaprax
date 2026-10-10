@@ -12,7 +12,13 @@ pub(super) fn execute_replay_transition(
     storage: &BTreeSet<StorageId>,
     leaves: &Leaves,
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
+    budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
+    if budget.physical.is_some() {
+        return transition_storage::execute(
+            program, function, transition, state, storage, leaves, helpers, budget,
+        );
+    }
     if state.published {
         return Err(replay_error(
             function,
@@ -42,7 +48,7 @@ pub(super) fn execute_replay_transition(
             append_dead_flags(function, state, flags, "initialize transition")?;
         }
         CleanupTransition::ReserveRenewal { at, binding } => renewal::reserve(
-            program, function, at, binding, state, storage, leaves, helpers,
+            program, function, at, binding, state, storage, leaves, helpers, budget,
         )?,
         CleanupTransition::Renew {
             at,
@@ -57,6 +63,7 @@ pub(super) fn execute_replay_transition(
             storage,
             leaves,
             helpers,
+            budget,
         )?,
         CleanupTransition::Transfer {
             at,
@@ -65,7 +72,15 @@ pub(super) fn execute_replay_transition(
         } => {
             renewal::reject_unmarked_finish(program, function, at, destination, helpers)?;
             let append = strings::reserve_append(function, at, source, destination, state)?;
-            replay_transfer(function, state, source, destination, storage, leaves)?;
+            replay_transfer(
+                function,
+                state,
+                source,
+                destination,
+                storage,
+                leaves,
+                budget,
+            )?;
             seal_try_residual(program, function, at, destination, state, storage, leaves)?;
             strings::publish_append(function, append, state)?;
         }
@@ -84,7 +99,15 @@ pub(super) fn execute_replay_transition(
                     program, function, state, source, variant, storage, leaves,
                 )?;
             }
-            replay_transfer(function, state, source, destination, storage, leaves)?;
+            replay_transfer(
+                function,
+                state,
+                source,
+                destination,
+                storage,
+                leaves,
+                budget,
+            )?;
         }
         CleanupTransition::InitializeVariant {
             destination,
@@ -304,7 +327,19 @@ pub(super) fn replay_transfer(
     destination: &CleanupPlace,
     storage: &BTreeSet<StorageId>,
     leaves: &Leaves,
+    budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
+    if budget.physical.is_some() {
+        return transition_storage::transfer(
+            function,
+            state,
+            source,
+            destination,
+            storage,
+            leaves,
+            budget,
+        );
+    }
     let source_flags = validate_place(function, source, storage, leaves)?;
     let destination_flags = validate_place(function, destination, storage, leaves)?;
     let source_set = source_flags.iter().copied().collect::<BTreeSet<_>>();

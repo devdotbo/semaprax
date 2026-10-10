@@ -89,9 +89,10 @@ pub(super) fn reserve(
     storage: &BTreeSet<StorageId>,
     leaves: &Leaves,
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
+    budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
     validate_binding(program, function, at, binding, helpers)?;
-    let flags = validate_place(function, binding, storage, leaves)?;
+    let flags = path_join::storage::validate_place(function, binding, storage, leaves, budget)?;
     if flags.len() != 1
         || !state.live_order.contains(&flags[0])
         || state.renewals.contains_key(at)
@@ -108,14 +109,28 @@ pub(super) fn reserve(
             "renewal reservation requires one live unreserved owner leaf",
         ));
     }
+    let protected = find_resolved_expression(function, at)
+        .is_some_and(super::super::renewal_profile::owned_rhs_provenance)
+        .then_some(flags[0]);
+    budget.reserve_array::<LivenessFlagId>(
+        function,
+        state.live_order.len(),
+        "renewal original history",
+    )?;
+    if protected.is_some() {
+        budget.reserve_array::<(LivenessFlagId, LivenessFlagId)>(
+            function,
+            state.live_order.len(),
+            "renewal staged epochs",
+        )?;
+    }
+    budget.reserve_btree_node::<ExpressionId, super::super::renewal_history::RenewalHistory>(
+        function,
+        "renewal reservation node",
+    )?;
     state.renewals.insert(
         at.clone(),
-        super::super::renewal_history::RenewalHistory::new(
-            state.live_order.clone(),
-            find_resolved_expression(function, at)
-                .is_some_and(super::super::renewal_profile::owned_rhs_provenance)
-                .then_some(flags[0]),
-        ),
+        super::super::renewal_history::RenewalHistory::new(state.live_order.clone(), protected),
     );
     Ok(())
 }
@@ -129,13 +144,14 @@ pub(super) fn renew(
     storage: &BTreeSet<StorageId>,
     leaves: &Leaves,
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
+    budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
     validate_binding(program, function, at, destination, helpers)?;
     let history = state
         .renewals
         .remove(at)
         .ok_or_else(|| replay_error(function, "renewal has no reservation"))?;
-    let flags = validate_place(function, destination, storage, leaves)?;
+    let flags = path_join::storage::validate_place(function, destination, storage, leaves, budget)?;
     if flags.len() != 1 {
         return Err(replay_error(
             function,
@@ -143,7 +159,8 @@ pub(super) fn renew(
         ));
     }
     if crate::string_ops::replacement::binding(function, at).is_some() {
-        let source_flags = validate_place(function, source, storage, leaves)?;
+        let source_flags =
+            path_join::storage::validate_place(function, source, storage, leaves, budget)?;
         if source_flags == flags {
             return Err(replay_error(
                 function,
@@ -152,7 +169,15 @@ pub(super) fn renew(
         }
         state.live_order.retain(|flag| !flags.contains(flag));
     }
-    replay_transfer(function, state, source, destination, storage, leaves)?;
+    replay_transfer(
+        function,
+        state,
+        source,
+        destination,
+        storage,
+        leaves,
+        budget,
+    )?;
     let flag = flags[0];
     if crate::string_ops::replacement::binding(function, at).is_some() {
         return string_replacement::finish(function, flag, &history, state);

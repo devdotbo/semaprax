@@ -226,7 +226,7 @@ pub(super) fn validate_path_states(
             for transition in &block.transitions {
                 renewal::charge_transition(function, transition, &state, budget)?;
                 execute_replay_transition(
-                    program, function, transition, &mut state, storage, leaves, helpers,
+                    program, function, transition, &mut state, storage, leaves, helpers, budget,
                 )?;
             }
             match &block.terminator {

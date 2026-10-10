@@ -74,6 +74,7 @@ mod renewal;
 mod string_replacement;
 mod strings;
 mod transition;
+mod transition_storage;
 use renewal::validate_join_compatibility;
 use strings::temporary_place;
 use transition::{
