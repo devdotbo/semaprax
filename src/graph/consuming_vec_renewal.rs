@@ -40,19 +40,24 @@ pub(super) fn graph_json(
         return Ok(graph);
     }
     graph_schema(program)?;
-    let document: serde_json::Value = serde_json::from_str(&graph)
-        .map_err(|_| Diagnostic::io("SPX-G410", "invalid checked consuming renewal graph"))?;
-    let previous = document["schema"]
-        .as_str()
-        .ok_or_else(|| Diagnostic::io("SPX-G410", "missing checked schema"))?;
-    let prefix = format!("{{\"schema\":{}", quote_json(previous));
-    if !graph.starts_with(&prefix) || !graph.ends_with('}') {
-        return Err(Diagnostic::io(
-            "SPX-G410",
-            "noncanonical consuming renewal graph",
-        ));
-    }
-    graph.replace_range(..prefix.len(), "{\"schema\":\"semaprax.graph.v79\"");
+    // Only inspect the provider's canonical leading schema token. Building a
+    // serde DOM here would duplicate the complete graph outside its census.
+    const HEADER: &str = "{\"schema\":\"";
+    let token = graph.strip_prefix(HEADER).and_then(|tail| {
+        let end = tail
+            .as_bytes()
+            .iter()
+            .take(64)
+            .position(|byte| *byte == b'"')?;
+        let schema = &tail[..end];
+        let version = schema.strip_prefix("semaprax.graph.v")?;
+        (!version.is_empty() && version.bytes().all(|byte| byte.is_ascii_digit()))
+            .then_some(HEADER.len() + end + 1)
+    });
+    let prefix_len = token
+        .filter(|_| graph.ends_with('}'))
+        .ok_or_else(|| Diagnostic::io("SPX-G410", "noncanonical consuming renewal graph"))?;
+    graph.replace_range(..prefix_len, "{\"schema\":\"semaprax.graph.v79\"");
     let mut updates = Vec::new();
     for (execution, function) in program.functions.iter().map(|f| (f.id.as_str(), f)).chain(
         program
