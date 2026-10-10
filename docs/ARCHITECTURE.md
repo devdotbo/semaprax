@@ -758,7 +758,12 @@ path readers.
 ### Validated HIR
 
 `src/project/json_codec` owns checked-source application codec derivation and
-exact regeneration replay. It emits ordinary source and rebuilds the original
+exact regeneration replay. Its `plan` child derives a bounded set against one
+immutable retained revision and admits the complete combined candidate through
+ordinary Project construction. It retains authored sources separately from the
+complete candidate and exact per-entry evidence; no new semantic index, hidden
+helper admission or managed publication authority is introduced.
+It emits ordinary source and rebuilds the original
 Project/profile; generated names have no HIR authority. Its `template` module
 expands compiler-owned markers once, keeping authored names and identities opaque
 through UTF-8 text helpers and streaming normalizers. Its `emit` module

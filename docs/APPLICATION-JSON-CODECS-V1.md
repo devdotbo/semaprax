@@ -18,6 +18,13 @@ Existing destinations, including a racing creator, are refused; original source
 and manifest files are never overwritten. Install the reviewed replacement
 through the ordinary source or semantic transaction workflow.
 
+The additive [codec plan v1](APPLICATION-JSON-CODEC-PLAN-V1.md) route accepts
+`--plan <plan-json> --output <new-bundle>` and derives 1..8 distinct module
+replacements against one immutable authored revision. Ordinary Project admission
+checks the combined candidate before one complete reviewable bundle is returned.
+Authored schemas remain separate from generated inventory and per-entry receipts;
+no managed apply or source overwrite authority is added.
+
 This is executable source generation, not the Agent proposal schema decoder,
 Rust interop Serde, an owning JSON tree, or a schema digest granting HIR authority.
 Helper names have no compiler exemption. Canonical parsing, resolution,

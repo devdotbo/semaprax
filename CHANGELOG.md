@@ -6,6 +6,13 @@
   failure regressions for the grouped implementation batch. Execution is
   pending; general lexical exits and OPT #734 remain incomplete.
 
+- Derive bounded application codec plans against one immutable authored Project
+  revision and validate the complete combined candidate before returning one
+  exclusive new bundle. Preserve exact authored sources, candidate inventory and
+  per-entry profile/bounds receipts; adopt the real paired ShiftSim setup and add
+  drift, overlap and no-partial-output regressions. Execution remains pending;
+  no managed publication authority or efficiency gain is claimed.
+
 - Derive bounded nested JSON responses with recursive length preflight, borrowed
   record paths and up to two existing Vec owners. Repair owned Vec renewal,
   projected Wasm borrow calls, stream-to-nested-result joins and independently

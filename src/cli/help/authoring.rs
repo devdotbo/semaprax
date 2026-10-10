@@ -114,7 +114,8 @@ pub(super) fn lookup(query: &str) -> Result<String, String> {
             "UTF-8 owned request and bounded-collection-response.v1 profiles require --max-string-bytes 1..64. See their authoring cards.\n",
             "bounded-nested-request.v1 additionally requires --max-array-items 1..256; see author:json-nested-request; bounded-nested-response.v1 uses the same bounds for borrowed encoding.\n",
             "Omit --profile for the default flat scalar record (1..8 i64/u8/usize/bool fields). Choose by source shape: help language author:json-identifier-views, author:json-request-views or author:json-stream-request-views.\n",
-            "Declare std.data.json.scan/token/digits/write. Output is a new complete module, never an overwrite. Generated helpers are ordinary checked source.\n",
+            "Declare std.data.json.scan/token/digits/write. Single-codec output is a new complete module, never an overwrite. Generated helpers are ordinary checked source.\n",
+            "For paired setup, json-codec <project> --plan <plan-json> --output <new-bundle> derives 1..8 distinct source replacements against one immutable revision and validates the combined candidate. The closed JSON plan preserves original authored schemas separately from candidate sources and exact per-entry receipts. Raw bundles have no managed publication authority. Contract: docs/APPLICATION-JSON-CODEC-PLAN-V1.md.\n",
             "Declared Vec<string> in a request-view schema is description only: runtime carries Copy views and Vec<View>, not owned String collections. For owning requests: help language author:json-owned-request. This is not a generic JSON codec.\n",
             "View implementations exist; owning combined gates are pending. Stream errors use raw input offsets; post-Ready request/schema errors use normalized-input offsets. Exact profiles, limits and gates: docs/APPLICATION-JSON-CODECS-V1.md.\n"
         ).to_owned()),
@@ -177,10 +178,10 @@ pub(super) fn lookup(query: &str) -> Result<String, String> {
             "Exact contract: docs/APPLICATION-JSON-NESTED-RESPONSE-V1.md. Compare author:json-collection-response for the fixed Report/Vec<Row>/Metrics shape and author:json-nested-request for decoder-only Vec<string> admission.\n"
         ).to_owned()),
         "author:json-request-response" => Ok(concat!(
-            "Typed request/response composition sketch; current qualification is pending. Run one selector per invocation; each output is a new complete module replacement. In examples/shiftsim-typed-record-successor, from that directory:\n",
-            "semaprax json-codec . --source src/request.spx --type shiftsim.request --output src/request.generated.spx --profile stream-owned-request.v1\n",
-            "semaprax json-codec . --source src/response.spx --type shiftsim.report --output src/response.generated.spx --profile bounded-collection-response.v1 --max-string-bytes 16\n",
-            "Review/install each generated source through the documented example workflow. This CLI has no combined request/response profile. The streaming request schema and Project manifest must already permit and grant process.stdin.read; derivation adds no capability.\n",
+            "Typed request/response composition; current qualification is pending. Use the bounded plan to derive both replacements against one immutable authored revision and validate their combined candidate. In examples/shiftsim-typed-record-successor, from that directory:\n",
+            "semaprax json-codec . --plan codec-plan.json --output codecs.candidate.json\n",
+            "The plan selects stream-owned-request.v1 and bounded-collection-response.v1 with max_string_bytes 16 (the single-codec --max-string-bytes 16 bound). It preserves authored schema bytes separately from the complete candidate and exact per-entry receipts.\n",
+            "Review the complete bundle before ordinary installation; raw output does not publish a managed generation. Single-codec calls retain one selector per invocation and no-overwrite behavior; no combined request/response profile is invented. The streaming request schema and Project manifest must already permit and grant process.stdin.read; derivation adds no capability.\n",
             "The request helper owns decoded strings and rows; ordinary `vec_field<Patient>(request.patients,index,\"priority\")` reads a selected Copy field (a String field is borrowed through last use). The response selector only encodes `Report { assignments: Vec<Assignment>, metrics: Metrics }`; it does not decode or map business data.\n",
             "Generated helpers are ordinary checked source. v31 command admission and current-head/application qualification remain separate; this draft claims no runtime qualification or general JSON-tree codec. See examples/shiftsim-typed-record-successor/README.md, author:json-owned-request, author:json-collection-response and author:collection-records.\n"
         ).to_owned()),
@@ -479,6 +480,9 @@ mod tests {
         }
         let request_response = lookup("author:json-request-response").unwrap();
         for fact in [
+            "--plan codec-plan.json",
+            "combined candidate",
+            "authored schema bytes separately",
             "one selector per invocation",
             "no combined request/response profile",
             "stream-owned-request.v1",

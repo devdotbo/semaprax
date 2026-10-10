@@ -10,17 +10,22 @@ completed assignment becomes part of the owned report.
 
 The request and response schemas are authored in `src/request.spx` and
 `src/response.spx`. Bootstrap the ordinary compiler-generated helpers in a
-copy of this directory. Derive **both** complete replacements against the same
-unchanged bootstrap before installing either one:
+copy of this directory. Derive the paired codecs as one complete checked,
+reviewable bundle against the unchanged authored revision:
 
 ```sh
-semaprax json-codec . --source src/request.spx --type shiftsim.request \
-  --output src/request.generated.spx --profile stream-owned-request.v1
-semaprax json-codec . --source src/response.spx --type shiftsim.report \
-  --output src/response.generated.spx --profile bounded-collection-response.v1 \
-  --max-string-bytes 16
-cp src/request.generated.spx src/request.spx
-cp src/response.generated.spx src/response.spx
+semaprax json-codec . --plan codec-plan.json --output codecs.candidate.json
+```
+
+`codec-plan.json` selects the original streaming request and bounded collection
+response profiles. The bundle retains original authored schemas separately from
+all candidate sources and exact per-entry receipts. Review the complete candidate
+before installation through ordinary source or managed transaction authority;
+there is no user-managed derive/replay order between the two codecs. The command
+never overwrites source and the bundle grants no mutation authority. After
+installing the reviewed candidate in the copy, activate the real command:
+
+```sh
 cp src/app.command.spx src/app.spx
 semaprax check .
 semaprax test .

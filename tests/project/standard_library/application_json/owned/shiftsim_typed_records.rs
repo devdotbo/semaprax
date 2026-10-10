@@ -135,53 +135,35 @@ fn typed_record_shiftsim_derives_both_codecs_and_runs_retained_corpus() {
     let root = crate::standard_library::temporary("shiftsim-typed-record-successor");
     write_example(&root);
 
-    let request_source =
-        project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
-            project::derive_json_codec_source_with_profile(
-                &snapshot.retain_revision(),
-                "src/request.spx",
-                "shiftsim.request",
-                project::JsonCodecProfile::StreamOwnedRequest,
-            )
-        })
-        .unwrap();
-    project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
-        project::verify_json_codec_source_with_profile(
-            &snapshot.retain_revision(),
-            "src/request.spx",
-            "shiftsim.request",
-            &request_source,
-            project::JsonCodecProfile::StreamOwnedRequest,
-        )
-    })
-    .unwrap();
-    std::fs::write(root.join("src/request.spx"), request_source).unwrap();
-
-    let response_source =
-        project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
-            project::derive_json_codec_source_with_profile(
-                &snapshot.retain_revision(),
-                "src/response.spx",
-                "shiftsim.report",
-                project::JsonCodecProfile::CollectionResponse {
-                    max_string_bytes: 16,
-                },
-            )
-        })
-        .unwrap();
-    project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
-        project::verify_json_codec_source_with_profile(
-            &snapshot.retain_revision(),
-            "src/response.spx",
-            "shiftsim.report",
-            &response_source,
-            project::JsonCodecProfile::CollectionResponse {
+    let entries = [
+        project::JsonCodecPlanEntry {
+            source_path: "src/request.spx".to_owned(),
+            record_id: "shiftsim.request".to_owned(),
+            profile: project::JsonCodecProfile::StreamOwnedRequest,
+        },
+        project::JsonCodecPlanEntry {
+            source_path: "src/response.spx".to_owned(),
+            record_id: "shiftsim.report".to_owned(),
+            profile: project::JsonCodecProfile::CollectionResponse {
                 max_string_bytes: 16,
             },
-        )
+        },
+    ];
+    let bundle = project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
+        let revision = snapshot.retain_revision();
+        let bundle = project::derive_json_codec_plan(&revision, &entries)?;
+        project::verify_json_codec_plan(&revision, &entries, &bundle)?;
+        Ok(bundle)
     })
     .unwrap();
-    std::fs::write(root.join("src/response.spx"), response_source).unwrap();
+    for entry in &bundle.entries {
+        let source = bundle
+            .candidate_sources
+            .iter()
+            .find(|s| s.path == entry.source_path)
+            .unwrap();
+        std::fs::write(root.join(&source.path), &source.source).unwrap();
+    }
     std::fs::copy(root.join("src/app.command.spx"), root.join("src/app.spx")).unwrap();
 
     let native = root.join("shiftsim-native");
@@ -191,21 +173,15 @@ fn typed_record_shiftsim_derives_both_codecs_and_runs_retained_corpus() {
             snapshot.manifest().project_profile(),
             project::ProjectProfile::StdinStreamCollectionRecordCommandIoV1
         );
-        assert!(
-            snapshot
-                .semantic_graph()
-                .contains("shiftsim.request.json.owned.decode")
-        );
-        assert!(
-            snapshot
-                .semantic_graph()
-                .contains("shiftsim.report.json.collection-response.encode")
-        );
-        assert!(
-            snapshot
-                .execute_entry(&project::ProjectExecutionOptions::default())?
-                .command_succeeded()
-        );
+        assert!(snapshot
+            .semantic_graph()
+            .contains("shiftsim.request.json.owned.decode"));
+        assert!(snapshot
+            .semantic_graph()
+            .contains("shiftsim.report.json.collection-response.encode"));
+        assert!(snapshot
+            .execute_entry(&project::ProjectExecutionOptions::default())?
+            .command_succeeded());
         let tests = snapshot.execute_test(&project::ProjectExecutionOptions::default())?;
         assert!(tests.command_succeeded());
         assert_eq!(tests.cases().len(), 2);

@@ -5,6 +5,11 @@ mod emit;
 mod nested_request;
 mod nested_response;
 mod owned;
+mod plan;
+pub use plan::{
+    derive_json_codec_plan, verify_json_codec_plan, JsonCodecBundle, JsonCodecBundleSource,
+    JsonCodecEntryReceipt, JsonCodecPlanEntry,
+};
 mod template;
 #[cfg(test)]
 mod tests;
@@ -90,6 +95,16 @@ pub fn derive_json_codec_source(
 }
 
 pub fn derive_json_codec_source_with_profile(
+    revision: &ProjectRevision,
+    source_path: &str,
+    record_id: &str,
+    profile: JsonCodecProfile,
+) -> Result<String, Vec<Diagnostic>> {
+    let canonical = derive_replacement(revision, source_path, record_id, profile)?;
+    validate_candidate_source(revision, source_path, canonical)
+}
+
+fn derive_replacement(
     revision: &ProjectRevision,
     source_path: &str,
     record_id: &str,
@@ -194,7 +209,7 @@ pub fn derive_json_codec_source_with_profile(
     drop(program);
     drop(generated);
     drop(fragment);
-    validate_candidate_source(revision, source_path, canonical)
+    Ok(canonical)
 }
 
 /// Move the canonical replacement through ordinary complete Project admission

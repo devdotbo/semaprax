@@ -1376,7 +1376,21 @@ full #724.
 
 Typed source: `help language author:json-request-response` and the
 [ShiftSim README](../examples/shiftsim-typed-record-successor/README.md).
-Select one profile per call:
+Prefer the combined checked candidate for paired setup:
+
+```sh
+cd examples/shiftsim-typed-record-successor
+semaprax json-codec . --plan codec-plan.json --output codecs.candidate.json
+```
+
+All entries derive against one immutable authored revision; ordinary Project
+admission checks the combined candidate before the new reviewable bundle is
+published. The bundle preserves original authored schemas separately from
+candidate sources and exact per-entry receipts. Review/install through ordinary
+source or managed transaction authority; receipts cannot authorize publication.
+See [codec plan v1](APPLICATION-JSON-CODEC-PLAN-V1.md).
+
+Single-codec calls remain supported. Select one profile per call:
 
 ```sh
 cd examples/shiftsim-typed-record-successor

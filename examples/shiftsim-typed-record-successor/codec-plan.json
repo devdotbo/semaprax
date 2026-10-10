@@ -1,0 +1,1 @@
+{"schema":"semaprax.json-codec-plan.v1","entries":[{"source":"src/request.spx","record":"shiftsim.request","profile":"stream-owned-request.v1"},{"source":"src/response.spx","record":"shiftsim.report","profile":"bounded-collection-response.v1","max_string_bytes":16}]}
