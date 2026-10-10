@@ -207,6 +207,12 @@ fn forbid_nested_yield(expr: &Expr, path: &str) -> Result<(), Diagnostic> {
         ExprKind::SuperMethod { args, .. } => args
             .iter()
             .try_for_each(|arg| forbid_nested_yield(arg, path)),
+        ExprKind::LexicalExit { value, .. } => {
+            if let Some(value) = value {
+                forbid_nested_yield(value, path)?;
+            }
+            Ok(())
+        }
         ExprKind::Unary { value, .. } => forbid_nested_yield(value, path),
         ExprKind::Binary { left, right, .. } => {
             forbid_nested_yield(left, path)?;

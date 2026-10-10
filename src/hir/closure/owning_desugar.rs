@@ -85,6 +85,9 @@ fn expr_has_owning_closure(expr: &Expr) -> bool {
         ExprKind::MethodCall { receiver, args, .. } => {
             expr_has_owning_closure(receiver) || args.iter().any(expr_has_owning_closure)
         }
+        ExprKind::LexicalExit { value, .. } => value
+            .as_ref()
+            .is_some_and(|value| expr_has_owning_closure(value)),
         ExprKind::Unary { value, .. } | ExprKind::Try { operand: value } => {
             expr_has_owning_closure(value)
         }
@@ -233,6 +236,11 @@ fn lower_expr(expr: &mut Expr, substitutions: &mut HashMap<String, Expr>) {
             lower_expr(receiver, substitutions);
             for arg in args {
                 lower_expr(arg, substitutions);
+            }
+        }
+        ExprKind::LexicalExit { value, .. } => {
+            if let Some(value) = value {
+                lower_expr(value, substitutions);
             }
         }
         ExprKind::Unary { value, .. } => lower_expr(value, substitutions),

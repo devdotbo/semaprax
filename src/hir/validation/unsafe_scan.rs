@@ -43,6 +43,11 @@ pub(super) fn contains_unsafe_boundary(expression: &ResolvedExpr) -> bool {
                 pending.push(start);
                 pending.push(source);
             }
+            ResolvedExprKind::LexicalExit { value, .. } => {
+                if let Some(value) = value {
+                    pending.push(value);
+                }
+            }
             ResolvedExprKind::Unary { value, .. }
             | ResolvedExprKind::Try { operand: value, .. }
             | ResolvedExprKind::TryOption { operand: value, .. }
