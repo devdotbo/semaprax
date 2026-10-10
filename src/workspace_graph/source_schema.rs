@@ -47,9 +47,7 @@ fn record_mode(
     if !arguments.is_empty() {
         return None;
     }
-    let Some(origin) = facts.get(declaration.as_str()) else {
-        return None;
-    };
+    let origin = facts.get(declaration.as_str())?;
     if origin.kind != hir::DeclarationKind::Record
         || origin.origin != hir::IdentityOrigin::Explicit
         || origin.owner.is_some()
@@ -60,9 +58,7 @@ fn record_mode(
         .iter()
         .flat_map(|owner| owner.types.iter().map(move |item| (owner, item)))
         .filter(|(_, item)| item.id == *declaration);
-    let Some((owner, record)) = candidates.next() else {
-        return None;
-    };
+    let (owner, record) = candidates.next()?;
     if candidates.next().is_some()
         || origin.path.as_deref() != Some(owner.path.as_str())
         || origin.module.as_deref() != Some(owner.module.as_str())
@@ -76,15 +72,13 @@ fn record_mode(
     if !(1..=hir::copy_record_collection::MAX_FIELDS).contains(&fields.len()) {
         return None;
     }
-    let Some((kind, checked)) = module.signature_types.iter().find_map(|(key, value)| {
+    let (kind, checked) = module.signature_types.iter().find_map(|(key, value)| {
         matches_text(
             key,
             format_args!("nominal:{}:{}:0:", declaration.as_str().len(), declaration),
         )
         .then_some(value)
-    }) else {
-        return None;
-    };
+    })?;
     if *kind != hir::DeclarationKind::Record || checked.contains_resource || !checked.sized {
         return None;
     }
@@ -103,9 +97,7 @@ fn record_mode(
     let mut owned_count = 0usize;
     let mut all_fields_explicit = true;
     for (position, field) in fields.iter().enumerate() {
-        let Some(field_origin) = facts.get(field.id.as_str()) else {
-            return None;
-        };
+        let field_origin = facts.get(field.id.as_str())?;
         if field_origin.kind != hir::DeclarationKind::Field
             || field_origin.owner.as_deref() != Some(declaration.as_str())
             || field_origin.path.as_deref() != Some(owner.path.as_str())

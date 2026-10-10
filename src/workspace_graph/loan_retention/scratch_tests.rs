@@ -203,11 +203,11 @@ fn generic_instances_reuse_one_scratch_and_refuse_one_short() {
     let program = crate::parse(
         r#"
 module generic.scratch;
-@id("generic.consume") fn consume(text: own string) -> i64 { 0 }
+@id("generic.consume") fn consume(text: string) -> i64 { 0 }
 @id("generic.keep") fn keep<T>(value: T) -> T {
     let owned = "scratch";
     let view = string_as_str(owned);
-    let observed_length = string_len(view);
+    let observed_length = str_len_bytes(view);
     let consumed_status = consume(owned);
     value
 }
@@ -421,7 +421,11 @@ fn candidate_intersection_keeps_equal_text_distinct_full_capacity_and_exact_unma
         retained_function_loan_bytes(&function).unwrap(),
         before + extra
     );
-    let exact = metadata(&function) + std::mem::size_of::<&ExpressionId>();
+    // Final partitioned census reuses the existing candidate/state carriers;
+    // the legacy excluding route's extra reference Vec no longer exists here.
+    // Keep the full independently allocated backing charge and exact/one-short
+    // allocation checks against the actual remaining two scratch carriers.
+    let exact = metadata(&function);
     for limit in [exact, exact - 1] {
         let mut scratch = RetentionScratch::default();
         let (result, overflow, debit) =

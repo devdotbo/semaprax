@@ -24,7 +24,7 @@ fn skip(flag: bool) -> i64 {
     failed
 }
 @id("guard.owned")
-fn owned(flag: bool, text: own string) -> string {
+fn owned(flag: bool, text: string) -> string {
     let keep = "prefix";
     if flag { let local = "arm"; return string_concat(text, local); }
     let suffix = "tail";
@@ -54,7 +54,7 @@ fn skip(flag: bool) -> i64 {
     if flag { 11 } else { let failed = 1 / 0; failed }
 }
 @id("guard.owned")
-fn owned(flag: bool, text: own string) -> string {
+fn owned(flag: bool, text: string) -> string {
     let keep = "prefix";
     if flag { let local = "arm"; string_concat(text, local) } else {
         let suffix = "tail";

@@ -51,6 +51,27 @@ fn nominal_values_outside_signatures_retain_exact_checked_type_facts() {
     }
 }
 #[test]
+fn repeated_zero_argument_nominal_facts_reuse_the_exact_retained_entry() {
+    let resolved = checked_value_fixture();
+    let ty = hir::ResolvedType::Nominal {
+        declaration: hir::DeclarationId::new("values.config"),
+        arguments: Vec::new(),
+    };
+    let mut retained = BTreeMap::new();
+    retain_checked_nominal_type(&ty, &resolved.declarations, &mut retained).unwrap();
+    let key = ty.identity_key();
+    let original_key = retained.get_key_value(&key).unwrap().0.as_ptr();
+    let original_layout = retained[&key].1.layout_key.as_ptr();
+    for _ in 0..128 {
+        retain_checked_nominal_type(&ty, &resolved.declarations, &mut retained).unwrap();
+    }
+    assert_eq!(retained.len(), 1);
+    assert_eq!(retained.get_key_value(&key).unwrap().0.as_ptr(), original_key);
+    assert_eq!(retained[&key].1.layout_key.as_ptr(), original_layout);
+    assert_eq!(retained[&key].1, resolved.declarations.type_facts(&ty).unwrap());
+}
+
+#[test]
 fn retained_value_facts_keep_the_4096_cap_and_reject_missing_checked_facts() {
     let resolved = checked_value_fixture();
     let ty = hir::ResolvedType::Nominal {

@@ -4,6 +4,7 @@ const SCHEMA: &str = r#"module response;
 @id("r.config") record Config {@id("r.config.label") label:string,@id("r.config.retry") retry:usize,}
 @id("r.row") record Row {@id("r.row.sku") sku:string,@id("r.row.count") count:u8,}
 @id("r.root") record Report {@id("r.root.config") config:Config,@id("r.root.rows") rows:Vec<Row>,@id("r.root.ok") ok:bool,}
+@id("r.anchor") fn anchor()->i64{0}
 "#;
 fn generate(source: &str, strings: usize, rows: usize) -> Result<String, Vec<Diagnostic>> {
     let program = crate::parse(source, "schema.spx").unwrap();

@@ -4564,9 +4564,11 @@ fn retained_signature_type_facts(
     let mut retained = BTreeMap::new();
     let mut visits = 0usize;
     if !functions.is_empty() {
-        reserve_builder_structure(std::mem::size_of::<
-            [Option<(CheckedValueNode<'_>, usize)>; MAX_CHECKED_VALUE_DEPTH + 1],
-        >())?;
+        reserve_builder_structure(
+            std::mem::size_of::<
+                [Option<(CheckedValueNode<'_>, usize)>; MAX_CHECKED_VALUE_DEPTH + 1],
+            >() + checked_value_retention::NOMINAL_KEY_SCRATCH_BYTES,
+        )?;
     }
     for function in functions {
         for ty in function

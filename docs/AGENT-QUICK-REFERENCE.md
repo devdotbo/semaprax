@@ -1404,7 +1404,7 @@ semaprax json-codec . --source src/response.spx --type shiftsim.report \
 For a two-codec application, derive both outputs from the unchanged bootstrap,
 then replay each candidate against that same authenticated Project revision with
 its exact source path, record ID, profile and bounds before copying either output
-over an authored source. Installing a module first changes the revision; hand edits remove derivation
+over an authored source. Installing one generated module first changes the revision; hand edits remove derivation
 evidence. The CLI never overwrites source or manifests. See the checked
 `standard_library::application_json::owned::catalog_scoped_records::` owner.
 

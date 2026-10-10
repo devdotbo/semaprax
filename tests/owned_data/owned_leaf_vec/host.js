@@ -316,6 +316,11 @@ const env = {
     if(!validUtf8(bytes))return 21;
     output.setBigInt64(0,ownBytes(bytes),true);return 0;
   },
+  spx_string_from_str_v2:(carrier,offset)=>{
+    const bytes=read(carrier),output=view(offset,8);
+    if(!validUtf8(bytes))return 25;
+    output.setBigInt64(0,ownBytes(bytes),true);return 0;
+  },
   spx_string_concat_v1:(left,right)=>ownBytes(new Uint8Array([...read(left),...read(right)])),
   spx_string_from_char_v1:value=>ownBytes(new TextEncoder().encode(String.fromCodePoint(value))),
   spx_string_len_chars_v1:carrier=>BigInt([...new TextDecoder('utf-8',{fatal:true}).decode(read(carrier))].length),

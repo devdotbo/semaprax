@@ -324,8 +324,8 @@ fn nested_response_256_two_string_rows_and_direct_string_use_existing_owner_limi
 let mut rows=vec_with_capacity<Row>(256usize);let mut at=0usize;
 while at<256usize{{rows=vec_push<Row>(rows,row());at=at+1usize;at<256usize}}
 let report=Report{{config:Config{{label:"x",retry:0usize}},rows:rows,ok:true}};
-let required=encoded_len(report);let result=encode(report,required);let expected={};
-let same=match own result{{Encoded::Refused{{required:n}}=>false,Encoded::Encoded{{text:actual}}=>equal(string_as_str(actual),string_as_str(expected)),}};
+let required=encoded_len(report);let outcome=encode(report,required);let expected={};
+let same=match own outcome{{Encoded::Refused{{required:n}}=>false,Encoded::Encoded{{text:actual}}=>equal(string_as_str(actual),string_as_str(expected)),}};
 if same && required=={}usize && vec_len<Row>(report.rows)==256usize{{724}}else{{0}}
 }}
 "#,
@@ -359,8 +359,8 @@ let seed=Row{sku:text(),count:text()};let seeds=vec_push<Row>(vec_with_capacity<
 let mut rows=vec_with_capacity<Row>(256usize);let mut at=0usize;
 while at<256usize{let row=vec_clone_at<Row>(seeds,0usize);rows=vec_push<Row>(rows,row);at=at+1usize;at<256usize}
 let report=Report{config:Config{label:"",retry:0usize},rows:rows,ok:true};
-let required=encoded_len(report);let result=encode(report,18446744073709551615usize);
-let refused=match own result{Encoded::Refused{required:n}=>n==18446744073709551615usize,Encoded::Encoded{text:actual}=>false,};
+let required=encoded_len(report);let outcome=encode(report,18446744073709551615usize);
+let refused=match own outcome{Encoded::Refused{required:n}=>n==18446744073709551615usize,Encoded::Encoded{text:actual}=>false,};
 if refused && required==18446744073709551615usize && vec_len<Row>(report.rows)==256usize{724}else{0}
 }
 "#;
@@ -393,8 +393,8 @@ fn nested_response_selected_exact_eight_and_late_dynamic_string_plus_one_settle_
 let mut rows=vec_with_capacity<Row>(8usize);let mut at=0usize;
 while at<8usize{{rows=vec_push<Row>(rows,row());at=at+1usize;at<8usize}}
 let report=Report{{config:Config{{label:"",retry:vec_with_capacity<usize>(0usize)}},rows:rows,ok:true}};
-let required=encoded_len(report);let result=encode(report,required);let expected={};
-let exact=match own result{{Encoded::Refused{{required:n}}=>false,Encoded::Encoded{{text:actual}}=>equal(string_as_str(actual),string_as_str(expected)),}};
+let required=encoded_len(report);let outcome=encode(report,required);let expected={};
+let exact=match own outcome{{Encoded::Refused{{required:n}}=>false,Encoded::Encoded{{text:actual}}=>equal(string_as_str(actual),string_as_str(expected)),}};
 let mut later=vec_with_capacity<Row>(8usize);let mut next=0usize;
 while next<7usize{{later=vec_push<Row>(later,row());next=next+1usize;next<7usize}}
 let bad_text=string_concat(string_concat("12345678","90123456"),"x");

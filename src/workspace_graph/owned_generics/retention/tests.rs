@@ -7,7 +7,7 @@ fn fixture() -> (Vec<Program>, Vec<hir::ResolvedFunctionInstance>) {
     for (name, size) in [("small", 1), ("medium", 5), ("large", 17)] {
         source.push_str(&format!("@id(\"{name}\") fn {name}<T>(value:T)->T {{\n"));
         for index in 0..size {
-            source.push_str(&format!("let text{index}=\"owned\"; let view{index}=string_as_str(text{index}); let size{index}=string_len(view{index});\n"));
+            source.push_str(&format!("let text{index}=\"owned\"; let view{index}=string_as_str(text{index}); let size{index}=str_len_bytes(view{index});\n"));
         }
         source.push_str("value }\n");
     }

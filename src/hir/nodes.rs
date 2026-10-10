@@ -264,6 +264,13 @@ impl ResolvedType {
 
     /// A name-independent key suitable as an input to future layout hashing.
     pub fn identity_key(&self) -> String {
+        // Zero-argument nominal keys need no traversal or child-key storage.
+        // Keep the exact length-delimited encoding used by the general path.
+        if let Self::Nominal { declaration, arguments } = self {
+            if arguments.is_empty() {
+                return format!("nominal:{}:{}:0:", declaration.as_str().len(), declaration);
+            }
+        }
         enum Frame<'a> {
             Enter(&'a ResolvedType),
             Finish(&'a DeclarationId, usize),

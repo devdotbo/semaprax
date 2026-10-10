@@ -107,7 +107,7 @@ fn while_identity_error(function: &str, condition: &str, body: &str, message: &s
     fn bounded(id: &str) -> String {
         let mut text: String = id.chars().take(160).collect();
         if id.chars().nth(160).is_some() {
-            text.push_str("…");
+            text.push('…');
         }
         text
     }

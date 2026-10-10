@@ -14,6 +14,8 @@ use super::{
     MAX_CHECKED_VALUE_DEPTH, MAX_CHECKED_VALUE_VISITS, MAX_DECLARATIONS,
 };
 
+pub(super) const NOMINAL_KEY_SCRATCH_BYTES: usize = 256;
+
 pub(super) fn retain_checked_value_types(
     root: CheckedValueNode<'_>,
     declarations: &hir::DeclarationIndex,
@@ -68,6 +70,25 @@ pub(super) fn retain_checked_nominal_type(
     let hir::ResolvedType::Nominal { declaration, .. } = ty else {
         return Ok(());
     };
+    // Most application records have no type arguments. Probe their exact
+    // canonical key on bounded stack storage before allocating a duplicate
+    // String (and identity_key's traversal carriers) for every body use.
+    // Oversized identities and generic instances retain the ordinary path.
+    if let hir::ResolvedType::Nominal { arguments, .. } = ty {
+        if arguments.is_empty() {
+            use std::io::Write;
+            let mut storage = [0u8; NOMINAL_KEY_SCRATCH_BYTES];
+            let mut cursor = std::io::Cursor::new(storage.as_mut_slice());
+            if write!(cursor, "nominal:{}:{}:0:", declaration.as_str().len(), declaration).is_ok() {
+                let length = cursor.position() as usize;
+                let key = std::str::from_utf8(&storage[..length])
+                    .expect("identity key is composed of UTF-8 strings");
+                if retained.contains_key(key) {
+                    return Ok(());
+                }
+            }
+        }
+    }
     let key = ty.identity_key();
     if retained.contains_key(&key) {
         return Ok(());
