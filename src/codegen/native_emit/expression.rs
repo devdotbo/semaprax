@@ -17,6 +17,7 @@ use std::collections::BTreeSet;
 mod box_ops;
 mod host_command;
 mod iterator_ops;
+mod lexical_block;
 mod lexical_break;
 mod lexical_exit;
 mod lexical_lookup;
@@ -1340,9 +1341,16 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                         })?
                         .to_owned();
                 } else if is_aggregate_type(self.program, &tail.ty)? {
-                    self.apply_owned_plan_at_value(&expr.id, &tail)?;
+                    if self.lexical_variant_block(expr)? {
+                        self.emit_lexical_variant_block_result(expr, &tail)?;
+                    } else {
+                        self.apply_owned_plan_at_value(&expr.id, &tail)?;
+                    }
                 }
                 self.emit_block_plan_scope_exit(expr)?;
+                if self.lexical_variant_block(expr)? {
+                    self.finish_variant_join(expr, &tail.code)?;
+                }
                 self.emit_owned_break_join_label(expr)?;
                 self.variables = saved;
                 self.resource_text_views = saved_resource_text_views;
@@ -1395,9 +1403,16 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                     })?
                     .to_owned();
             } else if is_aggregate_type(self.program, &value.ty)? {
-                self.apply_owned_plan_at_value(&block.id, &value)?;
+                if self.lexical_variant_block(block)? {
+                    self.emit_lexical_variant_block_result(block, &value)?;
+                } else {
+                    self.apply_owned_plan_at_value(&block.id, &value)?;
+                }
             }
             self.emit_block_plan_scope_exit(block)?;
+            if self.lexical_variant_block(block)? {
+                self.finish_variant_join(block, &value.code)?;
+            }
         }
         Ok(value)
     }

@@ -147,17 +147,18 @@ const OWNED_BREAK: &str = r#"
 module test.lexical_owned_break;
 @id("app.main") fn main() -> i64 {
     let outer = bytes_zeroed(7usize);
-    let first = vec_push<Bytes>(vec_with_capacity<Bytes>(2usize), bytes_zeroed(1usize));
-    let values = vec_push<Bytes>(first, bytes_zeroed(2usize));
+    let first = vec_push<Bytes>(vec_with_capacity<Bytes>(3usize), bytes_zeroed(1usize));
+    let second = vec_push<Bytes>(first, bytes_zeroed(2usize));
+    let values = vec_push<Bytes>(second, bytes_zeroed(3usize));
     let mut seen = 0;
     for own item in vec_into_iter<Bytes>(values) {
         let nested = bytes_zeroed(3usize);
         seen = seen + 1;
-        if seen == 1 { continue; };
-        if seen == 2 { break; };
+        if seen == 2 { continue; };
+        if seen == 3 { break; };
         0
     }
-    if seen == 2 && byte_len(bytes_as_slice(outer)) == 7usize { 9 } else { 0 }
+    if seen == 3 && byte_len(bytes_as_slice(outer)) == 7usize { 9 } else { 0 }
 }
 "#;
 
@@ -254,4 +255,17 @@ fn owning_break_replay_refuses_a_forged_nonzero_wrapper_tail() {
     let failure =
         hir::validate(&resolved).expect_err("tail drift must not inherit wrapper authority");
     assert_eq!(failure.code, "SPX-H006");
+}
+
+#[allow(clippy::duplicate_mod)]
+#[path = "owned_leaf_collections/native.rs"]
+mod owning_break_native;
+
+#[test]
+fn native_owning_loop_normal_then_continue_then_break_settles_every_owner_o0_o2() {
+    if Command::new("clang").arg("--version").output().is_err() {
+        return;
+    }
+    let source = OWNED_BREAK.replace("@id(\"app.main\")", "@id(\"owned.leaf.main\")");
+    owning_break_native::run(&source, 0, 9, owning_break_native::Failure::None);
 }
