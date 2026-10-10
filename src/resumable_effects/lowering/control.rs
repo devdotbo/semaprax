@@ -332,7 +332,8 @@ fn collect_sites<'a>(
                     | ResolvedStatement::Assign { value, .. } => {
                         collect_sites(value, true, false, sites)
                     }
-                    ResolvedStatement::While { body, .. } => {
+                    ResolvedStatement::While { body, .. }
+                    | ResolvedStatement::LexicalWhile { body, .. } => {
                         collect_sites(body, false, false, sites)
                     }
                     ResolvedStatement::Unsafe { .. } => {}

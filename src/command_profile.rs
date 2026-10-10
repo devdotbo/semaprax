@@ -224,6 +224,11 @@ fn validate_function(
                     callees.push(callee.clone());
                 }
             }
+            ResolvedExprKind::LexicalExit { .. } => {
+                return Err(admission(
+                    "lexical exits are outside Useful Data Command v2",
+                ))
+            }
             ResolvedExprKind::Unary { value, .. } => pending.push(value),
             ResolvedExprKind::Binary { left, right, .. } => {
                 pending.push(left);

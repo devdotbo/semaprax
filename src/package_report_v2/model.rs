@@ -640,6 +640,9 @@ pub(super) fn type_json(ty: &ResolvedType) -> String {
                 .join(","),
             type_json(result)
         ),
+        ResolvedType::Never => {
+            bounded_output::budgeted_clone("{\"kind\":\"completion\",\"name\":\"never\"}")
+        }
         ResolvedType::Unit => bounded_output::budgeted_clone("{\"kind\":\"unit\"}"),
         ResolvedType::I64 => primitive("i64"),
         ResolvedType::I32 => primitive("i32"),

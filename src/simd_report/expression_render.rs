@@ -8,6 +8,18 @@ pub(super) fn render_expr(
     output: &mut String,
 ) {
     match &expr.kind {
+        ResolvedExprKind::LexicalExit { kind, value, .. } => {
+            output.push_str(match kind {
+                hir::LexicalExitKind::Break => "break",
+                hir::LexicalExitKind::Continue => "continue",
+                hir::LexicalExitKind::Return => "return",
+            });
+            if let Some(value) = value {
+                output.push(' ');
+                output.push_str(&render_child(walker, value, 0));
+            }
+            output.push(';');
+        }
         ResolvedExprKind::Closure { .. } => output.push_str("<closure>"),
         ResolvedExprKind::Int(number) => {
             output.push_str(&number.to_string());
@@ -191,6 +203,9 @@ pub(super) fn render_expr(
                     }
                     ResolvedStatement::While {
                         condition, body, ..
+                    }
+                    | ResolvedStatement::LexicalWhile {
+                        condition, body, ..
                     } => {
                         output.push_str("while ");
                         output.push_str(&render_child(walker, condition, 0));
@@ -363,7 +378,8 @@ pub(super) fn scalar_type_name(ty: &Type) -> Option<&'static str> {
         Type::F64 => Some("f64"),
         Type::Bool => Some("bool"),
         Type::Char => Some("char"),
-        Type::String
+        Type::Never
+        | Type::String
         | Type::Str
         | Type::SliceU8
         | Type::StringMap

@@ -489,9 +489,9 @@ fn recipe_type(
         {
             Ok(format!("P{index}"))
         }
-        ResolvedType::Unit | ResolvedType::TypeParameter { .. } => Err(package_error(
-            "owned-data semantic recipe type is unsupported",
-        )),
+        ResolvedType::Never | ResolvedType::Unit | ResolvedType::TypeParameter { .. } => Err(
+            package_error("owned-data semantic recipe type is unsupported"),
+        ),
     }
 }
 
@@ -502,6 +502,9 @@ fn render_expr(
     local_index: &mut usize,
 ) -> Result<String, Diagnostic> {
     match &expression.kind {
+        ResolvedExprKind::LexicalExit { .. } => Err(package_error(
+            "lexical exits are outside semantic recipe v8",
+        )),
         ResolvedExprKind::Closure { .. }
         | ResolvedExprKind::FunctionReference { .. }
         | ResolvedExprKind::Invoke { .. } => Err(package_error(
@@ -735,6 +738,11 @@ fn render_block(
                 return Err(package_error(
                     "owned-data semantic recipe unsafe boundary is unsupported",
                 ));
+            }
+            ResolvedStatement::LexicalWhile { .. } => {
+                return Err(package_error(
+                    "lexical loops are outside semantic recipe v8",
+                ))
             }
             ResolvedStatement::While {
                 condition, body, ..

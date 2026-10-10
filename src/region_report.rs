@@ -229,6 +229,13 @@ pub fn generate(
     }
     let revision = graph::revision(&program);
     let resolved = hir::resolve(&program)?;
+    for function in &resolved.functions {
+        if hir::lexical_exit::requires(function).map_err(|d| vec![d])? {
+            return Err(vec![consistency_error(
+                "lexical control flow is outside region-report v1".to_owned(),
+            )]);
+        }
+    }
 
     let mut sorted = program.functions.iter().collect::<Vec<_>>();
     sorted.sort_by(|left, right| left.stable_id.as_bytes().cmp(right.stable_id.as_bytes()));
@@ -491,7 +498,11 @@ fn collect_expr(
                 collect_expr(argument, scope_end, resolved, facts);
             }
         }
-        ResolvedExprKind::Unary { value, .. } => {
+        ResolvedExprKind::LexicalExit { value: None, .. } => {}
+        ResolvedExprKind::LexicalExit {
+            value: Some(value), ..
+        }
+        | ResolvedExprKind::Unary { value, .. } => {
             collect_expr(value, scope_end, resolved, facts);
         }
         ResolvedExprKind::Binary { left, right, .. } => {
@@ -533,6 +544,9 @@ fn collect_expr(
                         collect_expr(body, span.end, resolved, facts);
                     }
                     ResolvedStatement::While {
+                        condition, body, ..
+                    }
+                    | ResolvedStatement::LexicalWhile {
                         condition, body, ..
                     } => {
                         // The loop re-evaluates its condition and body every

@@ -240,7 +240,11 @@ fn normalize_expression_spans(expression: &mut ResolvedExpr) {
                 normalize_expression_spans(argument);
             }
         }
-        ResolvedExprKind::Unary { value, .. }
+        ResolvedExprKind::LexicalExit { value: None, .. } => {}
+        ResolvedExprKind::LexicalExit {
+            value: Some(value), ..
+        }
+        | ResolvedExprKind::Unary { value, .. }
         | ResolvedExprKind::Upcast { source: value }
         | ResolvedExprKind::Yield { request: value } => {
             normalize_expression_spans(value);
@@ -322,6 +326,12 @@ fn normalize_statement_spans(statement: &mut ResolvedStatement) {
             condition,
             body,
             span,
+        }
+        | ResolvedStatement::LexicalWhile {
+            condition,
+            body,
+            span,
+            ..
         } => {
             *span = Span::default();
             normalize_expression_spans(condition);

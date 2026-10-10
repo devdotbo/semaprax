@@ -771,6 +771,11 @@ fn visit_hir<'a>(
     facts: &mut Vec<Fact<'a>>,
     scope_count: &mut usize,
 ) -> Result<()> {
+    if matches!(&expression.kind, ResolvedExprKind::LexicalExit { .. }) {
+        return Err(invalid(
+            "lexical exits are outside the expression candidate profile",
+        ));
+    }
     if depth > MAX_DEPTH || facts.len() >= MAX_EXPRESSIONS {
         return Err(limit("expression catalogue traversal exceeds its bound"));
     }
@@ -788,6 +793,12 @@ fn visit_hir<'a>(
         scope: scope.clone(),
     });
     match &expression.kind {
+        ResolvedExprKind::LexicalExit { .. } => {
+            return Err(invalid(
+                "lexical exits are outside the expression candidate profile",
+            ))
+        }
+
         ResolvedExprKind::Block { statements, tail } => {
             let mut local = scope.clone();
             for statement in statements {
@@ -806,6 +817,11 @@ fn visit_hir<'a>(
                     }
                     ResolvedStatement::Unsafe { body, .. } => {
                         visit_hir(body, phase, &local, depth + 1, facts, scope_count)?
+                    }
+                    ResolvedStatement::LexicalWhile { .. } => {
+                        return Err(invalid(
+                            "lexical loops are outside the expression candidate profile",
+                        ))
                     }
                     ResolvedStatement::While {
                         condition, body, ..
@@ -963,6 +979,7 @@ fn ast_children(expression: &Expr) -> Vec<&Expr> {
         ExprKind::MethodCall { receiver, args, .. } => {
             std::iter::once(receiver.as_ref()).chain(args).collect()
         }
+        ExprKind::LexicalExit { value, .. } => value.iter().map(|v| v.as_ref()).collect(),
         ExprKind::Unary { value, .. }
         | ExprKind::Try { operand: value }
         | ExprKind::Yield { request: value }
@@ -1025,6 +1042,7 @@ fn ast_children_mut(expression: &mut Expr) -> Vec<&mut Expr> {
         ExprKind::MethodCall { receiver, args, .. } => {
             std::iter::once(receiver.as_mut()).chain(args).collect()
         }
+        ExprKind::LexicalExit { value, .. } => value.iter_mut().map(|v| v.as_mut()).collect(),
         ExprKind::Unary { value, .. }
         | ExprKind::Try { operand: value }
         | ExprKind::Yield { request: value }
@@ -1111,6 +1129,7 @@ fn ast_kind(kind: &ExprKind) -> &'static str {
         ExprKind::Call { .. } => "call",
         ExprKind::MethodCall { .. } => "method_call",
         ExprKind::SuperMethod { .. } => "super_method",
+        ExprKind::LexicalExit { .. } => "lexical_exit",
         ExprKind::Unary { .. } => "unary",
         ExprKind::Binary { .. } => "binary",
         ExprKind::Block { .. } => "block",
@@ -1149,6 +1168,7 @@ fn hir_kind(kind: &ResolvedExprKind) -> &'static str {
         ResolvedExprKind::ByteRange { .. } => "byte_range",
         ResolvedExprKind::NativeRustImportCall(_) => "native_import_call",
         ResolvedExprKind::HostCommandCall(_) => "host_command_call",
+        ResolvedExprKind::LexicalExit { .. } => "lexical_exit",
         ResolvedExprKind::Unary { .. } => "unary",
         ResolvedExprKind::Binary { .. } => "binary",
         ResolvedExprKind::Block { .. } => "block",

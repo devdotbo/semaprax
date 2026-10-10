@@ -91,6 +91,7 @@ impl Representation {
             | ResolvedType::OnceFunctionI64Pair
             | ResolvedType::MutFunctionI64
             | ResolvedType::Function { .. }
+            | ResolvedType::Never
             | ResolvedType::Unit
             | ResolvedType::Char
             | ResolvedType::ArrayU8(_)
