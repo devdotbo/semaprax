@@ -108,6 +108,17 @@ exhaustion is sticky G171 with no ordinary-profile fallback. An irrelevant
 signature creates no memo backing. These consumers do not reuse proofs across
 invocations, revisions or mutable source.
 
+Retained Workspace Graph schema selection independently owns a positive-only
+memo over its exact held typed module slice and declaration facts. Every site
+still checks its complete call arguments, owner binding and selected cleanup
+schema; a completed transitive proof is reused only for the same retained
+callee pointer in that immutable context. One separately reserved 256-frame
+cursor and an exact function-reference Vec are reused across module selection.
+Changed providers, copied contexts and missing type facts require fresh replay.
+No negative result or attached plan grants authority. Sticky reservation refusal
+remains G171 and cannot be relabeled as successful ordinary-profile selection.
+This is authored compiler scratch reuse, not measured heap or speed evidence.
+
 Resolver and workspace-link construction hold one immutable typed index while
 building canonical plans for all ordinary functions and retained instances.
 Schema selection, renewal reservations and transfers reuse exact function-site

@@ -99,6 +99,66 @@ fn prove<'a>(
         return None;
     }
     let mut frames = [None; DEPTH];
+    prove_with_frames(
+        target,
+        lookup,
+        param_admit,
+        result_admit,
+        lookup_work,
+        &mut frames,
+    )
+}
+
+/// One phase-owned physical proof stack; its lifetime cannot carry authority
+/// across immutable provider contexts. The caller owns exact positive memo keys.
+pub(crate) struct ProofCursor<'a> {
+    frames: [Option<Frame<'a>>; DEPTH],
+}
+impl<'a> ProofCursor<'a> {
+    pub(crate) fn new() -> Result<Self, crate::diagnostic::Diagnostic> {
+        if !crate::bounded_output::reserve_active_required(std::mem::size_of::<Self>()) {
+            return Err(census_error());
+        }
+        Ok(Self {
+            frames: [None; DEPTH],
+        })
+    }
+}
+
+pub(crate) fn nonallocating_with_cursor<'a>(
+    target: &'a ResolvedFunction,
+    lookup: impl Fn(
+        &crate::hir::DeclarationId,
+        Option<&crate::hir::FunctionInstanceId>,
+    ) -> Option<&'a ResolvedFunction>,
+    param_admit: impl Fn(&ResolvedFunction, OwnershipMode, &ResolvedType) -> bool,
+    result_admit: impl Fn(&ResolvedFunction, &ResolvedType) -> bool,
+    lookup_work: usize,
+    cursor: &mut ProofCursor<'a>,
+) -> bool {
+    cursor.frames.fill(None);
+    prove_with_frames(
+        target,
+        &lookup,
+        &param_admit,
+        &result_admit,
+        lookup_work,
+        &mut cursor.frames,
+    )
+    .is_some()
+}
+
+fn prove_with_frames<'a>(
+    target: &'a ResolvedFunction,
+    lookup: &impl Fn(
+        &crate::hir::DeclarationId,
+        Option<&crate::hir::FunctionInstanceId>,
+    ) -> Option<&'a ResolvedFunction>,
+    param_admit: &impl Fn(&ResolvedFunction, OwnershipMode, &ResolvedType) -> bool,
+    result_admit: &impl Fn(&ResolvedFunction, &ResolvedType) -> bool,
+    lookup_work: usize,
+    frames: &mut [Option<Frame<'a>>; DEPTH],
+) -> Option<()> {
     frames[0] = Some(Frame::Function(target, 0));
     let mut depth = 1usize;
     let mut work = WORK;

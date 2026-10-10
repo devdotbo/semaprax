@@ -2373,8 +2373,14 @@ impl WorkspaceGraphBuild {
         &self,
     ) -> Result<BTreeMap<String, &'static str>, Vec<Diagnostic>> {
         let mut schemas = BTreeMap::new();
+        let mut proofs = source_schema::Proofs::new(&self.hir.modules, &self.hir.declarations);
         for module in &self.hir.modules {
-            let schema = source_schema::schema(module, &self.hir.modules, &self.hir.declarations)?;
+            let schema = source_schema::schema_with_proofs(
+                module,
+                &self.hir.modules,
+                &self.hir.declarations,
+                &mut proofs,
+            )?;
             if schemas.insert(module.path.clone(), schema).is_some() {
                 return Err(vec![graph_error(
                     "SPX-G173",

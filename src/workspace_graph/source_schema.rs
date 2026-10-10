@@ -3,6 +3,7 @@
 use super::*;
 use std::fmt::{self, Write};
 mod byte_helper;
+pub(super) use byte_helper::Proofs;
 
 struct MatchText<'a>(&'a str);
 impl Write for MatchText<'_> {
@@ -165,21 +166,37 @@ pub(super) fn all(
     if allocated > bytes {
         reserve_builder_structure(allocated - bytes)?;
     }
+    let mut proofs = byte_helper::Proofs::new(modules, facts);
     for module in modules {
-        schemas.push(schema(module, modules, facts)?);
+        schemas.push(schema_with_proofs(module, modules, facts, &mut proofs)?);
     }
     Ok(schemas)
 }
 
+#[cfg(test)]
 pub(super) fn schema(
     module: &WorkspaceResolvedModule,
     modules: &[WorkspaceResolvedModule],
     facts: &BTreeMap<String, WorkspaceDeclarationFact>,
 ) -> Result<&'static str, Vec<Diagnostic>> {
+    schema_with_proofs(
+        module,
+        modules,
+        facts,
+        &mut byte_helper::Proofs::new(modules, facts),
+    )
+}
+
+pub(super) fn schema_with_proofs<'a>(
+    module: &'a WorkspaceResolvedModule,
+    modules: &'a [WorkspaceResolvedModule],
+    facts: &'a BTreeMap<String, WorkspaceDeclarationFact>,
+    proofs: &mut byte_helper::Proofs<'a>,
+) -> Result<&'static str, Vec<Diagnostic>> {
     if module.native_law {
         return Ok("semaprax.native-law.v1");
     }
-    if let Some(schema) = byte_helper::schema(module, modules, facts)? {
+    if let Some(schema) = byte_helper::schema_with_proofs(module, modules, facts, proofs)? {
         return Ok(schema);
     }
     let authority = |function: &hir::ResolvedFunction| {

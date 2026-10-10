@@ -2,9 +2,11 @@
 //! No whole-program clone and no authority from an attached schema token.
 use super::*;
 use hir::{OwnershipMode, ResolvedExprKind, ResolvedType};
+mod proofs;
 #[cfg(test)]
 mod tests;
 mod type_authority;
+pub(in crate::workspace_graph) use proofs::Proofs;
 
 fn target<'a>(
     modules: &'a [WorkspaceResolvedModule],
@@ -81,10 +83,20 @@ fn census(function: &hir::ResolvedFunction) -> Option<bool> {
     Some(found)
 }
 
+#[cfg(test)]
 pub(super) fn schema(
     module: &WorkspaceResolvedModule,
     modules: &[WorkspaceResolvedModule],
     facts: &BTreeMap<String, WorkspaceDeclarationFact>,
+) -> Result<Option<&'static str>, Vec<Diagnostic>> {
+    schema_with_proofs(module, modules, facts, &mut Proofs::new(modules, facts))
+}
+
+pub(super) fn schema_with_proofs<'a>(
+    module: &'a WorkspaceResolvedModule,
+    modules: &'a [WorkspaceResolvedModule],
+    facts: &'a BTreeMap<String, WorkspaceDeclarationFact>,
+    proofs: &mut Proofs<'a>,
 ) -> Result<Option<&'static str>, Vec<Diagnostic>> {
     let fail = || {
         vec![graph_error(
@@ -177,32 +189,7 @@ pub(super) fn schema(
                             if required { return Err(fail()); }
                             continue;
                         }
-                        if !crate::loop_calls::byte_writer::resolved_nonallocating_with(
-                            callee,
-                            |id, instance| {
-                                if instance.is_none() {
-                                    target(modules, facts, id).map(|(_, f)| f)
-                                } else {
-                                    None
-                                }
-                            },
-                            |function, mode, ty| {
-                                target(modules, facts, &function.id)
-                                    .filter(|(_, retained)| std::ptr::eq(*retained, function))
-                                    .is_some_and(|(owner, _)| {
-                                        type_authority::parameter(owner, modules, facts, mode, ty)
-                                    })
-                            },
-                            |function, ty| {
-                                target(modules, facts, &function.id)
-                                    .filter(|(_, retained)| std::ptr::eq(*retained, function))
-                                    .is_some_and(|(owner, _)| {
-                                        *ty == ResolvedType::Bytes
-                                            || type_authority::copy(owner, modules, facts, ty)
-                                    })
-                            },
-                            lookup_work,
-                        ) {
+                        if !proofs.prove(modules, facts, callee, lookup_work)? {
                             // Ordinary allocating helpers retain the old profile.
                             // A v19 claim must replay every candidate exactly.
                             if required {

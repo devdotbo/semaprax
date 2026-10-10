@@ -369,3 +369,133 @@ fn imported_allocating_body_cannot_acquire_identity_prototype_authority() {
         .expect("real allocating provider must not become a nonallocating prototype");
     assert!(errors.iter().any(|error| error.code == "SPX-U105"));
 }
+
+#[test]
+fn repeated_retained_assignments_share_one_positive_proof_and_exact_provider_context() {
+    let repeated = APP.replace(
+        "output=fill(output,row);",
+        &"output=fill(output,row);".repeat(64),
+    );
+    let build = build(&[
+        ("app.spx", &repeated),
+        ("bridge.spx", BRIDGE),
+        ("leaf.spx", LEAF),
+    ]);
+    let module = build
+        .hir
+        .modules
+        .iter()
+        .find(|m| m.module == "app.main")
+        .unwrap();
+    let mut proofs = Proofs::new(&build.hir.modules, &build.hir.declarations);
+    assert_eq!(
+        schema_with_proofs(
+            module,
+            &build.hir.modules,
+            &build.hir.declarations,
+            &mut proofs
+        )
+        .unwrap(),
+        Some("semaprax.graph.v76")
+    );
+    assert_eq!(
+        proofs.proof_count, 1,
+        "sixty-four sites independently check one immutable transitive callee"
+    );
+    let callee = target(
+        &build.hir.modules,
+        &build.hir.declarations,
+        &hir::DeclarationId::new("bridge"),
+    )
+    .unwrap()
+    .1;
+    let count: usize = build.hir.modules.iter().map(|m| m.functions.len()).sum();
+    let (warm, overflowed, used) = crate::bounded_output::with_limit_usage(0, || {
+        proofs.prove(&build.hir.modules, &build.hir.declarations, callee, count)
+    });
+    assert!(warm.unwrap());
+    assert!(!overflowed);
+    assert_eq!(used, 0);
+    let foreign = imported();
+    let callee = target(
+        &foreign.hir.modules,
+        &foreign.hir.declarations,
+        &hir::DeclarationId::new("bridge"),
+    )
+    .unwrap()
+    .1;
+    assert_eq!(
+        proofs
+            .prove(
+                &foreign.hir.modules,
+                &foreign.hir.declarations,
+                callee,
+                count
+            )
+            .unwrap_err()[0]
+            .code,
+        "SPX-G410"
+    );
+}
+
+#[test]
+fn retained_helper_cursor_exact_backing_and_one_short_preserve_budget_refusal() {
+    let build = imported();
+    let modules = &build.hir.modules;
+    let facts = &build.hir.declarations;
+    let callee = target(modules, facts, &hir::DeclarationId::new("bridge"))
+        .unwrap()
+        .1;
+    let count: usize = modules.iter().map(|m| m.functions.len()).sum();
+    let required = std::mem::size_of::<Proofs<'_>>()
+        + count * std::mem::size_of::<&hir::ResolvedFunction>()
+        + std::mem::size_of::<crate::loop_calls::byte_writer::ProofCursor<'_>>();
+    for limit in [required, required - 1] {
+        let (result, overflowed, used) = crate::bounded_output::with_limit_usage(limit, || {
+            Proofs::new(modules, facts).prove(modules, facts, callee, count)
+        });
+        if limit == required {
+            assert!(result.unwrap());
+            assert!(!overflowed);
+            assert_eq!(used, required);
+        } else {
+            assert!(overflowed);
+            assert_eq!(result.unwrap_err()[0].code, "SPX-G171");
+            assert!(used < required);
+        }
+    }
+}
+
+#[test]
+fn helper_positive_proof_never_authenticates_changed_provider_body_or_facts() {
+    let original = imported();
+    let mut proofs = Proofs::new(&original.hir.modules, &original.hir.declarations);
+    let callee = target(
+        &original.hir.modules,
+        &original.hir.declarations,
+        &hir::DeclarationId::new("bridge"),
+    )
+    .unwrap()
+    .1;
+    assert!(proofs
+        .prove(&original.hir.modules, &original.hir.declarations, callee, 3)
+        .unwrap());
+    for mutate_body in [false, true] {
+        let mut changed = imported();
+        if mutate_body {
+            function_mut(&mut changed, "leaf")
+                .effects
+                .push("fs.read".to_owned());
+        } else {
+            changed
+                .hir
+                .modules
+                .iter_mut()
+                .find(|m| m.module == "lib.leaf")
+                .unwrap()
+                .signature_types
+                .clear();
+        }
+        refused(&changed);
+    }
+}
