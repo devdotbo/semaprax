@@ -1,6 +1,8 @@
 //! Emission context initialization; target identity is borrowed from the authenticated invocation.
 use super::*;
 impl<'a, O: COutput> CEmitter<'a, O> {
+    // Keep independently authenticated function, invocation and ownership views explicit.
+    #[allow(clippy::too_many_arguments)]
     pub(super) fn new(
         output: &'a mut O,
         variables: HashMap<ValueId, CBinding>,

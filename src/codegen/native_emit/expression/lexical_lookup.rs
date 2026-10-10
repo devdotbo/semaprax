@@ -63,10 +63,8 @@ pub(super) fn expression<'a>(
 ) -> Result<&'a ResolvedExpr, Diagnostic> {
     let mut found = None;
     walk(root, |expression| {
-        if &expression.id == site {
-            if found.replace(expression).is_some() {
-                return Err(backend_error("native lexical anchor is ambiguous"));
-            }
+        if &expression.id == site && found.replace(expression).is_some() {
+            return Err(backend_error("native lexical anchor is ambiguous"));
         }
         Ok(())
     })?;
@@ -135,12 +133,12 @@ pub(super) fn iterator_tail<'a>(
             tail = inner;
         }
         charge_inspection(tail, &mut work)?;
-        if &tail.id == next {
-            if arm.guard.is_some() || selected.replace((arm, blocks, count)).is_some() {
-                return Err(backend_error(
-                    "native iterator latch tail is ambiguous or guarded",
-                ));
-            }
+        if &tail.id == next
+            && (arm.guard.is_some() || selected.replace((arm, blocks, count)).is_some())
+        {
+            return Err(backend_error(
+                "native iterator latch tail is ambiguous or guarded",
+            ));
         }
     }
     selected.ok_or_else(|| backend_error("native iterator latch is not an exact arm tail"))
@@ -155,14 +153,12 @@ pub(super) fn owning_wrapper<'a>(
     walk(root, |expression| {
         if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
             if matches!(statements.last(), Some(ResolvedStatement::LexicalWhile { condition: candidate, .. }) if &candidate.id == condition)
+                && (found.replace(expression).is_some()
+                    || hir::lexical_exit::source_for_wrapper(program, expression)?.is_none())
             {
-                if found.replace(expression).is_some()
-                    || hir::lexical_exit::source_for_wrapper(program, expression)?.is_none()
-                {
-                    return Err(backend_error(
-                        "native owning Break wrapper is ambiguous or unauthenticated",
-                    ));
-                }
+                return Err(backend_error(
+                    "native owning Break wrapper is ambiguous or unauthenticated",
+                ));
             }
         }
         Ok(())
