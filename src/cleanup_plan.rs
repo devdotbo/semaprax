@@ -9,7 +9,9 @@ mod build;
 mod deferred_commit;
 mod execute;
 mod lexical_control;
-pub use lexical_control::{LexicalControlPlan, LexicalExitCertificate, LoopCertificate, ResumeCertificate};
+pub use lexical_control::{
+    LexicalControlPlan, LexicalExitCertificate, LoopCertificate, ResumeCertificate,
+};
 mod native_rust;
 mod owner_admission;
 // Owned-value-across-a-yield liveness query (issue #296, spec section 11.6).
@@ -406,16 +408,25 @@ pub struct VariantCaseGuard {
 pub enum ExitContinuation {
     Continue(EdgeId),
     /// A finite iteration witness hands off to its authenticated runtime latch.
-    LoopLatch { target: crate::hir::ControlTarget },
-    LoopBreak { target: crate::hir::ControlTarget, edge: EdgeId },
+    LoopLatch {
+        target: crate::hir::ControlTarget,
+    },
+    LoopBreak {
+        target: crate::hir::ControlTarget,
+        edge: EdgeId,
+    },
     /// Nested scopes settle before entering the ordinary postcondition route.
     FunctionReturn {
         target: crate::hir::ControlTarget,
         edge: EdgeId,
         source: CleanupResultSource,
     },
-    CommitResult { source: CleanupResultSource },
-    ReturnFailure { source: StatusSourceId },
+    CommitResult {
+        source: CleanupResultSource,
+    },
+    ReturnFailure {
+        source: StatusSourceId,
+    },
     ReturnUnit,
 }
 

@@ -495,11 +495,7 @@ pub(crate) fn build_plan(
     program: &ResolvedProgram,
     function: &ResolvedFunction,
 ) -> Result<CleanupPlan, Diagnostic> {
-    if crate::hir::lexical_exit::requires(function)? {
-        let owner = crate::hir::lexical_exit::owner(program, function)?;
-        return lexical_control::build_plan_for_execution(program, function, &owner);
-    }
-    PlanBuilder::new(program, function)?.build()
+    lexical_control::build_registered_plan(program, function)
 }
 
 #[cfg(test)]
@@ -861,80 +857,88 @@ impl<'a> PlanBuilder<'a> {
         let body = self.lower_root_body(&self.function.body, current, state, root)?;
         current = body.block;
         state = body.state;
-        let result_source_expression = self.function.body.id.clone();
-        if let Some(source) = body.owned_source {
-            let destination = CleanupPlace::whole(StorageId::ProvisionalResult);
-            self.transfer(
-                current,
-                self.function.body.id.clone(),
-                source,
-                destination,
-                &mut state,
-                true,
-            )?;
-        }
+        if !self.flow_is_closed(current) {
+            let result_source_expression = self.function.body.id.clone();
+            if let Some(source) = body.owned_source {
+                let destination = CleanupPlace::whole(StorageId::ProvisionalResult);
+                self.transfer(
+                    current,
+                    self.function.body.id.clone(),
+                    source,
+                    destination,
+                    &mut state,
+                    true,
+                )?;
+            }
 
-        if !self.pending_try_residuals.is_empty() {
-            let owned_result = self.result_needs_drop()?;
-            let residuals = std::mem::take(&mut self.pending_try_residuals);
-            let epilogue =
-                self.finish_try_normal_path(current, &mut state, &residuals, owned_result, root)?;
+            if !self.pending_try_residuals.is_empty() {
+                let owned_result = self.result_needs_drop()?;
+                let residuals = std::mem::take(&mut self.pending_try_residuals);
+                let epilogue = self.finish_try_normal_path(
+                    current,
+                    &mut state,
+                    &residuals,
+                    owned_result,
+                    root,
+                )?;
 
-            for residual in residuals {
-                if !owned_result
-                    && (!residual.state.live_order.is_empty()
-                        || !residual.state.conditional_variants.is_empty())
-                {
-                    return Err(plan_error(
-                        "postfix `?` residual carries inconsistent live owners",
-                    ));
+                for residual in residuals {
+                    if !owned_result
+                        && (!residual.state.live_order.is_empty()
+                            || !residual.state.conditional_variants.is_empty())
+                    {
+                        return Err(plan_error(
+                            "postfix `?` residual carries inconsistent live owners",
+                        ));
+                    }
+                    let edge = self.new_edge(residual.block, epilogue, EdgeCondition::Always)?;
+                    let leaves_regions = self
+                        .region_chain(residual.region)
+                        .into_iter()
+                        .take_while(|region| *region != root)
+                        .collect::<Vec<_>>();
+                    if leaves_regions.is_empty() {
+                        self.terminate(residual.block, CleanupTerminator::Goto(edge))?;
+                    } else {
+                        self.emit_exit(
+                            residual.block,
+                            leaves_regions,
+                            Vec::new(),
+                            ExitContinuation::Continue(edge),
+                        )?;
+                    }
                 }
-                let edge = self.new_edge(residual.block, epilogue, EdgeCondition::Always)?;
-                let leaves_regions = self
-                    .region_chain(residual.region)
-                    .into_iter()
-                    .take_while(|region| *region != root)
-                    .collect::<Vec<_>>();
-                if leaves_regions.is_empty() {
-                    self.terminate(residual.block, CleanupTerminator::Goto(edge))?;
-                } else {
-                    self.emit_exit(
-                        residual.block,
-                        leaves_regions,
-                        Vec::new(),
-                        ExitContinuation::Continue(edge),
-                    )?;
+                current = epilogue;
+            }
+
+            for (ordinal, contract) in self.function.ensures.iter().enumerate() {
+                let continued = self.lower_contract_expression(
+                    contract,
+                    current,
+                    state,
+                    root,
+                    ContractPhase::Ensures,
+                    ordinal,
+                )?;
+                current = continued.0;
+                state = continued.1;
+            }
+            if !self.pending_try_residuals.is_empty() {
+                return Err(plan_error("postfix `?` is invalid in a postcondition"));
+            }
+
+            let result = if self.result_needs_drop()? {
+                CleanupResultSource::Owned {
+                    storage: CleanupPlace::whole(StorageId::ProvisionalResult),
                 }
-            }
-            current = epilogue;
+            } else {
+                CleanupResultSource::Scalar {
+                    expression: result_source_expression,
+                }
+            };
+            self.finish_success(current, state, root, result)?;
         }
-
-        for (ordinal, contract) in self.function.ensures.iter().enumerate() {
-            let continued = self.lower_contract_expression(
-                contract,
-                current,
-                state,
-                root,
-                ContractPhase::Ensures,
-                ordinal,
-            )?;
-            current = continued.0;
-            state = continued.1;
-        }
-        if !self.pending_try_residuals.is_empty() {
-            return Err(plan_error("postfix `?` is invalid in a postcondition"));
-        }
-
-        let result = if self.result_needs_drop()? {
-            CleanupResultSource::Owned {
-                storage: CleanupPlace::whole(StorageId::ProvisionalResult),
-            }
-        } else {
-            CleanupResultSource::Scalar {
-                expression: result_source_expression,
-            }
-        };
-        self.finish_success(current, state, root, result)?;
+        self.finish_lexical_returns()?;
 
         #[cfg(test)]
         note_lower_capacity_high_water(
@@ -966,6 +970,7 @@ impl<'a> PlanBuilder<'a> {
                 super::CLEANUP_PLAN_SCHEMA_V15
                     | super::CLEANUP_PLAN_SCHEMA_V16
                     | super::CLEANUP_PLAN_SCHEMA_V17
+                    | super::CLEANUP_PLAN_SCHEMA_V18
             ) {
                 self.schema
             } else if self
@@ -985,7 +990,7 @@ impl<'a> PlanBuilder<'a> {
             edges: self.edges,
             regions: self.regions,
             exits: self.exits,
-            lexical_control: None,
+            lexical_control: self.lexical.map(|control| Box::new(control.certificate)),
         })
     }
 
@@ -1321,7 +1326,15 @@ impl<'a> PlanBuilder<'a> {
         id: StatusSourceId,
         producer: StatusProducer,
     ) -> Result<(), Diagnostic> {
-        if self.status_sources.iter().any(|source| source.id == id) {
+        if let Some(existing) = self.status_sources.iter().find(|source| source.id == id) {
+            if self
+                .lexical
+                .as_ref()
+                .is_some_and(|control| control.building_resume)
+                && existing.producer == producer
+            {
+                return Ok(());
+            }
             return Err(plan_error(format!(
                 "duplicate cleanup status source for `{}`",
                 id.expression
@@ -1607,6 +1620,9 @@ impl<'a> PlanBuilder<'a> {
             ExitContinuation::CommitResult { source: result },
         )?;
         self.regions[root.0 as usize].normal_scope_end = exit;
+        if let Some(control) = &mut self.lexical {
+            control.certificate.function_success_exits.push(exit);
+        }
         Ok(())
     }
 
@@ -1656,6 +1672,13 @@ impl<'a> PlanBuilder<'a> {
         let mut current = block;
         let mut current_state = state;
         for statement in statements {
+            if self.flow_is_closed(current) {
+                return Ok(EvalResult {
+                    block: current,
+                    state: current_state,
+                    owned_source: None,
+                });
+            }
             // Field Mutation v1 stores replace one scalar Copy field; they
             // lower their RHS like an initializer and add no cleanup
             // structure and never transfer into a binding slot.
@@ -1683,6 +1706,24 @@ impl<'a> PlanBuilder<'a> {
                     current_state = evaluated.state;
                     continue;
                 }
+                ResolvedStatement::LexicalWhile {
+                    condition,
+                    body,
+                    latch,
+                    ..
+                } => {
+                    let evaluated = self.lower_lexical_while(
+                        condition,
+                        body,
+                        latch,
+                        current,
+                        current_state,
+                        root,
+                    )?;
+                    current = evaluated.block;
+                    current_state = evaluated.state;
+                    continue;
+                }
                 // Bounded While-Loops v1: linearize one admitted iteration.
                 ResolvedStatement::While {
                     condition, body, ..
@@ -1698,6 +1739,13 @@ impl<'a> PlanBuilder<'a> {
             let evaluated = self.lower_expr(value, current, current_state, root)?;
             current = evaluated.block;
             current_state = evaluated.state;
+            if self.flow_is_closed(current) {
+                return Ok(EvalResult {
+                    block: current,
+                    state: current_state,
+                    owned_source: None,
+                });
+            }
             if let Some(binding_place) = self.binding_slot(binding, root)? {
                 let source = evaluated.owned_source.ok_or_else(|| {
                     plan_error(format!(
@@ -1715,9 +1763,23 @@ impl<'a> PlanBuilder<'a> {
                 )?;
             }
         }
+        if self.flow_is_closed(current) {
+            return Ok(EvalResult {
+                block: current,
+                state: current_state,
+                owned_source: None,
+            });
+        }
         let tail = self.lower_expr(tail, current, current_state, root)?;
         current = tail.block;
         current_state = tail.state;
+        if self.flow_is_closed(current) {
+            return Ok(EvalResult {
+                block: current,
+                state: current_state,
+                owned_source: None,
+            });
+        }
         if let Some(destination) = destination.clone() {
             let source = tail
                 .owned_source
@@ -2268,6 +2330,14 @@ impl<'a> PlanBuilder<'a> {
                     block,
                     state,
                 } => match &expression.kind {
+                    ResolvedExprKind::LexicalExit { .. } => {
+                        results.push(self.lower_lexical_exit(
+                            expression,
+                            block,
+                            state,
+                            active_region,
+                        )?);
+                    }
                     ResolvedExprKind::Closure { .. } if !expression.ty.is_once_function() => {
                         results.push(EvalResult {
                             block,
@@ -3025,7 +3095,10 @@ impl<'a> PlanBuilder<'a> {
                     destination,
                 } => {
                     let mut then_result = results.pop().expect("then result retained");
-                    if let Some(destination) = destination.clone() {
+                    if let Some(destination) = destination
+                        .clone()
+                        .filter(|_| !self.flow_is_closed(then_result.block))
+                    {
                         let source = then_result
                             .owned_source
                             .take()
@@ -3056,7 +3129,10 @@ impl<'a> PlanBuilder<'a> {
                     destination,
                 } => {
                     let mut else_result = results.pop().expect("else result retained");
-                    if let Some(destination) = destination.clone() {
+                    if let Some(destination) = destination
+                        .clone()
+                        .filter(|_| !self.flow_is_closed(else_result.block))
+                    {
                         let source = else_result
                             .owned_source
                             .take()
@@ -3070,19 +3146,11 @@ impl<'a> PlanBuilder<'a> {
                             true,
                         )?;
                     }
-                    let state = self.merge_states(&then_result.state, &else_result.state)?;
-                    let join = self.new_block(active_region)?;
-                    let then_join =
-                        self.new_edge(then_result.block, join, EdgeCondition::Always)?;
-                    self.terminate(then_result.block, CleanupTerminator::Goto(then_join))?;
-                    let else_join =
-                        self.new_edge(else_result.block, join, EdgeCondition::Always)?;
-                    self.terminate(else_result.block, CleanupTerminator::Goto(else_join))?;
-                    results.push(EvalResult {
-                        block: join,
-                        state,
-                        owned_source: destination,
-                    });
+                    results.push(self.join_normal_branches(
+                        vec![then_result, else_result],
+                        active_region,
+                        destination,
+                    )?);
                 }
                 // The upcast contributes no liveness of its own; the source
                 // place stays the transfer source for the surrounding move.
@@ -3357,20 +3425,17 @@ impl<'a> PlanBuilder<'a> {
                     destination,
                 } => {
                     if index < statements.len() {
-                        if let ResolvedStatement::While {
-                            condition, body, ..
-                        } = &statements[index]
-                        {
-                            // Bounded While-Loops v1: linearize one admitted
-                            // iteration synchronously; its continuation feeds
-                            // the ordinary after-statement bookkeeping.
+                        if matches!(
+                            &statements[index],
+                            ResolvedStatement::While { .. }
+                                | ResolvedStatement::LexicalWhile { .. }
+                        ) {
                             if active_region != child_region {
                                 frames.push(Frame::RestoreRegion(active_region));
                                 active_region = child_region;
                             }
-                            let evaluated = self.lower_while(
-                                condition,
-                                body,
+                            let evaluated = self.lower_loop_statement(
+                                &statements[index],
                                 flow.block,
                                 flow.state,
                                 child_region,
@@ -3440,6 +3505,11 @@ impl<'a> PlanBuilder<'a> {
                     destination,
                 } => {
                     let evaluated = results.pop().expect("block statement result retained");
+                    if self.flow_is_closed(evaluated.block) {
+                        self.mark_abrupt_region(child_region)?;
+                        results.push(evaluated);
+                        continue;
+                    }
                     let mut state = evaluated.state;
                     // Field Mutation v1 stores bind nothing: only plain lets
                     // and whole-binding assignments transfer into slots.
@@ -3491,6 +3561,11 @@ impl<'a> PlanBuilder<'a> {
                     destination,
                 } => {
                     let evaluated = results.pop().expect("block tail result retained");
+                    if self.flow_is_closed(evaluated.block) {
+                        self.mark_abrupt_region(child_region)?;
+                        results.push(evaluated);
+                        continue;
+                    }
                     let mut state = evaluated.state;
                     if let Some(destination) = destination.clone() {
                         let source = evaluated
@@ -3866,6 +3941,11 @@ impl<'a> PlanBuilder<'a> {
                     source,
                 } => {
                     if index == arms.len() {
+                        let Some(arm_results) =
+                            self.normal_branch_inventory(arm_results, &mut results)
+                        else {
+                            continue;
+                        };
                         let mut arm_results = arm_results.into_iter();
                         let first = arm_results.next().ok_or_else(|| {
                             plan_error("copy-variant match produced no arm result")
@@ -4023,16 +4103,20 @@ impl<'a> PlanBuilder<'a> {
                     arm_region,
                 } => {
                     let mut result = results.pop().expect("match arm result retained");
-                    generic_variant::finish_arm(
-                        self,
-                        expression,
-                        &arms[index].value,
-                        &mut result,
-                        active_region,
-                    )?;
-                    if let Some(arm_region) = arm_region {
-                        (result.block, result.state) =
-                            self.exit_scope(result.block, result.state, arm_region)?;
+                    if !self.flow_is_closed(result.block) {
+                        generic_variant::finish_arm(
+                            self,
+                            expression,
+                            &arms[index].value,
+                            &mut result,
+                            active_region,
+                        )?;
+                        if let Some(arm_region) = arm_region {
+                            (result.block, result.state) =
+                                self.exit_scope(result.block, result.state, arm_region)?;
+                        }
+                    } else if let Some(arm_region) = arm_region {
+                        self.mark_abrupt_region(arm_region)?;
                     }
                     arm_results.push(result);
                     frames.push(Frame::MatchNext {
@@ -4058,6 +4142,11 @@ impl<'a> PlanBuilder<'a> {
                     destination,
                 } => {
                     if index == arms.len() {
+                        let Some(arm_results) =
+                            self.normal_branch_inventory(arm_results, &mut results)
+                        else {
+                            continue;
+                        };
                         let entry_state = branch_state;
                         let mut arm_results = arm_results.into_iter();
                         let first = arm_results
@@ -4281,7 +4370,10 @@ impl<'a> PlanBuilder<'a> {
                     parent_region,
                 } => {
                     let mut result = results.pop().expect("scalar match arm value retained");
-                    if let Some(destination) = destination.clone() {
+                    if let Some(destination) = destination
+                        .clone()
+                        .filter(|_| !self.flow_is_closed(result.block))
+                    {
                         let source = result.owned_source.take().ok_or_else(|| {
                             plan_error("owned scalar match arm has no cleanup source")
                         })?;
@@ -4295,8 +4387,12 @@ impl<'a> PlanBuilder<'a> {
                         )?;
                     }
                     if let Some(value_region) = value_region {
-                        (result.block, result.state) =
-                            self.exit_scope(result.block, result.state, value_region)?;
+                        if self.flow_is_closed(result.block) {
+                            self.mark_abrupt_region(value_region)?;
+                        } else {
+                            (result.block, result.state) =
+                                self.exit_scope(result.block, result.state, value_region)?;
+                        }
                     }
                     active_region = parent_region;
                     arm_results.push(result);
