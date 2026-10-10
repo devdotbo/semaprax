@@ -38,6 +38,15 @@ impl HirValidator<'_> {
         let mut pending = vec![expression];
         while let Some(expression) = pending.pop() {
             match &expression.kind {
+                ResolvedExprKind::LexicalExit {
+                    kind: crate::ast::LexicalExitKind::Return,
+                    ..
+                } => {
+                    // Return operands execute once in the function result
+                    // domain, not the repeated iteration domain. Ordinary
+                    // expression and lexical-target validation authenticate
+                    // their type, ownership transfer and nearest function.
+                }
                 ResolvedExprKind::LexicalExit { value, .. } => {
                     if let Some(value) = value {
                         pending.push(value);

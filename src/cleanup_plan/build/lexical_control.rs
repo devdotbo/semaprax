@@ -715,3 +715,22 @@ impl PlanBuilder<'_> {
         Ok(())
     }
 }
+
+impl PlanBuilder<'_> {
+    // A resume can encounter the source-for latch before ordinary HIR reaches
+    // it. Its first ordinary visit determines canonical source status order;
+    // repeated resume copies retain the same one authenticated producer.
+    pub(super) fn finish_resume_status(&mut self, id: &StatusSourceId) {
+        if self.lexical.as_ref().is_some_and(|control| {
+            !control.building_resume && control.replicated_statuses.contains(id)
+        }) {
+            let index = self
+                .status_sources
+                .iter()
+                .position(|source| &source.id == id)
+                .expect("existing resume status");
+            let source = self.status_sources.remove(index);
+            self.status_sources.push(source);
+        }
+    }
+}

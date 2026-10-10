@@ -92,8 +92,8 @@ fn generic_preflight_validates_selected_backing_before_allocating() {
     instances.last_mut().unwrap().function.loan_plan.endpoints[0]
         .point
         .expression = missing;
+    let mut scratch = RetentionScratch::default();
     let (result, overflow, used) = bounded_output::with_limit_usage(usize::MAX, || {
-        let mut scratch = RetentionScratch::default();
         super::super::retain_module_instances(
             &programs[0],
             &programs,
@@ -102,9 +102,18 @@ fn generic_preflight_validates_selected_backing_before_allocating() {
             Some(&mut scratch),
         )
     });
-    assert_eq!(result.unwrap_err()[0].code, "SPX-G171");
+    let errors = result.unwrap_err();
+    assert_eq!(errors[0].code, "SPX-G171");
     assert!(!overflow);
-    assert_eq!(used, 0, "complete census preflight precedes allocation");
+    assert!(
+        scratch.has_no_allocation(),
+        "complete selected preflight precedes either scratch allocation"
+    );
+    assert_eq!(
+        used,
+        errors[0].message.len() + errors[0].help.as_ref().map_or(0, String::len),
+        "the refusal allocates its diagnostic but no census carrier"
+    );
 }
 
 #[test]

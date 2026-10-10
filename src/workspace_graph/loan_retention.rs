@@ -60,6 +60,11 @@ impl RetentionScratch {
         self.keys.capacity().min(self.matched.capacity())
     }
 
+    #[cfg(test)]
+    pub(super) fn has_no_allocation(&self) -> bool {
+        self.keys.capacity() == 0 && self.matched.capacity() == 0
+    }
+
     pub(super) fn measure(&mut self, function: &ResolvedFunction) -> Result<usize> {
         self.keys.clear();
         self.matched.clear();

@@ -1327,6 +1327,7 @@ impl<'a> PlanBuilder<'a> {
                 control.building_resume || control.replicated_statuses.contains(&id)
             }) && existing.producer == producer
             {
+                self.finish_resume_status(&id);
                 return Ok(());
             }
             return Err(plan_error(format!(

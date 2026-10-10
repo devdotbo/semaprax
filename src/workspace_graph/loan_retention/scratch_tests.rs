@@ -431,17 +431,31 @@ fn candidate_intersection_keeps_equal_text_distinct_full_capacity_and_exact_unma
     let exact = metadata(&function);
     for limit in [exact, exact - 1] {
         let mut scratch = RetentionScratch::default();
-        let (result, overflow, debit) =
-            bounded_output::with_limit_usage(limit, || scratch.measure(&function));
+        let (result, overflow, debit, refusal) =
+            bounded_output::with_limit_usage_refusal(limit, || scratch.measure(&function));
         if limit == exact {
             assert_eq!(result.unwrap(), before + extra);
             assert!(!overflow);
             assert_eq!(debit, exact);
             assert!(scratch.keys.binary_search(&independent_key).is_err());
         } else {
-            assert_eq!(result.unwrap_err()[0].code, "SPX-G171");
+            let errors = result.unwrap_err();
+            assert_eq!(errors[0].code, "SPX-G171");
             assert!(overflow);
-            assert!(debit >= metadata(&function));
+            let refusal = refusal.expect("failed complete carrier reservation");
+            assert_eq!(refusal.requested, exact);
+            assert_eq!(refusal.remaining, exact - 1);
+            assert_eq!(
+                refusal.stage,
+                Some(bounded_output::ReservationStage::RetainedLoanScratch)
+            );
+            assert_eq!(scratch.keys.capacity(), 0);
+            assert_eq!(scratch.matched.capacity(), 0);
+            assert_eq!(
+                debit,
+                errors[0].message.len() + errors[0].help.as_ref().map_or(0, String::len),
+                "only refusal text is materialized; the complete scratch reservation failed"
+            );
         }
         assert_eq!(
             crate::cache_codec::encode(&function.loan_plan).unwrap(),

@@ -59,13 +59,13 @@ fn main() -> i64 { 0 }
 const OWNING_FOR: &str = r#"module test.lexical_owning_for;
 
 @id("lex.sum")
-fn sum(values: own Vec<Bytes>, stop: usize) -> i64 {
+fn sum(values: own Vec<Bytes>, stop: i64) -> i64 {
     let mut total = 0;
     for own item in vec_into_iter<Bytes>(values) {
-        let length = byte_len(bytes_as_slice(item));
-        if length == 2usize { continue; };
-        if length == stop { break; };
         total = total + 1;
+        let length = total;
+        if length == 2 { continue; };
+        if length == stop { break; };
         0
     }
     return total;
@@ -300,9 +300,7 @@ fn shared_or_forged_continue_resume_is_rejected() {
 fn forged_resume_inventory_and_wrapper_tail_are_rejected() {
     let (program, mut func) = fixture(OWNING_FOR, "lex.sum");
     let break_index = kinds(&func, LexicalExitKind::Break)[0];
-    let entry = control(&mut func).exits[break_index]
-        .resume
-        .unwrap();
+    let entry = control(&mut func).exits[break_index].resume.unwrap();
     let resume = control(&mut func)
         .resumes
         .iter_mut()

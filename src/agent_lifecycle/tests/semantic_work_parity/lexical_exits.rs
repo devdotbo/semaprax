@@ -7,10 +7,11 @@ const LEXICAL_BODY: &str = r#"
     let mut index = 0;
     let rounds = task.budget;
     while index < rounds {
-        let inner = bytes_copy(array_as_slice(seed));
+        let inner = "iteration owner";
         index = index + 1;
         if index == 1 { continue; };
         if index == 3 { break; };
+        0
     }
     return Summary { tag: bytes_copy(array_as_slice(seed)), total: index, count: index };
 "#;

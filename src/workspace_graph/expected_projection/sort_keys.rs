@@ -11,6 +11,38 @@ pub(super) fn verify(
             "explicit record sort source descriptor disagrees with retained HIR",
         )]
     };
+    // A complete path-free census proves absence before constructing source
+    // identities. Check HIR independently too: injected synthetic sort calls
+    // must still reach the exact source/HIR comparison below.
+    let mut source_sort = false;
+    for function in &program.functions {
+        for expression in function
+            .requires
+            .iter()
+            .chain(std::iter::once(&function.body))
+            .chain(&function.ensures)
+        {
+            source_sort |= contains_sort(expression);
+        }
+    }
+    let resolved_sort = resolved.functions.iter().any(|function| {
+        function
+            .requires
+            .iter()
+            .chain(std::iter::once(&function.body))
+            .chain(&function.ensures)
+            .any(contains_resolved_sort)
+    }) || resolved.function_templates.iter().any(|function| {
+        function
+            .requires
+            .iter()
+            .chain(std::iter::once(&function.body))
+            .chain(&function.ensures)
+            .any(contains_resolved_sort)
+    });
+    if !source_sort && !resolved_sort {
+        return Ok(());
+    }
     let mut expected = Vec::new();
     for function in &program.functions {
         let owner = hir::DeclarationId::new(&function.stable_id);
@@ -114,9 +146,87 @@ pub(super) fn verify(
     Ok(())
 }
 
+fn contains_sort(expression: &Expr) -> bool {
+    // One indexed frame per ancestor; width creates neither paths nor heap
+    // scratch. Excess depth takes the full verifier rather than proving absence.
+    let mut stack = [None; 514];
+    stack[0] = Some((expression, 0usize));
+    let mut len = 1usize;
+    while len != 0 {
+        len -= 1;
+        let (expression, next) = stack[len].take().expect("sort census frame");
+        if next == 0
+            && matches!(&expression.kind, ExprKind::Call { name, .. } if name == crate::vec_ops::sort_keys::NAME)
+        {
+            return true;
+        }
+        if let Some(child) = expression.child(next) {
+            if len + 2 > stack.len() {
+                return true;
+            }
+            stack[len] = Some((expression, next + 1));
+            stack[len + 1] = Some((child, 0));
+            len += 2;
+        }
+    }
+    false
+}
+
+fn contains_resolved_sort(expression: &hir::ResolvedExpr) -> bool {
+    let mut stack = [None; 514];
+    stack[0] = Some((expression, 0usize));
+    let mut len = 1usize;
+    while len != 0 {
+        len -= 1;
+        let (expression, next) = stack[len].take().expect("resolved sort census frame");
+        if next == 0
+            && matches!(&expression.kind,
+            hir::ResolvedExprKind::Call { callee: target, .. }
+                | hir::ResolvedExprKind::FunctionReference { target }
+                if target.as_str().starts_with(crate::vec_ops::sort_keys::PREFIX))
+        {
+            return true;
+        }
+        if let Some(child) = hir::lexical_exit::child(expression, next) {
+            if len + 2 > stack.len() {
+                return true;
+            }
+            stack[len] = Some((expression, next + 1));
+            stack[len + 1] = Some((child, 0));
+            len += 2;
+        }
+    }
+    false
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn absent_sort_census_allocates_no_paths_but_injected_sort_still_refuses() {
+        let ast = crate::check(
+            "module empty; @id(\"app.main\") fn main()->i64{let value=3;value+4}",
+            "empty.spx",
+        )
+        .unwrap();
+        let resolved = hir::resolve(&ast).unwrap();
+        let (result, overflow, bytes) = crate::bounded_output::with_limit_usage(0, || {
+            verify(&ast, &resolved, &BTreeMap::new())
+        });
+        result.unwrap();
+        assert!(!overflow);
+        assert_eq!(bytes, 0);
+        let sorted = crate::check(
+            include_str!("../../../tests/fixtures/explicit-copy-sort-keys.spx"),
+            "rank.spx",
+        )
+        .unwrap();
+        let sorted = hir::resolve(&sorted).unwrap();
+        assert_eq!(
+            verify(&ast, &sorted, &BTreeMap::new()).unwrap_err()[0].code,
+            "SPX-G173"
+        );
+    }
     #[test]
     fn independent_source_projection_binds_literal_keys_at_exact_call_identity() {
         let source = include_str!("../../../tests/fixtures/explicit-copy-sort-keys.spx");

@@ -1,13 +1,21 @@
-//! Contract loops have exact ordinary/Return proof domains and live contours.
+//! Admitted contract calls retain exact per-return proof domains. Inline
+//! contract loops/mutation remain closed; loops execute in checked callees.
 use super::*;
-use crate::cleanup_plan::ExecutionBoundaryKind;
+use crate::cleanup_plan::{ContractPhase, ExecutionBoundaryKind, StatusProducer};
 
 const SOURCE: &str = r#"module test.contract_loop_boundaries;
+@id("check_loop") fn check_loop(n:i64)->bool {
+ let mut i=0;
+ while i<n { i=i+1; 0 }
+ return i==n;
+}
 @id("run") fn run(n:i64)->i64
- requires { let mut i=0; while i<1 { i=i+1; 0 } i==1 }
- ensures { let mut i=0; while i<2 { i=i+1; 0 } i==2 }
+ requires check_loop(1)
+ ensures check_loop(2)
 {
  let owner="live root";
+ let mut i=0;
+ while i<1 { i=i+1; 0 }
  if n==1 { return 11; };
  if n==2 { return 12; };
  13
@@ -15,57 +23,110 @@ const SOURCE: &str = r#"module test.contract_loop_boundaries;
 @id("main") fn main()->i64 {0}
 "#;
 
+fn checked(source: &str, path: &str) -> ResolvedProgram {
+    let ast = crate::check(source, Path::new(path)).expect("fixture is admitted source");
+    let program = hir::resolve(&ast).unwrap();
+    hir::validate(&program).unwrap();
+    program
+}
 fn fixture() -> (ResolvedProgram, ResolvedFunction) {
-    let program =
-        hir::resolve(&parse(SOURCE, Path::new("contract-loop-boundaries.spx")).unwrap()).unwrap();
+    let program = checked(SOURCE, "contract-loop-boundaries.spx");
     let function = function(&program, "run");
-    validate_structure(&program, &function)
-        .expect("typed contract loops replay in their exact domains");
+    validate_structure(&program, &function).unwrap();
     (program, function)
+}
+fn ensures_failures(function: &ResolvedFunction) -> Vec<usize> {
+    function
+        .cleanup_plan
+        .exits
+        .iter()
+        .enumerate()
+        .filter_map(|(index, exit)| {
+            let ExitContinuation::ReturnFailure { source } = &exit.continuation else {
+                return None;
+            };
+            function
+                .cleanup_plan
+                .status_sources
+                .iter()
+                .any(|item| {
+                    &item.id == source
+                        && matches!(
+                            item.producer,
+                            StatusProducer::ContractFalse {
+                                phase: ContractPhase::Ensures,
+                                ..
+                            }
+                        )
+                })
+                .then_some(index)
+        })
+        .collect()
 }
 
 #[test]
-fn contract_loops_cover_requires_ordinary_and_each_distinct_return_domain() {
-    let (_, function) = fixture();
+fn contract_calls_cover_requires_ordinary_and_each_distinct_return_domain() {
+    let (program, function) = fixture();
     let plan = &function.cleanup_plan;
     let control = plan.lexical_control.as_deref().unwrap();
-    assert_eq!(control.execution_boundaries.len(), 5);
+    assert_eq!(control.execution_boundaries.len(), 2);
     assert_eq!(
         control.execution_boundaries[0].kind,
         ExecutionBoundaryKind::FunctionEntry
     );
-    let sites = control
-        .execution_boundaries
-        .iter()
-        .skip(2)
-        .map(|item| &item.site)
-        .collect::<BTreeSet<_>>();
     assert_eq!(
-        sites.len(),
-        1,
-        "one authored ensures loop is independently replicated three times"
+        control.execution_boundaries[1].kind,
+        ExecutionBoundaryKind::LoopIteration
     );
-    for boundary in control.execution_boundaries.iter().skip(3) {
-        let resumes = control
-            .resumes
-            .iter()
-            .filter(|resume| resume.blocks.contains(&boundary.block))
-            .collect::<Vec<_>>();
-        assert_eq!(resumes.len(), 1);
-        assert!(control
+    assert_eq!(control.function_success_exits.len(), 3);
+    assert_eq!(
+        control
             .exits
             .iter()
-            .any(|exit| exit.kind == crate::ast::LexicalExitKind::Return
-                && exit.resume == Some(resumes[0].entry)));
-        assert!(
-            !boundary.finalize_in_order.is_empty(),
-            "live root owner survives to the selected ensures loop"
-        );
-    }
+            .filter(|exit| exit.kind == crate::ast::LexicalExitKind::Return)
+            .map(|exit| exit.resume.unwrap())
+            .collect::<BTreeSet<_>>()
+            .len(),
+        2
+    );
+    let failures = ensures_failures(&function);
+    assert_eq!(
+        failures.len(),
+        3,
+        "one authored ensures failure in each exact result domain"
+    );
+    assert_eq!(
+        failures
+            .iter()
+            .map(|index| plan.exits[*index].from)
+            .collect::<BTreeSet<_>>()
+            .len(),
+        3
+    );
+    assert!(
+        failures
+            .iter()
+            .all(|index| !plan.exits[*index].finalize_in_order.is_empty()),
+        "live root owner survives into every selected postcondition"
+    );
+    let helper = super::function(&program, "check_loop");
+    validate_structure(&program, &helper).unwrap();
+    let boundaries = &helper
+        .cleanup_plan
+        .lexical_control
+        .as_deref()
+        .unwrap()
+        .execution_boundaries;
+    assert_eq!(
+        boundaries.len(),
+        2,
+        "contract loops belong to the authenticated callee"
+    );
+    assert_eq!(boundaries[1].kind, ExecutionBoundaryKind::LoopIteration);
 }
 
 #[test]
-fn replicated_contract_boundary_cannot_borrow_another_return_contour_or_order() {
+fn replicated_contract_domains_cannot_borrow_another_return_contour_or_order() {
     let (program, baseline) = fixture();
     let mut changed = baseline.clone();
     changed
@@ -73,33 +134,74 @@ fn replicated_contract_boundary_cannot_borrow_another_return_contour_or_order() 
         .lexical_control
         .as_deref_mut()
         .unwrap()
-        .execution_boundaries
-        .swap(3, 4);
+        .exits
+        .swap(0, 1);
     assert!(validate_structure(&program, &changed).is_err());
+    let failures = ensures_failures(&baseline);
     let mut changed = baseline.clone();
-    let control = changed.cleanup_plan.lexical_control.as_deref_mut().unwrap();
-    control.execution_boundaries[3].block = control.execution_boundaries[4].block;
+    changed.cleanup_plan.exits[failures[1]].from = changed.cleanup_plan.exits[failures[2]].from;
     assert!(validate_structure(&program, &changed).is_err());
-    let mut changed = baseline.clone();
-    changed
-        .cleanup_plan
-        .lexical_control
-        .as_deref_mut()
-        .unwrap()
-        .execution_boundaries[3]
+    let mut changed = baseline;
+    changed.cleanup_plan.exits[failures[1]]
         .finalize_in_order
         .clear();
     assert!(validate_structure(&program, &changed).is_err());
 }
 
 #[test]
-fn requires_boundary_cannot_be_replaced_by_ensures_or_omitted() {
+fn requires_cannot_be_replaced_by_ensures_or_omitted_and_contract_loops_stay_closed() {
     let (program, baseline) = fixture();
     let mut changed = baseline.clone();
-    let control = changed.cleanup_plan.lexical_control.as_deref_mut().unwrap();
-    control.execution_boundaries.swap(1, 2);
+    let requires = changed
+        .cleanup_plan
+        .status_sources
+        .iter()
+        .position(|item| {
+            matches!(
+                item.producer,
+                StatusProducer::ContractFalse {
+                    phase: ContractPhase::Requires,
+                    ..
+                }
+            )
+        })
+        .unwrap();
+    let ensures = changed
+        .cleanup_plan
+        .status_sources
+        .iter()
+        .position(|item| {
+            matches!(
+                item.producer,
+                StatusProducer::ContractFalse {
+                    phase: ContractPhase::Ensures,
+                    ..
+                }
+            )
+        })
+        .unwrap();
+    changed.cleanup_plan.status_sources.swap(requires, ensures);
     assert!(validate_structure(&program, &changed).is_err());
     let mut changed = baseline;
+    changed.cleanup_plan.status_sources.remove(requires);
+    assert!(validate_structure(&program, &changed).is_err());
+    for clause in ["requires", "ensures"] {
+        let source=format!("module closed; @id(\"run\") fn run()->i64 {clause} {{ let mut i=0; while i<1 {{i=i+1;0}} i==1 }} {{0}} @id(\"main\") fn main()->i64{{0}}");
+        let errors = crate::check(&source, "closed-contract-loop.spx").unwrap_err();
+        assert!(errors.iter().any(|error| error.code == "SPX-T253"));
+        assert!(errors.iter().any(|error| error.code == "SPX-U106"));
+    }
+    let helper = super::function(&program, "check_loop");
+    let mut changed = helper.clone();
+    changed
+        .cleanup_plan
+        .lexical_control
+        .as_deref_mut()
+        .unwrap()
+        .execution_boundaries
+        .swap(0, 1);
+    assert!(validate_structure(&program, &changed).is_err());
+    let mut changed = helper;
     changed
         .cleanup_plan
         .lexical_control
@@ -111,31 +213,25 @@ fn requires_boundary_cannot_be_replaced_by_ensures_or_omitted() {
 }
 
 #[test]
-fn owned_return_boundary_keeps_exact_provisional_result_in_its_failure_contour() {
-    let source = r#"module test.owned_contract_loop;
-@id("run") fn run()->Bytes
- ensures { let mut i=0; while i<2 { i=i+1; 0 } byte_len(bytes_as_slice(result))==2usize }
-{ return bytes_zeroed(2usize); }
-@id("main") fn main()->i64 {0}
+fn owned_return_keeps_exact_provisional_result_in_its_postcondition_failure_contour() {
+    let source = r#"module test.owned_contract;
+@id("run") fn run(n:i64)->Bytes ensures n==0 {
+ let mut i=0; while i<1 {i=i+1;0}
+ return bytes_zeroed(2usize);
+}
+@id("main") fn main()->i64{0}
 "#;
-    let program =
-        hir::resolve(&parse(source, Path::new("owned-contract-loop.spx")).unwrap()).unwrap();
+    let program = checked(source, "owned-contract.spx");
     let baseline = function(&program, "run");
-    validate_structure(&program, &baseline)
-        .expect("owned result survives its exact Return ensures loop");
-    let control = baseline.cleanup_plan.lexical_control.as_deref().unwrap();
-    assert_eq!(control.execution_boundaries.len(), 2);
-    assert!(control.execution_boundaries[1]
+    validate_structure(&program, &baseline).unwrap();
+    let failures = ensures_failures(&baseline);
+    assert_eq!(failures.len(), 1);
+    assert!(baseline.cleanup_plan.exits[failures[0]]
         .finalize_in_order
         .iter()
-        .any(|action| { action.source.storage == StorageId::ProvisionalResult }));
+        .any(|action| action.source.storage == StorageId::ProvisionalResult));
     let mut changed = baseline;
-    changed
-        .cleanup_plan
-        .lexical_control
-        .as_deref_mut()
-        .unwrap()
-        .execution_boundaries[1]
+    changed.cleanup_plan.exits[failures[0]]
         .finalize_in_order
         .clear();
     assert!(validate_structure(&program, &changed).is_err());
@@ -151,21 +247,19 @@ fn two_return_postconditions_reuse_exact_owned_call_argument_and_local_slots() {
  ensures {
   let measured=measure(bytes_zeroed(2usize),bytes_zeroed(3usize));
   let text="temporary";
-  let mut i=0; while i<1 {i=i+1;0}
   measured==5usize && string_len(text)==9
  }
 {
  let root="root retained";
+ let mut i=0; while i<1 {i=i+1;0}
  if choice {return 11;};
  return 12;
 }
-@id("main") fn main()->i64 {0}
+@id("main") fn main()->i64{0}
 "#;
-    let program =
-        hir::resolve(&parse(source, Path::new("owned-ensure-template.spx")).unwrap()).unwrap();
+    let program = checked(source, "owned-ensure-template.spx");
     let baseline = function(&program, "run");
-    validate_structure(&program, &baseline)
-        .expect("two return domains replay one exact authored slot inventory");
+    validate_structure(&program, &baseline).unwrap();
     let plan = &baseline.cleanup_plan;
     let arguments = plan
         .slots
@@ -187,32 +281,31 @@ fn two_return_postconditions_reuse_exact_owned_call_argument_and_local_slots() {
         );
     }
     let control = plan.lexical_control.as_deref().unwrap();
-    assert_eq!(control.execution_boundaries.len(), 3);
-    assert_eq!(
-        control.execution_boundaries[1].site,
-        control.execution_boundaries[2].site
-    );
-    assert_eq!(
-        control.execution_boundaries[1].region,
-        control.execution_boundaries[2].region
-    );
-    assert_ne!(
-        control.execution_boundaries[1].block,
-        control.execution_boundaries[2].block
-    );
+    let returns = control
+        .exits
+        .iter()
+        .filter(|exit| exit.kind == crate::ast::LexicalExitKind::Return)
+        .collect::<Vec<_>>();
+    assert_eq!(returns.len(), 2);
+    assert_ne!(returns[0].resume, returns[1].resume);
+    let failures = ensures_failures(&baseline);
+    assert_eq!(failures.len(), 2);
     let mut changed = baseline.clone();
-    let control = changed.cleanup_plan.lexical_control.as_deref_mut().unwrap();
-    control.execution_boundaries[1].block = control.execution_boundaries[2].block;
+    changed.cleanup_plan.exits[failures[0]].from = changed.cleanup_plan.exits[failures[1]].from;
     assert!(validate_structure(&program, &changed).is_err());
     let mut changed = baseline;
     let region = changed
         .cleanup_plan
-        .lexical_control
-        .as_deref()
-        .unwrap()
-        .execution_boundaries[1]
-        .region;
-    let endpoint = changed.cleanup_plan.regions[region.0 as usize].normal_scope_end;
+        .regions
+        .iter()
+        .find(|region| {
+            region
+                .slots
+                .iter()
+                .any(|slot| matches!(slot, StorageId::CallArgument { .. }))
+        })
+        .unwrap();
+    let endpoint = region.normal_scope_end;
     changed.cleanup_plan.exits[endpoint.0 as usize]
         .leaves_regions
         .clear();
