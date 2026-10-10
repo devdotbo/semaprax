@@ -252,3 +252,37 @@ fn attached_owned_variant_spare_backing_rebuilds_at_exact_phase_reservation() {
     crate::hir::validate(&program).unwrap();
     crate::cleanup_plan::validate_program(&program).unwrap();
 }
+
+#[test]
+fn prior_sticky_refusal_prevents_construction_and_publication() {
+    let mut program = program(SOURCE);
+    let original = program
+        .functions
+        .iter()
+        .map(|f| crate::cache_codec::encode(&f.cleanup_plan).unwrap())
+        .collect::<Vec<_>>();
+    CONSTRUCTION_STARTED.with(|started| started.set(false));
+    let (failure, overflowed, used, refusal) =
+        crate::bounded_output::with_limit_usage_refusal(1, || {
+            assert!(!crate::bounded_output::reserve_active_required(2));
+            // Refusal is sticky even though the unchanged remaining byte can
+            // still admit a smaller reservation.
+            assert!(crate::bounded_output::reserve_active_required(1));
+            attach_program_plans(&mut program)
+        });
+    assert_eq!(failure.unwrap_err().code, "SPX-H006");
+    assert!(overflowed);
+    assert_eq!(used, 1);
+    let refusal = refusal.unwrap();
+    assert_eq!(refusal.requested, 2);
+    assert_eq!(refusal.remaining, 1);
+    assert!(!CONSTRUCTION_STARTED.with(|started| started.get()));
+    assert_eq!(
+        original,
+        program
+            .functions
+            .iter()
+            .map(|f| crate::cache_codec::encode(&f.cleanup_plan).unwrap())
+            .collect::<Vec<_>>()
+    );
+}

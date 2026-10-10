@@ -244,6 +244,13 @@ pub(crate) fn active_remaining() -> Option<usize> {
     active().map(|budget| budget.remaining.get())
 }
 
+/// Infallible bounded helpers may return an empty carrier after refusal.
+/// Publication boundaries must reject that sticky state even when their
+/// surrounding operation otherwise returned success.
+pub(crate) fn active_refused() -> bool {
+    active().is_some_and(|budget| budget.overflowed.get())
+}
+
 pub(crate) fn active_limit() -> Option<usize> {
     active().map(|budget| budget.initial)
 }

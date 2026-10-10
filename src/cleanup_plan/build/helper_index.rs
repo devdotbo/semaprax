@@ -216,6 +216,11 @@ impl<'a> PlanBuilder<'a> {
 pub(crate) fn build_program_plans(
     program: &ResolvedProgram,
 ) -> Result<Vec<CleanupPlan>, Diagnostic> {
+    if crate::bounded_output::active_refused() {
+        return Err(plan_error(
+            "cleanup construction budget was already refused",
+        ));
+    }
     // Delayed publication keeps the old attached inventories alive while every
     // replacement is staged. Charge this additional overlap before any new
     // index/staging/builder allocation. Attached metadata grants no authority.
@@ -263,6 +268,12 @@ pub(crate) fn build_program_plans(
             &execution,
             &index,
         )?);
+    }
+    // Intrinsic parameter identities use infallible bounded formatting. A
+    // refused format returns an empty diagnostic carrier and marks the ledger;
+    // it must never turn into successful staged-plan publication.
+    if crate::bounded_output::active_refused() {
+        return Err(plan_error("cleanup construction exceeded admitted scratch"));
     }
     #[cfg(test)]
     {
