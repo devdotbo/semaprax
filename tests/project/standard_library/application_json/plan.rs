@@ -53,9 +53,39 @@ fn paired_plan_is_one_checked_revision_with_order_independent_exact_replay() {
         );
         assert_eq!(bundle.entries.len(), 2);
         assert_eq!(bundle.candidate_sources.len(), revision.sources().len());
+        let mut covered = std::collections::BTreeSet::new();
         for source in &bundle.candidate_sources {
-            assert_eq!(canonical(&source.source), source.source);
+            assert!(
+                covered.insert(source.path.clone()),
+                "duplicate candidate path"
+            );
+            let original = bundle
+                .authored_sources
+                .iter()
+                .find(|original| original.path == source.path)
+                .expect("every candidate has its exact authored source");
+            let projected = canonical(&source.source);
+            assert_eq!(canonical(&projected), projected);
+            if bundle
+                .entries
+                .iter()
+                .any(|entry| entry.source_path == source.path)
+            {
+                assert_eq!(projected, source.source);
+            } else {
+                // Dependency sources are preserved bytes, not formatter output.
+                assert_eq!(source.source, original.source);
+                assert_eq!(source.sha256, original.sha256);
+            }
+            assert_eq!(
+                source.sha256,
+                format!(
+                    "{:x}",
+                    semaprax::digest_hex::LowerHex(Sha256::digest(source.source.as_bytes()))
+                )
+            );
         }
+        assert_eq!(covered.len(), bundle.authored_sources.len());
         for original in &bundle.authored_sources {
             assert_eq!(
                 std::fs::read_to_string(root.join(&original.path)).unwrap(),

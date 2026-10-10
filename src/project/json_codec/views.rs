@@ -359,7 +359,7 @@ fn encoder(record: &TypeDeclaration) -> String {
         };
         write!(out, "+({n})").unwrap();
     }
-    writeln!(out,"\n}}}}\n@id(\"{id}.json.view.encode\") fn json_{name}_view_encode(input:borrow Slice<u8>,value:{name}JsonView,output_limit:usize)->{name}JsonViewEncode{{let required=json_{name}_view_encoded_len(input,value);if required==18446744073709551615usize || required>output_limit{{{name}JsonViewEncode::Refused{{required:required}}}}else{{\nlet output_0=\"{{\";").unwrap();
+    writeln!(out,"\n}}}}\n@id(\"{id}.json.view.encode\") fn json_{name}_view_encode(input:borrow Slice<u8>,value:{name}JsonView,output_limit:usize)->{name}JsonViewEncode{{let required=json_{name}_view_encoded_len(input,value);if required==18446744073709551615usize || required>output_limit{{{name}JsonViewEncode::Refused{{required:required}}}}else{{\nlet mut output=\"{{\";").unwrap();
     for (i, f) in fs.iter().enumerate() {
         let v = format!("value.{}", f.name);
         let rendered = match f.ty {
@@ -370,12 +370,17 @@ fn encoder(record: &TypeDeclaration) -> String {
             _ => format!("string_from_i64({v})"),
         };
         let label = literal(&format!("{}\"{}\":", if i == 0 { "" } else { "," }, f.name));
-        writeln!(out,"let label_{i}=string_concat(output_{i},{label});let rendered_{i}={rendered};let output_{}=string_concat(label_{i},rendered_{i});",i+1).unwrap();
+        // Renew one owned prefix instead of retaining every immutable prefix
+        // and named rendered value until the encoder scope ends.
+        writeln!(
+            out,
+            "output=string_concat(output,{label});output=string_concat(output,{rendered});"
+        )
+        .unwrap();
     }
     writeln!(
         out,
-        "{name}JsonViewEncode::Encoded{{text:string_concat(output_{},\"}}\")}}}}}}",
-        fs.len()
+        "output=string_concat(output,\"}}\");{name}JsonViewEncode::Encoded{{text:output}}}}}}"
     )
     .unwrap();
     out

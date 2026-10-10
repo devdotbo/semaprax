@@ -763,6 +763,9 @@ format: `Unreleased` then release buckets, grouped by impact.
 
 ## Unreleased
 
+- Generated identifier-view JSON encoders renew one String prefix through ordinary consuming append, avoiding scope-long immutable prefix owners without changing wire bytes or limits. The codec-plan regression now authenticates unchanged dependency bytes and SHA-256 separately from canonical generated members, and checks canonical idempotence for every candidate.
+
+
 - Authored finite owned-iterator Bytes scratch capacity replay (OPT741): exact immutable Vec constructor provenance, cumulative allocation bounds and selective Graph v78; owning execution remains pending.
 
 - Preserve authored JSON codec names and stable IDs containing template-marker
