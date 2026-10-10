@@ -275,18 +275,20 @@ def launch_trial(seed_repo: Path, artifacts: Path, seed_commit: str, trial: dict
                             "failure": "candidate failed exact authoring-profile admission"})
             else:
                 started = time.monotonic()
-                if settings.get("authoring_profile") in shiftsim.PINNED_AUTHORING_PROFILES:
-                    row["acceptance"] = shiftsim.check_program(candidate, settings["timeout_seconds"],
-                        env, "evidence_gated_scored",
-                        settings["authoring_profile"],
-                        artifacts / "harness-native" / label / "shiftsim",
-                        settings["qualification"].get("compiler_binary_sha256"),
-                        row.get("closed_authored_inventory_after_model"), trial["arm"],
-                        exclude_verified_node_modules=bool(tooling))
-                else:
-                    row["acceptance"] = shiftsim.check_program(candidate, settings["timeout_seconds"],
-                        env, "evidence_gated_scored", exclude_verified_node_modules=bool(tooling))
-                row["acceptance_elapsed_seconds"] = round(time.monotonic() - started, 3)
+                try:
+                    if settings.get("authoring_profile") in shiftsim.PINNED_AUTHORING_PROFILES:
+                        row["acceptance"] = shiftsim.check_program(candidate, settings["timeout_seconds"],
+                            env, "evidence_gated_scored",
+                            settings["authoring_profile"],
+                            artifacts / "harness-native" / label / "shiftsim",
+                            settings["qualification"].get("compiler_binary_sha256"),
+                            row.get("closed_authored_inventory_after_model"), trial["arm"],
+                            exclude_verified_node_modules=bool(tooling))
+                    else:
+                        row["acceptance"] = shiftsim.check_program(candidate, settings["timeout_seconds"],
+                            env, "evidence_gated_scored", exclude_verified_node_modules=bool(tooling))
+                finally:
+                    row["acceptance_elapsed_seconds"] = time.monotonic() - started
                 row["status"] = "accepted" if row["acceptance"]["accepted"] else "not_accepted"
                 if row["status"] != "accepted":
                     row["failure"] = "candidate failed build or acceptance checks"

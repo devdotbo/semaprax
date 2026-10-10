@@ -192,3 +192,12 @@ failures, and the same requested model and effort. Evidence is replayed before
 any worktree or paid endpoint. The typed application and its fresh v31
 qualification are source-only and execution-pending; this cohort makes no
 performance or token-savings claim.
+
+Future Codex attempt receipts retain full monotonic acceptance harness duration
+as `acceptance_elapsed_seconds`, including an acceptance exception before a
+normal report exists. This wall measurement is distinct from agent session time
+and build/test/check subprocess subtotals. Missing historical wall observations
+remain unavailable; no subprocess sum or missing timing is substituted as wall
+or zero. Any per-accepted wall report must include rejected attempts and retain
+null for incomplete observations or zero accepted tasks. This accounting change
+does not revise historical campaign artifacts or establish an efficiency gain.

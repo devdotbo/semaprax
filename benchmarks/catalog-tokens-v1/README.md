@@ -109,3 +109,12 @@ historical Project route/setup clause is superseded. This harness addition
 is pending compiler and application qualification; it establishes no token,
 cost or acceptance gain and dispatches no model runs by itself. ShiftSim uses its own explicitly selected round 5 and independent all15
 qualification; Catalog evidence cannot authorize a ShiftSim campaign.
+
+Future Codex attempt receipts retain full monotonic acceptance harness duration
+as `acceptance_elapsed_seconds`, including an acceptance exception before a
+normal report exists. This wall measurement is distinct from agent session time
+and build/test/check subprocess subtotals. Missing historical wall observations
+remain unavailable; no subprocess sum or missing timing is substituted as wall
+or zero. Any per-accepted wall report must include rejected attempts and retain
+null for incomplete observations or zero accepted tasks. This accounting change
+does not revise historical campaign artifacts or establish an efficiency gain.
