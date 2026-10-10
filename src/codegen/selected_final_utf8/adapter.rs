@@ -6,7 +6,6 @@ use super::super::{
 };
 use super::*;
 use crate::variant_layout::{VariantLayout, VariantTarget};
-use std::fmt::Write as _;
 pub(in crate::codegen) fn emit_adapter(
     output: &mut impl COutput,
     program: &ResolvedProgram,

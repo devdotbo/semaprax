@@ -90,15 +90,15 @@ pub(super) fn emit_hir_c_with_options(
     } else if output_profile.is_stdin_stream() {
         native_host_output::emit_language_command_runtime(&mut output);
         native_command_io::emit_runtime(&mut output);
-        super::native_stdin_stream::emit_runtime(&mut output);
-        super::native_stdin_stream::emit_command_helper_table(&mut output);
+        crate::codegen::native_stdin_stream::emit_runtime(&mut output);
+        crate::codegen::native_stdin_stream::emit_command_helper_table(&mut output);
     } else if output_profile == NativeOutputProfile::LanguageCommandIo {
         native_host_output::emit_language_command_runtime(&mut output);
         native_command_io::emit_runtime(&mut output);
     } else if output_profile == NativeOutputProfile::SourceSelectedFileResourceCommand {
-        super::native_selected_file_command::emit_resource_runtime(&mut output);
+        crate::codegen::native_selected_file_command::emit_resource_runtime(&mut output);
     } else if output_profile == NativeOutputProfile::SourceSelectedFileCommand {
-        super::native_selected_file_command::emit_runtime(&mut output, program);
+        crate::codegen::native_selected_file_command::emit_runtime(&mut output, program);
     } else if output_profile == NativeOutputProfile::SourceCommand {
         native_source_command::emit_runtime(&mut output, program);
     } else if output_profile == NativeOutputProfile::SourceResourceCommand {
@@ -211,11 +211,11 @@ pub(super) fn emit_hir_c_with_options(
                     | NativeOutputProfile::StdinStreamTextCommandIo
                     | NativeOutputProfile::StdinStreamDataCommandIo
             ) {
-                super::native_stdin_stream::exit_status::emit_runner(&mut output, symbol);
-                super::native_stdin_stream::exit_status::emit_process_adapter(&mut output);
+                crate::codegen::native_stdin_stream::exit_status::emit_runner(&mut output, symbol);
+                crate::codegen::native_stdin_stream::exit_status::emit_process_adapter(&mut output);
             } else {
-                super::native_stdin_stream::emit_runner(&mut output, symbol);
-                super::native_stdin_stream::emit_process_adapter(&mut output);
+                crate::codegen::native_stdin_stream::emit_runner(&mut output, symbol);
+                crate::codegen::native_stdin_stream::emit_process_adapter(&mut output);
             }
         } else if output_profile.is_language_command() {
             native_command_io::emit_runner(&mut output, symbol);
@@ -244,11 +244,14 @@ pub(super) fn emit_hir_c_with_options(
             return Ok(output.into_string());
         }
         if output_profile == NativeOutputProfile::SourceSelectedFileResourceCommand {
-            super::native_selected_file_command::emit_resource_process_adapter(&mut output, symbol);
+            crate::codegen::native_selected_file_command::emit_resource_process_adapter(
+                &mut output,
+                symbol,
+            );
             return Ok(output.into_string());
         }
         if output_profile == NativeOutputProfile::SourceSelectedFileCommand {
-            super::native_selected_file_command::emit_process_adapter(&mut output, symbol);
+            crate::codegen::native_selected_file_command::emit_process_adapter(&mut output, symbol);
             return Ok(output.into_string());
         }
         if output_profile == NativeOutputProfile::SourceCommand {
