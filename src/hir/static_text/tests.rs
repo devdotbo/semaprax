@@ -62,12 +62,11 @@ fn decoded_pool_exact_limit_and_plus_one_preserve_owned_string_semantics() {
         "literal-bound.spx",
     )
     .unwrap();
-    assert_eq!(
-        crate::hir::validate(&crate::hir::resolve(&mixed).unwrap())
-            .unwrap_err()
-            .code,
-        "SPX-H006"
-    );
+    // Resolution includes mandatory HIR validation: the extra owned byte is
+    // already refused there, rather than producing an invalid resolved module.
+    let mixed_errors = crate::hir::resolve(&mixed).unwrap_err();
+    assert!(mixed_errors.iter().any(|error| error.code == "SPX-H006"
+        && error.message == "selected decoded text pool exceeds 65536 bytes"));
     let ordinary = crate::check(
         "module literal.ordinary; @id(\"main\") fn main()->i64 {let text=\"x\";string_len(text)}",
         "ordinary.spx",

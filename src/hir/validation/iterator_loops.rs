@@ -404,13 +404,21 @@ impl HirValidator<'_> {
                             // The conversion only copies an existing view; full
                             // expression replay authenticates its immutable loan.
                             // It cannot retain the borrowed input across iterations.
-                            if args[0].ownership != OwnershipMode::Borrow
-                                || !matches!(&args[0].kind, ResolvedExprKind::Place(place) if place.projections.is_empty())
+                            let input = &args[0];
+                            let named_view = matches!(&input.kind, ResolvedExprKind::Place(place) if place.projections.is_empty());
+                            let owner_view = matches!(&input.kind, ResolvedExprKind::BorrowPlace { operation, place }
+                                if operation.as_str() == crate::byte_ops::STRING_AS_STR_ID && place.projections.is_empty());
+                            if input.ty != ResolvedType::Str
+                                || input.ownership != OwnershipMode::Borrow
+                                || !(named_view || owner_view)
                             {
                                 return Err(hir_error(
                                     "loop string_from_str requires a named borrowed-str input",
                                 ));
                             }
+                            // Do not skip the inline view: ordinary loop/view
+                            // replay still authenticates its exact live owner.
+                            pending.push(input);
                             continue;
                         }
                         pending.extend(args.iter().rev());

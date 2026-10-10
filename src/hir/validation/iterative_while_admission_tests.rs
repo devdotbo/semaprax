@@ -164,3 +164,82 @@ fn indexed(text: string) -> usize {
 
 #[path = "return_operand_tests.rs"]
 mod return_operand;
+
+const INLINE_STRING_COPY: &str = r#"module test.inline_string_copy;
+@id("main") fn main()->i64 {
+    let row="é\u{0}";
+    let mut output="";
+    let mut at=0;
+    while at<2 {
+        output=string_concat(output,string_from_str(string_as_str(row)));
+        at=at+1;
+        0
+    }
+    string_len(output)
+}
+"#;
+
+#[test]
+fn inline_named_string_view_copy_retains_ordinary_loop_and_loan_validation() {
+    let ast = crate::check(INLINE_STRING_COPY, "inline-string-copy.spx").unwrap();
+    let canonical = crate::format::canonical(&ast);
+    let ast = crate::check(&canonical, "inline-string-copy.spx").unwrap();
+    assert_eq!(crate::format::canonical(&ast), canonical);
+    let resolved = crate::hir::resolve(&ast).unwrap();
+    crate::hir::validate(&resolved).unwrap();
+    let graph = crate::graph::to_json(&ast).unwrap();
+    crate::graph::verify_json(&ast, &graph).unwrap();
+}
+
+#[test]
+fn inline_string_copy_refuses_forged_view_operation_type_and_root() {
+    fn input(expression: &mut ResolvedExpr) -> Option<&mut ResolvedExpr> {
+        match &mut expression.kind {
+            ResolvedExprKind::Call { callee, args, .. }
+                if callee.as_str() == crate::string_ops::FROM_STR_ID =>
+            {
+                args.first_mut()
+            }
+            ResolvedExprKind::Call { args, .. } => args.iter_mut().find_map(input),
+            ResolvedExprKind::Block { statements, tail } => {
+                for statement in statements {
+                    let found = match statement {
+                        ResolvedStatement::Assign { value, .. }
+                        | ResolvedStatement::Let { value, .. } => input(value),
+                        ResolvedStatement::While { body, .. }
+                        | ResolvedStatement::LexicalWhile { body, .. } => input(body),
+                        ResolvedStatement::Unsafe { body, .. } => input(body),
+                    };
+                    if found.is_some() {
+                        return found;
+                    }
+                }
+                input(tail)
+            }
+            _ => None,
+        }
+    }
+    let ast = crate::check(INLINE_STRING_COPY, "inline-string-forged.spx").unwrap();
+    let original = crate::hir::resolve(&ast).unwrap();
+    for attack in 0..3 {
+        let mut candidate = original.clone();
+        let function = candidate
+            .functions
+            .iter_mut()
+            .find(|function| function.id == candidate.entrypoint)
+            .unwrap();
+        let view = input(&mut function.body).expect("actual inline view");
+        let ResolvedExprKind::BorrowPlace { operation, place } = &mut view.kind else {
+            panic!("view")
+        };
+        match attack {
+            0 => *operation = DeclarationId::new(crate::byte_ops::STR_AS_BYTES_ID),
+            1 => view.ty = ResolvedType::SliceU8,
+            _ => place.root = ValueId::new("missing.owner".to_owned()),
+        }
+        assert_eq!(
+            crate::hir::validate(&candidate).unwrap_err().code,
+            "SPX-H006"
+        );
+    }
+}
