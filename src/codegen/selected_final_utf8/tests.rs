@@ -8,7 +8,7 @@ const SOURCE: &str = r#"module selected.final;
 @id("app.make") fn make(mode:usize)->Report {Report{raw:"{\"x\":\"é\\u0000\"}",mode:mode}}
 @id("app.dispose") fn dispose(value:own Report)->i64 {0}
 @id("app.encode") fn encode(value:borrow Report,limit:usize)->Outcome
-ensures value.mode!=2usize;
+ensures value.mode!=2usize
 {
  let source=str_as_bytes(string_as_str(value.raw));let required=byte_len(source);
  if required>limit {Outcome::Refused{required:required}} else {
@@ -21,7 +21,7 @@ ensures value.mode!=2usize;
 @id("app.main") fn main()->i64 {0}
 "#;
 fn program(source: &str) -> ResolvedProgram {
-    crate::hir::resolve(&crate::parse(source, "selected-final-utf8.spx").unwrap()).unwrap()
+    crate::hir::resolve(&crate::check(source, "selected-final-utf8.spx").unwrap()).unwrap()
 }
 fn emit(p: &ResolvedProgram) -> Result<NativeFinalUtf8Artifact, Diagnostic> {
     emit_native_final_utf8(
