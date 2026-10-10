@@ -46,6 +46,7 @@ let mut output=bytes_zeroed_bounded(required,131072usize);let mut cursor=0usize;
         "output",
         "cursor",
         "{",
+        0,
     ));
     // Root declaration order controls wire order, independently of vector sorting.
     for (index, field) in fields(root).iter().enumerate() {
@@ -55,6 +56,7 @@ let mut output=bytes_zeroed_bounded(required,131072usize);let mut cursor=0usize;
             "output",
             "cursor",
             &key,
+            index,
         ));
         if field.stable_id == shape.items.stable_id {
             writeln!(

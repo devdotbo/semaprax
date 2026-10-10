@@ -96,13 +96,14 @@ fn json_{name}_response_object_render{suffix}({parameters},position:usize,output
 requires json_{name}_response_object_len{suffix}({arguments})!=18446744073709551615usize && position<=byte_len(bytes_as_slice(output)) && json_{name}_response_object_len{suffix}({arguments})<=byte_len(bytes_as_slice(output))-position {{
 let mut next=output;let mut cursor=position;").unwrap();
     let prefix = format!("json_{}_response", writer.name);
-    out.push_str(&writer::literal_write(&prefix, "next", "cursor", "{"));
+    out.push_str(&writer::literal_write(&prefix, "next", "cursor", "{", 0));
     for (index, field) in fs.iter().enumerate() {
         out.push_str(&writer::literal_write(
             &prefix,
             "next",
             "cursor",
             &format!("{}\"{}\":", if index == 0 { "" } else { "," }, field.name),
+            index,
         ));
         let value = value(record, field, indexed);
         let kind = match field.ty {
@@ -125,7 +126,13 @@ let mut next=output;let mut cursor=position;").unwrap();
         )
         .unwrap();
     }
-    out.push_str(&writer::literal_write(&prefix, "next", "cursor", "}"));
+    out.push_str(&writer::literal_write(
+        &prefix,
+        "next",
+        "cursor",
+        "}",
+        fs.len(),
+    ));
     out.push_str("next}\n");
     out
 }

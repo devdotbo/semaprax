@@ -21,6 +21,7 @@ pub(in crate::project::json_codec) fn literal_write(
     output: &str,
     position: &str,
     value: &str,
+    site: usize,
 ) -> String {
     if value.len() == 1 {
         return format!(
@@ -35,9 +36,11 @@ pub(in crate::project::json_codec) fn literal_write(
         .join(",");
     // A fixed Copy array is ordinary stack data, not an owned String/Bytes
     // payload. Its borrow remains inside this statement's checked call.
-    // Keep the owned renewal itself an exact direct Call. A Block-valued RHS
-    // would consume the owner without carrying that ordinary renewal authority.
-    format!("{{let key=[{bytes}];{output}={prefix}_writer_bytes(array_as_slice(key),{position},{output});0}};{position}={position}+{}usize;\n",value.len())
+    // Discard the Copy block result with an ordinary immutable let. Bare
+    // expression statements are closed and discard bindings use distinct sites.
+    // Keep renewal an exact direct Call; a Block-valued RHS consumes the owner
+    // without carrying that ordinary renewal authority.
+    format!("let k{site}={{let k=[{bytes}];{output}={prefix}_writer_bytes(array_as_slice(k),{position},{output});0}};{position}={position}+{}usize;\n",value.len())
 }
 
 #[cfg(test)]
@@ -84,15 +87,32 @@ mod tests {
             .split("@id(\"response.row.json.collection-response.writer.digit\")")
             .next()
             .unwrap();
-        let first = literal_write("json_Row_response", "output", "cursor", "\"first\":");
-        let second = literal_write("json_Row_response", "output", "cursor", ",\"second\":");
+        let first = literal_write("json_Row_response", "output", "cursor", "\"first\":", 0);
+        let helper_first = literal_write("json_Row_response", "next", "cursor", "\"first\":", 0);
+        let helper_second = literal_write("json_Row_response", "next", "cursor", ",\"second\":", 0);
         let text = format!(
-            "module writer;\n{bytes_helper}\n@id(\"writer.main\") fn main()->i64{{
+            "module writer;\n{bytes_helper}\n
+@id(\"writer.first\") fn first(position:usize,output:own Bytes)->Bytes{{
+let mut next=output;let mut cursor=position;{helper_first}next}}
+@id(\"writer.second\") fn second(position:usize,output:own Bytes)->Bytes{{
+let mut next=output;let mut cursor=position;{helper_second}next}}
+@id(\"writer.main\") fn main()->i64{{
 let mut output=bytes_zeroed(128usize);let mut cursor=0usize;
 {first}let mut at=0usize;
-while at<2usize{{{first}{second}at=at+1usize;0}}
+while at<2usize{{output=first(cursor,output);cursor=cursor+8usize;output=second(cursor,output);cursor=cursor+10usize;at=at+1usize;0}}
 if cursor==44usize{{1}}else{{0}}}}\n"
         );
+        // Actual object-render helpers contain their keys outside runtime loops;
+        // row loops call these ordinary acyclic helpers. Inlining an array
+        // literal into a loop remains closed by the existing language contract.
+        let loop_literal = text.replace(
+            "output=first(cursor,output);cursor=cursor+8usize;",
+            &first.replace("let k0=", "let k1="),
+        );
+        assert!(crate::check(&loop_literal, "loop-array-writer.spx")
+            .unwrap_err()
+            .iter()
+            .any(|e| e.code == "SPX-T252"));
         let checked = crate::check(&text, "scoped-writer.spx").unwrap();
         let canonical = crate::format::canonical(&checked);
         let checked_again = crate::check(&canonical, "scoped-writer-canonical.spx").unwrap();
@@ -124,10 +144,46 @@ if cursor==44usize{{1}}else{{0}}}}\n"
                 .len(),
             3
         );
+        let graph = crate::graph::to_json(&checked_again).unwrap();
+        crate::graph::verify_json(&checked_again, &graph).unwrap();
+        let document: serde_json::Value = serde_json::from_str(&graph).unwrap();
+        assert_eq!(document["schema"], "semaprax.graph.v76");
+        assert_eq!(
+            document["byte_helper_renewal"]["schema"],
+            "semaprax.byte-helper-renewal.v1"
+        );
+        let encoded = crate::cache_codec::encode(&main.cleanup_plan).unwrap();
+        let mut cached = resolved.clone();
+        cached
+            .functions
+            .iter_mut()
+            .find(|f| f.id.as_str() == "writer.main")
+            .unwrap()
+            .cleanup_plan = crate::cache_codec::decode(&encoded).unwrap();
+        crate::hir::validate(&cached).unwrap();
+        assert_eq!(
+            crate::cache_codec::encode(
+                &cached
+                    .functions
+                    .iter()
+                    .find(|f| f.id.as_str() == "writer.main")
+                    .unwrap()
+                    .cleanup_plan
+            )
+            .unwrap(),
+            encoded
+        );
+        let bare = text.replacen("let k0={let k=", "{let k=", 1);
+        assert_eq!(
+            crate::parse(&bare, "bare-block-writer.spx")
+                .unwrap_err()
+                .code,
+            "SPX-P106"
+        );
         // Arbitrary Block-valued ownership assignment still has no direct-call
         // authority; correcting the generator must not broaden that boundary.
         let old_rhs = first
-            .replace("{let key=", "output={let key=")
+            .replace("let k0={let k=", "output={let k=")
             .replace(
                 ";output=json_Row_response_writer_bytes",
                 ";json_Row_response_writer_bytes",
@@ -142,15 +198,15 @@ if cursor==44usize{{1}}else{{0}}}}\n"
     #[test]
     fn literal_keys_use_copy_arrays_without_generated_source_expansion() {
         let key = format!("\"{}\":", "k".repeat(64));
-        let output = literal_write("json_Root_response", "next", "cursor", &key);
-        assert!(output.contains("let key=[34u8,107u8"));
-        assert!(output.contains("writer_bytes(array_as_slice(key),cursor,next)"));
+        let output = literal_write("json_Root_response", "next", "cursor", &key, 0);
+        assert!(output.starts_with("let k0={let k=[34u8,107u8"));
+        assert!(output.contains("writer_bytes(array_as_slice(k),cursor,next)"));
         assert!(output.contains("cursor=cursor+67usize"));
         assert_eq!(output.matches("bytes_set").count(), 0);
         assert!(!output.contains("string_"));
         assert!(output.len() < 512);
         assert_eq!(
-            literal_write("unused", "next", "cursor", "}"),
+            literal_write("unused", "next", "cursor", "}", 0),
             "next=bytes_set(next,cursor,125u8);cursor=cursor+1usize;\n"
         );
     }

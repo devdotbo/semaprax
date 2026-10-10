@@ -92,6 +92,7 @@ requires json_{name}_nested_response_object_len_{n}({arguments})!={INVALID} && p
         "next",
         "cursor",
         "{",
+        0,
     ));
     for (index, field) in record.fields.iter().enumerate() {
         let key = format!(
@@ -110,6 +111,7 @@ requires json_{name}_nested_response_object_len_{n}({arguments})!={INVALID} && p
             "next",
             "cursor",
             &key,
+            index,
         ));
         let rendered = render(root, &field.kind, field.ordinal, operand);
         writeln!(
@@ -124,6 +126,7 @@ requires json_{name}_nested_response_object_len_{n}({arguments})!={INVALID} && p
         "next",
         "cursor",
         "}",
+        record.fields.len(),
     ));
     out.push_str("next\n}\n");
     out

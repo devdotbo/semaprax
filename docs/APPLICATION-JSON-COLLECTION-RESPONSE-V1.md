@@ -121,7 +121,9 @@ values and exact-size-minus-one caller limits return the original `Refused`
 outcome without reservation or publication. Every helper additionally checks its
 own exact length and remaining capacity before its first write. Keys are fixed
 Copy byte arrays in short scopes, without temporary owned Strings. Each key
-write is a direct helper-call assignment inside a Copy statement block; the
+write is a direct helper-call assignment inside a Copy block initializer,
+discarded by a unique ordinal Copy binding, `let k0 = { ...; 0 };`. Bare block expression statements remain
+closed. The
 owned assignment RHS does not wrap the call in another block. This preserves
 ordinary helper-renewal authority and ends the key borrow before the next write.
 Numeric digits
