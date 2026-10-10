@@ -212,7 +212,7 @@ mod tests {
 
     fn fixture() -> Program {
         crate::parse(
-            "@id(\"main\") fn main() -> i64 { 0 }",
+            "module lexical.contour; @id(\"main\") fn main() -> i64 { 0 }",
             "lexical-contour.spx",
         )
         .unwrap()

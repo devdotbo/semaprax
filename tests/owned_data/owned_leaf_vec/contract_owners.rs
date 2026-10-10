@@ -1,6 +1,6 @@
 //! Same admitted source on interpreter and the strict existing Core-Wasm host.
 use std::sync::atomic::Ordering;
-const SOURCE: &str = r#"@id("contract.inspect") fn inspect(text:own string)->bool {string_len(text)==2}
+const SOURCE: &str = r#"@id("contract.inspect") fn inspect(text:string)->bool {string_len(text)==2}
 @id("contract.run") fn run(fail_pre:bool,fail_post:bool)->i64
  requires {let required=bytes_zeroed(2usize);let moved=required;byte_len(bytes_as_slice(moved))==2usize && !fail_pre}
  ensures {let checked=bytes_zeroed(3usize);let text="ok";let moved=text;inspect(moved) && byte_len(bytes_as_slice(checked))==3usize && !fail_post}

@@ -22,9 +22,11 @@ fn fresh_local_aliases_keep_ordinary_consuming_calls_and_canonical_roundtrip() {
 #[test]
 fn preexisting_owner_and_provisional_result_transfers_stay_refused() {
     for source in [
-        r#"@id("take") fn take(input:own Bytes)->i64 requires {let stolen=input;true}{0}
+        r#"module contracts.refused;
+@id("take") fn take(input:own Bytes)->i64 requires {let stolen=input;true}{0}
 @id("main") fn main()->i64{0}"#,
-        r#"@id("make") fn make()->Bytes ensures {let stolen=result;true}{bytes_zeroed(1usize)}
+        r#"module contracts.refused;
+@id("make") fn make()->Bytes ensures {let stolen=result;true}{bytes_zeroed(1usize)}
 @id("main") fn main()->i64{0}"#,
     ] {
         assert!(errors(source).iter().any(|error| error.code == "SPX-O105"));
@@ -74,7 +76,7 @@ fn budget_source(before: usize, after: usize, payload: u64, extra: bool) -> Stri
         text
     };
     format!(
-        "@id(\"main\") fn main()->i64 requires {} ensures {} {} {{0}}",
+        "module contracts.budget; @id(\"main\") fn main()->i64 requires {} ensures {} {} {{0}}",
         block(before),
         block(after),
         if extra {
