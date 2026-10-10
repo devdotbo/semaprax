@@ -600,43 +600,7 @@ pub(super) fn expression_at<'e>(
     root: &'e ResolvedExpr,
     id: &ExpressionId,
 ) -> Result<&'e ResolvedExpr, Diagnostic> {
-    const DEPTH: usize = crate::cache_codec::MAX_DEPTH + 1;
-    let mut stack: [Option<(&ResolvedExpr, usize)>; DEPTH] = [None; DEPTH];
-    stack[0] = Some((root, 0));
-    let mut used = 1;
-    let mut work = 0usize;
-    while used != 0 {
-        let (expression, index) = stack[used - 1].expect("occupied lexical lookup frame");
-        // child() scans these variable-width prefixes; debit even misses.
-        let width = match &expression.kind {
-            ResolvedExprKind::Block { statements, .. } => statements.len(),
-            ResolvedExprKind::Match { arms, .. } => arms.len(),
-            _ => 0,
-        };
-        work = work
-            .checked_add(width.saturating_add(1))
-            .filter(|work| *work <= 1_000_000)
-            .ok_or_else(|| plan_error("lexical advancement lookup exceeds bounded work"))?;
-        if index == 0 && &expression.id == id {
-            return Ok(expression);
-        }
-        if let Some(child) = crate::hir::lexical_exit::child(expression, index) {
-            stack[used - 1] = Some((expression, index + 1));
-            if used == DEPTH {
-                return Err(plan_error(
-                    "lexical advancement lookup exceeds bounded depth",
-                ));
-            }
-            stack[used] = Some((child, 0));
-            used += 1;
-        } else {
-            used -= 1;
-            stack[used] = None;
-        }
-    }
-    Err(plan_error(
-        "lexical advancement references an absent expression identity",
-    ))
+    super::lexical_iterator::lookup::expression_at(root, id)
 }
 impl PlanBuilder<'_> {
     fn lower_continue_advance(

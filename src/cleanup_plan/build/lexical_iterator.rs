@@ -2,6 +2,8 @@
 use super::lexical_control::{expression_at, LoopContext};
 use super::*;
 
+pub(super) mod lookup;
+
 impl PlanBuilder<'_> {
     /// Keep the entered Yield scopes and remainder until the certified Next
     /// call commits. Authored locals and the unmoved item end before Next.
