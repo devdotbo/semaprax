@@ -36,9 +36,9 @@ pub(super) fn assert_operation(program: &ResolvedProgram, wanted: &str) {
                                 assert_eq!(type_arguments.len(), 1);
                                 assert_eq!(expression.ty, type_arguments[0]);
                                 assert_eq!(expression.ownership, O::Own);
-                                // The intrinsic's first parameter borrows an owned
-                                // vector place; argument nodes retain owner identity.
-                                assert_eq!(args[0].ownership, O::Own);
+                                // The first argument is a borrowed projection of the
+                                // exact vector owner, authenticated below by its loan.
+                                assert_eq!(args[0].ownership, O::Borrow);
                                 assert!(
                                     matches!(&args[0].ty, T::Nominal { declaration, arguments }
                                     if declaration.as_str() == "core.vec"

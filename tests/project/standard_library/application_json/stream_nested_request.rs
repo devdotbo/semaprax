@@ -178,6 +178,9 @@ fn streamed_nested_orders_observe_real_provider_splits_and_refuse_unauthorized_o
         ("wide-envelope", schema.replace("sku: string", &format!("{}: string", "a".repeat(64)))
             .replace("quantity: u8", &format!("{}: u8", "b".repeat(64)))),
     ] {
+        // Authenticate the intended capability/envelope refusal, rather than
+        // incidental whitespace left by removing a declaration.
+        let refused = canonical(&refused);
         std::fs::write(root.join("src/schema.spx"), &refused).unwrap();
         let result = project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot|
             project::derive_json_codec_source_with_profile(&snapshot.retain_revision(), "src/schema.spx",
