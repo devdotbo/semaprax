@@ -68,6 +68,10 @@ root.
 and `stderr`. Captured byte streams are represented as lossy UTF-8 strings.
 Authentication, compilation, or host failures before case results are
 collected retain the command's diagnostic reporting path.
+A per-case host refusal publishes no result, including when a successful child
+exit was observed before its output readers finish. The captured exit code and
+first selected timeout/output/read failure remain visible; neither result
+carrier can turn that refusal into a successful reported value.
 
 ## Process bounds and cleanup
 

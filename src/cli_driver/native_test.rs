@@ -21,6 +21,11 @@ struct CaseResult {
 
 impl CaseResult {
     fn value(&self) -> Option<i64> {
+        // A successful child status may precede a reader/output refusal. Host
+        // settlement must complete before publishing either result carrier.
+        if self.failure.is_some() {
+            return None;
+        }
         if self.result_is_exit_status {
             return self
                 .status
@@ -310,6 +315,37 @@ mod tests {
         case.stdout = b"0\n".to_vec();
         case.failure = Some("output limit".to_owned());
         assert!(!case.passed());
+    }
+
+    #[test]
+    fn host_refusal_discards_result_after_successful_child_exit() {
+        for result_is_exit_status in [false, true] {
+            let mut case = CaseResult {
+                stable_id: "case".to_owned(),
+                name: "case".to_owned(),
+                is_main: false,
+                result_is_exit_status,
+                status: Some(success_status()),
+                stdout: b"0\n".to_vec(),
+                stderr: Vec::new(),
+                failure: None,
+            };
+            assert_eq!(case.value(), Some(0));
+            for failure in [
+                "native test exceeded 12 output bytes",
+                "native test exceeded 100 ms",
+                "cannot read native test stderr",
+            ] {
+                // Covers the race where try_wait observes success before the
+                // output readers finish and independently refuse the envelope.
+                case.failure = Some(failure.to_owned());
+                assert_eq!(case.value(), None);
+                assert!(!case.passed());
+                assert_eq!(case.outcome(), failure);
+                assert_eq!(case.status.as_ref().and_then(ExitStatus::code), Some(0));
+                assert_eq!(case.stdout, b"0\n");
+            }
+        }
     }
 
     fn success_status() -> ExitStatus {

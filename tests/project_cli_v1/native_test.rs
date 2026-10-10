@@ -424,3 +424,6 @@ fn main() -> i64 uses { process.stderr.write, process.stdout.write }
         .contains("exceeded 1024 output bytes"));
     fixture.scratch_empty();
 }
+
+#[path = "native_test/recovery.rs"]
+mod recovery;
