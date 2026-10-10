@@ -1,4 +1,5 @@
 //! Explicit clone-out and stable whole-carrier ordering for owned leaves.
+mod sort_keys;
 use super::super::OwnedRecordValue;
 use super::*;
 use std::collections::BTreeMap;

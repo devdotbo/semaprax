@@ -59,6 +59,12 @@ pub(super) enum Frame<'expr> {
         op: crate::string_ops::StringOp,
         argument_count: usize,
     },
+    FinishSortBy {
+        span: Span,
+        path: String,
+        element: ResolvedType,
+        callee: DeclarationId,
+    },
     FinishVecField {
         span: Span,
         path: String,
@@ -440,6 +446,7 @@ pub(super) fn frame_owned_capacity(
         | Frame::FinishStringOp { path, .. }
         | Frame::FinishLiteralFormat { path, .. }
         | Frame::FinishVecField { path, .. }
+        | Frame::FinishSortBy { path, .. }
         | Frame::LiteralFormatArgNext { path, .. }
         | Frame::FinishStrOp { path, .. }
         | Frame::FinishByteOp { path, .. }
@@ -528,9 +535,12 @@ pub(super) fn frame_owned_capacity(
     let retained = match frame {
         Frame::FinishInvoke { callable, .. } => resolved_expr_owned_capacity(callable),
         Frame::FinishLiteralFormat { template, .. } => template.capacity(),
-        Frame::FinishVecField { element, field, .. } => {
-            resolved_type_owned_capacity(element) + field.as_str().len()
-        }
+        Frame::FinishVecField { element, field, .. }
+        | Frame::FinishSortBy {
+            element,
+            callee: field,
+            ..
+        } => resolved_type_owned_capacity(element) + field.as_str().len(),
         Frame::FinishMethodCall { type_arguments, .. } => {
             type_arguments.capacity() * std::mem::size_of::<ResolvedType>()
                 + type_arguments

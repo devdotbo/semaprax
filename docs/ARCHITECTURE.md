@@ -827,6 +827,17 @@ Bytes clone without weakening the existing allocation/loop limits.
 [Owned Leaf Collections v1](OWNED-LEAF-COLLECTIONS-V1.md) defines this source
 batch's boundary. Its executable and application gates remain pending.
 
+`vec_ops/sort_keys.rs` independently derives/replays finite explicit field-key
+identities from complete admitted record layouts. `source_verify/sort_keys.rs`
+and `workspace_graph/expected_projection/sort_keys.rs` derive source authority;
+`hir/resolve_expr/sort_keys.rs` lowers the literal metadata into an ordinary
+consuming Call. Native `native_vec/{sort_keys,owned_sort_keys}.c`, interpreter
+`owned_vec/owned_leaf/sort_keys.rs`, and Wasm
+`aggregate/vec_owned_leaf/sort_keys.rs` own stable in-place execution. Selective
+prelude v15 binds only this additive operation. The literal is not a runtime
+String and the synthetic callee is not a declaration/import target. The owning
+contract is [Explicit Record Sort Keys v1](EXPLICIT-RECORD-SORT-KEYS-V1.md).
+
 `src/hir/vec_field.rs` authenticates the additive `vec_field<Row>(items, index, "field")`
 descriptor and its literal field selection; `src/hir/byte_slice_provenance/vec_field.rs`
 retains the complete named-vector origin. Native `field_read.rs` reads the

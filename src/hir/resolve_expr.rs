@@ -28,6 +28,7 @@ mod byte_view;
 mod capacity;
 mod finish;
 mod literal_format;
+mod sort_keys;
 mod vec_field;
 
 impl Resolver<'_> {
@@ -232,6 +233,15 @@ impl Resolver<'_> {
                                 path,
                                 segment: "native-rust-arg",
                             });
+                        } else if name == crate::vec_ops::sort_keys::NAME {
+                            frames.extend(self.sort_by_frames(
+                                function,
+                                expr,
+                                type_arguments,
+                                args,
+                                bindings,
+                                path,
+                            )?);
                         } else if name == crate::vec_field::NAME {
                             frames.extend(self.vec_field_frames(
                                 function,
@@ -942,15 +952,8 @@ impl Resolver<'_> {
                         span,
                     });
                 }
-                Frame::FinishVecField {
-                    span,
-                    path,
-                    element,
-                    field,
-                } => {
-                    let args = take_results(&mut results, 2);
-                    results
-                        .push(self.finish_vec_field(function, span, &path, element, field, args)?);
+                frame @ (Frame::FinishSortBy { .. } | Frame::FinishVecField { .. }) => {
+                    self.finish_vec_literal_frame(function, frame, &mut results)?;
                 }
                 Frame::FinishLiteralFormat {
                     span,

@@ -153,6 +153,7 @@ impl Evaluator<'_> {
     pub(super) fn evaluate_vec_op(
         &mut self,
         op: crate::vec_ops::VecOp,
+        identity: &str,
         type_arguments: &[ResolvedType],
         args: &[ResolvedExpr],
         environment: &mut Environment,
@@ -172,6 +173,11 @@ impl Evaluator<'_> {
             })
             .ok_or(Flow::Guard("invalid compiler-owned bounded Vec type"))?
             .clone();
+        if op == crate::vec_ops::VecOp::SortBy
+            && crate::vec_ops::sort_keys::replay(declarations, &element, identity).is_none()
+        {
+            return Err(Flow::Guard("forged explicit Vec sort descriptor"));
+        }
         let mut values = Vec::with_capacity(args.len());
         for (index, argument) in args.iter().enumerate() {
             if index == 0
@@ -192,6 +198,7 @@ impl Evaluator<'_> {
         match op {
             crate::vec_ops::VecOp::CloneAt => self.clone_owned_vec_element(&element, &values),
             crate::vec_ops::VecOp::SortOwned => self.sort_owned_vec_elements(&element, values),
+            crate::vec_ops::VecOp::SortBy => self.sort_record_vec_by(&element, identity, values),
             crate::vec_ops::VecOp::WithCapacity => {
                 let [Value::Usize(capacity)] = values.as_slice() else {
                     return Err(Flow::Guard(

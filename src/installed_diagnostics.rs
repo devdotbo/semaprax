@@ -206,6 +206,12 @@ pub fn explain_installed_diagnostic(code: &str) -> Result<InstalledDiagnosticExp
     let (installed, occurrences) = GENERATED_CODES[index];
     let occurrence_count = occurrences.len();
     let guidance = match installed {
+        "SPX-T311" => Some(json!({
+            "summary": "explicit record sort has an unsupported literal key policy",
+            "required_shape": "vec_sort_by<Row>(rows, \"priority:desc,arrival:asc\")",
+            "requirements": ["one explicit monomorphic admitted flat record type", "one owning Vec", "1..8 unique literal field:asc/field:desc keys", "exact persistent field identities and complete layout", "no live owner field/view loans"],
+            "repair": "Use a literal policy naming declared fields; end field loans before consuming the Vec. See docs/EXPLICIT-RECORD-SORT-KEYS-V1.md.",
+        })),
         "SPX-T310" => Some(json!({
             "summary": "scoped Vec record-field read has an unsupported operand or field selector",
             "required_shape": "vec_field<Row>(rows, index, \"field\")",
@@ -231,6 +237,7 @@ pub fn explain_installed_diagnostic(code: &str) -> Result<InstalledDiagnosticExp
         if occurrence_count == 1 { "" } else { "s" },
         guidance
             .as_ref()
+            .filter(|_| installed == "SPX-T310")
             .map(|_| "\nUse vec_field<Row>(rows, index, \"field\") with a named Vec, usize index and literal declared field. Scalars are Copy; String/Bytes views borrow the owner through last use.")
             .unwrap_or(""),
     );

@@ -35,6 +35,8 @@ mod identity_slots;
 mod import_stub;
 #[path = "expected_projection/local_identity.rs"]
 mod local_identity;
+#[path = "expected_projection/sort_keys.rs"]
+mod sort_keys;
 #[path = "expected_projection/statement_segment.rs"]
 mod statement_segment;
 #[path = "expected_projection/type_rewrite.rs"]
@@ -1779,6 +1781,7 @@ pub(super) fn verify_resolved_call_edges(
     resolved: &hir::ResolvedProgram,
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
 ) -> Result<(), Vec<Diagnostic>> {
+    sort_keys::verify(program, resolved, authored)?;
     let aliases = program
         .module_uses
         .iter()

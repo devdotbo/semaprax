@@ -158,6 +158,13 @@ impl Emitter<'_> {
             self.get_scalar(&result);
             self.output.push(0x50);
             self.emit_vec_failure_if(expr, STATUS_VEC_ALLOCATION_FAILURE)?;
+            if crate::vec_ops::sort_keys::uses(self.program) {
+                self.explicit_sort(expr, element, &result, true)?;
+                self.cr_set(scalar_local(&result)?);
+                self.get_scalar(&result);
+                self.output.push(0x50);
+                self.trap_if();
+            }
             return Ok(result);
         }
         if matches!(op, VecOp::Len | VecOp::Capacity | VecOp::Get) {
@@ -276,6 +283,17 @@ impl Emitter<'_> {
             }
             VecOp::Sort => {
                 self.emit_copy_record_sort(expr, owner, width, &fields, base, scratch)?
+            }
+            VecOp::SortBy => {
+                let value = Value::Scalar {
+                    local: owner,
+                    ty: args[0].ty.clone(),
+                };
+                self.explicit_sort(expr, element, &value, false)?;
+                self.cr_set(owner);
+                self.cr_get(owner);
+                self.output.push(0x50);
+                self.trap_if();
             }
             _ => return Err(error("invalid Copy record Vec owner operation")),
         }

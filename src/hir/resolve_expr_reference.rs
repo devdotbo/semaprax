@@ -209,6 +209,24 @@ impl Resolver<'_> {
                         span: expr.span,
                     });
                 }
+                if name == crate::vec_ops::sort_keys::NAME {
+                    let (element, callee) =
+                        self.prepare_sort_by(function, expr, type_arguments, args)?;
+                    let value = self.resolve_expr_recursive_reference(
+                        function,
+                        &args[0],
+                        bindings,
+                        &format!("{path}.arg.0"),
+                    )?;
+                    return self.finish_sort_by(
+                        function,
+                        expr.span,
+                        path,
+                        element,
+                        callee,
+                        vec![value],
+                    );
+                }
                 if name == crate::vec_field::NAME {
                     let (element, field) =
                         self.prepare_vec_field(function, expr, type_arguments, args)?;

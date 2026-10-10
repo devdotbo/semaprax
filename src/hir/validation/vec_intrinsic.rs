@@ -113,6 +113,14 @@ pub(super) fn signature(
     {
         return Err(hir_error("invalid vector operation call shape"));
     }
+    if op == crate::vec_ops::VecOp::SortBy
+        && crate::vec_ops::sort_keys::replay(declarations, &type_arguments[0], callee.as_str())
+            .is_none()
+    {
+        return Err(hir_error(
+            "explicit sort key nominal/field/layout/direction descriptor is forged or stale",
+        ));
+    }
     Ok(Some((
         crate::vec_ops::resolved_params_in(declarations, op, &type_arguments[0]),
         op.resolved_return_type(&type_arguments[0]),

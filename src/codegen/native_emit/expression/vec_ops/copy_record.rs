@@ -130,7 +130,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 VecOp::Clear => self.line(&format!(
                     "spx_status = spx_vec_clear(spx_ctx, UINT32_C(1), &{source}, &{destination});"
                 )),
-                VecOp::Sort => {
+                VecOp::Sort | VecOp::SortBy => {
                     let name = format!("spx_copy_tags_{}", self.next_local);
                     self.next_local += 1;
                     let tags = fields
@@ -141,7 +141,12 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                         .collect::<Result<Vec<_>, _>>()?
                         .join(", ");
                     self.line(&format!("const uint32_t {name}[{width}] = {{ {tags} }};"));
-                    self.line(&format!("spx_status = spx_copy_vec_sort(spx_ctx, &{source}, UINT64_C({width}), {name}, &{destination});"));
+                    if op == VecOp::SortBy {
+                        let keys = self.emit_sort_keys(expr)?;
+                        self.line(&format!("spx_status = spx_copy_vec_sort_keys(spx_ctx, &{source}, UINT64_C({width}), {name}, {keys}&{destination});"));
+                    } else {
+                        self.line(&format!("spx_status = spx_copy_vec_sort(spx_ctx, &{source}, UINT64_C({width}), {name}, &{destination});"));
+                    }
                 }
                 _ => return Err(backend_error("Copy record Vec owner operation is invalid")),
             }

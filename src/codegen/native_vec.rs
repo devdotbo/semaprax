@@ -9,6 +9,10 @@ pub(super) fn emit_runtime(
     output: &mut impl super::COutput,
     program: &crate::hir::ResolvedProgram,
 ) {
+    let sort_keys = crate::vec_ops::sort_keys::uses(program);
+    if sort_keys {
+        output.push_str(include_str!("native_vec/sort_keys_check.c"));
+    }
     let owned_leaf = program_uses_owned_leaf(program);
     if owned_leaf
         || crate::vec_ops::resolved_program_uses_owned_payload(program)
@@ -22,7 +26,7 @@ pub(super) fn emit_runtime(
             sort::emit_runtime(output);
         }
         if crate::hir::copy_record_collection::program_uses(program) {
-            copy_record::emit_runtime(output);
+            copy_record::emit_runtime(output, sort_keys);
         }
         return;
     }
@@ -35,7 +39,7 @@ pub(super) fn emit_runtime(
         output.push_str(NATIVE_VEC_EXTENDED_RUNTIME_C);
     }
     if crate::hir::copy_record_collection::program_uses(program) {
-        copy_record::emit_runtime(output);
+        copy_record::emit_runtime(output, sort_keys);
     }
 }
 
@@ -73,8 +77,11 @@ pub(super) fn program_uses_owned_leaf(program: &crate::hir::ResolvedProgram) -> 
                     .any(|root| {
                         let mut pending = vec![root];
                         while let Some(expression) = pending.pop() {
-                            if matches!(expression.kind, crate::hir::ResolvedExprKind::VecFieldRead { .. })
-                                || new_carrier(&expression.ty) {
+                            if matches!(
+                                expression.kind,
+                                crate::hir::ResolvedExprKind::VecFieldRead { .. }
+                            ) || new_carrier(&expression.ty)
+                            {
                                 return true;
                             }
                             crate::hir::push_resolved_expression_children_in_authored_order(
@@ -97,7 +104,13 @@ pub(super) fn program_uses_owned_leaf(program: &crate::hir::ResolvedProgram) -> 
                                                     | crate::vec_ops::VecOp::Replace
                                                     | crate::vec_ops::VecOp::ReserveOwned
                                                     | crate::vec_ops::VecOp::SortOwned
-                                            );
+                                            )
+                                            || (op == crate::vec_ops::VecOp::SortBy
+                                                && crate::hir::owned_leaf_collection::layout(
+                                                    &program.declarations,
+                                                    element,
+                                                )
+                                                .is_some());
                                     }
                                 }
                             },

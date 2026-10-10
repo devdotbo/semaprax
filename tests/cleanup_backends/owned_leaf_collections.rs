@@ -7,6 +7,8 @@ use semaprax::{codegen, hir};
 
 #[path = "owned_leaf_collections/native.rs"]
 mod native;
+#[path = "owned_leaf_collections/sort_keys.rs"]
+mod sort_keys;
 
 const SHARED: &str = include_str!("../fixtures/owned-leaf-collections.spx");
 const FIELDS: &str = r#"

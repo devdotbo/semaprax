@@ -5,6 +5,8 @@ use std::process::Command;
 mod outcome;
 #[path = "copy_record_vec/runtime.rs"]
 mod runtime;
+#[path = "copy_record_vec/sort_keys.rs"]
+mod sort_keys;
 
 const DECL: &str = r#"module copy.records;
 @id("app.job") record Job {
@@ -136,11 +138,9 @@ fn unsupported_shapes_and_owner_reuse_keep_stable_diagnostics() {
         "let v=vec_with_capacity<R>(0usize); let copied=vec_get<R>(v,0usize); 0",
     );
     let copy_ast = semaprax::parse(&copy_reader, "copy-reader-refusal.spx").unwrap();
-    assert!(
-        semaprax::verify::verify(&copy_ast)
-            .iter()
-            .any(|error| error.code == "SPX-T281")
-    );
+    assert!(semaprax::verify::verify(&copy_ast)
+        .iter()
+        .any(|error| error.code == "SPX-T281"));
     for (decl, body, code) in [
         (
             "@id(\"app.r\") record R { @id(\"app.r.x\") x:Bytes, @id(\"app.r.y\") y:Bytes, @id(\"app.r.z\") z:Bytes, }",
@@ -178,11 +178,9 @@ fn unsupported_shapes_and_owner_reuse_keep_stable_diagnostics() {
         "module t; @id(\"app.r\") record R {{{fields}}} fn main()->i64 {{ let v=vec_with_capacity<R>(0usize); 0 }}"
     );
     let ast = semaprax::parse(&text, "wide.spx").unwrap();
-    assert!(
-        semaprax::verify::verify(&ast)
-            .iter()
-            .any(|e| e.code == "SPX-T281")
-    );
+    assert!(semaprax::verify::verify(&ast)
+        .iter()
+        .any(|e| e.code == "SPX-T281"));
 }
 
 #[test]

@@ -49,6 +49,7 @@ mod owning_closure;
 mod place;
 mod record_invariants;
 mod scope;
+mod sort_keys;
 mod stdin_stream;
 mod type_table;
 mod variant_guards;

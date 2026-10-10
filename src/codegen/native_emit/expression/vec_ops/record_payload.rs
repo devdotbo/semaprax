@@ -55,7 +55,8 @@ impl<O: COutput> CEmitter<'_, O> {
             crate::vec_ops::VecOp::CloneAt
             | crate::vec_ops::VecOp::Replace
             | crate::vec_ops::VecOp::ReserveOwned
-            | crate::vec_ops::VecOp::SortOwned => {
+            | crate::vec_ops::VecOp::SortOwned
+            | crate::vec_ops::VecOp::SortBy => {
                 return Err(backend_error(
                     "additive owned operation reached frozen Vec lowering",
                 ));
@@ -66,8 +67,11 @@ impl<O: COutput> CEmitter<'_, O> {
             crate::vec_ops::VecOp::WithCapacity => {
                 self.require_type(&values[0].ty, &ResolvedType::Usize, "Vec capacity")?;
                 if crate::codegen::native_vec::owned_leaf::program_uses_field_reads(self.program) {
-                    let layout = crate::codegen::native_vec::owned_leaf::layout(self.program, element)
-                        .ok_or_else(|| backend_error("legacy Vec constructor lacks nominal descriptor"))?;
+                    let layout =
+                        crate::codegen::native_vec::owned_leaf::layout(self.program, element)
+                            .ok_or_else(|| {
+                                backend_error("legacy Vec constructor lacks nominal descriptor")
+                            })?;
                     self.line(&format!(
                         "spx_status = spx_leaf_legacy_new(spx_ctx, &{}, {}, &{destination});",
                         layout.symbol, values[0].code

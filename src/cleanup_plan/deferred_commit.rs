@@ -79,6 +79,7 @@ pub(super) fn is_infallible_vec_operation(op: Option<crate::vec_ops::VecOp>) -> 
                 | crate::vec_ops::VecOp::Clear
                 | crate::vec_ops::VecOp::Sort
                 | crate::vec_ops::VecOp::SortOwned
+                | crate::vec_ops::VecOp::SortBy
         )
     )
 }

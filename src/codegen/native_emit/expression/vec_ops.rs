@@ -5,6 +5,7 @@ mod field_read;
 mod owned_leaf;
 mod owned_payload;
 mod record_payload;
+mod sort_keys;
 
 use crate::diagnostic::Diagnostic;
 use crate::hir::{ResolvedExpr, ResolvedType};
@@ -43,6 +44,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 | crate::vec_ops::VecOp::Replace
                 | crate::vec_ops::VecOp::ReserveOwned
                 | crate::vec_ops::VecOp::SortOwned
+                | crate::vec_ops::VecOp::SortBy
         )) {
             return self.emit_owned_leaf_vec(expr, op, element, args);
         }
@@ -86,7 +88,8 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             crate::vec_ops::VecOp::CloneAt
             | crate::vec_ops::VecOp::Replace
             | crate::vec_ops::VecOp::ReserveOwned
-            | crate::vec_ops::VecOp::SortOwned => {
+            | crate::vec_ops::VecOp::SortOwned
+            | crate::vec_ops::VecOp::SortBy => {
                 Err(backend_error("owned operation reached scalar Vec lowering"))
             }
             crate::vec_ops::VecOp::WithCapacity => {

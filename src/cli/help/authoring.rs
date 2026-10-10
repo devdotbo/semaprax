@@ -2,7 +2,7 @@
 use std::fmt::Write as _;
 
 const MAX_BYTES: usize = 2_048;
-const ROUTES: &str = "Authoring routes (complete):\n  author:stdin-json               v27 bounded native stream command\n  author:stream-data-v2           v29 private record/Vec stream command\n  author:owned-data               v30 private owned-leaf collections\n  author:collection-records       v31 nested records containing Vec\n  author:nested-outcomes         v32 typed nested success/error carriers\n  author:file-text                native UTF-8 file command\n  author:source-web               single-source web build\n  author:literal-format           checked literal String rendering\n  author:string-from-utf8         strict owned String construction from bytes\n  author:copy-record-vec          flat Copy-record vectors\n  author:record-field-views       borrowed record and Vec field reads\n  author:json-codec               checked source JSON codec derivation\n  author:json-identifier-views    one identifier as a token view\n  author:json-request-views       bounded identifier and record arrays\n  author:json-stream-request-views bounded native stream request view\n  author:json-owned-request      bounded owning request collections\n  author:json-utf8-owned-request bounded UTF-8 string values\n  author:json-stream-utf8-owned-request bounded UTF-8 stdin requests\n  author:json-collection-response bounded nested collection encoder\n  author:json-nested-request      bounded finite nested request decoder\n  author:json-stream-nested-request bounded finite nested stdin decoder\n  author:json-nested-response     bounded finite nested borrowed encoder\n  author:json-request-response    typed request/response composition boundaries\nLibrary-only search: help language find:<word>:0\nExact card sections: help language topics\n";
+const ROUTES: &str = "Authoring routes (complete):\n  author:stdin-json               v27 bounded native stream command\n  author:stream-data-v2           v29 private record/Vec stream command\n  author:owned-data               v30 private owned-leaf collections\n  author:collection-records       v31 nested records containing Vec\n  author:nested-outcomes         v32 typed nested success/error carriers\n  author:file-text                native UTF-8 file command\n  author:source-web               single-source web build\n  author:literal-format           checked literal String rendering\n  author:string-from-utf8         strict owned String construction from bytes\n  author:copy-record-vec          flat Copy-record vectors\n  author:record-sort-keys         explicit stable field sort policies\n  author:record-field-views       borrowed record and Vec field reads\n  author:json-codec               checked source JSON codec derivation\n  author:json-identifier-views    one identifier as a token view\n  author:json-request-views       bounded identifier and record arrays\n  author:json-stream-request-views bounded native stream request view\n  author:json-owned-request      bounded owning request collections\n  author:json-utf8-owned-request bounded UTF-8 string values\n  author:json-stream-utf8-owned-request bounded UTF-8 stdin requests\n  author:json-collection-response bounded nested collection encoder\n  author:json-nested-request      bounded finite nested request decoder\n  author:json-stream-nested-request bounded finite nested stdin decoder\n  author:json-nested-response     bounded finite nested borrowed encoder\n  author:json-request-response    typed request/response composition boundaries\nLibrary-only search: help language find:<word>:0\nExact card sections: help language topics\n";
 
 #[cfg(test)]
 pub(super) fn assert_guide_contract() {
@@ -93,6 +93,15 @@ pub(super) fn lookup(query: &str) -> Result<String, String> {
             "string_format(\"id={}\", 7) -> owned string. The first argument is a source literal: <=65536 decoded UTF-8 bytes, <=32 sequential {} fields; {{ and }} escape braces.\n",
             "Fields are i64, u8, usize, bool, or owned string, evaluated left to right. Runtime templates, borrowed strings, floats, JSON escaping and generic/closure bodies are refused.\n",
             "Use only where an existing String backend/profile admits the ordinary function. Exact failure and cleanup contract: docs/CHECKED-LITERAL-FORMAT-V1.md.\n"
+        ).to_owned()),
+        "author:record-sort-keys" => Ok(concat!(
+            "Sort admitted flat record Vecs with explicit keys: vec_sort_by<Row>(rows,\"priority:desc,arrival:asc\").\n",
+            "One explicit monomorphic record type; 1..8 unique fields, exact literal field:asc or field:desc, comma separated without spaces (<=1024 bytes). Fields resolve to their persistent @id identities, complete ordered layout and existing capacity; names alone carry no authority. No callbacks or computed policy Strings. Invalid policy is SPX-T311.\n",
+            "Copy fields use existing scalar total order, including floating IEEE bit total order. Owned String/Bytes keys compare unsigned bytes, then length; NUL and UTF-8 bytes remain exact. Descending reverses comparison operands, so signed minimum is safe. Ties retain input order.\n",
+            "This consumes rows and returns the same owner at the next generation; no payload clones or replacement row array. End all field/view loans before sorting. Empty/full vectors keep their existing capacity and limits.\n",
+            "vec_sort and vec_sort_owned retain their declaration-order semantics. Choose keys independently of JSON wire order; no negative-key surrogate is needed. Primitive Vecs and generic/nested records remain refused by this operation; older command profiles retain their carrier refusals.\n",
+            "The literal is checked metadata, not a runtime String argument. HIR/graph callees use a compiler-owned length-delimited descriptor identity; it cannot be declared or imported. Selective prelude v15 binds new programs only.\n",
+            "Contract: docs/EXPLICIT-RECORD-SORT-KEYS-V1.md. Authored regressions await execution; no cost or runtime savings claim.\n"
         ).to_owned()),
         "author:copy-record-vec" => Ok(concat!(
             "Flat Copy-record Vec source implementation; cross-engine and application qualification pending.\n",
@@ -324,6 +333,28 @@ mod tests {
     use super::*;
 
     #[test]
+    fn explicit_sort_card_is_bounded_and_names_closed_literal_authority() {
+        let card = lookup("author:record-sort-keys").unwrap();
+        assert!(card.len() <= 4096);
+        for text in [
+            "vec_sort_by<Row>",
+            "1..8",
+            "SPX-T311",
+            "persistent @id",
+            "stable",
+            "next generation",
+            "not a runtime String",
+            "prelude v15",
+            "EXPLICIT-RECORD-SORT-KEYS-V1.md",
+        ] {
+            assert!(card.contains(text), "{text}");
+        }
+        assert!(lookup("author:routes")
+            .unwrap()
+            .contains("author:record-sort-keys"));
+    }
+
+    #[test]
     fn routes_and_search_are_bounded_exact_and_have_complete_continuations() {
         for route in [
             "author:routes",
@@ -337,6 +368,7 @@ mod tests {
             "author:literal-format",
             "author:string-from-utf8",
             "author:copy-record-vec",
+            "author:record-sort-keys",
             "author:record-field-views",
             "author:json-codec",
             "author:json-identifier-views",

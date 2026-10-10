@@ -27,6 +27,9 @@ pub(crate) const SCHEMA_V9: &str = "semaprax.prelude.v9";
 pub(crate) const SCHEMA_V10: &str = "semaprax.prelude.v10";
 pub(crate) const SCHEMA_V11: &str = "semaprax.prelude.v11";
 pub(crate) const SCHEMA_V12: &str = "semaprax.prelude.v12";
+pub(crate) const SCHEMA_V15: &str = "semaprax.prelude.v15";
+#[path = "prelude_sort_keys.rs"]
+pub(crate) mod sort_keys;
 pub(crate) const SCHEMA_V14: &str = "semaprax.prelude.v14";
 #[path = "prelude_owned_leaf.rs"]
 pub(crate) mod owned_leaf;
@@ -688,7 +691,13 @@ pub(crate) fn selected_for_source(source: &str) -> (&'static str, Vec<u8>, Strin
 pub(crate) fn selected_for_program(
     program: &crate::ast::Program,
 ) -> (&'static str, Vec<u8>, String) {
-    if owned_leaf::program_uses(program) {
+    if sort_keys::program_uses(program) {
+        (
+            SCHEMA_V15,
+            sort_keys::contract_bytes(),
+            sort_keys::digest_text(),
+        )
+    } else if owned_leaf::program_uses(program) {
         (
             SCHEMA_V14,
             owned_leaf::contract_bytes(),

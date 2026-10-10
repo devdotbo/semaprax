@@ -1,6 +1,9 @@
 //! Copy-record vectors reuse one authenticated scalar-word allocation.
-pub(super) fn emit_runtime(output: &mut impl super::super::COutput) {
+pub(super) fn emit_runtime(output: &mut impl super::super::COutput, keys: bool) {
     output.push_str(RUNTIME);
+    if keys {
+        output.push_str(include_str!("sort_keys.c"));
+    }
 }
 const RUNTIME: &str = r#"
 static __attribute__((unused)) struct spx_vec_authority_entry *spx_copy_vec_check(struct spx_context *c, const spx_vec_v1 *s, uint64_t width) {

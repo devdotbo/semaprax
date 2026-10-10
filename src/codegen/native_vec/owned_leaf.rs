@@ -12,6 +12,9 @@ pub(in crate::codegen) struct Layout {
 }
 
 pub(in crate::codegen) fn program_uses_field_reads(program: &ResolvedProgram) -> bool {
+    if crate::vec_ops::sort_keys::uses(program) {
+        return true;
+    }
     program
         .functions
         .iter()
@@ -110,6 +113,9 @@ pub(super) fn emit_runtime(output: &mut impl super::super::COutput, program: &Re
         output.push_str(include_str!("legacy_field.c"));
     } else {
         output.push_str(include_str!("owned_leaf.c"));
+    }
+    if crate::vec_ops::sort_keys::uses(program) {
+        output.push_str(include_str!("owned_sort_keys.c"));
     }
     let mut layouts = std::collections::BTreeMap::new();
     for f in program

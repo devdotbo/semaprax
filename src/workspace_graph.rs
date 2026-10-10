@@ -32,8 +32,8 @@ mod retained_validation;
 mod retained_vectors;
 mod session_protocol_decl;
 mod shape_identity;
-mod source_schema;
 pub(crate) mod source_callables;
+mod source_schema;
 mod validation;
 use crate::ast::{
     Expr, ExprKind, Function, ModuleUse, ModuleUseKind, ParamMode, Program, Span, Type,
@@ -5308,6 +5308,16 @@ fn validate_uses(
             }
         }
         for module_use in &program.module_uses {
+            if module_use
+                .persistent_id
+                .starts_with(crate::vec_ops::sort_keys::PREFIX)
+            {
+                return Err(vec![use_error(
+                    program,
+                    module_use,
+                    "compiler-owned explicit sort descriptors cannot be imported",
+                )]);
+            }
             if !imported_targets.insert((module_use.kind, module_use.persistent_id.as_str())) {
                 return Err(vec![use_error(
                     program,

@@ -509,6 +509,56 @@ const env = {
     value.identity=identity;value.shape=shape;
     return move(handle,value);
   },
+  spx_vec_sort_by_v1:(handle,identity,shape,policy)=>{
+    const value=vectorValue(handle);
+    if(!value)throw Error('stale explicit sort vector');
+    const copy=value.tag===1;
+    let width=0,seenSlots=0;
+    for(let raw=BigInt.asUintN(64,shape);raw;raw>>=8n){
+      const field=Number(raw&255n),code=field>>4,slot=field&15;
+      if(!field||code<1||code>10||slot>=8||(seenSlots&(1<<slot))||(copy&&code>8))throw Error('explicit sort shape');
+      width++;seenSlots|=1<<slot;
+    }
+    if(!width||seenSlots!==(1<<width)-1)throw Error('explicit sort layout');
+    if(copy){
+      if(value.values.length%width||value.capacity%BigInt(width))throw Error('Copy sort stride');
+      if(policy===0n){
+        if(value.identity!==undefined&&(value.identity!==identity||value.shape!==shape))throw Error('Copy descriptor rebound');
+        value.identity=identity;value.shape=shape;return handle;
+      }
+      if(value.identity!==identity||value.shape!==shape)throw Error('foreign Copy sort descriptor');
+    }else{
+      if(policy===0n)throw Error('owned sort cannot bind an arbitrary carrier');
+      bindSort(handle,identity,shape);
+    }
+    let seen=0,count=0;
+    for(let raw=BigInt.asUintN(64,policy);raw;raw>>=8n){const byte=Number(raw&255n),key=(byte>>1)-1;
+      if(key<0||key>=width||(seen&(1<<key)))throw Error('explicit sort duplicate/foreign key');
+      count++;seen|=1<<key;
+    }
+    if(!count||count>width||value.generation===0xffffffffn)throw Error('explicit sort policy/epoch');
+    if(sorting)throw Error('reentrant explicit sort');sorting=true;
+    try{
+      const rows=value.values,copied=copies,dropped=drops,authorities=vectors.size;
+      const length=copy?rows.length/width:rows.length;
+      for(let i=1;i<length;i++){let j=i;
+        while(j>0){let order=0;
+          for(let raw=BigInt.asUintN(64,policy);raw&&!order;raw>>=8n){
+            const byte=Number(raw&255n),key=(byte>>1)-1,field=Number((BigInt.asUintN(64,shape)>>BigInt(key*8))&255n),code=field>>4,slot=field&15;
+            const a=copy?rows[(j-1)*width+slot]:rows[j-1][slot],b=copy?rows[j*width+slot]:rows[j][slot];
+            const left=byte&1?b:a,right=byte&1?a:b;
+            order=code>=9?compareOwnedBytes(left,right):totalKey(left,code)<totalKey(right,code)?-1:totalKey(left,code)>totalKey(right,code)?1:0;
+          }
+          if(order<=0)break;
+          if(copy){for(let f=0;f<width;f++){const word=rows[(j-1)*width+f];rows[(j-1)*width+f]=rows[j*width+f];rows[j*width+f]=word;}}
+          else{const row=rows[j-1];rows[j-1]=rows[j];rows[j]=row;}j--;
+        }
+      }
+      value.identity=identity;value.shape=shape;value.generation++;
+      if(copies!==copied||drops!==dropped||value.values!==rows||vectors.size!==authorities)throw Error('explicit sort allocated/copied/dropped');
+      return BigInt.asIntN(64,(value.generation<<32n)|value.authority_slot);
+    }finally{sorting=false}
+  },
   spx_vec_leaf_sort_v1:(handle,identity,shape)=>{
     if(sorting)throw Error('reentrant owned sort');
     sorting=true;
@@ -601,6 +651,13 @@ const env = {
   try{await WebAssembly.instantiate(moduleBytes,{env:missing})}
   catch(error){if(!(error instanceof WebAssembly.LinkError))throw error;refused=true}
   if(!refused)throw Error('private boundary linked without clone import');
+  }
+  if(WebAssembly.Module.imports(new WebAssembly.Module(moduleBytes)).some(entry=>entry.name==='spx_vec_sort_by_v1')){
+    const missingSort={...env};delete missingSort.spx_vec_sort_by_v1;
+    let absent=false;
+    try{await WebAssembly.instantiate(moduleBytes,{env:missingSort})}
+    catch(error){if(!(error instanceof WebAssembly.LinkError))throw error;absent=true}
+    if(!absent)throw Error('explicit sort linked without its authenticated private import');
   }
   if(refusal==='field-no-allocation'){
     const withoutRead={...env};delete withoutRead.spx_vec_leaf_field_read_v1;

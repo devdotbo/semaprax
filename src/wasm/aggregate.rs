@@ -2262,7 +2262,8 @@ fn emit_profile_with_scalar_exports(
     let uses_extended_vec = super::vec_ops::program_uses_extended_vec(program);
     let uses_vec_sort = crate::vec_ops::resolved_program_uses_sort(program);
     let uses_vec_record = super::vec_ops::program_uses_record_vec(program);
-    let uses_owned_leaf_vec = super::vec_ops::program_uses_owned_leaf_vec(program);
+    let uses_owned_leaf_vec = super::vec_ops::program_uses_owned_leaf_vec(program)
+        || crate::vec_ops::sort_keys::uses(program);
     let uses_owned_iterator = crate::iterator_ops::resolved_program_uses_owned_iterator(program);
     let uses_box = super::program_uses_box(program);
     let uses_list = crate::list_ops::resolved_program_uses_list(program);
@@ -6653,7 +6654,8 @@ impl Emitter<'_> {
             crate::vec_ops::VecOp::CloneAt
             | crate::vec_ops::VecOp::Replace
             | crate::vec_ops::VecOp::ReserveOwned
-            | crate::vec_ops::VecOp::SortOwned => {
+            | crate::vec_ops::VecOp::SortOwned
+            | crate::vec_ops::VecOp::SortBy => {
                 Err(error("owned-leaf Vec operation has no admitted element"))
             }
         }

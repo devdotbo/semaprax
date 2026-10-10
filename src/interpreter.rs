@@ -4500,7 +4500,14 @@ impl Evaluator<'_> {
                     return self.evaluate_list_op(op, type_arguments, args, environment, depth);
                 }
                 if let Some(op) = crate::vec_ops::by_id(callee.as_str()) {
-                    return self.evaluate_vec_op(op, type_arguments, args, environment, depth);
+                    return self.evaluate_vec_op(
+                        op,
+                        callee.as_str(),
+                        type_arguments,
+                        args,
+                        environment,
+                        depth,
+                    );
                 }
                 if let Some(op) = crate::box_ops::by_id(callee.as_str()) {
                     return self.evaluate_box_op(op, type_arguments, args, environment, depth);

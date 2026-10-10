@@ -398,7 +398,10 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
         include_str!("../../src/workspace_graph/dependency_pruning.rs"),
     );
     let root = root.as_str();
-    let projection_root = include_str!("../../src/workspace_graph/expected_projection.rs");
+    let projection_root = concat!(
+        include_str!("../../src/workspace_graph/expected_projection.rs"),
+        include_str!("../../src/workspace_graph/expected_projection/sort_keys.rs")
+    );
     let projection_local_identity =
         include_str!("../../src/workspace_graph/expected_projection/local_identity.rs");
     let projection_call_identity =

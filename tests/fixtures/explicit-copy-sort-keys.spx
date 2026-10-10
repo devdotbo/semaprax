@@ -1,0 +1,25 @@
+module sort.ranking;
+@id("sort.row") record Rank {
+ @id("sort.serial") serial:i64,
+ @id("sort.priority") priority:i64,
+ @id("sort.arrival") arrival:usize,
+}
+@id("app.main") fn main()->i64 {
+ let mut rows=vec_with_capacity<Rank>(4usize);
+ rows=vec_push<Rank>(rows,Rank{serial:3,priority:2,arrival:1usize});
+ rows=vec_push<Rank>(rows,Rank{serial:1,priority:2,arrival:0usize});
+ rows=vec_push<Rank>(rows,Rank{serial:4,priority:1,arrival:0usize});
+ rows=vec_push<Rank>(rows,Rank{serial:2,priority:2,arrival:0usize});
+ rows=vec_sort_by<Rank>(rows,"priority:desc,arrival:asc");
+ let a=vec_get<Rank>(rows,0usize);let b=vec_get<Rank>(rows,1usize);
+ let c=vec_get<Rank>(rows,2usize);let d=vec_get<Rank>(rows,3usize);
+ let first=a.serial==1 && b.serial==2 && c.serial==3 && d.serial==4;
+ rows=vec_sort_by<Rank>(rows,"priority:asc,serial:desc");
+ let e=vec_get<Rank>(rows,0usize);let f=vec_get<Rank>(rows,1usize);
+ let g=vec_get<Rank>(rows,2usize);let h=vec_get<Rank>(rows,3usize);
+ let second=e.serial==4 && f.serial==3 && g.serial==2 && h.serial==1;
+ rows=vec_sort_by<Rank>(rows,"arrival:asc");
+ let i=vec_get<Rank>(rows,0usize);let j=vec_get<Rank>(rows,1usize);
+ let k=vec_get<Rank>(rows,2usize);let l=vec_get<Rank>(rows,3usize);
+ if first && second && i.serial==4 && j.serial==2 && k.serial==1 && l.serial==3 && vec_capacity<Rank>(rows)==4usize {42}else{1}
+}

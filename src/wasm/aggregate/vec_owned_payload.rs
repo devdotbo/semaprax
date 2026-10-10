@@ -113,8 +113,15 @@ impl Emitter<'_> {
             VecOp::Set => VEC_IMPORT_COUNT + 1,
             VecOp::Clear => VEC_IMPORT_COUNT + 2,
             VecOp::Get => unreachable!(),
-            VecOp::CloneAt | VecOp::Replace | VecOp::ReserveOwned | VecOp::SortOwned =>
-                return Err(error("owned Vec payload new operation requires an admitted leaf layout")),
+            VecOp::CloneAt
+            | VecOp::Replace
+            | VecOp::ReserveOwned
+            | VecOp::SortOwned
+            | VecOp::SortBy => {
+                return Err(error(
+                    "owned Vec payload new operation requires an admitted leaf layout",
+                ))
+            }
         };
         self.output.push(0x10);
         write_u32(self.output, vec_import_base(self.program) + offset);

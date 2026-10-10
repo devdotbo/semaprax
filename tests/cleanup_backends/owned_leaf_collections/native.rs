@@ -16,6 +16,21 @@ pub(super) fn run(source: &str, code: u32, expected: i64, failure: Failure) {
     let resolved = hir::resolve(&ast).expect("resolved admission");
     hir::validate(&resolved).expect("independent ownership replay");
     let generated = codegen::emit_c(&ast).expect("native owning projection");
+    let generated = generated
+        .lines()
+        .map(|line| {
+            if line.contains("spx_status = spx_leaf_sort_keys(") {
+                let operands=line.split('(').nth(1).unwrap_or("");
+                let source=operands.split(',').nth(1).unwrap_or("").trim();
+                let destination=line.rsplit(',').next().unwrap_or("").trim().trim_end_matches(");").trim();
+                assert!(source.starts_with('&') && destination.starts_with('&'),"sort observer must bind actual source/destination");
+                format!("{{ spx_vec_v1 fixture_before=*({source}); uint64_t fixture_next=spx_ctx->vec_next_generation; fixture_sort_active=1;\n{line}\nfixture_sort_active=0; if(({destination})->ptr!=fixture_before.ptr || ({destination})->authority!=fixture_before.authority || ({destination})->len!=fixture_before.len || ({destination})->capacity!=fixture_before.capacity || ({destination})->generation!=fixture_next || spx_ctx->vec_next_generation!=fixture_next+1 || ({source})->generation!=0)abort(); }}")
+            } else {
+                line.to_owned()
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
     assert!(generated.contains("spx_leaf_clone"));
     // Inject failure only in the clone worker. Ordinary String/Bytes creation
     // keeps its existing policy; this checks the new fallible clone contract.

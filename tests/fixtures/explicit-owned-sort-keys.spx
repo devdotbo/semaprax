@@ -1,0 +1,21 @@
+module owned.leaf;
+@id("owned.leaf.entry") record Entry {
+ @id("owned.leaf.serial") serial:i64,
+ @id("owned.leaf.text") text:string,
+ @id("owned.leaf.key") key:i64,
+}
+@id("owned.leaf.main") fn main()->i64 {
+ let mut rows=vec_with_capacity<Entry>(5usize);
+ rows=vec_push<Entry>(rows,Entry{serial:3,text:"a\u{0}",key:-9223372036854775808});
+ rows=vec_push<Entry>(rows,Entry{serial:1,text:"é",key:7});
+ rows=vec_push<Entry>(rows,Entry{serial:5,text:"a",key:7});
+ rows=vec_push<Entry>(rows,Entry{serial:2,text:"é",key:7});
+ rows=vec_push<Entry>(rows,Entry{serial:4,text:"z",key:0});
+ rows=vec_sort_by<Entry>(rows,"key:desc,text:desc");
+ let first=vec_field<Entry>(rows,0usize,"serial")==1 && vec_field<Entry>(rows,1usize,"serial")==2 && vec_field<Entry>(rows,2usize,"serial")==5 && vec_field<Entry>(rows,3usize,"serial")==4 && vec_field<Entry>(rows,4usize,"serial")==3;
+ rows=vec_sort_by<Entry>(rows,"text:asc");
+ let second=vec_field<Entry>(rows,0usize,"serial")==5 && vec_field<Entry>(rows,1usize,"serial")==3 && vec_field<Entry>(rows,2usize,"serial")==4 && vec_field<Entry>(rows,3usize,"serial")==1 && vec_field<Entry>(rows,4usize,"serial")==2;
+ let view=str_as_bytes(vec_field<Entry>(rows,1usize,"text"));
+ let exact=byte_len(view)==2usize && (match byte_get(view,1usize){Option::Some{value}=>value==0u8,Option::None{}=>false,});
+ if first && second && exact && vec_capacity<Entry>(rows)==5usize {29}else{0}
+}

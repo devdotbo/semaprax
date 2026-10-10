@@ -39,6 +39,20 @@ pub(super) fn run(name: &str, text: &str, code: u32, value: i64, refuse: bool) {
         }
     }
     let generated = codegen::emit_c(&ast).unwrap();
+    let generated = generated
+        .lines()
+        .map(|line| {
+            if line.contains("spx_status = spx_copy_vec_sort_keys(") {
+                let source=line.split(',').nth(1).unwrap_or("").trim();
+                let destination=line.rsplit(',').next().unwrap_or("").trim().trim_end_matches(");").trim();
+                assert!(source.starts_with('&') && destination.starts_with('&'),"bind actual Copy sort operands");
+                format!("{{ spx_vec_v1 spx_before=*({source}); uint64_t spx_next=spx_ctx->vec_next_generation; spx_sort_active=1;\n{line}\nspx_sort_active=0; if(({destination})->ptr!=spx_before.ptr || ({destination})->authority!=spx_before.authority || ({destination})->capacity!=spx_before.capacity || ({destination})->len!=spx_before.len || ({destination})->generation!=spx_next || spx_ctx->vec_next_generation!=spx_next+1 || ({source})->generation!=0)abort(); }}")
+            } else {
+                line.to_owned()
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
     assert!(generated.contains("spx_copy_vec_check"));
     let tracked = generated
         .replace("calloc(", "spx_test_calloc(")
@@ -51,18 +65,24 @@ pub(super) fn run(name: &str, text: &str, code: u32, value: i64, refuse: bool) {
     let allocator = format!(
         r#"#include <stdint.h>
 #include <stdlib.h>
-static uint64_t allocations=0;
-static __attribute__((unused)) void *spx_test_calloc(size_t n,size_t s){{if({refuse})return NULL;void*p=calloc(n,s);if(p)++allocations;return p;}}
-static __attribute__((unused)) void *spx_test_realloc(void*p,size_t n){{int had=p!=NULL;void*r=realloc(p,n);if(r&&!had)++allocations;return r;}}
-static __attribute__((unused)) void spx_test_free(void*p){{if(p){{if(!allocations)abort();--allocations;free(p);}}}}
+static uint64_t allocations=0;static unsigned spx_sort_active=0;
+static __attribute__((unused)) void *spx_test_calloc(size_t n,size_t s){{if(spx_sort_active)abort();if({refuse})return NULL;void*p=calloc(n,s);if(p)++allocations;return p;}}
+static __attribute__((unused)) void *spx_test_realloc(void*p,size_t n){{if(spx_sort_active)abort();int had=p!=NULL;void*r=realloc(p,n);if(r&&!had)++allocations;return r;}}
+static __attribute__((unused)) void spx_test_free(void*p){{if(spx_sort_active)abort();if(p){{if(!allocations)abort();--allocations;free(p);}}}}
 "#,
         refuse = u8::from(refuse)
     );
+    let total_order_probe = if name.starts_with("explicit-floating") {
+        include_str!("sort_keys_bits.c")
+    } else {
+        ""
+    };
     let probe = format!(
         r#"
 int main(void) {{
  struct spx_status_entry entries[32];struct spx_context c={{0}};
  if(!spx_context_init(&c,UINT64_C(17),entries,32,NULL,NULL,NULL))return 1;
+ {total_order_probe}
  for(unsigned i=0;i<3;++i){{
   int64_t value=INT64_C(123456789);uint32_t before=c.status_arena.length;
   spx_status_token status=spx_decl_6170702e6d61696e(&c,&value);

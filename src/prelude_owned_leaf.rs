@@ -38,7 +38,7 @@ pub(crate) fn program_uses(program: &crate::ast::Program) -> bool {
                 ..
             } = &expr.kind
             {
-                if crate::vec_ops::by_name(name).is_some_and(|op| op.owned_leaf_only()
+                if crate::vec_ops::by_name(name).is_some_and(|op| (op.owned_leaf_only() || op == crate::vec_ops::VecOp::SortBy)
                     || matches!(type_arguments.as_slice(), [element] if ast_new_element(program, element)))
                     || (crate::iterator_ops::by_name(name).is_some() && matches!(type_arguments.as_slice(), [element] if ast_new_element(program, element))) { return true; }
             }

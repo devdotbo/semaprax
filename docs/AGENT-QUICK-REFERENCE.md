@@ -1336,6 +1336,15 @@ bytes with `str_as_bytes(vec_field<Row>(value.items,index,"text"))`; a nested
 reads apply only in v30/v31/v32, not public ABIs. Implementation/qualification
 pending; see [scoped Vec field reads](SCOPED-VEC-FIELD-READS-V1.md).
 
+When ranking differs from JSON wire/declaration order, use
+`vec_sort_by<Row>(rows,"priority:desc,arrival:asc")`: 1..8 unique literal
+field keys on one admitted explicit monomorphic flat record (SPX-T311).
+It consumes the Vec, preserves stable ties and payload owners, and ends every
+live field/view loan before sorting. Descending reverses comparison operands,
+so signed minimum needs no negative-key surrogate. `vec_sort_owned` keeps its
+implicit declaration-order semantics. Exact boundaries and synthetic callee
+identity: [Explicit Record Sort Keys v1](EXPLICIT-RECORD-SORT-KEYS-V1.md).
+
 `semaprax lock --write` pins identity, sources, interface, targets and
 capabilities; `--verify` checks it and `--compare <base.lock>` reports breaking
 changes. Dependency ranges use `^`, `~` or `=`. `semaprax resolve` pins

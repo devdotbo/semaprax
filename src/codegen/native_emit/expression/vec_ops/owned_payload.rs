@@ -37,7 +37,8 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             crate::vec_ops::VecOp::CloneAt
             | crate::vec_ops::VecOp::Replace
             | crate::vec_ops::VecOp::ReserveOwned
-            | crate::vec_ops::VecOp::SortOwned => {
+            | crate::vec_ops::VecOp::SortOwned
+            | crate::vec_ops::VecOp::SortBy => {
                 return Err(backend_error(
                     "additive owned operation reached frozen Vec lowering",
                 ));

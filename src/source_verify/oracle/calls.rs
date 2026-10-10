@@ -213,6 +213,17 @@ pub(super) fn oracle_call(
         }
         return Some(CheckedValue::returned(*result, false));
     }
+    let args = if name == crate::vec_ops::sort_keys::NAME {
+        if !current.type_parameters.is_empty()
+            || crate::source_verify::sort_keys::descriptor(types, type_arguments, args).is_none()
+        {
+            diagnostics.push(error(program,"SPX-T311","vec_sort_by requires an explicit monomorphic record and 1..8 unique literal field:asc/field:desc keys",expr.span));
+            return None;
+        }
+        &args[..1]
+    } else {
+        args
+    };
     if let Some(op) = crate::vec_ops::by_name(name) {
         let element = type_arguments.first();
         if type_arguments.len() != 1

@@ -143,6 +143,15 @@ pub(super) fn ast_expr_cost(
             args,
         } => {
             cost.embedded_string(name)?;
+            // Complete synthetic key/layout identities are additional HIR text.
+            // Bound every transient replay buffer before entering the builder;
+            // descriptor construction itself charges its actual allocation.
+            if name == crate::vec_ops::sort_keys::NAME {
+                cost.add_split(
+                    8 * crate::vec_ops::sort_keys::MAX_DESCRIPTOR_BYTES,
+                    8 * crate::vec_ops::sort_keys::MAX_DESCRIPTOR_BYTES,
+                )?;
+            }
             for ty in type_arguments {
                 ast_type_cost(ty, cost)?;
             }

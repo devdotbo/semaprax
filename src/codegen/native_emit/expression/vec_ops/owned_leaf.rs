@@ -159,15 +159,18 @@ impl<O: COutput> CEmitter<'_, O> {
                 self.line(&format!("spx_leaf_write(spx_ctx, &{source}, {descriptor}, {index}, {push}, {row}, &{out});"));
                 self.line(&format!("{flag} = false;"));
             }
-            VecOp::Clear | VecOp::ReserveOwned | VecOp::SortOwned => {
+            VecOp::Clear | VecOp::ReserveOwned | VecOp::SortOwned | VecOp::SortBy => {
                 let (source, flag, _) = plan.call_argument(&expr.id, 0)?;
                 let (source, flag) = (source.to_owned(), flag.to_owned());
                 let helper = match op {
                     VecOp::Clear => "spx_leaf_clear",
                     VecOp::ReserveOwned => "spx_leaf_reserve",
+                    VecOp::SortBy => "spx_leaf_sort_keys",
                     _ => "spx_leaf_sort",
                 };
-                let additional = if op == VecOp::ReserveOwned {
+                let additional = if op == VecOp::SortBy {
+                    self.emit_sort_keys(expr)?
+                } else if op == VecOp::ReserveOwned {
                     format!("{}, ", values[1].code)
                 } else {
                     String::new()

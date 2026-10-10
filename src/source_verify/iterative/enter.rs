@@ -166,6 +166,23 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 type_arguments,
                 args,
             } => {
+                let args: &[Expr] = if name == crate::vec_ops::sort_keys::NAME {
+                    if !self.current.type_parameters.is_empty()
+                        || crate::source_verify::sort_keys::descriptor(
+                            self.types,
+                            type_arguments,
+                            args,
+                        )
+                        .is_none()
+                    {
+                        self.diagnostics.push(error(self.program,"SPX-T311","vec_sort_by requires an explicit monomorphic record and 1..8 unique literal field:asc/field:desc keys",expression.span));
+                        self.values.push(None);
+                        return Ok(());
+                    }
+                    &args[..1]
+                } else {
+                    args
+                };
                 if let Some(result) = crate::source_verify::owning_closure::check_call(
                     self.program,
                     name,

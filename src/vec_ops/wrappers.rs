@@ -44,7 +44,11 @@ pub(crate) fn wrapper_id(op: VecOp) -> Option<&'static str> {
         VecOp::Set => "std.collections.vec.set",
         VecOp::Clear => "std.collections.vec.clear",
         VecOp::Sort => "std.collections.vec.sort",
-        VecOp::CloneAt | VecOp::Replace | VecOp::ReserveOwned | VecOp::SortOwned => return None,
+        VecOp::CloneAt
+        | VecOp::Replace
+        | VecOp::ReserveOwned
+        | VecOp::SortOwned
+        | VecOp::SortBy => return None,
     })
 }
 
@@ -59,7 +63,11 @@ pub(crate) fn wrapper_name(op: VecOp) -> Option<&'static str> {
         VecOp::Set => "set",
         VecOp::Clear => "clear",
         VecOp::Sort => "sort",
-        VecOp::CloneAt | VecOp::Replace | VecOp::ReserveOwned | VecOp::SortOwned => return None,
+        VecOp::CloneAt
+        | VecOp::Replace
+        | VecOp::ReserveOwned
+        | VecOp::SortOwned
+        | VecOp::SortBy => return None,
     })
 }
 
@@ -105,7 +113,11 @@ pub(crate) fn source_wrapper(program: &Program, function: &Function) -> Option<V
         VecOp::ReserveExact => &["values", "additional"],
         VecOp::Set => &["values", "index", "value"],
         VecOp::Clear | VecOp::Sort => &["values"],
-        VecOp::CloneAt | VecOp::Replace | VecOp::ReserveOwned | VecOp::SortOwned => return None,
+        VecOp::CloneAt
+        | VecOp::Replace
+        | VecOp::ReserveOwned
+        | VecOp::SortOwned
+        | VecOp::SortBy => return None,
     };
     if function.params.len() != expected.len()
         || function
@@ -195,7 +207,11 @@ pub(crate) fn hir_wrapper(template: &ResolvedFunctionTemplate) -> Option<VecOp> 
         VecOp::ReserveExact => &["values", "additional"],
         VecOp::Set => &["values", "index", "value"],
         VecOp::Clear | VecOp::Sort => &["values"],
-        VecOp::CloneAt | VecOp::Replace | VecOp::ReserveOwned | VecOp::SortOwned => return None,
+        VecOp::CloneAt
+        | VecOp::Replace
+        | VecOp::ReserveOwned
+        | VecOp::SortOwned
+        | VecOp::SortBy => return None,
     };
     if template.params.len() != expected.len()
         || template
@@ -311,7 +327,11 @@ pub(crate) fn template_ownership(
             | VecOp::Sort => OwnershipMode::Own,
             VecOp::Len | VecOp::Capacity | VecOp::Get => OwnershipMode::Borrow,
             // These intrinsic operations have no transparent std.collections wrapper.
-            VecOp::CloneAt | VecOp::Replace | VecOp::ReserveOwned | VecOp::SortOwned => {
+            VecOp::CloneAt
+            | VecOp::Replace
+            | VecOp::ReserveOwned
+            | VecOp::SortOwned
+            | VecOp::SortBy => {
                 return None;
             }
         })

@@ -123,9 +123,11 @@ The staged source owner transfers once at the canonical infallible call commit.
 
 A scheduler can declare priority, arrival, id, service, deadline in that order
 and sort its actual patients. The independently checked codec still binds JSON
-wire field names. A report can declare negative count followed by path for
-descending counts and ascending UTF-8 ties. Unrelated catalog records must work
-under the same structural rule.
+wire field names. When business ranking differs from wire/declaration order,
+use `vec_sort_by<Row>(rows, "count:desc,path:asc")` as specified in
+[Explicit Record Sort Keys v1](EXPLICIT-RECORD-SORT-KEYS-V1.md). Its literal policy
+binds exact field identities; it does not change this implicit sort's ordering.
+Unrelated catalog records use the same structural admission rule.
 
 ## Representations and authority
 
