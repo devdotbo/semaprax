@@ -16,13 +16,11 @@ fn maximum_owned_traversal_roundtrips_source_graph_and_both_cache_projections() 
     assert_eq!(crate::format::canonical(&restored_ast), canonical);
     let graph = crate::graph::to_json(&restored_ast).unwrap();
     crate::graph::verify_json(&restored_ast, &graph).unwrap();
-    assert!(graph.contains("\"kind\":\"traversal_freeze\""));
+    let compact =
+        serde_json::to_string(&serde_json::from_str::<serde_json::Value>(&graph).unwrap()).unwrap();
+    assert!(compact.contains("\"kind\":\"traversal_freeze\""));
     assert!(!graph.contains("core.vec.clone_at"));
-    let forged_graph = graph.replacen(
-        "\"kind\":\"traversal_freeze\"",
-        "\"kind\":\"call_argument\"",
-        1,
-    );
+    let forged_graph = graph.replacen("\"traversal_freeze\"", "\"call_argument\"", 1);
     assert_ne!(forged_graph, graph);
     assert!(crate::graph::verify_json(&restored_ast, &forged_graph).is_err());
     let resolved = crate::hir::resolve(&restored_ast).unwrap();
