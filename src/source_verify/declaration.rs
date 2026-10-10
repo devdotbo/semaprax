@@ -22,6 +22,7 @@ use std::collections::{HashMap, HashSet};
 mod classes;
 mod declarations;
 mod functions;
+mod fusion;
 mod identity;
 
 pub(crate) fn verify(program: &Program) -> Vec<Diagnostic> {
@@ -178,12 +179,15 @@ pub(crate) fn verify(program: &Program) -> Vec<Diagnostic> {
                         .find(|(_, function)| function.stable_id == identity)
                 })
                 .map_or(Span::default(), |(_, function)| function.span);
-            diagnostics.push(error(
-                program,
-                capacity.diagnostic.code(),
-                capacity.detail,
-                span,
-            ));
+            let help = (capacity.diagnostic
+                == crate::byte_data_capacity::CapacityDiagnostic::Allocation)
+                .then(|| fusion::refusal_help(program))
+                .flatten();
+            let mut diagnostic = error(program, capacity.diagnostic.code(), capacity.detail, span);
+            if let Some(help) = help {
+                diagnostic = diagnostic.with_help(help);
+            }
+            diagnostics.push(diagnostic);
         }
     }
     let mut native_interop_failures = HashSet::new();

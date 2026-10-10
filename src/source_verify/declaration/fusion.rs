@@ -1,0 +1,266 @@
+//! Source-only finite construction inventory. No allocation or admission authority.
+use crate::ast::{
+    BinaryOp, Expr, ExprKind as K, Function, Program, Statement as S, Type, TypeDeclaration,
+    TypeDeclarationKind,
+};
+mod consumers;
+#[cfg(test)]
+mod tests;
+
+pub(super) fn refusal_help(program: &Program) -> Option<String> {
+    let inventory = inventory(program)?;
+    Some(format!("Finite construction candidate in `{}`: {} `{}` rows, {} Bytes-producing executions of width {} ({} payload bytes), {} owned UTF-8 bytes; constructor line {}. This remains SPX-T267: source recognition is not fusion or partition authority. OPT #746/#747 require independent HIR replay and a complete selected owner-domain executor; the legacy 32-event limit is unchanged.", inventory.function.stable_id, inventory.count, inventory.record.name, inventory.count, inventory.width, inventory.payload_bytes, inventory.string_bytes, inventory.byte_site.span.line))
+}
+struct Inventory<'a> {
+    function: &'a Function,
+    record: &'a TypeDeclaration,
+    byte_site: &'a Expr,
+    count: u64,
+    width: u64,
+    payload_bytes: u64,
+    string_bytes: u64,
+}
+fn call<'a>(expr: &'a Expr, name: &str) -> Option<(&'a [Type], &'a [Expr])> {
+    let K::Call {
+        name: actual,
+        type_arguments,
+        args,
+    } = &expr.kind
+    else {
+        return None;
+    };
+    (actual == name).then_some((type_arguments, args))
+}
+fn var(expr: &Expr, name: &str) -> bool {
+    matches!(&expr.kind, K::Var(actual) if actual == name)
+}
+fn row_type(arguments: &[Type], record: &TypeDeclaration) -> bool {
+    matches!(arguments, [Type::Named { name, arguments }] if name == &record.name && arguments.is_empty())
+}
+fn inventory(program: &Program) -> Option<Inventory<'_>> {
+    if program.functions.len() != 1
+        || program.types.len() != 1
+        || !program.module_uses.is_empty()
+        || !program.permits.is_empty()
+        || !program.interfaces.is_empty()
+        || !program.protocols.is_empty()
+        || !program.implementations.is_empty()
+        || !program.session_protocols.is_empty()
+        || !program.agents.is_empty()
+    {
+        return None;
+    }
+    let function = &program.functions[0];
+    if !function.explicit_id
+        || !function.type_parameters.is_empty()
+        || !function.params.is_empty()
+        || function.return_type != Type::I64
+        || !function.effects.is_empty()
+        || function.yields.is_some()
+        || function.follows.is_some()
+        || !function.requires.is_empty()
+        || !function.ensures.is_empty()
+    {
+        return None;
+    }
+    let record = &program.types[0];
+    if !record.explicit_id
+        || !record.type_parameters.is_empty()
+        || record.extends.is_some()
+        || !record.invariants().is_empty()
+        || record.stable_id == function.stable_id
+        || record.name == "Option"
+    {
+        return None;
+    }
+    let TypeDeclarationKind::Record { fields } = &record.kind else {
+        return None;
+    };
+    if fields.len() != 3 {
+        return None;
+    }
+    for (index, field) in fields.iter().enumerate() {
+        if !field.explicit_id
+            || field.stable_id == record.stable_id
+            || field.stable_id == function.stable_id
+            || fields[..index]
+                .iter()
+                .any(|other| other.name == field.name || other.stable_id == field.stable_id)
+        {
+            return None;
+        }
+    }
+    if fields.iter().filter(|f| f.ty == Type::I64).count() != 1
+        || fields.iter().filter(|f| f.ty == Type::String).count() != 1
+        || fields.iter().filter(|f| f.ty == Type::Bytes).count() != 1
+    {
+        return None;
+    }
+    let K::Block { statements, tail } = &function.body.kind else {
+        return None;
+    };
+    let [S::Let {
+        name: vector,
+        mutable: true,
+        declared: None,
+        value: allocation,
+        ..
+    }, S::Let {
+        name: induction,
+        mutable: true,
+        declared: None,
+        value: start,
+        ..
+    }, S::While {
+        condition, body, ..
+    }, suffix @ ..] = statements.as_slice()
+    else {
+        return None;
+    };
+    if vector == induction || !matches!(start.kind, K::Int(0)) {
+        return None;
+    }
+    let (types, args) = call(allocation, "vec_with_capacity")?;
+    if !row_type(types, record) {
+        return None;
+    }
+    let [capacity] = args else {
+        return None;
+    };
+    let K::Usize(capacity) = capacity.kind else {
+        return None;
+    };
+    let K::Binary {
+        op: BinaryOp::Lt,
+        left,
+        right,
+    } = &condition.kind
+    else {
+        return None;
+    };
+    if !var(left, induction) {
+        return None;
+    }
+    let K::Int(bound) = right.kind else {
+        return None;
+    };
+    let count = u64::try_from(bound).ok()?;
+    let row_capacity = crate::vec_ops::MAX_CAPACITY.min(
+        crate::vec_ops::MAX_OWNED_PAYLOAD_BYTES
+            / (2 * crate::vec_ops::OWNED_PAYLOAD_BYTES_PER_ELEMENT),
+    );
+    if count == 0 || count != capacity || count > row_capacity {
+        return None;
+    }
+    let K::Block {
+        statements: construction,
+        tail: construction_tail,
+    } = &body.kind
+    else {
+        return None;
+    };
+    let [S::Let {
+        name: item,
+        mutable: false,
+        declared: None,
+        value: constructor,
+        ..
+    }, S::Assign {
+        name: destination,
+        field: None,
+        value: push,
+        ..
+    }, S::Assign {
+        name: counter,
+        field: None,
+        value: step,
+        ..
+    }] = construction.as_slice()
+    else {
+        return None;
+    };
+    if item == vector
+        || item == induction
+        || destination != vector
+        || counter != induction
+        || !matches!(construction_tail.kind, K::Int(0))
+    {
+        return None;
+    }
+    let K::ConstructRecord {
+        type_name,
+        type_arguments,
+        fields: initializers,
+        ..
+    } = &constructor.kind
+    else {
+        return None;
+    };
+    if type_name != &record.name || !type_arguments.is_empty() || initializers.len() != fields.len()
+    {
+        return None;
+    }
+    let mut byte_site = None;
+    let mut width = None;
+    let mut string_bytes = None;
+    for (field, initializer) in fields.iter().zip(initializers) {
+        if field.name != initializer.name {
+            return None;
+        }
+        match field.ty {
+            Type::I64 if var(&initializer.value, induction) => {}
+            Type::String => {
+                let K::String(text) = &initializer.value.kind else {
+                    return None;
+                };
+                string_bytes = Some(u64::try_from(text.len()).ok()?.checked_mul(count)?);
+            }
+            Type::Bytes => {
+                let (types, args) = call(&initializer.value, "bytes_zeroed")?;
+                let [extent] = args else {
+                    return None;
+                };
+                if !types.is_empty() {
+                    return None;
+                }
+                let K::Usize(extent) = extent.kind else {
+                    return None;
+                };
+                if extent == 0 {
+                    return None;
+                }
+                width = Some(extent);
+                byte_site = Some(&initializer.value);
+            }
+            _ => return None,
+        }
+    }
+    let width = width?;
+    let payload_bytes = width.checked_mul(count)?;
+    // One proposed ordinary backing must fit the existing single-Bytes extent.
+    if payload_bytes > crate::byte_ops::MAX_OWNED_BYTE_VALUE_BYTES
+        || payload_bytes > crate::byte_data_capacity::MAX_OWNED_BYTE_PAYLOAD_BYTES
+    {
+        return None;
+    }
+    let (types, args) = call(push, "vec_push")?;
+    if !row_type(types, record)
+        || !matches!(args, [old, fresh] if var(old, vector) && var(fresh, item))
+    {
+        return None;
+    }
+    if !matches!(&step.kind, K::Binary { op: BinaryOp::Add, left, right } if var(left, induction) && matches!(right.kind, K::Int(1)))
+    {
+        return None;
+    }
+    consumers::validate(record, vector, induction, suffix, tail)?;
+    Some(Inventory {
+        function,
+        record,
+        byte_site: byte_site?,
+        count,
+        width,
+        payload_bytes,
+        string_bytes: string_bytes?,
+    })
+}

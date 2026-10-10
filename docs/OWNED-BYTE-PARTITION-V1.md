@@ -205,7 +205,8 @@ refuse before producing artifacts. Owning executable qualification remains pendi
 This primitive does NOT admit the unchanged 4,096-row fixture that executes
 bytes_zeroed(3usize) inside its constructor loop. It cannot reinterpret 4,096
 source allocations as one simply by naming a partition primitive. The separate
-[construction-fusion issue #747](https://github.com/wavect/semaprax/issues/747)
+[construction-fusion contract](OWNED-BYTE-CONSTRUCTION-FUSION-V1.md) for
+[issue #747](https://github.com/wavect/semaprax/issues/747)
 requires a versioned general bulk-construction lowering with exact induction/trip
 count, capacity, payload extent, fresh row, same Vec destination, no intermediate
 owner escape, left-to-right effects and failure/early-exit equivalence, independently
