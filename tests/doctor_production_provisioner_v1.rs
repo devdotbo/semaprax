@@ -149,7 +149,11 @@ impl Sources {
                     read(repository, "src/cli/json_codec/profile.rs"),
                 ]
                 .join("\n"),
-                read(repository, "src/cli_driver/native_test.rs"),
+                [
+                    read(repository, "src/cli_driver/native_test.rs"),
+                    read(repository, "src/cli_driver/native_test/timing.rs"),
+                ]
+                .join("\n"),
                 read(repository, "src/cli_driver/context_dispatch.rs"),
                 read(repository, "src/cli_driver/hot_reload.rs"),
                 read(repository, "src/cli_driver/options.rs"),

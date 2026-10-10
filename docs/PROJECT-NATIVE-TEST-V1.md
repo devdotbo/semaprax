@@ -109,3 +109,23 @@ The focused integration selectors are:
 cargo test --locked -p semaprax --test project source_command::source_command_native_tests_
 cargo test --locked -p semaprax --test project_cli_v1 native_test::
 ```
+
+## Opt-in diagnostic timings
+
+`semaprax test --target native --native-timing --json` adds a per-case
+`diagnostic_timings` object with schema
+`semaprax.native-test-diagnostic-timing.v1`. Without this flag, the existing
+v1 output shape is unchanged. The flag requires native target and JSON.
+
+Monotonic observations relative to host `run_case` entry record spawn return,
+existing deadline timer start, first wait, terminal exit/deadline/output/wait
+observation, both reader settlements, and observation completion. Missing stages
+are null, including stages unavailable after spawn failure. Setup time precedes
+the existing deadline interval; reader settlement follows its terminal
+observation. Compilation, sealing, scratch cleanup, and JSON serialization are
+outside this observation. Loader and OS scheduling time remain inside the
+original process deadline; the instrumentation neither isolates those costs
+nor changes timeout, output refusal, result publication, or settlement.
+Timing values are diagnostic observations, not deterministic pins or acceptance
+criteria. The original 100 ms recovery control remains unchanged and unqualified
+until its owning executable gate actually passes.
