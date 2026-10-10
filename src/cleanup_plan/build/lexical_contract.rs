@@ -48,7 +48,11 @@ impl PlanBuilder<'_> {
         if control.current_ensure.is_some() {
             return Err(plan_error("postcondition scope template is already active"));
         }
-        control.ensure_regions.entry(ordinal).or_default();
+        if ordinal == control.ensure_regions.len() {
+            control.ensure_regions.push(Vec::new());
+        } else if ordinal > control.ensure_regions.len() {
+            return Err(plan_error("postcondition scope template skipped a clause"));
+        }
         control.current_ensure = Some((ordinal, 0));
         Ok(true)
     }
@@ -65,7 +69,7 @@ impl PlanBuilder<'_> {
             .current_ensure
             .take()
             .ok_or_else(|| plan_error("postcondition scope template is not active"))?;
-        if control.ensure_regions.get(&ordinal).map(Vec::len) != Some(count) {
+        if control.ensure_regions.get(ordinal).map(Vec::len) != Some(count) {
             return Err(plan_error(
                 "postcondition scope template did not replay its exact authored shape",
             ));
@@ -85,7 +89,7 @@ impl PlanBuilder<'_> {
         };
         let retained = control
             .ensure_regions
-            .get(&ordinal)
+            .get(ordinal)
             .ok_or_else(|| plan_error("postcondition scope template is missing"))?;
         let region = retained.get(index).copied();
         control.current_ensure = Some((
@@ -124,7 +128,7 @@ impl PlanBuilder<'_> {
         };
         let retained = control
             .ensure_regions
-            .get_mut(&ordinal)
+            .get_mut(ordinal)
             .ok_or_else(|| plan_error("postcondition scope template is missing"))?;
         if next == 0 || next - 1 != retained.len() {
             return Err(plan_error(

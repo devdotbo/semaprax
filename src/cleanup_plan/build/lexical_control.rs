@@ -15,7 +15,7 @@ pub(super) struct LexicalBuildState {
     pub(super) wrapper_breaks: Vec<super::lexical_break::PendingWrapperBreak>,
     pub(super) building_resume: bool,
     pub(super) replicated_statuses: BTreeSet<StatusSourceId>,
-    pub(super) ensure_regions: BTreeMap<usize, Vec<CleanupRegionId>>,
+    pub(super) ensure_regions: Vec<Vec<CleanupRegionId>>,
     pub(super) current_ensure: Option<(usize, usize)>,
 }
 
@@ -41,7 +41,7 @@ pub(crate) fn build_plan_for_execution(
             wrapper_breaks: Vec::new(),
             building_resume: false,
             replicated_statuses: BTreeSet::new(),
-            ensure_regions: BTreeMap::new(),
+            ensure_regions: Vec::new(),
             current_ensure: None,
             certificate: super::super::LexicalControlPlan {
                 schema: "semaprax.lexical-control-flow.v1",
@@ -698,7 +698,7 @@ impl PlanBuilder<'_> {
             if control.building_resume {
                 let contract_scope = control
                     .ensure_regions
-                    .values()
+                    .iter()
                     .any(|regions| regions.contains(&region));
                 if !contract_scope
                     || self.regions[region.0 as usize].normal_scope_end != UNRESOLVED_EXIT

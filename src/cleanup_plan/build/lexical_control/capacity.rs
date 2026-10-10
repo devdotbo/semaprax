@@ -76,12 +76,10 @@ impl LexicalBuildState {
                 .iter()
                 .map(|item| item.owned_capacity())
                 .sum::<usize>()
-            + self.ensure_regions.len()
-                * (std::mem::size_of::<(usize, Vec<CleanupRegionId>)>()
-                    + std::mem::size_of::<BTreeMap<usize, Vec<CleanupRegionId>>>())
+            + self.ensure_regions.capacity() * std::mem::size_of::<Vec<CleanupRegionId>>()
             + self
                 .ensure_regions
-                .values()
+                .iter()
                 .map(|regions| regions.capacity() * std::mem::size_of::<CleanupRegionId>())
                 .sum::<usize>()
             + self.replicated_statuses.len()
@@ -232,6 +230,8 @@ mod tests {
             wrapper_breaks: Vec::new(),
             building_resume: false,
             replicated_statuses: BTreeSet::new(),
+            ensure_regions: Vec::new(),
+            current_ensure: None,
         }
     }
 
