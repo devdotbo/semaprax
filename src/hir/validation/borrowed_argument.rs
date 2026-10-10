@@ -130,12 +130,8 @@ impl<'a> HirValidator<'a> {
             }
             ResolvedExprKind::ByteRange {
                 operation, source, ..
-            } if operation.as_str() == crate::byte_ops::RANGE_ID
-                && matches!(&source.kind, ResolvedExprKind::Place(place)
-                        if place.projections.is_empty()
-                            && self.byte_slice_aliases.contains_key(&place.root)) =>
-            {
-                Ok(())
+            } if operation.as_str() == crate::byte_ops::RANGE_ID => {
+                self.byte_range_origin(source, scope).map(|_| ())
             }
             _ => Err(hir_error(
                 "byte-slice call argument lacks authenticated root provenance",

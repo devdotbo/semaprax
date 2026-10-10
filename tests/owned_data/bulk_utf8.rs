@@ -265,3 +265,24 @@ fn bulk_utf8_lazy_branches_and_staged_owners_preserve_first_failure() {
         );
     }
 }
+
+#[test]
+fn inline_owned_bytes_range_preserves_exact_subview_and_failure_settlement() {
+    let source = r#"module bulk.inline_owned_range;
+@id("app.main") fn main()->i64 {
+ let bytes=bytes_set(bytes_set(bytes_set(bytes_set(bytes_zeroed(4usize),0usize,255u8),1usize,65u8),2usize,0u8),3usize,255u8);
+ let text=string_from_utf8(byte_range(bytes_as_slice(bytes),1usize,3usize));
+ if string_len(text)==2 && str_len_bytes(string_as_str(text))==2 {42}else{0}
+}
+"#;
+    run(source, 42, None, -1);
+    let named=source.replace(
+        "let text=string_from_utf8(byte_range(bytes_as_slice(bytes),1usize,3usize));",
+        "let range=byte_range(bytes_as_slice(bytes),1usize,3usize);let alias=byte_range(range,0usize,2usize);let text=string_from_utf8(alias);",
+    );
+    assert_ne!(named, source);
+    run(&named, 42, None, -1);
+    let failed = source.replace("1usize,3usize));", "1usize,5usize));");
+    assert_ne!(failed, source);
+    run(&failed, 0, Some(("semaprax.byte-range.v1", 2, 12)), -1);
+}

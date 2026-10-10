@@ -11,6 +11,7 @@ mod borrowed_argument;
 mod borrowed_str;
 mod box_intrinsic;
 mod branch_merge;
+mod byte_range;
 mod call_parameters;
 mod callable_types;
 mod closure;
@@ -3035,18 +3036,7 @@ impl<'a> HirValidator<'a> {
                                     "byte range has an invalid compiler-owned operation",
                                 ));
                             }
-                            let ResolvedExprKind::Place(place) = &source.kind else {
-                                return Err(hir_error(
-                                    "byte range source must be an exact named slice",
-                                ));
-                            };
-                            if !place.projections.is_empty()
-                                || !self.byte_slice_aliases.contains_key(&place.root)
-                            {
-                                return Err(hir_error(
-                                    "byte range source lacks authenticated slice provenance",
-                                ));
-                            }
+                            self.byte_range_origin(source, &scope)?;
                             frames.push(Frame::ByteRangeAfterSource {
                                 expression,
                                 start,
@@ -4462,19 +4452,7 @@ impl<'a> HirValidator<'a> {
                                 (place, place.clone())
                             }
                             ResolvedExprKind::ByteRange { source, .. } => {
-                                let ResolvedExprKind::Place(place) = &source.kind else {
-                                    return Err(hir_error(
-                                        "byte range local source must be an exact named slice",
-                                    ));
-                                };
-                                let origin = self
-                                    .byte_slice_aliases
-                                    .get(&place.root)
-                                    .cloned()
-                                    .ok_or_else(|| {
-                                        hir_error("byte range local lacks symbolic root provenance")
-                                    })?;
-                                (place, origin)
+                                self.byte_range_origin(source, &scope)?
                             }
                             _ => {
                                 return Err(hir_error(
@@ -6327,16 +6305,7 @@ impl<'a> HirValidator<'a> {
                         "byte range has an invalid compiler-owned operation",
                     ));
                 }
-                let ResolvedExprKind::Place(place) = &source.kind else {
-                    return Err(hir_error("byte range source must be an exact named slice"));
-                };
-                if !place.projections.is_empty()
-                    || !self.byte_slice_aliases.contains_key(&place.root)
-                {
-                    return Err(hir_error(
-                        "byte range source lacks authenticated slice provenance",
-                    ));
-                }
+                self.byte_range_origin(source, scope)?;
                 self.validate_expr_recursive_reference(
                     function,
                     source,
@@ -6864,15 +6833,7 @@ impl<'a> HirValidator<'a> {
                                         (place, place.clone())
                                     }
                                     ResolvedExprKind::ByteRange { source, .. } => {
-                                        let ResolvedExprKind::Place(place) = &source.kind else {
-                                            return Err(hir_error(
-                                                "byte range local source must be an exact named slice",
-                                            ));
-                                        };
-                                        let origin = self.byte_slice_aliases.get(&place.root).cloned().ok_or_else(|| {
-                                            hir_error("byte range local lacks symbolic root provenance")
-                                        })?;
-                                        (place, origin)
+                                        self.byte_range_origin(source, &block_scope)?
                                     }
                                     _ => {
                                         return Err(hir_error(

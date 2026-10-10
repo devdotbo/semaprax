@@ -97,6 +97,12 @@ own transfer mappings and exact atomic call commits; staging never debits the
 reserved history. This tracking retains no declaration index and changes no
 serialized proof authority or physical cleanup operation.
 
+`hir/validation/byte_range.rs` re-derives named-slice and exact inline
+owned-Bytes range origins from live scope. Source loan origin bookkeeping
+independently retains the same owner for immutable composed-range locals;
+call admission and both HIR walkers consume that borrowed authority without a
+new retained declaration index or carrier schema.
+
 `hir/validation/call_parameters.rs` owns validation-only byte-operation
 signature views and argument ownership checks. Byte views borrow the immutable
 operation table and format synthetic parameter identities only for diagnostics;

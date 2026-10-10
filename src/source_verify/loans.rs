@@ -90,11 +90,36 @@ pub(super) fn local_borrow_origin(
                 return None;
             }
             if operation == crate::byte_ops::ByteOp::Range {
-                let ExprKind::Var(source) = &source.kind else {
-                    return None;
-                };
-                let origin = variables.get(source)?.borrow_origin.clone()?;
-                (origin.root, origin.projections, Some(origin.loan))
+                match &source.kind {
+                    ExprKind::Var(source) => {
+                        let origin = variables.get(source)?.borrow_origin.clone()?;
+                        (origin.root, origin.projections, Some(origin.loan))
+                    }
+                    ExprKind::Call {
+                        name,
+                        type_arguments,
+                        args,
+                    } if crate::byte_ops::by_name(name)
+                        == Some(crate::byte_ops::ByteOp::BytesAsSlice)
+                        && type_arguments.is_empty() =>
+                    {
+                        let [owner] = args.as_slice() else {
+                            return None;
+                        };
+                        let ExprKind::Var(root) = &owner.kind else {
+                            return None;
+                        };
+                        let binding = variables.get(root)?;
+                        if binding.ty != Type::Bytes
+                            || binding.mode != ParamMode::Own
+                            || binding.availability != Availability::Available
+                        {
+                            return None;
+                        }
+                        (root.clone(), Vec::new(), None)
+                    }
+                    _ => return None,
+                }
             } else {
                 let place = if operation == crate::byte_ops::ByteOp::StrAsBytes {
                     if let ExprKind::Call { name, args, .. } = &source.kind {

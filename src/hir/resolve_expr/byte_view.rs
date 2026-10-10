@@ -2,6 +2,19 @@
 use super::*;
 
 impl Resolver<'_> {
+    pub(in crate::hir) fn byte_range_source_shape(&self, source: &ResolvedExpr) -> bool {
+        match &source.kind {
+            ResolvedExprKind::Place(place) => place.projections.is_empty(),
+            ResolvedExprKind::BorrowPlace { operation, place } => {
+                operation.as_str() == crate::byte_ops::BYTES_AS_SLICE_ID
+                    && place.projections.is_empty()
+                    && source.ty == ResolvedType::SliceU8
+                    && source.ownership == OwnershipMode::Borrow
+            }
+            _ => false,
+        }
+    }
+
     pub(in crate::hir) fn resolved_view_place<'a>(
         &self,
         operation: crate::byte_ops::ByteOp,

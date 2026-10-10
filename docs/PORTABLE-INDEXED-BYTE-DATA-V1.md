@@ -242,6 +242,17 @@ a generic pointer/length pair is not sufficient HIR evidence. Type facts mark
 `usize` and `[u8; N]` Copy, `Bytes` uniquely owned/non-Copy, and `Slice<u8>`
 borrowed/non-storable/non-droppable.
 
+`byte_range` also accepts the exact inline source
+`bytes_as_slice(named_owner)` for a live, unprojected owned `Bytes` root.
+Independent HIR validation authenticates that operation, root type, ownership,
+and current availability. An immutable local derived from this range retains
+that same symbolic owner provenance, and a borrowed call receives the same
+root loan. Existing named-slice ranges retain their prior admission; arbitrary
+slice-producing calls, temporary owners, inline array/String views, projected
+inline roots, and recursive inline ranges remain refused. Ordinary while
+bodies retain their existing named-slice rule. No carrier, cap, or graph schema
+changes, and canonical source keeps the explicit composed operations.
+
 Graph v17 is mandatory if the reachable resolved program contains any of the
 four new types, an array literal, a byte-data operation, or a byte-slice
 provenance fact. V17 serializes `N`, root kind and identity, offset/length

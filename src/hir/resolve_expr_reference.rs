@@ -417,11 +417,10 @@ impl Resolver<'_> {
                     if op == crate::byte_ops::ByteOp::Range {
                         let mut args = args.into_iter();
                         let source = args.next().expect("range has a source");
-                        if !matches!(source.kind, ResolvedExprKind::Place(ref place) if place.projections.is_empty())
-                        {
+                        if !self.byte_range_source_shape(&source) {
                             return Err(self.error(
                                 "SPX-T266",
-                                "byte_range requires an exact named Slice<u8> source",
+                                "byte_range requires a named Slice<u8> or exact bytes_as_slice(named_owner) source",
                                 source.span,
                             ));
                         }
