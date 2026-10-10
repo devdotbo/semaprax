@@ -15,3 +15,5 @@ mod owned_utf8_settlement;
 mod status_abi;
 #[path = "native/string_settlement.rs"]
 mod string_settlement;
+#[path = "native/checked_string_allocation.rs"]
+mod checked_string_allocation;
