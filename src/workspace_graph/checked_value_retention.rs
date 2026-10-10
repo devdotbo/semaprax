@@ -10,8 +10,9 @@ use crate::diagnostic::Diagnostic;
 use crate::hir;
 
 use super::{
-    active_builder_limit, graph_error, limit_error, reserve_builder_structure, CheckedValueNode,
-    MAX_CHECKED_VALUE_DEPTH, MAX_CHECKED_VALUE_VISITS, MAX_DECLARATIONS,
+    active_builder_limit, checked_value_retention, graph_error, limit_error,
+    reserve_builder_structure, CheckedValueNode, MAX_CHECKED_VALUE_DEPTH, MAX_CHECKED_VALUE_VISITS,
+    MAX_DECLARATIONS,
 };
 
 pub(super) const NOMINAL_KEY_SCRATCH_BYTES: usize = 256;
@@ -79,7 +80,14 @@ pub(super) fn retain_checked_nominal_type(
             use std::io::Write;
             let mut storage = [0u8; NOMINAL_KEY_SCRATCH_BYTES];
             let mut cursor = std::io::Cursor::new(storage.as_mut_slice());
-            if write!(cursor, "nominal:{}:{}:0:", declaration.as_str().len(), declaration).is_ok() {
+            if write!(
+                cursor,
+                "nominal:{}:{}:0:",
+                declaration.as_str().len(),
+                declaration
+            )
+            .is_ok()
+            {
                 let length = cursor.position() as usize;
                 let key = std::str::from_utf8(&storage[..length])
                     .expect("identity key is composed of UTF-8 strings");
@@ -127,4 +135,47 @@ pub(super) fn retain_checked_nominal_type(
     reserve_builder_structure(bytes)?;
     retained.insert(key, (kind, facts));
     Ok(())
+}
+
+pub(super) fn retained_signature_type_facts(
+    functions: &[hir::ResolvedFunction],
+    declarations: &hir::DeclarationIndex,
+) -> Result<BTreeMap<String, (hir::DeclarationKind, hir::TypeFacts)>, Vec<Diagnostic>> {
+    let mut retained = BTreeMap::new();
+    let mut visits = 0usize;
+    if !functions.is_empty() {
+        reserve_builder_structure(
+            std::mem::size_of::<[Option<(CheckedValueNode<'_>, usize)>; MAX_CHECKED_VALUE_DEPTH + 1]>(
+            ) + checked_value_retention::NOMINAL_KEY_SCRATCH_BYTES,
+        )?;
+    }
+    for function in functions {
+        for ty in function
+            .params
+            .iter()
+            .map(|parameter| &parameter.ty)
+            .chain(std::iter::once(&function.return_type))
+        {
+            checked_value_retention::retain_checked_value_types(
+                CheckedValueNode::Type(ty),
+                declarations,
+                &mut retained,
+                &mut visits,
+            )?;
+        }
+        for expression in function
+            .requires
+            .iter()
+            .chain(std::iter::once(&function.body))
+            .chain(&function.ensures)
+        {
+            checked_value_retention::retain_checked_value_types(
+                CheckedValueNode::Expression(expression),
+                declarations,
+                &mut retained,
+                &mut visits,
+            )?;
+        }
+    }
+    Ok(retained)
 }

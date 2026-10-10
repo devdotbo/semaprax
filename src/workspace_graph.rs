@@ -11,6 +11,7 @@
 mod builder_bytes_report;
 mod callee_inventory;
 mod checked_value_retention;
+use checked_value_retention::retained_signature_type_facts;
 mod dependency_pruning;
 pub(crate) mod diagnostics;
 mod expected_projection;
@@ -4555,50 +4556,6 @@ fn retain_workspace_module(
         },
         imported_instances,
     ))
-}
-
-fn retained_signature_type_facts(
-    functions: &[hir::ResolvedFunction],
-    declarations: &hir::DeclarationIndex,
-) -> Result<BTreeMap<String, (hir::DeclarationKind, hir::TypeFacts)>, Vec<Diagnostic>> {
-    let mut retained = BTreeMap::new();
-    let mut visits = 0usize;
-    if !functions.is_empty() {
-        reserve_builder_structure(
-            std::mem::size_of::<
-                [Option<(CheckedValueNode<'_>, usize)>; MAX_CHECKED_VALUE_DEPTH + 1],
-            >() + checked_value_retention::NOMINAL_KEY_SCRATCH_BYTES,
-        )?;
-    }
-    for function in functions {
-        for ty in function
-            .params
-            .iter()
-            .map(|parameter| &parameter.ty)
-            .chain(std::iter::once(&function.return_type))
-        {
-            checked_value_retention::retain_checked_value_types(
-                CheckedValueNode::Type(ty),
-                declarations,
-                &mut retained,
-                &mut visits,
-            )?;
-        }
-        for expression in function
-            .requires
-            .iter()
-            .chain(std::iter::once(&function.body))
-            .chain(&function.ensures)
-        {
-            checked_value_retention::retain_checked_value_types(
-                CheckedValueNode::Expression(expression),
-                declarations,
-                &mut retained,
-                &mut visits,
-            )?;
-        }
-    }
-    Ok(retained)
 }
 
 const MAX_CHECKED_VALUE_VISITS: usize = 1_048_576;

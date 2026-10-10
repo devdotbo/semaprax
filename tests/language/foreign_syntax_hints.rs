@@ -222,6 +222,12 @@ fn empty_function_body_names_the_rule() {
     let diagnostic = rejection("module habit.empty;\n@id(\"app.main\")\nfn main() -> i64\n{\n}\n");
     assert_eq!(diagnostic.code, "SPX-P203");
     assert!(help(&diagnostic).contains("return value;"), "{diagnostic}");
+    assert!(
+        help(&diagnostic).contains("terminal exhaustive `match`")
+            && help(&diagnostic).contains("explicitly return on every path")
+            && help(&diagnostic).contains("loop and closure returns remain refused"),
+        "{diagnostic}"
+    );
 }
 
 #[test]
