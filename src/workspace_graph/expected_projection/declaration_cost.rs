@@ -125,6 +125,7 @@ pub(super) fn ast_expr_cost(
         expression.kind,
         ExprKind::Int(_)
             | ExprKind::String(_)
+| ExprKind::BorrowedUtf8Literal(_)
             | ExprKind::Float32(_)
             | ExprKind::Float64(_)
             | ExprKind::Bool(_)
@@ -335,7 +336,7 @@ pub(super) fn ast_expr_cost(
         | ExprKind::Float32(_)
         | ExprKind::Float64(_)
         | ExprKind::Bool(_) => {}
-        ExprKind::String(value) => {
+        ExprKind::String(value) | ExprKind::BorrowedUtf8Literal(value) => {
             if cost.is_raw_fallback() {
                 cost.embedded_string(value)?;
             }

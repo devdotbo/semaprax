@@ -85,6 +85,7 @@ pub(super) fn check_expr(
         ExprKind::Float64(_) => Some(CheckedValue::value(Type::F64)),
         ExprKind::Bool(_) => Some(CheckedValue::value(Type::Bool)),
         ExprKind::String(_) => Some(CheckedValue::value(Type::String)),
+        ExprKind::BorrowedUtf8Literal(_) => { diagnostics.push(super::static_text::unsupported(program, expr.span)); None },
         // This walker only traverses generic-function and contract
         // expressions; `super` is meaningful only inside a class-method
         // override, whose body is resolved by the HIR layer instead.

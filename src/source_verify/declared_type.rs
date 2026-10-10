@@ -718,6 +718,7 @@ fn generic_function_expression_is_admitted(
             | ExprKind::Float64(_)
             | ExprKind::Bool(_)
             | ExprKind::String(_)
+| ExprKind::BorrowedUtf8Literal(_)
             | ExprKind::Var(_) => {}
             ExprKind::ArrayU8(_) | ExprKind::RepeatArrayU8 { .. } => return false,
             ExprKind::Call { args, .. } => pending.extend(args.iter().rev()),
@@ -990,6 +991,7 @@ fn substitute_forwarded_call_arguments(
         | ExprKind::Float64(_)
         | ExprKind::Bool(_)
         | ExprKind::String(_)
+| ExprKind::BorrowedUtf8Literal(_)
         | ExprKind::Var(_) => {}
     }
     Some(())

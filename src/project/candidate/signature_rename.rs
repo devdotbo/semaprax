@@ -277,7 +277,8 @@ impl Rename<'_> {
             | ExprKind::Float32(_)
             | ExprKind::Float64(_)
             | ExprKind::Bool(_)
-            | ExprKind::String(_) => {}
+            | ExprKind::String(_)
+| ExprKind::BorrowedUtf8Literal(_) => {}
         }
         Ok(())
     }

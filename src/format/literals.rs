@@ -43,3 +43,10 @@ pub(crate) fn write_joined(output: &mut impl std::fmt::Write, values: &[String],
         output.write_str(value).unwrap();
     }
 }
+
+pub(super) fn write_text_literal(output: &mut impl std::fmt::Write, value: &str, borrowed: bool) {
+    if borrowed { output.write_str("str").unwrap(); }
+    output.write_char('"').unwrap();
+    super::write_string_escaped(output, value);
+    output.write_char('"').unwrap();
+}

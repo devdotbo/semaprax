@@ -233,6 +233,7 @@ impl Resolver<'_> {
                 // Owned String Loops v1: a literal allocates one owned
                 // String in the per-iteration body region.
                 ExprKind::String(_) => {}
+                ExprKind::BorrowedUtf8Literal(_) => return Err(self.error("SPX-H006", crate::source_verify::static_text::MESSAGE, expression.span)),
                 ExprKind::ArrayU8(_) | ExprKind::RepeatArrayU8 { .. } => {
                     return Err(self.error(
                         "SPX-T252",

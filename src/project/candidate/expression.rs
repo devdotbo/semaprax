@@ -1029,6 +1029,7 @@ fn ast_children(expression: &Expr) -> Vec<&Expr> {
         | ExprKind::Float64(_)
         | ExprKind::Bool(_)
         | ExprKind::String(_)
+| ExprKind::BorrowedUtf8Literal(_)
         | ExprKind::Var(_) => Vec::new(),
     }
 }
@@ -1107,6 +1108,7 @@ fn ast_children_mut(expression: &mut Expr) -> Vec<&mut Expr> {
         | ExprKind::Float64(_)
         | ExprKind::Bool(_)
         | ExprKind::String(_)
+| ExprKind::BorrowedUtf8Literal(_)
         | ExprKind::Var(_) => Vec::new(),
     }
 }
@@ -1125,6 +1127,7 @@ fn ast_kind(kind: &ExprKind) -> &'static str {
         ExprKind::Float64(_) => "f64",
         ExprKind::Bool(_) => "bool",
         ExprKind::String(_) => "string",
+        ExprKind::BorrowedUtf8Literal(_) => "borrowed_utf8_literal",
         ExprKind::Var(_) => "place",
         ExprKind::Call { .. } => "call",
         ExprKind::MethodCall { .. } => "method_call",

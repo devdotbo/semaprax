@@ -144,6 +144,7 @@ fn expression(
         | ExprKind::Float64(_)
         | ExprKind::Bool(_)
         | ExprKind::String(_)
+| ExprKind::BorrowedUtf8Literal(_)
         | ExprKind::Var(_) => {}
     }
     let previous_arity = match &expression.kind {

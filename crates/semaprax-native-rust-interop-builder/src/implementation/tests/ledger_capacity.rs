@@ -213,7 +213,8 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
             "\n",
             include_str!("../../../../../src/hir/resolve_expr_reference/literal_format.rs"),
             "\n",
-            include_str!("../../../../../src/hir/resolve_expr_reference/projection.rs")
+            include_str!("../../../../../src/hir/resolve_expr_reference/projection.rs"),
+            include_str!("../../../../../src/hir/resolve_expr_reference/static_text.rs")
         ),
         include_str!("../../../../../src/hir/resolve_for.rs"),
         include_str!("../../../../../src/hir/resolve_for/record.rs"),
@@ -323,6 +324,7 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
             include_str!("../../../../../src/loop_calls/byte_writer/source_index.rs"),
             concat!(
 include_str!("../../../../../src/source_verify.rs"),
+include_str!("../../../../../src/source_verify/static_text.rs"),
 "\n",
 include_str!("../../../../../src/source_verify/arguments.rs"),
 "\n",

@@ -265,6 +265,7 @@ pub(super) fn source_capacity_expr_type(
         ExprKind::Float64(_) => Some(Type::F64),
         ExprKind::Bool(_) => Some(Type::Bool),
         ExprKind::String(_) => Some(Type::String),
+        ExprKind::BorrowedUtf8Literal(_) => None,
         ExprKind::Var(name) => bindings.get(name).cloned(),
         ExprKind::Call { name, .. } => crate::byte_ops::by_name(name)
             .map(crate::byte_ops::ByteOp::ast_return_type)
@@ -555,7 +556,7 @@ pub(super) fn source_transcript_source_from_roots(
                 ExprKind::RepeatArrayU8 { count, .. } => {
                     results.push(TranscriptSource::Fixed(u64::from(*count)));
                 }
-                ExprKind::String(value) => results.push(
+                ExprKind::String(value) | ExprKind::BorrowedUtf8Literal(value) => results.push(
                     u64::try_from(value.len())
                         .map(TranscriptSource::Fixed)
                         .unwrap_or(TranscriptSource::Unknown),
@@ -1281,6 +1282,7 @@ fn source_capacity_expr(
                     | ExprKind::Float64(_)
                     | ExprKind::Bool(_)
                     | ExprKind::String(_)
+| ExprKind::BorrowedUtf8Literal(_)
                     | ExprKind::Var(_) => results.push(CapacityFlow::Empty),
                 }
             }

@@ -110,6 +110,7 @@ impl Resolver<'_> {
                         kind: ResolvedExprKind::Int(*value),
                         span: expr.span,
                     }),
+                    ExprKind::BorrowedUtf8Literal(_) => return Err(self.error("SPX-H006", crate::source_verify::static_text::MESSAGE, expr.span)),
                     ExprKind::String(value) => {
                         let ty = ResolvedType::String;
                         results.push(ResolvedExpr {

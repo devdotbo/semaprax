@@ -454,6 +454,7 @@ fn push_children<'e>(expression: &'e mut Expr, pending: &mut Vec<&'e mut Expr>) 
         | ExprKind::Float64(_)
         | ExprKind::Bool(_)
         | ExprKind::String(_)
+| ExprKind::BorrowedUtf8Literal(_)
         | ExprKind::Var(_) => {}
     }
 }

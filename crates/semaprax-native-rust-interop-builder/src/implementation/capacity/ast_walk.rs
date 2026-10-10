@@ -242,6 +242,7 @@ pub(in crate::implementation) fn ast_child<'a>(
         | crate::ast::ExprKind::Float64(_)
         | crate::ast::ExprKind::Bool(_)
         | crate::ast::ExprKind::String(_)
+| crate::ast::ExprKind::BorrowedUtf8Literal(_)
         | crate::ast::ExprKind::Var(_) => None,
     }
 }
@@ -351,6 +352,7 @@ pub(super) fn ast_child_identity_path_increment(
         | crate::ast::ExprKind::Float64(_)
         | crate::ast::ExprKind::Bool(_)
         | crate::ast::ExprKind::String(_)
+| crate::ast::ExprKind::BorrowedUtf8Literal(_)
         | crate::ast::ExprKind::Var(_) => 0,
     }
 }

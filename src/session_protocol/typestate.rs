@@ -252,6 +252,7 @@ fn collect_bindings(expr: &Expr, names: &mut HashSet<String>) {
         | ExprKind::Float64(_)
         | ExprKind::Bool(_)
         | ExprKind::String(_)
+| ExprKind::BorrowedUtf8Literal(_)
         | ExprKind::Var(_) => {}
     }
 }
@@ -404,6 +405,7 @@ fn contains_via_call(expr: &Expr, via_names: &BTreeSet<&str>) -> bool {
         | ExprKind::Float64(_)
         | ExprKind::Bool(_)
         | ExprKind::String(_)
+| ExprKind::BorrowedUtf8Literal(_)
         | ExprKind::Var(_) => false,
     }
 }

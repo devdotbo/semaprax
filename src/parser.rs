@@ -29,6 +29,7 @@ mod return_flow;
 pub(crate) mod session_protocol;
 mod signed_minimum;
 mod statement_if;
+mod static_text;
 mod types;
 use types::expression_path;
 mod yields;
@@ -878,6 +879,7 @@ impl Parser {
                 kind: ExprKind::String(value),
                 span: token.span,
             },
+            TokenKind::Ident(value) if value == "str" && self.adjacent_text_literal(token.span) => self.static_text_literal(token.span),
             TokenKind::Float(literal) => Expr {
                 kind: if literal.wide {
                     ExprKind::Float64(literal.value.to_bits())

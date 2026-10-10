@@ -366,6 +366,7 @@ pub(super) fn visit_ast_call_expressions(
         | ExprKind::Float64(_)
         | ExprKind::Bool(_)
         | ExprKind::String(_)
+| ExprKind::BorrowedUtf8Literal(_)
         | ExprKind::Var(_) => {}
         // Method calls resolve to hoisted functions in HIR; the AST-level
         // call-site walk sees them through the resolved Call edge instead.

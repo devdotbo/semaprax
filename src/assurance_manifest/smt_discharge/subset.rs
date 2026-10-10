@@ -198,6 +198,7 @@ pub fn expr_reason(expr: &Expr) -> Option<UnsupportedReason> {
         ExprKind::RepeatArrayU8 { .. } => "repeated byte array literal",
         ExprKind::Float32(_) | ExprKind::Float64(_) => "floating point",
         ExprKind::String(_) => "string literal",
+        ExprKind::BorrowedUtf8Literal(_) => "frontend-only borrowed UTF-8 literal",
         ExprKind::Call { .. } => "call",
         ExprKind::MethodCall { .. } => "method call",
         ExprKind::SuperMethod { .. } => "super method call",

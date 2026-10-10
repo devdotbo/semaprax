@@ -18,6 +18,7 @@ use std::collections::BTreeMap;
 
 mod control;
 mod literal_format;
+mod static_text;
 mod projection;
 
 impl Resolver<'_> {
@@ -146,11 +147,8 @@ impl Resolver<'_> {
                 ResolvedType::Bool,
                 OwnershipMode::Value,
             ),
-            ExprKind::String(value) => (
-                ResolvedExprKind::String(value.clone()),
-                ResolvedType::String,
-                OwnershipMode::Own,
-            ),
+            ExprKind::String(value) => static_text::owned_string(value),
+            ExprKind::BorrowedUtf8Literal(_) => return Err(self.error("SPX-H006", crate::source_verify::static_text::MESSAGE, expr.span)),
             ExprKind::Var(name) => {
                 if bindings
                     .get(name)

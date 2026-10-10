@@ -285,6 +285,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 // Owned String Loops v1: a literal allocates one owned
                 // String in the per-iteration body region.
                 ExprKind::String(_) => results.push(Ok(())),
+                ExprKind::BorrowedUtf8Literal(_) => {
+                    self.diagnostics.push(crate::source_verify::static_text::unsupported(self.program, expression.span));
+                    results.push(Err(()));
+                },
                 ExprKind::ArrayU8(_) | ExprKind::RepeatArrayU8 { .. } => {
                     self.diagnostics.push(error(
                         self.program,

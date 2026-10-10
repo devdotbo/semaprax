@@ -329,6 +329,7 @@ impl Drop for Program {
                 | ExprKind::Float64(_)
                 | ExprKind::Bool(_)
                 | ExprKind::String(_)
+| ExprKind::BorrowedUtf8Literal(_)
                 | ExprKind::Var(_) => {}
             }
         }
@@ -900,6 +901,8 @@ pub enum ExprKind {
     Float64(u64),
     Bool(bool),
     String(String),
+    /// Explicit borrowed UTF-8 spelling; frontend-only until static-root admission.
+    BorrowedUtf8Literal(String),
     Var(String),
     Call {
         name: String,
@@ -1308,6 +1311,7 @@ impl Expr {
             | ExprKind::Float64(_)
             | ExprKind::Bool(_)
             | ExprKind::String(_)
+| ExprKind::BorrowedUtf8Literal(_)
             | ExprKind::Var(_) => None,
         }
     }

@@ -171,6 +171,7 @@ pub(in crate::source_verify) fn reject_while_disallowed_oracle(
         // Owned String Loops v1: a literal allocates one owned String in the
         // per-iteration body region.
         ExprKind::String(_) => Ok(()),
+        ExprKind::BorrowedUtf8Literal(_) => { diagnostics.push(crate::source_verify::static_text::unsupported(program, expression.span)); Err(()) },
         ExprKind::Unary { value, .. } => {
             reject_while_disallowed_oracle(program, value, functions, types, diagnostics)
         }

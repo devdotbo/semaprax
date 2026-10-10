@@ -136,7 +136,7 @@ pub(super) fn prove_with_cursor<'a>(
                 if next == usize::MAX {
                     frames[current] = Some(Frame::Expression(owner, expression, 0));
                     match &expression.kind {
-                        ExprKind::String(_)
+                        ExprKind::String(_) | ExprKind::BorrowedUtf8Literal(_)
                         | ExprKind::Closure { .. }
                         | ExprKind::MethodCall { .. }
                         | ExprKind::SuperMethod { .. }

@@ -105,6 +105,7 @@ impl<'a> Projection<'_, 'a> {
             ExprKind::Float64(bits) => (format!("{:?}", f64::from_bits(*bits)), Ty::Float),
             ExprKind::Bool(v) => (v.to_string(), Ty::Bool),
             ExprKind::String(v) => (js_string(v), Ty::Str),
+            ExprKind::BorrowedUtf8Literal(_) => ("U".to_owned(), Ty::Bool),
             ExprKind::Char(v) => (
                 char::from_u32(*v)
                     .map(|v| js_string(&v.to_string()))
