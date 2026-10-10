@@ -205,6 +205,9 @@ fn emit_alternative_tests(
     Ok(())
 }
 
+// Match the scalar emitter's explicit lowering inputs; the shared mutable
+// control depth must remain visible while only the selected operand executes.
+#[allow(clippy::too_many_arguments)]
 pub(super) fn emit_short_circuit(
     output: &mut impl ByteOutput,
     op: BinaryOp,

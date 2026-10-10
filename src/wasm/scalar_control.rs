@@ -68,6 +68,9 @@ impl<'a> Control<'a> {
         }
     }
 
+    // Keep the exact expression, bound target and operand separate from the
+    // scalar emitter's immutable indexes and result destination.
+    #[allow(clippy::too_many_arguments)]
     pub(super) fn emit_exit(
         &mut self,
         output: &mut impl ByteOutput,

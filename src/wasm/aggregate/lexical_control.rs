@@ -398,7 +398,7 @@ impl Emitter<'_> {
             self.lexical_result_stage()?
         } else if let Some(local) = plan.result_stage_scalar {
             self.require_scalar(result, &function.return_type, "function result")?;
-            self.get_scalar(&result);
+            self.get_scalar(result);
             self.output.push(0x21);
             write_u32(self.output, local);
             if owned_string_profile && function.return_type == ResolvedType::String

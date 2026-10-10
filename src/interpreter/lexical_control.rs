@@ -369,12 +369,10 @@ fn find_assignment<'a>(
                         ..
                     } = statement
                     {
-                        if &value.id == id {
-                            if found.replace((binding, value)).is_some() {
-                                return Err(Flow::Guard(
-                                    "lexical latch assignment identity is duplicated",
-                                ));
-                            }
+                        if &value.id == id && found.replace((binding, value)).is_some() {
+                            return Err(Flow::Guard(
+                                "lexical latch assignment identity is duplicated",
+                            ));
                         }
                     }
                 }
