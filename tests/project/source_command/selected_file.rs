@@ -131,7 +131,7 @@ fn selected_profile_rejects_wrong_input_missing_authority_and_portable_targets()
         manifest.replace("matrix = [\"native64\"]", "matrix = [\"wasm32\"]"),
     ] {
         let errors = super::ProjectManifest::parse(&invalid).unwrap_err();
-        assert_eq!(errors[0].code, "SPX-G170");
+        assert_eq!(errors[0].code, "SPX-J100");
     }
 }
 
