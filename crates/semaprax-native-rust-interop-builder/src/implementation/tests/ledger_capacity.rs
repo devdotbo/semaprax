@@ -120,6 +120,9 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
     // The resolver is split across submodules; its layout pins live beside the
     // frame machinery they describe, so bind the root and the resolver files.
     let hir_resolver = concat!(
+        include_str!("../../../../../src/loop_calls/byte_writer.rs"),
+        include_str!("../../../../../src/loop_calls/byte_writer/source.rs"),
+        include_str!("../../../../../src/loop_calls/byte_writer/resolved.rs"),
         include_str!("../../../../../src/hir.rs"),
         include_str!("../../../../../src/hir/lexical_exit.rs"),
         include_str!("../../../../../src/hir/lexical_exit/return_operand.rs"),
@@ -206,6 +209,8 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         include_str!("../../../../../src/hir/workspace_link/native_owner/url_view.rs"),
     );
     let hir_validator = concat!(
+        include_str!("../../../../../src/loop_calls/byte_writer.rs"),
+        include_str!("../../../../../src/loop_calls/byte_writer/resolved.rs"),
         include_str!("../../../../../src/hir/validation.rs"),
         include_str!("../../../../../src/hir/validation/lexical_exit.rs"),
         include_str!("../../../../../src/hir/validation/call_parameters.rs"),
@@ -237,6 +242,8 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         include_str!("../../../../../src/hir/validation/iterative_while_admission_tests.rs"),
     );
     let verifier = concat!(
+        include_str!("../../../../../src/loop_calls/byte_writer.rs"),
+        include_str!("../../../../../src/loop_calls/byte_writer/source.rs"),
         include_str!("../../../../../src/source_verify.rs"),
         include_str!("../../../../../src/source_verify/lexical_exit.rs"),
         include_str!("../../../../../src/source_verify/iterative/lexical_exit.rs"),
