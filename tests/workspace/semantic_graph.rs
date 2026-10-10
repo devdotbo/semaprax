@@ -349,12 +349,15 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
         concat!(
             concat!(
                 include_str!("../../src/workspace_graph.rs"),
+                include_str!("../../src/workspace_graph/retain_module.rs"),
+                include_str!("../../src/workspace_graph/static_text.rs"),
                 "\n",
                 include_str!("../../src/workspace_graph/package.rs"),
                 "\n",
                 include_str!("../../src/workspace_graph/record_traversal.rs"),
                 "\n",
                 include_str!("../../src/workspace_graph/source_schema.rs"),
+                include_str!("../../src/workspace_graph/source_schema/static_text.rs"),
                 "\n",
                 include_str!("../../src/workspace_graph/source_schema/byte_helper.rs"),
                 "\n",
