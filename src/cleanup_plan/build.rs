@@ -1327,11 +1327,9 @@ impl<'a> PlanBuilder<'a> {
         producer: StatusProducer,
     ) -> Result<(), Diagnostic> {
         if let Some(existing) = self.status_sources.iter().find(|source| source.id == id) {
-            if self
-                .lexical
-                .as_ref()
-                .is_some_and(|control| control.building_resume)
-                && existing.producer == producer
+            if self.lexical.as_ref().is_some_and(|control| {
+                control.building_resume || control.replicated_statuses.contains(&id)
+            }) && existing.producer == producer
             {
                 return Ok(());
             }
@@ -1340,6 +1338,7 @@ impl<'a> PlanBuilder<'a> {
                 id.expression
             )));
         }
+        self.note_resume_status(&id);
         self.status_sources.push(StatusSource { id, producer });
         Ok(())
     }

@@ -9,6 +9,7 @@ pub(super) struct LexicalBuildState {
     returns: Vec<PendingReturn>,
     active_loops: Vec<LoopContext>,
     pub(super) building_resume: bool,
+    pub(super) replicated_statuses: BTreeSet<StatusSourceId>,
 }
 
 /// Fresh monomorphic functions and late generic instances supply their actual
@@ -31,6 +32,7 @@ pub(crate) fn build_plan_for_execution(
             returns: Vec::new(),
             active_loops: Vec::new(),
             building_resume: false,
+            replicated_statuses: BTreeSet::new(),
             certificate: super::super::LexicalControlPlan {
                 schema: "semaprax.lexical-control-flow.v1",
                 loops: Vec::new(),
@@ -274,7 +276,25 @@ impl PlanBuilder<'_> {
             site: condition.id.clone(),
         };
         let condition_entry = block;
-        let evaluated_condition = self.lower_expr(condition, block, state.clone(), region)?;
+        let condition_region = if crate::string_ops::conditions::needs_cleanup(condition) {
+            Some(self.new_region(region)?)
+        } else {
+            None
+        };
+        let (condition_block, active_region) = if let Some(child) = condition_region {
+            let entry = self.new_block(child)?;
+            let edge = self.new_edge(block, entry, EdgeCondition::Always)?;
+            self.terminate(block, CleanupTerminator::Goto(edge))?;
+            (entry, child)
+        } else {
+            (block, region)
+        };
+        let mut evaluated_condition =
+            self.lower_expr(condition, condition_block, state.clone(), active_region)?;
+        if let Some(child) = condition_region {
+            (evaluated_condition.block, evaluated_condition.state) =
+                self.exit_scope(evaluated_condition.block, evaluated_condition.state, child)?;
+        }
         if evaluated_condition.state != state || evaluated_condition.owned_source.is_some() {
             return Err(plan_error("lexical loop condition changes entry ownership"));
         }
@@ -400,11 +420,7 @@ impl PlanBuilder<'_> {
                 )
             }
             crate::ast::LexicalExitKind::Continue => {
-                if !matches!(context.latch, crate::hir::LoopLatchKind::Condition) {
-                    return Err(plan_error(
-                        "generated lexical advancement proof has not been constructed",
-                    ));
-                }
+                let resume = self.lower_continue_advance(&context, &state)?;
                 if state != context.entry {
                     return Err(plan_error(
                         "loop continue does not restore exact entry ownership",
@@ -414,7 +430,7 @@ impl PlanBuilder<'_> {
                     ExitContinuation::LoopLatch {
                         target: target.clone(),
                     },
-                    None,
+                    resume,
                 )
             }
             crate::ast::LexicalExitKind::Return => {
@@ -525,5 +541,124 @@ pub(super) fn build_registered_plan(
         build_plan_for_execution(program, function, &owner)
     } else {
         PlanBuilder::new(program, function)?.build()
+    }
+}
+
+/// Locate an exact authenticated identity with a fixed-depth cursor, without
+/// cloning HIR or constructing an unbounded expression frontier.
+fn expression_at<'e>(
+    root: &'e ResolvedExpr,
+    id: &ExpressionId,
+) -> Result<&'e ResolvedExpr, Diagnostic> {
+    const DEPTH: usize = crate::cache_codec::MAX_DEPTH + 1;
+    let mut stack: [Option<(&ResolvedExpr, usize)>; DEPTH] = [None; DEPTH];
+    stack[0] = Some((root, 0));
+    let mut used = 1;
+    let mut work = 0usize;
+    while used != 0 {
+        work += 1;
+        if work > 1_000_000 {
+            return Err(plan_error(
+                "lexical advancement lookup exceeds bounded work",
+            ));
+        }
+        let (expression, index) = stack[used - 1].expect("occupied lexical lookup frame");
+        if index == 0 && &expression.id == id {
+            return Ok(expression);
+        }
+        if let Some(child) = crate::hir::lexical_exit::child(expression, index) {
+            stack[used - 1] = Some((expression, index + 1));
+            if used == DEPTH {
+                return Err(plan_error(
+                    "lexical advancement lookup exceeds bounded depth",
+                ));
+            }
+            stack[used] = Some((child, 0));
+            used += 1;
+        } else {
+            used -= 1;
+            stack[used] = None;
+        }
+    }
+    Err(plan_error(
+        "lexical advancement references an absent expression identity",
+    ))
+}
+impl PlanBuilder<'_> {
+    fn lower_continue_advance(
+        &mut self,
+        context: &LoopContext,
+        state: &FlowState,
+    ) -> Result<Option<BlockId>, Diagnostic> {
+        match &context.latch {
+            crate::hir::LoopLatchKind::Condition => Ok(None),
+            crate::hir::LoopLatchKind::SourceForStep { step, .. } => {
+                let function = self.function;
+                let body = expression_at(&function.body, &context.body)?;
+                let ResolvedExprKind::Block { statements, .. } = &body.kind else {
+                    return Err(plan_error("source-for latch body is not a block"));
+                };
+                let Some(ResolvedStatement::Assign {
+                    value, field: None, ..
+                }) = statements.last()
+                else {
+                    return Err(plan_error(
+                        "source-for latch has no whole counter assignment",
+                    ));
+                };
+                if &value.id != step {
+                    return Err(plan_error("source-for advance identity differs"));
+                }
+                let entry = self.new_block(context.region)?;
+                let first_new = self.blocks.len();
+                self.lexical
+                    .as_mut()
+                    .expect("lexical profile retained")
+                    .building_resume = true;
+                let evaluated = self.lower_expr(value, entry, state.clone(), context.region)?;
+                self.lexical
+                    .as_mut()
+                    .expect("lexical profile retained")
+                    .building_resume = false;
+                if self.flow_is_closed(evaluated.block)
+                    || evaluated.state != context.entry
+                    || evaluated.owned_source.is_some()
+                {
+                    return Err(plan_error(
+                        "source-for continue advancement does not restore exact loop ownership",
+                    ));
+                }
+                self.emit_exit(
+                    evaluated.block,
+                    Vec::new(),
+                    Vec::new(),
+                    ExitContinuation::LoopLatch {
+                        target: context.target.clone(),
+                    },
+                )?;
+                let mut blocks = vec![entry];
+                blocks.extend(self.blocks[first_new..].iter().map(|block| block.id));
+                self.lexical
+                    .as_mut()
+                    .expect("lexical profile retained")
+                    .certificate
+                    .resumes
+                    .push(super::super::ResumeCertificate { entry, blocks });
+                Ok(Some(entry))
+            }
+            crate::hir::LoopLatchKind::OwnedIteratorStep { .. } => Err(plan_error(
+                "owned iterator continue requires its retained remainder advancement contour",
+            )),
+        }
+    }
+}
+
+impl PlanBuilder<'_> {
+    pub(super) fn note_resume_status(&mut self, id: &StatusSourceId) {
+        if let Some(control) = &mut self.lexical {
+            if control.building_resume {
+                control.replicated_statuses.insert(id.clone());
+            }
+        }
     }
 }
