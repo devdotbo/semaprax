@@ -750,6 +750,8 @@ format: `Unreleased` then release buckets, grouped by impact.
 
 ## Unreleased
 
+- Authored finite owned-iterator Bytes scratch capacity replay (OPT741): exact immutable Vec constructor provenance, cumulative allocation bounds and selective Graph v78; owning execution remains pending.
+
 - Preserve authored JSON codec names and stable IDs containing template-marker
   spellings through one-pass expansion. Added generator and owning Project
   regressions for exact identities, policy replay and detached nested owners;

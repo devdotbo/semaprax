@@ -59,7 +59,9 @@ pub(crate) use generic_instances::to_legacy_hir_json;
 pub use generic_instances::{legacy_context_json, to_legacy_json, verify_json};
 pub(crate) use generic_mapping::requires_v35;
 mod byte_helper_renewal;
-use byte_helper_renewal::graph_json;
+mod finite_byte_scratch;
+use finite_byte_scratch::graph_json;
+pub(crate) use finite_byte_scratch::{graph_schema, legacy_graph_schema};
 #[path = "graph/native_import.rs"]
 mod native_import;
 #[path = "graph/nested_owned.rs"]
@@ -76,8 +78,8 @@ use nested_owned::{
 };
 pub(crate) use prelude_binding::revision_from_canonical_program;
 pub(crate) use scoped_vec_field::{
-    graph_schema, graph_schema_from_parts_and_instances,
-    graph_schema_from_parts_and_instances_with_renewal_authority, legacy_graph_schema,
+    graph_schema_from_parts_and_instances,
+    graph_schema_from_parts_and_instances_with_renewal_authority,
 };
 /// Hash the canonical human-readable source projection and implicit prelude.
 ///

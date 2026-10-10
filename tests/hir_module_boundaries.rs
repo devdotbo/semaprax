@@ -26,7 +26,15 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/hir/validation/stdin_stream.rs"),
         include_str!("../src/stdin_stream_ops/analysis.rs"),
         include_str!("../src/hir/validation/borrowed_bytes_call_tests.rs"),
-        include_str!("../src/hir/validation/iterator_loops.rs"),
+        concat!(
+            include_str!("../src/hir/validation/iterator_loops.rs"),
+            "\n",
+            include_str!("../src/finite_byte_scratch.rs"),
+            "\n",
+            include_str!("../src/finite_byte_scratch/source.rs"),
+            "\n",
+            include_str!("../src/finite_byte_scratch/resolved.rs")
+        ),
         include_str!("../src/hir/validation/string_replacement.rs"),
         include_str!("../src/hir/iterator_loop.rs"),
         include_str!("../src/hir/iterator_loop/renewal.rs"),

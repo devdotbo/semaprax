@@ -90,6 +90,8 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         expression: &'p Expr,
         owned_item: Option<&str>,
     ) -> Result<(), ()> {
+        let finite_scratch =
+            owned_item.and_then(|_| crate::finite_byte_scratch::source(self.current, expression));
         enum Frame<'a> {
             Expression(&'a Expr),
             Statement(&'a Statement),
@@ -382,7 +384,12 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         continue;
                     }
                     if let Some(operation) = crate::byte_ops::by_name(name) {
-                        if !operation.admitted_in_while() || args.len() != operation.arity() {
+                        if (!operation.admitted_in_while()
+                            && !finite_scratch
+                                .as_ref()
+                                .is_some_and(|proof| proof.permits(expression)))
+                            || args.len() != operation.arity()
+                        {
                             self.diagnostics.push(error(
                             self.program,
                             "SPX-T252",

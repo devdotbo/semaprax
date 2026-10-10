@@ -616,7 +616,7 @@ pub(super) fn byte_capacity_expression(
         ),
         Sequence(usize),
         Alternative(usize),
-        Loop,
+        Loop(Option<u32>),
         Match(usize),
         Emit(CapacityFlow),
     }
@@ -912,7 +912,11 @@ pub(super) fn byte_capacity_expression(
                                 | ResolvedStatement::LexicalWhile {
                                     condition, body, ..
                                 } => {
-                                    frames.push(Frame::Loop);
+                                    let finite = crate::finite_byte_scratch::resolved(
+                                        program, condition, body,
+                                    )
+                                    .map(|proof| proof.iterations);
+                                    frames.push(Frame::Loop(finite));
                                     frames.push(Frame::Visit(body, false));
                                     frames.push(Frame::Visit(condition, false));
                                 }
@@ -1013,16 +1017,23 @@ pub(super) fn byte_capacity_expression(
                 let children = results.drain(start..).collect::<Vec<_>>();
                 results.push(CapacityFlow::Alternative(children));
             }
-            Frame::Loop => {
+            Frame::Loop(finite) => {
                 let body = results
                     .pop()
                     .ok_or_else(|| hir_error("byte-capacity traversal stack underflowed"))?;
                 let condition = results
                     .pop()
                     .ok_or_else(|| hir_error("byte-capacity traversal stack underflowed"))?;
-                results.push(CapacityFlow::Loop {
-                    condition: Box::new(condition),
-                    body: Box::new(body),
+                results.push(match finite {
+                    Some(iterations) => CapacityFlow::FiniteOwnedLoop {
+                        iterations,
+                        condition: Box::new(condition),
+                        body: Box::new(body),
+                    },
+                    None => CapacityFlow::Loop {
+                        condition: Box::new(condition),
+                        body: Box::new(body),
+                    },
                 });
             }
             Frame::Match(arm_count) => {

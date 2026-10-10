@@ -867,6 +867,7 @@ fn source_capacity_expr(
         Sequence(usize),
         Alternative(usize),
         Loop,
+        FiniteOwnedLoop(u32),
         Block {
             statements: &'a [Statement],
             next: usize,
@@ -1315,6 +1316,18 @@ fn source_capacity_expr(
                     CapacityFlow::Alternative(children)
                 });
             }
+            Frame::FiniteOwnedLoop(iterations) => {
+                let body = results.pop().ok_or(())?;
+                let initialization = results.pop().ok_or(())?;
+                results.push(sequence(vec![
+                    initialization,
+                    CapacityFlow::FiniteOwnedLoop {
+                        iterations,
+                        condition: Box::new(CapacityFlow::Empty),
+                        body: Box::new(body),
+                    },
+                ]));
+            }
             Frame::Loop => {
                 let body = results.pop().ok_or(())?;
                 let condition = results.pop().ok_or(())?;
@@ -1393,7 +1406,15 @@ fn source_capacity_expr(
                                 direct_destination,
                                 update: BlockUpdate::None,
                             });
-                            frames.push(Frame::Loop);
+                            let finite = if matches!(statement, Statement::ForOwn { .. }) {
+                                context.ordinary.values().find_map(|function| {
+                                    crate::finite_byte_scratch::source(function, body)
+                                        .map(|proof| proof.iterations)
+                                })
+                            } else {
+                                None
+                            };
+                            frames.push(finite.map_or(Frame::Loop, Frame::FiniteOwnedLoop));
                             frames.push(Frame::Visit {
                                 expression: body,
                                 path: format!("{statement_path}.body"),

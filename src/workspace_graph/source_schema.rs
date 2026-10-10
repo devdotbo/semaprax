@@ -196,7 +196,16 @@ pub(super) fn schema_with_proofs<'a>(
     if module.native_law {
         return Ok("semaprax.native-law.v1");
     }
-    if let Some(schema) = byte_helper::schema_with_proofs(module, modules, facts, proofs)? {
+    let helper_schema = byte_helper::schema_with_proofs(module, modules, facts, proofs)?;
+    if module
+        .functions
+        .iter()
+        .chain(module.function_instances.iter().map(|i| &i.function))
+        .any(crate::finite_byte_scratch::function_requires)
+    {
+        return Ok("semaprax.graph.v78");
+    }
+    if let Some(schema) = helper_schema {
         return Ok(schema);
     }
     let authority = |function: &hir::ResolvedFunction| {

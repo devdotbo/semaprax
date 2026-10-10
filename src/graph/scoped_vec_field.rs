@@ -56,6 +56,17 @@ pub(crate) fn graph_schema_from_parts_and_instances_with_renewal_authority(
     if functions
         .iter()
         .chain(instances.iter().map(|i| &i.function))
+        .any(crate::finite_byte_scratch::function_requires)
+    {
+        return Err(Diagnostic::io(
+            "SPX-G410",
+            "finite owned-iterator scratch needs complete typed capacity replay",
+        ));
+    }
+
+    if functions
+        .iter()
+        .chain(instances.iter().map(|i| &i.function))
         .any(|f| f.cleanup_plan.schema == crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V19)
     {
         return Err(Diagnostic::io(

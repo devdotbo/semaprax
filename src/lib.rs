@@ -79,6 +79,7 @@ pub mod authentication;
 pub(crate) mod bounded_output;
 pub(crate) mod box_ops;
 pub(crate) mod byte_data_capacity;
+mod finite_byte_scratch;
 pub(crate) mod byte_ops;
 pub mod c_header;
 pub(crate) mod cache_codec;

@@ -7,7 +7,9 @@ mod intrinsic_calls;
 
 use self::calls::{oracle_call, oracle_method_call};
 use self::matching::oracle_match;
-use self::while_oracle::{check_while_statement, reject_while_disallowed_oracle};
+use self::while_oracle::{
+    check_while_statement, reject_finite_iterator_body_oracle, reject_while_disallowed_oracle,
+};
 use super::binding::{Availability, Binding, CheckedValue};
 use super::declared_type::{
     check_declared_type, function_value_signature, ordinary_option_argument,
@@ -1254,10 +1256,10 @@ pub(super) fn check_expr(
                                 || crate::source_verify::declared_type::owned_leaf_collection::runtime_element(types, element)
                         }) {
                             let _ = matching::with_owned_iterator_item(item, element, || {
-                                reject_while_disallowed_oracle(program, body, functions, types, diagnostics)
+                                reject_finite_iterator_body_oracle(program, current, body, functions, types, diagnostics)
                             });
                         } else {
-                            let _ = reject_while_disallowed_oracle(program, body, functions, types, diagnostics);
+                            let _ = reject_finite_iterator_body_oracle(program, current, body, functions, types, diagnostics);
                         }
                         if !item_inserted {
                             diagnostics.push(error(program, "SPX-T209", format!("loop item `{item}` shadows an existing value"), *item_span));

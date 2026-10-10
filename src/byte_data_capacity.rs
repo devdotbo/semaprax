@@ -76,6 +76,12 @@ pub(crate) enum CapacityFlow {
         condition: Box<CapacityFlow>,
         body: Box<CapacityFlow>,
     },
+    /// Supplied only by independent source/HIR owned-iterator provenance.
+    FiniteOwnedLoop {
+        iterations: u32,
+        condition: Box<CapacityFlow>,
+        body: Box<CapacityFlow>,
+    },
 }
 
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
@@ -603,6 +609,20 @@ fn validate_flow<'a>(
                 }
                 has_local_transcript_write = true;
             }
+            CapacityFlow::FiniteOwnedLoop {
+                iterations,
+                condition,
+                body,
+            } => {
+                if *iterations > MAX_BYTES_COPY_SITES {
+                    return Err(invariant(
+                        Some(&function.function),
+                        "finite iterator bound exceeds the closed profile",
+                    ));
+                }
+                pending.push(body);
+                pending.push(condition);
+            }
             CapacityFlow::Loop { condition, body } => {
                 pending.push(body);
                 pending.push(condition);
@@ -836,7 +856,10 @@ fn fold_flow(
                     frames.push(Frame::Finish(node, children.len()));
                     frames.extend(children.iter().rev().map(Frame::Enter));
                 }
-                CapacityFlow::Loop { condition, body } => {
+                CapacityFlow::Loop { condition, body }
+                | CapacityFlow::FiniteOwnedLoop {
+                    condition, body, ..
+                } => {
                     frames.push(Frame::Finish(node, 2));
                     frames.push(Frame::Enter(body));
                     frames.push(Frame::Enter(condition));
@@ -887,6 +910,23 @@ fn fold_flow(
                             })?;
                     }
                 }
+                if let CapacityFlow::FiniteOwnedLoop { iterations, .. } = node {
+                    let condition = children[0].1;
+                    let body = children[1].1;
+                    if condition.sites != 0 || condition.stdin_sites != 0 || body.stdin_sites != 0 {
+                        return Err(allocation_error(function, "finite iterator allocation is outside the iteration-local scratch domain"));
+                    }
+                    allocation.sites = body.sites.checked_mul(*iterations).ok_or_else(|| {
+                        allocation_error(function, "finite iterator allocation count overflowed")
+                    })?;
+                    allocation.payload_bytes = body
+                        .payload_bytes
+                        .checked_mul(u64::from(*iterations))
+                        .ok_or_else(|| {
+                            allocation_error(function, "finite iterator payload sum overflowed")
+                        })?;
+                    allocation.stdin_sites = 0;
+                }
                 if matches!(mode, FoldMode::Allocation)
                     && matches!(node, CapacityFlow::Loop { .. })
                     && (allocation.sites != 0 || allocation.stdin_sites != 0)
@@ -896,7 +936,11 @@ fn fold_flow(
                         "bytes_copy is reachable from a while condition or body",
                     ));
                 }
-                if matches!(mode, FoldMode::Transcript) && matches!(node, CapacityFlow::Loop { .. })
+                if matches!(mode, FoldMode::Transcript)
+                    && matches!(
+                        node,
+                        CapacityFlow::Loop { .. } | CapacityFlow::FiniteOwnedLoop { .. }
+                    )
                 {
                     let condition = &children[0].2;
                     let body = &children[1].2;

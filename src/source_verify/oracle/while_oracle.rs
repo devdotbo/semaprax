@@ -132,10 +132,38 @@ pub(in crate::source_verify) fn reject_while_disallowed_oracle(
     types: &TypeTable<'_>,
     diagnostics: &mut Vec<Diagnostic>,
 ) -> Result<(), ()> {
+    reject_with_scratch(program, expression, functions, types, diagnostics, None)
+}
+pub(in crate::source_verify) fn reject_finite_iterator_body_oracle(
+    program: &Program,
+    current: &Function,
+    expression: &Expr,
+    functions: &HashMap<&str, &Function>,
+    types: &TypeTable<'_>,
+    diagnostics: &mut Vec<Diagnostic>,
+) -> Result<(), ()> {
+    let scratch = crate::finite_byte_scratch::source(current, expression);
+    reject_with_scratch(
+        program,
+        expression,
+        functions,
+        types,
+        diagnostics,
+        scratch.as_ref(),
+    )
+}
+pub(in crate::source_verify) fn reject_with_scratch(
+    program: &Program,
+    expression: &Expr,
+    functions: &HashMap<&str, &Function>,
+    types: &TypeTable<'_>,
+    diagnostics: &mut Vec<Diagnostic>,
+    scratch: Option<&crate::finite_byte_scratch::SourceScratch<'_>>,
+) -> Result<(), ()> {
     match &expression.kind {
         ExprKind::LexicalExit { value, .. } => match value {
             Some(value) => {
-                reject_while_disallowed_oracle(program, value, functions, types, diagnostics)
+                reject_with_scratch(program, value, functions, types, diagnostics, scratch)
             }
             None => Ok(()),
         },
@@ -172,12 +200,11 @@ pub(in crate::source_verify) fn reject_while_disallowed_oracle(
         // per-iteration body region.
         ExprKind::String(_) => Ok(()),
         ExprKind::Unary { value, .. } => {
-            reject_while_disallowed_oracle(program, value, functions, types, diagnostics)
+            reject_with_scratch(program, value, functions, types, diagnostics, scratch)
         }
         ExprKind::Binary { left, right, .. } => {
-            let left = reject_while_disallowed_oracle(program, left, functions, types, diagnostics);
-            let right =
-                reject_while_disallowed_oracle(program, right, functions, types, diagnostics);
+            let left = reject_with_scratch(program, left, functions, types, diagnostics, scratch);
+            let right = reject_with_scratch(program, right, functions, types, diagnostics, scratch);
             left.and(right)
         }
         ExprKind::If {
@@ -186,31 +213,33 @@ pub(in crate::source_verify) fn reject_while_disallowed_oracle(
             else_branch,
         } => {
             let condition =
-                reject_while_disallowed_oracle(program, condition, functions, types, diagnostics);
+                reject_with_scratch(program, condition, functions, types, diagnostics, scratch);
             let then =
-                reject_while_disallowed_oracle(program, then_branch, functions, types, diagnostics);
+                reject_with_scratch(program, then_branch, functions, types, diagnostics, scratch);
             let else_branch =
-                reject_while_disallowed_oracle(program, else_branch, functions, types, diagnostics);
+                reject_with_scratch(program, else_branch, functions, types, diagnostics, scratch);
             condition.and(then).and(else_branch)
         }
         ExprKind::Block { statements, tail } => {
             let mut result = Ok(());
             for statement in statements {
-                result = reject_while_disallowed_statement_oracle(
+                result = reject_statement_with_scratch(
                     program,
                     statement,
                     functions,
                     types,
                     diagnostics,
+                    scratch,
                 );
                 result?;
             }
-            result.and(reject_while_disallowed_oracle(
+            result.and(reject_with_scratch(
                 program,
                 tail,
                 functions,
                 types,
                 diagnostics,
+                scratch,
             ))
         }
         ExprKind::Call {
@@ -272,7 +301,10 @@ pub(in crate::source_verify) fn reject_while_disallowed_oracle(
                 return Err(());
             }
             if let Some(operation) = crate::byte_ops::by_name(name) {
-                if !operation.admitted_in_while() || args.len() != operation.arity() {
+                if (!operation.admitted_in_while()
+                    && !scratch.is_some_and(|proof| proof.permits(expression)))
+                    || args.len() != operation.arity()
+                {
                     diagnostics.push(error(
                         program,
                         "SPX-T252",
@@ -317,13 +349,8 @@ pub(in crate::source_verify) fn reject_while_disallowed_oracle(
             }
             let mut result = Ok(());
             for argument in args {
-                result = reject_while_disallowed_oracle(
-                    program,
-                    argument,
-                    functions,
-                    types,
-                    diagnostics,
-                );
+                result =
+                    reject_with_scratch(program, argument, functions, types, diagnostics, scratch);
                 result?;
             }
             result
@@ -338,7 +365,7 @@ pub(in crate::source_verify) fn reject_while_disallowed_oracle(
             Err(())
         }
         ExprKind::Project { base, .. } => {
-            reject_while_disallowed_oracle(program, base, functions, types, diagnostics)
+            reject_with_scratch(program, base, functions, types, diagnostics, scratch)
         }
         ExprKind::ConstructRecord {
             type_name,
@@ -355,12 +382,13 @@ pub(in crate::source_verify) fn reject_while_disallowed_oracle(
             ) {
                 let mut result = Ok(());
                 for field in fields {
-                    if reject_while_disallowed_oracle(
+                    if reject_with_scratch(
                         program,
                         &field.value,
                         functions,
                         types,
                         diagnostics,
+                        scratch,
                     )
                     .is_err()
                     {
@@ -398,12 +426,13 @@ pub(in crate::source_verify) fn reject_while_disallowed_oracle(
                 return Err(());
             }
             for field in fields {
-                reject_while_disallowed_oracle(
+                reject_with_scratch(
                     program,
                     &field.value,
                     functions,
                     types,
                     diagnostics,
+                    scratch,
                 )?;
             }
             Ok(())
@@ -422,33 +451,36 @@ pub(in crate::source_verify) fn reject_while_disallowed_oracle(
         ExprKind::Match {
             scrutinee, arms, ..
         } => {
-            reject_while_disallowed_oracle(program, scrutinee, functions, types, diagnostics)?;
+            reject_with_scratch(program, scrutinee, functions, types, diagnostics, scratch)?;
             let mut result = Ok(());
             for arm in arms {
                 result = match &arm.guard {
                     Some(guard) => {
-                        let guard = reject_while_disallowed_oracle(
+                        let guard = reject_with_scratch(
                             program,
                             guard,
                             functions,
                             types,
                             diagnostics,
+                            scratch,
                         );
-                        let value = reject_while_disallowed_oracle(
+                        let value = reject_with_scratch(
                             program,
                             &arm.value,
                             functions,
                             types,
                             diagnostics,
+                            scratch,
                         );
                         guard.and(value)
                     }
-                    None => reject_while_disallowed_oracle(
+                    None => reject_with_scratch(
                         program,
                         &arm.value,
                         functions,
                         types,
                         diagnostics,
+                        scratch,
                     ),
                 };
                 result?;
@@ -467,18 +499,19 @@ pub(in crate::source_verify) fn reject_while_disallowed_oracle(
         // Resumable Effects control profile (issue #296): the parser admits a
         // direct statement-value `yield`; its request is an ordinary operand.
         ExprKind::Yield { request } => {
-            reject_while_disallowed_oracle(program, request, functions, types, diagnostics)
+            reject_with_scratch(program, request, functions, types, diagnostics, scratch)
         }
     }
 }
 
 #[cfg(test)]
-pub(super) fn reject_while_disallowed_statement_oracle(
+pub(super) fn reject_statement_with_scratch(
     program: &Program,
     statement: &Statement,
     functions: &HashMap<&str, &Function>,
     types: &TypeTable<'_>,
     diagnostics: &mut Vec<Diagnostic>,
+    scratch: Option<&crate::finite_byte_scratch::SourceScratch<'_>>,
 ) -> Result<(), ()> {
     match statement {
         Statement::Assign {
@@ -492,19 +525,14 @@ pub(super) fn reject_while_disallowed_statement_oracle(
             };
             let mut result = Ok(());
             for argument in args {
-                result = reject_while_disallowed_oracle(
-                    program,
-                    argument,
-                    functions,
-                    types,
-                    diagnostics,
-                );
+                result =
+                    reject_with_scratch(program, argument, functions, types, diagnostics, scratch);
                 result?;
             }
             result
         }
         Statement::Let { value, .. } | Statement::Assign { value, .. } => {
-            reject_while_disallowed_oracle(program, value, functions, types, diagnostics)
+            reject_with_scratch(program, value, functions, types, diagnostics, scratch)
         }
         Statement::Unsafe { span, .. } => {
             diagnostics.push(error(
@@ -519,8 +547,8 @@ pub(super) fn reject_while_disallowed_statement_oracle(
             condition, body, ..
         } => {
             let condition =
-                reject_while_disallowed_oracle(program, condition, functions, types, diagnostics);
-            let body = reject_while_disallowed_oracle(program, body, functions, types, diagnostics);
+                reject_with_scratch(program, condition, functions, types, diagnostics, scratch);
+            let body = reject_with_scratch(program, body, functions, types, diagnostics, scratch);
             condition.and(body)
         }
         Statement::For { span, .. }

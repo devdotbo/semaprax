@@ -11,7 +11,7 @@ impl HirValidator<'_> {
         &self,
         expression: &ResolvedExpr,
     ) -> Result<(), Diagnostic> {
-        self.validate_iterator_body(expression, None)
+        self.validate_iterator_body(expression, None, None)
     }
     fn is_owned_iterator_record_item(
         &self,
@@ -34,6 +34,7 @@ impl HirValidator<'_> {
         &self,
         expression: &ResolvedExpr,
         owned_item: Option<&ResolvedBinding>,
+        finite_scratch: Option<&crate::finite_byte_scratch::ResolvedScratch<'_>>,
     ) -> Result<(), Diagnostic> {
         let mut pending = vec![expression];
         while let Some(expression) = pending.pop() {
@@ -143,8 +144,16 @@ impl HirValidator<'_> {
                 ResolvedExprKind::BorrowPlace { operation, place } => {
                     // Ordinary expression replay independently authenticates
                     // the live String owner and its canonical shared loan.
-                    let exact_view = (operation.as_str() == crate::byte_ops::STRING_AS_STR_ID
-                        && expression.ty == ResolvedType::Str)
+                    let exact_byte = operation.as_str() == crate::byte_ops::BYTES_AS_SLICE_ID
+                        && expression.ty == ResolvedType::SliceU8
+                        && place.projections.is_empty()
+                        && (owned_item.is_some_and(|item| {
+                            item.ty == ResolvedType::Bytes && item.id == place.root
+                        }) || finite_scratch
+                            .is_some_and(|proof| proof.borrowed_root(&place.root)));
+                    let exact_view = exact_byte
+                        || (operation.as_str() == crate::byte_ops::STRING_AS_STR_ID
+                            && expression.ty == ResolvedType::Str)
                         || (operation.as_str() == crate::byte_ops::STR_AS_BYTES_ID
                             && expression.ty == ResolvedType::SliceU8)
                         || (operation.as_str() == crate::stdin_stream_ops::CHUNK_ID
@@ -409,6 +418,10 @@ impl HirValidator<'_> {
                         continue;
                     }
                     if let Some(operation) = crate::byte_ops::by_id(callee.as_str()) {
+                        if finite_scratch.is_some_and(|proof| proof.permits(expression)) {
+                            pending.extend(args.iter().rev());
+                            continue;
+                        }
                         owned_buffer::require_admitted_while_operation(
                             self, expression, callee, operation, args,
                         )?;
@@ -673,7 +686,12 @@ impl HirValidator<'_> {
             if !crate::iterator_ops::step_shape(&self.program.declarations, &protocol.step.ty) {
                 return Err(hir_error("iterator loop has unauthenticated Step metadata"));
             }
-            self.validate_iterator_body(protocol.authored_body, protocol.owned_item)
+            let finite = crate::finite_byte_scratch::resolved(self.program, condition, body);
+            self.validate_iterator_body(
+                protocol.authored_body,
+                protocol.owned_item,
+                finite.as_ref(),
+            )
         } else {
             self.validate_while_admission(condition)?;
             self.validate_while_admission(body)
