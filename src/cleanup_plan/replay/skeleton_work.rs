@@ -56,6 +56,7 @@ impl<'a, 'b> SkeletonWork<'a, 'b> {
         if budget.physical.is_none() {
             return Ok(Self::with_index(program, function, budget, index));
         }
+        selected_profile::validate(program, function, budget)?;
         let owner = selected_owner::owner(program, function, budget)?;
         let physical = budget.physical.as_deref_mut().ok_or_else(|| {
             replay_error(function, "selected skeleton has no physical reservation")
