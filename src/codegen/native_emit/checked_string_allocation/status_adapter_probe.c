@@ -116,4 +116,42 @@ static void preflight(void) {
     assert(!spx_checked_string_adapter_init_v1(&adapter,&semantic,&o,allocate,release));
     assert(adapter.semantic==NULL && o.attempts==0);
 }
-int main(void) {assert(fixture_binary_stdout());constructors();preflight();puts("checked-string-status-adapter-v1: ok");return 0;}
+/* Exercise the complete authentic status runtime rather than deleting helpers
+ * from the test emitter or relaxing -Werror. This arena is separate from each
+ * constructor invocation, so their prior-token and sticky-token checks remain
+ * unchanged. Details are write-once and recording later statuses cannot replace
+ * an already selected record. */
+static void status_runtime(void) {
+    struct spx_context semantic={0};struct spx_status_entry entries[8];
+    assert(spx_context_init(&semantic,724,entries,8,NULL,NULL,NULL));
+    spx_status_token requires=0,ensures=0,arithmetic=0;
+    assert(spx_status_record_requires_false(&semantic,&requires));
+    assert(spx_status_record_ensures_false(&semantic,&ensures));
+    assert(spx_status_record_arithmetic(&semantic,SPX_STATUS_ARITHMETIC_DIVISION_BY_ZERO,&arithmetic));
+    assert(requires==1 && ensures==2 && arithmetic==3);
+    const struct spx_normalized_status *required=spx_status_resolve(&semantic,requires);
+    const struct spx_normalized_status *ensured=spx_status_resolve(&semantic,ensures);
+    const struct spx_normalized_status *computed=spx_status_resolve(&semantic,arithmetic);
+    assert(required && ensured && computed);
+    assert(strcmp(required->domain_id,"semaprax.contract.v1")==0 && required->code==1);
+    assert(strcmp(ensured->domain_id,"semaprax.contract.v1")==0 && ensured->code==2);
+    assert(required->status_class==SPX_STATUS_CLASS_CONTRACT && ensured->status_class==SPX_STATUS_CLASS_CONTRACT);
+    assert(strcmp(computed->domain_id,"semaprax.arithmetic.v1")==0 && computed->code==SPX_STATUS_ARITHMETIC_DIVISION_BY_ZERO);
+    assert(computed->status_class==SPX_STATUS_CLASS_ARITHMETIC);
+    assert(required->retryability==SPX_RETRYABILITY_FALSE && ensured->retryability==SPX_RETRYABILITY_FALSE && computed->retryability==SPX_RETRYABILITY_FALSE);
+    assert(spx_status_resolve_detail(&semantic,requires)==NULL);
+    struct spx_status_detail detail={.failure_kind="requires",.failure_function="fixture.runtime",.failure_expression="fixture.requires",.failure_operation="contract",.failure_arguments="[]"};
+    assert(!spx_status_attach_detail(&semantic,0,detail));
+    assert(!spx_status_attach_detail(&semantic,4,detail));
+    assert(spx_status_attach_detail(&semantic,requires,detail));
+    detail.failure_kind="replacement";detail.failure_arguments[0]='X';
+    assert(!spx_status_attach_detail(&semantic,requires,detail));
+    const struct spx_status_detail *retained=spx_status_resolve_detail(&semantic,requires);
+    assert(retained && strcmp(retained->failure_kind,"requires")==0 && strcmp(retained->failure_arguments,"[]")==0);
+    assert(spx_status_resolve_detail(&semantic,0)==NULL && spx_status_resolve_detail(&semantic,4)==NULL);
+    assert(spx_status_resolve(&semantic,requires)==required && required->code==1);
+    spx_status_token untouched=99;
+    assert(!spx_status_record_arithmetic(&semantic,0,&untouched));
+    assert(untouched==99 && semantic.status_arena.length==3);
+}
+int main(void) {assert(fixture_binary_stdout());status_runtime();constructors();preflight();puts("checked-string-status-adapter-v1: ok");return 0;}
