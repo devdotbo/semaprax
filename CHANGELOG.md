@@ -1,5 +1,11 @@
 # Changelog
 
+- Authenticate the compiler-owned owned-Bytes borrow projection in the selected
+  final-UTF8 profile, retaining exact intrinsic-call validation and refusing
+  Array views or named aliases. Extend the JSON helper inventory oracle to
+  visit admitted byte-array literal leaves without changing field-read, clone,
+  wire or backend assertions. Grouped executable qualification is pending.
+
 - Propose the unimplemented OPT #746 owned Bytes consume-and-partition contract: bounded disjoint leases, exact staged transfer and selected-domain lifetime, without changing existing allocation quotas or admitting the maximum-row constructor loop.
 
 - Authored consuming owned-record outer Vec renewal with independently recovered
