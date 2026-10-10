@@ -5,6 +5,10 @@ use crate::cleanup_plan::{replay_reserve_vec, ReplayClonePayload, ReplayPhysical
 use std::cell::RefCell;
 mod selected;
 
+pub(crate) fn selected_inventory_needs_drop(ty: &ResolvedType) -> Result<bool, Diagnostic> {
+    selected::needs_drop(ty)
+}
+
 pub(crate) fn build_inventory(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,

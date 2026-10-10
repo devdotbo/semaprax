@@ -20,7 +20,9 @@ pub(crate) use replay_context::ReplayContext;
 mod generic_record;
 mod inventory_builder;
 use inventory_builder::InventoryBuilder;
-pub(crate) use inventory_builder::{build_inventory, build_inventory_with_reservation};
+pub(crate) use inventory_builder::{
+    build_inventory, build_inventory_with_reservation, selected_inventory_needs_drop,
+};
 mod iterator;
 #[cfg(test)]
 mod owned_capacity;
