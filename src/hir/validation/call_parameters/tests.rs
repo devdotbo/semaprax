@@ -650,3 +650,30 @@ fn string_signature_views_preserve_exact_owned_and_scalar_parameter_error_identi
         "argument ownership is incompatible with parameter `core.str.byte-at.param.1`"
     );
 }
+
+#[test]
+fn lexical_exit_declared_ownership_is_value_only_without_nominal_authority() {
+    let program = program();
+    let validator = HirValidator::new(&program).unwrap();
+    validator
+        .validate_declared_ownership(&ResolvedType::Never, OwnershipMode::Value)
+        .unwrap();
+    for mode in [
+        OwnershipMode::Own,
+        OwnershipMode::Borrow,
+        OwnershipMode::Shared,
+    ] {
+        let error = validator
+            .validate_declared_ownership(&ResolvedType::Never, mode)
+            .unwrap_err();
+        assert_eq!(error.code, "SPX-H006");
+        assert_eq!(error.message, "lexical exit has invalid ownership mode");
+    }
+    let forged = ResolvedType::Nominal {
+        declaration: DeclarationId::new("forged.never"),
+        arguments: Vec::new(),
+    };
+    assert!(validator
+        .validate_declared_ownership(&forged, OwnershipMode::Value)
+        .is_err());
+}

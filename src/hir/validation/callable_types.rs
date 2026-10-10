@@ -153,6 +153,13 @@ impl HirValidator<'_> {
         ty: &ResolvedType,
         ownership: OwnershipMode,
     ) -> Result<(), Diagnostic> {
+        if *ty == ResolvedType::Never {
+            return if ownership == OwnershipMode::Value {
+                Ok(())
+            } else {
+                Err(hir_error("lexical exit has invalid ownership mode"))
+            };
+        }
         if (ty.is_once_function() || ty.is_mut_function()) && ownership != OwnershipMode::Own {
             return Err(hir_error("affine callable requires unique ownership"));
         }
