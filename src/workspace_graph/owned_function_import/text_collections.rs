@@ -159,7 +159,9 @@ fn shape<'a>(
                         });
                     let string_payload = matches!(payloads.as_slice(), [payload]
                         if payload.ty == Type::String);
-                    if !record_payload && !vector_payload && !string_payload {
+                    let stream_payload = matches!(payloads.as_slice(), [bytes, length]
+                        if bytes.ty == Type::Bytes && length.ty == Type::Usize);
+                    if !record_payload && !vector_payload && !string_payload && !stream_payload {
                         return None;
                     }
                     outcome = true;
@@ -325,6 +327,42 @@ use type @id("outcome") from imports.provider as Outcome;
             APP
         ));
         assert!(!accepts(&PROVIDER.replace("@id(\"ok.report\") ", ""), APP));
+    }
+
+    #[test]
+    fn stream_input_import_replays_exact_owner_length_and_error_shape() {
+        let provider = r#"module imports.provider;
+@id("outcome") variant Input {
+ @id("ready") Ready { @id("ready.bytes") bytes:Bytes, @id("ready.length") length:usize, },
+ @id("error") Error { @id("error.code") code:i64, @id("error.offset") offset:usize, @id("error.field") field:i64, },
+}
+@id("inspect") fn inspect()->Input {Input::Error{code:1,offset:0usize,field:0}}
+"#;
+        let app = r#"module imports.app;
+use type @id("outcome") from imports.provider as Input;
+@id("app.main") fn main()->i64{0}
+"#;
+        assert!(accepts(provider, app));
+        for forged in [
+            provider.replace("bytes:Bytes", "bytes:Slice<u8>"),
+            provider.replace("length:usize", "length:i64"),
+            provider.replace(
+                "bytes:Bytes, @id(\"ready.length\") length:usize",
+                "bytes:usize, @id(\"ready.length\") length:Bytes",
+            ),
+            provider.replace("offset:usize", "offset:i64"),
+            provider.replace("@id(\"ready.bytes\") ", ""),
+        ] {
+            assert_ne!(forged, provider);
+            assert!(!accepts(&forged, app));
+        }
+        assert!(!accepts(
+            provider,
+            &app.replace(
+                "use type @id(\"outcome\") from imports.provider as Input;",
+                ""
+            )
+        ));
     }
 
     #[test]

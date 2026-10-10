@@ -19,6 +19,7 @@ fn run(fail: bool) -> i64
         index = index + 1;
         if index == 2 { continue; };
         if index == 4 { break; };
+        0
     }
     if fail { return 8; };
     return if index == 4 { 9 } else { 0 };

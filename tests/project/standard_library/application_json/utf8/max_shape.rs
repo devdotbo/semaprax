@@ -47,13 +47,13 @@ fn qualify_shape(root: &std::path::Path, decoder_id: &str) {
 fn imports_for(namespace: &str, profile: &str) -> String {
     format!(
         r#"module consumer.app;
-{PERMITS}
 use type @id("{namespace}.input.json.{profile}owned-result") from consumer.schema as Outcome;
 use type @id("{namespace}.row.json.view-encode") from consumer.schema as Encoded;
 use type @id("{namespace}.row") from consumer.schema as Row;
 use function @id("{namespace}.input.json.{profile}owned.decode") from consumer.schema as decode;
 use function @id("{namespace}.input.json.{profile}owned.encode") from consumer.schema as encode;
 use function @id("{namespace}.input.json.{profile}owned.encoded-len") from consumer.schema as encoded_len;
+{PERMITS}
 "#
     )
 }

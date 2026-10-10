@@ -197,7 +197,7 @@ fn main() -> i64
     while i < args_len() {
         let arg = arg_utf8(i);
         let flag = string_from_str(arg);
-        if string_compare(flag, "--json") == 0 { json = true; } else { if string_compare(flag, "--top") == 0 && i + 1usize < args_len() { i = i + 1usize; let value = arg_utf8(i); let number = string_from_str(value); let n = if digits(number, 0, string_len(number)) { match string_to_i64(number) { Option::Some { value: v } => v, Option::None {} => 0, } } else { 0 }; if n >= 1 && n <= 50 { top = n; } else { valid = false; } } else { valid = false; } }
+        if string_compare(flag, "--json") == 0 { json = true; } else { if string_compare(flag, "--top") == 0 && i + 1usize < args_len() { i = i + 1usize; let value = arg_utf8(i); let number = string_from_str(value); let n = if digits(string_slice(number, 0, string_len(number)), 0, string_len(number)) { match string_to_i64(number) { Option::Some { value: v } => v, Option::None {} => 0, } } else { 0 }; if n >= 1 && n <= 50 { top = n; } else { valid = false; } } else { valid = false; } }
         i = i + 1usize;
         0
     }

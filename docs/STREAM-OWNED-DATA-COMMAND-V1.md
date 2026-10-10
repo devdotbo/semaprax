@@ -76,3 +76,13 @@ pure/prepared test execution, streamed native output, repeated source-bound
 graph reconstruction, hostile command ABI, and frozen-profile refusal. The
 native stream fixture does not substitute for the collection's independent
 interpreter/native/Wasm corpus or allocation/cleanup hostile gates.
+
+Private imported stream normalization also admits the independently authenticated
+monomorphic two-case input outcome: the success case contains exactly an owned
+`Bytes` field followed by a Copy `usize` length; the error case contains exactly
+`i64`, `usize`, `i64` in that order. All declaration, case and field identities
+must be explicit. The owned buffer remains a whole canonical cleanup leaf.
+This matches the existing source/HIR stream-input normalization bridge; it
+grants no new filesystem capability, public descriptor or backend authority.
+Near-miss field types, order, arity and missing imported identities remain
+refused. Focused current-head qualification is pending.

@@ -61,6 +61,7 @@ mod api_admission;
 mod call_frame;
 mod closures;
 mod command_state;
+mod copy_projection;
 pub(crate) mod environment;
 mod expression_children;
 mod failure_detail;
@@ -2526,7 +2527,11 @@ fn scan_closure(
                 Err(reject_scan(expression, REASON_RECORD_UPDATE))
             }
             ResolvedExprKind::Project { .. } => {
-                Err(reject_scan(expression, REASON_RECORD_PROJECTION))
+                if copy_projection::admitted(program, expression) {
+                    Ok(())
+                } else {
+                    Err(reject_scan(expression, REASON_RECORD_PROJECTION))
+                }
             }
             ResolvedExprKind::Upcast { .. } => {
                 Err(reject_scan(expression, REASON_RECORD_PROJECTION))
@@ -3836,8 +3841,12 @@ impl Evaluator<'_> {
             if function.cleanup_plan.lexical_control.is_some() {
                 let mut frame = Environment::from(values);
                 frame.control = lexical_control::frame_control(function)?;
-                self.settle_execution_boundary(function, &mut frame,
-                    crate::cleanup_plan::ExecutionBoundaryKind::FunctionEntry, &function.body.id)?;
+                self.settle_execution_boundary(
+                    function,
+                    &mut frame,
+                    crate::cleanup_plan::ExecutionBoundaryKind::FunctionEntry,
+                    &function.body.id,
+                )?;
             }
             return Err(Flow::DepthExceeded);
         }
@@ -4999,8 +5008,10 @@ impl Evaluator<'_> {
                 update_owned_record(self.declarations, &expression.ty, base, replacements)
             }
             ResolvedExprKind::Try { .. } => self.evaluate_owned_try(expression, environment, depth),
-            ResolvedExprKind::Project { .. }
-            | ResolvedExprKind::Upcast { .. }
+            ResolvedExprKind::Project { .. } => {
+                self.evaluate_copy_projection(expression, environment, depth)
+            }
+            ResolvedExprKind::Upcast { .. }
             | ResolvedExprKind::TryOption { .. }
             | ResolvedExprKind::NativeRustImportCall(_) => Err(Flow::Guard(
                 "aggregate/import/match/try shape reached evaluation",

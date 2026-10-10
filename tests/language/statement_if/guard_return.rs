@@ -287,7 +287,10 @@ fn terminal_match_returns_preserve_ordinary_match_authority() {
     let actual = hir::resolve(&source).unwrap();
     let expected = hir::resolve(&lowered).unwrap();
     hir::validate(&actual).unwrap();
-    assert_eq!(graph::to_json(&source).unwrap(), graph::to_json(&lowered).unwrap());
+    assert_eq!(
+        graph::to_json(&source).unwrap(),
+        graph::to_json(&lowered).unwrap()
+    );
     for (actual, expected) in actual.functions.iter().zip(&expected.functions) {
         assert_eq!(actual.cleanup_plan, expected.cleanup_plan);
         assert_eq!(actual.loan_plan, expected.loan_plan);
@@ -298,8 +301,14 @@ fn terminal_match_returns_preserve_ordinary_match_authority() {
 fn terminal_match_returns_refuse_mixed_arms_and_unreachable_suffixes() {
     let prefix = "module match.refusal; @id(\"main\") fn main()->i64 ";
     for (body, code) in [
-        ("{ match true { true=>{return 1;}, false=>2, } }", "SPX-P210"),
-        ("{ match true { true=>{return 1;}, false=>{return 2;}, } 3 }", "SPX-P209"),
+        (
+            "{ match true { true=>{return 1;}, false=>2, } }",
+            "SPX-P210",
+        ),
+        (
+            "{ match true { true=>{return 1;}, false=>{return 2;}, } 3 }",
+            "SPX-P209",
+        ),
     ] {
         let errors = parse(&format!("{prefix}{body}"), Path::new("match-refusal.spx")).unwrap_err();
         assert_eq!(errors.code, code, "{errors:?}");
@@ -307,7 +316,34 @@ fn terminal_match_returns_refuse_mixed_arms_and_unreachable_suffixes() {
     // A match suffix with no return retains its binary continuation grammar
     // even when an earlier returning guard selects normalization for the body.
     let source = format!("{prefix}{{if false {{return 0;}} match true {{true=>1,false=>2,}} + 3}}");
-    let lowered = format!("{prefix}{{if false {{0}} else {{match true {{true=>1,false=>2,}} + 3}}}}");
+    let lowered =
+        format!("{prefix}{{if false {{0}} else {{match true {{true=>1,false=>2,}} + 3}}}}");
     let path = Path::new("match-continuation.spx");
-    assert_eq!(format::canonical(&parse(&source, path).unwrap()), format::canonical(&parse(&lowered, path).unwrap()));
+    assert_eq!(
+        format::canonical(&parse(&source, path).unwrap()),
+        format::canonical(&parse(&lowered, path).unwrap())
+    );
+}
+
+#[test]
+fn negative_return_and_guard_semicolon_preserve_canonical_continuations() {
+    let path = Path::new("guard-negative.spx");
+    for (body, expected) in [
+        ("return -1;", "-1"),
+        ("if false {return -1;}; return 2;", "if false {-1}else{2}"),
+        ("let return=9; return -1", "let return=9; return -1"),
+    ] {
+        let source = format!("module guard.negative; @id(\"main\") fn main()->i64 {{{body}}}");
+        let expected =
+            format!("module guard.negative; @id(\"main\") fn main()->i64 {{{expected}}}");
+        let actual = parse(&source, path).unwrap();
+        let expected = parse(&expected, path).unwrap();
+        assert_eq!(format::canonical(&actual), format::canonical(&expected));
+        assert_eq!(
+            graph::to_json(&actual).unwrap(),
+            graph::to_json(&expected).unwrap()
+        );
+        assert!(verify::verify(&actual).is_empty());
+        hir::validate(&hir::resolve(&actual).unwrap()).unwrap();
+    }
 }

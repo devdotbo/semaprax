@@ -53,10 +53,10 @@ fn owned_stream_request_drops_input_before_native_decision_and_output() {
     // This fixture consumes error payloads only as status 2: the generated
     // normalizer and decoder retain their distinct raw/normalized offsets.
     let application = imports().to_owned()
-        + PERMITS
         + r#"
 use type @id("application.request.json.stream-input") from consumer.schema as Input;
 use function @id("application.request.json.stream.normalize") from consumer.schema as normalize;
+permit {process.args.read,process.stderr.write,process.stdin.read,process.stdout.write}
 @id("consumer.receive") fn receive()->Outcome uses{process.stdin.read}{
 let normalized=normalize();match own normalized{
 Input::Error{code,offset,field}=>Outcome::Error{code:code,offset:offset,field:field},

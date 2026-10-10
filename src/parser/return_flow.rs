@@ -12,6 +12,7 @@ use crate::lexer::TokenKind;
 use super::{for_loop, statement_if, Parser};
 
 mod match_tail;
+mod preflight;
 
 impl Parser {
     pub(super) fn function_return_body(&mut self) -> Result<Expr, Diagnostic> {
@@ -41,6 +42,7 @@ impl Parser {
         if !self.return_in_block(self.cursor) {
             return self.block("function body");
         }
+        self.guard_return_preflight()?;
         let start = self
             .expect(&TokenKind::LBrace, "`{` before function body")?
             .span;
@@ -199,6 +201,7 @@ impl Parser {
                 )
             }
         } else {
+            self.take(&TokenKind::Semicolon);
             // The suffix belongs exclusively to the non-returning path. Its
             // statements keep their order and lexical nesting; no AST copies.
             let suffix_start = self.current().span;
@@ -269,6 +272,14 @@ impl Parser {
     /// Preserve existing uses of the ordinary identifier `return`, including
     /// calls and arithmetic. Only formerly refused adjacent operands opt in.
     pub(super) fn starts_return(&self, index: usize) -> bool {
+        if matches!(self.tokens.get(index).map(|token| &token.kind), Some(TokenKind::Ident(name)) if name == "return")
+            && self
+                .tokens
+                .get(index + 1)
+                .is_some_and(|token| token.kind == TokenKind::Minus)
+        {
+            return self.unary_return_statement(index);
+        }
         matches!(self.tokens.get(index).map(|token| &token.kind), Some(TokenKind::Ident(name)) if name == "return")
             && matches!(
                 self.tokens.get(index + 1).map(|token| &token.kind),

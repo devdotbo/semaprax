@@ -71,10 +71,10 @@ fn utf8_stream_owned_request_preserves_empty_first_array_unicode_and_unbounded_w
     .unwrap();
     std::fs::write(root.join("src/schema.spx"), generated).unwrap();
     let application = imports().to_owned()
-        + PERMITS
         + r#"
 use type @id("unicode.input.json.stream-input") from consumer.schema as Input;
 use function @id("unicode.input.json.stream.normalize") from consumer.schema as normalize;
+permit {process.args.read,process.stderr.write,process.stdin.read,process.stdout.write}
 @id("consumer.receive") fn receive()->Outcome uses{process.stdin.read}{
 let normalized=normalize();match own normalized{
 Input::Error{code,offset,field}=>Outcome::Error{code:code,offset:offset,field:field},

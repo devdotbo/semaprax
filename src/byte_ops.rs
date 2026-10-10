@@ -345,6 +345,7 @@ impl ByteOp {
         matches!(
             self,
             Self::StringAsStr
+                | Self::BytesAsSlice
                 | Self::StrAsBytes
                 | Self::ArrayAsSlice
                 | Self::Len

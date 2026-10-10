@@ -105,8 +105,8 @@ mod iterator_resume;
 fn successful_contract_temporaries_settle_before_selected_return_publication() {
     let source = r#"module lexical.contract.scopes;
 @id("app.main") fn main()->i64
- requires byte_len(bytes_as_slice(bytes_zeroed(2usize)))==2usize
- ensures byte_len(bytes_as_slice(bytes_zeroed(3usize)))==3usize
+ requires { let required=bytes_zeroed(2usize);byte_len(bytes_as_slice(required))==2usize }
+ ensures { let checked=bytes_zeroed(3usize);byte_len(bytes_as_slice(checked))==3usize }
  ensures result==29 {
  return 29;
 }
