@@ -39,6 +39,7 @@ mod guarded_variant;
 #[cfg(test)]
 mod hostile_tests;
 mod iterator;
+pub(super) mod lexical_control;
 mod owned_try;
 mod record_destructure;
 mod renewal;
@@ -494,6 +495,10 @@ pub(crate) fn build_plan(
     program: &ResolvedProgram,
     function: &ResolvedFunction,
 ) -> Result<CleanupPlan, Diagnostic> {
+    if crate::hir::lexical_exit::requires(function)? {
+        let owner = crate::hir::lexical_exit::owner(program, function)?;
+        return lexical_control::build_plan_for_execution(program, function, &owner);
+    }
     PlanBuilder::new(program, function)?.build()
 }
 
@@ -622,6 +627,7 @@ struct PlanBuilder<'a> {
     entry_state: CleanupEntryState,
     initial_state: FlowState,
     pending_try_residuals: Vec<PendingTryResidual>,
+    lexical: Option<Box<lexical_control::LexicalBuildState>>,
     schema: &'static str,
     string_appends: BTreeMap<ExpressionId, ExpressionId>,
     string_owner_moves: BTreeSet<ExpressionId>,
@@ -732,6 +738,7 @@ impl<'a> PlanBuilder<'a> {
                 conditional_variants: Vec::new(),
             },
             pending_try_residuals: Vec::new(),
+            lexical: None,
             schema: if crate::byte_ops::requires_same_owner_set(function) {
                 super::CLEANUP_PLAN_SCHEMA_V17
             } else if crate::string_ops::replacement::requires(function) {
