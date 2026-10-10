@@ -151,7 +151,7 @@ impl AggregateLayout {
         self.fields.iter().find(|item| item.field == *field)
     }
 
-    #[cfg(any(test, feature = "unstable-wit-component-harness"))]
+    // Selected native constructor certificates bind this independently computed layout.
     pub(crate) const fn digest(&self) -> [u8; 32] {
         self.digest
     }

@@ -211,6 +211,14 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         use crate::string_ops::{StringOp, CONVERT_NAN_CODE, CONVERT_OUT_OF_RANGE_CODE};
         let (input_type, target) = match op {
             StringOp::FromUtf8 => {
+                if self.output_profile == super::NativeOutputProfile::SelectedFinalUtf8 {
+                    let jump = self.operation_failure_jump()?;
+                    self.line(&format!("spx_status = spx_final_utf8_construct(spx_ctx, (const uint8_t *)({operand}).ptr, ({operand}).len, &{temporary});"));
+                    self.line(&format!(
+                        "if (spx_status != SPX_STATUS_SUCCESS) {{ {jump} }}"
+                    ));
+                    return Ok(());
+                }
                 if !self.output_profile.string_runtime().length_delimited {
                     return Err(backend_error(
                         "string_from_utf8 requires a length-delimited native String profile",

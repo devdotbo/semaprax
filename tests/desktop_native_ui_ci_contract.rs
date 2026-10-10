@@ -30,6 +30,7 @@ fn private_native_ui_is_platform_real_feature_gated_and_source_locked() {
             read(root, "src/codegen/native_bytes/semantic_work.rs"),
             read(root, "src/codegen/native_bytes/string_slots.rs"),
             read(root, "src/codegen/native_emit/mod.rs"),
+            read(root, "src/codegen/native_emit/emission.rs"),
             read(root, "src/codegen/native_emit/context.rs"),
             read(root, "src/codegen/native_emit/lexical_epilogue.rs"),
             read(root, "src/codegen/native_emit/expression/lexical_break.rs"),

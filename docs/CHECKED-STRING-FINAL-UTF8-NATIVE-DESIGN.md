@@ -1,9 +1,9 @@
 # Checked final UTF-8 native integration design
 
-Status: implementation design plus executable read-only compiler preflight.
-No selected production emission, allocation-failure recovery, public native ABI,
-interpreter or Wasm support is granted by this tranche. OPT #724 and #737 remain
-open. The owning contract is [Checked String Allocation v1](CHECKED-STRING-ALLOCATION-V1.md).
+Status: preflight/design reference. An authored explicit selected native profile
+is now specified in [Native Final UTF-8 Allocation v1](NATIVE-FINAL-UTF8-ALLOCATION-V1.md).
+Its owning definitions have not been executed; default profiles and interpreter/
+Wasm allocation behavior are unchanged. OPT #724 and #737 remain open. The owning contract is [Checked String Allocation v1](CHECKED-STRING-ALLOCATION-V1.md).
 
 Audience: compiler and native ownership implementers.
 

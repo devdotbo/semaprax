@@ -1,3 +1,5 @@
+mod emission;
+use emission::emit_hir_c_with_options;
 mod owned_moves;
 pub(crate) mod public_generic_bridge;
 use super::{
@@ -99,6 +101,7 @@ pub(super) fn emit_hir_c_with_labels(
         output_profile,
         selected_command,
         None,
+        None,
     )
 }
 /// The Legacy native profile instrumented for Agent Stage Semantic Work v1.
@@ -113,266 +116,8 @@ pub(super) fn emit_hir_c_semantically_metered(
         NativeOutputProfile::Legacy,
         None,
         Some(metering),
+        None,
     )
-}
-fn emit_hir_c_with_options(
-    program: &ResolvedProgram,
-    contract_labels: &HashMap<ExpressionId, String>,
-    output_profile: NativeOutputProfile,
-    selected_command: Option<&DeclarationId>,
-    semantic: Option<&NativeSemanticMetering>,
-) -> Result<String, Diagnostic> {
-    hir::validate(program)?;
-    if !output_profile.is_stdin_stream() && crate::stdin_stream_ops::resolved_program_uses(program)
-    {
-        return Err(backend_error(
-            "stdin reader requires the explicit native streaming-command profile",
-        ));
-    }
-    if program.types.iter().any(|declaration| {
-        matches!(
-            declaration.kind,
-            ResolvedTypeDeclarationKind::Resource { .. }
-        )
-    }) {
-        return Err(resource_lowering_gate());
-    }
-    let resource_abi = native_resource::build_resource_abi(program)?;
-    let record_layouts = AggregateLayoutCache::build(program, AggregateTarget::Native64)?;
-    let variant_layouts = VariantLayoutCache::build(program, VariantTarget::Native64)?;
-    let functions = function_index(program)?;
-    debug_assert!(resource_abi.resources.is_empty());
-    let mut output = crate::bounded_output::CappedString::new();
-    // Feature-test macros must precede the first system include. The
-    // `file_read_text` runtime needs `openat` and `O_NOFOLLOW`, and every
-    // command entry opens its file root with `O_DIRECTORY | O_CLOEXEC`;
-    // glibc declares these under strict C11 only with POSIX.1-2008 visibility.
-    if output_profile.is_command()
-        || output_profile == NativeOutputProfile::SourceCommand
-        || output_profile == NativeOutputProfile::SourceSelectedFileCommand
-        || output_profile == NativeOutputProfile::SourceSelectedFileResourceCommand
-        || output_profile == NativeOutputProfile::SourceResourceCommand
-        || crate::string_ops::program_uses_op(program, crate::string_ops::StringOp::FileReadText)
-    {
-        network_io::emit_feature_macros(&mut output);
-    }
-    if output_profile.is_command() {
-        emit_native_prelude_without_public_failure(
-            &mut output,
-            &resource_abi,
-            program,
-            output_profile.is_language_command(),
-            output_profile.string_runtime(),
-        );
-    } else {
-        emit_native_prelude_profile(
-            &mut output,
-            &resource_abi,
-            program,
-            output_profile.string_runtime(),
-        );
-    }
-    if output_profile == NativeOutputProfile::NetworkCommandIo {
-        network_io::emit_runtime(&mut output, program);
-    } else if output_profile == NativeOutputProfile::FilesystemCommandIo {
-        filesystem_io::emit_runtime(&mut output, program);
-    } else if output_profile == NativeOutputProfile::FilesystemCommandIoV2 {
-        filesystem_io_v2::emit_runtime(&mut output, program);
-    } else if output_profile == NativeOutputProfile::FilesystemCommandIoV3 {
-        filesystem_io_v3::emit_runtime(&mut output, program);
-    } else if output_profile == NativeOutputProfile::HttpsCommandIo {
-        http_io::emit_runtime(&mut output, program);
-    } else if output_profile == NativeOutputProfile::ProcessCommandIo {
-        process_io::emit_runtime(&mut output, program);
-    } else if output_profile == NativeOutputProfile::EnvironmentCommandIo {
-        environment_io::emit_runtime(&mut output, program);
-    } else if output_profile == NativeOutputProfile::LineCommandIo {
-        native_host_output::emit_line_command_runtime(&mut output);
-        native_command_io::emit_line_runtime(&mut output);
-    } else if output_profile.is_stdin_stream() {
-        native_host_output::emit_language_command_runtime(&mut output);
-        native_command_io::emit_runtime(&mut output);
-        super::native_stdin_stream::emit_runtime(&mut output);
-        super::native_stdin_stream::emit_command_helper_table(&mut output);
-    } else if output_profile == NativeOutputProfile::LanguageCommandIo {
-        native_host_output::emit_language_command_runtime(&mut output);
-        native_command_io::emit_runtime(&mut output);
-    } else if output_profile == NativeOutputProfile::SourceSelectedFileResourceCommand {
-        super::native_selected_file_command::emit_resource_runtime(&mut output);
-    } else if output_profile == NativeOutputProfile::SourceSelectedFileCommand {
-        super::native_selected_file_command::emit_runtime(&mut output, program);
-    } else if output_profile == NativeOutputProfile::SourceCommand {
-        native_source_command::emit_runtime(&mut output, program);
-    } else if output_profile == NativeOutputProfile::SourceResourceCommand {
-        native_source_resource_command::emit_runtime(&mut output, program);
-    } else if output_profile.supports_stdout_transcript() {
-        native_host_output::emit_runtime(&mut output);
-    }
-    if let Some(metering) = semantic {
-        semantic_work::emit_runtime(&mut output, metering);
-    }
-    emit_fixed_byte_array_declarations(&mut output, program)?;
-    emit_aggregate_declarations(
-        &mut output,
-        program,
-        &resource_abi,
-        &record_layouts,
-        &variant_layouts,
-    )?;
-    if hir::closure::requires_runtime_closures(program) {
-        closure::emit_carrier_declarations(&mut output, program, &resource_abi)?;
-    }
-    function_value::emit_typedefs(&mut output, program, &resource_abi)?;
-    emit_function_prototypes(&mut output, program, &functions, &resource_abi)?;
-    if closure::enabled(program) {
-        closure::emit_thunk_prototypes(&mut output, program, &resource_abi)?;
-    }
-    let emission = NativeEmissionContext {
-        program,
-        resource_abi: &resource_abi,
-        functions: &functions,
-        contract_labels,
-        record_layouts: &record_layouts,
-        variant_layouts: &variant_layouts,
-        output_profile,
-        semantic,
-    };
-    for function in &program.functions {
-        emit_function(
-            &mut output,
-            function,
-            &FunctionExecutionId::Monomorphic(function.id.clone()),
-            &emission,
-        )?;
-    }
-    for instance in &program.function_instances {
-        emit_function(
-            &mut output,
-            &instance.function,
-            &FunctionExecutionId::Generic(instance.id.clone()),
-            &emission,
-        )?;
-    }
-    if closure::enabled(program) {
-        for function in closure::closure_functions(program)? {
-            emit_function(
-                &mut output,
-                &function,
-                &FunctionExecutionId::Monomorphic(function.id.clone()),
-                &emission,
-            )?;
-        }
-        closure::emit_thunks(&mut output, program, &emission)?;
-    }
-    if output_profile.is_command() {
-        let command = selected_command
-            .ok_or_else(|| backend_error("native command selection is unavailable"))?;
-        let symbol = &functions
-            .get(&FunctionExecutionId::Monomorphic(command.clone()))
-            .ok_or_else(|| backend_error("selected native command is not indexed"))?
-            .symbol;
-        if output_profile == NativeOutputProfile::NetworkCommandIo {
-            network_io::emit_runner(&mut output, symbol);
-            native_command_io::emit_process_adapter(&mut output);
-        } else if output_profile == NativeOutputProfile::FilesystemCommandIo {
-            filesystem_io::emit_runner(&mut output, symbol);
-        } else if output_profile == NativeOutputProfile::FilesystemCommandIoV2 {
-            filesystem_io_v2::emit_runner(&mut output, symbol);
-        } else if output_profile == NativeOutputProfile::FilesystemCommandIoV3 {
-            filesystem_io_v3::emit_runner(&mut output, symbol);
-        } else if output_profile == NativeOutputProfile::HttpsCommandIo {
-            http_io::emit_runner(&mut output, symbol);
-            native_command_io::emit_process_adapter(&mut output);
-        } else if output_profile == NativeOutputProfile::ProcessCommandIo {
-            process_io::emit_runner(&mut output, symbol);
-        } else if output_profile == NativeOutputProfile::EnvironmentCommandIo {
-            environment_io::emit_runner(&mut output, symbol);
-        } else if output_profile.is_stdin_stream() {
-            if matches!(
-                output_profile,
-                NativeOutputProfile::StdinStreamExitCommandIo
-                    | NativeOutputProfile::StdinStreamTextCommandIo
-                    | NativeOutputProfile::StdinStreamDataCommandIo
-            ) {
-                super::native_stdin_stream::exit_status::emit_runner(&mut output, symbol);
-                super::native_stdin_stream::exit_status::emit_process_adapter(&mut output);
-            } else {
-                super::native_stdin_stream::emit_runner(&mut output, symbol);
-                super::native_stdin_stream::emit_process_adapter(&mut output);
-            }
-        } else if output_profile.is_language_command() {
-            native_command_io::emit_runner(&mut output, symbol);
-            native_command_io::emit_process_adapter(&mut output);
-        } else {
-            native_command::emit_runner(&mut output, symbol);
-            native_command::emit_process_adapter(&mut output);
-        }
-    } else {
-        let main = program
-            .functions
-            .iter()
-            .find(|function| function.id == program.entrypoint)
-            .ok_or_else(|| backend_error("resolved native entry point is not indexed"))?;
-        if !main.params.is_empty() || main.return_type != ResolvedType::I64 {
-            return Err(backend_error(
-                "resolved native entry point must have type `fn main() -> i64`",
-            ));
-        }
-        let symbol = &functions
-            .get(&FunctionExecutionId::Monomorphic(main.id.clone()))
-            .ok_or_else(|| backend_error("native entry point is not indexed"))?
-            .symbol;
-        if output_profile == NativeOutputProfile::StdoutTranscript {
-            native_host_output::emit_root_wrapper(&mut output, symbol);
-            return Ok(output.into_string());
-        }
-        if output_profile == NativeOutputProfile::SourceSelectedFileResourceCommand {
-            super::native_selected_file_command::emit_resource_process_adapter(&mut output, symbol);
-            return Ok(output.into_string());
-        }
-        if output_profile == NativeOutputProfile::SourceSelectedFileCommand {
-            super::native_selected_file_command::emit_process_adapter(&mut output, symbol);
-            return Ok(output.into_string());
-        }
-        if output_profile == NativeOutputProfile::SourceCommand {
-            native_source_command::emit_process_adapter(&mut output, symbol);
-            return Ok(output.into_string());
-        }
-        if output_profile == NativeOutputProfile::SourceResourceCommand {
-            native_source_resource_command::emit_process_adapter(&mut output, symbol, program);
-            return Ok(output.into_string());
-        }
-        write!(
-            output,
-        "#ifndef SPX_NO_ENTRY_WRAPPER\n\
-         #if defined(_WIN32)\n\
-         #include <fcntl.h>\n\
-         #include <io.h>\n\
-         #endif\n\
-         int main(void) {{\n\
-             struct spx_status_entry spx_status_entries[UINT32_C(1)];\n\
-             struct spx_context spx_ctx = {{0}};\n\
-             if (!spx_context_init(&spx_ctx, UINT64_C(1), spx_status_entries, UINT32_C(1), NULL, NULL, NULL)) {{\n\
-                 fputs(\"SEMAPRAX native runtime invariant failure: context initialization\\n\", stderr);\n\
-                 return 72;\n\
-             }}\n\
-             int64_t result;\n\
-             spx_status_token status = {symbol}(&spx_ctx, &result);\n\
-             if (status != SPX_STATUS_SUCCESS) return spx_public_failure(&spx_ctx, status);\n\
-             #if defined(_WIN32)\n\
-             if (_setmode(_fileno(stdout), _O_BINARY) == -1) {{\n\
-                 fputs(\"SEMAPRAX native runtime invariant failure: stdout binary mode\\n\", stderr);\n\
-                 return 72;\n\
-             }}\n\
-             #endif\n\
-             printf(\"%lld\\n\", (long long)result);\n\
-             return 0;\n\
-         }}\n\
-         #endif\n"
-        )
-        .expect("writing to a string cannot fail");
-    }
-    Ok(output.into_string())
 }
 /// Emit one length-indexed, alignment-one C type for each reachable nonempty
 /// fixed byte array. `[u8; 0]` is erased from physical C storage altogether;
@@ -506,7 +251,12 @@ fn emit_native_prelude_inner(
     let needs_borrowed_str = command_carriers
         || strings.command_carriers
         || program_uses_borrowed_str(program, strings.include_instances);
-    native_runtime::emit_status_runtime_for_profile(
+    let emit_status = if strings.selected_final_utf8 {
+        super::selected_final_utf8::emit_status_runtime
+    } else {
+        native_runtime::emit_status_runtime_for_profile
+    };
+    emit_status(
         output,
         native_vec::owned_leaf::program_uses_field_reads(program),
         needs_borrowed_str || owned_carrier::uses_bytes(program) || strings.provider_carriers,
@@ -537,13 +287,18 @@ fn emit_native_prelude_inner(
         output.push_str(NATIVE_USIZE_RUNTIME_C);
     }
     if owned_carrier::needs_string_runtime(program, strings.include_instances) {
-        output.push_str(if strings.resource_strings {
-            resource_strings::LENGTH_DELIMITED_RUNTIME_C
-        } else if strings.length_delimited {
-            NATIVE_LENGTH_DELIMITED_STRING_RUNTIME_C
+        if strings.selected_final_utf8 {
+            output.push_str(NATIVE_LENGTH_DELIMITED_STRING_RUNTIME_C);
+            output.push_str(super::selected_final_utf8::STRING_RUNTIME);
         } else {
-            NATIVE_STRING_RUNTIME_C
-        });
+            output.push_str(if strings.resource_strings {
+                resource_strings::LENGTH_DELIMITED_RUNTIME_C
+            } else if strings.length_delimited {
+                NATIVE_LENGTH_DELIMITED_STRING_RUNTIME_C
+            } else {
+                NATIVE_STRING_RUNTIME_C
+            });
+        }
     }
     string_ordering::emit_runtime(output, program, strings);
     if program_uses_string_ops(program, strings.include_instances) {
@@ -2457,3 +2212,17 @@ impl<'a, O: COutput> CEmitter<'a, O> {
 }
 pub(super) mod environment_io;
 pub(super) mod process_io;
+
+pub(in crate::codegen) fn emit_selected_final_utf8(
+    program: &ResolvedProgram,
+    selection: &super::selected_final_utf8::Selection,
+) -> Result<String, Diagnostic> {
+    emit_hir_c_with_options(
+        program,
+        &HashMap::new(),
+        NativeOutputProfile::SelectedFinalUtf8,
+        None,
+        None,
+        Some(selection),
+    )
+}

@@ -59,6 +59,8 @@ mod native_source_resource_command;
     )
 )]
 mod native_stdin_stream;
+/// Explicit native-only closed final-constructor/retained-release profile.
+pub mod selected_final_utf8;
 pub use native_stdin_stream::{
     emit_hir_c_with_stdin_stream, emit_hir_c_with_stdin_stream_collection_records,
     emit_hir_c_with_stdin_stream_data, emit_hir_c_with_stdin_stream_exit_status,

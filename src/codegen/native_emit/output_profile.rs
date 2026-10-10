@@ -11,6 +11,8 @@ use super::function_uses_strings;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum NativeOutputProfile {
     Legacy,
+    /// Exact rederived native-only final constructor and opaque lease boundary.
+    SelectedFinalUtf8,
     OwnedDataProvider,
     OwnedUtf8Provider,
     /// Private checked Bytes body with a bridge-owned invocation reservation.
@@ -63,6 +65,7 @@ pub(super) struct StringRuntimeSelection {
     /// slices, which its argument and output adapters use.
     pub(super) command_carriers: bool,
     pub(super) resource_strings: bool,
+    pub(super) selected_final_utf8: bool,
 }
 
 impl StringRuntimeSelection {
@@ -74,6 +77,7 @@ impl StringRuntimeSelection {
         stream_epochs: false,
         command_carriers: false,
         resource_strings: false,
+        selected_final_utf8: false,
     };
 }
 
@@ -97,6 +101,12 @@ impl NativeOutputProfile {
 
     pub(super) const fn string_runtime(self) -> StringRuntimeSelection {
         match self {
+            Self::SelectedFinalUtf8 => StringRuntimeSelection {
+                length_delimited: true,
+                include_instances: false,
+                selected_final_utf8: true,
+                ..StringRuntimeSelection::FROZEN
+            },
             Self::Legacy | Self::StdoutTranscript | Self::OwnedDataProvider => {
                 StringRuntimeSelection {
                     length_delimited: true,
@@ -106,6 +116,7 @@ impl NativeOutputProfile {
                     stream_epochs: false,
                     command_carriers: false,
                     resource_strings: false,
+                    selected_final_utf8: false,
                 }
             }
             Self::SourceCommand | Self::SourceSelectedFileCommand => StringRuntimeSelection {
@@ -116,6 +127,7 @@ impl NativeOutputProfile {
                 stream_epochs: false,
                 command_carriers: true,
                 resource_strings: false,
+                selected_final_utf8: false,
             },
             Self::SourceResourceCommand | Self::SourceSelectedFileResourceCommand => {
                 StringRuntimeSelection {
@@ -126,6 +138,7 @@ impl NativeOutputProfile {
                     stream_epochs: false,
                     command_carriers: true,
                     resource_strings: true,
+                    selected_final_utf8: false,
                 }
             }
             Self::OwnedUtf8Provider => StringRuntimeSelection {
@@ -136,6 +149,7 @@ impl NativeOutputProfile {
                 stream_epochs: false,
                 command_carriers: false,
                 resource_strings: false,
+                selected_final_utf8: false,
             },
             Self::ReservedBytesProvider => StringRuntimeSelection {
                 length_delimited: true,
@@ -145,6 +159,7 @@ impl NativeOutputProfile {
                 stream_epochs: false,
                 command_carriers: false,
                 resource_strings: false,
+                selected_final_utf8: false,
             },
             Self::StdinStreamTextCommandIo | Self::StdinStreamDataCommandIo => {
                 StringRuntimeSelection {
@@ -187,6 +202,7 @@ impl NativeOutputProfile {
         matches!(
             self,
             Self::Legacy
+                | Self::SelectedFinalUtf8
                 | Self::StdoutTranscript
                 | Self::SourceCommand
                 | Self::SourceSelectedFileCommand
@@ -290,6 +306,7 @@ mod tests {
         assert_eq!(
             StringRuntimeSelection {
                 resource_strings: false,
+                selected_final_utf8: false,
                 ..resource
             },
             frozen
