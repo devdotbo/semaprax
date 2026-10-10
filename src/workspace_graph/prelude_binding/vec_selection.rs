@@ -1,6 +1,7 @@
 //! Select Vec only through exact authored import identities and nominal fields.
 //! Fixed charged cursor backing avoids an unbounded recursive source walk.
 use super::*;
+use crate::ast::FieldDeclaration;
 const SLOTS: usize = 514;
 const WORK: usize = 1_000_000;
 struct Cursor<'a> {

@@ -385,7 +385,8 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
         ),
         concat!(
             include_str!("../../src/workspace_graph/prelude_binding.rs"),
-            include_str!("../../src/workspace_graph/prelude_binding/collection_selection.rs")
+            include_str!("../../src/workspace_graph/prelude_binding/collection_selection.rs"),
+            include_str!("../../src/workspace_graph/prelude_binding/vec_selection.rs")
         ),
         include_str!("../../src/workspace_graph/project_render.rs"),
         include_str!("../../src/workspace_graph/session_protocol_decl.rs"),
