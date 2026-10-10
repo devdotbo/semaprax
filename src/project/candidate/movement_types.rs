@@ -1,7 +1,7 @@
 //! Checked resource-free value dependencies and hygienic source relocation.
 //! Type declarations stay in their authenticated provider modules.
 
-use super::{MAX_DEPENDENCIES, Result, intent, invalid, limit};
+use super::{intent, invalid, limit, Result, MAX_DEPENDENCIES};
 use crate::ast::{
     ExprKind, Function, MatchPattern, ModuleUse, ModuleUseKind, ParamMode, Program,
     RecordMatchFieldPattern, RecordMatchPatternField, Span, Statement, Type,
@@ -859,7 +859,9 @@ impl<'a> Node<'a> {
                         .get(index)
                         .copied()
                 }
-                S::Unsafe { .. } | S::While { .. } => s.child(index).map(Self::Expression),
+                S::Unsafe { .. } | S::While { .. } | S::LexicalWhile { .. } => {
+                    s.child(index).map(Self::Expression)
+                }
             },
             Self::Arm(a) => match index {
                 0 => Some(Self::Pattern(&a.pattern)),
@@ -880,6 +882,10 @@ impl<'a> Node<'a> {
                 F::Wildcard => None,
             },
             Self::Expression(e) => match &e.kind {
+                E::LexicalExit { value, .. } => (index == 0)
+                    .then(|| value.as_deref())
+                    .flatten()
+                    .map(Self::Expression),
                 E::Closure { captures, .. } => captures
                     .get(index)
                     .map(|capture| Self::Expression(&capture.value)),

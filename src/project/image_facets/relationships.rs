@@ -177,6 +177,9 @@ pub(super) fn items(
                     }
                     Statement::While {
                         condition, body, ..
+                    }
+                    | Statement::LexicalWhile {
+                        condition, body, ..
                     } => {
                         let child = Context {
                             depth: context.depth + 1,

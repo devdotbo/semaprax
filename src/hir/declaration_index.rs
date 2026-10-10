@@ -1,11 +1,9 @@
 //! Deterministic declaration lookup, type facts, and inheritance materialization.
-
 use super::*;
 mod linked_owned_data;
 mod owned_builtin;
 mod projection;
 use owned_builtin::owned_builtin_facts;
-
 /// A deterministic, display-name-to-identity index.
 ///
 /// Types and values occupy distinct namespaces so future record/variant type
@@ -1426,11 +1424,7 @@ impl DeclarationIndex {
                     ty @ Type::Function { .. } => {
                         resolved.push(super::function_value::resolve::source_type(ty)?)
                     }
-                    Type::Never => {
-                        return Err(hir_error(
-                            "lexical completion marker is not a declared type",
-                        ))
-                    }
+                    Type::Never => return None,
                     Type::I64 => resolved.push(ResolvedType::I64),
                     Type::I32 => resolved.push(ResolvedType::I32),
                     Type::Char => resolved.push(ResolvedType::Char),

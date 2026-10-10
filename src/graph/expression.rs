@@ -401,7 +401,12 @@ fn statement_json(
             quote_json(audit),
             expr_json(program, body)?
         )),
-        ResolvedStatement::LexicalWhile { condition, body, latch, .. } => lexical_exit::statement_json(program, condition, body, latch)?,
+        ResolvedStatement::LexicalWhile {
+            condition,
+            body,
+            latch,
+            ..
+        } => lexical_exit::statement_json(program, condition, body, latch),
         ResolvedStatement::While {
             condition, body, ..
         } => Ok(format!(

@@ -23,6 +23,10 @@ pub(super) fn default_expr_expanded_cost(
     allow_owned: bool,
 ) -> Result<ExpandedDefaultCost, Vec<Diagnostic>> {
     match ty {
+        Type::Never => Err(vec![graph_error(
+            "SPX-G172",
+            "compiler-only completion marker has no default value",
+        )]),
         ty if allow_owned
             && super::type_rewrite::vector_element(ty, module, caller, programs).is_some() =>
         {
@@ -246,6 +250,12 @@ pub(super) fn default_expr(
     reserve_builder_structure(std::mem::size_of::<Expr>())?;
     let span = Span::default();
     let kind = match ty {
+        Type::Never => {
+            return Err(vec![graph_error(
+                "SPX-G172",
+                "compiler-only completion marker has no default value",
+            )])
+        }
         ty if allow_owned
             && super::type_rewrite::default_vector_element(ty, declarations).is_some() =>
         {

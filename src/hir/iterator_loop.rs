@@ -217,8 +217,8 @@ pub(crate) fn validate_function(
                             mutable: true,
                             value: seed,
                             ..
-                        }, (ResolvedStatement::While { .. }
-                        | ResolvedStatement::LexicalWhile { .. })] = statements.as_slice()
+                        }, ResolvedStatement::While { .. }
+                        | ResolvedStatement::LexicalWhile { .. }] = statements.as_slice()
                         else {
                             return Err(crate::diagnostic::Diagnostic::io(
                                 "SPX-H006",

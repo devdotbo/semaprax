@@ -15,6 +15,7 @@ pub(super) fn template_is_admitted(declaration: &TypeDeclaration) -> bool {
     !parameters.is_empty()
         && !fields.is_empty()
         && fields.iter().all(|field| match &field.ty {
+            Type::Never => false,
             Type::I64
             | Type::I32
             | Type::Char

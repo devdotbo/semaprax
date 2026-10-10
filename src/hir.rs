@@ -419,6 +419,7 @@ impl Availability {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct ValidationBinding {
+    mutable: bool,
     ty: ResolvedType,
     ownership: OwnershipMode,
     availability: Availability,

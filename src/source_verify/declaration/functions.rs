@@ -1,6 +1,5 @@
 //! Function-level checks: declaration admission, generic call cycles, and the
 //! per-function body, contract, and effect checks.
-
 use crate::ast::{
     Expr, ExprKind, Function, ImportDeclaration, InterfaceDeclaration, MatchPattern, ParamMode,
     Program, RecordMatchFieldPattern, Statement, Type,
@@ -24,7 +23,6 @@ use crate::source_verify::diagnostics::{
 use crate::source_verify::iterative::check_expr_iterative;
 use crate::source_verify::type_table::TypeTable;
 use std::collections::{BTreeSet, HashMap, HashSet};
-
 pub(super) fn check_function_declarations<'p>(
     program: &'p Program,
     functions: &mut HashMap<&'p str, &'p Function>,
@@ -446,7 +444,6 @@ pub(super) fn check_function_declarations<'p>(
         }
     }
 }
-
 pub(super) fn check_generic_function_cycles<'p>(
     program: &'p Program,
     call_graph: &HashMap<String, Vec<String>>,
@@ -545,12 +542,9 @@ pub(super) fn check_generic_function_cycles<'p>(
         }
     }
 }
-
 mod traversal_scope;
 use traversal_scope::static_binding;
-
 const MAX_STATIC_MAPPING_DEPTH: usize = 128;
-
 /// Carries the lexical scope, declaration table, and bounded traversal state
 /// required to authenticate an omitted symbolic mapping before body checking.
 #[allow(clippy::too_many_arguments)]
@@ -586,6 +580,7 @@ fn check_omitted_generic_mappings(
     }
     let next = depth + 1;
     match &expression.kind {
+        ExprKind::LexicalExit { value: None, .. } => {}
         ExprKind::Closure { .. } => {}
         ExprKind::Call {
             name,
@@ -752,7 +747,10 @@ fn check_omitted_generic_mappings(
                 next,
             );
         }
-        ExprKind::Unary { value, .. }
+        ExprKind::LexicalExit {
+            value: Some(value), ..
+        }
+        | ExprKind::Unary { value, .. }
         | ExprKind::Try { operand: value }
         | ExprKind::Yield { request: value }
         | ExprKind::Project { base: value, .. } => check_omitted_generic_mappings(
@@ -931,7 +929,6 @@ fn check_omitted_generic_mappings(
         | ExprKind::Var(_) => {}
     }
 }
-
 fn clear_pattern_bindings(pattern: &MatchPattern, bindings: &mut HashMap<String, Binding>) {
     match pattern {
         MatchPattern::Variant { fields, .. } => {
@@ -950,7 +947,6 @@ fn clear_pattern_bindings(pattern: &MatchPattern, bindings: &mut HashMap<String,
         MatchPattern::Wildcard { .. } | MatchPattern::Literal { .. } | MatchPattern::Or { .. } => {}
     }
 }
-
 fn clear_record_pattern_bindings(
     pattern: &RecordMatchFieldPattern,
     bindings: &mut HashMap<String, Binding>,
@@ -967,7 +963,6 @@ fn clear_record_pattern_bindings(
         RecordMatchFieldPattern::Wildcard { .. } => {}
     }
 }
-
 pub(super) fn check_function_bodies<'p>(
     program: &'p Program,
     functions: &HashMap<&'p str, &'p Function>,

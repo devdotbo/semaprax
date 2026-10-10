@@ -50,7 +50,7 @@ impl Parser {
                     .is_some_and(|token| token.kind == TokenKind::Semicolon))
     }
     pub(super) fn lexical_exit_tail(&mut self) -> Result<Expr, Diagnostic> {
-        let token = self.bump();
+        let token = self.bump().clone();
         let TokenKind::Ident(name) = token.kind else {
             unreachable!("exit lookahead");
         };

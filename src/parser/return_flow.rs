@@ -221,7 +221,7 @@ impl Parser {
         ))
     }
 
-    fn return_end(&mut self) -> Result<Span, Diagnostic> {
+    pub(super) fn return_end(&mut self) -> Result<Span, Diagnostic> {
         if !self.at(&TokenKind::RBrace) {
             return Err(self
                 .error_here(
@@ -268,7 +268,7 @@ impl Parser {
 
     /// Preserve existing uses of the ordinary identifier `return`, including
     /// calls and arithmetic. Only formerly refused adjacent operands opt in.
-    fn starts_return(&self, index: usize) -> bool {
+    pub(super) fn starts_return(&self, index: usize) -> bool {
         matches!(self.tokens.get(index).map(|token| &token.kind), Some(TokenKind::Ident(name)) if name == "return")
             && matches!(
                 self.tokens.get(index + 1).map(|token| &token.kind),

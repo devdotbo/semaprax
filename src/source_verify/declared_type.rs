@@ -386,6 +386,7 @@ pub(super) fn direct_function_type_argument(ty: &Type) -> bool {
 
 pub(super) fn generic_function_signature_slot(ty: &Type, parameters: &HashSet<&str>) -> bool {
     match ty {
+        Type::Never => false,
         Type::I64 | Type::Bool | Type::String => true,
         Type::I32
         | Type::Char
@@ -570,6 +571,7 @@ pub(super) fn substitute_function_type(
     while let Some(frame) = frames.pop() {
         match frame {
             Frame::Enter(template) => match template {
+                Type::Never => return None,
                 Type::I64 => resolved.push(Type::I64),
                 Type::I32 => resolved.push(Type::I32),
                 Type::Char => resolved.push(Type::Char),
@@ -700,6 +702,7 @@ fn generic_function_expression_is_admitted(
     let mut pending = vec![expression];
     while let Some(expression) = pending.pop() {
         match &expression.kind {
+            ExprKind::LexicalExit { .. } => return false,
             ExprKind::Closure { body, .. } => {
                 if !closures {
                     return false;
@@ -850,6 +853,11 @@ fn substitute_forwarded_call_arguments(
     expression: &mut Expr,
 ) -> Option<()> {
     match &mut expression.kind {
+        ExprKind::LexicalExit { value, .. } => {
+            if let Some(value) = value {
+                substitute_forwarded_call_arguments(function, arguments, value)?;
+            }
+        }
         ExprKind::Closure {
             params,
             return_type,

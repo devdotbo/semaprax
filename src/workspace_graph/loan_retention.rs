@@ -368,6 +368,11 @@ fn walk(
     }
     let mut child = |expression: &ResolvedExpr| walk(expression, depth + 1, visit);
     match &expression.kind {
+        E::LexicalExit { value, .. } => {
+            if let Some(value) = value {
+                child(value)?;
+            }
+        }
         E::Closure { captures, body, .. } => {
             for capture in captures {
                 child(&capture.value)?;

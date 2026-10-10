@@ -3,6 +3,7 @@ use super::*;
 
 pub(super) fn scalar_type_text(ty: &Type) -> &'static str {
     match ty {
+        Type::Never => unreachable!("compiler-only completion marker is not an admitted property scalar"),
         Type::I64 => "i64",
         Type::I32 => "i32",
         Type::U8 => "u8",

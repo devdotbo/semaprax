@@ -898,6 +898,11 @@ fn resolved_source_type(
         ));
     }
     Ok(match source {
+        Type::Never => {
+            return Err(authentication(
+                "compiler-only completion marker cannot be an interface signature",
+            ))
+        }
         Type::Function { parameters, result } => ResolvedType::Function {
             parameters: parameters
                 .iter()

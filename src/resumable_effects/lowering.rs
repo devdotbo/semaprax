@@ -528,6 +528,11 @@ fn locate_direct_yields(function: &ResolvedFunction) -> Result<Vec<YieldSite<'_>
     let execution = FunctionExecutionId::Monomorphic(function.id.clone());
     for (index, statement) in statements.iter().enumerate() {
         let (value, kind) = match statement {
+            ResolvedStatement::LexicalWhile { .. } => {
+                return Err(invalid(
+                    "lexical control is outside the resumable replay profile",
+                ))
+            }
             ResolvedStatement::Let { value, .. } => (value, ResumableStatementKind::Let),
             ResolvedStatement::Assign { value, .. } => (value, ResumableStatementKind::Assign),
             ResolvedStatement::Unsafe { .. } | ResolvedStatement::While { .. } => continue,
@@ -630,6 +635,11 @@ fn relocate_expression(
     expression.id = ExpressionId::new(execution, path);
     let expression_id = expression.id.clone();
     match &mut expression.kind {
+        ResolvedExprKind::LexicalExit { .. } => {
+            return Err(invalid(
+                "resumable projection cannot relocate a lexical exit",
+            ))
+        }
         ResolvedExprKind::Closure { .. } => {
             return Err(invalid(
                 "resumable projection cannot relocate a closure expression",
@@ -692,6 +702,11 @@ fn relocate_expression(
             for (index, statement) in statements.iter_mut().enumerate() {
                 let statement_path = format!("{path}.s{index}");
                 match statement {
+                    ResolvedStatement::LexicalWhile { .. } => {
+                        return Err(invalid(
+                            "resumable projection cannot relocate a lexical loop",
+                        ))
+                    }
                     ResolvedStatement::Let { binding, value, .. } => {
                         relocate_expression(
                             value,

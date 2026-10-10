@@ -365,6 +365,7 @@ impl Drop for Program {
 
         while let Some(mut ty) = types.pop() {
             match mem::replace(&mut ty, Type::I64) {
+                Type::Never => {}
                 Type::Named { arguments, .. } => types.extend(arguments),
                 Type::Function { parameters, result } => {
                     types.extend(parameters);

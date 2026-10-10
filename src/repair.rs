@@ -1,5 +1,4 @@
 //! Read-only, targeted diagnostic repair discovery and instantiation.
-
 mod call_closure;
 mod scoped_vec_field;
 use call_closure::{call_graph, has_call_cycle};
@@ -608,6 +607,7 @@ fn scalar_type(ty: &Type) -> bool {
 
 fn scalar_expr(expression: &Expr) -> bool {
     match &expression.kind {
+        ExprKind::LexicalExit { .. } => false,
         ExprKind::Closure { .. } => false,
         ExprKind::Int(_)
         | ExprKind::Int32(_)

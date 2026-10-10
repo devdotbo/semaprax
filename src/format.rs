@@ -29,7 +29,6 @@ mod session_protocol;
 mod statement_if;
 use block_statement::write_block_statement;
 use closure::contains_record_construction;
-
 use capacity::{
     legacy_canonical_temporary_bytes, legacy_expr_temporary_bytes, write_expr_measured,
 };
@@ -81,7 +80,6 @@ enum TypeFormatFrame<'a> {
     FunctionParameters(&'a [crate::ast::Type], usize),
     FunctionResult(&'a crate::ast::Type),
 }
-
 #[derive(Clone, Copy)]
 #[allow(dead_code)]
 pub(crate) struct PrivateScratchCapacity {
@@ -1007,7 +1005,7 @@ fn write_format_frames(
                         | Statement::ForOwn {
                             item, values, body, ..
                         } => {
-                            block_statement::write_traversal_header(output, statement, item);
+                            block_statement::write_traversal_header(&mut output, statement, item);
                             frames.push(Frame::BlockNextAfterWhile(statements, tail, index + 1));
                             frames.push(Frame::WhileBody(body));
                             frames.push(Frame::Expr(values, 0));
@@ -1246,6 +1244,9 @@ pub(crate) fn write_type(output: &mut impl std::fmt::Write, ty: &crate::ast::Typ
     let mut frames = FormatFrameStack::new(Frame::Type(ty), ScratchStackKind::Type);
     while let Some(frame) = frames.pop() {
         match frame {
+            Frame::Type(crate::ast::Type::Never) => {
+                panic!("compiler-only completion marker has no source type spelling")
+            }
             Frame::Type(crate::ast::Type::I64) => output.write_str("i64").unwrap(),
             Frame::Type(crate::ast::Type::I32) => output.write_str("i32").unwrap(),
             Frame::Type(crate::ast::Type::Char) => output.write_str("char").unwrap(),

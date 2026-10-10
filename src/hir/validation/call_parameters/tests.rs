@@ -81,6 +81,7 @@ fn compare_expression(
         scope.insert(
             parameter.id.clone(),
             ValidationBinding {
+                mutable: false,
                 ty: parameter.ty.clone(),
                 ownership: parameter.ownership,
                 availability: Availability::Available,

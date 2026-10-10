@@ -67,6 +67,7 @@ fn expression_json(
         quote_json(ownership_text(expression.ownership))
     );
     let output = match &expression.kind {
+        ResolvedExprKind::LexicalExit { .. } => return Err(projection_error("lexical exits are outside package report v2 contracts")),
         ResolvedExprKind::Closure { .. }
         | ResolvedExprKind::FunctionReference { .. }
         | ResolvedExprKind::Invoke { .. } => {

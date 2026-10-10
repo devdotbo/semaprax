@@ -26,6 +26,7 @@ pub(super) fn is_admitted(
     let mut saw_record = false;
     while let Some(frame) = frames.pop() {
         match frame {
+            Frame::Type(Type::Never, _) => return false,
             Frame::Type(Type::Bytes, _) => {
                 byte_leaves += 1;
                 if byte_leaves > MAX_NESTED_OWNED_BYTE_LEAVES {

@@ -414,6 +414,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             return Ok(());
         }
         let variant_instance = scrutinee_value.as_ref().and_then(|value| match &value.ty {
+            Type::Never => None,
             Type::Named { name, arguments } if self.types.variant_cases(&value.ty).is_some() => {
                 Some((name.clone(), arguments.clone()))
             }

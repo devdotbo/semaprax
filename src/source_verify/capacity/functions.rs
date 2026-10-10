@@ -38,7 +38,10 @@ pub(super) fn source_capacity_slot(
     Ok(())
 }
 
-pub(super) fn source_array_payload(types: &TypeTable<'_>, ty: &Type) -> Result<u32, ()> {
+pub(in crate::source_verify) fn source_array_payload(
+    types: &TypeTable<'_>,
+    ty: &Type,
+) -> Result<u32, ()> {
     let mut total = 0_u32;
     let mut pending = vec![ty.clone()];
     let mut expanded = 0_usize;

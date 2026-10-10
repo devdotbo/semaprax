@@ -389,6 +389,11 @@ fn check_type(
     declared_types: &std::collections::BTreeSet<&str>,
 ) -> Result<(), Diagnostic> {
     match ty {
+        Type::Never => Err(signature_error(
+            &protocol.name,
+            &method.name,
+            "compiler-only completion marker is outside Protocol Projection v1".to_owned(),
+        )),
         Type::OnceFunction
         | Type::OnceFunctionI64
         | Type::OnceFunctionI64Pair

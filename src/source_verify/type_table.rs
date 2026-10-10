@@ -250,6 +250,7 @@ impl<'a> TypeTable<'a> {
         while let Some(frame) = frames.pop() {
             match frame {
                 Frame::Enter(template) => match template {
+                    Type::Never => return None,
                     Type::I64 => resolved.push(Type::I64),
                     Type::I32 => resolved.push(Type::I32),
                     Type::Char => resolved.push(Type::Char),
@@ -337,6 +338,7 @@ impl<'a> TypeTable<'a> {
 
     pub(super) fn contains_string_inner(&self, ty: &Type, visiting: &mut HashSet<String>) -> bool {
         match ty {
+            Type::Never => false,
             Type::String => true,
             Type::I64
             | Type::I32
@@ -460,6 +462,7 @@ impl<'a> TypeTable<'a> {
                 }
                 Frame::Enter(ty) if crate::map_ops::ast_collection(&ty) => return true,
                 Frame::Enter(ty) => match ty {
+                    Type::Never => return false,
                     Type::String
                     | Type::Bytes
                     | Type::StringMap
@@ -561,6 +564,7 @@ impl<'a> TypeTable<'a> {
         let mut visited = HashSet::new();
         while let Some(current) = pending.pop() {
             match current {
+                Type::Never => return false,
                 Type::Bytes
                 | Type::OnceFunction
                 | Type::OnceFunctionI64
@@ -989,6 +993,7 @@ pub(super) fn classify_nested_owned_byte_record(
 
     while let Some(frame) = frames.pop() {
         match frame {
+            Frame::Type(Type::Never, _) => return NestedOwnedRecordAdmission::OutsideProfile,
             Frame::Type(Type::Bytes, _) => {
                 owned_leaves += 1;
                 if owned_leaves > MAX_NESTED_OWNED_BYTE_LEAVES {

@@ -809,6 +809,11 @@ fn render_recipe_expr(
             let mut rendered = String::from("{ ");
             for statement in statements {
                 match statement {
+                    ResolvedStatement::LexicalWhile { .. } => {
+                        return Err(package_error(
+                            "lexical control is outside the npm semantic recipe profile",
+                        ))
+                    }
                     ResolvedStatement::Let {
                         binding,
                         mutable,

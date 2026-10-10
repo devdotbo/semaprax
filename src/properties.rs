@@ -1134,6 +1134,7 @@ enum ScalarKind {
 impl ScalarKind {
     fn of(ty: &Type) -> Self {
         match ty {
+            Type::Never => unreachable!("compiler-only completion marker is not an admitted property scalar"),
             Type::I64 => ScalarKind::Int,
             Type::I32 => ScalarKind::Int32,
             Type::U8 => ScalarKind::Uint8,

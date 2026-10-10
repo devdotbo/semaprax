@@ -1057,6 +1057,11 @@ impl Resolver<'_> {
         let mut result = None;
         while let Some(frame) = frames.pop() {
             match frame {
+                Frame::Enter(Type::Never) => {
+                    return Err(hir_error(
+                        "compiler-only completion marker cannot be declared",
+                    ))
+                }
                 Frame::Enter(ty @ Type::Function { .. }) => {
                     result = Some(super::function_value::resolve::source_type(ty).ok_or_else(
                         || super::function_value::error("invalid callable signature"),

@@ -2,11 +2,9 @@
 //!
 //! Validates HIR meaning; source resolution remains in
 //! the parent module.
-
 use super::workspace_link::native_owner::admitted_ri06_regex_result as regex_result;
 use super::*;
 use crate::loan_plan::{LoanCause, LoanId, LoanPointPhase};
-
 mod borrowed_argument;
 mod borrowed_str;
 mod box_intrinsic;
@@ -42,14 +40,12 @@ use type_profiles::{
     template_has_owned_record_slot, template_ownership, validate_nested_update_base_shape,
 };
 use unsafe_scan::contains_unsafe_boundary;
-
 /// Validate resolved meaning without consulting attached cleanup metadata.
 /// Independent cleanup-plan replayers use this boundary to avoid circularly
 /// trusting the canonical cleanup-plan builder as their oracle.
 pub(crate) fn validate_core(program: &ResolvedProgram) -> Result<(), Diagnostic> {
     HirValidator::new(program)?.validate()
 }
-
 #[derive(Clone)]
 pub(super) struct HirValidator<'a> {
     program: &'a ResolvedProgram,
@@ -71,7 +67,6 @@ pub(super) struct HirValidator<'a> {
     canonical_loan_ids: BTreeMap<(ExpressionId, LoanCause), LoanId>,
     canonical_loan_liveness: BTreeMap<(ExpressionId, LoanPointPhase, LoanId), Place>,
 }
-
 impl<'a> HirValidator<'a> {
     fn binding_has_live_overlapping_loans(
         &self,
@@ -99,7 +94,6 @@ impl<'a> HirValidator<'a> {
         }
         Ok(false)
     }
-
     fn exact_loan_id(
         &self,
         execution: &FunctionExecutionId,
@@ -112,7 +106,6 @@ impl<'a> HirValidator<'a> {
             .get(&(expression.clone(), cause.clone()))
             .copied())
     }
-
     pub(super) fn new(program: &'a ResolvedProgram) -> Result<Self, Diagnostic> {
         validate_nul_free_identities(program)?;
         stdin_stream::reject_sealed_escape(program)?;
@@ -909,6 +902,11 @@ impl<'a> HirValidator<'a> {
                         }
                     } else {
                         match &field.ty {
+                            ResolvedType::Never => {
+                                return Err(hir_error(
+                                    "compiler-only completion marker cannot be a field type",
+                                ))
+                            }
                             ResolvedType::I64 | ResolvedType::Bool => {}
                             ResolvedType::I32
                             | ResolvedType::Char
@@ -1127,6 +1125,11 @@ impl<'a> HirValidator<'a> {
                             continue;
                         }
                         match &field.ty {
+                            ResolvedType::Never => {
+                                return Err(hir_error(
+                                    "compiler-only completion marker cannot be a field type",
+                                ))
+                            }
                             ResolvedType::I64
                             | ResolvedType::I32
                             | ResolvedType::Char
@@ -1824,6 +1827,7 @@ impl<'a> HirValidator<'a> {
             scope.insert(
                 param.id.clone(),
                 ValidationBinding {
+                    mutable: false,
                     ty: param.ty.clone(),
                     ownership: param.ownership,
                     availability: Availability::Available,
@@ -1888,6 +1892,7 @@ impl<'a> HirValidator<'a> {
         ensures_scope.insert(
             function.result_id.clone(),
             ValidationBinding {
+                mutable: false,
                 ty: function.return_type.clone(),
                 ownership: returned,
                 availability: Availability::Available,
@@ -2125,6 +2130,7 @@ impl<'a> HirValidator<'a> {
                             scope.insert(
                                 binding.id.clone(),
                                 ValidationBinding {
+                                    mutable: false,
                                     ty: binding.ty.clone(),
                                     ownership,
                                     availability: Availability::Available,
@@ -4578,6 +4584,7 @@ impl<'a> HirValidator<'a> {
                     scope.insert(
                         binding.id.clone(),
                         ValidationBinding {
+                            mutable: *mutable,
                             ty: binding.ty.clone(),
                             ownership: binding.ownership,
                             availability: Availability::Available,
@@ -5537,6 +5544,7 @@ impl<'a> HirValidator<'a> {
                                     arm_scope.insert(
                                         field.binding.id.clone(),
                                         ValidationBinding {
+                                            mutable: false,
                                             ty: field.binding.ty.clone(),
                                             ownership: binding_ownership,
                                             availability: Availability::Available,
@@ -5763,6 +5771,7 @@ impl<'a> HirValidator<'a> {
                             arm_scope.insert(
                                 binding.id.clone(),
                                 ValidationBinding {
+                                    mutable: false,
                                     ty: binding.ty.clone(),
                                     ownership: OwnershipMode::Value,
                                     availability: Availability::Available,
@@ -6971,6 +6980,7 @@ impl<'a> HirValidator<'a> {
                             block_scope.insert(
                                 binding.id.clone(),
                                 ValidationBinding {
+                                    mutable: *mutable,
                                     ty: binding.ty.clone(),
                                     ownership: binding.ownership,
                                     availability: Availability::Available,
@@ -7469,6 +7479,7 @@ impl<'a> HirValidator<'a> {
                                 arm_scope.insert(
                                     binding.id.clone(),
                                     ValidationBinding {
+                                        mutable: false,
                                         ty: binding.ty.clone(),
                                         ownership: OwnershipMode::Value,
                                         availability: Availability::Available,
@@ -7891,6 +7902,7 @@ impl<'a> HirValidator<'a> {
                                 arm_scope.insert(
                                     pattern_field.binding.id.clone(),
                                     ValidationBinding {
+                                        mutable: false,
                                         ty: pattern_field.binding.ty.clone(),
                                         ownership: binding_ownership,
                                         availability: Availability::Available,
@@ -8482,6 +8494,11 @@ impl<'a> HirValidator<'a> {
         while let Some(frame) = frames.pop() {
             match frame {
                 Frame::Enter(expression, scope_index) => match &expression.kind {
+                    ResolvedExprKind::LexicalExit { value, .. } => {
+                        if let Some(value) = value {
+                            frames.push(Frame::Enter(value, scope_index));
+                        }
+                    }
                     ResolvedExprKind::Closure { .. }
                     | ResolvedExprKind::FunctionReference { .. } => {}
                     ResolvedExprKind::Invoke { args, .. } => {

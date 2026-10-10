@@ -195,7 +195,7 @@ impl Rename<'_> {
                                 index: Some(index), ..
                             } = statement
                             {
-                                self.binding(&index.name, &mut body_scope)?;
+                                self.binding(&mut index.name, &mut body_scope)?;
                             }
                             self.expression(body, &body_scope, next)?;
                         }

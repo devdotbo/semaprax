@@ -384,7 +384,7 @@ fn push_children<'e>(expression: &'e mut Expr, pending: &mut Vec<&'e mut Expr>) 
             pending.push(receiver);
             pending.extend(args.iter_mut());
         }
-        ExprKind::LexicalExit { value, .. } => pending.extend(value.as_deref()),
+        ExprKind::LexicalExit { value, .. } => pending.extend(value.as_deref_mut()),
         ExprKind::Unary { value, .. }
         | ExprKind::Try { operand: value }
         | ExprKind::Project { base: value, .. }

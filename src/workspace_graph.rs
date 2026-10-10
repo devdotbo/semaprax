@@ -4615,7 +4615,9 @@ impl<'a> CheckedValueNode<'a> {
                         .get(index)
                         .copied()
                 }
-                S::Unsafe { .. } | S::While { .. } => statement.child(index).map(Self::Expression),
+                S::Unsafe { .. } | S::While { .. } | S::LexicalWhile { .. } => {
+                    statement.child(index).map(Self::Expression)
+                }
             },
             Self::Arm(arm) => match index {
                 0 => Some(Self::Pattern(&arm.pattern)),
@@ -4638,6 +4640,10 @@ impl<'a> CheckedValueNode<'a> {
                 F::Wildcard => None,
             },
             Self::Expression(expression) => match &expression.kind {
+                E::LexicalExit { value, .. } => (index == 0)
+                    .then(|| value.as_deref())
+                    .flatten()
+                    .map(Self::Expression),
                 E::Closure {
                     parameters,
                     captures,
@@ -5371,6 +5377,8 @@ fn signature_type_is_admitted(
     visiting: &mut BTreeSet<String>,
 ) -> bool {
     match ty {
+        Type::Never => false,
+        Type::Never => false,
         Type::I64
         | Type::I32
         | Type::Char

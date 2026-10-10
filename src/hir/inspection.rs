@@ -792,6 +792,14 @@ fn audit_cleanup_plan(plan: &CleanupPlan) -> Result<(), Diagnostic> {
             )?;
         }
         match &exit.continuation {
+            crate::cleanup_plan::ExitContinuation::LoopLatch { target }
+            | crate::cleanup_plan::ExitContinuation::LoopBreak { target, .. } => {
+                audit_control_target(target)?;
+            }
+            crate::cleanup_plan::ExitContinuation::FunctionReturn { target, source, .. } => {
+                audit_control_target(target)?;
+                audit_result_source(source)?;
+            }
             crate::cleanup_plan::ExitContinuation::Continue(_)
             | crate::cleanup_plan::ExitContinuation::ReturnUnit => {}
             crate::cleanup_plan::ExitContinuation::CommitResult { source } => {
@@ -1225,3 +1233,15 @@ pub(crate) fn workspace_call_sites(
 
 #[cfg(test)]
 mod tests;
+
+fn audit_control_target(target: &super::ControlTarget) -> Result<(), Diagnostic> {
+    match target {
+        super::ControlTarget::Function(owner) => {
+            reject_nul_identity("lexical target execution", &owner.identity_key())
+        }
+        super::ControlTarget::Loop { owner, site } => {
+            reject_nul_identity("lexical target execution", &owner.identity_key())?;
+            reject_nul_identity("lexical target loop", site.as_str())
+        }
+    }
+}
