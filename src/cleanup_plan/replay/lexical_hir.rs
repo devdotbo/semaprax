@@ -261,9 +261,9 @@ pub(super) fn generated_advance<'a>(
 
 /// The assignment (its value, then its binding) that renews an owned
 /// iterator step with the Yield-arm tail.
-pub(super) fn owned_step_assignment<'a>(
-    body: &'a ResolvedExpr,
-) -> Option<(&'a ResolvedExpr, &'a crate::hir::ResolvedBinding)> {
+pub(super) fn owned_step_assignment(
+    body: &ResolvedExpr,
+) -> Option<(&ResolvedExpr, &crate::hir::ResolvedBinding)> {
     let ResolvedExprKind::Block { statements, .. } = &body.kind else {
         return None;
     };
@@ -275,7 +275,7 @@ pub(super) fn owned_step_assignment<'a>(
 
 /// The owned item binding of an owning traversal's Yield arm, if any. It is
 /// disposed (not retained) when a `continue` advances the iterator.
-pub(super) fn yield_item<'a>(body: &'a ResolvedExpr) -> Option<&'a crate::hir::ResolvedBinding> {
+pub(super) fn yield_item(body: &ResolvedExpr) -> Option<&crate::hir::ResolvedBinding> {
     let ResolvedExprKind::Block { statements, .. } = &body.kind else {
         return None;
     };
@@ -292,9 +292,7 @@ pub(super) fn yield_item<'a>(body: &'a ResolvedExpr) -> Option<&'a crate::hir::R
 }
 
 /// The Yield arm block and the match whose arm it is.
-pub(super) fn yield_arm<'a>(
-    body: &'a ResolvedExpr,
-) -> Option<(&'a ResolvedExpr, &'a ResolvedExpr)> {
+pub(super) fn yield_arm(body: &ResolvedExpr) -> Option<(&ResolvedExpr, &ResolvedExpr)> {
     let ResolvedExprKind::Block { statements, .. } = &body.kind else {
         return None;
     };

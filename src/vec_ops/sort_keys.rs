@@ -287,14 +287,8 @@ pub(crate) fn source(declaration: &crate::ast::TypeDeclaration, value: &str) -> 
     {
         return None;
     }
-    let copy = crate::source_verify::copy_record_declaration_admitted(
-        declaration,
-    );
-    if !copy
-        && !crate::source_verify::owned_leaf_declaration_admitted(
-            declaration,
-        )
-    {
+    let copy = crate::source_verify::copy_record_declaration_admitted(declaration);
+    if !copy && !crate::source_verify::owned_leaf_declaration_admitted(declaration) {
         return None;
     }
     if declaration.stable_id.len() > MAX_DESCRIPTOR_BYTES
@@ -337,11 +331,9 @@ pub(crate) fn source(declaration: &crate::ast::TypeDeclaration, value: &str) -> 
     let capacity = if copy {
         crate::vec_ops::MAX_CAPACITY / fields.len() as u64
     } else {
-        let scalar = if scalar == 0 {
-            crate::vec_ops::MAX_CAPACITY
-        } else {
-            crate::vec_ops::MAX_CAPACITY / scalar
-        };
+        let scalar = crate::vec_ops::MAX_CAPACITY
+            .checked_div(scalar)
+            .unwrap_or(crate::vec_ops::MAX_CAPACITY);
         scalar
             .min(
                 crate::vec_ops::MAX_OWNED_PAYLOAD_BYTES
