@@ -44,11 +44,18 @@ static spx_status_token spx_selected_file_status_v1(struct spx_context *ctx, uin
 static bool spx_selected_file_same_v1(const struct stat *left, const struct stat *right) {
     if (left->st_dev != right->st_dev || left->st_ino != right->st_ino ||
         left->st_size != right->st_size || left->st_mode != right->st_mode) return false;
-#if defined(__APPLE__)
+#if defined(__APPLE__) && (!defined(_POSIX_C_SOURCE) || defined(_DARWIN_C_SOURCE))
     return left->st_mtimespec.tv_sec == right->st_mtimespec.tv_sec &&
         left->st_mtimespec.tv_nsec == right->st_mtimespec.tv_nsec &&
         left->st_ctimespec.tv_sec == right->st_ctimespec.tv_sec &&
         left->st_ctimespec.tv_nsec == right->st_ctimespec.tv_nsec;
+#elif defined(__APPLE__)
+    /* Darwin exposes scalar seconds/nanoseconds in its strict POSIX namespace.
+       Preserve both components without changing the caller's feature profile. */
+    return left->st_mtime == right->st_mtime &&
+        left->st_mtimensec == right->st_mtimensec &&
+        left->st_ctime == right->st_ctime &&
+        left->st_ctimensec == right->st_ctimensec;
 #else
     return left->st_mtim.tv_sec == right->st_mtim.tv_sec &&
         left->st_mtim.tv_nsec == right->st_mtim.tv_nsec &&
