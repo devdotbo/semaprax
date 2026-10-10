@@ -200,15 +200,26 @@ fn settle_actions(
         if matches!(value, Value::Moved) {
             continue;
         }
-        for field in &action.source.projections {
+        let mut path = action.source.projections.iter();
+        while let Some(field) = path.next() {
+            if matches!(value, Value::Moved) {
+                break;
+            }
             value = match value {
                 Value::Record(record) => {
                     Arc::get_mut(record).and_then(|record| record.fields.get_mut(field))
                 }
                 Value::Variant(variant) => {
+                    // Conditional payload paths include the exact case segment
+                    // before their field. It is metadata, not a payload field.
+                    if &variant.case != field {
+                        return Err(Flow::Guard("lexical finalizer payload case differs"));
+                    }
+                    let field = path
+                        .next()
+                        .ok_or(Flow::Guard("lexical finalizer payload field is absent"))?;
                     Arc::get_mut(variant).and_then(|variant| variant.fields.get_mut(field))
                 }
-                Value::Moved => None,
                 _ => return Err(Flow::Guard("lexical finalizer field path differs")),
             }
             .ok_or(Flow::Guard(
