@@ -951,6 +951,11 @@ pub(super) fn cleanup_retained_stats(
 
                 let children = &results[result_start..];
                 let key = match &expression.kind {
+                    crate::ast::ExprKind::LexicalExit { .. } => {
+                        return Err(b107(
+                            "lexical control is outside native Rust interop builder v1",
+                        ));
+                    }
                     // Closure construction retains a callable scalar carrier.
                     // Its body is lowered separately and cannot contribute a
                     // creation-time owned cleanup fact.

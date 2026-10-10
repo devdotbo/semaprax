@@ -30,9 +30,9 @@ pub(super) use hir_owned::*;
 pub(super) use hir_pre_resolve::*;
 pub(super) use source_budget::*;
 
-const HIR_RESOLVER_FRAME_BYTES: usize = 552;
-pub(super) const HIR_VALIDATOR_FRAME_BYTES: usize = 288;
-const SOURCE_VERIFIER_FRAME_BYTES: usize = 320;
+const HIR_RESOLVER_FRAME_BYTES: usize = semaprax::hir::RESOLVER_FRAME_BYTES;
+pub(super) const HIR_VALIDATOR_FRAME_BYTES: usize = semaprax::hir::VALIDATOR_FRAME_BYTES;
+const SOURCE_VERIFIER_FRAME_BYTES: usize = semaprax::hir::SOURCE_VERIFIER_FRAME_BYTES;
 const SOURCE_VARIANT_MATCH_STATE_BYTES: usize = 312;
 const CLEANUP_INVENTORY_SHAPE_FRAME_BYTES: usize = 40;
 const CLEANUP_INVENTORY_EXPR_FRAME_BYTES: usize = 24;

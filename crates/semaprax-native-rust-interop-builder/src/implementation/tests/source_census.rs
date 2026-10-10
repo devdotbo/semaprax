@@ -473,3 +473,6 @@ fn declaration_dag_capacity_counts_layered_leaf_and_layout_expansion_once() {
     assert_eq!(expansion.maximum_resource_leaves, 0);
     assert_eq!(expansion.maximum_type_occurrences, 515);
 }
+
+#[path = "source_census/lexical.rs"]
+mod lexical;

@@ -693,3 +693,7 @@ pub const RESOLVER_FRAME_BYTES: usize = std::mem::size_of::<resolve_expr_frame::
 /// The iterative validator independently asserts this exact physical layout.
 #[doc(hidden)]
 pub const VALIDATOR_FRAME_BYTES: usize = 288;
+
+/// Physical source verifier frame, shared without exposing its private module.
+#[doc(hidden)]
+pub const SOURCE_VERIFIER_FRAME_BYTES: usize = crate::source_verify::VERIFIER_FRAME_BYTES;

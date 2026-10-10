@@ -5,6 +5,10 @@
 //! Shared expression backing is counted in full per retained occurrence;
 //! sharing may overcount, while missing backing always refuses the census.
 
+#[path = "private_capacity_contract/lexical.rs"]
+mod lexical;
+pub(crate) use lexical::{control_target_owned_capacity, latch_owned_capacity};
+
 pub(crate) const PRELUDE_CAPACITY_IDENTITIES: [&str; 10] = [
     "core.option",
     "core.option.none",
@@ -559,6 +563,19 @@ pub(crate) fn cleanup_plan_owned_capacity(
         )?)?;
         bytes = bytes.checked_add(match &exit.continuation {
             ExitContinuation::Continue(_) | ExitContinuation::ReturnUnit => 0,
+            ExitContinuation::LoopLatch { target } | ExitContinuation::LoopBreak { target, .. } => {
+                control_target_owned_capacity(target)?
+            }
+            ExitContinuation::FunctionReturn { target, source, .. } => {
+                control_target_owned_capacity(target)?.checked_add(match source {
+                    CleanupResultSource::Scalar { expression } => {
+                        expression.owned_allocation_bytes()?
+                    }
+                    CleanupResultSource::Owned { storage } => {
+                        cleanup_place_owned_capacity(storage)?
+                    }
+                })?
+            }
             ExitContinuation::CommitResult { source } => match source {
                 CleanupResultSource::Scalar { expression } => {
                     expression.owned_allocation_bytes()?
@@ -568,5 +585,7 @@ pub(crate) fn cleanup_plan_owned_capacity(
             ExitContinuation::ReturnFailure { source } => status_id(source)?,
         })?;
     }
-    Some(bytes)
+    bytes.checked_add(lexical::plan_owned_capacity(
+        plan.lexical_control.as_deref(),
+    )?)
 }

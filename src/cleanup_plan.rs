@@ -491,6 +491,11 @@ impl CleanupPlan {
     #[cfg(test)]
     #[allow(dead_code)]
     fn owned_capacity_bytes(&self) -> Option<usize> {
+        // Preserve the historical test receipt for legacy metadata; the new
+        // selective profile uses the complete physical backing census.
+        if self.lexical_control.is_some() {
+            return crate::private_capacity_contract::cleanup_plan_owned_capacity(self);
+        }
         fn storage_bytes(storage: &StorageId) -> usize {
             match storage {
                 StorageId::Value(value) => value.as_str().len(),
@@ -705,6 +710,11 @@ impl CleanupPlan {
                     CleanupResultSource::Owned { storage } => place_bytes(storage)?,
                 },
                 ExitContinuation::ReturnFailure { source } => status_id_bytes(source),
+                ExitContinuation::LoopLatch { .. }
+                | ExitContinuation::LoopBreak { .. }
+                | ExitContinuation::FunctionReturn { .. } => {
+                    return crate::private_capacity_contract::cleanup_plan_owned_capacity(self);
+                }
             })?;
         }
         Some(total)
@@ -726,6 +736,7 @@ fn resolved_type_owned_capacity(ty: &ResolvedType) -> Option<usize> {
         | ResolvedType::OnceFunctionI64
         | ResolvedType::OnceFunctionI64Pair
         | ResolvedType::MutFunctionI64
+        | ResolvedType::Never
         | ResolvedType::Unit
         | ResolvedType::I64
         | ResolvedType::I32

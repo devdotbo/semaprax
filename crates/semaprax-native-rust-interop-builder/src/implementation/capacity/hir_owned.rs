@@ -5,7 +5,8 @@ use super::*;
 
 fn hir_type_owned_capacity(ty: &ResolvedType) -> Option<usize> {
     match ty {
-        ResolvedType::Unit
+        ResolvedType::Never
+        | ResolvedType::Unit
         | ResolvedType::I64
         | ResolvedType::I32
         | ResolvedType::Char
@@ -201,6 +202,17 @@ pub(in crate::implementation) fn hir_expr_owned_capacity(
                 }
                 pending.push(body);
             }
+            ResolvedExprKind::LexicalExit { target, value, .. } => {
+                total = total
+                    .checked_add(
+                        crate::private_capacity_contract::control_target_owned_capacity(target)
+                            .ok_or_else(|| b109("max_builder_bytes", MAX_BUILDER_BYTES))?,
+                    )
+                    .ok_or_else(|| b109("max_builder_bytes", MAX_BUILDER_BYTES))?;
+                if let Some(value) = value {
+                    pending.push(value);
+                }
+            }
             ResolvedExprKind::FunctionReference { .. } => {}
             ResolvedExprKind::Invoke { callable, args } => {
                 pending.push(callable.as_ref());
@@ -394,6 +406,26 @@ pub(in crate::implementation) fn hir_expr_owned_capacity(
                             total = total
                                 .checked_add(audit.capacity())
                                 .ok_or_else(|| b109("max_builder_bytes", MAX_BUILDER_BYTES))?;
+                            pending.push(body);
+                        }
+                        ResolvedStatement::LexicalWhile {
+                            condition,
+                            body,
+                            latch,
+                            ..
+                        } => {
+                            total =
+                                total
+                                    .checked_add(
+                                        crate::private_capacity_contract::latch_owned_capacity(
+                                            latch,
+                                        )
+                                        .ok_or_else(
+                                            || b109("max_builder_bytes", MAX_BUILDER_BYTES),
+                                        )?,
+                                    )
+                                    .ok_or_else(|| b109("max_builder_bytes", MAX_BUILDER_BYTES))?;
+                            pending.push(condition);
                             pending.push(body);
                         }
                         ResolvedStatement::While {

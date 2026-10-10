@@ -103,6 +103,9 @@ pub(in crate::implementation) fn ast_child<'a>(
         Some((path_index, child))
     };
     match &expression.kind {
+        crate::ast::ExprKind::LexicalExit { value, .. } => {
+            (index == 0).then(|| value.as_deref().and_then(|value| advance(1, 0, value)))?
+        }
         crate::ast::ExprKind::Closure { body, .. } => {
             (index == 0).then(|| advance(1, 0, body.as_ref()))?
         }
@@ -265,7 +268,9 @@ pub(super) fn ast_child_identity_path_increment(
         crate::ast::ExprKind::MethodCall { .. } | crate::ast::ExprKind::SuperMethod { .. } => {
             ".arg.".len() + decimal_digits(child_index)
         }
-        crate::ast::ExprKind::Unary { .. } => ".value".len(),
+        crate::ast::ExprKind::Unary { .. } | crate::ast::ExprKind::LexicalExit { .. } => {
+            ".value".len()
+        }
         crate::ast::ExprKind::Binary { .. } => {
             if child_index == 0 { ".left" } else { ".right" }.len()
         }
