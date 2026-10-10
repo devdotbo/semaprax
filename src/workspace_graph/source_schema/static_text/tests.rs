@@ -214,21 +214,9 @@ fn lexical_byte_renewal_has_direct_proof_and_retained_composition_stays_closed()
     // Retained source-schema replay cannot yet reconstruct full lexical
     // status/ownership flow from a borrowed namespace context. Keep the honest
     // refusal until that API exists; v18 presence itself grants no authority.
-    let sources = [
-        ("writer.spx", canonical),
-        (
-            "support.spx",
-            "module support.ready; @id(\"ready\") fn ready()->i64 {0}".to_owned(),
-        ),
-    ]
-    .into_iter()
-    .map(|(path, source)| WorkspaceSource {
-        path: path.to_owned(),
-        source: format::canonical(&crate::parse(&source, path).unwrap()),
-    })
-    .collect();
-    let errors = build_owned_retaining_sources_for_change(sources, MAX_CHANGE_BUILDER_BYTES)
-        .err()
-        .expect("retained composite route remains explicitly closed");
+    let retained = build(&canonical);
+    let errors = retained
+        .source_graph_schemas()
+        .expect_err("retained composite schema route remains explicitly closed");
     assert!(errors.iter().any(|error| error.code == "SPX-G410"));
 }
