@@ -66,6 +66,14 @@ declarations have null path/module. Synthetic declarations and stubs are never
 emitted. Edges retain only closure-owned emitted facts and use the exact
 Workspace edge tuple order.
 
+Independent per-module Vec selection follows exact authored imported function
+signatures and imported record/variant field paths, including nested type aliases.
+Unrelated provider declarations or bodies, missing persistent IDs, wrong modules
+and retained HIR metadata do not select Vec. The source-only cursor uses 514 fixed
+pending/visited slots, 4,096 visited fields and 1,000,000 work units; its full
+backing is charged before use. Exhaustion supplies no declaration authority.
+This selection reconciles the compiler-owned inventory and admits no new type.
+
 ## Canonical wire
 
 The schema is `semaprax.workspace-semantic-graph.v1`; the manifest schema is

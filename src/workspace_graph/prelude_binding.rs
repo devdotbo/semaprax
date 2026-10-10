@@ -221,6 +221,7 @@ pub(super) fn expected_module_declaration_facts(
     let mut facts = expected_declaration_facts_for(
         prelude::program_uses_vec(source)
             || module_imports_vec_signature(source, programs)
+            || vec_selection::module_uses(source, programs)
             || owned_generics::program_imports_vec_wrapper(source, programs),
         prelude::program_uses_box(source)
             || owned_generics::program_imports_box_wrapper(source, programs),
@@ -236,6 +237,7 @@ pub(super) fn expected_module_declaration_facts(
 }
 
 mod collection_selection;
+mod vec_selection;
 
 pub(super) fn expected_declaration_facts_for(
     include_vec: bool,
@@ -326,6 +328,38 @@ mod tests {
                 expected_module_declaration_facts(&app, std::slice::from_ref(&provider), false)
                     .unwrap();
             assert!(!facts.contains_key(prelude::VEC_ID));
+        }
+    }
+
+    #[test]
+    fn imported_nested_variant_and_record_vec_facts_follow_exact_source_paths() {
+        let provider = crate::parse(r#"module rows;
+@id("row") record Row { @id("row.n") n:i64, }
+@id("payload") record Payload { @id("payload.rows") rows:Vec<Row>, }
+@id("outcome") variant Outcome { @id("ready") Ready { @id("ready.value") value:Payload, }, @id("error") Error {}, }
+@id("plain") record Plain { @id("plain.n") n:i64, }
+@id("inspect") fn inspect(value:borrow Outcome)->i64{0}
+@id("provider.main") fn main()->i64{0}
+"#, "rows.spx").unwrap();
+        for (kind, id, module, expected) in [
+            ("type", "outcome", "rows", true),
+            ("type", "payload", "rows", true),
+            ("function", "inspect", "rows", true),
+            ("type", "plain", "rows", false),
+            ("type", "absent", "rows", false),
+            ("type", "outcome", "wrong", false),
+        ] {
+            let app = crate::parse(&format!("module app; use {kind} @id(\"{id}\") from {module} as imported; @id(\"app.main\") fn main()->i64{{0}}"), "app.spx").unwrap();
+            let facts =
+                expected_module_declaration_facts(&app, std::slice::from_ref(&provider), false)
+                    .unwrap();
+            assert_eq!(
+                facts.contains_key(prelude::VEC_ID),
+                expected,
+                "{kind}/{id}/{module}"
+            );
+            assert!(!facts.contains_key(crate::map_ops::MAP_ID));
+            assert!(!facts.contains_key(crate::stdin_stream_ops::READER_ID));
         }
     }
 
