@@ -594,6 +594,10 @@ fn validate_supported_type(
     context: &str,
 ) -> Result<(), Diagnostic> {
     match ty {
+        ResolvedType::Never => Err(unsupported(
+            function,
+            format!("does not support compiler-only Never {context} storage"),
+        )),
         ResolvedType::OnceFunction
         | ResolvedType::OnceFunctionI64
         | ResolvedType::OnceFunctionI64Pair

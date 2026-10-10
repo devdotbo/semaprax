@@ -1,6 +1,5 @@
 //! Typed Map/Set lowering. Pointer owners obey the canonical call-commit plan.
 use super::*;
-use crate::codegen::native_bytes::NativeBytesProducer as _;
 use crate::map_ops::MapOp;
 pub(super) fn emit_runtime(output: &mut impl COutput, program: &ResolvedProgram) {
     if crate::map_ops::resolved_program_uses(program) {

@@ -736,7 +736,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                             "host stdout write result",
                         )?;
                         let temporary = self.temporary(&ResolvedType::Usize)?;
-                        self.emit_stdout_write(&args[0], &value.code, &temporary);
+                        self.emit_stdout_write(&args[0], &value.code, &temporary)?;
                         return Ok(CValue {
                             code: temporary,
                             ty: ResolvedType::Usize,

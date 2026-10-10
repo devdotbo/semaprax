@@ -122,7 +122,7 @@ impl<O: COutput> CEmitter<'_, O> {
         expression: &ResolvedExpr,
         value: &str,
         result: &str,
-    ) {
+    ) -> Result<(), Diagnostic> {
         if self.output_profile == NativeOutputProfile::SourceResourceCommand {
             let helper = if self.is_resource_text_slice(expression) {
                 "spx_host_command_stdout_write_resource_str_checked_v1"
@@ -141,6 +141,7 @@ impl<O: COutput> CEmitter<'_, O> {
             };
             self.line(&format!("{result} = {helper}(spx_ctx, {value});"));
         }
+        Ok(())
     }
 
     pub(super) fn emit_stderr_write(
@@ -148,7 +149,7 @@ impl<O: COutput> CEmitter<'_, O> {
         expression: &ResolvedExpr,
         value: &str,
         result: &str,
-    ) {
+    ) -> Result<(), Diagnostic> {
         if self.output_profile == NativeOutputProfile::SourceResourceCommand {
             let helper = if self.is_resource_text_slice(expression) {
                 "spx_host_command_stderr_write_resource_str_checked_v1"
@@ -164,5 +165,6 @@ impl<O: COutput> CEmitter<'_, O> {
                 "{result} = spx_host_command_stderr_write_v1(spx_ctx, {value});"
             ));
         }
+        Ok(())
     }
 }

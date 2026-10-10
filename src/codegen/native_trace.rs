@@ -186,6 +186,11 @@ impl CapacityCalculator<'_> {
             CleanupTerminator::Exit(exit) => {
                 let exit = self.exit(id, *exit)?;
                 match &exit.continuation {
+                    ExitContinuation::LoopLatch { .. }
+                    | ExitContinuation::LoopBreak { .. }
+                    | ExitContinuation::FunctionReturn { .. } => Err(trace_error(
+                        "lexical continuation is outside cleanup v2 trace preflight",
+                    )),
                     ExitContinuation::Continue(edge) => Ok(vec![self.edge_target(id, *edge)?]),
                     ExitContinuation::CommitResult { .. }
                     | ExitContinuation::ReturnFailure { .. }
@@ -251,6 +256,13 @@ impl CapacityCalculator<'_> {
         }
 
         let continuation = match &exit.continuation {
+            ExitContinuation::LoopLatch { .. }
+            | ExitContinuation::LoopBreak { .. }
+            | ExitContinuation::FunctionReturn { .. } => {
+                return Err(trace_error(
+                    "lexical continuation is outside cleanup v2 trace preflight",
+                ))
+            }
             ExitContinuation::Continue(edge) => {
                 let target = self.edge_target(block, *edge)?;
                 capacity_at(capacities, target)?

@@ -1,7 +1,6 @@
 //! Native lowering for compiler-owned owned-string operations.
 
 use super::{backend_error, c_value_type, is_direct_plan_owned, CEmitter, COutput, CValue};
-use crate::codegen::native_bytes::NativeBytesProducer as _;
 use crate::diagnostic::Diagnostic;
 use crate::hir::{self, ExpressionId, ResolvedExpr, ResolvedType};
 

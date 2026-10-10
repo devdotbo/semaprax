@@ -336,7 +336,7 @@ pub(in crate::codegen) trait NativeBytesProducer: Sized {
             .slots
             .get(destination)
             .ok_or_else(|| error("scalar match destination is not indexed"))?;
-        Ok(super::native_bytes::emit_transfer(
+        Ok(super::emit_transfer(
             source_slot,
             dest_slot,
             "scalar match arm transfer",

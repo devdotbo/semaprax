@@ -1,6 +1,5 @@
 //! Moving a compact row into the ordinary typed IterStep result projection.
 use super::*;
-use crate::codegen::native_bytes::NativeBytesProducer as _;
 
 impl<O: COutput> CEmitter<'_, O> {
     pub(super) fn emit_owned_leaf_iterator(

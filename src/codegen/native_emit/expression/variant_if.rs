@@ -1,5 +1,4 @@
 use super::*;
-use crate::codegen::native_bytes::NativeBytesProducer as _;
 
 impl<'a, O: COutput> CEmitter<'a, O> {
     pub(super) fn emit_if_expr(&mut self, expr: &ResolvedExpr) -> Result<CValue, Diagnostic> {

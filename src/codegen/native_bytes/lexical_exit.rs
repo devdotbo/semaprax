@@ -1,7 +1,7 @@
 //! Exact per-site lexical finalizers; never fold these into terminal ordering.
 use super::*;
 impl NativeBytesPlan {
-    pub(super) fn lexical_finalizers(
+    pub(in crate::codegen) fn lexical_finalizers(
         &self,
         plan: &crate::cleanup_plan::CleanupPlan,
         site: &ExpressionId,

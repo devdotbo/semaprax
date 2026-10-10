@@ -190,7 +190,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                             "stderr_write argument",
                         )?;
                         let temporary = self.temporary(&ResolvedType::Usize)?;
-                        self.emit_stderr_write(argument, &value.code, &temporary);
+                        self.emit_stderr_write(argument, &value.code, &temporary)?;
                         CValue {
                             code: temporary,
                             ty: ResolvedType::Usize,

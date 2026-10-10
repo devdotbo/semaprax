@@ -1,5 +1,6 @@
 //! Bounded borrowed lookup of certificate anchors; no reconstructed ownership authority.
 use super::*;
+use crate::hir::ResolvedProgram;
 const MAX_DEPTH: usize = 256;
 const MAX_WORK: usize = 1_000_000;
 

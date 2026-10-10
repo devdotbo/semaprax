@@ -2,7 +2,6 @@
 use super::*;
 use crate::ast::LexicalExitKind;
 use crate::cleanup_plan::ExitContinuation;
-use crate::codegen::native_bytes::NativeBytesProducer as _;
 use crate::hir::{ControlTarget, LoopLatchKind};
 
 impl<'a, O: COutput> CEmitter<'a, O> {

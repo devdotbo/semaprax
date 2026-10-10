@@ -315,6 +315,7 @@ pub(super) fn derive_from_admitted(
     let mut owner_ordinal = 0;
     for (parameter_index, parameter) in function.params.iter().enumerate() {
         match &parameter.ty {
+            ResolvedType::Never => return Err(host_error("Never is not a native host parameter")),
             ResolvedType::OnceFunction
             | ResolvedType::OnceFunctionI64
             | ResolvedType::OnceFunctionI64Pair

@@ -1,5 +1,4 @@
 use super::*;
-use crate::codegen::native_bytes::NativeBytesProducer as _;
 impl<'a, O: COutput> CEmitter<'a, O> {
     /// Refutable Match v1 native lowering: the scrutinee stages once, then
     /// every arm tests `!matched && (<literal equality>)` with an optional

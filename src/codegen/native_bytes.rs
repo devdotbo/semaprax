@@ -7,7 +7,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::cleanup::FieldLivenessShape;
-use crate::cleanup_plan::{CleanupPlace, CleanupTransition, StorageId};
+use crate::cleanup_plan::{CleanupPlace, CleanupTransition, ExitContinuation, StorageId};
 use crate::diagnostic::Diagnostic;
 use crate::hir::{DeclarationId, ExpressionId, ResolvedFunction};
 use crate::variant_layout::VariantLayout;

@@ -1,6 +1,5 @@
 //! Native affine callable carrier. Physical ownership follows NativeBytesPlan.
 use super::*;
-use crate::codegen::native_bytes::NativeBytesProducer as _;
 
 pub(super) fn declarations(output: &mut impl COutput) {
     output.push_str("typedef spx_status_token (*spx_once_entry)(struct spx_context *, spx_bytes_v1, int64_t *);\n");

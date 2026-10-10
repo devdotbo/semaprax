@@ -198,6 +198,9 @@ pub(super) fn resolved_expr_children<'a>(
     expression: &'a ResolvedExpr,
 ) -> Box<dyn Iterator<Item = &'a ResolvedExpr> + 'a> {
     match &expression.kind {
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            Box::new(value.iter().map(|value| value.as_ref()))
+        }
         ResolvedExprKind::Binary { left, right, .. } => {
             Box::new([left.as_ref(), right.as_ref()].into_iter())
         }

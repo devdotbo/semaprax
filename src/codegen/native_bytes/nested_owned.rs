@@ -2,7 +2,6 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use super::error;
 use crate::cleanup_plan::{CleanupPlace, CleanupTransition, StorageId};
 use crate::diagnostic::Diagnostic;
 use crate::hir::{DeclarationId, ExpressionId};

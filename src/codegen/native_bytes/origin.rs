@@ -2,11 +2,13 @@
 use super::*;
 use crate::cleanup_plan::{BlockId, CleanupPlan};
 
+#[derive(Clone, Debug)]
 pub(super) struct Tagged {
     pub(super) block: BlockId,
     pub(super) ordinary: bool,
     pub(super) transition: CleanupTransition,
 }
+#[derive(Clone, Debug)]
 pub(super) struct Index<K>(BTreeMap<K, Vec<Tagged>>);
 impl<K: Ord> Default for Index<K> {
     fn default() -> Self {
