@@ -60,26 +60,27 @@ fn collect_expression_statuses(
     statuses: &mut Vec<StatusSource>,
     budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
-    budget.reserve_array::<Option<(&ResolvedExpr, usize)>>(
+    budget.reserve_array::<Option<expression_children::ReplayChildCursor<'_>>>(
         function,
         514,
         "status expression cursor",
     )?;
     let mut stack = [None; 514];
-    stack[0] = Some((expression, 0usize));
+    stack[0] = Some(expression_children::ReplayChildCursor::new(expression));
     let mut len = 1usize;
     while len != 0 {
         len -= 1;
-        let (expression, next) = stack[len].take().expect("status frame retained");
-        if let Some(child) = replay_expression_child(expression, next) {
+        let mut cursor = stack[len].take().expect("status frame retained");
+        let expression = cursor.expression();
+        if let Some(child) = cursor.next() {
             if len + 2 > stack.len() {
                 return Err(replay_error(
                     function,
                     "cleanup status expression depth exceeds 512",
                 ));
             }
-            stack[len] = Some((expression, next + 1));
-            stack[len + 1] = Some((child, 0));
+            stack[len] = Some(cursor);
+            stack[len + 1] = Some(expression_children::ReplayChildCursor::new(child));
             len += 2;
             continue;
         }

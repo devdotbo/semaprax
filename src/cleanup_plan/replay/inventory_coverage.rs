@@ -178,7 +178,7 @@ fn collect_supplemental(
     budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
     enum Frame<'a> {
-        Expr(&'a ResolvedExpr, usize),
+        Expr(expression_children::ReplayChildCursor<'a>, usize),
         Argument(&'a ResolvedExpr, usize),
     }
     budget.reserve_array::<Frame<'_>>(function, 1028, "supplemental expression cursor")?;
@@ -189,10 +189,14 @@ fn collect_supplemental(
             "supplemental expression cursor capacity disagrees with reservation",
         ));
     }
-    frames.push(Frame::Expr(expression, 0));
+    frames.push(Frame::Expr(
+        expression_children::ReplayChildCursor::new(expression),
+        0,
+    ));
     while let Some(frame) = frames.pop() {
         match frame {
-            Frame::Expr(expression, next) => {
+            Frame::Expr(mut cursor, next) => {
+                let expression = cursor.expression();
                 if let ResolvedExprKind::Call {
                     callee,
                     instance,
@@ -222,9 +226,12 @@ fn collect_supplemental(
                                 "supplemental-slot traversal exceeds the admitted depth",
                             ));
                         }
-                        frames.push(Frame::Expr(expression, next + 1));
+                        frames.push(Frame::Expr(cursor, next + 1));
                         frames.push(Frame::Argument(expression, next));
-                        frames.push(Frame::Expr(argument, 0));
+                        frames.push(Frame::Expr(
+                            expression_children::ReplayChildCursor::new(argument),
+                            0,
+                        ));
                     }
                 } else {
                     if matches!(
@@ -241,15 +248,18 @@ fn collect_supplemental(
                             "selected supplemental inventory does not support delegated calls",
                         ));
                     }
-                    if let Some(child) = replay_expression_child(expression, next) {
+                    if let Some(child) = cursor.next() {
                         if frames.len() + 2 > frames.capacity() {
                             return Err(replay_error(
                                 function,
                                 "supplemental-slot traversal exceeds the admitted depth",
                             ));
                         }
-                        frames.push(Frame::Expr(expression, next + 1));
-                        frames.push(Frame::Expr(child, 0));
+                        frames.push(Frame::Expr(cursor, next + 1));
+                        frames.push(Frame::Expr(
+                            expression_children::ReplayChildCursor::new(child),
+                            0,
+                        ));
                     }
                 }
             }

@@ -1,6 +1,45 @@
 //! Closed expression-child order for cleanup replay.
 use super::*;
 
+/// Preserve cleanup-specific child domains while giving Block/Match a
+/// borrowed incremental cursor. Other shapes retain the closed replay table,
+/// notably Closure captures and Invoke arguments (not their body/callable).
+#[derive(Clone, Copy)]
+pub(super) enum ReplayChildCursor<'a> {
+    Open(crate::hir::lexical_exit::ChildCursor<'a>),
+    Indexed(&'a ResolvedExpr, usize),
+}
+impl<'a> ReplayChildCursor<'a> {
+    pub(super) fn new(expression: &'a ResolvedExpr) -> Self {
+        if matches!(
+            expression.kind,
+            ResolvedExprKind::Block { .. } | ResolvedExprKind::Match { .. }
+        ) {
+            Self::Open(crate::hir::lexical_exit::ChildCursor::new(expression))
+        } else {
+            Self::Indexed(expression, 0)
+        }
+    }
+    pub(super) fn expression(&self) -> &'a ResolvedExpr {
+        match self {
+            Self::Open(cursor) => cursor.expression(),
+            Self::Indexed(expression, _) => expression,
+        }
+    }
+    pub(super) fn next(&mut self) -> Option<&'a ResolvedExpr> {
+        match self {
+            Self::Open(cursor) => cursor.next(),
+            Self::Indexed(expression, next) => {
+                let child = replay_expression_child(expression, *next);
+                if child.is_some() {
+                    *next += 1;
+                }
+                child
+            }
+        }
+    }
+}
+
 pub(super) fn replay_expression_child(
     expression: &ResolvedExpr,
     index: usize,
@@ -103,5 +142,57 @@ pub(super) fn replay_expression_child(
         | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. } => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{replay_expression_child, ReplayChildCursor};
+    use crate::hir::{ResolvedExpr, ResolvedExprKind};
+
+    #[test]
+    fn cursor_preserves_closed_child_order_and_invoke_argument_domain() {
+        let checked = crate::check(
+            include_str!("../../../tests/owned_data/byte_helper_renewal.spx"),
+            "replay-child-cursor.spx",
+        )
+        .unwrap();
+        let program = crate::hir::resolve(&checked).unwrap();
+        let mut pending = Vec::new();
+        for function in &program.functions {
+            pending.extend(function.requires.iter());
+            pending.push(&function.body);
+            pending.extend(function.ensures.iter());
+        }
+        while let Some(expression) = pending.pop() {
+            let expected: Vec<_> = (0..)
+                .map_while(|i| replay_expression_child(expression, i))
+                .collect();
+            let mut cursor = ReplayChildCursor::new(expression);
+            assert!(std::ptr::eq(cursor.expression(), expression));
+            for child in &expected {
+                assert!(std::ptr::eq(cursor.next().unwrap(), *child));
+            }
+            assert!(cursor.next().is_none());
+            assert!(cursor.next().is_none());
+            pending.extend(expected);
+        }
+        let main = program
+            .functions
+            .iter()
+            .find(|f| f.id.as_str() == "app.main")
+            .unwrap();
+        let mut invocation: ResolvedExpr = main.body.clone();
+        invocation.kind = ResolvedExprKind::Invoke {
+            callable: Box::new(main.body.clone()),
+            args: vec![main.body.clone()],
+        };
+        let ResolvedExprKind::Invoke { callable, args } = &invocation.kind else {
+            unreachable!()
+        };
+        let mut cursor = ReplayChildCursor::new(&invocation);
+        assert!(std::ptr::eq(cursor.next().unwrap(), &args[0]));
+        assert!(cursor.next().is_none());
+        assert!(!std::ptr::eq(&args[0], callable.as_ref()));
     }
 }

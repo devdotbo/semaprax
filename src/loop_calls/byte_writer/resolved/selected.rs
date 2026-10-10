@@ -143,6 +143,46 @@ mod tests {
         );
     }
     #[test]
+    fn wide_helper_cursor_retains_late_constructor_refusal() {
+        let mut source = String::from(
+            "module cursor.helper; @id(\"cursor.fill\") fn fill(output:own Bytes)->Bytes {",
+        );
+        for index in 0..32 {
+            source.push_str(&format!("let value_{index}={index};"));
+        }
+        source.push_str("bytes_set(output,0usize,65u8)} @id(\"app.main\") fn main()->i64 {0}");
+        let checked = crate::check(&source, "helper-proof-cursor.spx").unwrap();
+        let mut program = crate::hir::resolve(&checked).unwrap();
+        let function = program
+            .functions
+            .iter()
+            .find(|f| f.id.as_str() == "cursor.fill")
+            .unwrap();
+        assert!(super::super::nonallocating(&program, function));
+        let function = program
+            .functions
+            .iter_mut()
+            .find(|f| f.id.as_str() == "cursor.fill")
+            .unwrap();
+        let ResolvedExprKind::Block { statements, .. } = &mut function.body.kind else {
+            panic!("helper body remains a block")
+        };
+        let crate::hir::ResolvedStatement::Let { value, .. } = statements.last_mut().unwrap()
+        else {
+            panic!("last copied scalar remains a let")
+        };
+        value.kind = ResolvedExprKind::String("late allocation".to_owned());
+        value.ty = ResolvedType::String;
+        value.ownership = OwnershipMode::Own;
+        let function = program
+            .functions
+            .iter()
+            .find(|f| f.id.as_str() == "cursor.fill")
+            .unwrap();
+        assert!(!super::super::nonallocating(&program, function));
+    }
+
+    #[test]
     fn absent_helper_signature_has_no_selected_cursor_or_backing_charge() {
         let source = "module old; @id(\"old.main\") fn main()->i64 {42}";
         let checked = crate::check(source, "no-helper.spx").unwrap();

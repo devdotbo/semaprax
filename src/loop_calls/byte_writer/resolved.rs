@@ -4,7 +4,12 @@ pub(crate) use selected::checked_bindings_with_reservation;
 #[derive(Clone, Copy)]
 enum Frame<'a> {
     Function(&'a ResolvedFunction, usize),
-    Expression(&'a ResolvedFunction, &'a ResolvedExpr, usize),
+    Expression(
+        &'a ResolvedFunction,
+        crate::hir::lexical_exit::ChildCursor<'a>,
+        bool,
+        usize,
+    ),
 }
 pub(crate) fn nonallocating(
     program: &dyn crate::cleanup::ReplayContext,
@@ -191,11 +196,19 @@ fn prove_with_frames<'a>(
                     function.ensures.get(root - function.requires.len() - 1)
                 };
                 frames[current] = Some(Frame::Function(function, root + 1));
-                expression.map(|e| Frame::Expression(function, e, usize::MAX))
+                expression.map(|e| {
+                    Frame::Expression(
+                        function,
+                        crate::hir::lexical_exit::ChildCursor::new(e),
+                        false,
+                        0,
+                    )
+                })
             }
-            Frame::Expression(function, expression, next) => {
-                if next == usize::MAX {
-                    frames[current] = Some(Frame::Expression(function, expression, 0));
+            Frame::Expression(function, mut cursor, entered, next) => {
+                let expression = cursor.expression();
+                if !entered {
+                    frames[current] = Some(Frame::Expression(function, cursor, true, 0));
                     match &expression.kind {
                         ResolvedExprKind::String(_)
                         | ResolvedExprKind::LiteralFormat { .. }
@@ -272,9 +285,16 @@ fn prove_with_frames<'a>(
                     continue;
                 }
                 work = work.checked_sub(next.checked_add(1)?.checked_mul(2)?)?;
-                frames[current] = Some(Frame::Expression(function, expression, next + 1));
-                crate::hir::lexical_exit::child(expression, next)
-                    .map(|e| Frame::Expression(function, e, usize::MAX))
+                let child = cursor.next();
+                frames[current] = Some(Frame::Expression(function, cursor, true, next + 1));
+                child.map(|e| {
+                    Frame::Expression(
+                        function,
+                        crate::hir::lexical_exit::ChildCursor::new(e),
+                        false,
+                        0,
+                    )
+                })
             }
         };
         if let Some(child) = child {
