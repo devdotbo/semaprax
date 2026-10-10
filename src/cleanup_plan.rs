@@ -27,7 +27,7 @@ mod renewal_history;
 mod renewal_profile;
 mod replay;
 pub(crate) use replay::{
-    replay_reserve_vec, ClonePayload as ReplayClonePayload,
+    replay_btree_node_upper, replay_reserve_vec, ClonePayload as ReplayClonePayload,
     PhysicalReservation as ReplayPhysicalReservation,
 };
 mod validate;

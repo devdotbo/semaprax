@@ -7,7 +7,7 @@ mod physical_storage;
 mod physical_budget;
 mod physical_clone;
 pub(crate) use physical_clone::ClonePayload;
-pub(crate) use physical_storage::{replay_reserve_vec, PhysicalReservation};
+pub(crate) use physical_storage::{btree_node_upper as replay_btree_node_upper, replay_reserve_vec, PhysicalReservation};
 use expression_children::replay_expression_child;
 use expression_facts::expression_facts;
 

@@ -2,7 +2,7 @@
 use super::*;
 
 impl ReplayBudget {
-    fn with_physical(function: &ResolvedFunction, bytes: usize) -> Result<Self, Diagnostic> {
+    pub(super) fn with_physical(function: &ResolvedFunction, bytes: usize) -> Result<Self, Diagnostic> {
         let mut physical = physical_storage::PhysicalReservation::new(bytes);
         physical
             .reserve_array::<physical_storage::PhysicalReservation>(1)
