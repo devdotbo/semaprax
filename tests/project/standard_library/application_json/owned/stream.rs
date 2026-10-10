@@ -57,15 +57,12 @@ fn owned_stream_request_drops_input_before_native_decision_and_output() {
 use type @id("application.request.json.stream-input") from consumer.schema as Input;
 use function @id("application.request.json.stream.normalize") from consumer.schema as normalize;
 permit {process.args.read,process.stderr.write,process.stdin.read,process.stdout.write}
-@id("consumer.receive") fn receive()->Outcome uses{process.stdin.read}{
-let normalized=normalize();match own normalized{
-Input::Error{code,offset,field}=>{return Outcome::Error{code:code,offset:offset,field:field};},
-Input::Ready{bytes,length}=>{return decode(byte_range(bytes_as_slice(bytes),0usize,length));},
-}}
+@id("consumer.receive") fn receive(bytes:own Bytes,length:usize)->Outcome{
+decode(byte_range(bytes_as_slice(bytes),0usize,length))}
 @id("consumer.change") fn change(value:own Patient)->Patient{
-match own value{Patient{id,arrival,service,priority,deadline}=>Patient{id:id,arrival:arrival+1,service:service,priority:priority,deadline:deadline},}}
-@id("consumer.command") fn command()->i64 uses{process.stdin.read,process.stdout.write}{
-let outcome=receive();match own outcome{
+let next_arrival=value.arrival+1;value with {arrival:next_arrival}}
+@id("consumer.decide") fn decide(outcome:own Outcome)->i64 uses{process.stdout.write}{
+match own outcome{
 Outcome::Error{code,offset,field}=>2,
 Outcome::Decoded{servers,patients}=>{
 let words=vec_sort_owned<string>(servers);let sorted=vec_sort_owned<Patient>(patients);
@@ -77,6 +74,11 @@ let bytes=str_as_bytes(string_as_str(text));let written=stdout_write(bytes);if w
 },}
 }
 },}}
+@id("consumer.command") fn command()->i64 uses{process.stdin.read,process.stdout.write}{
+let normalized=normalize();match own normalized{
+Input::Error{code,offset,field}=>2,
+Input::Ready{bytes,length}=>{let outcome=receive(bytes,length);decide(outcome)},
+}}
 @id("consumer.main") fn main()->i64{0}
 "#;
     std::fs::write(root.join("src/app.spx"), canonical(&application)).unwrap();
