@@ -317,17 +317,19 @@ fn hir_complete_reservation_is_exact_and_one_less_prevents_resolution() {
         capacity.phase_peaks(),
         capacity.complete().unwrap(),
     );
-    // Pins regenerated from the owning HIR_CAPACITY_PIN_CANDIDATE at source
-    // bb4eacee1a32f4b7743dda9fac18e14dfb0ce6b4, focused run 38028525788.
-    // The admitted carrier/layout additions change physical type sizes and
-    // phase estimates; retain the exact and one-byte-short refusal below.
-    assert_eq!(capacity.retained_upper, 56_694);
+    // The scalar fixture has no resource leaves, hence cleanup_path_copies=0.
+    // Each cleanup occurrence retains one identity backing, independently of
+    // the three possible HIR backings per expression. Correcting that factor
+    // removes 2 * (204 + 5 * 214 + 206) = 2960 bytes from the prior 56694 pin:
+    // add.body, its five Add status occurrences, and main.body respectively.
+    // Keep the exact envelope and one-byte-short refusal independently below.
+    assert_eq!(capacity.retained_upper, 53_734);
     assert_eq!(capacity.scratch_upper, 16_170);
     assert_eq!(
         capacity.phase_peaks(),
         [5_028, 15_236, 5_078, 3_488, 5_792, 3_456, 16_170, 1_210]
     );
-    assert_eq!(capacity.complete().unwrap(), 72_864);
+    assert_eq!(capacity.complete().unwrap(), 69_904);
     assert_eq!(
         capacity.scratch_upper,
         capacity.phase_peaks().into_iter().max().unwrap(),
