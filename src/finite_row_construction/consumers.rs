@@ -7,7 +7,7 @@ struct Census<'a> {
     work: usize,
 }
 impl<'a> Census<'a> {
-    fn expression(&mut self, program: &ResolvedProgram, root: &'a E) -> Option<()> {
+    fn expression(&mut self, program: &ResolvedProgram, root: &'a E, element: &T) -> Option<()> {
         self.frames[0] = Some(crate::hir::lexical_exit::ChildCursor::new(root));
         self.len = 1;
         while self.len != 0 {
@@ -53,10 +53,15 @@ impl<'a> Census<'a> {
                                 && e.ownership == O::Value) => {}
                     K::Block { statements, .. } => {
                         // A lowered traversal is accepted only after its complete independent freeze replay.
-                        let traversal = crate::loan_plan::traversal::inspect(program, e)
-                            .ok()?
-                            .is_some();
+                        let traversal = crate::loan_plan::traversal::inspect_borrowed(
+                            program,
+                            e,
+                            element,
+                            &mut self.work,
+                        )?
+                        .is_some();
                         for statement in statements {
+                            self.work = self.work.checked_sub(1)?;
                             match statement {
                                 S::Let {
                                     binding, mutable, ..
@@ -103,7 +108,12 @@ impl<'a> Census<'a> {
         Some(())
     }
 }
-pub(super) fn validate<'a>(program: &ResolvedProgram, suffix: &'a [S], tail: &'a E) -> Option<()> {
+pub(super) fn validate<'a>(
+    program: &ResolvedProgram,
+    suffix: &'a [S],
+    tail: &'a E,
+    element: &T,
+) -> Option<()> {
     if !crate::bounded_output::reserve_active_required(std::mem::size_of::<Census<'_>>()) {
         return None;
     }
@@ -123,7 +133,7 @@ pub(super) fn validate<'a>(program: &ResolvedProgram, suffix: &'a [S], tail: &'a
                 || (crate::hir::is_scalar_resolved_type(&binding.ty)
                     && binding.ownership == O::Value) =>
             {
-                census.expression(program, value)?
+                census.expression(program, value, element)?
             }
             S::Assign {
                 binding,
@@ -133,12 +143,12 @@ pub(super) fn validate<'a>(program: &ResolvedProgram, suffix: &'a [S], tail: &'a
             } if crate::hir::is_scalar_resolved_type(&binding.ty)
                 && binding.ownership == O::Value =>
             {
-                census.expression(program, value)?
+                census.expression(program, value, element)?
             }
             _ => return None,
         }
     }
-    census.expression(program, tail)
+    census.expression(program, tail, element)
 }
 
 #[cfg(test)]

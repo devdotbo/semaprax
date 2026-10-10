@@ -8,9 +8,7 @@ mod consumers;
 #[cfg(test)]
 mod tests;
 
-struct Proof<'a> {
-    condition: &'a E,
-    body: &'a E,
+struct Proof {
     iterations: u32,
 }
 fn typed(e: &E, ty: &T, mode: O) -> bool {
@@ -50,7 +48,7 @@ fn call<'a>(e: &'a E, id: &str, types: &[T]) -> Option<&'a [E]> {
         _ => None,
     }
 }
-fn inspect(program: &ResolvedProgram) -> Option<Proof<'_>> {
+fn inspect(program: &ResolvedProgram) -> Option<Proof> {
     if program.functions.len() != 1
         || !program.function_instances.is_empty()
         || !program.function_templates.is_empty()
@@ -125,9 +123,20 @@ fn inspect(program: &ResolvedProgram) -> Option<Proof<'_>> {
     if !declaration.type_parameters.is_empty() {
         return None;
     }
+    let fact = program.declarations.declaration(record)?;
+    if fact.kind != crate::hir::DeclarationKind::Record
+        || fact.identity_origin != crate::hir::IdentityOrigin::Explicit
+        || fact.name != declaration.name
+        || fact.owner.is_some()
+    {
+        return None;
+    }
     let crate::hir::ResolvedTypeDeclarationKind::Record { fields } = &declaration.kind else {
         return None;
     };
+    if program.declarations.record_fields(record)? != fields.as_slice() {
+        return None;
+    }
     if fields.len() != 3
         || fields.iter().filter(|v| v.ty == T::I64).count() != 1
         || fields.iter().filter(|v| v.ty == T::String).count() != 1
@@ -262,14 +271,31 @@ fn inspect(program: &ResolvedProgram) -> Option<Proof<'_>> {
     if !typed(step, &T::I64, O::Value) || !place(left, counter) || !integer(right, 1) {
         return None;
     }
-    consumers::validate(program, suffix, tail)?;
+    consumers::validate(program, suffix, tail, element)?;
     Some(Proof {
-        condition,
-        body,
         iterations: u32::try_from(count).ok()?,
     })
 }
 pub(crate) fn resolved(program: &ResolvedProgram, condition: &E, body: &E) -> Option<u32> {
+    // Discovery is pointer-only and grants nothing. Avoid re-censusing the
+    // entire suffix when ordinary capacity visits a later traversal loop.
+    let [function] = program.functions.as_slice() else {
+        return None;
+    };
+    let K::Block { statements, .. } = &function.body.kind else {
+        return None;
+    };
+    let Some(S::While {
+        condition: candidate,
+        body: construction,
+        ..
+    }) = statements.get(2)
+    else {
+        return None;
+    };
+    if !std::ptr::eq(condition, candidate.as_ref()) || !std::ptr::eq(body, construction.as_ref()) {
+        return None;
+    }
     let p = inspect(program)?;
-    (std::ptr::eq(condition, p.condition) && std::ptr::eq(body, p.body)).then_some(p.iterations)
+    Some(p.iterations)
 }

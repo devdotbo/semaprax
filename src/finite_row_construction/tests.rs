@@ -167,3 +167,142 @@ fn one_short_scratch_and_mutated_consumer_never_select_finite_capacity() {
         assert!(crate::hir::validate(&changed).is_err());
     }
 }
+
+#[test]
+fn complete_borrowed_traversal_scratch_is_exact_and_non_candidates_are_free() {
+    let program = checked(8);
+    let (proof, refused, bytes) =
+        crate::bounded_output::with_limit_usage(usize::MAX, || inspect(&program));
+    assert!(proof.is_some());
+    assert!(!refused);
+    assert!(
+        bytes > consumers::scratch_bytes(),
+        "both simultaneously live fixed cursors are charged"
+    );
+    let (proof, refused, used) =
+        crate::bounded_output::with_limit_usage(bytes, || inspect(&program));
+    assert!(proof.is_some());
+    assert!(!refused);
+    assert_eq!(used, bytes);
+    let (proof, refused, _) =
+        crate::bounded_output::with_limit_usage(bytes - 1, || inspect(&program));
+    assert!(proof.is_none());
+    assert!(refused);
+    let K::Block { statements, .. } = &program.functions[0].body.kind else {
+        panic!()
+    };
+    let S::Let { value, .. } = &statements[7] else {
+        panic!()
+    };
+    let K::Block { statements, .. } = &value.kind else {
+        panic!()
+    };
+    let S::While {
+        condition, body, ..
+    } = &statements[2]
+    else {
+        panic!()
+    };
+    let (proof, refused, used) =
+        crate::bounded_output::with_limit_usage(0, || resolved(&program, condition, body));
+    assert!(proof.is_none());
+    assert!(!refused);
+    assert_eq!(used, 0);
+    let ast = crate::parse(&source(8), "finite-row.spx").unwrap();
+    let crate::ast::ExprKind::Block { statements, .. } = &ast.functions[0].body.kind else {
+        panic!()
+    };
+    let crate::ast::Statement::ForBorrow { body, .. } = &statements[7] else {
+        panic!()
+    };
+    let (proof, refused, used) = crate::bounded_output::with_limit_usage(0, || {
+        crate::source_verify::finite_row_loop(&ast, body)
+    });
+    assert!(proof.is_none());
+    assert!(!refused);
+    assert_eq!(used, 0);
+}
+#[test]
+fn freeze_parent_permissions_do_not_authorize_other_occurrences_or_mutation() {
+    for mutation in 0..4 {
+        let mut program = checked(8);
+        let K::Block { statements, .. } = &mut program.functions[0].body.kind else {
+            panic!()
+        };
+        let S::Let { value, .. } = &mut statements[7] else {
+            panic!()
+        };
+        let K::Block { statements, .. } = &mut value.kind else {
+            panic!()
+        };
+        let S::While { body, .. } = &mut statements[2] else {
+            panic!()
+        };
+        let K::Block { statements, .. } = &mut body.kind else {
+            panic!()
+        };
+        if mutation == 0 {
+            let S::Assign { value, .. } = &mut statements[2] else {
+                panic!()
+            };
+            let K::Binary { right, .. } = &mut value.kind else {
+                panic!()
+            };
+            right.kind = K::Usize(2);
+        } else {
+            let S::Let {
+                binding: discarded,
+                value: authored,
+                ..
+            } = &mut statements[1]
+            else {
+                panic!()
+            };
+            if mutation == 3 {
+                let K::Block { statements, .. } = &authored.kind else {
+                    panic!()
+                };
+                let S::Let { value: view, .. } = &statements[0] else {
+                    panic!()
+                };
+                let K::VecFieldRead { element, args, .. } = &view.kind else {
+                    panic!()
+                };
+                let element = element.clone();
+                let args = args.clone();
+                authored.ty = element.clone();
+                authored.ownership = O::Value;
+                authored.kind = K::Call {
+                    callee: crate::hir::DeclarationId::new(crate::vec_ops::GET_ID),
+                    instance: None,
+                    type_arguments: vec![element.clone()],
+                    args,
+                };
+                discarded.ty = element;
+                discarded.ownership = O::Value;
+                assert!(
+                    inspect(&program).is_none(),
+                    "root GET must have no borrowed freeze authority"
+                );
+                assert!(crate::hir::validate(&program).is_err());
+                continue;
+            }
+            let K::Block { statements, .. } = &mut authored.kind else {
+                panic!()
+            };
+            let S::Let { value: view, .. } = &mut statements[0] else {
+                panic!()
+            };
+            let K::VecFieldRead { args, .. } = &mut view.kind else {
+                panic!()
+            };
+            if mutation == 1 {
+                args.clear();
+            } else {
+                args[1].kind = K::Usize(0);
+            }
+        }
+        assert!(inspect(&program).is_none(), "mutation {mutation}");
+        assert!(crate::hir::validate(&program).is_err());
+    }
+}

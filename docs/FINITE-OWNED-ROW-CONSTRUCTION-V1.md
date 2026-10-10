@@ -40,15 +40,22 @@ record declarations, field IDs/order/types, whole binding IDs, ownership modes,
 capacity literal, comparison, fresh constructor, Bytes builtin target and
 literal extent, exact push/store and unit latch. It does not consume source
 candidate counts, attached plans, cache labels or graph facts as authority.
-Both capacity folds multiply the complete ordinary repeated body summary using
+A pointer-only discovery gate rejects noncandidate loops before running a suffix
+census, preventing repeated borrowed traversals from rescanning the whole
+function. Both capacity folds multiply the complete ordinary repeated body summary using
 checked arithmetic. The source and HIR proofs must therefore agree with the
 actual checked nodes rather than grant a generic allocating while exception.
 
 The suffix is closed to immutable aliases, owned sort, authenticated borrowed
 record traversal and scalar/read-only observations. Clone, foreign calls,
 unknown producers, owned row escape, further construction and arbitrary nested
-loops refuse. HIR independently replays complete traversal freeze structure;
-ordinary scope/type/ownership/loan/cleanup validation still authenticates every
+loops refuse. HIR independently replays complete traversal freeze structure.
+Both loan replay and this proof share the allocation-free structural prefix.
+The selected freeze walk uses exact immediate-parent child pointers instead of
+an allowed-ID set, borrowed nominal comparison instead of cloned type vectors,
+and the same suffix work counter. Its complete fixed cursor/header backing is
+reserved before use, while every flat statement scan debits actual work.
+Ordinary scope/type/ownership/loan/cleanup validation still authenticates every
 node and every live place. Borrowed proof cursors have fixed depth and work
 bounds, with required physical scratch charged before construction. One-short
 scratch refuses rather than publishing a finite capacity fact.
@@ -63,10 +70,12 @@ loop cleanup and borrowed-row carriers. Public provider permissions and ABI
 profiles are unchanged. Native physical allocation failure remains ordinary
 fatal behavior; this work provides no recoverable OOM claim.
 
-Authored lib definitions are `finite_row_construction::tests::` (four bodies):
+Authored lib definitions are `finite_row_construction::tests::` (six bodies):
 checked1/8/32 counts and exact events/payload, canonical and graph replay;
 count33/original4096 and unsealed source refusal; hostile typed trip, fields,
-producer, store, latch and escape; one-short scratch and mutated consumer calls.
+producer, store, latch and escape; one-short scratch and mutated consumer calls; exact/one-short complete nested
+traversal scratch and zero-budget noncandidate discovery; forged freeze latch
+and argument/extent identities.
 The existing `finite_byte_scratch::tests::` arbitrary-while, stdin and unknown
 constructor refusals remain unchanged.
 
@@ -75,7 +84,10 @@ Authored integration definitions are
 original ascending-row/Unicode/NUL/owned-Bytes oracle is exercised at1/8/32,
 with interpreter, native O0/O2 and internal Core-Wasm, native allocation refusal
 from the first borrowed read onward, complete settlement and repeated entry.
-The Core-Wasm refusal gate injects push allocation failure and malformed borrowed
+The singleton success sentinel differs from its failure value, so failed
+Unicode/NUL/count checks cannot pass with the empty arithmetic sum.
+The Core-Wasm refusal gate injects first, second and fourth push allocation
+failure with exact attempt counts, including terminal fourth-row failure, and malformed borrowed
 field words while retaining the host's original status/result/leak assertions.
 These definitions have not been executed for this tranche. The original4096
 physical gate is unchanged and still requires the separate executor contract.

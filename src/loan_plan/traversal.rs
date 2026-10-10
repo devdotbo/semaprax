@@ -39,136 +39,26 @@ fn inspect_counted<'a>(
     region: &'a ResolvedExpr,
     work: &mut WorkCounter,
 ) -> Result<Option<Proof<'a>>, Diagnostic> {
-    let ResolvedExprKind::Block { statements, tail } = &region.kind else {
-        return Ok(None);
-    };
-    let Some(ResolvedStatement::Let {
-        binding: marker, ..
-    }) = statements.first()
-    else {
-        return Ok(None);
-    };
-    if marker.name != "#for-borrow-length" {
-        return Ok(None);
-    }
     let fail = || {
         error("record traversal length, index, nominal reads or whole-root freeze proof is invalid")
     };
-    let [ResolvedStatement::Let {
-        binding: length,
-        mutable: false,
-        value: length_value,
-        ..
-    }, ResolvedStatement::Let {
-        binding: counter,
-        mutable: true,
-        value: zero,
-        ..
-    }, ResolvedStatement::While {
-        condition, body, ..
-    }
-    | ResolvedStatement::LexicalWhile {
-        condition, body, ..
-    }] = statements.as_slice()
-    else {
-        return Err(fail());
-    };
-    if !scalar(length)
-        || !scalar(counter)
-        || !usize_value(zero, 0)
-        || !usize_value(tail, 0)
-        || region.ty != ResolvedType::Usize
-        || region.ownership != OwnershipMode::Value
-    {
-        return Err(fail());
-    }
-    let ResolvedExprKind::Call {
-        callee,
-        type_arguments,
-        instance: None,
-        args,
-    } = &length_value.kind
-    else {
-        return Err(fail());
-    };
-    let [element] = type_arguments.as_slice() else {
-        return Err(fail());
-    };
-    let [source] = args.as_slice() else {
-        return Err(fail());
-    };
-    let ResolvedExprKind::Place(owner) = &source.kind else {
-        return Err(fail());
-    };
-    if callee.as_str() != crate::vec_ops::LEN_ID
-        || !owner.projections.is_empty()
-        || source.ty != crate::vec_ops::resolved_vec(element.clone())
-        || !matches!(source.ownership, OwnershipMode::Own | OwnershipMode::Borrow)
-        || !(crate::hir::copy_record_collection::admitted(program.declarations(), element)
+    let Some(Prefix {
+        source,
+        owner,
+        element,
+        counter,
+        length,
+        row_index,
+        authored,
+    }) = prefix(region, |element| {
+        crate::hir::copy_record_collection::admitted(program.declarations(), element)
             || crate::hir::owned_leaf_collection::layout(program.declarations(), element)
-                .is_some_and(|layout| layout.fields.is_some()))
-        || length_value.ty != ResolvedType::Usize
-        || length_value.ownership != OwnershipMode::Value
-    {
-        return Err(fail());
-    }
-    let ResolvedExprKind::Binary {
-        op: BinaryOp::Lt,
-        left,
-        right,
-    } = &condition.kind
+                .is_some_and(|layout| layout.fields.is_some())
+    })
+    .map_err(|()| fail())?
     else {
-        return Err(fail());
+        return Ok(None);
     };
-    if !place_is(left, counter) || !place_is(right, length) || condition.ty != ResolvedType::Bool {
-        return Err(fail());
-    }
-    let ResolvedExprKind::Block {
-        statements: iteration,
-        tail: iteration_tail,
-    } = &body.kind
-    else {
-        return Err(fail());
-    };
-    let [ResolvedStatement::Let {
-        binding: row_index,
-        mutable: false,
-        value: index_snapshot,
-        ..
-    }, ResolvedStatement::Let {
-        binding: discarded,
-        mutable: false,
-        value: authored,
-        ..
-    }, ResolvedStatement::Assign {
-        binding: incremented,
-        field: None,
-        value: increment,
-        ..
-    }] = iteration.as_slice()
-    else {
-        return Err(fail());
-    };
-    if !scalar(row_index)
-        || !place_is(index_snapshot, counter)
-        || incremented != counter
-        || discarded.ty != authored.ty
-        || discarded.ownership != authored.ownership
-        || !usize_value(iteration_tail, 0)
-    {
-        return Err(fail());
-    }
-    let ResolvedExprKind::Binary {
-        op: BinaryOp::Add,
-        left,
-        right,
-    } = &increment.kind
-    else {
-        return Err(fail());
-    };
-    if !place_is(left, counter) || !usize_value(right, 1) {
-        return Err(fail());
-    }
     // Every root occurrence must be the exact child of an authenticated read
     // or an ordinary shared-borrow argument. Mutation, transfer, rebind and
     // aggregate storage are not permitted, even when all row fields are Copy.
@@ -287,3 +177,170 @@ pub(super) fn draft(
 
 #[cfg(test)]
 mod tests;
+
+// Shared allocation-free structural prefix. Callers supply their independently
+// authenticated element profile; no attached loan plan participates.
+struct Prefix<'a> {
+    source: &'a ResolvedExpr,
+    owner: &'a crate::hir::Place,
+    element: &'a ResolvedType,
+    counter: &'a ResolvedBinding,
+    length: &'a ResolvedBinding,
+    row_index: &'a ResolvedBinding,
+    authored: &'a ResolvedExpr,
+}
+fn prefix<'a>(
+    region: &'a ResolvedExpr,
+    element_admitted: impl Fn(&ResolvedType) -> bool,
+) -> Result<Option<Prefix<'a>>, ()> {
+    let ResolvedExprKind::Block { statements, tail } = &region.kind else {
+        return Ok(None);
+    };
+    let Some(ResolvedStatement::Let {
+        binding: marker, ..
+    }) = statements.first()
+    else {
+        return Ok(None);
+    };
+    if marker.name != "#for-borrow-length" {
+        return Ok(None);
+    }
+    let [ResolvedStatement::Let {
+        binding: length,
+        mutable: false,
+        value: length_value,
+        ..
+    }, ResolvedStatement::Let {
+        binding: counter,
+        mutable: true,
+        value: zero,
+        ..
+    }, ResolvedStatement::While {
+        condition, body, ..
+    }
+    | ResolvedStatement::LexicalWhile {
+        condition, body, ..
+    }] = statements.as_slice()
+    else {
+        return Err(());
+    };
+    if !scalar(length)
+        || !scalar(counter)
+        || !usize_value(zero, 0)
+        || !usize_value(tail, 0)
+        || region.ty != ResolvedType::Usize
+        || region.ownership != OwnershipMode::Value
+    {
+        return Err(());
+    }
+    let ResolvedExprKind::Call {
+        callee,
+        type_arguments,
+        instance: None,
+        args,
+    } = &length_value.kind
+    else {
+        return Err(());
+    };
+    let [element] = type_arguments.as_slice() else {
+        return Err(());
+    };
+    let [source] = args.as_slice() else {
+        return Err(());
+    };
+    let ResolvedExprKind::Place(owner) = &source.kind else {
+        return Err(());
+    };
+    if callee.as_str() != crate::vec_ops::LEN_ID
+        || !owner.projections.is_empty()
+        || !matches!(&source.ty, ResolvedType::Nominal { declaration, arguments } if declaration.as_str()==crate::prelude::VEC_ID && arguments.as_slice()==std::slice::from_ref(element))
+        || !matches!(source.ownership, OwnershipMode::Own | OwnershipMode::Borrow)
+        || !element_admitted(element)
+        || length_value.ty != ResolvedType::Usize
+        || length_value.ownership != OwnershipMode::Value
+    {
+        return Err(());
+    }
+    let ResolvedExprKind::Binary {
+        op: BinaryOp::Lt,
+        left,
+        right,
+    } = &condition.kind
+    else {
+        return Err(());
+    };
+    if !place_is(left, counter) || !place_is(right, length) || condition.ty != ResolvedType::Bool {
+        return Err(());
+    }
+    let ResolvedExprKind::Block {
+        statements: iteration,
+        tail: iteration_tail,
+    } = &body.kind
+    else {
+        return Err(());
+    };
+    let [ResolvedStatement::Let {
+        binding: row_index,
+        mutable: false,
+        value: index_snapshot,
+        ..
+    }, ResolvedStatement::Let {
+        binding: discarded,
+        mutable: false,
+        value: authored,
+        ..
+    }, ResolvedStatement::Assign {
+        binding: incremented,
+        field: None,
+        value: increment,
+        ..
+    }] = iteration.as_slice()
+    else {
+        return Err(());
+    };
+    if !scalar(row_index)
+        || !place_is(index_snapshot, counter)
+        || incremented != counter
+        || discarded.ty != authored.ty
+        || discarded.ownership != authored.ownership
+        || !usize_value(iteration_tail, 0)
+    {
+        return Err(());
+    }
+    let ids = [
+        &owner.root,
+        &length.id,
+        &counter.id,
+        &row_index.id,
+        &discarded.id,
+    ];
+    if ids
+        .iter()
+        .enumerate()
+        .any(|(index, id)| ids[..index].contains(id))
+    {
+        return Err(());
+    }
+    let ResolvedExprKind::Binary {
+        op: BinaryOp::Add,
+        left,
+        right,
+    } = &increment.kind
+    else {
+        return Err(());
+    };
+    if !place_is(left, counter) || !usize_value(right, 1) {
+        return Err(());
+    }
+    Ok(Some(Prefix {
+        source,
+        owner,
+        element,
+        counter,
+        length,
+        row_index,
+        authored,
+    }))
+}
+mod borrowed;
+pub(crate) use borrowed::inspect as inspect_borrowed;

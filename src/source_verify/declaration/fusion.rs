@@ -305,6 +305,21 @@ fn inventory(program: &Program) -> Option<Inventory<'_>> {
 
 /// Ordinary finite capacity, restricted to the unchanged physical event cap.
 pub(crate) fn finite_loop(program: &Program, expression: &Expr) -> Option<u32> {
+    let [function] = program.functions.as_slice() else {
+        return None;
+    };
+    let K::Block { statements, .. } = &function.body.kind else {
+        return None;
+    };
+    let Some(S::While {
+        condition, body, ..
+    }) = statements.get(2)
+    else {
+        return None;
+    };
+    if !(std::ptr::eq(expression, condition.as_ref()) || std::ptr::eq(expression, body.as_ref())) {
+        return None;
+    }
     let proof = inventory(program)?;
     if proof.count > u64::from(crate::byte_data_capacity::MAX_BYTES_COPY_SITES)
         || !(std::ptr::eq(expression, proof.condition) || std::ptr::eq(expression, proof.body))

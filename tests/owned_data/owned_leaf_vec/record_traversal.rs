@@ -112,7 +112,8 @@ fn finite_fresh_rows_preserve_utf8_nul_and_settle_across_all_engines() {
     let body = SOURCE.split_once("@id(\"app.main\")").unwrap().1;
     for count in [1, 8, 32] {
         let body = format!("@id(\"app.main\"){body}").replace("4096", &count.to_string());
-        run(&body, (0..count).sum());
+        let body = body.replace("{ total } else { 0 }", "{ total + 17 } else { -1 }");
+        run(&body, (0..count).sum::<i64>() + 17);
     }
 }
 #[test]
@@ -121,5 +122,14 @@ fn finite_fresh_rows_preserve_first_failure_without_result_or_leaked_owner() {
     let body = SOURCE.split_once("@id(\"app.main\")").unwrap().1;
     let body = format!("@id(\"app.main\"){body}").replace("4096", "8");
     run_wasm(&body, 15, 0, "push-allocation");
+    for mode in ["codec-push-2", "codec-push-4"] {
+        run_wasm(&body, 15, 0, mode);
+    }
+    let terminal = format!(
+        "@id(\"app.main\"){}",
+        SOURCE.split_once("@id(\"app.main\")").unwrap().1
+    )
+    .replace("4096", "4");
+    run_wasm(&terminal, 15, 0, "codec-push-4");
     run_wasm(&body, 0, 1, "field-bad-word");
 }
