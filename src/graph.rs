@@ -84,7 +84,6 @@ pub(crate) use scoped_vec_field::{
     graph_schema_from_parts_and_instances,
     graph_schema_from_parts_and_instances_with_renewal_authority,
 };
-pub(crate) use static_text::{graph_schema, legacy_graph_schema};
 /// Hash the canonical human-readable source projection and implicit prelude.
 ///
 /// This revision intentionally does not depend on HIR spans, display metadata,

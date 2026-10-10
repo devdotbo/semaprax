@@ -465,6 +465,8 @@ pub(super) fn pre_filesystem_graph_schema(
         && !super::projected_string_view::requires(program)
         && !super::owned_nested_outcome::requires(program)
         && !super::scoped_vec_field::requires(program)
+        && !super::byte_helper_renewal::requires(program)
+        && !super::finite_byte_scratch::requires(program)
     {
         return legacy_graph_schema(program);
     }

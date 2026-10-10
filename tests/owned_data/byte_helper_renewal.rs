@@ -19,6 +19,10 @@ fn byte_helper_renewal_canonical_graph_and_physical_engines_preserve_one_owner()
         .unwrap();
     assert_eq!(main.cleanup_plan.schema, "semaprax.cleanup-plan.v19");
     assert!(main.cleanup_plan.lexical_control.is_none());
+    let frozen = graph::to_legacy_json(&roundtrip).unwrap_err();
+    assert!(frozen
+        .iter()
+        .any(|diagnostic| diagnostic.code == "SPX-G410"));
     let json = graph::to_json(&roundtrip).unwrap();
     graph::verify_json(&roundtrip, &json).unwrap();
     let document: serde_json::Value = serde_json::from_str(&json).unwrap();
