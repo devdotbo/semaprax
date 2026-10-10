@@ -218,7 +218,7 @@ fn provisional_storage_loan_and_failure_cleanup_cannot_be_substituted() {
         .iter_mut()
         .find(|slot| slot.storage == StorageId::ProvisionalResult)
         .unwrap();
-    provisional.storage = StorageId::Value(ValueId::new("foreign.destination"));
+    provisional.storage = StorageId::Value(ValueId::new("foreign.destination".to_owned()));
     assert_eq!(validate(&destination).unwrap_err().code, "SPX-H006");
     let mut absent = baseline.clone();
     let result = selected(&absent).result_id.clone();
@@ -228,7 +228,7 @@ fn provisional_storage_loan_and_failure_cleanup_cannot_be_substituted() {
         .retain(|l| l.origin.root != result);
     assert_eq!(validate(&absent).unwrap_err().code, "SPX-H006");
     let mut foreign = baseline.clone();
-    selected_mut(&mut foreign).result_id = ValueId::new("foreign.result");
+    selected_mut(&mut foreign).result_id = ValueId::new("foreign.result".to_owned());
     assert_eq!(validate(&foreign).unwrap_err().code, "SPX-H006");
 }
 
@@ -270,7 +270,7 @@ fn immutable_contract_view_alias_derives_exact_provisional_byte_provenance() {
             .get_mut(binding)
             .unwrap();
         match change {
-            0 => facts.root = ValueId::new("foreign.provisional"),
+            0 => facts.root = ValueId::new("foreign.provisional".to_owned()),
             1 => facts.root_kind = ByteSliceRootKind::FunctionParameter,
             2 => facts.producer = None,
             _ => facts.projected_type = ResolvedType::String,

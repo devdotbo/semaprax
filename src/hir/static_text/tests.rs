@@ -137,7 +137,7 @@ fn view_extent_and_mutability_are_independently_replayed_without_owner_slots() {
         crate::hir::ByteSliceRootKind::SourceExprStatic
     );
     assert_eq!(&provenance.root, first);
-    assert_eq!(&provenance.producer, producer);
+    assert_eq!(provenance.producer.as_ref(), Some(producer));
     assert_eq!(provenance.length, crate::hir::ByteSliceExtent::Constant(4));
     assert!(run.cleanup_plan.slots.iter().all(|slot| slot.storage
         != crate::cleanup_plan::StorageId::Value(first.clone())
