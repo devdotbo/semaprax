@@ -26,7 +26,9 @@ impl PhysicalReservation {
         }
     }
 
-    pub(crate) fn charged(&self) -> usize { self.charged }
+    pub(crate) fn charged(&self) -> usize {
+        self.charged
+    }
 
     /// No allocation or refund occurs here. Failed requests cannot subsequently
     /// authorize even a zero-byte construction through this ledger.
@@ -68,7 +70,16 @@ impl PhysicalReservation {
     }
 }
 
-/// Exact selected vector replacement, reserved while the old backing is live.
+/// Deterministic growth target. Every replacement is reserved in full while
+/// the previous backing remains charged; spare capacity never refunds a debit.
+pub(crate) fn replay_growth_capacity(capacity: usize, required: usize) -> Option<usize> {
+    if required <= capacity {
+        return Some(capacity);
+    }
+    Some(required.max(capacity.checked_mul(2)?))
+}
+
+/// Selected geometric vector replacement, reserved while old backing is live.
 pub(crate) fn replay_reserve_vec<T>(
     reservation: &mut PhysicalReservation,
     values: &mut Vec<T>,
@@ -81,11 +92,14 @@ pub(crate) fn replay_reserve_vec<T>(
     if required <= values.capacity() {
         return reservation.reserve(0);
     }
-    reservation.reserve_array::<T>(required)?;
-    if values.try_reserve_exact(additional).is_err() {
+    let Some(target) = replay_growth_capacity(values.capacity(), required) else {
+        return reservation.fail(PhysicalRefusal::Overflow);
+    };
+    reservation.reserve_array::<T>(target)?;
+    if values.try_reserve_exact(target - values.len()).is_err() {
         return reservation.fail(PhysicalRefusal::LocalLimit);
     }
-    if values.capacity() != required {
+    if values.capacity() != target {
         return reservation.fail(PhysicalRefusal::LocalLimit);
     }
     Ok(())
@@ -193,3 +207,6 @@ mod tests {
         assert_eq!(used, 0);
     }
 }
+
+#[cfg(test)]
+mod growth_tests;

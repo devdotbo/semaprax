@@ -129,7 +129,7 @@ impl ReplayBudget {
     }
 
     /// The old buffer remains fully charged while its replacement is allocated.
-    /// Selected growth is exact; ordinary replay retains its original allocator
+    /// Selected growth is geometric; ordinary replay retains its original allocator
     /// growth and performs no extra scans, reservations or allocator calls here.
     pub(super) fn reserve_vec<T>(
         &mut self,
@@ -148,11 +148,20 @@ impl ReplayBudget {
         if required <= values.capacity() {
             return Ok(());
         }
-        self.reserve_array::<T>(function, required, phase)?;
-        values.try_reserve_exact(additional).map_err(|_| {
-            replay_error(function, "cleanup replay physical vector allocation failed")
-        })?;
-        if values.capacity() != required {
+        let target = physical_storage::replay_growth_capacity(values.capacity(), required)
+            .ok_or_else(|| {
+                replay_error(
+                    function,
+                    "cleanup replay physical vector capacity overflowed",
+                )
+            })?;
+        self.reserve_array::<T>(function, target, phase)?;
+        values
+            .try_reserve_exact(target - values.len())
+            .map_err(|_| {
+                replay_error(function, "cleanup replay physical vector allocation failed")
+            })?;
+        if values.capacity() != target {
             return Err(replay_error(
                 function,
                 "cleanup replay physical vector capacity disagrees with its reservation",
