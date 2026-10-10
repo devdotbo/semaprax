@@ -1,7 +1,9 @@
 //! Renewal site identity is derived from HIR, independently of attached transitions.
+mod selected;
 #[cfg(test)]
 use crate::hir::ResolvedProgram;
 use crate::hir::{ExpressionId, ResolvedBinding, ResolvedFunction};
+pub(crate) use selected::bindings_with_reservation;
 use std::collections::BTreeMap;
 
 /// A held phase index authenticates exact program and function membership.

@@ -6,6 +6,7 @@ mod expression_facts;
 mod physical_storage;
 mod physical_budget;
 mod physical_clone;
+mod selected_owner;
 pub(crate) use physical_clone::ClonePayload;
 pub(crate) use physical_storage::{btree_node_upper as replay_btree_node_upper, replay_reserve_vec, PhysicalReservation};
 #[cfg(test)]

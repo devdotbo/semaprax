@@ -17,7 +17,7 @@ pub(super) fn validate_with_index(
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
 ) -> Result<(), Diagnostic> {
     let plan = &function.cleanup_plan;
-    let owner = crate::hir::lexical_exit::owner(program, function)?;
+    let owner = selected_owner::owner(program, function, budget)?;
     crate::hir::lexical_exit::validate_function(program, function, &owner)?;
     let held_facts = if let Some(physical) = budget.physical.as_deref_mut() {
         let mut held = None;
