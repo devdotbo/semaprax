@@ -202,3 +202,6 @@ pub(super) fn field_is_owned(
         || (crate::iterator_ops::step_shape(declarations, variant)
             && hir::owned_leaf_collection::runtime_element(declarations, ty))
 }
+
+#[cfg(test)]
+mod collection_match_tests;

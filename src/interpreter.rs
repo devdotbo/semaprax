@@ -2579,7 +2579,8 @@ fn scan_closure(
                 // A `string` arm result is an independent value: each arm
                 // builds its own, exactly as for a scalar result.
                 let owned_byte_variant = (is_admitted_resolved_scalar(&expression.ty)
-                    || expression.ty == ResolvedType::String)
+                    || expression.ty == ResolvedType::String
+                    || hir::collection_outcome::match_join(declarations, expression))
                     && variant_pattern_is_admitted(declarations, *mode, &scrutinee.ty, arms);
                 let agg = nested_owned::bc_match(declarations, *mode, &scrutinee.ty, arms);
                 if (!scalar

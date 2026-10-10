@@ -84,24 +84,60 @@ fn request_identifier_views_revalidate_spans_and_encode_exact_arrays_on_three_ba
     .unwrap();
     std::fs::write(root.join("src/schema.spx"), source).unwrap();
     std::fs::write(root.join("src/app.spx"), canonical(&app())).unwrap();
-    project::with_authenticated_project(&root.join("semaprax.toml"),|snapshot|{
-        let graph=snapshot.retain_revision();
-        assert!(graph.semantic_graph().contains("application.request.json.request.decode"));
-        assert!(graph.semantic_graph().contains("application.patient.json.view"));
+    project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
+        let graph = snapshot.retain_revision();
+        assert!(graph
+            .semantic_graph()
+            .contains("application.request.json.request.decode"));
+        assert!(graph
+            .semantic_graph()
+            .contains("application.patient.json.view"));
         super::builtin_calls::assert_operation(snapshot.entry_program(), "core.vec.push");
-        semaprax::hir::validate(snapshot.entry_program()).map_err(|error|vec![error])?;
-        assert_eq!(snapshot.execute_entry(&project::ProjectExecutionOptions::default())?.outcome(),&project::ProjectExecutionOutcome::Returned(725));
-        let c=codegen::emit_hir_c(snapshot.entry_program()).map_err(|error|vec![error])?;
-        for optimization in ["-O0","-O2"] { super::super::compile_and_run_c(&c,&root,optimization,"725"); }
-        let bytes=wasm::emit_resolved_module(snapshot.entry_program()).map_err(|error|vec![error])?;
-        let digest=format!("{:x}",semaprax::digest_hex::LowerHex(Sha256::digest(&bytes)));
-        std::fs::write(root.join("app.wasm"),bytes).unwrap();
-        let runtime=include_str!("../../../../src/wasm/browser_runtime.js").replace("__SEMAPRAX_OWNED_EXPORTS__","{}").replace("__SEMAPRAX_WASM_SHA256__",&digest);
-        std::fs::write(root.join("runtime.mjs"),runtime).unwrap();
-        std::fs::write(root.join("run.mjs"),"import {readFile} from 'node:fs/promises';import {instantiateBytes} from './runtime.mjs';const {instance}=await instantiateBytes(await readFile('./app.wasm'),{maxOwnedByteEntries:16});for(let i=0;i<16;i++){if(instance.exports.semaprax_main()!==725n)throw Error('request codec parity');}").unwrap();
-        let output=Command::new("node").arg("run.mjs").current_dir(&root).output().unwrap();
-        assert!(output.status.success(),"{}",String::from_utf8_lossy(&output.stderr));
+        semaprax::hir::validate(snapshot.entry_program()).map_err(|error| vec![error])?;
+        assert_eq!(
+            snapshot
+                .execute_entry(&project::ProjectExecutionOptions::default())?
+                .outcome(),
+            &project::ProjectExecutionOutcome::Returned(725)
+        );
+        let c = codegen::emit_hir_c(snapshot.entry_program()).map_err(|error| vec![error])?;
+        for optimization in ["-O0", "-O2"] {
+            super::super::compile_and_run_c(&c, &root, optimization, "725");
+        }
+        let bytes =
+            wasm::emit_resolved_module(snapshot.entry_program()).map_err(|error| vec![error])?;
+        let digest = format!(
+            "{:x}",
+            semaprax::digest_hex::LowerHex(Sha256::digest(&bytes))
+        );
+        std::fs::write(root.join("app.wasm"), bytes).unwrap();
+        assert_eq!(
+            digest,
+            format!(
+                "{:x}",
+                semaprax::digest_hex::LowerHex(Sha256::digest(
+                    std::fs::read(root.join("app.wasm")).unwrap()
+                ))
+            )
+        );
+        // This complete program owns private Copy-record Vec imports. The
+        // public browser adapter has no such grant; use their owning strict
+        // Core-Wasm host, retaining all 16 reentries and the 16-entry limit.
+        let host = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/owned_data/owned_leaf_vec/host.js");
+        let output = Command::new("node")
+            .arg(host)
+            .arg(root.join("app.wasm"))
+            .args(["0", "725", "copy-record-codec"])
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
         Ok(())
-    }).unwrap();
+    })
+    .unwrap();
     std::fs::remove_dir_all(root).unwrap();
 }

@@ -9,6 +9,7 @@ const expectedValue = BigInt(process.argv[4]);
 const refusal = process.argv[5] || '';
 // Dedicated private scalar String/Bytes witness, not a public Web adapter.
 const scalarView = refusal === 'scalar-view';
+const copyRecordCodec = refusal === 'copy-record-codec';
 const expectedDomain = scalarView ? process.argv[6] : null;
 if (scalarView && !['ok', 'semaprax.convert.v1'].includes(expectedDomain))
   throw Error('scalar-view requires an exact admitted normalized status domain');
@@ -74,6 +75,7 @@ const read = carrier => {
 };
 const alloc = carrier => {
   allocationOutsideSort('payload clone');
+  if(copyRecordCodec && payloads.size>=16)throw Error('Copy codec owned entry capacity');
   const bytes = new Uint8Array(read(carrier));
   const id = nextPayload++;
   payloads.set(id, bytes);
@@ -82,6 +84,7 @@ const alloc = carrier => {
 };
 const ownBytes = bytes => {
   allocationOutsideSort('owned payload');
+  if(copyRecordCodec && payloads.size>=16)throw Error('Copy codec owned entry capacity');
   const id = nextPayload++;
   payloads.set(id, new Uint8Array(bytes));
   copies++;
@@ -639,13 +642,25 @@ const env = {
     iterators.delete(handle);
   },
 };
+if(copyRecordCodec)require('./copy_scalar_imports.js')(env,vectorValue);
 (async()=>{
+  const requiredImports=WebAssembly.Module.imports(new WebAssembly.Module(moduleBytes));
+  if(copyRecordCodec){
+    if(!requiredImports.some(entry=>entry.name==='spx_vec_with_capacity') ||
+       requiredImports.some(entry=>/^spx_vec_leaf_/.test(entry.name)))
+      throw Error('Copy codec does not own the exact legacy Copy collection boundary');
+    const missing={...env};delete missing.spx_vec_with_capacity;
+    let refused=false;
+    try{await WebAssembly.instantiate(moduleBytes,{env:missing})}
+    catch(error){if(!(error instanceof WebAssembly.LinkError))throw error;refused=true}
+    if(!refused)throw Error('Copy codec linked without its actual capacity import');
+  }
   if(scalarView){
     const imports=WebAssembly.Module.imports(new WebAssembly.Module(moduleBytes));
     if(imports.some(entry=>/^spx_(vec|iter)_/.test(entry.name)) ||
        !imports.some(entry=>/^spx_(string|bytes)_/.test(entry.name)))
       throw Error('scalar-view fixture has a collection boundary or no owned payload import');
-  }else{
+  }else if(requiredImports.some(entry=>entry.name==='spx_vec_leaf_clone_at_v1')){
   const missing={...env};delete missing.spx_vec_leaf_clone_at_v1;
   let refused=false;
   try{await WebAssembly.instantiate(moduleBytes,{env:missing})}
@@ -706,7 +721,7 @@ const env = {
   }
   ({instance}=await WebAssembly.instantiate(moduleBytes,{env}));
   fieldOutput=new DataView(memory().buffer);
-  for(let run=0;run<3;run++){
+  for(let run=0;run<(copyRecordCodec?16:3);run++){
     codecPushAttempts=0;fieldReads=0;
     let selected=0,returned;
     try{returned=instance.exports.semaprax_main()}
