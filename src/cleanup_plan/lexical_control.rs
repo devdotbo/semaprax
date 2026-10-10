@@ -31,6 +31,16 @@ pub struct LexicalExitCertificate {
     pub target: ControlTarget,
     pub kind: LexicalExitKind,
     pub exit: ExitTargetId,
+    /// Exact finite generated-advance or postcondition proof entry.
+    pub resume: Option<BlockId>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ResumeCertificate {
+    pub entry: BlockId,
+    /// Exact structural block inventory of this finite proof fragment. Replay
+    /// reconstructs membership; backends never union or repair it.
+    pub blocks: Vec<BlockId>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -38,9 +48,33 @@ pub struct LexicalControlPlan {
     pub schema: &'static str,
     pub loops: Vec<LoopCertificate>,
     pub exits: Vec<LexicalExitCertificate>,
+    pub resumes: Vec<ResumeCertificate>,
 }
 
 impl CleanupPlan {
+    pub fn lexical_resume(&self, entry: BlockId) -> Option<&ResumeCertificate> {
+        let control = self.lexical_control.as_deref()?;
+        if self.schema != super::CLEANUP_PLAN_SCHEMA_V18 || control.schema != SCHEMA {
+            return None;
+        }
+        let mut matches = control.resumes.iter().filter(|item| item.entry == entry);
+        let certificate = matches.next()?;
+        if matches.next().is_some() || !certificate.blocks.contains(&entry) {
+            return None;
+        }
+        Some(certificate)
+    }
+
+    /// Filter producer transitions by their independently validated finite
+    /// proof domain. Ordinary emission excludes all duplicated resume bodies.
+    pub fn lexical_block_in_context(&self, entry: Option<BlockId>, block: BlockId) -> bool {
+        if let Some(entry) = entry {
+            return self.lexical_resume(entry).is_some_and(|resume| resume.blocks.contains(&block));
+        }
+        !self.lexical_control.as_deref().is_some_and(|control|
+            control.resumes.iter().any(|resume| resume.blocks.contains(&block)))
+    }
+
     pub fn lexical_loop(&self, condition: &ExpressionId) -> Option<&LoopCertificate> {
         let control = self.lexical_control.as_deref()?;
         if self.schema != super::CLEANUP_PLAN_SCHEMA_V18 || control.schema != SCHEMA {

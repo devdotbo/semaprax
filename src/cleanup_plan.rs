@@ -9,7 +9,7 @@ mod build;
 mod deferred_commit;
 mod execute;
 mod lexical_control;
-pub use lexical_control::{LexicalControlPlan, LexicalExitCertificate, LoopCertificate};
+pub use lexical_control::{LexicalControlPlan, LexicalExitCertificate, LoopCertificate, ResumeCertificate};
 mod native_rust;
 mod owner_admission;
 // Owned-value-across-a-yield liveness query (issue #296, spec section 11.6).

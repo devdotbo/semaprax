@@ -1,14 +1,15 @@
 //! Selective append-only cleanup cache projection; legacy bytes stay exact.
 use super::{codec_struct, Codec, Decoder, Encoder, Result};
 use crate::cleanup_plan::{
-    CleanupPlan, LexicalControlPlan, LexicalExitCertificate, LoopCertificate,
+    CleanupPlan, LexicalControlPlan, LexicalExitCertificate, LoopCertificate, ResumeCertificate,
     CLEANUP_PLAN_SCHEMA_V18,
 };
 
 codec_struct!(LoopCertificate { target, condition, body, latch, region, condition_entry,
     latch_entry, iteration_end, after, entry_order });
-codec_struct!(LexicalExitCertificate { site, target, kind, exit });
-codec_struct!(LexicalControlPlan { schema, loops, exits });
+codec_struct!(LexicalExitCertificate { site, target, kind, exit, resume });
+codec_struct!(ResumeCertificate { entry, blocks });
+codec_struct!(LexicalControlPlan { schema, loops, exits, resumes });
 
 impl Codec for CleanupPlan {
     fn encode(&self, out: &mut Encoder) -> Result<()> {

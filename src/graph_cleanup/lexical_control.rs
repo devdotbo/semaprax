@@ -1,6 +1,6 @@
 //! Render certificates verbatim; validation owns all semantic authentication.
 use super::{array_json, quote_json};
-use crate::cleanup_plan::{LexicalControlPlan, LexicalExitCertificate, LoopCertificate};
+use crate::cleanup_plan::{LexicalControlPlan, LexicalExitCertificate, LoopCertificate, ResumeCertificate};
 use crate::hir::{ControlTarget, LoopLatchKind, SourceForKind};
 
 pub(super) fn target_json(target: &ControlTarget) -> String {
@@ -53,12 +53,18 @@ fn exit_json(item: &LexicalExitCertificate) -> String {
         crate::ast::LexicalExitKind::Continue => "continue",
         crate::ast::LexicalExitKind::Return => "return",
     };
-    format!("{{\"site\":{},\"target\":{},\"kind\":{},\"exit\":{}}}",
-        quote_json(item.site.as_str()), target_json(&item.target), quote_json(kind), item.exit.0)
+    format!("{{\"site\":{},\"target\":{},\"kind\":{},\"exit\":{},\"resume\":{}}}",
+        quote_json(item.site.as_str()), target_json(&item.target), quote_json(kind), item.exit.0,
+        item.resume.map(|id| format!("{}", id.0)).unwrap_or_else(|| "null".to_owned()))
+}
+
+fn resume_json(item: &ResumeCertificate) -> String {
+    format!("{{\"entry\":{},\"blocks\":{}}}", item.entry.0,
+        array_json(&item.blocks, |id| format!("{}", id.0)))
 }
 
 pub(super) fn member_json(control: &LexicalControlPlan) -> String {
-    format!(",\"lexical_control\":{{\"schema\":{},\"loops\":{},\"exits\":{}}}",
+    format!(",\"lexical_control\":{{\"schema\":{},\"loops\":{},\"exits\":{},\"resumes\":{}}}",
         quote_json(control.schema), array_json(&control.loops, loop_json),
-        array_json(&control.exits, exit_json))
+        array_json(&control.exits, exit_json), array_json(&control.resumes, resume_json))
 }
