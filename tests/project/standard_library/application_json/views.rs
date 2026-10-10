@@ -2,6 +2,9 @@
 
 use super::*;
 
+#[path = "views/identifier_index.rs"]
+mod identifier_index;
+
 pub(super) const SCHEMA: &str = r#"module consumer.schema;
 @id("application.patient") record Patient {
  @id("application.patient.id") id:string,

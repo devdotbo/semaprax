@@ -1,6 +1,7 @@
 //! Checked ASCII identifier views. Integer spans never authenticate a source.
 
 mod arrays;
+mod identifier_index;
 mod request;
 mod stream;
 #[cfg(test)]

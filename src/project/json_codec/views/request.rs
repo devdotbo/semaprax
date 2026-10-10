@@ -81,9 +81,11 @@ pub(super) fn source(program: &Program, root: &TypeDeclaration) -> Result<String
         .iter()
         .find(|field| field.ty == Type::String)
         .unwrap();
+    let key = &string.name;
     let mut out = imports(program);
     out.push_str(&body(record));
     out.push_str(&arrays::source(record));
+    out.push_str(&identifier_index::source(record));
     writeln!(out,"@id(\"{id}.json.identifier-span\") record {name}JsonIdentifierSpan{{@id(\"{id}.json.identifier-start\")start:usize,@id(\"{id}.json.identifier-end\")end:usize,}}
 @id(\"{id}.json.request-result\") variant {name}JsonRequestDecode{{
 @id(\"{id}.json.request-decoded\") Decoded{{@id(\"{id}.json.request-servers\")servers:Vec<{name}JsonIdentifierSpan>,@id(\"{id}.json.request-patients\")patients:Vec<{row}JsonView>,}},
@@ -94,6 +96,7 @@ let mut error=if checked>length{{1}}else{{0}};let mut offset=if checked>length{{
 let root=if error==0{{jv_root(input)}}else{{0usize}};
 let _ = if error==0 && jv_kind(input,root)!=1{{error=5;offset=root;false}}else{{true}};
 let mut servers=vec_with_capacity<{name}JsonIdentifierSpan>(8usize);let mut patients=vec_with_capacity<{row}JsonView>(256usize);
+let mut server_fingerprints=vec_with_capacity<usize>(8usize);let mut patient_fingerprints=vec_with_capacity<usize>(256usize);
 let mut seen_servers=false;let mut seen_patients=false;
 let servers_key={};let patients_key={};
 let servers_key_view=array_as_slice(servers_key);let patients_key_view=array_as_slice(patients_key);
@@ -113,11 +116,11 @@ if vec_len<{name}JsonIdentifierSpan>(servers)>=8usize{{error=8;offset=cursor;fal
 let end=if jv_kind(input,cursor)==3{{jv_scan_string(input,cursor,false)}}else{{cursor}};
 if jv_kind(input,cursor)!=3{{error=5;offset=cursor;false}}else{{
 if !json_{row}_identifier_valid(input,cursor,end){{error=6;offset=cursor;false}}else{{
-let mut prior=0usize;let mut duplicate=false;
+let fingerprint=json_{row}_identifier_fingerprint(input,cursor,end);let mut prior=0usize;let mut duplicate=false;
 while !duplicate && prior<vec_len<{name}JsonIdentifierSpan>(servers){{
-let other=vec_get<{name}JsonIdentifierSpan>(servers,prior);duplicate=jv_decoded_token_eq(input,other.start,cursor);prior=prior+1usize;!duplicate && prior<vec_len<{name}JsonIdentifierSpan>(servers)
+let other=vec_get<{name}JsonIdentifierSpan>(servers,prior);duplicate=fingerprint==vec_get<usize>(server_fingerprints,prior) && jv_decoded_token_eq(input,other.start,cursor);prior=prior+1usize;!duplicate && prior<vec_len<{name}JsonIdentifierSpan>(servers)
 }}
-if duplicate{{error=10;offset=cursor;false}}else{{servers=vec_push<{name}JsonIdentifierSpan>(servers,{name}JsonIdentifierSpan{{start:cursor,end:end}});true}}
+if duplicate{{error=10;offset=cursor;false}}else{{servers=vec_push<{name}JsonIdentifierSpan>(servers,{name}JsonIdentifierSpan{{start:cursor,end:end}});server_fingerprints=vec_push<usize>(server_fingerprints,fingerprint);true}}
 }}
 }}
 }}
@@ -139,9 +142,9 @@ match decoded{{{row}JsonViewDecode::Error{{code,offset:at,field:target}}=>{{erro
             writeln!(out, "{}:value.{},", f.name, f.name).unwrap();
         }
     }
-    writeln!(out,"}};let mut prior=0usize;let mut duplicate=false;
-while !duplicate && prior<vec_len<{row}JsonView>(patients){{let other=vec_get<{row}JsonView>(patients,prior);duplicate=jv_decoded_token_eq(input,other.{}_start,adjusted.{}_start);prior=prior+1usize;!duplicate && prior<vec_len<{row}JsonView>(patients)}}
-if duplicate{{error=10;offset=adjusted.{}_start;false}}else{{patients=vec_push<{row}JsonView>(patients,adjusted);true}}
+    writeln!(out,"}};let fingerprint=json_{row}_identifier_fingerprint(input,adjusted.{key}_start,adjusted.{key}_end);let mut prior=0usize;let mut duplicate=false;
+while !duplicate && prior<vec_len<{row}JsonView>(patients){{let other=vec_get<{row}JsonView>(patients,prior);duplicate=fingerprint==vec_get<usize>(patient_fingerprints,prior) && jv_decoded_token_eq(input,other.{}_start,adjusted.{}_start);prior=prior+1usize;!duplicate && prior<vec_len<{row}JsonView>(patients)}}
+if duplicate{{error=10;offset=adjusted.{}_start;false}}else{{patients=vec_push<{row}JsonView>(patients,adjusted);patient_fingerprints=vec_push<usize>(patient_fingerprints,fingerprint);true}}
 }},}}
 }}
 }};

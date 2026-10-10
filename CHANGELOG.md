@@ -5,6 +5,7 @@
   Array views or named aliases. Extend the JSON helper inventory oracle to
   visit admitted byte-array literal leaves without changing field-read, clone,
   wire or backend assertions. Grouped executable qualification is pending.
+- Author OPT #748 collision-safe decoded-identifier duplicate prefilter in ordinary generated request source, retaining full equality on matching fingerprints and existing fuel, cardinality, grammar priority and domain refusals; owning execution remains pending.
 
 - Propose the unimplemented OPT #746 owned Bytes consume-and-partition contract: bounded disjoint leases, exact staged transfer and selected-domain lifetime, without changing existing allocation quotas or admitting the maximum-row constructor loop.
 

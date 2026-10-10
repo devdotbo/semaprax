@@ -334,6 +334,18 @@ record errors identify the nested field ordinal. Numeric representations retain
 the full scalar range. Application ranges, such as ShiftSim service 1..100000,
 remain explicit application checks rather than silently narrowing `i64`.
 
+The generated identifier request decoder for [#748](https://github.com/wavect/semaprax/issues/748) uses two ordinary
+`Vec<usize>` caches with the existing 8/256 cardinality bounds. Each fingerprint
+is recomputed from the independently validated decoded ASCII token bytes,
+including escaped spellings. Unequal fingerprints avoid a decoded comparison;
+equal fingerprints always run the original full decoded-token equality, so
+collisions grant no authority. Whole-document grammar validation still runs
+first, and duplicate offsets and identifier-policy refusals are unchanged.
+The source algorithm and collision/domain regression definitions are authored;
+owning executable qualification at the unchanged fuel and physical limits is
+pending. This does not claim to repair the separate UTF-8 maximum-shape fuel
+failure or change that policy's acceptance contract.
+
 The functions `json_Patient_view_decode`, `json_Patient_view_array_decode`,
 `json_Request_request_decode` and corresponding encode/encoded-length helpers
 are ordinary source. The request success carries the two owned view collections;
