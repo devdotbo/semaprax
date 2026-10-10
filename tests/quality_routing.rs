@@ -128,7 +128,7 @@ fn cli_and_editor_surfaces_route_changed_with_their_own_gates_in_fixed_order() {
     repository.write("src/cli/help.rs", "pub fn help() { /* changed */ }\n");
     repository.write("src/cli/help/library.rs", "pub fn library() {}\n");
     repository.write("src/cli/help/shapes.rs", "pub fn shapes() {}\n");
-    repository.write("src/cli/help/scoped_diagnostics.rs", "pub fn scoped() {}\n");
+    repository.write("src/cli/help/authoring.rs", "pub fn scoped() {}\n");
     repository.write(
         "src/cli/help/diagnostic_index.rs",
         "pub fn response() { /* changed */ }\n",
@@ -139,7 +139,9 @@ fn cli_and_editor_surfaces_route_changed_with_their_own_gates_in_fixed_order() {
     );
     repository.write("src/main.rs", "fn main() { println!(\"cli\"); }\n");
     let plan = repository.changed_plan(&[]).unwrap();
-    assert!(plan.contains("path\tsrc/cli/help/scoped_diagnostics.rs\tcli-surface\tcli-harnesses,documentation,rustdoc\n"));
+    assert!(plan.contains(
+        "path\tsrc/cli/help/authoring.rs\tcli-surface\tcli-harnesses,documentation,rustdoc\n"
+    ));
     assert!(plan.contains("effective\tchanged\n"));
     assert!(plan.contains("reason\tcomplete-git-state-has-narrow-mappings\n"));
     assert!(
