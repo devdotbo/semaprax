@@ -1,8 +1,6 @@
 //! Bounded transitive proof for ordinary same-owner byte-writing helpers.
 //! Declaration spelling, attached cleanup and generated names carry no authority.
 use crate::ast::{Expr, ExprKind, Function, ParamMode, Program, Type};
-#[cfg(test)]
-use crate::hir::ResolvedProgram;
 use crate::hir::{
     OwnershipMode, ResolvedBinding, ResolvedExpr, ResolvedExprKind, ResolvedFunction, ResolvedType,
 };

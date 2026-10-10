@@ -213,7 +213,7 @@ mod tests {
     fn hostile_wide_call_is_counted_before_any_skeleton_materialization() {
         let mut program = program();
         let function = program
-            .functions()
+            .functions
             .iter_mut()
             .find(|function| function.id.as_str() == "weight.choose")
             .unwrap();

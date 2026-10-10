@@ -195,12 +195,13 @@ fn inline_named_string_view_copy_retains_ordinary_loop_and_loan_validation() {
 fn inline_string_copy_refuses_forged_view_operation_type_and_root() {
     fn input(expression: &mut ResolvedExpr) -> Option<&mut ResolvedExpr> {
         match &mut expression.kind {
-            ResolvedExprKind::Call { callee, args, .. }
-                if callee.as_str() == crate::string_ops::FROM_STR_ID =>
-            {
-                args.first_mut()
+            ResolvedExprKind::Call { callee, args, .. } => {
+                if callee.as_str() == crate::string_ops::FROM_STR_ID {
+                    args.first_mut()
+                } else {
+                    args.iter_mut().find_map(input)
+                }
             }
-            ResolvedExprKind::Call { args, .. } => args.iter_mut().find_map(input),
             ResolvedExprKind::Block { statements, tail } => {
                 for statement in statements {
                     let found = match statement {
