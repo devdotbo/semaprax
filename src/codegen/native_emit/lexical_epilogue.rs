@@ -130,6 +130,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             self.emit_failure_at(&contract.id, StatusLane::ContractFalse)?;
             self.indent -= 1;
             self.line("}");
+            self.emit_lexical_contract_success(contract)?;
         }
         self.emit_success_terminal()
     }

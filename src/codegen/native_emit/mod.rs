@@ -40,6 +40,7 @@ mod generic_variant;
 mod guarded_variant;
 mod http_io;
 mod indexed_reads;
+mod lexical_contract;
 mod lexical_epilogue;
 mod literal_format;
 mod literals;
@@ -2026,6 +2027,7 @@ fn emit_function(
         emitter.emit_failure_at(&contract.id, crate::cleanup_plan::StatusLane::ContractFalse)?;
         emitter.indent -= 1;
         emitter.line("}");
+        emitter.emit_lexical_contract_success(contract)?;
     }
     if is_aggregate_type(program, &function.return_type)? {
         if let Some(plan) = &bytes_plan {

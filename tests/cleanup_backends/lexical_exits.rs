@@ -7,7 +7,11 @@ static NEXT: AtomicU64 = AtomicU64::new(0);
 const SOURCE: &str = r#"
 module test.lexical_exits;
 @id("lexical.run")
-fn run(fail: bool) -> i64 ensures result == 9 {
+fn run(fail: bool) -> i64
+    requires string_len("req") == 3
+    ensures string_len("post") == 4
+    ensures result == 9
+{
     let outer = "outer";
     let mut index = 0;
     while index < 5 {
@@ -86,7 +90,7 @@ int main(void) {{
             const struct spx_normalized_status *selected = spx_status_resolve(&context, status);
             if (status == SPX_STATUS_SUCCESS || selected == NULL || strcmp(selected->domain_id, "semaprax.contract.v1") != 0 || selected->code != UINT32_C(2) || result != INT64_C(1234567)) return 11;
         }} else if (status != SPX_STATUS_SUCCESS || result != INT64_C(9)) return 12;
-        if (spx_test_allocated - allocated_before != 5 || spx_test_freed - freed_before != 5) return 13;
+        if (spx_test_allocated - allocated_before != 7 || spx_test_freed - freed_before != 7) return 13;
     }}
     // The ABI already transferred this owner to the callee. Entry refusal
     // must settle it once before publication, without entering or decrementing
