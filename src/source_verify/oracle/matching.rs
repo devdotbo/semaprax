@@ -112,7 +112,7 @@ pub(super) fn oracle_match(
         let scrutinee_value = scrutinee_value.expect("scalar checked above");
         let mut result = None::<CheckedValue>;
         let baseline = variables.clone();
-        let outer_names = variables.keys().cloned().collect::<HashSet<_>>();
+        let outer_names = variables.keys().cloned().collect::<Vec<_>>();
         let mut joined = baseline.clone();
         for arm in arms {
             *variables = baseline.clone();
