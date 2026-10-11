@@ -979,6 +979,8 @@ endpoint and edge loan-ID lists use immutable boxed slices in their original
 canonical order. `loan_plan/compact_ids.rs` reserves possible vector-to-slice
 copy overlap before conversion; the cache slice codec preserves the original
 vector wire and charges the same decoded conversion overlap.
+`loan_plan/origin.rs` reconstructs alias prefixes through borrowed discovery and
+one prepaid materialization, preserving canonical projection order.
 `loan_plan/owned_capacity.rs` accounts retained carriers and distinct immutable
 expression-identity backing allocations. Its pointer inventory is temporary,
 charged before allocation, and grants no semantic identity or graph authority;

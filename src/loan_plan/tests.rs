@@ -471,7 +471,7 @@ fn alias_projection_reconstruction_accounts_cumulative_growth_not_only_final_ext
     };
     let mut work = WorkCounter::new(MAX_LOAN_PLAN_WORK_V1);
     let (actual, observed) = crate::test_allocation_observer::measure(|| {
-        resolve_origin(&aliases, initial, &mut work).unwrap()
+        origin::original(&aliases, initial, &mut work).unwrap()
     });
     assert!(!observed.invalid);
     assert_eq!(work.used, LINKS);

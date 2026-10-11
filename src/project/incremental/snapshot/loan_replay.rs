@@ -315,6 +315,18 @@ module projection_cache;
         assert_eq!(reconstruct_with_limit(&mut short, used - 1).unwrap_err()[0].code, "SPX-G256");
         assert_eq!(crate::cache_codec::encode(&short).unwrap(), wire);
         crate::hir::validate(&short).unwrap();
+
+        let mut forged = crate::cache_codec::decode(&wire).unwrap();
+        let loan = forged.functions.iter_mut().flat_map(|f| &mut f.loan_plan.loans)
+            .find(|loan| !loan.origin.projections.is_empty()).unwrap();
+        loan.origin.projections[0] = crate::hir::PlaceProjection::VariantField {
+            case: crate::hir::DeclarationId::new("foreign.native.case"),
+            field: crate::hir::DeclarationId::new("foreign.native.field"),
+        };
+        let forged_wire = crate::cache_codec::encode(&forged).unwrap();
+        assert_eq!(reconstruct(&mut forged).unwrap_err()[0].code, "SPX-G255");
+        assert_eq!(crate::cache_codec::encode(&forged).unwrap(), forged_wire);
+        assert_eq!(crate::hir::validate(&forged).unwrap_err().code, "SPX-H006");
     }
 
 }

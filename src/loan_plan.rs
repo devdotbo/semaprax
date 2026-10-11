@@ -35,6 +35,7 @@ use call_arguments::borrowed_call_arguments;
 mod guidance;
 mod lexical_exit;
 mod native_view;
+mod origin;
 pub(crate) mod owned_capacity;
 mod provisional_result;
 mod record_vec_borrow;
@@ -1295,23 +1296,10 @@ fn resolve_parent(
 
 fn resolve_origin(
     aliases: &BTreeMap<ValueId, Place>,
-    mut place: Place,
+    place: Place,
     work: &mut WorkCounter,
 ) -> Result<Place, Diagnostic> {
-    let mut seen = BTreeSet::new();
-    while let Some(alias) = aliases.get(&place.root) {
-        charge(work)?;
-        if !seen.insert(place.root.clone()) {
-            return Err(error("loan alias provenance contains a cycle"));
-        }
-        let mut projections = alias.projections.clone();
-        projections.extend(place.projections);
-        place = Place {
-            root: alias.root.clone(),
-            projections,
-        };
-    }
-    Ok(place)
+    origin::resolve(aliases, place, work)
 }
 
 fn expression_place(expression: &ResolvedExpr) -> Option<Place> {

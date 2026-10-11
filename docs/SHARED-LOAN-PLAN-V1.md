@@ -146,6 +146,19 @@ through compile-time assertions. This bounds the additional allocations; it
 does not claim a measured peak-memory reduction or change the existing live
 sets, CFG, retained proof capacity, or their accounting.
 
+Alias provenance reconstruction first traverses borrowed immutable prefixes,
+checks cycles, and counts the exact projection payload. It then materializes
+one final projection vector in canonical prefix order. Both alias passes debit
+each visited link before activity; the first pass also debits each inspected
+projection. Zero-projection chains need no materialization pass. These are
+planner visits, not a byte/comparator-work measurement, under the unchanged 1,000,000-work ceiling;
+this does not claim identical consumed work or admission at the old boundary.
+The materialized vector, carrier, and newly cloned projection-ID text are
+reserved before allocation on the existing active physical ledger. The prior
+conservative construction forecast remains unchanged, so cached reconstruction
+currently pays that forecast plus this actual reservation; no budget recovery
+or RequestViews cache-fit claim follows from this algorithm checkpoint.
+
 ## Independent replay
 
 Validated HIR does not trust an attached Shared Loan Plan. Independent replay
