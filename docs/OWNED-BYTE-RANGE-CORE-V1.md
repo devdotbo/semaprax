@@ -1,0 +1,48 @@
+# Private held Bytes range core v1
+
+Status: authored executor-neutral prerequisite for OPT #746/#747; unqualified.
+No source operation, allocation strategy, graph/cache tag, ABI or backend is
+selected by this core. The unchanged4096 fixture remains refused.
+
+`construction_fusion::domain::owner_core` holds one actual ordinary backing and
+an exact fixed slot table. It accepts no child as a partition input. The caller
+must independently authenticate the ordinary whole owner, target family/count
+and normal no-live-loan transfer; the Rust owner type is not a source certificate.
+The complete inventory publishes together only after width, checked extent,
+actual backing length, existing Bytes extent and maximum Vec count checks,
+metadata reservations and nonwrapping issuer preparation. Every precommit
+refusal returns the original backing unchanged. Zero count requires empty
+backing and positive width; it releases that backing once.
+
+The context holds the actual issuer and module through Rust borrows. Tokens
+carry invocation, slot, nonce and generation; every access validates them before
+resolving a slice. Slot index determines the immutable disjoint range. A child
+never gains whole-backing authority. Moves and stores renew nonce/generation;
+active subrange loans prohibit them and owner drop. Retired view slots receive
+new issuer nonces. The first operation failure remains sticky; exact loan-end
+and owner-drop cleanup remain possible and cannot replace it.
+
+The context must remain held while any child/container/view exists. A popped
+child remains in its slot when its parent Vec and siblings settle. Last-child
+settlement releases the backing exactly once. Context abandonment releases the
+remaining administrative backing without publishing a result or synthesizing
+language finalizer order. Executors still perform canonical per-owner cleanup.
+The older descriptor-bound fusion reference now also releases abandoned backing.
+
+Metadata predebits cover actual `Layout::array` slot/view/carrier backing,
+context and returned/temporary Vec headers. Exact-capacity allocation is checked
+before boxed tables publish; physical OOM is invariant fail-stop. The executor's
+`Runtime::reserve_metadata` must debit its real held physical account, including
+caller placement/overlap; this core creates no replacement budget or refund.
+Deep clone calls the executor's ordinary cumulative event/payload debit before
+fresh allocation and copies only the authenticated range. The executor must use
+the existing32-event/2MiB counters and retain ordinary clone finalization.
+No private parallel allowance is provided by the trait or descriptor.
+
+Six child tests own original-owner preservation/exact and one-short metadata,
+popped-child survival and deep-copy isolation, loan/store/sticky cleanup,
+foreign/stale/overlap/exhaustion refusal, ordinary clone boundaries/partial
+abandonment, and empty/invalid shapes. They are authored, not executed. Actual
+interpreter/native/Wasm integration and all original partition/fusion owning
+gates remain required by [partition](OWNED-BYTE-PARTITION-V1.md) and
+[fusion](OWNED-BYTE-CONSTRUCTION-FUSION-V1.md).

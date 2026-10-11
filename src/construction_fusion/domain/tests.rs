@@ -221,3 +221,31 @@ fn one_owner_supports_independently_bounded_concurrent_views() {
     domain.drop_owner(&mut owner).unwrap();
     assert_eq!(domain.phase(), Phase::Settled);
 }
+
+#[test]
+fn abandoned_partial_construction_releases_actual_backing_once() {
+    let (source, typed) = super::super::tests::inputs(8);
+    let descriptor = super::super::derive(&source, &typed).unwrap();
+    let required = Domain::<Probe>::metadata_bytes(8).unwrap();
+    let probe = Probe::new();
+    let module = ModuleIdentity::new();
+    let mut issuer = Issuer::new();
+    {
+        let mut domain =
+            Domain::new(&descriptor, &mut issuer, &module, probe.clone(), required).unwrap();
+        domain.start().unwrap();
+        let first = domain.issue(0).unwrap();
+        domain.publish(&first).unwrap();
+        let _partial = domain.issue(1).unwrap();
+        assert_eq!(probe.calls.get(), 1);
+        assert_eq!(probe.frees.get(), 0);
+        // Neither an incomplete row nor missing explicit abort may leak storage.
+    }
+    assert_eq!(probe.frees.get(), 1);
+    {
+        let _unstarted =
+            Domain::new(&descriptor, &mut issuer, &module, probe.clone(), required).unwrap();
+    }
+    assert_eq!(probe.calls.get(), 1);
+    assert_eq!(probe.frees.get(), 1);
+}

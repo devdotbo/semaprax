@@ -477,3 +477,14 @@ impl<'a, B: Backing> Domain<'a, B> {
 }
 #[cfg(test)]
 mod tests;
+
+/// Shared private range lifetime core; no source or backend selection.
+pub(crate) mod owner_core;
+
+impl<B: Backing> Drop for Domain<'_, B> {
+    fn drop(&mut self) {
+        if let Some(owner) = self.backing.take() {
+            self.executor.release(std::mem::ManuallyDrop::into_inner(owner));
+        }
+    }
+}

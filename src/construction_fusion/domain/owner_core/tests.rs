@@ -1,0 +1,303 @@
+use super::{Child, Core, Runtime};
+use crate::construction_fusion::domain::{Issuer, ModuleIdentity, Refusal};
+use std::{alloc::Layout, cell::RefCell, rc::Rc};
+#[derive(Default)]
+struct Account {
+    remaining: usize,
+    consumed: usize,
+    failed: bool,
+    events: u32,
+    payload: usize,
+    allocations: usize,
+    releases: usize,
+}
+#[derive(Clone)]
+struct Probe(Rc<RefCell<Account>>);
+impl Runtime for Probe {
+    type Owner = Box<[u8]>;
+    fn reserve_metadata(&mut self, layout: Layout) -> Result<(), Refusal> {
+        let mut a = self.0.borrow_mut();
+        if a.failed || layout.size() > a.remaining {
+            a.failed = true;
+            return Err(Refusal::Metadata);
+        }
+        a.remaining -= layout.size();
+        a.consumed += layout.size();
+        Ok(())
+    }
+    fn charge_clone(&mut self, extent: usize) -> Result<(), Refusal> {
+        let mut a = self.0.borrow_mut();
+        if a.failed
+            || a.events >= crate::byte_data_capacity::MAX_BYTES_COPY_SITES
+            || a.payload.checked_add(extent).is_none_or(|n| {
+                n > crate::byte_data_capacity::MAX_OWNED_BYTE_PAYLOAD_BYTES as usize
+            })
+        {
+            a.failed = true;
+            return Err(Refusal::Metadata);
+        }
+        a.events += 1;
+        a.payload += extent;
+        Ok(())
+    }
+    fn allocate(&mut self, extent: usize) -> Self::Owner {
+        self.0.borrow_mut().allocations += 1;
+        vec![0; extent].into_boxed_slice()
+    }
+    fn bytes(owner: &Self::Owner) -> &[u8] {
+        owner
+    }
+    fn bytes_mut(owner: &mut Self::Owner) -> &mut [u8] {
+        owner
+    }
+    fn release(&mut self, owner: Self::Owner) {
+        drop(owner);
+        self.0.borrow_mut().releases += 1;
+    }
+}
+fn required(count: usize) -> usize {
+    Core::<Probe>::metadata_layouts(count)
+        .unwrap()
+        .iter()
+        .map(Layout::size)
+        .sum()
+}
+fn probe(count: usize) -> Probe {
+    Probe(Rc::new(RefCell::new(Account {
+        remaining: required(count),
+        ..Account::default()
+    })))
+}
+fn duplicate<'a>(c: &Child<'a>) -> Child<'a> {
+    Child {
+        held: std::marker::PhantomData,
+        issuer: c.issuer,
+        module: c.module,
+        domain: c.domain,
+        slot: c.slot,
+        nonce: c.nonce,
+        generation: c.generation,
+    }
+}
+#[test]
+fn preparation_preserves_original_and_precharges_every_actual_table_and_header() {
+    let module = ModuleIdentity::new();
+    let mut issuer = Issuer::new();
+    let p = probe(3);
+    p.0.borrow_mut().remaining -= 1;
+    let owner: Box<[u8]> = vec![1, 2, 3, 4, 5, 6].into_boxed_slice();
+    let address = owner.as_ptr();
+    let (error, original) = match Core::partition(owner, 3, 2, &mut issuer, &module, p.clone()) {
+        Err(e) => e,
+        Ok(_) => panic!("one-short preparation published children"),
+    };
+    assert_eq!(error, Refusal::Metadata);
+    assert_eq!(original.as_ptr(), address);
+    assert_eq!(&*original, &[1, 2, 3, 4, 5, 6]);
+    assert!(p.0.borrow().failed);
+    assert_eq!(p.0.borrow().allocations, 0);
+    assert_eq!(p.0.borrow().releases, 0);
+    let p = probe(3);
+    let (core, children) = Core::partition(original, 3, 2, &mut issuer, &module, p.clone())
+        .ok()
+        .unwrap();
+    assert_eq!(core.slots.len(), 3);
+    assert_eq!(children.len(), children.capacity());
+    assert_eq!(p.0.borrow().consumed, required(3));
+    assert_eq!(p.0.borrow().remaining, 0);
+    assert_eq!(p.0.borrow().allocations, 0); // partition never copies the payload
+    drop(core);
+    assert_eq!(p.0.borrow().releases, 1);
+}
+#[test]
+fn popped_child_store_clone_and_last_release_preserve_disjoint_backing() {
+    let module = ModuleIdentity::new();
+    let mut issuer = Issuer::new();
+    let p = probe(3);
+    let (mut core, mut children) = Core::partition(
+        vec![1, 2, 3, 4, 5, 6].into_boxed_slice(),
+        3,
+        2,
+        &mut issuer,
+        &module,
+        p.clone(),
+    )
+    .ok()
+    .unwrap();
+    let mut popped = children.pop().unwrap();
+    for child in &mut children {
+        core.drop_owner(child).unwrap();
+    }
+    drop(children);
+    assert_eq!(p.0.borrow().releases, 0);
+    let cloned = core.deep_clone(&popped).unwrap();
+    assert_eq!(&*cloned, &[5, 6]);
+    assert_eq!(p.0.borrow().events, 1);
+    assert_eq!(p.0.borrow().payload, 2);
+    let stale = duplicate(&popped);
+    core.store(&mut popped, 0, 99).unwrap();
+    let mut view = core.borrow(&popped, 0..2).unwrap();
+    assert_eq!(core.read(&view, |b| b.to_vec()).unwrap(), [99, 6]);
+    assert_eq!(&*cloned, &[5, 6]); // actual independent ordinary allocation
+    core.end_borrow(&mut view).unwrap();
+    assert!(matches!(core.borrow(&stale, 0..1), Err(Refusal::Identity)));
+    assert_eq!(core.failure(), Some(Refusal::Identity));
+    core.drop_owner(&mut popped).unwrap();
+    assert_eq!(p.0.borrow().releases, 1);
+    core.runtime.release(cloned);
+    assert_eq!(p.0.borrow().releases, 2);
+    drop(core);
+    assert_eq!(p.0.borrow().releases, 2);
+}
+#[test]
+fn borrowed_store_refuses_before_mutation_and_cleanup_preserves_first_failure() {
+    let module = ModuleIdentity::new();
+    let mut issuer = Issuer::new();
+    let p = probe(2);
+    let (mut core, mut children) = Core::partition(
+        vec![1, 2, 3, 4].into_boxed_slice(),
+        2,
+        2,
+        &mut issuer,
+        &module,
+        p.clone(),
+    )
+    .ok()
+    .unwrap();
+    let mut loan = core.borrow(&children[0], 0..2).unwrap();
+    assert_eq!(core.store(&mut children[0], 0, 9), Err(Refusal::Borrowed));
+    assert_eq!(Probe::bytes(core.backing.as_ref().unwrap()), &[1, 2, 3, 4]);
+    assert_eq!(core.move_owner(&mut children[1]), Err(Refusal::Borrowed));
+    core.end_borrow(&mut loan).unwrap();
+    for c in &mut children {
+        core.drop_owner(c).unwrap();
+    }
+    assert_eq!(core.failure(), Some(Refusal::Borrowed));
+    assert_eq!(p.0.borrow().releases, 1);
+}
+#[test]
+fn foreign_stale_overlapping_and_exhausted_receipts_never_resolve_backing() {
+    for mutation in 0..6 {
+        let module = ModuleIdentity::new();
+        let mut issuer = Issuer::new();
+        let p = probe(2);
+        let (mut core, mut children) = Core::partition(
+            vec![1, 2, 3, 4].into_boxed_slice(),
+            2,
+            2,
+            &mut issuer,
+            &module,
+            p.clone(),
+        )
+        .ok()
+        .unwrap();
+        let mut forged = duplicate(&children[1]);
+        match mutation {
+            0 => forged.module ^= 1,
+            1 => forged.domain += 1,
+            2 => forged.slot = usize::MAX,
+            3 => core.slots[1].offset = 0,
+            4 => {
+                core.issuer.next = u64::MAX;
+            }
+            _ => {
+                core.slots[1].generation = u64::MAX;
+                forged.generation = u64::MAX;
+            }
+        }
+        if mutation == 5 {
+            assert_eq!(core.move_owner(&mut forged), Err(Refusal::Exhausted));
+        } else {
+            assert!(core.borrow(&forged, 0..2).is_err(), "mutation {mutation}");
+        }
+        assert!(core.failure().is_some());
+        assert_eq!(p.0.borrow().allocations, 0);
+        // Corrupt range-table control is abandoned, not repaired downstream.
+        if mutation != 3 && mutation != 5 {
+            for c in &mut children {
+                core.drop_owner(c).unwrap();
+            }
+        }
+        drop(core);
+        assert_eq!(p.0.borrow().releases, 1);
+    }
+}
+#[test]
+fn clone_limits_remain_ordinary_and_partial_abandonment_releases_once() {
+    for payload_short in [false, true] {
+        let module = ModuleIdentity::new();
+        let mut issuer = Issuer::new();
+        let p = probe(2);
+        {
+            let mut a = p.0.borrow_mut();
+            a.events = 31;
+            a.payload = crate::byte_data_capacity::MAX_OWNED_BYTE_PAYLOAD_BYTES as usize - 2;
+            if payload_short {
+                a.payload += 1;
+            }
+        }
+        let (mut core, mut children) = Core::partition(
+            vec![1, 2, 3, 4].into_boxed_slice(),
+            2,
+            2,
+            &mut issuer,
+            &module,
+            p.clone(),
+        )
+        .ok()
+        .unwrap();
+        if !payload_short {
+            let copy = core.deep_clone(&children[0]).unwrap();
+            assert_eq!(p.0.borrow().events, 32);
+            assert_eq!(p.0.borrow().payload, 2_097_152);
+            core.runtime.release(copy);
+        }
+        assert!(core.deep_clone(&children[1]).is_err());
+        let first = core.failure();
+        core.drop_owner(&mut children[0]).unwrap();
+        assert_eq!(core.failure(), first);
+        drop(core); // remaining child/partial publication cannot leak backing
+        assert_eq!(p.0.borrow().releases, if payload_short { 1 } else { 2 });
+        assert_eq!(p.0.borrow().allocations, if payload_short { 0 } else { 1 });
+    }
+}
+#[test]
+fn zero_and_invalid_shapes_preserve_transaction_and_issuer_no_wrap() {
+    let module = ModuleIdentity::new();
+    for (count, width, extent, error) in [
+        (1, 0, 0, Refusal::Range),
+        (usize::MAX, 2, 0, Refusal::Range),
+        (2, 2, 3, Refusal::Range),
+        (8193, 1, 8193, Refusal::Metadata),
+    ] {
+        let mut issuer = Issuer::new();
+        let p = probe(0);
+        let owner = vec![8; extent].into_boxed_slice();
+        let address = owner.as_ptr();
+        let (found, original) =
+            match Core::partition(owner, count, width, &mut issuer, &module, p.clone()) {
+                Err(e) => e,
+                Ok(_) => panic!("invalid shape published"),
+            };
+        assert_eq!(found, error);
+        assert_eq!(address, original.as_ptr());
+        assert_eq!(p.0.borrow().consumed, 0);
+        assert_eq!(issuer.next, 1);
+    }
+    let mut issuer = Issuer::new();
+    let p = probe(0);
+    let (core, children) = Core::partition(
+        Vec::new().into_boxed_slice(),
+        0,
+        1,
+        &mut issuer,
+        &module,
+        p.clone(),
+    )
+    .ok()
+    .unwrap();
+    assert!(children.is_empty());
+    assert_eq!(p.0.borrow().releases, 1);
+    drop(core);
+    assert_eq!(p.0.borrow().releases, 1);
+}
