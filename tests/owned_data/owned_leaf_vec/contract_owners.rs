@@ -23,11 +23,9 @@ fn interpret(source: &str, value: i64, code: Option<u32>) {
     // internal-strings route; ordinary Interpreter v1 must remain closed.
     let legacy =
         semaprax::interpreter::interpret(&path, "app.main", &[], &Default::default()).unwrap_err();
-    assert!(
-        legacy
-            .iter()
-            .any(|error| error.code == "SPX-F102" && error.message.contains("unsupported_callee"))
-    );
+    assert!(legacy
+        .iter()
+        .any(|error| error.code == "SPX-F102" && error.message.contains("unsupported_callee")));
     for _ in 0..3 {
         let observed = semaprax::interpreter::internal_strings::interpret(
             &path,
@@ -64,7 +62,8 @@ fn fresh_contract_aliases_consume_locals_settle_on_refusal_and_reenter_without_o
     for (call, code) in [("run(true,false)", 1), ("run(false,true)", 2)] {
         let failed = SOURCE.replace("run(false,false)", call);
         interpret(&failed, 0, Some(code));
-        super::run_wasm(&failed, 10, 0, "none");
+        // Core Wasm preserves distinct requires (9) and ensures (10) statuses.
+        super::run_wasm(&failed, 8 + code, 0, "none");
     }
     interpret(SOURCE, 29, None);
     super::run_wasm(SOURCE, 0, 29, "none");

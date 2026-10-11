@@ -89,6 +89,16 @@ pub(super) fn run(
     failure: Option<(&str, u32, u32)>,
     allocations: i64,
 ) {
+    run_with_browser_refusal(source, expected, failure, allocations, None);
+}
+
+pub(super) fn run_with_browser_refusal(
+    source: &str,
+    expected: i64,
+    failure: Option<(&str, u32, u32)>,
+    allocations: i64,
+    browser_refusal: Option<&str>,
+) {
     let root = directory();
     let path = root.join("app.spx");
     std::fs::write(&path, source).unwrap();
@@ -172,7 +182,29 @@ pub(super) fn run(
         .replace("__SEMAPRAX_OWNED_EXPORTS__", "{}")
         .replace("__SEMAPRAX_WASM_SHA256__", &digest);
     std::fs::write(root.join("runtime.mjs"), runtime).unwrap();
-    std::fs::write(root.join("run.mjs"), format!(r#"
+    let script = if let Some(message) = browser_refusal {
+        // Private Core-Wasm/native extent admission does not widen the browser
+        // adapter's independent String ceiling. Enough entries let this gate
+        // reach the owning capacity refusal instead of an unrelated slot cap.
+        format!(
+            r#"
+import {{readFile}} from 'node:fs/promises';
+import {{instantiateBytes,semanticStatus}} from './runtime.mjs';
+const bytes=await readFile('./app.wasm');
+for(let i=0;i<3;i++){{
+ const {{instance}}=await instantiateBytes(bytes,{{maxOwnedByteEntries:8}});
+ let refused=false;
+ try{{instance.exports.semaprax_main();}}catch(error){{
+  if(error.message!=={message:?}||semanticStatus(error))throw error;
+  refused=true;
+ }}
+ if(!refused)throw Error('browser adapter widened its String capacity');
+}}
+"#
+        )
+    } else {
+        format!(
+            r#"
 import {{readFile}} from 'node:fs/promises';
 import {{instantiateBytes,semanticStatus}} from './runtime.mjs';
 const {{instance}}=await instantiateBytes(await readFile('./app.wasm'),{{maxOwnedByteEntries:4}});
@@ -182,7 +214,10 @@ for(let i=0;i<3;i++){{
  if({code}===0){{if(selected||value!=={expected}n)throw Error('bulk adapter success mismatch');}}
  else if(!selected||selected.domain_id!=={domain:?}||selected.code!=={code})throw Error('bulk adapter status mismatch');
 }}
-"#)).unwrap();
+"#
+        )
+    };
+    std::fs::write(root.join("run.mjs"), script).unwrap();
     let output = Command::new("node")
         .arg("run.mjs")
         .current_dir(&root)

@@ -46,7 +46,14 @@ fn owned_long_str_and_byte_views_preserve_exact_extent_and_backend_settlement() 
     let view = string_as_str(whole);
     if forward(view) { 43 } else { -1 }
 }"#;
-    super::super::bulk_utf8::run(larger, 43, None, -1);
+    // Exact private/native extent does not widen the browser String ceiling.
+    super::super::bulk_utf8::run_with_browser_refusal(
+        larger,
+        43,
+        None,
+        -1,
+        Some("SEMAPRAX String concatenation capacity invariant"),
+    );
 }
 
 fn execute(generated: &str, probe: &str, optimization: &str) -> std::process::Output {

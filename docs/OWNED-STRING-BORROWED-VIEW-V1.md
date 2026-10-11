@@ -110,6 +110,9 @@ Owning executable qualification of this repair is pending. The authored
 `owned_data::borrowed_str_native::owned_views` gates retain the original bulk
 UTF-8 interpreter/native/Wasm settlement controls, add 131,072-byte byte views
 and 262,144-byte Str forwarding, and check foreign extent refusal before
-payload access. A separate native matcher oracle covers periodic near-matches,
+payload access. The 262,144-byte concatenation succeeds only on the reference
+interpreter, native backend, and strict private Core-Wasm host; its browser
+adapter gate requires the existing String-capacity refusal. The browser
+allocation and concatenation ceilings are unchanged. A separate native matcher oracle covers periodic near-matches,
 long needles, NUL and Unicode at O0/O2. These definitions are not execution
 receipts or a broader public ABI grant.
