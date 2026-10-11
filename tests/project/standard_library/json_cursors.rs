@@ -72,6 +72,13 @@ fn json_query_projection_executes_on_all_three_backends() {
     run_cursor_package("std.data.json.query");
 }
 
+// The unchanged package test entry includes all 256 byte values at eight
+// base/span boundaries, with present and absent offset checks in one closure.
+#[test]
+fn json_utf8_offset_conformance_executes_on_all_three_backends() {
+    run_cursor_package("std.data.json.utf8");
+}
+
 #[test]
 fn json_strict_scan_executes_on_all_three_backends() {
     run_cursor_package("std.data.json.scan");
