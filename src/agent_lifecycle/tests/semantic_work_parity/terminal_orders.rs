@@ -50,6 +50,9 @@ struct Route {
     name: &'static str,
     args: [i64; 6],
     limit: u64,
+    /// Interpreter-owned semantic fuel: one unit per admitted frame entry and
+    /// per entered loop body; exhaustion reports exactly the limit.
+    fuel: u64,
     outcome: Outcome,
     trace: Trace,
 }
@@ -58,6 +61,7 @@ const fn route(
     name: &'static str,
     args: [i64; 6],
     limit: u64,
+    fuel: u64,
     outcome: Outcome,
     trace: Trace,
 ) -> Route {
@@ -65,26 +69,38 @@ const fn route(
         name,
         args,
         limit,
+        fuel,
         outcome,
         trace,
     }
 }
 
 const ROUTES: &[Route] = &[
-    route("success", OK, 1_000, Outcome::Returned, Trace::Success),
+    route("success", OK, 1_000, 7, Outcome::Returned, Trace::Success),
     // run, descend, two weigh frames and three loop bodies.
-    route("success-at-exact-limit", OK, 7, Outcome::Returned, Trace::Success),
+    route(
+        "success-at-exact-limit",
+        OK,
+        7,
+        7,
+        Outcome::Returned,
+        Trace::Success,
+    ),
+    // The entry charge precedes the precondition.
     route(
         "requires-false",
         [0, 1, 1, 4, 0, 1_000],
         1_000,
+        1,
         Outcome::Requires,
         Trace::Requires,
     ),
+    // run, descend and the failing weigh frame.
     route(
         "operation-failure-before-join",
         [0, 0, 1, 4, 1, 1_000],
         1_000,
+        3,
         Outcome::Arithmetic,
         Trace::BeforeJoin,
     ),
@@ -92,6 +108,7 @@ const ROUTES: &[Route] = &[
         "operation-failure-after-join",
         [0, 1, 0, 4, 1, 1_000],
         1_000,
+        4,
         Outcome::Arithmetic,
         Trace::AfterJoin,
     ),
@@ -99,19 +116,23 @@ const ROUTES: &[Route] = &[
         "ensures-false",
         [0, 1, 1, 4, 1, 0],
         1_000,
+        7,
         Outcome::Ensures,
         Trace::Ensures,
     ),
+    // run plus 255 descend frames; the 257th frame is refused uncharged.
     route(
         "call-depth-before-owners",
         [300, 1, 1, 4, 1, 1_000],
         100_000,
+        256,
         Outcome::Depth,
         Trace::Descend,
     ),
     route(
         "fuel-at-callee-before-owners",
         OK,
+        1,
         1,
         Outcome::Fuel,
         Trace::Descend,
@@ -120,12 +141,14 @@ const ROUTES: &[Route] = &[
         "fuel-at-callee-before-join",
         OK,
         2,
+        2,
         Outcome::Fuel,
         Trace::BeforeJoin,
     ),
     route(
         "fuel-at-callee-after-join",
         OK,
+        3,
         3,
         Outcome::Fuel,
         Trace::AfterJoin,
@@ -134,12 +157,14 @@ const ROUTES: &[Route] = &[
         "fuel-at-first-iteration",
         OK,
         4,
+        4,
         Outcome::Fuel,
         Trace::Iteration,
     ),
     route(
         "fuel-at-last-iteration",
         OK,
+        6,
         6,
         Outcome::Fuel,
         Trace::Iteration,
@@ -320,10 +345,23 @@ fn opposing_terminal_orders_settle_exactly_on_every_native_route() {
             route.limit,
         );
         assert_outcome(route, &expected);
+        assert_eq!(work(&expected).fuel_used, route.fuel, "{}: fuel", route.name);
+        assert_eq!(
+            work(&expected).fuel_limit,
+            Some(route.limit),
+            "{}: admitted limit",
+            route.name
+        );
         assert_eq!(
             work(&expected).exhausted,
             matches!(route.outcome, Outcome::Fuel),
             "{}: exhaustion",
+            route.name
+        );
+        assert_eq!(
+            work(&expected).finalizer_events,
+            None,
+            "{}: the interpreter performs no plan finalizer",
             route.name
         );
         let trace = expected_trace(route.trace)
@@ -344,6 +382,11 @@ fn opposing_terminal_orders_settle_exactly_on_every_native_route() {
                 comparable(&actual),
                 comparable(&expected),
                 "{}: {leg} status, publication and fuel",
+                route.name
+            );
+            assert_eq!(
+                actual.steps_used, 0,
+                "{}: {leg} reports no instruction count",
                 route.name
             );
             assert_eq!(
