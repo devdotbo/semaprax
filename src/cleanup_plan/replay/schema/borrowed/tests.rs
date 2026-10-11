@@ -27,14 +27,49 @@ fn actual_provider_profile_is_current_and_keeps_the_original_value_match_schema_
     assert!(!profile.renewals(&program, function).unwrap().has_helpers());
     assert!(profile.renewals(&program, &function.clone()).is_none());
     assert!(profile.renewals(&program.clone(), function).is_none());
+    let before = budget.remaining;
+    assert_eq!(
+        profile.schema(&program, function, &mut budget).unwrap(),
+        original
+    );
+    // Nineteen evaluated guard probes, one string-length probe, and every
+    // byte up to the differing inventory-version digit; no hidden tree scan.
+    assert_eq!(
+        before - budget.remaining,
+        20 + crate::cleanup::CLEANUP_INVENTORY_SCHEMA_V1.len()
+    );
+    assert_eq!(
+        profile
+            .schema(&program, &function.clone(), &mut budget)
+            .unwrap_err()
+            .code,
+        "SPX-H006"
+    );
+    assert_eq!(
+        profile
+            .schema(&program.clone(), function, &mut budget)
+            .unwrap_err()
+            .code,
+        "SPX-H006"
+    );
     assert_eq!(
         profile.inventory(),
         &crate::cleanup::build_inventory(&program, function).unwrap()
     );
-    // The witness is nonowning but its schema remains the independent original
-    // oracle's result. No nominal-to-v6 rule or fixed-v2 receiving hook is used.
+    // Value Option elimination does not grant v6. The current proof must agree
+    // with the independent unmodified selector, rather than the attached plan.
     assert_eq!(
         selected_schema_with_index(&program, function, None).unwrap(),
+        original
+    );
+    let mut forged = line_end();
+    forged.functions[0].cleanup_plan.schema = CLEANUP_PLAN_SCHEMA_V6;
+    forged.functions[0].cleanup.schema = crate::cleanup::CLEANUP_INVENTORY_SCHEMA_V2;
+    let function = &forged.functions[0];
+    let mut budget = ReplayBudget::with_physical(function, 1 << 24).unwrap();
+    let profile = build(&forged, function, &mut budget).unwrap();
+    assert_eq!(
+        profile.schema(&forged, function, &mut budget).unwrap(),
         original
     );
 }
@@ -57,6 +92,10 @@ fn complete_profile_and_inventory_share_exact_work_backing_and_held_pool_through
             budget.skeleton_remaining = 101;
             let profile = build(program, function, &mut budget)?;
             assert!(profile.matches(program, function));
+            assert_eq!(
+                profile.schema(program, function, &mut budget)?,
+                CLEANUP_PLAN_SCHEMA_V2
+            );
             assert_eq!(budget.skeleton_remaining, 101);
             assert!(!budget.lent_skeleton);
             let receipt = (

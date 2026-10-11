@@ -1,7 +1,8 @@
 //! Guarded complete nonowning helper profile, bound to actual current members.
-//! This witness carries no replay verdict and does not select a cleanup schema.
+//! This guarded witness carries no replay verdict or production admission.
 use super::*;
 use crate::hir::{OwnershipMode, ResolvedStatement};
+mod decision;
 const DEPTH: usize = 514;
 type Frame<'a> = Option<(crate::hir::lexical_exit::ChildCursor<'a>, bool)>;
 
@@ -10,6 +11,7 @@ pub(super) struct Profile<'a> {
     function: &'a ResolvedFunction,
     inventory: crate::cleanup::CleanupInventory,
     renewals: crate::cleanup_plan::ReplayRenewalBindings<'a>,
+    schema_facts: decision::Facts,
 }
 impl<'a> Profile<'a> {
     pub(super) fn matches(
@@ -40,7 +42,7 @@ fn copy_type(
     budget: &mut ReplayBudget,
 ) -> Result<bool, Diagnostic> {
     budget.charge(function, 1, "borrowed helper Copy classification")?;
-    if crate::hir::borrowed_scalar::option_u8::is_type(ty) {
+    if matches!(ty, ResolvedType::Nominal { .. }) {
         crate::hir::borrowed_scalar::option_u8::authenticated_metered(
             program.declarations(),
             ty,
@@ -138,11 +140,14 @@ pub(super) fn build<'a>(
     if !found {
         return Err(fail(function));
     }
+    let mut schema_facts = decision::Facts::default();
+    schema_facts.ty(true);
     for parameter in &function.params {
         budget.charge(function, 1, "borrowed helper parameter profile")?;
         if !crate::hir::borrowed_scalar::parameter(&parameter.ty, parameter.ownership) {
             return Err(fail(function));
         }
+        schema_facts.binding(parameter.ownership, true);
     }
     // Own-root absence is established by the complete typed walk below. The
     // attached empty loan proof is then a consistency guard, not its authority.
@@ -172,14 +177,16 @@ pub(super) fn build<'a>(
             let (mut cursor, entered) = frames[depth - 1].take().ok_or_else(|| fail(function))?;
             let expression = cursor.expression();
             if !entered {
+                let admitted_type =
+                    matches!(expression.ty, ResolvedType::Str | ResolvedType::SliceU8)
+                        || copy_type(program, function, &expression.ty, budget)?;
+                schema_facts.expression(expression, admitted_type, function, budget)?;
+                if !admitted_type {
+                    return Err(fail(function));
+                }
                 if !crate::hir::borrowed_scalar::expression(function, expression, &mut |units| {
                     budget.charge(function, units, "borrowed helper rooted operand")
                 })? {
-                    return Err(fail(function));
-                }
-                if crate::hir::borrowed_scalar::option_u8::is_type(&expression.ty)
-                    && !copy_type(program, function, &expression.ty, budget)?
-                {
                     return Err(fail(function));
                 }
                 match &expression.kind {
@@ -205,7 +212,8 @@ pub(super) fn build<'a>(
                         call(program, function, callee, args, budget)?
                     }
                     ResolvedExprKind::Match { scrutinee, .. }
-                        if crate::hir::borrowed_scalar::option_u8::is_type(&scrutinee.ty) => {}
+                        if matches!(scrutinee.ty, ResolvedType::Nominal { .. })
+                            && copy_type(program, function, &scrutinee.ty, budget)? => {}
                     ResolvedExprKind::Block { statements, .. } => {
                         for statement in statements {
                             budget.charge(
@@ -213,6 +221,16 @@ pub(super) fn build<'a>(
                                 1,
                                 "borrowed helper complete statement profile",
                             )?;
+                            let binding_copy = match statement {
+                                ResolvedStatement::Let { binding, .. }
+                                | ResolvedStatement::Assign { binding, .. } => {
+                                    let admitted =
+                                        copy_type(program, function, &binding.ty, budget)?;
+                                    schema_facts.binding(binding.ownership, admitted);
+                                    Some(admitted)
+                                }
+                                _ => None,
+                            };
                             match statement {
                                 ResolvedStatement::Let { binding, .. }
                                 | ResolvedStatement::Assign {
@@ -220,7 +238,7 @@ pub(super) fn build<'a>(
                                     field: None,
                                     ..
                                 } if binding.ownership == OwnershipMode::Value
-                                    && copy_type(program, function, &binding.ty, budget)? => {}
+                                    && binding_copy == Some(true) => {}
                                 ResolvedStatement::While { .. } => {}
                                 _ => return Err(fail(function)),
                             }
@@ -272,6 +290,7 @@ pub(super) fn build<'a>(
         // binding or lexical owning loop, all excluded by the complete walk.
         // Writer absence additionally retains its original census limits above.
         renewals: crate::cleanup_plan::ReplayRenewalBindings::empty(),
+        schema_facts,
     })
 }
 #[cfg(test)]
