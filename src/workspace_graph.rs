@@ -4556,7 +4556,6 @@ fn build_resolved_core(
         .iter()
         .map(|(module, depth)| (crate::bounded_output::budgeted_clone(module), *depth))
         .collect());
-    staged!(EdgeProof, render_edge_proof(&expected_edges));
     Ok((
         modules,
         owned_module_paths,
@@ -4956,28 +4955,6 @@ fn insert_declaration_fingerprint(
 
 fn charge_builder_prebound(bytes: usize) -> Result<(), Vec<Diagnostic>> {
     reserve_builder_structure(bytes)
-}
-
-fn render_edge_proof(edges: &[WorkspaceEdge]) {
-    let mut proof = crate::bounded_output::CappedString::new();
-    use std::fmt::Write as _;
-    for edge in edges {
-        writeln!(
-            proof,
-            "{}\0{}\0{}\0{}\0{}\0{}\0{}\0{}\0{}\0{}",
-            edge.caller_path,
-            edge.caller,
-            edge.target_path,
-            edge.target,
-            edge.kind,
-            edge.site,
-            edge.expression,
-            edge.ast_path,
-            edge.alias,
-            edge.ordinal,
-        )
-        .expect("CappedString formatting is infallible");
-    }
 }
 
 fn checked_usage(

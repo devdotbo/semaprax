@@ -212,27 +212,42 @@ fn validate_retained_facts_inner(
             "workspace explicit type-reference facts disagree with retained HIR",
         )]);
     }
-    if compact {
-        let calls = compact_calls::reconstruct(programs, modules, edges)?;
-        validate_retained_call_projection(programs, modules, calls.iter().copied())?;
-        validate_effect_and_capability_edges_against_calls(modules, edges, calls.iter().copied())?;
-        return Ok(());
-    }
-    let authenticated_calls = reconstruct_authenticated_call_edges(programs, modules)?;
-    validate_retained_call_projection(programs, modules, &authenticated_calls)?;
-    let mut emitted_calls = Vec::new();
-    for edge in edges.iter().filter(|edge| edge.kind == "call") {
-        push_edge_reference(&mut emitted_calls, edge)?;
-    }
-    emitted_calls.sort();
-    if !emitted_calls.into_iter().eq(authenticated_calls.iter()) {
-        return Err(vec![graph_error(
-            "SPX-G173",
-            "emitted workspace call edges disagree with authenticated AST/HIR occurrences",
-        )]);
-    }
-    validate_effect_and_capability_edges_against_calls(modules, edges, authenticated_calls.iter())?;
-    Ok(())
+    // The edge proof is the independent replay below. No discarded text
+    // projection is constructed after these exact source/HIR comparisons.
+    crate::bounded_output::with_reservation_stage(
+        crate::bounded_output::ReservationStage::EdgeProof,
+        || {
+            if compact {
+                let calls = compact_calls::reconstruct(programs, modules, edges)?;
+                validate_retained_call_projection(programs, modules, calls.iter().copied())?;
+                validate_effect_and_capability_edges_against_calls(
+                    modules,
+                    edges,
+                    calls.iter().copied(),
+                )?;
+                return Ok(());
+            }
+            let authenticated_calls = reconstruct_authenticated_call_edges(programs, modules)?;
+            validate_retained_call_projection(programs, modules, &authenticated_calls)?;
+            let mut emitted_calls = Vec::new();
+            for edge in edges.iter().filter(|edge| edge.kind == "call") {
+                push_edge_reference(&mut emitted_calls, edge)?;
+            }
+            emitted_calls.sort();
+            if !emitted_calls.into_iter().eq(authenticated_calls.iter()) {
+                return Err(vec![graph_error(
+                    "SPX-G173",
+                    "emitted workspace call edges disagree with authenticated AST/HIR occurrences",
+                )]);
+            }
+            validate_effect_and_capability_edges_against_calls(
+                modules,
+                edges,
+                authenticated_calls.iter(),
+            )?;
+            Ok(())
+        },
+    )
 }
 
 fn reconstruct_authenticated_call_edges(

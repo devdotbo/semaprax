@@ -181,6 +181,13 @@ reserved against the same `builder_bytes` budget. Either overflow produces
 `SPX-G171`. A looser estimate rejects earlier and a tighter one later; neither
 removes the retained-memory bound.
 
+Independent edge replay compares the complete current source/HIR occurrence,
+type-reference, effect and capability projections directly. It does not allocate
+a second text rendering of those edges and discard it. Real replay scratch keeps
+the sticky `workspace edge proof` reservation stage; removing the unused text
+carrier neither refunds preceding reservations nor changes edge/output limits.
+Owning executable qualification of this reduction is pending.
+
 Authored expression-site reconstruction reuses one UTF-8 path buffer per root.
 Its inline carrier and each complete replacement backing are charged before
 allocation, including overlap with the previous backing; child return truncates
