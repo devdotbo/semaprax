@@ -86,7 +86,9 @@ fn main() -> i64
   A final `;` before `}` remains `SPX-P106`; a next item starting with an
   operator or `(` keeps `SPX-T312`, so bind that item with `let`. Wrapping an
   exit guard in `let _ =`, or extending it with an operator, crosses a value
-  boundary and remains `SPX-T312`.
+  boundary and remains `SPX-T312`. An exit guard
+  with a normal arm uses exact `else { 0 }`; a nonzero, bool, owning or
+  borrowed normal arm is also `SPX-T312`.
   An unconditional exit ends its block: do not add a dummy tail or unreachable
   effects. Continue advances an admitted source `for` exactly once; break/continue
   target only the nearest loop (`SPX-T313` otherwise). Exit crossings through
@@ -121,7 +123,7 @@ See [the catalog](STANDARD-LIBRARY-CATALOG.md#stdintdecimal) for exact stable ID
 - `bool`: `true`, `false`; `&&`, `||`, `!`.
 - `char`: `'a'`, `'\n'`, `'\u{2603}'`.
 - `string`: `"text"`; owned UTF-8; content equality and UTF-8 byte ordering.
-- `str`: no literal; borrowed by `borrow str` or `string_as_str(binding)`.
+- `str`: `str"text"` is static borrowed UTF-8; or use `string_as_str(binding)`.
 - `[u8; N]`: `[97u8, 98u8]`; fixed; `array_as_slice(binding)` gives
   `Slice<u8>`.
 - `Bytes`, `Slice<u8>`: no literal; owned bytes and borrowed byte view.
@@ -333,8 +335,11 @@ fn main() -> i64
   String/Bytes fields. User records need `@id`; ask
   `help language author:copy-record-vec` or `help language author:owned-data`.
   See [Owned Leaf Collections v1](OWNED-LEAF-COLLECTIONS-V1.md).
-- Import every named type in a function import's signature, including nested
-  types and inferred factory results. With `std.pattern.make`, add
+- Import every type you name from a function signature, including nested
+  types and factory results. A private inferred signature may retain hidden
+  layout facts; it does not let you name that type, its cases or siblings in
+  annotations, patterns or constructors. Use an explicit `use type` for those.
+  With `std.pattern.make`, add
   `use type @id("std.pattern.matcher") from std.pattern as Matcher;`
   `SPX-G172` names the missing type identity.
 - Classes hold fields and `fn name(self: Class, …)` methods, called as
@@ -509,6 +514,23 @@ immutable aliases and synchronous borrowed-text calls follow existing loans;
 literal evaluation shares module-held bytes without an owning String constructor.
 Ordinary `"..."` still owns a String; use `string_as_str(owner)` where the existing
 String profile admits it. Neither form implicitly converts to the other.
+
+```semaprax
+module app.static_text;
+
+@id("app.measure")
+fn measure(text: borrow str) -> i64
+{
+    str_len_bytes(text)
+}
+
+@id("app.main")
+fn main() -> i64
+{
+    let key = str"é\u{0}";
+    measure(key)
+}
+```
 
 Empty, NUL, Unicode and escapes preserve decoded bytes. There is no interpolation,
 mutable alias, aggregate storage, borrowed return or view escape. Each static
@@ -1047,6 +1069,27 @@ fn main() -> i64
 }
 ```
 
+<!-- expect: SPX-T312 -->
+```semaprax
+module bad.exit_guard;
+
+@id("bad.main")
+fn main() -> i64
+{
+    let mut index = 0;
+    while index < 2 {
+        index = index + 1;
+        if index == 1 { continue; } else { 7 };
+        0
+    }
+    index
+}
+```
+
+An exit guard is a statement boundary. Write `else { 0 }` for its normal
+arm; move useful work into the following statements. Binding the guard or
+adding an operator still crosses a value boundary.
+
 Each block below shows a common first attempt. Its marker names the expected
 diagnostic; the following text gives the fix. Parser and source-verifier
 diagnostics repeat that fix in `help`; other messages name the accepted form.
@@ -1080,8 +1123,8 @@ fn main() -> i64
 }
 ```
 
-A `while` body must end with the continuation condition: add `i < 3` as the
-body's last line.
+A `while` body needs a final expression: add `0` as its last line. The
+condition before the body controls repetition; the body value is discarded.
 
 <!-- expect: SPX-P203 -->
 ```semaprax
@@ -1202,7 +1245,8 @@ Use `u8_from_i64(value)` then `char_from_u8(byte)` for byte conversion; use
 | 4i64|SPX-P003|Write 4 (default i64); suffixes: i32/u8/usize|
 | i64 max+1 / parenthesized MIN negation|SPX-P003|Literal: -9223372036854775808/-2147483648i32; spaces trivia, parens separate; -MIN/MIN÷-1 overflow|
 | "a" + "b"|SPX-T250|string_concat("a", "b")|
-| literal/String as str arg|SPX-T205|Bind String; pass string_as_str(s)|
+| literal/String as str arg|SPX-T205|Static str"text"; or bind String and pass string_as_str(s)|
+| exit guard has nonzero/owning/view normal arm or is bound|SPX-T312|Bare statement guard; exact else { 0 }; move useful work after it|
 | conversion type error|SPX-T205|i64_from_f64(3.0) or usize_from_i64(1)|
 | excess conversion args|SPX-T204|One: f64_from_i64(1)|
 | float Map key/Set element|SPX-T274|Keys string/i64/bool; values String/Copy|

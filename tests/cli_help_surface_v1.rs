@@ -422,6 +422,9 @@ fn standalone_scoped_help_is_exhaustive_exact_capability_aware_and_inert() {
         .stdout
         .windows(b"## Control flow".len())
         .any(|window| window == b"## Control flow"));
+    let scalar_text = std::str::from_utf8(&scalars.stdout).unwrap();
+    assert!(scalar_text.contains("`str\"text\"` is static borrowed UTF-8"));
+    assert!(!scalar_text.contains("`str`: no literal"));
     assert!(scalars.stdout.len() <= 1_024);
     assert!(scalars.stdout.len() * 20 < card.len());
     let scalar_units =

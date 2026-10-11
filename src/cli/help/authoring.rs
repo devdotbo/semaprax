@@ -17,6 +17,9 @@ pub(super) fn assert_guide_contract() {
     assert!(guide.contains("Project profiles are distinct"));
     assert!(guide.contains("source-command.v1"));
     assert!(guide.contains("help language all"));
+    assert!(guide.contains("fused-construction-v1"));
+    assert!(guide.contains("--managed-bytes N"));
+    assert!(!guide.contains("there is no native `--profile` option"));
 }
 
 pub(super) fn lookup(query: &str) -> Result<String, String> {
@@ -33,7 +36,8 @@ pub(super) fn lookup(query: &str) -> Result<String, String> {
             "Lexical structured exits v1: source implementation; executable qualification pending.\n",
             "Inside an admitted loop: if skip { continue; }; if done { break; }; followed by the ordinary body tail. An unconditional exit ends its block: do not append dummy 0 or unreachable effects.\n",
             "An intermediate Copy-valued if/else can discard its result with a semicolon. A bare guard containing an exit may end with or without one before the next item: if skip { continue; } else { 0 }; canonical text drops it. let _ = guard or an operator suffix stays SPX-T312; a final ; } stays SPX-P106.\n",
-            "break; and continue; target the nearest loop. while continue checks its condition; for/for borrow/for own continue advances the authenticated iterator exactly once without running the body suffix. for own break settles remaining items. No labels or valued break.\n",
+            "Normal guard arm: exact else { 0 }; nonzero/bool/owned/view arms refuse SPX-T312. Move work after the guard.\n",
+            "break; and continue; target the nearest loop. while continue checks its condition; for continue advances its authenticated iterator exactly once; for own break settles remaining items. No labels or valued break.\n",
             "return value; targets this function with its exact result type. A loop may hand off a whole named owner; its operand still follows ordinary loop operation/loan rules. Accepted acyclic guard/terminal returns keep their value projection.\n",
             "Exits are direct function/loop/control-block statement tails, never inside initializers, call arguments, aggregates, return operands, closures, unsafe or yields functions. SPX-T312: move the exit to a statement guard. SPX-T313: break/continue need an enclosing loop. SPX-T103/O104: preserve exact result type and owner transfer.\n",
             "Owned returns stage the result before inner cleanup; root locals remain through ensures. Failure never publishes a result; existing staged-argument failure rules remain. A moved outer owner cannot be revived by break/continue.\n",
@@ -396,6 +400,12 @@ mod tests {
         assert!(exits.contains("A bare guard containing an exit may end with or without one"));
         assert!(exits.contains("let _ = guard or an operator suffix stays SPX-T312"));
         assert!(exits.contains("a final ; } stays SPX-P106"));
+        assert!(exits.contains("Normal guard arm: exact else { 0 }"));
+        let rejected = semaprax::check(
+            "module help.guard; @id(\"help.main\") fn main()->i64 {let mut i=0;while i<2 {i=i+1;if i==1 {continue;} else {7};0} i}",
+            "help-nonzero-exit-guard.spx",
+        ).unwrap_err();
+        assert!(rejected.iter().any(|d| d.code == "SPX-T312"));
         let utf8 = lookup("author:string-from-utf8").unwrap();
         for card in [&traversal, &exits, &utf8] {
             assert!(card.len() <= MAX_BYTES);

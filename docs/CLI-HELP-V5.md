@@ -96,3 +96,14 @@ bounds. P220 covers syntax/reservation refusal and T318 covers authenticated
 expansion/hygiene refusal. The card grants no public/interop profile, ABI or
 capability; [Typed Vec Constructors v1](TYPED-VEC-CONSTRUCTORS-V1.md) owns the
 authored implementation and pending executable qualification.
+
+## Source-shape corrections
+
+The bounded source guide distinguishes ordinary native builds from the explicit
+fused source opt-in, without asserting its pending qualification. Scalar help
+names the adjacent static borrowed `str"..."` literal. The full card checks a
+borrowed-text helper example and a `SPX-T312` nonzero exit-guard example; the
+normal guard arm remains exact `else { 0 }`. A retained private function
+signature does not authorize authored type names, cases or constructors without
+the corresponding explicit type import. Diagnostic help is regenerated only
+through the owning documentation projection, never edited as a pin shortcut.

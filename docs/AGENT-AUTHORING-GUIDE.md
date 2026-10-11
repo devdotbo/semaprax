@@ -5,10 +5,10 @@ Status: executable qualification pending.
 ## Source
 
 Use `semaprax fmt <file>`, then `semaprax check <file>`.
-Native builds use `semaprax build <file> --target native -o <path>`;
-there is no native `--profile` option. Web source builds may select
-`internal-strings-v1` or `text-toolkit-v1` with `--profile`; these are source
-build profiles, not Project profiles.
+Native: `semaprax build <file> --target native -o <path>`.
+The `fused-construction-v1` opt-in requires `--managed-bytes N`;
+qualification pending. Web source profiles: `internal-strings-v1` or `text-toolkit-v1`.
+Project profiles are distinct.
 
 ## Project
 
