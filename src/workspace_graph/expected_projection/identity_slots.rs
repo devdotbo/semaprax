@@ -216,6 +216,10 @@ fn ast_expr_identity_slots(expression: &Expr) -> Result<usize, Vec<Diagnostic>> 
             slots = checked_builder_sum(slots, ast_expr_identity_slots(scrutinee)?)?;
             for arm in arms {
                 slots = checked_builder_sum(slots, ast_pattern_identity_slots(&arm.pattern)?)?;
+                // `Expr::child` (and so the scalar-call discount) visits guards.
+                if let Some(guard) = &arm.guard {
+                    slots = checked_builder_sum(slots, ast_expr_identity_slots(guard)?)?;
+                }
                 slots = checked_builder_sum(slots, ast_expr_identity_slots(&arm.value)?)?;
             }
         }

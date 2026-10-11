@@ -106,10 +106,32 @@ pub(super) fn ast_type_cost(ty: &Type, cost: &mut StructuralCost) -> Result<(), 
     Ok(())
 }
 
+/// Where the parent places a child's resolved root. `CarrierFree` is used only
+/// for a `Box` slot of a unary, binary, `if` or block-tail node, or an element
+/// of a free-function call's argument list (every intrinsic route only moves
+/// or boxes its arguments): no binding, statement, field initializer, arm or
+/// pattern field is constructed for it there. Every other child, and every
+/// root reached through `ast_expr_cost`, is `Delegated` and keeps its complete
+/// bundle.
+#[derive(Clone, Copy, Eq, PartialEq)]
+enum RootPosition {
+    CarrierFree,
+    Delegated,
+}
+
 pub(super) fn ast_expr_cost(
     expression: &Expr,
     cost: &mut StructuralCost,
 ) -> Result<(), Vec<Diagnostic>> {
+    ast_expr_cost_at(expression, cost, RootPosition::Delegated)
+}
+
+fn ast_expr_cost_at(
+    expression: &Expr,
+    cost: &mut StructuralCost,
+    position: RootPosition,
+) -> Result<(), Vec<Diagnostic>> {
+    use RootPosition::CarrierFree;
     cost.value(expression)?;
     // `super` allocates the initial receiver before recreating its source,
     // upcast wrapper and call root; the discarded receiver still costs bytes.
@@ -140,6 +162,7 @@ pub(super) fn ast_expr_cost(
     cost.note_exact_expr_fixed_bundle()?;
     cost.account_scalar_identity(&expression.kind)?;
     cost.account_exact_absent_storage(&expression.kind)?;
+    cost.account_carrier_free_root(&expression.kind, position == CarrierFree)?;
     match &expression.kind {
         ExprKind::Closure {
             params,
@@ -177,21 +200,21 @@ pub(super) fn ast_expr_cost(
                 ast_type_cost(ty, cost)?;
             }
             for argument in args {
-                ast_expr_cost(argument, cost)?;
+                ast_expr_cost_at(argument, cost, CarrierFree)?;
             }
         }
         ExprKind::LexicalExit { value: None, .. } => {}
         ExprKind::LexicalExit {
             value: Some(value), ..
-        }
-        | ExprKind::Unary { value, .. } => ast_expr_cost(value, cost)?,
+        } => ast_expr_cost(value, cost)?,
+        ExprKind::Unary { value, .. } => ast_expr_cost_at(value, cost, CarrierFree)?,
         ExprKind::VecConstructor { element, value, .. } => {
             ast_type_cost(element, cost)?;
             ast_expr_cost(value, cost)?;
         }
         ExprKind::Binary { left, right, .. } => {
-            ast_expr_cost(left, cost)?;
-            ast_expr_cost(right, cost)?;
+            ast_expr_cost_at(left, cost, CarrierFree)?;
+            ast_expr_cost_at(right, cost, CarrierFree)?;
         }
         ExprKind::Block { statements, tail } => {
             for statement in statements {
@@ -250,16 +273,16 @@ pub(super) fn ast_expr_cost(
                     }
                 }
             }
-            ast_expr_cost(tail, cost)?;
+            ast_expr_cost_at(tail, cost, CarrierFree)?;
         }
         ExprKind::If {
             condition,
             then_branch,
             else_branch,
         } => {
-            ast_expr_cost(condition, cost)?;
-            ast_expr_cost(then_branch, cost)?;
-            ast_expr_cost(else_branch, cost)?;
+            ast_expr_cost_at(condition, cost, CarrierFree)?;
+            ast_expr_cost_at(then_branch, cost, CarrierFree)?;
+            ast_expr_cost_at(else_branch, cost, CarrierFree)?;
         }
         ExprKind::ConstructRecord {
             type_name,
@@ -293,6 +316,11 @@ pub(super) fn ast_expr_cost(
             for arm in arms {
                 cost.match_arm(arm)?;
                 ast_pattern_cost(&arm.pattern, cost)?;
+                // The boxed guard is a complete resolved expression tree too;
+                // `match_arm` charges only its pointer.
+                if let Some(guard) = &arm.guard {
+                    ast_expr_cost(guard, cost)?;
+                }
                 ast_expr_cost(&arm.value, cost)?;
             }
         }

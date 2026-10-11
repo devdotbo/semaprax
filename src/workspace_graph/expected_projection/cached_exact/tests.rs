@@ -28,9 +28,11 @@ fn semantic_cache_charges_two_exact_hir_bundles_without_duplicating_arc_carriers
     let parsed = summed(&programs, &authored, Retention::Parsed).unwrap();
     let semantic = summed(&programs, &authored, Retention::Semantic).unwrap();
     // Independently known AST: two modules, each Block/Binary/Int/Int. Only the
-    // Binary and two Int roots omit their four proved-absent storage footprints.
+    // Binary and two Int roots omit their four proved-absent storage footprints;
+    // as block tail and operands they also omit their six auxiliary carriers.
     let extra = 8 * crate::workspace_graph::HIR_EXPR_FIXED_BUNDLE
-        - 6 * super::super::cost::EXACT_ABSENT_ROOT_STORAGE;
+        - 6 * (super::super::cost::EXACT_ABSENT_ROOT_STORAGE
+            + super::super::cost::EXACT_ROOT_AUXILIARY_CARRIERS);
     assert_eq!(semantic.0 - parsed.0, extra);
     assert_eq!(semantic.1 - parsed.1, extra);
     let root = crate::hir::DeclarationId::new("one.main");
@@ -180,6 +182,21 @@ fn fixed_upper_omits_absent_storage_per_retained_copy_and_rejects_malformed_cens
             upper - 7 * footprint + copies * 7 * bundle
         );
     }
+    // Two of the three storage roots are also carrier-free: each retained copy
+    // omits exactly two more carrier sets, never a runtime root's.
+    let carriers = super::super::cost::EXACT_ROOT_AUXILIARY_CARRIERS;
+    raw.exact_carrier_free_roots = 2;
+    for (retention, copies) in [(Retention::Parsed, 1), (Retention::Semantic, 2)] {
+        assert_eq!(
+            super::fixed_upper(upper, &raw, &runtime, retention).unwrap(),
+            upper - 7 * footprint + copies * (7 * bundle - 3 * storage - 2 * carriers)
+        );
+    }
+    raw.exact_carrier_free_roots = 4;
+    for retention in [Retention::Parsed, Retention::Semantic] {
+        assert!(super::fixed_upper(upper, &raw, &runtime, retention).is_err());
+    }
+    raw.exact_carrier_free_roots = 0;
     for malformed in [[3, 2, 1], [0, 0, 6], [usize::MAX, 1, 0]] {
         raw.exact_absent_roots = malformed;
         for retention in [Retention::Parsed, Retention::Semantic] {

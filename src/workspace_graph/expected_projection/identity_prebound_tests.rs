@@ -340,3 +340,251 @@ fn uncached_ast_peak_is_final_only_and_has_an_exact_bound() {
     let refusal = uncached_peak_prebound(&programs, &authored).unwrap_err();
     assert!(refusal.iter().all(|error| error.code == "SPX-G171"));
 }
+
+struct LimitRestore(usize);
+impl Drop for LimitRestore {
+    fn drop(&mut self) {
+        super::super::ACTIVE_BUILDER_LIMIT.with(|limit| limit.set(self.0));
+    }
+}
+
+fn uniform_sequential_fixture() -> Vec<Program> {
+    ["m0", "m1", "m2"]
+        .into_iter()
+        .map(|module| {
+            let source = format!(
+                "module {module}; @id(\"{module}.run\") fn run(seed: i64) -> i64 {{ let first = seed + 1; let second = first * 2; second - 3 }}"
+            );
+            crate::parse(&source, std::path::Path::new(&format!("{module}.spx"))).unwrap()
+        })
+        .collect()
+}
+
+/// Independent sequencing oracle over the unchanged per-module cost function:
+/// it restates the documented overhead order and running retained sum, not
+/// the production loop.
+struct SequentialOracle {
+    full: Vec<usize>,
+    retained: Vec<usize>,
+    order: Vec<usize>,
+    forecast: usize,
+}
+
+fn sequential_oracle(
+    programs: &[Program],
+    authored: &std::collections::BTreeMap<&str, super::AuthoredDeclaration<'_>>,
+) -> SequentialOracle {
+    let mut full = Vec::new();
+    let mut retained = Vec::new();
+    for program in programs {
+        let maximum = Some(dependency_identity_max(program, authored, programs).unwrap());
+        for (include_imports, costs) in [(true, &mut full), (false, &mut retained)] {
+            costs.push(
+                synthetic_builder_bytes_scoped(
+                    program,
+                    authored,
+                    programs,
+                    maximum,
+                    5,
+                    include_imports,
+                )
+                .unwrap()
+                .retained_hir,
+            );
+        }
+    }
+    let mut order = (0..programs.len()).collect::<Vec<_>>();
+    order.sort_by_key(|index| {
+        (
+            std::cmp::Reverse(full[*index].saturating_sub(retained[*index])),
+            programs[*index].path.clone(),
+        )
+    });
+    let (mut prefix, mut forecast) = (0usize, 0usize);
+    for index in &order {
+        forecast = forecast.max(prefix + full[*index]);
+        prefix += retained[*index];
+        forecast = forecast.max(prefix);
+    }
+    SequentialOracle {
+        full,
+        retained,
+        order,
+        forecast,
+    }
+}
+
+/// The help the first refused sequential step must carry at `limit`, or the
+/// help of the first module whose own costing already refuses there.
+fn expected_one_short_help(
+    oracle: &SequentialOracle,
+    programs: &[Program],
+    authored: &std::collections::BTreeMap<&str, super::AuthoredDeclaration<'_>>,
+    limit: usize,
+) -> String {
+    let mut earlier_full = 0usize;
+    for (position, program) in programs.iter().enumerate() {
+        let maximum = Some(dependency_identity_max(program, authored, programs).unwrap());
+        let fits = [true, false].into_iter().all(|imports| {
+            synthetic_builder_bytes_scoped(program, authored, programs, maximum, 5, imports).is_ok()
+        });
+        if !fits {
+            let path = &program.path;
+            return format!(
+                "the static admission pre-charge refused before the graph builder ran, while forecasting module `{path}` on its own: that one module does not fit the {limit}-byte budget, which already carries {earlier_full} bytes for {position} earlier module(s). Splitting `{path}` into several modules cannot reduce the forecast, because the pre-charge sums every reachable module; reducing its admitted source can."
+            );
+        }
+        earlier_full += oracle.full[position];
+    }
+    let mut retained = 0usize;
+    for (earlier, index) in oracle.order.iter().enumerate() {
+        let path = &programs[*index].path;
+        let full = oracle.full[*index];
+        if retained + full > limit {
+            return format!(
+                "the static admission pre-charge refused before the graph builder ran, in its final sequential uncached forecast: {earlier} earlier module(s) retain {retained} bytes of filtered output, and resolving `{path}` adds its complete {full}-byte forecast, which exceeds the {limit}-byte budget. Each complete module forecast is charged only while that module resolves; reducing the admitted source of `{path}` or the output retained by earlier modules can reduce this peak."
+            );
+        }
+        let own = oracle.retained[*index];
+        if retained + own > limit {
+            return format!(
+                "the static admission pre-charge refused before the graph builder ran, in its final sequential uncached forecast: {earlier} earlier module(s) retain {retained} bytes of filtered output, and `{path}` retains {own} more bytes, which exceeds the {limit}-byte budget. Retained output sums every reachable module, so splitting one module into several cannot reduce it; removing a dependency or reducing total reachable source can."
+            );
+        }
+        retained += own;
+    }
+    panic!("no sequential step refuses at {limit}");
+}
+
+fn single_help(errors: &[crate::diagnostic::Diagnostic], limit: usize) -> String {
+    assert_eq!(errors.len(), 1, "{errors:?}");
+    assert_eq!(errors[0].code, "SPX-G171");
+    assert_eq!(
+        errors[0].message,
+        format!("Workspace Semantic Graph `builder_bytes` exceeds {limit}")
+    );
+    errors[0].help.clone().expect("builder refusal names its bound")
+}
+
+/// The final uncached forecast must describe its own refused step. Before
+/// this, it reused the partial module sum of the refused mode-5 pass that ran
+/// first, which named neither its peak nor its retained output.
+#[test]
+fn uncached_sequential_forecast_attributes_its_own_cumulative_one_short_step() {
+    let programs = uniform_sequential_fixture();
+    let authored = super::super::index_authored(&programs).unwrap();
+    let oracle = sequential_oracle(&programs, &authored);
+    // Import-free modules retain their complete own output, so the peak is
+    // the cumulative retained sum reached while resolving the last module.
+    assert_eq!(oracle.full, oracle.retained);
+    assert_eq!(oracle.forecast, oracle.retained.iter().sum::<usize>());
+    assert_eq!(oracle.order, [0, 1, 2]);
+    let layout = super::uncached_peak::uncached_output_layout(&programs, &authored).unwrap();
+    assert_eq!(layout.forecast, oracle.forecast);
+    assert_eq!(&layout.order[..programs.len()], oracle.order.as_slice());
+
+    let forecast = oracle.forecast;
+    let previous = super::super::ACTIVE_BUILDER_LIMIT.with(|limit| limit.replace(forecast));
+    let _restore = LimitRestore(previous);
+    // Exact bound: the production entry exhausts modes 0-5 and selects six.
+    assert_eq!(
+        super::initial_core_prebound(&programs, &authored, true).unwrap(),
+        (forecast, forecast, true, 6)
+    );
+    assert_eq!(
+        super::uncached_output_peak_prebound(&programs, &authored).unwrap(),
+        (forecast, forecast)
+    );
+    // Later live attribution reports the charged peak, not the module sum.
+    let dominant = (0..programs.len()).fold(0, |best, index| {
+        if oracle.full[index] > oracle.full[best] {
+            index
+        } else {
+            best
+        }
+    });
+    let live = single_help(&[super::super::limit_error("builder_bytes", forecast)], forecast);
+    assert!(
+        live.starts_with(&format!(
+            "live graph construction, not the static admission pre-charge, exceeded the budget: the pre-charge forecast {forecast} bytes for 3 module(s) and fit within {forecast}, with `{}` the largest at {} bytes.",
+            programs[dominant].path, oracle.full[dominant]
+        )),
+        "{live}"
+    );
+
+    let short = forecast - 1;
+    super::super::ACTIVE_BUILDER_LIMIT.with(|limit| limit.set(short));
+    for program in &programs {
+        let maximum = Some(dependency_identity_max(program, &authored, &programs).unwrap());
+        assert!(
+            synthetic_builder_bytes_scoped(program, &authored, &programs, maximum, 5, true).is_ok(),
+            "one module alone must fit, so only the cumulative step can refuse"
+        );
+    }
+    let expected = expected_one_short_help(&oracle, &programs, &authored, short);
+    assert!(expected.contains(&format!(
+        "2 earlier module(s) retain {} bytes",
+        oracle.retained[0] + oracle.retained[1]
+    )));
+    assert!(expected.contains(&format!("resolving `{}`", programs[2].path)));
+    // Hostile stale attribution: a refused summed pass runs first.
+    let summed = single_help(&uncached_peak_prebound(&programs, &authored).unwrap_err(), short);
+    assert!(summed.contains("alone forecasts"), "{summed}");
+    let refusal = super::uncached_peak::uncached_output_layout(&programs, &authored)
+        .err()
+        .unwrap();
+    assert_eq!(single_help(&refusal, short), expected);
+    // The production entry runs that same summed pass before mode six.
+    let entry = super::initial_core_prebound(&programs, &authored, true).unwrap_err();
+    let entry = single_help(&entry, short);
+    assert_eq!(entry, expected);
+    assert!(!entry.contains("alone forecasts"));
+    // The same refusal is deterministic and leaves the exact bound admitted.
+    assert_eq!(
+        single_help(
+            &super::uncached_output_peak_prebound(&programs, &authored).unwrap_err(),
+            short
+        ),
+        expected
+    );
+    super::super::ACTIVE_BUILDER_LIMIT.with(|limit| limit.set(forecast));
+    assert_eq!(
+        super::uncached_output_peak_prebound(&programs, &authored).unwrap(),
+        (forecast, forecast)
+    );
+}
+
+/// Imports give consumers a positive transient overhead, so they resolve
+/// before the provider. One byte short, the help names exactly the step the
+/// independent order reaches first.
+#[test]
+fn uncached_sequential_refusal_follows_the_independent_overhead_order() {
+    let programs = transient_fixture();
+    let authored = super::super::index_authored(&programs).unwrap();
+    let oracle = sequential_oracle(&programs, &authored);
+    for consumer in 1..programs.len() {
+        assert!(oracle.full[consumer] > oracle.retained[consumer]);
+    }
+    assert_eq!(oracle.full[0], oracle.retained[0]);
+    assert_eq!(oracle.order.last(), Some(&0), "the provider has no import overhead");
+    let layout = super::uncached_peak::uncached_output_layout(&programs, &authored).unwrap();
+    assert_eq!(layout.forecast, oracle.forecast);
+    assert_eq!(&layout.order[..programs.len()], oracle.order.as_slice());
+
+    let previous =
+        super::super::ACTIVE_BUILDER_LIMIT.with(|limit| limit.replace(oracle.forecast));
+    let _restore = LimitRestore(previous);
+    assert_eq!(
+        super::uncached_peak::uncached_output_layout(&programs, &authored)
+            .unwrap()
+            .forecast,
+        oracle.forecast
+    );
+    let short = oracle.forecast - 1;
+    super::super::ACTIVE_BUILDER_LIMIT.with(|limit| limit.set(short));
+    let expected = expected_one_short_help(&oracle, &programs, &authored, short);
+    let refusal = super::uncached_peak::uncached_output_layout(&programs, &authored)
+        .err()
+        .unwrap();
+    assert_eq!(single_help(&refusal, short), expected);
+}

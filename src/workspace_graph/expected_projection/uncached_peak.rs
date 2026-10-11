@@ -36,11 +36,15 @@ pub(in crate::workspace_graph) fn uncached_output_layout_with_registry(
     #[cfg(test)]
     let mut observation = super::super::forecast_observation::begin_pass(6);
     let _precharge = super::super::diagnostics::precharge_scope();
+    // This pass is the refusing bound whenever it refuses. Never let an
+    // earlier summed fallback's partial module sum describe it.
+    super::super::diagnostics::begin_precharge_pass();
     let mut order = [0; super::super::MAX_FILES];
     let mut full_costs = [0usize; super::super::MAX_FILES];
     let mut retained_costs = [0usize; super::super::MAX_FILES];
     for (index, program) in programs.iter().enumerate() {
         order[index] = index;
+        super::super::diagnostics::begin_precharge_module(&program.path);
         let maximum = Some(dependency_identity_max(program, authored, programs)?);
         full_costs[index] = synthetic_builder_bytes_scoped_with_registry(
             program, authored, programs, maximum, 5, true, registry,
@@ -50,6 +54,7 @@ pub(in crate::workspace_graph) fn uncached_output_layout_with_registry(
             program, authored, programs, maximum, 5, false, registry,
         )?
         .retained_hir;
+        super::super::diagnostics::record_precharge_module(&program.path, full_costs[index]);
     }
     order[..programs.len()].sort_unstable_by(|left, right| {
         let overhead = |index: usize| full_costs[index].saturating_sub(retained_costs[index]);
@@ -59,13 +64,16 @@ pub(in crate::workspace_graph) fn uncached_output_layout_with_registry(
     });
     let mut retained = 0usize;
     let mut peak = 0usize;
-    for index in &order[..programs.len()] {
+    for (earlier, index) in order[..programs.len()].iter().enumerate() {
+        let path = programs[*index].path.as_str();
+        stage_sequential_refusal(path, earlier, retained, full_costs[*index], true);
         peak = peak.max(checked_usage(
             retained,
             full_costs[*index],
             "builder_bytes",
             active_builder_limit(),
         )?);
+        stage_sequential_refusal(path, earlier, retained, retained_costs[*index], false);
         retained = checked_usage(
             retained,
             retained_costs[*index],
@@ -73,12 +81,32 @@ pub(in crate::workspace_graph) fn uncached_output_layout_with_registry(
             active_builder_limit(),
         )?;
     }
+    super::super::diagnostics::complete_sequential_precharge(peak.max(retained));
     #[cfg(test)]
     observation.complete(peak.max(retained), retained, 0);
     Ok(UncachedOutputLayout {
         order,
         forecast: peak.max(retained),
     })
+}
+
+/// Name a sequential step under exactly the condition on which the following
+/// `checked_usage` refuses it. The step itself is never altered or skipped.
+fn stage_sequential_refusal(
+    path: &str,
+    earlier: usize,
+    retained: usize,
+    additional: usize,
+    resolving: bool,
+) {
+    if retained
+        .checked_add(additional)
+        .is_none_or(|total| total > active_builder_limit())
+    {
+        super::super::diagnostics::record_sequential_precharge_refusal(
+            path, earlier, retained, additional, resolving,
+        );
+    }
 }
 
 pub(in crate::workspace_graph) fn charge_uncached_synthetic_ast(

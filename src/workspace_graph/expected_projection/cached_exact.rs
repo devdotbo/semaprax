@@ -26,9 +26,10 @@ fn overflow() -> Vec<Diagnostic> {
 // Replace only the independently asserted per-expression bundle. Every other
 // declaration/container, string-copy, generic/default/import and identity bound
 // stays in the original conservative ceiling. ExpressionId clone shares Arc.
-// Proved-absent literal/unary/binary root storage is excluded from each copy:
-// the semantic cache retains a `clone()` of the same resolved module, whose
-// inventory and plan vectors hold exactly the original's slots.
+// Proved-absent literal/unary/binary root storage, and the auxiliary carriers
+// of carrier-free roots, are excluded from each copy: the semantic cache
+// retains a `clone()` of the same resolved module, whose HIR, inventory and
+// plan vectors hold exactly the original's nodes and slots.
 pub(super) fn fixed_upper(
     upper: usize,
     raw: &StructuralCost,

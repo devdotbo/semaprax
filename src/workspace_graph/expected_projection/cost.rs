@@ -49,6 +49,7 @@ pub(in crate::workspace_graph) struct StructuralCost {
     pub(super) exact_fixed_discount: usize,
     pub(super) exact_expressions: usize,
     pub(super) exact_absent_roots: [usize; 3],
+    pub(super) exact_carrier_free_roots: usize,
 }
 
 /// Per-kind census of authored roots whose root storage is proved absent.
@@ -64,7 +65,8 @@ pub(super) enum AbsentStorageRoot {
 // The final uncached profile uses the complete asserted expression bundle,
 // retaining every map/tree allowance and live debit. Only the same four
 // independently absent root storage footprints are excluded, once per authored
-// root. Runtime/default expansions retain their complete storage bundles.
+// root, plus the six auxiliary carriers of authored carrier-free roots.
+// Runtime/default expansions retain their complete storage bundles.
 pub(super) fn fixed_hir_discount(
     mode: u8,
     raw: &StructuralCost,
@@ -135,6 +137,7 @@ impl StructuralCost {
             exact_fixed_discount: 0,
             exact_expressions: 0,
             exact_absent_roots: [0; 3],
+            exact_carrier_free_roots: 0,
         }
     }
 
@@ -233,6 +236,25 @@ impl StructuralCost {
         Ok(())
     }
 
+    /// Counted beside the storage census, for the same root kinds, only when
+    /// the parent proves the position carrier-free (see
+    /// `ROOT_AUXILIARY_CARRIERS`). Runtime/synthetic accumulators never count.
+    pub(super) fn account_carrier_free_root(
+        &mut self,
+        kind: &crate::ast::ExprKind,
+        carrier_free: bool,
+    ) -> Result<(), Vec<Diagnostic>> {
+        if self.inline_values && carrier_free && absent_storage_root(kind).is_some() {
+            self.exact_carrier_free_roots = checked_usage(
+                self.exact_carrier_free_roots,
+                1,
+                "builder_bytes",
+                active_builder_limit(),
+            )?;
+        }
+        Ok(())
+    }
+
     pub(super) fn inline_pattern_parent<T, P>(
         &mut self,
         parent: &T,
@@ -321,6 +343,7 @@ impl StructuralCost {
             exact_fixed_discount: 0,
             exact_expressions: 0,
             exact_absent_roots: [0; 3],
+            exact_carrier_free_roots: 0,
         }
     }
 
@@ -672,8 +695,10 @@ fn absent_storage_root(kind: &crate::ast::ExprKind) -> Option<AbsentStorageRoot>
     }
 }
 
-/// Bytes of proved-absent root storage in one retained exact HIR copy. Fails
-/// closed unless the census is covered by the raw accumulator's own bundles.
+/// Bytes of proved-absent root storage and carrier-free auxiliary carriers in
+/// one retained exact HIR copy. Fails closed unless the storage census is
+/// covered by the raw accumulator's own bundles and every carrier-free root is
+/// also a censused storage root.
 pub(super) fn exact_absent_storage(raw: &StructuralCost) -> Result<usize, Vec<Diagnostic>> {
     let overflow = || {
         vec![super::super::limit_error(
@@ -686,17 +711,60 @@ pub(super) fn exact_absent_storage(raw: &StructuralCost) -> Result<usize, Vec<Di
         .iter()
         .try_fold(0usize, |sum, count| sum.checked_add(*count))
         .ok_or_else(overflow)?;
-    if roots > raw.exact_expressions {
+    if roots > raw.exact_expressions || raw.exact_carrier_free_roots > roots {
         return Err(overflow());
     }
     roots
         .checked_mul(LITERAL_ABSENT_STORAGE)
+        .and_then(|storage| {
+            raw.exact_carrier_free_roots
+                .checked_mul(ROOT_AUXILIARY_CARRIERS)
+                .and_then(|carriers| storage.checked_add(carriers))
+        })
         .ok_or_else(overflow)
 }
+
+// The six auxiliary HIR carriers of the asserted expression bundle. A literal
+// root is one `ResolvedExpr` (`resolve_expr.rs` literal arms); a unary root is
+// one `ResolvedExpr` boxing its child (`finish::finish_unary`); a binary root
+// is one `ResolvedExpr` boxing both children (`Frame::FinishBinary`). None
+// constructs a binding, statement, field initializer, arm or pattern field.
+//
+// Absence at the root is not sufficient: `let`/assignment statements, field
+// initializers and match arms embed their child `ResolvedExpr` inline, and
+// `inline_expr_parent`/`match_arm` charge those parents without it, so that
+// child's bundle is their payer. `for`, closure, `yield` and lexical-exit
+// lowering likewise wrap authored children. Only a root the parent places in a
+// `Box` (unary/binary operands, `if` condition and branches, block tail) or in
+// an ordinary call's argument vector, none of which constructs these types, is
+// counted. Every other root, every runtime/default/generic expansion, and the
+// root's own `ResolvedExpr`, cleanup, plan, reachability and bookkeeping
+// footprints all stay charged.
+const ROOT_AUXILIARY_CARRIERS: usize = std::mem::size_of::<crate::hir::ResolvedBinding>()
+    + std::mem::size_of::<crate::hir::ResolvedStatement>()
+    + std::mem::size_of::<crate::hir::ResolvedFieldInitializer>()
+    + std::mem::size_of::<crate::hir::ResolvedMatchArm>()
+    + std::mem::size_of::<crate::hir::ResolvedMatchPatternField>()
+    + std::mem::size_of::<crate::hir::ResolvedRecordMatchPatternField>();
+// A carrier-free root still keeps its complete `ResolvedExpr` and every
+// cleanup/plan/reachability footprint except the four absent storage ones.
+const _: () = assert!(
+    super::super::HIR_EXPR_FIXED_BUNDLE
+        >= LITERAL_ABSENT_STORAGE
+            + ROOT_AUXILIARY_CARRIERS
+            + std::mem::size_of::<crate::hir::ResolvedExpr>()
+);
 
 // Everything except the four absent storage footprints stays charged per root.
 #[cfg(test)]
 pub(super) const EXACT_ABSENT_ROOT_STORAGE: usize = LITERAL_ABSENT_STORAGE;
+// Carrier-free roots additionally omit exactly these six HIR carriers.
+#[cfg(test)]
+pub(super) const EXACT_ROOT_AUXILIARY_CARRIERS: usize = ROOT_AUXILIARY_CARRIERS;
+
+#[cfg(test)]
+#[path = "carrier_absence_tests.rs"]
+mod carrier_absence_tests;
 
 #[cfg(test)]
 #[test]
@@ -877,19 +945,33 @@ mod uncached_absence_tests {
             + std::mem::size_of::<crate::cleanup::CleanupPlace>()
             + std::mem::size_of::<crate::cleanup_plan::CleanupSlot>()
     }
+    fn carriers() -> usize {
+        // Independent actual-layout oracle for the six auxiliary carriers.
+        std::mem::size_of::<crate::hir::ResolvedBinding>()
+            + std::mem::size_of::<crate::hir::ResolvedStatement>()
+            + std::mem::size_of::<crate::hir::ResolvedFieldInitializer>()
+            + std::mem::size_of::<crate::hir::ResolvedMatchArm>()
+            + std::mem::size_of::<crate::hir::ResolvedMatchPatternField>()
+            + std::mem::size_of::<crate::hir::ResolvedRecordMatchPatternField>()
+    }
 
     #[test]
     fn uncached_modes_remove_only_one_copy_of_proved_operator_root_storage() {
-        for (body, census) in [
-            ("1", [1, 0, 0]),
-            ("-(7 / 2) + (1 - 3)", [4, 1, 3]),
+        // Hand-counted carrier-free roots: block tails, operands, `if`
+        // conditions and call arguments. `let` values stay delegated.
+        for (body, census, free) in [
+            ("1", [1, 0, 0], 1),
+            ("-(7 / 2) + (1 - 3)", [4, 1, 3], 8),
             (
                 "let a = text(); if a == \"s\" && !flag { -(7 / 2) } else { (1 - 3) * f(2) }",
                 [5, 2, 5],
+                12,
             ),
+            ("let x = 1 + 2; let y = -x; y", [2, 1, 1], 2),
         ] {
             let raw = raw(body);
             assert_eq!(raw.exact_absent_roots, census);
+            assert_eq!(raw.exact_carrier_free_roots, free);
             let mut runtime = StructuralCost::new();
             runtime.exact_fixed_discount = 71;
             // Even a hostile runtime census cannot remove runtime storage.
@@ -898,7 +980,7 @@ mod uncached_absence_tests {
             for mode in [7, 8] {
                 assert_eq!(fixed_hir_discount(mode, &raw, &runtime).unwrap(), old);
             }
-            let additional = (census[1] + census[2]) * absent_storage();
+            let additional = (census[1] + census[2]) * absent_storage() + free * carriers();
             for mode in [5, 6] {
                 assert_eq!(
                     fixed_hir_discount(mode, &raw, &runtime).unwrap(),
@@ -929,7 +1011,7 @@ mod uncached_absence_tests {
     fn uncached_absence_rejects_malformed_census_and_preserves_exact_limit() {
         let mut raw = raw("-(7 / 2) + (1 - 3)");
         let runtime = StructuralCost::new();
-        let expected = old_discount(&raw, &runtime) + 4 * absent_storage();
+        let expected = old_discount(&raw, &runtime) + 4 * absent_storage() + 8 * carriers();
         struct Restore(usize);
         impl Drop for Restore {
             fn drop(&mut self) {
@@ -948,14 +1030,28 @@ mod uncached_absence_tests {
                 .all(|error| error.code == "SPX-G171"));
             crate::workspace_graph::ACTIVE_BUILDER_LIMIT.with(|limit| limit.set(expected));
         }
-        for malformed in [[usize::MAX, 1, 0], [0, 0, raw.exact_expressions + 1]] {
+        let census = raw.exact_absent_roots;
+        // A carrier-free count above its storage census, or one whose bytes
+        // overflow, refuses instead of saturating into a larger discount.
+        for (malformed, free) in [
+            ([usize::MAX, 1, 0], 0),
+            ([0, 0, raw.exact_expressions + 1], 0),
+            (census, 9),
+            ([0, 0, 0], 1),
+            (census, usize::MAX),
+        ] {
             raw.exact_absent_roots = malformed;
+            raw.exact_carrier_free_roots = free;
             for mode in [5, 6] {
                 assert!(fixed_hir_discount(mode, &raw, &runtime)
                     .unwrap_err()
                     .iter()
                     .all(|error| error.code == "SPX-G171"));
             }
+        }
+        // Modes 0-4 and 7+ never consult either census.
+        for mode in [0, 4, 7, 8] {
+            assert!(fixed_hir_discount(mode, &raw, &runtime).is_ok());
         }
     }
 }
