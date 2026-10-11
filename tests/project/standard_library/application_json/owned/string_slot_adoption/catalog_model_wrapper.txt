@@ -1,0 +1,24 @@
+module catalog.model;
+use type @id("catalog.output_item") from catalog.response_schema as Item;
+use type @id("catalog.metrics") from catalog.response_schema as Metrics;
+use type @id("catalog.report") from catalog.response_schema as Report;
+
+@id("catalog.tag")
+record Tag {
+    @id("catalog.tag.id")
+    id: string,
+}
+
+@id("catalog.result")
+record CatalogResult {
+    @id("catalog.result.valid")
+    valid: bool,
+    @id("catalog.result.report")
+    report: Report,
+}
+
+@id("catalog.model.anchor")
+fn model_anchor() -> i64
+{
+    0
+}

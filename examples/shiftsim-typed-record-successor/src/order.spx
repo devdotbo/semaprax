@@ -1,6 +1,5 @@
 module shiftsim.order;
 use type @id("shiftsim.patient") from shiftsim.request_schema as Patient;
-use type @id("shiftsim.server") from shiftsim.model as Server;
 
 @id("shiftsim.order.patients")
 fn patients_by_dispatch_key(patients: own Vec<Patient>) -> Vec<Patient>
@@ -9,22 +8,22 @@ fn patients_by_dispatch_key(patients: own Vec<Patient>) -> Vec<Patient>
 }
 
 @id("shiftsim.order.servers")
-fn servers_by_id(servers: own Vec<Server>) -> Vec<Server>
+fn servers_by_id(servers: own Vec<string>) -> Vec<string>
 {
-    vec_sort_by<Server>(servers, "id:asc")
+    vec_sort_owned<string>(servers)
 }
 
 @id("shiftsim.order.unique_sorted_server_ids")
-fn sorted_servers_have_unique_ids(servers: borrow Vec<Server>) -> bool
+fn sorted_servers_have_unique_ids(servers: borrow Vec<string>) -> bool
 {
-    // The caller retains servers_by_id order; Server has only its ID field.
+    // The caller retains servers_by_id order; primitive String slots retain that exact byte order.
     // Equal byte lengths plus a full prefix match is exact UTF-8/NUL equality.
-    let length = vec_len<Server>(servers);
+    let length = vec_len<string>(servers);
     let mut index = 1usize;
     let mut valid = true;
     while valid && index < length {
-        let previous = vec_field<Server>(servers, index - 1usize, "id");
-        let current = vec_field<Server>(servers, index, "id");
+        let previous = vec_str_at(servers, index - 1usize);
+        let current = vec_str_at(servers, index);
         valid = str_len_bytes(previous) != str_len_bytes(current) || !str_starts_with(current, previous);
         index = index + 1usize;
         valid && index < length

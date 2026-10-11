@@ -1,6 +1,5 @@
 module catalog.order;
 use type @id("catalog.input_item") from catalog.request_schema as InputItem;
-use type @id("catalog.tag") from catalog.model as Tag;
 use function @id("std.text.equals") from std.text as equals;
 
 @id("catalog.identifier")
@@ -19,15 +18,15 @@ fn identifier(value: borrow str) -> bool
 }
 
 @id("catalog.valid_sorted_tags")
-fn valid_sorted_tags(tags: borrow Vec<Tag>) -> bool
+fn valid_sorted_tags(tags: borrow Vec<string>) -> bool
 {
-    let length = vec_len<Tag>(tags);
+    let length = vec_len<string>(tags);
     let mut valid = length <= 8usize;
     let mut index = 0usize;
     while valid && index < length {
-        let current = vec_field<Tag>(tags, index, "id");
+        let current = vec_str_at(tags, index);
         valid = identifier(current);
-        if valid && index > 0usize { let previous = vec_field<Tag>(tags, index - 1usize, "id"); valid = !equals(previous, current); }
+        if valid && index > 0usize { let previous = vec_str_at(tags, index - 1usize); valid = !equals(previous, current); }
         index = index + 1usize;
         valid && index < length
     }
@@ -55,13 +54,13 @@ fn valid_sorted_items(items: borrow Vec<InputItem>) -> bool
 }
 
 @id("catalog.selected")
-fn selected(id: borrow str, tags: borrow Vec<Tag>) -> bool
+fn selected(id: borrow str, tags: borrow Vec<string>) -> bool
 {
-    let length = vec_len<Tag>(tags);
+    let length = vec_len<string>(tags);
     let mut include = length == 0usize;
     let mut index = 0usize;
     while !include && index < length {
-        let prefix = vec_field<Tag>(tags, index, "id");
+        let prefix = vec_str_at(tags, index);
         include = str_starts_with(id, prefix);
         index = index + 1usize;
         !include && index < length

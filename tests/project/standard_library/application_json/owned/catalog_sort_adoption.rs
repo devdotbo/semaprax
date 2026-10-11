@@ -72,6 +72,10 @@ fn direct_wire_row_sort_retains_independent_original_pipeline_and_all_23_cases()
     );
     for (path, bytes) in [
         ("src/model.spx", ORIGINAL_MODEL),
+        (
+            "src/order.spx",
+            super::super::string_slot_adoption::catalog_order(),
+        ),
         ("src/restock.spx", ORIGINAL_RESTOCK),
     ] {
         std::fs::write(root.join(path), bytes).unwrap();

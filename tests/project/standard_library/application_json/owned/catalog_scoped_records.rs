@@ -161,6 +161,8 @@ fn typed_catalog_derives_codecs_and_preserves_all_23_functional_cases() {
             project::ProjectProfile::StdinStreamCollectionRecordCommandIoV1
         );
         let graph = snapshot.semantic_graph();
+        assert!(graph.contains("core.vec.str-at"));
+        assert!(!graph.contains("\"catalog.tag\""));
         super::super::collection_response::assert_scoped_row_reads(
             snapshot.public_api_program(),
             "catalog.output_item",
@@ -199,8 +201,22 @@ fn typed_catalog_derives_codecs_and_preserves_all_23_functional_cases() {
     })
     .unwrap();
     std::fs::write(root.join("src/app.spx"), workaround).unwrap();
-    // Both sources execute every frozen raw-byte/all-channel row unchanged.
-    for (route, source) in [("workaround", &c_source), ("joined", &joined_c)] {
+    super::string_slot_adoption::catalog(&root);
+    let wrapper_c = project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
+        assert!(snapshot.semantic_graph().contains("catalog.tag"));
+        codegen::emit_hir_c_with_stdin_stream_collection_records(
+            snapshot.public_api_program(),
+            "catalog.command",
+        )
+        .map_err(|error| vec![error])
+    })
+    .unwrap();
+    // All three sources execute every frozen raw-byte/all-channel row unchanged.
+    for (route, source) in [
+        ("slot-views", &c_source),
+        ("joined", &joined_c),
+        ("tag-wrapper", &wrapper_c),
+    ] {
         for optimization in ["-O0", "-O2"] {
             let binary = compile_native(source, &root, optimization);
             for case in cases {

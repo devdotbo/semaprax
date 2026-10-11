@@ -135,6 +135,7 @@ fn unfactored_schedule_retains_exact_semantic_path_budget_refusal() {
     let original = include_str!("shiftsim_schedule_unfactored.txt");
     let root = crate::standard_library::temporary("shiftsim-unfactored-path-refusal");
     write_example(&root);
+    super::string_slot_adoption::shiftsim(&root);
     std::fs::write(root.join("src/schedule.spx"), original).unwrap();
     let entered = std::cell::Cell::new(false);
     let errors = project::with_authenticated_project(&root.join("semaprax.toml"), |_| {
@@ -163,7 +164,8 @@ fn unfactored_schedule_retains_exact_semantic_path_budget_refusal() {
 fn original_copy_state_replacement_calls_keep_both_t281_refusals() {
     let root = crate::standard_library::temporary("shiftsim-copy-replace-refusal");
     write_example(&root);
-    let mut original = SCHEDULE.to_owned();
+    super::string_slot_adoption::shiftsim(&root);
+    let mut original = super::string_slot_adoption::shiftsim_schedule().to_owned();
     for name in ["PatientState", "WorkerState"] {
         let admitted = format!("vec_set<{name}>(");
         assert_eq!(original.matches(&admitted).count(), 1);
@@ -227,6 +229,8 @@ fn typed_record_shiftsim_derives_both_codecs_and_runs_retained_corpus() {
     let native = root.join("shiftsim-native");
     let c_source = project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
         assert_eq!(snapshot.manifest().schema(), project::PROJECT_SCHEMA_V31);
+        assert!(snapshot.semantic_graph().contains("core.vec.str-at"));
+        assert!(!snapshot.semantic_graph().contains("\"shiftsim.server\""));
         assert_eq!(
             snapshot.manifest().project_profile(),
             project::ProjectProfile::StdinStreamCollectionRecordCommandIoV1
@@ -253,63 +257,79 @@ fn typed_record_shiftsim_derives_both_codecs_and_runs_retained_corpus() {
     .unwrap();
 
     let corpus: serde_json::Value = serde_json::from_str(CORPUS).unwrap();
-    for optimization in ["-O0", "-O2"] {
-        let binary = compile_native(&c_source, &root, optimization);
-        for case in corpus["valid"].as_array().unwrap() {
-            let name = case["name"].as_str().unwrap();
-            let escaped = case["request_encoding"] == "unicode-escaped-keys-and-identifiers-v1";
-            let mut input =
-                vec![b' '; case["leading_whitespace_bytes"].as_u64().unwrap_or(0) as usize];
-            input.extend_from_slice(request_wire(&case["input"], None, escaped).as_bytes());
-            let output = execute(&binary, &input);
-            assert_eq!(
-                output.status.code(),
-                Some(0),
-                "{name}: {}",
-                String::from_utf8_lossy(&output.stderr)
-            );
-            assert_eq!(
-                output.stdout,
-                expected_wire(&case["expected"]).as_bytes(),
-                "{name}"
-            );
-            assert!(output.stderr.is_empty(), "{name}");
-        }
-        for identifier in ["", "ABCDEFGHIJKLMNOPQ", "é", "has space", "NUL\0"] {
-            for slot in ["server", "patient"] {
-                let mut request = serde_json::json!({
-                    "servers": ["S0"],
-                    "patients": [{"id":"P0","arrival":0,"service":1,"priority":0,"deadline":1}]
-                });
-                if slot == "server" {
-                    request["servers"][0] = serde_json::json!(identifier);
-                } else {
-                    request["patients"][0]["id"] = serde_json::json!(identifier);
+    assert_eq!(
+        corpus["valid"].as_array().unwrap().len() + corpus["invalid"].as_array().unwrap().len(),
+        15
+    );
+    super::string_slot_adoption::shiftsim(&root);
+    let wrapper_c = project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
+        assert!(snapshot.semantic_graph().contains("shiftsim.server"));
+        codegen::emit_hir_c_with_stdin_stream_collection_records(
+            snapshot.public_api_program(),
+            "shiftsim.command",
+        )
+        .map_err(|error| vec![error])
+    })
+    .unwrap();
+    for source in [&c_source, &wrapper_c] {
+        for optimization in ["-O0", "-O2"] {
+            let binary = compile_native(source, &root, optimization);
+            for case in corpus["valid"].as_array().unwrap() {
+                let name = case["name"].as_str().unwrap();
+                let escaped = case["request_encoding"] == "unicode-escaped-keys-and-identifiers-v1";
+                let mut input =
+                    vec![b' '; case["leading_whitespace_bytes"].as_u64().unwrap_or(0) as usize];
+                input.extend_from_slice(request_wire(&case["input"], None, escaped).as_bytes());
+                let output = execute(&binary, &input);
+                assert_eq!(
+                    output.status.code(),
+                    Some(0),
+                    "{name}: {}",
+                    String::from_utf8_lossy(&output.stderr)
+                );
+                assert_eq!(
+                    output.stdout,
+                    expected_wire(&case["expected"]).as_bytes(),
+                    "{name}"
+                );
+                assert!(output.stderr.is_empty(), "{name}");
+            }
+            for identifier in ["", "ABCDEFGHIJKLMNOPQ", "é", "has space", "NUL\0"] {
+                for slot in ["server", "patient"] {
+                    let mut request = serde_json::json!({
+                        "servers": ["S0"],
+                        "patients": [{"id":"P0","arrival":0,"service":1,"priority":0,"deadline":1}]
+                    });
+                    if slot == "server" {
+                        request["servers"][0] = serde_json::json!(identifier);
+                    } else {
+                        request["patients"][0]["id"] = serde_json::json!(identifier);
+                    }
+                    let output = execute(&binary, request_wire(&request, None, false).as_bytes());
+                    assert_one_diagnostic_line(&output);
                 }
+            }
+            let too_many_servers = serde_json::json!({
+                "servers": (0..9).map(|i| format!("S{i}")).collect::<Vec<_>>(),
+                "patients": []
+            });
+            let too_many_patients = serde_json::json!({
+                "servers": ["S0"],
+                "patients": (0..257).map(|i| serde_json::json!({
+                    "id": format!("P{i}"),"arrival":0,"service":1,"priority":0,"deadline":1
+                })).collect::<Vec<_>>()
+            });
+            for request in [too_many_servers, too_many_patients] {
                 let output = execute(&binary, request_wire(&request, None, false).as_bytes());
                 assert_one_diagnostic_line(&output);
             }
-        }
-        let too_many_servers = serde_json::json!({
-            "servers": (0..9).map(|i| format!("S{i}")).collect::<Vec<_>>(),
-            "patients": []
-        });
-        let too_many_patients = serde_json::json!({
-            "servers": ["S0"],
-            "patients": (0..257).map(|i| serde_json::json!({
-                "id": format!("P{i}"),"arrival":0,"service":1,"priority":0,"deadline":1
-            })).collect::<Vec<_>>()
-        });
-        for request in [too_many_servers, too_many_patients] {
-            let output = execute(&binary, request_wire(&request, None, false).as_bytes());
-            assert_one_diagnostic_line(&output);
-        }
-        for case in corpus["invalid"].as_array().unwrap() {
-            let name = case["name"].as_str().unwrap();
-            let input = request_wire(&case["input"], None, false);
-            let output = execute(&binary, input.as_bytes());
-            assert_eq!(output.status.code(), Some(2), "{name}");
-            assert_one_diagnostic_line(&output);
+            for case in corpus["invalid"].as_array().unwrap() {
+                let name = case["name"].as_str().unwrap();
+                let input = request_wire(&case["input"], None, false);
+                let output = execute(&binary, input.as_bytes());
+                assert_eq!(output.status.code(), Some(2), "{name}");
+                assert_one_diagnostic_line(&output);
+            }
         }
     }
 

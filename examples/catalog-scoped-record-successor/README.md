@@ -17,15 +17,16 @@ Malformed JSON, unknown/duplicate/missing fields and incorrect scalar kinds are
 the real generated scanner/decoder's responsibility, not a handwritten parser.
 
 `InputItem` starts with ID so its stable sort makes duplicates adjacent without
-an extra String inventory. `Tag` wraps each owned decoded String once. Scoped
-`vec_field` reads inspect numeric fields, adjacent IDs and tag prefixes without
-cloning an unrelated row or String; adjacent views reuse `std.text.equals`.
-Reads retain each vector's live generation
-through their last use. `SortItem` has department/priority/ID declaration order
-for business sorting; consuming it into response `Item` preserves the required
-ID/department/priority/stock/mark JSON member order. The real response encoder
-preserves vector order and metrics order. No pointer, input position or token
-spelling becomes sorting authority.
+an extra String inventory. Tags stay in their decoded `Vec<string>` and are
+sorted directly. `vec_str_at` reads adjacent tags and selection prefixes;
+`vec_field` reads existing item fields, and adjacent IDs reuse `std.text.equals`.
+These views retain their original vector through their last use. Response
+`Item` rows sort by explicit department/priority/ID/stock/mark keys, preserving
+the required ID/department/priority/stock/mark JSON member order. The real
+encoder preserves vector and metrics order. No pointer or token spelling grants
+sorting authority. The retained Tag-wrapper sources remain differential controls
+for all 23 cases. Application qualification is pending; removing conversion
+vectors changes allocation-failure ordinals, with no physical savings claimed.
 
 The report is below 65536 bytes for every admitted 256-row/16-byte-ID value
 (even a conservative 128 bytes per row plus 128 metrics bytes is smaller).

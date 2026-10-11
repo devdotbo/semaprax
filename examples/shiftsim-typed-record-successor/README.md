@@ -1,12 +1,16 @@
 # ShiftSim typed-record successor
 
 This source draft replaces the retained scheduler's six-slot scalar packing
-with named `Patient`, `Server`, `Assignment`, and `Metrics` records. The
+with named `Patient`, `Assignment`, and `Metrics` records. Server IDs stay
+in a sorted `Vec<string>` and use `vec_str_at` for validation and selection. The
 declared `Patient` field order is the dispatch key `(priority, arrival, id)`;
 the stable owned-record sort preserves those ties. Mutable scheduling state
 uses separate Copy records indexed alongside the sorted owners, so waiting and
 completion scans do not deep-clone patient IDs. IDs are cloned only when a
 completed assignment becomes part of the owned report.
+The exact Server-wrapper program remains a differential control for all 15
+cases and original invalid-input checks. Qualification is pending. Conversion
+vector removal changes allocation-failure ordinals; no allocation gain is claimed.
 
 The request and response schemas are authored in `src/request.spx` and
 `src/response.spx`. Bootstrap the ordinary compiler-generated helpers in a

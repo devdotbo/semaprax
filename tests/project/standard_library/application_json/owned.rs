@@ -305,3 +305,5 @@ let outcome=encode(servers,patients,131072usize);match own outcome{{Encoded::Ref
     wasm_run(&root, 15, 0, "string-clone-allocation");
     std::fs::remove_dir_all(root).unwrap();
 }
+
+mod string_slot_adoption;

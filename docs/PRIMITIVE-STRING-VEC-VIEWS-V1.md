@@ -78,7 +78,12 @@ carries the exact identities and type arguments. Byte provenance is rederived.
 
 The owning frontend namespace is `vec_ops::string_slot::tests::`; backend
 execution, physical zero-clone observations and original Catalog/ShiftSim
-application adoption remain required before this feature is called implemented.
+application qualification remain required before this feature is called implemented.
+Catalog and ShiftSim now author primitive-slot reads, with exact pre-adoption
+Tag/Server wrapper sources retained. Their existing 23/15-case owning bodies
+execute both sources with unchanged expected channels and statuses. These
+application definitions are unexecuted in this adoption lane; conversion
+removal changes allocation ordinals and claims no physical or fuel result.
 Existing `vec_get`, `vec_clone_at` and `vec_field` contracts retain their meanings.
 See [Scoped Vec Field Reads v1](SCOPED-VEC-FIELD-READS-V1.md),
 [Owned Leaf Collections v1](OWNED-LEAF-COLLECTIONS-V1.md),

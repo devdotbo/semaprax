@@ -3,12 +3,6 @@ use type @id("shiftsim.assignment") from shiftsim.response_schema as Assignment;
 use type @id("shiftsim.metrics") from shiftsim.response_schema as Metrics;
 use type @id("shiftsim.report") from shiftsim.response_schema as Report;
 
-@id("shiftsim.server")
-record Server {
-    @id("shiftsim.server.id")
-    id: string,
-}
-
 @id("shiftsim.patient_state")
 record PatientState {
     @id("shiftsim.patient_state.arrival")
