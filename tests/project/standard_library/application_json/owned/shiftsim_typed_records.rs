@@ -131,6 +131,35 @@ fn expected_wire(value: &serde_json::Value) -> String {
 }
 
 #[test]
+fn original_copy_state_replacement_calls_keep_both_t281_refusals() {
+    let root = crate::standard_library::temporary("shiftsim-copy-replace-refusal");
+    write_example(&root);
+    let mut original = SCHEDULE.to_owned();
+    for name in ["PatientState", "WorkerState"] {
+        let admitted = format!("vec_set<{name}>(");
+        assert_eq!(original.matches(&admitted).count(), 1);
+        original = original.replace(&admitted, &format!("vec_replace<{name}>("));
+    }
+    std::fs::write(root.join("src/schedule.spx"), original).unwrap();
+    let entered = std::cell::Cell::new(false);
+    let errors = project::with_authenticated_project(&root.join("semaprax.toml"), |_| {
+        entered.set(true);
+        Ok(())
+    })
+    .expect_err("original Copy-state vec_replace calls must remain closed");
+    assert!(
+        !entered.get(),
+        "invalid Copy operations cannot authenticate a snapshot"
+    );
+    assert_eq!(errors.len(), 2, "{errors:?}");
+    assert!(
+        errors.iter().all(|error| error.code == "SPX-T281"),
+        "{errors:?}"
+    );
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
 fn typed_record_shiftsim_derives_both_codecs_and_runs_retained_corpus() {
     let root = crate::standard_library::temporary("shiftsim-typed-record-successor");
     write_example(&root);
