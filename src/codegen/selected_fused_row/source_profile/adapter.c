@@ -43,7 +43,8 @@ static void spx_profile_json_string(const char *s) {
 int main(void) {
     spx_profile_account account={0};
     struct spx_status_entry entries[1]={0};
-    struct spx_context context;
+    /* Runtime context storage is one-shot and canonically zero-initialized. */
+    struct spx_context context={0};
     if (!spx_profile_account_init(&account,SPX_PROFILE_LIMIT) ||
         !spx_context_init(&context,UINT64_C(1),entries,UINT32_C(1),NULL,NULL,NULL)) return 70;
     int64_t result=INT64_MIN;
