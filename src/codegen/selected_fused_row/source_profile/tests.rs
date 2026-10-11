@@ -6,10 +6,17 @@ use std::process::Command;
 const ORIGINAL: &str = include_str!("../../../../tests/fixtures/record-traversal-maximum.spx");
 const PREFIX: &str = include_str!("../probe_prefix.c");
 
+fn source_digest(text: &str) -> String {
+    Sha256::digest(text.as_bytes())
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect()
+}
+
 fn source(text: &str, limit: usize) -> String {
     let ast = crate::parse(text, "fused-source-profile.spx").unwrap();
     let owner = validate_selected(&ast).unwrap();
-    let hash = format!("{:x}", Sha256::digest(text.as_bytes()));
+    let hash = source_digest(text);
     emit_source_profile(&owner, limit, &hash).unwrap()
 }
 fn binaries(unit: &str, label: &str) -> Vec<std::path::PathBuf> {
@@ -84,10 +91,7 @@ fn original_native_source_profile_is_deterministic_and_default_remains_closed() 
         assert_eq!(value["result"], "8386560");
         assert_eq!(value["outcome"], "returned");
         assert_eq!(value["profile"], "fused-construction-v1");
-        assert_eq!(
-            value["source_sha256"],
-            format!("{:x}", Sha256::digest(ORIGINAL.as_bytes()))
-        );
+        assert_eq!(value["source_sha256"], source_digest(ORIGINAL));
     }
 
     let maximum = ORIGINAL.replace("{ total } else { 0 }", "{ 9223372036854775807 } else { 0 }");
@@ -102,10 +106,7 @@ fn original_native_source_profile_is_deterministic_and_default_remains_closed() 
         let value: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
         assert_eq!(value["outcome"], "returned");
         assert_eq!(value["result"], "9223372036854775807");
-        assert_eq!(
-            value["source_sha256"],
-            format!("{:x}", Sha256::digest(maximum.as_bytes()))
-        );
+        assert_eq!(value["source_sha256"], source_digest(maximum));
     }
 
     for binary in binaries(&source(ORIGINAL, 1), "refused") {

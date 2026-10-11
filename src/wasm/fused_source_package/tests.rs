@@ -25,7 +25,7 @@ fn per_invocation(owner: &ValidatedFusedSelection<'_>) -> usize {
 fn registry_buffer(owner: &ValidatedFusedSelection<'_>) -> usize {
     usize::try_from(accept(owner).unwrap().grant.registry_entries * REGISTRY_ENTRY_BYTES).unwrap()
 }
-fn borrowed(files: &[(&'static str, Vec<u8>)]) -> Vec<(&'static str, &[u8])> {
+fn borrowed<'a>(files: &'a [(&'static str, Vec<u8>)]) -> Vec<(&'static str, &'a [u8])> {
     files
         .iter()
         .map(|(name, bytes)| (*name, bytes.as_slice()))
