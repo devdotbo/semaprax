@@ -71,6 +71,9 @@ fn main() -> i64
 - Give every declaration an `@id("dotted.stable.name")`. Without it the
   compiler warns `SPX-S103`; a function rename then changes its identity.
 - The entry point is exactly `fn main() -> i64`. There is no other signature.
+- Return types have no ownership qualifier: write `-> string` or `-> Vec<T>`,
+  never `-> own string` or `-> own Vec<T>` (`SPX-P106`). In function signatures,
+  `own` and `borrow` qualify parameters; the result type determines ownership.
 - A function body has zero or more statements (`let`, assignment, `if`,
   `while`, `for`, `unsafe`) and one final expression. That expression supplies the block's
   value. Intermediate Copy scalars admit `expr;`; other discarded results
@@ -550,7 +553,8 @@ See `help language author:static-utf8` and the
 Use `string_format` for literal templates: `"id={}"`. See
 `help language author:literal-format` for fields, scope and pending gates.
 
-`text: string` transfers ownership; `own string` is `SPX-O002`.
+String parameters own their input implicitly: `text: string` transfers ownership;
+`text: own string` is `SPX-O002`.
 Read-only helpers take `text: borrow str`; pass `string_as_str(text)` before consumption.
 
 ```semaprax
@@ -993,7 +997,9 @@ NaN encodings. Owned payloads such as Bytes are rejected.
 [Copy Scalar Sort v1](COPY-SCALAR-SORT-V1.md) owns the operation.
 
 A list of Copy scalars is a `Vec<T>`. Every `vec_*` call spells its element
-type. Build with `let mut`, then move the finished vector into an immutable
+type. Borrowing a vector requires a named carrier: use `let values = make();`
+then `vec_len<T>(values)`, rather than `vec_len<T>(make())` (`SPX-O118`).
+Build with `let mut`, then move the finished vector into an immutable
 binding before traversing it:
 
 ```semaprax
