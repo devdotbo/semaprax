@@ -32,7 +32,12 @@ must resolve to the exact current owned String clone expression and inventory sl
 a temporary-shaped identity alone is insufficient. Live staged call arguments,
 provisional results and other unfinished temporary kinds remain closed. Root locals
 remain live through ensures; this does not change String read cloning or the allocator
-failure contract.
+failure contract. The reference interpreter retains the actual completed operands
+in exact temporary/flag slots, including comparison operands and normal scoped
+String results. Skipped lazy operands remain inactive; canonical condition,
+region and exit finalizers release only their authenticated carriers. Frame and
+slot backing are reserved before allocation when an active allocation budget is
+held. Owning executable qualification of this repair remains pending.
 
 `ControlTarget::Function(FunctionExecutionId)` names the current ordinary
 function execution, including the exact generic instance. `ControlTarget::Loop

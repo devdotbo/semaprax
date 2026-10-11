@@ -19,6 +19,8 @@ pub(super) struct FrameControl {
     pub(super) owner: FunctionExecutionId,
     pub(super) body: hir::ExpressionId,
     pub(super) resume: Option<crate::cleanup_plan::BlockId>,
+    pub(super) completed_epoch: usize,
+    pub(super) completed_strings: Vec<super::lexical_temporary::CompletedString>,
 }
 
 pub(super) fn target_owner(target: &ControlTarget) -> &FunctionExecutionId {
@@ -56,10 +58,17 @@ pub(super) fn frame_control(
     {
         return Err(Flow::Guard("lexical profile mixes function executions"));
     }
+    if !crate::bounded_output::reserve_active_required(std::mem::size_of::<FrameControl>()) {
+        return Err(Flow::Guard(
+            "lexical frame exceeds the active allocation budget",
+        ));
+    }
     Ok(Some(Box::new(FrameControl {
         owner: target_owner(target).clone(),
         body: function.body.id.clone(),
         resume: None,
+        completed_epoch: 0,
+        completed_strings: super::lexical_temporary::inventory(function)?,
     })))
 }
 
@@ -188,6 +197,12 @@ pub(super) fn settle_actions(
             StorageId::Value(root) => environment
                 .get_mut(root)
                 .ok_or(Flow::Guard("lexical finalizer binding is absent"))?,
+            StorageId::Temporary(id)
+                if action.source.projections.is_empty() && action.active_case.is_none() =>
+            {
+                super::lexical_temporary::finalize(environment, id, action.guard_flag)?;
+                continue;
+            }
             StorageId::ProvisionalResult => provisional.as_deref_mut().ok_or(Flow::Guard(
                 "lexical success attempted to finalize its protected result",
             ))?,

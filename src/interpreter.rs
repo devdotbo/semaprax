@@ -73,6 +73,7 @@ mod generic_owned;
 pub mod internal_strings;
 mod iterator;
 mod lexical_control;
+mod lexical_temporary;
 mod list;
 mod mutable_closure;
 mod nested_owned;
@@ -80,10 +81,10 @@ pub(crate) mod network;
 pub(crate) mod process;
 pub mod source_entry;
 use command_state::CommandInputState;
-mod owned_box;
-mod owned_buffer;
 #[cfg(test)]
 mod fused_row_backing;
+mod owned_box;
+mod owned_buffer;
 mod owned_try;
 mod owned_vec;
 mod prepared;
@@ -3920,7 +3921,9 @@ impl Evaluator<'_> {
                 Ok(Value::ArrayU8(Arc::from(vec![*value; length])))
             }
             ResolvedExprKind::BorrowedUtf8Literal(value) => {
-                if !value.is_backed() { return Err(Flow::Guard("static text backing is absent")); }
+                if !value.is_backed() {
+                    return Err(Flow::Guard("static text backing is absent"));
+                }
                 Ok(Value::BorrowedStr(BorrowedStrValue {
                     invocation_root: BorrowedRoot::SourceExprStatic(expression.id.clone()),
                     bytes: Utf8Backing::Static(value.clone()),
@@ -4073,11 +4076,7 @@ impl Evaluator<'_> {
                     },
                     _ => {
                         let rhs = self.evaluate(right, environment, depth)?;
-                        match combine(*op, lhs, rhs) {
-                            Some(Ok(value)) => Ok(value),
-                            Some(Err(status)) => Err(Flow::Failure(status)),
-                            None => Err(Flow::Guard("ill-typed operands")),
-                        }
+                        self.combine_completed(expression, lhs, rhs, environment)
                     }
                 }
             }
@@ -4141,7 +4140,8 @@ impl Evaluator<'_> {
                         invocation_root: ValueId::intrinsic_parameter(
                             crate::command_io_ops::ARG_UTF8_ID,
                             usize::MAX,
-                        ).into(),
+                        )
+                        .into(),
                         bytes: bytes.into(),
                     }))
                 }
@@ -4551,6 +4551,7 @@ impl Evaluator<'_> {
             }
             ResolvedExprKind::Block { statements, tail } => {
                 let base = environment.len();
+                let temporary_base = lexical_temporary::checkpoint(environment);
                 let mut interrupted = None;
                 'statements: for statement in statements {
                     match statement {
@@ -4627,8 +4628,12 @@ impl Evaluator<'_> {
                     .control
                     .as_deref()
                     .is_some_and(|control| control.body == expression.id);
+                if outcome.is_ok() && !retain_root {
+                    self.settle_completed_string_scope(environment, temporary_base)?;
+                }
                 if !retain_root {
                     environment.truncate(base);
+                    lexical_temporary::truncate(environment, temporary_base);
                 }
                 outcome
             }
@@ -6458,9 +6463,16 @@ fn inspect(value: borrow Either<Bytes, Bytes>) -> i64 {
         else {
             panic!("borrowed values retain their distinct runtime form")
         };
-        assert_eq!(original.invocation_root, BorrowedRoot::Invocation(root.clone()));
+        assert_eq!(
+            original.invocation_root,
+            BorrowedRoot::Invocation(root.clone())
+        );
         assert_eq!(forwarded.invocation_root, BorrowedRoot::Invocation(root));
-        let (Utf8Backing::Invocation(left), Utf8Backing::Invocation(right)) = (&original.bytes, &forwarded.bytes) else { panic!("foreign input keeps its invocation backing") };
+        let (Utf8Backing::Invocation(left), Utf8Backing::Invocation(right)) =
+            (&original.bytes, &forwarded.bytes)
+        else {
+            panic!("foreign input keeps its invocation backing")
+        };
         assert!(Arc::ptr_eq(left, right));
     }
 

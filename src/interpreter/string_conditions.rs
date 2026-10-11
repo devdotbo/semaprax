@@ -16,8 +16,13 @@ impl Evaluator<'_> {
             // Restore the enclosing context before either the body or an
             // error exit, and reuse the derived set across physical iterations.
             std::mem::swap(&mut self.string_condition_reads, &mut reads);
+            let temporary_base = super::lexical_temporary::checkpoint(environment);
             let condition_value = self.evaluate(condition, environment, depth);
             std::mem::swap(&mut self.string_condition_reads, &mut reads);
+            if condition_value.is_ok() {
+                self.settle_completed_string_scope(environment, temporary_base)?;
+                super::lexical_temporary::truncate(environment, temporary_base);
+            }
             let flag = match condition_value? {
                 Value::Bool(flag) => flag,
                 _ => return Err(Flow::Guard("non-boolean while condition")),

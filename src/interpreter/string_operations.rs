@@ -142,15 +142,27 @@ impl Evaluator<'_> {
             values.push(self.evaluate(argument, environment, depth)?);
         }
         if op.is_text_toolkit() {
-            return self.evaluate_text_toolkit(op, &values);
+            let outcome = self.evaluate_text_toolkit(op, &values);
+            if outcome.is_ok() {
+                self.retain_completed_string_arguments(op, args, &mut values, environment)?;
+            }
+            return outcome;
         }
         if op.is_collection() {
-            return self.evaluate_collection(op, values);
+            let outcome = self.evaluate_collection(op, &mut values);
+            if outcome.is_ok() {
+                self.retain_completed_string_arguments(op, args, &mut values, environment)?;
+            }
+            return outcome;
         }
         if op.is_conversion() {
-            return self.evaluate_conversion(op, &values);
+            let outcome = self.evaluate_conversion(op, &values);
+            if outcome.is_ok() {
+                self.retain_completed_string_arguments(op, args, &mut values, environment)?;
+            }
+            return outcome;
         }
-        match op {
+        let outcome = match op {
             crate::string_ops::StringOp::Len => match values.first() {
                 Some(Value::String(value)) => Ok(Value::Int(value.len() as i64)),
                 _ => Err(Flow::Guard("ill-typed string operation operand")),
@@ -215,7 +227,11 @@ impl Evaluator<'_> {
                 _ => Err(Flow::Guard("ill-typed string operation operand")),
             },
             _ => Err(Flow::Guard("ill-typed string operation operand")),
+        };
+        if outcome.is_ok() {
+            self.retain_completed_string_arguments(op, args, &mut values, environment)?;
         }
+        outcome
     }
 
     /// Text Toolkit v1. Offsets are byte offsets; every failure is the
@@ -290,10 +306,10 @@ impl Evaluator<'_> {
     fn evaluate_collection(
         &mut self,
         op: crate::string_ops::StringOp,
-        values: Vec<Value>,
+        values: &mut [Value],
     ) -> Result<Value, Flow> {
         use crate::string_ops::StringOp;
-        match (op, values.as_slice()) {
+        match (op, &*values) {
             (StringOp::Compare, [Value::String(left), Value::String(right)]) => Ok(Value::Int(
                 crate::string_ops::compare_bytes(left.as_bytes(), right.as_bytes()),
             )),
@@ -310,15 +326,18 @@ impl Evaluator<'_> {
                 StringOp::MapAdd | StringOp::MapSet,
                 [Value::Map(_), Value::String(_), Value::Int(_)],
             ) => {
-                let mut values = values.into_iter();
-                let (Some(Value::Map(map)), Some(Value::String(key)), Some(Value::Int(value))) =
-                    (values.next(), values.next(), values.next())
-                else {
+                let Value::Map(map) = std::mem::replace(&mut values[0], Value::Moved) else {
+                    return Err(Flow::Guard("ill-typed map operand"));
+                };
+                let Value::String(key) = &values[1] else {
+                    return Err(Flow::Guard("ill-typed map operand"));
+                };
+                let Value::Int(value) = values[2] else {
                     return Err(Flow::Guard("ill-typed map operand"));
                 };
                 let mut map =
                     Arc::try_unwrap(map).map_err(|_| Flow::Guard("aliased owned map carrier"))?;
-                match map.find(&key) {
+                match map.find(key) {
                     Ok(index) => {
                         let entry = &mut map.entries[index].1;
                         *entry = if op == StringOp::MapSet {
@@ -333,22 +352,22 @@ impl Evaluator<'_> {
                         if map.entries.len() >= map.capacity {
                             return Err(map_failure(crate::string_ops::MAP_FULL_CODE));
                         }
-                        let key = self.materialize_utf8_copy(&key)?;
+                        let key = self.materialize_utf8_copy(key)?;
                         map.entries.insert(index, (key, value));
                     }
                 }
                 Ok(Value::Map(Arc::new(map)))
             }
             (StringOp::MapRemove, [Value::Map(_), Value::String(_)]) => {
-                let mut values = values.into_iter();
-                let (Some(Value::Map(map)), Some(Value::String(key))) =
-                    (values.next(), values.next())
-                else {
+                let Value::Map(map) = std::mem::replace(&mut values[0], Value::Moved) else {
+                    return Err(Flow::Guard("ill-typed map removal operand"));
+                };
+                let Value::String(key) = &values[1] else {
                     return Err(Flow::Guard("ill-typed map removal operand"));
                 };
                 let mut map =
                     Arc::try_unwrap(map).map_err(|_| Flow::Guard("aliased owned map carrier"))?;
-                if let Ok(index) = map.find(&key) {
+                if let Ok(index) = map.find(key) {
                     map.entries.remove(index);
                 }
                 Ok(Value::Map(Arc::new(map)))
