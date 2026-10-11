@@ -1,5 +1,5 @@
 //! Saved-old roots and exact held backing, not a cached HIR signature verdict.
-use super::*;
+use super::{Diagnostic, Frame, Invocation, Lookup, Program, DEPTH};
 use crate::workspace_graph::index_authored;
 const PROVIDER: &str = r#"module private.provider;
 @id("payload") record Payload { @id("payload.text") text:string, }
@@ -164,9 +164,10 @@ fn held_frames_are_funded_once_and_repeated_roots_keep_exact_short_and_drop_cont
         }
         Ok::<_, Vec<Diagnostic>>(())
     };
-    let ((answer, overflowed, used), measured) = crate::test_allocation_observer::measure(|| {
-        crate::bounded_output::with_limit_usage(usize::MAX, run)
-    });
+    let ((answer, measured), overflowed, used) =
+        crate::bounded_output::with_limit_usage(usize::MAX, || {
+            crate::test_allocation_observer::measure(run)
+        });
     answer.unwrap();
     assert!(!overflowed && !measured.invalid);
     assert_eq!(used, frames + 16 * roots);

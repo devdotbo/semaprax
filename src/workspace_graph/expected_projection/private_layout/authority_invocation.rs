@@ -1,5 +1,9 @@
 //! One invocation's exact top-level proof and reusable borrowed DFS backing.
-use super::*;
+use super::{
+    debit, explicit_only, possible, refusal, reserve_builder_structure, Absence,
+    AuthoredDeclaration, BTreeMap, Cell, Diagnostic, Frame, Lookup, ModuleUseKind, PrivateTypes,
+    Program, TopLevel, DEPTH, WORK,
+};
 use std::cell::RefCell;
 
 enum Held<'a> {
