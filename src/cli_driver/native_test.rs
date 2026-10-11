@@ -265,7 +265,11 @@ fn run_case(executable: &Path, cwd: &Path, limits: NativeTestLimits) -> CaseResu
                 timing.first_wait = Some(timing.elapsed());
             }
         }
-        match child.try_wait() {
+        let observation = child.try_wait();
+        if let Some(timing) = &mut case.timing {
+            timing.wait_observed(matches!(&observation, Ok(None)));
+        }
+        match observation {
             Ok(Some(status)) => {
                 if let Some(timing) = &mut case.timing {
                     timing.terminal("exit");

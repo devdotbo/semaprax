@@ -126,6 +126,12 @@ observation. Compilation, sealing, scratch cleanup, and JSON serialization are
 outside this observation. Loader and OS scheduling time remain inside the
 original process deadline; the instrumentation neither isolates those costs
 nor changes timeout, output refusal, result publication, or settlement.
+The same opt-in object also records wait and pending observation counts, last
+wait/pending timestamps, the maximum gap between observed waits, and terminal
+deadline overshoot. These fixed-size observations distinguish repeated pending
+checks from long parent polling gaps. They do not measure child CPU or identify
+loader/scheduler causes. No polling counter or timestamp is sampled when the
+flag is absent; the existing wait order and five-millisecond sleep are unchanged.
 Timing values are diagnostic observations, not deterministic pins or acceptance
 criteria. The original 100 ms recovery control remains unchanged and unqualified
 until its owning executable gate actually passes.
