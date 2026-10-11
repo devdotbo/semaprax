@@ -84,6 +84,8 @@ pub(crate) mod box_ops;
 pub(crate) mod byte_data_capacity;
 mod finite_byte_scratch;
 mod finite_row_construction;
+#[allow(dead_code, reason = "private fusion prerequisite; ordinary admission and target selection remain closed")]
+mod construction_fusion;
 pub(crate) mod byte_ops;
 pub mod c_header;
 pub(crate) mod cache_codec;

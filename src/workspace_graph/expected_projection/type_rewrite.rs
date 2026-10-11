@@ -173,7 +173,7 @@ pub(super) fn default_vector_element<'a>(
     Some(element)
 }
 
-fn record_element(declaration: &crate::ast::TypeDeclaration) -> bool {
+pub(super) fn record_element(declaration: &crate::ast::TypeDeclaration) -> bool {
     let TypeDeclarationKind::Record { fields } = &declaration.kind else {
         return false;
     };

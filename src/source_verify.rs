@@ -279,3 +279,5 @@ pub const VERIFIER_FRAME_BYTES: usize = std::mem::size_of::<scope::VerifierFrame
 pub(crate) use declaration::fusion::{
     finite_allocation as finite_row_allocation, finite_loop as finite_row_loop,
 };
+
+pub(crate) use declaration::fusion::inventory as construction_fusion_candidate;

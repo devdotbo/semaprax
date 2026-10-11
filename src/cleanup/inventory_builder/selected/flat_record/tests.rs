@@ -7,6 +7,7 @@ const SOURCE: &str = r#"module replay.flat_inventory;
  @id("flat.row.data") data:Bytes,
 }
 @id("flat.identity") fn identity(value:own Row)->Row {value}
+@id("app.main") fn main()->i64 {0}
 "#;
 fn program() -> ResolvedProgram {
     crate::hir::resolve(&crate::check(SOURCE, "flat-inventory.spx").unwrap()).unwrap()

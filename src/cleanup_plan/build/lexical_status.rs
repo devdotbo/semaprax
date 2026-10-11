@@ -305,7 +305,7 @@ pub(super) fn declare(
                 .ok_or_else(|| plan_error("lexical status count overflow"))?;
             let bytes = match producer {
                 Producer::Call(id) => id.len(),
-                Producer::Arithmetic(_, cases) => cases.len() * size_of::<StatusCase>(),
+                Producer::Arithmetic(_, cases) => std::mem::size_of_val(cases),
                 Producer::Contract(..) => 0,
             };
             payload = payload

@@ -109,3 +109,71 @@ Source candidate recognition supplies no success evidence for those gates.
 authored, independently source/HIR-derived prerequisite restricted to the
 unchanged32 ordinary Bytes events. Owning executable qualification is pending.
 It neither fuses backing allocation nor admits count33 or the original4096 loop.
+
+
+## Private symbolic descriptor and reference domain
+
+The private `construction_fusion` module independently reconstructs the closed
+source candidate and symbolic typed constructor, retaining borrowed current
+function, record/field, loop, push, latch and suffix identities. It is not a
+serialized authority or a source-to-HIR equivalence certificate. Ordinary source
+and HIR admission still charge every constructor and retain the 32-event limit.
+Typed descriptor tests use admitted counts at most32; the synthetic4096 domain
+probe tests dimensions only and does not claim a checked4096 program.
+
+The reference domain holds an explicit module identity and non-resettable issuer.
+Every owner/view carries issuer, invocation, slot, nonce, generation and range
+identity. `new` preflights exact metadata dimensions without growing tables;
+`start` takes the administrative construction pin. At the first original Bytes
+operand, after the preceding String operand, the domain allocates the complete
+lease table and independent64-view table, then invokes the backing allocator.
+The executor must charge its actual layouts and backing capacities; metadata
+allocation failure and Bytes allocation failure remain invariant fail-stop.
+Each row must publish before the next issue. Completion releases the pin while
+children survive. Abort retains it until canonical partial-row/Vec/String cleanup
+has settled every child and `settle_abort` runs. Borrowing is allowed only after
+completion; active borrows block move/drop, and readonly callbacks resolve exact
+held backing ranges without cloning or exporting an owned backing. Writes are
+closed in this first profile. Issuer or generation exhaustion refuses without
+wrapping. The final child releases backing exactly once after the pin is gone.
+An abandoned private domain deliberately cannot implicitly free live backing;
+executor integration must provide the canonical explicit settlement boundary.
+
+Two descriptor and five domain regression definitions are authored, including
+exact/one-short metadata, independent concurrent view capacity, stale/foreign
+identity, unpublished rows, abort pin order and issuer exhaustion. Callback counts
+observe the reference protocol, not physical allocator measurements. Native,
+interpreter and Core-Wasm integration, full source/HIR equivalence, physical
+fault/metadata observations and atomic selected admission remain prerequisites.
+No executable gate or allocation saving is claimed by this private tranche.
+
+
+### Private Core-Wasm host-boundary precursor
+
+`wasm::fused_row_host` is a test-only import/reexport probe, with namespace
+`semaprax.private.fused-row-host.v1`. It is not a source emitter or a frozen
+public Bytes ABI. Its host factory instantiates only the exact granted module;
+imports stay private to that factory. The private carrier supplies a held issuer
+`externref`, a slot and a never-reused nonce. Exact issuer object, invocation-held
+slot/nonce and generation validation precede every payload read or release.
+A different issuer, module grant, invocation or retired owner/view refuses. The
+held issuer grants exactly one active domain, retained until settlement; overlapping
+instantiation refuses, and sequential reentry retains the non-resettable nonce.
+
+The host acquires fixed lease and64-view typed tables and one zeroed payload at
+the first Bytes preparation. It retains the same publication, complete-only
+borrow, abort pin and canonical settlement order as the reference domain. There
+is no per-child backing, copy-on-write or read-time table growth. Its ordinary
+32-event/2MiB counters are cumulative and do not refund on cleanup. Read views
+are readonly; move/drop refuses active views. The owning probe uses a genuinely
+checked eight-row descriptor and actual Core-Wasm imports, not4096 source
+admission. It exercises foreign/stale handles, range boundaries,64 simultaneous
+views, delayed abort release, last-child release, metadata exact/one-short and
+reentry. Its signature/inventory and Node boundary definitions are authored but
+unexecuted.
+
+Reported table sizes are actual typed-array `byteLength` values. JavaScript
+engine, closure, nonce and bookkeeping allocations are not a claimed complete
+physical reservation or allocator measurement. Full executor storage accounting,
+source lowering and immutable source/HIR provenance still have to join before
+activation; this host namespace grants no production or ordinary admission.

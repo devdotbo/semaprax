@@ -472,6 +472,7 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
         "pub(super) mod cost;",
         "pub(super) mod statement_segment;",
         "pub(super) mod uncached_peak;",
+        "pub(super) fn byte_writer_import_authorized<'a>(",
         "pub(super) use uncached_peak::{",
         "pub(super) struct SyntheticBuilderCosts {",
         "pub(super) raw_clone_and_hir: usize,",

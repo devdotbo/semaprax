@@ -2,7 +2,7 @@ use super::*;
 const SOURCE: &str = r#"module lexical.completed_string;
 @id("inspect") fn inspect(fail:bool)->i64 ensures !fail {
  let body="body";let mut index=0;
- while index<1 {index=index+1;if index==1 {return string_len(body)+25;} else {0};0}
+ while index<1 {index=index+1;if index==1 {return string_len(body)+25;} else {0} 0}
  29
 }
 @id("app.main") fn main()->i64 {0}
@@ -128,8 +128,8 @@ fn owning_iterator_continue_settles_completed_string_read_without_consuming_rema
 @id("iterate") fn iterate(values:own Vec<Bytes>)->i64 {
  let body="body";let mut total=0;
  for own item in vec_into_iter<Bytes>(values) {
-  string_len(body);
-  if byte_len(bytes_as_slice(item))==0usize {continue;} else {0};
+  let _ = string_len(body);
+  if byte_len(bytes_as_slice(item))==0usize {continue;} else {0}
   total=total+1;0
  } total
 }

@@ -1,5 +1,7 @@
 # Changelog
 
+- Repair borrowed-Str byte-writer proof signatures, exact-extent interpreter search, nested final-UTF8 native borrow arguments, and certified bottom-binding Wasm lowering. Consolidated owning qualification remains pending; foreign ingress, source admission and resource limits are unchanged.
+
 - Replace value-proportional JSON byte and UTF-8 offset probes with existing checked numeric conversions; retain contracts, grammar and fuel limits, with all-byte source conformance awaiting grouped execution.
 
 - Author OPT #750 linear saved-cursor work debits for selected primitive replay,

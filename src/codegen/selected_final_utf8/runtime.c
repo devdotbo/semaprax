@@ -106,7 +106,7 @@ bool semaprax_final_utf8_borrow_v1(struct spx_final_utf8_lease *lease,struct spx
     if(!slot->reserved||slot->text==NULL||slot->generation!=handle.generation||slot->borrowed||slot->borrow_epoch==UINT64_MAX)return false;
     ++slot->borrow_epoch;slot->borrowed=true;
     *borrow=(struct spx_final_utf8_borrow){lease,handle.slot,handle.generation,slot->borrow_epoch};
-    *data=(const uint8_t *)slot->text;*length=spx_string_length_bytes(slot->text);return true;
+    *data=(const uint8_t *)slot->text;*length=spx_string_length_v10(slot->text);return true;
 }
 bool semaprax_final_utf8_end_borrow_v1(struct spx_final_utf8_lease *lease,struct spx_final_utf8_borrow borrow) {
     if(!spx_final_utf8_valid_lease(lease)||lease->busy||borrow.identity!=lease||borrow.slot>=SPX_FINAL_UTF8_HANDLES)return false;

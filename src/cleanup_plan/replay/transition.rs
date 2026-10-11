@@ -4,6 +4,10 @@
 //! lexical exit continuations added by cleanup plan v18 live here with the rest.
 use super::*;
 
+#[allow(
+    clippy::too_many_arguments,
+    reason = "keep independent held authority and canonical replay inputs explicit"
+)]
 pub(super) fn execute_replay_transition(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
@@ -554,6 +558,10 @@ pub(super) fn state_for_edge(
     Ok(state)
 }
 
+#[allow(
+    clippy::too_many_arguments,
+    reason = "keep independent held authority and canonical replay inputs explicit"
+)]
 pub(super) fn replay_exit(
     function: &ResolvedFunction,
     exit: &ExitTarget,

@@ -29,9 +29,48 @@ fn entries() -> Vec<project::JsonCodecPlanEntry> {
     .to_vec()
 }
 
+// Bundled dependency paths are semantic workspace identities, not files below
+// the fixture root. Independently read the exact compiler-bundled file mapping
+// (standard_dependencies.rs PACKAGES), before deriving any receipt.
+fn paired_originals(root: &std::path::Path) -> std::collections::BTreeMap<String, String> {
+    let mut originals = std::collections::BTreeMap::new();
+    for path in ["src/schema.spx", "src/second.spx"] {
+        assert!(
+            originals
+                .insert(
+                    path.to_owned(),
+                    std::fs::read_to_string(root.join(path)).unwrap()
+                )
+                .is_none()
+        );
+    }
+    let repository = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    for (package, directory, file) in [
+        ("std.data.json", "data-json", "json"),
+        ("std.data.json.digits", "data-json-digits", "digits"),
+        ("std.data.json.doc", "data-json-doc", "doc"),
+        ("std.data.json.query", "data-json-query", "query"),
+        ("std.data.json.scan", "data-json-scan", "scan"),
+        ("std.data.json.token", "data-json-token", "token"),
+        ("std.data.json.utf8", "data-json-utf8", "utf8"),
+        ("std.data.json.write", "data-json-write", "write"),
+        ("std.io", "io", "io"),
+    ] {
+        let path = format!("dependencies/{package}/0.1.0/{file}.spx");
+        let physical = repository.join(format!("std/{directory}/src/{file}.spx"));
+        assert!(
+            originals
+                .insert(path, std::fs::read_to_string(physical).unwrap())
+                .is_none()
+        );
+    }
+    originals
+}
+
 #[test]
 fn paired_plan_is_one_checked_revision_with_order_independent_exact_replay() {
     let root = paired_fixture("codec-plan-pair");
+    let original_files = paired_originals(&root);
     let bundle = project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
         let revision = snapshot.retain_revision();
         let plan = entries();
@@ -86,17 +125,39 @@ fn paired_plan_is_one_checked_revision_with_order_independent_exact_replay() {
             );
         }
         assert_eq!(covered.len(), bundle.authored_sources.len());
+        assert_eq!(bundle.authored_sources.len(), original_files.len());
         for original in &bundle.authored_sources {
+            let physical_original = original_files
+                .get(&original.path)
+                .expect("every authored path has an independent physical source");
+            assert_eq!(&original.source, physical_original);
             assert_eq!(
-                std::fs::read_to_string(root.join(&original.path)).unwrap(),
-                original.source
+                original.sha256,
+                format!(
+                    "sha256:{:x}",
+                    semaprax::digest_hex::LowerHex(Sha256::digest(physical_original.as_bytes()))
+                )
             );
         }
         Ok(bundle)
     })
     .unwrap();
+    assert_eq!(paired_originals(&root), original_files);
     for source in &bundle.candidate_sources {
-        std::fs::write(root.join(&source.path), &source.source).unwrap();
+        if bundle
+            .entries
+            .iter()
+            .any(|entry| entry.source_path == source.path)
+        {
+            std::fs::write(root.join(&source.path), &source.source).unwrap();
+        } else {
+            assert_eq!(
+                &source.source,
+                original_files
+                    .get(&source.path)
+                    .expect("unchanged dependency is inventoried")
+            );
+        }
     }
     project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
         let revision = snapshot.retain_revision();

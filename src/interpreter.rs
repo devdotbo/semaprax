@@ -82,6 +82,8 @@ pub mod source_entry;
 use command_state::CommandInputState;
 mod owned_box;
 mod owned_buffer;
+#[cfg(test)]
+mod fused_row_backing;
 mod owned_try;
 mod owned_vec;
 mod prepared;
@@ -4395,11 +4397,7 @@ impl Evaluator<'_> {
                         crate::str_ops::StrOp::Contains => {
                             match (borrowed_text(&values[0]), borrowed_text(&values[1])) {
                                 (Some(value), Some(needle)) => {
-                                    crate::str_ops::contains(value, needle)
-                                        .map(Value::Bool)
-                                        .ok_or(Flow::Guard(
-                                            "borrowed string operation exceeds byte budget",
-                                        ))
+                                    Ok(Value::Bool(crate::str_ops::contains(value, needle)))
                                 }
                                 _ => Err(Flow::Guard("ill-typed borrowed string operand")),
                             }

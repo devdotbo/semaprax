@@ -32,8 +32,8 @@ fn checked_mixed_blocks_and_exit_operands_preserve_original_child_order() {
         r#"module cursor.mixed;
 @id("cursor.probe") fn probe(n:i64)->i64 {
  let mut i=0;
- while i<n {i=i+1;if i==2 {continue;}else{0};if i==3 {break;}else{0};0}
- if i>0 {return i+1;}else{0};
+ while i<n {i=i+1;if i==2 {continue;}else{0} if i==3 {break;}else{0} 0}
+ if i>0 {return i+1;}else{0}
  return 0;
 }
 @id("main") fn main()->i64 {probe(4)}

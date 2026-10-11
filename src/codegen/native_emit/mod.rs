@@ -74,6 +74,7 @@ pub use filesystem_io_v3::{emit_c_with_filesystem_io_v3, emit_hir_c_with_filesys
 pub use http_io::{emit_c_with_https_io, emit_hir_c_with_https_io};
 pub(super) use literals::c_string;
 use nested_owned::{borrowed_aggregate_byte_paths, borrowed_aggregate_path_suffix};
+pub(in crate::codegen) use nested_owned::emit_materialized_record_borrow_arguments;
 pub use network_io::{emit_c_with_network_io, emit_hir_c_with_network_io};
 pub(super) use output_profile::NativeOutputProfile;
 use output_profile::StringRuntimeSelection;

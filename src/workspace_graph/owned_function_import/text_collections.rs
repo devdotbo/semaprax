@@ -330,6 +330,44 @@ use type @id("outcome") from imports.provider as Outcome;
     }
 
     #[test]
+    fn nested_string_config_and_row_vector_require_the_complete_direct_import_closure() {
+        // Same ordinary carrier composition as the native codec fault witness:
+        // scalar refusal / Report containing a String Config and flat String rows.
+        let provider = PROVIDER
+            .replace(
+                "@id(\"report\") record Report",
+                "@id(\"config\") record Config { @id(\"config.label\") label:string, @id(\"config.retry\") retry:usize, }\n@id(\"report\") record Report",
+            )
+            .replace(
+                "@id(\"report.items\") items: Vec<Item>,",
+                "@id(\"report.config\") config:Config, @id(\"report.items\") items: Vec<Item>,",
+            );
+        let config_import = "use type @id(\"config\") from imports.provider as Config;";
+        let app = APP.replace(
+            "use type @id(\"report\")",
+            &format!("{config_import}\nuse type @id(\"report\")"),
+        );
+        assert!(accepts(&provider, &app));
+        for required in [
+            config_import,
+            "use type @id(\"item\") from imports.provider as Item;",
+            "use type @id(\"report\") from imports.provider as Report;",
+        ] {
+            assert!(app.contains(required));
+            assert!(!accepts(&provider, &app.replace(required, "")));
+        }
+        for forged in [
+            provider.replace("label:string", "label:str"),
+            provider.replace("items: Vec<Item>", "items: Vec<Vec<Item>>"),
+            provider.replace("@id(\"config.label\") ", ""),
+            provider.replace("config:Config", "config:Outcome"),
+        ] {
+            assert_ne!(forged, provider);
+            assert!(!accepts(&forged, &app));
+        }
+    }
+
+    #[test]
     fn stream_input_import_replays_exact_owner_length_and_error_shape() {
         let provider = r#"module imports.provider;
 @id("outcome") variant Input {

@@ -157,11 +157,11 @@ fn captured_record_layout_namespace_and_constructor_body_drift_are_independently
 fn source_bound_nominal_make_identity_read_with_real_lexical_results_selects() {
     let source=SOURCE
         .replace("fn identity(value:own Packet)->Packet {value}",
-            "fn identity(value:own Packet,flag:bool)->Packet {let mut next=0;while next<1 {next=next+1;if flag {return value;} else {0};0} value}")
+            "fn identity(value:own Packet,flag:bool)->Packet {let mut next=0;while next<1 {next=next+1;if flag {return value;} else {0} 0} value}")
         .replace("Packet{n:7,text:\"label\",data:bytes_copy(input)}",
-            "let packet=Packet{n:7,text:\"label\",data:bytes_copy(input)};let mut next=0;while next<1 {next=next+1;if byte_len(input)>0usize {return packet;} else {0};0} packet")
+            "let packet=Packet{n:7,text:\"label\",data:bytes_copy(input)};let mut next=0;while next<1 {next=next+1;if byte_len(input)>0usize {return packet;} else {0} 0} packet")
         .replace("{let key=str\"x\";return str_len_bytes(key);}",
-            "{let key=str\"x\";let input=[65u8];let packet=identity(make(array_as_slice(input)),false);let mut next=0;while next<1 {next=next+1;if str_len_bytes(key)==1 {return read(packet);} else {0};0} read(packet)}");
+            "{let key=str\"x\";let input=[65u8];let packet=identity(make(array_as_slice(input)),false);let mut next=0;while next<1 {next=next+1;if str_len_bytes(key)==1 {return read(packet);} else {0} 0} read(packet)}");
     let build = build_source(&source);
     let module = module(&build);
     for id in ["flat.make", "flat.identity"] {
@@ -184,7 +184,7 @@ fn source_bound_nominal_make_identity_read_with_real_lexical_results_selects() {
 #[test]
 fn direct_record_replay_rejects_retained_field_epoch_and_finalizer_mutations() {
     let source=SOURCE.replace("{let key=str\"x\";return str_len_bytes(key);}",
-        "{let key=str\"x\";let input=[65u8];let packet=identity(make(array_as_slice(input)));let mut next=0;while next<1 {next=next+1;if str_len_bytes(key)==1 {return read(packet);} else {0};0} read(packet)}");
+        "{let key=str\"x\";let input=[65u8];let packet=identity(make(array_as_slice(input)));let mut next=0;while next<1 {next=next+1;if str_len_bytes(key)==1 {return read(packet);} else {0} 0} read(packet)}");
     for attack in 0..3 {
         let mut build = build_source(&source);
         assert_eq!(

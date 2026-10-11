@@ -706,6 +706,44 @@ fn internal_byte_writer_import_authenticates_actual_body_and_preserves_public_re
     let wasm = crate::wasm::emit_resolved_module(&linked).unwrap();
     wasmparser::Validator::new().validate_all(&wasm).unwrap();
     assert!(built.linked_scalar_program("writer.app").is_err());
+    let target = linked
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "writer.write")
+        .unwrap();
+    assert!(crate::loop_calls::byte_writer::resolved_nonallocating(
+        &linked, target
+    ));
+    for mutation in 0..4 {
+        let mut forged = target.clone();
+        let hir::ResolvedExprKind::Block { statements, .. } = &mut forged.body.kind else {
+            panic!("writer body");
+        };
+        let hir::ResolvedStatement::Let { value, .. } = &mut statements[0] else {
+            panic!("byte binding");
+        };
+        let hir::ResolvedExprKind::Match { scrutinee, .. } = &mut value.kind else {
+            panic!("byte option");
+        };
+        let hir::ResolvedExprKind::Call {
+            args,
+            type_arguments,
+            ..
+        } = &mut scrutinee.kind
+        else {
+            panic!("byte read");
+        };
+        match mutation {
+            0 => type_arguments.push(hir::ResolvedType::I64),
+            1 => args[0].ownership = hir::OwnershipMode::Own,
+            2 => args[1].ty = hir::ResolvedType::I64,
+            _ => scrutinee.ty = hir::ResolvedType::U8,
+        }
+        assert!(
+            !crate::loop_calls::byte_writer::resolved_nonallocating(&linked, &forged),
+            "forged borrowed-Str signature {mutation}"
+        );
+    }
 }
 #[test]
 fn internal_byte_writer_import_refuses_allocating_generic_and_mismatched_owner_providers() {
@@ -720,4 +758,62 @@ fn internal_byte_writer_import_refuses_allocating_generic_and_mismatched_owner_p
             .expect("unproved writer source must refuse");
         assert!(errors.iter().any(|error| error.code == "SPX-G172"));
     }
+}
+
+#[test]
+fn outcome_payload_and_vector_nominals_report_each_required_direct_import() {
+    let provider = r#"
+module outcome.provider;
+@id("outcome.config") record Config { @id("outcome.config.label") label:string, }
+@id("outcome.row") record Row { @id("outcome.row.sku") sku:string, }
+@id("outcome.report") record Report {
+    @id("outcome.report.config") config:Config,
+    @id("outcome.report.rows") rows:Vec<Row>,
+}
+@id("outcome.decoded") variant Decoded {
+    @id("outcome.decoded.ready") Ready { @id("outcome.decoded.ready.value") value:Report, },
+    @id("outcome.decoded.error") Error {
+        @id("outcome.decoded.error.code") code:i64,
+        @id("outcome.decoded.error.offset") offset:usize,
+        @id("outcome.decoded.error.field") field:i64,
+    },
+}
+@id("outcome.decode") fn decode(input:borrow Slice<u8>)->Decoded { Decoded::Error { code:0, offset:0usize, field:0 } }
+"#;
+    let app = r#"
+module outcome.app;
+use type @id("outcome.decoded") from outcome.provider as Decoded;
+use type @id("outcome.report") from outcome.provider as Report;
+use type @id("outcome.config") from outcome.provider as Config;
+use type @id("outcome.row") from outcome.provider as Row;
+use function @id("outcome.decode") from outcome.provider as decode;
+@id("outcome.main") fn main()->i64 {
+    let input=[0u8]; let decoded=decode(array_as_slice(input));
+    match own decoded { Decoded::Error { code, offset, field } => code, Decoded::Ready { value } => 0, }
+}
+"#;
+    for (id, name) in [
+        ("outcome.report", "Report"),
+        ("outcome.config", "Config"),
+        ("outcome.row", "Row"),
+    ] {
+        let import = format!("use type @id(\"{id}\") from outcome.provider as {name};");
+        assert_eq!(app.matches(&import).count(), 1);
+        let missing = app.replace(&import, "");
+        let errors = build_owned(sources(&missing, provider))
+            .err()
+            .expect("every exposed nominal still requires a direct type import");
+        let expected = format!("missing direct nominal type import: {import}");
+        assert!(
+            errors.iter().any(|error| error.code == "SPX-G172"
+                && error.help.as_deref() == Some(expected.as_str())),
+            "{errors:?}"
+        );
+    }
+    let built = build_owned(sources(app, provider))
+        .expect("complete imports retain the existing closed outcome profile");
+    let linked = built
+        .linked_owned_data_api_program_with_roots("outcome.app", &[])
+        .unwrap();
+    hir::validate(&linked).unwrap();
 }

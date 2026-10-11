@@ -212,7 +212,7 @@ fn collect_supplemental(
                         ));
                     }
                     if parameter(program, function, callee, args.len())?.is_some()
-                        || (args.len() != 0
+                        || (!args.is_empty()
                             && parameter(program, function, callee, args.len() - 1)?.is_none())
                     {
                         return Err(replay_error(
@@ -317,7 +317,7 @@ requires 0usize<byte_len(bytes_as_slice(data)) {
 }
 @id("coverage.main") fn main()->i64 {
  let mut data=bytes_zeroed(1usize); data=fill(data); let mut at=0;
- while at<2 {data=fill(data);at=at+1;if at==1 {continue;}else{0};0}
+ while at<2 {data=fill(data);at=at+1;if at==1 {continue;}else{0} 0}
  let view=bytes_as_slice(data); if byte_len(view)==1usize {42}else{0}
 }"#,
             "replay-inventory-coverage.spx",

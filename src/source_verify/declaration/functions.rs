@@ -924,7 +924,7 @@ fn check_omitted_generic_mappings(
         | ExprKind::Float64(_)
         | ExprKind::Bool(_)
         | ExprKind::String(_)
-| ExprKind::BorrowedUtf8Literal(_)
+        | ExprKind::BorrowedUtf8Literal(_)
         | ExprKind::ArrayU8(_)
         | ExprKind::RepeatArrayU8 { .. }
         | ExprKind::Var(_) => {}
@@ -1028,11 +1028,13 @@ pub(super) fn check_function_bodies<'p>(
                 == template.type_parameters.len();
         let transparent_vec_wrapper = crate::vec_ops::source_wrapper(program, template);
         let transparent_box_wrapper = crate::box_ops::source_wrapper(program, template);
-        let specializations = if template.type_parameters.is_empty()
+        let specializations: std::borrow::Cow<'_, [Function]> = if template
+            .type_parameters
+            .is_empty()
             || transparent_vec_wrapper.is_some()
             || transparent_box_wrapper.is_some()
         {
-            vec![template.clone()]
+            std::borrow::Cow::Borrowed(std::slice::from_ref(template))
         } else if generic_parameter_list_is_valid {
             // These clones exist only to validate every admitted direct-scalar
             // substitution. Executable HIR instances are discovered separately
@@ -1052,22 +1054,24 @@ pub(super) fn check_function_bodies<'p>(
             } else {
                 scalar_function_substitutions(template.type_parameters.len())
             };
-            substitutions
-                .iter()
-                .filter_map(|arguments| {
-                    crate::source_verify::closure::specialize_checked(
-                        program,
-                        template,
-                        arguments,
-                        diagnostics,
-                    )
-                })
-                .collect()
+            std::borrow::Cow::Owned(
+                substitutions
+                    .iter()
+                    .filter_map(|arguments| {
+                        crate::source_verify::closure::specialize_checked(
+                            program,
+                            template,
+                            arguments,
+                            diagnostics,
+                        )
+                    })
+                    .collect(),
+            )
         } else {
-            Vec::new()
+            std::borrow::Cow::Owned(Vec::new())
         };
         let mut specialized_diagnostics = HashSet::new();
-        for function in &specializations {
+        for function in specializations.iter() {
             let specialized_diagnostic_start = diagnostics.len();
             let mut variables = HashMap::new();
             if function.return_type == Type::Str {

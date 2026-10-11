@@ -3,7 +3,7 @@ use semaprax::hir::{
     self, OwnershipMode as O, ResolvedExprKind as E, ResolvedProgram, ResolvedType as T,
 };
 
-pub(super) fn assert_operation(program: &ResolvedProgram, wanted: &str) {
+pub(super) fn assert_operation(program: &ResolvedProgram, wanted: &str) -> (usize, usize) {
     // This independently authenticates types, operation identities, loans and
     // canonical call-argument staging/cleanup before inspecting the operation.
     hir::validate(program).unwrap();
@@ -38,9 +38,8 @@ pub(super) fn assert_operation(program: &ResolvedProgram, wanted: &str) {
                                 assert_eq!(type_arguments.len(), 1);
                                 assert_eq!(expression.ty, type_arguments[0]);
                                 assert_eq!(expression.ownership, O::Own);
-                                // The first argument is a borrowed projection of the
-                                // exact vector owner, authenticated below by its loan.
-                                assert_eq!(args[0].ownership, O::Borrow);
+                                // Invocation borrows the vector; the expression keeps
+                                // the declared ownership of its exact root.
                                 assert!(
                                     matches!(&args[0].ty, T::Nominal { declaration, arguments }
                                     if declaration.as_str() == "core.vec"
@@ -67,6 +66,7 @@ pub(super) fn assert_operation(program: &ResolvedProgram, wanted: &str) {
                                     parameter.id == origin.root && parameter.ownership == O::Borrow
                                 });
                                 if let Some(parameter) = borrowed_parameter {
+                                    assert_eq!(args[0].ownership, O::Borrow);
                                     // Shared Loan Plan v1 preserves empty attachments
                                     // for exact synchronous borrow-parameter roots.
                                     assert!(origin.projections.is_empty());
@@ -74,6 +74,7 @@ pub(super) fn assert_operation(program: &ResolvedProgram, wanted: &str) {
                                     assert!(loans.is_empty());
                                     borrowed_clone_roots += 1;
                                 } else {
+                                    assert_eq!(args[0].ownership, O::Own);
                                     assert_eq!(loans.len(), 1);
                                     assert_eq!(&loans[0].origin, origin);
                                     owned_clone_loans += 1;
@@ -196,18 +197,9 @@ pub(super) fn assert_operation(program: &ResolvedProgram, wanted: &str) {
             }
         }
     }
-    if wanted == "core.vec.clone-at" {
-        assert!(
-            owned_clone_loans > 0,
-            "an actual owned root retains its exact loan oracle"
-        );
-        assert!(
-            borrowed_clone_roots > 0,
-            "the codec retains synchronous borrowed-root coverage"
-        );
-    }
     assert!(
         found > 0,
         "authenticated typed closure must execute {wanted}"
     );
+    (owned_clone_loans, borrowed_clone_roots)
 }

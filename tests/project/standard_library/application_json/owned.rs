@@ -165,11 +165,12 @@ fn wasm_run(root: &std::path::Path, status: u32, value: i64, refusal: &str) {
     );
 }
 
-fn qualify(root: &std::path::Path) {
-    project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
+fn qualify(root: &std::path::Path) -> (usize, usize) {
+    let census = project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
         let revision = snapshot.retain_revision();
         assert!(revision.semantic_graph().contains("json.owned.decode"));
-        super::builtin_calls::assert_operation(snapshot.entry_program(), "core.vec.clone-at");
+        let census =
+            super::builtin_calls::assert_operation(snapshot.entry_program(), "core.vec.clone-at");
         semaprax::hir::validate(snapshot.entry_program()).map_err(|error| vec![error])?;
         assert_eq!(
             snapshot
@@ -185,10 +186,11 @@ fn qualify(root: &std::path::Path) {
             wasm::emit_resolved_module(snapshot.entry_program()).map_err(|error| vec![error])?;
         wasmparser::Validator::new().validate_all(&wasm).unwrap();
         std::fs::write(root.join("app.wasm"), wasm).unwrap();
-        Ok(())
+        Ok(census)
     })
     .unwrap();
     wasm_run(root, 0, 726, "none");
+    census
 }
 
 #[test]
@@ -199,7 +201,15 @@ fn owned_request_detaches_input_then_sorts_updates_and_encodes_on_three_backends
         &app(true),
         "application.request",
     );
-    qualify(&root);
+    let (owned_roots, borrowed_roots) = qualify(&root);
+    assert!(
+        owned_roots > 0,
+        "an actual owned root retains its exact loan oracle"
+    );
+    assert!(
+        borrowed_roots > 0,
+        "the codec retains synchronous borrowed-root coverage"
+    );
     std::fs::remove_dir_all(root).unwrap();
 }
 

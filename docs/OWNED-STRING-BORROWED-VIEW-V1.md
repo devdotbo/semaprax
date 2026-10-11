@@ -93,6 +93,11 @@ before reading its payload and retains the existing cumulative invocation
 budget. Internal forwarding does not mint a new root or extend its lifetime.
 Pure foreign-Str programs retain their existing emitted runtime bytes.
 
+The reference interpreter also searches the exact authenticated view extent.
+It uses the standard byte-preserving String search without constructing a
+length-sized prefix table; foreign-root and cumulative invocation admission
+keep their existing limits. Forwarded owned views incur no new root charge.
+
 All internal Str consumers use the same exact extent. The selected ordinary
 native `str_contains` implementation uses critical factorization and constant
 scratch space with linear search work, including needles above 65,536 bytes;

@@ -4,16 +4,16 @@ const SOURCE: &str = r#"module replay.flat_records;
  @id("flat.Packet.n") n:i64,@id("flat.Packet.text") text:string,@id("flat.Packet.data") data:Bytes,
 }
 @id("flat.identity") fn identity(value:own Packet,flag:bool)->Packet {
- let mut next=0;while next<1 {next=next+1;if flag {return value;} else {0};0} value
+ let mut next=0;while next<1 {next=next+1;if flag {return value;} else {0} 0} value
 }
 @id("flat.make") fn make(input:borrow Slice<u8>)->Packet {
  let key=str"x";let value=Packet{n:7,text:"label",data:bytes_copy(input)};
- let mut next=0;while next<1 {next=next+1;if byte_len(input)>0usize {return value;} else {0};0} value
+ let mut next=0;while next<1 {next=next+1;if byte_len(input)>0usize {return value;} else {0} 0} value
 }
 @id("flat.read") fn read(value:borrow Packet)->i64 {value.n}
 @id("flat.probe") fn probe(flag:bool)->i64 {
  let input=[1u8,2u8];let packet=identity(make(array_as_slice(input)),flag);
- let mut next=0;while next<2 {next=next+1;if flag {continue;} else {0};if next==2 {return read(packet);} else {0};0} read(packet)
+ let mut next=0;while next<2 {next=next+1;if flag {continue;} else {0} if next==2 {return read(packet);} else {0} 0} read(packet)
 }
 @id("app.main") fn main()->i64 {probe(false)}
 "#;

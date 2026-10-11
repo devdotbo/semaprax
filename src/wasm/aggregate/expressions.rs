@@ -188,6 +188,13 @@ impl Emitter<'_> {
             return Ok(());
         };
         let value = self.emit_expr(statement.value())?;
+        if matches!(value, Value::Bottom) {
+            // The emitted certified exit has no result to store or publish.
+            return Ok(());
+        }
+        if binding.ty == ResolvedType::Never {
+            return Err(error("bottom binding initializer produced a normal value"));
+        }
         let destination = if is_aggregate(self.program, &binding.ty)? {
             let offset = self
                 .plan

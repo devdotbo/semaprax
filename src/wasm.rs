@@ -28,6 +28,8 @@ mod function_value;
 mod generic_function_component_v9;
 #[cfg(any(test, feature = "unstable-wit-component-harness"))]
 mod generic_record_component_v7;
+#[cfg(test)]
+mod fused_row_host;
 mod host_output;
 mod http_io;
 pub mod internal_strings;

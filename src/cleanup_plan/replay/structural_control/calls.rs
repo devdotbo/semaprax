@@ -224,11 +224,10 @@ pub(super) fn validate<'a>(
         ));
     }
     let mut actual = arguments.iter();
-    for index in 0..signature.len() {
+    for (index, arg) in args.iter().enumerate().take(signature.len()) {
         budget.charge(function, 1, "structural call parameters")?;
         let (mode, ty) = signature.parameter(index).expect("exact signature bound");
         let drop = needs_drop(program, function, ty)?;
-        let arg = &args[index];
         if !signature.accepts_type(index, &arg.ty)
             || !match mode {
                 OwnershipMode::Own => arg.ownership == OwnershipMode::Own,

@@ -27,6 +27,16 @@ impl FunctionPlan {
                 continue;
             };
             self.collect_expr(program, variant_layouts, value, parameter_count, frame)?;
+            if binding.ty == ResolvedType::Never {
+                if value.ty != ResolvedType::Never {
+                    return Err(error(
+                        "bottom binding has a normally completing initializer",
+                    ));
+                }
+                // A validated generated control binding has no normal value.
+                // Its initializer and all children were planned above.
+                continue;
+            }
             if is_aggregate(program, &binding.ty)? {
                 let (size, align) = aggregate_size_align(program, variant_layouts, &binding.ty)?;
                 let offset = frame.allocate(size, align)?;

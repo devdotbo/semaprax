@@ -45,16 +45,16 @@ pub(super) fn refusal_help(program: &Program) -> Option<String> {
     Some(help.0)
 }
 
-struct Inventory<'a> {
-    function: &'a Function,
-    record: &'a TypeDeclaration,
-    byte_site: &'a Expr,
-    condition: &'a Expr,
-    body: &'a Expr,
-    count: u64,
-    width: u64,
-    payload_bytes: u64,
-    string_bytes: u64,
+pub(crate) struct Inventory<'a> {
+    pub(crate) function: &'a Function,
+    pub(crate) record: &'a TypeDeclaration,
+    pub(crate) byte_site: &'a Expr,
+    pub(crate) condition: &'a Expr,
+    pub(crate) body: &'a Expr,
+    pub(crate) count: u64,
+    pub(crate) width: u64,
+    pub(crate) payload_bytes: u64,
+    pub(crate) string_bytes: u64,
 }
 fn call<'a>(expr: &'a Expr, name: &str) -> Option<(&'a [Type], &'a [Expr])> {
     let K::Call {
@@ -73,7 +73,7 @@ fn var(expr: &Expr, name: &str) -> bool {
 fn row_type(arguments: &[Type], record: &TypeDeclaration) -> bool {
     matches!(arguments, [Type::Named { name, arguments }] if name == &record.name && arguments.is_empty())
 }
-fn inventory(program: &Program) -> Option<Inventory<'_>> {
+pub(crate) fn inventory(program: &Program) -> Option<Inventory<'_>> {
     if program.functions.len() != 1
         || program.types.len() != 1
         || !program.module_uses.is_empty()
