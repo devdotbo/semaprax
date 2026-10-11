@@ -28,6 +28,8 @@ use super::skeleton_work::{ObservationDag, ObservationDagKind};
 use super::*;
 use std::rc::Rc;
 pub(super) mod copy_regions;
+#[cfg(test)]
+mod instrumentation;
 mod storage;
 use storage::{memo_insert, push_end, push_frame, reserve_transition_observation};
 
@@ -160,6 +162,8 @@ fn build_comparison(
     // constructors. Keep one active allowance through the HIR walk AND plan
     // automaton construction; the held program reservation belongs to other
     // enumerated functions and cannot pay for this deferred attempt.
+    #[cfg(test)]
+    instrumentation::begin(function, budget);
     let skeleton_reserve = budget.skeleton_remaining;
     budget.skeleton_remaining = std::mem::take(&mut budget.remaining);
     budget.lent_skeleton = true;
@@ -167,6 +171,13 @@ fn build_comparison(
         budget.merge_paths = true;
         let hir_paths = hir_skeleton_paths_with_index(program, function, budget, helpers);
         budget.merge_paths = false;
+        #[cfg(test)]
+        instrumentation::phase(
+            function,
+            budget,
+            "HIR skeleton",
+            hir_paths.as_ref().map(|paths| paths.as_slice()).ok(),
+        );
         let hir_paths = hir_paths?;
 
         let mut automaton = Automaton::default();
@@ -191,7 +202,11 @@ fn build_comparison(
             };
             automaton.epsilon(function, budget, end, terminal)?;
         }
+        #[cfg(test)]
+        instrumentation::phase(function, budget, "HIR automaton", None);
         let plan_root = automaton.add_plan(function, success, failure, latch, budget)?;
+        #[cfg(test)]
+        instrumentation::phase(function, budget, "plan automaton", None);
         Ok(BuiltComparison {
             automaton,
             sink,
@@ -204,6 +219,17 @@ fn build_comparison(
     budget.merge_paths = false;
     budget.lent_skeleton = false;
     budget.remaining = std::mem::replace(&mut budget.skeleton_remaining, skeleton_reserve);
+    #[cfg(test)]
+    instrumentation::phase(
+        function,
+        budget,
+        if result.is_ok() {
+            "constructed"
+        } else {
+            "constructor refusal"
+        },
+        None,
+    );
     result
 }
 
@@ -231,6 +257,8 @@ impl Automaton {
         budget.charge(function, 1, "factored automaton node construction")?;
         budget.reserve_vec(function, &mut self.nodes, 1, "factored automaton nodes")?;
         self.nodes.push(Node::default());
+        #[cfg(test)]
+        instrumentation::node();
         Ok(self.nodes.len() - 1)
     }
 
@@ -250,6 +278,8 @@ impl Automaton {
             "factored automaton moves",
         )?;
         self.nodes[from].moves.push((label, to));
+        #[cfg(test)]
+        instrumentation::edge();
         Ok(())
     }
 
@@ -268,6 +298,8 @@ impl Automaton {
             "factored automaton epsilon moves",
         )?;
         self.nodes[from].epsilon.push(to);
+        #[cfg(test)]
+        instrumentation::edge();
         Ok(())
     }
 
@@ -366,6 +398,8 @@ impl Automaton {
             match frame {
                 BuildFrame::Visit(dag, start) => {
                     budget.charge(function, 1, "factored HIR automaton")?;
+                    #[cfg(test)]
+                    instrumentation::visit(dag, memo.contains_key(&key(dag, start)));
                     if let Some(end) = memo.get(&key(dag, start)) {
                         push_end(function, budget, &mut ends, *end)?;
                         continue;

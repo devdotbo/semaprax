@@ -324,9 +324,15 @@ pub(in crate::cleanup_plan::replay) fn validate_authenticated(
             } = &candidate.built;
             let mut canonical = Canonicalizer::new(automaton, *sink);
             budget.reserve_array::<(usize, u64)>(function, 1, "lexical HIR weighted root")?;
-            let hir = canonical.id(function, vec![(*hir_root, 1)], budget)?;
+            let hir = canonical.id(function, vec![(*hir_root, 1)], budget);
+            #[cfg(test)]
+            instrumentation::phase(function, budget, "HIR canonicalization", None);
+            let hir = hir?;
             budget.reserve_array::<(usize, u64)>(function, 1, "lexical plan weighted root")?;
-            let plan = canonical.id(function, vec![(*plan_root, 1)], budget)?;
+            let plan = canonical.id(function, vec![(*plan_root, 1)], budget);
+            #[cfg(test)]
+            instrumentation::phase(function, budget, "plan canonicalization", None);
+            let plan = plan?;
             match (hir, plan) {
                 (Some(hir), Some(plan)) if hir == plan => Ok(()),
                 (Some(_), Some(_)) => Err(skeleton_mismatch(function)),

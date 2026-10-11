@@ -10,6 +10,8 @@ pub(super) fn push_frame<'a>(
 ) -> Result<(), Diagnostic> {
     budget.charge(function, 1, "factored DAG build frame")?;
     budget.reserve_vec(function, frames, 1, "factored DAG build frames")?;
+    #[cfg(test)]
+    super::instrumentation::frame(&frame);
     frames.push(frame);
     Ok(())
 }
@@ -38,6 +40,8 @@ pub(super) fn memo_insert(
         budget
             .reserve_btree_node::<(usize, usize), usize>(function, "factored DAG identity memo")?;
     }
+    #[cfg(test)]
+    super::instrumentation::memo(key, memo);
     memo.insert(key, end);
     Ok(())
 }
