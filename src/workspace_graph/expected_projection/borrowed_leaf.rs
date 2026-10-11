@@ -95,7 +95,7 @@ pub(in crate::workspace_graph) fn ast_peak(program: &Program) -> Result<usize, V
         synthetic_main_runtime_cost(&program.module)?.total
     };
     let owned = checked_usage(
-        std::mem::size_of::<SyntheticProgramView<'_>>(),
+        std::mem::size_of::<Input<'_>>(),
         generated,
         "builder_bytes",
         active_builder_limit(),
@@ -131,6 +131,13 @@ impl<'a> Input<'a> {
         if uncached && eligible(program) {
             construct(program).map(Self::Borrowed)
         } else {
+            // The old producer pays its inline Program carrier. Retaining it
+            // in this tagged input adds only the actual enclosing-header delta.
+            reserve_builder_structure(
+                std::mem::size_of::<Self>()
+                    .checked_sub(std::mem::size_of::<Program>())
+                    .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?,
+            )?;
             synthetic_program_with_registry(program, authored, programs, Some(registry))
                 .map(Self::Owned)
         }

@@ -2,7 +2,7 @@ use super::{
     construct, eligible, private_layout, reserve_builder_structure,
     synthetic_program_with_registry, Input,
 };
-use crate::ast::program_source::{ProgramSource, SyntheticProgramView};
+use crate::ast::program_source::ProgramSource;
 use crate::ast::TypeDeclaration;
 use crate::diagnostic::Diagnostic;
 use crate::hir;
@@ -88,7 +88,7 @@ fn borrowed_leaf_drop_has_no_allocation_and_constructor_limits_are_exact_and_sti
     let directory = 96 * std::mem::size_of::<(&str, &TypeDeclaration)>();
     assert_eq!(
         super::ast_peak(&wide).unwrap(),
-        directory + std::mem::size_of::<SyntheticProgramView<'_>>()
+        directory + std::mem::size_of::<Input<'_>>()
     );
     let ((result, allocation), overflowed, used) =
         crate::bounded_output::with_limit_usage(directory, || {
