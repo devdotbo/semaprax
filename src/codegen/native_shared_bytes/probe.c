@@ -106,7 +106,9 @@ PROBE_FN void iteration_and_abandonment(void) {
     spx_shb_copy(&reg, slice("01234567", 8u), &a);
     partition(&a, 4u, 2u, &v);
     it = spx_shb_iter_from_vec(&reg, &v);
-    assert(spx_shb_is_vacant(&v));
+    /* Vec has its own carrier, not the Bytes carrier layout. */
+    assert(v.rows == NULL && v.len == 0u && v.capacity == 0u
+        && v.generation == 0u && v.issuer == 0u && v.authority == 0u && v.reserved == 0u);
     stale_it = it;
     spx_shb_iter_next(&reg, &it, &tag, &c, &rest);
     assert(tag == 1u && view_is(&c, "01", 2u));

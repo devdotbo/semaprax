@@ -22,7 +22,7 @@ const env = {
 };
 const { instance } = await WebAssembly.instantiate(moduleBytes, { env });
 host.bind(instance);
-let leased = 0;
+
 for (let run = 0; run < 4; run += 1) {
   const receipt = host.facade.beginInvocation();
   let selected = 0, value;
@@ -44,7 +44,13 @@ for (let run = 0; run < 4; run += 1) {
   }
   host.facade.audit();
   host.facade.endInvocation(receipt);
-  leased = stats.releasedBackings;
+  if (expectedStatus === 9) {
+    // Entry preconditions refuse before allocation in either host mode.
+    if (stats.events !== 0 || stats.payload !== 0 || stats.copies !== 0 || stats.drops !== 0) {
+      throw new Error("precondition failure allocated or settled a body owner");
+    }
+  } else if (mode === "lease" && stats.releasedBackings === 0) {
+    throw new Error("lease witness issued no lease in an allocating body");
+  }
 }
-if (mode === "lease" && leased === 0) throw new Error("lease witness issued no lease");
 console.log("shared-owner-ordinary-ok");
