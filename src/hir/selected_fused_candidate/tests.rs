@@ -225,3 +225,82 @@ fn selected_capacity_events_are_exact_and_forged_producers_or_rescales_refuse() 
         Err(SelectedRefusal::Source(_))
     ));
 }
+
+/// Swap the first and last entries; true only when that changed the order.
+fn reorder<T: PartialEq>(entries: &mut [T]) -> bool {
+    let len = entries.len();
+    if len < 2 {
+        return false;
+    }
+    entries.swap(0, len - 1);
+    entries[0] != entries[len - 1]
+}
+
+#[test]
+fn tampered_inventory_cleanup_status_and_loan_plans_refuse_after_a_fresh_join() {
+    let program = parsed(SOURCE);
+    let owner = publish(&program);
+    let producer = owner.producer;
+    let validate = |candidate: &ResolvedProgram| {
+        let joined = resolution::join_current(&program, producer, candidate)
+            .unwrap_or_else(|refusal| panic!("whole-body join refused: {refusal:?}"));
+        crate::hir::validate_selected_with_static_text(
+            candidate,
+            Some(Selected::from_joined(&joined)),
+        )
+    };
+    // Control: an untampered clone joins and passes full selected validation.
+    validate(&owner.program().clone()).expect("untampered clone validates");
+
+    type Mutant = fn(&mut crate::hir::ResolvedFunction) -> bool;
+    let mutants: [(&str, Mutant); 8] = [
+        ("inventory slot dropped", |f| f.cleanup.slots.pop().is_some()),
+        ("inventory slots reordered", |f| reorder(&mut f.cleanup.slots)),
+        ("cleanup blocks reordered", |f| reorder(&mut f.cleanup_plan.blocks)),
+        ("cleanup edge dropped", |f| f.cleanup_plan.edges.pop().is_some()),
+        ("status source dropped", |f| {
+            f.cleanup_plan.status_sources.pop().is_some()
+        }),
+        ("status sources reordered", |f| {
+            reorder(&mut f.cleanup_plan.status_sources)
+        }),
+        ("loan dropped", |f| f.loan_plan.loans.pop().is_some()),
+        ("loan endpoints reordered", |f| {
+            reorder(&mut f.loan_plan.endpoints)
+        }),
+    ];
+    for (name, mutate) in mutants {
+        let mut tampered = owner.program().clone();
+        let main = tampered
+            .functions
+            .iter_mut()
+            .find(|function| function.id.as_str() == "app.main")
+            .unwrap();
+        assert!(mutate(main), "mutation must be real: {name}");
+        // The join reads the typed body only, so it still succeeds; full
+        // selected validation must reject the tampered attachment. No owner
+        // can be minted from this HIR: no constructor accepts HIR.
+        assert!(validate(&tampered).is_err(), "{name}");
+    }
+}
+
+#[test]
+fn an_unused_unrelated_invariant_record_refuses_before_selected_resolution() {
+    let source = SOURCE.replace(
+        "@id(\"app.main\")",
+        "@id(\"app.leaf.limit\")\nrecord Limit {\n    @id(\"app.leaf.limit.value\")\n    value: i64,\n}\n    requires value >= 0\n\n@id(\"app.main\")",
+    );
+    assert_ne!(source, SOURCE);
+    let program = parsed(&source);
+    assert!(program
+        .types
+        .iter()
+        .any(|declaration| !declaration.invariants().is_empty()));
+    assert!(matches!(
+        validate_selected(&program),
+        Err(SelectedRefusal::Resolve(_))
+    ));
+    // The row itself still derives a source candidate; only the closed HIR
+    // profile refuses the invariant-bearing module.
+    assert!(check_candidate(&program).is_ok());
+}

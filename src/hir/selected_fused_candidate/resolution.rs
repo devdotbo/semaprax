@@ -65,15 +65,26 @@ pub(in crate::hir) fn validation(
 }
 
 /// Resolve the original, already source-checked program with the exact
-/// producer gate. Record invariants would resolve a desugared second program
-/// whose nodes are not the held source, so they refuse here.
+/// producer gate.
+///
+/// The ordinary `resolve_verified` route resolves an invariant clause
+/// program and then a desugared program with synthesized functions. Those are
+/// different ASTs, and the held producer pointer would not belong to them.
+/// This closed profile therefore refuses any type that declares invariants,
+/// even one the selected row never uses. The check reads the borrowed
+/// declarations; it builds no clause program and skips no desugaring. The
+/// route also never reuses prior HIR and publishes no `Analysis`.
 pub(super) fn resolve_selected<'s>(
     source: &'s ast::Program,
     producer: &'s ast::Expr,
 ) -> Result<ResolvedProgram, Diagnostic> {
-    if crate::hir::record_invariants::clause_program(source).is_some() {
+    if source
+        .types
+        .iter()
+        .any(|declaration| !declaration.invariants().is_empty())
+    {
         return Err(crate::hir::hir_error(
-            "selected fused construction cannot resolve record invariants",
+            "selected fused construction refuses invariant-bearing types",
         ));
     }
     Resolver {

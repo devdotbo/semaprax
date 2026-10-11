@@ -336,9 +336,12 @@ opens it, for the held producer node alone. It runs five steps in order:
 
 1. `check_candidate` derives the source proof and runs every source pass.
 2. The original source resolves with its real row count. A resolver
-   `fused_producer` field admits only that exact producer pointer. Record
-   invariants refuse, because their desugared program would not be the held
-   source.
+   `fused_producer` field admits only that exact producer pointer. Any type
+   that declares invariants refuses, even one the row never uses. The check
+   reads the borrowed declarations, because the ordinary route would resolve
+   a clause program and then a desugared program with synthesized functions,
+   and the held producer pointer would belong to neither. No clause program
+   is built and no desugaring is skipped. Prior HIR is never reused.
 3. The sibling `hir::fused_construction::join::join` derives the typed
    selection independently. It authenticates a freshly derived current source
    proof whose producer must be the held node, and joins the full prefix and
@@ -361,5 +364,12 @@ result only to a callback. No constructor accepts HIR. Decoded, foreign and
 stale programs fail the pointer checks. Ordinary `check`, `resolve` and
 `validate` pass no selection and are unchanged. Nothing is written to a
 graph, cache or artifact, and no route calls the factory by default.
-Owning definitions are `hir::selected_fused_candidate::tests::` (four,
-unexecuted).
+Resolution and the factory each run the join, full validation and selected
+capacity, so that work is done twice on purpose. It may only be removed
+together with a sealed owner proof.
+
+Owning definitions are `hir::selected_fused_candidate::tests::` (six,
+unexecuted). They include cloned 4096-row HIR with tampered cleanup
+inventory, cleanup plan, status sources and loan plan. Each tampered clone
+still joins over the whole body and is then refused by full selected
+validation.
