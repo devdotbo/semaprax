@@ -63,3 +63,18 @@ pairs, malformed escapes, raw controls, and truncated tokens. Project v25's
 stream-text fixture imports both the structural walker and this query package;
 it retains the existing four command
 capabilities and 4096-byte stdin reader contract.
+
+## Single-read string framing
+
+The existing `std.data.json.string_end` and `std.data.json.doc.string_end`
+source scanners read each ordinary loop byte once, then classify that same
+optional byte as a quote, escape, plain byte, or absent input. They preserve
+eager checked offset arithmetic, their distinct escape rules, failure-offset
+encoding, and raw-byte policy. This changes source work, not admitted input,
+limits, or public signatures.
+
+The owning `json_scalar_lazy` definitions retain both original framing kernels
+and compare all byte values, opening positions, malformed framing, escapes,
+absent input and near-maximum offsets. Interpreter, native O0/O2 and Core-Wasm
+normal-result checks are authored; current-head execution and fuel benefits
+remain pending.

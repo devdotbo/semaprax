@@ -14,6 +14,14 @@ use function @id("std.data.json.query.scalar_at") from std.data.json.query as cu
 use function @id("std.data.json.escape_kind") from std.data.json as escape_kind;
 use function @id("std.data.json.code_unit") from std.data.json as code_unit;
 use function @id("std.data.json.at_is") from std.data.json as at_is;
+use function @id("std.data.json.string_end") from std.data.json as current_json_end;
+use function @id("std.data.json.doc.string_end") from std.data.json.doc as current_doc_end;
+use function @id("std.data.json.doc.at_in") from std.data.json.doc as doc_at_in;
+use function @id("std.data.json.at_in") from std.data.json as at_in;
+use function @id("std.data.json.escape_end") from std.data.json as escape_end;
+use function @id("std.data.json.failure") from std.data.json as failure;
+use function @id("std.data.json.is_failure") from std.data.json as is_failure;
+use function @id("std.data.json.failure_offset") from std.data.json as failure_offset;
 "#;
 
 fn source(body: &str) -> String {
@@ -31,6 +39,33 @@ fn source(body: &str) -> String {
                 .replace("fn scalar_at(", &format!("fn original_{module}(")),
         );
     }
+    for (family, original) in [
+        (
+            "doc",
+            include_str!("json_scalar_lazy/doc_string_end_original.txt"),
+        ),
+        (
+            "json",
+            include_str!("json_scalar_lazy/json_string_end_original.txt"),
+        ),
+    ] {
+        let provider_id = if family == "doc" {
+            "std.data.json.doc.string_end"
+        } else {
+            "std.data.json.string_end"
+        };
+        let original = original
+            .replace(
+                provider_id,
+                &format!("consumer.original.{family}.string_end"),
+            )
+            .replace("fn string_end(", &format!("fn original_{family}_end("));
+        source.push_str(&if family == "doc" {
+            original.replace("at_in(", "doc_at_in(")
+        } else {
+            original
+        });
+    }
     source.push_str(r#"@id("consumer.check") fn check(input: borrow Slice<u8>, start: usize) -> bool {
         current_utf8(input,start)==original_utf8(input,start) && current_query(input,start)==original_query(input,start)
     }
@@ -44,7 +79,7 @@ fn source(body: &str) -> String {
 fn install(name: &str, source: &str) -> std::path::PathBuf {
     let root = super::super::temporary(name);
     std::fs::create_dir_all(root.join("src")).unwrap();
-    std::fs::write(root.join("semaprax.toml"), "schema = \"semaprax.manifest.v1\"\n\n[package]\nname = \"scalar-differential\"\nversion = \"0.1.0\"\nprofile = \"useful-data.v1\"\n\n[modules]\nentry = \"consumer.app\"\nsources = [\"src/app.spx\", \"src/tests.spx\"]\ntests = [\"consumer.tests\"]\n\n[exports]\nweb = [\"consumer.main\"]\n\n[dependencies]\nstd.data.json = \"=0.1.0\"\nstd.data.json.query = \"=0.1.0\"\nstd.data.json.utf8 = \"=0.1.0\"\n").unwrap();
+    std::fs::write(root.join("semaprax.toml"), "schema = \"semaprax.manifest.v1\"\n\n[package]\nname = \"scalar-differential\"\nversion = \"0.1.0\"\nprofile = \"useful-data.v1\"\n\n[modules]\nentry = \"consumer.app\"\nsources = [\"src/app.spx\", \"src/tests.spx\"]\ntests = [\"consumer.tests\"]\n\n[exports]\nweb = [\"consumer.main\"]\n\n[dependencies]\nstd.data.json = \"=0.1.0\"\nstd.data.json.doc = \"=0.1.0\"\nstd.data.json.query = \"=0.1.0\"\nstd.data.json.utf8 = \"=0.1.0\"\n").unwrap();
     std::fs::write(
         root.join("src/tests.spx"),
         semaprax::format::canonical(
@@ -133,58 +168,25 @@ fn lazy_scalar_kernels_match_original_on_all_bytes_unicode_and_absent_offsets() 
     }
     body.push_str("let empty=byte_range(view,0usize,0usize);bad=bad+if check(empty,0usize)&&check(empty,18446744073709551604usize)&&check(empty,18446744073709551609usize)&&current_query(empty,18446744073709551609usize)==-1{0}else{1};if bad==0{0}else{1}\n");
     let root = install("json-scalar-lazy", &source(&body));
-    project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
-        snapshot.check()?;
-        assert_eq!(
-            snapshot
-                .execute_entry(&project::ProjectExecutionOptions::default())?
-                .outcome(),
-            &project::ProjectExecutionOutcome::Returned(0)
-        );
-        for id in [
-            "std.data.json.utf8.scalar_at",
-            "std.data.json.query.scalar_at",
-            "consumer.original.utf8",
-            "consumer.original.query",
-        ] {
-            assert!(snapshot.semantic_graph().contains(id));
-        }
-        let c = codegen::emit_hir_c(snapshot.entry_program()).map_err(|error| vec![error])?;
-        for optimization in ["-O0", "-O2"] {
-            super::super::compile_and_run_c(&c, &root, optimization, "0");
-        }
-        let bytes =
-            wasm::emit_resolved_module(snapshot.entry_program()).map_err(|error| vec![error])?;
-        std::fs::write(root.join("scalar.wasm"), bytes).unwrap();
-        std::fs::write(
-            root.join("scalar.mjs"),
-            super::super::wasm_host::wasm_conformance_js("scalar.wasm", 0, 0, Some(0)),
-        )
-        .unwrap();
-        let output = Command::new("node")
-            .arg("scalar.mjs")
-            .current_dir(&root)
-            .output()
-            .unwrap();
-        assert!(
-            output.status.success(),
-            "{}",
-            String::from_utf8_lossy(&output.stderr)
-        );
-        Ok(())
-    })
-    .unwrap();
+    qualify_normal(&root);
     std::fs::remove_dir_all(root).unwrap();
 }
 
 #[test]
 fn near_max_escape_offsets_preserve_original_normalized_arithmetic_failure() {
     let mut expected = None;
-    for function in ["original_query", "current_query"] {
+    for function in [
+        "original_query",
+        "current_query",
+        "original_doc_end",
+        "current_doc_end",
+        "original_json_end",
+        "current_json_end",
+    ] {
         let root = install(
             function,
             &source(&format!(
-                "let raw=[0u8];{function}(array_as_slice(raw),18446744073709551615usize)"
+                "let raw=[0u8];let probe={function}(array_as_slice(raw),18446744073709551615usize);if probe==probe {{0}}else{{1}}"
             )),
         );
         project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
@@ -211,4 +213,73 @@ fn near_max_escape_offsets_preserve_original_normalized_arithmetic_failure() {
         .unwrap();
         std::fs::remove_dir_all(root).unwrap();
     }
+}
+
+fn qualify_normal(root: &std::path::Path) {
+    project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
+        snapshot.check()?;
+        assert_eq!(
+            snapshot
+                .execute_entry(&project::ProjectExecutionOptions::default())?
+                .outcome(),
+            &project::ProjectExecutionOutcome::Returned(0)
+        );
+        for id in [
+            "std.data.json.utf8.scalar_at",
+            "std.data.json.query.scalar_at",
+            "consumer.original.utf8",
+            "consumer.original.query",
+        ] {
+            assert!(snapshot.semantic_graph().contains(id));
+        }
+        let c = codegen::emit_hir_c(snapshot.entry_program()).map_err(|error| vec![error])?;
+        for optimization in ["-O0", "-O2"] {
+            super::super::compile_and_run_c(&c, root, optimization, "0");
+        }
+        let bytes =
+            wasm::emit_resolved_module(snapshot.entry_program()).map_err(|error| vec![error])?;
+        std::fs::write(root.join("scalar.wasm"), bytes).unwrap();
+        std::fs::write(
+            root.join("scalar.mjs"),
+            super::super::wasm_host::wasm_conformance_js("scalar.wasm", 0, 0, Some(0)),
+        )
+        .unwrap();
+        let output = Command::new("node")
+            .arg("scalar.mjs")
+            .current_dir(&root)
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        Ok(())
+    })
+    .unwrap();
+}
+
+#[test]
+fn string_scanners_read_once_and_match_original_framing_and_failure_offsets() {
+    let mut body = String::from("let mut bad=0;\n");
+    let all: Vec<u8> = (0..=255).flat_map(|byte| [34, byte, 34]).collect();
+    body.push_str(&format!("let all={};let input=array_as_slice(all);let mut index=0usize;while index<256usize {{let mut offset=0usize;while offset<3usize {{let at=index*3usize+offset;bad=bad+if current_doc_end(input,at)==original_doc_end(input,at) && current_json_end(input,at)==original_json_end(input,at){{0}}else{{1}};offset=offset+1usize;0}}index=index+1usize;0}}\n",array(&all)));
+    let cases = [
+        b"\"\"".to_vec(),
+        b"\"ABC\"".to_vec(),
+        b"\"A\"B\"".to_vec(),
+        b"\"\\u0041\"".to_vec(),
+        b"\"\\q\"".to_vec(),
+        b"\"\\ud800\"".to_vec(),
+        b"\"\\".to_vec(),
+        b"\"A".to_vec(),
+        Vec::new(),
+    ];
+    for (i, raw) in cases.iter().enumerate() {
+        body.push_str(&format!("let failed_{i}={{let raw={};let input=array_as_slice(raw);let mut at=0usize;let mut count=0;while at<={}usize {{count=count+if current_doc_end(input,at)==original_doc_end(input,at) && current_json_end(input,at)==original_json_end(input,at){{0}}else{{1}};at=at+1usize;0}}count}};bad=bad+failed_{i};\n",array(raw),raw.len()));
+    }
+    body.push_str("if bad==0{0}else{1}\n");
+    let root = install("json-scanner-single-read", &source(&body));
+    qualify_normal(&root);
+    std::fs::remove_dir_all(root).unwrap();
 }
