@@ -76,6 +76,7 @@ pub use native_stdin_stream::{
     emit_hir_c_with_stdin_stream_nested_outcomes, emit_hir_c_with_stdin_stream_owned_data,
     emit_hir_c_with_stdin_stream_records, emit_hir_c_with_stdin_stream_text,
 };
+pub(crate) use selected_fused_row::emit_source_profile as emit_fused_source_profile;
 mod native_trace;
 mod native_trace_runtime;
 mod native_value;

@@ -18,6 +18,7 @@ mod lower;
 #[cfg(test)]
 mod precursor;
 mod selection;
+mod source_profile;
 #[cfg(test)]
 mod tests;
 
@@ -88,3 +89,5 @@ fn private_domain_affine_leases_fault_cleanup_and_reentry_at_o0_o2() {
     }
     std::fs::remove_dir_all(root).unwrap();
 }
+
+pub(crate) use source_profile::emit_source_profile;
