@@ -320,6 +320,7 @@ pub(super) struct LoopContext {
     pub(super) latch: crate::hir::LoopLatchKind,
     pub(super) entry: FlowState,
     pub(super) after: BlockId,
+    pub(super) true_match: Option<ExpressionId>,
 }
 
 impl PlanBuilder<'_> {
@@ -391,6 +392,8 @@ impl PlanBuilder<'_> {
                 latch: latch.clone(),
                 entry: state.clone(),
                 after,
+                true_match: crate::hir::iterator_loop::true_body_match(condition, body, latch)
+                    .map(|value| value.id.clone()),
             });
         self.record_execution_boundary(
             super::super::ExecutionBoundaryKind::LoopIteration,

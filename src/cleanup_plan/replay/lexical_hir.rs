@@ -38,6 +38,7 @@ pub(super) struct LexicalFacts<'a> {
     pub(super) boundaries: Vec<&'a ExpressionId>,
     pub(super) requires_boundaries: Vec<&'a ExpressionId>,
     pub(super) ensures_boundaries: Vec<&'a ExpressionId>,
+    true_match: Option<&'a ResolvedExpr>,
 }
 
 /// Maximum nesting this scan admits; the HIR lexical validator bounds the same
@@ -56,6 +57,7 @@ pub(super) fn collect<'a>(
         boundaries: Vec::new(),
         requires_boundaries: Vec::new(),
         ensures_boundaries: Vec::new(),
+        true_match: None,
     };
     for clause in &function.requires {
         let boundaries = contract_boundaries(function, clause, budget)?;
@@ -96,6 +98,7 @@ fn contract_boundaries<'a>(
         boundaries: Vec::new(),
         requires_boundaries: Vec::new(),
         ensures_boundaries: Vec::new(),
+        true_match: None,
     };
     let completes = scan(function, clause, &mut facts, 0, budget)?;
     if !completes || !facts.exits.is_empty() || !facts.loops.is_empty() || facts.tries != 0 {
@@ -186,7 +189,13 @@ fn scan<'a>(
                             "lexical loop boundaries",
                         )?;
                         facts.boundaries.push(&condition.id);
-                        let body_completes = scan(function, body, facts, depth + 1, budget)?;
+                        crate::hir::lexical_exit::validate_latch(condition, body, latch)?;
+                        let previous = facts.true_match;
+                        facts.true_match =
+                            crate::hir::iterator_loop::true_body_match(condition, body, latch);
+                        let body_result = scan(function, body, facts, depth + 1, budget);
+                        facts.true_match = previous;
+                        let body_completes = body_result?;
                         budget.reserve_vec(function, &mut facts.loops, 1, "lexical loop facts")?;
                         facts.loops.push(LoopFact {
                             condition,
@@ -222,11 +231,17 @@ fn scan<'a>(
                 return Ok(false);
             }
             let mut completes = false;
-            for arm in arms {
+            let yield_only = facts
+                .true_match
+                .is_some_and(|value| std::ptr::eq(value, expression));
+            for (index, arm) in arms.iter().enumerate() {
                 if let Some(guard) = &arm.guard {
                     scan(function, guard, facts, depth + 1, budget)?;
                 }
-                completes |= scan(function, &arm.value, facts, depth + 1, budget)?;
+                // Scan BOTH original arms. Only completion is conditioned on
+                // the independently proved true-loop predicate, never validity.
+                let arm_completes = scan(function, &arm.value, facts, depth + 1, budget)?;
+                completes |= arm_completes && (!yield_only || index == 1);
             }
             Ok(completes)
         }

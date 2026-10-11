@@ -3135,6 +3135,7 @@ fn emit_function_profile(
         control_depth: 0,
         lexical_loops: Vec::new(),
         lexical_resume: None,
+        iterator_true_match: None,
         status_exit_extra_depth: 1,
         try_target_enabled: false,
         failure_expression: None,
@@ -3350,6 +3351,7 @@ struct Emitter<'a> {
     control_depth: u32,
     lexical_loops: Vec<lexical_control::LoopLabel<'a>>,
     lexical_resume: Option<crate::cleanup_plan::BlockId>,
+    iterator_true_match: Option<ExpressionId>,
     status_exit_extra_depth: u32,
     try_target_enabled: bool,
     failure_expression: Option<ExpressionId>,
@@ -4944,7 +4946,11 @@ impl Emitter<'_> {
                 if arms.iter().any(|arm| arm.guard.is_some()) {
                     self.emit_guarded_variant_match(&emission)?;
                 } else {
-                    self.emit_match_arms(&emission, 0)?;
+                    let yield_only = self.iterator_true_match.as_ref() == Some(&expr.id);
+                    let normal = self.emit_match_arms(&emission, usize::from(yield_only))?;
+                    if yield_only && !normal {
+                        return Ok(Value::Bottom);
+                    }
                 }
                 if aggregate_result {
                     self.apply_variant_match_continuation(expr, &destination)?;
@@ -5474,7 +5480,7 @@ impl Emitter<'_> {
         &mut self,
         emission: &VariantMatchEmission<'_>,
         index: usize,
-    ) -> Result<(), Diagnostic> {
+    ) -> Result<bool, Diagnostic> {
         let VariantMatchEmission {
             destination,
             scrutinee,
@@ -5487,9 +5493,10 @@ impl Emitter<'_> {
         let mode = *mode;
         let Some(arm) = arms.get(index) else {
             self.output.push(0x00);
-            return Ok(());
+            return Ok(false);
         };
         let saved = self.bindings.clone();
+        let mut normal = false;
         if arm.guard.is_some() {
             return Err(error("guards are outside aggregate match lowering"));
         }
@@ -5531,13 +5538,14 @@ impl Emitter<'_> {
                     self.output.extend([0xfc, 0x0b, 0x00]);
                 }
                 let value = self.emit_expr(&arm.value)?;
+                normal |= !matches!(value, Value::Bottom);
                 self.copy_value(destination, &value, "match arm result")?;
                 if mode == crate::hir::ResolvedMatchMode::Own && !matches!(value, Value::Bottom) {
                     self.emit_owned_variant_match_cleanup(fields)?;
                 }
                 self.bindings = saved.clone();
                 self.output.push(0x05);
-                self.emit_match_arms(emission, index + 1)?;
+                normal |= self.emit_match_arms(emission, index + 1)?;
                 self.control_depth -= 1;
                 self.output.push(0x0b);
             }
@@ -5546,13 +5554,15 @@ impl Emitter<'_> {
                     return Err(error("owned variant wildcard cannot hide a live payload"));
                 }
                 let value = self.emit_expr(&arm.value)?;
+                normal |= !matches!(value, Value::Bottom);
                 self.copy_value(destination, &value, "wildcard match arm result")?;
             }
             crate::hir::ResolvedMatchPattern::Record { .. } => {
                 return Err(error("record pattern has a variant match scrutinee"));
             }
             crate::hir::ResolvedMatchPattern::Or(alternatives) => {
-                self.emit_case_or_arm(emission, index, alternatives)?
+                self.emit_case_or_arm(emission, index, alternatives)?;
+                normal = true;
             }
             crate::hir::ResolvedMatchPattern::Literal(_)
             | crate::hir::ResolvedMatchPattern::Binding(_) => {
@@ -5562,7 +5572,7 @@ impl Emitter<'_> {
             }
         }
         self.bindings = saved;
-        Ok(())
+        Ok(normal)
     }
 
     /// Refutable Match v1 aggregate-lane lowering. The scrutinee is a scalar

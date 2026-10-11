@@ -3787,12 +3787,19 @@ impl<'a> PlanBuilder<'a> {
                             state,
                         });
                     } else {
+                        // Full structural HIR and inventory still contain Done.
+                        // This CFG is entered only after its exact condition=true.
+                        let first = usize::from(self.lexical.as_ref().is_some_and(|control| {
+                            control.active_loops.last().is_some_and(|context| {
+                                context.true_match.as_ref() == Some(&expression.id)
+                            })
+                        }));
                         frames.push(Frame::MatchNext {
                             expression,
                             mode,
                             scrutinee,
                             arms,
-                            index: 0,
+                            index: first,
                             decision: scrutinee_result.block,
                             branch_state: scrutinee_result.state,
                             arm_results: Vec::with_capacity(arms.len()),

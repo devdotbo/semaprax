@@ -401,7 +401,15 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             crate::cleanup_plan::ExecutionBoundaryKind::LoopIteration,
             &condition.id,
         )?;
-        let body_value = self.emit_expr(body)?;
+        let previous = self.iterator_true_match.take();
+        self.iterator_true_match = certificate
+            .and_then(|item| {
+                crate::hir::iterator_loop::true_body_match(condition, body, &item.latch)
+            })
+            .map(|value| value.id.clone());
+        let body_result = self.emit_expr(body);
+        self.iterator_true_match = previous;
+        let body_value = body_result?;
         if matches!(body_value.ty, ResolvedType::String) {
             return Err(backend_error(
                 "discarding an owned string has no admitted native lowering",

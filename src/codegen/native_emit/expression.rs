@@ -1177,6 +1177,11 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                             // scalar field.
                             let value_id = assigned.id.clone();
                             let value = self.emit_expr(assigned)?;
+                            if value.ty == ResolvedType::Never {
+                                self.variables = saved;
+                                self.resource_text_views = saved_resource_text_views;
+                                return Ok(value);
+                            }
                             match field {
                                 Some(field_id) => {
                                     let layout = self.record_layout(&binding.ty)?;
@@ -1804,7 +1809,12 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 };
                 let matched = self.temporary(&ResolvedType::Bool)?;
                 self.line(&format!("{matched} = false;"));
-                for arm in arms {
+                let yield_only = self.iterator_true_match.as_ref() == Some(&expr.id);
+                let mut normal = false;
+                for (index, arm) in arms.iter().enumerate() {
+                    if yield_only && index != 1 {
+                        continue;
+                    }
                     let saved = self.variables.clone();
                     match &arm.pattern {
                         hir::ResolvedMatchPattern::Variant {
@@ -1975,6 +1985,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                     self.open_variant_guard(arm.guard.as_deref(), &matched)?;
                     let value = self.emit_expr(&arm.value)?;
                     self.require_flow_type(&value.ty, &expr.ty, "match arm result")?;
+                    normal |= value.ty != ResolvedType::Never;
                     if value.ty != ResolvedType::Never {
                         if is_direct_plan_owned(self.program, &expr.ty) {
                             if expr.ty == ResolvedType::String
@@ -2060,6 +2071,12 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 self.line(&format!(
                     "if (!{matched}) spx_runtime_invariant_failure(\"exhaustive variant match selected no arm\");"
                 ));
+                if yield_only && !normal {
+                    return Ok(CValue {
+                        code: String::new(),
+                        ty: ResolvedType::Never,
+                    });
+                }
                 if expr.ty != ResolvedType::Never {
                     self.finish_variant_join(expr, &result)?;
                 }

@@ -52,7 +52,16 @@ While condition and source structural mapping must be retained/authenticated.
 While continue targets the next condition. Source For continue targets its
 iteration latch: iteration cleanup first, then the exact generated advance once,
 then condition/next-item evaluation. Dropping the latch would silently turn a
-continue into an infinite loop or repeat an item. SourceForStep carries its exact
+continue into an infinite loop or repeat an item. The exact retained owning iterator
+condition independently authenticates Done as false and Yield as true. Only the
+matching Yield replacement arm is runtime-feasible after entering that body.
+Full structural HIR validation and inventory/census retain both original arms;
+independent replay scans both and narrows only completion/path joins. Constructor
+and native/Wasm emission derive the same scoped relation from the actual
+condition, body and latch, so an all-abrupt Yield body has no ordinary latch.
+The entry ownership union and exact latch restoration checks are unchanged.
+Unknown conditions, forged Done leaves, field modes and latch identities grant
+no feasibility selection. Owning executable qualification remains pending. SourceForStep carries its exact
 step ExpressionId; it is not identified by generated variable spelling.
 
 ## Authoring and diagnostics

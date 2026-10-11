@@ -67,6 +67,11 @@ impl LexicalBuildState {
                             .expect("body identity capacity")
                         + crate::private_capacity_contract::latch_owned_capacity(&context.latch)
                             .expect("latch capacity")
+                        + context.true_match.as_ref().map_or(0, |identity| {
+                            identity
+                                .owned_allocation_bytes()
+                                .expect("feasible match identity capacity")
+                        })
                         + flow_capacity(&context.entry)
                 })
                 .sum::<usize>()
@@ -371,6 +376,7 @@ mod tests {
             latch,
             entry,
             after: BlockId(0),
+            true_match: None,
         });
         assert_eq!(
             state.owned_capacity(),

@@ -29,6 +29,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             bytes_plan: bytes_plan
                 .map(|plan| native_bytes::NativeBytesView::ordinary(plan, &function.cleanup_plan)),
             cleanup_resume: None,
+            iterator_true_match: None,
             active_expression: None,
             contract_labels: emission.contract_labels,
             borrowed_aggregate_bytes,

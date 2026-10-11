@@ -364,7 +364,22 @@ impl Emitter<'_> {
             crate::cleanup_plan::ExecutionBoundaryKind::LoopIteration,
             &condition.id,
         )?; // stage semantic work v1: metered builds only
-        let _body_value = self.emit_expr(body)?;
+        let previous = self.iterator_true_match.take();
+        self.iterator_true_match = self
+            .lexical_loops
+            .last()
+            .filter(|_| lexical)
+            .and_then(|label| {
+                crate::hir::iterator_loop::true_body_match(
+                    condition,
+                    body,
+                    &label.certificate.latch,
+                )
+            })
+            .map(|value| value.id.clone());
+        let body_result = self.emit_expr(body);
+        self.iterator_true_match = previous;
+        let _body_value = body_result?;
         if lexical {
             self.lexical_loops.pop();
         }

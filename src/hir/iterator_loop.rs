@@ -178,6 +178,72 @@ fn recognize_scoped<'a>(
         owned_item,
     })
 }
+/// Runtime feasibility only; full HIR validation and structural inventories
+/// continue to scan both arms. No certificate or case liveness grants selection.
+pub(crate) fn true_body_match<'a>(
+    condition: &'a ResolvedExpr,
+    body: &'a ResolvedExpr,
+    latch: &crate::hir::LoopLatchKind,
+) -> Option<&'a ResolvedExpr> {
+    if !matches!(latch, crate::hir::LoopLatchKind::OwnedIteratorStep { .. })
+        || crate::hir::lexical_exit::validate_latch(condition, body, latch).is_err()
+    {
+        return None;
+    }
+    let proof = recognize(condition, body)?;
+    let ResolvedExprKind::Match {
+        scrutinee: predicate,
+        arms: conditions,
+        ..
+    } = &condition.kind
+    else {
+        return None;
+    };
+    let [negative, positive] = conditions.as_slice() else {
+        return None;
+    };
+    if predicate.ty != proof.step.ty
+        || predicate.ownership != proof.step.ownership
+        || negative.value.ty != ResolvedType::Bool
+        || positive.value.ty != ResolvedType::Bool
+        || negative.value.ownership != OwnershipMode::Value
+        || positive.value.ownership != OwnershipMode::Value
+        || !matches!(negative.value.kind, ResolvedExprKind::Bool(false))
+        || !matches!(positive.value.kind, ResolvedExprKind::Bool(true))
+    {
+        return None;
+    }
+    let ResolvedExprKind::Block { statements, .. } = &body.kind else {
+        return None;
+    };
+    let [ResolvedStatement::Assign { value, .. }] = statements.as_slice() else {
+        return None;
+    };
+    let ResolvedExprKind::Match {
+        scrutinee, arms, ..
+    } = &value.kind
+    else {
+        return None;
+    };
+    let [done, _yielded] = arms.as_slice() else {
+        return None;
+    };
+    if scrutinee.ty != proof.step.ty
+        || scrutinee.ownership != OwnershipMode::Own
+        || done.value.ty != proof.step.ty
+        || done.value.ownership != OwnershipMode::Own
+        || !matches!(&done.value.kind, ResolvedExprKind::ConstructVariant { variant, case, fields }
+            if variant.as_str() == crate::iterator_ops::STEP_ID
+            && case.as_str() == crate::iterator_ops::DONE_ID && fields.is_empty())
+    {
+        return None;
+    }
+    // recognize and validate_latch independently authenticate both guardless
+    // pattern inventories, typed Yield fields, exact Next operand and all latch
+    // identities. Done is the entire childless constructor authenticated above.
+    Some(value)
+}
+
 pub(crate) fn function_contains(function: &ResolvedFunction) -> bool {
     let mut pending = vec![&function.body];
     while let Some(expression) = pending.pop() {
@@ -325,3 +391,6 @@ pub(crate) fn template_contains(template: &ResolvedFunctionTemplate) -> bool {
     }
     false
 }
+
+#[cfg(test)]
+mod feasibility_tests;

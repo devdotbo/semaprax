@@ -2,8 +2,8 @@
 mod constructed_variant;
 use constructed_variant::materialize_constructed_variant;
 mod expression_children;
-mod flat_records;
 mod expression_facts;
+mod flat_records;
 mod inventory_coverage;
 mod physical_budget;
 mod physical_clone;
@@ -3662,6 +3662,7 @@ fn expression_skeleton(
     /// reads its loop's generated advancement from here.
     struct ActiveLoop<'a> {
         condition: &'a ExpressionId,
+        true_match: Option<&'a ResolvedExpr>,
         advance: Option<&'a ResolvedExpr>,
         step: OwnedStep<'a>,
     }
@@ -4706,6 +4707,7 @@ fn expression_skeleton(
                     .reserve_vec(function, &mut active_loops, 1, "active lexical loops")?;
                 active_loops.push(ActiveLoop {
                     condition: &condition.id,
+                    true_match: crate::hir::iterator_loop::true_body_match(condition, body, latch),
                     advance: lexical_hir::generated_advance(body, latch),
                     step: if matches!(latch, crate::hir::LoopLatchKind::OwnedIteratorStep { .. }) {
                         lexical_hir::owned_step_assignment(body).and_then(
@@ -5368,19 +5370,31 @@ fn expression_skeleton(
                 is_record,
             } => {
                 let arm_paths = produced.take().expect("match arm path retained");
-                let next_remaining = finish_match_arm(
-                    program,
-                    function,
-                    expression,
-                    scrutinee,
-                    arms,
-                    index,
-                    remaining,
-                    &arm_paths,
-                    &mut results,
-                    is_record,
-                    work,
-                )?;
+                // Both original arm expressions have been independently scanned.
+                // Project only the impossible Done runtime path out at the join.
+                let done_in_true_body = index == 0
+                    && active_loops.last().is_some_and(|context| {
+                        context
+                            .true_match
+                            .is_some_and(|value| std::ptr::eq(value, expression))
+                    });
+                let next_remaining = if done_in_true_body {
+                    remaining
+                } else {
+                    finish_match_arm(
+                        program,
+                        function,
+                        expression,
+                        scrutinee,
+                        arms,
+                        index,
+                        remaining,
+                        &arm_paths,
+                        &mut results,
+                        is_record,
+                        work,
+                    )?
+                };
                 let next = index + 1;
                 if !next_remaining.is_empty() && next < arms.len() {
                     push_frame!(
