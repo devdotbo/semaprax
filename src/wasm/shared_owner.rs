@@ -297,6 +297,10 @@ pub(in crate::wasm) struct Closure {
 /// Classifies the actual import section in order and refuses at the first
 /// import outside the closure of `host`.
 pub(in crate::wasm) fn consumer_closure(module: &[u8], host: Host) -> Result<Closure, Refusal> {
+    // Components also validate, but are not this ordinary Core-Wasm boundary.
+    if module.get(..8) != Some(b"\0asm\x01\0\0\0".as_slice()) {
+        return Err(Refusal::Malformed);
+    }
     wasmparser::Validator::new()
         .validate_all(module)
         .map_err(|_| Refusal::Malformed)?;

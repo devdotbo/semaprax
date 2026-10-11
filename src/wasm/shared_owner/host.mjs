@@ -63,7 +63,8 @@ export const PAYLOAD_CONSUMERS = Object.freeze([
 
 // One never-reset token space and one never-reset handle space per evaluated
 // module record, shared by every host it creates. Neither is installed on a
-// global, so no other code can replace, rewind or observe them. Tokens and
+// global, so no other code can replace, rewind or observe them. A second
+// evaluated copy refuses at the realm installation marker. Tokens and
 // handles are therefore never reused across registries, hosts, instances or
 // invocations of this module record; each table still only resolves what its
 // own issuer recorded.

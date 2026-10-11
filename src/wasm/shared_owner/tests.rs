@@ -604,6 +604,10 @@ fn closure_refuses_provider_and_non_function_crossings() {
             consumer_closure(b"\0asm\x02", host),
             Err(Refusal::Malformed)
         );
+        assert_eq!(
+            consumer_closure(b"\0asm\x0d\0\x01\0", host),
+            Err(Refusal::Malformed)
+        );
         // A valid Core module cannot authenticate a known import by name alone.
         let mut types = TypeSection::new();
         types.ty().function([] as [ValType; 0], [] as [ValType; 0]);
