@@ -12,7 +12,7 @@ enum Grammar {
 impl Grammar {
     fn pattern(self) -> &'static [u8] {
         match self {
-            Self::Header => b"([A-Za-z-]+):([^\\x0D\\x0A]*)",
+            Self::Header => b"([A-Za-z-]+):[ \\x09]*([^\\x0D\\x0A]*)",
             Self::Kv => b"([A-Za-z_][A-Za-z0-9_]*)=([^\\x0D\\x0A]*)",
         }
     }
@@ -48,7 +48,13 @@ impl Grammar {
         {
             return None;
         }
-        Some([[0, split], [split + 1, input.len()]])
+        let mut start = split + 1;
+        if matches!(self, Self::Header) {
+            while start < input.len() && matches!(input[start], b' ' | b'\t') {
+                start += 1;
+            }
+        }
+        Some([[0, split], [start, input.len()]])
     }
 }
 fn checksum(spans: [[usize; 2]; 2]) -> i64 {
@@ -97,6 +103,19 @@ fn ascii_source(grammar: Grammar, key: bool) -> (String, i64) {
             .sum::<usize>(),
         if key { 53 } else { 126 }
     );
+    let starts: Vec<_> = inputs
+        .iter()
+        .map(|input| {
+            grammar
+                .captures(input)
+                .map(|spans| spans[1][0] as u8)
+                .unwrap_or(0)
+        })
+        .collect();
+    if matches!(grammar, Grammar::Header) && !key {
+        assert_eq!(starts[usize::from(b' ')], 3);
+        assert_eq!(starts[usize::from(b'\t')], 3);
+    }
     let expected = inputs
         .iter()
         .filter_map(|input| grammar.captures(input))
@@ -107,12 +126,12 @@ fn ascii_source(grammar: Grammar, key: bool) -> (String, i64) {
     } else {
         format!("[65u8, {}u8, candidate]", grammar.separator())
     };
-    let packet = packet("expected", "capture_start(matcher, 0usize) == 0usize && capture_end(matcher, 0usize) == 1usize && capture_start(matcher, 1usize) == 2usize && capture_end(matcher, 1usize) == 3usize");
-    (format!("{}\nlet expected_bytes = {}; let expected_view = array_as_slice(expected_bytes);\nlet mut index = 0usize; let mut correct = true; let mut total = 0;\nwhile index < 128usize {{\nlet candidate = u8_from_i64(i64_from_usize(index)); let input = {input}; let view = array_as_slice(input);\nlet expected = match byte_get(expected_view, index) {{ Option::Some {{ value }} => value == 1u8, Option::None {{}} => false, }};\nmatcher = full_match(matcher, view, 262144usize);\nif {packet} {{ 0 }} else {{ correct = false; 0 }}\nif status(matcher) == 1usize {{ total = total + {}; 0 }} else {{ 0 }}\nindex = index + 1usize; 0\n}}\nif ready && correct {{ total }} else {{ -1 }}\n}}\n", prefix(grammar), array(&expectations), observed()), expected)
+    let packet = packet("expected", "capture_start(matcher, 0usize) == 0usize && capture_end(matcher, 0usize) == 1usize && capture_start(matcher, 1usize) == expected_start && capture_end(matcher, 1usize) == 3usize");
+    (format!("{}\nlet expected_bytes = {}; let expected_view = array_as_slice(expected_bytes);\nlet expected_starts = {}; let starts_view = array_as_slice(expected_starts);\nlet mut index = 0usize; let mut correct = true; let mut total = 0;\nwhile index < 128usize {{\nlet candidate = u8_from_i64(i64_from_usize(index)); let input = {input}; let view = array_as_slice(input);\nlet expected = match byte_get(expected_view, index) {{ Option::Some {{ value }} => value == 1u8, Option::None {{}} => false, }};\nlet expected_start = match byte_get(starts_view, index) {{ Option::Some {{ value }} => usize_from_u8(value), Option::None {{}} => 0usize, }};\nmatcher = full_match(matcher, view, 262144usize);\nif {packet} {{ 0 }} else {{ correct = false; 0 }}\nif status(matcher) == 1usize {{ total = total + {}; 0 }} else {{ 0 }}\nindex = index + 1usize; 0\n}}\nif ready && correct {{ total }} else {{ -1 }}\n}}\n", prefix(grammar), array(&expectations), array(&starts), observed()), expected)
 }
 fn long_source(grammar: Grammar, matches: bool) -> (String, i64) {
     let mut input = match grammar {
-        Grammar::Header => b"X-Key:".to_vec(),
+        Grammar::Header => b"X-Key: \t".to_vec(),
         Grammar::Kv => b"field_1=".to_vec(),
     };
     input.extend(vec![b'v'; 8192]);
@@ -123,7 +142,10 @@ fn long_source(grammar: Grammar, matches: bool) -> (String, i64) {
     assert_eq!(spans.is_some(), matches);
     let expected = spans.map(checksum).unwrap_or(0);
     let capture_check = spans.map(|spans| format!("capture_start(matcher, 0usize) == {}usize && capture_end(matcher, 0usize) == {}usize && capture_start(matcher, 1usize) == {}usize && capture_end(matcher, 1usize) == {}usize", spans[0][0], spans[0][1], spans[1][0], spans[1][1])).unwrap_or_else(|| "false".into());
-    let literal = String::from_utf8(input).unwrap().replace('\r', "\\r");
+    let literal = String::from_utf8(input)
+        .unwrap()
+        .replace('\r', "\\r")
+        .replace('\t', "\\t");
     let packet = packet(if matches { "true" } else { "false" }, &capture_check);
     (format!("{}\nlet input = \"{literal}\"; let text = string_as_str(input); let view = str_as_bytes(text);\nmatcher = full_match(matcher, view, 262144usize);\nif ready && {packet} {{ if status(matcher) == 1usize {{ {} }} else {{ 0 }} }} else {{ -1 }}\n}}\n", prefix(grammar), observed()), expected)
 }
