@@ -26,7 +26,11 @@ fn utf8_owned_policy_is_explicit_bounded_and_uses_distinct_scalar_decoders() {
     let derived = source(&program, root, 64).unwrap();
     assert_eq!(derived, source(&program, root, 64).unwrap());
     assert_ne!(derived, source(&program, root, 63).unwrap());
-    assert!(derived.contains("total<=64usize"));
+    assert!(derived.contains("ju_text_valid(input,start,end,64usize)"));
+    assert!(derived.contains("ju_bounded_valid(bytes,64usize)"));
+    assert!(derived.contains("ju_quoted_len(bytes,64usize)"));
+    assert!(derived.contains("std.data.json.scan.utf8_text_valid"));
+    assert!(!derived.contains("let mut raw_ascii="));
     assert!(derived.contains("scalar>=0 && scalar<=1114111"));
     assert!(derived.contains("char_from_i64(scalar)"));
     assert!(derived.contains("let mut unescaped=true"));
@@ -60,6 +64,25 @@ fn utf8_owned_policy_is_explicit_bounded_and_uses_distinct_scalar_decoders() {
             < request_decode.find("while error==0 && key<length").unwrap()
     );
     let parsed = crate::parse(&derived, "utf8-generated.spx").unwrap();
+    for suffix in ["valid", "owned-valid", "quoted-len"] {
+        let id = format!("text.row.json.utf8.{suffix}");
+        let wrapper = parsed
+            .functions
+            .iter()
+            .find(|function| function.stable_id == id)
+            .unwrap();
+        let crate::ast::ExprKind::Block { statements, tail } = &wrapper.body.kind else {
+            panic!("stable UTF-8 wrapper stays a source block");
+        };
+        assert!(statements.len() <= 1, "wrapper may only bind its byte view");
+        let crate::ast::ExprKind::Call { args, .. } = &tail.kind else {
+            panic!("stable wrapper delegates to checked ordinary source");
+        };
+        assert!(matches!(
+            args.last().unwrap().kind,
+            crate::ast::ExprKind::Usize(64)
+        ));
+    }
     assert!(parsed.permits.is_empty());
     assert!(parsed.functions.iter().all(|f| f.effects.is_empty()));
     let canonical = crate::format::canonical(&parsed);

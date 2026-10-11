@@ -155,9 +155,14 @@ fn collection_response_is_closed_ordered_and_canonical_without_source_authority(
                 "ju_raw_end"
             ),
             (
-                "std.data.json.utf8.utf8_end",
+                "std.data.json.utf8.bounded_valid",
                 "std.data.json.utf8",
-                "ju_raw_utf8_end"
+                "ju_bounded_valid"
+            ),
+            (
+                "std.data.json.utf8.quoted_len",
+                "std.data.json.utf8",
+                "ju_quoted_len"
             ),
         ]
     );

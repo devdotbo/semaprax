@@ -1,32 +1,6 @@
 @id("__ROW_ID__.json.utf8.valid")
 fn json___ROW___identifier_valid(input:borrow Slice<u8>,start:usize,end:usize)->bool {
-let length=byte_len(input);
-let mut raw_ascii=if start<end && end<=length && end-start>=2usize{
-match byte_get(input,start){Option::Some{value}=>value==34u8,Option::None{}=>false,} &&
-match byte_get(input,end-1usize){Option::Some{value}=>value==34u8,Option::None{}=>false,}
-}else{false};
-let mut raw_at=if raw_ascii{start+1usize}else{end};
-while raw_ascii && raw_at<end-1usize {
-raw_ascii=match byte_get(input,raw_at){Option::Some{value}=>value>=32u8 && value<128u8 && value!=34u8 && value!=92u8,Option::None{}=>false,};
-raw_at=if raw_ascii{raw_at+1usize}else{end};raw_ascii && raw_at<end-1usize
-}
-if raw_ascii{end-start-2usize<=__BOUND__usize}else{
-let mut valid=start<end && end<=length;
-let closed=if valid{jv_scan_string(input,start,false)}else{length+1usize};
-let total=if valid && closed==end{jv_decoded_len(input,start)}else{length+1usize};
-valid=valid && closed==end && total<=__BOUND__usize;
-let mut at=if valid{start+1usize}else{end};
-while valid && at<end-1usize {
-let byte=match byte_get(input,at){Option::Some{value}=>i64_from_u8(value),Option::None{}=>-1,};
-let escaped=byte==92;
-let ascii=byte>=32 && byte<128;
-let scalar=if escaped{ju_escape_scalar(input,at)}else{if ascii{byte}else{ju_raw_scalar(input,at)}};
-let next=if escaped{jv_token_end(input,at)}else{if ascii{at+1usize}else{ju_raw_end(input,at)}};
-valid=scalar>=0 && scalar<=1114111 && !(scalar>=55296 && scalar<=57343) && next>at && next<=end-1usize;
-at=if valid{next}else{end};valid && at<end-1usize
-}
-valid
-}
+ju_text_valid(input,start,end,__BOUND__usize)
 }
 @id("__ROW_ID__.json.utf8.materialize-text")
 fn json___ROW___utf8_text(input:borrow Slice<u8>,start:usize,end:usize)->string {
@@ -50,27 +24,11 @@ text
 }
 @id("__ROW_ID__.json.utf8.owned-valid")
 fn json___ROW___owned_valid(text:borrow str)->bool {
-let bytes=str_as_bytes(text);let length=byte_len(bytes);
-if length>__BOUND__usize{false}else{
-let mut at=0usize;let mut ascii=true;
-while ascii && at<length {
-ascii=match byte_get(bytes,at){Option::Some{value}=>value<128u8,Option::None{}=>false,};
-at=if ascii{at+1usize}else{at};ascii && at<length
-}
-at==length || ju_raw_utf8_end(bytes,at)==length
-}
+let bytes=str_as_bytes(text);ju_bounded_valid(bytes,__BOUND__usize)
 }
 @id("__ROW_ID__.json.utf8.quoted-len")
 fn json___ROW___utf8_quoted_len(text:borrow str)->usize {
-if !json___ROW___owned_valid(text){18446744073709551615usize}else{
-let bytes=str_as_bytes(text);let mut size=2usize;let mut at=0usize;
-while at<byte_len(bytes) {
-let byte=match byte_get(bytes,at){Option::Some{value}=>i64_from_u8(value),Option::None{}=>0,};
-size=size+(if byte==34 || byte==92 || byte==8 || byte==12 || byte==10 || byte==13 || byte==9{2usize}else{if byte<32{6usize}else{1usize}});
-at=at+1usize;at<byte_len(bytes)
-}
-size
-}
+let bytes=str_as_bytes(text);ju_quoted_len(bytes,__BOUND__usize)
 }
 @id("__ROW_ID__.json.utf8.quoted-render")
 fn json___ROW___utf8_quote(text:borrow str)->string {

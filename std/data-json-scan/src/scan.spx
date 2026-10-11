@@ -14,6 +14,9 @@ use function @id("std.data.json.query.emit_len") from std.data.json.query as emi
 use function @id("std.data.json.query.scan_string") from std.data.json.query as scan_string;
 use function @id("std.data.json.query.token_end") from std.data.json.query as token_end;
 use function @id("std.data.json.utf8.utf8_end") from std.data.json.utf8 as utf8_end;
+use function @id("std.data.json.query.scalar_at") from std.data.json.query as escape_scalar;
+use function @id("std.data.json.utf8.scalar_at") from std.data.json.utf8 as raw_scalar;
+use function @id("std.data.json.utf8.sequence_end") from std.data.json.utf8 as raw_end;
 
 // All offsets refer to the exact input view. A rejection is encoded as
 // length + 1 + its selected offset, as in the JSON scanner family.
@@ -181,4 +184,12 @@ fn key_eq(input: borrow Slice<u8>, key: usize, expected: borrow Slice<u8>) -> bo
 fn decimal_end(input: borrow Slice<u8>, start: usize) -> usize
 {
     number_end(input, start)
+}
+
+// Validate one exact JSON text token after ordinary whole-document grammar.
+// The bound is an explicit decoded-byte policy, not an input capability.
+@id("std.data.json.scan.utf8_text_valid")
+fn utf8_text_valid(input: borrow Slice<u8>, start: usize, end: usize, max_bytes: usize) -> bool
+{
+    if max_bytes > 64usize { false } else { let length = byte_len(input); let mut raw_ascii = if start < end && end <= length && end - start >= 2usize { match byte_get(input, start) { Option::Some { value } => value == 34u8, Option::None {} => false, } && match byte_get(input, end - 1usize) { Option::Some { value } => value == 34u8, Option::None {} => false, } } else { false }; let mut raw_at = if raw_ascii { start + 1usize } else { end }; while raw_ascii && raw_at < end - 1usize { raw_ascii = match byte_get(input, raw_at) { Option::Some { value } => value >= 32u8 && value < 128u8 && value != 34u8 && value != 92u8, Option::None {} => false, }; raw_at = if raw_ascii { raw_at + 1usize } else { end }; raw_ascii && raw_at < end - 1usize } if raw_ascii { end - start - 2usize <= max_bytes } else { let mut valid = start < end && end <= length; let closed = if valid { scan_string(input, start, false) } else { length + 1usize }; let total = if valid && closed == end { decoded_len(input, start) } else { length + 1usize }; valid = valid && closed == end && total <= max_bytes; let mut at = if valid { start + 1usize } else { end }; while valid && at < end - 1usize { let byte = match byte_get(input, at) { Option::Some { value } => i64_from_u8(value), Option::None {} => -1, }; let escaped = byte == 92; let ascii = byte >= 32 && byte < 128; let scalar = if escaped { escape_scalar(input, at) } else { if ascii { byte } else { raw_scalar(input, at) } }; let next = if escaped { token_end(input, at) } else { if ascii { at + 1usize } else { raw_end(input, at) } }; valid = scalar >= 0 && scalar <= 1114111 && !(scalar >= 55296 && scalar <= 57343) && next > at && next <= end - 1usize; at = if valid { next } else { end }; valid && at < end - 1usize } valid } }
 }

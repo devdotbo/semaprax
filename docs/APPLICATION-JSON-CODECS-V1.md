@@ -29,6 +29,14 @@ no managed apply or source overwrite authority is added.
 
 This is executable source generation, not the Agent proposal schema decoder,
 Rust interop Serde, an owning JSON tree, or a schema digest granting HIR authority.
+UTF-8 text validators retain their generated identities and explicit 1..64
+bounds while delegating scalar byte scans to existing `std.data.json.scan`
+and `std.data.json.utf8` modules. Response-only sources use only the UTF-8
+module. The shared `bounded_valid` and `quoted_len` kernels accept borrowed
+bytes; invalid text or a bound above 64 selects false or the existing maximum
+`usize` length sentinel. Materialization and rendering remain generated source.
+Owning executable qualification of this deduplication is pending.
+
 Helper names have no compiler exemption. Canonical parsing, resolution,
 independent HIR/loan/cleanup validation, graph construction, profile admission
 and cache/source replay are the same boundaries used by authored code. The

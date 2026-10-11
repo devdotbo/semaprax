@@ -8,6 +8,7 @@ fn ascii_fast_path_matches_original_scalar_validation_and_keeps_utf8_boundaries(
         r#"
 use function @id("unicode.row.json.utf8.valid") from consumer.schema as optimized;
 use function @id("unicode.row.json.utf8.owned-valid") from consumer.schema as optimized_owned;
+use function @id("unicode.row.json.utf8.quoted-len") from consumer.schema as optimized_quoted;
 use function @id("std.data.json.query.scan_string") from std.data.json.query as jv_scan_string;
 use function @id("std.data.json.query.decoded_len") from std.data.json.query as jv_decoded_len;
 use function @id("std.data.json.query.token_end") from std.data.json.query as jv_token_end;
@@ -15,9 +16,12 @@ use function @id("std.data.json.query.scalar_at") from std.data.json.query as ju
 use function @id("std.data.json.utf8.scalar_at") from std.data.json.utf8 as ju_raw_scalar;
 use function @id("std.data.json.utf8.sequence_end") from std.data.json.utf8 as ju_raw_end;
 use function @id("std.data.json.utf8.utf8_end") from std.data.json.utf8 as ju_raw_utf8_end;
+use function @id("std.data.json.utf8.bounded_valid") from std.data.json.utf8 as shared_valid;
+use function @id("std.data.json.utf8.quoted_len") from std.data.json.utf8 as shared_quoted;
 "#,
     );
     app.push_str(include_str!("ascii_legacy_validator.txt"));
+    app.push_str(include_str!("quoted_legacy_kernels.txt"));
     app.push_str(
         r#"
 @id("consumer.compare") fn compare(input:borrow Slice<u8>,start:usize,end:usize,wanted:bool)->i64 {
@@ -29,7 +33,9 @@ use function @id("std.data.json.utf8.utf8_end") from std.data.json.utf8 as ju_ra
  let bytes=str_as_bytes(text);
  let old=byte_len(bytes)<=64usize && ju_raw_utf8_end(bytes,0usize)==byte_len(bytes);
  let current=optimized_owned(text);
- if current==old && current==wanted {0} else {1}
+ let previous_length=json_Legacy_utf8_quoted_len(text);
+ let current_length=optimized_quoted(text);
+ if current==old && current==wanted && current_length==previous_length {0} else {1}
 }
 @id("consumer.main") fn main()->i64 {
  let mut bad=0;
@@ -39,6 +45,10 @@ use function @id("std.data.json.utf8.utf8_end") from std.data.json.utf8 as ju_ra
     // The immutable Rust input and truth table are independent of both decoders.
     let all_ascii: Vec<u8> = (0..=255).flat_map(|byte| [b'"', byte, b'"']).collect();
     app.push_str(&format!("let ascii={};let input=array_as_slice(ascii);let mut index=0usize;while index<256usize{{let start=index*3usize;let wanted=index>=32usize && index<128usize && index!=34usize && index!=92usize;bad=bad+compare(input,start,start+3usize,wanted);index=index+1usize;index<256usize}}\n", array(&all_ascii)));
+    // Each of the 256 original bytes also exercises the raw byte kernels.
+    // High single bytes are invalid UTF-8; ASCII quote cost is independent.
+    app.push_str("let mut byte_index=0usize;while byte_index<256usize{let start=byte_index*3usize+1usize;let one=byte_range(input,start,start+1usize);let valid=shared_valid(one,64usize);let quoted=shared_quoted(one,64usize);let expected=if byte_index>=128usize{18446744073709551615usize}else{2usize+(if byte_index==34usize || byte_index==92usize || byte_index==8usize || byte_index==12usize || byte_index==10usize || byte_index==13usize || byte_index==9usize{2usize}else{if byte_index<32usize{6usize}else{1usize}})};bad=bad+(if valid==(byte_index<128usize) && quoted==expected{0}else{1});byte_index=byte_index+1usize;byte_index<256usize}\n");
+    app.push_str("bad=bad+(if !shared_valid(input,18446744073709551615usize) && shared_quoted(input,65usize)==18446744073709551615usize{0}else{1});\n");
     app.push_str("bad=bad+compare(input,0usize,0usize,false);bad=bad+compare(input,768usize,769usize,false);bad=bad+compare(input,0usize,769usize,false);\n");
     app.push_str("bad=bad+compare(input,18446744073709551615usize,18446744073709551615usize,false);bad=bad+compare(input,0usize,18446744073709551615usize,false);\n");
     let cases: &[(&[u8], bool)] = &[

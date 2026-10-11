@@ -1,5 +1,9 @@
 # Changelog
 
+- Keep generated UTF-8 validator identities while sharing bounded scalar byte
+  kernels through the existing JSON scan/UTF-8 source modules (#753); owning
+  executable qualification pending.
+
 - Read each ordinary JSON string-framing byte once in the source scanners and Query plain-byte path, preserving eager offset arithmetic, escape policies and failure encoding. Retain independent original kernels and all-byte/backend differential definitions; grouped execution and measured benefits remain pending.
 - Added a summed exact cached construction fallback distinguishing parsed-only
   from semantic HIR retention, preserving old fitting receipts, quotas and the

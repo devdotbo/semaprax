@@ -7,7 +7,9 @@ pub(super) fn imports() -> String {
         ("query", "scalar_at", "ju_escape_scalar"),
         ("utf8", "scalar_at", "ju_raw_scalar"),
         ("utf8", "sequence_end", "ju_raw_end"),
-        ("utf8", "utf8_end", "ju_raw_utf8_end"),
+        ("scan", "utf8_text_valid", "ju_text_valid"),
+        ("utf8", "bounded_valid", "ju_bounded_valid"),
+        ("utf8", "quoted_len", "ju_quoted_len"),
     ] {
         writeln!(source, "use function @id(\"std.data.json.{module}.{name}\") from std.data.json.{module} as {alias};").unwrap();
     }

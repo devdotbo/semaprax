@@ -91,3 +91,16 @@ fn is_utf8(input: borrow Slice<u8>) -> bool
 {
     utf8_end(input, 0usize) == byte_len(input)
 }
+
+// Bounded JSON text kernels borrow bytes and never construct String owners.
+@id("std.data.json.utf8.bounded_valid")
+fn bounded_valid(input: borrow Slice<u8>, max_bytes: usize) -> bool
+{
+    if max_bytes > 64usize { false } else { let length = byte_len(input); if length > max_bytes { false } else { let mut at = 0usize; let mut ascii = true; while ascii && at < length { ascii = match byte_get(input, at) { Option::Some { value } => value < 128u8, Option::None {} => false, }; at = if ascii { at + 1usize } else { at }; ascii && at < length } at == length || utf8_end(input, at) == length } }
+}
+
+@id("std.data.json.utf8.quoted_len")
+fn quoted_len(input: borrow Slice<u8>, max_bytes: usize) -> usize
+{
+    if !bounded_valid(input, max_bytes) { 18446744073709551615usize } else { let mut size = 2usize; let mut at = 0usize; while at < byte_len(input) { let byte = match byte_get(input, at) { Option::Some { value } => i64_from_u8(value), Option::None {} => 0, }; size = size + if byte == 34 || byte == 92 || byte == 8 || byte == 12 || byte == 10 || byte == 13 || byte == 9 { 2usize } else { if byte < 32 { 6usize } else { 1usize } }; at = at + 1usize; at < byte_len(input) } size }
+}
