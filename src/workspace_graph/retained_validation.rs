@@ -192,9 +192,9 @@ fn validate_retained_facts_inner(
             )?;
         }
         // The traversal replay above authenticates compiler-introduced row
-        // reads and length calls. Their inferred element arguments are not
-        // explicit authored type sites.
-        traversal_type_sites::remove(source, programs, &imported_type_ids, &mut actual_type_sites)?;
+        // reads and length calls. Their inferred element arguments are emitted
+        // as authored-projection edges too, so each must remain exactly once.
+        traversal_type_sites::require(source, programs, &imported_type_ids, &actual_type_sites)?;
     }
     let mut expected_type_sites = Vec::new();
     for edge in edges.iter().filter(|edge| edge.kind == "type_reference") {

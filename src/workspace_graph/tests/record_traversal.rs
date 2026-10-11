@@ -48,6 +48,62 @@ fn imported_record_row_length_and_read_edges_replay_source_exactly() {
     super::super::record_traversal::validate(&source_programs, &build.hir.modules).unwrap();
 }
 #[test]
+fn imported_row_read_under_return_keeps_one_exact_type_site_and_edge() {
+    let mut input = sources();
+    input[1] = canonical_source(
+        "app.spx",
+        r#"module app;
+use type @id("library.row") from library as Row;
+@id("app.walk") fn walk(rows:borrow Vec<Row>)->i64 {
+ for borrow row at index in rows { let selected=row.left; if index==1usize {return row.right;}; 0 }
+ 0
+}
+@id("app.main") fn main()->i64 {0}
+"#,
+    );
+    let programs = parsed_sources(&input);
+    // The retained build itself compares the exact HIR/edge multiset.
+    let build = build_owned(input).unwrap();
+    super::super::record_traversal::validate(&programs, &build.hir.modules).unwrap();
+    let reads = build
+        .edges
+        .iter()
+        .filter(|edge| {
+            edge.caller == "app.walk"
+                && edge.kind == "type_reference"
+                && edge.ast_path.ends_with(".base.type_argument.0")
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(reads.len(), 2, "the let read and the Return operand read");
+    let returned = reads
+        .iter()
+        .find(|edge| edge.ast_path.contains(".then."))
+        .expect("the authored Return operand read is a traversal row read")
+        .ast_path
+        .clone();
+    validate_retained_facts(&programs, &build.hir.modules, &build.edges).unwrap();
+    // The HIR site is never filtered: a missing or duplicated edge disagrees.
+    for duplicate in [false, true] {
+        let mut edges = build.edges.clone();
+        let index = edges
+            .iter()
+            .position(|edge| edge.kind == "type_reference" && edge.ast_path == returned)
+            .unwrap();
+        if duplicate {
+            let copy = edges[index].clone();
+            edges.push(copy);
+        } else {
+            edges.remove(index);
+        }
+        let error = validate_retained_facts(&programs, &build.hir.modules, &edges).unwrap_err();
+        assert_eq!(error[0].code, "SPX-G173");
+        assert_eq!(
+            error[0].message,
+            "workspace explicit type-reference facts disagree with retained HIR"
+        );
+    }
+}
+#[test]
 fn same_typed_field_substitution_cannot_rebind_authored_row_projection() {
     let source_programs = sources()
         .iter()

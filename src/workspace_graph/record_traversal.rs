@@ -476,7 +476,13 @@ fn walk<'a>(
                 out,
             )?;
         }
-        ExprKind::Unary { value, .. } => child!(value, "value", bindings, row)?,
+        // An authored `return f(row.n)` keeps its operand's row reads; HIR
+        // resolves that operand at `{path}.value` like any unary child.
+        ExprKind::LexicalExit { value: None, .. } => {}
+        ExprKind::LexicalExit {
+            value: Some(value), ..
+        }
+        | ExprKind::Unary { value, .. } => child!(value, "value", bindings, row)?,
         ExprKind::Binary { left, right, .. } => {
             child!(left, "left", bindings, row)?;
             child!(right, "right", bindings, row)?;
