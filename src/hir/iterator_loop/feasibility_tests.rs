@@ -143,6 +143,31 @@ fn abrupt_mixed_empty_and_nested_iterations_keep_full_hir_and_exact_backend_rout
 fn forged_predicate_done_latch_and_normal_endpoint_refuse_independent_replay_and_targets() {
     let original = fixture(SOURCE);
     crate::hir::validate(&original).unwrap();
+    let mut missing_region = original.clone();
+    let function = missing_region
+        .functions
+        .iter_mut()
+        .find(|f| f.id.as_str() == "app.main")
+        .unwrap();
+    let (condition, body, latch) = loop_mut(&mut function.body).unwrap();
+    let selected = true_body_match(condition, body, latch).unwrap();
+    let ResolvedExprKind::Match { arms, .. } = &selected.kind else {
+        unreachable!()
+    };
+    let done = crate::cleanup_plan::StorageId::Temporary(arms[0].value.id.clone());
+    let region = function
+        .cleanup_plan
+        .regions
+        .iter()
+        .find(|region| region.slots.contains(&done))
+        .unwrap()
+        .id;
+    let certificate = function.cleanup_plan.lexical_control.as_mut().unwrap();
+    assert!(certificate.abrupt_only_regions.contains(&region));
+    certificate
+        .abrupt_only_regions
+        .retain(|candidate| *candidate != region);
+    assert!(crate::hir::validate(&missing_region).is_err());
     for mutation in 0..9 {
         let mut changed = original.clone();
         let function = changed

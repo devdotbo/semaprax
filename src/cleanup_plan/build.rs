@@ -3789,9 +3789,7 @@ impl<'a> PlanBuilder<'a> {
                     } else {
                         // Full structural HIR and inventory still contain Done.
                         // This CFG is entered only after its exact condition=true.
-                        let first = usize::from(self.lexical.as_ref().is_some_and(|control| {
-                            control.is_true_iterator_match(&expression.id)
-                        }));
+                        let first = self.prepare_true_iterator_match(expression, active_region)?;
                         frames.push(Frame::MatchNext {
                             expression,
                             mode,
@@ -6066,7 +6064,8 @@ impl<'a> PlanBuilder<'a> {
         let branch_state = scrutinee_result.state;
         let source = scrutinee_result.owned_source;
         let mut arm_results = Vec::with_capacity(arms.len());
-        for (index, arm) in arms.iter().enumerate() {
+        let first = self.prepare_true_iterator_match(expression, region)?;
+        for (index, arm) in arms.iter().enumerate().skip(first) {
             let final_arm = index + 1 == arms.len();
             let arm_region = (*mode != ResolvedMatchMode::Value)
                 .then(|| self.new_region(region))

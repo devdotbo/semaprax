@@ -38,8 +38,31 @@ fn consuming_row_staged_argument_failures_settle_once_preserve_status_and_reentr
     if Command::new("clang").arg("--version").output().is_err() {
         return;
     }
+    let transformed = SOURCE
+        .replace("@id(\"main\")", "@id(\"output\") record Output {@id(\"output.n\") n:i64,@id(\"output.text\") text:string,@id(\"output.bytes\") bytes:Bytes,}\n@id(\"main\")")
+        .replace("let mut words=vec_with_capacity<Row>", "let mut words=vec_with_capacity<Output>")
+        .replace("words=vec_push<Row>(words,item);0", "let _=match own item {Row{n,text,bytes}=>{if n==7 {words=vec_push<Output>(words,Output{n:n+1,text:text,bytes:bytes});}0},};0")
+        .replace("if vec_len<Row>(words)==2usize", "let mut observed=0;for borrow row in words {let title=row.text;let data=row.bytes;if row.n==8 && str_len_bytes(title)==2 && byte_len(data)==1usize {observed=observed+1;}0} if observed==2 && vec_len<Output>(words)==2usize");
+    let conditional_false = transformed
+        .replace(
+            "let inputs=vec_push<Row>(first,Row{n:7",
+            "let inputs=vec_push<Row>(first,Row{n:8",
+        )
+        .replace(
+            "observed==2 && vec_len<Output>(words)==2usize",
+            "observed==1 && vec_len<Output>(words)==1usize",
+        );
     for (source, code) in [
         (SOURCE.to_owned(), 0),
+        (transformed.clone(), 0),
+        (conditional_false, 0),
+        (
+            transformed.replace(
+                "let mut words=vec_with_capacity<Output>(2usize)",
+                "let mut words=vec_with_capacity<Output>(1usize)",
+            ),
+            1,
+        ),
         (
             SOURCE.replace(
                 "vec_push<Row>(words,item)",

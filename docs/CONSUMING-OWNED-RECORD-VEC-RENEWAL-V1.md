@@ -17,7 +17,9 @@ that exact record type. A consuming record match may instead transform an
 admitted input row into a different independently admitted owned-leaf output
 row and conditionally push it. Both current nominal declarations must satisfy
 the owned-record family; equality of the input and output nominal IDs is not
-required. The receiver and pushed result retain exact destination types and
+required. An owned pattern-field move must refer to that current arm's exact
+field ID, type, binding identity and ownership mode; no field permission escapes
+the arm or permits an arbitrary Bytes place. The receiver and pushed result retain exact destination types and
 ordinary grouped argument ownership. The ordinary argument route may compute a
 fallible owned row, such as `vec_clone_at<Row>(later, 0usize)`. This does not
 permit otherwise closed constructors or allocation in a source loop: every

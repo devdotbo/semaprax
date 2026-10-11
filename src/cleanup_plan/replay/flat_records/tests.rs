@@ -44,11 +44,12 @@ fn run(
 fn actual_nominal_make_identity_read_replay_matches_legacy_exact_and_one_short() {
     let fixture = crate::workspace_graph::SourceRecordReplayFixture::new(SOURCE);
     let standalone = program();
-    assert!(standalone.types.iter().any(|ty|
-        ty.id.as_str() == "flat.Packet"
+    assert!(standalone
+        .types
+        .iter()
+        .any(|ty| ty.id.as_str() == "flat.Packet"
             && matches!(&ty.kind, crate::hir::ResolvedTypeDeclarationKind::Record { fields }
-                if fields.len() == 3)
-    ));
+                if fields.len() == 3)));
     let standalone_function = standalone
         .functions
         .iter()
@@ -72,22 +73,28 @@ fn actual_nominal_make_identity_read_replay_matches_legacy_exact_and_one_short()
             .find(|f| f.id.as_str() == id)
             .unwrap();
         assert!(crate::hir::lexical_exit::requires(function).unwrap());
-        fixture.with_context(|context| {
-            let mut budget = ReplayBudget::new();
-            super::super::reserve_program_skeleton_work(
-                context,
-                std::iter::once(function),
-                &mut budget,
-            )
+        // The legacy reference requires the independently resolved program's
+        // genuine nominal TypeFacts. The retained primitive context intentionally
+        // contains direct field facts rather than generic nominal cleanup facts.
+        let legacy_function = standalone
+            .functions
+            .iter()
+            .find(|f| f.id.as_str() == id)
             .unwrap();
-            super::super::lexical_replay::validate_with_index(
-                context,
-                function,
-                &mut budget,
-                None,
-            )
-            .unwrap();
-        });
+        let mut budget = ReplayBudget::new();
+        super::super::reserve_program_skeleton_work(
+            &standalone,
+            std::iter::once(legacy_function),
+            &mut budget,
+        )
+        .unwrap();
+        super::super::lexical_replay::validate_with_index(
+            &standalone,
+            legacy_function,
+            &mut budget,
+            None,
+        )
+        .unwrap();
         let measured = run(&fixture, id, usize::MAX).unwrap();
         assert!(measured.charged() > 0);
         let exact = run(&fixture, id, measured.charged()).unwrap();

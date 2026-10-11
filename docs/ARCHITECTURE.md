@@ -1126,7 +1126,9 @@ lowering consume that checked representation; the profile has no public ABI.
 a borrowed Done/Yield condition, and an owning Step replacement. The independent
 `src/hir/iterator_loop.rs` recognizer authenticates the mutable seed and complete
 loop protocol; `src/hir/validation/iterator_loops.rs` preserves the ordinary
-body admission and exact ownership boundary. Cleanup build and replay select
+body admission and exact ownership boundary; its `iterator_loops/field_scope.rs`
+child confines owned Bytes pattern leaves to their authenticated current arm.
+Cleanup build and replay select
 v11, and graph selection independently binds it through v39. Wasm borrowed
 remainder bindings alias the active payload; consuming moves may clear only a
 distinct source slot. Native conditional owners stay in canonical plan storage.

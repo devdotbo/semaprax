@@ -29,6 +29,7 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/hir/validation/borrowed_bytes_call_tests.rs"),
         concat!(
             include_str!("../src/hir/validation/iterator_loops.rs"),
+            include_str!("../src/hir/validation/iterator_loops/field_scope.rs"),
             "\n",
             include_str!("../src/finite_byte_scratch.rs"),
             "\n",

@@ -1,4 +1,5 @@
 use super::*;
+mod field_scope;
 
 impl HirValidator<'_> {
     /// Bounded While-Loops v1 plus Indexed Byte Loop v2 admission re-check at
@@ -36,7 +37,7 @@ impl HirValidator<'_> {
         owned_item: Option<&ResolvedBinding>,
         finite_scratch: Option<&crate::finite_byte_scratch::ResolvedScratch<'_>>,
     ) -> Result<(), Diagnostic> {
-        let mut pending = vec![expression];
+        let mut pending = field_scope::Pending::new(expression, owned_item.is_some());
         while let Some(expression) = pending.pop() {
             match &expression.kind {
                 ResolvedExprKind::LexicalExit {
@@ -120,6 +121,7 @@ impl HirValidator<'_> {
                         && !named_str
                         && !cursor_borrow
                         && !self.is_owned_iterator_record_item(expression, owned_item)
+                        && !pending.admits(expression)
                         && (!crate::hir::is_scalar_resolved_type(&expression.ty)
                             || expression.ownership != OwnershipMode::Value)
                     {
@@ -668,7 +670,16 @@ impl HirValidator<'_> {
                         ));
                     }
                     for arm in arms.iter().rev() {
-                        pending.push(&arm.value);
+                        if owned_record {
+                            let fields = field_scope::fields(
+                                &self.program.declarations,
+                                owned_item.expect("authenticated owned item"),
+                                arm,
+                            )?;
+                            pending.push_scoped(&arm.value, Some(fields));
+                        } else {
+                            pending.push(&arm.value);
+                        }
                         if let Some(guard) = &arm.guard {
                             pending.push(guard);
                         }
@@ -687,7 +698,7 @@ impl HirValidator<'_> {
                 ResolvedExprKind::Yield { request } => pending.push(request),
             }
         }
-        Ok(())
+        pending.finish()
     }
 
     pub(super) fn validate_loop_pair(

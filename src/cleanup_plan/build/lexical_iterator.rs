@@ -5,6 +5,52 @@ use super::*;
 pub(super) mod lookup;
 
 impl PlanBuilder<'_> {
+    /// Retain the structurally required, inactive Done temporary in its authored
+    /// arm scope. The exact true-condition proof excludes runtime completion,
+    /// not the full typed inventory or its storage-to-region correspondence.
+    pub(super) fn prepare_true_iterator_match(
+        &mut self,
+        expression: &ResolvedExpr,
+        parent: CleanupRegionId,
+    ) -> Result<usize, Diagnostic> {
+        if !self
+            .lexical
+            .as_ref()
+            .is_some_and(|control| control.is_true_iterator_match(&expression.id))
+        {
+            return Ok(0);
+        }
+        let ResolvedExprKind::Match {
+            mode: ResolvedMatchMode::Own,
+            scrutinee,
+            arms,
+            ..
+        } = &expression.kind
+        else {
+            return Err(plan_error("true iterator body lost its owned match"));
+        };
+        let [done, _] = arms.as_slice() else {
+            return Err(plan_error("true iterator body lost its exact two arms"));
+        };
+        if done.guard.is_some()
+            || done.value.ownership != OwnershipMode::Own
+            || done.value.ty != scrutinee.ty
+            || !matches!(&done.value.kind, ResolvedExprKind::ConstructVariant { variant, case, fields }
+                if variant.as_str() == crate::iterator_ops::STEP_ID
+                    && case.as_str() == crate::iterator_ops::DONE_ID && fields.is_empty())
+        {
+            return Err(plan_error(
+                "true iterator Done is not its childless owned constructor",
+            ));
+        }
+        let region = self.new_region(parent)?;
+        self.expression_slot(&done.value, region)?;
+        self.mark_abrupt_region(region)?;
+        // No initialization, transition, normal endpoint or finalizer is minted:
+        // the constructor remains structurally present and runtime inactive.
+        Ok(1)
+    }
+
     /// The same authored Next is lowered once per finite continuation domain
     /// and once on its ordinary tail. All instances share one typed argument
     /// slot in the original Yield block, not fresh storage or broader authority.

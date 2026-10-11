@@ -55,4 +55,35 @@ fn consuming_rows_keep_later_cell_and_settle_partial_push_failure_on_reentry() {
     super::run_wasm(&full, 13, 0, "none");
     interpret(BODY, 29, None);
     super::run_wasm(BODY, 0, 29, "none");
+    let transformed = BODY
+        .replace("@id(\"app.main\")", "@id(\"app.output\") record Output {@id(\"app.output.priority\") priority:i64,@id(\"app.output.title\") title:string,@id(\"app.output.payload\") payload:Bytes,}\n@id(\"app.main\")")
+        .replace("let mut words=vec_with_capacity<Row>", "let mut words=vec_with_capacity<Output>")
+        .replace("words=vec_push<Row>(words,item);0", "let _=match own item {Row{priority,title,payload}=>{if priority==7 {words=vec_push<Output>(words,Output{priority:priority+1,title:title,payload:payload});}0},};0")
+        .replace("if vec_len<Row>(words)==2usize", "let mut observed=0;for borrow row in words {let title=row.title;let data=row.payload;if row.priority==8 && str_len_bytes(title)==2 && byte_len(data)==1usize {observed=observed+1;}0} if observed==2 && vec_len<Output>(words)==2usize");
+    for _ in 0..3 {
+        interpret(&transformed, 29, None);
+        super::run_wasm(&transformed, 0, 29, "none");
+    }
+    // The unselected row's String and Bytes fields settle in the owned arm.
+    let conditional_false = transformed
+        .replace(
+            "let inputs=vec_push<Row>(first,Row{priority:7",
+            "let inputs=vec_push<Row>(first,Row{priority:8",
+        )
+        .replace(
+            "observed==2 && vec_len<Output>(words)==2usize",
+            "observed==1 && vec_len<Output>(words)==1usize",
+        );
+    interpret(&conditional_false, 29, None);
+    super::run_wasm(&conditional_false, 0, 29, "none");
+    // First transformed row is retained; the second staged row fails to push.
+    let full = transformed.replace(
+        "let mut words=vec_with_capacity<Output>(2usize)",
+        "let mut words=vec_with_capacity<Output>(1usize)",
+    );
+    interpret(&full, 0, Some(1));
+    super::run_wasm(&full, 13, 0, "none");
+    super::run_wasm(&transformed, 15, 0, "codec-push-4");
+    interpret(&transformed, 29, None);
+    super::run_wasm(&transformed, 0, 29, "none");
 }

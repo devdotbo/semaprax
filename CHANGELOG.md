@@ -1,6 +1,9 @@
 # Changelog
 
 - Generate direct ASCII scalar/advance checks for JSON identifier validation and owned UTF-8 prefixes, retaining original escape/non-ASCII validation and all grammar, size and fuel limits. Independent original-path differential and maximum-capacity backend gates await qualification.
+- Retain inactive iterator Done storage in its exact authored region and confine
+  owned record Bytes-field moves to authenticated match-arm bindings. Preserve
+  full structural replay and path limits; grouped backend qualification pending.
 
 - Authored scalar expression statements: intermediate Copy scalar `expr;` keeps canonical spelling and lowers to hygienic immutable ordinary lets. Final-tail, underscore, owning discard and lexical initializer boundaries remain checked; qualification pending.
 
