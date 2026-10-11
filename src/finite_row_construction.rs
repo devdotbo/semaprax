@@ -8,8 +8,37 @@ mod consumers;
 #[cfg(test)]
 mod tests;
 
-struct Proof {
-    iterations: u32,
+pub(crate) struct Proof<'a> {
+    pub(crate) iterations: u32,
+    pub(crate) width: u64,
+    pub(crate) function: &'a crate::hir::ResolvedFunction,
+    pub(crate) record: &'a crate::hir::ResolvedTypeDeclaration,
+    pub(crate) vector: &'a ResolvedBinding,
+    pub(crate) counter: &'a ResolvedBinding,
+    pub(crate) item: &'a ResolvedBinding,
+    pub(crate) condition: &'a E,
+    pub(crate) body: &'a E,
+    pub(crate) constructor: &'a E,
+    pub(crate) push: &'a E,
+    pub(crate) step: &'a E,
+    pub(crate) suffix: &'a [S],
+    pub(crate) tail: &'a E,
+}
+fn inspect(program: &ResolvedProgram) -> Option<Proof<'_>> {
+    inspect_limit(
+        program,
+        u64::from(crate::byte_data_capacity::MAX_BYTES_COPY_SITES),
+    )
+}
+/// Private structural prerequisite only; ordinary capacity callers retain 32.
+pub(crate) fn fusion_structure(program: &ResolvedProgram) -> Option<Proof<'_>> {
+    inspect_limit(
+        program,
+        crate::vec_ops::MAX_CAPACITY.min(
+            crate::vec_ops::MAX_OWNED_PAYLOAD_BYTES
+                / (2 * crate::vec_ops::OWNED_PAYLOAD_BYTES_PER_ELEMENT),
+        ),
+    )
 }
 fn typed(e: &E, ty: &T, mode: O) -> bool {
     e.ty == *ty && e.ownership == mode
@@ -48,7 +77,7 @@ fn call<'a>(e: &'a E, id: &str, types: &[T]) -> Option<&'a [E]> {
         _ => None,
     }
 }
-fn inspect(program: &ResolvedProgram) -> Option<Proof> {
+fn inspect_limit(program: &ResolvedProgram, limit: u64) -> Option<Proof<'_>> {
     if program.functions.len() != 1
         || !program.function_instances.is_empty()
         || !program.function_templates.is_empty()
@@ -162,7 +191,7 @@ fn inspect(program: &ResolvedProgram) -> Option<Proof> {
         return None;
     };
     let count = usize_value(capacity)?;
-    if count == 0 || count > u64::from(crate::byte_data_capacity::MAX_BYTES_COPY_SITES) {
+    if count == 0 || count > limit {
         return None;
     }
     let K::Binary {
@@ -274,6 +303,19 @@ fn inspect(program: &ResolvedProgram) -> Option<Proof> {
     consumers::validate(program, suffix, tail, element)?;
     Some(Proof {
         iterations: u32::try_from(count).ok()?,
+        width,
+        function: f,
+        record: declaration,
+        vector,
+        counter,
+        item,
+        condition,
+        body,
+        constructor,
+        push,
+        step,
+        suffix,
+        tail,
     })
 }
 pub(crate) fn resolved(program: &ResolvedProgram, condition: &E, body: &E) -> Option<u32> {
