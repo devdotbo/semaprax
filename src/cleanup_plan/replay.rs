@@ -26,6 +26,8 @@ pub(crate) use physical_storage::{
 };
 #[cfg(test)]
 mod physical_observation_tests;
+#[cfg(test)]
+mod primitive_fixture;
 use expression_children::replay_expression_child;
 use expression_facts::expression_facts;
 

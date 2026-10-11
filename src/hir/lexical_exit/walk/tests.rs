@@ -30,12 +30,13 @@ fn assert_order(expression: &ResolvedExpr) {
 fn checked_mixed_blocks_and_exit_operands_preserve_original_child_order() {
     let function = function(
         r#"module cursor.mixed;
-@id("main") fn main(n:i64)->i64 {
+@id("cursor.probe") fn probe(n:i64)->i64 {
  let mut i=0;
- while i<n {i=i+1;if i==2 {continue;};if i==3 {break;};0}
- if i>0 {return i+1;};
+ while i<n {i=i+1;if i==2 {continue;}else{0};if i==3 {break;}else{0};0}
+ if i>0 {return i+1;}else{0};
  return 0;
 }
+@id("main") fn main()->i64 {probe(4)}
 "#,
     );
     assert!(requires(&function).unwrap());

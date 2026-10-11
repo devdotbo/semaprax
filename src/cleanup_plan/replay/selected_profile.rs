@@ -264,6 +264,7 @@ mod tests {
     #[test]
     fn child_cursor_frames_reserve_exact_and_one_short_before_profile_scan() {
         let program = checked();
+        let context = super::super::primitive_fixture::Context::new(&program);
         let function = program
             .functions
             .iter()
@@ -271,11 +272,11 @@ mod tests {
             .unwrap();
         let bytes = std::mem::size_of::<[Frame<'_>; DEPTH]>();
         let mut exact = budget(bytes);
-        validate(&program, function, &mut exact).unwrap();
+        validate(&context, function, &mut exact).unwrap();
         assert_eq!(exact.physical.as_ref().unwrap().charged(), bytes);
         let mut short = budget(bytes - 1);
         assert_eq!(
-            validate(&program, function, &mut short).unwrap_err().code,
+            validate(&context, function, &mut short).unwrap_err().code,
             "SPX-H006"
         );
         assert!(short.physical.as_mut().unwrap().reserve(0).is_err());
@@ -283,6 +284,7 @@ mod tests {
     #[test]
     fn child_cursor_checks_the_late_branch_without_granting_hostile_nominal_storage() {
         let program = checked();
+        let context = super::super::primitive_fixture::Context::new(&program);
         let mut function = program
             .functions
             .iter()
@@ -299,7 +301,7 @@ mod tests {
             declaration: crate::hir::DeclarationId::new("forged.record"),
             arguments: Vec::new(),
         };
-        let error = validate(&program, &function, &mut budget(usize::MAX)).unwrap_err();
+        let error = validate(&context, &function, &mut budget(usize::MAX)).unwrap_err();
         assert_eq!(error.code, "SPX-H006");
         assert!(error
             .message

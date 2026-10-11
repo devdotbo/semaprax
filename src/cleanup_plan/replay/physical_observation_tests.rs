@@ -15,10 +15,11 @@ module replay.physical;
     while next<3 {
         next=next+1;
         let view=str_as_bytes(key);
-        if flag && next==1 {continue;};
+        if flag && next==1 {continue;}else{0};
         if next==2 {
             return if byte_len(view)==3usize && byte_len(scratch_view)==3usize {7}else{0};
-        };
+        }else{0};
+        0
     }
     9
 }
@@ -34,6 +35,7 @@ fn program() -> crate::hir::ResolvedProgram {
 #[test]
 fn selected_static_text_and_bytes_replay_covers_observed_layouts_at_exact_limit() {
     let program = program();
+    let context = super::primitive_fixture::Context::new(&program);
     let function = program
         .functions()
         .iter()
@@ -44,7 +46,7 @@ fn selected_static_text_and_bytes_replay_covers_observed_layouts_at_exact_limit(
     let ((wide, charged), refused, outer) =
         crate::bounded_output::with_limit_usage(64 * 1024 * 1024, || {
             let (result, metrics) = test_allocation_observer::measure(|| {
-                validate_retained_lexical_with_limit(&program, function, 64 * 1024 * 1024)
+                validate_retained_lexical_with_limit(&context, function, 64 * 1024 * 1024)
             });
             (result, metrics)
         });
@@ -66,7 +68,7 @@ fn selected_static_text_and_bytes_replay_covers_observed_layouts_at_exact_limit(
     );
     let ((exact, observed), refused, used) = crate::bounded_output::with_limit_usage(outer, || {
         test_allocation_observer::measure(|| {
-            validate_retained_lexical_with_limit(&program, function, outer)
+            validate_retained_lexical_with_limit(&context, function, outer)
         })
     });
     exact.unwrap();
@@ -79,7 +81,7 @@ fn selected_static_text_and_bytes_replay_covers_observed_layouts_at_exact_limit(
     // below, not silently subtracted or represented as successful-path backing.
     let ((short, report), _, _) = crate::bounded_output::with_limit_usage(64 * 1024 * 1024, || {
         test_allocation_observer::measure(|| {
-            validate_retained_lexical_with_limit(&program, function, outer - 1)
+            validate_retained_lexical_with_limit(&context, function, outer - 1)
         })
     });
     assert_eq!(short.unwrap_err().code, "SPX-H006");

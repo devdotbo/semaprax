@@ -145,12 +145,12 @@ mod tests {
     #[test]
     fn wide_helper_cursor_retains_late_constructor_refusal() {
         let mut source = String::from(
-            "module cursor.helper; @id(\"cursor.fill\") fn fill(output:own Bytes)->Bytes {",
+            "module cursor.helper; @id(\"cursor.fill\") fn fill(output:own Bytes)->Bytes requires 0usize<byte_len(bytes_as_slice(output)) {",
         );
         for index in 0..32 {
             source.push_str(&format!("let value_{index}={index};"));
         }
-        source.push_str("bytes_set(output,0usize,65u8)} @id(\"app.main\") fn main()->i64 {0}");
+        source.push_str("let mut next=output; next=bytes_set(next,0usize,65u8); next} @id(\"app.main\") fn main()->i64 {0}");
         let checked = crate::check(&source, "helper-proof-cursor.spx").unwrap();
         let mut program = crate::hir::resolve(&checked).unwrap();
         let function = program
@@ -167,7 +167,7 @@ mod tests {
         let ResolvedExprKind::Block { statements, .. } = &mut function.body.kind else {
             panic!("helper body remains a block")
         };
-        let crate::hir::ResolvedStatement::Let { value, .. } = statements.last_mut().unwrap()
+        let crate::hir::ResolvedStatement::Let { value, .. } = statements.iter_mut().find(|statement| matches!(statement, crate::hir::ResolvedStatement::Let { binding, .. } if binding.name == "value_31")).unwrap()
         else {
             panic!("last copied scalar remains a let")
         };

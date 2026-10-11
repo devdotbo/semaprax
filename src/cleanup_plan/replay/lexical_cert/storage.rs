@@ -239,7 +239,7 @@ mod tests {
     use super::*;
     fn function() -> ResolvedFunction {
         let parsed = crate::check(
-            "module cert; @id(\"main\") fn main()->i64 { let mut i=0; while i<3 { i=i+1; } i }",
+            "module cert; @id(\"main\") fn main()->i64 { let mut i=0; while i<3 { i=i+1; 0 } i }",
             "cert.spx",
         )
         .unwrap();

@@ -196,7 +196,8 @@ mod tests {
             .unwrap()
             .clone();
         let mut reserved = budget(usize::MAX);
-        let indexed = Context::new(&program, &main, &mut reserved).unwrap();
+        let primitive = super::super::primitive_fixture::Context::new(&program);
+        let indexed = Context::new(&primitive, &main, &mut reserved).unwrap();
         let error = selected_context::Context::new(&indexed, &main, &mut reserved)
             .err()
             .unwrap();
