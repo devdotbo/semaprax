@@ -793,6 +793,46 @@ fn retained_imported_record_and_helper_use_the_actual_typed_namespace() {
         .unwrap();
     assert_ne!(spelled_scan.params[0].ty, imported_rows);
     runtime_parity(&retained, &control, Some(8));
+
+    // This independently exercises the new defining-record helper signature,
+    // rather than only importing a record used by a primitive-parameter helper.
+    let borrowed_provider = PROVIDER.replace(
+        "fn weight(n:i64)->i64 {n+1}",
+        "fn weight(row:borrow Row)->i64 {row.n+1}",
+    );
+    let borrowed_consumer = IMPORTED.replace("weight(row.n)", "weight(row)");
+    let borrowed = build_imported(&borrowed_provider, &borrowed_consumer);
+    admitted(&borrowed);
+    let borrowed_local = local
+        .replace(
+            "fn weight(n:i64)->i64 {n+1}",
+            "fn weight(row:borrow Row)->i64 {row.n+1}",
+        )
+        .replace("weight(row.n)", "weight(row)");
+    let borrowed_control = direct(&borrowed_local);
+    runtime_parity(&borrowed, &borrowed_control, Some(8));
+    // Authentication and every helper/consumer replay transfer the same
+    // preparation; this is distinct from the independent direct runtime oracle.
+    let scan = function(writer(&borrowed), "static.scan");
+    let preparation = SelectedReplayPreparation::with_limits(scan, WIDE_WORK, WIDE_BYTES).unwrap();
+    super::super::primitive::with_prepared_test_context(
+        writer(&borrowed),
+        &borrowed.hir.modules,
+        &borrowed.hir.declarations,
+        preparation,
+        |context, preparation| -> Result<(), Diagnostic> {
+            let helper = (0..context.function_count())
+                .filter_map(|i| context.function_at(i))
+                .find(|f| f.id.as_str() == "rows.weight")
+                .unwrap();
+            let mut session = SelectedReplaySession::from_preparation(context, scan, preparation)?;
+            session.validate_scalar(helper)?;
+            session.validate(scan)?;
+            session.finish()
+        },
+    )
+    .unwrap()
+    .unwrap();
 }
 
 #[test]
