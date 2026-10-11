@@ -5395,7 +5395,11 @@ fn expression_skeleton(
                                     ));
                                 };
                                 typed_storage::unsupported_provider(work)?;
-                                if record_destructure::contains_nested(fields) {
+                                if record_destructure::contains_nested(
+                                    program.declarations(),
+                                    instance,
+                                    fields,
+                                ) {
                                     let expected = record_destructure::replay(
                                         program, function, record, instance, fields, *mode,
                                     )?;
@@ -5957,7 +5961,7 @@ fn validate_match_skeleton_shape(
                     "explicit record match instance is not nominal",
                 ));
             };
-            if record_destructure::contains_nested(fields) {
+            if record_destructure::contains_nested(program.declarations(), instance, fields) {
                 let expected =
                     record_destructure::replay(program, function, record, instance, fields, *mode)?;
                 if !expected.nested {
@@ -7565,7 +7569,10 @@ fn expression_has_explicit_record_match(expression: &ResolvedExpr) -> bool {
     })
 }
 
-fn expression_has_nested_record_destructure(expression: &ResolvedExpr) -> bool {
+fn expression_has_nested_record_destructure(
+    program: &dyn crate::cleanup::ReplayContext,
+    expression: &ResolvedExpr,
+) -> bool {
     expression_has_kind(expression, |kind| {
         matches!(
             kind,
@@ -7575,8 +7582,8 @@ fn expression_has_nested_record_destructure(expression: &ResolvedExpr) -> bool {
                 ..
             } if arms.iter().any(|arm| matches!(
                 &arm.pattern,
-                ResolvedMatchPattern::Record { fields, .. }
-                    if record_destructure::contains_nested(fields)
+                ResolvedMatchPattern::Record { instance, fields, .. }
+                    if record_destructure::contains_nested(program.declarations(), instance, fields)
             ))
         )
     })

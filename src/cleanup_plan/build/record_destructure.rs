@@ -29,11 +29,16 @@ pub(super) struct Destructure {
     pub(super) owned_bindings: Vec<OwnedBinding>,
 }
 
-pub(super) fn contains_nested(fields: &[ResolvedRecordMatchPatternField]) -> bool {
+pub(super) fn contains_nested(
+    index: &crate::hir::DeclarationIndex,
+    root: &ResolvedType,
+    fields: &[ResolvedRecordMatchPatternField],
+) -> bool {
     fields.iter().any(|field| match &field.pattern {
         ResolvedRecordMatchFieldPattern::Record { .. } => true,
         ResolvedRecordMatchFieldPattern::Binding(binding) => {
             crate::hir::owned_record_subtree::candidate(binding)
+                && crate::hir::owned_record_subtree::admitted(index, root, &binding.ty)
         }
         ResolvedRecordMatchFieldPattern::Wildcard => false,
     })
@@ -109,7 +114,7 @@ pub(super) fn observe_borrow(
     else {
         return Ok(());
     };
-    if contains_nested(fields) {
+    if contains_nested(&builder.program.declarations, instance, fields) {
         let result = derive(
             builder.program,
             record,

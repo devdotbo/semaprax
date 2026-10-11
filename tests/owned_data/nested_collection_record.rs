@@ -3,6 +3,7 @@ use semaprax::interpreter::{self, InterpreterOptions};
 use std::sync::atomic::{AtomicU64, Ordering};
 #[path = "nested_collection_record/failure.rs"]
 pub(super) mod failure;
+#[path = "nested_collection_record/subtree.rs"]
 mod subtree;
 
 static NEXT: AtomicU64 = AtomicU64::new(0);

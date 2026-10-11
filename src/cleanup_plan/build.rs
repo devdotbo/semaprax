@@ -3700,7 +3700,7 @@ impl<'a> PlanBuilder<'a> {
                     arms,
                 } => {
                     if mode != ResolvedMatchMode::Value {
-                        schema::promote_match(&mut self.schema, arms);
+                        schema::promote_match(&self.program.declarations, &mut self.schema, arms);
                     }
                     let scrutinee_result = results.pop().expect("match scrutinee result retained");
                     if scrutinee_result.owned_source.is_some() && mode == ResolvedMatchMode::Value {
@@ -5955,7 +5955,7 @@ impl<'a> PlanBuilder<'a> {
             return Err(plan_error("match oracle received a non-match expression"));
         };
         if *mode != ResolvedMatchMode::Value {
-            schema::promote_match(&mut self.schema, arms);
+            schema::promote_match(&self.program.declarations, &mut self.schema, arms);
         }
         if arms.is_empty() {
             return Err(plan_error("copy-variant match has no arms"));

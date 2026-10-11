@@ -436,6 +436,8 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
             "\n",
             include_str!("../../../../../src/source_verify/declared_type.rs"),
             "\n",
+            include_str!("../../../../../src/source_verify/declared_type/subtree.rs"),
+            "\n",
             include_str!("../../../../../src/source_verify/declared_type/generic_composition.rs"),
             "\n",
             include_str!("../../../../../src/source_verify/declared_type/generic_collection.rs"),

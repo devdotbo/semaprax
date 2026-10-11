@@ -146,12 +146,16 @@ pub(super) fn promote_v7(schema: &mut &'static str) {
     }
 }
 
-pub(super) fn promote_match(schema: &mut &'static str, arms: &[crate::hir::ResolvedMatchArm]) {
+pub(super) fn promote_match(
+    index: &crate::hir::DeclarationIndex,
+    schema: &mut &'static str,
+    arms: &[crate::hir::ResolvedMatchArm],
+) {
     if arms.iter().any(|arm| {
         matches!(
             &arm.pattern,
-            crate::hir::ResolvedMatchPattern::Record { fields, .. }
-                if super::record_destructure::contains_nested(fields)
+            crate::hir::ResolvedMatchPattern::Record { instance, fields, .. }
+                if super::record_destructure::contains_nested(index, instance, fields)
         )
     }) {
         promote_v8(schema);

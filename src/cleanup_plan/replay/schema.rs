@@ -34,7 +34,7 @@ pub(super) fn selected_schema_with_index(
         crate::cleanup::cleanup_shape_profile(&slot.shape)
             .map(|profile| nested || profile.has_nested_owned_bytes)
     })?;
-    let has_nested_record_destructure = record_destructure::function_contains(function);
+    let has_nested_record_destructure = record_destructure::function_contains(program, function);
     let has_nested_record_update =
         record_destructure::update::function_contains(program, function)?;
     Ok(if crate::byte_ops::requires_same_owner_set(function) {

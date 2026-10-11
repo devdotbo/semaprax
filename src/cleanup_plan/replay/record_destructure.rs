@@ -139,26 +139,34 @@ pub(super) struct ExpectedDestructure {
     pub(super) bindings: Vec<ExpectedBinding>,
 }
 
-pub(super) fn contains_nested(fields: &[ResolvedRecordMatchPatternField]) -> bool {
+pub(super) fn contains_nested(
+    index: &crate::hir::DeclarationIndex,
+    root: &ResolvedType,
+    fields: &[ResolvedRecordMatchPatternField],
+) -> bool {
     fields.iter().any(|field| match &field.pattern {
         ResolvedRecordMatchFieldPattern::Record { .. } => true,
         ResolvedRecordMatchFieldPattern::Binding(binding) => {
             crate::hir::owned_record_subtree::candidate(binding)
+                && crate::hir::owned_record_subtree::admitted(index, root, &binding.ty)
         }
         ResolvedRecordMatchFieldPattern::Wildcard => false,
     })
 }
 
-pub(super) fn function_contains(function: &crate::hir::ResolvedFunction) -> bool {
+pub(super) fn function_contains(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &crate::hir::ResolvedFunction,
+) -> bool {
     function
         .requires
         .iter()
-        .any(super::expression_has_nested_record_destructure)
+        .any(|expr| super::expression_has_nested_record_destructure(program, expr))
         || function
             .ensures
             .iter()
-            .any(super::expression_has_nested_record_destructure)
-        || super::expression_has_nested_record_destructure(&function.body)
+            .any(|expr| super::expression_has_nested_record_destructure(program, expr))
+        || super::expression_has_nested_record_destructure(program, &function.body)
 }
 
 struct Pending<'a> {

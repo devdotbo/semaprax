@@ -247,4 +247,5 @@ module test.cleanup_nested_update;
     assert!(validate_structure(&program, &downgraded).is_err());
 }
 
+#[path = "nested_record_destructure_tests/subtree.rs"]
 mod subtree;
