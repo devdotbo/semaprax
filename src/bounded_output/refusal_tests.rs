@@ -145,6 +145,14 @@ fn reservation_stage_is_first_failure_only_and_nested_budget_is_unlabelled() {
     });
     assert_eq!(unlabelled.unwrap().stage, None);
     for stage in [
+        ReservationStage::ResolvedCore,
+        ReservationStage::CompactValidation,
+        ReservationStage::UncachedSyntheticPeak,
+        ReservationStage::AuthoredModuleValidation,
+        ReservationStage::FrontendLookup,
+        ReservationStage::SelectiveResolution,
+        ReservationStage::FrontendRetention,
+        ReservationStage::ImportedVecInstances,
         ReservationStage::ExpectedEdges,
         ReservationStage::ResolvedCallEdges,
         ReservationStage::StubSignatures,
@@ -154,11 +162,13 @@ fn reservation_stage_is_first_failure_only_and_nested_budget_is_unlabelled() {
         ReservationStage::EdgeProof,
     ] {
         let (_, overflowed, used, refusal) = with_limit_usage_refusal(3, || {
-            with_reservation_stage(stage, || {
-                assert!(reserve_active_required(2));
-                assert!(!reserve_active_required(2));
+            with_reservation_stage(ReservationStage::ResolvedCore, || {
+                with_reservation_stage(stage, || {
+                    assert!(reserve_active_required(2));
+                    assert!(!reserve_active_required(2));
+                });
+                assert!(!reserve_active_required(5));
             });
-            assert!(!reserve_active_required(5));
         });
         assert!(overflowed);
         assert_eq!(used, 2);
@@ -173,6 +183,20 @@ fn reservation_stage_is_first_failure_only_and_nested_budget_is_unlabelled() {
         );
         assert!(!stage.label().is_empty());
     }
+    let (_, overflowed, used, restored) = with_limit_usage_refusal(1, || {
+        with_reservation_stage(ReservationStage::ResolvedCore, || {
+            with_reservation_stage(ReservationStage::FrontendLookup, || {
+                assert!(reserve_active_required(0));
+            });
+            assert!(!reserve_active_required(2));
+        });
+    });
+    assert!(overflowed);
+    assert_eq!(used, 0);
+    assert_eq!(
+        restored.unwrap().stage,
+        Some(ReservationStage::ResolvedCore)
+    );
 }
 
 #[test]

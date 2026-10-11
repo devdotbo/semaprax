@@ -40,3 +40,38 @@ fn live_builder_help_names_only_a_scoped_compiler_stage() {
     assert!(help.contains("Authenticated internal stage: fresh HIR resolution."));
     assert!(help.contains("exact inner operation is unknown"));
 }
+
+#[test]
+fn live_core_stage_receipts_retain_the_actual_request_and_residual() {
+    use crate::bounded_output::{self, ReservationStage as Stage};
+    for stage in [
+        Stage::ResolvedCore,
+        Stage::CompactValidation,
+        Stage::UncachedSyntheticPeak,
+        Stage::AuthoredModuleValidation,
+        Stage::FrontendLookup,
+        Stage::SelectiveResolution,
+        Stage::FrontendRetention,
+        Stage::ImportedVecInstances,
+    ] {
+        let (_, overflowed, used, refusal) = bounded_output::with_limit_usage_refusal(755, || {
+            bounded_output::with_reservation_stage(Stage::ResolvedCore, || {
+                bounded_output::with_reservation_stage(stage, || {
+                    assert!(!bounded_output::reserve_active_required(2048));
+                });
+                assert!(!bounded_output::reserve_active_required(4096));
+            });
+        });
+        assert!(overflowed);
+        assert_eq!(used, 0);
+        let diagnostic = live_builder_refusal(super::super::MAX_BUILDER_BYTES, refusal);
+        assert_eq!(diagnostic.code, "SPX-G171");
+        assert!(diagnostic.path.is_none());
+        assert!(diagnostic.span.is_none());
+        let help = diagnostic.help.unwrap();
+        assert!(help.contains("requested 2048 bytes with 755 remaining and 0 reserved floor"));
+        assert!(help.contains(&format!("Authenticated internal stage: {}.", stage.label())));
+        assert!(help.contains("exact inner operation is unknown"));
+        assert!(help.len() < 4096);
+    }
+}

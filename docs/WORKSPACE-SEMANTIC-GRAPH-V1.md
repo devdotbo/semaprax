@@ -204,6 +204,11 @@ compiler-owned internal stage may identify the enclosing prebound, synthetic
 module construction, cached HIR validation, fresh HIR resolution, or resolved
 module retention operation. An unlabelled reservation reports stage `unknown`;
 the stage never comes from source and does not identify the exact inner call.
+Resolved-core construction provides an enclosing fallback label; compact
+validation inventory, uncached synthetic AST peak reservations, authored module
+signature validation, frontend lookup/resolution/retention and imported Vec
+instance inventory have narrower operation labels. These labels neither alter
+the cumulative ledger nor attribute a prior unlabelled refusal retrospectively.
 These quantities describe the cumulative reservation ledger, not a retained
 peak forecast, allocator measurement, or process RSS. The SPX-G171 code,
 message, source immutability, and ceiling are unchanged. Missing evidence is

@@ -16,6 +16,14 @@ pub(crate) struct ReservationRefusal {
 /// They never derive from source or from a forecast.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum ReservationStage {
+    ResolvedCore,
+    CompactValidation,
+    UncachedSyntheticPeak,
+    AuthoredModuleValidation,
+    FrontendLookup,
+    SelectiveResolution,
+    FrontendRetention,
+    ImportedVecInstances,
     CorePrebound,
     ExpectedEdges,
     ResolvedCallEdges,
@@ -36,6 +44,14 @@ pub(crate) enum ReservationStage {
 impl ReservationStage {
     pub(crate) fn label(self) -> &'static str {
         match self {
+            Self::ResolvedCore => "resolved core construction",
+            Self::CompactValidation => "compact validation inventory construction",
+            Self::UncachedSyntheticPeak => "uncached synthetic AST peak reservation",
+            Self::AuthoredModuleValidation => "authored module signature validation",
+            Self::FrontendLookup => "frontend checked module lookup",
+            Self::SelectiveResolution => "frontend selective function resolution",
+            Self::FrontendRetention => "frontend resolved module retention",
+            Self::ImportedVecInstances => "imported Vec instance inventory",
             Self::CorePrebound => "resolved-core prebound",
             Self::ExpectedEdges => "expected workspace edges",
             Self::ResolvedCallEdges => "resolved call edges",

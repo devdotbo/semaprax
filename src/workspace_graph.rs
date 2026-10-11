@@ -4182,17 +4182,20 @@ fn build_owned_inner(
             crate::bounded_output::with_limit_usage_refusal(active_builder_limit(), || {
                 reserve_builder_structure(layouts.receipt())?;
                 staged!(CorePrebound, charge_builder_prebound(resolve_builder_bytes))?;
-                build_resolved_core(
-                    &programs,
-                    &module_paths,
-                    &dependency_depths,
-                    &authored,
-                    Some(&sources),
-                    frontend.as_deref_mut(),
-                    &layouts,
-                    compact_layout
-                        .as_ref()
-                        .map(|layout| &layout.order[..programs.len()]),
+                staged!(
+                    ResolvedCore,
+                    build_resolved_core(
+                        &programs,
+                        &module_paths,
+                        &dependency_depths,
+                        &authored,
+                        Some(&sources),
+                        frontend.as_deref_mut(),
+                        &layouts,
+                        compact_layout
+                            .as_ref()
+                            .map(|layout| &layout.order[..programs.len()]),
+                    )
                 )
             });
         core_builder_bytes = core_builder_bytes.max(consumed);
@@ -4402,7 +4405,7 @@ fn build_resolved_core(
     // The final uncached attempt uses a compact index and sequential HIR
     // filtering; earlier receipts retain the complete synthetic HIR vector.
     let mut validation = retained_output_only
-        .then(|| WorkspaceValidationIndex::new(programs))
+        .then(|| staged!(CompactValidation, WorkspaceValidationIndex::new(programs)))
         .transpose()?;
     let authority = expected_projection::private_layout::authority::invocation::Invocation::new(
         programs, authored,
@@ -4423,12 +4426,15 @@ fn build_resolved_core(
     for index in 0..programs.len() {
         let program = &programs[compact_order.map_or(index, |order| order[index])];
         if retained_output_only {
-            expected_projection::uncached_peak::charge_uncached_synthetic_ast_with_registry(
-                program,
-                authored,
-                programs,
-                &mut synthetic_ast_peak,
-                Some(layouts),
+            staged!(
+                UncachedSyntheticPeak,
+                expected_projection::uncached_peak::charge_uncached_synthetic_ast_with_registry(
+                    program,
+                    authored,
+                    programs,
+                    &mut synthetic_ast_peak,
+                    Some(layouts),
+                )
             )?;
         }
         let synthetic = staged!(
@@ -4441,9 +4447,12 @@ fn build_resolved_core(
             )
         )?;
         // Exact stubs/spans and the unconditional prebound govern hits.
-        let cached = frontend
-            .as_deref_mut()
-            .and_then(|cache| cache.checked_module(&program.path, &synthetic));
+        let cached = staged!(
+            FrontendLookup,
+            frontend
+                .as_deref_mut()
+                .and_then(|cache| cache.checked_module(&program.path, &synthetic))
+        );
         let (resolved, static_text) = if let Some((resolved, resolver_bytes, original_loan_bytes)) =
             cached
         {
@@ -4488,9 +4497,12 @@ fn build_resolved_core(
                 .map(|layout| layout.presentation(program, &synthetic))
                 .transpose()?
                 .flatten();
-            let selective = frontend
-                .as_deref()
-                .and_then(|cache| cache.resolve_functions(&program.path, &synthetic, private));
+            let selective = staged!(
+                SelectiveResolution,
+                frontend
+                    .as_deref()
+                    .and_then(|cache| cache.resolve_functions(&program.path, &synthetic, private))
+            );
             let (resolved, function_costs, reused_functions, static_text) =
                 crate::vec_ops::with_authenticated_linked_source(|| {
                     crate::box_ops::with_authenticated_linked_source(|| {
@@ -4516,15 +4528,18 @@ fn build_resolved_core(
                     .expect("resolved core has a builder budget"),
             );
             if let Some(cache) = frontend.as_deref_mut() {
-                cache.resolved_module(
-                    &program.path,
-                    synthetic,
-                    &resolved,
-                    resolver_bytes,
-                    resolved_loan_bytes(&resolved)?,
-                    function_costs,
-                    reused_functions,
-                );
+                staged!(FrontendRetention, {
+                    cache.resolved_module(
+                        &program.path,
+                        synthetic,
+                        &resolved,
+                        resolver_bytes,
+                        resolved_loan_bytes(&resolved)?,
+                        function_costs,
+                        reused_functions,
+                    );
+                    Ok::<(), Vec<Diagnostic>>(())
+                })?;
             }
             (resolved, static_text)
         };
@@ -4533,12 +4548,15 @@ fn build_resolved_core(
             verify_resolved_call_edges(program, &resolved, authored)
         )?;
         if let Some(validation) = validation.as_mut() {
-            validation.record_module_authored(
-                &program.module,
-                &resolved,
-                programs,
-                authored,
-                Some(&authority),
+            staged!(
+                AuthoredModuleValidation,
+                validation.record_module_authored(
+                    &program.module,
+                    &resolved,
+                    programs,
+                    authored,
+                    Some(&authority),
+                )
             )?;
             let (module, imported_instances) = staged!(
                 RetainedModule,
@@ -4553,9 +4571,12 @@ fn build_resolved_core(
                     authenticated_sources,
                 )
             )?;
-            owned_generics::merge_imported_vec_instances(
-                &mut imported_vec_instances,
-                imported_instances,
+            staged!(
+                ImportedVecInstances,
+                owned_generics::merge_imported_vec_instances(
+                    &mut imported_vec_instances,
+                    imported_instances,
+                )
             )?;
             modules.push(module);
         } else {
@@ -4617,15 +4638,21 @@ fn build_resolved_core(
                     authenticated_sources,
                 )
             )?;
-            owned_generics::merge_imported_vec_instances(
-                &mut imported_vec_instances,
-                imported_instances,
+            staged!(
+                ImportedVecInstances,
+                owned_generics::merge_imported_vec_instances(
+                    &mut imported_vec_instances,
+                    imported_instances,
+                )
             )?;
             modules.push(module);
         }
         declarations
     };
-    owned_generics::attach_imported_vec_instances(&mut modules, imported_vec_instances)?;
+    staged!(
+        ImportedVecInstances,
+        owned_generics::attach_imported_vec_instances(&mut modules, imported_vec_instances)
+    )?;
     staged!(
         RetainedFacts,
         retained_validation::validate_core_facts(
