@@ -212,6 +212,136 @@ fn hostile_ambiguous_failure_selection_still_refuses_contradiction() {
         .contains("is not exactly selected at its source site"));
 }
 
+/// Actual checked source: two conditional variant owners take opposing
+/// canonical terminal orders (`variant_owner_order.spx`).
+const VARIANT_OWNER_ORDER: &str = include_str!("variant_owner_order.spx");
+/// The loop's `continue`/`break` are the source's only lexical exits.
+const LEXICAL_LOOP: &str = "    let mut index = 0;\n    while index < rounds {\n        index = index + 1;\n        if index == 1 { continue; };\n        if index == 3 { break; };\n        0\n    }\n";
+
+fn variant_owner_program(source: &str) -> (crate::ast::Program, crate::hir::ResolvedProgram) {
+    let checked = crate::check(source, std::path::Path::new("variant-owner-order.spx"))
+        .expect("variant owner order source checks");
+    let program = crate::hir::resolve(&checked).expect("variant owner order source resolves");
+    crate::hir::validate(&program).expect("independent replay admits the variant owner plan");
+    (checked, program)
+}
+
+fn run_function(program: &crate::hir::ResolvedProgram) -> &crate::hir::ResolvedFunction {
+    program
+        .functions
+        .iter()
+        .find(|function| function.id.as_str() == "test.native_terminal_variant_order.run")
+        .expect("run is declared")
+}
+
+fn body_let(
+    function: &crate::hir::ResolvedFunction,
+    index: usize,
+) -> (&crate::hir::ResolvedBinding, &crate::hir::ResolvedExpr) {
+    let crate::hir::ResolvedExprKind::Block { statements, .. } = &function.body.kind else {
+        panic!("run body is a block");
+    };
+    let crate::hir::ResolvedStatement::Let { binding, value, .. } = &statements[index] else {
+        panic!("run statement {index} is a let");
+    };
+    (binding, value)
+}
+
+/// The exact compiler-built failure exit selected by one callee call site.
+fn call_failure<'p>(plan: &'p CleanupPlan, call: &ExpressionId) -> &'p ExitTarget {
+    let mut exits = plan.exits.iter().filter(|exit| {
+        matches!(&exit.continuation, ExitContinuation::ReturnFailure { source }
+            if source.expression == *call && source.lane == StatusLane::OperationFailure)
+    });
+    let exit = exits.next().expect("call site has its exact failure exit");
+    assert!(exits.next().is_none(), "call site selects one exit");
+    exit
+}
+
+fn payload_order(exit: &ExitTarget) -> Vec<StorageId> {
+    exit.finalize_in_order
+        .iter()
+        .map(|action| action.source.storage.clone())
+        .collect()
+}
+
+/// `older` (`body.s2`) and `newer` (`body.s10`) are sealed conditional variants.
+/// Before any join they finalize newest-first; the scalar `if` join rebuilds
+/// conditional roots by storage identity, where `…body.s10` precedes
+/// `…body.s2`, so later exits finalize `older` first. Both orders are canonical.
+#[test]
+fn checked_variant_owners_take_opposing_terminal_orders_and_lexical_sites_select_each() {
+    let (checked, program) = variant_owner_program(VARIANT_OWNER_ORDER);
+    let run = run_function(&program);
+    let plan = &run.cleanup_plan;
+    assert!(plan.lexical_control.is_some(), "loop exits make run lexical");
+    let (older, _) = body_let(run, 2);
+    let (newer, _) = body_let(run, 10);
+    let older = StorageId::Value(older.id.clone());
+    let newer = StorageId::Value(newer.id.clone());
+    let before = call_failure(plan, &body_let(run, 11).1.id);
+    let after = call_failure(plan, &body_let(run, 13).1.id);
+    assert_eq!(payload_order(before), [newer.clone(), older.clone()]);
+    assert_eq!(payload_order(after), [older, newer]);
+    assert!(plan.lexical_block_in_context(None, before.from));
+    assert!(plan.lexical_block_in_context(None, after.from));
+
+    let native = NativeBytesPlan::build(run)
+        .expect("lexical selection admits the opposing exact exits")
+        .expect("run owns Bytes slots");
+    assert!(native.exit_selected_terminal);
+    assert!(native.finalizers.is_empty(), "no shared order is invented");
+    assert_eq!(
+        native.epilogue(),
+        "    spx_runtime_invariant_failure(\"native terminal cleanup lacks its exact selected exit\");\n"
+    );
+    let generated = crate::codegen::emit_c(&checked).expect("native emits the lexical owner");
+    assert_eq!(
+        generated
+            .matches("native terminal cleanup lacks its exact selected exit")
+            .count(),
+        1,
+        "only run's unreachable common epilogue fails closed"
+    );
+}
+
+/// The same owners without lexical selection keep one shared epilogue, which
+/// cannot honor both exits: SPX-B104 names the function, both exits and slots.
+#[test]
+fn checked_nonlexical_variant_owner_conflict_still_refuses_with_exit_and_slot_detail() {
+    assert_eq!(VARIANT_OWNER_ORDER.matches(LEXICAL_LOOP).count(), 1);
+    let source = VARIANT_OWNER_ORDER.replace(LEXICAL_LOOP, "    let index = rounds;\n");
+    let (checked, program) = variant_owner_program(&source);
+    let run = run_function(&program);
+    let plan = &run.cleanup_plan;
+    assert!(plan.lexical_control.is_none());
+    let before = call_failure(plan, &body_let(run, 11).1.id);
+    let after = call_failure(plan, &body_let(run, 13).1.id);
+    let flag = |exit: &ExitTarget, index: usize| {
+        format!("spx_bytes_live_{}", exit.finalize_in_order[index].guard_flag.0)
+    };
+    assert_eq!(flag(before, 0), flag(after, 1));
+    assert_eq!(flag(before, 1), flag(after, 0));
+    let error = NativeBytesPlan::build(run).unwrap_err();
+    assert_eq!(error.code, "SPX-B104");
+    for expected in [
+        format!(
+            "contradictory finalizer precedence in function `{}`",
+            run.id
+        ),
+        format!("{} finalizes `{}`", exit_label(before), flag(before, 0)),
+        format!("before `{}`", flag(before, 1)),
+        format!(
+            "but {} finalizes them in the opposite order",
+            exit_label(after)
+        ),
+        "no lexical exit selection".to_owned(),
+    ] {
+        assert!(error.message.contains(&expected), "{expected}: {error:?}");
+    }
+    assert_eq!(crate::codegen::emit_c(&checked).unwrap_err().code, "SPX-B104");
+}
+
 #[test]
 fn hostile_uncertified_commit_still_refuses_contradiction() {
     let (function, failed, result) = function_ids();

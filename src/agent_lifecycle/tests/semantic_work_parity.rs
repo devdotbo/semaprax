@@ -573,3 +573,5 @@ fn metered_dispatch_refuses_invalid_limits_unmetered_profiles_and_cancellation_b
 }
 
 mod lexical_exits;
+#[cfg(any(target_os = "linux", target_os = "macos"))]
+mod terminal_orders;
