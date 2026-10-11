@@ -160,7 +160,7 @@ pub(super) fn rewrite_declaration_with_layout(
     {
         return rewrite_declaration(declaration, target_module, caller, programs);
     }
-    let mut rewrite = |ty: &mut Type| {
+    let rewrite = |ty: &mut Type| {
         super::expected_projection::type_rewrite::rewrite_with_layout(
             ty,
             target_module,

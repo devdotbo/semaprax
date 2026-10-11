@@ -194,6 +194,12 @@ SCOPED-RECORD-VEC-TRAVERSAL-V2.md and the exact OPT #734 acceptance.
 
 The graph projects the `Never` completion marker on exit expressions but omits it
 from the value type-facts registry: completion has no storage or ABI facts.
+An ordinary single-arm record match may also complete only through a terminal
+arm. Its expression and arm retain `Never` with Value mode; the independent
+lexical contour validator proves the actual exit rather than trusting that type
+marker. Forged ordinary values marked `Never` and ownership-bearing completion
+remain rejected. The owning two-return cleanup and ShiftSim gates qualify this
+repair in the consolidated batch; authored changes alone prove no backend result.
 
 ## Fresh contract-local owners (OPT-743)
 

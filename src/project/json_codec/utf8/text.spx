@@ -1,6 +1,17 @@
 @id("__ROW_ID__.json.utf8.valid")
 fn json___ROW___identifier_valid(input:borrow Slice<u8>,start:usize,end:usize)->bool {
-let length=byte_len(input);let mut valid=start<end && end<=length;
+let length=byte_len(input);
+let mut raw_ascii=if start<end && end<=length && end-start>=2usize{
+match byte_get(input,start){Option::Some{value}=>value==34u8,Option::None{}=>false,} &&
+match byte_get(input,end-1usize){Option::Some{value}=>value==34u8,Option::None{}=>false,}
+}else{false};
+let mut raw_at=if raw_ascii{start+1usize}else{end};
+while raw_ascii && raw_at<end-1usize {
+raw_ascii=match byte_get(input,raw_at){Option::Some{value}=>value>=32u8 && value<128u8 && value!=34u8 && value!=92u8,Option::None{}=>false,};
+raw_at=if raw_ascii{raw_at+1usize}else{end};raw_ascii && raw_at<end-1usize
+}
+if raw_ascii{end-start-2usize<=__BOUND__usize}else{
+let mut valid=start<end && end<=length;
 let closed=if valid{jv_scan_string(input,start,false)}else{length+1usize};
 let total=if valid && closed==end{jv_decoded_len(input,start)}else{length+1usize};
 valid=valid && closed==end && total<=__BOUND__usize;
@@ -15,6 +26,7 @@ valid=scalar>=0 && scalar<=1114111 && !(scalar>=55296 && scalar<=57343) && next>
 at=if valid{next}else{end};valid && at<end-1usize
 }
 valid
+}
 }
 @id("__ROW_ID__.json.utf8.materialize-text")
 fn json___ROW___utf8_text(input:borrow Slice<u8>,start:usize,end:usize)->string {

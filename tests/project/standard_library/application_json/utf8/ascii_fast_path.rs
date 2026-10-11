@@ -37,10 +37,14 @@ use function @id("std.data.json.utf8.utf8_end") from std.data.json.utf8 as ju_ra
     );
     // Every ASCII byte, including raw forbidden controls, quote and backslash.
     // The immutable Rust input and truth table are independent of both decoders.
-    let all_ascii: Vec<u8> = (0..128).flat_map(|byte| [b'"', byte, b'"']).collect();
-    app.push_str(&format!("let ascii={};let input=array_as_slice(ascii);let mut index=0usize;while index<128usize{{let start=index*3usize;let wanted=index>=32usize && index!=34usize && index!=92usize;bad=bad+compare(input,start,start+3usize,wanted);index=index+1usize;index<128usize}}\n", array(&all_ascii)));
-    app.push_str("bad=bad+compare(input,0usize,0usize,false);bad=bad+compare(input,384usize,385usize,false);bad=bad+compare(input,0usize,385usize,false);\n");
+    let all_ascii: Vec<u8> = (0..=255).flat_map(|byte| [b'"', byte, b'"']).collect();
+    app.push_str(&format!("let ascii={};let input=array_as_slice(ascii);let mut index=0usize;while index<256usize{{let start=index*3usize;let wanted=index>=32usize && index<128usize && index!=34usize && index!=92usize;bad=bad+compare(input,start,start+3usize,wanted);index=index+1usize;index<256usize}}\n", array(&all_ascii)));
+    app.push_str("bad=bad+compare(input,0usize,0usize,false);bad=bad+compare(input,768usize,769usize,false);bad=bad+compare(input,0usize,769usize,false);\n");
+    app.push_str("bad=bad+compare(input,18446744073709551615usize,18446744073709551615usize,false);bad=bad+compare(input,0usize,18446744073709551615usize,false);\n");
     let cases: &[(&[u8], bool)] = &[
+        (br#""A"B""#, false),
+        (b"A\"", false),
+        (b"\"A", false),
         (br#""\u0000""#, true),
         (br#""\n\t\"\\""#, true),
         ("\"é😀\"".as_bytes(), true),
@@ -59,6 +63,18 @@ use function @id("std.data.json.utf8.utf8_end") from std.data.json.utf8 as ju_ra
             array(bytes),
             bytes.len()
         ));
+    }
+    for (i, (payload, wanted)) in [
+        (String::new(), true),
+        ("A".to_owned(), true),
+        ("A".repeat(64), true),
+        ("A".repeat(65), false),
+    ]
+    .iter()
+    .enumerate()
+    {
+        let raw = format!("\"{payload}\"");
+        app.push_str(&format!("let token_{i}={};bad=bad+compare(array_as_slice(token_{i}),0usize,{}usize,{wanted});\n", array(raw.as_bytes()), raw.len()));
     }
     for (i, (text, wanted)) in [
         (String::new(), true),

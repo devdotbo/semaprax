@@ -104,13 +104,31 @@ pub(super) fn build_scope_exits(
                     control.schema != crate::hir::lexical_exit::LEXICAL_CONTROL_FLOW_SCHEMA_V1
                 })
                 || region.normal_scope_end.0 != u32::MAX
-                || lexical_ends.contains_key(&region.id)
+                || lexical_ends.get(&region.id).is_some_and(|ends| {
+                    ends.iter().any(|exit| {
+                        plan.lexical_control.as_deref().is_none_or(|control| {
+                            control
+                                .resumes
+                                .iter()
+                                .filter(|resume| {
+                                    plan.lexical_block_in_context(Some(resume.entry), exit.from)
+                                })
+                                .count()
+                                != 1
+                        })
+                    })
+                })
             {
                 return Err(error(
                     "native abrupt-only scope certificate is not canonical",
                 ));
             }
-            continue;
+            // A region can be abrupt in ordinary flow but close normally in
+            // one independently authenticated finite resume domain. Inactive
+            // regions have no completion and acquire no runtime scope exit.
+            if !lexical_ends.contains_key(&region.id) {
+                continue;
+            }
         }
         let (ordinary, ends) = if lexical {
             (

@@ -183,6 +183,12 @@ first-array values and 256 rows. Its schema admission checks the canonical
 decoded String byte can require six JSON bytes for a control escape. It does
 not charge six escaped spelling bytes per field-name byte as canonical output.
 Empty and repeated values remain valid under this generic policy.
+The ordinary token validator can accept a complete raw ASCII token in one
+interior scan after independently checking bounds and both quote endpoints.
+It accepts interior bytes 32..127 except quotes/backslashes and checks the same
+decoded byte bound. All other spellings run the unchanged full validator. This
+authored fast path retains whole-document grammar-first selection, all 264
+maximum values and the existing fuel; qualification remains pending.
 
 The private quote helper validates the same UTF-8 and decoded byte bound before
 either rendering path. Values without controls, quotation marks or backslashes

@@ -511,12 +511,11 @@ See `help language author:static-utf8` and the
 
 ## Strings and bytes
 
-Use `string_format` for literal templates such as `"id={}"`. See
+Use `string_format` for literal templates: `"id={}"`. See
 `help language author:literal-format` for fields, scope and pending gates.
 
-`text: string` transfers ownership. Do not write `own string`
-(`SPX-O002`). A read-only helper takes `text: borrow str`; pass
-`string_as_str(text)` before any consuming call.
+`text: string` transfers ownership; `own string` is `SPX-O002`.
+Read-only helpers take `text: borrow str`; pass `string_as_str(text)` before consumption.
 
 ```semaprax
 module app.bytes;
@@ -556,17 +555,14 @@ fn main() -> i64
 - Byte functions take `borrow Slice<u8>`. Get one from `str_as_bytes(view)`,
   `array_as_slice(array_binding)`, or `bytes_as_slice(bytes_binding)`.
 - `string_from_utf8(input: borrow Slice<u8>) -> string` (`core.string.from_utf8`)
-  copies strict UTF-8: `let text = string_from_utf8(bytes_as_slice(bytes));`.
-  The detached owner preserves NUL/BOM/noncharacters without normalization or
-  replacement. Malformed input fails with `semaprax.convert.v1` code 1.
-  No new public ABI/capability; closed public adapters keep their own admission.
-- Exact dynamic allocation: `bytes_zeroed_bounded(requested, 131072usize)` returns
-  `Bytes` of exactly `requested` bytes. Its second operand must be a literal
-  bound at most 131072 (`SPX-T271`); capacity analysis charges that full bound.
-  A request exceeding it fails before allocation with
-  `semaprax.byte-buffer.v1` code 2 (`capacity_exceeded`). Bind the returned owner
-  before same-owner filling. Allocation stays outside bounded loops; physical
-  allocation exhaustion retains the existing fail-stop contract.
+  copies strict UTF-8 into a detached owner, preserving NUL/BOM/noncharacters
+  without normalization/replacement. Malformed input: `semaprax.convert.v1` code 1.
+  Public ABI, capabilities and closed adapter admission remain unchanged.
+- `bytes_zeroed_bounded(requested, 131072usize)` allocates exactly `requested`
+  bytes. Operand two must be a literal <=131072 (`SPX-T271`); analysis charges
+  its full bound. Overbound requests fail before allocation:
+  `semaprax.byte-buffer.v1` code 2 (`capacity_exceeded`). Bind before same-owner
+  filling; allocate outside bounded loops. Physical exhaustion remains fail-stop.
 - Buffer chains: `bytes_zeroed` requires a literal `usize` capacity;
   `bytes_set` takes the prior link, `usize` index, and byte. A bound chain
   freezes for borrowed reads.
@@ -613,27 +609,22 @@ fn main() -> i64
 
 - `stdout_write(slice)` needs both `permit { process.stdout.write }` and
   `uses { process.stdout.write }` and returns the `usize` byte count.
-- Single-file `run` evaluates `main` in the bounded interpreter; `--native`
-  selects C11. `--json`, `--max-steps` and `--max-bytes` bound reports and
-  execution. Exact `process.stdout.write` selects transcript output (the
-  example prints `banana!0`). Args, file or stderr effects select the CLI
-  route below; `stdin_read` needs native `useful-data-command.v1`.
-- `net_connect`, `net_send`, `net_recv`, `net_stream_stdout`, `net_wait`, and
-  `net_close` are the effect-gated TCP client operations of
-  [Bounded Language Network I/O v1](BOUNDED-LANGUAGE-NETWORK-IO-V1.md); they
-  need `permit`/`uses` of `network.connect`, `network.read`, and
-  `network.write`, execute only through an injected provider, and `net_recv`
-  (an owned result) is not admitted inside `while` bodies (`SPX-T270`).
-- `file_read` and `file_write_new` use explicit `fs.read` / `fs.write` effects
-  and an injected [Filesystem I/O v1](FILESYSTEM-IO-V1.md) provider. Paths are
-  bounded relative byte prefixes; writes create new files and never overwrite.
-  [Filesystem I/O v2](FILESYSTEM-IO-V2.md) adds stat, sorted immediate-name
-  listing, directory creation, removal, and atomic replacement. Only stat/list
-  accept an empty path for the injected root. `std.fs` composes typed Path,
-  FileInfo, and Reader/Writer values through these boundaries.
-- Interpreter and native calls have a 256-frame recursion bound; exceeding it
-  reports runtime capacity, not a language status or process signal. Raw
-  WebAssembly uses its engine's stack-limit trap.
+- Single-file `run` interprets `main`; `--native` selects C11. `--json`,
+  `--max-steps` and `--max-bytes` bound reports/execution. Exact
+  `process.stdout.write` selects transcripts (above: `banana!0`). Args/file/stderr
+  effects select the CLI route; `stdin_read` needs native `useful-data-command.v1`.
+- TCP: `net_connect`, `net_send`, `net_recv`, `net_stream_stdout`, `net_wait`,
+  `net_close` need `permit`/`uses` of `network.connect`, `network.read`,
+  `network.write` and an injected provider. Owned `net_recv` is refused inside
+  `while` (`SPX-T270`). [Network I/O v1](BOUNDED-LANGUAGE-NETWORK-IO-V1.md).
+- `file_read` / `file_write_new` require explicit `fs.read` / `fs.write` and an
+  injected [Filesystem I/O v1](FILESYSTEM-IO-V1.md) provider. Paths are bounded
+  relative byte prefixes; writes create new files without overwriting.
+  [Filesystem I/O v2](FILESYSTEM-IO-V2.md) adds stat, sorted immediate-name listing,
+  mkdir, removal and atomic replacement. Only stat/list accept empty paths for
+  the injected root. `std.fs` composes typed Path, FileInfo and Reader/Writer.
+- Interpreter/native recursion caps at 256 frames: overflow reports runtime
+  capacity without language status/process signal. Raw Wasm traps at its engine stack limit.
 
 ## Compiler-owned functions
 

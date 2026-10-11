@@ -4,6 +4,11 @@ use semaprax::hir::{
 };
 
 pub(super) fn assert_operation(program: &ResolvedProgram, wanted: &str) -> (usize, usize) {
+    let (_, owned, borrowed) = operation_counts(program, wanted);
+    (owned, borrowed)
+}
+
+pub(super) fn operation_counts(program: &ResolvedProgram, wanted: &str) -> (usize, usize, usize) {
     // This independently authenticates types, operation identities, loans and
     // canonical call-argument staging/cleanup before inspecting the operation.
     hir::validate(program).unwrap();
@@ -232,5 +237,5 @@ pub(super) fn assert_operation(program: &ResolvedProgram, wanted: &str) -> (usiz
         found > 0,
         "authenticated typed closure must execute {wanted}"
     );
-    (owned_clone_loans, borrowed_clone_roots)
+    (found, owned_clone_loans, borrowed_clone_roots)
 }

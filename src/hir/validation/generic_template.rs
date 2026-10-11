@@ -257,7 +257,16 @@ fn validate_record_match_result(
     expression: &ResolvedExpr,
     arm: &ResolvedMatchArm,
 ) -> Result<(), Diagnostic> {
-    if matches!(arm.value.ty, ResolvedType::I64 | ResolvedType::Bool)
+    // Completion carries no runtime value. The independent lexical contour
+    // validator still proves the terminal arm and its exact Value ownership.
+    let terminal = !matches!(execution, FunctionExecutionId::Generic(_))
+        && expression.ty == ResolvedType::Never
+        && expression.ownership == OwnershipMode::Value
+        && arm.value.ty == ResolvedType::Never
+        && arm.value.ownership == OwnershipMode::Value
+        && matches!(&expression.kind, ResolvedExprKind::Match { arms, .. } if arms.len() == 1);
+    if terminal
+        || matches!(arm.value.ty, ResolvedType::I64 | ResolvedType::Bool)
         || admits_owned_record_match_result(program, execution, expression, arm)
         || admits_ordinary_record_result(program, execution, expression, arm)
     {

@@ -408,9 +408,9 @@ mod cursor_work_tests {
     fn guarded_match_patterns_and_all_contract_roots_keep_their_work_debits() {
         // Real checked source gives every arm/guard its own source identity;
         // the final wildcard makes the scalar match exhaustive.
-        let arms = (0..16)
+        let arms = (0..4)
             .map(|i| {
-                let pattern = if i == 15 {
+                let pattern = if i == 3 {
                     "_".to_owned()
                 } else {
                     i.to_string()
@@ -431,15 +431,37 @@ mod cursor_work_tests {
             let ResolvedExprKind::Match { arms, .. } = &tail.kind else {
                 panic!("match tail")
             };
-            assert_eq!(arms.len(), 16);
-            assert_eq!(arms.iter().filter(|arm| arm.guard.is_some()).count(), 8);
-            let exact = 8 + 4 * 16 + 3 * 8;
+            assert_eq!(arms.len(), 4);
+            assert_eq!(arms.iter().filter(|arm| arm.guard.is_some()).count(), 2);
+            let exact = 8 + 4 * 4 + 3 * 2;
             assert_eq!(run(context, function, exact).unwrap(), 0);
             assert_eq!(
                 run(context, function, exact - 1).unwrap_err().code,
                 "SPX-H006"
             );
         });
+        // Retain the previous 16-arm witness at its actual admission boundary:
+        // symbolic guarded histories exhaust the unchanged branch-state budget
+        // before the selected cursor proof can execute.
+        let branch_arms = (0..16)
+            .map(|i| {
+                let pattern = if i == 15 {
+                    "_".to_owned()
+                } else {
+                    i.to_string()
+                };
+                let guard = if i % 2 == 0 { " if true" } else { "" };
+                format!("{pattern}{guard}=>0,")
+            })
+            .collect::<String>();
+        let branch_source =
+            format!("module app; @id(\"app.main\") fn main()->i64 {{match 0 {{{branch_arms}}}}}");
+        let branch_error =
+            crate::check(&branch_source, "linear-profile-branch-limit.spx").unwrap_err();
+        assert!(branch_error.iter().any(|error| error.code == "SPX-H006"
+            && error
+                .message
+                .contains("cleanup replay work budget exhausted during plan branch state push")));
         // Preserve the original large guarded source as an explicit unchanged
         // terminal-path limit refusal, independently of this cursor-work gate.
         let oversized_arms = (0..64)

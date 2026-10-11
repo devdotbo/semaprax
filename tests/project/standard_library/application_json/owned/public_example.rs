@@ -136,18 +136,18 @@ fn public_owned_json_command_bootstraps_and_runs_valid_and_malformed_stdin() {
 
     let c = project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
         let revision = snapshot.retain_revision();
-        assert!(
-            revision
-                .semantic_graph()
-                .contains("warehouse.request.json.owned.decode")
-        );
+        assert!(revision
+            .semantic_graph()
+            .contains("warehouse.request.json.owned.decode"));
         // Builtins are typed expression authority, not compact cross-file edges.
-        let (sorts, clone_loans) = super::super::builtin_calls::assert_operation(
-            snapshot.entry_program(),
-            "core.vec.sort-owned",
-        );
+        let (sorts, clone_loans, borrowed_clone_roots) =
+            super::super::builtin_calls::operation_counts(
+                snapshot.public_api_program(),
+                "core.vec.sort-owned",
+            );
         assert_eq!(sorts, 2, "String locations and owned Stock rows both sort");
         assert_eq!(clone_loans, 0);
+        assert_eq!(borrowed_clone_roots, 0);
         codegen::emit_hir_c_with_stdin_stream_owned_data(
             snapshot.public_api_program(),
             "warehouse.command",

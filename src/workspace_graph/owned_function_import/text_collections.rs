@@ -469,10 +469,19 @@ use type @id("outcome") from imports.provider as Outcome;
             &provider.replace("offset:usize", "offset:i64"),
             app
         ));
-        assert!(!accepts(
+        // The explicit outcome root now authenticates its private Item layout.
+        assert!(accepts(
             provider,
             &app.replace("use type @id(\"item\") from imports.provider as Item;", "")
         ));
+        assert!(!accepts(
+            provider,
+            &app.replace(
+                "use type @id(\"outcome\") from imports.provider as Outcome;",
+                ""
+            )
+        ));
+        assert!(!accepts(&provider.replace("@id(\"item.text\") ", ""), app));
         assert!(!accepts(
             &provider.replace("fn inspect()", "fn inspect<T>()"),
             app

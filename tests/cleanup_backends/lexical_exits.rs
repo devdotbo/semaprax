@@ -279,6 +279,20 @@ fn native_owning_loop_normal_then_continue_then_break_settles_every_owner_o0_o2(
         9,
         super::owned_leaf_collections::native::Failure::None,
     );
+    let normal_tail = "if seen == 2 { continue; };\n        if seen == 3 { break; };\n        0";
+    assert_eq!(source.matches(normal_tail).count(), 1);
+    let all_abrupt = source.replace(
+        normal_tail,
+        "if seen == 1 { continue; }\n        if seen == 2 { continue; }\n        break;",
+    );
+    // Both finite advance domains must run their own canonical scope cleanup;
+    // the ordinary body and inactive Done arm have no normal completion.
+    super::owned_leaf_collections::native::run(
+        &all_abrupt,
+        0,
+        9,
+        super::owned_leaf_collections::native::Failure::None,
+    );
 }
 
 #[test]
