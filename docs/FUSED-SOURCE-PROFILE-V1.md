@@ -32,6 +32,12 @@ shape and one `main() -> i64` entry is eligible. The original unmodified
 The selected factory retains its existing distinction: a legacy construction
 of at most 32 events follows ordinary admission; requesting this selected
 profile for that shape is refused without ordinary fallback.
+When selection finds no eligible function, SPX-F130 reports the first failed
+shape rule and the function's source location, preferring the authored `main`.
+The reason is retained from the same derivation pass and grants no authority.
+For an admitted legacy construction of at most 32 rows, the guidance is to
+remove the selected profile and account options without changing requirements
+or the row count. Ambiguity and ordinary source diagnostics retain precedence.
 Names, paths, cached evidence and raw hashes grant no selection authority.
 Project, test, check, graph, cache and ordinary run/build routes retain their
 existing admission and diagnostics. Wrong profiles, arguments, exports, web

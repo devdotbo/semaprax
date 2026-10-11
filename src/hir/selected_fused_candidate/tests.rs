@@ -1,7 +1,7 @@
 use super::*;
 use crate::byte_data_capacity::{
-    analyze_with_strategy, AllocationStrategy, CapacityDiagnostic, CapacityFlow,
-    FunctionCapacityInput,
+    AllocationStrategy, CapacityDiagnostic, CapacityFlow, FunctionCapacityInput,
+    analyze_with_strategy,
 };
 use crate::hir::ResolvedStatement;
 
@@ -61,13 +61,12 @@ fn ordinary_32_row_control_keeps_the_unchanged_legacy_routes() {
     crate::hir::validate(&resolved).unwrap();
     let summary = crate::hir::analyze_byte_data_capacity(&resolved).unwrap();
     let main = summary.function("app.main").unwrap();
-    assert_eq!(
-        (main.bytes_copy_sites, main.fused_backing_events),
-        (32, 0)
-    );
+    assert_eq!((main.bytes_copy_sites, main.fused_backing_events), (32, 0));
     assert!(matches!(
         validate_selected(&program),
-        Err(SelectedRefusal::Source(CandidateRefusal::NoSelection))
+        Err(SelectedRefusal::Source(
+            CandidateRefusal::NoSelection { .. }
+        ))
     ));
 }
 
@@ -127,10 +126,10 @@ fn decoded_stale_and_foreign_hir_cannot_join_select_or_validate() {
             let selected = Selected::from_joined(joined);
             assert!(selected.held_by(owner.program()));
             assert!(!selected.held_by(&decoded));
-            assert!(crate::hir::byte_capacity::analyze_selected_byte_data_capacity(
-                &decoded, selected
-            )
-            .is_err());
+            assert!(
+                crate::hir::byte_capacity::analyze_selected_byte_data_capacity(&decoded, selected)
+                    .is_err()
+            );
             assert!(
                 crate::hir::validate_selected_with_static_text(&decoded, Some(selected)).is_err()
             );
@@ -153,11 +152,13 @@ fn decoded_stale_and_foreign_hir_cannot_join_select_or_validate() {
         .with_joined(|joined| {
             let selected = Selected::from_joined(joined);
             assert!(!selected.held_by(owner.program()));
-            assert!(crate::hir::byte_capacity::analyze_selected_byte_data_capacity(
-                owner.program(),
-                selected
-            )
-            .is_err());
+            assert!(
+                crate::hir::byte_capacity::analyze_selected_byte_data_capacity(
+                    owner.program(),
+                    selected
+                )
+                .is_err()
+            );
         })
         .unwrap();
 }
@@ -187,13 +188,10 @@ fn selected_capacity_events_are_exact_and_forged_producers_or_rescales_refuse() 
                 inputs
             };
             // One fused event plus 31 ordinary events fit the unchanged cap.
-            let fits = analyze_with_strategy(&extra(31), AllocationStrategy::FusedConstructionV1)
-                .unwrap();
+            let fits =
+                analyze_with_strategy(&extra(31), AllocationStrategy::FusedConstructionV1).unwrap();
             let main = fits.function("app.main").unwrap();
-            assert_eq!(
-                (main.bytes_copy_sites, main.fused_backing_events),
-                (32, 1)
-            );
+            assert_eq!((main.bytes_copy_sites, main.fused_backing_events), (32, 1));
             let short = analyze_with_strategy(&extra(32), AllocationStrategy::FusedConstructionV1)
                 .unwrap_err();
             assert_eq!(short.diagnostic, CapacityDiagnostic::Allocation);
@@ -206,9 +204,8 @@ fn selected_capacity_events_are_exact_and_forged_producers_or_rescales_refuse() 
                 panic!("projected fused construction")
             };
             producer.push_str(".forged");
-            let refused =
-                analyze_with_strategy(&forged, AllocationStrategy::FusedConstructionV1)
-                    .unwrap_err();
+            let refused = analyze_with_strategy(&forged, AllocationStrategy::FusedConstructionV1)
+                .unwrap_err();
             assert_eq!(refused.diagnostic, CapacityDiagnostic::Invariant);
 
             // The projected flow is never accepted under the default strategy.
@@ -254,10 +251,18 @@ fn tampered_inventory_cleanup_status_and_loan_plans_refuse_after_a_fresh_join() 
 
     type Mutant = fn(&mut crate::hir::ResolvedFunction) -> bool;
     let mutants: [(&str, Mutant); 8] = [
-        ("inventory slot dropped", |f| f.cleanup.slots.pop().is_some()),
-        ("inventory slots reordered", |f| reorder(&mut f.cleanup.slots)),
-        ("cleanup blocks reordered", |f| reorder(&mut f.cleanup_plan.blocks)),
-        ("cleanup edge dropped", |f| f.cleanup_plan.edges.pop().is_some()),
+        ("inventory slot dropped", |f| {
+            f.cleanup.slots.pop().is_some()
+        }),
+        ("inventory slots reordered", |f| {
+            reorder(&mut f.cleanup.slots)
+        }),
+        ("cleanup blocks reordered", |f| {
+            reorder(&mut f.cleanup_plan.blocks)
+        }),
+        ("cleanup edge dropped", |f| {
+            f.cleanup_plan.edges.pop().is_some()
+        }),
         ("status source dropped", |f| {
             f.cleanup_plan.status_sources.pop().is_some()
         }),
@@ -292,10 +297,12 @@ fn an_unused_unrelated_invariant_record_refuses_before_selected_resolution() {
     );
     assert_ne!(source, SOURCE);
     let program = parsed(&source);
-    assert!(program
-        .types
-        .iter()
-        .any(|declaration| !declaration.invariants().is_empty()));
+    assert!(
+        program
+            .types
+            .iter()
+            .any(|declaration| !declaration.invariants().is_empty())
+    );
     assert!(matches!(
         validate_selected(&program),
         Err(SelectedRefusal::Resolve(_))
