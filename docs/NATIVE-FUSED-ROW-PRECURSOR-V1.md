@@ -107,10 +107,12 @@ Bytes fields retain leased carriers. Equal `Slice<u8>` types alone never select
 an executor representation. Source spans are matched to current source expression
 kind, field/alias name and call shape as additional binding checks. Unknown,
 foreign, mixed-result or escaping view producers refuse. Source field checks
-currently authenticate the field name and a variable-shaped base; they do not
-bind that source variable to the independently reconstructed lowered traversal
-alias/index. Complete source-to-HIR authentication must close this explicit seam
-before the mapping can become emitter authority. The mapping is private,
+now require the exact authored traversal-body pointer and source row alias.
+A separately reconstructed frozen HIR region binds its owner place and row-index
+identity to the unique current source `ForBorrow`, vector alias and index name.
+The canonical synthetic snapshot span remains the source item span, matching the
+actual lowering contract. Current owner/index drift, source alias mismatch,
+ambiguous regions and foreign body pointers refuse. The mapping is private,
 nonserialized proof data with no source admission or emission hook.
 
 The native64 target mirror reports actual Bytes 24, View 48 and Row 40 byte

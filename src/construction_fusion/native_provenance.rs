@@ -7,6 +7,8 @@ use hir::{
 use std::mem::size_of;
 mod layout;
 mod source;
+mod traversal;
+use traversal::Traversal;
 #[cfg(test)]
 mod tests;
 pub(crate) use layout::TargetLayout;
@@ -24,6 +26,7 @@ struct Origin<'a> {
     producer: &'a E,
     field: &'a hir::ResolvedFieldDeclaration,
     vector: &'a hir::ValueId,
+    traversal: Traversal<'a>,
 }
 #[derive(Clone, Copy)]
 enum Value<'a> {
@@ -44,6 +47,7 @@ struct Frame<'a> {
     child: usize,
     tail: bool,
     binding: Option<&'a hir::ResolvedBinding>,
+    traversal: Option<Traversal<'a>>,
 }
 struct Scratch<'a> {
     frames: [Option<Frame<'a>>; DEPTH],
@@ -94,7 +98,7 @@ fn debit(work: &mut usize, n: usize) -> Option<()> {
     *work = work.checked_sub(n)?;
     Some(())
 }
-fn frame(expression: &E, base: usize) -> Frame<'_> {
+fn frame<'a>(expression: &'a E, base: usize, traversal: Option<Traversal<'a>>) -> Frame<'a> {
     Frame {
         expression,
         cursor: hir::lexical_exit::ChildCursor::new(expression),
@@ -103,6 +107,7 @@ fn frame(expression: &E, base: usize) -> Frame<'_> {
         child: 0,
         tail: false,
         binding: None,
+        traversal,
     }
 }
 fn next<'a>(frame: &mut Frame<'a>) -> Option<&'a E> {
@@ -149,9 +154,10 @@ fn vector_type(ty: &T, descriptor: &Descriptor<'_>) -> bool {
 }
 fn classify<'a>(
     descriptor: &Descriptor<'a>,
-    sources: &[&ast::Expr],
+    sources: &[source::Node<'a>],
     scratch: &Scratch<'a>,
     e: &'a E,
+    traversal: Option<Traversal<'a>>,
     work: &mut usize,
 ) -> Option<Option<Value<'a>>> {
     if let K::Place(place) = &e.kind {
@@ -200,20 +206,46 @@ fn classify<'a>(
         let Value::Vector(vector) = alias(scratch, &place.root, work)?.value else {
             return None;
         };
+        let traversal = traversal?;
+        if place != traversal.owner
+            || index.ty != traversal.index.ty
+            || index.ownership != traversal.index.ownership
+            || !matches!(&index.kind,K::Place(p) if p.root==traversal.index.id && p.projections.is_empty())
+        {
+            return None;
+        }
         let selected = hir::vec_field::field(&descriptor.program.declarations, element, field)?;
         let carrier = match (&selected.declaration.ty, *bytes, &e.ty, e.ownership) {
             (T::String, false, T::Str, O::Borrow) => Carrier::OrdinaryStr,
             (T::String, true, T::SliceU8, O::Borrow) => Carrier::OrdinarySlice,
             (T::Bytes, false, T::SliceU8, O::Borrow) => Carrier::LeasedSlice,
-            (T::I64, false, T::I64, O::Value) => return Some(None),
+            (T::I64, false, T::I64, O::Value) => {
+                source::field(
+                    sources,
+                    e.span,
+                    &selected.declaration.name,
+                    *bytes,
+                    traversal,
+                    work,
+                )?;
+                return Some(None);
+            }
             _ => return None,
         };
-        source::field(sources, e.span, &selected.declaration.name, *bytes, work)?;
+        source::field(
+            sources,
+            e.span,
+            &selected.declaration.name,
+            *bytes,
+            traversal,
+            work,
+        )?;
         return Some(Some(Value::View(Origin {
             carrier,
             producer: e,
             field: selected.declaration,
             vector,
+            traversal,
         })));
     }
     if let K::BorrowPlace { operation, place } = &e.kind {
@@ -318,7 +350,7 @@ fn register<'a>(
 }
 fn walk<'a>(
     descriptor: &Descriptor<'a>,
-    sources: &[&ast::Expr],
+    sources: &[source::Node<'a>],
     scratch: &mut Scratch<'a>,
     root: &'a E,
     work: &mut usize,
@@ -327,7 +359,8 @@ fn walk<'a>(
     if let K::Block { statements, .. } = &root.kind {
         debit(work, statements.len())?;
     }
-    scratch.frames[0] = Some(frame(root, scratch.len));
+    let context = traversal::enter(descriptor, sources, scratch, root, None, work)?;
+    scratch.frames[0] = Some(frame(root, scratch.len, context));
     let mut depth = 1;
     while depth != 0 {
         debit(work, 1)?;
@@ -336,12 +369,21 @@ fn walk<'a>(
             if let K::Block { statements, .. } = &child.kind {
                 debit(work, statements.len())?;
             }
-            *scratch.frames.get_mut(depth)? = Some(frame(child, scratch.len));
+            let inherited = top.traversal;
+            let context = traversal::enter(descriptor, sources, scratch, child, inherited, work)?;
+            *scratch.frames.get_mut(depth)? = Some(frame(child, scratch.len, context));
             depth += 1;
         } else {
             let done = scratch.frames[depth - 1].take()?;
             depth -= 1;
-            let value = classify(descriptor, sources, scratch, done.expression, work)?;
+            let value = classify(
+                descriptor,
+                sources,
+                scratch,
+                done.expression,
+                done.traversal,
+                work,
+            )?;
             if let Some(Value::View(origin)) = value {
                 emit(
                     Fact {
@@ -402,7 +444,7 @@ pub(crate) fn derive<'a>(
             },
         )?;
         if let Some(binding) = binding {
-            let result = classify(&descriptor, &sources, &scratch, value, &mut work)?;
+            let result = classify(&descriptor, &sources, &scratch, value, None, &mut work)?;
             register(&mut scratch, binding, value, result, &mut work)?;
         }
     }
@@ -459,7 +501,7 @@ pub(crate) fn derive<'a>(
             &mut emit,
         )?;
         if let Some(binding) = binding {
-            let result = classify(&descriptor, &sources, &scratch, value, &mut work)?;
+            let result = classify(&descriptor, &sources, &scratch, value, None, &mut work)?;
             register(&mut scratch, binding, value, result, &mut work)?;
         }
     }

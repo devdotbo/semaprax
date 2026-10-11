@@ -87,12 +87,13 @@ fn source_alias_field_and_current_hir_producer_drift_refuse() {
         &sources,
         &scratch,
         fact.producer(),
+        Some(fact.origin.traversal),
         &mut work
     )
     .unwrap()
     .is_some());
     // Direct producer authentication is independent of any attached loan plan.
-    for change in 0..4 {
+    for change in 0..5 {
         let mut forged = fact.producer().clone();
         match change {
             0 => forged.ownership = O::Own,
@@ -103,7 +104,7 @@ fn source_alias_field_and_current_hir_producer_drift_refuse() {
                 };
                 *field = hir::DeclarationId::new("app.leaf.row.title");
             }
-            _ => {
+            3 => {
                 let K::VecFieldRead { args, .. } = &mut forged.kind else {
                     panic!("producer")
                 };
@@ -112,8 +113,25 @@ fn source_alias_field_and_current_hir_producer_drift_refuse() {
                 };
                 place.root = mapping.descriptor.typed.counter.id.clone();
             }
+            _ => {
+                let K::VecFieldRead { args, .. } = &mut forged.kind else {
+                    panic!("producer")
+                };
+                let K::Place(place) = &mut args[1].kind else {
+                    panic!("index")
+                };
+                place.root = mapping.descriptor.typed.counter.id.clone();
+            }
         }
-        assert!(classify(&mapping.descriptor, &sources, &scratch, &forged, &mut work).is_none());
+        assert!(classify(
+            &mapping.descriptor,
+            &sources,
+            &scratch,
+            &forged,
+            Some(fact.origin.traversal),
+            &mut work
+        )
+        .is_none());
     }
     let alias_fact = mapping
         .facts()
@@ -145,6 +163,7 @@ fn source_alias_field_and_current_hir_producer_drift_refuse() {
         &sources,
         &scratch,
         alias_fact.expression,
+        Some(alias_fact.origin.traversal),
         &mut work
     )
     .unwrap()
@@ -160,6 +179,19 @@ fn source_alias_field_and_current_hir_producer_drift_refuse() {
         &sources,
         &scratch,
         alias_fact.expression,
+        Some(alias_fact.origin.traversal),
+        &mut work
+    )
+    .is_none());
+    let foreign_body = fact.origin.traversal.body.clone();
+    let mut foreign_context = fact.origin.traversal;
+    foreign_context.body = &foreign_body;
+    assert!(source::field(
+        &sources,
+        fact.producer().span,
+        &fact.field().name,
+        false,
+        foreign_context,
         &mut work
     )
     .is_none());
@@ -167,6 +199,18 @@ fn source_alias_field_and_current_hir_producer_drift_refuse() {
     for (from, to) in [
         ("let data = row.payload;", "let data = row.title;"),
         ("str_as_bytes(text)", "str_as_bytes(data)"),
+        (
+            "for borrow row at index in rows",
+            "for borrow other at index in rows",
+        ),
+        (
+            "for borrow row at index in rows",
+            "for borrow row at alternate in rows",
+        ),
+        (
+            "for borrow row at index in rows",
+            "for borrow row at index in items",
+        ),
         (
             "let rows = items;",
             "let rows = items;let copy=vec_clone_at<Row>(rows,0usize);",
