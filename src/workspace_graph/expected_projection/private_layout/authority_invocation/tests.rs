@@ -64,7 +64,12 @@ fn one_invocation_preserves_old_authority_universe_and_current_caller_checks() {
         let programs = programs(classes);
         let authored = index_authored(&programs).unwrap();
         let owner = Invocation::new(&programs, &authored);
-        let (saved, _) = super::super::oracle::saved_roots(&programs[0], &programs).unwrap();
+        let (saved, _) =
+            crate::workspace_graph::expected_projection::private_layout::oracle::saved_roots(
+                &programs[0],
+                &programs,
+            )
+            .unwrap();
         let mut first_work = None;
         for _ in 0..8 {
             let private = owner

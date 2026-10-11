@@ -210,4 +210,5 @@ fn legacy<'a>(
     Ok(map)
 }
 #[cfg(test)]
+#[path = "authority_invocation/tests.rs"]
 mod tests;

@@ -337,7 +337,7 @@ module projection_cache;
             assert_eq!(crate::cache_codec::encode(&short).unwrap(), wire);
             crate::hir::validate(&short).unwrap();
 
-            let mut forged = crate::cache_codec::decode(&wire).unwrap();
+            let mut forged: ResolvedProgram = crate::cache_codec::decode(&wire).unwrap();
             let loan = forged
                 .functions
                 .iter_mut()
