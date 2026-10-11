@@ -76,12 +76,12 @@ pub(super) fn assert_original_stream_controls(root: &std::path::Path, original: 
     std::fs::write(&app, canonical(original)).unwrap();
     let errors =
         project::with_authenticated_project(&root.join("semaprax.toml"), |_| Ok(())).unwrap_err();
-    assert!(
-        errors
-            .iter()
-            .any(|error| matches!(error.code, "SPX-T258" | "SPX-T216")),
-        "{errors:?}"
-    );
+    for code in ["SPX-T258", "SPX-T216"] {
+        assert!(
+            errors.iter().any(|error| error.code == code),
+            "{code}: {errors:?}"
+        );
+    }
     std::fs::write(app, bootstrap).unwrap();
 }
 

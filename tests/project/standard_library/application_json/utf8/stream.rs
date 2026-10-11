@@ -97,12 +97,12 @@ if written==byte_len(bytes){0}else{1}
     std::fs::write(root.join("src/app.spx"), canonical(&application)).unwrap();
     let errors =
         project::with_authenticated_project(&root.join("semaprax.toml"), |_| Ok(())).unwrap_err();
-    assert!(
-        errors
-            .iter()
-            .any(|error| matches!(error.code, "SPX-T258" | "SPX-T216")),
-        "{errors:?}"
-    );
+    for code in ["SPX-T258", "SPX-T216"] {
+        assert!(
+            errors.iter().any(|error| error.code == code),
+            "{code}: {errors:?}"
+        );
+    }
     // Decode settles the input in its callee epilogue before Outcome publication.
     // Only the later scalar decision call can encode or publish stdout.
     let application = application

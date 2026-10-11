@@ -1,5 +1,8 @@
 //! A scalar statement is an ordinary immutable let with independently checked syntax.
 use semaprax::{ast, check, format, graph, hir, parse, verify};
+#[path = "scalar_expression/backends.rs"]
+mod backends;
+
 const PATH: &str = "scalar-expression.spx";
 fn source(body: &str) -> String {
     format!("module scalar.discard; @id(\"main\") fn main()->i64 {{ {body} }}")
@@ -62,9 +65,11 @@ fn owned_aggregate_function_and_borrowed_results_require_explicit_binding() {
 #[test]
 fn final_tail_underscore_and_initializer_exit_priorities_stay_closed() {
     assert_eq!(parse(&source("1;"), PATH).unwrap_err().code, "SPX-P106");
-    assert!(errors("let _=1; let _=2; 0")
-        .iter()
-        .any(|d| d.code == "SPX-T209"));
+    assert!(
+        errors("let _=1; let _=2; 0")
+            .iter()
+            .any(|d| d.code == "SPX-T209")
+    );
     let diagnostics = errors("let mut i=0; while i<1 { {continue;}; i=i+1; 0 } i");
     assert!(
         diagnostics.iter().any(|d| d.code == "SPX-T312"),
@@ -98,9 +103,11 @@ fn forged_marker_never_hides_a_reader_mutability_annotation_or_duplicate() {
     if let ast::Statement::Let { mutable, .. } = &mut statements[0] {
         *mutable = true;
     }
-    assert!(verify::verify(&program)
-        .iter()
-        .any(|d| d.code == "SPX-T315"));
+    assert!(
+        verify::verify(&program)
+            .iter()
+            .any(|d| d.code == "SPX-T315")
+    );
     assert!(format::canonical(&program).contains("let mut"));
     if let ast::ExprKind::Block { statements, .. } = &mut program.functions[0].body.kind {
         if let ast::Statement::Let {
@@ -111,9 +118,11 @@ fn forged_marker_never_hides_a_reader_mutability_annotation_or_duplicate() {
             *declared = Some(ast::Type::I64);
         }
     }
-    assert!(verify::verify(&program)
-        .iter()
-        .any(|d| d.code == "SPX-T315"));
+    assert!(
+        verify::verify(&program)
+            .iter()
+            .any(|d| d.code == "SPX-T315")
+    );
     assert!(format::canonical(&program).contains(": i64"));
     if let ast::ExprKind::Block { statements, .. } = &mut program.functions[0].body.kind {
         if let ast::Statement::Let {
@@ -128,9 +137,11 @@ fn forged_marker_never_hides_a_reader_mutability_annotation_or_duplicate() {
         let duplicate = statements[0].clone();
         statements.push(duplicate);
     }
-    assert!(verify::verify(&program)
-        .iter()
-        .any(|d| d.code == "SPX-T209"));
+    assert!(
+        verify::verify(&program)
+            .iter()
+            .any(|d| d.code == "SPX-T209")
+    );
     assert!(format::canonical(&program).contains(&format!("let {name}")));
 }
 #[test]
@@ -180,12 +191,23 @@ fn normalizer_preserves_lazy_failure_and_consumed_arguments_across_backends() {
             "discard must preserve the selected checked failure"
         );
     }
+    backends::assert_execution_pair(text, lowered, Some(19), true);
+    backends::assert_execution_pair(failing, ordinary_failure, None, true);
     let scalar = source("false && (1/0==0); 19");
     let ordinary_scalar = source("let _if1=false && (1/0==0); 19");
     assert_eq!(
         semaprax::wasm::emit_module(&check(&scalar, PATH).unwrap()).unwrap(),
         semaprax::wasm::emit_module(&check(&ordinary_scalar, PATH).unwrap()).unwrap()
     );
+    let all_scalars = source("1; 1i32; 1u8; 1usize; 'x'; 1.0f32; 1.0; true; false && (1/0==0); 19");
+    let ordinary_all_scalars = source(
+        "let _if1=1; let _if2=1i32; let _if3=1u8; let _if4=1usize; let _if5='x'; let _if6=1.0f32; let _if7=1.0; let _if8=true; let _if9=false && (1/0==0); 19",
+    );
+    assert_eq!(
+        semaprax::wasm::emit_module(&check(&all_scalars, PATH).unwrap()).unwrap(),
+        semaprax::wasm::emit_module(&check(&ordinary_all_scalars, PATH).unwrap()).unwrap()
+    );
+    backends::assert_execution_pair(&all_scalars, &ordinary_all_scalars, Some(19), false);
 }
 #[test]
 fn contracts_authenticate_discard_markers_independently_of_the_function_body() {
