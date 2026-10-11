@@ -178,7 +178,7 @@ fn check(expression: &ResolvedExpr, work: &mut usize) -> Result<(), Diagnostic> 
                     };
                 }
             }
-            for op in crate::vec_ops::VecOp::ALL {
+            for op in crate::vec_ops::ALL {
                 if equal(callee.as_str(), op.id(), work)? {
                     return if matches!(
                         op,
