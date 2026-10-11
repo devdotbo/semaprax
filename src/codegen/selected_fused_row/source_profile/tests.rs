@@ -126,10 +126,12 @@ int main(void) {
     spx_profile_account paid={0},short_account={0};
     assert(spx_profile_account_init(&paid,SPX_PROFILE_REQUIRED*2u));
     assert(!spx_profile_account_init(&paid,SPX_PROFILE_REQUIRED*3u));
-    struct spx_status_entry entries[1];struct spx_context context;
     for (unsigned i=0;i<2;i++) {
-        memset(entries,0,sizeof(entries));
+        /* Fresh one-shot context, same cumulative account and issuer. */
+        struct spx_status_entry entries[1]={0};struct spx_context context={0};
         assert(spx_context_init(&context,1,entries,1,NULL,NULL,NULL));
+        assert(!spx_context_init(&context,2,entries,1,NULL,NULL,NULL));
+        assert(context.invocation_nonce==1 && context.status_arena.length==0);
         census_reset();profile_malloc_bytes=0;int64_t result=-99;spx_status_token token=SPX_STATUS_SUCCESS;
         assert(spx_profile_invoke(&paid,&context,&result,&token)==SPX_FUSED_PUBLISHED);
         assert(result==8386560 && token==SPX_STATUS_SUCCESS && !census.live);
@@ -141,6 +143,8 @@ int main(void) {
         for (size_t n=0;n<census.calls;n++) requested+=census.bytes[n];
         assert(profile_malloc_bytes==SPX_PROFILE_STRINGS && requested==SPX_PROFILE_REQUIRED);
     }
+    struct spx_status_entry entries[1]={0};struct spx_context context={0};
+    assert(spx_context_init(&context,1,entries,1,NULL,NULL,NULL));
     census_reset();int64_t result=-99;spx_status_token token=SPX_STATUS_SUCCESS;
     assert(spx_profile_invoke(&paid,&context,&result,&token)==SPX_FUSED_REFUSED);
     assert(paid.failed && result==-99 && token==SPX_STATUS_SUCCESS && !census.live && !census.calls && !census.mallocs);
@@ -176,7 +180,7 @@ fn native_source_failure_preserves_status_and_never_publishes_poison() {
 int main(void) {
     spx_profile_account paid={0};assert(spx_profile_account_init(&paid,SPX_PROFILE_REQUIRED*3u));
     for (unsigned i=0;i<3;i++) {
-        struct spx_status_entry entries[1]={0};struct spx_context context;
+        struct spx_status_entry entries[1]={0};struct spx_context context={0};
         assert(spx_context_init(&context,1,entries,1,NULL,NULL,NULL));
         census_reset();int64_t result=-99;spx_status_token token=SPX_STATUS_SUCCESS;
         assert(spx_profile_invoke(&paid,&context,&result,&token)==SPX_FUSED_LANGUAGE_FAILURE);
