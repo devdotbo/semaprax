@@ -7,6 +7,7 @@
   preflight while retaining the exact filtered emission closure and resource
   refusal gate; authored exclusion/forgery regressions await owning execution.
 - Repair native owned String view validation to retain exact owned extent while keeping foreign root and internal Slice bounds separate; select constant-space linear contains only for owned-view programs. Author long-view, matcher, ingress and backend settlement controls; executable qualification is pending.
+- Move scalar-match guard and arm-value cleanup replay onto the existing bounded heap continuation machine, retaining path order, failure selection, String result transfers and limits; owning regression definitions await grouped qualification.
 
 - Authenticate the compiler-owned owned-Bytes borrow projection in the selected
   final-UTF8 profile, retaining exact intrinsic-call validation and refusing

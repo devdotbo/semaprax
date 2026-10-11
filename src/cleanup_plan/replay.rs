@@ -8,6 +8,7 @@ mod inventory_coverage;
 mod physical_budget;
 mod physical_clone;
 mod physical_storage;
+mod scalar_match;
 mod selected_callees;
 mod selected_context;
 mod selected_entry;
@@ -3509,6 +3510,8 @@ fn expression_skeleton(
             false_prefixes: Vec<ExprSkeletonPath>,
             results: Vec<ExprSkeletonPath>,
         },
+        ScalarGuard(scalar_match::Guard<'a>),
+        ScalarValue(scalar_match::Value<'a>),
         MatchScrutinee {
             expression: &'a ResolvedExpr,
             scrutinee: &'a ResolvedExpr,
@@ -3536,6 +3539,24 @@ fn expression_skeleton(
             work.charge(1, "typed-HIR skeleton continuation push")?;
             note_skeleton_materialization();
             $frames.push($frame);
+        }};
+    }
+
+    macro_rules! schedule_scalar {
+        ($next:expr, $frames:ident, $produced:ident) => {{
+            match $next {
+                scalar_match::Next::Guard(state) => {
+                    let guard = state.expression();
+                    push_frame!($frames, Frame::ScalarGuard(state));
+                    push_frame!($frames, Frame::Eval(guard));
+                }
+                scalar_match::Next::Value(state) => {
+                    let value = state.expression();
+                    push_frame!($frames, Frame::ScalarValue(state));
+                    push_frame!($frames, Frame::Eval(value));
+                }
+                scalar_match::Next::Done(paths) => $produced = Some(paths),
+            }
         }};
     }
 
@@ -4280,7 +4301,7 @@ fn expression_skeleton(
                             Frame::MatchScrutinee {
                                 expression,
                                 scrutinee,
-                                arms,
+                                arms
                             }
                         );
                         push_frame!(frames, Frame::Eval(scrutinee));
@@ -5159,6 +5180,16 @@ fn expression_skeleton(
                 append_expr_paths(&mut results, selected, work, "if else result")?;
                 produced = Some(results);
             }
+            Frame::ScalarGuard(state) => {
+                let paths = produced.take().expect("scalar guard paths retained");
+                let next = state.finish(paths, work)?;
+                schedule_scalar!(next, frames, produced);
+            }
+            Frame::ScalarValue(state) => {
+                let paths = produced.take().expect("scalar value paths retained");
+                let next = state.finish(program, paths, work)?;
+                schedule_scalar!(next, frames, produced);
+            }
             Frame::MatchScrutinee {
                 expression,
                 scrutinee,
@@ -5171,15 +5202,16 @@ fn expression_skeleton(
                 }
                 // Scalar decisions authenticate each selected arm and guard.
                 if crate::hir::is_refutable_match_scalar(&scrutinee.ty) {
-                    produced = Some(finish_scalar_match_skeleton(
+                    let next = scalar_match::State::new(
                         program,
                         function,
                         expression,
                         scrutinee,
                         arms,
                         scrutinee_paths,
-                        work,
-                    )?);
+                    )?
+                    .next(work)?;
+                    schedule_scalar!(next, frames, produced);
                     continue;
                 }
                 let is_record =
@@ -6062,199 +6094,6 @@ fn prepare_selected_match_path(
 /// through the optional guard's Boolean join; rejected paths — including
 /// false guards — fall through), and the trailing catch-all arm consumes
 /// everything unconditionally, mirroring the canonical builder exactly.
-#[allow(clippy::too_many_arguments)]
-fn finish_scalar_match_skeleton(
-    program: &dyn crate::cleanup::ReplayContext,
-    function: &ResolvedFunction,
-    expression: &ResolvedExpr,
-    scrutinee: &ResolvedExpr,
-    arms: &[ResolvedMatchArm],
-    scrutinee_paths: Vec<ExprSkeletonPath>,
-    work: &mut SkeletonWork<'_, '_>,
-) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
-    if type_needs_drop(program, function, &expression.ty)?
-        && !matches!(expression.ty, crate::hir::ResolvedType::String)
-    {
-        return Err(replay_error(
-            function,
-            "droppable refutable-match result reached the copy-only cleanup skeleton",
-        ));
-    }
-    let last = arms
-        .last()
-        .ok_or_else(|| replay_error(function, "refutable match has no arms"))?;
-    let catch_all = matches!(
-        &last.pattern,
-        ResolvedMatchPattern::Wildcard | ResolvedMatchPattern::Binding(_)
-    );
-    if !catch_all || last.guard.is_some() {
-        return Err(replay_error(
-            function,
-            "resolved refutable match lacks a trailing irrefutable guard-free catch-all",
-        ));
-    }
-
-    let mut results: Vec<ExprSkeletonPath> = Vec::new();
-    let mut remaining = scrutinee_paths;
-    for (index, arm) in arms.iter().enumerate() {
-        let final_arm = index + 1 == arms.len();
-
-        // Terminal paths bypass the rest of the decision chain.
-        let mut active = Vec::new();
-        for path in std::mem::take(&mut remaining) {
-            if path.failed || path.residual {
-                work.push_existing_path(&mut results, path, "scalar match path move")?;
-            } else {
-                work.push_existing_path(&mut active, path, "scalar match path move")?;
-            }
-        }
-
-        let mut selected_paths: Vec<ExprSkeletonPath> = Vec::new();
-        let mut rejected_paths: Vec<ExprSkeletonPath> = Vec::new();
-        if final_arm {
-            selected_paths = active;
-        } else {
-            let arm_index = u32::try_from(index)
-                .map_err(|_| replay_error(function, "too many scalar match arms"))?;
-            for path in active {
-                let mut selected = work.clone_expr_path(&path, "scalar match selected clone")?;
-                let scrutinee_id =
-                    work.clone_owned(&scrutinee.id, "scalar match selected scrutinee clone")?;
-                work.push_observation(
-                    &mut selected,
-                    SkeletonObservation::ArmSelected {
-                        scrutinee: scrutinee_id,
-                        arm: arm_index,
-                        selected: true,
-                    },
-                    "scalar match selected observation",
-                )?;
-                work.push_existing_path(&mut selected_paths, selected, "scalar match path move")?;
-
-                let mut rejected = path;
-                let scrutinee_id =
-                    work.clone_owned(&scrutinee.id, "scalar match rejected scrutinee clone")?;
-                work.push_observation(
-                    &mut rejected,
-                    SkeletonObservation::ArmSelected {
-                        scrutinee: scrutinee_id,
-                        arm: arm_index,
-                        selected: false,
-                    },
-                    "scalar match rejected observation",
-                )?;
-                work.push_existing_path(&mut rejected_paths, rejected, "scalar match path move")?;
-            }
-        }
-
-        if let Some(guard) = &arm.guard {
-            let guard_paths = expression_skeleton(program, function, guard.as_ref(), work)?;
-            let (terminal, when_true, when_false) =
-                split_boolean_prefixes_at(guard_paths, &guard.id, work)?;
-            // The true continuation consumes the shared prefixes; false and terminal continuations clone them.
-            let mut with_false = Vec::new();
-            for prefix in &selected_paths {
-                let cloned = clone_expr_path_shallow(prefix, work)?;
-                let prefixed = sequence_skeleton_paths(
-                    work.singleton_path(cloned, "guard-false prefix")?,
-                    &when_false,
-                    work,
-                )?;
-                work.extend_existing_paths(
-                    &mut with_false,
-                    prefixed,
-                    "scalar match path extension",
-                )?;
-            }
-            let mut with_terminal = Vec::new();
-            for prefix in &selected_paths {
-                let cloned = clone_expr_path_shallow(prefix, work)?;
-                let prefixed = sequence_skeleton_paths(
-                    work.singleton_path(cloned, "guard-terminal prefix")?,
-                    &terminal,
-                    work,
-                )?;
-                work.extend_existing_paths(
-                    &mut with_terminal,
-                    prefixed,
-                    "scalar match path extension",
-                )?;
-            }
-            let with_true = sequence_skeleton_paths(selected_paths, &when_true, work)?;
-            // False guards and failed guard evaluations fall through.
-            work.extend_existing_paths(
-                &mut rejected_paths,
-                with_false,
-                "scalar match path extension",
-            )?;
-            work.extend_existing_paths(
-                &mut rejected_paths,
-                with_terminal,
-                "scalar match path extension",
-            )?;
-            work.extend_existing_paths(
-                &mut remaining,
-                rejected_paths,
-                "scalar match path extension",
-            )?;
-            for selected in with_true {
-                append_scalar_arm_value(
-                    program,
-                    function,
-                    expression,
-                    arm,
-                    selected,
-                    &mut results,
-                    work,
-                )?;
-            }
-        } else {
-            work.extend_existing_paths(
-                &mut remaining,
-                rejected_paths,
-                "scalar match path extension",
-            )?;
-            for selected in selected_paths {
-                append_scalar_arm_value(
-                    program,
-                    function,
-                    expression,
-                    arm,
-                    selected,
-                    &mut results,
-                    work,
-                )?;
-            }
-        }
-    }
-    for path in remaining {
-        work.push_existing_path(&mut results, path, "scalar match path move")?;
-    }
-    Ok(results)
-}
-
-/// Sequences one selected-arm prefix with its arm-value sub-skeleton and
-/// publishes the conditional-result transfer for owned values.
-#[allow(clippy::too_many_arguments)]
-fn append_scalar_arm_value(
-    program: &dyn crate::cleanup::ReplayContext,
-    function: &ResolvedFunction,
-    expression: &ResolvedExpr,
-    arm: &ResolvedMatchArm,
-    selected_prefix: ExprSkeletonPath,
-    results: &mut Vec<ExprSkeletonPath>,
-    work: &mut SkeletonWork<'_, '_>,
-) -> Result<(), Diagnostic> {
-    let value_paths = expression_skeleton(program, function, &arm.value, work)?;
-    let sequenced = sequence_skeleton_paths(
-        work.singleton_path(selected_prefix, "scalar match selected prefix")?,
-        &value_paths,
-        work,
-    )?;
-    let finished = finish_conditional_result(program, function, expression, sequenced, work)?;
-    append_expr_paths(results, finished, work, "scalar match arm result")?;
-    Ok(())
-}
 
 fn clone_expr_path_shallow(
     path: &ExprSkeletonPath,

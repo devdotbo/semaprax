@@ -70,6 +70,14 @@ identically to pre-feature output.
 4. Arm values must agree on type and ownership across all arms
    (`SPX-T259`).
 
+Independent cleanup replay evaluates scalar-match guards and arm values on its
+existing bounded heap continuation machine. Nested scalar matches do not start
+a recursive evaluator. Arm selection, guard-false fallthrough, sticky failure
+and owned String conditional-result transfers retain their exact order; the
+actual continuation frame layout is reserved before stack backing allocation.
+The existing depth, path and work limits remain unchanged. This is an authored
+implementation route; its grouped executable qualification remains pending.
+
 ## Admitted profile (v1 only)
 
 Refutable matches require a Copy scalar of exactly `i64`, `i32`, `u8`,
