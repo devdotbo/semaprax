@@ -31,13 +31,19 @@ impl ReplayContext for Closure<'_> {
         &self.local.module.types
     }
     fn type_count(&self) -> usize {
-        self.local.module.types.len() + self.types.len()
+        self.local.module.types.len() + self.types.len() + usize::from(self.local.vector.is_some())
     }
+    /// Local types, borrowed defining-module types, then the canonical Vec
+    /// rebuilt beside the shared index metadata.
     fn type_at(&self, index: usize) -> Option<&ResolvedTypeDeclaration> {
         self.local.module.types.get(index).or_else(|| {
-            index
-                .checked_sub(self.local.module.types.len())
-                .and_then(|i| self.types.get(i).copied())
+            let held = index.checked_sub(self.local.module.types.len())?;
+            self.types.get(held).copied().or_else(|| {
+                self.local
+                    .vector
+                    .as_ref()
+                    .filter(|_| held == self.types.len())
+            })
         })
     }
     fn interfaces(&self) -> &[ResolvedInterface] {
@@ -375,6 +381,30 @@ fn authenticate_target<'a>(
     Ok(Member { module, function })
 }
 
+/// Keep the stable retained-source diagnostic. Owning tests name the refusing
+/// closure boundary instead of inferring it from a generic G410; an earlier,
+/// more specific help is never replaced. Production output is unchanged.
+fn boundary<T>(
+    answer: Result<T, Vec<Diagnostic>>,
+    stage: &'static str,
+) -> Result<T, Vec<Diagnostic>> {
+    #[cfg(test)]
+    let answer = answer.map_err(|errors| {
+        errors
+            .into_iter()
+            .map(|error| {
+                if error.help.is_some() {
+                    error
+                } else {
+                    error.with_help(format!("imported scalar closure boundary: {stage}"))
+                }
+            })
+            .collect()
+    });
+    #[cfg(not(test))]
+    let _ = stage;
+    answer
+}
 fn authenticate_inner<'a>(
     module: &'a WorkspaceResolvedModule,
     modules: &'a [WorkspaceResolvedModule],
@@ -382,15 +412,30 @@ fn authenticate_inner<'a>(
     resources: &mut SelectedReplayPreparation,
 ) -> Result<Closure<'a>, Vec<Diagnostic>> {
     let anchor = module.functions.first().ok_or_else(fail)?;
-    super::current_module(module, modules, resources, anchor)?;
+    boundary(
+        super::current_module(module, modules, resources, anchor),
+        "current module",
+    )?;
     resources
         .reserve_array::<Closure<'_>>(anchor, 1, "imported scalar closure owner")
         .map_err(|_| fail())?;
-    let mut local = local::authenticate(module, facts, resources, anchor)?;
-    let types = types::discover(module, modules, facts, &mut local.index, resources, anchor)?;
-    let graph = graph::discover(module, modules, facts, resources, anchor)?;
+    let mut local = boundary(
+        local::authenticate(module, facts, resources, anchor),
+        "local source",
+    )?;
+    let types = boundary(
+        types::discover(module, modules, facts, &mut local.index, resources, anchor),
+        "defining types",
+    )?;
+    let graph = boundary(
+        graph::discover(module, modules, facts, resources, anchor),
+        "helper graph",
+    )?;
     #[cfg(test)]
-    let edges = graph::order(&graph, resources, anchor, |_| {})?;
+    let edges = boundary(
+        graph::order(&graph, resources, anchor, |_| {}),
+        "helper order",
+    )?;
     #[cfg(not(test))]
     graph::order(&graph, resources, anchor, |_| {})?;
     #[cfg(test)]

@@ -150,7 +150,7 @@ fn authenticate_inner<'a>(
             )
         })
         .map_err(|_| fail())?;
-    super::super::records::authenticate_prepared(
+    let vector = super::super::records::authenticate_prepared(
         module,
         inventory.records.as_deref(),
         facts,
@@ -158,7 +158,11 @@ fn authenticate_inner<'a>(
         resources,
         anchor,
     )?;
-    Ok(Context { index, module })
+    Ok(Context {
+        index,
+        module,
+        vector: Some(vector),
+    })
 }
 
 /// Same borrowed lexical classifier, with each frontier transition debited.

@@ -85,7 +85,8 @@ fn prepared_string_vec_and_borrowed_record_signatures_keep_current_type_pointers
         &mut resources,
     )
     .unwrap();
-    assert_eq!(context.type_count(), 1);
+    // The borrowed defining record, then the context-held canonical Vec.
+    assert_eq!(context.type_count(), 2);
     assert!(std::ptr::eq(
         context.type_at(0).unwrap(),
         &provider.types[0]
@@ -94,6 +95,8 @@ fn prepared_string_vec_and_borrowed_record_signatures_keep_current_type_pointers
         context.type_at(0).unwrap(),
         &provider.types[0].clone()
     ));
+    assert_canonical_vec(context.type_at(1).unwrap(), &[consumer, provider]);
+    assert!(context.type_at(2).is_none());
     assert_eq!(
         context
             .declarations()
@@ -123,12 +126,18 @@ fn prepared_string_vec_and_borrowed_record_signatures_keep_current_type_pointers
     let module = module(&build);
     assert!(module.static_text.as_ref().unwrap().lexical.is_some());
     let (context, _, _) = prepare(module, &build.hir.declarations, 32_000_000, usize::MAX).unwrap();
-    assert_eq!(context.type_count(), module.types.len());
+    // Exact current module pointers first; the canonical Vec follows them.
+    assert_eq!(context.type_count(), module.types.len() + 1);
     for (i, current) in module.types.iter().enumerate() {
         assert!(std::ptr::eq(context.type_at(i).unwrap(), current));
         assert!(!std::ptr::eq(context.type_at(i).unwrap(), &current.clone()));
     }
-    assert!(context.type_at(module.types.len()).is_none());
+    assert_canonical_vec(context.type_at(module.types.len()).unwrap(), &[module]);
+    assert!(context.type_at(module.types.len() + 1).is_none());
+    assert!(!module
+        .types
+        .iter()
+        .any(|current| current.id.as_str() == crate::prelude::VEC_ID));
     let id = hir::DeclarationId::new(crate::prelude::VEC_ID);
     let declaration = context.declarations().declaration(&id).unwrap();
     assert_eq!(declaration.kind, hir::DeclarationKind::Record);
@@ -144,6 +153,41 @@ fn prepared_string_vec_and_borrowed_record_signatures_keep_current_type_pointers
     assert_eq!(parameter.name, "T");
     assert_eq!(parameter.index, 0);
     assert_eq!(context.declarations().record_fields(&id).unwrap(), &[]);
+    // The receiving classifier accepts exactly this current/index pairing.
+    let vector = context.type_at(module.types.len()).unwrap();
+    assert_eq!(
+        vector.type_parameters.as_slice(),
+        context.declarations().type_parameters(&id).unwrap()
+    );
+    crate::cleanup::authenticate_selected_vector(&context, &id).unwrap();
+}
+
+/// The lent Vec is the exact canonical compiler-owned declaration and is held
+/// by the context, never borrowed from (or forged into) a retained module.
+fn assert_canonical_vec(
+    vector: &hir::ResolvedTypeDeclaration,
+    modules: &[&WorkspaceResolvedModule],
+) {
+    assert_eq!(vector.id.as_str(), crate::prelude::VEC_ID);
+    assert_eq!(vector.name, "Vec");
+    assert_eq!(vector.span, crate::ast::Span::default());
+    let [parameter] = vector.type_parameters.as_slice() else {
+        panic!("canonical Vec parameter");
+    };
+    assert_eq!(
+        (parameter.name.as_str(), parameter.index, parameter.span),
+        ("T", 0, crate::ast::Span::default())
+    );
+    let hir::ResolvedTypeDeclarationKind::Record { fields } = &vector.kind else {
+        panic!("canonical Vec record");
+    };
+    assert!(fields.is_empty());
+    for module in modules {
+        assert!(!module
+            .types
+            .iter()
+            .any(|current| std::ptr::eq(current, vector)));
+    }
 }
 #[test]
 fn prepared_current_layout_namespace_and_signature_drift_are_independent_and_sticky() {
