@@ -30,6 +30,14 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         scope: usize,
     ) -> Result<(), Diagnostic> {
         match &expression.kind {
+            ExprKind::VecConstructor { .. } => {
+                let expansion = crate::ast::vec_constructor::inspect(expression)
+                    .map_err(|message| error(self.program, "SPX-T318", message, expression.span))?;
+                self.frames.push(VerifierFrame::Enter {
+                    expression: expansion.value,
+                    scope,
+                });
+            }
             ExprKind::LexicalExit { kind, value } => {
                 if let Some(operand) = value {
                     self.frames.push(VerifierFrame::ResumeLexicalReturn {

@@ -55,6 +55,11 @@ pub(super) fn check_expr(
     diagnostics: &mut Vec<Diagnostic>,
 ) -> Option<CheckedValue> {
     match &expr.kind {
+        ExprKind::VecConstructor { .. } => match crate::ast::vec_constructor::inspect(expr) {
+            Ok(expansion) => check_expr(program, current, expansion.value, variables,
+                functions, types, result_type, allow_moves, diagnostics),
+            Err(message) => { diagnostics.push(error(program, "SPX-T318", message, expr.span)); None }
+        },
         ExprKind::LexicalExit{..}=>lexical_exit::check(program,current,expr,variables,functions,types,result_type,allow_moves,diagnostics),
         ExprKind::Closure {
             owning: true,

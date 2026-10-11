@@ -41,6 +41,7 @@ pub fn inspect(expression: &Expr) -> Result<Expansion<'_>, &'static str> {
         return Err("Vec constructor expansion count disagrees");
     }
     let mut previous: Option<&str> = None;
+    let mut previous_number = 0usize;
     for (index, statement) in statements.iter().enumerate() {
         let Statement::Let {
             syntax: LetSyntax::Authored,
@@ -59,12 +60,13 @@ pub fn inspect(expression: &Expr) -> Result<Expansion<'_>, &'static str> {
         {
             return Err("Vec constructor binding is not hygienically minted");
         }
-        if statements[..index].iter().any(|earlier| {
-            matches!(earlier,
-            Statement::Let { name: other, .. } if other == name)
-        }) {
-            return Err("Vec constructor binding is duplicated");
+        let number = name[3..]
+            .parse::<usize>()
+            .map_err(|_| "Vec constructor name overflows")?;
+        if number <= previous_number {
+            return Err("Vec constructor binding order disagrees");
         }
+        previous_number = number;
         let ExprKind::Call {
             name: callee,
             type_arguments,
@@ -100,4 +102,48 @@ pub fn inspect(expression: &Expr) -> Result<Expansion<'_>, &'static str> {
         value,
         statements,
     })
+}
+
+/// Exact owned backing of a Type clone, excluding its inline outer Type.
+/// The cursor is depth-bounded, independent of argument-list width.
+pub(crate) fn type_backing_bytes(root: &Type) -> Option<usize> {
+    const DEPTH: usize = 129;
+    let mut stack: [Option<(&Type, usize)>; DEPTH] = [None; DEPTH];
+    let mut depth = 1usize;
+    let mut total = 0usize;
+    stack[0] = Some((root, 0));
+    while depth != 0 {
+        let (ty, child) = stack[depth - 1]?;
+        if child == 0 {
+            let backing = match ty {
+                Type::Named { name, arguments } => name
+                    .len()
+                    .checked_add(arguments.len().checked_mul(std::mem::size_of::<Type>())?)?,
+                Type::Function { parameters, .. } => parameters
+                    .len()
+                    .checked_mul(std::mem::size_of::<Type>())?
+                    .checked_add(std::mem::size_of::<Type>())?,
+                _ => 0,
+            };
+            total = total.checked_add(backing)?;
+        }
+        let next = match ty {
+            Type::Named { arguments, .. } => arguments.get(child),
+            Type::Function { parameters, result } => parameters
+                .get(child)
+                .or_else(|| (child == parameters.len()).then_some(result.as_ref())),
+            _ => None,
+        };
+        if let Some(next) = next {
+            if depth == DEPTH {
+                return None;
+            }
+            stack[depth - 1] = Some((ty, child + 1));
+            stack[depth] = Some((next, 0));
+            depth += 1;
+        } else {
+            depth -= 1;
+        }
+    }
+    Some(total)
 }

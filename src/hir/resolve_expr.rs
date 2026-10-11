@@ -53,6 +53,22 @@ impl Resolver<'_> {
             #[cfg(test)]
             capacity::note(&frames, &results, &frame, &loop_targets);
             match frame {
+                Frame::FinishVecConstructor { element, count } => {
+                    let mut expression = results.pop().expect("constructor block resolved");
+                    let ResolvedExprKind::Block { statements, tail } = expression.kind else {
+                        return Err(super::hir_error(
+                            "Vec constructor did not lower to its block",
+                        ));
+                    };
+                    expression.kind = ResolvedExprKind::VecConstructor {
+                        element,
+                        count,
+                        statements,
+                        tail,
+                    };
+                    super::vec_constructor::authenticate(&expression)?;
+                    results.push(expression);
+                }
                 Frame::EnterLoop(target) => {
                     lexical_exit::enter_loop(&mut loop_targets, &mut loop_depth, target)?
                 }
@@ -78,6 +94,24 @@ impl Resolver<'_> {
                     bindings,
                     path,
                 } => match &expr.kind {
+                    ExprKind::VecConstructor { .. } => {
+                        let expansion =
+                            crate::ast::vec_constructor::inspect(expr).map_err(super::hir_error)?;
+                        let element = self.resolve_call_type_argument(
+                            function,
+                            expansion.element,
+                            expr.span,
+                        )?;
+                        frames.push(Frame::FinishVecConstructor {
+                            element,
+                            count: expansion.count,
+                        });
+                        frames.push(Frame::Enter {
+                            expr: expansion.value,
+                            bindings,
+                            path,
+                        });
+                    }
                     ExprKind::LexicalExit { kind, value } => {
                         lexical_exit::schedule(
                             function,

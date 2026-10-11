@@ -44,6 +44,7 @@ enum ExprFormatFrame<'a> {
     Expr(&'a Expr, u8),
     MeasureEnd(usize, u8, usize),
     CallArgs(&'a [Expr], usize),
+    ConstructorItems(&'a [Statement], usize),
     BinaryRight(&'a Expr, BinaryOp, bool),
     Block(&'a [Statement], Option<&'a Expr>, usize),
     BlockNext(&'a [Statement], Option<&'a Expr>, usize),
@@ -740,6 +741,22 @@ fn write_format_frames(
                         closure::write_signature(&mut output, params, return_type);
                         frames.push(Frame::Expr(body, 0));
                     }
+
+                    ExprKind::VecConstructor {
+                        element,
+                        value: normalized,
+                        ..
+                    } => {
+                        if let Ok(expansion) = crate::ast::vec_constructor::inspect(value) {
+                            output.write_str("vec_of<").unwrap();
+                            write_type(&mut output, element);
+                            output.write_str(">(").unwrap();
+                            frames.push(Frame::Close(')'));
+                            frames.push(Frame::ConstructorItems(expansion.statements, 1));
+                        } else {
+                            frames.push(Frame::Expr(normalized, parent_precedence));
+                        }
+                    }
                     ExprKind::Call {
                         name,
                         type_arguments,
@@ -929,6 +946,19 @@ fn write_format_frames(
                     .as_deref_mut()
                     .expect("measurement frames require a length table")
                     .insert((expression, precedence), output.bytes.saturating_sub(start));
+            }
+
+            Frame::ConstructorItems(statements, index) => {
+                if let Some(Statement::Let { value, .. }) = statements.get(index) {
+                    let ExprKind::Call { args, .. } = &value.kind else {
+                        unreachable!("authenticated constructor")
+                    };
+                    if index != 1 {
+                        output.write_str(", ").unwrap();
+                    }
+                    frames.push(Frame::ConstructorItems(statements, index + 1));
+                    frames.push(Frame::Expr(&args[1], 0));
+                }
             }
             Frame::CallArgs(args, index) => {
                 if let Some(argument) = args.get(index) {

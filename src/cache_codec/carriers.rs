@@ -255,7 +255,8 @@ mod ast {
         23 => UpdateRecord { base, fields }, 24 => Project { base, field, field_span },
         25 => Closure { params, return_type, body, owning, retained, mutable },
         26 => Yield { request },
-        27 => LexicalExit { kind, value }, 28 => BorrowedUtf8Literal(value)
+        27 => LexicalExit { kind, value }, 28 => BorrowedUtf8Literal(value),
+        29 => VecConstructor { element, count, value }
     });
     codec_struct!(MatchArm {
         pattern,

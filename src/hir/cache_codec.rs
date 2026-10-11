@@ -1,7 +1,7 @@
 //! Complete private checked-module wire carriers. Access stays behind the
 //! authenticated cache owner; this module grants no source or backend authority.
 use super::*;
-use crate::cache_codec::{codec_enum, codec_struct, codec_tuple, Codec, Decoder, Encoder};
+use crate::cache_codec::{Codec, Decoder, Encoder, codec_enum, codec_struct, codec_tuple};
 
 codec_tuple!(DeclarationId(0));
 codec_tuple!(FunctionInstanceId(0));
@@ -291,7 +291,7 @@ codec_enum!(ResolvedExprKind {
     24=>Try{operand,result,ok_case,ok_field,err_case,err_field,residual_type},
     25=>TryOption{operand,option,some_case,some_field,none_case,residual_type},
     26=>UpdateRecord{base,record,fields},27=>Project{base,field},28=>Upcast{source},29=>FunctionReference{target},30=>Invoke{callable,args},31=>Closure{parameters,captures,body},
-    32=>Yield{request},33=>LiteralFormat{template,args},34=>VecFieldRead{element,field,bytes,args},35=>LexicalExit{kind,target,value},36=>BorrowedUtf8Literal(value)
+    32=>Yield{request},33=>LiteralFormat{template,args},34=>VecFieldRead{element,field,bytes,args},35=>LexicalExit{kind,target,value},36=>BorrowedUtf8Literal(value),37=>VecConstructor{element,count,statements,tail}
 });
 codec_struct!(ResolvedMatchArm {
     pattern,

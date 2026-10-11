@@ -8,6 +8,7 @@ use std::rc::Rc;
 
 use crate::ast::{BinaryOp, Expr, Span, Statement, Type, UnaryOp};
 
+use super::Binding;
 #[cfg(test)]
 use super::capacity_probe::{
     resolved_expr_owned_capacity, resolved_field_initializer_owned_capacity,
@@ -22,9 +23,12 @@ use super::ids::{DeclarationId, FunctionInstanceId};
 use super::nodes::{
     DeclarationKind, ResolvedBinding, ResolvedHostCommandOperation, ResolvedMatchMode, ResolvedType,
 };
-use super::Binding;
 
 pub(super) enum Frame<'expr> {
+    FinishVecConstructor {
+        element: ResolvedType,
+        count: u32,
+    },
     EnterLoop(super::ControlTarget),
     LeaveLoop,
     FinishLexicalExit {
@@ -448,7 +452,7 @@ pub(super) fn frame_owned_capacity(
     }
     let path = match frame {
         Frame::ForOwn(_) => unreachable!("handled above"),
-        Frame::EnterLoop(_) | Frame::LeaveLoop => 0,
+        Frame::EnterLoop(_) | Frame::LeaveLoop | Frame::FinishVecConstructor { .. } => 0,
         Frame::FinishLexicalExit { path, .. } => path.capacity(),
         Frame::FinishInvoke { path, .. }
         | Frame::Enter { path, .. }
@@ -544,6 +548,7 @@ pub(super) fn frame_owned_capacity(
         _ => 0,
     };
     let retained = match frame {
+        Frame::FinishVecConstructor { element, .. } => resolved_type_owned_capacity(element),
         Frame::EnterLoop(target) | Frame::FinishLexicalExit { target, .. } => {
             super::capacity_probe::lexical_target_capacity(target)
         }

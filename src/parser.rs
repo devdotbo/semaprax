@@ -32,6 +32,7 @@ mod signed_minimum;
 mod statement_if;
 mod static_text;
 mod types;
+mod vec_constructor;
 use types::expression_path;
 mod yields;
 pub struct Parser {
@@ -1114,13 +1115,18 @@ impl Parser {
                 let end = self
                     .expect(&TokenKind::RParen, "`)` after call arguments")?
                     .span;
-                expression = Expr {
-                    kind: ExprKind::Call {
-                        name,
-                        type_arguments,
-                        args,
-                    },
-                    span: expression.span.merge(end),
+                let span = expression.span.merge(end);
+                expression = if name == "vec_of" {
+                    self.vec_constructor(type_arguments, args, span)?
+                } else {
+                    Expr {
+                        kind: ExprKind::Call {
+                            name,
+                            type_arguments,
+                            args,
+                        },
+                        span,
+                    }
                 };
                 continue;
             }
