@@ -5,7 +5,7 @@ const SOURCE: &str = r#"module lexical.status.order;
  let values=vec_push<i64>(vec_push<i64>(vec_with_capacity<i64>(2usize),1),2);
  let mut seen=0;
  for value in values {
-  if value==1 {continue;};
+  if value==1 {continue;} else {0};
   let marker=2+3;
   seen=marker;
   break;

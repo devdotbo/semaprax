@@ -10,8 +10,8 @@ const SOURCE: &str = r#"module lexical.iterator.closed;
  for own item in vec_into_iter<Bytes>(values) {
   let width=byte_len(bytes_as_slice(item));
   seen=seen+1;
-  if seen==1 {continue;};
-  if width==2usize {continue;};
+  if seen==1 {continue;} else {0};
+  if width==2usize {continue;} else {0};
   total=total+3;
   break;
  }

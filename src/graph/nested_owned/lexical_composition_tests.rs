@@ -8,7 +8,7 @@ fn lexical_iterator_overlay_requires_retained_owner_and_independent_replay() {
  let mut seen=0;
  for own item in vec_into_iter<Bytes>(values) {
   seen=seen+1;
-  if seen==1 {continue;};
+  if seen==1 {continue;} else {0};
   break;
  }
  return seen;
