@@ -124,6 +124,7 @@ mod resolve_variant_or;
 mod resolve_vec_call;
 mod resolve_yield;
 mod type_reachability;
+pub(crate) mod vec_constructor;
 pub(crate) use type_reachability::is_admitted_copy_aggregate_variant_field;
 pub(crate) use type_reachability::{
     is_admitted_concrete_owned_byte_variant, is_admitted_owned_string_variant,

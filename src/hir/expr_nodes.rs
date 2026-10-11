@@ -5,12 +5,12 @@
 
 use crate::ast::{BinaryOp, Span, UnaryOp};
 
+use super::Place;
 use super::ids::{DeclarationId, ExpressionId, FunctionInstanceId};
 use super::nodes::{
     OwnershipMode, ResolvedBinding, ResolvedHostCommandCall, ResolvedMatchMode,
     ResolvedNativeRustImportCall, ResolvedType,
 };
-use super::Place;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ResolvedExpr {
@@ -31,6 +31,12 @@ pub struct ResolvedClosureCapture {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ResolvedExprKind {
+    /// Authenticated source constructor; the value executes an ordinary block.
+    VecConstructor {
+        element: ResolvedType,
+        count: u32,
+        value: Box<ResolvedExpr>,
+    },
     /// A typed terminal flow, independently bound to its exact lexical target.
     LexicalExit {
         kind: crate::ast::LexicalExitKind,

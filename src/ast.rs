@@ -6,6 +6,8 @@ pub mod expression_statement;
 mod session_protocol;
 #[path = "ast/statement_if.rs"]
 mod statement_if;
+#[doc(hidden)]
+pub mod vec_constructor;
 pub use session_protocol::{
     SessionProtocolDeclaration, SessionProtocolFollowsClause, SessionProtocolKind,
     SessionProtocolName, SessionProtocolNext, SessionProtocolTerminal, SessionProtocolTransition,
@@ -860,6 +862,12 @@ pub struct ClosureParam {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ExprKind {
+    /// Source constructor provenance around sequential ordinary Vec calls.
+    VecConstructor {
+        element: Type,
+        count: u32,
+        value: Box<Expr>,
+    },
     /// Terminal source control flow: no normal value and no authored target.
     LexicalExit {
         kind: LexicalExitKind,
