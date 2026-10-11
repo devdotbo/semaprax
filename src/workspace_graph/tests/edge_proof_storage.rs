@@ -1,8 +1,8 @@
 //! The historical text sink is an independent, test-only allocation control.
+use super::canonical_source;
 use crate::bounded_output::{with_limit_usage_refusal, CappedString, ReservationStage};
 use crate::workspace_graph::{
-    build_owned_with_builder_limit, retained_validation, WorkspaceEdge, WorkspaceSource,
-    MAX_BUILDER_BYTES,
+    build_owned_with_builder_limit, retained_validation, WorkspaceEdge, MAX_BUILDER_BYTES,
 };
 use std::fmt::Write as _;
 use std::path::Path;
@@ -32,14 +32,8 @@ fn historical_text(edges: &[WorkspaceEdge]) -> String {
 #[test]
 fn edge_replay_keeps_exact_projection_and_one_short_without_discarded_text_storage() {
     let sources = vec![
-        WorkspaceSource {
-            path: "app/main.spx".to_owned(),
-            source: "module app.main;\nuse function @id(\"lib.answer\") from lib.core as answer;\n@id(\"app.main\") fn main() -> i64 { answer() + answer() }\n".to_owned(),
-        },
-        WorkspaceSource {
-            path: "lib/core.spx".to_owned(),
-            source: "module lib.core;\n@id(\"lib.answer\") fn answer() -> i64 { 21 }\n".to_owned(),
-        },
+        canonical_source("app/main.spx", "module app.main;\nuse function @id(\"lib.answer\") from lib.core as answer;\n@id(\"app.main\") fn main() -> i64 { answer() + answer() }\n"),
+        canonical_source("lib/core.spx", "module lib.core;\n@id(\"lib.answer\") fn answer() -> i64 { 21 }\n"),
     ];
     let baseline = build_owned_with_builder_limit(sources.clone(), MAX_BUILDER_BYTES).unwrap();
     let programs = sources

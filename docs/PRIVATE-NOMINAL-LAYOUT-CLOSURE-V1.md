@@ -96,9 +96,30 @@ provider pointers, both signature parity paths, and exact/one-short storage.
 The same linked source has interpreter, native O0/O2 and strict CoreWasm owning
 success and failed-postcondition controls with repeated invocation and zero live
 native/String/Vec storage; no production source or backend ABI is substituted.
-Function-root admission uses precharged borrowed closure frames and independently
-reclassifies each signature root's ownership, avoiding the explicit-import
-scanner's cloned identities and dynamic pending sets on this new route.
+Function-root admission consumes an invocation-held, precharged ownership and
+signature-site directory. A shared bounded postorder walk computes each reached
+nominal declaration's ownedness once; exact current function/type pointers bind
+its signature sites to the immutable caller, provider set, and authored index.
+The compiler Vec wrapper retains its own ownership and flat element checks.
+Binary lookups compare stable function identity and signature ordinal, then
+authenticate exact held signature pointers,
+debit the held work remainder and allocate no new frames, cloned IDs,
+sets, or backing. Exhaustion never grants a private fallback. Primitive signature
+leaves use the old scalar/resource classification without a pending Vec.
+
+`private_layout::owner_index::tests::` adds three owning definitions: differential
+comparison with the independent old walk, wide logarithmic probes, and
+allocation-free repeated queries;
+exact/one-short complete construction, shared lookup work, and observed absence
+of legacy fallback after refusal; and duplicate
+provider names/aliases plus cold/reconstructed layout and retained-HIR drift.
+Import validation holds one caller directory across its import loop. Forecasting
+and synthetic stub construction each reuse their already-held closure for all
+signature queries and naming/rewrite operations. Those separate phase boundaries
+still independently reconstruct the closure; no global cache or cross-phase
+validation lease is introduced. Directory construction currently prepays a
+conservative quadratic in-place sort allowance; this tranche claims logarithmic
+site queries, not optimal wide-directory construction.
 
 These definitions have not been executed for this tranche. No current-head
 interpreter/native/Wasm, cache, benchmark, source-size saving, or matrix promotion

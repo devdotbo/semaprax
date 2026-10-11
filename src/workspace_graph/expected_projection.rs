@@ -203,7 +203,9 @@ fn synthetic_builder_bytes_scoped_with_retention(
                 programs,
                 &mut default_memo,
                 &mut BTreeSet::new(),
-                super::owned_function_import::admitted(program, target, authored, programs),
+                super::owned_function_import::admitted_with_layout(
+                    program, target, authored, programs, &layout,
+                ),
                 import_stub::byte_helper_authorized(function, target.module, &mut byte_proofs)?,
                 Some(&layout),
             )?;
@@ -827,7 +829,9 @@ pub(super) fn synthetic_program(
         function.body = default_expr(
             &function,
             &type_declarations,
-            super::owned_function_import::admitted(program, target, authored, programs),
+            super::owned_function_import::admitted_with_layout(
+                program, target, authored, programs, &layout,
+            ),
             import_stub::byte_helper_authorized(target_function, target.module, &mut byte_proofs)?,
         )?;
         synthetic.functions.push(function);

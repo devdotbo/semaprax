@@ -6,9 +6,10 @@ pub(super) fn admitted(
     target: &AuthoredDeclaration<'_>,
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
     programs: &[Program],
-) -> bool {
+    layout: &crate::workspace_graph::expected_projection::private_layout::LayoutClosure<'_>,
+) -> Result<bool, ()> {
     let Some(function) = target.function else {
-        return false;
+        return Ok(false);
     };
     let signature_root = target.explicit
         && caller.module_uses.iter().any(|u| {
@@ -29,20 +30,24 @@ pub(super) fn admitted(
         || function.yields.is_some()
         || function.follows.is_some()
     {
-        return false;
+        return Ok(false);
     }
+    let refused = std::cell::Cell::new(false);
     let shape = |ty: &Type| {
+        if scalar(ty) || matches!(ty, Type::ArrayU8(_)) {
+            return Some(false);
+        }
+        if matches!(ty, Type::String | Type::Bytes) || crate::map_ops::ast_collection(ty) {
+            return Some(true);
+        }
         if signature_root {
-            if let Some(owner) =
-                crate::workspace_graph::expected_projection::private_layout::signature_owner(
-                    caller,
-                    target.module,
-                    ty,
-                    authored,
-                    programs,
-                )
-            {
-                return Some(owner);
+            match layout.signature_owner(caller, target, ty, authored, programs) {
+                Ok(Some(owner)) => return Some(owner),
+                Err(_) => {
+                    refused.set(true);
+                    return None;
+                }
+                Ok(None) => {}
             }
             // A private nominal root must never fall back to the allocating
             // explicit-import scanner if its independent closure refused.
@@ -52,6 +57,7 @@ pub(super) fn admitted(
                 ty,
                 programs,
             ) {
+                refused.set(true);
                 return None;
             }
         }
@@ -70,7 +76,7 @@ pub(super) fn admitted(
             || (matches!(ty, Type::Named { .. }) && shape(ty).is_some())
     };
     let selected = added(&function.return_type) || function.params.iter().any(|p| added(&p.ty));
-    selected
+    let admitted = selected
         && shape(&function.return_type).is_some()
         && function.params.iter().all(|p| {
             if crate::map_ops::ast_collection(&p.ty) {
@@ -87,7 +93,12 @@ pub(super) fn admitted(
                     None => false,
                 },
             }
-        })
+        });
+    if refused.get() {
+        Err(())
+    } else {
+        Ok(admitted)
+    }
 }
 
 pub(super) fn record_import(
@@ -357,12 +368,23 @@ use type @id("outcome") from imports.provider as Outcome;
             crate::parse(app, "app.spx").unwrap(),
         ];
         let authored = super::super::super::index_authored(&programs).unwrap();
+        let Ok(layout) =
+            crate::workspace_graph::expected_projection::private_layout::LayoutClosure::derive(
+                &programs[1],
+                &authored,
+                &programs,
+            )
+        else {
+            return false;
+        };
         admitted(
             &programs[1],
             authored.get("inspect").unwrap(),
             &authored,
             &programs,
+            &layout,
         )
+        .unwrap_or(false)
     }
     #[test]
     fn nested_outcome_imports_rederive_vector_elements_and_explicit_root() {

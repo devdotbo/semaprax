@@ -48,7 +48,7 @@ fn make() -> Report
 fn read(value: borrow Report) -> i64
 {
     let text = string_as_str(value.config.text);
-    if str_len_bytes(text) == 3usize && vec_len<Row>(value.rows) == 1usize { value.config.n } else { 0 }
+    if str_len_bytes(text) == 3 && vec_len<Row>(value.rows) == 1usize { value.config.n } else { 0 }
 }
 
 @id("forward")

@@ -5257,6 +5257,7 @@ fn validate_uses(
                 }
             }
         }
+        let mut private_layout = None;
         for module_use in &program.module_uses {
             if module_use
                 .persistent_id
@@ -5331,7 +5332,9 @@ fn validate_uses(
             }
             match module_use.kind {
                 ModuleUseKind::Function => {
-                    validate_imported_function(program, module_use, target, authored, programs)?
+                    validate_imported_function(
+                        program, module_use, target, authored, programs, &mut private_layout,
+                    )?
                 }
                 ModuleUseKind::Type => {
                     validate_imported_type(program, module_use, target, authored, programs)?;

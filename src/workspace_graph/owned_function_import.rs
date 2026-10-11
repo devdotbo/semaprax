@@ -4,14 +4,17 @@ use super::diagnostics::PROJECT_SIGNATURE_HELP;
 use super::*;
 mod text_collections;
 
-pub(super) fn admitted(
+pub(super) fn admitted_with_layout(
     caller: &Program,
     target: &AuthoredDeclaration<'_>,
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
     programs: &[Program],
+    layout: &super::expected_projection::private_layout::LayoutClosure<'_>,
 ) -> bool {
-    if text_collections::admitted(caller, target, authored, programs) {
-        return true;
+    match text_collections::admitted(caller, target, authored, programs, layout) {
+        Ok(true) => return true,
+        Err(()) => return false,
+        Ok(false) => {}
     }
     let Some(function) = target.function else {
         return false;
@@ -111,6 +114,22 @@ fn scalar(ty: &Type) -> bool {
             | Type::Bool
     )
 }
+#[cfg(test)]
+thread_local! {
+    static LEGACY_RECORD_SCANS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
+#[cfg(test)]
+pub(in crate::workspace_graph) fn with_legacy_record_scans<T>(
+    operation: impl FnOnce() -> T,
+) -> (T, usize) {
+    LEGACY_RECORD_SCANS.with(|count| {
+        let previous = count.replace(0);
+        let result = operation();
+        let observed = count.replace(previous);
+        (result, observed)
+    })
+}
+
 fn record_slot(
     module: &str,
     ty: &Type,
@@ -127,6 +146,8 @@ fn record_kind(
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
     programs: &[Program],
 ) -> Option<bool> {
+    #[cfg(test)]
+    LEGACY_RECORD_SCANS.with(|count| count.set(count.get().checked_add(1).unwrap()));
     let Type::Named { name, arguments } = ty else {
         return None;
     };
@@ -327,13 +348,20 @@ fn reader_inspection_signature(function: &Function) -> bool {
         )
 }
 
-pub(super) fn validate_imported_function(
+pub(super) fn validate_imported_function<'a>(
     caller: &Program,
     module_use: &ModuleUse,
     target: &AuthoredDeclaration<'_>,
-    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
-    programs: &[Program],
+    authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,
+    programs: &'a [Program],
+    layouts: &mut Option<expected_projection::private_layout::LayoutClosure<'a>>,
 ) -> Result<(), Vec<Diagnostic>> {
+    if layouts.is_none() {
+        *layouts = Some(expected_projection::private_layout::LayoutClosure::derive(
+            caller, authored, programs,
+        )?);
+    }
+    let layout = layouts.as_ref().expect("initialized caller layout");
     let function = target.function.expect("function target carries a function");
     let transparent_vec_wrapper = programs
         .iter()
@@ -347,7 +375,7 @@ pub(super) fn validate_imported_function(
         || reader_inspection_signature(function)
         || transparent_vec_wrapper
         || transparent_box_wrapper
-        || admitted(caller, target, authored, programs)
+        || admitted_with_layout(caller, target, authored, programs, layout)
     {
         return Ok(());
     }

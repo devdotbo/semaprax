@@ -14,6 +14,9 @@ mod roots;
 mod shape;
 use shape::{debit, explicit_only, scalar, validate_declaration, validate_root, Absence};
 
+#[path = "private_layout/owner_index.rs"]
+mod owner_index;
+
 pub(super) struct Entry<'a> {
     pub(super) module: &'a str,
     pub(super) declaration: &'a TypeDeclaration,
@@ -21,6 +24,7 @@ pub(super) struct Entry<'a> {
 }
 pub(in crate::workspace_graph) struct LayoutClosure<'a> {
     pub(super) entries: Vec<Entry<'a>>,
+    owners: Option<owner_index::Owners<'a>>,
 }
 struct Frame<'a> {
     module: &'a str,
@@ -31,19 +35,33 @@ const DEPTH: usize = crate::cleanup::MAX_CLEANUP_SHAPE_DEPTH;
 const WORK: usize = 1_048_576;
 
 impl<'a> LayoutClosure<'a> {
+    pub(in crate::workspace_graph) fn signature_owner(
+        &self,
+        caller: &Program,
+        target: &AuthoredDeclaration<'_>,
+        ty: &Type,
+        authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+        programs: &[Program],
+    ) -> Result<Option<bool>, Vec<Diagnostic>> {
+        match &self.owners {
+            Some(owners) => owners.owner(caller, target, ty, authored, programs),
+            None => Ok(None),
+        }
+    }
     pub(in crate::workspace_graph) fn is_empty(&self) -> bool {
         self.entries.is_empty()
     }
 
     pub(super) fn derive(
         caller: &Program,
-        authored: &BTreeMap<&str, AuthoredDeclaration<'a>>,
+        authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,
         programs: &'a [Program],
     ) -> Result<Self, Vec<Diagnostic>> {
         let mut remaining = WORK;
         if explicit_only(caller, authored, programs, &mut remaining)? != Absence::Possible {
             return Ok(Self {
                 entries: Vec::new(),
+                owners: None,
             });
         }
         // Borrowed root traversal precedes naming. Explicit-only programs do
@@ -68,6 +86,7 @@ impl<'a> LayoutClosure<'a> {
         if count == 0 {
             return Ok(Self {
                 entries: Vec::new(),
+                owners: None,
             });
         }
         let mut ordinal = names::first(caller)?;
@@ -141,9 +160,14 @@ impl<'a> LayoutClosure<'a> {
                     .ok_or_else(refusal)?,
             )
             .ok_or_else(refusal)?;
-        let _ = remaining;
+
         entries.sort_unstable_by(|a, b| a.declaration.stable_id.cmp(&b.declaration.stable_id));
-        Ok(Self { entries })
+        let owners =
+            owner_index::Owners::build(caller, authored, programs, &entries, &mut remaining)?;
+        Ok(Self {
+            entries,
+            owners: Some(owners),
+        })
     }
     pub(super) fn add_costs(
         &self,
@@ -551,6 +575,7 @@ mod function_runtime;
 
 // A function-only nominal signature is checked through the same borrowed closure
 // walk before admission; this creates no aliases or stored authority.
+#[cfg(test)]
 pub(in crate::workspace_graph) fn signature_owner<'a>(
     caller: &Program,
     module: &'a str,
