@@ -292,7 +292,7 @@ match borrow outcome {
 Encoded::Refused{required:n}=>false,
 Encoded::Encoded{text}=>{
 let actual=string_as_str(text);let width=byte_len(expected);let mut at=0usize;
-let mut same=str_len(actual)==total && offset<=total && width<=total-offset;
+let mut same=usize_from_i64(str_len_bytes(actual))==total && offset<=total && width<=total-offset;
 while same && at<width{same=match str_byte_at(actual,offset+at){Option::Some{value:a}=>match byte_get(expected,at){Option::Some{value:b}=>a==b,Option::None{}=>false,},Option::None{}=>false,};at=at+1usize;same && at<width}
 same
 },}}
