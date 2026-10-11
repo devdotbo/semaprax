@@ -405,7 +405,10 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
             include_str!("../../src/workspace_graph/indexed_rust.rs"),
             include_str!("../../src/workspace_graph/native_law.rs")
         ),
-        include_str!("../../src/workspace_graph/source_callables.rs"),
+        concat!(
+            include_str!("../../src/workspace_graph/source_callables.rs"),
+            include_str!("../../src/workspace_graph/source_callables/path_cursor.rs")
+        ),
         include_str!("../../src/workspace_graph/callee_inventory.rs"),
         concat!(
             include_str!("../../src/workspace_graph/retained_validation.rs"),

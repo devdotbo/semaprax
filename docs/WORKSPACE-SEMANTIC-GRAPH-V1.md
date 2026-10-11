@@ -181,6 +181,13 @@ reserved against the same `builder_bytes` budget. Either overflow produces
 `SPX-G171`. A looser estimate rejects earlier and a tighter one later; neither
 removes the retained-memory bound.
 
+Authored expression-site reconstruction reuses one UTF-8 path buffer per root.
+Its inline carrier and each complete replacement backing are charged before
+allocation, including overlap with the previous backing; child return truncates
+the buffer without refunding the cumulative debit. Callback path bytes, order,
+lowered traversal suffixes, and separately charged owned edge copies stay exact.
+This changes scratch construction, not parsed depth/call quotas or authority.
+
 A final live resolved-core budget refusal may include additive help with the
 first sticky reservation's requested bytes, remaining bytes, and reserved
 floor, captured from that exact attempt before its budget is restored. Optional
