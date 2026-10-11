@@ -484,14 +484,20 @@ fn private_host_implements_exactly_the_lease_aware_consumers() {
             "{symbol}"
         );
     }
-    // No global token authority and no hidden free/probe path.
-    for forbidden in [
-        "globalThis",
-        "Symbol.for",
-        "FinalizationRegistry",
-        "WeakRef",
-    ] {
+    // The realm marker contains no mint/lookup authority. It cannot be
+    // replaced or adopted by a separately evaluated copy.
+    assert!(HOST_SOURCE.contains("Object.prototype.hasOwnProperty.call(globalThis, REALM_KEY)"));
+    assert!(HOST_SOURCE.contains(
+        "value: Object.freeze({}), writable: false, configurable: false, enumerable: false"
+    ));
+    assert!(!HOST_SOURCE.contains("value: TOKENS"));
+    assert!(!HOST_SOURCE.contains("export const TOKENS"));
+    assert!(!HOST_SOURCE.contains("export function nextHandle"));
+    for forbidden in ["FinalizationRegistry", "WeakRef"] {
         assert!(!HOST_SOURCE.contains(forbidden), "{forbidden}");
+        assert!(!REGISTRY_SOURCE.contains(forbidden), "{forbidden}");
+    }
+    for forbidden in ["globalThis", "Symbol.for"] {
         assert!(!REGISTRY_SOURCE.contains(forbidden), "{forbidden}");
     }
 }
