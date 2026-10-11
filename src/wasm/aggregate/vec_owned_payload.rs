@@ -103,7 +103,7 @@ impl Emitter<'_> {
         }
         let offset = match op {
             crate::vec_ops::VecOp::Sort => {
-                return Err(error("owned Vec payload sorting is not admitted"))
+                return Err(error("owned Vec payload sorting is not admitted"));
             }
             VecOp::WithCapacity => 0,
             VecOp::Push => 1,
@@ -113,14 +113,15 @@ impl Emitter<'_> {
             VecOp::Set => VEC_IMPORT_COUNT + 1,
             VecOp::Clear => VEC_IMPORT_COUNT + 2,
             VecOp::Get => unreachable!(),
-            VecOp::CloneAt
+            VecOp::StrAt
+            | VecOp::CloneAt
             | VecOp::Replace
             | VecOp::ReserveOwned
             | VecOp::SortOwned
             | VecOp::SortBy => {
                 return Err(error(
                     "owned Vec payload new operation requires an admitted leaf layout",
-                ))
+                ));
             }
         };
         self.output.push(0x10);

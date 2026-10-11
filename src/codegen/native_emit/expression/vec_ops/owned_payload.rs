@@ -35,7 +35,8 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             String::new()
         };
         match op {
-            crate::vec_ops::VecOp::CloneAt
+            crate::vec_ops::VecOp::StrAt
+            | crate::vec_ops::VecOp::CloneAt
             | crate::vec_ops::VecOp::Replace
             | crate::vec_ops::VecOp::ReserveOwned
             | crate::vec_ops::VecOp::SortOwned

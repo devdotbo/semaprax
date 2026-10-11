@@ -674,7 +674,7 @@ if(copyRecordCodec)require('./copy_scalar_imports.js')(env,vectorValue);
     catch(error){if(!(error instanceof WebAssembly.LinkError))throw error;absent=true}
     if(!absent)throw Error('explicit sort linked without its authenticated private import');
   }
-  if(refusal==='field-no-allocation'){
+  if(refusal==='field-no-allocation'||refusal==='slot-no-copy'){
     const withoutRead={...env};delete withoutRead.spx_vec_leaf_field_read_v1;
     let absent=false;
     try{await WebAssembly.instantiate(moduleBytes,{env:withoutRead})}
@@ -723,6 +723,7 @@ if(copyRecordCodec)require('./copy_scalar_imports.js')(env,vectorValue);
   fieldOutput=new DataView(memory().buffer);
   for(let run=0;run<(copyRecordCodec?16:3);run++){
     codecPushAttempts=0;fieldReads=0;
+    const beforeSlotCopies=copies;
     let selected=0,returned;
     try{returned=instance.exports.semaprax_main()}
     catch(error){if(!error.message.startsWith('status:'))throw error;selected=Number(error.message.slice(7))}
@@ -737,7 +738,8 @@ if(copyRecordCodec)require('./copy_scalar_imports.js')(env,vectorValue);
     if(vectors.size||iterators.size||payloads.size||copies!==drops)
       throw Error(`leaks vec=${vectors.size} iter=${iterators.size} payload=${payloads.size} copies=${copies} drops=${drops}`);
     if(refusal==='field-index-failure'&&fieldReads!==0)throw Error('index failure accessed row storage');
-    if(refusal==='field-no-allocation'&&fieldReads<64)throw Error('repeated read guard was not exercised');
+    if((refusal==='field-no-allocation'||refusal==='slot-no-copy')&&fieldReads<64)throw Error('repeated read guard was not exercised');
+    if(refusal==='slot-no-copy'&&copies-beforeSlotCopies!==3)throw Error('String-slot reads copied payload storage');
     if(codecPushFailure&&codecPushAttempts!==Number(codecPushFailure[1]))
       throw Error('partial codec allocation failure did not reach its exact owning commit');
   }

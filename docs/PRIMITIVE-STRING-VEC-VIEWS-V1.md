@@ -44,6 +44,28 @@ unchanged. Owned String extent is authenticated independently from foreign Str
 extent. The separate existing `str_as_bytes` bound remains unchanged. No family,
 capacity, fuel, foreign-memory, host quota or public export permission is added.
 
+## Backend ownership boundary
+
+The interpreter retains the existing immutable Vec backing for a view. At an
+owning caller transfer it independently checks the current execution's exact
+Before endpoint, all owner-root alias/child loans and the original producer;
+only dead references are released. No String/Vec copy or physical finalizer is
+performed by that release. A cheap presence flag grants no loan authority.
+Native and private Core Wasm use the authenticated primitive String leaf
+slot, preserving its original pointer/token and exact slot generation. Native
+commits are matched in the current certified resume context. Fused and named
+byte views keep the existing 128 KiB Slice boundary; plain owned Str extent is
+not capped by that boundary. Foreign roots retain 64 KiB admission. Runtime
+closure profiles and standalone/public borrowed export permissions are unchanged.
+
+Authored owning selectors are `interpreter::string_slot::tests::` (two bodies)
+and `owned_leaf_vec::string_slots::` (two bodies). They include same-source
+NUL/Unicode/empty/repeated reads, last-use aliases before an owning user call,
+lazy skipped uses, exact native allocations/private host copies, long Str,
+exact Slice extent, provider corruption and Vec/2 cleanup/reentry controls.
+They have not been executed in this implementation lane; executable
+qualification and application adoption remain pending.
+
 ## Versioned projections
 
 Only programs using these calls select Prelude v17 and Graph v80. The v80

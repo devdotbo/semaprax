@@ -6,6 +6,12 @@ use std::ops::Deref;
 pub(super) enum BorrowedRoot {
     Invocation(ValueId),
     SourceExprStatic(hir::ExpressionId),
+    VectorStringSlot {
+        root: ValueId,
+        producer: hir::ExpressionId,
+        index: usize,
+        generation: u64,
+    },
 }
 impl From<ValueId> for BorrowedRoot {
     fn from(value: ValueId) -> Self {
@@ -16,6 +22,11 @@ impl From<ValueId> for BorrowedRoot {
 pub(super) enum Utf8Backing {
     Invocation(Arc<[u8]>),
     Static(hir::StaticUtf8),
+    VectorStringSlot {
+        vector: Arc<owned_vec::OwnedVecValue>,
+        index: usize,
+        generation: u64,
+    },
 }
 impl From<Arc<[u8]>> for Utf8Backing {
     fn from(value: Arc<[u8]>) -> Self {
@@ -27,6 +38,20 @@ impl AsRef<[u8]> for Utf8Backing {
         match self {
             Self::Invocation(bytes) => bytes,
             Self::Static(text) => text.as_str().as_bytes(),
+            Self::VectorStringSlot {
+                vector,
+                index,
+                generation,
+            } => {
+                assert_eq!(
+                    vector.generation, *generation,
+                    "String-slot generation changed"
+                );
+                let Value::String(text) = &vector.values[*index] else {
+                    unreachable!("authenticated String-slot backing changed type")
+                };
+                text.as_bytes()
+            }
         }
     }
 }

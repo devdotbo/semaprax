@@ -1,6 +1,6 @@
 //! Closed selection and iterative work admission before recursive lowering.
 
-use super::{error, Export, PreparedSelection};
+use super::{Export, PreparedSelection, error};
 use crate::diagnostic::Diagnostic;
 use crate::hir::{
     self, DeclarationId, IdentityOrigin, OwnershipMode, ResolvedExprKind, ResolvedFunction,
@@ -76,7 +76,9 @@ fn prepare_profile(
                 parameter.ownership != OwnershipMode::Value || !public_scalar(&parameter.ty)
             })
         {
-            return Err(error("standalone String export requires an explicit identity and bounded value i64/bool signature"));
+            return Err(error(
+                "standalone String export requires an explicit identity and bounded value i64/bool signature",
+            ));
         }
         exports.push(Export {
             id: id.clone(),
@@ -247,7 +249,9 @@ fn prepare_profile(
                 && !general_guards
                 && matches!(&expression.kind, ResolvedExprKind::Match {scrutinee,arms,..} if crate::variant_guards::copy_variant(&program.declarations,&scrutinee.ty) && arms.iter().any(|arm| arm.guard.as_ref().is_some_and(|guard| !crate::variant_guards::scalar_guard_shape(guard) || !matches!(arm.pattern,hir::ResolvedMatchPattern::Variant {..}))))
             {
-                return Err(error("general Copy variant guards require the explicit general-loop-match-v1 profile"));
+                return Err(error(
+                    "general Copy variant guards require the explicit general-loop-match-v1 profile",
+                ));
             }
             match &expression.kind {
                 ResolvedExprKind::LexicalExit { kind, target, .. }
@@ -501,6 +505,7 @@ fn admits_owned_string_byte_view(
                             && provenance.projected_type == ResolvedType::Str
                     }
                     crate::hir::ByteSliceRootKind::OwnedVectorField
+                    | crate::hir::ByteSliceRootKind::OwnedVectorStringSlot
                     | crate::hir::ByteSliceRootKind::SourceExprStatic => false,
                     _ => false,
                 }

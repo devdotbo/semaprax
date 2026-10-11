@@ -55,7 +55,7 @@ mod string_replacement;
 pub(super) use static_text_profile::{emit_scalar_exports_with_static_text, emit_with_static_text};
 pub(super) mod text_toolkit;
 pub(super) use provider_lowering::{
-    lower_public_generic_provider_closure, PUBLIC_GENERIC_PROVIDER_SOURCE_INDEX_MIN,
+    PUBLIC_GENERIC_PROVIDER_SOURCE_INDEX_MIN, lower_public_generic_provider_closure,
 };
 pub(crate) fn owned_arena_capacity(
     program: &ResolvedProgram,
@@ -67,8 +67,8 @@ pub(crate) fn owned_arena_capacity(
 mod numeric_conversions;
 
 use super::{
-    function_import, intern_type, section, write_bytes, write_i64, write_name, write_u32,
-    Signature, F32, F64, I32, I64, SCALAR_IMPORT_COUNT,
+    F32, F64, I32, I64, SCALAR_IMPORT_COUNT, Signature, function_import, intern_type, section,
+    write_bytes, write_i64, write_name, write_u32,
 };
 use crate::aggregate_layout::{AggregateLayout, AggregateLayoutCache, AggregateTarget};
 use crate::ast::{BinaryOp, UnaryOp};
@@ -84,6 +84,7 @@ use crate::variant_layout::{VariantLayout, VariantLayoutCache, VariantTarget};
 mod box_ops;
 mod scalar_shape;
 pub(super) mod string_runtime;
+mod string_slot;
 mod variant_equality;
 mod vec_copy_record;
 mod vec_field;
@@ -6261,6 +6262,9 @@ impl Emitter<'_> {
         type_arguments: &[ResolvedType],
         args: &[ResolvedExpr],
     ) -> Result<Value, Diagnostic> {
+        if op == crate::vec_ops::VecOp::StrAt {
+            return self.emit_string_slot(expr);
+        }
         let [element] = type_arguments else {
             return Err(error("Vec operation requires one exact type argument"));
         };
@@ -6561,7 +6565,8 @@ impl Emitter<'_> {
                 self.store_vec_element_bits(&result, element)?;
                 Ok(result)
             }
-            crate::vec_ops::VecOp::CloneAt
+            crate::vec_ops::VecOp::StrAt
+            | crate::vec_ops::VecOp::CloneAt
             | crate::vec_ops::VecOp::Replace
             | crate::vec_ops::VecOp::ReserveOwned
             | crate::vec_ops::VecOp::SortOwned
@@ -6729,7 +6734,8 @@ impl Emitter<'_> {
                 crate::hir::ByteSliceRootKind::SourceExprStatic => Err(error(
                     "static borrowed UTF-8 is outside the standalone String arena profile",
                 )),
-                crate::hir::ByteSliceRootKind::OwnedVectorField => {
+                crate::hir::ByteSliceRootKind::OwnedVectorField
+                | crate::hir::ByteSliceRootKind::OwnedVectorStringSlot => {
                     Err(error("standalone byte view excludes owned vector fields"))
                 }
                 _ => Err(error("standalone byte view has an unsupported root")),
@@ -7074,10 +7080,16 @@ impl Emitter<'_> {
         }
         self.output.push(0x21);
         write_u32(self.output, local);
-        Ok(Value::Scalar {
+        let result = Value::Scalar {
             local,
             ty: expr.ty.clone(),
-        })
+        };
+        if operation.as_str() == crate::byte_ops::STR_AS_BYTES_ID
+            && crate::vec_ops::string_slot::resolved_uses(self.program)
+        {
+            self.validate_byte_slice(&result);
+        }
+        Ok(result)
     }
 
     fn emit_byte_range(

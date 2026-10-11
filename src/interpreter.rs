@@ -90,6 +90,7 @@ mod owned_vec;
 mod prepared;
 mod projected_string_view;
 mod public_api_argument;
+mod string_slot;
 mod vec_field;
 pub use public_api_argument::PublicApiArgument;
 mod map_collections;
@@ -116,8 +117,8 @@ pub use failure_detail::{ContractArgument, ContractFailureDetail};
 use hir::ResolvedHostCommandOperation as Operation;
 pub(crate) use prepared::prepare_resolved_i64_with_profile;
 pub(crate) use resolved_case::{
-    evaluate_resolved_i64_function_with_profile, evaluate_resolved_profile_i64_entry,
-    evaluate_resolved_zero_arg_i64_function, ResolvedFunctionProfile,
+    ResolvedFunctionProfile, evaluate_resolved_i64_function_with_profile,
+    evaluate_resolved_profile_i64_entry, evaluate_resolved_zero_arg_i64_function,
 };
 use scalar_profile::{is_admitted_resolved_scalar, pattern_value_matches};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -126,10 +127,10 @@ use std::{path::Path, sync::Arc};
 use sha2::{Digest as _, Sha256};
 
 use crate::ast::{BinaryOp, Function, ParamMode, Program, Type, UnaryOp};
-use crate::bounded_output::{with_limit, BudgetedJoin as _};
+use crate::bounded_output::{BudgetedJoin as _, with_limit};
 use crate::cleanup_plan::{ContractPhase, StatusCase};
 use crate::conformance::{NormalizedStatus, Retryability, StatusClass};
-use crate::diagnostic::{quote_json, Diagnostic};
+use crate::diagnostic::{Diagnostic, quote_json};
 use crate::hir::{
     DeclarationId, ResolvedExpr, ResolvedExprKind, ResolvedFunction, ResolvedStatement,
     ResolvedType, ValueId,
@@ -138,10 +139,10 @@ use crate::runtime_status::{normalize_arithmetic, normalize_contract};
 use crate::{graph, hir, parse, patch, verify};
 
 pub(crate) use prepared::{
-    evaluate_prepared_resolved_zero_arg_i64, prepare_resolved_zero_arg_i64,
-    trace_child_expressions, PreparedCancellation, PreparedResolvedEvaluation,
-    PreparedResolvedEvaluationOutcome, PreparedResolvedI64, ResolvedTraceEvent, ResolvedTracePhase,
-    MAX_PREPARED_INDEX_BYTES, MAX_PREPARED_ORIGIN_NODES,
+    MAX_PREPARED_INDEX_BYTES, MAX_PREPARED_ORIGIN_NODES, PreparedCancellation,
+    PreparedResolvedEvaluation, PreparedResolvedEvaluationOutcome, PreparedResolvedI64,
+    ResolvedTraceEvent, ResolvedTracePhase, evaluate_prepared_resolved_zero_arg_i64,
+    prepare_resolved_zero_arg_i64, trace_child_expressions,
 };
 
 macro_rules! bformat {
@@ -3401,6 +3402,8 @@ fn normalize_byte_range(code: u32) -> NormalizedStatus {
 /// their suffix in structural order, so the index never needs to search or
 /// rebuild the retained prefix.
 struct Environment {
+    slot_function: Option<usize>,
+    slot_views: bool,
     control: Option<Box<lexical_control::FrameControl>>,
     bindings: Vec<(ValueId, Value)>,
     slots: HashMap<ValueId, usize>,
@@ -3414,6 +3417,8 @@ impl From<Vec<(ValueId, Value)>> for Environment {
             .map(|(index, (id, _))| (id.clone(), index))
             .collect();
         Self {
+            slot_function: None,
+            slot_views: false,
             control: None,
             bindings,
             slots,
@@ -3933,24 +3938,7 @@ impl Evaluator<'_> {
                 Ok(Value::String(self.materialize_utf8_copy(value)?))
             }
             ResolvedExprKind::Place(place) => {
-                let moves_storage = expression.ownership == hir::OwnershipMode::Own
-                    && matches!(
-                        &expression.ty,
-                        ResolvedType::Bytes
-                            | ResolvedType::StringMap
-                            | ResolvedType::OnceFunction
-                            | ResolvedType::OnceFunctionI64
-                            | ResolvedType::OnceFunctionI64Pair
-                            | ResolvedType::MutFunctionI64
-                            | ResolvedType::Nominal { .. }
-                    );
-                if moves_storage {
-                    take_owned_place(environment, place)
-                        .ok_or(Flow::Guard("use of moved owned storage"))
-                } else {
-                    self.lookup_place(environment, place)?
-                        .ok_or(Flow::Guard("unresolved scalar place"))
-                }
+                self.evaluate_slot_place(expression, place, environment)
             }
             ResolvedExprKind::BorrowPlace { operation, place } => {
                 let op = crate::byte_ops::by_id(operation.as_str())
@@ -3985,6 +3973,7 @@ impl Evaluator<'_> {
                         Value::BorrowedSlice(BorrowedSliceValue::whole(place.root.clone(), bytes)),
                     ),
                     (crate::byte_ops::ByteOp::StrAsBytes, Value::BorrowedStr(value)) => {
+                        string_slot::validate_slice_extent(&value.bytes)?;
                         Ok(Value::BorrowedSlice(BorrowedSliceValue::from_view(
                             value.invocation_root,
                             value.bytes,
@@ -4479,6 +4468,9 @@ impl Evaluator<'_> {
                 if let Some(op) = crate::list_ops::by_id(callee.as_str()) {
                     return self.evaluate_list_op(op, type_arguments, args, environment, depth);
                 }
+                if let Some(slot) = crate::vec_ops::string_slot::inspect(expression) {
+                    return self.evaluate_string_slot(expression, slot, environment, depth);
+                }
                 if let Some(op) = crate::vec_ops::by_id(callee.as_str()) {
                     return self.evaluate_vec_op(
                         op,
@@ -4960,7 +4952,7 @@ impl Evaluator<'_> {
                                 _ => {
                                     return Err(Flow::Guard(
                                         "variant pattern has non-variant value",
-                                    ))
+                                    ));
                                 }
                             }
                         }
@@ -5473,7 +5465,7 @@ fn verify_envelope_with_profile(envelope: &str, profile: SourceProfile) -> Resul
             _ => {
                 return Err(consistency_error(
                     "argument type is outside the canonical interpreter boundary".to_owned(),
-                ))
+                ));
             }
         };
         let Some(value_text) = argument["value"].as_str() else {
@@ -5615,7 +5607,7 @@ fn verify_envelope_with_profile(envelope: &str, profile: SourceProfile) -> Resul
             return Err(consistency_error(format!(
                 "outcome kind must be one of [{OUTCOME_RETURNED}, {OUTCOME_FAILED}, \
                  {OUTCOME_FUEL_EXHAUSTED}, {OUTCOME_CALL_DEPTH_EXCEEDED}]"
-            )))
+            )));
         }
     }
 
@@ -5891,14 +5883,16 @@ fn main() -> i64 { 0 }
         };
         assert!(matches!(record.fields.get(&left), Some(Value::Moved)));
         assert_eq!(record.fields.get(&right), Some(&Value::Bytes(right_value)));
-        assert!(take_owned_place(
-            &mut environment,
-            &hir::Place {
-                root,
-                projections: vec![hir::PlaceProjection::Field(left)],
-            },
-        )
-        .is_none());
+        assert!(
+            take_owned_place(
+                &mut environment,
+                &hir::Place {
+                    root,
+                    projections: vec![hir::PlaceProjection::Field(left)],
+                },
+            )
+            .is_none()
+        );
     }
 
     fn resolved(source: &str) -> hir::ResolvedProgram {

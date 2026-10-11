@@ -4118,6 +4118,12 @@ resolver stack checks while keeping module ceilings fixed.
 child retain their existing authority checks after extraction; textual owning
 audits include every moved body.
 
+`interpreter/string_slot` retains the same primitive String-slot backing and
+releases dead references at independently validated caller transfer endpoints.
+`native_emit/expression/vec_ops/string_slot` and `wasm/aggregate/string_slot`
+use the existing authenticated leaf-read boundary without cloning an owner;
+standalone/public borrowed export permissions remain unchanged.
+
 `interpreter/vec_field` reads the staged carrier without semantic owner creation
 or UTF-8 materialization. Native and Wasm lowering use their authenticated
 existing layouts and borrowed leaf carriers. Checked semantic-cache v7 invokes

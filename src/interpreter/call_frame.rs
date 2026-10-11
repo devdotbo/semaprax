@@ -10,6 +10,7 @@ impl Evaluator<'_> {
     ) -> Result<Value, Flow> {
         // Stage semantic work v1: one unit per admitted source frame.
         let mut frame = Environment::from(values);
+        frame.slot_function = Some(function as *const ResolvedFunction as usize);
         frame.control = lexical_control::frame_control(function)?;
         if let Err(failure) = self.semantic_charge() {
             self.settle_execution_boundary(
@@ -31,7 +32,7 @@ impl Evaluator<'_> {
                         &frame,
                         ContractPhase::Requires,
                         index,
-                    ))
+                    ));
                 }
                 _ => return Err(Flow::Guard("non-boolean requires clause")),
             }
@@ -53,7 +54,7 @@ impl Evaluator<'_> {
             Err(Flow::Lexical(_)) => {
                 return Err(Flow::Guard(
                     "lexical control escaped its exact runtime target",
-                ))
+                ));
             }
             Err(flow) => return Err(flow),
         };

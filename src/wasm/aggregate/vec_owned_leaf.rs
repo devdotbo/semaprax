@@ -392,12 +392,12 @@ impl Emitter<'_> {
                 _ => {
                     return Err(error(
                         "owned-leaf result field is outside admitted scalar profile",
-                    ))
+                    ));
                 }
             }
             match target {
                 Value::Bottom => {
-                    return Err(error("owned-leaf result field has no runtime storage"))
+                    return Err(error("owned-leaf result field has no runtime storage"));
                 }
                 Value::ScalarMemory { .. } => self.store_scalar(ty),
                 Value::Scalar { local, .. } => {
@@ -405,7 +405,7 @@ impl Emitter<'_> {
                     write_u32(self.output, local);
                 }
                 Value::Aggregate { .. } => {
-                    return Err(error("owned-leaf result field is aggregate"))
+                    return Err(error("owned-leaf result field is aggregate"));
                 }
             }
         }
@@ -642,8 +642,8 @@ impl Emitter<'_> {
                 self.output.push(0x21);
                 write_u32(self.output, scalar_local(&result)?);
             }
-            VecOp::Get | VecOp::Set | VecOp::ReserveExact | VecOp::Sort => {
-                return Err(error("owned-leaf Vec old operation is not admitted"))
+            VecOp::StrAt | VecOp::Get | VecOp::Set | VecOp::ReserveExact | VecOp::Sort => {
+                return Err(error("owned-leaf Vec old operation is not admitted"));
             }
         }
         Ok(result)

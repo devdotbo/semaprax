@@ -6,12 +6,13 @@ mod owned_leaf;
 mod owned_payload;
 mod record_payload;
 mod sort_keys;
+mod string_slot;
 
 use crate::codegen::native_bytes::NativeBytesProducer as _;
 use crate::diagnostic::Diagnostic;
 use crate::hir::{ResolvedExpr, ResolvedType};
 
-use super::super::{backend_error, CEmitter, COutput, CValue};
+use super::super::{CEmitter, COutput, CValue, backend_error};
 
 // `format!` resolves to the bounded codegen macro declared before
 // `mod native_emit`; it must never fall back to `std::format!` here.
@@ -23,6 +24,9 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         type_arguments: &[ResolvedType],
         args: &[ResolvedExpr],
     ) -> Result<CValue, Diagnostic> {
+        if op == crate::vec_ops::VecOp::StrAt {
+            return self.emit_string_slot(expr);
+        }
         let [element] = type_arguments else {
             return Err(backend_error(
                 "bounded Vec operation has incorrect type arity",
@@ -86,7 +90,8 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         self.require_type(&expr.ty, &return_type, "bounded Vec operation result")?;
         let plan = self.bytes_plan;
         match op {
-            crate::vec_ops::VecOp::CloneAt
+            crate::vec_ops::VecOp::StrAt
+            | crate::vec_ops::VecOp::CloneAt
             | crate::vec_ops::VecOp::Replace
             | crate::vec_ops::VecOp::ReserveOwned
             | crate::vec_ops::VecOp::SortOwned

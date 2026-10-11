@@ -196,6 +196,9 @@ impl Evaluator<'_> {
             }
         }
         match op {
+            crate::vec_ops::VecOp::StrAt => Err(Flow::Guard(
+                "String-slot operation requires exact borrowed call dispatch",
+            )),
             crate::vec_ops::VecOp::CloneAt => self.clone_owned_vec_element(&element, &values),
             crate::vec_ops::VecOp::SortOwned => self.sort_owned_vec_elements(&element, values),
             crate::vec_ops::VecOp::SortBy => self.sort_record_vec_by(&element, identity, values),

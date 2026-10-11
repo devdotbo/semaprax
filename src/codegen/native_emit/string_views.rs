@@ -18,7 +18,8 @@ pub(super) fn program_has_owned_string_byte_view(program: &ResolvedProgram) -> b
         pending.extend(function.requires.iter().chain(&function.ensures));
     }
     while let Some(expression) = pending.pop() {
-        if is_projected_string_byte_view(program, expression)
+        if crate::vec_ops::string_slot::inspect(expression).is_some_and(|slot| slot.bytes)
+            || is_projected_string_byte_view(program, expression)
             || matches!(
                 &expression.kind,
                 ResolvedExprKind::VecFieldRead { bytes: true, .. }
@@ -50,7 +51,8 @@ pub(super) fn program_uses_string_as_str(
         pending.extend(function.requires.iter().chain(&function.ensures));
     }
     while let Some(expression) = pending.pop() {
-        if is_projected_string_byte_view(program, expression)
+        if crate::vec_ops::string_slot::inspect(expression).is_some()
+            || is_projected_string_byte_view(program, expression)
             || matches!(&expression.kind, ResolvedExprKind::VecFieldRead { element, field, .. }
                 if crate::hir::vec_field::field(&program.declarations, element, field)
                     .is_some_and(|selected| selected.declaration.ty == crate::hir::ResolvedType::String))

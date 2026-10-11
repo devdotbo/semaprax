@@ -4,6 +4,9 @@ use crate::hir;
 use super::*;
 
 pub(super) fn uses(program: &ResolvedProgram) -> bool {
+    if crate::vec_ops::string_slot::resolved_uses(program) {
+        return true;
+    }
     program
         .functions
         .iter()

@@ -1,0 +1,33 @@
+module app.slots;
+@id("slots.inspect") fn inspect(values:borrow Vec<string>)->i64 {
+ let selected=vec_str_at(values,0usize);
+ let empty=vec_str_at(values,1usize);
+ let mut repeat=0usize;
+ let mut good=str_len_bytes(selected)==4 && str_is_empty(empty);
+ while repeat<64usize {
+  let bytes=str_as_bytes(vec_str_at(values,0usize));
+  good=good && byte_len(bytes)==4usize
+   && (match byte_get(bytes,1usize) {Option::Some{value:b1}=>b1==0u8,Option::None{}=>false,})
+   && (match byte_get(bytes,2usize) {Option::Some{value:b2}=>b2==195u8,Option::None{}=>false,})
+   && (match byte_get(bytes,3usize) {Option::Some{value:b3}=>b3==169u8,Option::None{}=>false,});
+  repeat=repeat+1usize;
+  0
+ }
+ if good {42}else{0}
+}
+@id("slots.consume") fn consume(values:own Vec<string>)->i64 {
+ let next=vec_push<string>(values,"b");
+ if vec_len<string>(next)==3usize {42}else{0}
+}
+@id("app.main") fn main()->i64 {
+ let initial=vec_with_capacity<string>(3usize);
+ let one=vec_push<string>(initial,"a\u{0}é");
+ let values=vec_push<string>(one,"");
+ let answer=inspect(values);
+ let view=vec_str_at(values,0usize);
+ let alias=view;
+ let bytes=str_as_bytes(alias);
+ let good=answer==42 && byte_len(bytes)==4usize && str_len_bytes(view)==4;
+ let consumed=consume(values);
+ if good && consumed==42 {42}else{0}
+}
