@@ -1407,7 +1407,7 @@ mod tests {
                 concat!(
                 "SPX-T252\n",
                 "wrote: generic while call\n",
-                "fix: vec_len<T>; imported generic aliases closed [While](WHILE-LOOPS-V1.md)\n",
+                "fix: vec_len<T>; imported generic aliases closed [While][while]\n",
                 "\n",
                 "wrote: rejected while helper\n",
                 "fix: Borrow compiler Copy-scalar Vec<T>; return scalar/flat Copy variant/string\n",
