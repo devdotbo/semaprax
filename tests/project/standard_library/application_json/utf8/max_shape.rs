@@ -192,7 +192,7 @@ fn owned_identifier_maximum_shape_preserves_exact_16_byte_ids_and_short_output()
     assert!(distinct.iter().all(|text| text.len() == 16));
     for escaped in [false, true] {
         let length = canonical.len() + if escaped { 264 * 16 * 5 } else { 0 };
-        assert!(length + 1 <= 131072);
+        assert!(length < 131072);
         let mut app = imports_for("identifier", "");
         identifier_wire(&mut app, "witness", length, escaped);
         identifier_wire(&mut app, "expected", canonical.len(), false);
@@ -271,7 +271,7 @@ fn utf8_maximum_shape_preserves_raw_escaped_and_mixed_64_byte_values() {
         let canonical = serde_json::to_vec(&expected).unwrap();
         let punctuation = canonical.len() - 264 * canonical_token.len();
         let length = punctuation + 264 * input_token.len();
-        assert!(length + 1 <= 131072);
+        assert!(length < 131072);
         assert!(canonical.len() <= 131072);
         let mut app = imports_for("unicode", "utf8.");
         unicode_wire(&mut app, "witness", &input_token, length);

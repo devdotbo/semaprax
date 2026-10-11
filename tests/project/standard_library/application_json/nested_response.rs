@@ -385,7 +385,7 @@ fn nested_response_selected_exact_eight_and_late_dynamic_string_plus_one_settle_
     let row = "{\"sku\":\"1234567890123456\",\"count\":1}";
     let expected = format!(
         "{{\"config\":{{\"label\":\"\",\"retry\":[]}},\"rows\":[{}],\"ok\":true}}",
-        vec![row; 8].join(",")
+        [row; 8].join(",")
     );
     let app = imports()
         + &format!(

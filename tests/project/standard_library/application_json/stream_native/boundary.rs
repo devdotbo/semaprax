@@ -84,7 +84,7 @@ pub(super) fn execute_observed(binary: &std::path::Path, input: &[u8]) -> std::p
         }
     }
     let mut expected = vec![4096; input.len() / 4096];
-    if input.len() % 4096 != 0 {
+    if !input.len().is_multiple_of(4096) {
         expected.push(input.len() % 4096);
     }
     expected.push(0); // Explicit EOF read, not an inferred writer boundary.

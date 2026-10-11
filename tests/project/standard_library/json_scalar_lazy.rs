@@ -263,7 +263,7 @@ fn qualify_normal(root: &std::path::Path) {
         .unwrap();
         let output = Command::new("node")
             .arg("scalar.mjs")
-            .current_dir(&root)
+            .current_dir(root)
             .output()
             .unwrap();
         assert!(

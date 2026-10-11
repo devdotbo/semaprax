@@ -119,7 +119,8 @@ fn stage(root: &Path) {
     std::fs::write(root.join("src/app.spx"), canonical(original)).unwrap();
     let errors =
         project::with_authenticated_project(&root.join("semaprax.toml"), |_| Ok(())).unwrap_err();
-    for code in ["SPX-O118"] {
+    {
+        let code = "SPX-O118";
         assert!(
             errors.iter().any(|error| error.code == code),
             "{code}: {errors:?}"

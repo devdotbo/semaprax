@@ -48,14 +48,13 @@ fn source(root: &std::path::Path) -> String {
         assert!(graph.contains("orders.request.json.nested.stream-decode"));
         assert!(graph.contains("orders.request.json.stream.normalize"));
         codegen::emit_hir_c_with_stdin_stream_nested_outcomes(snapshot.public_api_program(),
-            "orders.command").map(|c| {
+            "orders.command").inspect(|c| {
                 let sources = revision.sources().iter().map(|s| format!("{}={:x}", s.path(),
                     semaprax::digest_hex::LowerHex(Sha256::digest(s.source().as_bytes()))))
                     .collect::<Vec<_>>().join(",");
                 eprintln!("stream-nested-audit project={} hir={} sources={} c={:x}",
                     revision.project_revision(), revision.semantic_graph_digest(), sources,
                     semaprax::digest_hex::LowerHex(Sha256::digest(c.as_bytes())));
-                c
             }).map_err(|error| vec![error])
     }).unwrap()
 }
