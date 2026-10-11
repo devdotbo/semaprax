@@ -86,6 +86,14 @@ pub(super) fn validate(
                 {
                     return Err(replay_error(function, "selected lexical replay does not admit nominal or callable expression storage"));
                 }
+                if let ResolvedExprKind::Project { base, .. } = &expression.kind {
+                    collections::prepay(
+                        program,
+                        function,
+                        collections::type_key_bytes(&base.ty)?,
+                        budget,
+                    )?;
+                }
                 flat_records::expression(program, function, expression)?;
                 match &expression.kind {
                     ResolvedExprKind::ConstructVariant { .. }
@@ -125,6 +133,18 @@ pub(super) fn validate(
                             "selected primitive statements",
                         )?;
                         for statement in statements {
+                            if let crate::hir::ResolvedStatement::Let { binding, .. }
+                            | crate::hir::ResolvedStatement::Assign { binding, .. } = statement
+                            {
+                                if matches!(binding.ty, ResolvedType::Nominal { .. }) {
+                                    collections::prepay(
+                                        program,
+                                        function,
+                                        collections::type_key_bytes(&binding.ty)?,
+                                        budget,
+                                    )?;
+                                }
+                            }
                             match statement {
                                 crate::hir::ResolvedStatement::Let { binding, .. }
                                 | crate::hir::ResolvedStatement::Assign { binding, .. }
