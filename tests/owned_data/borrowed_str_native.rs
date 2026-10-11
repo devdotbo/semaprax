@@ -195,4 +195,5 @@ int main(void) {{
     }
 }
 
+#[path = "borrowed_str_native/owned_views.rs"]
 mod owned_views;
