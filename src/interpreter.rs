@@ -2639,6 +2639,9 @@ fn scan_closure(
             ResolvedExprKind::Call {
                 callee, instance, ..
             } => {
+                if callee.as_str() == crate::construction_fusion::partition::ID {
+                    return Err(reject_scan(expression, REASON_UNSUPPORTED_CALLEE));
+                }
                 let intrinsic = crate::map_ops::by_id(callee.as_str()).is_some()
                     || crate::string_ops::by_id(callee.as_str()).is_some()
                     || crate::str_ops::by_id(callee.as_str()).is_some()
@@ -4363,6 +4366,7 @@ impl Evaluator<'_> {
                     };
                 }
                 if let Some(op) = crate::byte_ops::by_id(callee.as_str()) {
+                    byte_partition::refuse_ordinary_operation(op)?;
                     self.charge()?;
                     let mut values = Vec::with_capacity(args.len());
                     for argument in args {

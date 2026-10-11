@@ -334,3 +334,14 @@ impl<R: InvocationRuntime> Registry<R> {
 }
 #[cfg(test)]
 mod tests;
+
+// Registration is not evaluator authority. The ordinary dispatcher rejects
+// before evaluating arguments; only the future checked owner entry may install.
+pub(super) fn refuse_ordinary_operation(op: crate::byte_ops::ByteOp) -> Result<(), super::Flow> {
+    match op {
+        crate::byte_ops::ByteOp::Partition => Err(super::Flow::Guard(
+            "byte partition requires its sealed ordinary interpreter receiver",
+        )),
+        _ => Ok(()),
+    }
+}
