@@ -180,11 +180,67 @@ fn fingerprints() -> bool
     let entry = fingerprint_entry(46usize, nul);
     let packed = entry_opening(entry) == 46usize && entry_fingerprint(entry) == nul;
     let matches = !fingerprint_match(source, fingerprint_entry(0usize, ascii), 5usize, ascii) && fingerprint_match(source, fingerprint_entry(0usize, ascii), 10usize, ascii) && !fingerprint_match(source, fingerprint_entry(0usize, ascii), 10usize, ascii + 1usize) && !fingerprint_match(source, fingerprint_entry(20usize, wide), 26usize, wide) && fingerprint_match(source, fingerprint_entry(20usize, wide), 32usize, wide) && !fingerprint_match(source, entry, 56usize, nul) && fingerprint_match(source, fingerprint_entry(66usize, emoji), 80usize, emoji);
-    bytes && values && bounds && fast && packed && matches
+    let old = frozen_fingerprint(source, 0usize, 64usize) == ascii && frozen_fingerprint(source, 20usize, 64usize) == wide && frozen_fingerprint(source, 46usize, 64usize) == nul && frozen_fingerprint(source, 66usize, 64usize) == emoji && frozen_fingerprint(source, 80usize, 64usize) == emoji && frozen_fingerprint(source, 0usize, 2usize) == 0usize && frozen_fingerprint(source, 1usize, 64usize) == 0usize && frozen_fingerprint(source, 86usize, 64usize) == 0usize && frozen_fingerprint(source, 18446744073709551615usize, 64usize) == 0usize;
+    bytes && values && bounds && fast && packed && matches && old
+}
+
+// Saved pre-generalized raw-byte shortcut. The fallback remains independent
+// of the changed production branch, including decoded escape/cursor semantics.
+@id("std.data.json.dec.tests.frozen-fingerprint")
+fn frozen_fingerprint(input: borrow Slice<u8>, start: usize, limit: usize) -> usize
+    requires limit >= 1usize && limit <= 256usize
+    ensures result < 16842752usize
+{
+    let mut valid = start < byte_len(input) && at_is(input, start, 34u8);
+    let mut index = if valid { start + 1usize } else { start };
+    let mut part = 0usize;
+    let mut count = 0usize;
+    let mut hash = 0usize;
+    let mut running = valid && !at_is(input, index, 34u8);
+    while running {
+        // Plain ASCII emits one byte. Classify it once rather than repeating
+        // emit-width, decoded-byte and token-end probes for the same cursor.
+        // Escaped/control/non-ASCII tokens retain the original path.
+        let raw = match byte_get(input, index) { Option::Some { value: byte } => usize_from_u8(byte), Option::None {} => 256usize, };
+        if part == 0usize && raw >= 32usize && raw <= 127usize && raw != 34usize && raw != 92usize { valid = count < limit; hash = if valid { (hash * 257usize + raw) % 65521usize } else { hash }; count = if valid { count + 1usize } else { count }; index = if valid { index + 1usize } else { index }; part = 0usize; 0 } else { let width = emit_len(input, index); let value = decoded_byte_at(input, index, part); let last = part + 1usize >= width; let next = if last { token_end(input, index) } else { index }; valid = width > 0usize && value < 256usize && count < limit && !is_failure(input, next); hash = if valid { (hash * 257usize + value) % 65521usize } else { hash }; count = if valid { count + 1usize } else { count }; index = if valid { next } else { index }; part = if valid && !last { part + 1usize } else { 0usize }; 0 }
+        running = valid && !at_is(input, index, 34u8);
+        running
+    }
+    if valid && count > 0usize { count * 65536usize + hash } else { 0usize }
+}
+
+@id("std.data.json.dec.tests.raw-fingerprint-equivalence")
+fn raw_fingerprint_equivalence() -> bool
+{
+    let mut value = 0usize;
+    let mut equal = true;
+    while value < 256usize {
+        let raw = [34u8, u8_from_usize(value), 34u8];
+        let view = array_as_slice(raw);
+        let expected = if value >= 32usize && value != 34usize && value != 92usize { 65536usize + value } else { 0usize };
+        equal = equal && decoded_fingerprint(view, 0usize, 1usize) == expected && frozen_fingerprint(view, 0usize, 1usize) == expected;
+        let unclosed = [34u8, u8_from_usize(value)];
+        let unclosed_view = array_as_slice(unclosed);
+        equal = equal && decoded_fingerprint(unclosed_view, 0usize, 1usize) == 0usize && frozen_fingerprint(unclosed_view, 0usize, 1usize) == 0usize;
+        value = value + 1usize;
+        0
+    }
+    // Valid raw UTF-8 versus escaped spelling, and independently folded bytes.
+    // Fold 195/169/240/159/152/128 independently of either pull implementation.
+    let raw = [34u8, 195u8, 169u8, 240u8, 159u8, 152u8, 128u8, 34u8];
+    let escaped = [34u8, 92u8, 117u8, 48u8, 48u8, 101u8, 57u8, 92u8, 117u8, 68u8, 56u8, 51u8, 68u8, 92u8, 117u8, 68u8, 69u8, 48u8, 48u8, 34u8];
+    let raw_view = array_as_slice(raw);
+    let escaped_view = array_as_slice(escaped);
+    let first = (195usize * 257usize + 169usize) % 65521usize;
+    let second = (first * 257usize + 240usize) % 65521usize;
+    let third = (second * 257usize + 159usize) % 65521usize;
+    let fourth = (third * 257usize + 152usize) % 65521usize;
+    let expected = 6usize * 65536usize + (fourth * 257usize + 128usize) % 65521usize;
+    equal && decoded_fingerprint(raw_view, 0usize, 6usize) == expected && frozen_fingerprint(raw_view, 0usize, 6usize) == expected && decoded_fingerprint(escaped_view, 0usize, 6usize) == expected && frozen_fingerprint(escaped_view, 0usize, 6usize) == expected && decoded_fingerprint(raw_view, 0usize, 5usize) == 0usize && frozen_fingerprint(raw_view, 0usize, 5usize) == 0usize && decoded_fingerprint(escaped_view, 0usize, 5usize) == 0usize && frozen_fingerprint(escaped_view, 0usize, 5usize) == 0usize
 }
 
 @id("std.data.json.dec.tests.main")
 fn main() -> i64
 {
-    if primitives() && hex() && escapes() && surrogates() && lone_surrogate() && encoding() && conversion() && tokens() && lengths() && emission_dispatch() && buffer() && buffer_unicode() && token_equality() && fingerprints() { 0 } else { 1 }
+    if primitives() && hex() && escapes() && surrogates() && lone_surrogate() && encoding() && conversion() && tokens() && lengths() && emission_dispatch() && buffer() && buffer_unicode() && token_equality() && fingerprints() && raw_fingerprint_equivalence() { 0 } else { 1 }
 }

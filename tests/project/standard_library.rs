@@ -455,6 +455,16 @@ fn typed_paths_execute_on_all_three_backends() {
 }
 
 #[test]
+fn decoded_fingerprint_raw_bytes_execute_on_all_three_backends() {
+    run_examples_and_conformance(
+        packages()
+            .into_iter()
+            .filter(|package| package.module == "std.data.json.dec")
+            .collect(),
+    );
+}
+
+#[test]
 fn pattern_executes_on_all_three_backends() {
     run_examples_and_conformance(
         packages()

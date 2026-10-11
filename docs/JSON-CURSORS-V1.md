@@ -146,6 +146,15 @@ stops at the first decoded byte past `limit`, so its work is bounded by `limit`
 rather than by the token's source span. Escaped, surrogate-pair and raw
 spellings of the same bytes produce the same fingerprint.
 
+Raw bytes in `32..=255`, excluding the quote and escape markers, use the
+same one-byte pull meaning directly. This includes the constituent bytes of
+UTF-8 scalars; it changes neither raw UTF-8 validation nor escape expansion.
+The package conformance retains the previous ASCII-only shortcut as an
+independent reference, checks all 256 scalar byte inputs, and compares valid
+raw/escaped Unicode at exact decoded-length and one-short bounds. Invalid raw
+UTF-8 constituent tests establish the old helper's total byte behavior only;
+they grant no application admission or UTF-8 validity.
+
 `fingerprint_entry` packs an opening offset of at most 131,072 and a
 fingerprint into one Copy `usize`; `entry_opening` and `entry_fingerprint`
 recover them. `fingerprint_match` returns `false` when the stored fingerprint
