@@ -15,6 +15,25 @@ fn paid_array_moves_into_iterator_and_returned_child_survives_container_cleanup(
     let authority = LoanCapacity::checked(&program, &program.functions[0]).unwrap();
     let probe = account(usize::MAX);
     let mut receiver = Loans::new(authority, probe.clone()).unwrap();
+    let loan_charge = probe.charged();
+    let short = account(loan_charge + Layout::new::<PartitionVec>().size() - 1);
+    let short_authority = LoanCapacity::checked(&program, &program.functions[0]).unwrap();
+    let mut short_receiver = Loans::new(short_authority, short.clone()).unwrap();
+    let original = vec![4].into_boxed_slice();
+    let pointer = original.as_ptr();
+    let (error, original) = PartitionVec::partition(&mut short_receiver, original, 1, 1)
+        .err()
+        .unwrap();
+    assert!(matches!(
+        error,
+        crate::construction_fusion::partition::Preparation::Authority(
+            crate::construction_fusion::domain::Refusal::Metadata
+        )
+    ));
+    assert_eq!(original.as_ptr(), pointer);
+    assert_eq!(short.charged(), loan_charge);
+    assert!(PartitionVec::partition(&mut short_receiver, original, 1, 1).is_err());
+    assert_eq!(short.charged(), loan_charge); // sticky retry does not allocate or spend
     let mut vector = PartitionVec::partition(&mut receiver, vec![1, 2, 3].into_boxed_slice(), 3, 1)
         .ok()
         .unwrap();
