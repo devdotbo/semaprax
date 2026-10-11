@@ -84,7 +84,7 @@ fn forged_proofs_producers_counts_and_functions_refuse() {
     let refused = verify_selected_capacity(&program, &types, Some(&foreign)).unwrap_err();
     assert!(matches!(refused.diagnostic, CapacityDiagnostic::Invariant));
     assert!(has_error(
-        &crate::source_verify::declaration::verify_selected(&program, Some(&foreign))
+        &crate::source_verify::declaration::verify_selected(&program, Some(&foreign), None)
     ));
 
     // Producer, count and loop forgeries derive no selection and keep the

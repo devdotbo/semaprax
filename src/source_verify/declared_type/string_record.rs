@@ -45,6 +45,9 @@ pub(in crate::source_verify) fn reject(
     let Some((record, field)) = string_field(ty, types) else {
         return false;
     };
+    // The record can be an appended private layout copy.
+    let record = crate::source_verify::private_names::private_label(program, types, record)
+        .unwrap_or_else(|| record.to_owned());
     diagnostics.push(
         error(
             program,

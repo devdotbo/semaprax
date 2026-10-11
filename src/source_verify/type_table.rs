@@ -68,6 +68,9 @@ pub(super) struct TypeTable<'a> {
     /// extending class, root ancestor first, so construction, projection,
     /// and pattern checks treat inherited members like declared ones.
     pub(super) merged_class_fields: HashMap<&'a str, Vec<FieldDeclaration>>,
+    /// Workspace Graph private layout copies in this exact program, presented
+    /// by provider provenance in diagnostics; never consulted for resolution.
+    pub(super) private: Option<super::private_names::PrivateNames<'a>>,
 }
 
 impl<'a> TypeTable<'a> {
@@ -163,6 +166,7 @@ impl<'a> TypeTable<'a> {
             declared_fields,
             merged_class_fields,
             class_parents,
+            private: None,
         }
     }
 

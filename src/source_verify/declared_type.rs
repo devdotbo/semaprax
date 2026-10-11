@@ -214,17 +214,20 @@ pub(super) fn check_declared_type(
             continue;
         };
         if arguments.len() != declaration.type_parameters.len() {
+            // Declaration checks also walk appended private layout copies.
+            let private = super::private_names::private_label(program, types, name);
             let mut diagnostic = error(
                 program,
                 "SPX-T221",
                 format!(
-                    "type `{name}` expects {} type arguments, received {}",
+                    "type `{}` expects {} type arguments, received {}",
+                    private.as_deref().unwrap_or(name),
                     declaration.type_parameters.len(),
                     arguments.len()
                 ),
                 span,
             );
-            if arguments.is_empty() {
+            if arguments.is_empty() && private.is_none() {
                 diagnostic = diagnostic.with_help(super::hints::type_arguments_help(
                     name,
                     declaration.type_parameters.len(),
@@ -340,7 +343,12 @@ pub(super) fn check_declared_type(
             diagnostics.push(error(
                 program,
                 "SPX-T223",
-                format!("generic copy type `{name}` accepts only direct `i64` or `bool` arguments"),
+                format!(
+                    "generic copy type `{}` accepts only direct `i64` or `bool` arguments",
+                    super::private_names::private_label(program, types, name)
+                        .as_deref()
+                        .unwrap_or(name)
+                ),
                 span,
             ));
         }
@@ -1099,23 +1107,33 @@ pub(super) fn check_ownership_mode(
         }
         return;
     }
+    // Import stubs can declare parameters of appended private layout copies;
+    // such a type is presented by provenance and never offered as a spelling.
+    // Both are evaluated only while a diagnostic is constructed.
+    let private = || super::private_names::is_private(program, types, &param.ty);
+    let shown = || super::private_names::type_name(program, types, &param.ty);
     if types.is_direct_owned_variant(&param.ty) {
         if !matches!(param.mode, ParamMode::Own | ParamMode::Borrow) {
-            diagnostics.push(
-                error(
-                    program,
-                    "SPX-T263",
-                    format!(
-                        "owned-string variant parameter `{}.{}` must use `own {}` or `borrow {}`",
-                        function.name, param.name, param.ty, param.ty
-                    ),
-                    param.span,
-                )
-                .with_help(format!(
+            let diagnostic = error(
+                program,
+                "SPX-T263",
+                format!(
+                    "owned-string variant parameter `{}.{}` must use `own {}` or `borrow {}`",
+                    function.name,
+                    param.name,
+                    shown(),
+                    shown()
+                ),
+                param.span,
+            );
+            diagnostics.push(if private() {
+                diagnostic
+            } else {
+                diagnostic.with_help(format!(
                     "use `{}: own {}` to transfer ownership, or `borrow {}` for a synchronous view",
                     param.name, param.ty, param.ty
-                )),
-            );
+                ))
+            });
         }
         return;
     }
@@ -1130,8 +1148,8 @@ pub(super) fn check_ownership_mode(
         || types.contains_owned_bytes(&param.ty)
         || matches!(&param.ty, Type::Named { name, arguments } if arguments.len() == 1 && types.declaration(name).is_some_and(|d| matches!(d.stable_id.as_str(), crate::prelude::BOX_ID | crate::prelude::VEC_ID)));
     match (requires_explicit_mode, param.mode) {
-        (true, ParamMode::Value) => diagnostics.push(
-            error(
+        (true, ParamMode::Value) => {
+            let diagnostic = error(
                 program,
                 "SPX-O001",
                 format!(
@@ -1139,12 +1157,16 @@ pub(super) fn check_ownership_mode(
                     function.name, param.name
                 ),
                 param.span,
-            )
-            .with_help(format!(
-                "use `{}: own {}` to transfer ownership",
-                param.name, param.ty
-            )),
-        ),
+            );
+            diagnostics.push(if private() {
+                diagnostic
+            } else {
+                diagnostic.with_help(format!(
+                    "use `{}: own {}` to transfer ownership",
+                    param.name, param.ty
+                ))
+            });
+        }
         (false, mode) if mode != ParamMode::Value && param.ty == Type::String => diagnostics.push(
             error(
                 program,
@@ -1163,7 +1185,7 @@ pub(super) fn check_ownership_mode(
             format!(
                 "ownership mode `{}` is only valid for resource types; `{}` is a value type",
                 mode.text(),
-                param.ty
+                shown()
             ),
             param.span,
         )),

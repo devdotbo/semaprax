@@ -26,7 +26,16 @@ pub(super) mod fusion;
 mod identity;
 
 pub(crate) fn verify(program: &Program) -> Vec<Diagnostic> {
-    verify_selected(program, None)
+    verify_selected(program, None, None)
+}
+
+/// [`verify`] with a Workspace Graph private layout presentation bound to
+/// this exact `program`. It changes diagnostic text only.
+pub(crate) fn verify_presenting<'p>(
+    program: &'p Program,
+    private: Option<crate::source_verify::private_names::PrivateNames<'p>>,
+) -> Vec<Diagnostic> {
+    verify_selected(program, None, private)
 }
 
 /// Every ordinary source pass. A held `FusedConstructionV1` selection only
@@ -36,6 +45,7 @@ pub(crate) fn verify(program: &Program) -> Vec<Diagnostic> {
 pub(in crate::source_verify) fn verify_selected<'p>(
     program: &'p Program,
     selected: Option<&crate::source_verify::fused_construction::SourceProof<'p>>,
+    private: Option<crate::source_verify::private_names::PrivateNames<'p>>,
 ) -> Vec<Diagnostic> {
     let mut diagnostics = Vec::new();
     if let Err(diagnostic) = crate::static_protocol::validate(program) {
@@ -89,7 +99,8 @@ pub(in crate::source_verify) fn verify_selected<'p>(
         &mut diagnostics,
     );
 
-    let types = TypeTable::new(program);
+    let mut types = TypeTable::new(program);
+    types.private = private;
     check_byte_data_declarations(program, &types, &mut diagnostics);
     let mut native_rust_names = HashSet::new();
     check_native_rust_imports(program, &types, &mut native_rust_names, &mut diagnostics);

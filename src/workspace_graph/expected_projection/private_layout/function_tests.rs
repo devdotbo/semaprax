@@ -442,6 +442,7 @@ fn private_layout_diagnostics_present_provider_provenance_and_only_legal_imports
             Some("SPX-T205"),
         ),
         ("@id(\"bad\") fn bad(value:own _spx_layout_0)->i64 {0}", None),
+        ("@id(\"bad\") fn bad()->bool {make()}", Some("SPX-T103")),
     ] {
         let caller = format!("{CALLER}\n{declaration}\n");
         let minted = aliases(&caller).into_iter().map(|(_, a)| a).collect::<Vec<_>>();
@@ -465,4 +466,21 @@ fn private_layout_diagnostics_present_provider_provenance_and_only_legal_imports
             assert!(diagnostics.iter().any(|d| d.code == code), "{diagnostics:?}");
         }
     }
+    // A private descendant nested in a payload is presented in place, and the
+    // authored declared type stays authored.
+    let caller = format!(
+        "{CALLER}\n@id(\"bad\") fn bad()->i64 {{let value=make();let rows:bool=value.rows;0}}\n"
+    );
+    let minted = aliases(&caller).into_iter().map(|(_, a)| a).collect::<Vec<_>>();
+    let diagnostics = build_owned(sources(&caller, PROVIDER)).err().unwrap();
+    assert!(!exposes_alias(&diagnostics, &minted), "{diagnostics:?}");
+    let binding = diagnostics
+        .iter()
+        .find(|d| d.code == "SPX-T232")
+        .expect("declared binding mismatch");
+    assert_eq!(
+        binding.message,
+        "declared binding type `bool` does not accept value type \
+         `Vec<Row [unimported @id(\"row\") from function_layout.provider]>`"
+    );
 }

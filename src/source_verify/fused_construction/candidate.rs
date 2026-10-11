@@ -84,7 +84,7 @@ pub(crate) fn check_candidate(
     if !proof.authenticate(program) {
         return Err(CandidateRefusal::NotHeld);
     }
-    let diagnostics = crate::source_verify::declaration::verify_selected(program, Some(&proof));
+    let diagnostics = crate::source_verify::declaration::verify_selected(program, Some(&proof), None);
     if diagnostics
         .iter()
         .any(|diagnostic| diagnostic.severity.is_error())

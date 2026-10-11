@@ -145,7 +145,15 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                                     self.program,
                                     diagnostic,
                                     format!(
-                                        "declared binding type `{declared_ty}` does not accept value type `{}`",
+                                        "declared binding type `{}` does not accept value type `{}`",
+                                        // Generic validation specialization
+                                        // substitutes `let` annotations, so a
+                                        // declared type can carry a private copy.
+                                        crate::source_verify::private_names::type_name(
+                                            self.program,
+                                            self.types,
+                                            declared_ty
+                                        ),
                                         crate::source_verify::private_names::type_name(
                                             self.program,
                                             self.types,

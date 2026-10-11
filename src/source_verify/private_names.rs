@@ -4,119 +4,107 @@
 //! minted private names so a function-only signature root can be checked
 //! without publishing the provider type in the caller. Those names are not
 //! source and must never reach a diagnostic, where an agent could treat them
-//! as usable spellings or repairs. The graph binds this scope to the exact
-//! synthetic program and the exact copied declaration addresses it appended.
+//! as usable spellings or repairs. The graph lends a [`PrivateNames`] view of
+//! its held closure to the one verification of the exact synthetic program
+//! those copies were appended to, through that verification's [`TypeTable`].
+//! The view borrows everything it presents: binding it allocates nothing, and
+//! provider context is read only while a diagnostic is constructed.
 //! Lookup still resolves only by the synthetic name: this scope changes how a
 //! diagnostic names a declaration, never which declarations resolve. An
 //! authored declaration with any spelling, including a colliding one, is not
-//! one of the bound addresses and keeps its ordinary authored rendering.
+//! one of the appended copies and keeps its ordinary authored rendering.
 
 use crate::ast::{Program, Span, Type, TypeDeclaration};
 use crate::diagnostic::Diagnostic;
 use crate::source_verify::diagnostics::error;
 use crate::source_verify::type_table::TypeTable;
-use std::cell::RefCell;
 
-/// The authenticated provider context of one copied private declaration.
-pub(crate) struct ProviderName {
-    /// Address of the copied declaration inside the bound synthetic program.
-    pub(crate) declaration: usize,
-    pub(crate) module: String,
-    pub(crate) id: String,
-    /// The provider's own declared name; context only, never a caller name.
-    pub(crate) name: String,
-    /// The provider declaration has an explicit persistent identity, so an
-    /// ordinary `use type @id(..)` import can name it.
-    pub(crate) explicit: bool,
-    /// No caller import, type or function already spells `name`, so that
-    /// import may use the provider's declared name as its alias.
-    pub(crate) name_free: bool,
+/// The held closure that appended the private copies, in append order.
+pub(crate) trait Providers {
+    /// The provider module and provider declaration of the `index`th copy.
+    fn provider(&self, index: usize) -> Option<(&str, &TypeDeclaration)>;
 }
 
-struct Active {
-    program: usize,
-    names: Vec<ProviderName>,
+/// A borrowed binding of the copies at `program.types[base..]` to the closure
+/// that appended them. Only the graph constructs one, after checking that
+/// every copy is the exact appended declaration the closure describes.
+#[derive(Clone, Copy)]
+pub(crate) struct PrivateNames<'s> {
+    program: &'s Program,
+    caller: &'s Program,
+    base: usize,
+    providers: &'s dyn Providers,
 }
 
-std::thread_local! {
-    static ACTIVE: RefCell<Option<Active>> = const { RefCell::new(None) };
-}
-
-/// Run `operation` with `names` bound to the exact `program` it verifies.
-pub(crate) fn with_provider_names<T>(
-    program: &Program,
-    names: Vec<ProviderName>,
-    operation: impl FnOnce() -> T,
-) -> T {
-    if names.is_empty() {
-        return operation();
-    }
-    struct Restore(Option<Active>);
-    impl Drop for Restore {
-        fn drop(&mut self) {
-            let previous = self.0.take();
-            ACTIVE.with(|active| *active.borrow_mut() = previous);
+impl<'s> PrivateNames<'s> {
+    pub(crate) fn new(
+        program: &'s Program,
+        caller: &'s Program,
+        base: usize,
+        providers: &'s dyn Providers,
+    ) -> Self {
+        Self {
+            program,
+            caller,
+            base,
+            providers,
         }
     }
-    let restore = Restore(ACTIVE.with(|active| {
-        active.borrow_mut().replace(Active {
-            program: program as *const Program as usize,
-            names,
-        })
-    }));
-    let result = operation();
-    drop(restore);
-    result
 }
 
-fn provider<R>(
+struct Provider<'s> {
+    module: &'s str,
+    declaration: &'s TypeDeclaration,
+}
+
+fn provider<'s>(
     program: &Program,
-    types: &TypeTable<'_>,
+    types: &TypeTable<'s>,
     name: &str,
-    present: impl FnOnce(&ProviderName) -> R,
-) -> Option<R> {
-    let declaration = types.declaration(name)? as *const TypeDeclaration as usize;
-    ACTIVE.with(|active| {
-        let active = active.borrow();
-        let active = active.as_ref()?;
-        if active.program != program as *const Program as usize {
-            return None;
-        }
-        active
-            .names
-            .iter()
-            .find(|candidate| candidate.declaration == declaration)
-            .map(present)
-    })
+) -> Option<(Provider<'s>, &'s Program)> {
+    let names = types.private?;
+    if !std::ptr::eq(names.program, program) {
+        return None;
+    }
+    let declaration = types.declaration(name)?;
+    let index = names
+        .program
+        .types
+        .get(names.base..)?
+        .iter()
+        .position(|copy| std::ptr::eq(copy, declaration))?;
+    let (module, declaration) = names.providers.provider(index)?;
+    Some((
+        Provider {
+            module,
+            declaration,
+        },
+        names.caller,
+    ))
 }
 
-fn label(provider: &ProviderName) -> String {
+fn label(provider: &Provider<'_>) -> String {
     format!(
         "{} [unimported @id(\"{}\") from {}]",
-        provider.name, provider.id, provider.module
+        provider.declaration.name, provider.declaration.stable_id, provider.module
     )
 }
 
-/// `ty` as a diagnostic names it. Outside a bound private scope this is the
-/// exact ordinary `Display` rendering.
-pub(super) fn type_name(program: &Program, types: &TypeTable<'_>, ty: &Type) -> String {
-    let bound = ACTIVE.with(|active| {
-        active
-            .borrow()
-            .as_ref()
-            .is_some_and(|active| active.program == program as *const Program as usize)
-    });
-    if !bound {
-        return ty.to_string();
+/// Whether `ty` names a private layout copy anywhere in its payload. Such a
+/// type has no source spelling, so no help may offer it as one.
+pub(super) fn is_private(program: &Program, types: &TypeTable<'_>, ty: &Type) -> bool {
+    if !types
+        .private
+        .is_some_and(|names| std::ptr::eq(names.program, program))
+    {
+        return false;
     }
-    let mut presented = None::<Type>;
     let mut pending = vec![ty];
     while let Some(node) = pending.pop() {
         match node {
             Type::Named { name, arguments } => {
-                if provider(program, types, name, |_| ()).is_some() {
-                    presented = Some(ty.clone());
-                    break;
+                if provider(program, types, name).is_some() {
+                    return true;
                 }
                 pending.extend(arguments);
             }
@@ -127,15 +115,32 @@ pub(super) fn type_name(program: &Program, types: &TypeTable<'_>, ty: &Type) -> 
             _ => {}
         }
     }
-    let Some(mut presented) = presented else {
+    false
+}
+
+/// How a diagnostic names the bare declared type `name` when it is a private
+/// copy of this exact program; `None` when `name` is its own source spelling.
+pub(super) fn private_label(
+    program: &Program,
+    types: &TypeTable<'_>,
+    name: &str,
+) -> Option<String> {
+    provider(program, types, name).map(|(provider, _)| label(&provider))
+}
+
+/// `ty` as a diagnostic names it. Outside a bound private scope this is the
+/// exact ordinary `Display` rendering.
+pub(super) fn type_name(program: &Program, types: &TypeTable<'_>, ty: &Type) -> String {
+    if !is_private(program, types, ty) {
         return ty.to_string();
-    };
+    }
+    let mut presented = ty.clone();
     let mut pending = vec![&mut presented];
     while let Some(node) = pending.pop() {
         match node {
             Type::Named { name, arguments } => {
-                if let Some(text) = provider(program, types, name, label) {
-                    *name = text;
+                if let Some((provider, _)) = provider(program, types, name) {
+                    *name = label(&provider);
                 }
                 pending.extend(arguments.iter_mut());
             }
@@ -162,37 +167,48 @@ pub(super) fn missing_case(
     span: Span,
 ) -> Diagnostic {
     let body = if payload { "{ .. }" } else { "{}" };
-    provider(program, types, variant_name, |provider| {
-        let diagnostic = error(
-            program,
-            "SPX-M101",
-            format!(
-                "non-exhaustive match; missing case `{case_name} {body}` of provider variant `{}` \
-                 (@id(\"{}\") from {}), which this module has not imported",
-                provider.name, provider.id, provider.module
-            ),
-            span,
-        );
-        match (provider.explicit, provider.name_free) {
-            (true, true) => diagnostic.with_help(format!(
-                "to name its cases, import the provider variant explicitly: \
-                 `use type @id(\"{}\") from {} as {};`",
-                provider.id, provider.module, provider.name
-            )),
-            (true, false) => diagnostic.with_help(format!(
-                "to name its cases, import @id(\"{}\") from {} explicitly under an alias \
-                 this module does not already use",
-                provider.id, provider.module
-            )),
-            (false, _) => diagnostic,
-        }
-    })
-    .unwrap_or_else(|| {
-        error(
+    let Some((provider, caller)) = provider(program, types, variant_name) else {
+        return error(
             program,
             "SPX-M101",
             format!("non-exhaustive match; missing case `{variant_name}::{case_name} {body}`"),
             span,
-        )
-    })
+        );
+    };
+    let declaration = provider.declaration;
+    let diagnostic = error(
+        program,
+        "SPX-M101",
+        format!(
+            "non-exhaustive match; missing case `{case_name} {body}` of provider variant `{}` \
+             (@id(\"{}\") from {}), which this module has not imported",
+            declaration.name, declaration.stable_id, provider.module
+        ),
+        span,
+    );
+    if !declaration.explicit_id {
+        return diagnostic;
+    }
+    // The provider name is an import alias only when the authored caller has
+    // no import, type or function already spelling it.
+    let spelled = caller.module_uses.iter().any(|u| u.alias == declaration.name)
+        || caller.types.iter().any(|t| t.name == declaration.name)
+        || caller.functions.iter().any(|f| f.name == declaration.name);
+    if spelled {
+        diagnostic.with_help(format!(
+            "to name its cases, import @id(\"{}\") from {} explicitly under an alias \
+             this module does not already use",
+            declaration.stable_id, provider.module
+        ))
+    } else {
+        diagnostic.with_help(format!(
+            "to name its cases, import the provider variant explicitly: \
+             `use type @id(\"{}\") from {} as {};`",
+            declaration.stable_id, provider.module, declaration.name
+        ))
+    }
 }
+
+#[cfg(test)]
+#[path = "private_names/tests.rs"]
+mod tests;

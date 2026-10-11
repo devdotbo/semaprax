@@ -47,23 +47,33 @@ recognizes a private prefix. Original graph import/reference edges remain
 source-derived and contain no invented child import.
 
 Minted names are never diagnostic text. Before fresh or selective resolution
-of a caller's synthetic program, the graph reads that caller's already held
-closure (no derivation, work debit or lookup grant) and binds each appended
-copy, by its exact address in that exact synthetic program, to its provider
-module, persistent identity and provider-declared name. The source verifier
-consults this scope only when rendering a type it already resolved: an
+of a caller's synthetic program, the graph borrows that caller's already held
+closure (no derivation, work debit or lookup grant), checks that the copies at
+the end of that exact synthetic program are the declarations it appended, and
+lends a borrowed view to that one verification through its type table. The
+view holds only references, so binding it allocates no slot backing or string
+copy and adds no builder charge; there is no thread-local scope to nest or
+restore. A copy is identified by its exact address in that exact synthetic
+program, and its provider module, persistent identity and provider-declared
+name are read from the held provider source only while a diagnostic is
+constructed. The source verifier consults this view only when rendering a type
+it already resolved: an
 `SPX-M101` missing case on a private variant names only the case plus the
 provider variant's context, and record-pattern, scrutinee, call-argument,
 return, binding and branch/arm-join type mismatches render a private type as
-`Name [unimported @id("id") from module]`. Codes and authored or explicitly
+`Name [unimported @id("id") from module]`. Declaration checks also walk the
+appended copies and import stubs, and generic validation specialization
+substitutes `let` annotations, so declared binding types, type-argument and
+copy-argument arity, string-bearing record and parameter-mode diagnostics use
+the same rendering, and their spelling helps are withheld for a private type,
+which has no source spelling. Codes and authored or explicitly
 imported names are unchanged, and there is no prefix filter or message
 rewriting, so an authored colliding spelling keeps its authored rendering. A
 missing-case help offers `use type @id(..) from module as Name;` only when the
 provider declaration has an explicit identity and the caller has no import,
 type or function already spelling `Name`; otherwise it asks for an unused
-alias, and without an explicit identity it offers no action. The binding is
-presentation-only diagnostic metadata, allocated outside builder accounting
-like verifier diagnostics, and only for callers with private entries.
+alias, and without an explicit identity it offers no action. Whether `Name`
+is free is decided from the authored caller only while that help is built.
 
 ## Storage and replay
 
@@ -129,7 +139,15 @@ stay rejected, no diagnostic contains any alias the caller's own closure
 minted, and applying the offered import is the succeeding explicit-root
 control. A caller already declaring `Decoded` receives no fabricated alias, and
 inferred record-pattern, call-argument and colliding authored-spelling callers
-keep provider context without exposing aliases. These are
+keep provider context without exposing aliases, as do a mismatched return and
+a private descendant nested in a declared-binding payload. A registry
+definition binds the held presentation under a zero-byte builder budget and
+the allocation observer: zero allocations, frees and live bytes through drop,
+no work debit, receipt change or re-derivation, while one-short, renamed and
+foreign-identity copies are refused. A verifier child binds a view to one
+program and proves that an equal clone, an unbound pass after it, and a view
+bound past the copy all keep ordinary text, and that an authored declaration
+sharing the private prefix keeps its authored spelling. These are
 authored gates; current-head execution is still required for qualification.
 
 Function-root admission consumes an invocation-held, precharged ownership and

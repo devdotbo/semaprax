@@ -126,21 +126,15 @@ impl<'a> LayoutRegistry<'a> {
         }
         result
     }
-    /// Presentation-only provenance for the private copies already appended to
-    /// `synthetic` from this caller's held closure. It derives nothing, debits
-    /// no work and grants no lookup; an unheld or explicit-only caller has none.
-    pub(in crate::workspace_graph) fn provider_names(
+    /// This caller's already held closure, borrowed only to present the private
+    /// copies appended from it. It derives nothing, debits no work, grants no
+    /// lookup and allocates nothing; an unheld or explicit-only caller has none.
+    pub(in crate::workspace_graph) fn held(
         &self,
         caller: &Program,
-        synthetic: &Program,
-    ) -> Result<Vec<crate::source_verify::private_names::ProviderName>, Vec<Diagnostic>> {
-        let Some(index) = self.index(caller) else {
-            return Ok(Vec::new());
-        };
-        match self.slots.borrow().get(index) {
-            Some(Some(layout)) => layout.provider_names(caller, synthetic),
-            _ => Ok(Vec::new()),
-        }
+    ) -> Option<Ref<'_, LayoutClosure<'a>>> {
+        let index = self.index(caller)?;
+        Ref::filter_map(self.slots.borrow(), |slots| slots.get(index)?.as_ref()).ok()
     }
     fn index(&self, caller: &Program) -> Option<usize> {
         let address = caller as *const Program as usize;

@@ -506,15 +506,18 @@ pub fn resolve(program: &Program) -> Result<ResolvedProgram, Vec<Diagnostic>> {
 /// A prior function is eligible only when the complete non-body environment,
 /// every function signature, and that function's full AST are exactly equal.
 /// The resolver still rebuilds and validates the complete `ResolvedProgram`.
-pub(crate) fn resolve_with_function_reuse(
-    program: &Program,
+/// `private` only changes how source diagnostics name `program`'s private
+/// layout copies.
+pub(crate) fn resolve_with_function_reuse<'p>(
+    program: &'p Program,
     previous_program: Option<&Program>,
     previous_resolved: Option<&ResolvedProgram>,
     previous_costs: Option<&BTreeMap<String, usize>>,
+    private: Option<source_verify::private_names::PrivateNames<'p>>,
 ) -> Result<(ResolvedProgram, FunctionResolutionWork), Vec<Diagnostic>> {
     #[cfg(feature = "unstable-workflow-profiling")]
     let _workflow_span = crate::workflow_profile::span(crate::workflow_profile::Stage::Resolve);
-    let diagnostics = source_verify::verify(program);
+    let diagnostics = source_verify::verify_presenting(program, private);
     if diagnostics
         .iter()
         .any(|diagnostic| diagnostic.severity.is_error())

@@ -468,10 +468,11 @@ impl FrontendPass {
         ))
     }
 
-    pub(crate) fn resolve_functions(
+    pub(crate) fn resolve_functions<'p>(
         &self,
         path: &str,
-        synthetic: &Program,
+        synthetic: &'p Program,
+        private: Option<crate::source_verify::private_names::PrivateNames<'p>>,
     ) -> Option<Result<SelectiveResolvedModule>> {
         if !self.semantic {
             return None;
@@ -488,6 +489,7 @@ impl FrontendPass {
                 entry.map(|entry| &entry.synthetic),
                 entry.map(|entry| &entry.resolved),
                 entry.map(|entry| &entry.function_costs),
+                private,
             )
             .map(|(resolved, work)| SelectiveResolvedModule {
                 reused_functions: work.reused(),

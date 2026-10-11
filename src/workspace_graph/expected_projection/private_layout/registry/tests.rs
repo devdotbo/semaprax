@@ -320,3 +320,63 @@ fn two_callers_share_one_derivation_query_ledger_and_sticky_refusal() {
     assert_eq!(exact, used);
     assert!(run(used - 1).0.is_err());
 }
+#[test]
+fn held_presentation_borrows_with_no_derivation_work_charge_or_allocation() {
+    let parsed = sources();
+    let authored = index_authored(&parsed).unwrap();
+    let registry = LayoutRegistry::new(&parsed, &authored);
+    // Presentation never derives: before the real lookup nothing is held.
+    assert!(registry.held(&parsed[0]).is_none());
+    assert_eq!(registry.derivations.get(), 0);
+    let synthetic = expected_projection::synthetic_program_with_registry(
+        &parsed[0],
+        &authored,
+        &parsed,
+        Some(&registry),
+    )
+    .unwrap();
+    assert_eq!(registry.derivations.get(), 1);
+    let (work, receipt) = (registry.work_remaining(), registry.receipt());
+    // A zero-byte builder budget refuses any charge; the observer counts every
+    // requested backing through the view's and the borrow's drop.
+    let ((bound, metrics), overflowed, charged) = crate::bounded_output::with_limit_usage(0, || {
+        crate::test_allocation_observer::measure(|| {
+            let held = registry.held(&parsed[0]).expect("held caller closure");
+            let view = held.presentation(&parsed[0], &synthetic).unwrap();
+            let bound = std::hint::black_box(view).is_some();
+            drop(held);
+            bound
+        })
+    });
+    assert!(bound, "the caller's private copies are presented");
+    assert!(!metrics.invalid);
+    assert_eq!(
+        (metrics.allocations, metrics.reallocations, metrics.allocated),
+        (0, 0, 0),
+        "binding the presentation allocates no slot backing or string copy"
+    );
+    assert_eq!((metrics.freed, metrics.live, metrics.highwater), (0, 0, 0));
+    assert!(!overflowed);
+    assert_eq!(charged, 0);
+    assert_eq!(registry.work_remaining(), work, "no work debit");
+    assert_eq!(registry.receipt(), receipt, "no preparation receipt");
+    assert_eq!(registry.derivations.get(), 1, "no re-derivation");
+    // A provider without imports is never held, so it has no presentation.
+    assert!(registry.held(&parsed[1]).is_none());
+    // One-short, renamed and foreign-identity copies are not the appended
+    // declarations; the graph refuses them instead of presenting them.
+    let mismatch = |synthetic: &crate::ast::Program| {
+        let held = registry.held(&parsed[0]).unwrap();
+        let errors = held.presentation(&parsed[0], synthetic).err().unwrap();
+        assert_eq!(errors[0].code, "SPX-G173", "{errors:?}");
+    };
+    let mut short = synthetic.clone();
+    short.types.pop();
+    mismatch(&short);
+    let mut renamed = synthetic.clone();
+    renamed.types.last_mut().unwrap().name = "Row".to_owned();
+    mismatch(&renamed);
+    let mut foreign = synthetic.clone();
+    foreign.types.last_mut().unwrap().stable_id = "sibling".to_owned();
+    mismatch(&foreign);
+}

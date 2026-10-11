@@ -4476,36 +4476,38 @@ fn build_resolved_core(
         } else {
             let before = crate::bounded_output::active_remaining()
                 .expect("resolved core has a builder budget");
-            // Diagnostics name private layout copies by provider provenance.
-            let provider_names = layouts.provider_names(program, &synthetic)?;
+            // Diagnostics name private layout copies by provider provenance
+            // through a borrowed view of the already held closure; binding it
+            // derives, debits and allocates nothing.
+            let held = layouts.held(program);
+            let private = held
+                .as_deref()
+                .map(|layout| layout.presentation(program, &synthetic))
+                .transpose()?
+                .flatten();
+            let selective = frontend
+                .as_deref()
+                .and_then(|cache| cache.resolve_functions(&program.path, &synthetic, private));
             let (resolved, function_costs, reused_functions, static_text) =
-                crate::source_verify::private_names::with_provider_names(
-                    &synthetic,
-                    provider_names,
-                    || {
-                        let selective = frontend
-                            .as_deref()
-                            .and_then(|cache| cache.resolve_functions(&program.path, &synthetic));
-                        crate::vec_ops::with_authenticated_linked_source(|| {
-                            crate::box_ops::with_authenticated_linked_source(|| {
-                                if let Some(selective) = selective {
-                                    selective.map(|resolved| resolved.into_parts())
-                                } else {
-                                    staged!(
-                                        FreshResolution,
-                                        hir::resolve_with_function_reuse(
-                                            &synthetic, None, None, None
-                                        )
-                                    )
-                                    .map(|(resolved, work)| {
-                                        let selected = work.static_text();
-                                        (resolved, BTreeMap::new(), 0, selected)
-                                    })
-                                }
+                crate::vec_ops::with_authenticated_linked_source(|| {
+                    crate::box_ops::with_authenticated_linked_source(|| {
+                        if let Some(selective) = selective {
+                            selective.map(|resolved| resolved.into_parts())
+                        } else {
+                            staged!(
+                                FreshResolution,
+                                hir::resolve_with_function_reuse(
+                                    &synthetic, None, None, None, private
+                                )
+                            )
+                            .map(|(resolved, work)| {
+                                let selected = work.static_text();
+                                (resolved, BTreeMap::new(), 0, selected)
                             })
-                        })
-                    },
-                )?;
+                        }
+                    })
+                })?;
+            drop(held);
             let resolver_bytes = before.saturating_sub(
                 crate::bounded_output::active_remaining()
                     .expect("resolved core has a builder budget"),
