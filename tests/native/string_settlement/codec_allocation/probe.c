@@ -98,7 +98,10 @@ int main(void) {
                 REQUIRE(WEXITSTATUS(status)==42 && length==0);++returned;
             }else{
                 REQUIRE(WIFSIGNALED(status) && WTERMSIG(status)==SIGABRT);
-                if(strcmp(message,"SEMAPRAX native runtime invariant failure: string allocation failed\n"))
+                const char *expected_fatal_message=selected==decoded+1
+                    ? "SEMAPRAX native runtime invariant failure: owned byte buffer allocation failed\n"
+                    : "SEMAPRAX native runtime invariant failure: string allocation failed\n";
+                if(strcmp(message,expected_fatal_message))
                     fprintf(stderr,"fault census repetition=%u selected=%zu decoded=%zu composed=%zu: %s",
                             repetition,selected,decoded,composed,message);
                 /* The encoder's first allocation is its one owned Bytes buffer.
