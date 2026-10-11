@@ -14,7 +14,10 @@
 // (sequence << 20) | entry; the entry records kind, host, instance,
 // invocation and owner domain, and every operation checks all five before any
 // read or mutation. An equal number from another host, instance, invocation,
-// domain or module copy is refused with no effect. The realm property is a
+// domain or module copy is refused with no effect. Precedence is fixed: the
+// domain's sticky failure, then every operand token's authentication, then
+// the domain phase, so a foreign or stale token is reported as such in every
+// phase. The realm property is a
 // name, not network, filesystem, process or other ambient authority. Bootstrap
 // is trusted; raw registry/account authority is closure-private and the realm
 // facade exposes only checked host/account factories, never mint or reset.
@@ -504,10 +507,11 @@ function createHostWithAuthority(space) {
       },
       row_push(carrier, vector, scalar, text, lease) {
         const domain = domainOf(carrier);
-        active(domain); phase(domain, 'Building');
+        active(domain);
         const {handle: old, entry: vec} = held(domain, vector, KIND.vec);
         const string = held(domain, text, KIND.string);
         const child = owner(domain, lease);
+        phase(domain, 'Building');
         const staged = domain.staged;
         if (string.entry.contained || child.entry.contained || child.slot !== vec.len
             || domain.tables.published[child.slot] || staged.text !== string.handle
@@ -553,59 +557,70 @@ function createHostWithAuthority(space) {
       },
       vec_move(carrier, vector) {
         const domain = domainOf(carrier);
-        active(domain); phase(domain, 'Complete');
+        active(domain);
         const {handle, entry: vec} = held(domain, vector, KIND.vec);
+        phase(domain, 'Complete');
         if (domain.views !== 0) fault(domain, 'borrowed');
         vec.handle = renew(domain, KIND.vec, 0, vec, handle);
         return vec.handle;
       },
       vec_len(carrier, vector) {
         const domain = domainOf(carrier);
-        active(domain); phase(domain, 'Complete');
-        return BigInt(held(domain, vector, KIND.vec).entry.len);
+        active(domain);
+        const vec = held(domain, vector, KIND.vec).entry;
+        phase(domain, 'Complete');
+        return BigInt(vec.len);
       },
       field_scalar(carrier, vector, position) {
         const domain = domainOf(carrier);
-        active(domain); phase(domain, 'Complete');
+        active(domain);
         const vec = held(domain, vector, KIND.vec).entry;
+        phase(domain, 'Complete');
         return vec.storage.scalar[index(domain, vec, position)];
       },
       field_text(carrier, vector, position) {
         const domain = domainOf(carrier);
-        active(domain); phase(domain, 'Complete');
+        active(domain);
         const vec = held(domain, vector, KIND.vec).entry;
+        phase(domain, 'Complete');
         const text = vec.storage.text[index(domain, vec, position)];
         held(domain, text, KIND.string);
         return text;
       },
       text_len(carrier, text) {
         const domain = domainOf(carrier);
-        active(domain); phase(domain, 'Complete');
-        return BigInt(held(domain, text, KIND.string).entry.bytes.length);
+        active(domain);
+        const bytes = held(domain, text, KIND.string).entry.bytes;
+        phase(domain, 'Complete');
+        return BigInt(bytes.length);
       },
       text_byte(carrier, text, position) {
         const domain = domainOf(carrier);
-        active(domain); phase(domain, 'Complete');
+        active(domain);
         const bytes = held(domain, text, KIND.string).entry.bytes, at = BigInt.asUintN(64, position);
+        phase(domain, 'Complete');
         return at < BigInt(bytes.length) ? bytes[Number(at)] : -1;
       },
       payload_borrow(carrier, vector, position) {
         const domain = domainOf(carrier);
-        active(domain); phase(domain, 'Complete');
+        active(domain);
         const vec = held(domain, vector, KIND.vec).entry;
+        phase(domain, 'Complete');
         const child = owner(domain, vec.storage.owner[index(domain, vec, position)]);
         return borrowSlot(domain, child.slot);
       },
       view_len(carrier, borrowed) {
         const domain = domainOf(carrier);
-        active(domain); phase(domain, 'Complete');
+        active(domain);
         view(domain, borrowed);
+        phase(domain, 'Complete');
         return BigInt(grant.width);
       },
       view_byte(carrier, borrowed, position) {
         const domain = domainOf(carrier);
-        active(domain); phase(domain, 'Complete');
+        active(domain);
         const {slot} = view(domain, borrowed), at = BigInt.asUintN(64, position);
+        phase(domain, 'Complete');
         return at < BigInt(grant.width) ? range(domain, slot)[Number(at)] : -1;
       },
       end_borrow(carrier, borrowed) {
@@ -620,8 +635,9 @@ function createHostWithAuthority(space) {
       },
       sort(carrier, vector) {
         const domain = domainOf(carrier);
-        active(domain); phase(domain, 'Complete');
+        active(domain);
         const {handle, entry: vec} = held(domain, vector, KIND.vec);
+        phase(domain, 'Complete');
         if (domain.views !== 0) fault(domain, 'borrowed');
         reserve(domain, 1);
         const {scalar, text, owner: owners} = vec.storage;
@@ -653,8 +669,8 @@ function createHostWithAuthority(space) {
       },
       vec_drop(carrier, vector) {
         const domain = domainOf(carrier);
-        phase(domain, 'Complete', 'Aborted');
         const {handle, entry: vec} = held(domain, vector, KIND.vec);
+        phase(domain, 'Complete', 'Aborted');
         if (domain.views !== 0) fault(domain, 'borrowed');
         // Authenticate every row before releasing any, then release in
         // container order. A popped child is no longer contained here.
@@ -677,6 +693,7 @@ function createHostWithAuthority(space) {
       },
       string_drop(carrier, text) {
         const domain = domainOf(carrier);
+        held(domain, text, KIND.string);
         phase(domain, 'Complete', 'Aborted');
         dropString(domain, text, false);
         releaseIfLast(domain);
@@ -684,6 +701,7 @@ function createHostWithAuthority(space) {
       },
       owner_drop(carrier, lease) {
         const domain = domainOf(carrier);
+        owner(domain, lease);
         phase(domain, 'Complete', 'Aborted');
         dropOwner(domain, lease, false);
         releaseIfLast(domain);
@@ -705,8 +723,9 @@ function createHostWithAuthority(space) {
     const extra = {
       vec_pop(carrier, vector) {
         const domain = domainOf(carrier);
-        active(domain); phase(domain, 'Complete');
+        active(domain);
         const {handle, entry: vec} = held(domain, vector, KIND.vec);
+        phase(domain, 'Complete');
         if (domain.views !== 0) fault(domain, 'borrowed');
         if (vec.len === 0) return [0n, handle];
         reserve(domain, 2);
@@ -720,9 +739,9 @@ function createHostWithAuthority(space) {
       },
       row_drop(carrier, popped) {
         const domain = domainOf(carrier);
-        phase(domain, 'Complete', 'Aborted');
         const {handle, entry} = held(domain, popped, KIND.row);
         const child = owner(domain, entry.lease);
+        phase(domain, 'Complete', 'Aborted');
         if (held(domain, entry.text, KIND.string).entry.contained !== 'row' || child.entry.contained !== 'row'
             || domain.tables.borrows[child.slot] !== 0) fault(domain, 'borrowed');
         // A popped record is a new standalone ownership epoch. Its ordinary
@@ -738,16 +757,19 @@ function createHostWithAuthority(space) {
       },
       row_borrow(carrier, popped) {
         const domain = domainOf(carrier);
-        active(domain); phase(domain, 'Complete');
+        active(domain);
         const {entry} = held(domain, popped, KIND.row);
-        return borrowSlot(domain, owner(domain, entry.lease).slot);
+        const child = owner(domain, entry.lease);
+        phase(domain, 'Complete');
+        return borrowSlot(domain, child.slot);
       },
       // Store renews exactly this child's nonce and generation before writing.
       store(carrier, popped, position, byte) {
         const domain = domainOf(carrier);
-        active(domain); phase(domain, 'Complete');
+        active(domain);
         const {entry} = held(domain, popped, KIND.row);
         const child = owner(domain, entry.lease), tables = domain.tables;
+        phase(domain, 'Complete');
         if (tables.borrows[child.slot] !== 0) fault(domain, 'borrowed');
         if (!Number.isInteger(position) || position < 0 || position >= grant.width
             || !Number.isInteger(byte) || byte < 0 || byte > 255) fault(domain, 'range');
@@ -763,9 +785,10 @@ function createHostWithAuthority(space) {
       // allocation; only the authenticated range is copied. Never refunded.
       deep_clone(carrier, popped) {
         const domain = domainOf(carrier);
-        active(domain); phase(domain, 'Complete');
+        active(domain);
         const {entry} = held(domain, popped, KIND.row);
         const child = owner(domain, entry.lease), ledger = invocation.ledger;
+        phase(domain, 'Complete');
         if (ledger.events + 1 > MAX_EVENTS || ledger.cumulative + grant.width > MAX_CUMULATIVE)
           fault(domain, 'ordinary-byte-capacity');
         reserve(domain, 1);

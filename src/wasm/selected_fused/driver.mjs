@@ -376,7 +376,14 @@ if (mode === 'original') {
       return 0n;
     }, code);
   }
-  // Construction order and phase refusals.
+  // Construction order and phase refusals. Token authentication precedes the
+  // phase check: a stale operand in Building is stale, not a phase refusal.
+  settledControl(instance, c => {
+    const d = c.start(R, W), v = c.vec_new(d, R);
+    refusal(() => c.vec_len(d, v + (1n << 20n)), 'stale');
+    c.abort(d); c.vec_drop(d, v); c.settle_abort(d);
+    return 0n;
+  }, 'stale');
   settledControl(instance, c => {
     const d = c.start(R, W), v = c.vec_new(d, R);
     refusal(() => c.issue(d, 0n), 'operand-order');
