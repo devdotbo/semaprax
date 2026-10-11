@@ -1,7 +1,7 @@
 //! Inactive prerequisite: borrowed reachable namespace inventory, never replay authority.
 //! Ordinary whole-program validation remains required. This does not implement
 //! ReplayContext or select a physical storage profile.
-use super::{Diagnostic, ReplayBudget, replay_error};
+use super::{replay_error, Diagnostic, ReplayBudget};
 use crate::cleanup::ReplayContext;
 use crate::hir::lexical_exit::ChildCursor;
 use crate::hir::{
@@ -158,9 +158,7 @@ impl<'a, 'b> Walk<'a, 'b> {
             K::Block { statements, .. } => {
                 self.debit(statements.len())?;
                 for s in statements {
-                    if let Some(b) = s.binding() {
-                        self.ty(&b.ty)?;
-                    }
+                    self.ty(&s.binding().ty)?;
                 }
                 Ok(None)
             }

@@ -267,6 +267,7 @@ fn resolved_string_slot_loop_refuses_typed_computed_and_missing_operands() {
         let parsed =
             crate::parse(&changed, std::path::Path::new("resolved-slots-loop.spx")).unwrap();
         let error = crate::hir::resolve(&parsed).unwrap_err();
-        assert_eq!(error.code, "SPX-T283", "{replacement}: {error:?}");
+        assert_eq!(error.len(), 1, "{replacement}: {error:?}");
+        assert_eq!(error[0].code, "SPX-T283", "{replacement}: {error:?}");
     }
 }

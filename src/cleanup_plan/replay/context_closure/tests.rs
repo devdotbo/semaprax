@@ -1,5 +1,5 @@
-use super::{Inventory, derive};
-use crate::cleanup_plan::replay::{ReplayBudget, physical_storage::PhysicalReservation};
+use super::{derive, Inventory};
+use crate::cleanup_plan::replay::{physical_storage::PhysicalReservation, ReplayBudget};
 use crate::hir::{ResolvedExprKind as K, ResolvedProgram, ResolvedType};
 
 const SOURCE: &str = r#"module closure;
@@ -21,7 +21,7 @@ fn budget(bytes: usize) -> ReplayBudget {
     b.physical = Some(Box::new(PhysicalReservation::new(bytes)));
     b
 }
-fn ids(i: &Inventory<'_>) -> (Vec<&str>, Vec<&str>) {
+fn ids<'a>(i: &Inventory<'a>) -> (Vec<&'a str>, Vec<&'a str>) {
     (
         i.functions.iter().map(|f| f.id.as_str()).collect(),
         i.types.iter().map(|t| t.id.as_str()).collect(),
@@ -70,27 +70,23 @@ fn borrowed_closure_matches_full_fixture_walk_without_granting_context_authority
     let i = derive(&p, root, &mut budget(usize::MAX)).unwrap();
     assert_eq!(ids(&i).0, oracle(&p, root));
     assert_eq!(ids(&i).1, ["closure.Packet", "closure.Leaf"]);
-    assert!(
-        i.functions
-            .iter()
-            .all(|f| p.functions.iter().any(|g| std::ptr::eq(*f, g)))
-    );
-    assert!(
-        i.types
-            .iter()
-            .all(|t| p.types.iter().any(|u| std::ptr::eq(*t, u)))
-    );
+    assert!(i
+        .functions
+        .iter()
+        .all(|f| p.functions.iter().any(|g| std::ptr::eq(*f, g))));
+    assert!(i
+        .types
+        .iter()
+        .all(|t| p.types.iter().any(|u| std::ptr::eq(*t, u))));
     let main = p
         .functions
         .iter()
         .find(|f| f.id.as_str() == "closure.main")
         .unwrap();
-    assert!(
-        derive(&p, main, &mut budget(usize::MAX))
-            .unwrap()
-            .types
-            .is_empty()
-    );
+    assert!(derive(&p, main, &mut budget(usize::MAX))
+        .unwrap()
+        .types
+        .is_empty());
     // A forged unrelated declaration can be outside discovery, but the required
     // ordinary validator still rejects it; Inventory is not a validation lease.
     let mut forged = p.clone();
