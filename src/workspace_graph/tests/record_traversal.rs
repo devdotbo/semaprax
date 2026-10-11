@@ -104,6 +104,77 @@ use type @id("library.row") from library as Row;
     }
 }
 #[test]
+fn imported_row_byte_view_edge_names_the_inner_field_read_call() {
+    let input = vec![
+        canonical_source(
+            "library.spx",
+            r#"module library;
+@id("library.entry") record Entry { @id("library.entry.n") n:i64, @id("library.entry.text") text:string, }
+@id("library.zero") fn zero()->i64 { 0 }
+"#,
+        ),
+        canonical_source(
+            "app.spx",
+            r#"module app;
+use type @id("library.entry") from library as Entry;
+@id("app.walk") fn walk(rows:borrow Vec<Entry>)->i64 {
+ for borrow row at index in rows { let utf8=str_as_bytes(row.text); let numbered=index; 0 }
+ 0
+}
+@id("app.main") fn main()->i64 {0}
+"#,
+        ),
+    ];
+    let programs = parsed_sources(&input);
+    // The retained build itself compares the exact HIR/edge multiset.
+    let build = build_owned(input).unwrap();
+    super::super::record_traversal::validate(&programs, &build.hir.modules).unwrap();
+    let owner = hir::DeclarationId::new("app.walk");
+    let outer = "body.s0.value.s2.body.s1.value.s0.value";
+    let inner = format!("{outer}.arg.0");
+    let type_path = format!("{inner}.type_argument.0");
+    let inner_identity = hir::workspace_expression_identity(&owner, &inner);
+    let outer_identity = hir::workspace_expression_identity(&owner, outer);
+    let position = |edges: &[WorkspaceEdge]| {
+        let matching = edges
+            .iter()
+            .enumerate()
+            .filter(|(_, edge)| {
+                edge.caller == "app.walk"
+                    && edge.kind == "type_reference"
+                    && edge.target == "library.entry"
+                    && edge.ast_path == type_path
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(matching.len(), 1, "one byte-view row type edge");
+        matching[0].0
+    };
+    let index = position(&build.edges);
+    assert_eq!(build.edges[index].expression, inner_identity);
+    validate_retained_facts(&programs, &build.hir.modules, &build.edges).unwrap();
+    // Rekeying to the outer str_as_bytes call, or dropping or duplicating the
+    // edge, disagrees with the independently reconstructed HIR site.
+    for attack in 0..3 {
+        let mut edges = build.edges.clone();
+        match attack {
+            0 => edges[index].expression = outer_identity.clone(),
+            1 => {
+                edges.remove(index);
+            }
+            _ => {
+                let copy = edges[index].clone();
+                edges.push(copy);
+            }
+        }
+        let error = validate_retained_facts(&programs, &build.hir.modules, &edges).unwrap_err();
+        assert_eq!(error[0].code, "SPX-G173");
+        assert_eq!(
+            error[0].message,
+            "workspace explicit type-reference facts disagree with retained HIR"
+        );
+    }
+}
+#[test]
 fn same_typed_field_substitution_cannot_rebind_authored_row_projection() {
     let source_programs = sources()
         .iter()

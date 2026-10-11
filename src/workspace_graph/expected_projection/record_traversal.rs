@@ -27,18 +27,16 @@ pub(super) fn collect_edges(
         )?;
     }
     for read in &expected.reads {
-        let type_path = if read.copy {
-            budgeted_format(format_args!("{}.base.type_argument.0", read.path))
-        } else if read.bytes {
-            budgeted_format(format_args!("{}.arg.0.type_argument.0", read.path))
-        } else {
-            budgeted_format(format_args!("{}.type_argument.0", read.path))
-        };
+        // Retained HIR keys a fused `str_as_bytes(row.text)` type site at its
+        // inner field-read call, so the edge names that same expression.
         let expression_path = if read.copy {
             budgeted_format(format_args!("{}.base", read.path))
+        } else if read.bytes {
+            budgeted_format(format_args!("{}.arg.0", read.path))
         } else {
             crate::bounded_output::budgeted_clone(&read.path)
         };
+        let type_path = budgeted_format(format_args!("{expression_path}.type_argument.0"));
         push(
             program,
             read.function,

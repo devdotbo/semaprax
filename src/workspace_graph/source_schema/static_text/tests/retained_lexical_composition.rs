@@ -110,7 +110,10 @@ use function @id("rows.weight") from static.rows as weight;
 const WIDE_WORK: usize = 32_000_000;
 const WIDE_BYTES: usize = 1 << 28;
 
-fn build_imported(provider: &str, consumer: &str) -> WorkspaceGraphBuild {
+fn try_build_imported(
+    provider: &str,
+    consumer: &str,
+) -> Result<WorkspaceGraphBuild, Vec<Diagnostic>> {
     let sources = [("rows.spx", provider), ("writer.spx", consumer)]
         .into_iter()
         .map(|(path, source)| WorkspaceSource {
@@ -118,9 +121,10 @@ fn build_imported(provider: &str, consumer: &str) -> WorkspaceGraphBuild {
             source: format::canonical(&crate::parse(source, path).unwrap()),
         })
         .collect();
-    build_owned_retaining_sources_for_change(sources, MAX_CHANGE_BUILDER_BYTES)
-        .unwrap()
-        .0
+    build_owned_retaining_sources_for_change(sources, MAX_CHANGE_BUILDER_BYTES).map(|built| built.0)
+}
+fn build_imported(provider: &str, consumer: &str) -> WorkspaceGraphBuild {
+    try_build_imported(provider, consumer).unwrap()
 }
 
 /// Direct full-Program oracle: canonical round trip, graph replay and the
@@ -800,17 +804,40 @@ fn retained_imported_record_and_helper_use_the_actual_typed_namespace() {
         "fn weight(n:i64)->i64 {n+1}",
         "fn weight(row:borrow Row)->i64 {row.n+1}",
     );
-    let borrowed_consumer = IMPORTED.replace("weight(row.n)", "weight(row)");
+    // The traversal row is source-only and cannot be passed (Scoped Record Vec
+    // Traversal v2). Inside the unchanged matched branch the authored Return
+    // lends a named owned probe whose `n` is read from the matched row itself.
+    let matched = "if str_len_bytes(text)==str_len_bytes(key) {return weight(row.n);};";
+    let probe = |source: &str| {
+        assert_eq!(source.matches(matched).count(), 1);
+        let lent = source.replace(
+            matched,
+            "if str_len_bytes(text)==str_len_bytes(key) \
+             {let probe=Row{n:row.n,text:\"é\"}; return weight(probe);};",
+        );
+        assert!(!lent.contains("weight(row.n)") && lent.contains("return weight(probe);"));
+        lent
+    };
+    let borrowed_consumer = probe(IMPORTED);
     let borrowed = build_imported(&borrowed_provider, &borrowed_consumer);
     admitted(&borrowed);
-    let borrowed_local = local
-        .replace(
-            "fn weight(n:i64)->i64 {n+1}",
-            "fn weight(row:borrow Row)->i64 {row.n+1}",
-        )
-        .replace("weight(row.n)", "weight(row)");
+    let borrowed_local = probe(&local.replace(
+        "fn weight(n:i64)->i64 {n+1}",
+        "fn weight(row:borrow Row)->i64 {row.n+1}",
+    ));
     let borrowed_control = direct(&borrowed_local);
     runtime_parity(&borrowed, &borrowed_control, Some(8));
+    // Changing only the matched source row's `n` changes the helper result in
+    // both the retained build and the direct oracle, so the probe is not a
+    // constant.
+    let reweighted = |source: &str| {
+        let matched_row = "Row{n:7,text:\"é\"}";
+        assert_eq!(source.matches(matched_row).count(), 1);
+        source.replace(matched_row, "Row{n:40,text:\"é\"}")
+    };
+    let moved = build_imported(&borrowed_provider, &reweighted(&borrowed_consumer));
+    admitted(&moved);
+    runtime_parity(&moved, &direct(&reweighted(&borrowed_local)), Some(41));
     // Authentication and every helper/consumer replay transfer the same
     // preparation; this is distinct from the independent direct runtime oracle.
     let scan = function(writer(&borrowed), "static.scan");
@@ -835,6 +862,52 @@ fn retained_imported_record_and_helper_use_the_actual_typed_namespace() {
     )
     .unwrap()
     .unwrap();
+}
+
+#[test]
+fn retained_traversal_row_cannot_be_lent_owned_or_stored_through_imported_helpers() {
+    // Passing, transferring or storing the source-only row stays refused even
+    // when an imported helper names the exact provider record type.
+    for (helper, authored, consumer_use) in [
+        (
+            "fn weight(row:borrow Row)->i64 {row.n+1}",
+            "weight(row.n)",
+            "weight(row)",
+        ),
+        (
+            "fn weight(row:own Row)->i64 {row.n+1}",
+            "weight(row.n)",
+            "weight(row)",
+        ),
+        (
+            "fn weight(n:i64)->i64 {n+1}",
+            "let text=row.text;",
+            "let text=row.text; let kept=row;",
+        ),
+    ] {
+        let provider = PROVIDER.replace("fn weight(n:i64)->i64 {n+1}", helper);
+        let consumer = IMPORTED.replace(authored, consumer_use);
+        assert_ne!(consumer, IMPORTED);
+        let errors = try_build_imported(&provider, &consumer)
+            .err()
+            .expect("retained build refuses the escaping row");
+        assert!(
+            errors.iter().any(|error| error.code == "SPX-H006"
+                && error.message
+                    == "record traversal row cannot escape or materialize aggregate storage; select a field"),
+            "{consumer_use}: {errors:#?}"
+        );
+        let local = SOURCE_FOR
+            .replace("fn weight(n:i64)->i64 {n+1}", helper)
+            .replace(authored, consumer_use);
+        let errors = crate::check(&local, "writer.spx")
+            .err()
+            .expect("direct source verification refuses the escaping row");
+        assert!(
+            errors.iter().any(|error| error.code == "SPX-T284"),
+            "{consumer_use}: {errors:#?}"
+        );
+    }
 }
 
 #[test]
