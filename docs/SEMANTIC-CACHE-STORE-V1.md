@@ -91,7 +91,15 @@ The restore phase preflights actual HIR contracts, bodies, concrete function
 instances, bindings, places and identity lengths before invoking the planner.
 It reserves original proof capacities together with the conservative construction
 allowance, including temporary/returned vectors, map nodes, liveness and allocation
-overlap. Charges are monotonic; replacement refunds nothing. This phase uses the
+overlap. Ordinary alias prefixes are counted from every actual source-tree
+occurrence, including synthetic assignment fields. The planner materializes the
+resolved prefix once; a cycle-free chain uses each distinct Let prefix at most
+once, so the whole occurrence census plus one initial origin bounds it. Any
+borrowed Match with a direct nonempty Variant arm keeps the older chain
+multiplier, independently of untrusted interface/type/proof metadata, covering
+native aliases that replicate shared prefixes. All other allocation terms stay
+unchanged, and the materializer additionally reserves its actual payload on the
+same ledger. Charges are monotonic; replacement refunds nothing. This phase uses the
 unchanged 64 MiB checked-module construction ceiling, separately from the codec's
 128 MiB allocation ceiling and the ordinary graph replay receipt. The private wire
 format, complete checked-module reuse, zero source resolutions, and exact retained

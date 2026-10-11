@@ -154,10 +154,14 @@ projection. Zero-projection chains need no materialization pass. These are
 planner visits, not a byte/comparator-work measurement, under the unchanged 1,000,000-work ceiling;
 this does not claim identical consumed work or admission at the old boundary.
 The materialized vector, carrier, and newly cloned projection-ID text are
-reserved before allocation on the existing active physical ledger. The prior
-conservative construction forecast remains unchanged, so cached reconstruction
-currently pays that forecast plus this actual reservation; no budget recovery
-or RequestViews cache-fit claim follows from this algorithm checkpoint.
+reserved before allocation on the existing active physical ledger. Cached reconstruction retains the complete occurrence census and every map,
+recipient, live-set, and old-proof allowance. For ordinary aliases only, one
+materialization removes the prior per-link accumulated-vector multiplier.
+Any borrowed Match with a direct nonempty Variant arm retains the original
+multiplier, conservatively covering native receiver aliases that replicate a
+shared scrutinee prefix. Cached reconstruction also pays the actual reservation
+on the same ledger; this conservative double debit is not a RequestViews
+cache-fit or measured budget-recovery claim.
 
 ## Independent replay
 
