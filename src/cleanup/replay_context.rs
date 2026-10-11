@@ -7,6 +7,13 @@ pub(crate) trait ReplayContext {
     fn types(&self) -> &[ResolvedTypeDeclaration];
     fn interfaces(&self) -> &[ResolvedInterface];
     fn functions(&self) -> &[ResolvedFunction];
+    /// Indexed borrowed members may come from several held defining modules.
+    fn function_count(&self) -> usize {
+        self.functions().len()
+    }
+    fn function_at(&self, index: usize) -> Option<&ResolvedFunction> {
+        self.functions().get(index)
+    }
     fn function_templates(&self) -> &[ResolvedFunctionTemplate];
     fn function_instances(&self) -> &[ResolvedFunctionInstance];
     /// Only the selected immutable replay lease implements this method. It

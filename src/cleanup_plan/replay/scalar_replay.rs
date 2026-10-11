@@ -1,0 +1,129 @@
+//! Physically metered proof replay for independently source-bound scalar helpers.
+//! Full structure and path states precede exact observation equality.
+use super::*;
+pub(super) fn validate(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+) -> Result<(), Diagnostic> {
+    if !crate::hir::is_scalar_resolved_type(&function.return_type)
+        || function.params.iter().any(|p| {
+            p.ownership != OwnershipMode::Value || !crate::hir::is_scalar_resolved_type(&p.ty)
+        })
+    {
+        return Err(replay_error(
+            function,
+            "selected helper signature is outside Copy scalars",
+        ));
+    }
+    scalar_nodes(function, budget)?;
+    selected_profile::validate(program, function, budget)?;
+    selected_owner::owner(program, function, budget)?;
+    if function.loan_plan.schema != crate::loan_plan::LOAN_PLAN_SCHEMA_V1
+        || !function.loan_plan.loans.is_empty()
+        || !function.loan_plan.endpoints.is_empty()
+        || !function.loan_plan.edges.is_empty()
+    {
+        return Err(replay_error(
+            function,
+            "pure scalar helper carries an unexpected loan proof",
+        ));
+    }
+    let plan = &function.cleanup_plan;
+    if budget.physical.is_none()
+        || lexical_cert::requires_lexical(function)
+        || plan.lexical_control.is_some()
+        || plan.schema != schema::selected_schema_with_index(program, function, None)?
+    {
+        return Err(replay_error(
+            function,
+            "selected scalar helper requires its exact nonlexical schema",
+        ));
+    }
+    budget.charge(
+        function,
+        plan_structure_units(plan),
+        "selected scalar helper structure",
+    )?;
+    let physical = budget
+        .physical
+        .as_deref_mut()
+        .ok_or_else(|| replay_error(function, "selected scalar helper lacks backing"))?;
+    let facts = expression_facts::expression_facts_with_reservation(function, physical)?;
+    inventory_coverage::validate_inventory_coverage(program, function, budget)?;
+    status_construction::validate_required_status_sources(program, function, budget)?;
+    let storage = structural_maps::validate_slots(function, budget)?;
+    let leaves = structural_maps::collect_leaves(function, budget)?;
+    status_validation::validate_status_sources(function, &facts, budget)?;
+    structural_maps::validate_regions(function, &storage, budget)?;
+    structural_control::validate_entry(function, &storage, &leaves, budget)?;
+    let renewals = program
+        .primitive_renewals(function)
+        .ok_or_else(|| replay_error(function, "selected scalar helper lacks its function lease"))?;
+    structural_control::validate_blocks_and_edges(
+        program, function, &facts, &storage, &leaves, renewals, budget,
+    )?;
+    structural_control::validate_exits(
+        program,
+        function,
+        &storage,
+        &leaves,
+        &BTreeSet::new(),
+        budget,
+    )?;
+    structural_maps::validate_reference_coverage(function, budget)?;
+    structural_control::validate_reachable_acyclic_cfg(function, budget)?;
+    validate_path_states(program, function, &storage, &leaves, budget, None, None)?;
+    match factored::compare_with_index(program, function, budget, None)? {
+        Some(true) => Ok(()),
+        Some(false) => Err(replay_error(
+            function,
+            "selected scalar helper control trace disagrees with typed HIR",
+        )),
+        None => Err(replay_error(
+            function,
+            "selected scalar helper trace multiplicity overflowed",
+        )),
+    }
+}
+
+fn scalar_nodes(function: &ResolvedFunction, budget: &mut ReplayBudget) -> Result<(), Diagnostic> {
+    type Frame<'a> = Option<(crate::hir::lexical_exit::ChildCursor<'a>, bool)>;
+    budget.reserve_array::<Frame<'_>>(function, 514, "selected scalar body profile cursor")?;
+    let mut stack = [None; 514];
+    for root in function
+        .requires
+        .iter()
+        .chain(std::iter::once(&function.body))
+        .chain(&function.ensures)
+    {
+        stack[0] = Some((crate::hir::lexical_exit::ChildCursor::new(root), false));
+        let mut depth = 1;
+        while depth != 0 {
+            budget.charge(function, 1, "selected scalar body profile node")?;
+            let (mut cursor, entered) = stack[depth - 1]
+                .take()
+                .ok_or_else(|| replay_error(function, "scalar profile cursor is empty"))?;
+            if !entered
+                && (!crate::hir::is_scalar_resolved_type(&cursor.expression().ty)
+                    || cursor.expression().ownership != OwnershipMode::Value)
+            {
+                return Err(replay_error(
+                    function,
+                    "selected scalar helper body contains non-Copy storage",
+                ));
+            }
+            if let Some(child) = cursor.next() {
+                if depth == 514 {
+                    return Err(replay_error(function, "scalar helper exceeds HIR depth"));
+                }
+                stack[depth - 1] = Some((cursor, true));
+                stack[depth] = Some((crate::hir::lexical_exit::ChildCursor::new(child), false));
+                depth += 1;
+            } else {
+                depth -= 1;
+            }
+        }
+    }
+    Ok(())
+}

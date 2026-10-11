@@ -162,7 +162,7 @@ pub(super) fn validate(
                         {
                             budget.charge(
                                 function,
-                                program.functions().len(),
+                                program.function_count(),
                                 "selected current callee lookup",
                             )?;
                             if program.resolve_call_target(callee, None).is_none() {

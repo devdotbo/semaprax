@@ -1,6 +1,7 @@
 //! Independent source-signature and current namespace authentication for the
 //! module-local primitive retained lexical replay context.
 use super::*;
+mod helpers;
 mod records;
 use crate::cleanup::ReplayContext;
 use crate::hir::{
@@ -127,6 +128,7 @@ pub(super) fn authenticate<'a>(
 /// replay with the same cumulative reservation for every selected function.
 pub(in crate::workspace_graph::source_schema) fn replay(
     module: &WorkspaceResolvedModule,
+    modules: &[WorkspaceResolvedModule],
     facts: &BTreeMap<String, WorkspaceDeclarationFact>,
 ) -> Result<bool, Vec<Diagnostic>> {
     let Some(inventory) = module.static_text.as_deref() else {
@@ -137,6 +139,14 @@ pub(in crate::workspace_graph::source_schema) fn replay(
     }
     let mut physical =
         crate::cleanup_plan::ReplayPhysicalReservation::new(MAX_CHANGE_BUILDER_BYTES);
+    if inventory
+        .lexical
+        .as_deref()
+        .is_some_and(|inventory| inventory.imported)
+    {
+        helpers::replay(module, modules, facts, physical)?;
+        return Ok(true);
+    }
     physical
         .reserve_array::<Context<'_>>(1)
         .map_err(|_| fail())?;

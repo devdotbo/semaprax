@@ -32,10 +32,13 @@ impl<'a> Context<'a> {
         budget.reserve_vec(
             function,
             &mut targets,
-            source.functions().len(),
+            source.function_count(),
             "selected borrowed callee references",
         )?;
-        for target in source.functions() {
+        for index in 0..source.function_count() {
+            let target = source.function_at(index).ok_or_else(|| {
+                replay_error(function, "selected callee member index is incomplete")
+            })?;
             budget.charge(function, 1, "selected callee inventory member")?;
             targets.push(target);
         }
@@ -45,7 +48,7 @@ impl<'a> Context<'a> {
             sift(
                 &mut targets,
                 root,
-                source.functions().len(),
+                source.function_count(),
                 function,
                 budget,
             )?;
@@ -127,6 +130,12 @@ impl ReplayContext for Context<'_> {
     }
     fn functions(&self) -> &[ResolvedFunction] {
         self.source.functions()
+    }
+    fn function_count(&self) -> usize {
+        self.source.function_count()
+    }
+    fn function_at(&self, index: usize) -> Option<&ResolvedFunction> {
+        self.source.function_at(index)
     }
     fn function_templates(&self) -> &[crate::hir::ResolvedFunctionTemplate] {
         self.source.function_templates()

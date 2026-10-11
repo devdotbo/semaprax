@@ -53,6 +53,12 @@ impl ReplayContext for Context<'_> {
     fn functions(&self) -> &[ResolvedFunction] {
         self.source.functions()
     }
+    fn function_count(&self) -> usize {
+        self.source.function_count()
+    }
+    fn function_at(&self, index: usize) -> Option<&ResolvedFunction> {
+        self.source.function_at(index)
+    }
     fn function_templates(&self) -> &[crate::hir::ResolvedFunctionTemplate] {
         self.source.function_templates()
     }

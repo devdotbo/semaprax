@@ -16,7 +16,10 @@ pub(super) fn owner(
         ));
     }
     let mut found = false;
-    for current in program.functions() {
+    for index in 0..program.function_count() {
+        let current = program
+            .function_at(index)
+            .ok_or_else(|| replay_error(function, "selected member index is incomplete"))?;
         budget.charge(function, 1, "selected current function membership")?;
         if std::ptr::eq(current, function) {
             if found {

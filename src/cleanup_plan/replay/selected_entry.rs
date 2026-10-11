@@ -24,6 +24,106 @@ pub(crate) fn validate_retained_lexical_with_reservation(
     session.finish()
 }
 
+/// Non-clone preparation owner: authentication and replay consume one ledger.
+pub(crate) struct Preparation {
+    budget: ReplayBudget,
+    failed: bool,
+}
+impl Preparation {
+    pub(crate) fn new(
+        function: &ResolvedFunction,
+        physical: PhysicalReservation,
+    ) -> Result<Self, Diagnostic> {
+        Ok(Self {
+            budget: ReplayBudget::from_reservation(function, physical)?,
+            failed: false,
+        })
+    }
+    #[cfg(test)]
+    pub(crate) fn with_limits(
+        function: &ResolvedFunction,
+        work: usize,
+        bytes: usize,
+    ) -> Result<Self, Diagnostic> {
+        if work > MAX_REPLAY_WORK_UNITS {
+            return Err(replay_error(
+                function,
+                "test preparation work exceeds production ceiling",
+            ));
+        }
+        let mut preparation = Self::new(function, PhysicalReservation::new(bytes))?;
+        preparation.budget.remaining = work;
+        Ok(preparation)
+    }
+    pub(crate) fn charge(
+        &mut self,
+        function: &ResolvedFunction,
+        units: usize,
+        phase: &str,
+    ) -> Result<(), Diagnostic> {
+        if self.failed {
+            return Err(replay_error(
+                function,
+                "selected preparation already failed",
+            ));
+        }
+        let answer = self.budget.charge(function, units, phase);
+        self.failed = answer.is_err();
+        answer
+    }
+    pub(crate) fn reserve_array<T>(
+        &mut self,
+        function: &ResolvedFunction,
+        count: usize,
+        phase: &str,
+    ) -> Result<(), Diagnostic> {
+        if self.failed {
+            return Err(replay_error(
+                function,
+                "selected preparation already failed",
+            ));
+        }
+        let answer = self.budget.reserve_array::<T>(function, count, phase);
+        self.failed = answer.is_err();
+        answer
+    }
+    pub(crate) fn reserve_vec<T>(
+        &mut self,
+        function: &ResolvedFunction,
+        values: &mut Vec<T>,
+        additional: usize,
+        phase: &str,
+    ) -> Result<(), Diagnostic> {
+        if self.failed {
+            return Err(replay_error(
+                function,
+                "selected preparation already failed",
+            ));
+        }
+        let answer = self.budget.reserve_vec(function, values, additional, phase);
+        self.failed = answer.is_err();
+        answer
+    }
+    pub(crate) fn physical(
+        &mut self,
+        function: &ResolvedFunction,
+    ) -> Result<&mut PhysicalReservation, Diagnostic> {
+        if self.failed {
+            return Err(replay_error(
+                function,
+                "selected preparation already failed",
+            ));
+        }
+        self.budget
+            .physical
+            .as_deref_mut()
+            .ok_or_else(|| replay_error(function, "selected preparation lost backing ledger"))
+    }
+    pub(crate) fn fail(&mut self) {
+        self.failed = true;
+    }
+}
+
 /// One held provider, borrowed callee inventory, and cumulative work ledger.
 /// Each selected member still obtains a fresh function-bound renewal lease.
 pub(crate) struct Session<'a> {
@@ -40,6 +140,17 @@ impl<'a> Session<'a> {
     ) -> Result<Self, Diagnostic> {
         let budget = ReplayBudget::from_reservation(anchor, physical)?;
         Self::from_budget(program, anchor, budget)
+    }
+
+    pub(crate) fn from_preparation(
+        program: &'a dyn ReplayContext,
+        anchor: &'a ResolvedFunction,
+        preparation: Preparation,
+    ) -> Result<Self, Diagnostic> {
+        if preparation.failed {
+            return Err(replay_error(anchor, "selected preparation already failed"));
+        }
+        Self::from_budget(program, anchor, preparation.budget)
     }
 
     fn from_budget(
@@ -74,6 +185,33 @@ impl<'a> Session<'a> {
         Ok(())
     }
 
+    #[cfg(test)]
+    pub(crate) fn metrics(&self) -> (usize, usize) {
+        (
+            self.budget.remaining,
+            self.budget
+                .physical
+                .as_ref()
+                .expect("selected backing retained")
+                .charged(),
+        )
+    }
+    pub(crate) fn validate_scalar(
+        &mut self,
+        function: &ResolvedFunction,
+    ) -> Result<(), Diagnostic> {
+        if self.failed {
+            return Err(replay_error(
+                function,
+                "selected module replay already failed",
+            ));
+        }
+        self.failed = true;
+        let context = selected_context::Context::new(&self.indexed, function, &mut self.budget)?;
+        scalar_replay::validate(&context, function, &mut self.budget)?;
+        self.failed = false;
+        Ok(())
+    }
     pub(crate) fn finish(mut self) -> Result<PhysicalReservation, Diagnostic> {
         if self.failed {
             return Err(replay_error(

@@ -115,7 +115,7 @@ pub(super) fn compare(
 ) -> Result<Option<bool>, Diagnostic> {
     compare_with_index(program, function, budget, None)
 }
-fn compare_with_index(
+pub(super) fn compare_with_index(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,

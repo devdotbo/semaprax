@@ -444,7 +444,16 @@ impl Encoder {
         }
     }
 }
-pub(super) fn typed(function: &ResolvedFunction, source_revision: &[u8; 32]) -> Option<[u8; 32]> {
+pub(in crate::workspace_graph) fn typed(
+    function: &ResolvedFunction,
+    source_revision: &[u8; 32],
+) -> Option<[u8; 32]> {
+    typed_with_work(function, source_revision).map(|(digest, _)| digest)
+}
+pub(in crate::workspace_graph) fn typed_with_work(
+    function: &ResolvedFunction,
+    source_revision: &[u8; 32],
+) -> Option<([u8; 32], usize)> {
     let mut encoder = Encoder {
         hash: Sha256::new(),
         work: 1_048_576,
@@ -479,9 +488,12 @@ pub(super) fn typed(function: &ResolvedFunction, source_revision: &[u8; 32]) -> 
     for expression in &function.ensures {
         encoder.expression(expression, 0)?;
     }
-    Some(encoder.hash.finalize().into())
+    Some((
+        encoder.hash.finalize().into(),
+        1_048_576usize.checked_sub(encoder.work)?,
+    ))
 }
-pub(super) fn source(path: &str, module: &str, source: &str) -> [u8; 32] {
+pub(in crate::workspace_graph) fn source(path: &str, module: &str, source: &str) -> [u8; 32] {
     let mut hash = Sha256::new();
     hash.update(b"semaprax.retained-primitive-source.v1\0");
     for bytes in [path.as_bytes(), module.as_bytes(), source.as_bytes()] {
@@ -491,7 +503,7 @@ pub(super) fn source(path: &str, module: &str, source: &str) -> [u8; 32] {
     hash.finalize().into()
 }
 
-pub(super) fn scratch_bytes() -> usize {
+pub(in crate::workspace_graph) fn scratch_bytes() -> usize {
     // Fixed SHA state; no formatter or materialized source is created.
     // Expression recursion is independently bounded to 256 and constructs no heap.
     std::mem::size_of::<Encoder>() + std::mem::size_of::<Sha256>()

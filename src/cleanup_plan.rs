@@ -31,7 +31,7 @@ mod replay;
 pub(crate) use replay::validate_retained_lexical_with_reservation;
 pub(crate) use replay::{
     ClonePayload as ReplayClonePayload, PhysicalReservation as ReplayPhysicalReservation,
-    SelectedReplaySession, replay_btree_node_upper, replay_reserve_vec,
+    SelectedReplaySession, SelectedReplayPreparation, replay_btree_node_upper, replay_reserve_vec,
 };
 mod validate;
 

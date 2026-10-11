@@ -2,7 +2,7 @@
 //! These are captured from the authoritative AST, never from a cleanup schema.
 use super::*;
 use crate::ast::{ParamMode, Type};
-mod body_digest;
+pub(super) mod body_digest;
 mod function_matching;
 pub(in crate::workspace_graph) mod records;
 
@@ -10,6 +10,7 @@ pub(in crate::workspace_graph) struct Inventory {
     pub(in crate::workspace_graph) functions: Vec<FunctionFact>,
     pub(in crate::workspace_graph) records: Option<Box<records::Records>>,
     source_revision: [u8; 32],
+    pub(in crate::workspace_graph) imported: bool,
 }
 pub(in crate::workspace_graph) struct FunctionFact {
     pub(in crate::workspace_graph) id: hir::DeclarationId,
@@ -25,7 +26,7 @@ pub(in crate::workspace_graph) struct ParameterFact {
     pub(in crate::workspace_graph) ty: hir::ResolvedType,
 }
 
-fn ty(ty: &Type) -> Option<hir::ResolvedType> {
+pub(super) fn ty(ty: &Type) -> Option<hir::ResolvedType> {
     use hir::ResolvedType as R;
     Some(match ty {
         Type::I64 => R::I64,
@@ -99,7 +100,10 @@ fn capture_with_matching<const LEGACY: bool>(
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
     authenticated_sources: Option<&[WorkspaceSource]>,
 ) -> Result<Option<Box<Inventory>>, Vec<Diagnostic>> {
-    if !program.module_uses.is_empty()
+    if program
+        .module_uses
+        .iter()
+        .any(|u| u.kind != crate::ast::ModuleUseKind::Function)
         || !program.agents.is_empty()
         || !program.interfaces.is_empty()
         || !program.protocols.is_empty()
@@ -276,6 +280,7 @@ fn capture_with_matching<const LEGACY: bool>(
         functions,
         records,
         source_revision,
+        imported: !program.module_uses.is_empty(),
     };
     // Validate the complete retained backing arithmetic after the independently
     // reserved exact-capacity carriers have been constructed.
@@ -332,6 +337,14 @@ pub(in crate::workspace_graph) fn body_matches(
     function: &hir::ResolvedFunction,
 ) -> bool {
     body_digest::typed(function, &inventory.source_revision) == Some(source.body)
+}
+pub(in crate::workspace_graph) fn body_match_work(
+    inventory: &Inventory,
+    source: &FunctionFact,
+    function: &hir::ResolvedFunction,
+) -> Option<usize> {
+    let (digest, work) = body_digest::typed_with_work(function, &inventory.source_revision)?;
+    (digest == source.body).then_some(work)
 }
 pub(in crate::workspace_graph) fn digest_scratch_bytes() -> usize {
     body_digest::scratch_bytes()

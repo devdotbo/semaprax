@@ -15,12 +15,13 @@ mod scalar_match;
 mod selected_callees;
 mod selected_context;
 mod selected_entry;
+mod scalar_replay;
 mod status_construction;
 mod structural_control;
 mod structural_maps;
 #[cfg(test)]
 pub(crate) use selected_entry::validate_retained_lexical_with_limit;
-pub(crate) use selected_entry::Session as SelectedReplaySession;
+pub(crate) use selected_entry::{Session as SelectedReplaySession, Preparation as SelectedReplayPreparation};
 #[cfg(test)]
 pub(crate) use selected_entry::validate_retained_lexical_with_reservation;
 mod selected_owner;
