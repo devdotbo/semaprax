@@ -697,7 +697,9 @@ fn assert_resolved_identity_error(
                 mutate(&program.module, &mut synthetic, &programs);
                 (
                     program.module.clone(),
-                    hir::resolve(&synthetic).expect("mutated identity HIR must resolve"),
+                    hir::resolve(&synthetic)
+                        .expect("mutated identity HIR must resolve")
+                        .into(),
                 )
             })
             .collect::<Vec<_>>()
@@ -1495,7 +1497,9 @@ fn substituted_identity_origin_disagrees_with_retained_hir() {
                 let synthetic = synthetic_program(program, &authored, &programs).unwrap();
                 (
                     program.module.clone(),
-                    hir::resolve(&synthetic).expect("synthetic identity fixture must resolve"),
+                    hir::resolve(&synthetic)
+                        .expect("synthetic identity fixture must resolve")
+                        .into(),
                 )
             })
             .collect::<Vec<_>>()
@@ -1633,7 +1637,9 @@ fn synthetic_main_allowlist_is_exact_and_collision_fails_closed() {
                 let synthetic = synthetic_program(program, &authored, &programs).unwrap();
                 (
                     program.module.clone(),
-                    hir::resolve(&synthetic).expect("exact synthetic main must resolve"),
+                    hir::resolve(&synthetic)
+                        .expect("exact synthetic main must resolve")
+                        .into(),
                 )
             })
             .collect::<Vec<_>>()
