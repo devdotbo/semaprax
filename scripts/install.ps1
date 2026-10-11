@@ -1061,7 +1061,7 @@ function Invoke-SemapraxInstall {
         try {
             Write-SemapraxTextFile -Path ($receiptPath + '.tmp') -Text $text
             if ([System.IO.File]::Exists($receiptPath)) {
-                [System.IO.File]::Replace(($receiptPath + '.tmp'), $receiptPath, $null)
+                [System.IO.File]::Replace(($receiptPath + '.tmp'), $receiptPath, [System.Management.Automation.Language.NullString]::Value)
             } else {
                 [System.IO.File]::Move(($receiptPath + '.tmp'), $receiptPath)
             }

@@ -177,7 +177,7 @@ function Invoke-Installer {
 }
 
 $script:OriginalPath = $env:Path
-$assets = [System.IO.Path]::GetFullPath($AssetsDir)
+$assets = (Resolve-Path -LiteralPath $AssetsDir).ProviderPath
 $script:InstallScript = [System.IO.Path]::Combine($assets, 'install.ps1')
 $work = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), 'spx journey ' + [Guid]::NewGuid().ToString('N').Substring(0, 8))
 $installDir = [System.IO.Path]::Combine($work, 'install dir')
@@ -209,7 +209,7 @@ try {
         Assert-Journey ($oldTag -match '^v\d+\.\d+\.\d+$') 'previous release tag is required'
         $oldDir = [System.IO.Path]::Combine($base, $oldTag)
         [void][System.IO.Directory]::CreateDirectory($oldDir)
-        foreach ($f in [System.IO.Directory]::GetFiles($env:SEMAPRAX_JOURNEY_PREVIOUS_ASSETS)) {
+        foreach ($f in [System.IO.Directory]::GetFiles((Resolve-Path -LiteralPath $env:SEMAPRAX_JOURNEY_PREVIOUS_ASSETS).ProviderPath)) {
             [System.IO.File]::Copy($f, [System.IO.Path]::Combine($oldDir, [System.IO.Path]::GetFileName($f)), $true)
         }
         $oldArgs = @('-Version', $oldTag, '-InstallDir', $installDir)

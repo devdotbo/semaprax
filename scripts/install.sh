@@ -642,6 +642,9 @@ PREV_TAG=""
 PREV_SHA=""
 if [ -e "$PREFIX" ] || [ -L "$PREFIX" ]; then
   [ -d "$PREFIX" ] || die "$PREFIX exists and is not a directory"
+  if is_link_or_exists "$PREFIX/current" && [ ! -L "$PREFIX/current" ]; then
+    die "refusing to replace $PREFIX/current: it is not a symbolic link"
+  fi
   if receipt_has_schema; then
     validate_receipt_paths
     PREV_TAG="$(receipt_field tag)"
@@ -819,7 +822,7 @@ if [ -e "$DEST" ] || [ -L "$DEST" ]; then
     [ ! -L "$DEST" ] || die "refusing to reuse a linked version directory"
     for exe in semaprax semapraxd; do
       cmp -s "$PKG/$exe" "$DEST/$exe" ||
-        die "installed $exe differs from the verified archive; inspect the installation before retrying"
+        die "$exe differs from the verified archive; inspect the installation before retrying"
     done
     REUSE=1
   else

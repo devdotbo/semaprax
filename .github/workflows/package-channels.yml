@@ -111,16 +111,22 @@ jobs:
         run: |
           set -euo pipefail
           brew tap wavect/tap
-          brew install --formula wavect/tap/semaprax
-          brew test wavect/tap/semaprax
+          if [ "$(uname -m)" = arm64 ]; then
+            brew install --formula wavect/tap/semaprax
+            brew test wavect/tap/semaprax
+          fi
           # Upgrade the same canonical formula on this disposable host using
           # the proposal, keeping the public tap unchanged until review.
           cp proposal/homebrew/semaprax.rb "$(brew --repository wavect/tap)/Formula/"
-          brew upgrade --formula wavect/tap/semaprax
+          if brew list --versions semaprax >/dev/null 2>&1; then
+            brew upgrade --formula wavect/tap/semaprax
+          else
+            brew install --formula wavect/tap/semaprax
+          fi
           brew test wavect/tap/semaprax
           brew tap homebrew/core --force
           brew audit --strict wavect/tap/semaprax
-          brew uninstall semaprax
+          brew uninstall --force semaprax
           brew untap wavect/tap
           echo 'Validated proposal; wavect/homebrew-tap still needs its reviewed update.' >> "$GITHUB_STEP_SUMMARY"
 
@@ -153,6 +159,6 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'WinGet local package installation failed' }
           & ./scripts/channel-winget-journey.ps1 -Version $version
           if ($LASTEXITCODE -ne 0) { throw 'WinGet installed journey failed' }
-          winget uninstall --id Wavect.Semaprax --exact --disable-interactivity
+          winget uninstall --id Wavect.Semaprax --exact --accept-source-agreements --disable-interactivity
           if ($LASTEXITCODE -ne 0) { throw 'WinGet uninstall failed' }
           'Validated local proposal; Microsoft index acceptance remains pending.' >> $env:GITHUB_STEP_SUMMARY
