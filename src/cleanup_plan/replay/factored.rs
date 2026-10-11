@@ -130,6 +130,7 @@ fn compare_with_index(
     let sink = automaton.node();
     let success = automaton.end(sink, SkeletonTerminal::Success);
     let failure = automaton.end(sink, SkeletonTerminal::Failure);
+    let latch = automaton.end(sink, SkeletonTerminal::LoopLatch);
     let hir_root = automaton.node();
     let mut memo = BTreeMap::new();
     for path in &hir_paths {
@@ -143,16 +144,11 @@ fn compare_with_index(
         let terminal = match path.terminal {
             SkeletonTerminal::Success => success,
             SkeletonTerminal::Failure => failure,
-            SkeletonTerminal::LoopLatch => {
-                return Err(replay_error(
-                    function,
-                    "factored skeleton comparison does not admit lexical loop latches",
-                ));
-            }
+            SkeletonTerminal::LoopLatch => latch,
         };
         automaton.nodes[end].epsilon.push(terminal);
     }
-    let plan_root = automaton.add_plan(function, success, failure, budget)?;
+    let plan_root = automaton.add_plan(function, success, failure, latch, budget)?;
     let mut canonical = Canonicalizer::new(&automaton, sink);
     let Some(hir) = canonical.id(function, vec![(hir_root, 1)], budget)? else {
         return Ok(None);
@@ -306,6 +302,7 @@ impl Automaton {
         function: &ResolvedFunction,
         success: usize,
         failure: usize,
+        latch: usize,
         budget: &mut ReplayBudget,
     ) -> Result<usize, Diagnostic> {
         let plan = &function.cleanup_plan;
@@ -347,19 +344,50 @@ impl Automaton {
                 }
                 CleanupTerminator::Exit(exit) => {
                     let exit = &plan.exits[exit.0 as usize];
-                    let target = match exit.continuation {
+                    let target = match &exit.continuation {
                         ExitContinuation::Continue(edge) => entry(plan.edges[edge.0 as usize].to),
                         ExitContinuation::CommitResult { .. } | ExitContinuation::ReturnUnit => {
                             success
                         }
                         ExitContinuation::ReturnFailure { .. } => failure,
-                        ExitContinuation::LoopLatch { .. }
-                        | ExitContinuation::LoopBreak { .. }
-                        | ExitContinuation::FunctionReturn { .. } => {
-                            return Err(replay_error(
-                                function,
-                                "factored skeleton comparison does not admit lexical exits",
+                        ExitContinuation::LoopBreak { edge, .. }
+                        | ExitContinuation::FunctionReturn { edge, .. } => {
+                            let marker =
+                                lexical_skeleton::plan_exit_observation(budget, function, exit.id)?
+                                    .ok_or_else(|| {
+                                        replay_error(
+                                    function,
+                                    "factored lexical exit lacks an exact certificate marker",
+                                )
+                                    })?;
+                            // The marker itself is the labelled continuation edge.
+                            // A lexical exit must never become an epsilon edge.
+                            self.nodes[node].moves.push((
+                                Label::Observation(Rc::new(marker)),
+                                entry(plan.edges[edge.0 as usize].to),
                             ));
+                            continue;
+                        }
+                        ExitContinuation::LoopLatch { target } => {
+                            let marker = match lexical_skeleton::plan_exit_observation(
+                                budget, function, exit.id,
+                            )? {
+                                Some(marker) => marker,
+                                None => SkeletonObservation::LoopLatch {
+                                    target: skeleton_clone(
+                                        budget,
+                                        function,
+                                        target,
+                                        "factored loop-latch target clone",
+                                    )?,
+                                },
+                            };
+                            let target =
+                                lexical_cert::latch_resume(plan, exit.id).map_or(latch, entry);
+                            self.nodes[node]
+                                .moves
+                                .push((Label::Observation(Rc::new(marker)), target));
+                            continue;
                         }
                     };
                     self.nodes[node].epsilon.push(target);
@@ -670,3 +698,7 @@ fn cross_check(program: &dyn crate::cleanup::ReplayContext, function: &ResolvedF
     }
     SKELETON_MATERIALIZATIONS.with(|count| count.set(saved));
 }
+
+#[cfg(test)]
+#[path = "factored/lexical_plan_tests.rs"]
+mod lexical_plan_tests;

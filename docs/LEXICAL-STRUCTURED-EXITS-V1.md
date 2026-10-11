@@ -82,7 +82,12 @@ old/new backing overlap. That shared frontier releases the DAG iteratively with
 no destructor allocation; cross-reservation children fail closed. Duplicate
 alternatives retain multiplicity. Automaton/frontier/canonicalizer storage,
 Copy-inert region eligibility and pre-census strategy admission remain barriers
-to selecting lexical factoring. Authored small multiset and physical storage
+to selecting lexical factoring. The inactive plan converter emits exact certified
+return/break marker edges to their existing continuation and exact continue/latch
+marker edges to authenticated advancement resumes or the third latch terminal.
+Lexical exits create no epsilon edge. An independent small automaton enumerator
+compares the complete multiset with the existing plan walk, with authored marker
+site/owner and missing generated-resume attacks. Authored small multiset and physical storage
 regressions remain unexecuted until grouped qualification. All
 authored children remain structurally scanned, including infeasible Done, and
 the 65,536-path, depth and replay-work limits remain unchanged. Independent small
