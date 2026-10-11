@@ -371,14 +371,24 @@ mod tests {
         assert_eq!(used, 0);
         assert_eq!(selected.0.capacity(), 0);
         let required = 32 * std::mem::size_of::<usize>();
-        let (result, refused, used) = crate::bounded_output::with_limit_usage(required - 1, || {
-            let mut selected = SelectedModules::default();
-            let result = selected.record(0, 32, true);
-            assert_eq!(selected.0.capacity(), 0);
-            result
-        });
-        assert!(result.is_err());
+        let (result, refused, used, first_refusal) =
+            crate::bounded_output::with_limit_usage_refusal(required - 1, || {
+                let mut selected = SelectedModules::default();
+                let result = selected.record(0, 32, true);
+                assert_eq!(selected.0.capacity(), 0);
+                result
+            });
+        let error = result
+            .err()
+            .expect("one-short selected vector backing refuses");
         assert!(refused);
-        assert_eq!(used, 0);
+        let first_refusal = first_refusal.expect("selected vector precharge records refusal");
+        assert_eq!(first_refusal.requested, required);
+        assert_eq!(first_refusal.remaining, required - 1);
+        let (report, report_refused, report_used) =
+            crate::bounded_output::with_limit_usage(required - 1, capacity);
+        assert!(!report_refused);
+        assert_eq!(error, report);
+        assert_eq!(used, report_used);
     }
 }
