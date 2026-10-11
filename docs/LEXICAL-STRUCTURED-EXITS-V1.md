@@ -80,8 +80,8 @@ alternative/concatenation members, merge indexes and vectors. Every child edge
 registers against one held destruction frontier before node allocation, including
 old/new backing overlap. That shared frontier releases the DAG iteratively with
 no destructor allocation; cross-reservation children fail closed. Duplicate
-alternatives retain multiplicity. Copy region-to-frontier binding and pre-census strategy admission remain barriers
-to selecting lexical factoring. Inactive automaton construction now precharges
+alternatives retain multiplicity. Production Copy region-to-frontier binding and
+pre-census strategy admission remain barriers to selecting lexical factoring. Inactive automaton construction now precharges
 nodes, moves, epsilon vectors, observation identity/projection payloads, DAG
 frames/ends/memo and block-entry backing. Attempted factored comparisons retain
 spent work and physical debits when falling back. An authored allocator witness
@@ -100,8 +100,14 @@ Place HIR mode; exact parameter mode and Copy result decide inertness. Owned
 parameters, unknown targets, wrong result/receiver types, loops, lexical exits and
 residual forms stay closed. Its fixed cursor is reserved before use. Lexical
 failed/residual/abrupt/owned-source and pending-commit paths remain separate even
-in the inactive merged walk; only normal states can reach a merge. This discovery
-is not yet bound to individual merge frontiers and grants no strategy admission. An independent small automaton enumerator
+in the inactive merged walk; only normal states can reach a merge. A test-only
+scope binds discovery to the exact expression identity before evaluation and closes
+before a caller sequences its retained prefix. Normal lexical paths outside that
+scope remain separate. An independent small HIR-DAG expansion compares complete
+multisets against ordinary enumeration, including owning prefixes and borrowed Vec
+read status traces; these definitions still require executable qualification. The
+production walker has no Copy scope and discovery grants no strategy admission.
+An independent small automaton enumerator
 compares the complete multiset with the existing plan walk, with authored marker
 site/owner and missing generated-resume attacks. Authored small multiset and physical storage
 regressions remain unexecuted until grouped qualification. All

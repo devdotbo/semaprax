@@ -3382,6 +3382,10 @@ fn expression_skeleton(
 ) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
     enum Frame<'a> {
         Eval(&'a ResolvedExpr),
+        #[cfg(test)]
+        FinishCopyRegion {
+            previous: Option<ExpressionId>,
+        },
         RenewalPrefix(&'a ResolvedExpr),
         UpcastPassthrough,
         Unary {
@@ -3677,9 +3681,14 @@ fn expression_skeleton(
     }
 
     // Depth excludes the body block; the machine retains its evaluated child, that block, and 512 expression ancestors.
-    work.budget
-        .reserve_array::<Frame<'_>>(function, 515, "typed HIR continuation stack")?;
-    let mut frames = Vec::with_capacity(515);
+    // An inactive lexical Copy scope adds one metadata frame in test builds.
+    let frame_capacity = 515 + usize::from(cfg!(test));
+    work.budget.reserve_array::<Frame<'_>>(
+        function,
+        frame_capacity,
+        "typed HIR continuation stack",
+    )?;
+    let mut frames = Vec::with_capacity(frame_capacity);
     push_frame!(frames, Frame::Eval(expression));
     let mut produced: Option<Vec<ExprSkeletonPath>> = None;
     /// Lexical loops whose body is being evaluated, innermost last. A `continue`
@@ -3700,6 +3709,15 @@ fn expression_skeleton(
     let mut active_loops: Vec<ActiveLoop<'_>> = Vec::new();
     while let Some(frame) = frames.pop() {
         match frame {
+            #[cfg(test)]
+            Frame::FinishCopyRegion { previous } => {
+                let paths = produced
+                    .take()
+                    .expect("Copy region expression paths retained");
+                let paths = work.merged_paths(paths)?;
+                work.active_copy_region = previous;
+                produced = Some(paths);
+            }
             Frame::RenewalPrefix(expression) => {
                 let mut paths = produced.take().expect("renewal RHS paths retained");
                 renewal::prepend_reservation(function, expression, &mut paths, work)?;
@@ -3707,6 +3725,18 @@ fn expression_skeleton(
             }
             Frame::Eval(expression) => {
                 debug_assert!(produced.is_none());
+                #[cfg(test)]
+                if work.budget.merge_paths
+                    && function.cleanup_plan.lexical_control.is_some()
+                    && work.active_copy_region.is_none()
+                    && factored::copy_regions::eligible(program, function, expression, work.budget)?
+                {
+                    // This expression starts from its own empty path. Close its
+                    // scope before the caller sequences any retained prefix.
+                    let identity = work.clone_payload(&expression.id, "Copy region origin")?;
+                    let previous = work.active_copy_region.replace(identity);
+                    push_frame!(frames, Frame::FinishCopyRegion { previous });
+                }
                 if work.renewal_binding(&expression.id).is_some() {
                     push_frame!(frames, Frame::RenewalPrefix(expression));
                 }

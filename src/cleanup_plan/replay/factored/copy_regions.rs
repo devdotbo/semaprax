@@ -4,6 +4,19 @@
 //! families, ownership transfers, loops, residuals and lexical exits stay closed.
 use super::*;
 
+fn debit(
+    budget: &mut ReplayBudget,
+    function: &ResolvedFunction,
+    units: usize,
+    phase: &str,
+) -> Result<(), Diagnostic> {
+    if budget.merge_paths {
+        budget.charge_skeleton(function, units, phase)
+    } else {
+        budget.charge(function, units, phase)
+    }
+}
+
 fn copy_type(ty: &ResolvedType) -> bool {
     crate::hir::is_scalar_resolved_type(ty)
         || matches!(
@@ -87,7 +100,7 @@ fn call_mode(
 
 /// Inspect this exact borrowed HIR region without cloning its types or body.
 /// The verdict carries no path-merge or strategy authority by itself.
-pub(super) fn eligible(
+pub(in crate::cleanup_plan::replay) fn eligible(
     program: &dyn ReplayContext,
     function: &ResolvedFunction,
     root: &ResolvedExpr,
@@ -103,7 +116,7 @@ pub(super) fn eligible(
     let mut length = 1;
     frames[0] = Some(expression_children::ReplayChildCursor::new(root));
     while length != 0 {
-        budget.charge(function, 1, "Copy region discovery step")?;
+        debit(budget, function, 1, "Copy region discovery step")?;
         let frame = frames[length - 1]
             .as_mut()
             .expect("Copy discovery frame retained");
@@ -129,7 +142,7 @@ pub(super) fn eligible(
             | ResolvedExprKind::If { .. } => {}
             ResolvedExprKind::Block { statements, .. } => {
                 for statement in statements {
-                    budget.charge(function, 1, "Copy region statement mode")?;
+                    debit(budget, function, 1, "Copy region statement mode")?;
                     match statement {
                         ResolvedStatement::Let { binding, .. }
                         | ResolvedStatement::Assign { binding, .. }
@@ -141,7 +154,12 @@ pub(super) fn eligible(
             }
             ResolvedExprKind::Call { args, .. } => {
                 for (index, argument) in args.iter().enumerate() {
-                    budget.charge(function, 1, "Copy region authenticated parameter mode")?;
+                    debit(
+                        budget,
+                        function,
+                        1,
+                        "Copy region authenticated parameter mode",
+                    )?;
                     match call_mode(program, expression, index) {
                         Some(OwnershipMode::Borrow) if borrowed_place(argument) => {}
                         Some(OwnershipMode::Value) if copy_type(&argument.ty) => {}

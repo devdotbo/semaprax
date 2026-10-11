@@ -10,6 +10,7 @@ pub(super) struct SkeletonWork<'a, 'b> {
     pub(super) function: &'a ResolvedFunction,
     pub(super) budget: &'b mut ReplayBudget,
     pub(super) renewal_bindings: crate::cleanup_plan::renewal_profile::RenewalBindings<'a>,
+    pub(super) active_copy_region: Option<ExpressionId>,
     dag_scratch: Option<std::rc::Rc<std::cell::RefCell<dag_storage::DestructionScratch>>>,
     held_renewals: Option<&'a crate::cleanup_plan::renewal_profile::RenewalBindings<'a>>,
     /// Authored same-owner append and direct literal-format String moves.
@@ -37,6 +38,7 @@ impl<'a, 'b> SkeletonWork<'a, 'b> {
         Self {
             function,
             budget,
+            active_copy_region: None,
             dag_scratch: None,
             held_renewals: None,
             renewal_bindings: crate::cleanup_plan::renewal_profile::bindings_with_index(
@@ -76,6 +78,7 @@ impl<'a, 'b> SkeletonWork<'a, 'b> {
             function,
             budget,
             renewal_bindings: crate::cleanup_plan::renewal_profile::RenewalBindings::empty(),
+            active_copy_region: None,
             dag_scratch: None,
             held_renewals: Some(held_renewals),
             string_owner_moves: BTreeSet::new(),
@@ -521,7 +524,8 @@ impl Ord for Observations {
 impl SkeletonWork<'_, '_> {
     fn lexical_merge_normal(&self, path: &ExprSkeletonPath) -> bool {
         self.function.cleanup_plan.lexical_control.is_none()
-            || (!path.failed
+            || (self.active_copy_region.is_some()
+                && !path.failed
                 && !path.residual
                 && path.owned_source.is_none()
                 && path.continuation == lexical_skeleton::Continuation::Normal)

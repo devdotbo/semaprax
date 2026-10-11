@@ -26,7 +26,7 @@ use super::skeleton_work::{ObservationDag, ObservationDagKind};
 use super::*;
 use std::rc::Rc;
 #[cfg(test)] // Inactive discovery has no production strategy authority yet.
-mod copy_regions;
+pub(super) mod copy_regions;
 mod storage;
 use storage::{memo_insert, push_end, push_frame, reserve_transition_observation};
 

@@ -184,3 +184,87 @@ fn generated_continue_resume_omission_changes_the_complete_typed_trace() {
     );
     assert!(validate_structure(&program, &forged).is_err());
 }
+
+/// Expand the small HIR observation DAG by ordinary Cartesian concatenation.
+/// This oracle uses neither the plan automaton nor weighted canonicalization.
+fn expand_hir(paths: &[SkeletonPath]) -> Vec<(Vec<Rc<SkeletonObservation>>, SkeletonTerminal)> {
+    fn expand(dag: &ObservationDag) -> Vec<Vec<Rc<SkeletonObservation>>> {
+        match &dag.kind {
+            ObservationDagKind::Seq(prefix, items) => {
+                let mut paths = prefix.as_ref().map_or_else(|| vec![vec![]], |p| expand(p));
+                for path in &mut paths {
+                    path.extend_from_slice(items);
+                }
+                paths
+            }
+            ObservationDagKind::Alt(parts) => parts.iter().flat_map(|p| expand(p)).collect(),
+            ObservationDagKind::Cat(parts) => {
+                let mut paths = vec![vec![]];
+                for part in parts {
+                    let suffixes = expand(part);
+                    paths = paths
+                        .into_iter()
+                        .flat_map(|prefix| {
+                            suffixes.iter().map(move |suffix| {
+                                let mut path = prefix.clone();
+                                path.extend_from_slice(suffix);
+                                path
+                            })
+                        })
+                        .collect();
+                }
+                paths
+            }
+        }
+    }
+    let mut result = Vec::new();
+    for path in paths {
+        let (prefix, items) = path.observations.parts();
+        let expanded = prefix.map_or_else(|| vec![vec![]], |p| expand(p));
+        for mut observations in expanded {
+            observations.extend_from_slice(items);
+            result.push((observations, path.terminal));
+        }
+    }
+    result.sort();
+    result
+}
+
+fn assert_copy_scope_oracle(source: &str) {
+    let (program, function) = fixture(source);
+    let mut enumerating = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
+    let expected = hir_skeleton_paths(&program, &function, &mut enumerating).unwrap();
+    let mut factored = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
+    factored.merge_paths = true;
+    let actual = hir_skeleton_paths(&program, &function, &mut factored).unwrap();
+    assert_eq!(expand_hir(&actual), expand_hir(&expected));
+    assert!(actual.len() <= expected.len());
+}
+
+#[test]
+fn copy_scopes_preserve_complete_lexical_owning_and_status_multisets() {
+    assert_copy_scope_oracle(WHILE);
+    assert_copy_scope_oracle(GENERATED);
+    assert_copy_scope_oracle(
+        r#"module factored.borrowed;
+@id("probe") fn probe(values: own Vec<i64>, n:i64)->i64 {
+    let answer=if vec_len<i64>(values)>0usize {
+        if n==0 {vec_get<i64>(values,0usize)}else{2}
+    }else{0};
+    return answer;
+}
+@id("main") fn main()->i64 {0}
+"#,
+    );
+    assert_copy_scope_oracle(
+        r#"module factored.prefix;
+@id("consume") fn consume(values: own Vec<i64>)->i64 {0}
+@id("probe") fn probe(values: own Vec<i64>, n:i64)->i64 {
+    let prefix=consume(values);
+    let answer=if n==0 {if prefix==0 {1}else{2}}else{3};
+    return answer;
+}
+@id("main") fn main()->i64 {0}
+"#,
+    );
+}

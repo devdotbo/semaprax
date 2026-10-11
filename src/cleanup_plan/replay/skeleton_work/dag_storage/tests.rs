@@ -166,6 +166,16 @@ fn lexical_failure_and_abrupt_duplicates_stay_separate() {
         "failure multiplicity is carried by separate paths first"
     );
     let normal = empty_expr_path();
+    let merged = work
+        .merged_paths(vec![normal.clone(), normal.clone()])
+        .unwrap();
+    assert_eq!(
+        merged.len(),
+        2,
+        "normal paths outside a Copy scope stay separate"
+    );
+    // This isolated merge oracle supplies the independently owned region scope.
+    work.active_copy_region = Some(function.body.id.clone());
     let merged = work.merged_paths(vec![normal.clone(), normal]).unwrap();
     assert_eq!(merged.len(), 1);
     let commits = vec![(0, CleanupPlace::whole(StorageId::ProvisionalResult))];
