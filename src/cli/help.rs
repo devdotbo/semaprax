@@ -4,6 +4,7 @@ use std::process::ExitCode;
 mod authoring;
 mod diagnostic_index;
 mod library;
+mod reference_links;
 mod shapes;
 
 use library::library_help;
@@ -449,7 +450,7 @@ pub(crate) fn language_topic(query: &str) -> Result<String, String> {
     );
     let section = &LANGUAGE_REFERENCE[start..];
     let end = section.find("\n## ").unwrap_or(section.len());
-    Ok(section[..end].to_owned())
+    reference_links::inline_section(&section[..end], LANGUAGE_REFERENCE)
 }
 
 pub(crate) fn diagnostic_entry(query: &str) -> Result<String, String> {
@@ -1372,7 +1373,7 @@ mod tests {
             concat!(
                 "SPX-T208\n",
                 "wrote: index + 1 when index: usize\n",
-                "fix: Literals default to i64; use index + 1usize\n",
+                "fix: Default i64; index + 1usize\n",
             )
         );
         assert!(t208.len() <= 256);
@@ -1382,14 +1383,14 @@ mod tests {
         let g170 = diagnostic_entry("SPX-G170").unwrap();
         assert!(g170.contains("noncanonical Project source"));
         assert!(g170.contains("semaprax fmt --manifest <manifest>"));
-        assert!(g170.contains("declare its Project dependency"));
+        assert!(g170.contains("std.*: Project dependency + stable-ID import"));
         let t269 = diagnostic_entry("SPX-T269").unwrap();
         assert_eq!(
             t269,
             concat!(
                 "SPX-T269\n",
                 "wrote: direct output repeats per path / is loop-reachable\n",
-                "fix: Direct writes outside loops; profile limits. Default stdout+stderr ≤65536 bytes; Project v28 staged appends ≤1 MiB\n",
+                "fix: Writes outside loops; profile caps: stdout+stderr ≤65536 bytes default; v28 appends ≤1 MiB\n",
             )
         );
         for (code, expected) in [
@@ -1398,7 +1399,7 @@ mod tests {
                 concat!(
                 "SPX-J100\n",
                 "wrote: bad [modules]\n",
-                "fix: 2–16 sorted sources; one bounded nonentry test module. entry=\"app\", sources=[\"a.spx\",\"b.spx\"], tests=[\"app.tests\"] [Manifest](PACKAGE-MANIFEST-V1.md)\n",
+                "fix: 2–16 sorted sources; one bounded nonentry test module: entry=\"app\", sources=[\"a.spx\",\"b.spx\"], tests=[\"app.tests\"] [Manifest](PACKAGE-MANIFEST-V1.md)\n",
             ),
             ),
             (
@@ -1409,13 +1410,13 @@ mod tests {
                 "fix: vec_len<T>; imported generic aliases closed [While](WHILE-LOOPS-V1.md)\n",
                 "\n",
                 "wrote: rejected while helper\n",
-                "fix: Borrow compiler Copy scalar Vec<T>; return scalar/flat Copy variant/string\n",
+                "fix: Borrow compiler Copy-scalar Vec<T>; return scalar/flat Copy variant/string\n",
                 "\n",
                 "wrote: outer owner changes in while\n",
-                "fix: Preserve outer ownership\n",
+                "fix: Keep outer ownership\n",
                 "\n",
                 "wrote: Bytes+usize renewal/input views\n",
-                "fix: Pure nongeneric call; return only one whole same type owner; whole named independent Slice/str borrows only [renewal hook](IO-LINES-V1.md#cursor-transitions), executable gate pending\n",
+                "fix: Pure nongeneric call; whole same-type owner return; whole named independent Slice/str borrows [renewal hook](IO-LINES-V1.md#cursor-transitions), executable gate pending\n",
             ),
             ),
             (
@@ -1423,7 +1424,7 @@ mod tests {
                 concat!(
                 "SPX-T282\n",
                 "wrote: Vec capacity >8192\n",
-                "fix: Reduce vec_with_capacity<T>; Vec-only bound [Vec](OWNED-BOUNDED-VEC-V1.md)\n",
+                "fix: Reduce vec_with_capacity<T>; Vec cap [Vec](OWNED-BOUNDED-VEC-V1.md)\n",
             ),
             ),
             (
@@ -1431,7 +1432,7 @@ mod tests {
                 concat!(
                 "SPX-T283\n",
                 "wrote: lookalike Vec wrapper\n",
-                "fix: Exact std.collections.vec.* ID; no substitute [Vec](OWNED-BOUNDED-VEC-V1.md)\n",
+                "fix: Exact std.collections.vec.* ID only [Vec](OWNED-BOUNDED-VEC-V1.md)\n",
             ),
             ),
             (
@@ -1439,16 +1440,16 @@ mod tests {
                 concat!(
                 "SPX-H006\n",
                 "wrote: function: >256 shared loans\n",
-                "fix: Fewer loans; fixed limit [Loans](SHARED-LOAN-PLAN-V1.md)\n",
+                "fix: Fewer loans; fixed cap [Loans](SHARED-LOAN-PLAN-V1.md)\n",
                 "\n",
                 "wrote: function: >4096 loan points\n",
-                "fix: Simpler flow; admitted helpers\n",
+                "fix: Simplify; admitted helpers\n",
                 "\n",
                 "wrote: function: >4096 CFG edges\n",
-                "fix: Simpler flow; admitted helpers\n",
+                "fix: Simplify; admitted helpers\n",
                 "\n",
                 "wrote: loan work >1000000\n",
-                "fix: Less work; fixed bound\n",
+                "fix: Less work; fixed cap\n",
             ),
             ),
         ] {
@@ -1465,7 +1466,7 @@ mod tests {
 
         let p106 = diagnostic_entry("SPX-P106").unwrap();
         assert_eq!(p106.matches("\nwrote: ").count(), 9);
-        assert!(p106.contains("No tuples; declare a record"));
+        assert!(p106.contains("Declare a record"));
         assert_eq!(
             diagnostic_entry("spx-t208").unwrap_err(),
             "diagnostic help has no exact match for `spx-t208`"

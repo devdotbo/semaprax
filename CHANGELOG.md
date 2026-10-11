@@ -1,5 +1,7 @@
 # Changelog
 
+- Retain actual lexical String temporaries until canonical settlement and authenticate iterator condition feasibility across construction, replay, native and Wasm routes. Make isolated help links self-contained, preserve compact diagnostic advice and restore Projects help within its existing budget. Grouped owning qualification remains pending.
+
 - Repair exact owned-record clone loans, independently authenticated cross-row Vec renewal, selected lexical skeleton reservation, and Wasm continuation after certified bottom statements. Preserve owned Str carriers and derive npm's exact fixed memory extent independently of public result authority. Reconstruct compiler Vec facts for retained nominal fields without widening imports. Grouped owning qualification remains pending; quotas and public ABI admission are unchanged.
 - Preserve exact native String-copy and encoder Bytes-OOM observations, all full-bound UTF-8 wire cases, ordinary-versus-lexical record authority and owning closure refusals. Clarify fresh discard names in agent guidance; `_` remains an ordinary binding.
 

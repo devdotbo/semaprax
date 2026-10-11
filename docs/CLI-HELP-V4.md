@@ -132,9 +132,10 @@ No match exits two, emits no stdout, and reports the literal diagnostic
 and case-folded matching are not admitted. The default shortlist is capped at
 256 bytes and 100 repository lexical units. Every exact response is capped at
 1,024 bytes and 300 units. The
-guarded `SPX-T208` response is 111 bytes and 32 units, more than twenty times
-smaller in both measures than the 2,513-byte, 916-unit complete diagnostic
-index. Even the nine-row `SPX-P106` response is only 773 bytes.
+guarded `SPX-T208` response remains more than twenty times smaller in both
+measures than the complete diagnostic table. Earlier wording measured 111
+bytes/32 units for that response and 773 bytes for the nine-row `SPX-P106`
+response; these are prior-representation observations, not current-byte claims.
 
 ## Language card
 
@@ -271,3 +272,11 @@ This surface is still not shell completion, dynamic discovery, a plugin
 registry, a machine-readable command schema, or proof that a documented command
 is published. A guided shape is not a grammar. Local tests are not hosted,
 cross-platform, release, or support evidence.
+
+
+Exact topic slices expand their referenced Markdown links to inline targets;
+footer definitions are omitted from isolated slices. Missing or duplicate
+reference definitions refuse instead of emitting a dangling link. Full-card
+`all` bytes remain unchanged. Diagnostic-table cells use inline links so the
+pinned JSON companion is independently readable. Existing byte/unit bounds
+remain mandatory.
