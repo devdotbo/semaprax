@@ -455,6 +455,11 @@ fn consuming_cursor_retains_exact_depth_refusal_and_detached_node_identity() {
         tail: Box::new(root),
     };
     assert!(!compare_walk(&parent));
+    let mut scratch = [None; crate::cache_codec::MAX_DEPTH + 1];
+    assert!(!visit_with(&parent, |_| {}, &mut scratch));
+    assert!(scratch.iter().all(Option::is_none));
+    assert!(visit_with(&program.functions[0].body, |_| {}, &mut scratch));
+    assert!(scratch.iter().all(Option::is_none));
     let detached = parent.clone();
     assert!(!std::ptr::eq(&parent, &detached));
     let mut first = None;
@@ -462,4 +467,55 @@ fn consuming_cursor_retains_exact_depth_refusal_and_detached_node_identity() {
         first.get_or_insert(node as *const ResolvedExpr);
     }));
     assert_eq!(first, Some(&detached as *const ResolvedExpr));
+}
+
+#[test]
+fn consuming_publication_reuses_one_paid_cursor_and_settles_without_heap_backing() {
+    let source = crate::check(
+        "module scratch; @id(\"main\") fn main()->i64 {if true {1}else{2}}",
+        "consuming-scratch.spx",
+    )
+    .unwrap();
+    let program = crate::hir::resolve(&source).unwrap();
+    let function = &program.functions[0];
+    let exact = (crate::cache_codec::MAX_DEPTH + 1)
+        * std::mem::size_of::<Option<crate::hir::lexical_exit::ChildCursor<'_>>>();
+    let mut scratch = [None; crate::cache_codec::MAX_DEPTH + 1];
+    let mut first = 0;
+    let mut second = 0;
+    assert!(visit_with(&function.body, |_| first += 1, &mut scratch));
+    assert!(scratch.iter().all(Option::is_none));
+    assert!(visit_with(&function.body, |_| second += 1, &mut scratch));
+    let mut old = 0;
+    assert!(old_visit(&function.body, |_| old += 1));
+    assert_eq!((first, second), (old, old));
+    assert!(scratch.iter().all(Option::is_none));
+    let ((complete, charged), allocation) = crate::test_allocation_observer::measure(|| {
+        let (empty, overflow, charged) = crate::bounded_output::with_limit_usage(exact, || {
+            let mut found = BTreeMap::new();
+            append_bindings(&program, function, &mut found);
+            found.is_empty()
+        });
+        (empty && !overflow, charged)
+    });
+    assert!(complete);
+    assert_eq!(
+        charged, exact,
+        "two independent scans have one held storage payer"
+    );
+    assert!(!allocation.invalid);
+    assert_eq!((allocation.allocated, allocation.live), (0, 0));
+    let ((empty, retried_empty), overflow, charged) =
+        crate::bounded_output::with_limit_usage(exact - 1, || {
+            let mut found = BTreeMap::new();
+            append_bindings(&program, function, &mut found);
+            let empty = found.is_empty();
+            append_bindings(&program, function, &mut found);
+            (empty, found.is_empty())
+        });
+    assert!(empty && retried_empty && overflow);
+    assert_eq!(
+        charged, 0,
+        "refusal publishes no partially authenticated binding"
+    );
 }

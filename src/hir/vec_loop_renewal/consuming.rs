@@ -15,15 +15,26 @@ pub(crate) struct Site<'a> {
     pub(crate) binding: &'a ResolvedBinding,
 }
 
+type Frames<'a> =
+    [Option<crate::hir::lexical_exit::ChildCursor<'a>>; crate::cache_codec::MAX_DEPTH + 1];
+fn frames<'a>() -> Option<Frames<'a>> {
+    crate::bounded_output::reserve_active_required(std::mem::size_of::<Frames<'_>>())
+        .then(|| [None; crate::cache_codec::MAX_DEPTH + 1])
+}
 /// Depth-first authored-order traversal with no heap frontier or ID clones.
 /// Overflow refuses this additive profile, without changing legacy collectors.
-fn visit<'a>(root: &'a ResolvedExpr, mut visitor: impl FnMut(&'a ResolvedExpr)) -> bool {
-    use crate::hir::lexical_exit::ChildCursor;
-    type Frames<'a> = [Option<ChildCursor<'a>>; crate::cache_codec::MAX_DEPTH + 1];
-    if !crate::bounded_output::reserve_active_required(std::mem::size_of::<Frames<'_>>()) {
+fn visit<'a>(root: &'a ResolvedExpr, visitor: impl FnMut(&'a ResolvedExpr)) -> bool {
+    let Some(mut frames) = frames() else {
         return false;
-    }
-    let mut stack: Frames<'_> = [None; crate::cache_codec::MAX_DEPTH + 1];
+    };
+    visit_with(root, visitor, &mut frames)
+}
+fn visit_with<'a>(
+    root: &'a ResolvedExpr,
+    mut visitor: impl FnMut(&'a ResolvedExpr),
+    stack: &mut Frames<'a>,
+) -> bool {
+    use crate::hir::lexical_exit::ChildCursor;
     stack[0] = Some(ChildCursor::new(root));
     let mut len = 1;
     while len != 0 {
@@ -41,6 +52,7 @@ fn visit<'a>(root: &'a ResolvedExpr, mut visitor: impl FnMut(&'a ResolvedExpr)) 
         };
         if let Some(child) = child {
             if len == stack.len() {
+                stack.fill(None);
                 return false;
             }
             stack[len] = Some(ChildCursor::new(child));
@@ -71,115 +83,130 @@ fn declares(root: &ResolvedExpr, target: &ResolvedBinding, mutable: bool) -> boo
 fn scan<'a>(
     function: &'a ResolvedFunction,
     admission: &ElementAdmission,
+    emit: impl FnMut(Site<'a>),
+) -> bool {
+    let Some(mut frames) = frames() else {
+        return false;
+    };
+    scan_with(function, admission, emit, &mut frames)
+}
+fn scan_with<'a>(
+    function: &'a ResolvedFunction,
+    admission: &ElementAdmission,
     mut emit: impl FnMut(Site<'a>),
+    frames: &mut Frames<'a>,
 ) -> bool {
     let mut complete_all = true;
-    let complete = visit(&function.body, |expr| {
-        let ResolvedExprKind::Block { statements, tail } = &expr.kind else {
-            return;
-        };
-        for statement in statements {
-            let (condition, body) = match statement {
-                ResolvedStatement::While {
-                    condition, body, ..
-                }
-                | ResolvedStatement::LexicalWhile {
-                    condition, body, ..
-                } => (condition.as_ref(), body.as_ref()),
-                _ => continue,
+    let complete = visit_with(
+        &function.body,
+        |expr| {
+            let ResolvedExprKind::Block { statements, tail } = &expr.kind else {
+                return;
             };
-            let Some(protocol) = super::super::iterator_loop::recognize(condition, body) else {
-                continue;
-            };
-            let Some(item) = protocol.owned_item else {
-                continue;
-            };
-            let [ResolvedStatement::Let {
-                binding: step,
-                mutable: true,
-                value: seed,
-                ..
-            }, ResolvedStatement::While { .. } | ResolvedStatement::LexicalWhile { .. }] =
-                statements.as_slice()
-            else {
-                continue;
-            };
-            if step != protocol.step
-                || !(tail.ownership == OwnershipMode::Value
-                    && matches!(
-                        tail.kind,
-                        ResolvedExprKind::Int(0) | ResolvedExprKind::Usize(0)
-                    ))
-                || seed.ty != step.ty
-                || seed.ownership != OwnershipMode::Own
-                || !matches!(&seed.kind, ResolvedExprKind::Call { callee, type_arguments, instance: None, args }
+            for statement in statements {
+                let (condition, body) = match statement {
+                    ResolvedStatement::While {
+                        condition, body, ..
+                    }
+                    | ResolvedStatement::LexicalWhile {
+                        condition, body, ..
+                    } => (condition.as_ref(), body.as_ref()),
+                    _ => continue,
+                };
+                let Some(protocol) = super::super::iterator_loop::recognize(condition, body) else {
+                    continue;
+                };
+                let Some(item) = protocol.owned_item else {
+                    continue;
+                };
+                let [ResolvedStatement::Let {
+                    binding: step,
+                    mutable: true,
+                    value: seed,
+                    ..
+                }, ResolvedStatement::While { .. } | ResolvedStatement::LexicalWhile { .. }] =
+                    statements.as_slice()
+                else {
+                    continue;
+                };
+                if step != protocol.step
+                    || !(tail.ownership == OwnershipMode::Value
+                        && matches!(
+                            tail.kind,
+                            ResolvedExprKind::Int(0) | ResolvedExprKind::Usize(0)
+                        ))
+                    || seed.ty != step.ty
+                    || seed.ownership != OwnershipMode::Own
+                    || !matches!(&seed.kind, ResolvedExprKind::Call { callee, type_arguments, instance: None, args }
                     if callee.as_str() == crate::iterator_ops::NEXT_ID
                     && type_arguments.as_slice() == std::slice::from_ref(&item.ty)
                     && matches!(args.as_slice(), [source] if source.ownership == OwnershipMode::Own
                         && matches!(&source.ty, ResolvedType::Nominal { declaration, arguments }
                             if declaration.as_str() == crate::iterator_ops::ITER_ID && arguments.as_slice() == std::slice::from_ref(&item.ty))))
-            {
-                continue;
-            }
-
-            // Exact monomorphic owned rows; older scalar/generic/primitive routes
-            // remain owned by their frozen classifiers.
-            if item.ownership != OwnershipMode::Own
-                || !matches!(&item.ty,
-                ResolvedType::Nominal { arguments, .. } if arguments.is_empty())
-            {
-                continue;
-            }
-            complete_all &= visit(protocol.authored_body, |node| {
-                let ResolvedExprKind::Block { statements, .. } = &node.kind else {
-                    return;
-                };
-                for statement in statements {
-                    let ResolvedStatement::Assign {
-                        binding,
-                        field: None,
-                        value,
-                        ..
-                    } = statement
-                    else {
-                        continue;
-                    };
-                    let ResolvedType::Nominal { arguments, .. } = &binding.ty else {
-                        continue;
-                    };
-                    let [element] = arguments.as_slice() else {
-                        continue;
-                    };
-                    let ResolvedExprKind::Call { callee, .. } = &value.kind else {
-                        continue;
-                    };
-                    let Some(op) = crate::vec_ops::by_id(callee.as_str()) else {
-                        continue;
-                    };
-                    // The exact row family and ordinary staged argument checks
-                    // apply to the yielded item and to an independently admitted
-                    // fallible row argument (e.g. clone_at). No argument exemption
-                    // or allocation permission is supplied by this classifier.
-                    if op != crate::vec_ops::VecOp::Push
-                        || admission(op, &item.ty) != Some(OwnershipMode::Own)
-                        || admission(op, element) != Some(OwnershipMode::Own)
-                        || !super::same_cell(binding, value, Some(admission))
-                        || !declares(&function.body, binding, true)
-                        || declares(protocol.authored_body, binding, false)
-                    {
-                        continue;
-                    }
-                    emit(Site {
-                        condition,
-                        body,
-                        item,
-                        at: value,
-                        binding,
-                    });
+                {
+                    continue;
                 }
-            });
-        }
-    });
+
+                // Exact monomorphic owned rows; older scalar/generic/primitive routes
+                // remain owned by their frozen classifiers.
+                if item.ownership != OwnershipMode::Own
+                    || !matches!(&item.ty,
+                ResolvedType::Nominal { arguments, .. } if arguments.is_empty())
+                {
+                    continue;
+                }
+                complete_all &= visit(protocol.authored_body, |node| {
+                    let ResolvedExprKind::Block { statements, .. } = &node.kind else {
+                        return;
+                    };
+                    for statement in statements {
+                        let ResolvedStatement::Assign {
+                            binding,
+                            field: None,
+                            value,
+                            ..
+                        } = statement
+                        else {
+                            continue;
+                        };
+                        let ResolvedType::Nominal { arguments, .. } = &binding.ty else {
+                            continue;
+                        };
+                        let [element] = arguments.as_slice() else {
+                            continue;
+                        };
+                        let ResolvedExprKind::Call { callee, .. } = &value.kind else {
+                            continue;
+                        };
+                        let Some(op) = crate::vec_ops::by_id(callee.as_str()) else {
+                            continue;
+                        };
+                        // The exact row family and ordinary staged argument checks
+                        // apply to the yielded item and to an independently admitted
+                        // fallible row argument (e.g. clone_at). No argument exemption
+                        // or allocation permission is supplied by this classifier.
+                        if op != crate::vec_ops::VecOp::Push
+                            || admission(op, &item.ty) != Some(OwnershipMode::Own)
+                            || admission(op, element) != Some(OwnershipMode::Own)
+                            || !super::same_cell(binding, value, Some(admission))
+                            || !declares(&function.body, binding, true)
+                            || declares(protocol.authored_body, binding, false)
+                        {
+                            continue;
+                        }
+                        emit(Site {
+                            condition,
+                            body,
+                            item,
+                            at: value,
+                            binding,
+                        });
+                    }
+                });
+            }
+        },
+        frames,
+    );
     complete && complete_all
 }
 
@@ -219,16 +246,22 @@ pub(super) fn append_bindings<'a>(
     function: &'a ResolvedFunction,
     found: &mut BTreeMap<ExpressionId, &'a ResolvedBinding>,
 ) {
+    // Both independent traversals borrow one actually held fixed cursor. Nested
+    // candidate/body/declaration walks still reserve their overlapping scratch.
+    let Some(mut frames) = frames() else {
+        return;
+    };
     // Scan once before publishing: an incomplete new-profile walk cannot leave
     // partially authorized renewal entries in the held cleanup index.
-    if !scan(
+    if !scan_with(
         function,
         &|op, element| super::element_mode(program.declarations(), op, element),
         |_| {},
+        &mut frames,
     ) {
         return;
     }
-    scan(
+    scan_with(
         function,
         &|op, element| super::element_mode(program.declarations(), op, element),
         |site| {
@@ -236,6 +269,7 @@ pub(super) fn append_bindings<'a>(
                 found.insert(site.at.id.clone(), site.binding);
             }
         },
+        &mut frames,
     );
 }
 
