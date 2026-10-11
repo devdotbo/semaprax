@@ -71,7 +71,10 @@ int main(void) {{
    const struct spx_normalized_status *status=spx_status_resolve(&context,token);
    if(token==SPX_STATUS_SUCCESS||status==NULL||strcmp(status->domain_id,"semaprax.contract.v1")!=0||status->code!=(pass==1?UINT32_C(1):UINT32_C(2))||output!=INT64_C(1234567)) return 2;
   }} else if(token!=SPX_STATUS_SUCCESS||output!=INT64_C(29)) return 3;
-  size_t expected=pass==1?1:4;
+  /* Successful body/postconditions retain four ordinary String Place clones:
+   * body read, text alias, moved call argument, and inspect parameter read.
+   * These settle in addition to the two Bytes and two String constructors. */
+  size_t expected=pass==1?1:8;
   if(allocated-before_alloc!=expected||freed-before_free!=expected||allocated!=freed||context.call_depth!=0) {{
    fprintf(stderr,"contract-owner observation pass=%d allocated=%zu freed=%zu expected=%zu total_allocated=%zu total_freed=%zu depth=%zu\n",pass,allocated-before_alloc,freed-before_free,expected,allocated,freed,(size_t)context.call_depth);
    return 4;
