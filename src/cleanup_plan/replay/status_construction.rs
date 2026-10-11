@@ -359,7 +359,12 @@ mod tests {
         // with different Arc representation. The receiver preserves that rule.
         let function = &program.functions[0];
         let mut expected = function.cleanup_plan.status_sources[0].clone();
-        expected.id.expression = ExpressionId::default();
+        // Exercise the existing refused-construction empty representation
+        // against a separately allocated empty identity, without new API.
+        let (empty, refused) =
+            crate::bounded_output::with_limit(0, || ExpressionId::from_owned(String::new()));
+        assert!(refused);
+        expected.id.expression = empty;
         let mut actual = expected.clone();
         actual.id.expression = ExpressionId::from_owned(String::new());
         assert_eq!(expected, actual);
