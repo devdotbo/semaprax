@@ -65,6 +65,8 @@ impl<'p, R: InvocationRuntime> Loans<'p, R> {
             // Full replacement charge includes overlap with the held caller
             // directory. No refund follows a return or repeated invocation.
             if let Some(count) = replacement {
+                self.registry
+                    .reserve_consumer(Layout::new::<Vec<Frame<'p>>>())?;
                 self.registry.reserve_consumer(
                     Layout::array::<Frame<'p>>(count).map_err(|_| Refusal::Metadata)?,
                 )?;

@@ -1,6 +1,8 @@
-use super::super::{LoanCapacity, Loans};
+use super::super::{LoanCapacity, Loans, Slot};
+use super::Frame;
 use crate::hir::{ResolvedFunction, ResolvedProgram};
 use crate::interpreter::byte_partition::tests::{account, Probe};
+use std::alloc::Layout;
 
 fn fixture() -> ResolvedProgram {
     let source = r#"module partition.frames;
@@ -107,6 +109,20 @@ fn entry_has_exact_one_short_shared_funding_and_scalar_frames_have_no_slots() {
         .enter_frame(LoanCapacity::checked(&program, helper).unwrap())
         .unwrap();
     let exact = probe.charged();
+    // Independent complete layout sum, not a second invocation of the
+    // implementation's metadata-layout or measured-charge helper.
+    let independent = Layout::new::<Loans<'_, Probe>>().size()
+        + Layout::new::<Vec<Slot>>().size()
+        + Layout::array::<Slot>(crate::loan_plan::MAX_LOANS_PER_FUNCTION_V1)
+            .unwrap()
+            .size()
+        + Layout::new::<Vec<Frame<'_>>>().size()
+        + Layout::array::<Frame<'_>>(1).unwrap().size()
+        + Layout::new::<Vec<Slot>>().size()
+        + Layout::array::<Slot>(helper.loan_plan.loans.len())
+            .unwrap()
+            .size();
+    assert_eq!(exact, independent);
     receiver.leave_frame().unwrap();
     let before = probe.charged();
     for _ in 0..32 {
