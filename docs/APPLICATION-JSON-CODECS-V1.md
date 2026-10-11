@@ -357,7 +357,11 @@ The generated identifier request decoder for [#748](https://github.com/wavect/se
 is recomputed from the independently validated decoded ASCII token bytes,
 including escaped spellings. Unequal fingerprints avoid a decoded comparison;
 equal fingerprints always run the original full decoded-token equality, so
-collisions grant no authority. Whole-document grammar validation still runs
+collisions grant no authority. Records additionally chain through 64
+fingerprint buckets held in two more ordinary `Vec<usize>` vectors (64 heads,
+zero-filled at the first decoded record, and 256 links), so a record probes
+only earlier records in its bucket; the eight-identifier array keeps its direct
+scan. Whole-document grammar validation still runs
 first, and duplicate offsets and identifier-policy refusals are unchanged.
 The source algorithm and collision/domain regression definitions are authored;
 owning executable qualification at the unchanged fuel and physical limits is

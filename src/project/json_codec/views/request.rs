@@ -97,6 +97,7 @@ let root=if error==0{{jv_root(input)}}else{{0usize}};
 let _ = if error==0 && jv_kind(input,root)!=1{{error=5;offset=root;false}}else{{true}};
 let mut servers=vec_with_capacity<{name}JsonIdentifierSpan>(8usize);let mut patients=vec_with_capacity<{row}JsonView>(256usize);
 let mut server_fingerprints=vec_with_capacity<usize>(8usize);let mut patient_fingerprints=vec_with_capacity<usize>(256usize);
+let mut patient_heads=vec_with_capacity<usize>(64usize);let mut patient_links=vec_with_capacity<usize>(256usize);
 let mut seen_servers=false;let mut seen_patients=false;
 let servers_key={};let patients_key={};
 let servers_key_view=array_as_slice(servers_key);let patients_key_view=array_as_slice(patients_key);
@@ -142,9 +143,17 @@ match decoded{{{row}JsonViewDecode::Error{{code,offset:at,field:target}}=>{{erro
             writeln!(out, "{}:value.{},", f.name, f.name).unwrap();
         }
     }
-    writeln!(out,"}};let fingerprint=json_{row}_identifier_fingerprint(input,adjusted.{key}_start,adjusted.{key}_end);let mut prior=0usize;let mut duplicate=false;
-while !duplicate && prior<vec_len<{row}JsonView>(patients){{let other=vec_get<{row}JsonView>(patients,prior);duplicate=fingerprint==vec_get<usize>(patient_fingerprints,prior) && jv_decoded_token_eq(input,other.{}_start,adjusted.{}_start);prior=prior+1usize;!duplicate && prior<vec_len<{row}JsonView>(patients)}}
-if duplicate{{error=10;offset=adjusted.{}_start;false}}else{{patients=vec_push<{row}JsonView>(patients,adjusted);patient_fingerprints=vec_push<usize>(patient_fingerprints,fingerprint);true}}
+    // Records chain through 64 fingerprint buckets: `patient_heads[bucket]`
+    // and `patient_links[slot]` hold one plus an earlier slot in that bucket,
+    // or zero. Decoded-equal identifiers share a fingerprint and so a bucket;
+    // accepted identifiers are pairwise distinct, so newest-first chain order
+    // cannot change the reported duplicate. Heads are zero-filled lazily at
+    // the first decoded record; every bucket and link is bounded by 256.
+    writeln!(out,"}};let fingerprint=json_{row}_identifier_fingerprint(input,adjusted.{key}_start,adjusted.{key}_end);let bucket=fingerprint%64usize;
+while vec_len<usize>(patient_heads)<64usize{{patient_heads=vec_push<usize>(patient_heads,0usize);vec_len<usize>(patient_heads)<64usize}}
+let mut candidate=vec_get<usize>(patient_heads,bucket);let mut duplicate=false;
+while !duplicate && candidate>0usize{{let slot=candidate-1usize;let other=vec_get<{row}JsonView>(patients,slot);duplicate=fingerprint==vec_get<usize>(patient_fingerprints,slot) && jv_decoded_token_eq(input,other.{key}_start,adjusted.{key}_start);candidate=vec_get<usize>(patient_links,slot);!duplicate && candidate>0usize}}
+if duplicate{{error=10;offset=adjusted.{key}_start;false}}else{{let previous=vec_get<usize>(patient_heads,bucket);let head=vec_len<{row}JsonView>(patients)+1usize;patient_links=vec_push<usize>(patient_links,previous);patient_heads=vec_set<usize>(patient_heads,bucket,head);patients=vec_push<{row}JsonView>(patients,adjusted);patient_fingerprints=vec_push<usize>(patient_fingerprints,fingerprint);true}}
 }},}}
 }}
 }};
@@ -160,7 +169,7 @@ let _ = if error==0 && !seen_servers{{error=3;offset=length;field=1;false}}else{
 let _ = if error==0 && !seen_patients{{error=3;offset=length;field=2;false}}else{{true}};
 let _ = if error==0 && vec_len<{name}JsonIdentifierSpan>(servers)==0usize && vec_len<{row}JsonView>(patients)>0usize{{error=11;offset=length;field=1;false}}else{{true}};
 if error==0{{{name}JsonRequestDecode::Decoded{{servers:servers,patients:patients}}}}else{{{name}JsonRequestDecode::Error{{code:error,offset:offset,field:field}}}}
-}}",string.name,string.name,string.name).unwrap();
+}}").unwrap();
     // Encoder receives the exact caller-selected immutable source and every
     // view is revalidated. It cannot authenticate spans by helper identity.
     out.push_str(&encoder(root, servers, patients, record));

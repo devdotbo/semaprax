@@ -301,7 +301,20 @@ fn scan_first_failure(body: borrow Slice<u8>, enriched: bool) -> usize
     let mut start = 0usize;
     let mut total = 0;
     let mut index = vec_with_capacity<usize>(256usize);
+    // Accepted entries chain through 64 fingerprint buckets: `heads[bucket]`
+    // and `links[slot]` hold one plus an earlier `index` slot in that bucket,
+    // or zero. Decoded-equal ids share a fingerprint and so a bucket; accepted
+    // ids are pairwise distinct, so newest-first chain order cannot change
+    // which record is the duplicate.
+    let mut heads = vec_with_capacity<usize>(64usize);
+    let mut links = vec_with_capacity<usize>(256usize);
     let mut failure = if whole { pack_failure(1usize, 0usize, 65536usize) } else { if many { pack_failure(1usize, 257usize, 0usize) } else { 0usize } };
+    let mut filling = failure == 0usize && count > 0usize;
+    while filling {
+        heads = vec_push<usize>(heads, 0usize);
+        filling = vec_len<usize>(heads) < 64usize;
+        filling
+    }
     let mut scanning = failure == 0usize && record < count;
     while scanning {
         let end = line_end(body, start);
@@ -309,19 +322,21 @@ fn scan_first_failure(body: borrow Slice<u8>, enriched: bool) -> usize
         let line = byte_range(body, start, end);
         let id = if basic == 0usize { record_id_value(line) } else { 0usize };
         let fingerprint = if basic == 0usize { decoded_fingerprint(body, start + id, max_id_bytes()) } else { 0usize };
-        let mut prior = 0usize;
+        let bucket = fingerprint % 64usize;
+        let mut candidate = if basic == 0usize { vec_get<usize>(heads, bucket) } else { 0usize };
         let mut duplicate = false;
-        let mut comparing = basic == 0usize && prior < record;
+        let mut comparing = candidate > 0usize;
         while comparing {
-            let entry = vec_get<usize>(index, prior);
+            let slot = candidate - 1usize;
+            let entry = vec_get<usize>(index, slot);
             duplicate = fingerprint_match(body, entry, start + id, fingerprint);
-            prior = prior + 1usize;
-            comparing = !duplicate && prior < record;
+            candidate = vec_get<usize>(links, slot);
+            comparing = !duplicate && candidate > 0usize;
             comparing
         }
         let regular = indexed_record_failure(body, record, start, end, total, basic, id, duplicate);
         failure = provider_failure_if(line, enriched, regular, record, id);
-        let _ = if failure == 0usize { index = vec_push<usize>(index, fingerprint_entry(start + id, fingerprint)); 0usize } else { 0usize };
+        let _ = if failure == 0usize { let previous = vec_get<usize>(heads, bucket); links = vec_push<usize>(links, previous); heads = vec_set<usize>(heads, bucket, record + 1usize); index = vec_push<usize>(index, fingerprint_entry(start + id, fingerprint)); 0usize } else { 0usize };
         total = if failure == 0usize { total_after(total, valid_record_quantity(body, start, end)) } else { total };
         record = if failure == 0usize { record + 1usize } else { count };
         start = end + 1usize;

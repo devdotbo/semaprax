@@ -44,10 +44,20 @@ mod tests {
         let program = crate::parse(SCHEMA, "schema.spx").unwrap();
         let output = request_source(&program, &program.types[1]).unwrap();
         assert!(output.contains("fingerprint==vec_get<usize>(server_fingerprints,prior) && jv_decoded_token_eq(input,other.start,cursor)"));
-        assert!(output.contains("fingerprint==vec_get<usize>(patient_fingerprints,prior) && jv_decoded_token_eq(input,other.id_start,adjusted.id_start)"));
+        // Records probe only their fingerprint bucket; the exact decoded
+        // comparison still decides every equal fingerprint in that chain.
+        assert!(output.contains("duplicate=fingerprint==vec_get<usize>(patient_fingerprints,slot) && jv_decoded_token_eq(input,other.id_start,adjusted.id_start)"));
+        assert!(output.contains("let bucket=fingerprint%64usize;"));
+        assert!(output.contains(
+            "candidate=vec_get<usize>(patient_links,slot);!duplicate && candidate>0usize"
+        ));
+        assert!(output.contains("patient_heads=vec_set<usize>(patient_heads,bucket,head)"));
+        assert!(!output.contains("prior<vec_len<PatientJsonView>(patients)"));
         assert!(output.contains("jv_strict_end(input,32usize,0)"));
         assert!(output.contains("vec_with_capacity<usize>(8usize)"));
         assert!(output.contains("vec_with_capacity<usize>(256usize)"));
+        assert!(output.contains("vec_with_capacity<usize>(64usize)"));
+        assert!(output.contains("patients)>=256usize{error=8"));
         let parsed = crate::parse(&output, "fingerprinted-request.spx").unwrap();
         let canonical = crate::format::canonical(&parsed);
         assert_eq!(
