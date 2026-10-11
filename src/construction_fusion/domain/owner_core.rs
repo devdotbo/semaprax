@@ -1,6 +1,6 @@
 //! Executor-neutral held backing/range core. No descriptor or source authority.
 //! The executor debits its REAL invocation account before metadata/clone allocation.
-use super::{Issuer, ModuleIdentity, Refusal, MAX_VIEWS};
+use super::{Issuer, MAX_VIEWS, ModuleIdentity, Refusal};
 use std::{alloc::Layout, marker::PhantomData, ops::Range};
 
 /// Implementations own unique backing, expose its actual extent, and fail-stop
@@ -187,8 +187,7 @@ impl<R: Runtime> Core<'static, R> {
         }
         Self::partition_held(
             owner,
-            count,
-            width,
+            (count, width),
             IssuerHolder::Owned(Box::new(issuer)),
             ModuleHolder::Owned(Box::new(module)),
             preparation.runtime,
@@ -301,8 +300,7 @@ impl<'a, R: Runtime> Core<'a, R> {
     ) -> Result<(Self, Vec<Child<'a>>), (Refusal, R::Owner)> {
         Self::partition_held(
             owner,
-            count,
-            width,
+            (count, width),
             IssuerHolder::Borrowed(issuer),
             ModuleHolder::Borrowed(module),
             runtime,
@@ -312,8 +310,7 @@ impl<'a, R: Runtime> Core<'a, R> {
     }
     fn partition_held(
         owner: R::Owner,
-        count: usize,
-        width: usize,
+        (count, width): (usize, usize),
         mut issuer: IssuerHolder<'a>,
         module: ModuleHolder<'a>,
         mut runtime: R,

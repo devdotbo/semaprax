@@ -3,7 +3,7 @@
 use super::*;
 mod append;
 mod cells;
-use crate::cleanup_plan::{replay_btree_node_upper, ReplayPhysicalReservation};
+use crate::cleanup_plan::{ReplayPhysicalReservation, replay_btree_node_upper};
 use crate::hir::{ResolvedExprKind, ResolvedStatement, ValueId};
 pub(crate) use append::admitted as selected_string_append;
 use std::collections::BTreeSet;
@@ -181,21 +181,21 @@ fn walk<'a>(
             }
             frames[depth - 1] = Some((cursor, true, in_loop));
             let mut child_loop = in_loop;
-            if let Some((item, _)) = cursor.last_statement_child() {
-                if let ResolvedStatement::While {
+            if let Some((
+                ResolvedStatement::While {
                     condition, body, ..
                 }
                 | ResolvedStatement::LexicalWhile {
                     condition, body, ..
-                } = item
-                {
-                    if std::ptr::eq(condition.as_ref(), child) {
-                        child_loop = false;
-                    }
-                    if std::ptr::eq(body.as_ref(), child) {
-                        child_loop =
-                            crate::hir::iterator_loop::recognize(condition, body).is_none();
-                    }
+                },
+                _,
+            )) = cursor.last_statement_child()
+            {
+                if std::ptr::eq(condition.as_ref(), child) {
+                    child_loop = false;
+                }
+                if std::ptr::eq(body.as_ref(), child) {
+                    child_loop = crate::hir::iterator_loop::recognize(condition, body).is_none();
                 }
             }
             frames[depth] = Some((
