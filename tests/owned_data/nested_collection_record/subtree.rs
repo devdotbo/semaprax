@@ -166,3 +166,47 @@ fn subtree_transfer_refuses_hidden_owner_borrow_use_after_move_and_live_descenda
         assert!(errors.iter().any(|d| d.code == code), "{label}: {errors:?}");
     }
 }
+
+#[test]
+fn subtree_cache_cold_warm_and_current_source_drift_replay_exact_graph_facts() {
+    let manifest = semaprax::project::ProjectManifest::parse(
+        r#"schema="semaprax.manifest.v1"
+[package]
+name="subtree"
+version="0.1.0"
+[modules]
+entry="test.subtree"
+sources=["app.spx","tests.spx"]
+tests=["test.subtree_tests"]
+[exports]
+web=["public.probe"]
+"#,
+    )
+    .unwrap();
+    let source = format!(
+        "{}\n@id(\"public.probe\") fn probe()->i64 {{0}}",
+        source(SUBTREE, true)
+    );
+    let tests = "module test.subtree_tests; @id(\"tests.main\") fn main()->i64 {0}";
+    let inputs = |text: &str| {
+        vec![
+            semaprax::project::ProjectFrontendSource::new("app.spx", text).unwrap(),
+            semaprax::project::ProjectFrontendSource::new("tests.spx", tests).unwrap(),
+        ]
+    };
+    let mut cache = semaprax::project::ProjectFrontendCache::new_with_semantic_cache();
+    let cold = cache.build(&manifest, &inputs(&source)).unwrap();
+    let cold_graph = cold.revision().semantic_graph().to_owned();
+    let warm = cache.build(&manifest, &inputs(&source)).unwrap();
+    assert_eq!(warm.revision().semantic_graph(), cold_graph);
+    let work: serde_json::Value = serde_json::from_str(warm.to_json()).unwrap();
+    assert_eq!(work["work"]["modules_parsed"], 0);
+    let drift = source.replace("@id(\"report.bytes\")", "@id(\"report.bytes.current\")");
+    assert_ne!(source, drift);
+    let current = cache.build(&manifest, &inputs(&drift)).unwrap();
+    assert_ne!(current.revision().semantic_graph(), cold_graph);
+    let malformed = drift.replace("report,valid", "report:_,valid");
+    assert!(cache.build(&manifest, &inputs(&malformed)).is_err());
+    let restored = cache.build(&manifest, &inputs(&source)).unwrap();
+    assert_eq!(restored.revision().semantic_graph(), cold_graph);
+}
