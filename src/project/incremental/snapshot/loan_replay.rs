@@ -271,4 +271,50 @@ module loan_snapshot;
         );
         assert_eq!(crate::cache_codec::encode(&forged).unwrap(), wire);
     }
+
+    #[test]
+    fn repeated_projected_borrows_keep_exact_reconstruction_budget_and_full_wire() {
+        let source = r#"
+module projection_cache;
+@id("projection.packet") record Packet {
+    @id("projection.payload") payload: Bytes,
+    @id("projection.marker") marker: i64,
+}
+@id("projection.inspect") fn inspect(value: borrow Bytes) -> usize {
+    byte_len(bytes_as_slice(value))
+}
+@id("projection.run") fn run() -> i64 {
+    let packet = Packet { payload: bytes_zeroed(7usize), marker: 42 };
+    let first = inspect(packet.payload);
+    let second = inspect(packet.payload);
+    let view = bytes_as_slice(packet.payload);
+    let alias = view;
+    if first == second && byte_len(alias) == 7usize { packet.marker } else { 0 }
+}
+@id("projection.main") fn main() -> i64 { run() }
+"#;
+        let ast = crate::check(source, "projection-cache.spx").unwrap();
+        let original = crate::hir::resolve(&ast).unwrap();
+        crate::hir::validate(&original).unwrap();
+        let wire = crate::cache_codec::encode(&original).unwrap();
+        let mut decoded = crate::cache_codec::decode(&wire).unwrap();
+        let (used, observed) = crate::test_allocation_observer::measure(|| {
+            reconstruct_with_limit(&mut decoded, MAX_PROJECT_CHECKED_MODULE_CACHE_PREBOUND).unwrap()
+        });
+        assert!(!observed.invalid);
+        assert!(observed.allocated <= used);
+        assert!(observed.highwater <= used);
+        assert_eq!(crate::cache_codec::encode(&decoded).unwrap(), wire);
+        crate::hir::validate(&decoded).unwrap();
+        assert_eq!(decoded.functions.iter().map(|f| &f.loan_plan).collect::<Vec<_>>(),
+                   original.functions.iter().map(|f| &f.loan_plan).collect::<Vec<_>>());
+
+        let mut exact = crate::cache_codec::decode(&wire).unwrap();
+        assert_eq!(reconstruct_with_limit(&mut exact, used).unwrap(), used);
+        let mut short = crate::cache_codec::decode(&wire).unwrap();
+        assert_eq!(reconstruct_with_limit(&mut short, used - 1).unwrap_err()[0].code, "SPX-G256");
+        assert_eq!(crate::cache_codec::encode(&short).unwrap(), wire);
+        crate::hir::validate(&short).unwrap();
+    }
+
 }

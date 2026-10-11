@@ -445,3 +445,64 @@ fn record_renewal_named_views_replay_origins_and_reject_owner_aliases() {
     missing.functions[index].loan_plan = LoanPlan::empty_v1();
     assert_eq!(crate::hir::validate(&missing).unwrap_err().code, "SPX-H006");
 }
+
+
+#[test]
+fn alias_projection_reconstruction_accounts_cumulative_growth_not_only_final_extent() {
+    use crate::hir::DeclarationId;
+
+    const LINKS: usize = 128;
+    let mut aliases = BTreeMap::new();
+    for index in 0..LINKS {
+        aliases.insert(
+            ValueId::intrinsic_parameter("root", index),
+            Place {
+                root: ValueId::intrinsic_parameter("root", index + 1),
+                projections: vec![PlaceProjection::VariantField {
+                    case: DeclarationId::new(format!("case.{index}")),
+                    field: DeclarationId::new(format!("field.{index}")),
+                }],
+            },
+        );
+    }
+    let initial = Place {
+        root: ValueId::intrinsic_parameter("root", 0),
+        projections: vec![PlaceProjection::Field(DeclarationId::new("initial"))],
+    };
+    let mut work = WorkCounter::new(MAX_LOAN_PLAN_WORK_V1);
+    let (actual, observed) = crate::test_allocation_observer::measure(|| {
+        resolve_origin(&aliases, initial, &mut work).unwrap()
+    });
+    assert!(!observed.invalid);
+    assert_eq!(work.used, LINKS);
+    assert_eq!(actual.root.as_str(), "root.param.128");
+    assert_eq!(actual.projections.len(), LINKS + 1);
+    for (position, projection) in actual.projections[..LINKS].iter().enumerate() {
+        let index = LINKS - position - 1;
+        assert_eq!(projection, &PlaceProjection::VariantField {
+            case: DeclarationId::new(format!("case.{index}")),
+            field: DeclarationId::new(format!("field.{index}")),
+        });
+    }
+    // Every link allocates a new projection vector containing its one prefix
+    // plus the previous complete vector. The old vector is then dropped, but
+    // those requests remain part of cumulative construction accounting.
+    let projection_size = std::mem::size_of::<PlaceProjection>();
+    let cumulative_vector_lower = (2..=LINKS + 1).sum::<usize>() * projection_size;
+    assert!(observed.allocated >= cumulative_vector_lower);
+    let largest_link_text = "case.127".len() + "field.127".len();
+    let rejected_max_prefix_envelope =
+        2 * (LINKS + 1) * (4 * 4 * projection_size + largest_link_text);
+    assert!(cumulative_vector_lower > rejected_max_prefix_envelope);
+
+    // These synthetic aliases exercise allocator behavior, not source or HIR
+    // authority. Cyclic provenance remains an independently refused operation.
+    aliases.insert(actual.root.clone(), Place {
+        root: ValueId::intrinsic_parameter("root", 0),
+        projections: Vec::new(),
+    });
+    let mut work = WorkCounter::new(MAX_LOAN_PLAN_WORK_V1);
+    assert_eq!(resolve_origin(&aliases, Place {
+        root: ValueId::intrinsic_parameter("root", 0), projections: Vec::new(),
+    }, &mut work).unwrap_err().code, "SPX-H006");
+}
