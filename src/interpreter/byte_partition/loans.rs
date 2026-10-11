@@ -12,6 +12,7 @@ use std::alloc::Layout;
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) struct ViewId {
     invocation: u64,
+    frame: u64,
     index: u16,
     generation: u64,
 }
@@ -24,6 +25,10 @@ pub(crate) struct Loans<'p, R: InvocationRuntime> {
     registry: Registry<R>,
     slots: Box<[Slot]>,
     point: u16,
+    frame: u64,
+    next_frame: u64,
+    frames: Vec<frames::Frame<'p>>,
+    spare: Option<Box<[Slot]>>,
 }
 impl<'p, R: InvocationRuntime> Loans<'p, R> {
     /// Header and complete fixed loan inventory are paid before allocation.
@@ -58,6 +63,10 @@ impl<'p, R: InvocationRuntime> Loans<'p, R> {
             registry,
             slots: slots.into_boxed_slice(),
             point: 0,
+            frame: 1,
+            next_frame: 2,
+            frames: Vec::new(),
+            spare: None,
         })
     }
     pub(crate) fn partition(
@@ -97,6 +106,7 @@ impl<'p, R: InvocationRuntime> Loans<'p, R> {
             slot.view = Some(view);
             Ok(ViewId {
                 invocation: self.registry.invocation,
+                frame: self.frame,
                 index: id.0,
                 generation,
             })
@@ -109,10 +119,7 @@ impl<'p, R: InvocationRuntime> Loans<'p, R> {
             if id.invocation != self.registry.invocation {
                 return Err(Refusal::Identity);
             }
-            let slot = self.slots.get(id.index as usize).ok_or(Refusal::Identity)?;
-            if slot.generation != id.generation {
-                return Err(Refusal::Identity);
-            }
+            let slot = frames::lookup(id, self.frame, &self.slots, &self.frames)?;
             self.registry
                 .read(slot.view.as_ref().ok_or(Refusal::Identity)?, f)
         })();
@@ -130,10 +137,7 @@ impl<'p, R: InvocationRuntime> Loans<'p, R> {
             if id.invocation != self.registry.invocation {
                 return Err(Refusal::Identity);
             }
-            let slot = self.slots.get(id.index as usize).ok_or(Refusal::Identity)?;
-            if slot.generation != id.generation {
-                return Err(Refusal::Identity);
-            }
+            let slot = frames::lookup(id, self.frame, &self.slots, &self.frames)?;
             self.registry
                 .read_range(slot.view.as_ref().ok_or(Refusal::Identity)?, start, end, f)
         })();
@@ -216,6 +220,15 @@ impl<'p, R: InvocationRuntime> Loans<'p, R> {
                 }
             }
         }
+        for frame in &mut self.frames {
+            for slot in &mut frame.slots {
+                if let Some(mut view) = slot.view.take() {
+                    if let Err(error) = self.registry.end_view(&mut view) {
+                        first.get_or_insert(error);
+                    }
+                }
+            }
+        }
         first.map_or(Ok(()), Err)
     }
 }
@@ -227,3 +240,5 @@ impl<R: InvocationRuntime> Drop for Loans<'_, R> {
 
 #[cfg(test)]
 mod tests;
+
+mod frames;
