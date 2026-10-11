@@ -1,5 +1,11 @@
-//! Actual native64 private carriers; no legacy Vec width reinterpretation.
+//! Legacy precursor layout of the pre-selected native runtime: one 165504-byte
+//! administrative context with inline 4096-slot and 64-view tables, 24-byte
+//! owners and a 40-byte row. These numbers describe that precursor contract
+//! only and are kept unchanged for the legacy `Mapping`; they are not the
+//! selected runtime. The selected native layout (168-byte header, exact heap
+//! tables, 16-byte stored owner, 32-byte row) lives in [`selected`].
 use super::*;
+pub(crate) mod selected;
 #[repr(C)]
 struct Bytes {
     issuer: *const (),

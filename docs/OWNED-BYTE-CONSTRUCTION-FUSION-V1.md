@@ -492,3 +492,86 @@ exact/one-short reservations, scoped stale/live views, checked failure and
 reentry. They are unexecuted implementation controls. Ordinary entry selection
 remains unchanged; this receiver does not establish all-backend qualification
 or public admission.
+### Selected native layout (authored, unexecuted)
+
+The 40-byte row and roughly 165 KB administrative context above describe the
+legacy native precursor, whose contract `native_provenance::layout` keeps
+unchanged. The selected native runtime has a different layout, recorded
+separately in `construction_fusion::native_provenance::layout::selected`
+through a `repr(C)` mirror whose fields use the C field types exactly. On a
+native64 target:
+
+- the invocation holds one 240-byte domain header with its address-bound 80-byte destination receipt;
+- the lease and view tables are exact heap allocations of 24-byte entries
+  (`count` slots and 64 views), made at the first original Bytes operand after
+  one held metadata-ledger debit of header, both tables and frame placement;
+- a stored row is 32 bytes: scalar 8, String pointer 8 and a 16-byte stored
+  owner (slot, generation, nonce) without an issuer field;
+- the private owner carrier, which also appears inside staged and popped
+  40-byte receipts, is 24 bytes; a view is 48 bytes; a row Vec header is 56.
+
+Metadata is `240 + 24 * count + 64 * 24 + placement`, where placement is
+the lowering's staged, row-header and view frame items at their actual sizes.
+At 4096 rows and zero placement that is 100,080 bytes. Physical row storage
+(`32 * count`) is reported apart from the semantic owned-record charge
+(`2 * 16 * count`, 131,072 at 4096). The charge is an envelope fact, not a
+physical cap derived from the row size. Every quantity uses checked arithmetic;
+rows outside 33..=4096, extents above 131,072 bytes and header plus placement above the unchanged 65,536-byte frame cap refuse.
+
+A stored owner is authenticated only through the held row Vec header whose
+domain and generation match the held domain. A popped or staged receipt
+carries the held issuer with a renewed nonce and generation. A profile that
+would carry a stored owner outside its header, or hand any private carrier to
+a public ABI, provider or unrelated function, refuses. The frozen public
+16-byte Bytes ABI is unchanged; a private carrier never converts to it. The
+profile's final passive Vec settlement marker is carrier-model data derived
+from source owner events. It is never cleanup-plan permission: engines settle
+through the validated program's full canonical cleanup plan.
+
+The runtime receiver reads a fresh join from the private validated factory
+owner (`hir::selected_fused_candidate::ValidatedFusedSelection::with_joined`).
+It requires the owner's capacity facts to agree with that join and adds the
+native lowering's placement census. A receiver over an unvalidated join exists
+only for owning tests. The legacy descriptor is never consulted.
+
+The reference funding model uses one physical ledger held by the invocation.
+At the original destination boundary (`vec_with_capacity`, before the loop),
+it reserves the exact row storage, `32 * count`. It then holds a row receipt
+bound to that ledger account, the issuer, the destination's canonical
+expression identity, the exact geometry and a freshly minted nonce. A refusal
+fails at that Vec boundary and is never moved to the first Bytes operand.
+Activation at the first Bytes operand requires the matching live receipt. It
+then claims the held issuer, debits header, both tables and placement on the
+same ledger, and debits the ordinary event and payload counters before the
+backing. Retiring the receipt at canonical cleanup refunds nothing. Ledger
+refusals are sticky, a second invocation debits the same account and nothing
+resets. Neither the semantic Vec envelope nor the ordinary Bytes budgets fund
+or substitute for row storage.
+
+This reference protocol is proof data, not a runtime authority or a physical
+measurement. The actual native runtime has a separate administrative admission
+step: before effects it debits the exact frame and both tables on the held
+physical ledger and holds the row bytes and ordinary backing event. At the
+original Vec node `rows_reserve` consumes the row hold into a monotonic debit
+and `rows_allocate_funded` binds the real allocation pointer to the embedded
+receipt. At the first Bytes operand `activate_with_rows` requires the exact
+receipt address, domain, issuer, ledger, invocation and geometry before it
+allocates the tables and consumes the payload hold. A copied receipt fails.
+Only never-consumed holds can release; debits never refund. Actual Vec
+allocation failure still selects its ordinary failure status. Administrative
+admission refusal and allocation fail-stop are separate from language statuses.
+
+Owning definitions are `native_provenance::layout::selected::tests::` (eight
+bodies) and `native_provenance::layout::selected::gate::` (two bodies). The
+current-runtime gate compiles the actual selected `runtime.c` with assertions
+for fourteen struct sizes and alignments, all 89 field offsets and sizes,
+runtime limits and the placement formula. It drives actual admission, row
+receipt conversion, allocation and first-Bytes activation at 33 and 4096 rows,
+at O0 and O2. One physical account pays for two invocations; a third and an
+exact-one-short account refuse without reset or refund. Copied and foreign
+receipts exercise the actual fail-stop receiver. All definitions are authored
+and unexecuted; final native source reconciliation still needs acceptance.
+
+Agreement between the sources is layout evidence only. It is not a physical
+allocation measurement, executor qualification or admission, and nothing
+selects this layout or activates it in production.
