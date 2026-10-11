@@ -270,6 +270,9 @@ pub(super) fn ast_child_identity_path_increment(
         crate::ast::ExprKind::MethodCall { .. } | crate::ast::ExprKind::SuperMethod { .. } => {
             ".arg.".len() + decimal_digits(child_index)
         }
+        // The authenticated constructor marker and its ordinary Block use
+        // the same result/site path. Visit the Block once, without `.value`.
+        crate::ast::ExprKind::VecConstructor { .. } => 0,
         crate::ast::ExprKind::Unary { .. } | crate::ast::ExprKind::LexicalExit { .. } => {
             ".value".len()
         }
