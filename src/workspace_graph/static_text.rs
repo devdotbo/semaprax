@@ -344,11 +344,22 @@ mod tests {
         assert!(cursor.is_ok());
         assert!(!refused);
         assert_eq!(used, bytes);
-        let (cursor, refused, used) =
-            crate::bounded_output::with_limit_usage(bytes - 1, AstCursor::new);
-        assert!(cursor.is_err());
+        let (cursor, refused, used, first_refusal) =
+            crate::bounded_output::with_limit_usage_refusal(bytes - 1, AstCursor::new);
+        let error = cursor.err().expect("one-short cursor backing refuses");
         assert!(refused);
-        assert_eq!(used, 0);
+        let first_refusal = first_refusal.expect("cursor precharge records refusal");
+        assert_eq!(first_refusal.requested, bytes);
+        assert_eq!(first_refusal.remaining, bytes - 1);
+        assert_eq!(first_refusal.floor, 0);
+        assert_eq!(first_refusal.stage, None);
+        // Refusal reporting is charged too. An independent diagnostic-only
+        // control proves that no cursor backing was debited after refusal.
+        let (report, report_refused, report_used) =
+            crate::bounded_output::with_limit_usage(bytes - 1, capacity);
+        assert!(!report_refused);
+        assert_eq!(error, report);
+        assert_eq!(used, report_used);
         let ((result, selected), refused, used) =
             crate::bounded_output::with_limit_usage(0, || {
                 let mut selected = SelectedModules::default();
