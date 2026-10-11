@@ -1,0 +1,35 @@
+@id("shiftsim.schedule.waiting_count")
+fn waiting_count(states: borrow Vec<PatientState>, count: usize, time: i64) -> i64
+{
+    let mut waiting = 0;
+    let mut index = 0usize;
+    while index < count {
+        let state = vec_get<PatientState>(states, index);
+        if !state.assigned && state.arrival <= time { waiting = waiting + 1; }
+        index = index + 1usize;
+        0
+    }
+    waiting
+}
+
+@id("shiftsim.schedule.next_time")
+fn next_time(patients: borrow Vec<PatientState>, patient_count: usize, workers: borrow Vec<WorkerState>, server_count: usize, time: i64) -> i64
+{
+    let mut next = 9223372036854775807;
+    let mut arrival_index = 0usize;
+    while arrival_index < patient_count {
+        let state = vec_get<PatientState>(patients, arrival_index);
+        if !state.assigned && state.arrival > time && state.arrival < next { next = state.arrival; }
+        arrival_index = arrival_index + 1usize;
+        0
+    }
+    let mut completion_index = 0usize;
+    while completion_index < server_count {
+        let state = vec_get<WorkerState>(workers, completion_index);
+        if state.free_at > time && state.free_at < next { next = state.free_at; }
+        completion_index = completion_index + 1usize;
+        0
+    }
+    next
+}
+

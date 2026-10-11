@@ -14,6 +14,14 @@ control, including 256 IDs; the application still uses its original one-million-
 limit. These validation copies and the vector change allocation-failure ordinals.
 Output IDs are copied when a completed assignment enters the owned report.
 Runtime/fuel improvement is unqualified until the focused application gates run.
+A separate Copy `Vec<i64>` sorts arrival times once. Its monotonic cursor counts
+all arrivals at or before the current event; subtracting the dispatched count
+gives the exact waiting count. The next event is the first later arrival or the
+first later worker completion. Patient priority order and server ties remain in
+their original vectors. Frozen full-scan waiting/next-time helpers and the old
+scheduler remain independent controls. This adds a Copy vector allocation and
+changes physical failure ordinals; the original 256/8 bounds, corpus, and fuel
+limit stay unchanged.
 The exact Server-wrapper program remains a differential control for all 15
 cases and original invalid-input checks. Qualification is pending. Conversion
 vector removal changes allocation-failure ordinals; no allocation gain is claimed.
