@@ -272,11 +272,15 @@ cleanup, and only then publishes. A census refuses unless every transition,
 failure exit, commit and nonempty scope end was reproduced. Each failure exit's
 status producer must match the lowered operation. Each leased view's loans must
 end inside the block where the view ends. A view ends at every end of its own
-`SliceView` loan. When that end is the after point of the view operand of a
-consuming `view_len` or `view_byte`, the token is already staged for that call,
-so the view retires immediately after the call receives it, never between the
-operand read and the call. A failure exit in that interval retires it with the
-live views.
+`SliceView` loan. A consuming `view_len` or `view_byte` holds the exact open
+view its operand token was read from, from that read until the call receives
+it. Any end of that view reached while a hold remains, whether at the operand's
+own after point or nested in a later operand (`byte_get(v, byte_len(v))`),
+defers, and the view retires once, right after the last holding call. A nested
+call releases only its own hold. A failure exit in that interval, such as a
+checked index subtraction, retires each deferred view once with the live
+views and publishes no result. A scope cannot close over a held or deferred
+view.
 
 The module imports 24 functions from `semaprax.private.selected-fused.v1`,
 exports only its literal memory and `semaprax_main`, and validates under

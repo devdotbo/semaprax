@@ -63,6 +63,9 @@ pub(super) struct Binding<'a> {
     pub(super) id: &'a ValueId,
     pub(super) local: u32,
     pub(super) repr: Repr,
+    /// For a leased binding, the local of the exact open view its token was
+    /// read from; a binding without one can never stage a consuming token.
+    pub(super) view: Option<u32>,
 }
 
 /// One open leased view: its local, the exact `SliceView` loan the canonical
@@ -86,10 +89,14 @@ pub(super) struct Lower<'a> {
     pub(super) locals: Vec<ValType>,
     pub(super) bindings: Vec<Binding<'a>>,
     pub(super) scopes: Vec<Scope<'a>>,
-    /// Views whose loan already ended at the after point of a view operand
-    /// whose token is staged for a consuming host call that has not run yet.
-    /// They retire right after that call; a failure exit in between ends them.
-    pub(super) consumed: Vec<u32>,
+    /// One entry per view token staged for a consuming host call that has not
+    /// run yet, innermost call last: the exact view local the token was read
+    /// from. Only the call that pushed a hold releases it.
+    pub(super) holds: Vec<u32>,
+    /// Views whose loan the plan ended, anywhere, while a hold on them was
+    /// pending, in the order those ends were reached. Each retires once no
+    /// hold remains on it; a failure exit in between ends it.
+    pub(super) deferred: Vec<u32>,
     pub(super) cleanup: Replay<'a>,
     pub(super) domain: u32,
     pub(super) phase: Phase,
@@ -107,7 +114,8 @@ pub(super) fn module(selected: &Selected<'_>) -> Result<Vec<u8>, Refusal> {
         locals: Vec::new(),
         bindings: Vec::new(),
         scopes: Vec::new(),
-        consumed: Vec::new(),
+        holds: Vec::new(),
+        deferred: Vec::new(),
         cleanup: Replay::empty(&selected.function.cleanup_plan),
         domain: 0,
         phase: Phase::Building,
@@ -271,17 +279,25 @@ impl<'a> Lower<'a> {
     /// destination of an edge from a live to a dead point, so the loan is dead
     /// on every path reaching it; the guarded end therefore runs once per
     /// path, whichever of the loan's ends (a short-circuit join, either match
-    /// arm) that path reaches. Views end only here, right after the consuming
-    /// call of an operand whose own after point ends them (`release_consumed`),
-    /// or on a failure path, for exactly the loans live at that point.
+    /// arm) that path reaches. Views end only here, right after the last
+    /// consuming call holding their staged token (`release`), or on a failure
+    /// path, for exactly the loans live at that point and the deferred views.
+    ///
+    /// An end reached while any consuming call still holds the view's token,
+    /// at any nesting depth below that call, defers: the loan is dead from
+    /// here on every path, so retiring it once the holder ran is exact.
     pub(super) fn loan_points(&mut self, at: &ExpressionId, phase: LoanPointPhase) {
         for view in self.loan_ends(at, phase) {
-            self.end_view(view);
+            if !self.holds.contains(&view) {
+                self.end_view(view);
+            } else if !self.deferred.contains(&view) {
+                self.deferred.push(view);
+            }
         }
     }
     /// Mark, in loan-plan vector order, every lowered end of an open view's own
     /// loan at this program point and return the views it ends, unemitted.
-    pub(super) fn loan_ends(&mut self, at: &ExpressionId, phase: LoanPointPhase) -> Vec<u32> {
+    fn loan_ends(&mut self, at: &ExpressionId, phase: LoanPointPhase) -> Vec<u32> {
         let selected = self.selected;
         let mut ending = Vec::new();
         for loan in &selected.function.loan_plan.loans {
@@ -362,19 +378,53 @@ impl<'a> Lower<'a> {
         {
             return Err(Refusal::Loans);
         }
-        // A consumed view's loan is already dead here, but its token still
-        // awaits the consuming call this exit skips, so the exit retires it.
-        for view in &self.consumed {
+        // A deferred view's loan is already dead here, but a staged token of
+        // it still awaits a consuming call this exit skips, so the exit
+        // retires it, once. A held view whose loan is live is covered above.
+        for view in &self.deferred {
             if !views.contains(view) {
                 views.push(*view);
             }
         }
         Ok(views)
     }
-    /// Retire, in deferral order, the consumed views staged since `mark`, now
-    /// that their consuming host call has received every token.
-    pub(super) fn release_consumed(&mut self, mark: usize) {
-        for view in self.consumed.split_off(mark) {
+    /// The exact open view a lowered leased expression read its token from:
+    /// the view the payload read at this very site opened, the view a leased
+    /// binding was bound to, or either through a block's tail. Anything else,
+    /// or a view no longer open, refuses; identity is never guessed.
+    pub(super) fn view_of(&self, e: &E) -> Result<u32, Refusal> {
+        let open = || self.scopes.iter().flat_map(|scope| scope.views.iter());
+        let view = match &e.kind {
+            K::VecFieldRead { .. } => open()
+                .filter(|view| view.loan.site == e.id)
+                .last()
+                .map(|view| view.local),
+            K::Place(place) if place.projections.is_empty() => self
+                .bindings
+                .iter()
+                .rev()
+                .find(|binding| binding.id == &place.root)
+                .and_then(|binding| binding.view),
+            K::Block { tail, .. } => return self.view_of(tail),
+            _ => None,
+        }
+        .ok_or(Refusal::Loans)?;
+        if !open().any(|candidate| candidate.local == view) {
+            return Err(Refusal::Loans);
+        }
+        Ok(view)
+    }
+    /// The consuming call that staged the holds from `mark` on has received
+    /// every token: drop exactly those holds (an outer call's stay), then
+    /// retire, in deferral order, each deferred view no remaining hold needs.
+    pub(super) fn release(&mut self, mark: usize) {
+        self.holds.truncate(mark);
+        let deferred = std::mem::take(&mut self.deferred);
+        let (ready, waiting): (Vec<u32>, Vec<u32>) = deferred
+            .into_iter()
+            .partition(|view| !self.holds.contains(view));
+        self.deferred = waiting;
+        for view in ready {
             self.end_view(view);
         }
     }
@@ -397,12 +447,13 @@ impl<'a> Lower<'a> {
     pub(super) fn close_scope(&mut self, block: &E) -> Result<(), Refusal> {
         self.loan_points(&block.id, LoanPointPhase::After);
         let scope = self.scopes.pop().ok_or(unsupported("scope"))?;
-        // A view still awaiting its consuming call cannot leave its scope.
+        // A view whose token a consuming call still holds, or whose end still
+        // waits for one, cannot leave its scope.
         if scope.views.iter().any(|view| view.lowered.contains(&false))
             || scope
                 .views
                 .iter()
-                .any(|view| self.consumed.contains(&view.local))
+                .any(|view| self.holds.contains(&view.local) || self.deferred.contains(&view.local))
         {
             return Err(Refusal::Loans);
         }
@@ -449,6 +500,7 @@ impl<'a> Lower<'a> {
             id: &counter.id,
             local: induction,
             repr: Repr::I64,
+            view: None,
         });
         self.construction(condition, body, induction)?;
         self.op(I::LocalGet(self.domain));
@@ -464,6 +516,9 @@ impl<'a> Lower<'a> {
         let result = self.local(ValType::I64);
         self.op(I::LocalSet(result));
         self.close_scope(&function.body)?;
+        if !self.holds.is_empty() || !self.deferred.is_empty() {
+            return Err(Refusal::Loans);
+        }
         self.post(&function.body.id, Owned::None)?;
         // No postconditions exist in this profile (checked); the commit exit's
         // non-result cleanup runs, and only then is the result published. The
@@ -528,6 +583,7 @@ impl<'a> Lower<'a> {
             id: &vector.id,
             local: self.vector_carrier(&vector.id)?,
             repr: Repr::Vector,
+            view: None,
         });
         Ok(())
     }
