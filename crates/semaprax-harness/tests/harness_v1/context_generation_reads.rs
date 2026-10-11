@@ -22,9 +22,13 @@ fn hn10_selected_generation_remains_readable_until_read_finishes() {
                 selected_tx.send(()).unwrap();
                 release_rx.recv_timeout(Duration::from_secs(5)).unwrap();
                 assert_eq!(n, 1);
-                assert_eq!(std::fs::read_to_string(dir.join("graph.json")).unwrap(), "generation-1");
+                assert_eq!(
+                    std::fs::read_to_string(dir.join("graph.json")).unwrap(),
+                    "generation-1"
+                );
                 Ok(n)
-            }).unwrap()
+            })
+            .unwrap()
     });
     selected_rx.recv_timeout(Duration::from_secs(5)).unwrap();
     // Another store cannot enter publication while selected files remain in use.
@@ -40,11 +44,16 @@ fn hn10_selected_generation_remains_readable_until_read_finishes() {
         store.publish(n).unwrap();
     }
     assert!(!root.join("owned/gen/g1").exists());
-    assert_eq!(std::fs::read_dir(root.join("owned/gen")).unwrap().count(), 2);
+    assert_eq!(
+        std::fs::read_dir(root.join("owned/gen")).unwrap().count(),
+        2
+    );
     // Callback failure releases the lock without changing CURRENT.
-    let err = store.read_current::<()>(Duration::from_secs(5), |_, _| {
-        Err(HarnessDiagnostic::new("SPX-HPF011", "read failed"))
-    }).unwrap_err();
+    let err = store
+        .read_current::<()>(Duration::from_secs(5), |_, _| {
+            Err(HarnessDiagnostic::new("SPX-HPF011", "read failed"))
+        })
+        .unwrap_err();
     assert_eq!(err.code, "SPX-HPF011");
     let _lock = store.lock(Duration::from_secs(5)).unwrap();
     assert_eq!(store.current().unwrap().0, 3);
