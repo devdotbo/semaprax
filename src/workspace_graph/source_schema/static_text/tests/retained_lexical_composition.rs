@@ -1000,3 +1000,5 @@ fn retained_imported_provider_identity_layout_path_and_body_drift_fail_closed() 
         refused(&retained);
     }
 }
+
+mod statement_marker_resources;
