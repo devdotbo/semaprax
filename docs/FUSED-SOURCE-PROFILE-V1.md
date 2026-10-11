@@ -19,8 +19,9 @@ auto-funding. `--managed-bytes` is mandatory and uses canonical positive decimal
 syntax, from 1 through 1,073,741,824 inclusive. The upper bound is a new v1
 administrative policy; it does not change an ordinary compiler or runtime cap.
 Overflow, zero, leading zeros and unsupported option combinations are rejected
-before source IO. The limit grants capacity, not an eager allocation of that
-amount.
+before source IO. The limit is independent of compiler quotas. The Wasm account may preallocate
+its explicit physical arena under its declared host contract; callers must not
+interpret the amount as a cross-target RSS bound.
 
 Build requires an explicit `--target native` or `--target wasm`; an implicit
 ordinary build default cannot select an account policy.
@@ -51,14 +52,19 @@ status checks remain mandatory.
 | --- | --- | --- |
 | Interpreter | Cumulative requested Rust layouts for runtime frame construction, execution and cleanup | Source parsing/compiler validation and fresh source/HIR joining, administrative account control, diagnostic/normalized-status text and report serialization, allocator overhead and process memory |
 | Native | Monotonic reservation of the complete closed requested heap footprint; structural allocations consume their held funding at original boundaries | Fixed caller/status/control stack, compiler, loader, libc/allocator overhead and output buffers |
-| Wasm | Exact host adapter account contract supplied with the compiler-produced module and fixed host package | Account scope and exclusions must be declared by that package; no total JS/process-memory claim |
+| Wasm | One held caller account funds the eager registry buffers (33 bytes per entry), then an eager arena from the remainder; invocation metadata and row/carrier tables carve from that arena cumulatively | JS objects, maps, closures, ordinary String bookkeeping and Bytes payloads, module memory, compiler and process/allocator overhead |
 
 These amounts are not RSS or equivalent cross-target memory measurements.
 Native categories, original effect boundaries, reentry, semantic status and
 settlement are owned by [Native fused source account v1](NATIVE-FUSED-SOURCE-ACCOUNT-V1.md).
-Wasm package qualification must establish its own precise funded categories,
-module digest check, shared issuer and cleanup contract before support is
-reported as implemented.
+The Wasm package entry is `await install(accountBytes)`, followed by
+`runner.invoke()`. The caller amount must be positive, at most the compiled
+manifest limit and at most the v1 administrative maximum. The fixed entry loads
+its own module relative to `import.meta.url` and verifies its digest before
+creating the namespace. Registry backing is funded before the arena; the
+unchanged per-invocation registry debit is additionally retained conservatively.
+Repeated invocations share that one account and issuer without refunds.
+Qualification of these declared scopes remains pending.
 
 Interpreter execution retains the ordinary default 1,000,000 steps and accepts
 `--max-steps` under the existing finite option policy. Native and Wasm do not
@@ -70,7 +76,10 @@ replace the required managed account.
 
 Every selected invocation reports `semaprax.fused-source.v1`, profile, raw source
 SHA-256, target, account limit, `managed_reserved` and outcome. A result appears
-only for `returned`, after canonical publication and non-result cleanup. A
+only for `returned`, encoded as a canonical signed decimal **string** (for
+example `"8386560"` or `"9223372036854775807"`) to preserve every i64 exactly
+across JavaScript and native consumers. It follows canonical publication and
+non-result cleanup. A
 `language_failure` exposes the semantic status pair `{domain, code}`; interpreter
 may additionally expose its full canonical `normalized_status`. Administrative
 account, authority or runtime refusal has no invented language status or result.
@@ -96,8 +105,9 @@ observer has 16,384 tracking slots to retain the original 4,096 simultaneous
 title allocations plus backing/frame/table allocations; tracking metadata is
 excluded and exhaustion still invalidates the observation. This is test
 instrumentation capacity, not a runtime/compiler quota.
-`quickstart_v1::fused_source` owns real CLI source run/build and pre-IO denial
-controls. Native receiver gates live in
+The `--test quickstart_v1` selectors `fused_source::` own real CLI source
+run/build, paired Wasm loading with three invocations and exact/one-short
+accounts, tampered module refusal, fresh publication and pre-IO denial controls. Native receiver gates live in
 `codegen::selected_fused_row::source_profile::tests`. Wasm and the consolidated
 three-target receipt remain necessary qualification; authored gates are not
 execution evidence. The broader hostile/profile/ownership matrix remains open

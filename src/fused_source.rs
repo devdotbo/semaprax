@@ -108,7 +108,7 @@ pub fn run_interpreter(
         let returned = match answer {
             Ok(answer) if !refused => {
                 value["outcome"] = "returned".into();
-                value["result"] = answer.result.into();
+                value["result"] = answer.result.to_string().into();
                 value["steps_used"] = answer.steps.into();
                 true
             }

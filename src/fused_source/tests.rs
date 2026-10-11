@@ -29,7 +29,7 @@ fn explicit_source_factory_keeps_original_4096_and_ordinary_refusal_with_current
             crate::interpreter::DEFAULT_MAX_STEPS,
         );
         assert!(report.returned());
-        assert_eq!(value["result"], 8_386_560);
+        assert_eq!(value["result"], "8386560");
         assert_eq!(value["profile"], PROFILE);
         assert_eq!(
             value["source_sha256"],
@@ -43,6 +43,15 @@ fn explicit_source_factory_keeps_original_4096_and_ordinary_refusal_with_current
             value["steps_used"].as_u64().unwrap() <= crate::interpreter::DEFAULT_MAX_STEPS as u64
         );
     }
+    let maximum = SOURCE.replace("{ total } else { 0 }", "{ 9223372036854775807 } else { 0 }");
+    assert_ne!(maximum, SOURCE);
+    let (report, value) = run(
+        &maximum,
+        CALLER_ACCOUNT,
+        crate::interpreter::DEFAULT_MAX_STEPS,
+    );
+    assert!(report.returned());
+    assert_eq!(value["result"], "9223372036854775807");
     let non_entry = SOURCE.replace("fn main()", "fn selected_helper()");
     assert!(run_interpreter(
         &non_entry,
@@ -84,6 +93,7 @@ fn interpreter_source_account_exact_short_fuel_and_selected_failure_never_publis
     let (report, value) = run(SOURCE, CALLER_ACCOUNT, 1);
     assert!(!report.returned());
     assert_eq!(value["outcome"], "fuel_exhausted");
+    assert!(value.get("status").is_none());
     assert_eq!(value["cleanup_complete"], true);
     assert!(value.get("result").is_none());
     let changed = SOURCE.replace(
@@ -98,6 +108,13 @@ fn interpreter_source_account_exact_short_fuel_and_selected_failure_never_publis
     );
     assert!(!report.returned());
     assert_eq!(value["outcome"], "language_failure");
+    assert_eq!(
+        value["status"],
+        serde_json::json!({
+            "domain": crate::conformance::ARITHMETIC_STATUS_DOMAIN_V1,
+            "code": crate::cleanup_plan::StatusCase::AddOverflow.code(),
+        })
+    );
     assert_eq!(value["cleanup_complete"], true);
     assert!(value.get("result").is_none());
     assert_eq!(
