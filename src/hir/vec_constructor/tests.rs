@@ -200,6 +200,8 @@ fn marker_absence_preserves_ordinary_512_depth_and_overdepth_refuses() {
     )
     .unwrap();
     let mut typed = hir::resolve(&source).unwrap();
+    // One leaf plus 511 wrappers is exactly 512 ordinary semantic nodes.
+    typed.functions[0].body.kind = hir::ResolvedExprKind::Int(0);
     for _ in 1..512 {
         let previous = typed.functions[0].body.clone();
         typed.functions[0].body.kind = hir::ResolvedExprKind::Unary {
