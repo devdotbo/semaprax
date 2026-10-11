@@ -123,6 +123,17 @@ stages dynamic owned arguments in ordinary CallArgument epochs. The native
 and Wasm emitters use private rendering workers, while Project snapshot replay
 re-resolves format-bearing synthetic source before accepting retained HIR.
 
+The additive retained scalar import route captures defining-source facts in
+`workspace_graph/static_text/scalar_helpers.rs` before HIR filtering.
+`source_schema/static_text/primitive/helpers.rs` authenticates the demanded acyclic
+closure and exposes exact borrowed function members across modules; imported names
+never enter the consumer's local declaration-name index. The private
+`cleanup_plan/replay/selected_entry.rs` preparation transfers its single work and
+backing ledger into the existing session, while `scalar_replay.rs` independently
+replays each nonlexical scalar helper. The unchanged lexical driver replays the
+consumer. Broader imported nominal/loan/intrinsic profiles remain closed and #745
+remains open; authored execution and allocator controls await qualification.
+
 Project execution selects interpreter closure admission from the retained manifest
 profile in `interpreter/resolved_case.rs`. Project v25 stream-text and its v27
 stream-data successor admit pure, explicit-ID owned-String helpers with the

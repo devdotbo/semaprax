@@ -35,6 +35,20 @@ pub(in crate::workspace_graph) fn pure(
     function: &ResolvedFunction,
     work: &mut usize,
 ) -> Result<bool, Vec<Diagnostic>> {
+    pure_metered(function, work, &mut |_| Ok(()))
+}
+pub(in crate::workspace_graph) fn pure_metered(
+    function: &ResolvedFunction,
+    work: &mut usize,
+    charge: &mut dyn FnMut(usize) -> Result<(), Vec<Diagnostic>>,
+) -> Result<bool, Vec<Diagnostic>> {
+    let mut take = |units| {
+        let remaining = work.checked_sub(units).ok_or_else(fail)?;
+        charge(units)?;
+        *work = remaining;
+        Ok(())
+    };
+    take(function.params.len().checked_add(1).ok_or_else(fail)?)?;
     if !function.effects.is_empty()
         || function.yields.is_some()
         || !hir::is_scalar_resolved_type(&function.return_type)
@@ -42,10 +56,11 @@ pub(in crate::workspace_graph) fn pure(
             .params
             .iter()
             .any(|p| p.ownership != OwnershipMode::Value || !hir::is_scalar_resolved_type(&p.ty))
-        || crate::hir::lexical_exit::requires(function).map_err(|e| vec![e])?
     {
         return Ok(false);
     }
+    // The charged whitelist rejects every lexical statement and expression;
+    // no separate unmetered lexical traversal is needed for this closed shape.
     let mut stack = [None; DEPTH];
     for root in function
         .requires
@@ -56,35 +71,49 @@ pub(in crate::workspace_graph) fn pure(
         stack[0] = Some(hir::lexical_exit::ChildCursor::new(root));
         let mut depth = 1;
         while depth != 0 {
-            debit(work, 1)?;
+            take(1)?;
             let mut cursor = stack[depth - 1].take().ok_or_else(fail)?;
             let expr = cursor.expression();
-            if !hir::is_scalar_resolved_type(&expr.ty) || expr.ownership != OwnershipMode::Value {
-                return Ok(false);
-            }
-            match &expr.kind {
-                ResolvedExprKind::Int(_)
-                | ResolvedExprKind::Int32(_)
-                | ResolvedExprKind::Char(_)
-                | ResolvedExprKind::Uint8(_)
-                | ResolvedExprKind::Usize(_)
-                | ResolvedExprKind::Float32(_)
-                | ResolvedExprKind::Float64(_)
-                | ResolvedExprKind::Bool(_)
-                | ResolvedExprKind::Unary { .. }
-                | ResolvedExprKind::Binary { .. }
-                | ResolvedExprKind::If { .. } => {}
-                ResolvedExprKind::Place(place) if place.projections.is_empty() => {}
-                ResolvedExprKind::Call {
-                    instance,
-                    type_arguments,
-                    ..
-                } if instance.is_none() && type_arguments.is_empty() => {}
-                ResolvedExprKind::Block { statements, .. } => {
-                    debit(work, statements.len())?;
-                    if statements.iter().any(|s|!matches!(s,ResolvedStatement::Let{binding,..}|ResolvedStatement::Assign{binding,field:None,..} if binding.ownership==OwnershipMode::Value&&hir::is_scalar_resolved_type(&binding.ty))) {return Ok(false);}
+            if !cursor.is_started() {
+                if !hir::is_scalar_resolved_type(&expr.ty) || expr.ownership != OwnershipMode::Value
+                {
+                    return Ok(false);
                 }
-                _ => return Ok(false),
+                match &expr.kind {
+                    ResolvedExprKind::Int(_)
+                    | ResolvedExprKind::Int32(_)
+                    | ResolvedExprKind::Char(_)
+                    | ResolvedExprKind::Uint8(_)
+                    | ResolvedExprKind::Usize(_)
+                    | ResolvedExprKind::Float32(_)
+                    | ResolvedExprKind::Float64(_)
+                    | ResolvedExprKind::Bool(_)
+                    | ResolvedExprKind::Unary { .. }
+                    | ResolvedExprKind::Binary { .. }
+                    | ResolvedExprKind::If { .. } => {}
+                    ResolvedExprKind::Place(place) if place.projections.is_empty() => {}
+                    ResolvedExprKind::Call {
+                        instance,
+                        type_arguments,
+                        ..
+                    } if instance.is_none() && type_arguments.is_empty() => {}
+                    ResolvedExprKind::Block { statements, .. } => {
+                        take(statements.len())?;
+                        for statement in statements {
+                            match statement {
+                                ResolvedStatement::Let { binding, .. }
+                                | ResolvedStatement::Assign {
+                                    binding,
+                                    field: None,
+                                    ..
+                                } if binding.ownership == OwnershipMode::Value
+                                    && hir::is_scalar_resolved_type(&binding.ty) => {}
+                                _ => return Ok(false),
+                            }
+                        }
+                    }
+                    _ => return Ok(false),
+                }
             }
             if let Some(child) = cursor.next() {
                 if depth == DEPTH {
@@ -107,24 +136,53 @@ pub(super) fn capture(
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
     sources: Option<&[WorkspaceSource]>,
 ) -> Result<Option<Box<Inventory>>, Vec<Diagnostic>> {
-    // Demand is merely selection; each defining source is independently held.
-    if !programs.iter().any(|p| {
-        p.module_uses.iter().any(|u| {
-            u.kind == crate::ast::ModuleUseKind::Function && u.target_module == program.module
-        })
-    }) {
-        return Ok(None);
-    }
     let Some(sources) = sources else {
         return Ok(None);
     };
     let mut work = WORK;
-    debit(&mut work, sources.len())?;
-    let mut matches = sources.iter().filter(|s| s.path == program.path);
-    let source = matches.next().ok_or_else(fail)?;
-    if matches.next().is_some() {
-        return Err(fail());
+    // Demand is merely selection; each defining source is independently held.
+    let mut demanded = false;
+    for current in programs {
+        debit(&mut work, 1)?;
+        for import in &current.module_uses {
+            debit(
+                &mut work,
+                import
+                    .target_module
+                    .len()
+                    .checked_add(program.module.len())
+                    .and_then(|n| n.checked_add(1))
+                    .ok_or_else(fail)?,
+            )?;
+            if import.kind == crate::ast::ModuleUseKind::Function
+                && import.target_module == program.module
+            {
+                demanded = true;
+            }
+        }
     }
+    if !demanded {
+        return Ok(None);
+    }
+
+    let mut selected = None;
+    for source in sources {
+        debit(
+            &mut work,
+            source
+                .path
+                .len()
+                .checked_add(program.path.len())
+                .and_then(|n| n.checked_add(1))
+                .ok_or_else(fail)?,
+        )?;
+        if source.path == program.path {
+            if selected.replace(source).is_some() {
+                return Err(fail());
+            }
+        }
+    }
+    let source = selected.ok_or_else(fail)?;
     reserve_builder_structure(
         body_digest::scratch_bytes()
             .checked_add(
@@ -149,12 +207,39 @@ pub(super) fn capture(
     let revision = body_digest::source(&program.path, &program.module, &source.source);
     let mut count = 0usize;
     for source in &program.functions {
-        debit(&mut work, resolved.functions.len())?;
-        let function = resolved
-            .functions
-            .iter()
-            .find(|f| f.id.as_str() == source.stable_id)
-            .ok_or_else(fail)?;
+        debit(
+            &mut work,
+            source.params.len().checked_add(1).ok_or_else(fail)?,
+        )?;
+        if !source.explicit_id
+            || !source.type_parameters.is_empty()
+            || source.follows.is_some()
+            || source
+                .params
+                .iter()
+                .any(|p| p.mode != crate::ast::ParamMode::Value)
+        {
+            continue;
+        }
+        let mut current = None;
+        for function in &resolved.functions {
+            debit(
+                &mut work,
+                function
+                    .id
+                    .as_str()
+                    .len()
+                    .checked_add(source.stable_id.len())
+                    .and_then(|n| n.checked_add(1))
+                    .ok_or_else(fail)?,
+            )?;
+            if function.id.as_str() == source.stable_id {
+                if current.replace(function).is_some() {
+                    return Err(fail());
+                }
+            }
+        }
+        let function = current.ok_or_else(fail)?;
         if source.explicit_id
             && source.type_parameters.is_empty()
             && source.follows.is_none()
@@ -184,12 +269,39 @@ pub(super) fn capture(
         return Err(capacity());
     }
     for source in &program.functions {
-        debit(&mut work, resolved.functions.len())?;
-        let function = resolved
-            .functions
-            .iter()
-            .find(|f| f.id.as_str() == source.stable_id)
-            .ok_or_else(fail)?;
+        debit(
+            &mut work,
+            source.params.len().checked_add(1).ok_or_else(fail)?,
+        )?;
+        if !source.explicit_id
+            || !source.type_parameters.is_empty()
+            || source.follows.is_some()
+            || source
+                .params
+                .iter()
+                .any(|p| p.mode != crate::ast::ParamMode::Value)
+        {
+            continue;
+        }
+        let mut current = None;
+        for function in &resolved.functions {
+            debit(
+                &mut work,
+                function
+                    .id
+                    .as_str()
+                    .len()
+                    .checked_add(source.stable_id.len())
+                    .and_then(|n| n.checked_add(1))
+                    .ok_or_else(fail)?,
+            )?;
+            if function.id.as_str() == source.stable_id {
+                if current.replace(function).is_some() {
+                    return Err(fail());
+                }
+            }
+        }
+        let function = current.ok_or_else(fail)?;
         if !source.explicit_id
             || !source.type_parameters.is_empty()
             || source.follows.is_some()
@@ -201,7 +313,45 @@ pub(super) fn capture(
         {
             continue;
         }
-        let origin = authored.get(source.stable_id.as_str()).ok_or_else(fail)?;
+        let mut selected = None;
+        for (id, origin) in authored {
+            debit(
+                &mut work,
+                id.len()
+                    .checked_add(source.stable_id.len())
+                    .and_then(|n| n.checked_add(1))
+                    .ok_or_else(fail)?,
+            )?;
+            if *id == source.stable_id {
+                selected = Some(origin);
+                break;
+            }
+        }
+        let origin = selected.ok_or_else(fail)?;
+        debit(
+            &mut work,
+            origin
+                .module
+                .len()
+                .checked_add(program.module.len())
+                .and_then(|n| n.checked_add(origin.path.len()))
+                .and_then(|n| n.checked_add(program.path.len()))
+                .and_then(|n| n.checked_add(source.name.len()))
+                .and_then(|n| n.checked_add(function.name.len()))
+                .and_then(|n| n.checked_add(1))
+                .ok_or_else(fail)?,
+        )?;
+        for (source, current) in source.params.iter().zip(&function.params) {
+            debit(
+                &mut work,
+                source
+                    .name
+                    .len()
+                    .checked_add(current.name.len())
+                    .and_then(|n| n.checked_add(1))
+                    .ok_or_else(fail)?,
+            )?;
+        }
         if origin.module != program.module
             || origin.path != program.path
             || !origin.explicit
@@ -235,11 +385,21 @@ pub(super) fn capture(
                 })
                 .ok_or_else(capacity)?,
         )?;
+        debit(
+            &mut work,
+            source
+                .stable_id
+                .len()
+                .checked_add(source.name.len())
+                .and_then(|n| n.checked_add(function.params.len()))
+                .ok_or_else(fail)?,
+        )?;
         let mut params = Vec::with_capacity(function.params.len());
         if params.capacity() != function.params.len() {
             return Err(capacity());
         }
         for param in &function.params {
+            debit(&mut work, param.name.len().checked_add(1).ok_or_else(fail)?)?;
             reserve_builder_structure(
                 param
                     .id
@@ -254,8 +414,13 @@ pub(super) fn capture(
                 ty: param.ty.clone(),
             });
         }
-        let (digest, spent) = body_digest::typed_with_work(function, &revision).ok_or_else(fail)?;
-        debit(&mut work, spent)?;
+        let digest = body_digest::typed_attempt_metered(
+            function,
+            &revision,
+            Some(&mut |units| debit(&mut work, units).ok()),
+        )
+        .0
+        .ok_or_else(fail)?;
         functions.push(Function {
             id: function.id.clone(),
             explicit: source.explicit_id,
@@ -271,11 +436,12 @@ pub(super) fn capture(
         capture_work: WORK.checked_sub(work).ok_or_else(fail)?,
     })))
 }
-pub(in crate::workspace_graph) fn match_work(
+pub(in crate::workspace_graph) fn matches_metered(
     inventory: &Inventory,
     fact: &Function,
     function: &ResolvedFunction,
-) -> Option<usize> {
-    let (digest, spent) = body_digest::typed_with_work(function, &inventory.revision)?;
-    (digest == fact.digest).then_some(spent)
+    debit: &mut dyn FnMut(usize) -> Option<()>,
+) -> bool {
+    body_digest::typed_attempt_metered(function, &inventory.revision, Some(debit)).0
+        == Some(fact.digest)
 }

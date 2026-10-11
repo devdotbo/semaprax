@@ -10,6 +10,7 @@ pub(in crate::workspace_graph) struct Inventory {
     pub(in crate::workspace_graph) functions: Vec<FunctionFact>,
     pub(in crate::workspace_graph) records: Option<Box<records::Records>>,
     source_revision: [u8; 32],
+    pub(in crate::workspace_graph) capture_hash_work: usize,
     pub(in crate::workspace_graph) imported: bool,
 }
 pub(in crate::workspace_graph) struct FunctionFact {
@@ -163,6 +164,13 @@ fn capture_with_matching<const LEGACY: bool>(
         return Err(fail());
     }
     reserve_builder_structure(body_digest::scratch_bytes())?;
+    let mut capture_hash_work = source
+        .source
+        .len()
+        .checked_add(program.path.len())
+        .and_then(|n| n.checked_add(program.module.len()))
+        .and_then(|n| n.checked_add(24 + b"semaprax.retained-primitive-source.v1\0".len()))
+        .ok_or_else(fail)?;
     let source_revision = body_digest::source(&program.path, &program.module, &source.source);
     let mut body_work = WORK;
     // One held borrowed index serves both full source/signature checks and
@@ -223,7 +231,17 @@ fn capture_with_matching<const LEGACY: bool>(
         {
             return Err(fail());
         }
-        if body_digest::typed(function, &source_revision).is_none() {
+        if body_digest::typed_attempt_metered(
+            function,
+            &source_revision,
+            Some(&mut |units| {
+                capture_hash_work = capture_hash_work.checked_add(units)?;
+                Some(())
+            }),
+        )
+        .0
+        .is_none()
+        {
             return Ok(None);
         }
     }
@@ -270,7 +288,16 @@ fn capture_with_matching<const LEGACY: bool>(
             name: crate::bounded_output::budgeted_clone(&function.name),
             params,
             result: records::clone_type(&current.return_type)?,
-            body: body_digest::typed(current, &source_revision).ok_or_else(fail)?,
+            body: body_digest::typed_attempt_metered(
+                current,
+                &source_revision,
+                Some(&mut |units| {
+                    capture_hash_work = capture_hash_work.checked_add(units)?;
+                    Some(())
+                }),
+            )
+            .0
+            .ok_or_else(fail)?,
         });
     }
     if crate::bounded_output::active_refused() {
@@ -280,6 +307,7 @@ fn capture_with_matching<const LEGACY: bool>(
         functions,
         records,
         source_revision,
+        capture_hash_work,
         imported: !program.module_uses.is_empty(),
     };
     // Validate the complete retained backing arithmetic after the independently
@@ -338,13 +366,14 @@ pub(in crate::workspace_graph) fn body_matches(
 ) -> bool {
     body_digest::typed(function, &inventory.source_revision) == Some(source.body)
 }
-pub(in crate::workspace_graph) fn body_match_work(
+pub(in crate::workspace_graph) fn body_matches_metered(
     inventory: &Inventory,
     source: &FunctionFact,
     function: &hir::ResolvedFunction,
-) -> Option<usize> {
-    let (digest, work) = body_digest::typed_with_work(function, &inventory.source_revision)?;
-    (digest == source.body).then_some(work)
+    debit: &mut dyn FnMut(usize) -> Option<()>,
+) -> bool {
+    body_digest::typed_attempt_metered(function, &inventory.source_revision, Some(debit)).0
+        == Some(source.body)
 }
 pub(in crate::workspace_graph) fn digest_scratch_bytes() -> usize {
     body_digest::scratch_bytes()

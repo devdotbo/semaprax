@@ -31,7 +31,6 @@ pub(super) fn validate(
     }
     let plan = &function.cleanup_plan;
     if budget.physical.is_none()
-        || lexical_cert::requires_lexical(function)
         || plan.lexical_control.is_some()
         || plan.schema != schema::selected_schema_with_index(program, function, None)?
     {
@@ -111,6 +110,17 @@ fn scalar_nodes(function: &ResolvedFunction, budget: &mut ReplayBudget) -> Resul
                 return Err(replay_error(
                     function,
                     "selected scalar helper body contains non-Copy storage",
+                ));
+            }
+            if !entered
+                && matches!(
+                    &cursor.expression().kind,
+                    ResolvedExprKind::LexicalExit { .. }
+                )
+            {
+                return Err(replay_error(
+                    function,
+                    "selected scalar helper contains lexical control",
                 ));
             }
             if let Some(child) = cursor.next() {

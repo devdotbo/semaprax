@@ -11,20 +11,24 @@ use function @id("leaf.step") from scalar.leaf as leaf_step;
 "#;
 const LEAF: &str = r#"module scalar.leaf; @id("leaf.step") fn step(n:i64)->i64 {n+1}"#;
 fn build(caller: &str, provider: &str, leaf: &str) -> Result<WorkspaceGraphBuild, Vec<Diagnostic>> {
-    let sources = [
+    build_sources(&[
         ("caller.spx", caller),
         ("provider.spx", provider),
         ("leaf.spx", leaf),
-    ]
-    .into_iter()
-    .map(|(path, source)| WorkspaceSource {
-        path: path.into(),
-        source: crate::format::canonical(&crate::parse(source, path).unwrap()),
-    })
-    .collect();
+    ])
+}
+fn build_sources(sources: &[(&str, &str)]) -> Result<WorkspaceGraphBuild, Vec<Diagnostic>> {
+    let sources = sources
+        .iter()
+        .map(|(path, source)| WorkspaceSource {
+            path: (*path).into(),
+            source: crate::format::canonical(&crate::parse(source, path).unwrap()),
+        })
+        .collect();
     build_owned_retaining_sources_for_change(sources, MAX_CHANGE_BUILDER_BYTES)
         .map(|(build, _)| build)
 }
+
 fn caller(build: &WorkspaceGraphBuild) -> &WorkspaceResolvedModule {
     build
         .hir
@@ -193,7 +197,7 @@ fn current_source_body_contract_target_and_namespace_guards_refuse_stale_provide
 }
 #[test]
 fn actual_provider_plan_mutations_cannot_borrow_source_digest_authority() {
-    for attack in 0..6 {
+    for attack in 0..9 {
         let mut build = build(CALLER, PROVIDER, LEAF).unwrap();
         let certificate = caller(&build).functions[0]
             .cleanup_plan
@@ -241,7 +245,7 @@ fn actual_provider_plan_mutations_cannot_borrow_source_digest_authority() {
                 edge.to = crate::cleanup_plan::BlockId(u32::MAX);
             }
             4 => function.loan_plan.schema = "forged.loan.schema",
-            _ => {
+            5 => {
                 let block = function
                     .cleanup_plan
                     .blocks
@@ -267,6 +271,49 @@ fn actual_provider_plan_mutations_cannot_borrow_source_digest_authority() {
                     .unwrap()
                     .clone();
                 block.transitions.push(transition);
+            }
+            6 => {
+                let edge = function
+                    .cleanup_plan
+                    .edges
+                    .iter_mut()
+                    .find(|e| {
+                        matches!(
+                            e.condition,
+                            crate::cleanup_plan::EdgeCondition::StatusZero(_)
+                        )
+                    })
+                    .unwrap();
+                let crate::cleanup_plan::EdgeCondition::StatusZero(id) = &edge.condition else {
+                    unreachable!()
+                };
+                edge.condition = crate::cleanup_plan::EdgeCondition::StatusNonzero(id.clone());
+            }
+            7 => {
+                let exit = function
+                    .cleanup_plan
+                    .exits
+                    .iter_mut()
+                    .find(|e| {
+                        matches!(
+                            e.continuation,
+                            crate::cleanup_plan::ExitContinuation::CommitResult { .. }
+                        )
+                    })
+                    .unwrap();
+                exit.continuation = crate::cleanup_plan::ExitContinuation::ReturnUnit;
+            }
+            _ => {
+                let block = &mut function.cleanup_plan.blocks[0];
+                block
+                    .transitions
+                    .push(crate::cleanup_plan::CleanupTransition::Initialize {
+                        at: function.body.id.clone(),
+                        destination: crate::cleanup_plan::CleanupPlace {
+                            storage: crate::cleanup_plan::StorageId::ProvisionalResult,
+                            projections: Vec::new(),
+                        },
+                    });
             }
         }
         assert!(
@@ -305,7 +352,9 @@ fn measured(
                 .validate_scalar(helper.function)
                 .map_err(|_| fail())?;
         }
-        session.validate(anchor).map_err(|_| fail())?;
+        for function in &context.lexical {
+            session.validate(function).map_err(|_| fail())?;
+        }
         let (remaining, charged) = session.metrics();
         drop(session);
         drop(context);
@@ -384,15 +433,13 @@ fn cloned_function_and_failed_later_provider_cannot_restart_a_lease_or_allowance
         crate::cleanup_plan::ReplayPhysicalReservation::new(1 << 26),
     )
     .unwrap();
-    assert!(
-        authenticate(
-            module,
-            &malformed.hir.modules,
-            &malformed.hir.declarations,
-            &mut resources
-        )
-        .is_err()
-    );
+    assert!(authenticate(
+        module,
+        &malformed.hir.modules,
+        &malformed.hir.declarations,
+        &mut resources
+    )
+    .is_err());
     assert_eq!(
         resources
             .charge(anchor, 0, "forbidden retry")
@@ -400,6 +447,265 @@ fn cloned_function_and_failed_later_provider_cannot_restart_a_lease_or_allowance
             .code,
         "SPX-H006"
     );
+}
+
+fn call_mut(expression: &mut hir::ResolvedExpr) -> Option<&mut hir::DeclarationId> {
+    match &mut expression.kind {
+        hir::ResolvedExprKind::Call { callee, .. } => Some(callee),
+        hir::ResolvedExprKind::Block { statements, tail } => {
+            for statement in statements {
+                if let hir::ResolvedStatement::Let { value, .. } = statement {
+                    if let Some(id) = call_mut(value) {
+                        return Some(id);
+                    }
+                }
+            }
+            call_mut(tail)
+        }
+        _ => None,
+    }
+}
+#[test]
+fn equal_name_providers_are_bound_by_exact_ids_and_authored_aliases() {
+    let caller = CALLER
+        .replace(
+            "as step;",
+            "as first_step;\nuse function @id(\"leaf.step\") from scalar.leaf as second_step;",
+        )
+        .replace("step(41)", "first_step(30)+second_step(0)");
+    let provider = PROVIDER.replace("{leaf_step(n)}", "{leaf_step(n)+10}");
+    let build = build(&caller, &provider, LEAF).unwrap();
+    assert_eq!(schema(&build).unwrap(), "semaprax.graph.v77");
+    let linked = build
+        .linked_owned_data_api_program_with_roots("scalar.app", &[])
+        .unwrap();
+    let local = local(LEAF);
+    assert_eq!(
+        crate::interpreter::evaluate_resolved_zero_arg_i64(&linked, "app.main", 100_000)
+            .unwrap()
+            .outcome,
+        crate::interpreter::evaluate_resolved_zero_arg_i64(&local, "app.main", 100_000)
+            .unwrap()
+            .outcome
+    );
+    runtime::run(&linked, &local);
+}
+#[test]
+fn target_alias_missing_duplicate_and_stale_generation_do_not_reuse_provider_authority() {
+    for attack in 0..7 {
+        let mut build = build(CALLER, PROVIDER, LEAF).unwrap();
+        match attack {
+            0 => {
+                let module = build
+                    .hir
+                    .modules
+                    .iter_mut()
+                    .find(|m| m.module == "scalar.app")
+                    .unwrap();
+                *call_mut(&mut module.functions[0].body).unwrap() =
+                    hir::DeclarationId::new("leaf.step");
+            }
+            1 => {
+                let module = build
+                    .hir
+                    .modules
+                    .iter_mut()
+                    .find(|m| m.module == "scalar.helper")
+                    .unwrap();
+                *call_mut(&mut module.functions[0].body).unwrap() =
+                    hir::DeclarationId::new("helper.step");
+            }
+            2 => {
+                build.hir.modules.retain(|m| m.module != "scalar.leaf");
+            }
+            3 => {
+                let mut another = self::build(CALLER, PROVIDER, LEAF).unwrap();
+                let position = another
+                    .hir
+                    .modules
+                    .iter()
+                    .position(|m| m.module == "scalar.leaf")
+                    .unwrap();
+                build.hir.modules.push(another.hir.modules.remove(position));
+            }
+            4 => {
+                let mut another = self::build(CALLER, PROVIDER, LEAF).unwrap();
+                let another = another
+                    .hir
+                    .modules
+                    .iter_mut()
+                    .find(|m| m.module == "scalar.leaf")
+                    .unwrap();
+                let duplicate = another.scalar_helpers.as_mut().unwrap().functions.remove(0);
+                let current = build
+                    .hir
+                    .modules
+                    .iter_mut()
+                    .find(|m| m.module == "scalar.leaf")
+                    .unwrap();
+                current
+                    .scalar_helpers
+                    .as_mut()
+                    .unwrap()
+                    .functions
+                    .push(duplicate);
+            }
+            5 => {
+                let mut another =
+                    self::build(CALLER, PROVIDER, &LEAF.replace("n+1", "n+2")).unwrap();
+                let another = another
+                    .hir
+                    .modules
+                    .iter_mut()
+                    .find(|m| m.module == "scalar.leaf")
+                    .unwrap();
+                let current = build
+                    .hir
+                    .modules
+                    .iter_mut()
+                    .find(|m| m.module == "scalar.leaf")
+                    .unwrap();
+                current.scalar_helpers = another.scalar_helpers.take();
+            }
+            _ => {
+                let current = build
+                    .hir
+                    .modules
+                    .iter_mut()
+                    .find(|m| m.module == "scalar.app")
+                    .unwrap();
+                current
+                    .static_text
+                    .as_mut()
+                    .unwrap()
+                    .lexical
+                    .as_mut()
+                    .unwrap()
+                    .imported = false;
+            }
+        }
+        assert!(
+            schema(&build)
+                .unwrap_err()
+                .iter()
+                .any(|e| e.code == "SPX-G410"),
+            "provider attack {attack}"
+        );
+    }
+}
+#[test]
+fn unrelated_generic_provider_declaration_cannot_expand_the_selected_closure() {
+    let provider =
+        format!("{PROVIDER}\n@id(\"unused.identity\") fn identity<T>(value:T)->T{{value}}");
+    let build = build(CALLER, &provider, LEAF).unwrap();
+    assert_eq!(schema(&build).unwrap(), "semaprax.graph.v77");
+    let module = build
+        .hir
+        .modules
+        .iter()
+        .find(|m| m.module == "scalar.helper")
+        .unwrap();
+    assert!(!module.function_templates.is_empty());
+    assert_eq!(module.scalar_helpers.as_ref().unwrap().functions.len(), 1);
+}
+
+#[test]
+fn two_module_continue_and_return_use_the_actual_provider() {
+    let caller_source = r#"module scalar.app;
+use function @id("leaf.step") from scalar.leaf as step;
+@id("app.main") fn main()->i64 {
+ let label=str"é\u{0}";
+ let mut i=0;
+ while i<2 { i=step(i); if i==1 {continue;}else{0}; 0 }
+ return i;
+}"#;
+    let build = build_sources(&[("caller.spx", caller_source), ("leaf.spx", LEAF)]).unwrap();
+    assert_eq!(schema(&build).unwrap(), "semaprax.graph.v77");
+    let linked = build
+        .linked_owned_data_api_program_with_roots("scalar.app", &[])
+        .unwrap();
+    let local_source = caller_source
+        .replace("module scalar.app;", "module scalar.local;")
+        .replace(
+            "use function @id(\"leaf.step\") from scalar.leaf as step;",
+            "",
+        );
+    let local_source = format!("{local_source}\n{}", &LEAF[LEAF.find("@id(").unwrap()..]);
+    let local = hir::resolve(&crate::check(&local_source, "local-loop.spx").unwrap()).unwrap();
+    runtime::run(&linked, &local);
+}
+#[test]
+fn generic_option_nominal_and_vec_provider_bodies_keep_the_route_closed() {
+    let generic_caller = CALLER.replace("step(41)", "step<i64>(41)");
+    let generic_provider = r#"module scalar.helper; @id("helper.step") fn step<T>(n:T)->T{n}"#;
+    assert!(build(&generic_caller, generic_provider, LEAF)
+        .err()
+        .expect("generic provider remains closed")
+        .iter()
+        .any(|e| e.code == "SPX-G410"));
+    for leaf in [
+        LEAF.replace("n+1","let choice=Option<i64>::Some {value:n}; n"),
+        format!("module scalar.leaf; @id(\"private.Row\") record Row {{@id(\"private.Row.n\") n:i64,}} @id(\"leaf.step\") fn step(n:i64)->i64{{let row=Row {{n:n}};row.n}}"),
+        LEAF.replace("n+1","let values=vec_with_capacity<i64>(1usize);n"),
+    ] {
+        assert!(build(CALLER,PROVIDER,&leaf).err().expect("carrier provider remains closed").iter().any(|e|e.code=="SPX-G410"));
+    }
+}
+
+#[test]
+fn failed_later_body_authentication_keeps_actual_work_and_poisoned_preparation() {
+    let mut build = build(CALLER, PROVIDER, LEAF).unwrap();
+    let leaf = build
+        .hir
+        .modules
+        .iter_mut()
+        .find(|m| m.module == "scalar.leaf")
+        .unwrap();
+    let hir::ResolvedExprKind::Block { tail, .. } = &mut leaf.functions[0].body.kind else {
+        panic!("source body")
+    };
+    let hir::ResolvedExprKind::Binary { right, .. } = &mut tail.kind else {
+        panic!("arithmetic body")
+    };
+    right.kind = hir::ResolvedExprKind::Int(2);
+    let module = caller(&build);
+    let anchor = &module.functions[0];
+    let mut resources =
+        SelectedReplayPreparation::with_limits(anchor, 32_000_000, 1 << 26).unwrap();
+    assert!(authenticate(
+        module,
+        &build.hir.modules,
+        &build.hir.declarations,
+        &mut resources
+    )
+    .is_err());
+    let remaining = resources.remaining();
+    let spent = 32_000_000 - remaining;
+    assert!(
+        spent > 0 && remaining > 0,
+        "failure does not mint or refund work"
+    );
+    assert_eq!(
+        resources
+            .charge(anchor, 0, "failed body retry")
+            .unwrap_err()
+            .code,
+        "SPX-H006"
+    );
+    assert_eq!(resources.remaining(), remaining);
+    let mut short = SelectedReplayPreparation::with_limits(anchor, spent - 1, 1 << 26).unwrap();
+    assert!(authenticate(
+        module,
+        &build.hir.modules,
+        &build.hir.declarations,
+        &mut short
+    )
+    .is_err());
+    assert_eq!(
+        short.charge(anchor, 0, "one-short retry").unwrap_err().code,
+        "SPX-H006"
+    );
+    assert!(short.remaining() < spent - 1);
 }
 
 mod runtime;

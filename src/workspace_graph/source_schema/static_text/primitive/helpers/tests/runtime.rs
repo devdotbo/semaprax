@@ -34,13 +34,14 @@ int main(void){{
  struct spx_status_entry entries[32];struct spx_context context={{0}};
  if(!spx_context_init(&context,UINT64_C(17),entries,32,NULL,NULL,NULL))return 1;
  for(unsigned i=0;i<3;++i){{
+  uint32_t before=context.status_arena.length;
   int64_t value=INT64_C(123456789);spx_status_token token=spx_decl_6170702e6d61696e(&context,&value);
   if({failure}){{
    if(token==SPX_STATUS_SUCCESS||value!=INT64_C(123456789))return 2;
    const struct spx_normalized_status*status=spx_status_resolve(&context,token);
-   if(!status||strcmp(status->domain,"{domain}")||status->code!=UINT32_C({code}))return 3;
+   if(!status||strcmp(status->domain_id,"{domain}")||status->code!=UINT32_C({code}))return 3;
   }}else if(token!=SPX_STATUS_SUCCESS||value!=INT64_C({value}))return 4;
-  if(context.call_depth)return 5;
+  if(context.call_depth||context.status_arena.length!=before+{failure})return 5;
  }}return 0;
 }}
 "#,
@@ -82,7 +83,10 @@ int main(void){{
         let host = root.join("host.js");
         std::fs::write(
             &host,
-            include_str!("../../../../../../../tests/owned_data/owned_leaf_vec/host.js"),
+            include_str!("../../../../../../../tests/owned_data/owned_leaf_vec/host.js").replace(
+                "if(!selected&&returned!==expectedValue)",
+                "if(selected&&returned!==undefined)throw Error('failed helper published a result');\n    if(!selected&&returned!==expectedValue)",
+            ),
         )
         .unwrap();
         let executed = Command::new("node")

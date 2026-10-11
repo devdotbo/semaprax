@@ -5,6 +5,7 @@ use crate::cleanup_plan::{SelectedReplayPreparation, SelectedReplaySession};
 use crate::workspace_graph::static_text::scalar_helpers;
 type Frame<'a> = Option<(hir::lexical_exit::ChildCursor<'a>, bool)>;
 const DEPTH: usize = 514;
+mod local;
 struct Member<'a> {
     module: &'a WorkspaceResolvedModule,
     function: &'a ResolvedFunction,
@@ -12,6 +13,8 @@ struct Member<'a> {
 pub(super) struct Closure<'a> {
     local: Context<'a>,
     helpers: Vec<Member<'a>>,
+    lexical: Vec<&'a ResolvedFunction>,
+    count: usize,
 }
 impl ReplayContext for Closure<'_> {
     fn declarations(&self) -> &hir::DeclarationIndex {
@@ -27,7 +30,7 @@ impl ReplayContext for Closure<'_> {
         &self.local.module.functions
     }
     fn function_count(&self) -> usize {
-        self.local.module.functions.len() + self.helpers.len()
+        self.count
     }
     fn function_at(&self, index: usize) -> Option<&ResolvedFunction> {
         self.local.module.functions.get(index).or_else(|| {
@@ -63,6 +66,27 @@ fn charge(
     resources
         .charge(anchor, n, "imported scalar helper authentication")
         .map_err(|_| fail())
+}
+fn fact<'a>(
+    id: &str,
+    facts: &'a BTreeMap<String, WorkspaceDeclarationFact>,
+    resources: &mut SelectedReplayPreparation,
+    anchor: &ResolvedFunction,
+) -> Result<&'a WorkspaceDeclarationFact, Vec<Diagnostic>> {
+    for (key, value) in facts {
+        charge(
+            resources,
+            anchor,
+            key.len()
+                .checked_add(id.len())
+                .and_then(|n| n.checked_add(1))
+                .ok_or_else(fail)?,
+        )?;
+        if key == id {
+            return Ok(value);
+        }
+    }
+    Err(fail())
 }
 fn lookup<'a>(
     id: &hir::DeclarationId,
@@ -158,12 +182,7 @@ fn authenticate_target<'a>(
     resources: &mut SelectedReplayPreparation,
     anchor: &ResolvedFunction,
 ) -> Result<Member<'a>, Vec<Diagnostic>> {
-    charge(
-        resources,
-        anchor,
-        id.as_str().len().checked_add(1).ok_or_else(fail)?,
-    )?;
-    let origin = facts.get(id.as_str()).ok_or_else(fail)?;
+    let origin = fact(id.as_str(), facts, resources, anchor)?;
     if origin.kind != hir::DeclarationKind::Function
         || origin.owner.is_some()
         || origin.origin != hir::IdentityOrigin::Explicit
@@ -236,13 +255,6 @@ fn authenticate_target<'a>(
         }
     }
     let source = expected.ok_or_else(fail)?;
-    if !source.explicit
-        || source.name != function.name
-        || source.result != function.return_type
-        || source.params.len() != function.params.len()
-    {
-        return Err(fail());
-    }
     charge(
         resources,
         anchor,
@@ -252,6 +264,13 @@ fn authenticate_target<'a>(
             .checked_add(function.name.len())
             .ok_or_else(fail)?,
     )?;
+    if !source.explicit
+        || source.name != function.name
+        || source.result != function.return_type
+        || source.params.len() != function.params.len()
+    {
+        return Err(fail());
+    }
     for (source, current) in source.params.iter().zip(&function.params) {
         charge(
             resources,
@@ -277,16 +296,23 @@ fn authenticate_target<'a>(
         .reserve_array::<Frame<'_>>(anchor, DEPTH, "imported scalar helper profile cursor")
         .map_err(|_| fail())?;
     let mut work = 1_048_576;
-    if !scalar_helpers::pure(function, &mut work)? {
+    if !scalar_helpers::pure_metered(function, &mut work, &mut |units| {
+        charge(resources, anchor, units)
+    })? {
         return Err(fail());
     }
-    charge(
-        resources,
-        anchor,
-        1_048_576usize.checked_sub(work).ok_or_else(fail)?,
-    )?;
-    let spent = scalar_helpers::match_work(inventory, source, function).ok_or_else(fail)?;
-    charge(resources, anchor, spent)?;
+    resources
+        .reserve_array::<u8>(
+            anchor,
+            crate::workspace_graph::static_text::primitive::digest_scratch_bytes(),
+            "imported scalar body digest scratch",
+        )
+        .map_err(|_| fail())?;
+    if !scalar_helpers::matches_metered(inventory, source, function, &mut |units| {
+        charge(resources, anchor, units).ok()
+    }) {
+        return Err(fail());
+    }
     Ok(Member { module, function })
 }
 
@@ -300,31 +326,7 @@ fn authenticate_inner<'a>(
     resources
         .reserve_array::<Closure<'_>>(anchor, 1, "imported scalar closure owner")
         .map_err(|_| fail())?;
-    // Existing local source/layout checks are retained; account each digest and
-    // constructor scan in the same non-clone work owner before replay.
-    let inventory = module
-        .static_text
-        .as_deref()
-        .and_then(|i| i.lexical.as_deref())
-        .ok_or_else(fail)?;
-    for (source, function) in inventory.functions.iter().zip(&module.functions) {
-        let work = crate::workspace_graph::static_text::primitive::body_match_work(
-            inventory, source, function,
-        )
-        .ok_or_else(fail)?;
-        charge(
-            resources,
-            anchor,
-            work.checked_mul(2)
-                .and_then(|n| n.checked_add(function.params.len()))
-                .ok_or_else(fail)?,
-        )?;
-    }
-    let local = super::authenticate(
-        module,
-        facts,
-        resources.physical(anchor).map_err(|_| fail())?,
-    )?;
+    let local = local::authenticate(module, facts, resources, anchor)?;
     let maximum = modules
         .iter()
         .try_fold(0usize, |n, m| n.checked_add(m.functions.len()))
@@ -340,13 +342,22 @@ fn authenticate_inner<'a>(
             "imported scalar defining source debits",
         )
         .map_err(|_| fail())?;
+    charge(resources, anchor, modules.len())?;
     let mut charged = vec![0u8; modules.len()];
     let mut helpers: Vec<Member<'a>> = Vec::with_capacity(maximum);
     if helpers.capacity() != maximum {
         return Err(fail());
     }
     let mut processed = 0;
-    while processed < module.functions.len() + helpers.len() {
+    loop {
+        let total = module
+            .functions
+            .len()
+            .checked_add(helpers.len())
+            .ok_or_else(fail)?;
+        if processed >= total {
+            break;
+        }
         let function = if processed < module.functions.len() {
             &module.functions[processed]
         } else {
@@ -383,6 +394,7 @@ fn authenticate_inner<'a>(
                 if helpers.len() == maximum {
                     return Err(fail());
                 }
+                charge(resources, anchor, 1)?;
                 helpers.push(member);
             }
             Ok(())
@@ -400,6 +412,7 @@ fn authenticate_inner<'a>(
     resources
         .reserve_array::<usize>(anchor, count, "imported scalar closure ready frontier")
         .map_err(|_| fail())?;
+    charge(resources, anchor, count)?;
     let mut indegree = vec![0usize; count];
     let mut pending = Vec::with_capacity(count);
     let mut edges = Vec::new();
@@ -417,6 +430,7 @@ fn authenticate_inner<'a>(
             resources
                 .reserve_vec(anchor, &mut edges, 1, "imported scalar closure edges")
                 .map_err(|_| fail())?;
+            charge(resources, anchor, 1)?;
             edges.push((from, to));
             indegree[to] = indegree[to].checked_add(1).ok_or_else(fail)?;
             Ok(())
@@ -425,11 +439,13 @@ fn authenticate_inner<'a>(
     for (i, n) in indegree.iter().enumerate() {
         charge(resources, anchor, 1)?;
         if *n == 0 {
+            charge(resources, anchor, 1)?;
             pending.push(i);
         }
     }
     let mut visited = 0usize;
     while let Some(from) = pending.pop() {
+        charge(resources, anchor, 1)?;
         visited = visited.checked_add(1).ok_or_else(fail)?;
         for (source, to) in &edges {
             charge(resources, anchor, 1)?;
@@ -439,6 +455,7 @@ fn authenticate_inner<'a>(
                     if pending.len() == count {
                         return Err(fail());
                     }
+                    charge(resources, anchor, 1)?;
                     pending.push(*to);
                 }
             }
@@ -449,27 +466,37 @@ fn authenticate_inner<'a>(
     }
     let mut local = local;
     for member in &helpers {
-        charge(
-            resources,
-            anchor,
-            member
-                .function
-                .id
-                .as_str()
-                .len()
-                .checked_add(member.function.name.len())
-                .and_then(|n| n.checked_add(member.function.params.len() + 1))
-                .ok_or_else(fail)?,
-        )?;
-        local
-            .index
-            .append_scalar_helper_replay(
-                member.function,
-                resources.physical(anchor).map_err(|_| fail())?,
-            )
+        resources
+            .construct(anchor, |physical, debit| {
+                local
+                    .index
+                    .append_scalar_helper_replay_metered(member.function, physical, debit)
+            })
             .map_err(|_| fail())?;
     }
-    Ok(Closure { local, helpers })
+    resources
+        .reserve_array::<&ResolvedFunction>(
+            anchor,
+            module.functions.len(),
+            "imported consumer lexical members",
+        )
+        .map_err(|_| fail())?;
+    let mut lexical = Vec::with_capacity(module.functions.len());
+    if lexical.capacity() != module.functions.len() {
+        return Err(fail());
+    }
+    for function in &module.functions {
+        if local::requires(function, resources, anchor)? {
+            charge(resources, anchor, 1)?;
+            lexical.push(function);
+        }
+    }
+    Ok(Closure {
+        local,
+        helpers,
+        lexical,
+        count,
+    })
 }
 pub(super) fn authenticate<'a>(
     module: &'a WorkspaceResolvedModule,
@@ -506,15 +533,11 @@ pub(super) fn replay(
             .validate_scalar(helper.function)
             .map_err(|_| fail())?;
     }
-    let mut found = false;
-    for function in &module.functions {
-        if hir::lexical_exit::requires(function).map_err(|e| vec![e])? {
-            session.validate(function).map_err(|_| fail())?;
-            found = true;
-        }
-    }
-    if !found {
+    if context.lexical.is_empty() {
         return Err(fail());
+    }
+    for function in &context.lexical {
+        session.validate(function).map_err(|_| fail())?;
     }
     session.finish().map_err(|_| fail())?;
     Ok(())

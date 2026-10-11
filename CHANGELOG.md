@@ -1,5 +1,7 @@
 # Changelog
 
+- Author a defining-source-bound retained static-UTF-8 composition with imported pure monomorphic scalar helpers (#745). Borrow exact provider HIR, authenticate the whole acyclic closure and replay every helper's real status/cleanup proof with one cumulative work/backing owner. Equal-name aliases, checked failures, stale/hostile provider and plan controls, saved local backend comparisons and exact/one-short allocation/work definitions await grouped qualification; broader #745 remains open.
+
 - Activate deferred lexical replay resource selection and exact expression-scoped Copy factoring (#759), retaining independent lexical/certificate/ownership validation, multiset traces and unchanged enumerated/work ceilings. Keep selected physical provider/type exclusions and cumulative backing/work ledgers. Whole-entry, forced-strategy and immutable original ShiftSim qualification remain pending.
 
 - Attribute seven previously unlabelled live workspace reservation seams with compiler-owned operation stages. Keep exact ledger charges, nested-budget resets and sticky first refusals. Exclude only exact borrowed Vec length/capacity observations from invented census operation failures, retaining every child path and independent enumeration control. Pin the frozen two-Bytes record profile to its documented five operations. Grouped qualification remains pending.

@@ -30,22 +30,23 @@ mod replay;
 #[cfg(test)]
 pub(crate) use replay::validate_retained_lexical_with_reservation;
 pub(crate) use replay::{
-    ClonePayload as ReplayClonePayload, PhysicalReservation as ReplayPhysicalReservation,
-    SelectedReplaySession, SelectedReplayPreparation, replay_btree_node_upper, replay_reserve_vec,
+    replay_btree_node_upper, replay_reserve_vec, ClonePayload as ReplayClonePayload,
+    PhysicalReservation as ReplayPhysicalReservation, SelectedReplayPreparation,
+    SelectedReplaySession,
 };
 mod validate;
 
 pub(crate) use build::build_plan;
 pub(crate) use build::helper_index::attach_program_plans;
 pub(crate) use build::lexical_control::build_plan_for_execution;
-pub use execute::{CleanupExecutionError, CleanupScenario, execute_for_conformance};
-pub(crate) use owned_liveness::{
-    OwnedFrameLiveness, owned_authorize_partial_disposal, owned_authorize_result_disposal,
-    owned_frame_body, owned_frame_copy_expression, owned_frame_liveness, owned_frame_parameter,
-    owned_frame_v2_body, owned_frame_v2_liveness, owned_frame_v2_parameter,
-};
+pub use execute::{execute_for_conformance, CleanupExecutionError, CleanupScenario};
 pub(crate) use owned_liveness::{
     admit_owned_bytes_profile, admit_sequential_aggregate_bytes_profile, carried_locals_at,
+};
+pub(crate) use owned_liveness::{
+    owned_authorize_partial_disposal, owned_authorize_result_disposal, owned_frame_body,
+    owned_frame_copy_expression, owned_frame_liveness, owned_frame_parameter, owned_frame_v2_body,
+    owned_frame_v2_liveness, owned_frame_v2_parameter, OwnedFrameLiveness,
 };
 pub(crate) use replay::selected_schema;
 pub(crate) use validate::validate_program;
@@ -870,8 +871,8 @@ fn staged_result_bytes(source: &StagedCopyResultSource) -> Option<usize> {
     }
 }
 
-pub(crate) use owned_liveness::{OwnedRecordTransferPlan, owned_record_transfer_plan};
-pub(crate) use owned_liveness::{OwnedStepTransferPlan, owned_step_transfer_plan};
+pub(crate) use owned_liveness::{owned_record_transfer_plan, OwnedRecordTransferPlan};
+pub(crate) use owned_liveness::{owned_step_transfer_plan, OwnedStepTransferPlan};
 
 #[cfg(test)]
 mod phase_measurement;

@@ -1,8 +1,8 @@
 //! Independent structural validation of attached cleanup plans without invoking the builder.
 // Private prerequisite only: no selected replay admission hook.
+mod constructed_variant;
 #[cfg(test)]
 mod context_closure;
-mod constructed_variant;
 use constructed_variant::materialize_constructed_variant;
 mod expression_children;
 mod expression_facts;
@@ -12,24 +12,26 @@ mod physical_budget;
 mod physical_clone;
 mod physical_storage;
 mod scalar_match;
+mod scalar_replay;
 mod selected_callees;
 mod selected_context;
 mod selected_entry;
-mod scalar_replay;
 mod status_construction;
 mod structural_control;
 mod structural_maps;
 #[cfg(test)]
 pub(crate) use selected_entry::validate_retained_lexical_with_limit;
-pub(crate) use selected_entry::{Session as SelectedReplaySession, Preparation as SelectedReplayPreparation};
 #[cfg(test)]
 pub(crate) use selected_entry::validate_retained_lexical_with_reservation;
+pub(crate) use selected_entry::{
+    Preparation as SelectedReplayPreparation, Session as SelectedReplaySession,
+};
 mod selected_owner;
 mod selected_profile;
 mod status_validation;
 pub(crate) use physical_clone::ClonePayload;
 pub(crate) use physical_storage::{
-    PhysicalReservation, btree_node_upper as replay_btree_node_upper, replay_reserve_vec,
+    btree_node_upper as replay_btree_node_upper, replay_reserve_vec, PhysicalReservation,
 };
 #[cfg(test)]
 mod physical_observation_tests;
@@ -46,15 +48,14 @@ use crate::hir::ResolvedTypeDeclarationKind;
 use std::cell::Cell;
 
 use super::{
-    BlockId, CLEANUP_PLAN_SCHEMA_V2, CLEANUP_PLAN_SCHEMA_V3, CLEANUP_PLAN_SCHEMA_V4,
-    CLEANUP_PLAN_SCHEMA_V5, CLEANUP_PLAN_SCHEMA_V6, CLEANUP_PLAN_SCHEMA_V7, CLEANUP_PLAN_SCHEMA_V8,
-    CLEANUP_PLAN_SCHEMA_V9, CLEANUP_PLAN_SCHEMA_V10, CLEANUP_PLAN_SCHEMA_V11,
+    BlockId, CleanupPlace, CleanupRegionId, CleanupResultSource, CleanupTerminator,
+    CleanupTransition, ConditionalVariantCase, ConditionalVariantEntry, EdgeCondition, EdgeId,
+    ExitContinuation, ExitTarget, StagedCopyResultSource, StatusCase, StatusLane, StatusProducer,
+    StatusSource, StatusSourceId, StorageId, CLEANUP_PLAN_SCHEMA_V10, CLEANUP_PLAN_SCHEMA_V11,
     CLEANUP_PLAN_SCHEMA_V12, CLEANUP_PLAN_SCHEMA_V13, CLEANUP_PLAN_SCHEMA_V14,
-    CLEANUP_PLAN_SCHEMA_V15, CLEANUP_PLAN_SCHEMA_V16, CleanupPlace, CleanupRegionId,
-    CleanupResultSource, CleanupTerminator, CleanupTransition, ConditionalVariantCase,
-    ConditionalVariantEntry, EdgeCondition, EdgeId, ExitContinuation, ExitTarget,
-    StagedCopyResultSource, StatusCase, StatusLane, StatusProducer, StatusSource, StatusSourceId,
-    StorageId,
+    CLEANUP_PLAN_SCHEMA_V15, CLEANUP_PLAN_SCHEMA_V16, CLEANUP_PLAN_SCHEMA_V2,
+    CLEANUP_PLAN_SCHEMA_V3, CLEANUP_PLAN_SCHEMA_V4, CLEANUP_PLAN_SCHEMA_V5, CLEANUP_PLAN_SCHEMA_V6,
+    CLEANUP_PLAN_SCHEMA_V7, CLEANUP_PLAN_SCHEMA_V8, CLEANUP_PLAN_SCHEMA_V9,
 };
 use crate::ast::{BinaryOp, UnaryOp};
 use crate::cleanup::ReplayContext;
@@ -74,14 +75,14 @@ mod path_summary;
 mod skeleton_bound;
 mod skeleton_work;
 mod typed_storage;
-#[cfg(test)]
-use path_summary::{STATUS_ONLY_PATH_SUMMARY_THRESHOLD, cleanup_plan_requires_path_replay};
 use path_summary::{
     cleanup_inert_large_decisions_can_be_summarized, cleanup_inert_path_product_can_be_summarized,
     or_arm_path_counts, plan_structure_units, status_only_paths_can_be_summarized,
     validate_replay_size_budget,
 };
-use skeleton_work::{Observations, SkeletonWork, empty_expr_path};
+#[cfg(test)]
+use path_summary::{cleanup_plan_requires_path_replay, STATUS_ONLY_PATH_SUMMARY_THRESHOLD};
+use skeleton_work::{empty_expr_path, Observations, SkeletonWork};
 
 #[cfg(test)]
 mod context_tests;
@@ -107,8 +108,8 @@ mod transition_storage;
 use renewal::validate_join_compatibility;
 use strings::temporary_place;
 use transition::{
-    ExitFlow, append_dead_flags, execute_replay_transition, find_resolved_expression, replay_exit,
-    replay_transfer, require_normal_flow_state, state_for_edge, validate_staged_target,
+    append_dead_flags, execute_replay_transition, find_resolved_expression, replay_exit,
+    replay_transfer, require_normal_flow_state, state_for_edge, validate_staged_target, ExitFlow,
 };
 mod record_destructure;
 mod resolved_call;

@@ -124,9 +124,33 @@ and are reported separately in the owning observation definitions. Exact and
 one-short tests establish preconstruction refusal, not a claim that diagnostics
 fit inside a tiny failed replay budget.
 
-Imports, templates/instances, nominal aggregates, Vec/variant carriers and
-dynamic callable providers remain closed in this selected retained route.
-Their full physical replay constructor closure remains an OPT #745 obligation.
+An additive selected route has authored implementation and owning regression
+controls for imported pure monomorphic Copy-scalar helpers. The defining module
+captures its own checked source revision, explicit function identity, scalar
+signature and complete requires/body/ensures guard before HIR retention, including
+providers without static literals. Import stubs and caller aliases grant no body
+authority. Replay authenticates each demanded provider against the current
+namespace, exact defining module/path, signature and body, rejects cycles, and
+borrows the actual defining functions through one indexed context. Equal names in
+different providers remain distinct by persistent ID and authored alias.
+
+One non-clone preparation owner pays authentication hashes, borrowed comparisons,
+closure frontiers and declaration reconstruction before transferring its remaining
+work and cumulative backing into the module replay session. Each helper obtains a
+fresh function-bound lease and undergoes complete structural, status, path-state
+and exact observation replay. Checked arithmetic and pre/postcondition failures
+remain part of the proof; purity is not infallibility. Failure prevents restarting
+the preparation or session. Independent saved local controls, provider-body and
+plan mutations, aliases, stale/missing/duplicate providers and exact/one-short
+whole-entry-to-Drop ledgers are authored but unexecuted in this batch.
+
+The imported consumer route admits primitive signatures and no local nominal type
+inventory; the existing no-import route retains its separately specified record
+profile. Helper-local lexical control, templates/instances, borrowed or owning
+helper parameters/results, nominal/Vec/Option carriers, intrinsics and dynamic
+callable providers remain closed. Full OPT #745 remains open for these provider,
+loan/path, storage/instance and exact intrinsic metadata obligations. No wider
+production or executable qualification is claimed.
 A separate private inventory constructor profile supports exact current
 nongeneric flat records with 1..8 direct Copy/String/Bytes fields, under a
 32-declaration lookup bound. It compares declaration and field identities,

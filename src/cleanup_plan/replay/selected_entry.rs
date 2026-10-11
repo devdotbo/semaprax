@@ -104,20 +104,43 @@ impl Preparation {
         self.failed = answer.is_err();
         answer
     }
-    pub(crate) fn physical(
+    #[cfg(test)]
+    pub(crate) fn remaining(&self) -> usize {
+        self.budget.remaining
+    }
+    /// Constructors borrow both resources from this owner. They cannot copy
+    /// work credits or replace the ledger when their retained backing grows.
+    pub(crate) fn construct<T>(
         &mut self,
         function: &ResolvedFunction,
-    ) -> Result<&mut PhysicalReservation, Diagnostic> {
+        apply: impl FnOnce(
+            &mut PhysicalReservation,
+            &mut dyn FnMut(usize) -> Result<(), Diagnostic>,
+        ) -> Result<T, Diagnostic>,
+    ) -> Result<T, Diagnostic> {
         if self.failed {
             return Err(replay_error(
                 function,
                 "selected preparation already failed",
             ));
         }
-        self.budget
-            .physical
+        let ReplayBudget {
+            remaining,
+            physical,
+            ..
+        } = &mut self.budget;
+        let physical = physical
             .as_deref_mut()
-            .ok_or_else(|| replay_error(function, "selected preparation lost backing ledger"))
+            .ok_or_else(|| replay_error(function, "selected preparation lost backing ledger"))?;
+        let mut debit = |units| {
+            *remaining = remaining
+                .checked_sub(units)
+                .ok_or_else(|| replay_error(function, "selected constructor work exhausted"))?;
+            Ok(())
+        };
+        let answer = apply(physical, &mut debit);
+        self.failed = answer.is_err();
+        answer
     }
     pub(crate) fn fail(&mut self) {
         self.failed = true;

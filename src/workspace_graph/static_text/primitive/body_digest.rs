@@ -4,13 +4,21 @@
 use crate::hir::*;
 use sha2::{Digest, Sha256};
 const DOMAIN: &[u8] = b"semaprax.retained-primitive-body.v1\0";
-struct Encoder {
+struct Encoder<'a> {
     hash: Sha256,
     work: usize,
+    debit: Option<&'a mut dyn FnMut(usize) -> Option<()>>,
 }
-impl Encoder {
+impl Encoder<'_> {
     fn bytes(&mut self, bytes: &[u8]) -> Option<()> {
-        self.work = self.work.checked_sub(bytes.len().checked_add(1)?)?;
+        let units = bytes.len().checked_add(1)?;
+        let remaining = self.work.checked_sub(units)?;
+        if let Some(debit) = self.debit.as_deref_mut() {
+            // The shared ledger accounts the actual length prefix and payload.
+            // Keep the historical per-body local ceiling as an extra bound.
+            debit(bytes.len().checked_add(std::mem::size_of::<u64>())?)?;
+        }
+        self.work = remaining;
         self.hash
             .update((u64::try_from(bytes.len()).ok()?).to_le_bytes());
         self.hash.update(bytes);
@@ -454,44 +462,62 @@ pub(in crate::workspace_graph) fn typed_with_work(
     function: &ResolvedFunction,
     source_revision: &[u8; 32],
 ) -> Option<([u8; 32], usize)> {
+    let (digest, spent) = typed_attempt(function, source_revision);
+    digest.map(|digest| (digest, spent))
+}
+/// Preserve successful byte/node debits even when a hostile body cannot encode.
+pub(in crate::workspace_graph) fn typed_attempt(
+    function: &ResolvedFunction,
+    source_revision: &[u8; 32],
+) -> (Option<[u8; 32]>, usize) {
+    typed_attempt_metered(function, source_revision, None)
+}
+pub(in crate::workspace_graph) fn typed_attempt_metered(
+    function: &ResolvedFunction,
+    source_revision: &[u8; 32],
+    debit: Option<&mut dyn FnMut(usize) -> Option<()>>,
+) -> (Option<[u8; 32]>, usize) {
     let mut encoder = Encoder {
         hash: Sha256::new(),
         work: 1_048_576,
+        debit,
     };
-    encoder.bytes(DOMAIN)?;
-    encoder.bytes(source_revision)?;
-    encoder.span(function.span)?;
-    encoder.text(function.id.as_str())?;
-    encoder.text(&function.name)?;
-    encoder.ty(&function.return_type)?;
-    encoder.text(function.result_id.as_str())?;
-    encoder.number(function.params.len() as u64)?;
-    for param in &function.params {
-        encoder.span(param.span)?;
-        encoder.text(param.id.as_str())?;
-        encoder.text(&param.name)?;
-        encoder.ty(&param.ty)?;
-        encoder.ownership(param.ownership)?;
-    }
-    if !function.effects.is_empty() || function.yields.is_some() {
-        return None;
-    }
-    encoder.text("requires")?;
-    encoder.number(function.requires.len() as u64)?;
-    for expression in &function.requires {
-        encoder.expression(expression, 0)?;
-    }
-    encoder.text("body")?;
-    encoder.expression(&function.body, 0)?;
-    encoder.text("ensures")?;
-    encoder.number(function.ensures.len() as u64)?;
-    for expression in &function.ensures {
-        encoder.expression(expression, 0)?;
-    }
-    Some((
-        encoder.hash.finalize().into(),
-        1_048_576usize.checked_sub(encoder.work)?,
-    ))
+    let encoded = (|| {
+        encoder.bytes(DOMAIN)?;
+        encoder.bytes(source_revision)?;
+        encoder.span(function.span)?;
+        encoder.text(function.id.as_str())?;
+        encoder.text(&function.name)?;
+        encoder.ty(&function.return_type)?;
+        encoder.text(function.result_id.as_str())?;
+        encoder.number(function.params.len() as u64)?;
+        for param in &function.params {
+            encoder.span(param.span)?;
+            encoder.text(param.id.as_str())?;
+            encoder.text(&param.name)?;
+            encoder.ty(&param.ty)?;
+            encoder.ownership(param.ownership)?;
+        }
+        if !function.effects.is_empty() || function.yields.is_some() {
+            return None;
+        }
+        encoder.text("requires")?;
+        encoder.number(function.requires.len() as u64)?;
+        for expression in &function.requires {
+            encoder.expression(expression, 0)?;
+        }
+        encoder.text("body")?;
+        encoder.expression(&function.body, 0)?;
+        encoder.text("ensures")?;
+        encoder.number(function.ensures.len() as u64)?;
+        for expression in &function.ensures {
+            encoder.expression(expression, 0)?;
+        }
+        Some(())
+    })();
+    let spent = 1_048_576 - encoder.work;
+    let digest = encoded.map(|()| encoder.hash.finalize().into());
+    (digest, spent)
 }
 pub(in crate::workspace_graph) fn source(path: &str, module: &str, source: &str) -> [u8; 32] {
     let mut hash = Sha256::new();
@@ -506,5 +532,5 @@ pub(in crate::workspace_graph) fn source(path: &str, module: &str, source: &str)
 pub(in crate::workspace_graph) fn scratch_bytes() -> usize {
     // Fixed SHA state; no formatter or materialized source is created.
     // Expression recursion is independently bounded to 256 and constructs no heap.
-    std::mem::size_of::<Encoder>() + std::mem::size_of::<Sha256>()
+    std::mem::size_of::<Encoder<'_>>() + std::mem::size_of::<Sha256>()
 }

@@ -8,6 +8,13 @@ impl DeclarationIndex {
         functions: impl Iterator<Item = (&'a ResolvedFunction, IdentityOrigin)>,
         physical: &mut ReplayPhysicalReservation,
     ) -> Result<Self, crate::diagnostic::Diagnostic> {
+        Self::primitive_replay_metered(functions, physical, &mut |_| Ok(()))
+    }
+    pub(crate) fn primitive_replay_metered<'a>(
+        functions: impl Iterator<Item = (&'a ResolvedFunction, IdentityOrigin)>,
+        physical: &mut ReplayPhysicalReservation,
+        debit: &mut dyn FnMut(usize) -> Result<(), crate::diagnostic::Diagnostic>,
+    ) -> Result<Self, crate::diagnostic::Diagnostic> {
         let fail = || {
             crate::diagnostic::Diagnostic::io(
                 "SPX-H006",
@@ -20,11 +27,48 @@ impl DeclarationIndex {
             work = work
                 .checked_sub(function.params.len().checked_add(1).ok_or_else(fail)?)
                 .ok_or_else(fail)?;
-            if index.declarations.contains_key(&function.id)
-                || index.functions_by_name.contains_key(&function.name)
-            {
-                return Err(fail());
+            // Scan exact retained keys before the tree operations. The second
+            // byte debit covers their search/insertion comparisons (each key
+            // can be compared at most once by each tree operation).
+            for key in index.declarations.keys() {
+                debit(
+                    key.as_str()
+                        .len()
+                        .checked_add(function.id.as_str().len())
+                        .and_then(|n| n.checked_mul(3))
+                        .ok_or_else(fail)?,
+                )?;
+                if key == &function.id {
+                    return Err(fail());
+                }
             }
+            for key in index.functions_by_name.keys() {
+                debit(
+                    key.len()
+                        .checked_add(function.name.len())
+                        .and_then(|n| n.checked_mul(3))
+                        .ok_or_else(fail)?,
+                )?;
+                if key == &function.name {
+                    return Err(fail());
+                }
+            }
+            debit(
+                function
+                    .id
+                    .as_str()
+                    .len()
+                    .checked_mul(4)
+                    .and_then(|n| {
+                        function
+                            .name
+                            .len()
+                            .checked_mul(2)
+                            .and_then(|m| n.checked_add(m))
+                    })
+                    .and_then(|n| n.checked_add(1))
+                    .ok_or_else(fail)?,
+            )?;
             let node = crate::cleanup_plan::replay_btree_node_upper::<DeclarationId, Declaration>()
                 .ok_or_else(fail)?;
             let names = crate::cleanup_plan::replay_btree_node_upper::<String, DeclarationId>()
@@ -53,6 +97,28 @@ impl DeclarationIndex {
             physical
                 .reserve(function.id.as_str().len())
                 .map_err(|_| fail())?;
+            debit(
+                function
+                    .result_id
+                    .as_str()
+                    .len()
+                    .checked_mul(2)
+                    .and_then(|n| n.checked_add(function.body.id.as_str().len()))
+                    .and_then(|n| n.checked_add(function.id.as_str().len().checked_mul(2)?))
+                    .ok_or_else(fail)?,
+            )?;
+            for parameter in &function.params {
+                debit(
+                    parameter
+                        .id
+                        .as_str()
+                        .len()
+                        .checked_mul(2)
+                        .and_then(|n| n.checked_add(function.id.as_str().len()))
+                        .and_then(|n| n.checked_add(32))
+                        .ok_or_else(fail)?,
+                )?;
+            }
             let owner = FunctionExecutionId::Monomorphic(function.id.clone());
             if !function.result_id.matches_result(&owner)
                 || !function.body.id.matches(&owner, "body")
@@ -85,10 +151,11 @@ impl DeclarationIndex {
 impl DeclarationIndex {
     /// Imported declarations are identified by persistent ID; their original
     /// names never enter the caller's authored alias namespace.
-    pub(crate) fn append_scalar_helper_replay(
+    pub(crate) fn append_scalar_helper_replay_metered(
         &mut self,
         function: &ResolvedFunction,
         physical: &mut ReplayPhysicalReservation,
+        debit: &mut dyn FnMut(usize) -> Result<(), crate::diagnostic::Diagnostic>,
     ) -> Result<(), crate::diagnostic::Diagnostic> {
         let fail = || {
             crate::diagnostic::Diagnostic::io(
@@ -96,8 +163,20 @@ impl DeclarationIndex {
                 "scalar helper declaration reconstruction refused",
             )
         };
-        if self.declarations.contains_key(&function.id)
-            || !is_scalar_resolved_type(&function.return_type)
+        for key in self.declarations.keys() {
+            debit(
+                key.as_str()
+                    .len()
+                    .checked_add(function.id.as_str().len())
+                    .and_then(|n| n.checked_mul(3))
+                    .ok_or_else(fail)?,
+            )?;
+            if key == &function.id {
+                return Err(fail());
+            }
+        }
+        debit(function.params.len().checked_add(1).ok_or_else(fail)?)?;
+        if !is_scalar_resolved_type(&function.return_type)
             || function
                 .params
                 .iter()
@@ -114,6 +193,29 @@ impl DeclarationIndex {
                     .ok_or_else(fail)?,
             )
             .map_err(|_| fail())?;
+        debit(
+            function
+                .id
+                .as_str()
+                .len()
+                .checked_mul(4)
+                .and_then(|n| n.checked_add(function.name.len()))
+                .and_then(|n| n.checked_add(function.result_id.as_str().len().checked_mul(2)?))
+                .and_then(|n| n.checked_add(function.body.id.as_str().len()))
+                .ok_or_else(fail)?,
+        )?;
+        for parameter in &function.params {
+            debit(
+                parameter
+                    .id
+                    .as_str()
+                    .len()
+                    .checked_mul(2)
+                    .and_then(|n| n.checked_add(function.id.as_str().len()))
+                    .and_then(|n| n.checked_add(32))
+                    .ok_or_else(fail)?,
+            )?;
+        }
         let owner = FunctionExecutionId::Monomorphic(function.id.clone());
         if !function.result_id.matches_result(&owner)
             || !function.body.id.matches(&owner, "body")
