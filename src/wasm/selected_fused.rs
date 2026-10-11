@@ -1,11 +1,17 @@
 //! Selected `FusedConstructionV1` Core-Wasm executor for OPT #747.
 //!
-//! Default admission is closed. The only publishing entry, [`accept`], takes a
-//! [`ValidatedSelection`], which cannot be constructed until root supplies the
-//! independently authenticated source proof, the typed source/HIR join and
-//! complete selected validation. The older descriptor, capacity summary and
-//! rescaled 32-row HIR remain an unvalidated test-only precursor
-//! (`precursor`); they produce no [`Artifact`] and grant no count authority.
+//! Default admission is closed: no public emitter, profile or route calls this
+//! module. The only publishing entry, [`accept`], receives the private
+//! `hir::selected_fused_candidate::ValidatedFusedSelection` owner, whose only
+//! constructor (`validate_selected`) has run the source passes, resolution of
+//! the original source, the independent typed join, full selected validation
+//! and selected capacity. `accept` rederives every node it lowers inside the
+//! owner's fresh `with_joined` callback, requires `Joined::still_current`,
+//! cross-checks the owner's capacity facts and then runs every executor-side
+//! check below. Raw HIR or a bare `Joined` is never accepted. The older
+//! descriptor, capacity summary and rescaled 32-row HIR remain an unvalidated
+//! test-only precursor (`precursor`); they produce no [`Artifact`] and grant
+//! no count authority.
 //!
 //! Lowering consumes the function's exact canonical cleanup plan: admission
 //! revalidates the attached cleanup and loan plans against fresh builds, the
@@ -142,7 +148,8 @@ pub(in crate::wasm) struct Grant {
     /// Lease and view tables carved from the invocation account.
     pub(in crate::wasm) metadata_bytes: u64,
     pub(in crate::wasm) row_bytes: u64,
-    /// Complete invocation account: row backing plus lease/view tables.
+    /// Complete per-invocation physical account: the precharged registry
+    /// entries' bytes, then row backing, then lease/view tables.
     pub(in crate::wasm) account_bytes: u64,
     /// Namespace registry entries the host precharges at `start`.
     pub(in crate::wasm) registry_entries: u64,
@@ -151,30 +158,51 @@ pub(in crate::wasm) struct Grant {
 }
 
 /// Publishable selected module. Only [`accept`] constructs one.
-#[allow(dead_code, reason = "constructed only after root selected activation")]
 pub(in crate::wasm) struct Artifact {
     pub(in crate::wasm) bytes: Vec<u8>,
     pub(in crate::wasm) grant: Grant,
 }
 
-/// Not constructible until root activation: it will carry the authenticated
-/// `SourceProof`, the `hir::fused_construction::join::Joined` selection, the
-/// producer-bound carrier mapping and the complete selected validation
-/// receipt. The uninhabited field keeps every publishing path closed.
-#[allow(dead_code, reason = "constructed only after root selected activation")]
-pub(in crate::wasm) struct ValidatedSelection<'a> {
-    pending: PendingRootValidation,
-    held: std::marker::PhantomData<&'a crate::hir::ResolvedProgram>,
-}
-enum PendingRootValidation {}
-
-/// The selected publishing entry. Root hookup replaces the uninhabited field
-/// with its validated owner, builds [`Selected`] from it, calls
-/// [`facts::check`] and then [`module`]; no step may be skipped or rebuilt
-/// from the unvalidated precursor.
-#[allow(dead_code, reason = "called only after root selected activation")]
-pub(in crate::wasm) fn accept(selection: ValidatedSelection<'_>) -> Result<Artifact, Refusal> {
-    match selection.pending {}
+/// The selected publishing entry. Every lowered node is rederived inside the
+/// owner's fresh join; nothing from an earlier join, the precursor or raw HIR
+/// is consulted. The owner's capacity facts must agree with the joined
+/// dimensions, and then every executor-side check runs before lowering.
+pub(in crate::wasm) fn accept(
+    owner: &crate::hir::selected_fused_candidate::ValidatedFusedSelection<'_>,
+) -> Result<Artifact, Refusal> {
+    let source = owner.source();
+    let program = owner.program();
+    let capacity = owner.capacity();
+    // Refusal-only carrier cross-check; carriers themselves come from their
+    // producing field reads inside the lowering.
+    let mapping = crate::construction_fusion::native_provenance::derive(source, program)
+        .ok_or(Refusal::Carrier)?;
+    owner
+        .with_joined(|joined| {
+            if !joined.still_current(source, program) {
+                return Err(Refusal::Stale);
+            }
+            let selected = facts::from_joined(joined, source, program, Some(&mapping))?;
+            let extent = u64::from(selected.rows)
+                .checked_mul(selected.width)
+                .ok_or(Refusal::Layout)?;
+            if capacity.rows != selected.rows
+                || capacity.width != selected.width
+                || capacity.extent != extent
+                || capacity.fused_backing_events != 1
+                || capacity.bytes_copy_sites == 0
+                || capacity.bytes_copy_sites > crate::byte_data_capacity::MAX_BYTES_COPY_SITES
+                || capacity.owned_byte_payload_bytes < extent
+                || capacity.owned_byte_payload_bytes
+                    > crate::byte_data_capacity::MAX_OWNED_BYTE_PAYLOAD_BYTES
+            {
+                return Err(Refusal::Capacity);
+            }
+            facts::check(&selected, source, program)?;
+            let (bytes, grant) = module(&selected)?;
+            Ok(Artifact { bytes, grant })
+        })
+        .map_err(|_| Refusal::Join)?
 }
 
 /// Lower an already checked selection. Callers must have run [`facts::check`]

@@ -1,11 +1,11 @@
 // Owning driver for the selected Core-Wasm FusedConstructionV1 executor.
-// Authored; execution is pending the root gate run. Each process holds the
-// realm's single namespace, so namespace-dimension controls use their own
-// mode. The module under test is the UNVALIDATED precursor lowering of the
-// actual selected function; nothing here is a publishable artifact.
+// Authored; execution is pending the root gate run. The module under test is
+// the publishable artifact `accept` emitted from the ORIGINAL 4096-row source
+// through `validate_selected`. Each process holds the realm's single
+// namespace, so namespace-dimension controls run as their own mode.
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
-import {createAccount, createAuthorizedHost, createSharedNamespace, SelectedRefusal} from './host.mjs';
+import {createAccount, createAuthorizedHost, createSharedNamespace} from './host.mjs';
 
 const [wasmPath, digest, rowsText, widthText, metadataText, rowBytesText, accountText, registryText,
   orderText, textText, mode, expectedText] = process.argv.slice(2);
@@ -14,17 +14,22 @@ const grant = Object.freeze({digest, rows: Number(rowsText), width: Number(width
   metadataBytes: Number(metadataText), rowBytes: Number(rowBytesText), accountBytes: Number(accountText),
   registryEntries: Number(registryText), order: orderText.split(',')});
 const rows = grant.rows, width = grant.width, extent = rows * width;
+const registryBytes = grant.registryEntries * (8 + 4 * 6 + 1);
+const registryReservation = Math.ceil(registryBytes / 8) * 8;
 const R = BigInt(rows), W = BigInt(width), textBytes = Number(textText);
 const expected = BigInt(expectedText);
 const LITERAL = 1024;
-const isRefusal = code => error => error instanceof SelectedRefusal && error.code === code;
+// By name and code: refusals from separately loaded module copies are
+// distinct classes but carry the same identity.
+const isRefusal = code => error => error?.name === 'SelectedRefusal' && error.code === code;
 const refusal = (operation, code) => assert.throws(operation, isRefusal(code));
 let observed = null;
 const capture = code => error => { observed = error.observation; return isRefusal(code)(error); };
-const exact = () => createAccount(grant.accountBytes);
+let namespace = null;
+const exact = () => createAccount(namespace, grant.accountBytes);
 
-// A complete successful guest invocation: one backing, exact charges, Strings
-// ordinary, every child settled, every entry retired and precharge released.
+// A complete successful guest invocation: one backing, exact physical debits,
+// Strings ordinary, every child settled, every entry retired.
 function success(result) {
   const o = result.observation, [domain] = o.domains;
   assert.equal(result.status, 0);
@@ -41,26 +46,32 @@ function success(result) {
   assert.equal(domain.issued, rows);
   assert(domain.peakViews >= 1 && domain.peakViews <= 64);
   assert.equal(o.fusedEvents, 1);
-  assert.equal(o.accountCarved, grant.accountBytes);
+  assert.equal(o.registryDebit, registryBytes);
+  assert.equal(o.accountUsed, grant.accountBytes);
   assert.equal(o.strings, rows);
   assert.equal(o.stringDrops, rows);
   assert.equal(o.stringBytes, rows * textBytes);
   assert.equal(o.liveEntries, 0);
   assert.equal(o.outstandingQuota, 0);
   assert(o.nextSequence > o.firstSequence);
+  if (o.finalizers !== undefined) {
+    const contained = o.finalizers.filter(event => event.container === true).map(event => event.kind);
+    assert.deepEqual(contained, Array.from({length: rows}, () => grant.order.filter(role => role !== 'scalar')).flat());
+  }
   return o;
 }
-// The guest's own canonical construction, driven through the same imports.
+// The guest's own canonical construction, through the same imports. Returns
+// the last row's String and owner tokens as well.
 function build(c) {
   const domain = c.start(R, W);
-  let vector = c.vec_new(domain, R);
+  let vector = c.vec_new(domain, R), text = 0n, lease = 0n;
   for (let row = 0; row < rows; row++) {
-    const text = c.string_literal(domain, LITERAL, textBytes);
-    const lease = c.issue(domain, BigInt(row));
+    text = c.string_literal(domain, LITERAL, textBytes);
+    lease = c.issue(domain, BigInt(row));
     vector = c.row_push(domain, vector, BigInt(row), text, lease);
   }
   c.complete(domain);
-  return [domain, vector];
+  return [domain, vector, text, lease];
 }
 function settledControl(instance, body, failure = null) {
   const result = instance.session({account: exact()}, body), [domain] = result.observation.domains;
@@ -76,11 +87,12 @@ if (mode === 'original') {
   assert.equal(extent, 12288);
   assert.equal(rows * textBytes, 12288);
   assert.equal(expected, 8386560n);
-  const namespace = createSharedNamespace({registryEntries: 65536});
+  namespace = createSharedNamespace({registryEntries: 65536});
   const instance = await createAuthorizedHost(namespace).instantiate(bytes, grant);
-  // Reentry: the namespace sequence continues and never resets.
+  // Reentry: the sequence continues; one account is never reset or refunded,
+  // so three invocations consume exactly three debits and a fourth refuses.
+  const account = createAccount(namespace, 3 * grant.accountBytes);
   let previous = 0n;
-  const account = exact();
   for (let run = 0; run < 3; run++) {
     const o = success(instance.invoke({account}));
     assert.equal(o.events, 1);
@@ -88,10 +100,15 @@ if (mode === 'original') {
     assert(o.firstSequence > previous);
     previous = o.nextSequence - 1n;
   }
+  assert.throws(() => instance.invoke({account}), isRefusal('account'));
 } else if (mode === 'controls') {
   assert.deepEqual(grant.order, ['scalar', 'text', 'payload']);
   // Room for exactly two concurrent domains' precharge, plus one entry.
-  const namespace = createSharedNamespace({registryEntries: 2 * grant.registryEntries + 1});
+  namespace = createSharedNamespace({registryEntries: 2 * grant.registryEntries + 1});
+  assert.deepEqual(Reflect.ownKeys(namespace), ['observe', 'createAccount', 'createHost']);
+  const opaqueAccount = exact();
+  assert.deepEqual(Reflect.ownKeys(opaqueAccount), ['byteLength']);
+  assert(Object.isFrozen(namespace) && Object.isFrozen(opaqueAccount));
   refusal(() => createSharedNamespace(), 'namespace-singleton');
   refusal(() => createAuthorizedHost(Object.freeze({observe: namespace.observe})), 'namespace');
   const host = createAuthorizedHost(namespace);
@@ -103,16 +120,20 @@ if (mode === 'original') {
   }
   const instance = await host.instantiate(bytes, grant, {controls: true});
 
-  // Physical account: exact and +1 succeed; one short refuses at the first
-  // Bytes operand, after that row's String, before any payload allocation.
-  success(instance.invoke({account: exact()}));
-  const plus = success(instance.invoke({account: createAccount(grant.accountBytes + 1)}));
+  // Physical account: exact and +1 succeed; an exact account is consumed and
+  // never reset; one short refuses at the first Bytes operand, after that
+  // row's String, before any payload allocation.
+  const once = exact();
+  success(instance.invoke({account: once}));
+  assert.throws(() => instance.invoke({account: once}), isRefusal('account'));
+  const plus = success(instance.invoke({account: createAccount(namespace, grant.accountBytes + 1)}));
   assert.equal(plus.accountBytes, grant.accountBytes + 1);
-  assert.throws(() => instance.invoke({account: createAccount(grant.accountBytes - 1)}), capture('metadata'));
+  assert.throws(() => instance.invoke({account: createAccount(namespace, grant.accountBytes - 1)}),
+    capture('metadata'));
   assert.equal(observed.domains[0].phase, 'Abandoned');
   assert.equal(observed.domains[0].allocations, 0);
   assert.equal(observed.domains[0].metadataBytes, 0);
-  assert.equal(observed.accountCarved, rows * grant.rowBytes);
+  assert.equal(observed.accountUsed, registryReservation + rows * grant.rowBytes);
   assert.equal(observed.events, 0);
   assert.equal(observed.cumulative, 0);
   assert.equal(observed.strings, 1);
@@ -134,8 +155,7 @@ if (mode === 'original') {
 
   // Partial faults at row cuts: the plan's exact push failure exit, the
   // selected status first and sticky, one release, nothing refunded.
-  const cuts = rows <= 64 ? [...Array(rows).keys()] : [0, 1, 2, rows >> 1, rows - 2, rows - 1];
-  for (const cut of cuts) {
+  for (const cut of [0, 1, 2, rows >> 1, rows - 2, rows - 1]) {
     const result = instance.invoke({account: exact(), faults: {push: cut}}), o = result.observation;
     assert.equal(result.status, 15);
     assert.equal(o.selected, 15);
@@ -145,6 +165,7 @@ if (mode === 'original') {
     assert.equal(o.domains[0].releases, 1);
     assert.equal(o.events, 1);
     assert.equal(o.cumulative, extent);
+    assert.equal(o.accountUsed, grant.accountBytes);
     assert.equal(o.strings, cut + 1);
     assert.equal(o.stringDrops, cut + 1);
     assert.equal(o.liveEntries, 0);
@@ -153,59 +174,100 @@ if (mode === 'original') {
   assert.equal(vec.status, 15);
   assert.equal(vec.observation.domains[0].allocations, 0);
   assert.equal(vec.observation.events, 0);
-  assert.equal(vec.observation.accountCarved, 0);
-  // Physical payload failure is fail-stop: carving and charges precede it.
+  assert.equal(vec.observation.accountUsed, registryReservation);
+  // Physical payload failure is fail-stop: debits and charges precede it.
   assert.throws(() => instance.invoke({account: exact(), faults: {payload: true}}),
     error => { observed = error.observation; return error.message === 'selected-fused:physical-payload-fault'; });
   assert.equal(observed.domains[0].phase, 'Abandoned');
   assert.equal(observed.domains[0].allocations, 0);
-  assert.equal(observed.accountCarved, grant.accountBytes);
+  assert.equal(observed.accountUsed, grant.accountBytes);
   assert.equal(observed.events, 1);
   assert.equal(observed.liveEntries, 0);
   success(instance.invoke({account: exact()}));
 
-  // Foreign host and foreign instance: a live token from either is refused in
-  // a fresh domain, and its owner is unaffected and still publishes.
-  const otherHost = createAuthorizedHost(namespace);
+  // Separately loaded module copies share the one realm namespace authority:
+  // neither can create a namespace, both mint from one sequence, and a live
+  // token of every kind from one copy is refused by the other with no effect.
+  const copyA = await import(new URL('./host.mjs?copy=A', import.meta.url));
+  const copyB = await import(new URL('./host.mjs?copy=B', import.meta.url));
+  refusal(() => copyA.createSharedNamespace(), 'namespace-singleton');
+  refusal(() => copyB.createSharedNamespace({registryEntries: 1}), 'namespace-singleton');
+  const fromA = await copyA.createAuthorizedHost(namespace).instantiate(bytes, grant, {controls: true});
+  const fromB = await copyB.createAuthorizedHost(namespace).instantiate(bytes, grant, {controls: true});
   const third = await host.instantiate(bytes, grant, {controls: true});
-  const strangers = [[await otherHost.instantiate(bytes, grant, {controls: true}), 'foreign-host'],
-    [await host.instantiate(bytes, grant, {controls: true}), 'foreign-instance']];
-  for (const [stranger, code] of strangers) {
-    const outer = instance.session({account: exact()}, a => {
-      const da = a.start(R, W), va = a.vec_new(da, R);
-      const ta = a.string_literal(da, LITERAL, textBytes), oa = a.issue(da, 0n);
-      const inner = stranger.session({account: exact()}, b => {
-        const db = b.start(R, W);
-        // Two domains' precharge are held; a third cannot be precharged.
-        assert.throws(() => third.session({account: exact()}, c => c.start(R, W)), isRefusal('registry-exhausted'));
-        refusal(() => b.vec_new(da, R), code);
-        const vb = b.vec_new(db, R), tb = b.string_literal(db, LITERAL, textBytes), ob = b.issue(db, 0n);
-        for (const [left, right] of [[da, db], [va, vb], [ta, tb], [oa, ob]]) assert.notEqual(left, right);
-        refusal(() => b.row_push(db, vb, 0n, tb, oa), code);
-        refusal(() => b.row_push(db, vb, 0n, tb, ob), code);
-        b.abort(db);
-        refusal(() => b.owner_drop(db, oa), code);
-        // Same registry entry, next sequence: never minted, so stale.
-        refusal(() => b.owner_drop(db, ob + (1n << 20n)), 'stale');
-        b.owner_drop(db, ob);
-        b.string_drop(db, tb);
-        b.vec_drop(db, vb);
-        b.settle_abort(db);
-        return 0n;
-      });
-      assert.equal(inner.observation.domains[0].phase, 'Settled');
-      assert.equal(inner.observation.domains[0].failure, code);
-      assert.equal(inner.observation.domains[0].releases, 1);
-      const renewed = a.row_push(da, va, 0n, ta, oa);
-      a.abort(da);
-      a.vec_drop(da, renewed);
-      a.settle_abort(da);
+  const outer = fromA.session({account: copyA.createAccount(namespace, grant.accountBytes)}, a => {
+    let [da, va, ta, oa] = build(a), row;
+    const view = a.payload_borrow(da, va, 0n);
+    a.end_borrow(da, view);
+    [row, va] = a.vec_pop(da, va);
+    const clone = a.deep_clone(da, row);
+    const borrowed = a.row_borrow(da, row);
+    const inner = fromB.session({account: copyB.createAccount(namespace, grant.accountBytes)}, b => {
+      const db = b.start(R, W);
+      // Two domains' precharge are held; a third cannot be precharged.
+      assert.throws(() => third.session({account: exact()}, c => c.start(R, W)), isRefusal('registry-exhausted'));
+      const vb = b.vec_new(db, R), tb = b.string_literal(db, LITERAL, textBytes), ob = b.issue(db, 0n);
+      const tokensA = [da, va, ta, oa, borrowed, row, clone], tokensB = [db, vb, tb, ob];
+      for (const left of tokensA) for (const right of tokensB) assert.notEqual(left, right);
+      refusal(() => b.vec_new(da, R), 'foreign-host');
+      b.abort(db);
+      for (const [operation, token] of [[b.vec_drop, va], [b.string_drop, ta], [b.owner_drop, oa],
+        [b.end_borrow, borrowed], [b.row_drop, row], [b.bytes_drop, clone]]) {
+        refusal(() => operation(db, token), 'foreign-host');
+      }
+      refusal(() => b.owner_drop(db, ob + (1n << 20n)), 'stale');
+      b.owner_drop(db, ob);
+      b.string_drop(db, tb);
+      b.vec_drop(db, vb);
+      b.settle_abort(db);
       return 0n;
     });
-    assert.equal(outer.observation.domains[0].phase, 'Settled');
-    assert.equal(outer.observation.domains[0].failure, null);
-    assert.equal(outer.observation.liveEntries, 0);
-  }
+    assert.equal(inner.observation.domains[0].phase, 'Settled');
+    assert.equal(inner.observation.domains[0].failure, 'foreign-host');
+    // No effect on the owner: every presented token still authenticates.
+    assert.equal(a.view_byte(da, borrowed, 0n), 0);
+    a.end_borrow(da, borrowed);
+    assert.equal(a.bytes_byte(da, clone, 0), 0);
+    a.bytes_drop(da, clone);
+    a.row_drop(da, row);
+    a.vec_drop(da, va);
+    return 0n;
+  });
+  assert.equal(outer.observation.domains[0].phase, 'Settled');
+  assert.equal(outer.observation.domains[0].failure, null);
+  assert.equal(outer.observation.domains[0].releases, 1);
+  assert.equal(outer.observation.liveEntries, 0);
+  assert.deepEqual(outer.observation.finalizers.filter(event => event.container === 'row').map(event => event.kind),
+    [...grant.order].reverse().filter(role => role !== 'scalar'));
+  // Foreign instance of the same host copy.
+  const sibling = await host.instantiate(bytes, grant, {controls: true});
+  instance.session({account: exact()}, a => {
+    const da = a.start(R, W), va = a.vec_new(da, R);
+    sibling.session({account: exact()}, b => {
+      const db = b.start(R, W);
+      refusal(() => b.vec_new(da, R), 'foreign-instance');
+      refusal(() => b.vec_len(db, va), 'foreign-instance');
+      b.abort(db);
+      b.settle_abort(db);
+      return 0n;
+    });
+    a.abort(da);
+    a.vec_drop(da, va);
+    a.settle_abort(da);
+    return 0n;
+  });
+  // Foreign domain within one instance and invocation.
+  instance.session({account: createAccount(namespace, 2 * grant.accountBytes)}, c => {
+    const first = c.start(R, W);
+    c.abort(first);
+    c.settle_abort(first);
+    const second = c.start(R, W), vector = c.vec_new(second, R);
+    refusal(() => c.vec_len(second, first), 'foreign');
+    c.abort(second);
+    c.vec_drop(second, vector);
+    c.settle_abort(second);
+    return 0n;
+  });
   // One held account and one invocation per instance at a time.
   const held = exact();
   instance.session({account: held}, () => {
@@ -283,7 +345,7 @@ if (mode === 'original') {
   }, 'borrowed');
   const views = settledControl(instance, c => {
     const [domain, vector] = build(c), open = [];
-    for (let slot = 0; slot < 64; slot++) open.push(c.payload_borrow(domain, vector, BigInt(slot % rows)));
+    for (let slot = 0; slot < 64; slot++) open.push(c.payload_borrow(domain, vector, BigInt(slot)));
     refusal(() => c.payload_borrow(domain, vector, 0n), 'view-capacity');
     for (const view of open) c.end_borrow(domain, view);
     c.vec_drop(domain, vector);
@@ -338,10 +400,10 @@ if (mode === 'original') {
     return 0n;
   }, 'unpublished');
 } else if (mode === 'exhaustion') {
-  // Sequence exhaustion refuses before mutation; the namespace never resets.
-  const namespace = createSharedNamespace({registryEntries: grant.registryEntries, sequenceLimit: 3});
-  const host = createAuthorizedHost(namespace);
-  const exhausted = await host.instantiate(bytes, grant, {controls: true});
+  // Sequence exhaustion refuses before mutation, in every module copy, and
+  // the shared namespace never resets.
+  namespace = createSharedNamespace({registryEntries: grant.registryEntries, sequenceLimit: 3});
+  const exhausted = await createAuthorizedHost(namespace).instantiate(bytes, grant, {controls: true});
   const spent = exhausted.session({account: exact()}, c => {
     const d = c.start(R, W), v = c.vec_new(d, R), t = c.string_literal(d, LITERAL, textBytes);
     refusal(() => c.issue(d, 0n), 'namespace-exhausted');
@@ -354,8 +416,11 @@ if (mode === 'original') {
   assert.equal(spent.observation.domains[0].metadataBytes, 0);
   assert.equal(spent.observation.liveEntries, 0);
   assert.throws(() => exhausted.invoke({account: exact()}), isRefusal('namespace-exhausted'));
-  const later = await createAuthorizedHost(namespace).instantiate(bytes, grant);
-  assert.throws(() => later.invoke({account: exact()}), isRefusal('namespace-exhausted'));
+  const copy = await import(new URL('./host.mjs?copy=exhaustion', import.meta.url));
+  refusal(() => copy.createSharedNamespace(), 'namespace-singleton');
+  const later = await copy.createAuthorizedHost(namespace).instantiate(bytes, grant);
+  assert.throws(() => later.invoke({account: copy.createAccount(namespace, grant.accountBytes)}),
+    isRefusal('namespace-exhausted'));
   assert.equal(namespace.observe().nextSequence, 4n);
 } else {
   throw new Error(`unknown selected driver mode ${mode}`);

@@ -452,9 +452,10 @@ impl<'a> Lower<'a> {
     }
 
     /// The exact failure exit for `expression`: select the status first (the
-    /// host keeps the first selection sticky), end open leased views, bracket
-    /// an unfinished construction with abort/settle, then emit the exit's
-    /// finalizers verbatim and return the selected failure.
+    /// host keeps the first selection sticky), end exactly the leased views
+    /// whose loans are live at `expression`, bracket an unfinished
+    /// construction with abort/settle, then emit the exit's finalizers
+    /// verbatim and return the selected failure.
     pub(super) fn fail(&mut self, expression: &ExpressionId, failure: Failure, status: i32) -> Result<(), Refusal> {
         let plan = self.cleanup.plan;
         let source = StatusSourceId {
@@ -500,9 +501,14 @@ impl<'a> Lower<'a> {
                 }
             }
         }
+        let live = self.live_views_at(expression)?;
         self.op(I::I32Const(status));
         self.op(I::Call(import::SELECT_FAILURE));
-        self.end_views();
+        // Only the loans the plan holds live here end, and they end before any
+        // owner finalizer. Normal-path scopes are untouched: this code exits.
+        for view in live {
+            self.end_view(view);
+        }
         let building = self.phase == super::lower::Phase::Building;
         if building {
             self.op(I::LocalGet(self.domain));

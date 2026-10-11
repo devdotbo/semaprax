@@ -1,12 +1,7 @@
 //! Owning selected Core-Wasm definitions for OPT #747. Authored, unexecuted.
-//!
-//! Every executable definition here drives the UNVALIDATED precursor: ordinary
-//! `check` keeps SPX-T267 above 32 rows, so `rescaled` resolves the genuine
-//! 32-row program and moves only its count literals (right-aligned so the
-//! parsed source shares every span), and `selected_capacity` stands in for the
-//! pending source/HIR capacity selector. Neither is selected validation or
-//! count authority, and none of these definitions produces an `Artifact`.
-use super::precursor::{inspect, PrecursorModule};
+//! Publishing tests resolve the original source through the sealed full-validation
+//! factory. Rescaled HIR below is confined to unvalidated precursor refusal controls.
+use super::precursor::inspect;
 use super::*;
 use crate::byte_data_capacity::{
     analyze_with_strategy, AllocationStrategy, CapacityFlow as F, FunctionCapacityInput,
@@ -87,18 +82,7 @@ fn capacity_for(source: &crate::ast::Program, program: &ResolvedProgram) -> Prog
     let width = u64::try_from(descriptor.width()).unwrap();
     selected_capacity(descriptor.byte_site().id.as_str(), rows, width)
 }
-fn text_bytes(inputs: &Inputs) -> u64 {
-    let descriptor = crate::construction_fusion::derive(&inputs.source, &inputs.program).unwrap();
-    descriptor.string_bytes() / u64::try_from(descriptor.count()).unwrap()
-}
-fn module(inputs: &Inputs) -> PrecursorModule {
-    let summary = capacity(inputs);
-    inspect(&inputs.source, &inputs.program, &summary)
-        .unwrap()
-        .module(&inputs.source, &inputs.program)
-        .unwrap()
-}
-fn run_node(module: &PrecursorModule, text_bytes: u64, mode: &str, expected: i64) {
+fn run_node(module: &Artifact, text_bytes: u64, mode: &str, expected: i64) {
     let grant = &module.grant;
     let directory = std::env::temp_dir().join(format!(
         "semaprax-selected-fused-{}-{mode}-{}",
@@ -139,14 +123,27 @@ fn run_node(module: &PrecursorModule, text_bytes: u64, mode: &str, expected: i64
     );
 }
 
+fn accepted(count: u32) -> (Artifact, u64) {
+    let source = crate::parse(&text(count), "selected-fused-wasm.spx").unwrap();
+    let owner = crate::hir::selected_fused_candidate::validate_selected(&source)
+        .expect("original source passes full selected validation");
+    let descriptor = crate::construction_fusion::derive(owner.source(), owner.program()).unwrap();
+    let text_bytes = descriptor.string_bytes() / u64::from(count);
+    let artifact = accept(&owner).expect("sealed current owner passes the private Wasm receiver");
+    (artifact, text_bytes)
+}
+
 #[test]
-fn publishing_entry_stays_uninhabited_until_root_validation() {
-    // The only Artifact-producing entry takes an uninhabited validated owner.
-    let entry: fn(ValidatedSelection<'_>) -> Result<Artifact, Refusal> = accept;
-    let _ = entry;
+fn publishing_entry_requires_the_sealed_current_validation_owner() {
+    let source = crate::parse(ORIGINAL, "selected-fused-wasm.spx").unwrap();
+    let owner = crate::hir::selected_fused_candidate::validate_selected(&source).unwrap();
+    let original = accept(&owner).unwrap();
+    // Moving the owner cannot retain an earlier join's node addresses.
+    let moved = Box::new(owner);
+    assert_eq!(original.bytes, accept(&moved).unwrap().bytes);
     let parent = include_str!("../selected_fused.rs");
     assert!(parent.contains("#[cfg(test)]\nmod precursor;"));
-    assert!(parent.contains("enum PendingRootValidation {}"));
+    assert!(!parent.contains("enum PendingRootValidation {}"));
     let precursor = include_str!("precursor.rs");
     assert!(!precursor.contains("Artifact {"));
 }
@@ -240,14 +237,13 @@ fn noncanonical_cleanup_or_loan_plans_refuse_before_lowering() {
 
 #[test]
 fn selected_module_is_wasm1_private_exact_and_deterministic() {
-    let selected = inputs(4096);
-    let lowered = module(&selected);
+    let (lowered, _) = accepted(4096);
     // Wasm 1.0 only: no reference types, multi-value, bulk memory or sign
     // extension, so no frozen profile gains a newly required feature.
     wasmparser::Validator::new_with_features(wasmparser::WasmFeatures::WASM1)
         .validate_all(&lowered.bytes)
         .unwrap();
-    assert_eq!(lowered.bytes, module(&selected).bytes);
+    assert_eq!(lowered.bytes, accepted(4096).0.bytes);
     let mut imports = Vec::new();
     let mut types = Vec::new();
     let mut exports = Vec::new();
@@ -310,7 +306,7 @@ fn selected_module_is_wasm1_private_exact_and_deterministic() {
     assert_eq!(mirrored, IMPORTS.map(|(name, _, _)| name));
     assert!(host.contains(&format!("NAMESPACE = '{NAMESPACE}'")));
     assert_eq!(lowered.grant.metadata_bytes, 91_456);
-    assert_eq!(lowered.grant.account_bytes, 4096 * 24 + 91_456);
+    assert_eq!(lowered.grant.account_bytes, (layout::registry_entries(4096) * 33).next_multiple_of(8) + 4096 * 24 + 91_456);
     assert_eq!(lowered.grant.registry_entries, 2 + 3 * 4096 + 64 + 31 + 1);
     assert_eq!(lowered.grant.digest.len(), 64);
 }
@@ -337,7 +333,7 @@ fn layout_ledger_matches_actual_host_tables_registry_and_account() {
     assert_eq!(layout::MAX_VIEWS, 64);
     assert_eq!(layout::metadata_bytes(4096), 4096 * 22 + 64 * 21);
     assert_eq!(layout::metadata_bytes(33), 2_070);
-    assert_eq!(layout::account_bytes(33), 33 * 24 + 2_070);
+    assert_eq!(layout::account_bytes(33), (layout::registry_entries(33) * 33).next_multiple_of(8) + 33 * 24 + 2_072);
     assert_eq!(layout::registry_entries(33), 2 + 99 + 64 + 31 + 1);
     assert!(layout::fits_ordinary_vec(4096));
     assert!(!layout::fits_ordinary_vec(4097));
@@ -358,12 +354,10 @@ fn layout_ledger_matches_actual_host_tables_registry_and_account() {
 
 #[test]
 fn original_4096_rows_execute_exact_payload_and_sum_through_selected_host() {
-    let selected = inputs(4096);
-    let lowered = module(&selected);
+    let (lowered, text) = accepted(4096);
     let expected: i64 = (0..4096).sum();
     assert_eq!(expected, 8_386_560);
     assert_eq!(u64::from(lowered.grant.rows) * lowered.grant.width, 12_288);
-    let text = text_bytes(&selected);
     assert_eq!(text * 4096, 12_288);
     run_node(&lowered, text, "original", expected);
 }
@@ -371,15 +365,15 @@ fn original_4096_rows_execute_exact_payload_and_sum_through_selected_host() {
 #[test]
 fn selected_host_controls_accounts_foreign_tokens_faults_and_cleanup() {
     for count in [33, 4096] {
-        let selected = inputs(count);
+        let (artifact, text_bytes) = accepted(count);
         let expected: i64 = (0..i64::from(count)).sum();
-        run_node(&module(&selected), text_bytes(&selected), "controls", expected);
+        run_node(&artifact, text_bytes, "controls", expected);
     }
 }
 
 #[test]
 fn shared_namespace_exhaustion_refuses_before_mutation_and_never_resets() {
-    let selected = inputs(33);
+    let (artifact, text_bytes) = accepted(33);
     let expected: i64 = (0..33).sum();
-    run_node(&module(&selected), text_bytes(&selected), "exhaustion", expected);
+    run_node(&artifact, text_bytes, "exhaustion", expected);
 }

@@ -2,24 +2,36 @@
 // `semaprax.private.selected-fused.v1`. It is not a public Web adapter, a
 // frozen Bytes ABI or a default import; it never serves an `env` module.
 //
-// Handle authority. A realm has exactly one caller-held shared namespace
-// (`createSharedNamespace`; a second call refuses). Every authorized host must
-// be created with that namespace, so two hosts can never both start counting
-// at one. The namespace owns a never-reset, nonwrapping sequence and a
-// preallocated typed registry: each token is (sequence << 20) | entry, and the
-// entry records kind, host, instance, invocation and owner domain. Every
-// operation resolves the exact token and checks all five bindings before any
-// read or mutation, so an equal number from another host, instance,
-// invocation or domain is refused with no effect.
+// Handle authority. A realm has exactly one caller-held shared namespace.
+// `createSharedNamespace` (called through ANY loaded copy of this module)
+// installs that namespace as a non-configurable, non-writable realm property
+// under a registered symbol; any later creation, from this or any other copy,
+// refuses. `createAuthorizedHost` (from any copy) requires exactly that
+// installed namespace and performs every issuance through the namespace's own
+// closure authority, so all copies share one never-reset, nonwrapping
+// sequence, one preallocated typed registry and one set of host, instance and
+// invocation serials. No copy owns a counter. Each token is
+// (sequence << 20) | entry; the entry records kind, host, instance,
+// invocation and owner domain, and every operation checks all five before any
+// read or mutation. An equal number from another host, instance, invocation,
+// domain or module copy is refused with no effect. The realm property is a
+// name, not network, filesystem, process or other ambient authority. Bootstrap
+// is trusted; raw registry/account authority is closure-private and the realm
+// facade exposes only checked host/account factories, never mint or reset.
 //
-// Physical accounting. The registry is one preallocated ArrayBuffer; each
-// domain precharges its maximum live entries at `start`. Row backing and the
-// lease/view tables are carved from one caller-held, preallocated invocation
-// account ArrayBuffer before the payload is allocated; carving checks the
-// whole group first. JavaScript Map, array, object and closure bookkeeping
-// (holder objects, Strings' ordinary byte arrays) is NOT claimed as a
-// physical reservation. Payload and String bytes are ordinary allocations
-// charged to the ordinary 32-event/2 MiB and String counters.
+// Physical accounting. The registry is one preallocated ArrayBuffer owned by
+// the namespace. Each invocation holds one caller-held, preallocated account
+// ArrayBuffer (minted by the namespace so every copy recognizes it) that never
+// resets and never refunds. At `start` (the original Vec boundary) the domain's
+// precharged registry entries' byteLength is debited from it; at the Vec
+// allocation the row backing is carved from it (all charged carves include
+// exact trailing alignment for subsequent typed arrays); at the first original Bytes
+// operand the lease/view tables are carved from it, before the payload is
+// allocated. Every carve checks the whole group first. JavaScript Map, array,
+// object and closure bookkeeping (holder objects, Strings' ordinary byte
+// arrays) is NOT claimed as a physical reservation. Payload and String bytes
+// are ordinary allocations charged to the ordinary 32-event/2 MiB and String
+// counters.
 
 export const NAMESPACE = 'semaprax.private.selected-fused.v1';
 export const IMPORT_NAMES = Object.freeze([
@@ -48,12 +60,14 @@ const INDEX_MASK = (1n << INDEX_BITS) - 1n;
 const MAX_ENTRIES = 1 << 20;
 const SEQUENCE_LIMIT = (1n << 43n) - 1n;
 const KIND = Object.freeze({domain: 1, vec: 2, string: 3, owner: 4, view: 5, row: 6, bytes: 7});
+// Registered names shared by every copy in the realm.
+const REALM_KEY = Symbol.for('semaprax.private.selected-fused.realm-namespace.v1');
 
 export class SelectedRefusal extends Error {
-  constructor(code) { super(`selected-fused:${code}`); this.code = code; }
+  constructor(code) { super(`selected-fused:${code}`); this.name = 'SelectedRefusal'; this.code = code; }
 }
 export class SelectedStatus extends Error {
-  constructor(status) { super(`status:${status}`); this.status = status; }
+  constructor(status) { super(`status:${status}`); this.name = 'SelectedStatus'; this.status = status; }
 }
 const refuse = code => { throw new SelectedRefusal(code); };
 
@@ -98,6 +112,7 @@ function carveAll(buffer, start, layout) {
   }
   return {views, end: offset};
 }
+const align8 = bytes => Math.ceil(bytes / 8) * 8;
 const layoutBytes = layout => layout.reduce((sum, [, Type, count]) => sum + Type.BYTES_PER_ELEMENT * count, 0);
 const rowLayout = rows => [['scalar', BigInt64Array, rows], ['text', BigUint64Array, rows],
   ['owner', BigUint64Array, rows]];
@@ -107,13 +122,9 @@ const tableLayout = rows => [['nonce', BigUint64Array, rows], ['generation', Big
   ['published', Uint8Array, rows], ['viewLive', Uint8Array, MAX_VIEWS]];
 const registryEntries = rows => 2 + 3 * rows + MAX_VIEWS + MAX_CLONES + 1;
 
-// ---- The realm's single caller-held namespace -------------------------------
-let realm = null;
-const namespaces = new WeakMap();
-const accounts = new WeakMap();
-
+// ---- The realm's single caller-held namespace authority ---------------------
 export function createSharedNamespace(options = {}) {
-  if (realm !== null) refuse('namespace-singleton');
+  if (Object.prototype.hasOwnProperty.call(globalThis, REALM_KEY)) refuse('namespace-singleton');
   const entries = options.registryEntries ?? 65536;
   const sequenceLimit = options.sequenceLimit === undefined ? SEQUENCE_LIMIT : BigInt(options.sequenceLimit);
   if (!Number.isSafeInteger(entries) || entries < 1 || entries > MAX_ENTRIES
@@ -125,23 +136,112 @@ export function createSharedNamespace(options = {}) {
     ['kind', Uint8Array, entries]]);
   if (end !== buffer.byteLength) throw new Error('selected registry layout invariant');
   for (let index = 0; index < entries; index++) registry.free[index] = entries - 1 - index;
-  const state = {registry, entries, objects: new Array(entries).fill(null), sequence: 1n, sequenceLimit,
-    freeTop: entries, quota: 0, hosts: 0, instances: 0, invocations: 0, registryBytes: buffer.byteLength};
-  const handle = Object.freeze({
-    observe: () => Object.freeze({nextSequence: state.sequence, liveEntries: entries - state.freeTop,
-      outstandingQuota: state.quota, registryBytes: state.registryBytes}),
+  const objects = new Array(entries).fill(null);
+  const accounts = new WeakMap();
+  let sequence = 1n, freeTop = entries, quota = 0, hosts = 0, instances = 0, invocations = 0;
+  const resolve = carrier => {
+    if (typeof carrier !== 'bigint') refuse('carrier');
+    const token = BigInt.asUintN(64, carrier);
+    const index = Number(token & INDEX_MASK);
+    return token !== 0n && index < entries && registry.token[index] === token ? index : -1;
+  };
+  const authority = Object.freeze({
+    nextHost: () => { if (hosts === 0xffffffff) refuse('host-exhausted'); return ++hosts; },
+    nextInstance: () => { if (instances === 0xffffffff) refuse('instance-exhausted'); return ++instances; },
+    nextInvocation: () => { if (invocations === 0xffffffff) refuse('invocation-exhausted'); return ++invocations; },
+    sequence: () => sequence,
+    // Precharge `count` entries for one domain, or refuse before mutation.
+    precharge(count) {
+      if (freeTop - quota < count) refuse('registry-exhausted');
+      if (sequence > sequenceLimit) refuse('namespace-exhausted');
+      quota += count;
+    },
+    release(count) { quota -= count; },
+    canMint(count) { if (sequence + BigInt(count) - 1n > sequenceLimit) refuse('namespace-exhausted'); },
+    mint(kind, host, instance, invocation, domain, target, object) {
+      if (sequence > sequenceLimit) refuse('namespace-exhausted');
+      if (freeTop === 0 || quota === 0) throw new Error('selected precharge invariant');
+      const index = registry.free[--freeTop];
+      const token = (sequence << INDEX_BITS) | BigInt(index);
+      sequence += 1n;
+      registry.token[index] = token;
+      registry.kind[index] = kind;
+      registry.host[index] = host;
+      registry.instance[index] = instance;
+      registry.invocation[index] = invocation;
+      registry.domain[index] = domain === -1 ? index : domain;
+      registry.target[index] = target;
+      objects[index] = object;
+      quota--;
+      return {token, index};
+    },
+    // A retired entry returns to the outstanding precharge of its domain.
+    retire(carrier) {
+      const index = resolve(carrier);
+      if (index < 0) refuse('stale');
+      registry.token[index] = 0n;
+      objects[index] = null;
+      registry.free[freeTop++] = index;
+      quota++;
+      return index;
+    },
+    resolve,
+    entry: index => Object.freeze({kind: registry.kind[index], host: registry.host[index],
+      instance: registry.instance[index], invocation: registry.invocation[index],
+      domain: registry.domain[index], target: registry.target[index], object: objects[index]}),
+    liveOfDomain(domain) {
+      const live = [];
+      for (let index = 0; index < entries; index++) {
+        if (registry.token[index] !== 0n && registry.domain[index] === domain && index !== domain)
+          live.push(registry.token[index]);
+      }
+      return live;
+    },
+    createAccount(bytes) {
+      if (!Number.isSafeInteger(bytes) || bytes < 0) throw new TypeError('selected account size');
+      const handle = Object.freeze({byteLength: bytes});
+      accounts.set(handle, {buffer: new ArrayBuffer(bytes), offset: 0, held: null});
+      return handle;
+    },
+    account(handle) {
+      const state = handle === null || typeof handle !== 'object' ? undefined : accounts.get(handle);
+      if (state === undefined) refuse('account');
+      return state;
+    },
+    observe: () => Object.freeze({nextSequence: sequence, liveEntries: entries - freeTop,
+      outstandingQuota: quota, registryBytes: buffer.byteLength}),
   });
-  namespaces.set(handle, state);
-  realm = handle;
-  return handle;
+  // The raw registry and account state never leave this bootstrap closure.
+  // Later module copies delegate through these checked factories only.
+  const namespace = Object.freeze({observe: authority.observe,
+    createAccount: bytes => authority.createAccount(bytes),
+    createHost: () => createHostWithAuthority(authority)});
+  Object.defineProperty(globalThis, REALM_KEY, {value: namespace, writable: false, configurable: false,
+    enumerable: false});
+  return namespace;
 }
 
-// One caller-held, preallocated invocation account.
-export function createAccount(bytes) {
-  if (!Number.isSafeInteger(bytes) || bytes < 0) throw new TypeError('selected account size');
-  const handle = Object.freeze({byteLength: bytes});
-  accounts.set(handle, {buffer: new ArrayBuffer(bytes), offset: 0, held: null});
-  return handle;
+// Require the namespace installed by the trusted first bootstrap. A hostile
+// preinstalled realm property causes createSharedNamespace to refuse; callers
+// must never treat an object supplied by untrusted JavaScript as bootstrap
+// evidence. Same-realm arbitrary JavaScript is not a sandbox boundary.
+function namespaceOf(namespace) {
+  const installed = Object.getOwnPropertyDescriptor(globalThis, REALM_KEY);
+  if (installed === undefined || installed.configurable || installed.writable || installed.value !== namespace
+      || !Object.isFrozen(namespace) || typeof namespace.createAccount !== 'function'
+      || typeof namespace.createHost !== 'function' || typeof namespace.observe !== 'function')
+    refuse('namespace');
+  return namespace;
+}
+
+// One caller-held, preallocated, never-reset invocation account. Only opaque
+// handles are returned; no offset, buffer or mutable account object escapes.
+export function createAccount(namespace, bytes) {
+  return namespaceOf(namespace).createAccount(bytes);
+}
+
+export function createAuthorizedHost(namespace) {
+  return namespaceOf(namespace).createHost();
 }
 
 function checkGrant(grant) {
@@ -151,61 +251,17 @@ function checkGrant(grant) {
       || !Number.isSafeInteger(width) || width < 1 || rows * width > MAX_EXTENT
       || rows > VEC_MAX_CAPACITY || rows * 2 * OWNED_BYTES_PER_LEAF > VEC_MAX_OWNED_BYTES
       || metadataBytes !== layoutBytes(tableLayout(rows)) || rowBytes !== ROW_BYTES
-      || accountBytes !== layoutBytes(rowLayout(rows)) + metadataBytes
       || grant.registryEntries !== registryEntries(rows)
+      || accountBytes !== align8(grant.registryEntries * REGISTRY_ENTRY_BYTES) + layoutBytes(rowLayout(rows)) + align8(metadataBytes)
       || !Array.isArray(order) || order.length !== 3 || roles.some(role => !order.includes(role))
       || typeof grant.digest !== 'string') refuse('grant');
   return Object.freeze({rows, width, metadataBytes, accountBytes, registryEntries: grant.registryEntries,
+    registryBytes: grant.registryEntries * REGISTRY_ENTRY_BYTES,
     order: Object.freeze([...order]), textFirst: order.indexOf('text') < order.indexOf('payload')});
 }
 
-export function createAuthorizedHost(namespace) {
-  if (realm === null || namespace !== realm) refuse('namespace');
-  const space = namespaces.get(namespace);
-  const registry = space.registry;
-  const host = ++space.hosts;
-
-  // Resolve an exact live token to its registry entry, or null.
-  const resolve = carrier => {
-    if (typeof carrier !== 'bigint') refuse('carrier');
-    const token = BigInt.asUintN(64, carrier);
-    const index = Number(token & INDEX_MASK);
-    if (token === 0n || index >= space.entries || registry.token[index] !== token) return null;
-    return {token, index};
-  };
-  // Mint from a domain's precharge; refuses before any mutation.
-  const reserve = (domain, count) => {
-    if (domain.quota < count) refuse('registry-quota');
-    if (space.sequence + BigInt(count) - 1n > space.sequenceLimit) refuse('namespace-exhausted');
-  };
-  const mint = (domain, kind, target, object, binding) => {
-    reserve(domain, 1);
-    const index = registry.free[--space.freeTop];
-    const token = (space.sequence << INDEX_BITS) | BigInt(index);
-    space.sequence += 1n;
-    registry.token[index] = token;
-    registry.kind[index] = kind;
-    registry.host[index] = host;
-    registry.instance[index] = binding.instance;
-    registry.invocation[index] = binding.invocation;
-    registry.domain[index] = kind === KIND.domain ? index : domain.index;
-    registry.target[index] = target;
-    space.objects[index] = object;
-    domain.quota--;
-    space.quota--;
-    return {token, index};
-  };
-  // Retired entries return to the owning domain's precharge, never to others.
-  const retire = (domain, token) => {
-    const found = resolve(token);
-    if (found === null) refuse('stale');
-    registry.token[found.index] = 0n;
-    space.objects[found.index] = null;
-    registry.free[space.freeTop++] = found.index;
-    domain.quota++;
-    space.quota++;
-  };
-  const releaseQuota = domain => { space.quota -= domain.quota; domain.quota = 0; };
+function createHostWithAuthority(space) {
+  const host = space.nextHost();
 
   async function instantiate(bytes, rawGrant, setup = {}) {
     const copy = new Uint8Array(bytes);
@@ -219,34 +275,50 @@ export function createAuthorizedHost(namespace) {
       refuse('import-inventory');
     const exported = WebAssembly.Module.exports(module).map(entry => `${entry.name}:${entry.kind}`).sort();
     if (exported.join(',') !== 'memory:memory,semaprax_main:function') refuse('export-inventory');
-    const instance = ++space.instances;
+    const instance = space.nextInstance();
     let invocation = null, memory = null;
 
-    const binding = () => ({instance, invocation: invocation.serial});
+    // Mint from this domain's precharge; refuses before any mutation.
+    const reserve = (domain, count) => {
+      if (domain.quota < count) refuse('registry-quota');
+      space.canMint(count);
+    };
+    const mint = (domain, kind, target, object) => {
+      reserve(domain, 1);
+      const minted = space.mint(kind, host, instance, invocation.serial,
+        kind === KIND.domain ? -1 : domain.index, target, object);
+      domain.quota--;
+      return minted;
+    };
+    const retire = (domain, token) => {
+      space.retire(token);
+      domain.quota++;
+    };
+    const releaseQuota = domain => { space.release(domain.quota); domain.quota = 0; };
     const domainOf = carrier => {
-      const found = resolve(carrier);
-      if (found === null) refuse('stale');
-      const index = found.index;
-      if (registry.kind[index] !== KIND.domain) refuse('kind');
-      if (registry.host[index] !== host) refuse('foreign-host');
-      if (registry.instance[index] !== instance) refuse('foreign-instance');
-      if (invocation === null || registry.invocation[index] !== invocation.serial) refuse('foreign-invocation');
-      return space.objects[index];
+      const index = space.resolve(carrier);
+      if (index < 0) refuse('stale');
+      const entry = space.entry(index);
+      if (entry.kind !== KIND.domain) refuse('kind');
+      if (entry.host !== host) refuse('foreign-host');
+      if (entry.instance !== instance) refuse('foreign-instance');
+      if (invocation === null || entry.invocation !== invocation.serial) refuse('foreign-invocation');
+      return entry.object;
     };
     const fault = (domain, code) => {
       if (domain.failure === null) domain.failure = code;
       refuse(code);
     };
     const held = (domain, carrier, kind) => {
-      const found = resolve(carrier);
-      if (found === null) fault(domain, 'stale');
-      const index = found.index;
-      if (registry.host[index] !== host) fault(domain, 'foreign-host');
-      if (registry.instance[index] !== instance) fault(domain, 'foreign-instance');
-      if (registry.invocation[index] !== invocation.serial) fault(domain, 'foreign-invocation');
-      if (registry.domain[index] !== domain.index) fault(domain, 'foreign');
-      if (registry.kind[index] !== kind) fault(domain, 'kind');
-      return {handle: found.token, entry: space.objects[index], target: registry.target[index]};
+      const index = space.resolve(carrier);
+      if (index < 0) fault(domain, 'stale');
+      const entry = space.entry(index);
+      if (entry.host !== host) fault(domain, 'foreign-host');
+      if (entry.instance !== instance) fault(domain, 'foreign-instance');
+      if (entry.invocation !== invocation.serial) fault(domain, 'foreign-invocation');
+      if (entry.domain !== domain.index) fault(domain, 'foreign');
+      if (entry.kind !== kind) fault(domain, 'kind');
+      return {handle: BigInt.asUintN(64, carrier), entry: entry.object, target: entry.target};
     };
     const active = domain => { if (domain.failure !== null) refuse(domain.failure); };
     const phase = (domain, ...allowed) => { if (!allowed.includes(domain.phase)) fault(domain, 'phase'); };
@@ -280,6 +352,7 @@ export function createAuthorizedHost(namespace) {
     const dropString = (domain, carrier, container) => {
       const {handle, entry} = held(domain, carrier, KIND.string);
       if (entry.contained !== container) fault(domain, 'contained');
+      if (invocation.finalizers !== null) invocation.finalizers.push({container, kind: 'text'});
       retire(domain, handle);
       domain.strings--;
       invocation.ledger.stringDrops++;
@@ -288,6 +361,7 @@ export function createAuthorizedHost(namespace) {
       const {handle, entry, slot} = owner(domain, carrier);
       if (entry.contained !== container) fault(domain, 'contained');
       if (domain.tables.borrows[slot] !== 0) fault(domain, 'borrowed');
+      if (invocation.finalizers !== null) invocation.finalizers.push({container, kind: 'payload'});
       domain.tables.live[slot] = 0;
       retire(domain, handle);
       domain.children--;
@@ -295,7 +369,7 @@ export function createAuthorizedHost(namespace) {
     // A renewed token is minted before the old one retires (one overlap entry).
     const renew = (domain, kind, target, object, old) => {
       reserve(domain, 1);
-      const fresh = mint(domain, kind, target, object, binding());
+      const fresh = mint(domain, kind, target, object);
       retire(domain, old);
       return fresh.token;
     };
@@ -305,7 +379,7 @@ export function createAuthorizedHost(namespace) {
       if (at < 0) fault(domain, 'view-capacity');
       if (tables.borrows[slot] === 0xffffffff) fault(domain, 'borrow-overflow');
       reserve(domain, 1);
-      const {token} = mint(domain, KIND.view, at, null, binding());
+      const {token} = mint(domain, KIND.view, at, null);
       tables.viewNonce[at] = token;
       tables.viewSlot[at] = slot;
       tables.viewGeneration[at] = tables.generation[slot];
@@ -316,13 +390,15 @@ export function createAuthorizedHost(namespace) {
       return token;
     };
     const range = (domain, slot) => domain.payload.subarray(slot * grant.width, (slot + 1) * grant.width);
-    // Transactional carving from the held invocation account.
+    const used = () => invocation.account.offset - invocation.accountStart;
+    // Transactional carving from the held, never-reset invocation account.
     const carve = (domain, layout) => {
-      const account = invocation.account, bytes = layoutBytes(layout);
-      if (account.offset + bytes > account.buffer.byteLength) fault(domain, 'metadata');
+      const account = invocation.account, bytes = layoutBytes(layout), reserved = align8(bytes);
+      if (account.offset + reserved > account.buffer.byteLength) fault(domain, 'metadata');
       const {views, end} = carveAll(account.buffer, account.offset, layout);
-      account.offset = end;
-      invocation.ledger.accountCarved = end;
+      if (end !== account.offset + bytes) throw new Error('selected carve extent invariant');
+      account.offset += reserved;
+      invocation.ledger.accountUsed = used();
       return {views, bytes};
     };
 
@@ -331,15 +407,19 @@ export function createAuthorizedHost(namespace) {
         if (invocation === null) refuse('no-invocation');
         if (rows !== BigInt(grant.rows) || width !== BigInt(grant.width)) refuse('grant-dimensions');
         if (invocation.domains.some(domain => domain.phase !== 'Settled')) refuse('domain-active');
-        // Precharge every registry entry this domain can hold live.
-        if (space.freeTop - space.quota < grant.registryEntries) refuse('registry-exhausted');
-        if (space.sequence > space.sequenceLimit) refuse('namespace-exhausted');
+        const account = invocation.account;
+        // Original Vec boundary: debit the registry precharge's byteLength from
+        // the held account and precharge the entries, together or not at all.
+        if (account.offset + align8(grant.registryBytes) > account.buffer.byteLength) refuse('account');
+        space.precharge(grant.registryEntries);
+        account.offset += align8(grant.registryBytes);
+        invocation.ledger.accountUsed = used();
+        invocation.ledger.registryDebit += grant.registryBytes;
         const domain = {index: 0, quota: grant.registryEntries, phase: 'Building', pin: true, failure: null,
           issued: 0, children: 0, strings: 0, views: 0, peakViews: 0, clones: 0, vec: null, tables: null,
           payload: null, staged: {text: null, owner: null}, allocations: 0, releases: 0,
           metadataBytes: 0, payloadBytes: 0, storageBytes: 0, token: 0n};
-        space.quota += grant.registryEntries;
-        const {token, index: entry} = mint(domain, KIND.domain, 0, domain, binding());
+        const {token, index: entry} = mint(domain, KIND.domain, 0, domain);
         domain.index = entry;
         domain.token = token;
         invocation.domains.push(domain);
@@ -357,7 +437,7 @@ export function createAuthorizedHost(namespace) {
         const vec = {storage, len: 0, capacity: grant.rows};
         domain.vec = vec;
         domain.storageBytes = bytes;
-        vec.handle = mint(domain, KIND.vec, 0, vec, binding()).token;
+        vec.handle = mint(domain, KIND.vec, 0, vec).token;
         return vec.handle;
       },
       string_literal(carrier, offset, length) {
@@ -377,7 +457,7 @@ export function createAuthorizedHost(namespace) {
         invocation.ledger.strings++;
         invocation.ledger.stringBytes += length;
         domain.strings++;
-        staged.text = mint(domain, KIND.string, 0, {bytes, contained: false}, binding()).token;
+        staged.text = mint(domain, KIND.string, 0, {bytes, contained: false}).token;
         return staged.text;
       },
       issue(carrier, ordinal) {
@@ -396,7 +476,7 @@ export function createAuthorizedHost(namespace) {
           // allocation; then carve, charge and allocate. Nothing is refunded.
           const ledger = invocation.ledger, extent = grant.rows * grant.width;
           const account = invocation.account;
-          if (account.offset + grant.metadataBytes > account.buffer.byteLength) fault(domain, 'metadata');
+          if (account.offset + align8(grant.metadataBytes) > account.buffer.byteLength) fault(domain, 'metadata');
           if (ledger.events + 1 > MAX_EVENTS || ledger.cumulative + extent > MAX_CUMULATIVE)
             fault(domain, 'ordinary-byte-capacity');
           const {views: tables, bytes} = carve(domain, tableLayout(grant.rows));
@@ -413,7 +493,7 @@ export function createAuthorizedHost(namespace) {
           domain.allocations++;
         }
         const slot = domain.issued, tables = domain.tables;
-        const {token} = mint(domain, KIND.owner, slot, {contained: false}, binding());
+        const {token} = mint(domain, KIND.owner, slot, {contained: false});
         tables.nonce[slot] = token;
         tables.generation[slot] = 1n;
         tables.live[slot] = 1;
@@ -545,8 +625,8 @@ export function createAuthorizedHost(namespace) {
         if (domain.views !== 0) fault(domain, 'borrowed');
         reserve(domain, 1);
         const {scalar, text, owner: owners} = vec.storage;
-        const textOf = at => space.objects[Number(text[at] & INDEX_MASK)].bytes;
-        const payloadOf = at => range(domain, registry.target[Number(owners[at] & INDEX_MASK)]);
+        const textOf = at => space.entry(space.resolve(text[at])).object.bytes;
+        const payloadOf = at => range(domain, space.entry(space.resolve(owners[at])).target);
         const compare = (left, right) => {
           for (const role of grant.order) {
             const order = role === 'scalar'
@@ -583,8 +663,12 @@ export function createAuthorizedHost(namespace) {
               || owner(domain, vec.storage.owner[at]).entry.contained !== true) fault(domain, 'contained');
         }
         for (let at = 0; at < vec.len; at++) {
-          dropString(domain, vec.storage.text[at], true);
-          dropOwner(domain, vec.storage.owner[at], true);
+          // Ordinary owned-leaf Vec lifecycle: rows ascending, then fields
+          // in authenticated declaration order (native_vec/owned_leaf.c).
+          for (const role of grant.order) {
+            if (role === 'text') dropString(domain, vec.storage.text[at], true);
+            if (role === 'payload') dropOwner(domain, vec.storage.owner[at], true);
+          }
         }
         retire(domain, handle);
         domain.vec = null;
@@ -630,7 +714,7 @@ export function createAuthorizedHost(namespace) {
         const text = vec.storage.text[vec.len], lease = vec.storage.owner[vec.len];
         held(domain, text, KIND.string).entry.contained = 'row';
         owner(domain, lease).entry.contained = 'row';
-        const row = mint(domain, KIND.row, 0, {text, lease}, binding()).token;
+        const row = mint(domain, KIND.row, 0, {text, lease}).token;
         vec.handle = renew(domain, KIND.vec, 0, vec, handle);
         return [row, vec.handle];
       },
@@ -641,8 +725,13 @@ export function createAuthorizedHost(namespace) {
         const child = owner(domain, entry.lease);
         if (held(domain, entry.text, KIND.string).entry.contained !== 'row' || child.entry.contained !== 'row'
             || domain.tables.borrows[child.slot] !== 0) fault(domain, 'borrowed');
-        dropString(domain, entry.text, 'row');
-        dropOwner(domain, entry.lease, 'row');
+        // A popped record is a new standalone ownership epoch. Its ordinary
+        // record lifecycle is reverse declaration order (RFC-0003), distinct
+        // from a Vec's internal row lifecycle. No function-plan vector changes.
+        for (let field = grant.order.length - 1; field >= 0; field--) {
+          if (grant.order[field] === 'text') dropString(domain, entry.text, 'row');
+          if (grant.order[field] === 'payload') dropOwner(domain, entry.lease, 'row');
+        }
         retire(domain, handle);
         releaseIfLast(domain);
         return 0;
@@ -684,7 +773,7 @@ export function createAuthorizedHost(namespace) {
         ledger.cumulative += grant.width;
         const bytes = new Uint8Array(range(domain, child.slot));
         domain.clones++;
-        return mint(domain, KIND.bytes, 0, {bytes}, binding()).token;
+        return mint(domain, KIND.bytes, 0, {bytes}).token;
       },
       bytes_byte(carrier, clone, position) {
         const domain = domainOf(carrier);
@@ -704,38 +793,35 @@ export function createAuthorizedHost(namespace) {
     // Whole-invocation abandonment: release administrative backing and every
     // remaining entry without publishing a result or inventing finalizers.
     const abandon = domain => {
-      for (let entry = 0; entry < space.entries; entry++) {
-        if (registry.token[entry] !== 0n && registry.domain[entry] === domain.index && entry !== domain.index)
-          retire(domain, registry.token[entry]);
-      }
+      for (const token of space.liveOfDomain(domain.index)) retire(domain, token);
       if (domain.payload !== null) { domain.payload = null; domain.releases++; }
       domain.phase = 'Abandoned';
     };
     const snapshot = current => Object.freeze({
       ...current.ledger,
       selected: current.selected,
+      finalizers: current.finalizers === null ? undefined : Object.freeze(current.finalizers.map(event => Object.freeze({...event}))),
       domains: current.domains.map(domain => Object.freeze({phase: domain.phase, failure: domain.failure,
         allocations: domain.allocations, releases: domain.releases, payloadBytes: domain.payloadBytes,
         metadataBytes: domain.metadataBytes, issued: domain.issued, peakViews: domain.peakViews,
         storageBytes: domain.storageBytes})),
-      firstSequence: current.firstSequence, nextSequence: space.sequence,
-      liveEntries: space.entries - space.freeTop, outstandingQuota: space.quota,
+      firstSequence: current.firstSequence, ...space.observe(),
     });
     function session(run, body) {
       if (invocation !== null) refuse('reentrant-invocation');
-      const account = accounts.get(run.account);
-      if (account === undefined) refuse('account');
+      const account = space.account(run.account);
       if (account.held !== null) refuse('account-held');
       const ordinaryEvents = run.ordinaryEvents ?? 0, ordinaryBytes = run.ordinaryBytes ?? 0;
       if (!Number.isInteger(ordinaryEvents) || ordinaryEvents < 0 || ordinaryEvents > MAX_EVENTS
           || !Number.isInteger(ordinaryBytes) || ordinaryBytes < 0 || ordinaryBytes > MAX_CUMULATIVE)
         throw new TypeError('selected ledger preload');
-      const current = {serial: ++space.invocations, domains: [], account, selected: null,
-        faults: Object.freeze({...(run.faults ?? {})}), firstSequence: space.sequence,
-        ledger: {events: ordinaryEvents, cumulative: ordinaryBytes, fusedEvents: 0, accountBytes:
-          account.buffer.byteLength, accountCarved: 0, strings: 0, stringBytes: 0, stringDrops: 0}};
+      // The account is never reset: this invocation continues at its offset.
+      const current = {serial: space.nextInvocation(), domains: [], account, accountStart: account.offset,
+        selected: null, finalizers: setup.controls === true ? [] : null, faults: Object.freeze({...(run.faults ?? {})}), firstSequence: space.sequence(),
+        ledger: {events: ordinaryEvents, cumulative: ordinaryBytes, fusedEvents: 0,
+          accountBytes: account.buffer.byteLength, accountUsed: 0, registryDebit: 0, strings: 0,
+          stringBytes: 0, stringDrops: 0}};
       account.held = current;
-      account.offset = 0;
       invocation = current;
       let value, status = 0, error = null;
       try { value = body(controls); }

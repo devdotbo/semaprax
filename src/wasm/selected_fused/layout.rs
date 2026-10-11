@@ -1,10 +1,12 @@
 //! Actual selected Core-Wasm host representations.
 //!
-//! These are the exact typed-array byte lengths `host.mjs` carves from one
-//! caller-held, preallocated invocation `ArrayBuffer` before any payload
-//! allocation, and the registry entries it precharges from the realm's
-//! preallocated namespace registry. JavaScript Map, closure and object
-//! bookkeeping is not counted and is not claimed as a physical reservation.
+//! These are the exact typed-array byte lengths `host.mjs` debits from one
+//! caller-held, preallocated, never-reset invocation account `ArrayBuffer`
+//! before any payload allocation: the registry entries it precharges (whose
+//! storage is the realm namespace's preallocated registry buffer, so this
+//! debit is a conservative second reservation), then the carved row backing
+//! and lease/view tables. JavaScript Map, closure and object bookkeeping is
+//! not counted and is not claimed as a physical reservation.
 
 /// Simultaneous borrowed payload views; matches the reference domain.
 pub(super) const MAX_VIEWS: u64 = crate::construction_fusion::domain::MAX_VIEWS as u64;
@@ -29,11 +31,16 @@ pub(super) fn metadata_bytes(rows: u32) -> u64 {
     u64::from(rows) * SLOT_BYTES + MAX_VIEWS * VIEW_BYTES
 }
 
-/// Exact invocation account: row backing carved at the Vec allocation site,
-/// then the lease/view tables. Carving order is 8-byte arrays, then 4-byte,
-/// then 1-byte arrays, so no alignment padding is ever required.
+/// Exact per-domain account debit, in order: the precharged registry entries'
+/// byteLength at `start` (the original Vec boundary), the row backing carved
+/// at the Vec allocation, then the lease/view tables carved at the first
+/// Bytes operand. Carving order is 8-byte, then 4-byte, then 1-byte arrays,
+/// with exact charged trailing alignment to eight bytes for the next carve or invocation. The account never resets or refunds, so each
+/// invocation on one account consumes this again.
 pub(super) fn account_bytes(rows: u32) -> u64 {
-    u64::from(rows) * ROW_BYTES + metadata_bytes(rows)
+    (registry_entries(rows) * REGISTRY_ENTRY_BYTES).next_multiple_of(8)
+        + u64::from(rows) * ROW_BYTES
+        + metadata_bytes(rows).next_multiple_of(8)
 }
 
 /// Registry entries precharged at `start` for the domain's maximum live

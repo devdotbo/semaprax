@@ -1,4 +1,6 @@
-//! UNVALIDATED test-only precursor; compiled only under `cfg(test)`.
+//! UNVALIDATED test-only precursor; compiled only under `cfg(test)`. It is
+//! kept only for static refusal gates (strategy, capacity, legacy, stale,
+//! noncanonical plans); no executable host gate counts its bytes.
 //!
 //! It rebuilds `Selected` from the private `construction_fusion` descriptor,
 //! the carrier mapping and a caller-supplied capacity summary. None of these is
@@ -96,7 +98,7 @@ impl Precursor<'_> {
             rows: u32::try_from(self.descriptor.count()).map_err(|_| Refusal::Layout)?,
             width: u64::try_from(self.descriptor.width()).map_err(|_| Refusal::Layout)?,
             order: facts::roles(typed.record, byte_field)?,
-            mapping: &self.mapping,
+            mapping: Some(&self.mapping),
         })
     }
     pub(super) fn rows(&self) -> usize {

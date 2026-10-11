@@ -13,6 +13,7 @@ use super::{import, Refusal};
 use crate::ast::BinaryOp;
 use crate::cleanup_plan::CheckedOperation;
 use crate::construction_fusion::native_provenance::Carrier;
+use crate::loan_plan::LoanPointPhase;
 use crate::hir::{
     DeclarationId, OwnershipMode as O, Place, ResolvedBinding, ResolvedExpr as E,
     ResolvedExprKind as K, ResolvedMatchArm, ResolvedMatchPattern as P, ResolvedStatement as S,
@@ -134,14 +135,16 @@ impl<'a> Lower<'a> {
             return Err(unsupported("Vec projection"));
         }
         let source = self.vector_carrier(&place.root)?;
+        self.loan_points(&value.id, LoanPointPhase::Before);
         if let Some(argument) = argument {
-            self.post(&argument.id, Owned::None)?;
+            self.visit(argument)?;
         }
         let renewed = self.local(ValType::I64);
         self.op(I::LocalGet(self.domain));
         self.op(I::LocalGet(source));
         self.op(I::Call(function));
         self.owned(renewed);
+        self.loan_points(&value.id, LoanPointPhase::After);
         self.post(&value.id, Owned::Leaf(renewed))?;
         self.bindings.push(Binding {
             id: &binding.id,
@@ -163,16 +166,21 @@ impl<'a> Lower<'a> {
             return Err(unsupported("Vec operand"));
         }
         let carrier = self.vector_carrier(&place.root)?;
-        self.post(&argument.id, Owned::None)?;
+        self.visit(argument)?;
         Ok(carrier)
     }
 
-    fn carrier(&self, e: &E) -> Result<Repr, Refusal> {
-        Ok(match self.selected.carrier(e).ok_or(Refusal::Carrier)? {
-            Carrier::OrdinaryStr => Repr::Text,
-            Carrier::OrdinarySlice => Repr::Slice,
-            Carrier::LeasedSlice => Repr::Leased,
-        })
+    /// The carrier is the producer's own: a field read's field type and fused
+    /// `bytes` flag, inherited unchanged by aliases. Independent provenance,
+    /// when present, may only refuse a disagreement.
+    fn carrier(&self, e: &E, repr: Repr) -> Result<(), Refusal> {
+        let carrier = match repr {
+            Repr::Text => Carrier::OrdinaryStr,
+            Repr::Slice => Carrier::OrdinarySlice,
+            Repr::Leased => Carrier::LeasedSlice,
+            _ => return Err(Refusal::Carrier),
+        };
+        self.selected.cross_check(e, carrier)
     }
 
     fn temp(&mut self, repr: Repr) -> u32 {
@@ -189,11 +197,20 @@ impl<'a> Lower<'a> {
         self.op(I::Call(function));
     }
 
-    /// Lower one expression, then replay the plan's transitions at it.
+    /// Lower one expression between its loan points, then replay the plan's
+    /// transitions at it. Loans end before owner transitions at the same point.
     pub(super) fn expr(&mut self, e: &'a E) -> Result<Repr, Refusal> {
+        self.loan_points(&e.id, LoanPointPhase::Before);
         let repr = self.expr_inner(e)?;
+        self.loan_points(&e.id, LoanPointPhase::After);
         self.post(&e.id, Owned::None)?;
         Ok(repr)
+    }
+    /// Loan points and transitions of an expression lowered outside `expr`.
+    fn visit(&mut self, e: &E) -> Result<(), Refusal> {
+        self.loan_points(&e.id, LoanPointPhase::Before);
+        self.loan_points(&e.id, LoanPointPhase::After);
+        self.post(&e.id, Owned::None)
     }
 
     fn expr_inner(&mut self, e: &'a E) -> Result<Repr, Refusal> {
@@ -278,8 +295,8 @@ impl<'a> Lower<'a> {
         if repr == Repr::Vector {
             return Err(unsupported("Vec value in expression"));
         }
-        if matches!(repr, Repr::Text | Repr::Slice | Repr::Leased) && self.carrier(e)? != repr {
-            return Err(Refusal::Carrier);
+        if matches!(repr, Repr::Text | Repr::Slice | Repr::Leased) {
+            self.carrier(e, repr)?;
         }
         self.op(I::LocalGet(local));
         Ok(repr)
@@ -296,9 +313,10 @@ impl<'a> Lower<'a> {
             return Err(unsupported("borrowed place operation"));
         }
         let (local, repr) = self.lookup(&place.root)?;
-        if repr != Repr::Text || self.carrier(e)? != Repr::Slice {
+        if repr != Repr::Text {
             return Err(Refusal::Carrier);
         }
+        self.carrier(e, Repr::Slice)?;
         self.op(I::LocalGet(local));
         Ok(Repr::Slice)
     }
@@ -329,7 +347,7 @@ impl<'a> Lower<'a> {
         let (position, Repr::Usize) = self.lookup(&position.root)? else {
             return Err(unsupported("field read index"));
         };
-        self.post(&index.id, Owned::None)?;
+        self.visit(index)?;
         let declaration = fields
             .iter()
             .find(|candidate| &candidate.id == field)
@@ -341,16 +359,12 @@ impl<'a> Lower<'a> {
             }
             (T::String, _) => {
                 let repr = if bytes { Repr::Slice } else { Repr::Text };
-                if self.carrier(e)? != repr {
-                    return Err(Refusal::Carrier);
-                }
+                self.carrier(e, repr)?;
                 self.host(import::FIELD_TEXT, &[vector, position]);
                 Ok(repr)
             }
             (T::Bytes, false) if declaration.id == selected.byte_field.id => {
-                if self.carrier(e)? != Repr::Leased {
-                    return Err(Refusal::Carrier);
-                }
+                self.carrier(e, Repr::Leased)?;
                 let view = self.local(ValType::I64);
                 self.host(import::PAYLOAD_BORROW, &[vector, position]);
                 self.owned(view);

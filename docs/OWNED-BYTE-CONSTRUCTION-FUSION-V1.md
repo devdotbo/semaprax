@@ -241,14 +241,13 @@ activation; this host namespace grants no production or ordinary admission.
 Status: authored for OPT #747; owning definitions unexecuted. Default
 admission stays closed and ordinary `check` still reports `SPX-T267`.
 
-The only entry that publishes an artifact is
-`wasm::selected_fused::accept(ValidatedSelection)`. That type holds an
-uninhabited field, so no caller can construct it until root supplies the
-authenticated `SourceProof`, the `hir::fused_construction::join` selection, the
-carrier mapping and complete selected validation. No production caller exists.
-The older descriptor, capacity summary and rescaled 32-row HIR form a
-test-only, unvalidated precursor (`precursor`, `cfg(test)`). It yields an
-unpublishable `PrecursorModule` and carries no count authority.
+The only artifact entry is `wasm::selected_fused::accept(&ValidatedFusedSelection)`.
+The sealed owner's factory resolves the original source and runs both selected
+capacity gates and full validation. The receiver obtains a fresh source/HIR
+join, cross-checks the held capacity, and performs its own carrier, plan,
+profile and layout checks before emitting. No public default route calls it.
+The older descriptor, capacity summary and rescaled 32-row HIR remain a
+test-only unvalidated precursor. They grant no artifact or count authority.
 
 Every producer of the executor input (`facts::Selected`) must pass
 `facts::check` against the exact current source and HIR. The check requires a
@@ -286,6 +285,13 @@ host, instance, invocation or domain refuses with no effect on its owner. Each
 domain precharges its maximum registry entries at `start`. Row backing and the
 lease and view tables are carved, after a whole-group check, from one
 caller-held, preallocated invocation account before the payload is allocated.
+Registry reservations and table carves include their exact trailing alignment
+so subsequent typed arrays and subsequent invocations start on eight-byte
+boundaries. The account's cumulative offset never resets or refunds. Separate
+loaded host-module copies delegate to the first trusted bootstrap's checked
+host/account factories. Raw registry and mutable account state stay in its
+closure. Bootstrap refuses an existing realm property; arbitrary JavaScript
+in the same realm is not a sandbox boundary.
 JavaScript object and closure bookkeeping is not counted as a physical
 reservation.
 
@@ -295,16 +301,16 @@ and are never refunded. A popped child survives its parent Vec, store renews
 only that child, and the last child releases the backing exactly once. An
 unsettled domain at invocation end is abandoned without a result.
 
-Ten authored definitions in `wasm::selected_fused::tests::` own this
+Nine authored definitions in `wasm::selected_fused::tests::` own this
 interface. Six are static or structural:
-- the uninhabited publishing entry;
+- the concrete sealed-owner entry and fresh joining after an owner move;
 - the closed precursor;
 - refusal of noncanonical cleanup and loan plans;
 - the Wasm 1.0 private import inventory;
 - public runtimes never naming the namespace;
 - the actual table, registry and account layout.
 
-The other four drive the host:
+The other three drive the host:
 - the 4,096-row run (12,288 payload bytes, 12,288 String bytes, sum 8,386,560,
   three reentrant invocations);
 - the host controls, run at 33 and at 4,096 rows;
@@ -316,10 +322,10 @@ and instance tokens with no effect, a third domain's refused precharge, a held
 account, foreign invocations, a sticky selected failure, escape, popped-child,
 store and clone isolation, 64 views and stale handles.
 
-These definitions drive only the precursor. Activation still requires root's
-validated selection behind `accept`, the capacity flow built from that joined
-selection with the producer bound, a selected check yielding current HIR above
-32 rows, and matching native and interpreter executors.
+Publishing and host definitions consume an artifact from the original source
+through the real factory. Only hostile precursor controls use rescaled HIR.
+All definitions remain unexecuted. Default admission still requires matching
+native and interpreter executors and owning acceptance checks.
 
 ## Source half of the selected FusedConstructionV1 proof
 

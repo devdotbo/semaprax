@@ -1,12 +1,13 @@
 //! Selected executor input and the checks every producer of it must pass.
 //!
-//! [`Selected`] borrows typed facts; it is not authority. Its only producers
-//! are the test-only unvalidated precursor and, after root activation, the
-//! validated selection behind `accept`. Both must call [`check`] against the
-//! exact current program before lowering.
+//! [`Selected`] borrows typed facts; it is not authority. Its producers are
+//! [`from_joined`] (inside `accept`, from the validated owner's fresh join)
+//! and the test-only unvalidated precursor. Both must call [`check`] against
+//! the exact current source and program before lowering.
 use super::{layout, Refusal};
 use crate::byte_data_capacity::MAX_BYTES_COPY_SITES;
 use crate::construction_fusion::native_provenance::{Carrier, Mapping};
+use crate::hir::fused_construction::{join::Joined, Role};
 use crate::hir::{
     ResolvedBinding, ResolvedExpr as E, ResolvedFieldDeclaration, ResolvedFunction,
     ResolvedProgram, ResolvedStatement as S, ResolvedType as T, ResolvedTypeDeclaration,
@@ -38,14 +39,76 @@ pub(super) struct Selected<'a> {
     pub(super) rows: u32,
     pub(super) width: u64,
     pub(super) order: [&'static str; 3],
-    pub(super) mapping: &'a Mapping<'a>,
+    /// Independent provenance used only to refuse disagreement. The lowering
+    /// takes every carrier from its producing field read, never from here.
+    pub(super) mapping: Option<&'a Mapping<'a>>,
 }
 
 impl Selected<'_> {
-    /// Producer-bound representation of one view expression, if any.
-    pub(super) fn carrier(&self, expression: &E) -> Option<Carrier> {
-        self.mapping.fact(expression).map(|fact| fact.carrier())
+    /// Refuse unless the independent provenance, when present, names exactly
+    /// `carrier` for this view expression.
+    pub(super) fn cross_check(&self, expression: &E, carrier: Carrier) -> Result<(), Refusal> {
+        match self.mapping {
+            None => Ok(()),
+            Some(mapping) => match mapping.fact(expression) {
+                Some(fact) if fact.carrier() == carrier => Ok(()),
+                _ => Err(Refusal::Carrier),
+            },
+        }
     }
+}
+
+/// Build the executor input from one fresh, current join. Every node comes
+/// from the joined selection over the exact owner program; nothing is cached.
+pub(super) fn from_joined<'a>(
+    joined: &Joined<'a>,
+    source: &'a crate::ast::Program,
+    program: &'a ResolvedProgram,
+    mapping: Option<&'a Mapping<'a>>,
+) -> Result<Selected<'a>, Refusal> {
+    let selection = joined.selection();
+    if !std::ptr::eq(selection.program(), program) || !joined.still_current(source, program) {
+        return Err(Refusal::Stale);
+    }
+    let mut order = [""; 3];
+    let mut byte_field = None;
+    let fields = selection.fields();
+    if fields.len() != 3 {
+        return Err(Refusal::Join);
+    }
+    for ((slot, role), field) in order.iter_mut().zip(selection.order()).zip(fields) {
+        *slot = match (role, &field.ty) {
+            (Role::Induction, T::I64) => "scalar",
+            (Role::Text, T::String) => "text",
+            (Role::Payload, T::Bytes) => {
+                byte_field = Some(field);
+                "payload"
+            }
+            _ => return Err(Refusal::Join),
+        };
+    }
+    Ok(Selected {
+        source,
+        program,
+        function: selection.function(),
+        record: selection.record(),
+        vector: selection.vector(),
+        counter: selection.counter(),
+        item: selection.item(),
+        condition: selection.condition(),
+        body: selection.body(),
+        constructor: selection.constructor(),
+        push: selection.push(),
+        step: selection.step(),
+        producer: selection.producer(),
+        byte_field: byte_field.ok_or(Refusal::Join)?,
+        suffix: selection.suffix(),
+        tail: selection.tail(),
+        rows: selection.rows(),
+        width: selection.width(),
+        order,
+        mapping,
+    })
 }
 
 /// Field roles in declaration order. Exactly one i64, String and Bytes field,
@@ -85,7 +148,9 @@ pub(super) fn check(
 ) -> Result<(), Refusal> {
     if !std::ptr::eq(selected.source, source)
         || !std::ptr::eq(selected.program, program)
-        || !selected.mapping.still_held(source, program)
+        || selected
+            .mapping
+            .is_some_and(|mapping| !mapping.still_held(source, program))
     {
         return Err(Refusal::Stale);
     }
@@ -121,7 +186,7 @@ pub(super) fn check(
     }
     // Every leased view comes from the exact selected Bytes field of the
     // selected vector; every other view stays an ordinary String carrier.
-    for fact in selected.mapping.facts() {
+    for fact in selected.mapping.map_or(&[][..], |mapping| mapping.facts()) {
         let leased = fact.carrier() == Carrier::LeasedSlice;
         let payload = fact.field().id == selected.byte_field.id;
         if leased != payload || fact.vector() != &selected.vector.id {

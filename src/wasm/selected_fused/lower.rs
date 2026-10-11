@@ -11,6 +11,7 @@
 use super::cleanup::{Failure, Owned, Replay};
 use super::facts::Selected;
 use super::{import, Refusal, ENTRY, IMPORTS, NAMESPACE};
+use crate::loan_plan::LoanPointPhase;
 use crate::hir::{
     ExpressionId, ResolvedBinding, ResolvedExpr as E, ResolvedExprKind as K,
     ResolvedStatement as S, ResolvedType as T, ValueId,
@@ -192,20 +193,76 @@ impl<'a> Lower<'a> {
         Ok((start, length))
     }
 
-    /// End every open leased view, innermost scope and latest view first.
-    /// Views are loans, not owners: they end before any owner finalizer.
-    pub(super) fn end_views(&mut self) {
-        let views: Vec<u32> = self
-            .scopes
-            .iter()
-            .rev()
-            .flat_map(|scope| scope.views.iter().rev().map(|(local, _)| *local))
-            .collect();
-        for view in views {
+    /// End, in loan-plan vector order, every open leased view whose loan the
+    /// canonical loan plan ends at this program point. Views end only here
+    /// (or on a failure path, for exactly the loans live at that point).
+    pub(super) fn loan_points(&mut self, at: &ExpressionId, phase: LoanPointPhase) {
+        let selected = self.selected;
+        let mut ending = Vec::new();
+        for loan in &selected.function.loan_plan.loans {
+            if !loan
+                .ends
+                .iter()
+                .any(|end| &end.expression == at && end.phase == phase)
+            {
+                continue;
+            }
+            for scope in &self.scopes {
+                for (local, site) in &scope.views {
+                    if *site == &loan.site && !ending.contains(local) {
+                        ending.push(*local);
+                    }
+                }
+            }
+        }
+        for view in ending {
+            for scope in &mut self.scopes {
+                scope.views.retain(|(local, _)| *local != view);
+            }
             self.end_view(view);
         }
     }
-    fn end_view(&mut self, view: u32) {
+    /// Leased views a failure at `at` must end: exactly the open views whose
+    /// loans the plan holds live before `at`, in its live-set order. An open
+    /// view the plan does not hold live there is a lowering/plan disagreement.
+    pub(super) fn live_views_at(&self, at: &ExpressionId) -> Result<Vec<u32>, Refusal> {
+        let open: Vec<(u32, &ExpressionId)> = self
+            .scopes
+            .iter()
+            .flat_map(|scope| scope.views.iter().copied())
+            .collect();
+        if open.is_empty() {
+            return Ok(Vec::new());
+        }
+        let plan = &self.selected.function.loan_plan;
+        let endpoint = plan
+            .endpoints
+            .iter()
+            .find(|endpoint| {
+                &endpoint.point.expression == at && endpoint.point.phase == LoanPointPhase::Before
+            })
+            .ok_or(Refusal::Loans)?;
+        let mut covered = vec![false; open.len()];
+        let mut views = Vec::new();
+        for id in endpoint.live_before.iter() {
+            let loan = plan
+                .loans
+                .iter()
+                .find(|loan| loan.id == *id)
+                .ok_or(Refusal::Loans)?;
+            for (index, (local, site)) in open.iter().enumerate() {
+                if !covered[index] && *site == &loan.site {
+                    covered[index] = true;
+                    views.push(*local);
+                }
+            }
+        }
+        if covered.contains(&false) {
+            return Err(Refusal::Loans);
+        }
+        Ok(views)
+    }
+    pub(super) fn end_view(&mut self, view: u32) {
         self.op(I::LocalGet(view));
         self.op(I::I64Eqz);
         self.op(I::I32Eqz);
@@ -217,34 +274,14 @@ impl<'a> Lower<'a> {
         self.op(I::LocalSet(view));
         self.op(I::End);
     }
-    /// Close the innermost scope at the end of `block`: its views end, after
-    /// checking that each view's authenticated loans end inside this block.
+    /// Close the innermost scope at the end of `block`. The block's own
+    /// after-point loan ends are processed first; any view still open then
+    /// outlives every loan end the plan gives it, so lowering refuses.
     pub(super) fn close_scope(&mut self, block: &E) -> Result<(), Refusal> {
+        self.loan_points(&block.id, LoanPointPhase::After);
         let scope = self.scopes.pop().ok_or(unsupported("scope"))?;
         if !scope.views.is_empty() {
-            let mut inside = vec![&block.id];
-            let mut pending: Vec<&E> = vec![block];
-            while let Some(expression) = pending.pop() {
-                inside.push(&expression.id);
-                pending.extend(crate::hir::lexical_exit::ChildCursor::new(expression));
-            }
-            let loans = &self.selected.function.loan_plan.loans;
-            for (_, site) in &scope.views {
-                let mut matching = loans.iter().filter(|loan| &loan.site == *site).peekable();
-                if matching.peek().is_none() {
-                    return Err(Refusal::Loans);
-                }
-                for loan in matching {
-                    if loan.ends.is_empty()
-                        || loan.ends.iter().any(|end| !inside.contains(&&end.expression))
-                    {
-                        return Err(Refusal::Loans);
-                    }
-                }
-            }
-        }
-        for (view, _) in scope.views.into_iter().rev() {
-            self.end_view(view);
+            return Err(Refusal::Loans);
         }
         Ok(())
     }
