@@ -1312,6 +1312,25 @@ fn collect_expression_type_edges(
         )
     });
     match &expression.kind {
+        ExprKind::VecConstructor { .. } => {
+            let expansion = crate::ast::vec_constructor::inspect(expression).map_err(|_| {
+                vec![graph_error(
+                    "SPX-G173",
+                    "Vec constructor source provenance disagrees with retained HIR",
+                )]
+            })?;
+            // The marker replaces its ordinary Block at the same identity.
+            collect_expression_type_edges(
+                program,
+                owner,
+                expansion.value,
+                path,
+                type_uses,
+                module_paths,
+                authored,
+                edges,
+            )?;
+        }
         ExprKind::Closure {
             params,
             return_type,
@@ -1449,7 +1468,6 @@ fn collect_expression_type_edges(
         ExprKind::LexicalExit {
             value: Some(value), ..
         }
-        | ExprKind::VecConstructor { value, .. }
         | ExprKind::Unary { value, .. } => collect_expression_type_edges(
             program,
             owner,

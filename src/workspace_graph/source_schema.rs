@@ -227,6 +227,11 @@ pub(super) fn schema_with_proofs<'a>(
         .chain(module.function_instances.iter().map(|i| &i.function))
         .any(crate::finite_byte_scratch::function_requires);
     let admission = |operation: crate::vec_ops::VecOp, element: &hir::ResolvedType| {
+        if crate::vec_ops::resolved_element_is_admitted(element)
+            && crate::vec_ops::resolved_operation_element_is_admitted(operation, element)
+        {
+            return Some(hir::OwnershipMode::Value);
+        }
         if *element == hir::ResolvedType::String && operation.admits_owned_leaf()
             || *element == hir::ResolvedType::Bytes
                 && crate::vec_ops::resolved_operation_element_is_admitted(operation, element)
@@ -273,9 +278,17 @@ pub(super) fn schema_with_proofs<'a>(
         {
             continue;
         }
-        let byte = crate::byte_ops::requires_same_owner_set(function);
-        let string = !byte && crate::string_ops::replacement::requires(function);
-        let ordinary = !byte && !string && authority(function);
+        let lexical = hir::lexical_exit::requires(function).map_err(|error| vec![error])?;
+        if (function.cleanup_plan.schema == crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V18) != lexical
+        {
+            return Err(vec![graph_error(
+                "SPX-G410",
+                "lexical cleanup schema disagrees with authored exits",
+            )]);
+        }
+        let byte = !lexical && crate::byte_ops::requires_same_owner_set(function);
+        let string = !lexical && !byte && crate::string_ops::replacement::requires(function);
+        let ordinary = !lexical && !byte && !string && authority(function);
         for (schema, expected, message) in [
             (
                 crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V17,
@@ -390,6 +403,64 @@ mod tests {
         build_owned_retaining_sources_for_change(sources, MAX_CHANGE_BUILDER_BYTES)
             .unwrap()
             .0
+    }
+
+    #[test]
+    fn string_slot_schema_preserves_scalar_renewal_and_authored_lexical_precedence() {
+        for lexical in [false, true] {
+            let exit = if lexical {
+                "if n==0 {return str_len_bytes(vec_str_at(values,0usize));}else{0};"
+            } else {
+                ""
+            };
+            let source = format!(
+                r#"module app.main;
+@id("inspect") fn inspect(n:i64)->i64 {{
+ let values=vec_push<string>(vec_with_capacity<string>(1usize),"ok");
+ let mut ranks=vec_with_capacity<i64>(1usize); let mut i=0;
+ while i<1 {{ ranks=vec_push<i64>(ranks,i); i=i+1; {exit} 0 }}
+ str_len_bytes(vec_str_at(values,0usize))
+}}
+@id("main") fn main()->i64 {{inspect(1)}}
+"#
+            );
+            let mut build = build_source(&source);
+            let expected = if lexical {
+                crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V18
+            } else {
+                crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V15
+            };
+            let function = build
+                .hir
+                .modules
+                .iter()
+                .flat_map(|m| &m.functions)
+                .find(|f| f.id.as_str() == "inspect")
+                .unwrap();
+            assert_eq!(function.cleanup_plan.schema, expected);
+            assert_eq!(
+                build.source_graph_schemas().unwrap()["app/main.spx"],
+                "semaprax.graph.v80"
+            );
+            let forged = if lexical {
+                crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V15
+            } else {
+                crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V18
+            };
+            build
+                .hir
+                .modules
+                .iter_mut()
+                .flat_map(|m| &mut m.functions)
+                .find(|f| f.id.as_str() == "inspect")
+                .unwrap()
+                .cleanup_plan
+                .schema = forged;
+            assert_eq!(
+                build.source_graph_schemas().unwrap_err()[0].code,
+                "SPX-G410"
+            );
+        }
     }
 
     #[test]

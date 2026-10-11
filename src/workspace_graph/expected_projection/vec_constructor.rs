@@ -303,6 +303,24 @@ mod tests {
         value
     }
     #[test]
+    fn imported_nominal_constructor_type_sites_keep_the_replaced_block_identity() {
+        let sources = [
+            ("provider.spx", "module provider.rows; @id(\"row\") record Row { @id(\"row.value\") value:i64, } @id(\"provider.main\") fn main()->i64{0}"),
+            ("caller.spx", "module app.main; use type @id(\"row\") from provider.rows as Row; @id(\"main\") fn main()->i64{let rows=vec_of<Row>(Row{value:42}); if vec_len<Row>(rows)==1usize {42}else{0}}"),
+        ].into_iter().map(|(path, source)| crate::workspace_graph::WorkspaceSource {
+            path: path.to_owned(),
+            source: crate::format::canonical(&crate::parse(source, path).unwrap()),
+        }).collect();
+        let build = crate::workspace_graph::build_owned(sources).unwrap();
+        let path = "body.s0.value.s0.value";
+        let identity = hir::workspace_expression_identity(&hir::DeclarationId::new("main"), path);
+        assert!(build.edges.iter().any(|edge| edge.kind == "type_reference"
+            && edge.target == "row"
+            && edge.ast_path == format!("{path}.type_argument.0")
+            && edge.expression == identity));
+    }
+
+    #[test]
     fn retained_constructor_requires_exact_current_source_site_and_typed_marker_inventory() {
         let source = crate::check(SOURCE, "constructor.spx").unwrap();
         let typed = hir::resolve(&source).unwrap();
