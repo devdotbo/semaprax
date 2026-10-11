@@ -56,6 +56,7 @@ mod scalar_exports;
 mod selected_fused;
 mod string_ops_v2_use;
 use string_ops_v2_use::{program_uses_numeric_text, program_uses_string_ops_v2};
+mod borrowed_equality;
 /// Call-depth admission for the legacy scalar-core emitter (#293 P2-2).
 mod scalar_call_admission;
 #[cfg(any(test, feature = "unstable-wit-component-harness"))]
@@ -706,6 +707,7 @@ struct LocalLayout<'a> {
 struct TextIntrinsicIndexes {
     starts_with: u32,
     contains: u32,
+    equality: Option<u32>,
 }
 
 trait ByteOutput: std::ops::Deref<Target = [u8]> {
@@ -1570,9 +1572,16 @@ fn emit_resolved_module_internal(
         + executable_functions.len() as u32
         + owned_plans.len() as u32
         + scalar_exports.len() as u32;
+    let text_equality = !text_exports.is_empty() && borrowed_equality::uses(program)?;
+    let text_helper_count = if text_exports.is_empty() {
+        0
+    } else {
+        3 + usize::from(text_equality)
+    };
     let text_intrinsics = (!text_exports.is_empty()).then_some(TextIntrinsicIndexes {
         starts_with: text_helper_base + 1,
         contains: text_helper_base + 2,
+        equality: text_equality.then_some(text_helper_base + 3),
     });
 
     let mut module = crate::bounded_output::CappedVec::from_slice(b"\0asm\x01\0\0\0");
@@ -1625,7 +1634,7 @@ fn emit_resolved_module_internal(
         (function_types.len()
             + owned_function_types.len()
             + scalar_export_types.len()
-            + usize::from(text_validator_type.is_some()) * 3
+            + text_helper_count
             + text_export_types.len()
             + usize::from(main_index.is_some())) as u32,
     );
@@ -1642,6 +1651,9 @@ fn emit_resolved_module_internal(
         write_u32(&mut functions, validator);
         write_u32(&mut functions, binary);
         write_u32(&mut functions, binary);
+        if text_equality {
+            write_u32(&mut functions, binary);
+        }
     }
     for type_index in text_export_types {
         write_u32(&mut functions, type_index);
@@ -1748,7 +1760,7 @@ fn emit_resolved_module_internal(
             exports.push(kind);
             write_u32(&mut exports, index);
         }
-        let text_export_base = text_helper_base + 3;
+        let text_export_base = text_helper_base + text_helper_count as u32;
         for (ordinal, plan) in text_exports.iter().enumerate() {
             write_name(&mut exports, &plan.wasm_export);
             exports.push(0x00);
@@ -1763,7 +1775,7 @@ fn emit_resolved_module_internal(
         (executable_functions.len()
             + owned_plans.len()
             + scalar_exports.len()
-            + if text_exports.is_empty() { 0 } else { 3 }
+            + text_helper_count
             + text_exports.len()
             + usize::from(main_index.is_some())) as u32,
     );
@@ -1900,6 +1912,12 @@ fn emit_resolved_module_internal(
         ] {
             let mut body = crate::bounded_output::CappedVec::new();
             emitter(&mut body);
+            write_u32(&mut code, body.len() as u32);
+            code.extend_from_slice(&body);
+        }
+        if text_equality {
+            let mut body = crate::bounded_output::CappedVec::new();
+            borrowed_equality::emit_body(&mut body, text_helper_base + 1);
             write_u32(&mut code, body.len() as u32);
             code.extend_from_slice(&body);
         }

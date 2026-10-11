@@ -5180,8 +5180,13 @@ fn combine(op: BinaryOp, lhs: Value, rhs: Value) -> Option<Result<Value, Normali
                 _ => None,
             }
         }
-        // Owned strings compare by exact UTF-8 contents; any other operator
-        // over strings is ill-typed on verified programs.
+        // Borrowed views compare exact bytes without cloning their owners.
+        // Ordering remains ill-typed for Str on verified programs.
+        (Value::BorrowedStr(a), Value::BorrowedStr(b)) => match op {
+            BinaryOp::Eq => Some(Ok(Value::Bool(a.bytes.as_ref() == b.bytes.as_ref()))),
+            BinaryOp::Ne => Some(Ok(Value::Bool(a.bytes.as_ref() != b.bytes.as_ref()))),
+            _ => None,
+        },
         (Value::String(a), Value::String(b)) => match op {
             BinaryOp::Eq => Some(Ok(Value::Bool(a == b))),
             BinaryOp::Ne => Some(Ok(Value::Bool(a != b))),

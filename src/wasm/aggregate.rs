@@ -28,6 +28,7 @@ mod filesystem_ops;
 mod filesystem_v2;
 mod lexical_control;
 mod literal_format;
+mod str_equality;
 mod str_helpers;
 mod str_usage;
 use str_usage::program_uses_str_ops;

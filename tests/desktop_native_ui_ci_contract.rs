@@ -82,6 +82,7 @@ fn private_native_ui_is_platform_real_feature_gated_and_source_locked() {
             read(root, "src/codegen/native_emit/expression/lexical_exit.rs"),
             read(root, "src/codegen/native_emit/expression/lexical_lookup.rs"),
             read(root, "src/codegen/native_emit/expression/scalar_match.rs"),
+            read(root, "src/codegen/native_emit/expression/str_equality.rs"),
             read(
                 root,
                 "src/codegen/native_emit/expression/vec_ops/string_slot.rs"

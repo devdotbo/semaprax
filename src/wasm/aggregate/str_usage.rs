@@ -41,8 +41,10 @@ fn expression_uses_str_ops(expression: &ResolvedExpr) -> bool {
         | ResolvedExprKind::Project { base: value, .. }
         | ResolvedExprKind::Upcast { source: value }
         | ResolvedExprKind::Yield { request: value } => expression_uses_str_ops(value),
-        ResolvedExprKind::Binary { left, right, .. } => {
-            expression_uses_str_ops(left) || expression_uses_str_ops(right)
+        ResolvedExprKind::Binary { op, left, right } => {
+            (matches!(op, BinaryOp::Eq | BinaryOp::Ne) && left.ty == ResolvedType::Str)
+                || expression_uses_str_ops(left)
+                || expression_uses_str_ops(right)
         }
         ResolvedExprKind::Block { statements, tail }
         | ResolvedExprKind::VecConstructor {

@@ -79,6 +79,14 @@ fn borrowed_and_owned_slot_views_share_nul_utf8_storage_and_expire_before_owned_
     // One Vec backing and three original String owners. Reads and aliases
     // must not add allocations; all three invocations settle every owner.
     run(SOURCE, false, "slot-no-copy", Some(4));
+    // Eq/Ne reads actual String slots through the same whole-Vec loan.
+    // Distinct slot roots, repeated same-slot views and an alias retain the
+    // original four allocations and all caller-side last-use transfers.
+    let equality = SOURCE
+        .replace("str_len_bytes(selected)==4 && str_is_empty(empty)", "str_len_bytes(selected)==4 && str_is_empty(empty) && selected==vec_str_at(values,0usize) && selected!=empty && empty==vec_str_at(values,1usize)")
+        .replace("answer==42 &&", "answer==42 && view==alias &&");
+    assert_ne!(equality, SOURCE);
+    run(&equality, false, "slot-no-copy", Some(4));
     for mode in [
         "field-bad-word",
         "field-forged-shape",

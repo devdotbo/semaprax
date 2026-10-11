@@ -60,7 +60,7 @@ fn unique_patient_ids(values: borrow Vec<Patient>) -> bool
         let mut previous_index = 0usize;
         while valid && previous_index < index {
             let previous = vec_field<Patient>(values, previous_index, "id");
-            valid = str_len_bytes(current) != str_len_bytes(previous) || !str_starts_with(current, previous);
+            valid = current != previous;
             previous_index = previous_index + 1usize;
             valid && previous_index < index
         }

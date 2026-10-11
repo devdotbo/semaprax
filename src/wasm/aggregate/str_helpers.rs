@@ -66,6 +66,15 @@ impl Emitter<'_> {
         op: crate::str_ops::StrOp,
         values: &[Value],
     ) -> Option<u32> {
+        self.owned_str_predicate_pair(op, &values[0], &values[1])
+    }
+
+    pub(super) fn owned_str_predicate_pair(
+        &mut self,
+        op: crate::str_ops::StrOp,
+        left: &Value,
+        right: &Value,
+    ) -> Option<u32> {
         let operation = match op {
             crate::str_ops::StrOp::StartsWith => crate::string_ops::StringOp::StartsWith,
             crate::str_ops::StrOp::Contains => crate::string_ops::StringOp::Contains,
@@ -77,8 +86,8 @@ impl Emitter<'_> {
                 operation.id(),
             )))
             .copied()?;
-        self.get_scalar(&values[0]);
-        self.get_scalar(&values[1]);
+        self.get_scalar(left);
+        self.get_scalar(right);
         Some(index)
     }
 }

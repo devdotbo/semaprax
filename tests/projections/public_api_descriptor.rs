@@ -621,6 +621,7 @@ fn project_v8_is_activated_only_by_manifest_and_profile_admission() {
     let wasm = concat!(
         include_str!("../../src/wasm.rs"),
         include_str!("../../src/wasm/scalar_emit.rs"),
+        include_str!("../../src/wasm/borrowed_equality.rs"),
         include_str!("../../src/wasm/scalar_emit_match.rs"),
         include_str!("../../src/wasm/scalar_control.rs"),
         include_str!("../../src/wasm/lexical_lookup.rs"),

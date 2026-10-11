@@ -4087,6 +4087,13 @@ The native emitter `native_emit/indexed_reads.rs` and aggregate Wasm
 Both consume only previously authenticated arguments and preserve canonical
 Option layouts and existing cleanup ordering.
 
+Borrowed Str Eq/Ne is received by native `expression/str_equality.rs`,
+aggregate Wasm `aggregate/str_equality.rs`, and scalar text Wasm
+`borrowed_equality.rs`. The aggregate receiver preserves tagged owner handles;
+the public wrapper retains its existing root validation and cumulative bound.
+[Borrowed Str Equality v1](BORROWED-STR-EQUALITY-V1.md) owns exact-byte semantics
+and pending backend qualification.
+
 The additive [Project v26 source command](PROJECT-MANIFEST-V26.md) is owned
 by `project/source_command.rs`, closed manifest/profile admission and the
 existing owned representation workspace linker. The linked SourceCommand HIR

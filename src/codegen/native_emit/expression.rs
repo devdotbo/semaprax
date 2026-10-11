@@ -31,6 +31,7 @@ mod record_iterator_item;
 mod resource_text;
 mod scalar_match;
 mod stdin_stream;
+mod str_equality;
 mod unary;
 mod variant_equality;
 mod variant_if;
@@ -2396,6 +2397,9 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             return self.emit_lazy_binary(op, left, right, result_type);
         }
         let left = self.emit_expr(left)?;
+        if matches!(op, BinaryOp::Eq | BinaryOp::Ne) && left.ty == ResolvedType::Str {
+            return self.emit_str_equality(op, left, right, result_type);
+        }
         if matches!(op, BinaryOp::Eq | BinaryOp::Ne)
             && self.program.is_payload_free_variant(&left.ty)
         {

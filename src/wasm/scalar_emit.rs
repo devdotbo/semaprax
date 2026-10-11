@@ -427,6 +427,41 @@ pub(super) fn emit_with_control(
             }
         },
         ResolvedExprKind::Binary { op, left, right } => {
+            if left.ty == ResolvedType::Str && matches!(op, BinaryOp::Eq | BinaryOp::Ne) {
+                let helper = layout
+                    .text_intrinsics
+                    .and_then(|indexes| indexes.equality)
+                    .ok_or_else(|| {
+                        Diagnostic::io("SPX-W119", "Str equality reached a non-text Wasm profile")
+                    })?;
+                if right.ty != ResolvedType::Str || expr.ty != ResolvedType::Bool {
+                    return Err(Diagnostic::io("SPX-W119", "Str equality types disagree"));
+                }
+                emit_with_control(
+                    output,
+                    left,
+                    value_indexes,
+                    function_indexes,
+                    layout,
+                    result,
+                    control,
+                )?;
+                emit_with_control(
+                    output,
+                    right,
+                    value_indexes,
+                    function_indexes,
+                    layout,
+                    result,
+                    control,
+                )?;
+                output.push(0x10);
+                write_u32(output, helper);
+                if *op == BinaryOp::Ne {
+                    output.push(0x45);
+                }
+                return Ok(());
+            }
             if matches!(left.ty, ResolvedType::String) {
                 // Owned strings compare by UTF-8 contents through the host
                 // shim; every other operator over strings is ill-typed.

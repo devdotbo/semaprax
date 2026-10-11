@@ -1167,6 +1167,12 @@ and field path; it does not clone or move the String. Literal, temporary, call,
 and constructor roots remain refused. Source implementation and qualification
 are pending; see [Projected String Views v1](PROJECTED-STRING-VIEWS-V1.md).
 
+Two admitted borrowed `str` views use `a == b` or `a != b` for exact UTF-8
+byte equality, including NUL. This does not clone their owners or normalize
+Unicode. Keep both roots live; mixed Str/String and Str ordering remain
+refused. [Borrowed Str Equality v1](BORROWED-STR-EQUALITY-V1.md) has authored
+backend gates; current-head qualification is pending.
+
 Use `u8_from_i64(value)` then `char_from_u8(byte)` for byte conversion; use
 `char_from_i64(value)` for arbitrary Unicode code points.
 
