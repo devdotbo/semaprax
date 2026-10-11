@@ -96,7 +96,22 @@ fn refuse(program: &ResolvedProgram, case: &str) {
     assert_eq!(expected.code, "SPX-H006", "{case}: {expected:?}");
     let error = codegen::emit_hir_c(program).expect_err(case);
     assert_eq!(
-        error, expected,
+        (
+            error.code,
+            error.severity,
+            error.message,
+            error.path,
+            error.span,
+            error.help
+        ),
+        (
+            expected.code,
+            expected.severity,
+            expected.message,
+            expected.path,
+            expected.span,
+            expected.help
+        ),
         "{case}: native must retain the independent replay diagnostic"
     );
 }

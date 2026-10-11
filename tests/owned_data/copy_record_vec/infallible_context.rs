@@ -127,16 +127,81 @@ fn total_calls(expression: &ResolvedExpr, out: &mut Vec<(ExpressionId, Declarati
             out.push((expression.id.clone(), callee.clone()));
         }
     }
-    for index in 0..expression.child_count() {
-        total_calls(expression.child(index).unwrap(), out);
+    // Independent fixture census: refuse unknown shapes instead of silently
+    // omitting calls when this fixture evolves.
+    match &expression.kind {
+        ResolvedExprKind::Call { args, .. } | ResolvedExprKind::VecFieldRead { args, .. } => {
+            for child in args {
+                total_calls(child, out);
+            }
+        }
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
+            for statement in statements {
+                for index in 0..statement.child_count() {
+                    total_calls(statement.child(index).unwrap(), out);
+                }
+            }
+            total_calls(tail, out);
+        }
+        ResolvedExprKind::Binary { left, right, .. } => {
+            total_calls(left, out);
+            total_calls(right, out);
+        }
+        ResolvedExprKind::If {
+            condition,
+            then_branch,
+            else_branch,
+        } => {
+            total_calls(condition, out);
+            total_calls(then_branch, out);
+            total_calls(else_branch, out);
+        }
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            if let Some(value) = value {
+                total_calls(value, out);
+            }
+        }
+        ResolvedExprKind::ConstructRecord { fields, .. } => {
+            for field in fields {
+                total_calls(&field.value, out);
+            }
+        }
+        ResolvedExprKind::Project { base, .. } | ResolvedExprKind::Unary { value: base, .. } => {
+            total_calls(base, out)
+        }
+        ResolvedExprKind::Int(_)
+        | ResolvedExprKind::Usize(_)
+        | ResolvedExprKind::String(_)
+        | ResolvedExprKind::Bool(_)
+        | ResolvedExprKind::Place(_)
+        | ResolvedExprKind::BorrowPlace { .. } => {}
+        other => panic!("uncensused fixture expression: {other:?}"),
     }
 }
 fn refuse(program: &ResolvedProgram, label: &str) {
     let independent = semaprax::hir::validate(program).expect_err(label);
     assert_eq!(independent.code, "SPX-H006", "{label}: {independent:?}");
+    let emitted = semaprax::codegen::emit_hir_c(program).expect_err(label);
     assert_eq!(
-        semaprax::codegen::emit_hir_c(program).expect_err(label),
-        independent,
+        (
+            emitted.code,
+            emitted.severity,
+            emitted.message,
+            emitted.path,
+            emitted.span,
+            emitted.help
+        ),
+        (
+            independent.code,
+            independent.severity,
+            independent.message,
+            independent.path,
+            independent.span,
+            independent.help
+        ),
         "{label}"
     );
 }
