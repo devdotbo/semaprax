@@ -2,7 +2,7 @@
 use super::*;
 use std::cmp::Ordering;
 mod keys;
-pub(super) trait Key {
+pub(in crate::cleanup_plan::replay::factored) trait Key {
     fn compare(
         &self,
         other: &Self,
@@ -10,7 +10,7 @@ pub(super) trait Key {
         budget: &mut ReplayBudget,
     ) -> Result<Ordering, Diagnostic>;
 }
-pub(super) struct Dictionary<K, V> {
+pub(in crate::cleanup_plan::replay::factored) struct Dictionary<K, V> {
     rows: Vec<(K, V)>,
 }
 impl<K, V> Default for Dictionary<K, V> {
@@ -19,7 +19,7 @@ impl<K, V> Default for Dictionary<K, V> {
     }
 }
 impl<K: Key, V> Dictionary<K, V> {
-    pub(super) fn new() -> Self {
+    pub(in crate::cleanup_plan::replay::factored) fn new() -> Self {
         Self { rows: Vec::new() }
     }
     fn position(
@@ -41,7 +41,7 @@ impl<K: Key, V> Dictionary<K, V> {
         }
         Ok(Err(low))
     }
-    pub(super) fn get(
+    pub(in crate::cleanup_plan::replay::factored) fn get(
         &self,
         function: &ResolvedFunction,
         key: &K,
@@ -52,7 +52,7 @@ impl<K: Key, V> Dictionary<K, V> {
             .ok()
             .map(|i| &self.rows[i].1))
     }
-    pub(super) fn contains(
+    pub(in crate::cleanup_plan::replay::factored) fn contains(
         &self,
         function: &ResolvedFunction,
         key: &K,
@@ -89,7 +89,7 @@ impl<K: Key, V> Dictionary<K, V> {
         self.rows.insert(index, (key, value));
         Ok(())
     }
-    pub(super) fn insert(
+    pub(in crate::cleanup_plan::replay::factored) fn insert(
         &mut self,
         function: &ResolvedFunction,
         key: K,
@@ -105,7 +105,7 @@ impl<K: Key, V> Dictionary<K, V> {
         }
         Ok(())
     }
-    pub(super) fn entry(
+    pub(in crate::cleanup_plan::replay::factored) fn entry(
         &mut self,
         function: &ResolvedFunction,
         key: K,
@@ -123,7 +123,7 @@ impl<K: Key, V> Dictionary<K, V> {
         };
         Ok(&mut self.rows[index].1)
     }
-    pub(super) fn remove(
+    pub(in crate::cleanup_plan::replay::factored) fn remove(
         &mut self,
         function: &ResolvedFunction,
         key: &K,
@@ -139,13 +139,13 @@ impl<K: Key, V> Dictionary<K, V> {
         }
         Ok(())
     }
-    pub(super) fn len(&self) -> usize {
+    pub(in crate::cleanup_plan::replay::factored) fn len(&self) -> usize {
         self.rows.len()
     }
-    pub(super) fn iter(&self) -> std::slice::Iter<'_, (K, V)> {
+    pub(in crate::cleanup_plan::replay::factored) fn iter(&self) -> std::slice::Iter<'_, (K, V)> {
         self.rows.iter()
     }
-    pub(super) fn into_rows(self) -> Vec<(K, V)> {
+    pub(in crate::cleanup_plan::replay::factored) fn into_rows(self) -> Vec<(K, V)> {
         self.rows
     }
 }

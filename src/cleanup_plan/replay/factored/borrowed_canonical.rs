@@ -1,7 +1,7 @@
 //! Exact weighted canonicalization with actual charged dictionary probes.
 //! This owner is reachable only from an opaque complete borrowed-helper lease.
 use super::*;
-mod dictionary;
+pub(super) mod dictionary;
 use dictionary::Dictionary;
 pub(super) struct BorrowedCanonicalizer<'a> {
     automaton: &'a Automaton,

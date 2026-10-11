@@ -31,19 +31,12 @@ pub(super) fn push_end(
 pub(super) fn memo_insert(
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
-    memo: &mut BTreeMap<(usize, usize), usize>,
+    memo: &mut dag_memo::Memo,
     key: (usize, usize),
     end: usize,
 ) -> Result<(), Diagnostic> {
     budget.charge(function, 1, "factored DAG identity memo insertion")?;
-    if !memo.contains_key(&key) {
-        budget
-            .reserve_btree_node::<(usize, usize), usize>(function, "factored DAG identity memo")?;
-    }
-    #[cfg(test)]
-    super::instrumentation::memo(key, memo);
-    memo.insert(key, end);
-    Ok(())
+    dag_memo::insert(function, memo, key, end, budget)
 }
 
 pub(super) fn reserve_transition_observation(

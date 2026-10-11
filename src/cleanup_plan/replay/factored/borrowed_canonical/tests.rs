@@ -85,6 +85,22 @@ fn ordinary_order_and_full_duplicate_multisets_match_with_one_budget_through_dro
             assert_eq!(budget.remaining, 0);
         }
     }
+    // One DAG pointer with different continuations is two distinct identities.
+    // The saved BTree route remains an independent numeric tuple oracle.
+    let mut memo = dag_memo::Memo::Borrowed(dictionary::Dictionary::new());
+    let mut old_memo = BTreeMap::new();
+    let mut memo_budget = ReplayBudget::with_physical(function, 1 << 20).unwrap();
+    for (key, end) in [((1, 1), 10), ((1, 2), 20), ((2, 1), 30), ((1, 1), 11)] {
+        old_memo.insert(key, end);
+        dag_memo::insert(function, &mut memo, key, end, &mut memo_budget).unwrap();
+    }
+    for key in [(1, 1), (1, 2), (2, 1), (2, 2), (0, 1)] {
+        assert_eq!(
+            dag_memo::get(function, &memo, &key, &mut memo_budget).unwrap(),
+            old_memo.get(&key).copied()
+        );
+    }
+
     // Two identical alternatives must remain two traces. A shared suffix
     // and a different terminal exercise weighted closure and label identity.
     let mut automaton = Automaton::default();

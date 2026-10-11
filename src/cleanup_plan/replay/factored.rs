@@ -30,6 +30,7 @@ use std::rc::Rc;
 #[cfg(test)]
 mod borrowed_canonical;
 pub(super) mod copy_regions;
+mod dag_memo;
 #[cfg(test)]
 mod instrumentation;
 mod storage;
@@ -204,7 +205,7 @@ fn build_comparison(
         let failure = automaton.end(function, budget, sink, SkeletonTerminal::Failure)?;
         let latch = automaton.end(function, budget, sink, SkeletonTerminal::LoopLatch)?;
         let hir_root = automaton.node(function, budget)?;
-        let mut memo = BTreeMap::new();
+        let mut memo = dag_memo::new(program, function, budget)?;
         for path in &hir_paths {
             let end = automaton.add_observations(
                 function,
@@ -384,7 +385,7 @@ impl Automaton {
         function: &ResolvedFunction,
         observations: &Observations,
         start: usize,
-        memo: &mut BTreeMap<(usize, usize), usize>,
+        memo: &mut dag_memo::Memo,
         budget: &mut ReplayBudget,
     ) -> Result<usize, Diagnostic> {
         let (prefix, items) = observations.parts();
@@ -405,7 +406,7 @@ impl Automaton {
         function: &ResolvedFunction,
         root: &Rc<ObservationDag>,
         start: usize,
-        memo: &mut BTreeMap<(usize, usize), usize>,
+        memo: &mut dag_memo::Memo,
         budget: &mut ReplayBudget,
     ) -> Result<usize, Diagnostic> {
         let key = |dag: &Rc<ObservationDag>, start: usize| (Rc::as_ptr(dag) as usize, start);
@@ -416,10 +417,11 @@ impl Automaton {
             match frame {
                 BuildFrame::Visit(dag, start) => {
                     budget.charge(function, 1, "factored HIR automaton")?;
+                    let retained = dag_memo::get(function, memo, &key(dag, start), budget)?;
                     #[cfg(test)]
-                    instrumentation::visit(dag, memo.contains_key(&key(dag, start)));
-                    if let Some(end) = memo.get(&key(dag, start)) {
-                        push_end(function, budget, &mut ends, *end)?;
+                    instrumentation::visit(dag, retained.is_some());
+                    if let Some(end) = retained {
+                        push_end(function, budget, &mut ends, end)?;
                         continue;
                     }
                     match &dag.kind {
