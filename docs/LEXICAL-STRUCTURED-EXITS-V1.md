@@ -21,6 +21,10 @@ syntax cannot mint a target. Parsing rejects statements after an unconditional
 exit instead of deleting their effects. A conditional with one exit alternative
 joins its other normal type; two exit alternatives have no normal completion.
 No bottom value may become a parameter, field, ABI slot, local or published result.
+An owned record-match arm whose entire result flow exits abruptly retains its
+arm region in the abrupt-only certificate. It creates neither a second normal
+scope exit nor a normal match-result transfer; independent replay still rejects
+a missing/repeated region or a forged normal endpoint.
 The initial profile admits exits only on direct function/loop/control-block
 statement-tail routes. An exit cannot cross initializer, call argument, aggregate,
 return operand, yield, unsafe or closure evaluation. SPX-T312 owns that refusal;

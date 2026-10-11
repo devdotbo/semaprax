@@ -16,13 +16,13 @@ use crate::hir::{
 use crate::prelude;
 
 use super::{
-    BlockId, CallArgumentTransfer, CheckedOperation, CleanupBlock, CleanupEdge, CleanupEntryState,
+    BlockId, CLEANUP_PLAN_SCHEMA_V2, CLEANUP_PLAN_SCHEMA_V3, CLEANUP_PLAN_SCHEMA_V4,
+    CallArgumentTransfer, CheckedOperation, CleanupBlock, CleanupEdge, CleanupEntryState,
     CleanupPlace, CleanupPlan, CleanupRegion, CleanupRegionId, CleanupResultSource, CleanupSlot,
     CleanupSlotId, CleanupTerminator, CleanupTransition, ConditionalVariantCase,
     ConditionalVariantEntry, ContractPhase, EdgeCondition, EdgeId, ExitContinuation, ExitTarget,
     ExitTargetId, FinalizeAction, StagedCopyResultSource, StatusCase, StatusLane, StatusProducer,
-    StatusSource, StatusSourceId, StorageId, CLEANUP_PLAN_SCHEMA_V2, CLEANUP_PLAN_SCHEMA_V3,
-    CLEANUP_PLAN_SCHEMA_V4,
+    StatusSource, StatusSourceId, StorageId,
 };
 
 mod lexical_temporary;
@@ -3812,6 +3812,9 @@ impl<'a> PlanBuilder<'a> {
                     if self.flow_is_closed(result.block) {
                         // The lexical exit already settled the arm contour and
                         // terminated this path; it has no normal match join.
+                        if let Some(arm_region) = arm_region {
+                            self.mark_abrupt_region(arm_region)?;
+                        }
                         results.push(result);
                         continue;
                     }
@@ -4968,7 +4971,7 @@ impl<'a> PlanBuilder<'a> {
                 ResolvedStatement::LexicalWhile { .. } => {
                     return Err(plan_error(
                         "legacy recursive cleanup reference does not admit lexical loops",
-                    ))
+                    ));
                 }
                 ResolvedStatement::Let { binding, value, .. }
                 | ResolvedStatement::Assign { binding, value, .. } => (binding, value),
@@ -6011,7 +6014,7 @@ impl<'a> PlanBuilder<'a> {
             | ResolvedType::TypeParameter { .. }
             | ResolvedType::Function { .. } => false,
             ResolvedType::Never => {
-                return Err(plan_error("match scrutinee cannot have terminal flow type"))
+                return Err(plan_error("match scrutinee cannot have terminal flow type"));
             }
         };
         if is_record {
@@ -6037,6 +6040,9 @@ impl<'a> PlanBuilder<'a> {
                 arm_region.unwrap_or(region),
             )?;
             if self.flow_is_closed(result.block) {
+                if let Some(arm_region) = arm_region {
+                    self.mark_abrupt_region(arm_region)?;
+                }
                 return Ok(result);
             }
             if let Some(source) = result.owned_source.take() {
@@ -6553,10 +6559,12 @@ interface HostEcho permits { host.echo } {
                 )
             })
         }));
-        assert!(resolved
-            .functions
-            .iter()
-            .any(|function| function.params.len() == 8));
+        assert!(
+            resolved
+                .functions
+                .iter()
+                .any(|function| function.params.len() == 8)
+        );
         for identity in [
             "choice.nested",
             "scalar.nested-wide",
@@ -6623,10 +6631,12 @@ interface HostEcho permits { host.echo } {
                 source: crate::cleanup_plan::StagedCopyResultSource::TryOptionNone { .. },
             }
         )));
-        assert!(resolved
-            .functions
-            .iter()
-            .any(|function| !function.cleanup_plan.status_sources.is_empty()));
+        assert!(
+            resolved
+                .functions
+                .iter()
+                .any(|function| !function.cleanup_plan.status_sources.is_empty())
+        );
         assert!(resolved.functions.iter().any(|function| {
             !function.cleanup_plan.regions.is_empty()
                 && !function.cleanup_plan.edges.is_empty()
