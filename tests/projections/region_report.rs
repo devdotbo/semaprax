@@ -194,7 +194,10 @@ fn reported_binding_ids_equal_the_resolved_hir_inventory() {
                     collect_expr(value, ids);
                 }
             }
-            hir::ResolvedExprKind::Block { statements, tail } => {
+            hir::ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            }
+            | hir::ResolvedExprKind::Block { statements, tail } => {
                 for statement in statements {
                     ids.push(statement.binding().id.as_str().to_owned());
                     collect_expr(statement.value(), ids);

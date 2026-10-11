@@ -309,4 +309,5 @@ let outcome=encode(servers,patients,131072usize);match own outcome{{Encoded::Ref
     std::fs::remove_dir_all(root).unwrap();
 }
 
+#[path = "owned/string_slot_adoption.rs"]
 mod string_slot_adoption;

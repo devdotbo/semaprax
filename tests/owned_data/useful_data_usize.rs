@@ -93,7 +93,10 @@ fn expressions(root: &hir::ResolvedExpr) -> Vec<&hir::ResolvedExpr> {
             } => {
                 pending.extend([source.as_ref(), start.as_ref(), end.as_ref()]);
             }
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            }
+            | ResolvedExprKind::Block { statements, tail } => {
                 pending.extend(statements.iter().map(|statement| statement.value()));
                 pending.push(tail);
             }

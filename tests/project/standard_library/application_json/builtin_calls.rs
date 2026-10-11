@@ -171,7 +171,10 @@ pub(super) fn operation_counts(program: &ResolvedProgram, wanted: &str) -> (usiz
                     then_branch.as_ref(),
                     else_branch.as_ref(),
                 ]),
-                E::Block { statements, tail } => {
+                E::VecConstructor {
+                    statements, tail, ..
+                }
+                | E::Block { statements, tail } => {
                     pending.push(tail);
                     for statement in statements {
                         for index in 0..statement.child_count() {

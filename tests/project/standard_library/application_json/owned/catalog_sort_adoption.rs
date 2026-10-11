@@ -127,7 +127,10 @@ fn push_children<'a>(
         semaprax::hir::ResolvedExprKind::Closure { captures, .. } => {
             pending.extend(captures.iter().rev().map(|capture| &capture.value))
         }
-        semaprax::hir::ResolvedExprKind::Block { statements, tail } => {
+        semaprax::hir::ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        }
+        | semaprax::hir::ResolvedExprKind::Block { statements, tail } => {
             pending.push(tail);
             for statement in statements.iter().rev() {
                 for index in (0..statement.child_count()).rev() {
