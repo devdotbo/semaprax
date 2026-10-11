@@ -44,10 +44,11 @@ fn run(
 fn actual_nominal_make_identity_read_replay_matches_legacy_exact_and_one_short() {
     let fixture = crate::workspace_graph::SourceRecordReplayFixture::new(SOURCE);
     let standalone = program();
-    assert!(standalone.types.iter().any(|ty| matches!(
-        ty.kind,
-        crate::hir::ResolvedTypeDeclarationKind::Resource { .. }
-    )));
+    assert!(standalone.types.iter().any(|ty|
+        ty.id.as_str() == "flat.Packet"
+            && matches!(&ty.kind, crate::hir::ResolvedTypeDeclarationKind::Record { fields }
+                if fields.len() == 3)
+    ));
     let standalone_function = standalone
         .functions
         .iter()
@@ -72,10 +73,17 @@ fn actual_nominal_make_identity_read_replay_matches_legacy_exact_and_one_short()
             .unwrap();
         assert!(crate::hir::lexical_exit::requires(function).unwrap());
         fixture.with_context(|context| {
+            let mut budget = ReplayBudget::new();
+            super::super::reserve_program_skeleton_work(
+                context,
+                std::iter::once(function),
+                &mut budget,
+            )
+            .unwrap();
             super::super::lexical_replay::validate_with_index(
                 context,
                 function,
-                &mut ReplayBudget::new(),
+                &mut budget,
                 None,
             )
             .unwrap();

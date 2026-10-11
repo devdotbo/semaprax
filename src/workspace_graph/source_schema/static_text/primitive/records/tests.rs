@@ -54,13 +54,22 @@ fn module(build: &WorkspaceGraphBuild) -> &WorkspaceResolvedModule {
 }
 #[test]
 fn captured_flat_layout_reconstructs_minimal_index_at_exact_and_one_short_without_admission() {
-    assert!(
-        build()
-            .source_graph_schemas()
-            .unwrap_err()
-            .iter()
-            .any(|error| error.code == "SPX-G410"),
-        "a normalized nonlexical fixture cannot select the retained lexical route"
+    let nonlexical = build();
+    assert_eq!(
+        nonlexical.source_graph_schemas().unwrap()["flat.spx"],
+        "semaprax.graph.v77"
+    );
+    let mut reservation = crate::cleanup_plan::ReplayPhysicalReservation::new(usize::MAX);
+    assert_eq!(
+        super::super::authenticate(
+            module(&nonlexical),
+            &nonlexical.hir.declarations,
+            &mut reservation,
+        )
+        .err()
+        .expect("ordinary graph admission grants no retained lexical authority")
+        .code,
+        "SPX-G410"
     );
     let build = build_lexical();
     assert_eq!(
