@@ -333,3 +333,20 @@ host policy before installing the receiver. Computing the forecast never grants
 source authority or automatically creates that funding. The ordinary producer,
 Value installer, retained-frame/public SDK route and all-target activation remain
 closed until their complete receiving obligations are joined.
+
+### Affine interpreter carrier checkpoint
+
+The closed interpreter carrier holds a partition child as an affine owner. The
+central ordinary Bytes alias receiver returns a guard for this carrier rather
+than copying its receipt. Legacy whole backing aliases and private fused aliases
+retain their existing behavior. A partition Slice alias copies only an opaque
+view descriptor; the checked loan table retains the single finalization owner.
+Scoped reads authenticate that descriptor on every use, and actual loan-plan
+end edges expire all its aliases before owner renewal.
+
+The authored carrier control covers descriptor aliasing, exact edge expiry,
+move/store after expiry, stale-view sticky refusal and leaf settlement. The
+ordinary evaluator installer, borrowed Bytes parameter adapter, aggregate leaf
+finalization, and cross-function execution remain closed pending the fresh
+validated partition callgraph and all ordinary consumers. These private controls
+do not qualify ordinary source admission or public carrier escape.

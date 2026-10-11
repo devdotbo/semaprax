@@ -25,6 +25,7 @@ struct State<R: Runtime> {
     children: Vec<Child<'static>>,
 }
 /// Affine private receipt: no Clone, serializer, pointer adapter, or public ABI.
+#[derive(Debug, PartialEq)]
 pub(crate) struct Owner {
     invocation: u64,
     context: usize,
@@ -248,6 +249,11 @@ impl<R: InvocationRuntime> Registry<R> {
             Ok(child.receipt())
         })?;
         Ok(())
+    }
+    pub(crate) fn extent(&mut self, owner: &Owner) -> Result<usize, Refusal> {
+        self.apply(owner, false, |core, child| {
+            core.authenticate_receipt(child, owner.receipt)
+        })
     }
     pub(crate) fn deep_clone(&mut self, owner: &Owner) -> Result<R::Owner, Refusal> {
         self.apply(owner, false, |core, child| core.deep_clone(child))

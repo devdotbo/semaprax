@@ -473,6 +473,9 @@ impl Registry<'_> {
     ) -> Result<BorrowedSliceValue, Flow> {
         match &bytes.bytes {
             Backing::Ordinary(bytes) => Ok(BorrowedSliceValue::whole(root, bytes.clone())),
+            Backing::Partition(_) => Err(Flow::Guard(
+                "partition owner requires an ordinary checked loan receiver",
+            )),
             Backing::Leased(lease) => {
                 let end = self.len(lease)?;
                 let view = self.borrow(lease)?;
@@ -482,6 +485,7 @@ impl Registry<'_> {
                     start: 0,
                     end,
                     lease: Some(view),
+                    partition: None,
                 })
             }
         }
@@ -490,6 +494,11 @@ impl Registry<'_> {
 
 impl Registry<'_> {
     pub(super) fn preflight_value(&self, value: &Value) -> Result<(), Flow> {
+        if matches!(value, Value::Bytes(bytes) if matches!(bytes.bytes, Backing::Partition(_))) {
+            return Err(Flow::Guard(
+                "partition owner requires its ordinary canonical receiver",
+            ));
+        }
         if self.state.is_none() {
             return Ok(());
         }
@@ -519,6 +528,11 @@ impl Registry<'_> {
         Ok(())
     }
     pub(super) fn settle_value(&mut self, value: &mut Value) -> Result<(), Flow> {
+        if matches!(value, Value::Bytes(bytes) if matches!(bytes.bytes, Backing::Partition(_))) {
+            return Err(Flow::Guard(
+                "partition owner requires its ordinary canonical receiver",
+            ));
+        }
         if self.state.is_none() {
             return Ok(());
         }
@@ -569,11 +583,18 @@ impl Registry<'_> {
         a: &OwnedBytesValue,
         b: &OwnedBytesValue,
     ) -> Result<std::cmp::Ordering, Flow> {
+        if matches!(a.bytes, Backing::Partition(_)) || matches!(b.bytes, Backing::Partition(_)) {
+            return Err(Flow::Guard(
+                "partition bytes require an ordinary paired receiving registry",
+            ));
+        }
         let av = match &a.bytes {
+            Backing::Partition(_) => return Err(Flow::Guard("closed partition comparison")),
             Backing::Ordinary(_) => None,
             Backing::Leased(lease) => Some(self.borrow(lease)?),
         };
         let bv = match &b.bytes {
+            Backing::Partition(_) => return Err(Flow::Guard("closed partition comparison")),
             Backing::Ordinary(_) => None,
             Backing::Leased(lease) => match self.borrow(lease) {
                 Ok(view) => Some(view),

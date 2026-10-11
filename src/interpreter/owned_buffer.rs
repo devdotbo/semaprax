@@ -423,12 +423,12 @@ mod tests {
         assert_eq!(&owner.bytes[..5], &[1, 2, 3, 4, 5]);
         assert_eq!(&owner.bytes[5..10], &[6; 5]);
         assert_eq!(&owner.bytes[10..58], &[7; 48]);
-        let snapshot = owner.bytes.clone();
+        let snapshot = owner.bytes.borrow_alias().unwrap();
         owner = set(owner, 0, 99).unwrap();
         assert_eq!(snapshot[0], 1);
         assert_eq!(owner.bytes[0], 99);
         assert_ne!(owner.bytes.as_ptr(), snapshot.as_ptr());
-        let snapshot = owner.bytes.clone();
+        let snapshot = owner.bytes.borrow_alias().unwrap();
         assert!(matches!(set5(owner, 63, [0; 5]), Err(Flow::Failure(_))));
         assert_eq!(snapshot[63], 0);
     }

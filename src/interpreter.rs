@@ -5862,8 +5862,8 @@ fn main() -> i64 { 0 }
             Value::Record(Arc::new(OwnedRecordValue {
                 record: hir::DeclarationId::new("test.packet"),
                 fields: BTreeMap::from([
-                    (left.clone(), Value::Bytes(left_value.clone())),
-                    (right.clone(), Value::Bytes(right_value.clone())),
+                    (left.clone(), Value::Bytes(left_value.borrow_alias().unwrap())),
+                    (right.clone(), Value::Bytes(right_value.borrow_alias().unwrap())),
                 ]),
             })),
         )]);

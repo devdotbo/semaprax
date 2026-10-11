@@ -9,7 +9,7 @@ use crate::{
 };
 use std::alloc::Layout;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) struct ViewId {
     invocation: u64,
     index: u16,
@@ -138,6 +138,12 @@ impl<'p, R: InvocationRuntime> Loans<'p, R> {
                 .read_range(slot.view.as_ref().ok_or(Refusal::Identity)?, start, end, f)
         })();
         self.registry.select(result)
+    }
+    pub(crate) fn extent(&mut self, owner: &Owner) -> Result<usize, Refusal> {
+        self.registry.extent(owner)
+    }
+    pub(crate) fn moved(&mut self, owner: &mut Owner) -> Result<(), Refusal> {
+        self.registry.moved(owner)
     }
     pub(crate) fn copy_out_and_settle(&mut self, owner: &mut Owner) -> Result<R::Owner, Refusal> {
         self.registry.copy_out_and_settle(owner)
