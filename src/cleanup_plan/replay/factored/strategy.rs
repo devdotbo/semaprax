@@ -297,17 +297,6 @@ pub(in crate::cleanup_plan::replay) fn validate_authenticated(
     }
     match candidate.strategy {
         Strategy::Enumerated => {
-            for census in [candidate.hir, candidate.plan] {
-                if let Census::Exceeded { total, .. } = census {
-                    let total = usize::try_from(total).map_err(|_| {
-                        replay_error(
-                            function,
-                            "cleanup replay exact path count exceeds address space",
-                        )
-                    })?;
-                    return path_summary::path_budget_errors(function, total, total);
-                }
-            }
             if budget.physical.is_some() {
                 return Err(replay_error(
                     function,

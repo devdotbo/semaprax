@@ -210,3 +210,71 @@ fn deferred_enumerated_reservation_adds_to_held_pool_without_refund() {
     assert_eq!(budget.remaining, remaining - upper);
     assert_eq!(budget.skeleton_spent, 0);
 }
+
+#[test]
+fn immutable_original_shiftsim_forced_enumerated_retains_frozen_refusal() {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    static SERIAL: AtomicU64 = AtomicU64::new(0);
+    let repository = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let example = repository.join("examples/shiftsim-typed-record-successor");
+    let wrappers = repository
+        .join("tests/project/standard_library/application_json/owned/string_slot_adoption");
+    let original = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/project/standard_library/application_json/owned/shiftsim_schedule_unfactored.txt"
+    ));
+    let root = std::env::temp_dir().join(format!(
+        "semaprax-original-shiftsim-enumerated-{}-{}",
+        std::process::id(),
+        SERIAL.fetch_add(1, Ordering::Relaxed)
+    ));
+    std::fs::create_dir_all(root.join("src")).unwrap();
+    std::fs::create_dir_all(root.join("fixtures")).unwrap();
+    std::fs::copy(example.join("semaprax.toml"), root.join("semaprax.toml")).unwrap();
+    for name in [
+        "request.spx",
+        "response.spx",
+        "app.spx",
+        "app.command.spx",
+        "tests.spx",
+    ] {
+        std::fs::copy(example.join("src").join(name), root.join("src").join(name)).unwrap();
+    }
+    for (name, wrapper) in [
+        ("model.spx", "shiftsim_model_wrapper.txt"),
+        ("order.spx", "shiftsim_order_wrapper.txt"),
+    ] {
+        std::fs::copy(wrappers.join(wrapper), root.join("src").join(name)).unwrap();
+    }
+    std::fs::write(root.join("src/schedule.spx"), original).unwrap();
+    let entered = std::cell::Cell::new(false);
+    let errors = with_strategy(Strategy::Enumerated, || {
+        crate::project::with_authenticated_project(&root.join("semaprax.toml"), |_| {
+            entered.set(true);
+            Ok(())
+        })
+    })
+    .expect_err("the immutable original remains above the frozen enumerated ceiling");
+    assert!(!entered.get());
+    assert!(
+        errors.iter().any(|error| error.code == "SPX-H006"
+            && error.message.contains("shiftsim.schedule.run")
+            && error.message.contains("65537 semantic terminal paths")
+            && error.message.contains("65536 path budget")),
+        "{errors:?}"
+    );
+    assert_eq!(
+        std::fs::read_to_string(root.join("src/schedule.spx")).unwrap(),
+        original
+    );
+    for (name, wrapper) in [
+        ("model.spx", "shiftsim_model_wrapper.txt"),
+        ("order.spx", "shiftsim_order_wrapper.txt"),
+    ] {
+        assert_eq!(
+            std::fs::read(root.join("src").join(name)).unwrap(),
+            std::fs::read(wrappers.join(wrapper)).unwrap()
+        );
+    }
+    std::fs::remove_dir_all(root).unwrap();
+}
