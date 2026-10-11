@@ -1,7 +1,7 @@
 //! Independently reconstructed cleanup inventory, with an explicit selected
 //! physical constructor boundary. Legacy construction retains its old behavior.
 use super::*;
-use crate::cleanup_plan::{replay_reserve_vec, ReplayClonePayload, ReplayPhysicalReservation};
+use crate::cleanup_plan::{ReplayClonePayload, ReplayPhysicalReservation, replay_reserve_vec};
 use std::cell::RefCell;
 mod selected;
 
@@ -46,7 +46,7 @@ pub(crate) fn build_inventory(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
 ) -> Result<CleanupInventory, Diagnostic> {
-    build_inventory_inner(program, function, None, false)
+    build_inventory_inner(program, function, None, false, None)
 }
 
 /// Selected physical constructor only: direct primitive owned resources and
@@ -59,7 +59,7 @@ pub(crate) fn build_inventory_with_reservation<'a>(
     function: &ResolvedFunction,
     physical: &'a mut ReplayPhysicalReservation,
 ) -> Result<CleanupInventory, Diagnostic> {
-    build_inventory_inner(program, function, Some(RefCell::new(physical)), false)
+    build_inventory_inner(program, function, Some(RefCell::new(physical)), false, None)
 }
 
 // Selected source-bound replay uses this independently classified direct
@@ -69,7 +69,26 @@ pub(crate) fn build_flat_record_inventory_with_reservation<'a>(
     function: &ResolvedFunction,
     physical: &'a mut ReplayPhysicalReservation,
 ) -> Result<CleanupInventory, Diagnostic> {
-    build_inventory_inner(program, function, Some(RefCell::new(physical)), true)
+    build_inventory_inner(program, function, Some(RefCell::new(physical)), true, None)
+}
+
+// Inactive receiver until selected schema/profile and every receiving site have
+// been closed over one shared session. This authenticates Copy Option metadata
+// itself and refuses other nominal carriers before delegated type classification.
+#[cfg(test)]
+pub(crate) fn build_borrowed_helper_inventory_with_budget<'a>(
+    program: &'a dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+    physical: &'a mut ReplayPhysicalReservation,
+    work: &'a mut dyn FnMut(usize) -> Result<(), Diagnostic>,
+) -> Result<CleanupInventory, Diagnostic> {
+    build_inventory_inner(
+        program,
+        function,
+        Some(RefCell::new(physical)),
+        true,
+        Some(RefCell::new(work)),
+    )
 }
 
 fn build_inventory_inner<'a>(
@@ -77,8 +96,10 @@ fn build_inventory_inner<'a>(
     function: &ResolvedFunction,
     physical: Option<RefCell<&'a mut ReplayPhysicalReservation>>,
     flat_records: bool,
+    work: Option<RefCell<&'a mut dyn FnMut(usize) -> Result<(), Diagnostic>>>,
 ) -> Result<CleanupInventory, Diagnostic> {
     let mut builder = InventoryBuilder {
+        work,
         physical,
         flat_records,
         program,
@@ -89,6 +110,7 @@ fn build_inventory_inner<'a>(
     };
 
     for (parameter_index, parameter) in function.params.iter().enumerate() {
+        builder.charge(1)?;
         if parameter.ownership == OwnershipMode::Own && builder.needs_drop(&parameter.ty)? {
             let storage = builder.add_slot(
                 CleanupStorageOrigin::Parameter {
@@ -156,6 +178,7 @@ fn build_inventory_inner<'a>(
 }
 
 pub(super) struct InventoryBuilder<'a> {
+    pub(super) work: Option<RefCell<&'a mut dyn FnMut(usize) -> Result<(), Diagnostic>>>,
     pub(super) flat_records: bool,
     pub(super) physical: Option<RefCell<&'a mut ReplayPhysicalReservation>>,
     pub(super) program: &'a dyn crate::cleanup::ReplayContext,
@@ -166,7 +189,28 @@ pub(super) struct InventoryBuilder<'a> {
 }
 
 impl InventoryBuilder<'_> {
+    pub(super) fn charge(&self, units: usize) -> Result<(), Diagnostic> {
+        if let Some(work) = &self.work {
+            work.borrow_mut()(units)?;
+        }
+        Ok(())
+    }
     pub(super) fn needs_drop(&self, ty: &ResolvedType) -> Result<bool, Diagnostic> {
+        self.charge(1)?;
+        if let Some(work) = &self.work {
+            if crate::hir::borrowed_scalar::option_u8::is_type(ty) {
+                return if crate::hir::borrowed_scalar::option_u8::authenticated_metered(
+                    self.program.declarations(),
+                    ty,
+                    &mut |units| work.borrow_mut()(units),
+                )? {
+                    Ok(false)
+                } else {
+                    Err(cleanup_error("selected Option metadata is unauthenticated"))
+                };
+            }
+            return selected::needs_drop(ty);
+        }
         if self.physical.is_some() {
             return if self.flat_records {
                 selected::needs_drop_in(self.program, ty)
@@ -252,6 +296,7 @@ impl InventoryBuilder<'_> {
         let mut projections = Vec::<DeclarationId>::new();
         let mut shapes = Vec::new();
         while let Some(frame) = frames.pop() {
+            self.charge(1)?;
             #[cfg(test)]
             if self.physical.is_none() {
                 note_capacity_high_water(
@@ -581,6 +626,7 @@ impl InventoryBuilder<'_> {
             vec![Frame::Enter(expression)]
         };
         while let Some(frame) = frames.pop() {
+            self.charge(1)?;
             #[cfg(test)]
             if self.physical.is_none() {
                 note_capacity_high_water(
@@ -593,6 +639,9 @@ impl InventoryBuilder<'_> {
             }
             match frame {
                 Frame::Enter(expression) => {
+                    if self.work.is_some() {
+                        self.needs_drop(&expression.ty)?;
+                    }
                     selected::reserve_legacy(
                         &self.physical,
                         &mut frames,
@@ -815,6 +864,22 @@ impl InventoryBuilder<'_> {
         pattern: &crate::hir::ResolvedMatchPattern,
     ) -> Result<(), Diagnostic> {
         use crate::hir::{ResolvedMatchPattern, ResolvedRecordMatchFieldPattern};
+        if self.work.is_some() {
+            self.charge(1)?;
+            match pattern {
+                ResolvedMatchPattern::Variant { .. }
+                    if crate::hir::borrowed_scalar::option_u8::pattern(pattern) => {}
+                ResolvedMatchPattern::Binding(binding)
+                    if binding.ownership == OwnershipMode::Value
+                        && crate::hir::is_scalar_resolved_type(&binding.ty) => {}
+                ResolvedMatchPattern::Wildcard | ResolvedMatchPattern::Literal(_) => {}
+                _ => {
+                    return Err(cleanup_error(
+                        "budgeted helper inventory pattern is outside exact Copy metadata",
+                    ));
+                }
+            }
+        }
 
         enum Item<'a> {
             Pattern(&'a ResolvedMatchPattern),
@@ -826,6 +891,7 @@ impl InventoryBuilder<'_> {
             vec![Item::Pattern(pattern)]
         };
         while let Some(item) = pending.pop() {
+            self.charge(1)?;
             match item {
                 Item::Pattern(ResolvedMatchPattern::Binding(binding)) => {
                     if binding.ownership == OwnershipMode::Own && self.needs_drop(&binding.ty)? {
@@ -856,6 +922,7 @@ impl InventoryBuilder<'_> {
                 }
                 Item::Pattern(ResolvedMatchPattern::Variant { fields, .. }) => {
                     for field in fields {
+                        self.charge(1)?;
                         if field.binding.ownership == OwnershipMode::Own
                             && self.needs_drop(&field.binding.ty)?
                         {

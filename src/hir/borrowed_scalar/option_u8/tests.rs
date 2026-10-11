@@ -1,5 +1,6 @@
 //! Independent exact metadata, byte-read and case shape controls.
 use super::*;
+mod metered;
 fn ty() -> ResolvedType {
     ResolvedType::Nominal {
         declaration: DeclarationId::new(crate::prelude::OPTION_ID),
@@ -30,6 +31,7 @@ fn matched(function: &ResolvedFunction) -> &ResolvedExpr {
 #[test]
 fn exact_compiler_option_metadata_requires_parameter_case_field_and_origin_identity() {
     assert!(authenticated(&index(), &ty()));
+    assert!(metered::original(&index(), &ty()));
     for mutation in 0..11 {
         let mut index = index();
         let owner = DeclarationId::new(crate::prelude::OPTION_ID);
@@ -91,6 +93,10 @@ fn exact_compiler_option_metadata_requires_parameter_case_field_and_origin_ident
             }
         }
         assert!(!authenticated(&index, &ty()), "metadata mutant {mutation}");
+        assert_eq!(
+            authenticated(&index, &ty()),
+            metered::original(&index, &ty())
+        );
     }
     for payload in [ResolvedType::I64, ResolvedType::Bytes, ResolvedType::Str] {
         let mut wrong = ty();

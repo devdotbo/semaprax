@@ -18,6 +18,8 @@ use crate::hir::{
 mod replay_context;
 pub(crate) use replay_context::ReplayContext;
 mod generic_record;
+#[cfg(test)]
+pub(crate) use inventory_builder::build_borrowed_helper_inventory_with_budget;
 mod inventory_builder;
 use inventory_builder::InventoryBuilder;
 pub(crate) use inventory_builder::{

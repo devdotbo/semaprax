@@ -90,6 +90,7 @@ impl InventoryBuilder<'_> {
             let bytes = value
                 .clone_payload_bytes()
                 .ok_or_else(|| cleanup_error("selected inventory clone backing overflow"))?;
+            self.charge(bytes)?;
             physical
                 .borrow_mut()
                 .reserve(bytes)
@@ -109,6 +110,12 @@ impl InventoryBuilder<'_> {
         storage: CleanupStorageId,
     ) -> Result<FieldLivenessShape, Diagnostic> {
         let program = self.program;
+        if self.work.is_some() {
+            if !self.needs_drop(ty)? {
+                return Ok(FieldLivenessShape::NoDrop);
+            }
+            return self.selected_leaf_shape(ty, storage, None);
+        }
         if crate::hir::borrowed_scalar::option_u8::is_type(ty) {
             needs_drop_in(program, ty)?;
             return Ok(FieldLivenessShape::NoDrop);

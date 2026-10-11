@@ -354,10 +354,14 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
                 include_str!("../../src/workspace_graph/static_text.rs"),
                 include_str!("../../src/workspace_graph/static_text/primitive.rs"),
                 include_str!("../../src/workspace_graph/static_text/scalar_helpers.rs"),
-                include_str!("../../src/workspace_graph/static_text/scalar_helpers/capture_directory.rs"),
+                include_str!(
+                    "../../src/workspace_graph/static_text/scalar_helpers/capture_directory.rs"
+                ),
                 include_str!("../../src/hir/borrowed_scalar.rs"),
                 include_str!("../../src/hir/borrowed_scalar/option_u8.rs"),
+                include_str!("../../src/hir/borrowed_scalar/option_u8/metered.rs"),
                 include_str!("../../src/hir/borrowed_scalar/option_u8/tests.rs"),
+                include_str!("../../src/hir/borrowed_scalar/option_u8/tests/metered.rs"),
                 include_str!("../../src/hir/declaration_index/primitive_replay/option_u8.rs"),
                 include_str!(
                     "../../src/workspace_graph/static_text/primitive/function_matching.rs"
