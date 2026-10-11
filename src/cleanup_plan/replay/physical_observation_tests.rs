@@ -15,10 +15,10 @@ module replay.physical;
     while next<3 {
         next=next+1;
         let view=str_as_bytes(key);
-        if flag && next==1 {continue;}else{0};
+        if flag && next==1 {continue;}else{0}
         if next==2 {
             return if byte_len(view)==3usize && byte_len(scratch_view)==3usize {7}else{0};
-        }else{0};
+        }else{0}
         0
     }
     9
