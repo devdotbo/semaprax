@@ -186,7 +186,7 @@ pub(super) fn validate<'a>(
     arguments: &[CallArgumentTransfer],
     storage: &BTreeSet<StorageId>,
     leaves: &Leaves,
-    cursor: &mut CallCursor<'a>,
+    cursor: Option<&mut CallCursor<'a>>,
     budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
     #[cfg(test)]
@@ -199,10 +199,14 @@ pub(super) fn validate<'a>(
     #[cfg(test)]
     let expression = match &held {
         Some((expression, _)) => *expression,
-        None => cursor.find(function, call, budget)?,
+        None => cursor
+            .ok_or_else(|| replay_error(function, "selected call lacks its lookup cursor"))?
+            .find(function, call, budget)?,
     };
     #[cfg(not(test))]
-    let expression = cursor.find(function, call, budget)?;
+    let expression = cursor
+        .ok_or_else(|| replay_error(function, "selected call lacks its lookup cursor"))?
+        .find(function, call, budget)?;
     let ResolvedExprKind::Call {
         callee,
         type_arguments,

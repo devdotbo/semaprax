@@ -218,7 +218,11 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(
                             "call has more than one atomic commit",
                         ));
                     }
-                    if cursor.is_none() {
+                    #[cfg(test)]
+                    let needs_cursor = !expressions.is_metered();
+                    #[cfg(not(test))]
+                    let needs_cursor = true;
+                    if needs_cursor && cursor.is_none() {
                         cursor = Some(calls::CallCursor::new(function, budget)?);
                     }
                     calls::validate(
@@ -229,7 +233,7 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(
                         arguments,
                         storage,
                         leaves,
-                        cursor.as_mut().expect("created structural call cursor"),
+                        cursor.as_mut(),
                         budget,
                     )?;
                 }
@@ -258,8 +262,28 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(
                             "selected structural replay does not support residual staging",
                         ));
                     };
+                    #[cfg(test)]
+                    if expressions.is_metered() {
+                        borrowed_branch::staged(function, source, budget)?;
+                    } else {
+                        validate_staged_target(function, source)?;
+                    }
+                    #[cfg(not(test))]
                     validate_staged_target(function, source)?;
-                    if expression != &function.body.id {
+                    #[cfg(test)]
+                    let matches = if expressions.is_metered() {
+                        schema::borrowed::same_schema(
+                            function,
+                            expression.as_str(),
+                            function.body.id.as_str(),
+                            budget,
+                        )?
+                    } else {
+                        expression == &function.body.id
+                    };
+                    #[cfg(not(test))]
+                    let matches = expression == &function.body.id;
+                    if !matches {
                         return Err(replay_error(
                             function,
                             "body Copy-result stage names another expression",
@@ -296,6 +320,22 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(
                 for edge in edges {
                     owned_edge(function, block.id, *edge, &mut referenced_edges, budget)?;
                 }
+                #[cfg(test)]
+                if expressions.is_metered() {
+                    borrowed_branch::validate(
+                        function,
+                        &plan.edges[edges[0].0 as usize].condition,
+                        &plan.edges[edges[1].0 as usize].condition,
+                        budget,
+                    )?;
+                } else {
+                    validate_branch_pair(
+                        function,
+                        &plan.edges[edges[0].0 as usize].condition,
+                        &plan.edges[edges[1].0 as usize].condition,
+                    )?;
+                }
+                #[cfg(not(test))]
                 validate_branch_pair(
                     function,
                     &plan.edges[edges[0].0 as usize].condition,

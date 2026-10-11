@@ -3,6 +3,8 @@
 use super::*;
 mod blocks;
 #[cfg(test)]
+mod borrowed_branch;
+#[cfg(test)]
 pub(in crate::cleanup_plan::replay) mod borrowed_ids;
 mod calls;
 mod cfg;
