@@ -123,6 +123,9 @@ fn private_owner_refuses_foreign_carriers_and_actual_call_or_plan_mutations() {
         let mut work = usize::MAX;
         assert!(owner.revalidate_compiler().is_err() || owner.receive_current_graph(&mut work).is_err(), "mutation {mutation}");
         if mutation != 3 { assert!(owner.receive_current_graph(&mut work).is_err()); assert_eq!(work, 0); }
+        let mut bound_work = usize::MAX;
+        assert!(owner.simultaneous_view_bound(&owner.program.functions[1], &mut bound_work).is_err());
+        assert_eq!(bound_work, 0, "failed compiler renewal must poison view receipt");
     }
 }
 

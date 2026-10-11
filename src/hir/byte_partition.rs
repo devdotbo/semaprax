@@ -65,8 +65,10 @@ impl<'source> ValidatedPartitionProgram<'source> {
     pub(crate) fn simultaneous_view_bound(
         &self, entry: &ResolvedFunction, receiving_work: &mut usize,
     ) -> Result<usize, Diagnostic> {
-        self.revalidate_compiler()?;
-        let result = scope_with_views(&self.program, receiving_work, Some(entry));
+        let result = (|| {
+            self.revalidate_compiler()?;
+            scope_with_views(&self.program, receiving_work, Some(entry))
+        })();
         if result.is_err() { *receiving_work = 0; }
         result
     }
