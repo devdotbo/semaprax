@@ -2,6 +2,8 @@
 //! Attached inventories and plans carry no authority for this selection.
 
 use super::*;
+#[cfg(test)]
+mod borrowed;
 use crate::cleanup_plan::{CLEANUP_PLAN_SCHEMA_V17, CLEANUP_PLAN_SCHEMA_V18};
 
 pub(crate) fn selected_schema(
