@@ -5,8 +5,8 @@ Status: implementation and owning regression definitions authored; owning execut
 Audience: internal library authors, compiler contributors, and reviewers.
 
 An ordinary checked library caller may import an explicit nongeneric root type
-and a function whose signature uses that root without importing every private
-record reached through its layout. For example, an explicitly imported `Decoded`
+or an exact provider function whose signature carries that root, without importing
+every private record reached through its layout. For example, an explicitly imported `Decoded`
 result can carry `Report`, containing `Config` and `Vec<Row>`, while source names
 only `Decoded` and its cases. This is internal layout reconstruction, not a new
 source import, public descriptor, capability, graph edge, or lifetime grant.
@@ -14,8 +14,10 @@ source import, public descriptor, capability, graph edge, or lifetime grant.
 ## Authority and visibility
 
 The current source-authenticated provider supplies each persistent declaration,
-case, and field identity. Root signature names still require their explicit
-ordinary type imports. Descendants must independently satisfy the existing
+case, and field identity. Authored type names, constructors, and patterns still require explicit ordinary
+type imports. A function-only signature root permits inferred local values to be
+forwarded and borrowed field projections to be checked against its actual layout;
+it does not publish the provider type name in the caller. Descendants must independently satisfy the existing
 resource-free, invariant-free, nongeneric record shape, cycle, depth,
 field, owned-leaf, and exact compiler-Vec checks. A nested variant, resource,
 generic descendant, borrowed leaf, altered Vec identity, or unsupported record
@@ -26,7 +28,7 @@ refusal outcome. Other outcome payload families retain their existing explicit
 import route.
 
 One invocation-local borrowed closure resolves only descendants reached through
-an admitted explicit root. It prefers an existing explicit alias. Otherwise it
+an admitted explicit type root or exact imported function-signature root. It prefers an existing explicit alias. Otherwise it
 mints a normal source identifier fresh against all authored identifiers in the
 caller: imports, declarations, parameters and generic parameters, all type
 references, local bindings and reads, constructor and field names, match and
@@ -86,6 +88,17 @@ The original owned-function outcome gate retains complete HIR validation and
 forged Vec-parameter refusal while checking descendant omission. The existing
 text-collection hostile shapes remain refused. The workspace source-boundary
 gate joins the new implementation and test children.
+
+The `private_layout::function_tests::` child adds three definitions covering
+function-only forwarding and borrowed nested String/Vec projections, exact root
+and descendant identities, absent sibling/ancestor/source-name authority, stale
+provider pointers, both signature parity paths, and exact/one-short storage.
+The same linked source has interpreter, native O0/O2 and strict CoreWasm owning
+success and failed-postcondition controls with repeated invocation and zero live
+native/String/Vec storage; no production source or backend ABI is substituted.
+Function-root admission uses precharged borrowed closure frames and independently
+reclassifies each signature root's ownership, avoiding the explicit-import
+scanner's cloned identities and dynamic pending sets on this new route.
 
 These definitions have not been executed for this tranche. No current-head
 interpreter/native/Wasm, cache, benchmark, source-size saving, or matrix promotion

@@ -1,8 +1,8 @@
 //! Current-source private type authority, independent of synthetic aliases.
 use super::{
-    Absence, AuthoredDeclaration, BTreeMap, DEPTH, Diagnostic, Frame, ModuleUseKind, Program, WORK,
     debit, explicit_only, graph_error, private_without_work, refusal, reserve_builder_structure,
-    visit,
+    visit, Absence, AuthoredDeclaration, BTreeMap, Diagnostic, Frame, ModuleUseKind, Program,
+    DEPTH, WORK,
 };
 use std::cell::Cell;
 
@@ -20,7 +20,7 @@ impl<'a> PrivateTypes<'a> {
         if !caller
             .module_uses
             .iter()
-            .any(|u| u.kind == ModuleUseKind::Type)
+            .any(|u| matches!(u.kind, ModuleUseKind::Type | ModuleUseKind::Function))
         {
             return Ok(Self {
                 roots: Vec::new(),
@@ -38,12 +38,35 @@ impl<'a> PrivateTypes<'a> {
             .iter()
             .try_fold(0usize, |n, p| n.checked_add(p.types.len()))
             .ok_or_else(refusal)?;
-        debit(&mut remaining, count)?;
+        let function_count = programs
+            .iter()
+            .try_fold(0usize, |n, p| n.checked_add(p.functions.len()))
+            .ok_or_else(refusal)?;
+        let indexed = count.checked_add(function_count).ok_or_else(refusal)?;
+        debit(&mut remaining, indexed)?;
         let node = crate::cleanup_plan::replay_btree_node_upper::<&str, AuthoredDeclaration<'_>>()
             .ok_or_else(refusal)?;
-        reserve_builder_structure(count.checked_mul(node).ok_or_else(refusal)?)?;
+        reserve_builder_structure(indexed.checked_mul(node).ok_or_else(refusal)?)?;
         let mut authored = BTreeMap::new();
         for p in programs {
+            for f in &p.functions {
+                if authored
+                    .insert(
+                        f.stable_id.as_str(),
+                        AuthoredDeclaration {
+                            path: &p.path,
+                            module: &p.module,
+                            explicit: f.explicit_id,
+                            kind: crate::workspace_graph::AuthoredKind::Function,
+                            function: Some(f),
+                            ty: None,
+                        },
+                    )
+                    .is_some()
+                {
+                    return Err(refusal());
+                }
+            }
             for t in &p.types {
                 if authored
                     .insert(
@@ -182,7 +205,7 @@ fn possible(
     for import in caller
         .module_uses
         .iter()
-        .filter(|u| u.kind == ModuleUseKind::Type)
+        .filter(|u| matches!(u.kind, ModuleUseKind::Type | ModuleUseKind::Function))
     {
         if work.checked_sub(programs.len()).is_none() {
             *work = 0;
@@ -193,17 +216,30 @@ fn possible(
             .iter()
             .find(|p| p.module == import.target_module)
             .ok_or_else(refusal)?;
-        if work.checked_sub(provider.types.len()).is_none() {
+        let scan = provider
+            .types
+            .len()
+            .checked_add(provider.functions.len())
+            .ok_or_else(refusal)?;
+        if work.checked_sub(scan).is_none() {
             *work = 0;
             return Ok(false);
         }
-        debit(work, provider.types.len())?;
-        let root = provider
-            .types
-            .iter()
-            .find(|t| t.stable_id == import.persistent_id)
-            .ok_or_else(refusal)?;
-        if !root.explicit_id {
+        debit(work, scan)?;
+        let explicit = match import.kind {
+            ModuleUseKind::Type => provider
+                .types
+                .iter()
+                .find(|t| t.stable_id == import.persistent_id)
+                .map(|t| t.explicit_id),
+            ModuleUseKind::Function => provider
+                .functions
+                .iter()
+                .find(|f| f.stable_id == import.persistent_id)
+                .map(|f| f.explicit_id),
+            _ => None,
+        };
+        if explicit != Some(true) {
             return Err(refusal());
         }
         for ty in &provider.types {

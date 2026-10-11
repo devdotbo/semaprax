@@ -10,13 +10,60 @@ pub(super) fn admitted(
     let Some(function) = target.function else {
         return false;
     };
+    let signature_root = target.explicit
+        && caller.module_uses.iter().any(|u| {
+            u.kind == ModuleUseKind::Function
+                && u.persistent_id == function.stable_id
+                && u.target_module == target.module
+        })
+        && authored
+            .get(function.stable_id.as_str())
+            .is_some_and(|entry| {
+                entry
+                    .function
+                    .is_some_and(|held| std::ptr::eq(held, function))
+                    && entry.module == target.module
+                    && entry.explicit
+            });
     if !function.type_parameters.is_empty()
         || function.yields.is_some()
         || function.follows.is_some()
     {
         return false;
     }
-    let shape = |ty: &Type| shape(target.module, ty, caller, authored, programs);
+    let shape = |ty: &Type| {
+        if signature_root {
+            if let Some(owner) =
+                crate::workspace_graph::expected_projection::private_layout::signature_owner(
+                    caller,
+                    target.module,
+                    ty,
+                    authored,
+                    programs,
+                )
+            {
+                return Some(owner);
+            }
+            // A private nominal root must never fall back to the allocating
+            // explicit-import scanner if its independent closure refused.
+            if crate::workspace_graph::expected_projection::private_layout::signature_is_private(
+                caller,
+                target.module,
+                ty,
+                programs,
+            ) {
+                return None;
+            }
+        }
+        shape(
+            target.module,
+            ty,
+            caller,
+            authored,
+            programs,
+            signature_root,
+        )
+    };
     let added = |ty: &Type| {
         crate::map_ops::ast_collection(ty)
             || *ty == Type::String
@@ -56,7 +103,7 @@ pub(super) fn record_import(
         name: declaration.name.clone(),
         arguments: Vec::new(),
     };
-    shape(target.module, &ty, caller, authored, programs).is_some()
+    shape(target.module, &ty, caller, authored, programs, false).is_some()
 }
 
 // Re-derive a bounded record closure. Only its root is source-visible; descendants
@@ -68,6 +115,7 @@ fn shape<'a>(
     caller: &Program,
     authored: &BTreeMap<&str, AuthoredDeclaration<'a>>,
     programs: &'a [Program],
+    signature_root: bool,
 ) -> Option<bool> {
     enum Frame<'a> {
         Enter(&'a str, &'a Type, usize),
@@ -107,6 +155,7 @@ fn shape<'a>(
                     return None;
                 }
                 if depth == 1
+                    && !signature_root
                     && caller.module != target.module
                     && !caller
                         .module_uses

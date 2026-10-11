@@ -1,0 +1,14 @@
+module function_layout.app;
+use function @id("make") from function_layout.provider as make;
+use function @id("read") from function_layout.provider as read;
+use function @id("forward") from function_layout.provider as forward;
+
+@id("app.main")
+fn main() -> i64
+{
+    let report = make();
+    let view = string_as_str(report.config.text);
+    let before = if str_len_bytes(view) == 3usize { read(report) } else { 0 };
+    let moved = forward(report);
+    before + read(moved)
+}

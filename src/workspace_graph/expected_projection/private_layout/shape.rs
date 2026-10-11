@@ -36,7 +36,7 @@ pub(super) fn explicit_only(
         return Ok(Absence::WorkExhausted);
     }
     for import in &caller.module_uses {
-        if import.kind != ModuleUseKind::Type {
+        if !matches!(import.kind, ModuleUseKind::Type | ModuleUseKind::Function) {
             continue;
         }
         let target = authored
@@ -53,11 +53,10 @@ pub(super) fn explicit_only(
         if !observe(work, caller.module_uses.len()) {
             return Ok(Absence::WorkExhausted);
         }
-        if !caller
-            .module_uses
-            .iter()
-            .any(|u| u.kind == ModuleUseKind::Type && u.target_module == provider.module)
-        {
+        if !caller.module_uses.iter().any(|u| {
+            matches!(u.kind, ModuleUseKind::Type | ModuleUseKind::Function)
+                && u.target_module == provider.module
+        }) {
             continue;
         }
         if !observe(work, provider.types.len() + provider.module_uses.len()) {

@@ -1,5 +1,5 @@
 //! Invocation-local private layout closure; never a source import or graph edge.
-use super::super::{AuthoredDeclaration, graph_error, reserve_builder_structure};
+use super::super::{graph_error, reserve_builder_structure, AuthoredDeclaration};
 use crate::ast::{ModuleUseKind, Program, Type, TypeDeclaration, TypeDeclarationKind};
 use crate::diagnostic::Diagnostic;
 use std::collections::BTreeMap;
@@ -8,9 +8,11 @@ use std::fmt::Write;
 pub(in crate::workspace_graph) mod authority;
 #[path = "private_layout/names.rs"]
 mod names;
+#[path = "private_layout/roots.rs"]
+mod roots;
 #[path = "private_layout/shape.rs"]
 mod shape;
-use shape::{Absence, debit, explicit_only, scalar, validate_declaration, validate_root};
+use shape::{debit, explicit_only, scalar, validate_declaration, validate_root, Absence};
 
 pub(super) struct Entry<'a> {
     pub(super) module: &'a str,
@@ -267,152 +269,144 @@ fn visit<'a>(
     remaining: &mut usize,
     mut found: impl FnMut(&'a str, &'a TypeDeclaration, &mut usize) -> Result<(), Vec<Diagnostic>>,
 ) -> Result<(), Vec<Diagnostic>> {
-    debit(remaining, caller.module_uses.len())?;
-    for imported in caller
-        .module_uses
-        .iter()
-        .filter(|u| u.kind == ModuleUseKind::Type)
-    {
-        *remaining = remaining.checked_sub(1).ok_or_else(refusal)?;
-        let Some(target) = authored.get(imported.persistent_id.as_str()) else {
-            return Err(refusal());
-        };
-        let root = target.ty.ok_or_else(refusal)?;
-        if imported.target_module != target.module || !target.explicit {
-            return Err(refusal());
-        }
-        if !needs_private(
-            caller,
-            target.module,
-            root,
-            authored,
-            programs,
-            frames,
-            remaining,
-        )? {
-            continue;
-        }
-        let outcome = matches!(root.kind, TypeDeclarationKind::Variant { .. });
-        validate_root(root, target.module, authored, programs, remaining)?;
-        let mut fields = 0usize;
-        let mut leaves = 0usize;
-        validate_declaration(root, &mut fields, remaining)?;
-        frames.push(Frame {
-            module: target.module,
-            declaration: root,
-            next: 0,
-        });
-        while let Some(frame) = frames.last_mut() {
-            *remaining = remaining.checked_sub(1).ok_or_else(refusal)?;
-            if let TypeDeclarationKind::Variant { cases } = &frame.declaration.kind {
-                debit(
-                    remaining,
-                    cases.iter().map(|c| c.fields.len()).sum::<usize>(),
-                )?;
-            }
-            let child = field_type(frame.declaration, frame.next);
-            frame.next += 1;
-            let module = frame.module;
-            let Some(ty) = child else {
-                frames.pop();
-                continue;
-            };
-            if scalar(ty) {
-                continue;
-            }
-            if matches!(ty, Type::String | Type::Bytes)
-                || (!outcome && crate::map_ops::ast_collection(ty))
+    roots::visit(
+        caller,
+        authored,
+        programs,
+        remaining,
+        |module, root, signature, remaining| {
+            let root_private = signature && private(caller, module, &root.stable_id, remaining)?;
+            if !root_private
+                && !needs_private(caller, module, root, authored, programs, frames, remaining)?
             {
-                leaves = leaves.checked_add(1).ok_or_else(refusal)?;
-                if leaves > crate::cleanup::MAX_CLEANUP_OWNED_LEAVES {
-                    return Err(refusal());
-                }
-                continue;
+                return Ok(());
             }
-            let Type::Named { name, arguments } = ty else {
-                return Err(refusal());
-            };
-            let id = identity(module, name, programs, remaining)?;
-            if id == Some(crate::prelude::VEC_ID) || (id.is_none() && name == "Vec") {
-                debit(remaining, caller.types.len() + caller.module_uses.len())?;
-                if caller.types.iter().any(|t| t.name == "Vec")
-                    || caller.module_uses.iter().any(|u| {
-                        u.kind == ModuleUseKind::Type
-                            && u.alias == "Vec"
-                            && u.persistent_id != crate::prelude::VEC_ID
-                    })
-                {
-                    return Err(refusal());
+            let outcome = matches!(root.kind, TypeDeclarationKind::Variant { .. });
+            validate_root(root, module, authored, programs, remaining)?;
+            let mut fields = 0usize;
+            let mut leaves = 0usize;
+            validate_declaration(root, &mut fields, remaining)?;
+            if root_private {
+                found(module, root, remaining)?;
+            }
+            frames.push(Frame {
+                module,
+                declaration: root,
+                next: 0,
+            });
+            while let Some(frame) = frames.last_mut() {
+                *remaining = remaining.checked_sub(1).ok_or_else(refusal)?;
+                if let TypeDeclarationKind::Variant { cases } = &frame.declaration.kind {
+                    debit(
+                        remaining,
+                        cases.iter().map(|c| c.fields.len()).sum::<usize>(),
+                    )?;
                 }
-                leaves = leaves.checked_add(1).ok_or_else(refusal)?;
-                if leaves > crate::cleanup::MAX_CLEANUP_OWNED_LEAVES {
-                    return Err(refusal());
-                }
-                let [element] = arguments.as_slice() else {
-                    return Err(refusal());
+                let child = field_type(frame.declaration, frame.next);
+                frame.next += 1;
+                let module = frame.module;
+                let Some(ty) = child else {
+                    frames.pop();
+                    continue;
                 };
-                if crate::vec_ops::ast_vec_element_is_admitted(element) || *element == Type::String
-                {
+                if scalar(ty) {
                     continue;
                 }
-                let Type::Named { name, arguments } = element else {
+                if matches!(ty, Type::String | Type::Bytes)
+                    || (!outcome && crate::map_ops::ast_collection(ty))
+                {
+                    leaves = leaves.checked_add(1).ok_or_else(refusal)?;
+                    if leaves > crate::cleanup::MAX_CLEANUP_OWNED_LEAVES {
+                        return Err(refusal());
+                    }
+                    continue;
+                }
+                let Type::Named { name, arguments } = ty else {
                     return Err(refusal());
                 };
+                let id = identity(module, name, programs, remaining)?;
+                if id == Some(crate::prelude::VEC_ID) || (id.is_none() && name == "Vec") {
+                    debit(remaining, caller.types.len() + caller.module_uses.len())?;
+                    if caller.types.iter().any(|t| t.name == "Vec")
+                        || caller.module_uses.iter().any(|u| {
+                            u.kind == ModuleUseKind::Type
+                                && u.alias == "Vec"
+                                && u.persistent_id != crate::prelude::VEC_ID
+                        })
+                    {
+                        return Err(refusal());
+                    }
+                    leaves = leaves.checked_add(1).ok_or_else(refusal)?;
+                    if leaves > crate::cleanup::MAX_CLEANUP_OWNED_LEAVES {
+                        return Err(refusal());
+                    }
+                    let [element] = arguments.as_slice() else {
+                        return Err(refusal());
+                    };
+                    if crate::vec_ops::ast_vec_element_is_admitted(element)
+                        || *element == Type::String
+                    {
+                        continue;
+                    }
+                    let Type::Named { name, arguments } = element else {
+                        return Err(refusal());
+                    };
+                    if !arguments.is_empty() {
+                        return Err(refusal());
+                    }
+                    let id = identity(module, name, programs, remaining)?.ok_or_else(refusal)?;
+                    let target = authored.get(id).ok_or_else(refusal)?;
+                    let declaration = target.ty.ok_or_else(refusal)?;
+                    debit(
+                        remaining,
+                        match &declaration.kind {
+                            TypeDeclarationKind::Record { fields } => fields.len() * 2,
+                            _ => 1,
+                        },
+                    )?;
+                    if !target.explicit
+                        || !declaration.explicit_id
+                        || declaration.extends.is_some()
+                        || !super::type_rewrite::record_element(declaration)
+                    {
+                        return Err(refusal());
+                    }
+                    if private(caller, target.module, id, remaining)? {
+                        found(target.module, declaration, remaining)?;
+                    }
+                    continue;
+                }
                 if !arguments.is_empty() {
                     return Err(refusal());
                 }
-                let id = identity(module, name, programs, remaining)?.ok_or_else(refusal)?;
+                let id = id.ok_or_else(refusal)?;
                 let target = authored.get(id).ok_or_else(refusal)?;
                 let declaration = target.ty.ok_or_else(refusal)?;
-                debit(
-                    remaining,
-                    match &declaration.kind {
-                        TypeDeclarationKind::Record { fields } => fields.len() * 2,
-                        _ => 1,
-                    },
-                )?;
+                debit(remaining, frames.len())?;
                 if !target.explicit
                     || !declaration.explicit_id
+                    || !declaration.type_parameters.is_empty()
+                    || !declaration.invariants().is_empty()
                     || declaration.extends.is_some()
-                    || !super::type_rewrite::record_element(declaration)
+                    || !matches!(declaration.kind, TypeDeclarationKind::Record { .. })
+                    || frames.iter().any(|f| f.declaration.stable_id == id)
+                    || frames.len() == DEPTH
                 {
                     return Err(refusal());
                 }
                 if private(caller, target.module, id, remaining)? {
                     found(target.module, declaration, remaining)?;
                 }
-                continue;
+                validate_declaration(declaration, &mut fields, remaining)?;
+                frames.push(Frame {
+                    module: target.module,
+                    declaration,
+                    next: 0,
+                });
             }
-            if !arguments.is_empty() {
-                return Err(refusal());
-            }
-            let id = id.ok_or_else(refusal)?;
-            let target = authored.get(id).ok_or_else(refusal)?;
-            let declaration = target.ty.ok_or_else(refusal)?;
-            debit(remaining, frames.len())?;
-            if !target.explicit
-                || !declaration.explicit_id
-                || !declaration.type_parameters.is_empty()
-                || !declaration.invariants().is_empty()
-                || declaration.extends.is_some()
-                || !matches!(declaration.kind, TypeDeclarationKind::Record { .. })
-                || frames.iter().any(|f| f.declaration.stable_id == id)
-                || frames.len() == DEPTH
-            {
-                return Err(refusal());
-            }
-            if private(caller, target.module, id, remaining)? {
-                found(target.module, declaration, remaining)?;
-            }
-            validate_declaration(declaration, &mut fields, remaining)?;
-            frames.push(Frame {
-                module: target.module,
-                declaration,
-                next: 0,
-            });
-        }
-    }
-    Ok(())
+            Ok(())
+        },
+    )
 }
 // Selection only: traverse borrowed declaration references to determine whether
 // this particular root needs inference. Full shape validation follows separately.
@@ -546,3 +540,148 @@ pub(super) fn identity<'a>(
 #[cfg(test)]
 #[path = "private_layout/tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "private_layout/function_tests.rs"]
+mod function_tests;
+
+#[cfg(test)]
+#[path = "private_layout/function_runtime.rs"]
+mod function_runtime;
+
+// A function-only nominal signature is checked through the same borrowed closure
+// walk before admission; this creates no aliases or stored authority.
+pub(in crate::workspace_graph) fn signature_owner<'a>(
+    caller: &Program,
+    module: &'a str,
+    ty: &Type,
+    authored: &BTreeMap<&str, AuthoredDeclaration<'a>>,
+    programs: &'a [Program],
+) -> Option<bool> {
+    let Type::Named { name, arguments } = ty else {
+        return None;
+    };
+    let mut work = WORK;
+    let candidate = identity(module, name, programs, &mut work).ok()?;
+    let vector =
+        candidate == Some(crate::prelude::VEC_ID) || (candidate.is_none() && name == "Vec");
+    let id = if vector {
+        let [Type::Named { name, arguments }] = arguments.as_slice() else {
+            return None;
+        };
+        if !arguments.is_empty() {
+            return None;
+        }
+        identity(module, name, programs, &mut work).ok()??
+    } else {
+        if !arguments.is_empty() {
+            return None;
+        }
+        candidate?
+    };
+    let root = authored.get(id)?.ty?;
+    if !private(caller, module, id, &mut work).ok()? {
+        return None;
+    }
+    reserve_builder_structure(DEPTH.checked_mul(std::mem::size_of::<Frame<'_>>())?).ok()?;
+    let mut frames = Vec::with_capacity(DEPTH);
+    if frames.capacity() != DEPTH {
+        return None;
+    }
+    let mut seen = false;
+    visit(
+        caller,
+        authored,
+        programs,
+        &mut frames,
+        &mut work,
+        |_, declaration, _| {
+            if std::ptr::eq(root, declaration) {
+                seen = true;
+            }
+            Ok(())
+        },
+    )
+    .ok()?;
+    if !seen {
+        return None;
+    }
+    let mut owns = vector;
+    frames.push(Frame {
+        module: authored.get(id)?.module,
+        declaration: root,
+        next: 0,
+    });
+    while let Some(frame) = frames.last_mut() {
+        debit(&mut work, 1).ok()?;
+        let ty = field_type(frame.declaration, frame.next);
+        frame.next = frame.next.checked_add(1)?;
+        let owner = frame.module;
+        let Some(ty) = ty else {
+            frames.pop();
+            continue;
+        };
+        if scalar(ty) {
+            continue;
+        }
+        if matches!(ty, Type::String | Type::Bytes) || crate::map_ops::ast_collection(ty) {
+            owns = true;
+            continue;
+        }
+        let Type::Named { name, arguments } = ty else {
+            return None;
+        };
+        let id = identity(owner, name, programs, &mut work).ok()?;
+        if id == Some(crate::prelude::VEC_ID) || (id.is_none() && name == "Vec") {
+            owns = true;
+            continue;
+        }
+        if !arguments.is_empty() || frames.len() == DEPTH {
+            return None;
+        }
+        let child = authored.get(id?)?;
+        frames.push(Frame {
+            module: child.module,
+            declaration: child.ty?,
+            next: 0,
+        });
+    }
+    Some(owns)
+}
+pub(in crate::workspace_graph) fn signature_is_private(
+    caller: &Program,
+    module: &str,
+    ty: &Type,
+    programs: &[Program],
+) -> bool {
+    let Type::Named { name, arguments } = ty else {
+        return false;
+    };
+    let mut work = WORK;
+    let resolved = match identity(module, name, programs, &mut work) {
+        Ok(id) => id,
+        Err(_) => return true,
+    };
+    let id = if resolved == Some(crate::prelude::VEC_ID) || (resolved.is_none() && name == "Vec") {
+        let [element] = arguments.as_slice() else {
+            return true;
+        };
+        let Type::Named { name, arguments } = element else {
+            return false;
+        };
+        if !arguments.is_empty() {
+            return true;
+        }
+        match identity(module, name, programs, &mut work) {
+            Ok(Some(id)) => id,
+            _ => return true,
+        }
+    } else {
+        if !arguments.is_empty() {
+            return true;
+        }
+        let Some(id) = resolved else { return false };
+        id
+    };
+    private(caller, module, id, &mut work).unwrap_or(true)
+}
