@@ -346,11 +346,15 @@ fn probe(label: &str, root: &std::path::Path) -> Vec<Vec<Value>> {
     let copies = include_str!("../../../../native/string_settlement/bulk_utf8/copies.c");
     let hooks = include_str!("physical_hooks.c");
     let probe = include_str!("physical_probe.c");
+    // The emitted Borrow Report ABI separately passes its exact Vec field.
+    // Both codecs use the same live prepared field, without copying its carrier.
     let source = format!(
-        "#define FIXTURE_TRACK_CALLOC\n{observer}\n{copies}\n{hooks}\n#define main fixture_generated_main\n{generated}\n#undef main\n#undef malloc\n#undef calloc\n#undef realloc\n#undef free\n#undef memcpy\n#define IMPLEMENTATION \"{label}\"\n#define PREPARE spx_decl_{}\n#define REQUIRED spx_decl_{}\n#define RUN spx_decl_{}\n#define CONSUME spx_decl_{}\n#define REPORT spx_record_{}\n{probe}\nint main(void){{struct spx_status_entry entries[16];struct spx_context context={{0}};REQUIRE(spx_context_init(&context,737,entries,16,NULL,NULL,NULL));{cases}(void)puts(\"724\");return 0;}}",
+        "#define FIXTURE_TRACK_CALLOC\n{observer}\n{copies}\n{hooks}\n#define main fixture_generated_main\n{generated}\n#undef main\n#undef malloc\n#undef calloc\n#undef realloc\n#undef free\n#undef memcpy\n#define IMPLEMENTATION \"{label}\"\n#define PREPARE spx_decl_{}\n#define REQUIRED(context,input,result) spx_decl_{}((context),(input),&((input)->spx_field_{}),(result))\n#define RUN(context,input,limit,expected,result) spx_decl_{}((context),(input),&((input)->spx_field_{}),(limit),(expected),(result))\n#define CONSUME spx_decl_{}\n#define REPORT spx_record_{}\n{probe}\nint main(void){{struct spx_status_entry entries[16];struct spx_context context={{0}};REQUIRE(spx_context_init(&context,737,entries,16,NULL,NULL,NULL));{cases}(void)puts(\"724\");return 0;}}",
         hex("consumer.prepare"),
         hex("consumer.required"),
+        hex("response.report.items"),
         hex("consumer.run"),
+        hex("response.report.items"),
         hex("consumer.consume"),
         hex("response.report")
     );
