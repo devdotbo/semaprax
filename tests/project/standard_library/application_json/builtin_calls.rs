@@ -8,6 +8,8 @@ pub(super) fn assert_operation(program: &ResolvedProgram, wanted: &str) {
     // canonical call-argument staging/cleanup before inspecting the operation.
     hir::validate(program).unwrap();
     let mut found = 0;
+    let mut owned_clone_loans = 0;
+    let mut borrowed_clone_roots = 0;
     for function in program
         .functions
         .iter()
@@ -61,8 +63,21 @@ pub(super) fn assert_operation(program: &ResolvedProgram, wanted: &str) {
                                             )
                                     })
                                     .collect();
-                                assert_eq!(loans.len(), 1);
-                                assert_eq!(&loans[0].origin, origin);
+                                let borrowed_parameter = function.params.iter().find(|parameter| {
+                                    parameter.id == origin.root && parameter.ownership == O::Borrow
+                                });
+                                if let Some(parameter) = borrowed_parameter {
+                                    // Shared Loan Plan v1 preserves empty attachments
+                                    // for exact synchronous borrow-parameter roots.
+                                    assert!(origin.projections.is_empty());
+                                    assert_eq!(parameter.ty, args[0].ty);
+                                    assert!(loans.is_empty());
+                                    borrowed_clone_roots += 1;
+                                } else {
+                                    assert_eq!(loans.len(), 1);
+                                    assert_eq!(&loans[0].origin, origin);
+                                    owned_clone_loans += 1;
+                                }
                                 let commits: Vec<_> = function
                                     .cleanup_plan
                                     .blocks
@@ -180,6 +195,16 @@ pub(super) fn assert_operation(program: &ResolvedProgram, wanted: &str) {
                 | E::FunctionReference { .. } => {}
             }
         }
+    }
+    if wanted == "core.vec.clone-at" {
+        assert!(
+            owned_clone_loans > 0,
+            "an actual owned root retains its exact loan oracle"
+        );
+        assert!(
+            borrowed_clone_roots > 0,
+            "the codec retains synchronous borrowed-root coverage"
+        );
     }
     assert!(
         found > 0,
