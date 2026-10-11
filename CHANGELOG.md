@@ -1,5 +1,9 @@
 # Changelog
 
+- Author OPT #750 linear saved-cursor work debits for selected primitive replay,
+  renewal reconstruction and resolved byte-helper proofs, preserving work/depth
+  and physical bounds with exact/one-short gates; owning execution remains pending.
+
 - Authenticate the compiler-owned owned-Bytes borrow projection in the selected
   final-UTF8 profile, retaining exact intrinsic-call validation and refusing
   Array views or named aliases. Extend the JSON helper inventory oracle to

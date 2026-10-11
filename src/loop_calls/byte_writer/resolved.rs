@@ -113,7 +113,7 @@ fn prove<'a>(
         param_admit,
         result_admit,
         lookup_work,
-        &mut frames,
+        (&mut frames, WORK),
     )
 }
 
@@ -151,7 +151,7 @@ pub(crate) fn nonallocating_with_cursor<'a>(
         &param_admit,
         &result_admit,
         lookup_work,
-        &mut cursor.frames,
+        (&mut cursor.frames, WORK),
     )
     .is_some()
 }
@@ -165,11 +165,11 @@ fn prove_with_frames<'a>(
     param_admit: &impl Fn(&ResolvedFunction, OwnershipMode, &ResolvedType) -> bool,
     result_admit: &impl Fn(&ResolvedFunction, &ResolvedType) -> bool,
     lookup_work: usize,
-    frames: &mut [Option<Frame<'a>>; DEPTH],
+    cursor: (&mut [Option<Frame<'a>>; DEPTH], usize),
 ) -> Option<()> {
+    let (frames, mut work) = cursor;
     frames[0] = Some(Frame::Function(target, 0));
     let mut depth = 1usize;
-    let mut work = WORK;
     while depth != 0 {
         work = work.checked_sub(1)?;
         let current = depth - 1;
@@ -284,7 +284,9 @@ fn prove_with_frames<'a>(
                     }
                     continue;
                 }
-                work = work.checked_sub(next.checked_add(1)?.checked_mul(2)?)?;
+                // Two conservative constant units for the saved advance;
+                // growing indexed-prefix cost belongs only to indexed walks.
+                work = work.checked_sub(2)?;
                 let child = cursor.next();
                 frames[current] = Some(Frame::Expression(function, cursor, true, next + 1));
                 child.map(|e| {
@@ -480,3 +482,6 @@ fn checked_bindings_with_storage<'a, S>(
     }
     Ok(found)
 }
+
+#[cfg(test)]
+mod cursor_work_tests;

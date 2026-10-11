@@ -100,12 +100,8 @@ fn walk<'a>(
             depth -= 1;
             continue;
         }
-        let width = match &expression.kind {
-            ResolvedExprKind::Block { statements, .. } => statements.len(),
-            ResolvedExprKind::Match { arms, .. } => arms.len(),
-            _ => 0,
-        };
-        *work = work.checked_sub(width).ok_or_else(error)?;
+        // Block boundaries are prepaid by the entry statement census;
+        // the saved cursor never restarts a statement or match prefix.
         let mut cursor = cursor;
         if let Some(child) = cursor.next() {
             if depth == DEPTH {
@@ -196,7 +192,7 @@ mod tests {
         assert!(short.reserve(0).is_err());
     }
     #[test]
-    fn cursor_walk_retains_statement_order_and_exact_legacy_work_debits() {
+    fn cursor_walk_retains_statement_order_and_exact_linear_work_debits() {
         let mut source = String::from("module app; @id(\"app.main\") fn main()->i64 {");
         for index in 0..32 {
             source.push_str(&format!("let value_{index}={index};"));
@@ -225,11 +221,8 @@ mod tests {
             if matches!(expression.kind, ResolvedExprKind::Closure { .. }) {
                 continue;
             }
-            expected_work -= match &expression.kind {
-                ResolvedExprKind::Block { statements, .. } => statements.len(),
-                ResolvedExprKind::Match { arms, .. } => arms.len(),
-                _ => 0,
-            };
+            // Indexed lookup is an independent order oracle here. The
+            // saved-cursor contract charges this advance, not its old prefix.
             if let Some(child) = crate::hir::lexical_exit::child(expression, next) {
                 pending.push((expression, next + 1));
                 pending.push((child, usize::MAX));
@@ -245,6 +238,9 @@ mod tests {
         .unwrap();
         assert_eq!(actual, reference);
         assert_eq!(work, expected_work);
+        // 41 nodes, 40 edges, 34 statements: entries+terminal advances,
+        // edges and one complete statement census = 2*41+40+34.
+        assert_eq!(WORK - work, 156);
         let mut short_work = WORK - expected_work - 1;
         assert_eq!(
             walk(function, &mut frames, &mut short_work, |_| Ok(()))
@@ -299,5 +295,43 @@ mod tests {
                 .code,
             "SPX-H006"
         );
+    }
+}
+
+#[cfg(test)]
+mod cursor_work_tests {
+    use super::*;
+    #[test]
+    fn both_renewal_passes_share_exact_linear_work_and_visit_every_statement() {
+        for width in [0, 1, 64, 512] {
+            let statements = (0..width)
+                .map(|i| format!("let n{i}=0;"))
+                .collect::<String>();
+            let source = format!("module app; @id(\"app.main\") fn main()->i64 {{{statements}0}}");
+            let program =
+                crate::hir::resolve(&crate::parse(&source, "linear-renewals.spx").unwrap())
+                    .unwrap();
+            let function = &program.functions[0];
+            let mut frames = [None; DEPTH];
+            let mut work = 2 * (4 * width + 5);
+            let mut visits = 0;
+            for _ in 0..2 {
+                walk(function, &mut frames, &mut work, |_| {
+                    visits += 1;
+                    Ok(())
+                })
+                .unwrap();
+            }
+            assert_eq!(work, 0);
+            assert_eq!(visits, 2 * width);
+            let mut short = 2 * (4 * width + 5) - 1;
+            walk(function, &mut frames, &mut short, |_| Ok(())).unwrap();
+            assert_eq!(
+                walk(function, &mut frames, &mut short, |_| Ok(()))
+                    .unwrap_err()
+                    .code,
+                "SPX-H006"
+            );
+        }
     }
 }

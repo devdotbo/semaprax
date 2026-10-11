@@ -174,12 +174,8 @@ pub(super) fn validate(
                 frames[depth - 1] = Some((cursor, true));
                 continue;
             }
-            let width = match &expression.kind {
-                ResolvedExprKind::Block { statements, .. } => statements.len(),
-                ResolvedExprKind::Match { arms, .. } => arms.len(),
-                _ => 0,
-            };
-            budget.charge(function, width, "selected primitive child lookup")?;
+            // The entry census prepays block statement boundaries. Saved
+            // cursor progress makes each advance (including None) constant.
             let mut cursor = cursor;
             if let Some(child) = cursor.next() {
                 if depth == DEPTH {
@@ -291,5 +287,112 @@ mod tests {
         assert!(error
             .message
             .contains("nominal or callable expression storage"));
+    }
+}
+
+#[cfg(test)]
+mod cursor_work_tests {
+    use super::*;
+    fn program(width: usize) -> crate::hir::ResolvedProgram {
+        let statements = (0..width)
+            .map(|i| format!("let n{i}=0;"))
+            .collect::<String>();
+        let source = format!("module app; @id(\"app.main\") fn main()->i64 {{{statements}0}}");
+        crate::hir::resolve(&crate::parse(&source, "linear-profile.spx").unwrap()).unwrap()
+    }
+    fn run(program: &crate::hir::ResolvedProgram, limit: usize) -> Result<usize, Diagnostic> {
+        let mut budget = ReplayBudget::new();
+        budget.remaining = limit;
+        budget.physical = Some(Box::new(
+            super::super::physical_storage::PhysicalReservation::new(usize::MAX),
+        ));
+        validate(program, &program.functions[0], &mut budget)?;
+        Ok(budget.remaining)
+    }
+    #[test]
+    fn wide_statement_census_and_terminal_advances_have_exact_linear_work() {
+        for width in [0, 1, 64, 512] {
+            let program = program(width);
+            // Block+tail+initializers: entry and terminal probes, each edge,
+            // and exactly one statement census; no prefix re-scan term.
+            let exact = 4 * width + 5;
+            assert_eq!(run(&program, exact).unwrap(), 0);
+            assert_eq!(run(&program, exact - 1).unwrap_err().code, "SPX-H006");
+        }
+    }
+    #[test]
+    fn guarded_match_patterns_and_all_contract_roots_keep_their_work_debits() {
+        let mut matched = program(0);
+        let ResolvedExprKind::Block { tail, .. } = &mut matched.functions[0].body.kind else {
+            panic!()
+        };
+        let seed = tail.clone();
+        let arms = (0..64)
+            .map(|i| crate::hir::ResolvedMatchArm {
+                pattern: ResolvedMatchPattern::Wildcard,
+                guard: (i % 2 == 0).then(|| {
+                    let mut guard = seed.clone();
+                    guard.kind = ResolvedExprKind::Bool(true);
+                    guard.ty = ResolvedType::Bool;
+                    guard
+                }),
+                value: seed.as_ref().clone(),
+                span: seed.span,
+            })
+            .collect();
+        tail.kind = ResolvedExprKind::Match {
+            scrutinee: seed,
+            arms,
+            mode: crate::hir::ResolvedMatchMode::Value,
+        };
+        let exact = 8 + 4 * 64 + 3 * 32;
+        assert_eq!(run(&matched, exact).unwrap(), 0);
+        assert!(run(&matched, exact - 1).is_err());
+        // Separate roots share the same global ReplayBudget; no fresh permit
+        // appears at requires/body/ensures transitions.
+        let source = "module app; @id(\"app.main\") fn main()->i64 requires true ensures true {0}";
+        let contracts =
+            crate::hir::resolve(&crate::parse(source, "contract-roots.spx").unwrap()).unwrap();
+        assert_eq!(run(&contracts, 9).unwrap(), 0);
+        assert!(run(&contracts, 8).is_err());
+    }
+    #[test]
+    fn deep_cursor_has_exact_work_and_retains_depth_and_late_type_refusal() {
+        let mut deep = program(0);
+        let ResolvedExprKind::Block { tail, .. } = &mut deep.functions[0].body.kind else {
+            panic!()
+        };
+        for _ in 0..32 {
+            let inner = tail.clone();
+            tail.kind = ResolvedExprKind::Unary {
+                op: crate::ast::UnaryOp::Neg,
+                value: inner,
+            };
+        }
+        assert_eq!(run(&deep, 5 + 3 * 32).unwrap(), 0);
+        assert!(run(&deep, 5 + 3 * 32 - 1).is_err());
+        let ResolvedExprKind::Block { tail, .. } = &mut deep.functions[0].body.kind else {
+            panic!()
+        };
+        for _ in 32..DEPTH {
+            let inner = tail.clone();
+            tail.kind = ResolvedExprKind::Unary {
+                op: crate::ast::UnaryOp::Neg,
+                value: inner,
+            };
+        }
+        assert!(run(&deep, usize::MAX).is_err(), "work cannot buy depth");
+        let mut late = program(64);
+        let ResolvedExprKind::Block { tail, .. } = &mut late.functions[0].body.kind else {
+            panic!()
+        };
+        tail.ty = ResolvedType::Nominal {
+            declaration: crate::hir::DeclarationId::new("forged"),
+            arguments: Vec::new(),
+        };
+        assert!(
+            run(&late, usize::MAX).is_err(),
+            "late unsupported storage remains checked"
+        );
     }
 }

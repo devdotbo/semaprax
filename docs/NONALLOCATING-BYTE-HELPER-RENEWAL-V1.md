@@ -18,7 +18,7 @@ use their ordinary provenance; they cannot alias the transferred byte owner.
 The helper's complete body, requires and ensures, and every directly called
 ordinary helper are inspected independently in source and typed HIR. The
 closure must be acyclic. Each proof has at most 256 combined expression/function
-cursor frames and 1,000,000 examined-node, child-prefix and callee-lookup work
+cursor frames and 1,000,000 examined-node, child traversal and callee-lookup work
 units. Full fixed cursor scratch is reserved before use. Missing declarations,
 indirect calls, effects, yields, closures, lexical exits and proof-bound
 exhaustion fail closed. No source or attached cleanup profile substitutes for
@@ -220,3 +220,13 @@ The ignored measurement definition is
 Both are authored in the existing library harness; the driver selects only the
 latter by its exact name. The regular qualification selector must exclude the
 ignored body from executed-success counts.
+
+## Resolved saved-cursor accounting (OPT #750)
+
+The resolved proof's authored child cursor uses the linear conservative work
+model in [HIR authored child cursor v1](HIR-AUTHORED-CHILD-CURSOR-V1.md): one
+block statement census and constant saved advances. It retains complete callee,
+argument, active-call-cycle and ownership checks. Source indexed traversal keeps
+its existing prefix charges. Physical reservations, work/depth bounds, runtime
+fuel and helper schema authority are unchanged; owning executable qualification
+of this authored accounting change remains pending.
