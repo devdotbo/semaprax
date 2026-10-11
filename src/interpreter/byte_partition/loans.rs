@@ -139,6 +139,22 @@ impl<'p, R: InvocationRuntime> Loans<'p, R> {
         })();
         self.registry.select(result)
     }
+    pub(super) fn active(&self) -> Result<(), Refusal> {
+        self.registry.active()
+    }
+    #[cfg(test)]
+    pub(super) fn endpoint(&self) -> u16 {
+        self.point
+    }
+    pub(super) fn reserve_consumer(&mut self, layout: Layout) -> Result<(), Refusal> {
+        self.registry.reserve_consumer(layout)
+    }
+    pub(super) fn preparation_failure(&mut self, error: Preparation) -> Preparation {
+        self.registry.preparation_failure(error)
+    }
+    pub(super) fn preflight_owner(&mut self, owner: &Owner) -> Result<(), Refusal> {
+        self.registry.preflight_owner(owner)
+    }
     pub(crate) fn extent(&mut self, owner: &Owner) -> Result<usize, Refusal> {
         self.registry.extent(owner)
     }

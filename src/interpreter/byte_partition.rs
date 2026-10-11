@@ -11,6 +11,7 @@ use std::{
     sync::atomic::{AtomicU64, Ordering},
 };
 pub(crate) mod authority;
+pub(crate) mod flat;
 pub(crate) mod funding;
 pub(crate) mod loans;
 static NEXT_INVOCATION: AtomicU64 = AtomicU64::new(1);
@@ -230,6 +231,15 @@ impl<R: InvocationRuntime> Registry<R> {
             f(&mut state.core, child)
         })();
         self.select(result)
+    }
+    pub(super) fn reserve_consumer(&mut self, layout: Layout) -> Result<(), Refusal> {
+        let result = self
+            .active()
+            .and_then(|()| self.runtime.reserve_metadata(layout));
+        self.select(result)
+    }
+    pub(super) fn preflight_owner(&mut self, owner: &Owner) -> Result<(), Refusal> {
+        self.apply(owner, false, |core, child| core.check_move(child))
     }
     pub(crate) fn moved(&mut self, owner: &mut Owner) -> Result<(), Refusal> {
         owner.receipt = self.apply(owner, false, |core, child| {

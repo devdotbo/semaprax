@@ -357,3 +357,18 @@ the exact checked loan instead of creating an Arc or another Core loan. Owner
 move/store/finalizer adapters reject view carriers. Reads after the actual end
 edge fail for both Bytes and Slice aliases. This receiving adapter remains
 private and needs the joined installer to bind the actual source owner root.
+
+### Flat container receiver checkpoint
+
+The private affine container retains the original paid Vec<Owner> output; it
+creates no second value array or Arc control block. Its actual header is charged
+before partition publication. Consuming iteration moves that same array into
+IntoIter<Owner> after preflight and an exact paid iterator header. Extracted
+children survive container settlement in the held invocation registry. Clear
+preflights every child before its first finalizer; leaf settlement uses ascending
+row order and stays available after sticky refusal once live loans end.
+
+These private receiving operations are not an ordinary vec_pop declaration or
+a language IterStep constructor. Actual Value dispatch, current source/root
+binding, canonical call/result handoff and language iterator publication still
+require the sealed entry join. The authored controls are unexecuted.
