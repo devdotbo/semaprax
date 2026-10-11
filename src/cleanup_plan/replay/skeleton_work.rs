@@ -316,6 +316,8 @@ pub(super) struct Observations {
 /// A set of observation sequences. `Seq` is `prefix` then `items`; `Cat`
 /// concatenates its parts in order; `Alt` is the union of its members.
 pub(super) struct ObservationDag {
+    #[cfg(test)]
+    pub(super) ordinal: Option<usize>,
     pub(super) kind: ObservationDagKind,
     scratch: Option<std::rc::Rc<std::cell::RefCell<dag_storage::DestructionScratch>>>,
 }
@@ -357,6 +359,8 @@ impl Drop for ObservationDag {
 impl ObservationDag {
     pub(super) fn legacy(kind: ObservationDagKind) -> Self {
         Self {
+            #[cfg(test)]
+            ordinal: None,
             kind,
             scratch: None,
         }

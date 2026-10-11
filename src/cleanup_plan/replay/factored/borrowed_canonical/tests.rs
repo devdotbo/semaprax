@@ -92,14 +92,57 @@ fn ordinary_order_and_full_duplicate_multisets_match_with_one_budget_through_dro
     let mut memo_budget = ReplayBudget::with_physical(function, 1 << 20).unwrap();
     for (key, end) in [((1, 1), 10), ((1, 2), 20), ((2, 1), 30), ((1, 1), 11)] {
         old_memo.insert(key, end);
-        dag_memo::insert(function, &mut memo, key, end, &mut memo_budget).unwrap();
+        dag_memo::insert(function, &mut memo, dag_memo::test_key(key.0, key.0, key.1), end, &mut memo_budget).unwrap();
     }
     for key in [(1, 1), (1, 2), (2, 1), (2, 2), (0, 1)] {
         assert_eq!(
-            dag_memo::get(function, &memo, &key, &mut memo_budget).unwrap(),
+            dag_memo::get(function, &memo, &dag_memo::test_key(key.0, key.0, key.1), &mut memo_budget).unwrap(),
             old_memo.get(&key).copied()
         );
     }
+
+    // The same discovery/continuation history has identical actual work under
+    // different allocation-address ranks; each lookup still retains both keys.
+    let history = |pointers: [usize; 3], ledger: &mut ReplayBudget| -> Result<(), Diagnostic> {
+        let mut current = dag_memo::Memo::Borrowed(dictionary::Dictionary::new());
+        for (ordinal, pointer) in pointers.iter().enumerate() {
+            for continuation in [1usize, 2] {
+                dag_memo::insert(function, &mut current, dag_memo::test_key(*pointer, ordinal, continuation), ordinal, ledger)?;
+            }
+        }
+        for pointer in pointers {
+            for continuation in [2usize, 1, 3] {
+                assert_eq!(
+                    dag_memo::get(function, &current, &dag_memo::test_key(pointer, pointers.iter().position(|p| *p == pointer).unwrap(), continuation), ledger)?,
+                    if continuation == 3 { None } else { Some(pointers.iter().position(|p| *p == pointer).unwrap()) },
+                );
+            }
+        }
+        Ok(())
+    };
+    let mut reference = None;
+    for pointers in [[1usize, 2, 3], [3, 1, 2], [usize::MAX, 17, 0]] {
+        let mut ledger = ReplayBudget::new();
+        history(pointers, &mut ledger).unwrap();
+        let work = MAX_REPLAY_WORK_UNITS - ledger.remaining;
+        assert_eq!(*reference.get_or_insert(work), work);
+        for allowance in [work, work - 1] {
+            let mut ledger = ReplayBudget::new();
+            ledger.remaining = allowance;
+            assert_eq!(history(pointers, &mut ledger).is_ok(), allowance == work);
+            assert_eq!(ledger.remaining, 0);
+        }
+    }
+
+    // Legacy nodes have no session-minted construction ordinal.
+    let detached = Rc::new(ObservationDag::legacy(ObservationDagKind::Seq(None, Vec::new())));
+    let mut detached_budget = ReplayBudget::new();
+    assert!(dag_memo::get(function, &memo, &dag_memo::key(&detached, 1), &mut detached_budget).is_err());
+
+    // A detached construction ordinal never grants a cached continuation.
+    let mut ledger = ReplayBudget::new();
+    assert!(dag_memo::get(function, &memo, &dag_memo::test_key(99, 1, 1), &mut ledger).is_err());
+    assert!(dag_memo::insert(function, &mut memo, dag_memo::test_key(99, 1, 1), 50, &mut ledger).is_err());
 
     // Two identical alternatives must remain two traces. A shared suffix
     // and a different terminal exercise weighted closure and label identity.

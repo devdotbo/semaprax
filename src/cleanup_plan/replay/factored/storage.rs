@@ -32,7 +32,7 @@ pub(super) fn memo_insert(
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
     memo: &mut dag_memo::Memo,
-    key: (usize, usize),
+    key: dag_memo::Key,
     end: usize,
 ) -> Result<(), Diagnostic> {
     budget.charge(function, 1, "factored DAG identity memo insertion")?;

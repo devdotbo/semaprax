@@ -67,6 +67,12 @@ pub(super) fn needs_drop_in(
     program: &dyn crate::cleanup::ReplayContext,
     ty: &ResolvedType,
 ) -> Result<bool, Diagnostic> {
+    // Complete selected replay has already authenticated abrupt expression
+    // nodes. Their Never type carries no value; the primitive-only constructor
+    // boundary remains closed to Never through needs_drop().
+    if *ty == ResolvedType::Never {
+        return Ok(false);
+    }
     if crate::hir::borrowed_scalar::option_u8::is_type(ty) {
         return if crate::hir::borrowed_scalar::option_u8::authenticated(program.declarations(), ty)
         {

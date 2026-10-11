@@ -409,7 +409,7 @@ impl Automaton {
         memo: &mut dag_memo::Memo,
         budget: &mut ReplayBudget,
     ) -> Result<usize, Diagnostic> {
-        let key = |dag: &Rc<ObservationDag>, start: usize| (Rc::as_ptr(dag) as usize, start);
+        let key = dag_memo::key;
         budget.reserve_array::<BuildFrame<'_>>(function, 1, "factored DAG initial frame")?;
         let mut frames = vec![BuildFrame::Visit(root, start)];
         let mut ends = Vec::<usize>::new();

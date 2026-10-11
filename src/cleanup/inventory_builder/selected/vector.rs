@@ -86,7 +86,9 @@ pub(crate) fn authenticate(
 
 /// Conservative probe prepayment for one receiving classification. Length
 /// inspection is constant-time; every directory entry is debited before it is
-/// inspected. Supported leaf shapes are established before recursive equality.
+/// inspected. This census counts directory keys, not type admission: unrelated
+/// generic declarations and non-flat fields cannot veto a demanded Vec/record.
+/// The receiving classifiers separately establish leaf shapes before equality.
 /// The namespace multiplier bounds even a linear ordered-map comparison path;
 /// it is not an authority lease or a new work allowance.
 pub(crate) fn prepay(
@@ -106,9 +108,6 @@ pub(crate) fn prepay(
             .checked_add(item.id.as_str().len())
             .and_then(|n| n.checked_add(item.name.len() + 1))
             .ok_or_else(fail)?;
-        if item.type_parameters.len() > 1 {
-            return Err(fail());
-        }
         for parameter in &item.type_parameters {
             charge(1)?;
             bytes = bytes
@@ -116,16 +115,8 @@ pub(crate) fn prepay(
                 .ok_or_else(fail)?;
         }
         if let ResolvedTypeDeclarationKind::Record { fields } = &item.kind {
-            if fields.len() > 8 {
-                return Err(fail());
-            }
             for field in fields {
                 charge(1)?;
-                if !(crate::hir::is_scalar_resolved_type(&field.ty)
-                    || matches!(field.ty, ResolvedType::String | ResolvedType::Bytes))
-                {
-                    return Err(fail());
-                }
                 bytes = bytes
                     .checked_add(field.id.as_str().len())
                     .and_then(|n| n.checked_add(field.name.len() + 1))
