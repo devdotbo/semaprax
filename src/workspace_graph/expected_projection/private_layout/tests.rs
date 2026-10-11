@@ -90,13 +90,64 @@ fn explicit_root_retains_private_descendants_and_only_authored_edges() {
         "use type @id(\"decoded\") from closure.provider as Decoded;",
         "",
     );
+    assert_ne!(missing, APP);
+    // Without the type import, `decode`'s exact signature still roots the same
+    // admitted outcome layout privately, so the closure itself is not refused.
+    let parsed = programs(&missing, PROVIDER);
+    let index = index_authored(&parsed).unwrap();
+    let closure = LayoutClosure::derive(&parsed[0], &index, &parsed).unwrap();
+    assert_eq!(
+        closure
+            .entries
+            .iter()
+            .map(|e| e.declaration.stable_id.as_str())
+            .collect::<Vec<_>>(),
+        ["config", "decoded", "report", "row"]
+    );
+    assert!(closure
+        .entries
+        .iter()
+        .all(|e| e.alias.starts_with("_spx_layout_")));
+    // A function-only root publishes no type name, so the otherwise legal
+    // authored `Decoded::Error` pattern on the admitted scrutinee stays unresolved.
     let missing_diagnostics = build_owned(sources(&missing, PROVIDER))
         .err()
         .expect("missing explicit root is rejected");
     assert!(
-        missing_diagnostics.iter().any(|d| d.code == "SPX-G172"),
+        missing_diagnostics.iter().any(|d| d.code == "SPX-M103"
+            && d.path.as_deref() == Some("app.spx")
+            && d.message.contains("`Decoded::Error`")),
         "missing explicit root diagnostics: {missing_diagnostics:?}"
     );
+    assert!(
+        missing_diagnostics.iter().all(|d| d.code != "SPX-G172"),
+        "missing explicit root diagnostics: {missing_diagnostics:?}"
+    );
+    // A signature root outside the narrow inferred profile keeps its explicit
+    // import route: absent the type import, the closure refuses it.
+    let encoding = format!(
+        "{extended}@id(\"encode\") fn encode(value:i64)->Encoded {{ Encoded::Refused {{ required:0usize }} }}\n"
+    );
+    let unimported = "module closure.app; use function @id(\"encode\") from closure.provider as encode; @id(\"main\") fn main()->i64 { 7 }";
+    let parsed = programs(unimported, &encoding);
+    let index = index_authored(&parsed).unwrap();
+    let refused = LayoutClosure::derive(&parsed[0], &index, &parsed)
+        .err()
+        .expect("unimported outcome root is refused");
+    assert!(refused.iter().any(|d| d.code == "SPX-G172"), "{refused:?}");
+    let refused = build_owned(sources(unimported, &encoding))
+        .err()
+        .expect("unimported outcome root is rejected");
+    assert!(refused.iter().any(|d| d.code == "SPX-G172"), "{refused:?}");
+    let imported = unimported.replace(
+        "use function",
+        "use type @id(\"encoded\") from closure.provider as Encoded; use function",
+    );
+    let parsed = programs(&imported, &encoding);
+    let index = index_authored(&parsed).unwrap();
+    assert!(LayoutClosure::derive(&parsed[0], &index, &parsed)
+        .unwrap()
+        .is_empty());
 }
 #[test]
 fn private_names_avoid_all_authored_refs_without_exposing_child_names() {

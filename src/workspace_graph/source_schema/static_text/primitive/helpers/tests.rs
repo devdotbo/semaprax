@@ -670,7 +670,22 @@ fn generic_option_nominal_and_vec_provider_bodies_keep_the_route_closed() {
             LEAF.replace("n+1", "let values=vec_with_capacity<i64>(1usize);n"),
         ),
     ] {
-        let rejected = build(CALLER, PROVIDER, &leaf)
+        // The builder admits each monomorphic scalar-signature import with any
+        // checked body; scalar-helper capture omits a non-pure leaf instead of
+        // refusing it. The selected source schema is the receiving gate.
+        let build = build(CALLER, PROVIDER, &leaf)
+            .unwrap_or_else(|e| panic!("{label} carrier provider builds: {e:?}"));
+        let carrier = build
+            .hir
+            .modules
+            .iter()
+            .find(|m| m.module == "scalar.leaf")
+            .unwrap();
+        assert!(
+            carrier.scalar_helpers.is_none(),
+            "{label} carrier captured no scalar facts"
+        );
+        let rejected = schema(&build)
             .err()
             .unwrap_or_else(|| panic!("{label} carrier provider remains closed"));
         assert!(
