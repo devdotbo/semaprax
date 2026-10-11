@@ -165,6 +165,7 @@ impl Consumer {
             ByteOp::Copy => Self::Copy,
             ByteOp::Zeroed => Self::Zeroed,
             ByteOp::ZeroedBounded => Self::ZeroedBounded,
+            ByteOp::Partition => Self::Partition,
             ByteOp::Set => Self::Set,
             ByteOp::Set5 => Self::Set5,
             ByteOp::Set1Or5 => Self::Set1Or5,
