@@ -20,7 +20,7 @@ enum Position {
 impl<'a> ChildCursor<'a> {
     pub(crate) fn new(expression: &'a ResolvedExpr) -> Self {
         let position = match &expression.kind {
-            K::Block { .. } => Position::Block {
+            K::Block { .. } | K::VecConstructor { .. } => Position::Block {
                 statement: 0,
                 child: 0,
             },
@@ -50,7 +50,10 @@ impl<'a> Iterator for ChildCursor<'a> {
         self.started = true;
         match (&self.expression.kind, &mut self.position) {
             (
-                K::Block { statements, tail },
+                K::Block { statements, tail }
+                | K::VecConstructor {
+                    statements, tail, ..
+                },
                 Position::Block {
                     statement,
                     child: index,
@@ -114,7 +117,10 @@ pub(crate) fn child(expr: &ResolvedExpr, index: usize) -> Option<&ResolvedExpr> 
             .get(index)
             .map(|capture| &capture.value)
             .or_else(|| (index == captures.len()).then_some(body.as_ref())),
-        K::Block { statements, tail } => {
+        K::Block { statements, tail }
+        | K::VecConstructor {
+            statements, tail, ..
+        } => {
             let mut offset = 0;
             for statement in statements {
                 let count = statement.child_count();

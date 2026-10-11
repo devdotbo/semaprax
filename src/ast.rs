@@ -220,6 +220,10 @@ impl Drop for Program {
 
         while let Some(mut expression) = expressions.pop() {
             match mem::replace(&mut expression.kind, ExprKind::Int(0)) {
+                ExprKind::VecConstructor { element, value, .. } => {
+                    types.push(element);
+                    expressions.push(*value);
+                }
                 ExprKind::Closure {
                     params,
                     return_type,
@@ -251,7 +255,8 @@ impl Drop for Program {
                     expressions.push(*receiver);
                     expressions.extend(args);
                 }
-                ExprKind::Unary { value, .. }
+                ExprKind::VecConstructor { value, .. }
+                | ExprKind::Unary { value, .. }
                 | ExprKind::Try { operand: value }
                 | ExprKind::Project { base: value, .. }
                 | ExprKind::Yield { request: value } => expressions.push(*value),
