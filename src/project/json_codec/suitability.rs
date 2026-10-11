@@ -232,6 +232,8 @@ pub fn explain_json_codec_suitability(
             missing.push("--max-array-items 1..256");
         }
         let mut row = json!({"selector":selector,"shape_matches":Value::Null,"missing_policy":missing,
+            "max_string_bytes":if string.is_some() { options.max_string_bytes } else { None },
+            "max_array_items":if array.is_some() { options.max_array_items } else { None },
             "candidate_admission":"not_evaluated","backend_admission":"not_evaluated"});
         if row["missing_policy"]
             .as_array()
@@ -274,6 +276,7 @@ pub fn explain_json_codec_suitability(
     let envelope = json!({"schema":"semaprax.json-codec-suitability.v1","project_revision":revision.project_revision(),
         "workspace_revision":revision.workspace_revision(),"source":source.path(),"source_sha256":hash(source.source().as_bytes()),
         "type":options.record,"target":target,"target_manifest_policy":target_policy,
+        "policy":{"max_string_bytes":options.max_string_bytes,"max_array_items":options.max_array_items},
         "profile_count":rows.len(),"offset":options.offset,
         "profiles":[],"next_offset":Value::Null,"coverage":"continued"});
     page(envelope, &rows, options.offset, options.max_bytes)

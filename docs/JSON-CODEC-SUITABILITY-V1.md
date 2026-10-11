@@ -29,7 +29,9 @@ revision; every nonzero continuation offset requires that exact binding. This
 prevents combining pages from changed source or manifests. The CLI additionally
 uses the existing held-input recheck before returning output. The receipt binds
 Project and workspace revisions, exact authored source path and SHA-256, selected
-type identity and target. No caller HIR or report supplies authority.
+type identity, target and exact optional policy bounds. Each evaluated row
+repeats its applicable bounds; omitted bounds remain null. No caller HIR or
+report supplies authority.
 
 The `semaprax.json-codec-suitability.v1` envelope contains `profile_count: 12`,
 `offset`, `coverage`, `next_offset`, and whole `profiles` rows. Order is the
@@ -51,8 +53,8 @@ For a shape match, `required_modules` comes from its actual generated imports.
 are absent from the checked entry declaration index; it is discovery data, not
 a complete dependency resolution or an import grant. Bundled/transitive modules
 and aliases still undergo ordinary candidate resolution. Every row keeps
-`candidate_admission` and `backend_admission` as `not_evaluated` and names that
-remaining prerequisite. This version explains source-policy shape and manifest
+`candidate_admission` and `backend_admission` as `not_evaluated`; successful
+shape rows name that remaining prerequisite. This version explains source-policy shape and manifest
 target constraints; it does not claim which complete generated application will
 pass any backend, grant a profile, or promise capacity, fuel or benchmark gains.
 

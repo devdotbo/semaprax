@@ -42,6 +42,8 @@ fn actual_checked_type_reports_all_profiles_and_keeps_shape_separate_from_candid
     assert_eq!(value["source"], "src/core.spx");
     assert_eq!(value["type"], "explain.Row");
     assert_eq!(value["profile_count"], 12);
+    assert!(value["policy"]["max_string_bytes"].is_null());
+    assert!(value["policy"]["max_array_items"].is_null());
     assert_eq!(value["coverage"], "complete");
     assert!(value["next_offset"].is_null());
     let rows = value["profiles"].as_array().unwrap();
