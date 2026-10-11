@@ -345,3 +345,15 @@ fn typed_record_shiftsim_derives_both_codecs_and_runs_retained_corpus() {
     assert_one_diagnostic_line(&output);
     std::fs::remove_dir_all(root).unwrap();
 }
+
+#[test]
+fn typed_vec_constructor_retains_exact_explicit_chain_application_control() {
+    let root = crate::standard_library::temporary("shiftsim-vec-constructor-control");
+    write_example(&root);
+    let original = include_str!("vec_constructor_adoption/shiftsim_tests_explicit_chain.txt");
+    let adopted = TESTS;
+    assert!(!original.contains("vec_of<"));
+    assert!(adopted.contains("vec_of<string>"));
+    super::vec_constructor_adoption::assert_application_control(&root, adopted, original);
+    std::fs::remove_dir_all(root).unwrap();
+}

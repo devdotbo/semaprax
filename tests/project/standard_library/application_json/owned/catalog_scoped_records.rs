@@ -255,3 +255,19 @@ fn typed_catalog_derives_codecs_and_preserves_all_23_functional_cases() {
 
 #[path = "catalog_sort_adoption.rs"]
 mod catalog_sort_adoption;
+
+#[test]
+fn typed_vec_constructor_retains_exact_explicit_chain_application_control() {
+    let root = crate::standard_library::temporary("catalog-vec-constructor-control");
+    stage(&root);
+    let original = include_str!("vec_constructor_adoption/catalog_tests_explicit_chain.txt");
+    let adopted = SOURCES
+        .iter()
+        .find(|(path, _)| *path == "src/tests.spx")
+        .unwrap()
+        .1;
+    assert!(!original.contains("vec_of<"));
+    assert!(adopted.contains("vec_of<InputItem>"));
+    super::vec_constructor_adoption::assert_application_control(&root, adopted, original);
+    std::fs::remove_dir_all(root).unwrap();
+}

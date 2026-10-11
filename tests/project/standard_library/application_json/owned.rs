@@ -1,6 +1,9 @@
 //! Actual owned request values, detached from input, on the same three backends.
 use super::*;
 
+#[path = "owned/vec_constructor_adoption.rs"]
+mod vec_constructor_adoption;
+
 #[path = "owned/stream.rs"]
 mod stream;
 #[path = "owned/public_example.rs"]

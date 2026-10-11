@@ -57,7 +57,14 @@ interpreter/native O0/O2/private Wasm execution, failure/cleanup and reentry;
 `public_api_descriptor::vec_constructor::` covers frozen closure refusal.
 The original ShiftSim15 and Catalog23 corpus bodies remain unchanged; their
 committed eight-server and two-item examples adopt the constructor. Exact old
-example sources remain independent controls. No token, turn, runtime or
+example sources remain independent controls in
+`tests/project/standard_library/application_json/owned/vec_constructor_adoption/`.
+The owning `shiftsim_typed_records::` and `catalog_scoped_records::`
+`typed_vec_constructor_retains_exact_explicit_chain_application_control` gates
+execute both authored test modules twice on the Project interpreter and native
+O0/O2. Their command profiles advertise native64; these application gates do
+not claim a Wasm command profile. The bounded constructor Wasm differential
+remains owned by `owned_leaf_vec::vec_constructor::`. No token, turn, runtime or
 physical-work gain is claimed before matched observations and executable gates.
 
 Agent advice uses `help language author:vec-constructor` and exact diagnostic
