@@ -828,7 +828,9 @@ fn retained_imported_record_and_helper_use_the_actual_typed_namespace() {
             let mut session = SelectedReplaySession::from_preparation(context, scan, preparation)?;
             session.validate_scalar(helper)?;
             session.validate(scan)?;
-            session.finish()
+            // finish returns the held accounting owner, not unit. Drop it
+            // inside this same callback after successful complete replay.
+            session.finish().map(drop)
         },
     )
     .unwrap()
