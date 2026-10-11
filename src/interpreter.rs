@@ -4397,11 +4397,7 @@ impl Evaluator<'_> {
                         crate::str_ops::StrOp::Contains => {
                             match (borrowed_text(&values[0]), borrowed_text(&values[1])) {
                                 (Some(value), Some(needle)) => {
-                                    crate::str_ops::contains(value, needle)
-                                        .map(Value::Bool)
-                                        .ok_or(Flow::Guard(
-                                            "borrowed string operation exceeds byte budget",
-                                        ))
+                                    Ok(Value::Bool(crate::str_ops::contains(value, needle)))
                                 }
                                 _ => Err(Flow::Guard("ill-typed borrowed string operand")),
                             }

@@ -26,48 +26,11 @@ pub(crate) const BYTE_AT_ID: &str = "core.str.byte-at";
 /// cumulative budget; derived and forwarded views do not recharge it.
 pub(crate) const MAX_BORROWED_STR_BYTES: usize = 65_536;
 
-/// Allocation-bounded KMP over exact UTF-8 bytes.  UTF-8 validity is already
-/// established at every profile boundary; searching bytes preserves embedded
-/// NUL and never observes scalar boundaries or locale state.
-pub(crate) fn contains(value: &str, needle: &str) -> Option<bool> {
-    // The invocation boundary owns cumulative charging. This local check is
-    // only a defensive bound on the fixed-width KMP prefix representation.
-    if value.len() > MAX_BORROWED_STR_BYTES || needle.len() > MAX_BORROWED_STR_BYTES {
-        return None;
-    }
-    if needle.is_empty() {
-        return Some(true);
-    }
-    if needle.len() > value.len() {
-        return Some(false);
-    }
-
-    let needle = needle.as_bytes();
-    let mut prefix = vec![0_u16; needle.len()];
-    let mut matched = 0_usize;
-    for index in 1..needle.len() {
-        while matched != 0 && needle[matched] != needle[index] {
-            matched = usize::from(prefix[matched - 1]);
-        }
-        if needle[matched] == needle[index] {
-            matched += 1;
-        }
-        prefix[index] = matched as u16;
-    }
-
-    matched = 0;
-    for byte in value.bytes() {
-        while matched != 0 && needle[matched] != byte {
-            matched = usize::from(prefix[matched - 1]);
-        }
-        if needle[matched] == byte {
-            matched += 1;
-            if matched == needle.len() {
-                return Some(true);
-            }
-        }
-    }
-    Some(false)
+/// Search exact authenticated UTF-8 bytes without a length-sized prefix table.
+/// Foreign-root limits belong to invocation admission; forwarded owned views
+/// retain their actual extent. Embedded NUL and locale never affect matching.
+pub(crate) fn contains(value: &str, needle: &str) -> bool {
+    value.contains(needle)
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

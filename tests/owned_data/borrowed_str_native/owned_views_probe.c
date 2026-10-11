@@ -9,6 +9,8 @@ static bool reference_contains(const uint8_t *value, uint64_t n,
     return false;
 }
 int main(void) {
+    struct spx_status_entry entries[16]; struct spx_context ctx = {0};
+    if (!spx_context_init(&ctx, UINT64_C(9), entries, UINT32_C(16), NULL, NULL, NULL)) return 10;
     uint8_t value[8], needle[6];
     for (uint64_t n = 0; n <= 8; ++n) {
         for (uint64_t m = 0; m <= 6; ++m) {
