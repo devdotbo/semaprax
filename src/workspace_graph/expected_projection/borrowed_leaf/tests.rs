@@ -2,10 +2,12 @@ use super::{
     construct, eligible, private_layout, reserve_builder_structure,
     synthetic_program_with_registry, Input,
 };
-use crate::ast::program_source::ProgramSource;
+use crate::ast::program_source::{ProgramSource, SyntheticProgramView};
+use crate::ast::TypeDeclaration;
 use crate::diagnostic::Diagnostic;
 use crate::hir;
 use crate::workspace_graph::index_authored;
+use std::fmt::Write;
 const SOURCE: &str =
     "module borrowed_leaf; @id(\"read\") fn read(data:borrow Slice<u8>)->usize { byte_len(data) }";
 
@@ -65,6 +67,51 @@ fn borrowed_leaf_drop_has_no_allocation_and_constructor_limits_are_exact_and_sti
             let first = construct(&program);
             let retry = construct(&program);
             (first.is_err(), retry.is_err())
+        });
+    assert!(overflowed);
+    assert!(first && retry);
+
+    // Existing main removes generated-main overreservation. The independent
+    // literal census has exactly 96 borrowed directory entries and no owned
+    // expression/declaration subtree or sorting scratch.
+    let mut source = String::from("module wide_leaf;");
+    for index in 0..96 {
+        let name = index * 37 % 96;
+        write!(
+            source,
+            " @id(\"row.{index}\") record Row{name} {{ @id(\"row.{index}.value\") value:i64, }}"
+        )
+        .unwrap();
+    }
+    source.push_str(" @id(\"main\") fn main()->i64 {0}");
+    let wide = crate::parse(&source, "wide-leaf.spx").unwrap();
+    let directory = 96 * std::mem::size_of::<(&str, &TypeDeclaration)>();
+    assert_eq!(
+        super::ast_peak(&wide).unwrap(),
+        directory + std::mem::size_of::<SyntheticProgramView<'_>>()
+    );
+    let ((result, allocation), overflowed, used) =
+        crate::bounded_output::with_limit_usage(directory, || {
+            crate::test_allocation_observer::measure(|| {
+                let view = construct(&wide)?;
+                assert_eq!(view.types().len(), 96);
+                for (actual, authored) in view.types().iter().zip(&wide.types) {
+                    assert!(std::ptr::eq(actual, authored));
+                }
+                drop(view);
+                Ok::<_, Vec<Diagnostic>>(())
+            })
+        });
+    result.unwrap();
+    assert!(!overflowed);
+    assert_eq!(used, directory);
+    assert!(!allocation.invalid);
+    assert_eq!(allocation.allocated, directory);
+    assert_eq!(allocation.reallocations, 0);
+    assert_eq!(allocation.live, 0);
+    let ((first, retry), overflowed, _) =
+        crate::bounded_output::with_limit_usage(directory - 1, || {
+            (construct(&wide).is_err(), construct(&wide).is_err())
         });
     assert!(overflowed);
     assert!(first && retry);

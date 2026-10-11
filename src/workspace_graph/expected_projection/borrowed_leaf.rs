@@ -39,7 +39,10 @@ pub(in crate::workspace_graph) fn construct(
     for declaration in &program.types {
         types.push((declaration.name.as_str(), declaration));
     }
-    types.sort_by(|left, right| left.0.cmp(right.0));
+    // Duplicate keys always refuse with the same diagnostic; equal-key order
+    // is never consumed. Unstable sorting retains that verdict without a
+    // hidden stable-sort scratch allocation.
+    types.sort_unstable_by(|left, right| left.0.cmp(right.0));
     if types.windows(2).any(|items| items[0].0 == items[1].0) {
         return Err(vec![graph_error(
             "SPX-G173",
