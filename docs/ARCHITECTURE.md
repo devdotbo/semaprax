@@ -781,6 +781,13 @@ contract](DOCTOR-PROBE-V1.md).
 ### Canonical source
 
 `src/lexer.rs`, `src/parser.rs`, and `src/ast.rs` parse human-readable source.
+`ast/program_source` owns a sealed two-slice compiler input and a concrete
+presentation identity. `workspace_graph/expected_projection/borrowed_leaf`
+lends authored AST collections for uncached import-free, invariant-free
+synthetic inputs and owns only their optional scalar main. The source verifier,
+prelude/declaration index and resolver consume that exact input; cached,
+imported and invariant-desugared projections keep the owned representation.
+
 The parser separates recursive prefix atoms from postfix construction so
 inactive postfix temporaries do not accumulate during nested atom parsing.
 Token order, contextual grammar, spans and diagnostics are unchanged.

@@ -1,6 +1,7 @@
 //! Test-only recursive checking of call and method-call expressions.
 
-use crate::ast::{Expr, Function, ImportResult, Param, ParamMode, Program, Type};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{Expr, Function, ImportResult, Param, ParamMode, Type};
 use crate::diagnostic::Diagnostic;
 use crate::source_verify::arguments::{
     activate_borrowed_bytes_call_loans, check_argument_ownership, release_borrowed_bytes_call_loans,
@@ -21,7 +22,7 @@ pub(super) fn oracle_call(
     name: &String,
     type_arguments: &Vec<Type>,
     args: &Vec<Expr>,
-    program: &Program,
+    program: &dyn ProgramSource,
     current: &Function,
     expr: &Expr,
     variables: &mut HashMap<String, Binding>,
@@ -757,7 +758,7 @@ pub(super) fn oracle_call(
         );
     }
     let native_import = program
-        .interfaces
+        .interfaces()
         .iter()
         .flat_map(|interface| &interface.imports)
         .find(|import| import.native_rust && import.name == *name);
@@ -1052,7 +1053,7 @@ pub(super) fn oracle_method_call(
     method: &String,
     type_arguments: &Vec<Type>,
     args: &Vec<Expr>,
-    program: &Program,
+    program: &dyn ProgramSource,
     current: &Function,
     expr: &Expr,
     variables: &mut HashMap<String, Binding>,

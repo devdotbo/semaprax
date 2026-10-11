@@ -4,7 +4,8 @@
 use super::binding::{Availability, Binding};
 use super::diagnostics::error;
 use super::type_table::TypeTable;
-use crate::ast::{Expr, ExprKind, ParamMode, Program, Span, Type};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{Expr, ExprKind, ParamMode, Span, Type};
 use crate::diagnostic::Diagnostic;
 use std::collections::{HashMap, HashSet};
 
@@ -54,7 +55,7 @@ pub(super) fn source_place(
 }
 
 pub(super) fn check_source_place_availability(
-    program: &Program,
+    program: &dyn ProgramSource,
     place: &SourcePlace,
     variables: &HashMap<String, Binding>,
     span: Span,

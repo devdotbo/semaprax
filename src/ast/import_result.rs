@@ -86,7 +86,10 @@ impl ImportResult {
     }
 
     /// Closed native container admission never widens ordinary generic programs.
-    pub(crate) fn container_enabled(program: &super::Program, ty: &Type) -> bool {
+    pub(crate) fn container_enabled(
+        program: &dyn super::program_source::ProgramSource,
+        ty: &Type,
+    ) -> bool {
         if let Some(kind) = Self::container_for_type(ty) {
             return program
                 .interfaces

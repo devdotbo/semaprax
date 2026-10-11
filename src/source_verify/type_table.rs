@@ -2,9 +2,10 @@
 //! resource declarations, the merged class-field prefix used by inheritance,
 //! and the structural type predicates built on them.
 
+use crate::ast::program_source::ProgramSource;
 use crate::ast::{
-    FieldDeclaration, Function, ImportDeclaration, InterfaceDeclaration, Program,
-    ResourceLifecycleKind, Type, TypeDeclaration, TypeDeclarationKind, VariantCaseDeclaration,
+    FieldDeclaration, Function, ImportDeclaration, InterfaceDeclaration, ResourceLifecycleKind,
+    Type, TypeDeclaration, TypeDeclarationKind, VariantCaseDeclaration,
 };
 use std::collections::{HashMap, HashSet};
 
@@ -81,9 +82,9 @@ impl<'a> TypeTable<'a> {
             && matches!(arguments.as_slice(), [element]
                 if super::declared_type::owned_leaf_collection::runtime_element(self, element)))
     }
-    pub(super) fn new(program: &'a Program) -> Self {
+    pub(super) fn new(program: &'a dyn ProgramSource) -> Self {
         let declarations: HashMap<&'a str, &'a TypeDeclaration> = program
-            .types
+            .types()
             .iter()
             .chain(crate::prelude::declarations_for_program(program))
             .map(|declaration| (declaration.name.as_str(), declaration))

@@ -17,7 +17,7 @@ impl Resolver<'_> {
         message: impl Into<String>,
         span: Span,
     ) -> Diagnostic {
-        Diagnostic::error(code, message, span).at_path(&self.program.path)
+        Diagnostic::error(code, message, span).at_path(self.program.path())
     }
 
     /// Class Inheritance v1: finds the nearest ancestor of `start` (inclusive)
@@ -147,7 +147,7 @@ impl Resolver<'_> {
         span: Span,
     ) -> Result<OwnershipMode, Diagnostic> {
         if let super::FunctionExecutionId::Monomorphic(owner) = function {
-            if let Some(template) = self.program.functions.iter().find(|candidate| {
+            if let Some(template) = self.program.functions().iter().find(|candidate| {
                 candidate.stable_id == owner.as_str() && !candidate.type_parameters.is_empty()
             }) {
                 if super::generic_variant::slot(

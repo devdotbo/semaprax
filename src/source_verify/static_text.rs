@@ -1,9 +1,10 @@
 //! Explicit immutable literal-root source admission. Ordinary String is unchanged.
-use crate::ast::{ParamMode, Program, Span, Type};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{ParamMode, Span, Type};
 use crate::diagnostic::Diagnostic;
 pub(crate) const MESSAGE: &str = "static UTF-8 literal exceeds 65536 decoded bytes";
 pub(super) fn checked(
-    program: &Program,
+    program: &dyn ProgramSource,
     span: Span,
     text: &str,
 ) -> Result<super::binding::CheckedValue, Diagnostic> {

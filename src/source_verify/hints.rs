@@ -9,13 +9,14 @@
 //! verifier and the test-only recursive oracle call the same helpers so their
 //! diagnostics stay byte-identical.
 
+use crate::ast::program_source::ProgramSource;
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
 use super::diagnostics::error;
 use super::type_table::TypeTable;
 use crate::ast::{
-    Expr, ExprKind, Function, Program, Span, Type, TypeDeclarationKind, VariantCaseDeclaration,
+    Expr, ExprKind, Function, Span, Type, TypeDeclarationKind, VariantCaseDeclaration,
 };
 use crate::diagnostic::Diagnostic;
 
@@ -126,7 +127,7 @@ fn foreign_function_help(name: &str) -> Option<&'static str> {
 /// `unknown function` with the nearest declared or compiler-owned name when one
 /// is unambiguous and close, or the output hint for print-family names.
 pub(super) fn unknown_function(
-    program: &Program,
+    program: &dyn ProgramSource,
     name: &str,
     functions: &HashMap<&str, &Function>,
     span: Span,
@@ -547,7 +548,11 @@ pub(super) const STRING_OPERATOR_HELP: &str =
 pub(super) const RESULT_NAME_HELP: &str = "`result` names the function's return value only in \
     `ensures`; rename a local binding to `outcome` and update its uses";
 
-pub(super) fn reserved_local_binding(program: &Program, name: &str, span: Span) -> Diagnostic {
+pub(super) fn reserved_local_binding(
+    program: &dyn ProgramSource,
+    name: &str,
+    span: Span,
+) -> Diagnostic {
     let diagnostic = error(
         program,
         "SPX-S109",
@@ -606,7 +611,7 @@ pub(super) const IMMUTABLE_TRAVERSAL_HELP: &str = "move the finished vector into
 
 /// A function declares an effect its module does not permit.
 pub(super) fn unpermitted_effect(
-    program: &Program,
+    program: &dyn ProgramSource,
     function: &Function,
     effect: &str,
 ) -> Diagnostic {
@@ -615,7 +620,8 @@ pub(super) fn unpermitted_effect(
         "SPX-E101",
         format!(
             "function `{}` uses `{effect}` but module `{}` does not permit it",
-            function.name, program.module
+            function.name,
+            program.module()
         ),
         function.span,
     )
@@ -627,14 +633,14 @@ pub(super) fn unpermitted_effect(
 /// A call needs an effect its caller does not declare. Name both edits, so
 /// fixing `uses` does not surface the module `permit` as a second round trip.
 pub(super) fn missing_effect(
-    program: &Program,
+    program: &dyn ProgramSource,
     callee: &str,
     effect: &str,
     caller: &Function,
     span: Span,
 ) -> Diagnostic {
     let uses = format!("add `uses {{ {effect} }}` on its own line between the signature and `{{`");
-    let help = if program.permits.iter().any(|permit| permit == effect) {
+    let help = if program.permits().iter().any(|permit| permit == effect) {
         uses
     } else {
         format!("{uses}, and `permit {{ {effect} }}` at module level, below the `module` line")

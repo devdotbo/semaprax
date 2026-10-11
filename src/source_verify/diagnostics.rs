@@ -4,12 +4,13 @@
 use super::binding::{Availability, Binding, CheckedValue};
 use super::iterative::check_expr_iterative;
 use super::type_table::TypeTable;
-use crate::ast::{Expr, ExprKind, Function, ParamMode, Program, Span, Type};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{Expr, ExprKind, Function, ParamMode, Span, Type};
 use crate::diagnostic::Diagnostic;
 use std::collections::{BTreeSet, HashMap, HashSet};
 
 pub(super) fn reject_native_unit_value(
-    program: &Program,
+    program: &dyn ProgramSource,
     expression: &Expr,
     value: &CheckedValue,
     diagnostics: &mut Vec<Diagnostic>,
@@ -25,7 +26,7 @@ pub(super) fn reject_native_unit_value(
 }
 
 pub(super) fn reject_aggregate_match_result(
-    program: &Program,
+    program: &dyn ProgramSource,
     expression: &Expr,
     value: &CheckedValue,
     diagnostics: &mut Vec<Diagnostic>,
@@ -64,7 +65,7 @@ pub(super) fn reject_aggregate_match_result(
 /// Copy scalar scrutinee or a variant whose every payload is a Copy scalar.
 /// HIR validation re-checks the same rule on resolved types.
 pub(super) fn reject_loop_match_scrutinee(
-    program: &Program,
+    program: &dyn ProgramSource,
     types: &TypeTable<'_>,
     scrutinee: &Expr,
     value: &CheckedValue,
@@ -101,7 +102,7 @@ pub(super) fn reject_loop_match_scrutinee(
 }
 
 pub(super) fn reject_aggregate_equality(
-    program: &Program,
+    program: &dyn ProgramSource,
     types: &TypeTable<'_>,
     expression: &Expr,
     value: &CheckedValue,
@@ -161,7 +162,7 @@ pub(super) fn reject_aggregate_equality(
 
 #[allow(clippy::too_many_arguments)]
 pub(super) fn require_bool(
-    program: &Program,
+    program: &dyn ProgramSource,
     function: &Function,
     contract: &Expr,
     variables: &HashMap<String, Binding>,
@@ -247,16 +248,16 @@ pub(super) fn require_bool(
 }
 
 pub(super) fn error(
-    program: &Program,
+    program: &dyn ProgramSource,
     code: &'static str,
     message: impl Into<String>,
     span: Span,
 ) -> Diagnostic {
-    Diagnostic::error(code, message, span).at_path(&program.path)
+    Diagnostic::error(code, message, span).at_path(program.path())
 }
 
 pub(super) fn invalid_stable_id(
-    program: &Program,
+    program: &dyn ProgramSource,
     code: &'static str,
     subject: impl Into<String>,
     span: Span,
@@ -273,7 +274,7 @@ pub(super) fn invalid_stable_id(
 }
 
 pub(super) fn reject_reserved_host_id(
-    program: &Program,
+    program: &dyn ProgramSource,
     stable_id: &str,
     kind: &str,
     span: Span,

@@ -277,7 +277,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 }
                 let native = self
                     .program
-                    .interfaces
+                    .interfaces()
                     .iter()
                     .flat_map(|interface| &interface.imports)
                     .find(|import| import.native_rust && import.name == *name);

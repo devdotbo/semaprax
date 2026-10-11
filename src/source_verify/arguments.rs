@@ -6,14 +6,15 @@ use super::diagnostics::error;
 use super::loans::{has_active_overlapping_loan, mark_value_sources_moved};
 use super::place::source_place;
 use super::type_table::TypeTable;
-use crate::ast::{Expr, ExprKind, Function, Param, ParamMode, Program, Type};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{Expr, ExprKind, Function, Param, ParamMode, Type};
 use crate::diagnostic::Diagnostic;
 use std::collections::HashMap;
 mod projected_string_view;
 
 #[allow(clippy::too_many_arguments)]
 pub(super) fn check_argument_ownership(
-    program: &Program,
+    program: &dyn ProgramSource,
     current: &Function,
     callee: &str,
     arg: &Expr,
@@ -226,7 +227,7 @@ pub(super) fn source_borrowed_bytes_call_place_is_admitted(
 }
 
 pub(super) fn activate_borrowed_bytes_call_loans(
-    program: &Program,
+    program: &dyn ProgramSource,
     arguments: &[Expr],
     parameters: &[Param],
     variables: &mut HashMap<String, Binding>,

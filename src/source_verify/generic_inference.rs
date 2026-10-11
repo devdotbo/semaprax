@@ -6,7 +6,8 @@ use super::declared_type::{
     substitute_function_type,
 };
 use super::type_table::TypeTable;
-use crate::ast::{BinaryOp, Expr, ExprKind, Function, Program, Type, UnaryOp};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{BinaryOp, Expr, ExprKind, Function, Type, UnaryOp};
 use std::collections::HashMap;
 
 const MAX_EVIDENCE_DEPTH: usize = 128;
@@ -25,7 +26,7 @@ impl EvidenceBudget {
 }
 
 pub(super) fn arguments(
-    program: &Program,
+    program: &dyn ProgramSource,
     current: &Function,
     target: &Function,
     args: &[Expr],
@@ -51,7 +52,7 @@ pub(super) fn arguments(
 /// observes the same expression forms as call inference and never checks or
 /// evaluates the expression.
 pub(super) fn expression_type(
-    program: &Program,
+    program: &dyn ProgramSource,
     current: &Function,
     expression: &Expr,
     bindings: &HashMap<String, Binding>,
@@ -74,7 +75,7 @@ pub(super) fn expression_type(
 /// together so recursive omitted calls cannot reset either bound.
 #[allow(clippy::too_many_arguments)]
 fn infer_arguments(
-    program: &Program,
+    program: &dyn ProgramSource,
     current: &Function,
     target: &Function,
     args: &[Expr],
@@ -159,7 +160,7 @@ fn ordered(ty: &Type) -> bool {
 /// enter the ordinary expression verifier.
 #[allow(clippy::too_many_arguments)]
 fn evidence(
-    program: &Program,
+    program: &dyn ProgramSource,
     current: &Function,
     expression: &Expr,
     bindings: &HashMap<String, Binding>,
@@ -304,7 +305,7 @@ fn evidence(
 }
 
 fn generic_arguments_are_admitted(
-    program: &Program,
+    program: &dyn ProgramSource,
     current: &Function,
     target: &Function,
     arguments: &[Type],

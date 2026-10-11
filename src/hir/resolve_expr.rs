@@ -251,7 +251,7 @@ impl Resolver<'_> {
                         {
                             let import = self
                                 .program
-                                .interfaces
+                                .interfaces()
                                 .iter()
                                 .flat_map(|interface| &interface.imports)
                                 .find(|import| import.stable_id == import_id.as_str())
@@ -463,7 +463,7 @@ impl Resolver<'_> {
                                 })?;
                             let target = self
                                 .program
-                                .functions
+                                .functions()
                                 .iter()
                                 .find(|function| function.stable_id == template.as_str())
                                 .ok_or_else(|| {
@@ -601,13 +601,13 @@ impl Resolver<'_> {
                                 )
                             })?;
                         let template_record = matches!(function, FunctionExecutionId::Monomorphic(owner)
-                        if self.program.functions.iter().any(|candidate|
+                        if self.program.functions().iter().any(|candidate|
                             candidate.stable_id == owner.as_str() && !candidate.type_parameters.is_empty())
                         && super::type_reachability::is_nested_owned_byte_record_template(
                             &self.declarations,
                             &ResolvedType::Nominal { declaration: record.clone(), arguments: arguments.clone() },
                             owner,
-                            self.program.functions.iter().find(|candidate| candidate.stable_id == owner.as_str()).map_or(0, |candidate| candidate.type_parameters.len()),
+                            self.program.functions().iter().find(|candidate| candidate.stable_id == owner.as_str()).map_or(0, |candidate| candidate.type_parameters.len()),
                         ));
                         if arguments.len() != parameters.len()
                             || (!template_record
@@ -897,7 +897,7 @@ impl Resolver<'_> {
                     let args = take_results(&mut results, argument_count);
                     let source_import = self
                         .program
-                        .interfaces
+                        .interfaces()
                         .iter()
                         .flat_map(|interface| &interface.imports)
                         .find(|candidate| candidate.stable_id == import.as_str())
@@ -2893,7 +2893,7 @@ impl Resolver<'_> {
                     }
                     let holder_ast = self
                         .program
-                        .types
+                        .types()
                         .iter()
                         .find(|t| t.stable_id == holder.as_str())
                         .ok_or_else(|| {
@@ -3041,7 +3041,7 @@ impl Resolver<'_> {
                     };
                     let holder_ast = self
                         .program
-                        .types
+                        .types()
                         .iter()
                         .find(|t| t.stable_id == holder.as_str())
                         .ok_or_else(|| {

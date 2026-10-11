@@ -1,4 +1,5 @@
 //! Exact consuming scalar iterator protocol. Runtime adapters receive no ambient authority.
+use crate::ast::program_source::ProgramSource;
 use crate::ast::{Param, ParamMode, Span, Type};
 use crate::hir::{DeclarationId, OwnershipMode, ResolvedParam, ResolvedType, ValueId};
 #[cfg(test)]
@@ -155,7 +156,7 @@ pub(crate) fn resolved_params(op: IteratorOp, element: &ResolvedType) -> Vec<Res
         span: Span::default(),
     }]
 }
-pub(crate) fn program_uses_iterator(program: &crate::ast::Program) -> bool {
+pub(crate) fn program_uses_iterator(program: &dyn ProgramSource) -> bool {
     fn uses_function(function: &crate::ast::Function) -> bool {
         ast_type_uses_iterator(&function.return_type)
             || function
@@ -169,8 +170,8 @@ pub(crate) fn program_uses_iterator(program: &crate::ast::Program) -> bool {
                 .chain(&function.ensures)
                 .any(ast_expression_uses_iterator)
     }
-    program.functions.iter().any(uses_function)
-        || program.types.iter().any(|declaration| {
+    program.functions().iter().any(uses_function)
+        || program.types().iter().any(|declaration| {
             matches!(&declaration.kind, crate::ast::TypeDeclarationKind::Class { methods, .. }
                 if methods.iter().any(uses_function))
         })

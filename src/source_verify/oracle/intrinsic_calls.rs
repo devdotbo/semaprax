@@ -1,5 +1,6 @@
 //! Recursive reference checking for exact String and borrowed-text intrinsics.
 use super::*;
+use crate::ast::program_source::ProgramSource;
 use crate::ast::Param;
 use crate::source_verify::arguments::{
     activate_borrowed_bytes_call_loans, check_argument_ownership, release_borrowed_bytes_call_loans,
@@ -10,7 +11,7 @@ pub(super) fn check_call(
     name: &str,
     type_arguments: &[Type],
     args: &[Expr],
-    program: &Program,
+    program: &dyn ProgramSource,
     current: &Function,
     expression: &Expr,
     variables: &mut HashMap<String, Binding>,

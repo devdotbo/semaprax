@@ -1,5 +1,6 @@
 //! Source-level byte-data storage, call-path, and transcript capacity projection.
 use super::*;
+use crate::ast::program_source::ProgramSource;
 mod command_io;
 mod empty_clone;
 mod functions;
@@ -7,7 +8,7 @@ mod fused_selection;
 pub(super) use functions::{source_array_payload, source_capacity_functions};
 pub(super) use fused_selection::verify_selected_capacity;
 pub(super) struct SourceCapacityContext<'a> {
-    pub(super) program: &'a Program,
+    pub(super) program: &'a dyn ProgramSource,
     pub(super) types: &'a TypeTable<'a>,
     pub(super) ordinary: &'a BTreeMap<&'a str, &'a Function>,
     pub(super) enclosing_class: Option<&'a str>,
@@ -1579,7 +1580,7 @@ fn source_capacity_expr(
 /// The unchanged default, analyzed under `AllocationStrategy::Legacy`.
 #[cfg(test)]
 pub(super) fn verify_byte_data_capacity(
-    program: &Program,
+    program: &dyn ProgramSource,
     types: &TypeTable<'_>,
 ) -> Result<(), crate::byte_data_capacity::CapacityError> {
     verify_selected_capacity(program, types, None)

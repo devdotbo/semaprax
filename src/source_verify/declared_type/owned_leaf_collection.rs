@@ -1,5 +1,6 @@
 //! Source-owned shape proof, independent of the resolved descriptor.
 use super::*;
+use crate::ast::program_source::ProgramSource;
 
 pub(crate) fn declaration_admitted(declaration: &crate::ast::TypeDeclaration) -> bool {
     let TypeDeclarationKind::Record { fields } = &declaration.kind else {
@@ -59,21 +60,21 @@ pub(in crate::source_verify) fn vec_operation_admitted(
         || admits_operation(types, op, element)
 }
 
-pub(crate) fn source_admitted(program: &Program, element: &Type) -> bool {
+pub(crate) fn source_admitted(program: &dyn ProgramSource, element: &Type) -> bool {
     *element == Type::String
         || matches!(element, Type::Named { name, arguments }
             if arguments.is_empty()
-            && program.types.iter().any(|item| item.name == *name && declaration_admitted(item)))
+            && program.types().iter().any(|item| item.name == *name && declaration_admitted(item)))
 }
 
 pub(crate) fn resolved_source_admitted(
-    program: &Program,
+    program: &dyn ProgramSource,
     element: &crate::hir::ResolvedType,
 ) -> bool {
     *element == crate::hir::ResolvedType::String
         || matches!(element, crate::hir::ResolvedType::Nominal { declaration, arguments }
             if arguments.is_empty()
-            && program.types.iter().any(|item|
+            && program.types().iter().any(|item|
                 item.stable_id == declaration.as_str() && declaration_admitted(item)))
 }
 
@@ -124,6 +125,6 @@ pub(in crate::source_verify) fn clone_capacity_flow(
     ))
 }
 
-pub(crate) fn legacy_source_element(program: &Program, element: &Type) -> bool {
+pub(crate) fn legacy_source_element(program: &dyn ProgramSource, element: &Type) -> bool {
     super::owned_record_collection::is_admitted_authored_record_collection_element(program, element)
 }

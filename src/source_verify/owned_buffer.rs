@@ -25,7 +25,8 @@
 //! at run time, before the owner transfer commits, and selects the single
 //! `semaprax.byte-buffer.v1` failure identically on every backend.
 
-use crate::ast::{Expr, ExprKind, Program};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{Expr, ExprKind};
 use crate::byte_ops::{self, ByteOp};
 use crate::diagnostic::Diagnostic;
 
@@ -34,7 +35,7 @@ use super::diagnostics::error;
 /// Check one `bytes_zeroed` or `bytes_set` call site. The caller has already
 /// rejected type arguments and a wrong argument count.
 pub(super) fn check_call(
-    program: &Program,
+    program: &dyn ProgramSource,
     expression: &Expr,
     op: ByteOp,
     name: &str,

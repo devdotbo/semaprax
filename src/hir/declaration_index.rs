@@ -1,9 +1,11 @@
 //! Deterministic declaration lookup, type facts, and inheritance materialization.
 use super::*;
+
 mod linked_owned_data;
 mod owned_builtin;
 mod primitive_replay;
 mod projection;
+mod source;
 use owned_builtin::owned_builtin_facts;
 /// A deterministic, display-name-to-identity index.
 ///
@@ -763,20 +765,12 @@ impl DeclarationIndex {
         true
     }
 
-    pub(super) fn recompute_type_facts(&self, ty: &ResolvedType) -> Option<TypeFacts> {
-        self.compute_type_facts(ty, &mut BTreeSet::new(), &mut BTreeMap::new())
-    }
-
-    pub(super) fn from_verified(program: &Program) -> Result<Self, Diagnostic> {
-        Self::from_verified_with_prelude(program, crate::prelude::declarations_for_program(program))
-    }
-
     pub(super) fn from_verified_with_prelude(
-        program: &Program,
+        program: &dyn ProgramSource,
         prelude: &[crate::ast::TypeDeclaration],
     ) -> Result<Self, Diagnostic> {
         let mut index = Self::default();
-        for declaration in program.types.iter().chain(prelude) {
+        for declaration in program.types().iter().chain(prelude) {
             let kind = match declaration.kind {
                 TypeDeclarationKind::Resource { .. } => DeclarationKind::Resource,
                 TypeDeclarationKind::Record { .. } => DeclarationKind::Record,
@@ -809,7 +803,7 @@ impl DeclarationIndex {
                                 format!("type `{}` has too many parameters", declaration.name),
                                 declaration.span,
                             )
-                            .at_path(&program.path)
+                            .at_path(program.path())
                         })?,
                         span: parameter.span,
                     })
@@ -817,7 +811,7 @@ impl DeclarationIndex {
                 .collect::<Result<Vec<_>, Diagnostic>>()?;
             index.type_parameters.insert(owner, parameters);
         }
-        for interface in &program.interfaces {
+        for interface in program.interfaces() {
             let interface_id = DeclarationId::new(interface.stable_id.clone());
             index.insert_top_level(
                 interface.name.clone(),
@@ -844,7 +838,7 @@ impl DeclarationIndex {
                 );
             }
         }
-        for declaration in program.types.iter().chain(prelude) {
+        for declaration in program.types().iter().chain(prelude) {
             let TypeDeclarationKind::Resource { lifecycles } = &declaration.kind else {
                 continue;
             };
@@ -862,7 +856,7 @@ impl DeclarationIndex {
                 );
             }
         }
-        for function in &program.functions {
+        for function in program.functions() {
             let owner = DeclarationId::new(function.stable_id.clone());
             index.insert_top_level(
                 function.name.clone(),
@@ -889,7 +883,7 @@ impl DeclarationIndex {
                                 format!("function `{}` has too many parameters", function.name),
                                 function.span,
                             )
-                            .at_path(&program.path)
+                            .at_path(program.path())
                         })?,
                         span: parameter.span,
                     })
@@ -909,9 +903,9 @@ impl DeclarationIndex {
                 "Native Rust Interop declaration set is unsupported: symbol collision",
                 Span::default(),
             )
-            .at_path(&program.path));
+            .at_path(program.path()));
         }
-        for declaration in program.types.iter().chain(prelude) {
+        for declaration in program.types().iter().chain(prelude) {
             let (TypeDeclarationKind::Record { fields }
             | TypeDeclarationKind::Class { fields, .. }) = &declaration.kind
             else {
@@ -928,7 +922,7 @@ impl DeclarationIndex {
                             format!("unresolved field type `{}`", field.ty),
                             field.span,
                         )
-                        .at_path(&program.path)
+                        .at_path(program.path())
                     })?;
                 let field_index = u32::try_from(ordinal).map_err(|_| {
                     Diagnostic::error(
@@ -936,7 +930,7 @@ impl DeclarationIndex {
                         format!("record `{}` has too many fields", declaration.name),
                         declaration.span,
                     )
-                    .at_path(&program.path)
+                    .at_path(program.path())
                 })?;
                 let resolved = ResolvedFieldDeclaration {
                     id: DeclarationId::new(field.stable_id.clone()),
@@ -958,7 +952,7 @@ impl DeclarationIndex {
             }
             index.record_fields.insert(owner, resolved_fields);
         }
-        for declaration in program.types.iter() {
+        for declaration in program.types().iter() {
             let TypeDeclarationKind::Class { fields, methods } = &declaration.kind else {
                 continue;
             };
@@ -973,7 +967,7 @@ impl DeclarationIndex {
                             format!("unresolved class field type `{}`", field.ty),
                             field.span,
                         )
-                        .at_path(&program.path)
+                        .at_path(program.path())
                     })?;
                 let field_index = u32::try_from(ordinal).map_err(|_| {
                     Diagnostic::error(
@@ -981,7 +975,7 @@ impl DeclarationIndex {
                         format!("class `{}` has too many fields", declaration.name),
                         declaration.span,
                     )
-                    .at_path(&program.path)
+                    .at_path(program.path())
                 })?;
                 let resolved = ResolvedFieldDeclaration {
                     id: DeclarationId::new(field.stable_id.clone()),
@@ -1010,7 +1004,7 @@ impl DeclarationIndex {
                         format!("duplicate stable id `{}`", method.stable_id),
                         method.span,
                     )
-                    .at_path(&program.path));
+                    .at_path(program.path()));
                 }
                 index.insert_owned_declaration(
                     owner.clone(),
@@ -1032,14 +1026,14 @@ impl DeclarationIndex {
                         ),
                         method.span,
                     )
-                    .at_path(&program.path));
+                    .at_path(program.path()));
                 }
                 index
                     .type_parameters
                     .insert(DeclarationId::new(method.stable_id.clone()), Vec::new());
             }
         }
-        for declaration in program.types.iter().chain(prelude) {
+        for declaration in program.types().iter().chain(prelude) {
             let TypeDeclarationKind::Variant { cases } = &declaration.kind else {
                 continue;
             };
@@ -1053,7 +1047,7 @@ impl DeclarationIndex {
                         format!("variant `{}` has too many cases", declaration.name),
                         declaration.span,
                     )
-                    .at_path(&program.path)
+                    .at_path(program.path())
                 })?;
                 index.insert_case(
                     owner.clone(),
@@ -1077,7 +1071,7 @@ impl DeclarationIndex {
                                 format!("unresolved case field type `{}`", field.ty),
                                 field.span,
                             )
-                            .at_path(&program.path)
+                            .at_path(program.path())
                         })?;
                     let field_index = u32::try_from(field_ordinal).map_err(|_| {
                         Diagnostic::error(
@@ -1088,7 +1082,7 @@ impl DeclarationIndex {
                             ),
                             case.span,
                         )
-                        .at_path(&program.path)
+                        .at_path(program.path())
                     })?;
                     let resolved = ResolvedFieldDeclaration {
                         id: DeclarationId::new(field.stable_id.clone()),
@@ -1130,7 +1124,7 @@ impl DeclarationIndex {
                 "record declarations contain an illegal by-value recursive layout",
                 Span::default(),
             )
-            .at_path(&program.path));
+            .at_path(program.path()));
         }
         Ok(index)
     }
@@ -1139,8 +1133,11 @@ impl DeclarationIndex {
     /// non-class parents and inheritance cycles, then prepends each class's
     /// inherited field prefix so layouts, semantic facts, projections, and
     /// cleanup treat an inherited member exactly like a declared one.
-    fn materialize_class_inheritance(&mut self, program: &Program) -> Result<(), Diagnostic> {
-        for declaration in &program.types {
+    fn materialize_class_inheritance(
+        &mut self,
+        program: &dyn ProgramSource,
+    ) -> Result<(), Diagnostic> {
+        for declaration in program.types() {
             let Some(extends) = &declaration.extends else {
                 continue;
             };
@@ -1158,7 +1155,7 @@ impl DeclarationIndex {
                     ),
                     declaration.name_span,
                 )
-                .at_path(&program.path));
+                .at_path(program.path()));
             };
             if !parent_arguments.is_empty() {
                 return Err(Diagnostic::error(
@@ -1169,7 +1166,7 @@ impl DeclarationIndex {
                     ),
                     declaration.name_span,
                 )
-                .at_path(&program.path));
+                .at_path(program.path()));
             }
             let parent = self.types_by_name.get(parent_name).ok_or_else(|| {
                 Diagnostic::error(
@@ -1180,7 +1177,7 @@ impl DeclarationIndex {
                     ),
                     declaration.name_span,
                 )
-                .at_path(&program.path)
+                .at_path(program.path())
             })?;
             if self
                 .declaration(parent)
@@ -1194,11 +1191,11 @@ impl DeclarationIndex {
                     ),
                     declaration.name_span,
                 )
-                .at_path(&program.path));
+                .at_path(program.path()));
             }
             self.class_parents.insert(child, parent.clone());
         }
-        for declaration in &program.types {
+        for declaration in program.types() {
             if !matches!(declaration.kind, TypeDeclarationKind::Class { .. }) {
                 continue;
             }
@@ -1215,7 +1212,7 @@ impl DeclarationIndex {
                         ),
                         declaration.span,
                     )
-                    .at_path(&program.path));
+                    .at_path(program.path()));
                 }
                 cursor = parent.clone();
             }
@@ -1224,7 +1221,7 @@ impl DeclarationIndex {
         // its standalone ancestor layout at every depth. Declared-only lists
         // are snapshotted first because ancestors are materialized in place.
         let mut declared_fields = BTreeMap::new();
-        for declaration in &program.types {
+        for declaration in program.types() {
             if matches!(declaration.kind, TypeDeclarationKind::Class { .. }) {
                 let id = DeclarationId::new(declaration.stable_id.clone());
                 if let Some(fields) = self.record_fields(&id) {
@@ -1232,7 +1229,7 @@ impl DeclarationIndex {
                 }
             }
         }
-        for declaration in &program.types {
+        for declaration in program.types() {
             let TypeDeclarationKind::Class { .. } = &declaration.kind else {
                 continue;
             };
@@ -1251,7 +1248,7 @@ impl DeclarationIndex {
                         format!("class `{member}` has no resolved fields"),
                         declaration.span,
                     )
-                    .at_path(&program.path)
+                    .at_path(program.path())
                 })?;
                 for mut field in fields.iter().cloned() {
                     if !seen_names.insert(field.name.clone()) || !seen_ids.insert(field.id.clone())
@@ -1264,7 +1261,7 @@ impl DeclarationIndex {
                             ),
                             field.span,
                         )
-                        .at_path(&program.path));
+                        .at_path(program.path()));
                     }
                     // Effective positions are canonical for the extending
                     // class; backends consume them as declaration order.
@@ -1274,7 +1271,7 @@ impl DeclarationIndex {
                             format!("class `{}` has too many fields", declaration.name),
                             declaration.span,
                         )
-                        .at_path(&program.path)
+                        .at_path(program.path())
                     })?;
                     if !is_child {
                         self.fields_by_owner_name

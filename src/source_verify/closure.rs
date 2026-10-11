@@ -4,12 +4,13 @@ use super::declared_type::{function_value_scalar_type, function_value_signature}
 use super::diagnostics::{error, source_identifier};
 use super::scope::{VerifierFrame, VerifierScope};
 use super::IterativeVerifier;
-use crate::ast::{ClosureParam, Expr, ExprKind, ParamMode, Program, Statement, Type};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{ClosureParam, Expr, ExprKind, ParamMode, Statement, Type};
 use crate::diagnostic::Diagnostic;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
 pub(crate) fn capture_names_scoped(
-    program: &Program,
+    program: &dyn ProgramSource,
     params: &[ClosureParam],
     return_type: &Type,
     body: &Expr,
@@ -142,7 +143,7 @@ pub(crate) fn capture_names_scoped(
                         || outer.contains_key(name.as_str())
                         || !type_arguments.is_empty()
                         || program
-                            .functions
+                            .functions()
                             .iter()
                             .find(|f| f.name == *name)
                             .and_then(function_value_signature)
@@ -327,7 +328,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
 #[cfg(test)]
 #[allow(clippy::too_many_arguments)]
 pub(super) fn oracle(
-    program: &Program,
+    program: &dyn ProgramSource,
     current: &crate::ast::Function,
     expression: &Expr,
     outer: &HashMap<String, Binding>,
@@ -451,7 +452,7 @@ pub(super) fn source_signature(params: &[ClosureParam], result: &Type) -> Type {
 /// This check carries no capture/type authority; normal source checking still
 /// checks each scalar substitution and its lexical snapshot inventory.
 pub(super) fn validate_generic_syntax(
-    program: &Program,
+    program: &dyn ProgramSource,
     function: &crate::ast::Function,
 ) -> Result<(), Diagnostic> {
     if function.type_parameters.is_empty() {
@@ -517,7 +518,7 @@ pub(super) fn validate_generic_syntax(
                     ..
                 } if type_arguments.is_empty()
                     && program
-                        .functions
+                        .functions()
                         .iter()
                         .find(|candidate| candidate.name == *name)
                         .and_then(function_value_signature)
@@ -544,7 +545,7 @@ pub(super) fn validate_generic_syntax(
 /// Every admitted collection substitution must be checked, including unused
 /// templates. Unsupported specialization must never erase validation work.
 pub(super) fn specialize_checked(
-    program: &Program,
+    program: &dyn ProgramSource,
     template: &crate::ast::Function,
     arguments: &[Type],
     diagnostics: &mut Vec<Diagnostic>,

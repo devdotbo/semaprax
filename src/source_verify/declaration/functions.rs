@@ -1,8 +1,9 @@
 //! Function-level checks: declaration admission, generic call cycles, and the
 //! per-function body, contract, and effect checks.
+use crate::ast::program_source::ProgramSource;
 use crate::ast::{
     Expr, ExprKind, Function, ImportDeclaration, InterfaceDeclaration, MatchPattern, ParamMode,
-    Program, RecordMatchFieldPattern, Statement, Type,
+    RecordMatchFieldPattern, Statement, Type,
 };
 use crate::diagnostic::Diagnostic;
 use crate::source_verify::binding::{Availability, Binding};
@@ -24,12 +25,12 @@ use crate::source_verify::iterative::check_expr_with_helpers;
 use crate::source_verify::type_table::TypeTable;
 use std::collections::{BTreeSet, HashMap, HashSet};
 pub(super) fn check_function_declarations<'p>(
-    program: &'p Program,
+    program: &'p dyn ProgramSource,
     functions: &mut HashMap<&'p str, &'p Function>,
     ids: &mut HashSet<&'p str>,
     diagnostics: &mut Vec<Diagnostic>,
 ) {
-    for function in &program.functions {
+    for function in program.functions() {
         if !source_identifier(&function.name) {
             diagnostics.push(error(
                 program,
@@ -186,7 +187,7 @@ pub(super) fn check_function_declarations<'p>(
                     ),
                     function.name_span,
                 )
-                .at_path(&program.path)
+                .at_path(program.path())
                 .with_help("add @id(\"your.namespace.symbol\") before the declaration"),
             );
         }
@@ -228,7 +229,8 @@ pub(super) fn check_function_declarations<'p>(
                 "SPX-T286",
                 format!(
                     "`{}.{}` must be one exact transparent compiler-owned box wrapper",
-                    program.module, function.name
+                    program.module(),
+                    function.name
                 ),
                 function.span,
             ));
@@ -242,7 +244,8 @@ pub(super) fn check_function_declarations<'p>(
                 "SPX-T283",
                 format!(
                     "`{}.{}` must be one exact transparent compiler-owned vector wrapper",
-                    program.module, function.name
+                    program.module(),
+                    function.name
                 ),
                 function.span,
             ));
@@ -259,7 +262,8 @@ pub(super) fn check_function_declarations<'p>(
                     "SPX-T283",
                     format!(
                         "`{}.{}` must be one exact transparent compiler-owned vector wrapper",
-                        program.module, function.name
+                        program.module(),
+                        function.name
                     ),
                     function.span,
                 ));
@@ -276,7 +280,8 @@ pub(super) fn check_function_declarations<'p>(
                     "SPX-T286",
                     format!(
                         "`{}.{}` must be one exact transparent compiler-owned box wrapper",
-                        program.module, function.name
+                        program.module(),
+                        function.name
                     ),
                     function.span,
                 ));
@@ -445,19 +450,19 @@ pub(super) fn check_function_declarations<'p>(
     }
 }
 pub(super) fn check_generic_function_cycles<'p>(
-    program: &'p Program,
+    program: &'p dyn ProgramSource,
     call_graph: &HashMap<String, Vec<String>>,
     generic_functions: &HashSet<&'p str>,
     diagnostics: &mut Vec<Diagnostic>,
 ) {
     let functions = program
-        .functions
+        .functions()
         .iter()
         .map(|function| (function.name.as_str(), function))
         .collect::<HashMap<_, _>>();
     let types = TypeTable::new(program);
     for function in program
-        .functions
+        .functions()
         .iter()
         .filter(|function| !function.type_parameters.is_empty())
     {
@@ -483,7 +488,7 @@ pub(super) fn check_generic_function_cycles<'p>(
                 0,
             );
             expression.visit_call_instances(&mut |callee, arguments, span| {
-                if let Some(target) = program.functions.iter().find(|target| {
+                if let Some(target) = program.functions().iter().find(|target| {
                     target.name == callee && !target.type_parameters.is_empty()
                 }) {
                     if arguments.is_empty() {
@@ -549,7 +554,7 @@ const MAX_STATIC_MAPPING_DEPTH: usize = 128;
 /// required to authenticate an omitted symbolic mapping before body checking.
 #[allow(clippy::too_many_arguments)]
 fn check_omitted_generic_mappings(
-    program: &Program,
+    program: &dyn ProgramSource,
     current: &Function,
     expression: &Expr,
     bindings: &mut HashMap<String, Binding>,
@@ -966,7 +971,7 @@ fn clear_record_pattern_bindings(
     }
 }
 pub(super) fn check_function_bodies<'p>(
-    program: &'p Program,
+    program: &'p dyn ProgramSource,
     functions: &HashMap<&'p str, &'p Function>,
     import_keys: &HashMap<&'p str, (&'p InterfaceDeclaration, &'p ImportDeclaration)>,
     types: &TypeTable<'p>,
@@ -976,7 +981,7 @@ pub(super) fn check_function_bodies<'p>(
     let byte_helpers = crate::loop_calls::byte_writer::SourceIndex::new(program);
     let function_value_targets =
         crate::source_verify::function_value_inventory::function_value_targets(program, functions);
-    for template in &program.functions {
+    for template in program.functions() {
         reject_function(program, template, types, diagnostics);
         let type_parameters = template
             .type_parameters
@@ -1319,7 +1324,7 @@ pub(super) fn check_function_bodies<'p>(
                 }
             }
             for effect in &function.effects {
-                if !program.permits.iter().any(|permit| permit == effect) {
+                if !program.permits().iter().any(|permit| permit == effect) {
                     diagnostics.push(crate::source_verify::hints::unpermitted_effect(
                         program, function, effect,
                     ));
@@ -1386,7 +1391,7 @@ pub(super) fn check_function_bodies<'p>(
         }
     }
     if let Some(error) = byte_helpers.failure() {
-        diagnostics.push(error.at_path(&program.path));
+        diagnostics.push(error.at_path(program.path()));
     }
 }
 

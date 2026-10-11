@@ -145,7 +145,7 @@ impl Resolver<'_> {
             return request.clone();
         };
         self.program
-            .functions
+            .functions()
             .iter()
             .find(|candidate| candidate.stable_id == id.as_str())
             .and_then(|candidate| candidate.yields.as_ref())

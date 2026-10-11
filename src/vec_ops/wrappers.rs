@@ -1,8 +1,9 @@
 //! Exact transparent generic wrappers admitted only for `std.collections`.
 
+use crate::ast::program_source::ProgramSource;
 use std::cell::Cell;
 
-use crate::ast::{Expr, ExprKind, Function, Program, Type};
+use crate::ast::{Expr, ExprKind, Function, Type};
 use crate::hir::{
     OwnershipMode, ResolvedExpr, ResolvedExprKind, ResolvedFunctionTemplate, ResolvedProgram,
     ResolvedType,
@@ -29,8 +30,8 @@ pub(crate) fn with_authenticated_linked_source<T>(operation: impl FnOnce() -> T)
     result
 }
 
-pub(crate) fn source_module_is_authenticated(program: &Program) -> bool {
-    program.module == MODULE || AUTHENTICATED_LINKED_SOURCE.with(Cell::get)
+pub(crate) fn source_module_is_authenticated(program: &dyn ProgramSource) -> bool {
+    program.module() == MODULE || AUTHENTICATED_LINKED_SOURCE.with(Cell::get)
 }
 
 pub(crate) fn wrapper_id(op: VecOp) -> Option<&'static str> {
@@ -79,15 +80,15 @@ pub(crate) fn wrapper_by_id(id: &str) -> Option<VecOp> {
         .find(|op| wrapper_id(*op) == Some(id))
 }
 
-pub(crate) fn is_source_candidate(program: &Program, function: &Function) -> bool {
-    program.module == MODULE
+pub(crate) fn is_source_candidate(program: &dyn ProgramSource, function: &Function) -> bool {
+    program.module() == MODULE
         && (wrapper_by_id(&function.stable_id).is_some()
             || super::ALL
                 .into_iter()
                 .any(|op| wrapper_name(op) == Some(function.name.as_str())))
 }
 
-pub(crate) fn source_wrapper(program: &Program, function: &Function) -> Option<VecOp> {
+pub(crate) fn source_wrapper(program: &dyn ProgramSource, function: &Function) -> Option<VecOp> {
     if !source_module_is_authenticated(program)
         || !function.explicit_id
         || function.type_parameters.len() != 1
@@ -165,7 +166,7 @@ fn exact_source_body(body: &Expr, op: VecOp, params: &[crate::ast::Param]) -> bo
 }
 
 pub(crate) fn source_parameter_is_admitted(
-    program: &Program,
+    program: &dyn ProgramSource,
     function: &Function,
     op: VecOp,
     ty: &Type,
@@ -175,7 +176,7 @@ pub(crate) fn source_parameter_is_admitted(
 }
 
 pub(crate) fn source_arguments_are_admitted(
-    program: &Program,
+    program: &dyn ProgramSource,
     function: &Function,
     arguments: &[Type],
 ) -> bool {

@@ -14,6 +14,7 @@
 //! authored declaration with any spelling, including a colliding one, is not
 //! one of the appended copies and keeps its ordinary authored rendering.
 
+use crate::ast::program_source::ProgramSource;
 use crate::ast::{Program, Span, Type, TypeDeclaration};
 use crate::diagnostic::Diagnostic;
 use crate::source_verify::diagnostics::error;
@@ -25,12 +26,12 @@ pub(crate) trait Providers {
     fn provider(&self, index: usize) -> Option<(&str, &TypeDeclaration)>;
 }
 
-/// A borrowed binding of the copies at `program.types[base..]` to the closure
+/// A borrowed binding of the copies at `program.types()[base..]` to the closure
 /// that appended them. Only the graph constructs one, after checking that
 /// every copy is the exact appended declaration the closure describes.
 #[derive(Clone, Copy)]
 pub(crate) struct PrivateNames<'s> {
-    program: &'s Program,
+    program: &'s dyn ProgramSource,
     caller: &'s Program,
     base: usize,
     providers: &'s dyn Providers,
@@ -38,7 +39,7 @@ pub(crate) struct PrivateNames<'s> {
 
 impl<'s> PrivateNames<'s> {
     pub(crate) fn new(
-        program: &'s Program,
+        program: &'s dyn ProgramSource,
         caller: &'s Program,
         base: usize,
         providers: &'s dyn Providers,
@@ -58,19 +59,19 @@ struct Provider<'s> {
 }
 
 fn provider<'s>(
-    program: &Program,
+    program: &dyn ProgramSource,
     types: &TypeTable<'s>,
     name: &str,
 ) -> Option<(Provider<'s>, &'s Program)> {
     let names = types.private?;
-    if !std::ptr::eq(names.program, program) {
+    if !names.program.subject().same(program.subject()) {
         return None;
     }
     let declaration = types.declaration(name)?;
     let index = names
         .program
-        .types
-        .get(names.base..)?
+        .types()
+        .suffix(names.base)?
         .iter()
         .position(|copy| std::ptr::eq(copy, declaration))?;
     let (module, declaration) = names.providers.provider(index)?;
@@ -92,10 +93,10 @@ fn label(provider: &Provider<'_>) -> String {
 
 /// Whether `ty` names a private layout copy anywhere in its payload. Such a
 /// type has no source spelling, so no help may offer it as one.
-pub(super) fn is_private(program: &Program, types: &TypeTable<'_>, ty: &Type) -> bool {
+pub(super) fn is_private(program: &dyn ProgramSource, types: &TypeTable<'_>, ty: &Type) -> bool {
     if !types
         .private
-        .is_some_and(|names| std::ptr::eq(names.program, program))
+        .is_some_and(|names| names.program.subject().same(program.subject()))
     {
         return false;
     }
@@ -121,7 +122,7 @@ pub(super) fn is_private(program: &Program, types: &TypeTable<'_>, ty: &Type) ->
 /// How a diagnostic names the bare declared type `name` when it is a private
 /// copy of this exact program; `None` when `name` is its own source spelling.
 pub(super) fn private_label(
-    program: &Program,
+    program: &dyn ProgramSource,
     types: &TypeTable<'_>,
     name: &str,
 ) -> Option<String> {
@@ -130,7 +131,7 @@ pub(super) fn private_label(
 
 /// `ty` as a diagnostic names it. Outside a bound private scope this is the
 /// exact ordinary `Display` rendering.
-pub(super) fn type_name(program: &Program, types: &TypeTable<'_>, ty: &Type) -> String {
+pub(super) fn type_name(program: &dyn ProgramSource, types: &TypeTable<'_>, ty: &Type) -> String {
     if !is_private(program, types, ty) {
         return ty.to_string();
     }
@@ -159,7 +160,7 @@ pub(super) fn type_name(program: &Program, types: &TypeTable<'_>, ty: &Type) -> 
 /// only the case, with its provider context and, when the provider supports
 /// it, the ordinary explicit import that would make its cases nameable.
 pub(super) fn missing_case(
-    program: &Program,
+    program: &dyn ProgramSource,
     types: &TypeTable<'_>,
     variant_name: &str,
     case_name: &str,

@@ -12,13 +12,14 @@
 //! are allowed. A consumed outer binding still changes ownership liveness
 //! inside the loop and keeps its existing diagnostic.
 
-use crate::ast::{ParamMode, Program, Type, TypeDeclarationKind};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{ParamMode, Type, TypeDeclarationKind};
 use crate::hir::{OwnershipMode, ResolvedType};
 use crate::source_verify::is_scalar_source_type;
 
 /// One source parameter a loop-body call admits: a Copy scalar or flat Copy variant, a borrowed
 /// byte slice, named `str`, or exact Copy-scalar Vec, or an owned `string` the call consumes.
-pub(crate) fn ast_param_admitted(program: &Program, mode: ParamMode, ty: &Type) -> bool {
+pub(crate) fn ast_param_admitted(program: &dyn ProgramSource, mode: ParamMode, ty: &Type) -> bool {
     match mode {
         ParamMode::Value => {
             ast_copy_variant(program, ty)
@@ -69,7 +70,7 @@ pub(crate) fn effects_admitted(effects: &[String]) -> bool {
 }
 
 /// One source result a loop-body call admits: a Copy scalar, flat Copy variant or new `string`.
-pub(crate) fn ast_result_admitted(program: &Program, ty: &Type) -> bool {
+pub(crate) fn ast_result_admitted(program: &dyn ProgramSource, ty: &Type) -> bool {
     is_scalar_source_type(ty)
         || *ty == Type::String
         || ast_copy_variant(program, ty)
@@ -163,12 +164,12 @@ pub(crate) fn match_scrutinee_refusal(ty: &str) -> String {
 
 /// Exact source twin of the flat concrete Copy-payload variant classifier.
 /// Only direct scalar fields or direct concrete scalar type arguments qualify.
-pub(crate) fn ast_copy_variant(program: &Program, ty: &Type) -> bool {
+pub(crate) fn ast_copy_variant(program: &dyn ProgramSource, ty: &Type) -> bool {
     let Type::Named { name, arguments } = ty else {
         return false;
     };
     let Some(declaration) = program
-        .types
+        .types()
         .iter()
         .chain(crate::prelude::declarations_for_program(program))
         .find(|d| d.name == *name)

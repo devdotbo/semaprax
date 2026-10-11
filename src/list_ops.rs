@@ -1,6 +1,7 @@
 //! Exact compiler-owned immutable `List<i64>` constructor and destructor lane.
 //! The source type is algebraic even though its physical carrier is opaque.
 
+use crate::ast::program_source::ProgramSource;
 use crate::ast::{Param, ParamMode, Span, Type};
 use crate::hir::{DeclarationId, OwnershipMode, ResolvedParam, ResolvedType, ValueId};
 
@@ -226,7 +227,7 @@ pub(crate) fn ast_is_list(ty: &Type) -> bool {
     *ty == ast_list() || *ty == ast_step()
 }
 
-pub(crate) fn program_uses_list(program: &crate::ast::Program) -> bool {
+pub(crate) fn program_uses_list(program: &dyn ProgramSource) -> bool {
     fn type_uses(ty: &Type) -> bool {
         match ty {
             Type::Named { name, arguments } => {
@@ -252,8 +253,8 @@ pub(crate) fn program_uses_list(program: &crate::ast::Program) -> bool {
                     found
                 })
     }
-    program.functions.iter().any(function_uses)
-        || program.types.iter().any(|declaration| {
+    program.functions().iter().any(function_uses)
+        || program.types().iter().any(|declaration| {
             matches!(&declaration.kind, crate::ast::TypeDeclarationKind::Class { methods, .. }
                 if methods.iter().any(function_uses))
         })

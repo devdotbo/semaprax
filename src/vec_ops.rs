@@ -1,5 +1,6 @@
 //! Compiler-owned operations for the internal Owned Bounded Vec v1 profile.
 
+use crate::ast::program_source::ProgramSource;
 use crate::ast::{Expr, ExprKind, Param, ParamMode, Span, Type};
 use crate::hir::{
     DeclarationId, OwnershipMode, ResolvedExpr, ResolvedExprKind, ResolvedParam, ResolvedType,
@@ -532,8 +533,8 @@ pub(crate) fn resolved_params_in(
 
 /// True when the source requests the owning Bytes Vec profile. An authored
 /// `Vec` declaration remains ordinary source meaning.
-pub(crate) fn program_uses_owned_payload(program: &crate::ast::Program) -> bool {
-    if program.types.iter().any(|declaration| {
+pub(crate) fn program_uses_owned_payload(program: &dyn ProgramSource) -> bool {
+    if program.types().iter().any(|declaration| {
         declaration.name == "Vec" && declaration.stable_id != crate::prelude::VEC_ID
     }) {
         return false;
@@ -560,7 +561,7 @@ pub(crate) fn program_uses_owned_payload(program: &crate::ast::Program) -> bool 
                     found
                 })
     };
-    program.functions.iter().any(function_uses)
+    program.functions().iter().any(function_uses)
 }
 
 pub(crate) fn resolved_program_uses_owned_payload(program: &crate::hir::ResolvedProgram) -> bool {
@@ -603,7 +604,7 @@ pub(crate) fn resolved_program_uses_owned_payload(program: &crate::hir::Resolved
 }
 
 pub(crate) fn is_same_owner_reassignment_source(
-    program: &crate::ast::Program,
+    program: &dyn ProgramSource,
     value: &Expr,
     name: &str,
     ty: &Type,
@@ -618,7 +619,7 @@ pub(crate) fn is_same_owner_reassignment_source(
     };
     let direct = by_name(callee).filter(|op| op.reopens_same_owner());
     let wrapper = program
-        .functions
+        .functions()
         .iter()
         .find(|function| function.name == *callee)
         .and_then(|function| source_wrapper(program, function))
@@ -678,7 +679,7 @@ pub(crate) fn is_same_owner_reassignment_hir(
 }
 
 pub(crate) fn is_same_owner_reassignment_hir_source(
-    program: &crate::ast::Program,
+    program: &dyn ProgramSource,
     value: &ResolvedExpr,
     owner: &ValueId,
 ) -> bool {
@@ -698,7 +699,7 @@ pub(crate) fn is_same_owner_reassignment_hir_source(
             (crate::hir::FunctionInstanceId::derive(callee, type_arguments) == *instance)
                 .then(|| {
                     program
-                        .functions
+                        .functions()
                         .iter()
                         .find(|function| function.stable_id == callee.as_str())
                         .and_then(|function| source_wrapper(program, function))

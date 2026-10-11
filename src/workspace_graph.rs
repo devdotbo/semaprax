@@ -4437,19 +4437,20 @@ fn build_resolved_core(
         }
         let synthetic = staged!(
             SyntheticModule,
-            expected_projection::synthetic_program_with_registry(
+            expected_projection::borrowed_leaf::Input::construct(
                 program,
                 authored,
                 programs,
-                Some(layouts)
+                layouts,
+                frontend.is_none()
             )
         )?;
         // Exact stubs/spans and the unconditional prebound govern hits.
         let cached = staged!(
             FrontendLookup,
-            frontend
-                .as_deref_mut()
-                .and_then(|cache| cache.checked_module(&program.path, &synthetic))
+            frontend.as_deref_mut().and_then(|cache| synthetic
+                .owned()
+                .and_then(|input| cache.checked_module(&program.path, input)))
         );
         let (resolved, static_text) = if let Some((resolved, resolver_bytes, original_loan_bytes)) =
             cached
@@ -4492,14 +4493,14 @@ fn build_resolved_core(
             let held = layouts.held(program);
             let private = held
                 .as_deref()
-                .map(|layout| layout.presentation(program, &synthetic))
+                .map(|layout| layout.presentation(program, synthetic.source()))
                 .transpose()?
                 .flatten();
             let selective = staged!(
                 SelectiveResolution,
-                frontend
-                    .as_deref()
-                    .and_then(|cache| cache.resolve_functions(&program.path, &synthetic, private))
+                frontend.as_deref().and_then(|cache| synthetic
+                    .owned()
+                    .and_then(|input| cache.resolve_functions(&program.path, input, private)))
             );
             let (resolved, function_costs, reused_functions, static_text) =
                 crate::vec_ops::with_authenticated_linked_source(|| {
@@ -4507,16 +4508,12 @@ fn build_resolved_core(
                         if let Some(selective) = selective {
                             selective.map(|resolved| resolved.into_parts())
                         } else {
-                            staged!(
-                                FreshResolution,
-                                hir::resolve_with_function_reuse(
-                                    &synthetic, None, None, None, private
-                                )
+                            staged!(FreshResolution, synthetic.resolve(private)).map(
+                                |(resolved, work)| {
+                                    let selected = work.static_text();
+                                    (resolved, BTreeMap::new(), 0, selected)
+                                },
                             )
-                            .map(|(resolved, work)| {
-                                let selected = work.static_text();
-                                (resolved, BTreeMap::new(), 0, selected)
-                            })
                         }
                     })
                 })?;
@@ -4530,7 +4527,7 @@ fn build_resolved_core(
                     let loan_bytes = resolved_loan_bytes(&resolved)?;
                     Ok::<_, Vec<Diagnostic>>(cache.resolved_module(
                         &program.path,
-                        synthetic,
+                        synthetic.into_owned()?,
                         resolved,
                         resolver_bytes,
                         loan_bytes,

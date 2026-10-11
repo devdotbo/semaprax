@@ -124,10 +124,14 @@ pub(in crate::workspace_graph) fn charge_uncached_synthetic_ast_with_registry(
     retained_peak: &mut usize,
     registry: Option<&LayoutRegistry<'_>>,
 ) -> Result<(), Vec<Diagnostic>> {
-    let bytes = synthetic_builder_bytes_scoped_with_registry(
-        program, authored, programs, None, 4, true, registry,
-    )?
-    .synthetic_ast;
+    let bytes = if super::borrowed_leaf::eligible(program) {
+        super::borrowed_leaf::ast_peak(program)?
+    } else {
+        synthetic_builder_bytes_scoped_with_registry(
+            program, authored, programs, None, 4, true, registry,
+        )?
+        .synthetic_ast
+    };
     // The uncached path drops this AST before constructing the next one.
     // Preserve a monotonic peak reservation; never refund earlier charges.
     if bytes > *retained_peak {
@@ -222,7 +226,11 @@ pub(in crate::workspace_graph) fn uncached_peak_prebound_with_registry(
             "builder_bytes",
             active_builder_limit(),
         )?;
-        synthetic_ast_peak = synthetic_ast_peak.max(costs.synthetic_ast);
+        synthetic_ast_peak = synthetic_ast_peak.max(if super::borrowed_leaf::eligible(program) {
+            super::borrowed_leaf::ast_peak(program)?
+        } else {
+            costs.synthetic_ast
+        });
     }
     let total = checked_usage(
         retained_hir,

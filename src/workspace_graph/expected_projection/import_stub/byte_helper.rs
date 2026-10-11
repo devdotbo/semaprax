@@ -259,9 +259,23 @@ impl<'a> ProviderProofs<'a> {
         self.proofs.prove(
             owner,
             function,
-            |owner, name| lookup(owner, name, authored, programs),
-            |owner, mode, ty| parameter(owner, mode, ty, authored, programs),
+            |owner, name| {
+                let crate::ast::program_source::Subject::Owned(owner) = owner.subject() else {
+                    return None;
+                };
+                lookup(owner, name, authored, programs)
+                    .map(|(p, f)| (p as &dyn crate::ast::program_source::ProgramSource, f))
+            },
+            |owner, mode, ty| {
+                let crate::ast::program_source::Subject::Owned(owner) = owner.subject() else {
+                    return false;
+                };
+                parameter(owner, mode, ty, authored, programs)
+            },
             |owner, ty| {
+                let crate::ast::program_source::Subject::Owned(owner) = owner.subject() else {
+                    return false;
+                };
                 crate::source_verify::is_scalar_source_type(ty)
                     || crate::loop_calls::ast_copy_variant(owner, ty)
                     || record(owner, ty, authored, programs)

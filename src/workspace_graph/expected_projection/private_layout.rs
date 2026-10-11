@@ -245,7 +245,7 @@ impl<'a> LayoutClosure<'a> {
     pub(in crate::workspace_graph) fn presentation<'s>(
         &'s self,
         caller: &'s Program,
-        synthetic: &'s Program,
+        synthetic: &'s dyn crate::ast::program_source::ProgramSource,
     ) -> Result<Option<crate::source_verify::private_names::PrivateNames<'s>>, Vec<Diagnostic>>
     {
         if self.entries.is_empty() {
@@ -258,11 +258,16 @@ impl<'a> LayoutClosure<'a> {
         let mut work = ledger.remaining.get();
         let result = (|| {
             let base = synthetic
-                .types
+                .types()
                 .len()
                 .checked_sub(self.entries.len())
                 .ok_or_else(presentation_mismatch)?;
-            for (entry, copy) in self.entries.iter().zip(&synthetic.types[base..]) {
+            for (entry, copy) in self.entries.iter().zip(
+                synthetic
+                    .types()
+                    .suffix(base)
+                    .ok_or_else(presentation_mismatch)?,
+            ) {
                 debit(&mut work, 1)?;
                 let name = sorting::identity(&copy.name, &entry.alias, &mut work)?;
                 let identity =

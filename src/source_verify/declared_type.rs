@@ -7,8 +7,9 @@ use super::diagnostics::{error, source_identifier};
 use super::type_table::{
     effective_record_fields, owned_byte_prelude_instance_is_admitted, TypeTable,
 };
+use crate::ast::program_source::ProgramSource;
 use crate::ast::{
-    Expr, ExprKind, FieldDeclaration, Function, MatchMode, Param, ParamMode, Program,
+    Expr, ExprKind, FieldDeclaration, Function, MatchMode, Param, ParamMode,
     RecordMatchFieldPattern, RecordMatchPatternField, Span, Type, TypeDeclarationKind,
 };
 use crate::diagnostic::Diagnostic;
@@ -133,7 +134,7 @@ pub(super) fn record_layout_is_recursive(
 }
 
 pub(super) fn check_declared_type(
-    program: &Program,
+    program: &dyn ProgramSource,
     ty: &Type,
     span: Span,
     types: &TypeTable<'_>,
@@ -1023,7 +1024,7 @@ pub(super) fn validation_specialize_signature(
 }
 
 pub(super) fn check_ownership_mode(
-    program: &Program,
+    program: &dyn ProgramSource,
     function: &Function,
     param: &crate::ast::Param,
     types: &TypeTable<'_>,
@@ -1215,7 +1216,7 @@ pub(super) fn ordinary_option_argument(ty: &Type) -> Option<&Type> {
 
 #[allow(clippy::too_many_arguments)]
 pub(super) fn check_record_pattern(
-    program: &Program,
+    program: &dyn ProgramSource,
     pattern_type: &str,
     fields: &[RecordMatchPatternField],
     expected: &Type,

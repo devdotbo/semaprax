@@ -2,7 +2,8 @@
 //! Schema-only records outside that executable profile retain SPX-T309.
 use super::super::diagnostics::error;
 use super::super::type_table::TypeTable;
-use crate::ast::{Program, Span, Type, TypeDeclarationKind};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{Span, Type, TypeDeclarationKind};
 use crate::diagnostic::Diagnostic;
 
 pub(in crate::source_verify) fn runtime_admitted(root: &Type, types: &TypeTable<'_>) -> bool {
@@ -32,7 +33,7 @@ fn string_field<'a>(ty: &Type, types: &TypeTable<'a>) -> Option<(&'a str, &'a st
 
 /// Push `SPX-T309` when `ty` is a string-bearing record used as `role`.
 pub(in crate::source_verify) fn reject(
-    program: &Program,
+    program: &dyn ProgramSource,
     ty: &Type,
     role: &str,
     span: Span,

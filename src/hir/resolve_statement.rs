@@ -153,7 +153,7 @@ impl Resolver<'_> {
             .and_then(FunctionExecutionId::monomorphic_declaration)
             .and_then(|owner| {
                 self.program
-                    .functions
+                    .functions()
                     .iter()
                     .find(|f| f.stable_id == owner.as_str())
             })
@@ -326,7 +326,7 @@ impl Resolver<'_> {
                     // admission scan.
                     let declared = self
                         .program
-                        .functions
+                        .functions()
                         .iter()
                         .find(|function| function.name == *name);
                     if let Some(declared) = declared {
@@ -485,7 +485,7 @@ impl Resolver<'_> {
         };
         let Some(target) = self
             .program
-            .functions
+            .functions()
             .iter()
             .find(|function| function.name == *name)
         else {

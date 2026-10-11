@@ -106,7 +106,7 @@ fn resolve_element(
     span: Span,
 ) -> Result<ResolvedType, Diagnostic> {
     if let FunctionExecutionId::Monomorphic(owner) = function {
-        if let Some(candidate) = resolver.program.functions.iter().find(|candidate| {
+        if let Some(candidate) = resolver.program.functions().iter().find(|candidate| {
             candidate.stable_id == owner.as_str()
                 && crate::source_verify::generic_collection_profile(candidate)
         }) {

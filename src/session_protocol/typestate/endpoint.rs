@@ -4,19 +4,20 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+use crate::ast::program_source::ProgramSource;
 use crate::ast::{
-    Expr, ExprKind, Function, ParamMode, Program, SessionProtocolDeclaration, SessionProtocolNext,
-    Span, Statement, Type,
+    Expr, ExprKind, Function, ParamMode, SessionProtocolDeclaration, SessionProtocolNext, Span,
+    Statement, Type,
 };
 use crate::diagnostic::Diagnostic;
 
-fn error(program: &Program, code: &'static str, span: Span, message: &str) -> Diagnostic {
+fn error(program: &dyn ProgramSource, code: &'static str, span: Span, message: &str) -> Diagnostic {
     super::k_error(program, code, message.to_owned(), span)
 }
 
-pub(super) fn check_declarations(program: &Program) -> Vec<Diagnostic> {
+pub(super) fn check_declarations(program: &dyn ProgramSource) -> Vec<Diagnostic> {
     let mut diagnostics = Vec::new();
-    for protocol in &program.session_protocols {
+    for protocol in program.session_protocols() {
         let Some(endpoint) = &protocol.endpoint else {
             continue;
         };
@@ -41,7 +42,8 @@ pub(super) fn check_declarations(program: &Program) -> Vec<Diagnostic> {
                 );
                 continue;
             };
-            let Some(function) = program.functions.iter().find(|f| f.stable_id == via.name) else {
+            let Some(function) = program.functions().iter().find(|f| f.stable_id == via.name)
+            else {
                 continue;
             };
             let SessionProtocolNext::Then(next) = &transition.next else {
@@ -78,12 +80,12 @@ struct Flow {
 }
 
 struct Checker<'a> {
-    program: &'a Program,
+    program: &'a dyn ProgramSource,
     via: BTreeMap<&'a str, bool>,
 }
 
 pub(super) fn check_function(
-    program: &Program,
+    program: &dyn ProgramSource,
     function: &Function,
     protocol: &SessionProtocolDeclaration,
 ) -> Result<(), Diagnostic> {
@@ -115,7 +117,7 @@ pub(super) fn check_function(
         if let (Some(via_id), SessionProtocolNext::Then(next)) = (&transition.via, &transition.next)
         {
             if let Some(target) = program
-                .functions
+                .functions()
                 .iter()
                 .find(|f| f.stable_id == via_id.name)
             {

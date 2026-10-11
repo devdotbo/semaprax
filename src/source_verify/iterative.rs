@@ -10,7 +10,8 @@ use super::hints;
 use super::scope::VerifierFrame;
 use super::type_table::TypeTable;
 use super::IterativeVerifier;
-use crate::ast::{Expr, Function, Program, Statement, Type, TypeDeclarationKind};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{Expr, Function, Statement, Type, TypeDeclarationKind};
 use crate::diagnostic::Diagnostic;
 use std::collections::HashMap;
 
@@ -272,7 +273,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
 
 #[allow(clippy::too_many_arguments)]
 pub(super) fn check_expr_iterative(
-    program: &Program,
+    program: &dyn ProgramSource,
     current: &Function,
     expr: &Expr,
     variables: &mut HashMap<String, Binding>,
@@ -298,7 +299,7 @@ pub(super) fn check_expr_iterative(
 }
 #[allow(clippy::too_many_arguments)]
 pub(super) fn check_expr_with_helpers<'a, 'p>(
-    program: &'p Program,
+    program: &'p dyn ProgramSource,
     current: &'p Function,
     expr: &'p Expr,
     variables: &mut HashMap<String, Binding>,
@@ -333,7 +334,7 @@ pub(super) fn check_expr_with_helpers<'a, 'p>(
     match result {
         Ok(value) => value,
         Err(diagnostic) => {
-            diagnostics.push(diagnostic.at_path(&program.path));
+            diagnostics.push(diagnostic.at_path(program.path()));
             None
         }
     }

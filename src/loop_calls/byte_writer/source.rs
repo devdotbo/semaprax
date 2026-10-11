@@ -1,17 +1,18 @@
 use super::*;
+use crate::ast::program_source::ProgramSource;
 #[derive(Clone, Copy)]
 enum Frame<'a> {
-    Function(&'a Program, &'a Function, usize),
-    Expression(&'a Program, &'a Expr, usize),
+    Function(&'a dyn ProgramSource, &'a Function, usize),
+    Expression(&'a dyn ProgramSource, &'a Expr, usize),
 }
 
-pub(crate) fn nonallocating(program: &Program, target: &Function) -> bool {
+pub(crate) fn nonallocating(program: &dyn ProgramSource, target: &Function) -> bool {
     nonallocating_with(
         program,
         target,
         |owner, name| {
             owner
-                .functions
+                .functions()
                 .iter()
                 .find(|f| f.name == name)
                 .map(|f| (owner, f))
@@ -19,20 +20,20 @@ pub(crate) fn nonallocating(program: &Program, target: &Function) -> bool {
         ast_param,
         super::super::ast_result_admitted,
         program
-            .functions
+            .functions()
             .len()
-            .saturating_add(program.module_uses.len()),
+            .saturating_add(program.module_uses().len()),
     )
 }
 
 /// The supplied lookup must authenticate actual provider bodies. Frames retain
 /// that body's own source module, including for transitive parameter admission.
 pub(crate) fn nonallocating_with<'a>(
-    program: &'a Program,
+    program: &'a dyn ProgramSource,
     target: &'a Function,
-    lookup: impl Fn(&'a Program, &str) -> Option<(&'a Program, &'a Function)>,
-    param_admit: impl Fn(&Program, ParamMode, &Type) -> bool,
-    result_admit: impl Fn(&Program, &Type) -> bool,
+    lookup: impl Fn(&'a dyn ProgramSource, &str) -> Option<(&'a dyn ProgramSource, &'a Function)>,
+    param_admit: impl Fn(&dyn ProgramSource, ParamMode, &Type) -> bool,
+    result_admit: impl Fn(&dyn ProgramSource, &Type) -> bool,
     lookup_work: usize,
 ) -> bool {
     prove(
@@ -46,11 +47,11 @@ pub(crate) fn nonallocating_with<'a>(
     .is_some()
 }
 fn prove<'a>(
-    program: &'a Program,
+    program: &'a dyn ProgramSource,
     target: &'a Function,
-    lookup: &impl Fn(&'a Program, &str) -> Option<(&'a Program, &'a Function)>,
-    param_admit: &impl Fn(&Program, ParamMode, &Type) -> bool,
-    result_admit: &impl Fn(&Program, &Type) -> bool,
+    lookup: &impl Fn(&'a dyn ProgramSource, &str) -> Option<(&'a dyn ProgramSource, &'a Function)>,
+    param_admit: &impl Fn(&dyn ProgramSource, ParamMode, &Type) -> bool,
+    result_admit: &impl Fn(&dyn ProgramSource, &Type) -> bool,
     lookup_work: usize,
 ) -> Option<()> {
     if !crate::bounded_output::reserve_active_required(std::mem::size_of::<
@@ -81,11 +82,11 @@ impl Default for Cursor<'_> {
 }
 #[allow(clippy::too_many_arguments)]
 pub(super) fn prove_with_cursor<'a>(
-    program: &'a Program,
+    program: &'a dyn ProgramSource,
     target: &'a Function,
-    lookup: &impl Fn(&'a Program, &str) -> Option<(&'a Program, &'a Function)>,
-    param_admit: &impl Fn(&Program, ParamMode, &Type) -> bool,
-    result_admit: &impl Fn(&Program, &Type) -> bool,
+    lookup: &impl Fn(&'a dyn ProgramSource, &str) -> Option<(&'a dyn ProgramSource, &'a Function)>,
+    param_admit: &impl Fn(&dyn ProgramSource, ParamMode, &Type) -> bool,
+    result_admit: &impl Fn(&dyn ProgramSource, &Type) -> bool,
     lookup_work: usize,
     cursor: &mut Cursor<'a>,
 ) -> Option<()> {
@@ -149,7 +150,7 @@ pub(super) fn prove_with_cursor<'a>(
                             ..
                         } => {
                             if !type_arguments.is_empty()
-                                || !owner.types.iter().any(|d| {
+                                || !owner.types().iter().any(|d| {
                                     d.name == *type_name
                                         && crate::source_verify::copy_record_declaration_admitted(d)
                                 })
@@ -254,14 +255,14 @@ pub(super) fn prove_with_cursor<'a>(
     Some(())
 }
 
-fn copy_variant(program: &Program, name: &str, arguments: &[Type]) -> bool {
+fn copy_variant(program: &dyn ProgramSource, name: &str, arguments: &[Type]) -> bool {
     if matches!(name, "Option" | "Result") {
         return arguments.len() == usize::from(name == "Result") + 1
             && arguments
                 .iter()
                 .all(crate::source_verify::is_scalar_source_type);
     }
-    program.types.iter().any(|d| d.name == name && d.type_parameters.is_empty()
+    program.types().iter().any(|d| d.name == name && d.type_parameters.is_empty()
         && arguments.is_empty() && matches!(&d.kind, crate::ast::TypeDeclarationKind::Variant { cases }
             if cases.iter().all(|c| c.fields.iter().all(|f| crate::source_verify::is_scalar_source_type(&f.ty)))))
 }

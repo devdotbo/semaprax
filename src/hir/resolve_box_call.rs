@@ -182,7 +182,7 @@ fn resolve_element(
     if let FunctionExecutionId::Monomorphic(owner) = function {
         if let Some(candidate) = resolver
             .program
-            .functions
+            .functions()
             .iter()
             .find(|candidate| candidate.stable_id == owner.as_str())
             .filter(|candidate| {

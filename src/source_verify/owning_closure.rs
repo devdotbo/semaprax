@@ -18,7 +18,8 @@ use super::binding::{Availability, Binding, CheckedValue};
 use super::diagnostics::error;
 use super::loans::has_active_overlapping_loan;
 use super::type_table::TypeTable;
-use crate::ast::{Expr, ExprKind, Function, ParamMode, Program, Span, Type};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{Expr, ExprKind, Function, ParamMode, Span, Type};
 use crate::diagnostic::Diagnostic;
 use std::collections::HashMap;
 
@@ -73,7 +74,7 @@ fn sentinel_parts(ty: &Type) -> Option<(&str, &Type)> {
 /// and returns the closure's checked value, whose `mode` is always `Own`.
 #[allow(clippy::too_many_arguments)]
 pub(super) fn check_construction(
-    program: &Program,
+    program: &dyn ProgramSource,
     current: &Function,
     expression: &Expr,
     return_type: &Type,
@@ -161,7 +162,7 @@ pub(super) fn check_construction(
         ));
         return None;
     };
-    let Some(target) = program.functions.iter().find(|f| f.name == *target_name) else {
+    let Some(target) = program.functions().iter().find(|f| f.name == *target_name) else {
         diagnostics.push(error(
             program,
             "SPX-T293",
@@ -283,7 +284,7 @@ pub(super) fn check_construction(
 /// as an unrelated bound value or unknown function.
 #[allow(clippy::too_many_arguments)]
 pub(super) fn check_call(
-    program: &Program,
+    program: &dyn ProgramSource,
     name: &str,
     type_arguments: &[Type],
     args: &[Expr],
@@ -355,7 +356,7 @@ pub(super) fn check_call(
 /// `let`, comparing it, and so on all reduce to exactly this check, since
 /// the callee of a call expression is never itself a `Var` node.
 pub(super) fn reject_escaping_read(
-    program: &Program,
+    program: &dyn ProgramSource,
     name: &str,
     ty: &Type,
     span: Span,

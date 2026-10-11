@@ -1,4 +1,5 @@
 //! Additive typed Map and Set catalogue; v1 String Collections stays monomorphic.
+use crate::ast::program_source::ProgramSource;
 use crate::ast::{Param, ParamMode, Span, Type};
 use crate::hir::{DeclarationId, OwnershipMode, ResolvedParam, ResolvedType, ValueId};
 
@@ -385,8 +386,8 @@ pub(crate) fn ast_resolved(ty: &Type) -> Option<ResolvedType> {
         _ => return None,
     })
 }
-pub(crate) fn program_uses(program: &crate::ast::Program) -> bool {
-    program.functions.iter().any(|function| {
+pub(crate) fn program_uses(program: &dyn ProgramSource) -> bool {
+    program.functions().iter().any(|function| {
         function
             .params
             .iter()
@@ -404,7 +405,7 @@ pub(crate) fn program_uses(program: &crate::ast::Program) -> bool {
                     });
                     found
                 })
-    }) || program.types.iter().any(|decl| match &decl.kind {
+    }) || program.types().iter().any(|decl| match &decl.kind {
         crate::ast::TypeDeclarationKind::Record { fields }
         | crate::ast::TypeDeclarationKind::Class { fields, .. } => {
             fields.iter().any(|field| ast_collection(&field.ty))

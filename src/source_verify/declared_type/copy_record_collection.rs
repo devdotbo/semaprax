@@ -1,5 +1,6 @@
 //! Source classifier, independent of HIR nominal admission.
 use super::*;
+use crate::ast::program_source::ProgramSource;
 
 pub(in crate::source_verify) fn admitted(types: &TypeTable<'_>, ty: &Type) -> bool {
     let Type::Named { name, arguments } = ty else {
@@ -16,12 +17,15 @@ pub(crate) fn declaration_admitted(declaration: &crate::ast::TypeDeclaration) ->
             && fields.iter().all(|field| crate::vec_ops::ast_element_is_admitted(&field.ty)))
 }
 
-pub(crate) fn source_admitted(program: &Program, ty: &Type) -> bool {
+pub(crate) fn source_admitted(program: &dyn ProgramSource, ty: &Type) -> bool {
     matches!(ty, Type::Named { name, arguments } if arguments.is_empty()
-        && program.types.iter().any(|declaration| declaration.name == *name && declaration_admitted(declaration)))
+        && program.types().iter().any(|declaration| declaration.name == *name && declaration_admitted(declaration)))
 }
 
-pub(crate) fn resolved_source_admitted(program: &Program, ty: &crate::hir::ResolvedType) -> bool {
+pub(crate) fn resolved_source_admitted(
+    program: &dyn ProgramSource,
+    ty: &crate::hir::ResolvedType,
+) -> bool {
     matches!(ty, crate::hir::ResolvedType::Nominal { declaration, arguments } if arguments.is_empty()
-        && program.types.iter().any(|item| item.stable_id == declaration.as_str() && declaration_admitted(item)))
+        && program.types().iter().any(|item| item.stable_id == declaration.as_str() && declaration_admitted(item)))
 }

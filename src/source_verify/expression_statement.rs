@@ -1,10 +1,11 @@
 //! Syntax provenance never grants ownership, borrowed aliases or unit discard.
 use super::diagnostics::{error, is_scalar_source_type};
 use super::CheckedValue;
-use crate::ast::{LetSyntax, ParamMode, Program, Statement};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{LetSyntax, ParamMode, Statement};
 use crate::diagnostic::Diagnostic;
 pub(super) fn check(
-    program: &Program,
+    program: &dyn ProgramSource,
     statement: &Statement,
     actual: &CheckedValue,
 ) -> Option<Diagnostic> {

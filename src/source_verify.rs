@@ -14,13 +14,14 @@
 //! - [`capacity`] projects storage capacity; [`oracle`] is the test-only
 //!   recursive cross-check of the frame loop.
 
+use crate::ast::program_source::ProgramSource;
 #[cfg(test)]
 use std::collections::HashSet;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use crate::ast::{
-    BinaryOp, Expr, ExprKind, Function, MatchPattern, Program, RecordMatchFieldPattern, Statement,
-    Type, TypeDeclarationKind,
+    BinaryOp, Expr, ExprKind, Function, MatchPattern, RecordMatchFieldPattern, Statement, Type,
+    TypeDeclarationKind,
 };
 #[cfg(test)]
 use crate::ast::{Param, ParamMode, Span};
@@ -83,8 +84,8 @@ pub(crate) use declared_type::copy_record_collection::{
 };
 pub(crate) use diagnostics::is_scalar_source_type;
 
-pub(crate) fn program_uses_record_iterator(program: &Program) -> bool {
-    fn type_uses(program: &Program, ty: &Type) -> bool {
+pub(crate) fn program_uses_record_iterator(program: &dyn ProgramSource) -> bool {
+    fn type_uses(program: &dyn ProgramSource, ty: &Type) -> bool {
         match ty {
             Type::Named { name, arguments } => {
                 (matches!(name.as_str(), "Iter" | "IterStep")
@@ -154,8 +155,8 @@ pub(crate) fn program_uses_record_iterator(program: &Program) -> bool {
         }
         false
     };
-    program.functions.iter().any(function_uses)
-        || program.types.iter().any(|declaration| {
+    program.functions().iter().any(function_uses)
+        || program.types().iter().any(|declaration| {
             matches!(&declaration.kind, TypeDeclarationKind::Class { methods, .. }
                 if methods.iter().any(function_uses))
         })
@@ -181,7 +182,7 @@ use capacity::{
 };
 
 struct IterativeVerifier<'a, 'p> {
-    program: &'p Program,
+    program: &'p dyn ProgramSource,
     current: &'p Function,
     constructor_hygiene: Option<bool>,
     byte_helpers: Option<&'a dyn crate::loop_calls::byte_writer::SourceHelpers>,
@@ -217,7 +218,7 @@ struct IterativeVerifier<'a, 'p> {
 impl<'a, 'p> IterativeVerifier<'a, 'p> {
     #[allow(clippy::too_many_arguments)]
     fn new(
-        program: &'p Program,
+        program: &'p dyn ProgramSource,
         current: &'p Function,
         variables: HashMap<String, Binding>,
         functions: &'p HashMap<&'p str, &'p Function>,
@@ -279,7 +280,7 @@ mod iterative_verifier_tests;
 
 pub(crate) use declared_type::generic_collection::profile as generic_collection_profile;
 
-pub(crate) fn generic_variant_profile(program: &Program, function: &Function) -> bool {
+pub(crate) fn generic_variant_profile(program: &dyn ProgramSource, function: &Function) -> bool {
     declared_type::generic_variant::profile(function, &type_table::TypeTable::new(program))
 }
 

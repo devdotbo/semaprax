@@ -1,11 +1,12 @@
 //! Recursive oracle for the closed streaming operation signatures.
 use super::*;
+use crate::ast::program_source::ProgramSource;
 #[allow(clippy::too_many_arguments)]
 pub(super) fn check_call(
     name: &str,
     type_arguments: &[Type],
     args: &[Expr],
-    program: &Program,
+    program: &dyn ProgramSource,
     current: &Function,
     expression: &Expr,
     variables: &mut HashMap<String, Binding>,

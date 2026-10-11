@@ -11,6 +11,7 @@
 //! in the selected function. There is no skip flag and no raised limit, and
 //! the flow grants no physical metadata or runtime authority.
 use super::*;
+use crate::ast::program_source::ProgramSource;
 use crate::source_verify::fused_construction::SourceProof;
 
 /// True only for the exact borrowed loop statement of a held selection.
@@ -39,7 +40,7 @@ pub(super) fn selected_flow(
 }
 
 pub(in crate::source_verify) fn verify_selected_capacity(
-    program: &Program,
+    program: &dyn ProgramSource,
     types: &TypeTable<'_>,
     selected: Option<&SourceProof<'_>>,
 ) -> Result<(), crate::byte_data_capacity::CapacityError> {
@@ -52,7 +53,7 @@ pub(in crate::source_verify) fn verify_selected_capacity(
         ));
     }
     let ordinary = program
-        .functions
+        .functions()
         .iter()
         .map(|function| (function.name.as_str(), function))
         .collect::<BTreeMap<_, _>>();

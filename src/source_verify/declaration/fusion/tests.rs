@@ -1,4 +1,5 @@
 use super::*;
+use crate::ast::Program;
 const SOURCE: &str = include_str!("../../../../tests/fixtures/record-traversal-maximum.spx");
 fn parsed(source: &str) -> Program {
     crate::parse(source, "fusion-candidate.spx").unwrap()

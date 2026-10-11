@@ -482,7 +482,12 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         *span,
                     ));
                 } else {
-                    if !self.program.permits.iter().any(|permit| permit == "unsafe") {
+                    if !self
+                        .program
+                        .permits()
+                        .iter()
+                        .any(|permit| permit == "unsafe")
+                    {
                         self.diagnostics.push(error(
                             self.program,
                             "SPX-N101",

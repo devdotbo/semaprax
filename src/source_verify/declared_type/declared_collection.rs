@@ -1,5 +1,6 @@
 //! Independently checked logical collection field types; never runtime values.
 use super::*;
+use crate::ast::program_source::ProgramSource;
 use crate::ast::ExprKind;
 
 pub(in crate::source_verify) fn text_element(types: &TypeTable<'_>, ty: &Type) -> bool {
@@ -93,7 +94,7 @@ fn contains(types: &TypeTable<'_>, root: &Type) -> bool {
     false
 }
 pub(in crate::source_verify) fn reject_function(
-    program: &Program,
+    program: &dyn ProgramSource,
     f: &Function,
     types: &TypeTable<'_>,
     diagnostics: &mut Vec<Diagnostic>,

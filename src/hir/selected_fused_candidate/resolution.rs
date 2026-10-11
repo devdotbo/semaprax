@@ -34,12 +34,17 @@ fn refused(refusal: Refusal) -> Diagnostic {
 
 /// Capacity hook at the resolver's ordinary capacity boundary.
 pub(in crate::hir) fn capacity(
-    source: &ast::Program,
+    source: &dyn ast::program_source::ProgramSource,
     producer: Option<&ast::Expr>,
     resolved: &ResolvedProgram,
 ) -> Result<(), Diagnostic> {
     let Some(producer) = producer else {
         return crate::hir::analyze_byte_data_capacity(resolved).map(|_| ());
+    };
+    let ast::program_source::Subject::Owned(source) = source.subject() else {
+        return Err(refused(Refusal::Join(
+            "selected source is not the original owned AST",
+        )));
     };
     let joined = join_current(source, producer, resolved).map_err(refused)?;
     crate::hir::byte_capacity::analyze_selected_byte_data_capacity(
@@ -51,12 +56,17 @@ pub(in crate::hir) fn capacity(
 
 /// Validation hook at the resolver's ordinary final validation boundary.
 pub(in crate::hir) fn validation(
-    source: &ast::Program,
+    source: &dyn ast::program_source::ProgramSource,
     producer: Option<&ast::Expr>,
     resolved: &ResolvedProgram,
 ) -> Result<bool, Diagnostic> {
     let Some(producer) = producer else {
         return crate::hir::validate_with_static_text(resolved);
+    };
+    let ast::program_source::Subject::Owned(source) = source.subject() else {
+        return Err(refused(Refusal::Join(
+            "selected source is not the original owned AST",
+        )));
     };
     let joined = join_current(source, producer, resolved).map_err(refused)?;
     crate::hir::validate_selected_with_static_text(resolved, Some(Selected::from_joined(&joined)))

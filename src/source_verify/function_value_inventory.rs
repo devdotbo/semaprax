@@ -4,8 +4,9 @@
 //! dynamically selected callback conservatively ranges over its signature.
 
 use super::declared_type::function_value_signature;
+use crate::ast::program_source::ProgramSource;
 use crate::ast::{
-    Expr, ExprKind, Function, MatchPattern, Program, RecordMatchFieldPattern, Statement, Type,
+    Expr, ExprKind, Function, MatchPattern, RecordMatchFieldPattern, Statement, Type,
 };
 use std::collections::{BTreeSet, HashMap};
 
@@ -21,11 +22,11 @@ enum Binding {
 type Scope<'a> = HashMap<&'a str, Binding>;
 
 pub(crate) fn function_value_targets(
-    program: &Program,
+    program: &dyn ProgramSource,
     functions: &HashMap<&str, &Function>,
 ) -> BTreeSet<String> {
     let mut targets = BTreeSet::new();
-    for function in &program.functions {
+    for function in program.functions() {
         let scope = initial_scope(function);
         for expression in function
             .requires

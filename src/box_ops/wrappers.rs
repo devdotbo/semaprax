@@ -1,6 +1,7 @@
 //! Exact transparent generic wrappers admitted only for `std.mem`.
 use super::BoxOp;
-use crate::ast::{Expr, ExprKind, Function, Program, Type};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{Expr, ExprKind, Function, Type};
 use crate::hir::{
     ResolvedExpr, ResolvedExprKind, ResolvedFunctionTemplate, ResolvedProgram, ResolvedType,
 };
@@ -19,8 +20,8 @@ pub(crate) fn with_authenticated_linked_source<T>(operation: impl FnOnce() -> T)
     drop(restore);
     result
 }
-pub(crate) fn source_module_is_authenticated(program: &Program) -> bool {
-    program.module == MODULE || AUTHENTICATED_LINKED_SOURCE.with(Cell::get)
+pub(crate) fn source_module_is_authenticated(program: &dyn ProgramSource) -> bool {
+    program.module() == MODULE || AUTHENTICATED_LINKED_SOURCE.with(Cell::get)
 }
 pub(crate) fn wrapper_id(op: BoxOp) -> &'static str {
     match op {
@@ -39,14 +40,14 @@ pub(crate) fn wrapper_name(op: BoxOp) -> &'static str {
 pub(crate) fn wrapper_by_id(id: &str) -> Option<BoxOp> {
     super::ALL.into_iter().find(|op| wrapper_id(*op) == id)
 }
-pub(crate) fn is_source_candidate(program: &Program, function: &Function) -> bool {
-    program.module == MODULE
+pub(crate) fn is_source_candidate(program: &dyn ProgramSource, function: &Function) -> bool {
+    program.module() == MODULE
         && (wrapper_by_id(&function.stable_id).is_some()
             || super::ALL
                 .into_iter()
                 .any(|op| wrapper_name(op) == function.name))
 }
-pub(crate) fn source_wrapper(program: &Program, function: &Function) -> Option<BoxOp> {
+pub(crate) fn source_wrapper(program: &dyn ProgramSource, function: &Function) -> Option<BoxOp> {
     if !source_module_is_authenticated(program)
         || !function.explicit_id
         || function.type_parameters.len() != 1
@@ -98,7 +99,7 @@ fn exact_source_body(body: &Expr, op: BoxOp, param: &crate::ast::Param) -> bool 
         && matches!(args.as_slice(),[arg] if matches!(&arg.kind,ExprKind::Var(name) if name==&param.name))
 }
 pub(crate) fn source_parameter_is_admitted(
-    program: &Program,
+    program: &dyn ProgramSource,
     function: &Function,
     op: BoxOp,
     ty: &Type,
@@ -107,7 +108,7 @@ pub(crate) fn source_parameter_is_admitted(
         && matches!(ty,Type::Named{name,arguments} if name=="T"&&arguments.is_empty())
 }
 pub(crate) fn source_arguments_are_admitted(
-    program: &Program,
+    program: &dyn ProgramSource,
     function: &Function,
     args: &[Type],
 ) -> bool {

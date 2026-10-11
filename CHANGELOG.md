@@ -2,6 +2,14 @@
 
 - Author actual-binary public CLI codec suitability controls (#773): twelve-profile receipts, whole-row bounded continuation, exact/+1/one-short output, source and manifest drift, capability versus shape, and read-only grammar refusals. Every query checks the complete fixture tree for writes. Source-only checkpoint; current-source execution qualification remains pending.
 
+- Borrow exact authored AST declarations during uncached, import-free,
+  invariant-free synthetic projection resolution (partial OPT776). The sealed
+  presentation owns only an optional scalar main, retains complete source/HIR
+  verification and reduces only the reservation for the absent AST copy.
+  Cache/import/invariant paths remain paid owned inputs. Owning parity,
+  pointer, allocation-free overlay Drop and budget controls are authored;
+  qualification and original Catalog/Shift fit remain pending.
+
 - Chain decoded-identifier fingerprints through 64 bounded Copy buckets (#748/#771) in the generated request-view record decoder and the Catalog Normalizer's first-failure scan, so a probe walks only its bucket instead of every prior entry. Bucket heads and links are ordinary reserved `Vec<usize>` backing (64 and 256); full decoded-token equality still decides every equal fingerprint, including deliberate collisions. Grammar/cardinality/schema/duplicate/total/provider order, offsets, the ASCII 1..16 request policy, the 1..64-byte UTF-8 id policy, fuel and public limits are unchanged; the eight-server scan and the frozen pairwise reference stay direct. A request-view max-shape regression (256 colliding/escaped rows, 257th refusal, last-row duplicate, early-duplicate/late-schema/grammar order) is authored on interpreter/native/Wasm. Source-authored only; qualification and fuel effects are unmeasured.
 - Replace native lexical-anchor Block/Match prefix rescans with the existing fixed-depth borrowed child cursor. Authored order, exact anchor ambiguity, assignment identity, iterator tail behavior and the 256-frame/1,000,000-work bounds remain unchanged; both actual Block scans are paid before traversal. Independent indexed-order, wide linear-debit, exact/one-short and hostile depth/duplicate controls are authored; qualification and performance measurement remain pending.
 

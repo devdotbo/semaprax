@@ -504,7 +504,12 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
             concat!(
                 include_str!("../../src/workspace_graph/expected_projection.rs"),
                 include_str!("../../src/workspace_graph/expected_projection/vec_constructor.rs"),
-                include_str!("../../src/workspace_graph/expected_projection/held_projection.rs")
+                include_str!("../../src/workspace_graph/expected_projection/held_projection.rs"),
+                include_str!("../../src/workspace_graph/expected_projection/borrowed_leaf.rs"),
+                include_str!(
+                    "../../src/workspace_graph/expected_projection/borrowed_leaf/tests.rs"
+                ),
+                include_str!("../../src/ast/program_source.rs")
             ),
             "\n",
             include_str!("../../src/workspace_graph/expected_projection/record_traversal.rs")

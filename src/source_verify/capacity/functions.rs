@@ -1,14 +1,15 @@
 use super::*;
+use crate::ast::program_source::ProgramSource;
 
 pub(in crate::source_verify) fn source_capacity_functions(
-    program: &Program,
+    program: &dyn ProgramSource,
 ) -> Vec<(Option<&str>, &Function)> {
     let mut functions = program
-        .functions
+        .functions()
         .iter()
         .map(|function| (None, function))
         .collect::<Vec<_>>();
-    for declaration in &program.types {
+    for declaration in program.types() {
         if let TypeDeclarationKind::Class { methods, .. } = &declaration.kind {
             functions.extend(
                 methods

@@ -6,12 +6,13 @@ use super::binding::{Availability, Binding, BorrowOrigin, SourceLoan, SourceLoan
 use super::diagnostics::error;
 use super::place::{join_definitely_partial, join_moved_places, source_place, SourcePlace};
 use super::type_table::TypeTable;
-use crate::ast::{Expr, ExprKind, MatchArm, ParamMode, Program, Span, Statement, Type};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{Expr, ExprKind, MatchArm, ParamMode, Span, Statement, Type};
 use crate::diagnostic::Diagnostic;
 use std::collections::HashMap;
 
 pub(super) fn local_borrow_origin(
-    program: &Program,
+    program: &dyn ProgramSource,
     expression: &Expr,
     borrower: &str,
     borrower_span: Span,
@@ -42,7 +43,7 @@ pub(super) fn local_borrow_origin(
         }
         ExprKind::Call { name, args, .. }
             if program
-                .interfaces
+                .interfaces()
                 .iter()
                 .flat_map(|interface| &interface.imports)
                 .any(|import| {
@@ -363,7 +364,7 @@ pub(super) fn release_dead_local_loans(
 }
 
 pub(super) fn mark_value_sources_moved(
-    program: &Program,
+    program: &dyn ProgramSource,
     expr: &Expr,
     variables: &mut HashMap<String, Binding>,
     types: &TypeTable<'_>,

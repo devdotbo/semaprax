@@ -1,12 +1,13 @@
 //! Narrow noncopyable transactional scalar callback admission.
 use super::binding::{Availability, Binding, CheckedValue};
 use super::diagnostics::{error, source_identifier};
-use crate::ast::{Expr, ExprKind, Function, ParamMode, Program, Span, Type};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{Expr, ExprKind, Function, ParamMode, Span, Type};
 use crate::diagnostic::Diagnostic;
 use std::collections::HashMap;
 
 pub(super) fn construction(
-    program: &Program,
+    program: &dyn ProgramSource,
     current: &Function,
     expression: &Expr,
     variables: &HashMap<String, Binding>,
@@ -80,7 +81,7 @@ pub(super) fn construction(
         ));
     }
     let target = program
-        .functions
+        .functions()
         .iter()
         .find(|function| function.name == *name)
         .ok_or_else(|| reject("mutable update target must be an ordinary local function"))?;
@@ -104,7 +105,7 @@ pub(super) fn construction(
 /// The returned synthetic signature carries no ability to construct a plain
 /// function value from the stateful receiver.
 pub(super) fn invocation_signature(
-    program: &Program,
+    program: &dyn ProgramSource,
     binding: &Binding,
     name: &str,
     args: &[Expr],

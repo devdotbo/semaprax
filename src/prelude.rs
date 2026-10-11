@@ -5,6 +5,7 @@
 //! user's canonical `.spx` file. The revision digest binds this schema so an
 //! implicit-prelude change cannot silently retain an old semantic base.
 
+use crate::ast::program_source::ProgramSource;
 use std::fmt::Write as _;
 use std::sync::OnceLock;
 
@@ -79,9 +80,7 @@ pub(crate) fn declarations() -> &'static [TypeDeclaration] {
     })
 }
 
-pub(crate) fn declarations_for_program(
-    program: &crate::ast::Program,
-) -> &'static [TypeDeclaration] {
+pub(crate) fn declarations_for_program(program: &dyn ProgramSource) -> &'static [TypeDeclaration] {
     if crate::map_ops::program_uses(program) {
         declarations()
     } else if crate::stdin_stream_ops::program_uses(program)
@@ -566,7 +565,7 @@ pub(crate) fn digest_text_v5() -> String {
     output
 }
 
-pub(crate) fn program_uses_box(program: &crate::ast::Program) -> bool {
+pub(crate) fn program_uses_box(program: &dyn ProgramSource) -> bool {
     fn function_uses_box(function: &crate::ast::Function) -> bool {
         crate::box_ops::wrapper_by_id(&function.stable_id).is_some()
             || function
@@ -582,9 +581,9 @@ pub(crate) fn program_uses_box(program: &crate::ast::Program) -> bool {
                     found
                 })
     }
-    program.module_uses.iter().any(|module_use| module_use.kind == ModuleUseKind::Function && module_use.target_module == crate::box_ops::MODULE && crate::box_ops::wrapper_by_id(&module_use.persistent_id).is_some())
-        || program.functions.iter().any(function_uses_box)
-        || program.types.iter().any(|declaration| matches!(&declaration.kind, TypeDeclarationKind::Class { methods, .. } if methods.iter().any(function_uses_box)))
+    program.module_uses().iter().any(|module_use| module_use.kind == ModuleUseKind::Function && module_use.target_module == crate::box_ops::MODULE && crate::box_ops::wrapper_by_id(&module_use.persistent_id).is_some())
+        || program.functions().iter().any(function_uses_box)
+        || program.types().iter().any(|declaration| matches!(&declaration.kind, TypeDeclarationKind::Class { methods, .. } if methods.iter().any(function_uses_box)))
 }
 
 fn vec_v3_op(op: crate::vec_ops::VecOp) -> bool {
@@ -596,7 +595,7 @@ fn vec_v3_op(op: crate::vec_ops::VecOp) -> bool {
     )
 }
 
-pub(crate) fn program_uses_vec_v3(program: &crate::ast::Program) -> bool {
+pub(crate) fn program_uses_vec_v3(program: &dyn ProgramSource) -> bool {
     fn function_uses_vec_v3(function: &crate::ast::Function) -> bool {
         crate::vec_ops::wrapper_by_id(&function.stable_id).is_some_and(vec_v3_op)
             || function
@@ -613,12 +612,12 @@ pub(crate) fn program_uses_vec_v3(program: &crate::ast::Program) -> bool {
                 })
     }
 
-    program.module_uses.iter().any(|module_use| {
+    program.module_uses().iter().any(|module_use| {
         module_use.kind == ModuleUseKind::Function
             && module_use.target_module == crate::vec_ops::MODULE
             && crate::vec_ops::wrapper_by_id(&module_use.persistent_id).is_some_and(vec_v3_op)
-    }) || program.functions.iter().any(function_uses_vec_v3)
-        || program.types.iter().any(|declaration| {
+    }) || program.functions().iter().any(function_uses_vec_v3)
+        || program.types().iter().any(|declaration| {
             matches!(
                 &declaration.kind,
                 TypeDeclarationKind::Class { methods, .. }
@@ -627,7 +626,7 @@ pub(crate) fn program_uses_vec_v3(program: &crate::ast::Program) -> bool {
         })
 }
 
-pub(crate) fn program_uses_vec(program: &crate::ast::Program) -> bool {
+pub(crate) fn program_uses_vec(program: &dyn ProgramSource) -> bool {
     fn type_uses_vec(ty: &Type) -> bool {
         let mut pending = vec![ty];
         while let Some(ty) = pending.pop() {
@@ -662,7 +661,7 @@ pub(crate) fn program_uses_vec(program: &crate::ast::Program) -> bool {
         found
     }
 
-    program.types.iter().any(|declaration| {
+    program.types().iter().any(|declaration| {
         declaration.extends.as_ref().is_some_and(type_uses_vec)
             || match &declaration.kind {
                 TypeDeclarationKind::Resource { .. } => false,
@@ -678,7 +677,7 @@ pub(crate) fn program_uses_vec(program: &crate::ast::Program) -> bool {
                         || methods.iter().any(function_uses_vec)
                 }
             }
-    }) || program.functions.iter().any(function_uses_vec)
+    }) || program.functions().iter().any(function_uses_vec)
 }
 
 #[cfg(test)]
@@ -696,9 +695,7 @@ pub(crate) fn selected_for_source(source: &str) -> (&'static str, Vec<u8>, Strin
     selected_for_program(&program)
 }
 
-pub(crate) fn selected_for_program(
-    program: &crate::ast::Program,
-) -> (&'static str, Vec<u8>, String) {
+pub(crate) fn selected_for_program(program: &dyn ProgramSource) -> (&'static str, Vec<u8>, String) {
     let (sort_keys, static_text, string_slots) = sort_keys::selection(program);
     if string_slots {
         (

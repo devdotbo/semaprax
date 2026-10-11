@@ -15,7 +15,8 @@ use self::identity::{check_interface_identities, check_type_identities};
 use super::capacity::{source_capacity_functions, verify_selected_capacity};
 use super::diagnostics::error;
 use super::type_table::TypeTable;
-use crate::ast::{Program, Span, Type};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{Span, Type};
 use crate::diagnostic::Diagnostic;
 use std::collections::{HashMap, HashSet};
 
@@ -25,14 +26,14 @@ mod functions;
 pub(super) mod fusion;
 mod identity;
 
-pub(crate) fn verify(program: &Program) -> Vec<Diagnostic> {
+pub(crate) fn verify(program: &dyn ProgramSource) -> Vec<Diagnostic> {
     verify_selected(program, None, None)
 }
 
 /// [`verify`] with a Workspace Graph private layout presentation bound to
 /// this exact `program`. It changes diagnostic text only.
 pub(crate) fn verify_presenting<'p>(
-    program: &'p Program,
+    program: &'p dyn ProgramSource,
     private: Option<crate::source_verify::private_names::PrivateNames<'p>>,
 ) -> Vec<Diagnostic> {
     verify_selected(program, None, private)
@@ -43,7 +44,7 @@ pub(crate) fn verify_presenting<'p>(
 /// to its own loop: the while-body producer admission and that loop's capacity
 /// flow. Callers outside the private candidate route always pass `None`.
 pub(in crate::source_verify) fn verify_selected<'p>(
-    program: &'p Program,
+    program: &'p dyn ProgramSource,
     selected: Option<&crate::source_verify::fused_construction::SourceProof<'p>>,
     private: Option<crate::source_verify::private_names::PrivateNames<'p>>,
 ) -> Vec<Diagnostic> {
@@ -59,28 +60,28 @@ pub(in crate::source_verify) fn verify_selected<'p>(
         reason = "private partition source factory has no ordinary route"
     )
 )]
-pub(crate) fn verify_partition(program: &Program) -> Vec<Diagnostic> {
+pub(crate) fn verify_partition(program: &dyn ProgramSource) -> Vec<Diagnostic> {
     verify_profile(program, None, None, true)
 }
 
 fn verify_profile<'p>(
-    program: &'p Program,
+    program: &'p dyn ProgramSource,
     selected: Option<&crate::source_verify::fused_construction::SourceProof<'p>>,
     private: Option<crate::source_verify::private_names::PrivateNames<'p>>,
     partition: bool,
 ) -> Vec<Diagnostic> {
     let mut diagnostics = Vec::new();
-    if let Err(diagnostic) = crate::static_protocol::validate(program) {
-        diagnostics.push(diagnostic.at_path(&program.path));
+    if let Err(diagnostic) = crate::static_protocol::validate_source(program) {
+        diagnostics.push(diagnostic.at_path(program.path()));
         return diagnostics;
     }
-    if !program.module_uses.is_empty() {
+    if !program.module_uses().is_empty() {
         diagnostics.push(
             Diagnostic::io(
                 "SPX-G172",
                 "source module imports require Workspace Semantic Graph resolution",
             )
-            .at_path(&program.path)
+            .at_path(program.path())
             .with_help(super::hints::PROJECT_IMPORTS_HELP),
         );
         return diagnostics;
@@ -104,7 +105,7 @@ fn verify_profile<'p>(
                 });
             }
         }
-        for declaration in &program.types {
+        for declaration in program.types() {
             for invariant in declaration.invariants() {
                 invariant.visit_calls(&mut |name, span| {
                     if name == crate::construction_fusion::partition::NAME && private_call.is_none()
@@ -185,7 +186,7 @@ fn verify_profile<'p>(
     let function_value_targets =
         crate::source_verify::function_value_inventory::function_value_targets(program, &functions);
     let call_graph = program
-        .functions
+        .functions()
         .iter()
         .map(|function| {
             (
@@ -199,7 +200,7 @@ fn verify_profile<'p>(
         })
         .collect::<HashMap<_, _>>();
     let generic_functions = program
-        .functions
+        .functions()
         .iter()
         .filter(|function| !function.type_parameters.is_empty())
         .map(|function| function.name.as_str())
@@ -243,11 +244,11 @@ fn verify_profile<'p>(
                 "SPX-T105",
                 "executable module must define `fn main() -> i64`",
                 program
-                    .functions
+                    .functions()
                     .first()
                     .map_or(Span::default(), |function| function.span),
             )
-            .at_path(&program.path)
+            .at_path(program.path())
             .with_help(super::hints::LIBRARY_MODULE_HELP),
         );
     }

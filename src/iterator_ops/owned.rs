@@ -1,5 +1,6 @@
 //! Exact owned-Bytes iterator feature selection. Layout never grants admission.
 use super::*;
+use crate::ast::program_source::ProgramSource;
 pub(crate) fn item_ownership(element: &ResolvedType, borrowed: bool) -> OwnershipMode {
     if matches!(element, ResolvedType::Bytes | ResolvedType::String)
         || matches!(element, ResolvedType::Nominal { arguments, .. } if arguments.is_empty())
@@ -164,7 +165,7 @@ fn ast_type(ty: &Type) -> bool {
         _ => false,
     }
 }
-pub(crate) fn program_uses_owned_iterator(program: &crate::ast::Program) -> bool {
+pub(crate) fn program_uses_owned_iterator(program: &dyn ProgramSource) -> bool {
     fn uses_function(function: &crate::ast::Function) -> bool {
         if ast_type(&function.return_type) || function.params.iter().any(|p| ast_type(&p.ty)) {
             return true;
@@ -201,8 +202,8 @@ pub(crate) fn program_uses_owned_iterator(program: &crate::ast::Program) -> bool
         }
         false
     }
-    program.functions.iter().any(uses_function)
-        || program.types.iter().any(|declaration| {
+    program.functions().iter().any(uses_function)
+        || program.types().iter().any(|declaration| {
             matches!(&declaration.kind, crate::ast::TypeDeclarationKind::Class { methods, .. }
                 if methods.iter().any(uses_function))
         })

@@ -1,15 +1,16 @@
 //! Independent authored contour validation before type and ownership inference.
 use super::diagnostics::error;
+use crate::ast::program_source::ProgramSource;
 use crate::ast::{
     Expr, ExprKind, Function, LetSyntax, LexicalExitKind, Program, Statement, TypeDeclarationKind,
 };
 use crate::diagnostic::Diagnostic;
 
-pub(super) fn validate(program: &Program, diagnostics: &mut Vec<Diagnostic>) {
+pub(super) fn validate(program: &dyn ProgramSource, diagnostics: &mut Vec<Diagnostic>) {
     for function in program
-        .functions
+        .functions()
         .iter()
-        .chain(program.types.iter().flat_map(|ty| match &ty.kind {
+        .chain(program.types().iter().flat_map(|ty| match &ty.kind {
             TypeDeclarationKind::Class { methods, .. } => methods.as_slice(),
             _ => &[],
         }))
@@ -17,7 +18,11 @@ pub(super) fn validate(program: &Program, diagnostics: &mut Vec<Diagnostic>) {
         check_function(program, function, diagnostics);
     }
 }
-fn check_function(program: &Program, function: &Function, diagnostics: &mut Vec<Diagnostic>) {
+fn check_function(
+    program: &dyn ProgramSource,
+    function: &Function,
+    diagnostics: &mut Vec<Diagnostic>,
+) {
     // Legacy ASTs keep their owning expression-depth admission. Only an actual
     // exit selects this additional contour contract; presence is independently
     // scanned through every structural child, including contracts and closures.
@@ -68,7 +73,7 @@ fn guard_completion(expr: &Expr, depth: usize) -> bool {
 }
 
 fn walk(
-    program: &Program,
+    program: &dyn ProgramSource,
     expr: &Expr,
     statement_route: bool,
     loops: usize,

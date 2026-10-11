@@ -12,6 +12,7 @@
 //! remains.
 
 use super::*;
+use crate::ast::program_source::ProgramSource;
 
 pub(in crate::source_verify) fn is_admitted_owned_record_collection_element(
     types: &TypeTable<'_>,
@@ -36,7 +37,7 @@ pub(in crate::source_verify) fn is_admitted_owned_record_collection_element(
 }
 
 pub(in crate::source_verify) fn is_admitted_authored_record_collection_element(
-    program: &Program,
+    program: &dyn ProgramSource,
     ty: &Type,
 ) -> bool {
     let Type::Named { name, arguments } = ty else {
@@ -45,7 +46,7 @@ pub(in crate::source_verify) fn is_admitted_authored_record_collection_element(
     if !arguments.is_empty() {
         return false;
     }
-    program.types.iter().any(|declaration| {
+    program.types().iter().any(|declaration| {
         declaration.name == *name
             && declaration.type_parameters.is_empty()
             && matches!(&declaration.kind, TypeDeclarationKind::Record { fields } if admits_field_shape(fields))

@@ -1,8 +1,9 @@
 //! Differential ordinary return checking, distinct from the iterative resume frame.
 use super::*;
+use crate::ast::program_source::ProgramSource;
 #[allow(clippy::too_many_arguments)]
 pub(super) fn check(
-    program: &Program,
+    program: &dyn ProgramSource,
     current: &Function,
     expr: &Expr,
     variables: &mut HashMap<String, Binding>,

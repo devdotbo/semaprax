@@ -173,7 +173,7 @@ impl Resolver<'_> {
                 if let Some(import_id) = self.declarations.native_rust_import_id(name).cloned() {
                     let import = self
                         .program
-                        .interfaces
+                        .interfaces()
                         .iter()
                         .flat_map(|interface| &interface.imports)
                         .find(|import| import.stable_id == import_id.as_str())
@@ -622,7 +622,7 @@ impl Resolver<'_> {
                     })?;
                 let target = self
                     .program
-                    .functions
+                    .functions()
                     .iter()
                     .find(|function| function.stable_id == template.as_str())
                     .ok_or_else(|| {
@@ -733,7 +733,7 @@ impl Resolver<'_> {
                     })?;
                 let class_ast = self
                     .program
-                    .types
+                    .types()
                     .iter()
                     .find(|t| t.stable_id == class_id.as_str())
                     .ok_or_else(|| {

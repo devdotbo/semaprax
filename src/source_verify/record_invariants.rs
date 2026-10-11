@@ -11,17 +11,18 @@
 use super::binding::{Availability, Binding};
 use super::diagnostics::{error, require_bool};
 use super::type_table::TypeTable;
-use crate::ast::{Expr, ExprKind, Function, ParamMode, Program, Type, TypeDeclarationKind};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{Expr, ExprKind, Function, ParamMode, Type, TypeDeclarationKind};
 use crate::diagnostic::Diagnostic;
 use std::collections::{BTreeSet, HashMap, HashSet};
 
 pub(super) fn check_record_invariants(
-    program: &Program,
+    program: &dyn ProgramSource,
     functions: &HashMap<&str, &Function>,
     types: &TypeTable<'_>,
     diagnostics: &mut Vec<Diagnostic>,
 ) {
-    for declaration in &program.types {
+    for declaration in program.types() {
         let invariants = declaration.invariants();
         let Some(first) = invariants.first() else {
             continue;

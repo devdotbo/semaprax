@@ -1,7 +1,8 @@
 //! Test-only recursive checking of `match` expressions: exhaustiveness,
 //! per-arm binding state, and the joins that produce the match's value.
 
-use crate::ast::{Expr, ExprKind, Function, MatchMode, MatchPattern, ParamMode, Program, Type};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{Expr, ExprKind, Function, MatchMode, MatchPattern, ParamMode, Type};
 use crate::diagnostic::Diagnostic;
 use crate::source_verify::binding::{Availability, Binding, CheckedValue};
 use crate::source_verify::declared_type::{
@@ -66,7 +67,7 @@ pub(super) fn oracle_match(
     mode: &MatchMode,
     scrutinee: &Box<Expr>,
     arms: &Vec<crate::ast::MatchArm>,
-    program: &Program,
+    program: &dyn ProgramSource,
     current: &Function,
     expr: &Expr,
     variables: &mut HashMap<String, Binding>,

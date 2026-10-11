@@ -1,5 +1,7 @@
 use std::{fmt, mem};
 
+pub(crate) mod program_source;
+
 #[doc(hidden)]
 pub mod expression_statement;
 #[path = "ast/session_protocol.rs"]
@@ -516,7 +518,7 @@ impl AgentDeclaration {
     /// Source admission checks only opted-in Agents; legacy role references stay inert.
     pub(crate) fn validate_execution_metadata(
         &self,
-        program: &Program,
+        program: &dyn program_source::ProgramSource,
     ) -> Result<(), &'static str> {
         if !self.has_execution_metadata() {
             return Ok(());
@@ -529,7 +531,7 @@ impl AgentDeclaration {
                 continue;
             }
             let mut matches = program
-                .functions
+                .functions()
                 .iter()
                 .filter(|f| f.stable_id == operation.stable_id);
             let function = matches
@@ -540,7 +542,7 @@ impl AgentDeclaration {
             }
             if operation.embedded_function_index.is_some()
                 && (self
-                    .embedded_function(operation, &program.functions)
+                    .embedded_function_in(operation, program.functions())
                     .is_none()
                     || self.operations[..index].iter().any(|prior| {
                         prior.embedded_function_index == operation.embedded_function_index
@@ -571,7 +573,7 @@ impl AgentDeclaration {
                 return Err("Agent model wait helper identity is invalid or aliases a role");
             }
             let mut matches = program
-                .functions
+                .functions()
                 .iter()
                 .filter(|f| f.stable_id == binding.helper_id);
             let function = matches
@@ -580,10 +582,10 @@ impl AgentDeclaration {
             if matches.next().is_some()
                 || !function.explicit_id
                 || !function.type_parameters.is_empty()
-                || program.agents.iter().any(|agent| {
+                || program.agents().iter().any(|agent| {
                     agent.operations.iter().any(|op| {
                         agent
-                            .embedded_function(op, &program.functions)
+                            .embedded_function_in(op, program.functions())
                             .is_some_and(|f| std::ptr::eq(f, function))
                     })
                 })
@@ -597,12 +599,27 @@ impl AgentDeclaration {
     }
 
     /// A formatter may hide only the actual validated parser-origin entry.
+    pub(crate) fn embedded_function_in<'a>(
+        &self,
+        operation: &AgentOperationDeclaration,
+        functions: program_source::DeclSlices<'a, Function>,
+    ) -> Option<&'a Function> {
+        let function = functions.get(operation.embedded_function_index?)?;
+        self.authenticated_embedded_function(operation, function)
+    }
     pub fn embedded_function<'a>(
         &self,
         operation: &AgentOperationDeclaration,
         functions: &'a [Function],
     ) -> Option<&'a Function> {
         let function = functions.get(operation.embedded_function_index?)?;
+        self.authenticated_embedded_function(operation, function)
+    }
+    fn authenticated_embedded_function<'a>(
+        &self,
+        operation: &AgentOperationDeclaration,
+        function: &'a Function,
+    ) -> Option<&'a Function> {
         (operation.kind == AgentOperationKind::Deterministic
             && function.stable_id == operation.stable_id
             && function.name == operation.role.source_name()

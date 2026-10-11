@@ -3,6 +3,7 @@
 //! A reader is a sealed nominal cleanup leaf, not an authored record or a file
 //! descriptor. Target profiles must explicitly admit this vocabulary.
 
+use crate::ast::program_source::ProgramSource;
 pub(crate) mod analysis;
 
 use crate::ast::{Param, ParamMode, Span, Type, TypeDeclaration, TypeDeclarationKind};
@@ -168,7 +169,7 @@ pub(crate) fn pure_by_id(id: &str) -> Option<PureOp> {
     }
 }
 pub(crate) fn source_next_is_same_owner(
-    program: &crate::ast::Program,
+    program: &dyn ProgramSource,
     name: &str,
     value: &crate::ast::Expr,
 ) -> bool {
@@ -184,7 +185,7 @@ pub(crate) fn source_next_is_same_owner(
         && matches!(args.as_slice(), [crate::ast::Expr { kind: crate::ast::ExprKind::Var(owner), .. }] if owner == name)
         && (operation == "stdin_stream_next"
             || program
-                .functions
+                .functions()
                 .iter()
                 .any(|function| function.name == *operation && ast_forward_signature(function)))
 }
@@ -366,7 +367,7 @@ pub(crate) fn ast_expression_uses(expression: &crate::ast::Expr) -> bool {
     }
     false
 }
-pub(crate) fn program_uses(program: &crate::ast::Program) -> bool {
+pub(crate) fn program_uses(program: &dyn ProgramSource) -> bool {
     fn function_uses(function: &crate::ast::Function) -> bool {
         ast_type_uses(&function.return_type)
             || function.params.iter().any(|param| ast_type_uses(&param.ty))
@@ -377,9 +378,9 @@ pub(crate) fn program_uses(program: &crate::ast::Program) -> bool {
                 .chain(&function.ensures)
                 .any(ast_expression_uses)
     }
-    program.functions.iter().any(function_uses)
+    program.functions().iter().any(function_uses)
         || program
-            .types
+            .types()
             .iter()
             .any(|declaration| match &declaration.kind {
                 TypeDeclarationKind::Record { fields } => {

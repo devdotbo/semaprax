@@ -27,13 +27,13 @@ impl Resolver<'_> {
         span: Span,
     ) -> Result<(), Diagnostic> {
         let template_owned = matches!(function, FunctionExecutionId::Monomorphic(owner)
-            if self.program.functions.iter().any(|candidate|
+            if self.program.functions().iter().any(|candidate|
                 candidate.stable_id == owner.as_str() && !candidate.type_parameters.is_empty())
             && super::type_reachability::is_nested_owned_byte_record_template(
                 &self.declarations, &scrutinee.ty, owner,
-                self.program.functions.iter().find(|candidate| candidate.stable_id == owner.as_str())
+                self.program.functions().iter().find(|candidate| candidate.stable_id == owner.as_str())
                     .map_or(0, |candidate| candidate.type_parameters.len())));
-        let template_variant = matches!(function,FunctionExecutionId::Monomorphic(owner) if self.program.functions.iter().find(|candidate|candidate.stable_id==owner.as_str()).is_some_and(|candidate|super::generic_variant::slot(&self.declarations,&scrutinee.ty,owner,candidate.type_parameters.len())));
+        let template_variant = matches!(function,FunctionExecutionId::Monomorphic(owner) if self.program.functions().iter().find(|candidate|candidate.stable_id==owner.as_str()).is_some_and(|candidate|super::generic_variant::slot(&self.declarations,&scrutinee.ty,owner,candidate.type_parameters.len())));
         let facts = self.declarations.type_facts(&scrutinee.ty);
         let copy = facts.as_ref().is_some_and(|facts| facts.copy);
         let owned = template_owned

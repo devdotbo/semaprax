@@ -313,6 +313,21 @@ modules by descending full-minus-retained HIR overhead, with a path tie-break;
 the forecast and resolver use the same order. Completed outputs are restored
 to canonical path order before validation and publication.
 
+Uncached modules with no module uses and no record invariants now lend their
+exact authored declaration collections to a sealed compiler-only
+`ProgramSource`. The synthetic presentation owns only an optional scalar `main`;
+its leaf body and empty recursive collections make teardown allocation-free.
+A concrete presentation identity distinguishes different overlays of the same
+source. Full source verification, prelude selection, declaration indexing,
+byte-helper checks and HIR resolution still run over that presentation.
+Imports and invariant desugaring retain the paid owned projection; frontend
+cache keys also retain the original owned path. Only the reservation for the
+absent synthetic AST copy is reduced on the actual uncached borrowed route.
+HIR expansion, cleanup and retained-output forecasts are unchanged. This is a
+partial OPT776 boundary: generated imported overlays and their teardown remain
+owned, and original application fit and actual allocation gates are unqualified
+until the owning checks run.
+
 Within one resolved-core validation attempt, private type authority retains one
 borrowed owner bound to the exact immutable Program slice and authored map.
 Its lazy complete top-level proof is charged to the first caller's existing

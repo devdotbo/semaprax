@@ -35,7 +35,7 @@ impl Resolver<'_> {
         span: Span,
     ) -> Result<ResolvedType, Diagnostic> {
         if let FunctionExecutionId::Monomorphic(caller_id) = caller {
-            if let Some(template) = self.program.functions.iter().find(|candidate| {
+            if let Some(template) = self.program.functions().iter().find(|candidate| {
                 candidate.stable_id == caller_id.as_str() && !candidate.type_parameters.is_empty()
             }) {
                 return self.resolve_function_type(template, argument, span);
@@ -61,7 +61,7 @@ impl Resolver<'_> {
         function: &FunctionExecutionId,
         span: Span,
     ) -> Result<ResolvedType, Diagnostic> {
-        let target = self.program.functions.iter().find(|candidate| matches!(function, FunctionExecutionId::Monomorphic(declaration) if candidate.stable_id == declaration.as_str()))
+        let target = self.program.functions().iter().find(|candidate| matches!(function, FunctionExecutionId::Monomorphic(declaration) if candidate.stable_id == declaration.as_str()))
             .ok_or_else(|| self.error("SPX-H006", format!("resolved `?` has unknown enclosing function `{function}`"), span))?;
         self.resolve_function_type(target, &target.return_type, target.span)
     }
@@ -91,7 +91,7 @@ impl Resolver<'_> {
         };
         let caller_parameter_count = self
             .program
-            .functions
+            .functions()
             .iter()
             .find(|candidate| candidate.stable_id == caller_id.as_str())
             .map_or(0, |candidate| candidate.type_parameters.len());
@@ -196,7 +196,7 @@ impl Resolver<'_> {
         let _lowering_stage = reservation_stage_guard(ReservationStage::HirLowering);
         let entrypoint = self
             .program
-            .functions
+            .functions()
             .iter()
             .find(|function| function.name == "main")
             .map(|function| DeclarationId::new(function.stable_id.clone()))
@@ -208,9 +208,7 @@ impl Resolver<'_> {
                 )
             })?;
         self.validate_record_layouts()?;
-        let types = self
-            .program
-            .types
+        let types = self.program.types()
             .iter()
             .chain(crate::prelude::declarations_for_program(self.program))
             .map(|declaration| {
@@ -330,7 +328,7 @@ impl Resolver<'_> {
             .collect::<Result<Vec<_>, Diagnostic>>()?;
         let interfaces = self
             .program
-            .interfaces
+            .interfaces()
             .iter()
             .map(|interface| {
                 let interface_id = DeclarationId::new(interface.stable_id.clone());
@@ -413,25 +411,22 @@ impl Resolver<'_> {
             .collect::<Result<Vec<_>, Diagnostic>>()?;
         // Retention can move this exact carrier without creating a second Vec
         // when the synthetic module contains only authored local functions.
-        let function_count = self
-            .program
-            .functions
-            .iter()
-            .chain(
-                self.program
-                    .types
-                    .iter()
-                    .flat_map(|declaration| match &declaration.kind {
+        let function_count =
+            self.program
+                .functions()
+                .iter()
+                .chain(self.program.types().iter().flat_map(
+                    |declaration| match &declaration.kind {
                         TypeDeclarationKind::Class { methods, .. } => methods.as_slice(),
                         _ => &[],
-                    }),
-            )
-            .filter(|function| function.type_parameters.is_empty())
-            .count();
+                    },
+                ))
+                .filter(|function| function.type_parameters.is_empty())
+                .count();
         let mut functions = Vec::with_capacity(function_count);
         for function in self
             .program
-            .functions
+            .functions()
             .iter()
             .filter(|function| function.type_parameters.is_empty())
         {
@@ -444,7 +439,7 @@ impl Resolver<'_> {
                 .insert(function.stable_id.clone(), cost);
             functions.push(resolved);
         }
-        for decl in &self.program.types {
+        for decl in self.program.types() {
             if let TypeDeclarationKind::Class { methods, .. } = &decl.kind {
                 for method in methods {
                     if method.type_parameters.is_empty() {
@@ -461,30 +456,30 @@ impl Resolver<'_> {
         }
         let function_templates = self
             .program
-            .functions
+            .functions()
             .iter()
             .filter(|function| !function.type_parameters.is_empty())
             .map(|function| self.resolve_function_template(function))
             .collect::<Result<Vec<_>, _>>()?;
         let function_instances =
             self.discover_function_instances(&functions, &function_templates)?;
-        for agent in &self.program.agents {
+        for agent in self.program.agents() {
             agent
                 .validate_execution_metadata(self.program)
                 .map_err(|message| Diagnostic::io("SPX-G559", message))?;
         }
         let agents = self
             .program
-            .agents
+            .agents()
             .iter()
-            .map(|declaration| resolve_agent_declaration(declaration, &self.program.module))
+            .map(|declaration| resolve_agent_declaration(declaration, self.program.module()))
             .collect();
         let byte_slice_roots = derive_byte_slice_provenance(&functions, &self.declarations)?;
         let mut declarations = self.declarations;
         declarations.byte_slice_roots = byte_slice_roots;
         let mut resolved = ResolvedProgram {
-            module: self.program.module.clone(),
-            permits: self.program.permits.clone(),
+            module: self.program.module().to_owned(),
+            permits: self.program.permits().to_vec(),
             agents,
             entrypoint,
             declarations,
@@ -651,7 +646,7 @@ impl Resolver<'_> {
     }
 
     pub(super) fn validate_record_layouts(&self) -> Result<(), Diagnostic> {
-        for declaration in &self.program.types {
+        for declaration in self.program.types() {
             if !matches!(
                 &declaration.kind,
                 TypeDeclarationKind::Record { .. } | TypeDeclarationKind::Class { .. }
@@ -1216,7 +1211,7 @@ impl Resolver<'_> {
         if let FunctionExecutionId::Monomorphic(owner) = execution {
             if let Some(function) = self
                 .program
-                .functions
+                .functions()
                 .iter()
                 .find(|candidate| candidate.stable_id == owner.as_str())
             {

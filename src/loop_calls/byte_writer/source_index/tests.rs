@@ -1,4 +1,5 @@
 use super::*;
+use crate::ast::Program;
 const SOURCE: &str = include_str!("../../../../tests/owned_data/byte_helper_renewal.spx");
 fn parsed(source: &str) -> Program {
     crate::parse(source, "source-helper-index.spx").unwrap()

@@ -1,4 +1,5 @@
 use super::*;
+use crate::ast::Program;
 use std::path::Path;
 
 fn parsed(source: &str) -> Program {

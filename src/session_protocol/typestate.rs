@@ -69,30 +69,36 @@
 //! has no HIR node, no native/Wasm lowering, and no runtime representation --
 //! a `follows` clause is erased exactly like the declaration it names.
 
+use crate::ast::program_source::ProgramSource;
 mod endpoint;
 
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 
 use crate::ast::{
-    BinaryOp, Expr, ExprKind, Function, Program, SessionProtocolDeclaration, SessionProtocolNext,
+    BinaryOp, Expr, ExprKind, Function, SessionProtocolDeclaration, SessionProtocolNext,
     SessionProtocolTransition, Span, Statement,
 };
 use crate::diagnostic::Diagnostic;
 
-fn k_error(program: &Program, code: &'static str, message: String, span: Span) -> Diagnostic {
-    Diagnostic::error(code, message, span).at_path(&program.path)
+fn k_error(
+    program: &dyn ProgramSource,
+    code: &'static str,
+    message: String,
+    span: Span,
+) -> Diagnostic {
+    Diagnostic::error(code, message, span).at_path(program.path())
 }
 
 /// `SPX-K107`..`SPX-K109`: endpoint typestate checking for every function
 /// that opts in with `follows session protocol "<protocol-id>"`. A no-op
 /// (returns immediately) for a program with no such function, so an ordinary
 /// program pays nothing for this check existing.
-pub(crate) fn check(program: &Program) -> Vec<Diagnostic> {
+pub(crate) fn check(program: &dyn ProgramSource) -> Vec<Diagnostic> {
     let mut diagnostics = endpoint::check_declarations(program);
     // The clause shares the function grammar, so a class method can carry
     // it; only free functions are checked, so refuse it on a method rather
     // than admit an unchecked claim.
-    for declaration in &program.types {
+    for declaration in program.types() {
         let crate::ast::TypeDeclarationKind::Class { methods, .. } = &declaration.kind else {
             continue;
         };
@@ -111,18 +117,18 @@ pub(crate) fn check(program: &Program) -> Vec<Diagnostic> {
         }
     }
     if !program
-        .functions
+        .functions()
         .iter()
         .any(|function| function.follows.is_some())
     {
         return diagnostics;
     }
-    for function in &program.functions {
+    for function in program.functions() {
         let Some(follows) = &function.follows else {
             continue;
         };
         let Some(protocol) = program
-            .session_protocols
+            .session_protocols()
             .iter()
             .find(|declaration| declaration.stable_id == follows.protocol_id)
         else {
@@ -435,7 +441,7 @@ fn statement_contains_via_call(statement: &Statement, via_names: &BTreeSet<&str>
 /// callee that way, never by persistent id), and the whole-function shadow
 /// set (see [`shadowed_names`]).
 struct Context<'p> {
-    program: &'p Program,
+    program: &'p dyn ProgramSource,
     function: &'p Function,
     protocol: &'p SessionProtocolDeclaration,
     via_by_name: BTreeMap<&'p str, Vec<&'p SessionProtocolTransition>>,
@@ -443,12 +449,12 @@ struct Context<'p> {
 }
 
 fn check_function(
-    program: &Program,
+    program: &dyn ProgramSource,
     function: &Function,
     protocol: &SessionProtocolDeclaration,
 ) -> Result<(), Diagnostic> {
     let by_stable_id: BTreeMap<&str, &Function> = program
-        .functions
+        .functions()
         .iter()
         .map(|candidate| (candidate.stable_id.as_str(), candidate))
         .collect();

@@ -1,6 +1,7 @@
 //! Bounded transitive proof for ordinary same-owner byte-writing helpers.
 //! Declaration spelling, attached cleanup and generated names carry no authority.
-use crate::ast::{Expr, ExprKind, Function, ParamMode, Program, Type};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{Expr, ExprKind, Function, ParamMode, Type};
 use crate::hir::{
     OwnershipMode, ResolvedBinding, ResolvedExpr, ResolvedExprKind, ResolvedFunction, ResolvedType,
 };
@@ -63,7 +64,7 @@ fn vec_operation(op: crate::vec_ops::VecOp) -> bool {
         crate::vec_ops::VecOp::Len | crate::vec_ops::VecOp::Capacity | crate::vec_ops::VecOp::Get
     )
 }
-fn ast_param(program: &Program, mode: ParamMode, ty: &Type) -> bool {
+fn ast_param(program: &dyn ProgramSource, mode: ParamMode, ty: &Type) -> bool {
     match mode {
         ParamMode::Own => *ty == Type::Bytes,
         ParamMode::Value => {
@@ -74,12 +75,12 @@ fn ast_param(program: &Program, mode: ParamMode, ty: &Type) -> bool {
         ParamMode::Borrow => {
             super::ast_param_admitted(program, mode, ty)
                 || matches!(ty, Type::Named { name, arguments } if arguments.is_empty()
-                && program.types.iter().any(|d| d.name == *name && matches!(d.kind, crate::ast::TypeDeclarationKind::Record { .. })))
+                && program.types().iter().any(|d| d.name == *name && matches!(d.kind, crate::ast::TypeDeclarationKind::Record { .. })))
         }
         ParamMode::Shared => false,
     }
 }
-pub(crate) fn source_target(program: &Program, target: &Function) -> bool {
+pub(crate) fn source_target(program: &dyn ProgramSource, target: &Function) -> bool {
     target.return_type == Type::Bytes
         && target
             .params
@@ -93,7 +94,7 @@ pub(crate) fn source_target(program: &Program, target: &Function) -> bool {
             .all(|p| ast_param(program, p.mode, &p.ty))
         && source_nonallocating(program, target)
 }
-pub(crate) fn source_assignment(program: &Program, binding: &str, value: &Expr) -> bool {
+pub(crate) fn source_assignment(program: &dyn ProgramSource, binding: &str, value: &Expr) -> bool {
     let ExprKind::Call {
         name,
         type_arguments,
@@ -102,7 +103,7 @@ pub(crate) fn source_assignment(program: &Program, binding: &str, value: &Expr) 
     else {
         return false;
     };
-    let Some(target) = program.functions.iter().find(|f| f.name == *name) else {
+    let Some(target) = program.functions().iter().find(|f| f.name == *name) else {
         return false;
     };
     type_arguments.is_empty()

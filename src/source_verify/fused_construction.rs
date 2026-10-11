@@ -251,16 +251,25 @@ impl<'p> SourceProof<'p> {
     }
 
     /// True only for the exact borrowed module this proof was derived from.
-    pub(crate) fn still_held(&self, program: &Program) -> bool {
-        std::ptr::eq(self.program, program)
+    pub(crate) fn still_held(
+        &self,
+        program: &dyn crate::ast::program_source::ProgramSource,
+    ) -> bool {
+        crate::ast::program_source::Subject::Owned(self.program).same(program.subject())
     }
 
     /// Re-derive from the held module and require every borrowed identity to
     /// be the same node. A stale or foreign proof refuses.
-    pub(crate) fn authenticate(&self, program: &Program) -> bool {
+    pub(crate) fn authenticate(
+        &self,
+        program: &dyn crate::ast::program_source::ProgramSource,
+    ) -> bool {
         if !self.still_held(program) {
             return false;
         }
+        let crate::ast::program_source::Subject::Owned(program) = program.subject() else {
+            return false;
+        };
         let Ok(Derivation::Selected(fresh)) = derive(program, self.function) else {
             return false;
         };

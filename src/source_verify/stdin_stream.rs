@@ -1,15 +1,16 @@
 //! Closed source admission for one invocation-scoped streaming reader.
 use super::diagnostics::error;
-use crate::ast::{Expr, ExprKind, ParamMode, Program, Statement, TypeDeclarationKind};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{Expr, ExprKind, ParamMode, Statement, TypeDeclarationKind};
 use crate::diagnostic::Diagnostic;
 use crate::stdin_stream_ops::{ast_is_reader, ast_type_uses};
 use std::collections::{BTreeMap, BTreeSet};
 
-pub(super) fn check(program: &Program, diagnostics: &mut Vec<Diagnostic>) {
+pub(super) fn check(program: &dyn ProgramSource, diagnostics: &mut Vec<Diagnostic>) {
     let refuse = |diagnostics: &mut Vec<Diagnostic>, message, span| {
         diagnostics.push(error(program, "SPX-T270", message, span))
     };
-    for declaration in &program.types {
+    for declaration in program.types() {
         if declaration.stable_id == crate::stdin_stream_ops::READER_ID {
             continue;
         }
@@ -33,7 +34,7 @@ pub(super) fn check(program: &Program, diagnostics: &mut Vec<Diagnostic>) {
         }
     }
     for import in program
-        .interfaces
+        .interfaces()
         .iter()
         .flat_map(|interface| &interface.imports)
     {
@@ -49,7 +50,7 @@ pub(super) fn check(program: &Program, diagnostics: &mut Vec<Diagnostic>) {
         }
     }
     let streaming = crate::stdin_stream_ops::program_uses(program);
-    for function in &program.functions {
+    for function in program.functions() {
         if streaming {
             function.body.visit_all_nodes(&mut |expression| {
                 if matches!(expression.kind, ExprKind::Closure { .. }) {
@@ -220,22 +221,22 @@ pub(super) fn check(program: &Program, diagnostics: &mut Vec<Diagnostic>) {
     }
 }
 
-fn open_bounds(program: &Program) -> Result<(), (&'static str, crate::ast::Span)> {
-    if program.functions.len() > crate::byte_data_capacity::MAX_FUNCTIONS {
+fn open_bounds(program: &dyn ProgramSource) -> Result<(), (&'static str, crate::ast::Span)> {
+    if program.functions().len() > crate::byte_data_capacity::MAX_FUNCTIONS {
         return Err((
             "streaming admission exceeds function capacity",
-            program.functions[crate::byte_data_capacity::MAX_FUNCTIONS].span,
+            program.functions()[crate::byte_data_capacity::MAX_FUNCTIONS].span,
         ));
     }
     let mut work = 0usize;
     let functions = program
-        .functions
+        .functions()
         .iter()
         .map(|f| (f.name.as_str(), f))
         .collect::<BTreeMap<_, _>>();
     let mut reverse = BTreeMap::<String, BTreeSet<&str>>::new();
     let mut relevant = BTreeSet::new();
-    for function in &program.functions {
+    for function in program.functions() {
         if ast_is_reader(&function.return_type)
             || function.params.iter().any(|p| ast_is_reader(&p.ty))
             || crate::stdin_stream_ops::ast_expression_uses(&function.body)
@@ -273,7 +274,7 @@ fn open_bounds(program: &Program) -> Result<(), (&'static str, crate::ast::Span)
     }
     let mut summaries = BTreeMap::new();
     let mut active = BTreeSet::new();
-    for function in &program.functions {
+    for function in program.functions() {
         if !relevant.contains(function.name.as_str()) {
             summaries.insert(function.name.as_str(), 0);
             continue;

@@ -1,9 +1,10 @@
 //! Borrowed source-phase proof memo. Each defining module/provider is part of
 //! the exact key; no cache survives the immutable source invocation.
 use super::*;
+use crate::ast::program_source::ProgramSource;
 use crate::diagnostic::Diagnostic;
 use std::cell::RefCell;
-type Entry<'a> = (&'a Program, &'a Function, bool);
+type Entry<'a> = (&'a dyn ProgramSource, &'a Function, bool);
 pub(crate) struct SourceProofs<'a> {
     entries: Vec<Entry<'a>>,
     cursor: Option<Box<source::Cursor<'a>>>,
@@ -41,11 +42,11 @@ impl<'a> SourceProofs<'a> {
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn prove(
         &mut self,
-        owner: &'a Program,
+        owner: &'a dyn ProgramSource,
         target: &'a Function,
-        lookup: impl Fn(&'a Program, &str) -> Option<(&'a Program, &'a Function)>,
-        param: impl Fn(&Program, ParamMode, &Type) -> bool,
-        result: impl Fn(&Program, &Type) -> bool,
+        lookup: impl Fn(&'a dyn ProgramSource, &str) -> Option<(&'a dyn ProgramSource, &'a Function)>,
+        param: impl Fn(&dyn ProgramSource, ParamMode, &Type) -> bool,
+        result: impl Fn(&dyn ProgramSource, &Type) -> bool,
         lookup_work: usize,
     ) -> Result<bool, Diagnostic> {
         if self.failed {
@@ -60,11 +61,11 @@ impl<'a> SourceProofs<'a> {
     #[allow(clippy::too_many_arguments)]
     fn checked(
         &mut self,
-        owner: &'a Program,
+        owner: &'a dyn ProgramSource,
         target: &'a Function,
-        lookup: impl Fn(&'a Program, &str) -> Option<(&'a Program, &'a Function)>,
-        param: impl Fn(&Program, ParamMode, &Type) -> bool,
-        result: impl Fn(&Program, &Type) -> bool,
+        lookup: impl Fn(&'a dyn ProgramSource, &str) -> Option<(&'a dyn ProgramSource, &'a Function)>,
+        param: impl Fn(&dyn ProgramSource, ParamMode, &Type) -> bool,
+        result: impl Fn(&dyn ProgramSource, &Type) -> bool,
         lookup_work: usize,
     ) -> Result<bool, Diagnostic> {
         self.work = self
@@ -74,7 +75,7 @@ impl<'a> SourceProofs<'a> {
         if let Some((_, _, proved)) = self
             .entries
             .iter()
-            .find(|(p, f, _)| std::ptr::eq(*p, owner) && std::ptr::eq(*f, target))
+            .find(|(p, f, _)| p.subject().same(owner.subject()) && std::ptr::eq(*f, target))
         {
             return Ok(*proved);
         }
@@ -140,11 +141,11 @@ impl<'a> SourceProofs<'a> {
     }
 }
 pub(crate) struct SourceIndex<'a> {
-    program: &'a Program,
+    program: &'a dyn ProgramSource,
     proofs: RefCell<SourceProofs<'a>>,
 }
 impl<'a> SourceIndex<'a> {
-    pub(crate) fn new(program: &'a Program) -> Self {
+    pub(crate) fn new(program: &'a dyn ProgramSource) -> Self {
         Self {
             program,
             proofs: RefCell::new(SourceProofs::default()),
@@ -163,7 +164,7 @@ impl<'a> SourceIndex<'a> {
         }
         let Some(function) = self
             .program
-            .functions
+            .functions()
             .iter()
             .find(|candidate| std::ptr::eq(*candidate, function))
         else {
@@ -189,7 +190,7 @@ impl<'a> SourceIndex<'a> {
                 function,
                 |owner, name| {
                     owner
-                        .functions
+                        .functions()
                         .iter()
                         .find(|f| f.name == name)
                         .map(|f| (owner, f))
@@ -197,9 +198,9 @@ impl<'a> SourceIndex<'a> {
                 ast_param,
                 super::super::ast_result_admitted,
                 self.program
-                    .functions
+                    .functions()
                     .len()
-                    .saturating_add(self.program.module_uses.len()),
+                    .saturating_add(self.program.module_uses().len()),
             )
             .unwrap_or(false)
     }
@@ -212,7 +213,7 @@ impl<'a> SourceIndex<'a> {
         else {
             return false;
         };
-        let Some(target) = self.program.functions.iter().find(|f| f.name == *name) else {
+        let Some(target) = self.program.functions().iter().find(|f| f.name == *name) else {
             return false;
         };
         type_arguments.is_empty()

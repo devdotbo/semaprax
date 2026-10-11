@@ -35,7 +35,7 @@ fn resolve_element(
     if let FunctionExecutionId::Monomorphic(owner) = function {
         if let Some(candidate) = resolver
             .program
-            .functions
+            .functions()
             .iter()
             .find(|candidate| candidate.stable_id == owner.as_str())
             .filter(|candidate| {
@@ -112,7 +112,7 @@ fn record_owner_renewal(
     };
     let Some(target) = resolver
         .program
-        .functions
+        .functions()
         .iter()
         .find(|function| function.stable_id == callee.as_str())
     else {
@@ -341,7 +341,7 @@ fn scoped_collection_assignment(
 ) -> bool {
     if let ResolvedType::TypeParameter { owner, .. } = &value.ty {
         if value.ownership == OwnershipMode::Value
-            && resolver.program.functions.iter().any(|function| {
+            && resolver.program.functions().iter().any(|function| {
                 function.stable_id == owner.as_str()
                     && crate::source_verify::generic_collection_profile(function)
                     && super::generic_collection::parameter(
@@ -357,7 +357,7 @@ fn scoped_collection_assignment(
     let Some(owner) = execution.monomorphic_declaration() else {
         return false;
     };
-    if !resolver.program.functions.iter().any(|f| {
+    if !resolver.program.functions().iter().any(|f| {
         f.stable_id == owner.as_str() && crate::source_verify::generic_collection_profile(f)
     }) {
         return false;
@@ -411,7 +411,7 @@ fn byte_helper_renewal(
     };
     let Some(target) = resolver
         .program
-        .functions
+        .functions()
         .iter()
         .find(|f| f.stable_id == callee.as_str())
     else {

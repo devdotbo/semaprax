@@ -13,6 +13,7 @@
 //! `monomorphize`, `byte_capacity`, and `byte_slice_provenance` own the
 //! derivations layered over resolved HIR.
 
+use crate::ast::program_source::ProgramSource;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 
@@ -538,6 +539,46 @@ pub(crate) fn resolve_with_function_reuse<'p>(
     resolve_verified(program, reuse).map_err(|error| vec![error])
 }
 
+/// Full ordinary verification of the private borrowed presentation. Recursive
+/// record-invariant desugaring remains on the paid owned input route.
+pub(crate) fn resolve_source<'p>(
+    program: &'p dyn ProgramSource,
+    private: Option<source_verify::private_names::PrivateNames<'p>>,
+) -> Result<(ResolvedProgram, FunctionResolutionWork), Vec<Diagnostic>> {
+    let diagnostics = source_verify::verify_presenting(program, private);
+    if diagnostics
+        .iter()
+        .any(|diagnostic| diagnostic.severity.is_error())
+    {
+        return Err(diagnostics);
+    }
+    if program
+        .types()
+        .iter()
+        .any(|declaration| !declaration.invariants().is_empty())
+    {
+        return Err(vec![Diagnostic::io(
+            "SPX-H006",
+            "borrowed projection requires owned invariant desugaring",
+        )]);
+    }
+    (Resolver {
+        program,
+        byte_helpers: crate::loop_calls::byte_writer::SourceIndex::new(program),
+        declarations: DeclarationIndex::from_verified_with_prelude(
+            program,
+            crate::prelude::declarations_for_program(program),
+        )
+        .map_err(|error| vec![error])?,
+        reuse: None,
+        function_work: FunctionResolutionWork::default(),
+        fused_producer: None,
+        partition_profile: false,
+    })
+    .resolve()
+    .map_err(|error| vec![error])
+}
+
 /// Resolve a verified program. Record Invariants v1: when a record declares
 /// invariants, the resolution of the original supplies the record type of
 /// every production site, and the program is resolved once more after
@@ -645,7 +686,7 @@ struct FunctionReuse<'a> {
 }
 
 struct Resolver<'a> {
-    program: &'a Program,
+    program: &'a dyn ProgramSource,
     byte_helpers: crate::loop_calls::byte_writer::SourceIndex<'a>,
     declarations: DeclarationIndex,
     reuse: Option<FunctionReuse<'a>>,

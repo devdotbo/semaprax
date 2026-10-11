@@ -1,7 +1,8 @@
 //! Test-only recursive `while` statement checking and the oracle form of the
 //! `while` admission rules.
 
-use crate::ast::{Expr, ExprKind, Function, Program, Span, Statement, Type};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{Expr, ExprKind, Function, Span, Statement, Type};
 #[cfg(test)]
 use crate::diagnostic::Diagnostic;
 use crate::source_verify::binding::Binding;
@@ -17,7 +18,7 @@ use std::collections::HashMap;
 #[cfg(test)]
 #[allow(clippy::too_many_arguments)]
 pub(super) fn check_while_statement(
-    program: &Program,
+    program: &dyn ProgramSource,
     current: &Function,
     condition: &Expr,
     body: &Expr,
@@ -126,7 +127,7 @@ pub(super) fn check_while_statement(
 /// `IterativeVerifier::reject_while_disallowed` diagnostic for diagnostic.
 #[cfg(test)]
 pub(in crate::source_verify) fn reject_while_disallowed_oracle(
-    program: &Program,
+    program: &dyn ProgramSource,
     expression: &Expr,
     functions: &HashMap<&str, &Function>,
     types: &TypeTable<'_>,
@@ -135,7 +136,7 @@ pub(in crate::source_verify) fn reject_while_disallowed_oracle(
     reject_with_scratch(program, expression, functions, types, diagnostics, None)
 }
 pub(in crate::source_verify) fn reject_finite_iterator_body_oracle(
-    program: &Program,
+    program: &dyn ProgramSource,
     current: &Function,
     expression: &Expr,
     functions: &HashMap<&str, &Function>,
@@ -153,7 +154,7 @@ pub(in crate::source_verify) fn reject_finite_iterator_body_oracle(
     )
 }
 pub(in crate::source_verify) fn reject_with_scratch(
-    program: &Program,
+    program: &dyn ProgramSource,
     expression: &Expr,
     functions: &HashMap<&str, &Function>,
     types: &TypeTable<'_>,
@@ -526,7 +527,7 @@ pub(in crate::source_verify) fn reject_with_scratch(
 
 #[cfg(test)]
 pub(super) fn reject_statement_with_scratch(
-    program: &Program,
+    program: &dyn ProgramSource,
     statement: &Statement,
     functions: &HashMap<&str, &Function>,
     types: &TypeTable<'_>,
@@ -587,7 +588,7 @@ pub(super) fn reject_statement_with_scratch(
 
 #[cfg(test)]
 fn source_record_owner_renewal(
-    program: &Program,
+    program: &dyn ProgramSource,
     functions: &HashMap<&str, &Function>,
     binding: &str,
     value: &Expr,

@@ -3,6 +3,7 @@
 //! Mirrors the iterative verifier so tests can cross-check the frame machine
 //! against a direct recursive reading of the same rules.
 
+use crate::ast::program_source::ProgramSource;
 mod intrinsic_calls;
 
 use self::calls::{oracle_call, oracle_method_call};
@@ -27,8 +28,7 @@ use super::place::{
 };
 use super::type_table::{effective_record_fields, TypeTable};
 use crate::ast::{
-    BinaryOp, Expr, ExprKind, Function, ParamMode, Program, Statement, Type, TypeDeclarationKind,
-    UnaryOp,
+    BinaryOp, Expr, ExprKind, Function, ParamMode, Statement, Type, TypeDeclarationKind, UnaryOp,
 };
 #[cfg(test)]
 use crate::diagnostic::Diagnostic;
@@ -44,7 +44,7 @@ pub(super) mod while_oracle;
 #[cfg(test)]
 #[allow(clippy::too_many_arguments)]
 pub(super) fn check_expr(
-    program: &Program,
+    program: &dyn ProgramSource,
     current: &Function,
     expr: &Expr,
     variables: &mut HashMap<String, Binding>,

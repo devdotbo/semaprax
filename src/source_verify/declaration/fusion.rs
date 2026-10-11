@@ -1,6 +1,7 @@
 //! Exact finite construction inventory; large candidates remain diagnostic-only.
+use crate::ast::program_source::ProgramSource;
 use crate::ast::{
-    BinaryOp, Expr, ExprKind as K, Function, Program, Statement as S, Type, TypeDeclaration,
+    BinaryOp, Expr, ExprKind as K, Function, Statement as S, Type, TypeDeclaration,
     TypeDeclarationKind,
 };
 mod consumers;
@@ -24,7 +25,7 @@ impl std::fmt::Write for Help {
         Ok(())
     }
 }
-pub(super) fn refusal_help(program: &Program) -> Option<String> {
+pub(super) fn refusal_help(program: &dyn ProgramSource) -> Option<String> {
     use std::fmt::Write;
     let inventory = inventory(program)?;
     if inventory.function.stable_id.len() > MAX_IDENTITY_BYTES
@@ -73,20 +74,20 @@ fn var(expr: &Expr, name: &str) -> bool {
 fn row_type(arguments: &[Type], record: &TypeDeclaration) -> bool {
     matches!(arguments, [Type::Named { name, arguments }] if name == &record.name && arguments.is_empty())
 }
-pub(crate) fn inventory(program: &Program) -> Option<Inventory<'_>> {
-    if program.functions.len() != 1
-        || program.types.len() != 1
-        || !program.module_uses.is_empty()
-        || !program.permits.is_empty()
-        || !program.interfaces.is_empty()
-        || !program.protocols.is_empty()
-        || !program.implementations.is_empty()
-        || !program.session_protocols.is_empty()
-        || !program.agents.is_empty()
+pub(crate) fn inventory(program: &dyn ProgramSource) -> Option<Inventory<'_>> {
+    if program.functions().len() != 1
+        || program.types().len() != 1
+        || !program.module_uses().is_empty()
+        || !program.permits().is_empty()
+        || !program.interfaces().is_empty()
+        || !program.protocols().is_empty()
+        || !program.implementations().is_empty()
+        || !program.session_protocols().is_empty()
+        || !program.agents().is_empty()
     {
         return None;
     }
-    let function = &program.functions[0];
+    let function = program.functions().get(0)?;
     if !function.explicit_id
         || !function.type_parameters.is_empty()
         || !function.params.is_empty()
@@ -99,7 +100,7 @@ pub(crate) fn inventory(program: &Program) -> Option<Inventory<'_>> {
     {
         return None;
     }
-    let record = &program.types[0];
+    let record = program.types().get(0)?;
     if !record.explicit_id
         || !record.type_parameters.is_empty()
         || record.extends.is_some()
@@ -304,10 +305,11 @@ pub(crate) fn inventory(program: &Program) -> Option<Inventory<'_>> {
 }
 
 /// Ordinary finite capacity, restricted to the unchanged physical event cap.
-pub(crate) fn finite_loop(program: &Program, expression: &Expr) -> Option<u32> {
-    let [function] = program.functions.as_slice() else {
+pub(crate) fn finite_loop(program: &dyn ProgramSource, expression: &Expr) -> Option<u32> {
+    if program.functions().len() != 1 {
         return None;
-    };
+    }
+    let function = program.functions().get(0)?;
     let K::Block { statements, .. } = &function.body.kind else {
         return None;
     };
@@ -328,7 +330,7 @@ pub(crate) fn finite_loop(program: &Program, expression: &Expr) -> Option<u32> {
     }
     u32::try_from(proof.count).ok()
 }
-pub(crate) fn finite_allocation(program: &Program, expression: &Expr) -> bool {
+pub(crate) fn finite_allocation(program: &dyn ProgramSource, expression: &Expr) -> bool {
     inventory(program).is_some_and(|proof| {
         proof.count <= u64::from(crate::byte_data_capacity::MAX_BYTES_COPY_SITES)
             && std::ptr::eq(expression, proof.byte_site)
