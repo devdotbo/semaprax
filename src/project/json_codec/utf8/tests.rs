@@ -29,6 +29,19 @@ fn utf8_owned_policy_is_explicit_bounded_and_uses_distinct_scalar_decoders() {
     assert!(derived.contains("ju_text_valid(input,start,end,64usize)"));
     assert!(derived.contains("ju_bounded_valid(bytes,64usize)"));
     assert!(derived.contains("ju_quoted_len(bytes,64usize)"));
+    let sizing = derived
+        .split("fn json_Row_owned_row_len")
+        .nth(1)
+        .unwrap()
+        .split("fn json_Row_owned_row_render")
+        .next()
+        .unwrap();
+    assert_eq!(sizing.matches("json_Row_utf8_quoted_len").count(), 1);
+    assert!(!sizing.contains("owned_valid"));
+    assert!(
+        sizing.find("if quoted==18446744073709551615usize").unwrap()
+            < sizing.find("usize_from_i64").unwrap()
+    );
     assert!(derived.contains("std.data.json.scan.utf8_text_valid"));
     assert!(!derived.contains("let mut raw_ascii="));
     assert!(derived.contains("scalar>=0 && scalar<=1114111"));

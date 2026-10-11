@@ -1,0 +1,25 @@
+// Frozen original sizing for this fixture's Row(number:i64,text:string).
+@id("consumer.legacy.owned-row-len")
+fn legacy_owned_row_len(value:borrow Row)->usize {
+if !json_Legacy_owned_valid(string_as_str(value.text)){18446744073709551615usize}else{
+19usize+(usize_from_i64(legacy_i64_len(value.number)))+(json_Legacy_utf8_quoted_len(string_as_str(value.text)))
+}}
+@id("consumer.legacy.encoded-len")
+fn legacy_encoded_len(words:borrow Vec<string>,rows:borrow Vec<Row>)->usize {
+let count=vec_len<string>(words);let row_count=vec_len<Row>(rows);
+let mut valid=count<=8usize && row_count<=256usize;
+let mut total=23usize;let mut index=0usize;
+while valid && index<count {
+let word=vec_clone_at<string>(words,index);valid=json_Legacy_owned_valid(string_as_str(word));
+let _ = if valid{total=total+json_Legacy_utf8_quoted_len(string_as_str(word))+(if index>0usize{1usize}else{0usize});true}else{false};
+index=index+1usize;valid && index<count
+}
+let mut at=0usize;
+while valid && at<row_count {
+let row=vec_clone_at<Row>(rows,at);let size=legacy_owned_row_len(row);
+let comma=if at>0usize{1usize}else{0usize};
+let _ = if !valid || size==18446744073709551615usize || total>131072usize-comma || size>131072usize-total-comma{valid=false;false}else{total=total+size+comma;true};
+at=at+1usize;valid && at<row_count
+}
+if valid{total}else{18446744073709551615usize}
+}

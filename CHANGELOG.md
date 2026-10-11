@@ -1,5 +1,7 @@
 # Changelog
 
+- Advance ASCII once in ordinary UTF-8 scans and reuse checked quoted lengths in generated UTF-8 sizing. Preserve fallback, earliest faults, invalid short circuits and all limits; frozen original/backend differential definitions await grouped qualification.
+
 - Keep generated UTF-8 validator identities while sharing bounded scalar byte
   kernels through the existing JSON scan/UTF-8 source modules (#753); owning
   executable qualification pending.

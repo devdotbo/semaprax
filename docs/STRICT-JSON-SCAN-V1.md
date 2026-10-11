@@ -23,6 +23,14 @@ The generated stable-ID validators delegate to this ordinary checked function;
 helper identity grants no compiler authority. This additive kernel's owning
 executable qualification is pending.
 
+The ordinary `utf8_end` scan advances present ASCII bytes with one checked
+read, including NUL and controls; non-ASCII and absent reads retain the original
+sequence validator. Initial start clamping and earliest-fault encoding are
+unchanged. Generated UTF-8 sizing checks the quoted-length sentinel before
+scalar or total arithmetic and reuses that checked length. Frozen original scan
+and sizing differential definitions await grouped executable qualification;
+this does not change JSON grammar, limits or the maximum-shape fuel ceiling.
+
 ## Validation and result
 
 The package has the `useful-data.v1` profile and depends on bundled

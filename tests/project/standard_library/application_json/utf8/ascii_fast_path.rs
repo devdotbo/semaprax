@@ -18,12 +18,20 @@ use function @id("std.data.json.utf8.sequence_end") from std.data.json.utf8 as j
 use function @id("std.data.json.utf8.utf8_end") from std.data.json.utf8 as ju_raw_utf8_end;
 use function @id("std.data.json.utf8.bounded_valid") from std.data.json.utf8 as shared_valid;
 use function @id("std.data.json.utf8.quoted_len") from std.data.json.utf8 as shared_quoted;
+use function @id("std.data.json.digits.i64_len") from std.data.json.digits as legacy_i64_len;
 "#,
     );
     app.push_str(include_str!("ascii_legacy_validator.txt"));
+    app.push_str(include_str!("utf8_end_legacy.txt"));
     app.push_str(include_str!("quoted_legacy_kernels.txt"));
+    app.push_str(include_str!("encoded_len_legacy.txt"));
     app.push_str(
         r#"
+@id("consumer.compare_raw_utf8") fn compare_raw_utf8(input:borrow Slice<u8>,start:usize,wanted:usize)->i64 {
+ let old=legacy_utf8_end(input,start);
+ let current=ju_raw_utf8_end(input,start);
+ if current==old && current==wanted {0} else {1}
+}
 @id("consumer.compare") fn compare(input:borrow Slice<u8>,start:usize,end:usize,wanted:bool)->i64 {
  let old=json_Legacy_identifier_valid(input,start,end);
  let current=optimized(input,start,end);
@@ -31,11 +39,16 @@ use function @id("std.data.json.utf8.quoted_len") from std.data.json.utf8 as sha
 }
 @id("consumer.compare_owned") fn compare_owned(text:borrow str,wanted:bool)->i64 {
  let bytes=str_as_bytes(text);
- let old=byte_len(bytes)<=64usize && ju_raw_utf8_end(bytes,0usize)==byte_len(bytes);
+ let old=byte_len(bytes)<=64usize && legacy_utf8_end(bytes,0usize)==byte_len(bytes);
  let current=optimized_owned(text);
  let previous_length=json_Legacy_utf8_quoted_len(text);
  let current_length=optimized_quoted(text);
- if current==old && current==wanted && current_length==previous_length {0} else {1}
+ let words=vec_push<string>(vec_with_capacity<string>(1usize),string_from_str(text));
+ let rows=vec_push<Row>(vec_with_capacity<Row>(1usize),Row{number:-9223372036854775808,text:string_from_str(text)});
+ let old_size=legacy_encoded_len(words,rows);
+ let new_size=encoded_len(words,rows);
+ let wanted_size=if wanted{62usize+previous_length+previous_length}else{18446744073709551615usize};
+ if current==old && current==wanted && current_length==previous_length && old_size==new_size && new_size==wanted_size {0} else {1}
 }
 @id("consumer.main") fn main()->i64 {
  let mut bad=0;
@@ -48,6 +61,29 @@ use function @id("std.data.json.utf8.quoted_len") from std.data.json.utf8 as sha
     // Each of the 256 original bytes also exercises the raw byte kernels.
     // High single bytes are invalid UTF-8; ASCII quote cost is independent.
     app.push_str("let mut byte_index=0usize;while byte_index<256usize{let start=byte_index*3usize+1usize;let one=byte_range(input,start,start+1usize);let valid=shared_valid(one,64usize);let quoted=shared_quoted(one,64usize);let expected=if byte_index>=128usize{18446744073709551615usize}else{2usize+(if byte_index==34usize || byte_index==92usize || byte_index==8usize || byte_index==12usize || byte_index==10usize || byte_index==13usize || byte_index==9usize{2usize}else{if byte_index<32usize{6usize}else{1usize}})};bad=bad+(if valid==(byte_index<128usize) && quoted==expected{0}else{1});byte_index=byte_index+1usize;byte_index<256usize}\n");
+    // UTF-8 includes every ASCII control/NUL; JSON-token validity is separate.
+    app.push_str("let mut raw_index=0usize;while raw_index<256usize{let start=raw_index*3usize+1usize;let one=byte_range(input,start,start+1usize);let wanted=if raw_index<128usize{1usize}else{2usize};bad=bad+compare_raw_utf8(one,0usize,wanted);bad=bad+compare_raw_utf8(one,1usize,1usize);bad=bad+compare_raw_utf8(one,18446744073709551615usize,1usize);raw_index=raw_index+1usize;raw_index<256usize}\n");
+    let raw_cases: &[(&[u8], usize, usize)] = &[
+        (b"", 0, 0),
+        (b"", usize::MAX, 0),
+        (b"A\0\x7f", 0, 3),
+        (b"A\0\x7f", 1, 3),
+        ("é😀".as_bytes(), 0, 6),
+        ("é😀".as_bytes(), 2, 6),
+        ("é😀".as_bytes(), 1, 8),
+        ("é😀".as_bytes(), usize::MAX, 6),
+        (b"A\xe2\x82", 0, 5),
+        (b"A\xe2\x82", 2, 6),
+        (b"\xc0\xaf", 0, 3),
+        (b"\xed\xa0\x80", 0, 4),
+        (b"\xf4\x90\x80\x80", 0, 5),
+        (b"A\x80B", 0, 5),
+        (b"A\x80B", 2, 3),
+        (b"A\x80B", 4, 3),
+    ];
+    for (i, (bytes, start, wanted)) in raw_cases.iter().enumerate() {
+        app.push_str(&format!("let raw_utf8_{i}={};bad=bad+compare_raw_utf8(array_as_slice(raw_utf8_{i}),{start}usize,{wanted}usize);\n",array(bytes)));
+    }
     app.push_str("bad=bad+(if !shared_valid(input,18446744073709551615usize) && shared_quoted(input,65usize)==18446744073709551615usize{0}else{1});\n");
     app.push_str("bad=bad+compare(input,0usize,0usize,false);bad=bad+compare(input,768usize,769usize,false);bad=bad+compare(input,0usize,769usize,false);\n");
     app.push_str("bad=bad+compare(input,18446744073709551615usize,18446744073709551615usize,false);bad=bad+compare(input,0usize,18446744073709551615usize,false);\n");

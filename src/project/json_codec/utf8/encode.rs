@@ -12,15 +12,18 @@ pub(super) fn source(
     let row_id = &row.stable_id;
     let key = &string.name;
     let fs = fields(row);
-    let mut out = format!("@id(\"{row_id}.json.utf8.owned-row-len\")
+    let mut out = format!(
+        "@id(\"{row_id}.json.utf8.owned-row-len\")
 fn json_{row_name}_owned_row_len(value:borrow {row_name})->usize {{
-if !json_{row_name}_owned_valid(string_as_str(value.{key})) {{18446744073709551615usize}} else {{\n");
+let quoted=json_{row_name}_utf8_quoted_len(string_as_str(value.{key}));
+if quoted==18446744073709551615usize {{18446744073709551615usize}} else {{\n"
+    );
     let punctuation = 2 + fs.iter().map(|f| f.name.len() + 3).sum::<usize>() + fs.len() - 1;
     write!(out, "{punctuation}usize").unwrap();
     for field in fs {
         let value = format!("value.{}", field.name);
         let length = match field.ty {
-            Type::String => format!("json_{row_name}_utf8_quoted_len(string_as_str({value}))"),
+            Type::String => "quoted".to_owned(),
             Type::Bool => format!("if {value}{{4usize}}else{{5usize}}"),
             Type::Usize => format!("jv_usize_len({value})"),
             Type::U8 => format!("usize_from_i64(jv_i64_len(i64_from_u8({value})))"),
@@ -71,8 +74,8 @@ let count=vec_len<string>(words);let row_count=vec_len<{row_name}>(rows);
 let mut valid=count<=8usize && row_count<=256usize;
 let mut total={punctuation}usize;let mut index=0usize;
 while valid && index<count {{
-let word=vec_clone_at<string>(words,index);valid=json_{row_name}_owned_valid(string_as_str(word));
-let _ = if valid {{total=total+json_{row_name}_utf8_quoted_len(string_as_str(word))+(if index>0usize{{1usize}}else{{0usize}});true}}else{{false}};
+let word=vec_clone_at<string>(words,index);let quoted=json_{row_name}_utf8_quoted_len(string_as_str(word));valid=quoted!=18446744073709551615usize;
+let _ = if valid {{total=total+quoted+(if index>0usize{{1usize}}else{{0usize}});true}}else{{false}};
 index=index+1usize;valid && index<count
 }}
 let mut at=0usize;
