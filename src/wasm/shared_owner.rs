@@ -33,6 +33,8 @@
 
 /// Private authority domain; distinct from every public token table.
 pub(in crate::wasm) const DOMAIN: &str = "semaprax.private.wasm-shared-byte-owner.v1";
+/// Private guest encoding; normalized at the paired source entry only.
+pub(in crate::wasm) const PARTITION_GUEST_STATUS_BASE: u32 = 0x7000;
 /// Partition status domain and codes, in refusal precedence order.
 pub(in crate::wasm) const PARTITION_STATUS_DOMAIN: &str =
     crate::construction_fusion::partition::operation::STATUS_DOMAIN;

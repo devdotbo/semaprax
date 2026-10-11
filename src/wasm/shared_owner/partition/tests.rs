@@ -51,10 +51,32 @@ fn actual_partition_failure_codes_keep_owner_live_until_canonical_cleanup_and_re
     ] {
         let module = emitted(&source);
         if node_available() {
-            let expected = format!("status:{}", 0x7000 + code);
-            let directory = stage(&[("ordinary.mjs", ORDINARY.as_bytes()), ("app.wasm", module.bytes())]);
-            assert!(run_node(&directory, "ordinary.mjs", &["app.wasm", &expected, "plain"])
-                .contains("shared-owner-ordinary-ok"));
+            let entry = module.entry_source();
+            let directory = stage(&[("entry.mjs", entry.as_bytes()), ("entry-test.mjs", ENTRY_TEST.as_bytes())]);
+            assert!(run_node(&directory, "entry-test.mjs", &[&code.to_string()])
+                .contains("partition-entry-ok"));
         }
     }
 }
+
+// Same four invocations per case; one actual paired installer, no witness ticket.
+const ENTRY_TEST: &str = r#"import { install } from './entry.mjs';
+const code = Number(process.argv[2]);
+const metadata = 16384*6 + 8192*22 + 32*11 + 32*8;
+const entry = await install(metadata + 65536);
+for (let run=0; run<4; run+=1) {
+ const outcome = entry.invoke();
+ if (JSON.stringify(outcome) !== JSON.stringify({outcome:'language_failure',status:{domain:'semaprax.byte-partition.v1',code}})) throw new Error(JSON.stringify(outcome));
+ if ('result' in outcome || 'reason' in outcome) throw new Error('failure published extra result');
+ const account = entry.account();
+ if (account.reserved !== metadata || account.peak !== metadata+65536) throw new Error(JSON.stringify(account));
+}
+let rejected=false;
+try { await install({module:new Uint8Array(),managedBytes:metadata+65536}); } catch { rejected=true; }
+if (!rejected) throw new Error('caller module accepted');
+const short = await install(metadata+65535);
+const refused = short.invoke();
+if (refused.outcome !== 'administrative_refusal' || 'status' in refused || 'result' in refused) throw new Error(JSON.stringify(refused));
+if (short.account().reserved !== metadata || short.invoke().reason !== 'private entry is poisoned') throw new Error('short account reused');
+console.log('partition-entry-ok');
+"#;
