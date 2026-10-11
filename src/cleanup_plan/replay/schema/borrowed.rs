@@ -3,6 +3,7 @@
 use super::*;
 use crate::hir::{OwnershipMode, ResolvedStatement};
 mod decision;
+mod operands;
 const DEPTH: usize = 514;
 type Frame<'a> = Option<(crate::hir::lexical_exit::ChildCursor<'a>, bool)>;
 
@@ -152,7 +153,7 @@ fn call(
     args: &[ResolvedExpr],
     budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
-    if crate::hir::borrowed_scalar::builtin(callee.as_str()) {
+    if operands::builtin(function, callee.as_str(), budget)?.is_some() {
         return Ok(());
     }
     let mut target = None;
@@ -266,13 +267,7 @@ pub(in crate::cleanup_plan::replay) fn build<'a>(
                     return Err(fail(function));
                 }
                 if !matches!(expression.kind, ResolvedExprKind::Match { .. })
-                    && !crate::hir::borrowed_scalar::expression(
-                        function,
-                        expression,
-                        &mut |units| {
-                            budget.charge(function, units, "borrowed helper rooted operand")
-                        },
-                    )?
+                    && !operands::expression(function, expression, budget)?
                 {
                     return Err(fail(function));
                 }

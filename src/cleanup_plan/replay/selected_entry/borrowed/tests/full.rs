@@ -36,20 +36,48 @@ fn run(
 
 #[test]
 fn actual_option_helpers_full_replay_matches_ordinary_and_metering_through_drop() {
-    let program = program();
-    for function in &program.functions[..2] {
-        validate_structure(&program, function).unwrap();
+    fn source_pair(
+        module: &str,
+        source: &str,
+        first: &str,
+        next: &str,
+    ) -> crate::hir::ResolvedProgram {
+        let start = source.find(first).unwrap();
+        let end = source.find(next).unwrap();
+        let selected = format!(
+            "module {module};\n{}\n@id(\"main\") fn main()->i64 {{0}}",
+            &source[start..end]
+        );
+        crate::hir::resolve(&crate::check(&selected, "actual-borrowed-full-replay.spx").unwrap())
+            .unwrap()
     }
-    let (wide, allocation) = run(&program, MAX_REPLAY_WORK_UNITS, 1 << 24);
-    let (work, bytes) = wide.unwrap();
-    assert!(!allocation.invalid && allocation.live == 0 && allocation.allocated <= bytes);
-    let (exact, allocation) = run(&program, work, bytes);
-    assert_eq!(exact.unwrap(), (work, bytes));
-    assert!(!allocation.invalid && allocation.live == 0 && allocation.allocated <= bytes);
-    for (work, bytes) in [(work - 1, bytes), (work, bytes - 1)] {
-        let (answer, allocation) = run(&program, work, bytes);
-        assert!(answer.is_err());
-        assert!(!allocation.invalid && allocation.live == 0);
+    let lines = source_pair(
+        "std.io.lines",
+        include_str!("../../../../../../std/io-lines/src/lines.spx"),
+        "@id(\"std.io.lines.line-end\")",
+        "@id(\"std.io.lines.line-content-len\")",
+    );
+    let conversion = source_pair(
+        "std.data.json.utf8",
+        include_str!("../../../../../../std/data-json-utf8/src/utf8.spx"),
+        "@id(\"std.data.json.utf8.offset_at\")",
+        "@id(\"std.data.json.utf8.sequence_kind\")",
+    );
+    for program in [program(), lines, conversion] {
+        for function in &program.functions[..2] {
+            validate_structure(&program, function).unwrap();
+        }
+        let (wide, allocation) = run(&program, MAX_REPLAY_WORK_UNITS, 1 << 24);
+        let (work, bytes) = wide.unwrap();
+        assert!(!allocation.invalid && allocation.live == 0 && allocation.allocated <= bytes);
+        let (exact, allocation) = run(&program, work, bytes);
+        assert_eq!(exact.unwrap(), (work, bytes));
+        assert!(!allocation.invalid && allocation.live == 0 && allocation.allocated <= bytes);
+        for (work, bytes) in [(work - 1, bytes), (work, bytes - 1)] {
+            let (answer, allocation) = run(&program, work, bytes);
+            assert!(answer.is_err());
+            assert!(!allocation.invalid && allocation.live == 0);
+        }
     }
 }
 
