@@ -372,3 +372,9 @@ These private receiving operations are not an ordinary vec_pop declaration or
 a language IterStep constructor. Actual Value dispatch, current source/root
 binding, canonical call/result handoff and language iterator publication still
 require the sealed entry join. The authored controls are unexecuted.
+
+The private funding upper also includes the exact flat container and iterator
+headers per partition. Its eventual installer must prove at most one consuming
+iterator transition per partition, as well as one consuming partition per whole
+backing event. Additional container construction cannot reuse that header debit.
+The bound still grants no host funding or source authority.

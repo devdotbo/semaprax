@@ -121,7 +121,10 @@ impl Runtime for Handle<'_, '_> {
 }
 /// Maximum requests for one joined invocation: at most one consuming partition
 /// per ordinary backing event, unchanged child/loan bounds, and full geometric
-/// registry replacement overlap. No fabricated byte ceiling is introduced.
+/// registry replacement overlap. One flat container and its single consuming
+/// iterator transition are included per partition; the installed callgraph must
+/// prove this bound, not reuse these charges for additional container builds.
+/// No fabricated byte ceiling is introduced.
 /// The eventual factory must prove whole-backing identity/one-time consumption;
 /// this computation alone cannot grant that authority.
 pub(crate) fn upper(capacity: &LoanCapacity<'_>) -> Result<usize, Refusal> {
@@ -156,6 +159,8 @@ pub(crate) fn upper(capacity: &LoanCapacity<'_>) -> Result<usize, Refusal> {
             .map_err(|_| Refusal::Metadata)?
             .size())?;
         add(Layout::new::<Vec<Owner>>().size())?;
+        add(Layout::new::<super::flat::PartitionVec>().size())?;
+        add(Layout::new::<super::flat::PartitionIterator>().size())?;
     }
     add(crate::byte_data_capacity::MAX_OWNED_BYTE_PAYLOAD_BYTES as usize)?;
     Ok(total)
