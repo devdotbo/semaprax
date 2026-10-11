@@ -1,5 +1,45 @@
-//! Private executable runtime precursor; no source/admission/emission selector.
-//! The C owning probe supplies metadata and allocator authority explicitly.
+//! Private selected FusedConstructionV1 native lowering and runtime.
+//!
+//! The production-shaped route is [`emit_validated`], the explicit accepting
+//! API for the full validated selected owner ([`ValidatedOwner`]). No type in
+//! this tree implements it yet, so the receiver has no production caller.
+//! The old `construction_fusion` descriptor reaches the same lowering only
+//! through the test-only UNVALIDATED precursor, which carries no artifact
+//! authority. No default emitter, manifest, name, cached flag or graph fact
+//! selects either route, and the original 4096-row program still refuses in
+//! ordinary source verification; nothing here supports it.
+use crate::diagnostic::Diagnostic;
+mod cleanup;
+mod crossing;
+mod emit;
+mod layout;
+mod lower;
+#[cfg(test)]
+mod precursor;
+mod selection;
+#[cfg(test)]
+mod tests;
+
+#[cfg_attr(
+    not(test),
+    allow(unused_imports, reason = "receiving entry has no production caller")
+)]
+pub(crate) use emit::{emit_validated, Artifact, ENTRY};
+#[cfg_attr(
+    not(test),
+    allow(unused_imports, reason = "receiving entry has no production caller")
+)]
+pub(crate) use selection::{CarrierFacts, ValidatedOwner};
+pub(super) const RUNTIME: &str = include_str!("selected_fused_row/runtime.c");
+
+fn error(message: &str) -> Diagnostic {
+    Diagnostic::io(
+        "SPX-B104",
+        format!("selected fused-row profile: {message}"),
+    )
+}
+
+#[cfg(test)]
 #[test]
 fn private_domain_affine_leases_fault_cleanup_and_reentry_at_o0_o2() {
     use std::process::Command;
@@ -16,7 +56,8 @@ fn private_domain_affine_leases_fault_cleanup_and_reentry_at_o0_o2() {
     std::fs::write(
         &source,
         format!(
-            "{}\n{}",
+            "{}\n{}\n{}",
+            include_str!("selected_fused_row/probe_prefix.c"),
             include_str!("selected_fused_row/runtime.c"),
             include_str!("selected_fused_row/probe.c")
         ),

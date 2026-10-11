@@ -1,5 +1,28 @@
 //! Ordinary native emission, plus a sealed selected closure view.
 use super::*;
+/// Ordinary prelude only, for the private selected fused-row unit. Full HIR
+/// validation runs first; no function, entry wrapper or public carrier is emitted.
+#[cfg_attr(
+    not(test),
+    allow(dead_code, reason = "private fused-row receiving entry has no production caller")
+)]
+pub(in crate::codegen) fn emit_selected_fused_row_prelude(
+    program: &ResolvedProgram,
+) -> Result<String, Diagnostic> {
+    hir::validate(program)?;
+    let resource_abi = native_resource::build_resource_abi(program)?;
+    if !resource_abi.resources.is_empty() {
+        return Err(resource_lowering_gate());
+    }
+    let mut output = crate::bounded_output::CappedString::new();
+    emit_native_prelude_profile(
+        &mut output,
+        &resource_abi,
+        program,
+        NativeOutputProfile::Legacy.string_runtime(),
+    );
+    Ok(output.into_string())
+}
 pub(super) fn emit_hir_c_with_options(
     program: &ResolvedProgram,
     contract_labels: &HashMap<ExpressionId, String>,

@@ -61,7 +61,11 @@ mod native_source_resource_command;
 mod native_stdin_stream;
 /// Explicit native-only closed final-constructor/retained-release profile.
 pub mod selected_final_utf8;
-#[cfg(test)]
+/// Private FusedConstructionV1 receiving entry; no default route selects it.
+#[cfg_attr(
+    not(test),
+    allow(dead_code, reason = "private fused-row receiving entry has no production caller")
+)]
 mod selected_fused_row;
 pub use native_stdin_stream::{
     emit_hir_c_with_stdin_stream, emit_hir_c_with_stdin_stream_collection_records,
