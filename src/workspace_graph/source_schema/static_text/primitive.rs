@@ -155,41 +155,59 @@ pub(in crate::workspace_graph::source_schema) fn replay(
         .reserve_array::<Context<'_>>(anchor, 1, "retained lexical context")
         .map_err(|_| fail())?;
     let context = helpers::local::authenticate(module, facts, &mut preparation, anchor)?;
+    preparation
+        .reserve_array::<&ResolvedFunction>(
+            anchor,
+            module.functions.len(),
+            "retained lexical member references",
+        )
+        .map_err(|_| fail())?;
+    let mut lexical = Vec::with_capacity(module.functions.len());
+    if lexical.capacity() != module.functions.len() {
+        preparation.fail();
+        return Err(fail());
+    }
+    for function in &module.functions {
+        if helpers::local::requires(function, &mut preparation, anchor)? {
+            preparation
+                .charge(anchor, 1, "retained lexical member insertion")
+                .map_err(|_| fail())?;
+            lexical.push(function);
+        }
+    }
     let mut session =
         crate::cleanup_plan::SelectedReplaySession::from_preparation(&context, anchor, preparation)
             .map_err(|_| fail())?;
     let mut found = false;
-    for function in &module.functions {
-        if crate::hir::lexical_exit::requires(function).map_err(|error| vec![error])? {
-            session.validate(function).map_err(|error| {
-                let errors = fail();
-                // Keep the public retained-source diagnostic stable. Owning
-                // tests must distinguish its independently replayed cause from
-                // a literal-site/namespace mismatch before proposing a repair.
-                #[cfg(test)]
-                let errors: Vec<_> = errors
-                    .into_iter()
-                    .map(|diagnostic| {
-                        let prefix = error.message.get(..error.message.len().min(512));
-                        let detail = prefix.unwrap_or_else(|| {
-                            let mut end = error.message.len().min(512);
-                            while !error.message.is_char_boundary(end) {
-                                end -= 1;
-                            }
-                            &error.message[..end]
-                        });
-                        diagnostic.with_help(format!(
-                            "independent primitive lexical replay for `{}`: {}: {}",
-                            function.id, error.code, detail
-                        ))
-                    })
-                    .collect();
-                #[cfg(not(test))]
-                let _ = error;
-                errors
-            })?;
-            found = true;
-        }
+    for function in lexical {
+        session.validate(function).map_err(|error| {
+            let errors = fail();
+            // Keep the public retained-source diagnostic stable. Owning
+            // tests must distinguish its independently replayed cause from
+            // a literal-site/namespace mismatch before proposing a repair.
+            #[cfg(test)]
+            let errors: Vec<_> = errors
+                .into_iter()
+                .map(|diagnostic| {
+                    let prefix = error.message.get(..error.message.len().min(512));
+                    let detail = prefix.unwrap_or_else(|| {
+                        let mut end = error.message.len().min(512);
+                        while !error.message.is_char_boundary(end) {
+                            end -= 1;
+                        }
+                        &error.message[..end]
+                    });
+                    diagnostic.with_help(format!(
+                        "independent primitive lexical replay for `{}`: {}: {}",
+                        function.id, error.code, detail
+                    ))
+                })
+                .collect();
+            #[cfg(not(test))]
+            let _ = error;
+            errors
+        })?;
+        found = true;
     }
     if !found {
         return Err(fail());

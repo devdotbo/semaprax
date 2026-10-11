@@ -10,6 +10,9 @@ fn prepare<'a>(
     let anchor = module.functions.first().unwrap();
     let mut resources =
         SelectedReplayPreparation::with_limits(anchor, work, bytes).map_err(|e| vec![e])?;
+    resources
+        .reserve_array::<super::super::super::Context<'_>>(anchor, 1, "owning prepared context")
+        .map_err(|e| vec![e])?;
     let context =
         super::super::super::helpers::local::authenticate(module, facts, &mut resources, anchor)?;
     let spent = work - resources.remaining();
@@ -130,6 +133,26 @@ fn prepared_current_layout_namespace_and_signature_drift_are_independent_and_sti
     )
     .is_err());
     assert!(resources.charge(anchor, 0, "detached module").is_err());
+    let mut duplicate = build_lexical();
+    let another = build_lexical();
+    let repeated = another
+        .hir
+        .modules
+        .into_iter()
+        .find(|m| m.module == "static.flat_records")
+        .unwrap();
+    duplicate.hir.modules.push(repeated);
+    let repeated = module(&duplicate);
+    let repeated_anchor = repeated.functions.first().unwrap();
+    let mut resources =
+        SelectedReplayPreparation::with_limits(repeated_anchor, 32_000_000, usize::MAX).unwrap();
+    assert!(super::super::super::current_module(
+        repeated,
+        &duplicate.hir.modules,
+        &mut resources,
+        repeated_anchor
+    )
+    .is_err());
     let (context, _, _) = prepare(source, &build.hir.declarations, 32_000_000, usize::MAX).unwrap();
     // Attached schema is not source-signature authority; the actual borrowed
     // member universe remains independently reconstructible.

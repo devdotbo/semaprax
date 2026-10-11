@@ -162,7 +162,7 @@ fn authenticate_inner<'a>(
 }
 
 /// Same borrowed lexical classifier, with each frontier transition debited.
-pub(super) fn requires(
+pub(in crate::workspace_graph::source_schema::static_text::primitive) fn requires(
     function: &ResolvedFunction,
     resources: &mut SelectedReplayPreparation,
     anchor: &ResolvedFunction,
