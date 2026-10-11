@@ -369,6 +369,13 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                             })
                             || args.len() != operation.arity()
                         {
+                            #[cfg(test)]
+                            crate::source_verify::string_slot::trace_while_refusal(
+                                "iterative",
+                                operation,
+                                type_arguments,
+                                args,
+                            );
                             self.diagnostics.push(error(
                                 self.program,
                                 "SPX-T283",
@@ -689,5 +696,87 @@ fn record_renewal_named_view_admission_agrees_with_iterative_verifier() {
                 .collect::<Vec<_>>()
         };
         assert_eq!(key(actual_diagnostics), key(oracle_diagnostics));
+    }
+}
+
+#[cfg(test)]
+fn string_slot_loop_admission(source: &str, admitted: bool) {
+    use crate::source_verify::oracle::while_oracle::reject_while_disallowed_oracle;
+    use crate::source_verify::type_table::TypeTable;
+    use std::collections::HashMap;
+    let program = crate::parse(source, std::path::Path::new("slots-loop.spx")).unwrap();
+    let current = program
+        .functions
+        .iter()
+        .find(|f| f.name == "inspect")
+        .unwrap();
+    let functions = program
+        .functions
+        .iter()
+        .map(|f| (f.name.as_str(), f))
+        .collect();
+    let types = TypeTable::new(&program);
+    let ExprKind::Block { statements, .. } = &current.body.kind else {
+        panic!("inspect block")
+    };
+    let body = statements
+        .iter()
+        .find_map(|statement| match statement {
+            Statement::While { body, .. } => Some(body.as_ref()),
+            _ => None,
+        })
+        .unwrap();
+    let mut expected_diagnostics = Vec::new();
+    let expected = reject_while_disallowed_oracle(
+        &program,
+        body,
+        &functions,
+        &types,
+        &mut expected_diagnostics,
+    );
+    let mut actual_diagnostics = Vec::new();
+    let mut verifier = crate::source_verify::IterativeVerifier::new(
+        &program,
+        current,
+        HashMap::new(),
+        &functions,
+        &types,
+        None,
+        true,
+        &mut actual_diagnostics,
+    );
+    let actual = verifier.reject_while_disallowed(body);
+    assert_eq!(actual, expected);
+    assert_eq!(actual.is_ok(), admitted);
+    let keys = |items: Vec<crate::diagnostic::Diagnostic>| {
+        items
+            .into_iter()
+            .map(|d| (d.code, d.severity, d.message, d.path, d.span, d.help))
+            .collect::<Vec<_>>()
+    };
+    if !admitted {
+        assert!(actual_diagnostics.iter().any(|d| d.code == "SPX-T283"));
+    }
+    assert_eq!(keys(actual_diagnostics), keys(expected_diagnostics));
+}
+
+#[test]
+fn string_slot_named_root_fused_loop_source_matches_independent_oracle() {
+    let source = include_str!("../../../tests/fixtures/string-slot-views.spx");
+    crate::check(source, "slots-loop.spx").unwrap();
+    string_slot_loop_admission(source, true);
+}
+
+#[test]
+fn string_slot_explicit_types_and_computed_roots_keep_exact_loop_refusal() {
+    let source = include_str!("../../../tests/fixtures/string-slot-views.spx");
+    for replacement in [
+        "str_as_bytes(vec_str_at<string>(values,0usize))",
+        "str_as_bytes(vec_str_at({values},0usize))",
+        "str_as_bytes(vec_str_at(values))",
+    ] {
+        let changed = source.replace("str_as_bytes(vec_str_at(values,0usize))", replacement);
+        assert_ne!(changed, source);
+        string_slot_loop_admission(&changed, false);
     }
 }

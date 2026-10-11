@@ -25,3 +25,23 @@ pub(super) fn root<'a>(
         && binding.definitely_partial.is_empty())
     .then_some(held.as_str())
 }
+
+/// Failure-only test telemetry; recognized operation names are static compiler data.
+/// No operand text, values, or binding inventory is emitted.
+#[cfg(test)]
+pub(super) fn trace_while_refusal(
+    phase: &str,
+    operation: crate::vec_ops::VecOp,
+    types: &[Type],
+    args: &[Expr],
+) {
+    eprintln!(
+        "T283-operand-v1 phase={phase} name={} op={} admitted={} types={} args={} named_root={}",
+        operation.name(),
+        operation.id(),
+        operation.admitted_in_while(),
+        types.len(),
+        args.len(),
+        matches!(args.first().map(|arg| &arg.kind), Some(ExprKind::Var(_))),
+    );
+}

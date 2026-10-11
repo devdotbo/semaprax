@@ -282,6 +282,13 @@ pub(in crate::source_verify) fn reject_with_scratch(
                     })
                     || args.len() != operation.arity()
                 {
+                    #[cfg(test)]
+                    crate::source_verify::string_slot::trace_while_refusal(
+                        "oracle",
+                        operation,
+                        type_arguments,
+                        args,
+                    );
                     diagnostics.push(error(
                         program,
                         "SPX-T283",
