@@ -72,6 +72,9 @@ fn main() -> i64
   profile admits `break;`, `continue;` and ordinary `return value;` as direct
   function/loop/control-block tails; executable qualification is pending.
   Use `if skip { continue; };` or `if done { break; };` inside a loop.
+  With a valued `else`, omit the intermediate semicolon: `if skip { continue; }
+  else { 0 }` followed by the next statement or tail. Wrapping an exit guard in
+  `let _ =` crosses an initializer and remains `SPX-T312`.
   An unconditional exit ends its block: do not add a dummy tail or unreachable
   effects. Continue advances an admitted source `for` exactly once; break/continue
   target only the nearest loop (`SPX-T313` otherwise). Exit crossings through

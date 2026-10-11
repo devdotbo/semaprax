@@ -28,6 +28,7 @@ const LOOP_HELP: &str =
 const EXPRESSION_STATEMENT_HELP: &str = "a block is statements followed by exactly one final value \
                                          expression; discard an intermediate call with `let _ = …;` \
                                          or move it to the end of the block";
+const IF_STATEMENT_HELP: &str = "an intermediate `if ... else ...` has no trailing `;`; omit it before the next statement or block tail. Keep break/continue/return in statement guards, never in a `let` initializer";
 /// `println("…");` as a statement: the habit is printing, not the statement.
 const PRINT_NAMES: [&str; 6] = ["print", "println", "printf", "puts", "console_log", "echo"];
 const PRINT_HELP: &str = "there is no print routine; bind the text, then `let view = \
@@ -168,6 +169,7 @@ impl Parser {
     pub(super) fn expression_statement(&self, tail: &Expr) -> Diagnostic {
         let help = match &tail.kind {
             ExprKind::Call { name, .. } if PRINT_NAMES.contains(&name.as_str()) => PRINT_HELP,
+            ExprKind::If { .. } => IF_STATEMENT_HELP,
             _ => EXPRESSION_STATEMENT_HELP,
         };
         self.error_here("SPX-P106", "expected `}` after block")

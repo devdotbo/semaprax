@@ -156,6 +156,19 @@ fn main() -> i64
     assert_eq!(diagnostic.code, "SPX-P106");
     assert_eq!(diagnostic.message, "expected `}` after block");
     assert!(help(&diagnostic).contains("let _ = …;"), "{diagnostic}");
+    let malformed = main_body("let mut i=0;while i<2 {i=i+1;if i==1 {continue;} else {0};0} i");
+    let diagnostic = rejection(&malformed);
+    assert_eq!(diagnostic.code, "SPX-P106");
+    assert!(
+        help(&diagnostic).contains("no trailing `;`"),
+        "{diagnostic}"
+    );
+    assert!(help(&diagnostic).contains("never in a `let` initializer"));
+    admitted_lexical(
+        &malformed.replace("else {0};0", "else {0} 0"),
+        "2",
+        "valued-exit-guard",
+    );
 }
 
 #[test]
