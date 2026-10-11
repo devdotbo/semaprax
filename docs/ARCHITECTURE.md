@@ -3668,9 +3668,16 @@ a supported language, CLI, ABI, or runtime surface.
 
 `workspace_graph/owned_function_import.rs` authenticates explicit nongeneric
 record signatures over Bytes and Copy scalars. Its `text_collections` helper
-replays finite String/vector result variants and their direct element imports.
-`expected_projection/type_rewrite.rs` rewrites only authenticated compiler-owned
-Vec elements to the caller's exact imported alias, with matching cost replay.
+replays finite String/vector result variants and explicit root imports.
+`expected_projection/private_layout.rs` independently reconstructs their private
+record descendants from held provider declarations; its `names` child reserves
+fresh synthetic names against every identifier in the bounded plain-module
+caller. Copied declarations and prototypes use those names without adding source
+imports or graph edges. `expected_projection/type_rewrite.rs` rewrites exact
+compiler-owned Vec elements through the current imported/private alias closure,
+with matching clone, identity and default-cost replay. See
+[Private Nominal Layout Closure v1](PRIVATE-NOMINAL-LAYOUT-CLOSURE-V1.md); owning
+executable qualification is pending.
 Selected Project profiles still independently admit the linked HIR closure.
 `expected_projection/defaults.rs`
 precharges checking-only empty leaves; execution retains provider body and

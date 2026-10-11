@@ -11,8 +11,19 @@ pub(super) fn runtime_cost(
     programs: &[Program],
     cost: &mut StructuralCost,
 ) -> Result<(), Vec<Diagnostic>> {
-    if let Some(element) = vector_element(ty, target_module, caller, programs) {
-        return runtime_cost(element, target_module, caller, programs, cost);
+    runtime_cost_with_layout(ty, target_module, caller, programs, cost, None)
+}
+
+pub(super) fn runtime_cost_with_layout(
+    ty: &Type,
+    target_module: &str,
+    caller: &Program,
+    programs: &[Program],
+    cost: &mut StructuralCost,
+    layout: Option<&super::private_layout::LayoutClosure<'_>>,
+) -> Result<(), Vec<Diagnostic>> {
+    if let Some(element) = vector_element_with_layout(ty, target_module, caller, programs, layout) {
+        return runtime_cost_with_layout(element, target_module, caller, programs, cost, layout);
     }
     if crate::stdin_stream_ops::ast_is_reader(ty)
         || crate::map_ops::ast_collection(ty)
@@ -40,6 +51,7 @@ pub(super) fn runtime_cost(
         .iter()
         .find(|item| item.kind == ModuleUseKind::Type && item.persistent_id == target_id)
         .map(|item| item.alias.as_str())
+        .or_else(|| layout.and_then(|l| l.alias(caller, &target_id)))
         .ok_or_else(|| {
             vec![graph_error(
                 "SPX-G172",
@@ -57,11 +69,21 @@ pub(super) fn rewrite(
     caller: &Program,
     programs: &[Program],
 ) -> Result<(), Vec<Diagnostic>> {
-    if vector_element(ty, target_module, caller, programs).is_some() {
+    rewrite_with_layout(ty, target_module, caller, programs, None)
+}
+
+pub(super) fn rewrite_with_layout(
+    ty: &mut Type,
+    target_module: &str,
+    caller: &Program,
+    programs: &[Program],
+    layout: Option<&super::private_layout::LayoutClosure<'_>>,
+) -> Result<(), Vec<Diagnostic>> {
+    if vector_element_with_layout(ty, target_module, caller, programs, layout).is_some() {
         let Type::Named { arguments, .. } = ty else {
             unreachable!()
         };
-        return rewrite(&mut arguments[0], target_module, caller, programs);
+        return rewrite_with_layout(&mut arguments[0], target_module, caller, programs, layout);
     }
     if crate::stdin_stream_ops::ast_is_reader(ty)
         || crate::map_ops::ast_collection(ty)
@@ -89,6 +111,7 @@ pub(super) fn rewrite(
         .iter()
         .find(|item| item.kind == ModuleUseKind::Type && item.persistent_id == target_id)
         .map(|item| item.alias.as_str())
+        .or_else(|| layout.and_then(|l| l.alias(caller, &target_id)))
         .ok_or_else(|| {
             vec![graph_error(
                 "SPX-G172",
@@ -106,6 +129,16 @@ pub(super) fn vector_element<'a>(
     module: &str,
     caller: &Program,
     programs: &[Program],
+) -> Option<&'a Type> {
+    vector_element_with_layout(ty, module, caller, programs, None)
+}
+
+pub(super) fn vector_element_with_layout<'a>(
+    ty: &'a Type,
+    module: &str,
+    caller: &Program,
+    programs: &[Program],
+    layout: Option<&super::private_layout::LayoutClosure<'_>>,
 ) -> Option<&'a Type> {
     let Type::Named { name, arguments } = ty else {
         return None;
@@ -138,10 +171,11 @@ pub(super) fn vector_element<'a>(
         .flat_map(|program| &program.types)
         .find(|declaration| declaration.stable_id == id)?;
     (record_element(declaration)
-        && caller
+        && (caller
             .module_uses
             .iter()
-            .any(|item| item.kind == ModuleUseKind::Type && item.persistent_id == id))
+            .any(|item| item.kind == ModuleUseKind::Type && item.persistent_id == id)
+            || layout.is_some_and(|l| l.alias(caller, &id).is_some())))
     .then_some(element)
 }
 

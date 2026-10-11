@@ -22,16 +22,50 @@ pub(super) fn default_expr_expanded_cost(
     visiting: &mut BTreeSet<String>,
     allow_owned: bool,
 ) -> Result<ExpandedDefaultCost, Vec<Diagnostic>> {
+    default_expr_expanded_cost_with_layout(
+        ty,
+        module,
+        caller,
+        authored,
+        programs,
+        memo,
+        visiting,
+        allow_owned,
+        None,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(super) fn default_expr_expanded_cost_with_layout(
+    ty: &Type,
+    module: &str,
+    caller: &Program,
+    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+    programs: &[Program],
+    memo: &mut [BTreeMap<String, ExpandedDefaultCost>; 2],
+    visiting: &mut BTreeSet<String>,
+    allow_owned: bool,
+    layout: Option<&super::private_layout::LayoutClosure<'_>>,
+) -> Result<ExpandedDefaultCost, Vec<Diagnostic>> {
     match ty {
         Type::Never => Err(vec![graph_error(
             "SPX-G172",
             "compiler-only completion marker has no default value",
         )]),
         ty if allow_owned
-            && super::type_rewrite::vector_element(ty, module, caller, programs).is_some() =>
+            && super::type_rewrite::vector_element_with_layout(
+                ty, module, caller, programs, layout,
+            )
+            .is_some() =>
         {
             let mut rewritten = ty.clone();
-            super::type_rewrite::rewrite(&mut rewritten, module, caller, programs)?;
+            super::type_rewrite::rewrite_with_layout(
+                &mut rewritten,
+                module,
+                caller,
+                programs,
+                layout,
+            )?;
             let Type::Named { arguments, .. } = rewritten else {
                 unreachable!()
             };
@@ -130,6 +164,7 @@ pub(super) fn default_expr_expanded_cost(
                 .iter()
                 .find(|item| item.kind == ModuleUseKind::Type && item.persistent_id == target_id)
                 .map(|item| item.alias.as_str())
+                .or_else(|| layout.and_then(|l| l.alias(caller, &target_id)))
                 .ok_or_else(|| {
                     vec![graph_error(
                         "SPX-G173",
@@ -145,7 +180,7 @@ pub(super) fn default_expr_expanded_cost(
                     for field in fields {
                         cost.add(std::mem::size_of::<FieldInitializer>())?;
                         cost.string(&field.name)?;
-                        let nested = default_expr_expanded_cost(
+                        let nested = default_expr_expanded_cost_with_layout(
                             &field.ty,
                             target.module,
                             caller,
@@ -154,6 +189,7 @@ pub(super) fn default_expr_expanded_cost(
                             memo,
                             visiting,
                             allow_owned,
+                            layout,
                         )?;
                         cost.add_split(nested.bytes, nested.string_bytes)?;
                         cost.add_identity_carriers(nested.identity_carriers)?;
@@ -169,7 +205,7 @@ pub(super) fn default_expr_expanded_cost(
                     for field in fields {
                         cost.add(std::mem::size_of::<FieldInitializer>())?;
                         cost.string(&field.name)?;
-                        let nested = default_expr_expanded_cost(
+                        let nested = default_expr_expanded_cost_with_layout(
                             &field.ty,
                             target.module,
                             caller,
@@ -178,6 +214,7 @@ pub(super) fn default_expr_expanded_cost(
                             memo,
                             visiting,
                             allow_owned,
+                            layout,
                         )?;
                         cost.add_split(nested.bytes, nested.string_bytes)?;
                         cost.add_identity_carriers(nested.identity_carriers)?;
@@ -198,7 +235,7 @@ pub(super) fn default_expr_expanded_cost(
                     for field in &case.fields {
                         cost.add(std::mem::size_of::<FieldInitializer>())?;
                         cost.string(&field.name)?;
-                        let nested = default_expr_expanded_cost(
+                        let nested = default_expr_expanded_cost_with_layout(
                             &field.ty,
                             target.module,
                             caller,
@@ -207,6 +244,7 @@ pub(super) fn default_expr_expanded_cost(
                             memo,
                             visiting,
                             allow_owned,
+                            layout,
                         )?;
                         cost.add_split(nested.bytes, nested.string_bytes)?;
                         cost.add_identity_carriers(nested.identity_carriers)?;

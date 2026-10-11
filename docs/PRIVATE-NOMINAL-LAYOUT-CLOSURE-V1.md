@@ -1,0 +1,95 @@
+# Private Nominal Layout Closure v1
+
+Status: implementation and owning regression definitions authored; owning executable qualification is pending.
+
+Audience: internal library authors, compiler contributors, and reviewers.
+
+An ordinary checked library caller may import an explicit nongeneric root type
+and a function whose signature uses that root without importing every private
+record reached through its layout. For example, an explicitly imported `Decoded`
+result can carry `Report`, containing `Config` and `Vec<Row>`, while source names
+only `Decoded` and its cases. This is internal layout reconstruction, not a new
+source import, public descriptor, capability, graph edge, or lifetime grant.
+
+## Authority and visibility
+
+The current source-authenticated provider supplies each persistent declaration,
+case, and field identity. Root signature names still require their explicit
+ordinary type imports. Descendants must independently satisfy the existing
+resource-free, invariant-free, nongeneric record shape, cycle, depth,
+field, owned-leaf, and exact compiler-Vec checks. A nested variant, resource,
+generic descendant, borrowed leaf, altered Vec identity, or unsupported record
+vector element remains refused. Existing 64-depth, 4096-field, 256-owned-leaf,
+vector, and builder-byte limits remain unchanged. Inferred roots in this MVP are
+records or the exact two-case record-payload plus scalar code/offset/field
+refusal outcome. Other outcome payload families retain their existing explicit
+import route.
+
+One invocation-local borrowed closure resolves only descendants reached through
+an admitted explicit root. It prefers an existing explicit alias. Otherwise it
+mints a normal source identifier fresh against all authored identifiers in the
+caller: imports, declarations, parameters and generic parameters, all type
+references, local bindings and reads, constructor and field names, match and
+nested record patterns, closures, and traversal aliases/indices. The MVP census
+covers plain record/variant/function modules. Interfaces, classes, resources,
+protocols, implementations, sessions, Agent declarations, and session-following
+functions refuse inferred private layouts until their full name census is
+implemented. Their existing explicit-import route is unchanged.
+
+The new names are used only in copied synthetic declarations, field types,
+function prototypes, and checking-only defaults. Authored AST and `module_uses`
+are never rewritten. An unimported authored `Report` annotation, `Config`
+constructor, or child pattern remains unresolved; a local declaration with that
+name cannot capture the provider's child. No lexer or `SPX-S106` exception
+recognizes a private prefix. Original graph import/reference edges remain
+source-derived and contain no invented child import.
+
+## Storage and replay
+
+The borrowed provider references remain tied to the held immutable source set.
+A bounded two-pass traversal reserves its real frame backing before allocation;
+its single shared work budget covers both passes. The private entry directory
+reserves its exact requested capacity, and each private name reserves complete
+String capacity before writing. The identifier census uses precharged fixed
+expression/type/pattern frame vectors and one shared work counter. It does not
+serialize a whole Program or recursively format Debug output. Existing complete
+provider-import sets bypass private-name and directory construction. If the
+optional absence scan exhausts its bounded work, inference is disabled before
+creating any aliases or directory; ordinary explicit-import validation still
+runs and missing descendant aliases remain refused.
+
+Synthetic clone forecasts include every copied private declaration, its field
+and case metadata, string backing, identities, and rewritten aliases/defaults.
+A growing synthetic type directory reserves the full replacement while the
+previous directory is live. Private monomorphic field rewriting borrows field
+types directly and does not build temporary field-reference vectors.
+
+Each fresh build and source/cache comparison reconstructs the closure from its
+current authenticated caller and providers. A stored private alias or closure
+set is not authority. Actual provider bodies remain the linked implementation;
+checking-only defaults cannot replace them. Existing independent HIR layout,
+loan, cleanup, source-fact, cache, and selected-target validation remains required.
+This does not widen public Project/package ABI admission or frozen source-less
+`from_parts` authority.
+
+## Owning definitions and qualification
+
+`workspace_graph::expected_projection::private_layout::tests::` defines four
+owning bodies: omitted private descendants with real provider evaluation and
+exact Vec facts; full name hygiene and source visibility; provider identity,
+layout and body drift; exact/one-short frame, directory and String reservations.
+The original owned-function outcome gate retains complete HIR validation and
+forged Vec-parameter refusal while checking descendant omission. The existing
+text-collection hostile shapes remain refused. The workspace source-boundary
+gate joins the new implementation and test children.
+
+These definitions have not been executed for this tranche. No current-head
+interpreter/native/Wasm, cache, benchmark, source-size saving, or matrix promotion
+is established by this document. The owning grouped qualification must run the
+new bodies, existing imported-library and cache/replay controls, and selected
+Project/backend gates before a support claim.
+
+Related contracts: [Project v32 Nested-Outcome Command v1](PROJECT-V32-NESTED-OUTCOME-COMMAND-V1.md),
+[Workspace Semantic Graph v1](WORKSPACE-SEMANTIC-GRAPH-V1.md),
+[Semantic Kernel v1](SEMANTIC-KERNEL-V1.md), and
+[Architecture](ARCHITECTURE.md#internal-owned-data-libraries).

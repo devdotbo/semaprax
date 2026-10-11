@@ -362,7 +362,9 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
                 include_str!("../../src/workspace_graph/source_schema.rs"),
                 include_str!("../../src/workspace_graph/source_schema/static_text.rs"),
                 include_str!("../../src/workspace_graph/source_schema/static_text/primitive.rs"),
-                include_str!("../../src/workspace_graph/source_schema/static_text/primitive/records.rs"),
+                include_str!(
+                    "../../src/workspace_graph/source_schema/static_text/primitive/records.rs"
+                ),
                 "\n",
                 include_str!("../../src/workspace_graph/source_schema/byte_helper.rs"),
                 "\n",
@@ -459,8 +461,14 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
         include_str!("../../src/workspace_graph/expected_projection/uncached_peak.rs");
     let projection_type_rewrite =
         include_str!("../../src/workspace_graph/expected_projection/type_rewrite.rs");
+    let projection_private_layout = concat!(
+        include_str!("../../src/workspace_graph/expected_projection/private_layout.rs"),
+        include_str!("../../src/workspace_graph/expected_projection/private_layout/names.rs"),
+        include_str!("../../src/workspace_graph/expected_projection/private_layout/shape.rs"),
+        include_str!("../../src/workspace_graph/expected_projection/private_layout/tests.rs"),
+    );
     let projection = format!(
-        "{projection_type_rewrite}\n{projection_import_stub}\n{projection_uncached_peak}\n{projection_root}\n{projection_local_identity}\n{projection_call_identity}\n{projection_call_sites}\n{projection_cost}\n{projection_declaration_cost}\n{projection_identity_slots}\n{projection_statement_segment}\n{projection_defaults}"
+        "{projection_private_layout}\n{projection_type_rewrite}\n{projection_import_stub}\n{projection_uncached_peak}\n{projection_root}\n{projection_local_identity}\n{projection_call_identity}\n{projection_call_sites}\n{projection_cost}\n{projection_declaration_cost}\n{projection_identity_slots}\n{projection_statement_segment}\n{projection_defaults}"
     );
 
     assert!(root.contains("mod expected_projection;"));
@@ -470,7 +478,9 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
         // These helpers are deliberately visible only inside workspace_graph;
         // the exact list prevents the analysis facade from growing silently.
         "pub(super) mod cost;",
+        "pub(super) mod private_layout;",
         "pub(super) mod statement_segment;",
+        "pub(super) mod type_rewrite;",
         "pub(super) mod uncached_peak;",
         "pub(super) fn byte_writer_import_authorized<'a>(",
         "pub(super) use uncached_peak::{",

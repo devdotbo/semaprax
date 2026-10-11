@@ -431,6 +431,7 @@ Audience: all documentation readers.
 - [Project v23: Native Streaming Standard Input](PROJECT-V23-STDIN-STREAM-V1.md)
 - [Project v31: Collection-Record Command v1](PROJECT-V31-COLLECTION-RECORD-COMMAND-V1.md)
 - [Project v32: Nested-Outcome Command v1](PROJECT-V32-NESTED-OUTCOME-COMMAND-V1.md)
+- [Private Nominal Layout Closure v1](PRIVATE-NOMINAL-LAYOUT-CLOSURE-V1.md)
 - [Draft: Bounded Streaming Standard Input](DRAFT-STDIN-STREAM-V1.md)
 - [Bounded Language Network I/O](BOUNDED-LANGUAGE-NETWORK-IO-V1.md)
 - [Bounded Network Services](BOUNDED-NETWORK-SERVICES-V1.md)

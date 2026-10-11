@@ -1483,8 +1483,8 @@ No capability, profile, decoder or business-data mapping is generated. See
 
 Choose `author:collection-records` for v31 `Report { rows: Vec<Row> }` data;
 choose `author:nested-outcomes` for v32 typed nested success/error carriers.
-Import every directly named signature type, including the outcome and nested
-payload records (SPX-G172); matching generated names grant no nominal authority.
+Import explicit signature roots (SPX-G172). [Private record layouts](PRIVATE-NOMINAL-LAYOUT-CLOSURE-V1.md)
+may be inferred; authored child names still need imports.
 A projected variant is not a record root: bind its payload with `match own`
 first. Keep each match-arm comma **inside** its closing brace. Owning aggregate
 match results require their independently admitted finite collection outcome;

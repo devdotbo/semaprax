@@ -59,7 +59,8 @@ pub(super) fn record_import(
     shape(target.module, &ty, caller, authored, programs).is_some()
 }
 
-// Re-derive a bounded explicit record closure, including each exposed type import.
+// Re-derive a bounded record closure. Only its root is source-visible; descendants
+// remain private layouts and are copied under independently fresh synthetic names.
 // The boolean distinguishes owners from Copy records; no generic substitution occurs.
 fn shape<'a>(
     module: &'a str,
@@ -80,8 +81,8 @@ fn shape<'a>(
     let mut outcome = false;
     while let Some(frame) = pending.pop() {
         match frame {
-            Frame::Enter(module, ty, _)
-                if vector(module, ty, caller, authored, programs)
+            Frame::Enter(module, ty, depth)
+                if vector(module, ty, caller, authored, programs, depth > 1)
                     || crate::map_ops::ast_collection(ty)
                     || matches!(ty, Type::String | Type::Bytes) =>
             {
@@ -105,7 +106,8 @@ fn shape<'a>(
                 {
                     return None;
                 }
-                if caller.module != target.module
+                if depth == 1
+                    && caller.module != target.module
                     && !caller
                         .module_uses
                         .iter()
@@ -155,7 +157,7 @@ fn shape<'a>(
                                 .is_some_and(|ty| matches!(&ty.kind, TypeDeclarationKind::Record { .. }))));
                     let vector_payload = (1..=2).contains(&payloads.len())
                         && payloads.iter().all(|payload| {
-                            vector(target.module, &payload.ty, caller, authored, programs)
+                            vector(target.module, &payload.ty, caller, authored, programs, true)
                         });
                     let string_payload = matches!(payloads.as_slice(), [payload]
                         if payload.ty == Type::String);
@@ -217,6 +219,7 @@ fn vector(
     caller: &Program,
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
     programs: &[Program],
+    descendant: bool,
 ) -> bool {
     let Type::Named { name, arguments } = ty else {
         return false;
@@ -271,7 +274,8 @@ fn vector(
             field.explicit_id
                 && (scalar(&field.ty) || matches!(field.ty, Type::String | Type::Bytes))
         })
-        && (caller.module == target.module
+        && (descendant
+            || caller.module == target.module
             || caller
                 .module_uses
                 .iter()
@@ -312,11 +316,18 @@ use type @id("outcome") from imports.provider as Outcome;
         )
     }
     #[test]
-    fn nested_outcome_imports_rederive_vector_elements_and_direct_types() {
+    fn nested_outcome_imports_rederive_vector_elements_and_explicit_root() {
         assert!(accepts(PROVIDER, APP));
-        assert!(!accepts(
+        assert!(accepts(
             PROVIDER,
             &APP.replace("use type @id(\"item\") from imports.provider as Item;", "")
+        ));
+        assert!(!accepts(
+            PROVIDER,
+            &APP.replace(
+                "use type @id(\"outcome\") from imports.provider as Outcome;",
+                ""
+            )
         ));
         assert!(!accepts(
             &PROVIDER.replace("text: string", "text: Vec<string>"),
@@ -330,7 +341,7 @@ use type @id("outcome") from imports.provider as Outcome;
     }
 
     #[test]
-    fn nested_string_config_and_row_vector_require_the_complete_direct_import_closure() {
+    fn nested_string_config_and_row_vector_rederive_private_layout_closure() {
         // Same ordinary carrier composition as the native codec fault witness:
         // scalar refusal / Report containing a String Config and flat String rows.
         let provider = PROVIDER
@@ -354,7 +365,7 @@ use type @id("outcome") from imports.provider as Outcome;
             "use type @id(\"report\") from imports.provider as Report;",
         ] {
             assert!(app.contains(required));
-            assert!(!accepts(&provider, &app.replace(required, "")));
+            assert!(accepts(&provider, &app.replace(required, "")));
         }
         for forged in [
             provider.replace("label:string", "label:str"),

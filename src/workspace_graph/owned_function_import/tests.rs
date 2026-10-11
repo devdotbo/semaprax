@@ -771,7 +771,7 @@ fn internal_byte_writer_import_refuses_allocating_generic_and_mismatched_owner_p
 }
 
 #[test]
-fn outcome_payload_and_vector_nominals_report_each_required_direct_import() {
+fn outcome_payload_and_vector_nominals_replay_private_descendants_and_explicit_root() {
     let provider = r#"
 module outcome.provider;
 @id("outcome.config") record Config { @id("outcome.config.label") label:string, }
@@ -810,15 +810,13 @@ use function @id("outcome.decode") from outcome.provider as decode;
         let import = format!("use type @id(\"{id}\") from outcome.provider as {name};");
         assert_eq!(app.matches(&import).count(), 1);
         let missing = app.replace(&import, "");
-        let errors = build_owned(sources(&missing, provider))
-            .err()
-            .expect("every exposed nominal still requires a direct type import");
-        let expected = format!("missing direct nominal type import: {import}");
-        assert!(
-            errors.iter().any(|error| error.code == "SPX-G172"
-                && error.help.as_deref() == Some(expected.as_str())),
-            "{errors:?}"
-        );
+        let built = build_owned(sources(&missing, provider))
+            .expect("root import authenticates private descendant layout");
+        let linked = built
+            .linked_owned_data_api_program_with_roots("outcome.app", &[])
+            .unwrap();
+        hir::validate(&linked).unwrap();
+        assert!(linked.types.iter().any(|t| t.id.as_str() == id));
     }
     let built = build_owned(sources(app, provider))
         .expect("complete imports retain the existing closed outcome profile");

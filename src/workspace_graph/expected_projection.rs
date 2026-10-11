@@ -35,6 +35,8 @@ mod identity_slots;
 mod import_stub;
 #[path = "expected_projection/local_identity.rs"]
 mod local_identity;
+#[path = "expected_projection/private_layout.rs"]
+pub(super) mod private_layout;
 #[path = "expected_projection/record_traversal.rs"]
 mod record_traversal;
 #[path = "expected_projection/sort_keys.rs"]
@@ -42,7 +44,7 @@ mod sort_keys;
 #[path = "expected_projection/statement_segment.rs"]
 pub(super) mod statement_segment;
 #[path = "expected_projection/type_rewrite.rs"]
-mod type_rewrite;
+pub(super) mod type_rewrite;
 #[path = "expected_projection/uncached_peak.rs"]
 pub(super) mod uncached_peak;
 use cost::{ExpandedDefaultCost, GenericInstanceCost, StructuralCost};
@@ -64,7 +66,7 @@ use identity_slots::{
     ast_function_identity_slots, ast_program_identity_slots, ast_type_declaration_identity_slots,
     ast_type_identity_slots,
 };
-use import_stub::{default_expr, default_expr_expanded_cost};
+use import_stub::default_expr;
 use uncached_peak::uncached_peak_prebound;
 pub(super) use uncached_peak::{
     initial_core_prebound, next_retention_prebound_with_uncached_peak,
@@ -95,11 +97,19 @@ pub(super) fn synthetic_builder_bytes_scoped(
 ) -> Result<SyntheticBuilderCosts, Vec<Diagnostic>> {
     let mut raw = StructuralCost::raw_ast(layout_mode >= 1).with_inline_values(layout_mode >= 2);
     ast_program_cost(program, &mut raw, include_imports)?;
+    let layout = private_layout::LayoutClosure::derive(program, authored, programs)?;
     let mut identity_slots = ast_program_identity_slots(program)?;
     let mut runtime = StructuralCost::new();
     let mut default_memo = [BTreeMap::new(), BTreeMap::new()];
     let mut byte_proofs = import_stub::ByteHelperProofs::new(authored, programs);
     let mut transient_import_clone = 0usize;
+    layout.add_costs(
+        program,
+        programs,
+        &mut raw,
+        &mut runtime,
+        &mut identity_slots,
+    )?;
     for module_use in program.module_uses.iter().filter(|_| include_imports) {
         if module_use.kind == ModuleUseKind::Protocol {
             continue;
@@ -142,22 +152,24 @@ pub(super) fn synthetic_builder_bytes_scoped(
             for param in &function.params {
                 identity_slots =
                     checked_builder_sum(identity_slots, ast_type_identity_slots(&param.ty)?)?;
-                rewrite_type_runtime_cost(
+                type_rewrite::runtime_cost_with_layout(
                     &param.ty,
                     target.module,
                     program,
                     programs,
                     &mut runtime,
+                    Some(&layout),
                 )?;
             }
-            rewrite_type_runtime_cost(
+            type_rewrite::runtime_cost_with_layout(
                 &function.return_type,
                 target.module,
                 program,
                 programs,
                 &mut runtime,
+                Some(&layout),
             )?;
-            let cost = default_expr_expanded_cost(
+            let cost = import_stub::default_expr_expanded_cost_with_layout(
                 function,
                 target.module,
                 program,
@@ -167,6 +179,7 @@ pub(super) fn synthetic_builder_bytes_scoped(
                 &mut BTreeSet::new(),
                 super::owned_function_import::admitted(program, target, authored, programs),
                 import_stub::byte_helper_authorized(function, target.module, &mut byte_proofs)?,
+                Some(&layout),
             )?;
             runtime.add_split(cost.bytes, cost.string_bytes)?;
             runtime.add_identity_carriers(cost.identity_carriers)?;
@@ -178,12 +191,13 @@ pub(super) fn synthetic_builder_bytes_scoped(
                 identity_slots,
                 ast_type_declaration_identity_slots(declaration)?,
             )?;
-            super::generic_type_import::rewrite_declaration_runtime_cost(
+            super::generic_type_import::rewrite_declaration_runtime_cost_with_layout(
                 declaration,
                 target.module,
                 program,
                 programs,
                 &mut runtime,
+                Some(&layout),
             )?;
         }
     }
@@ -784,6 +798,7 @@ pub(super) fn synthetic_program(
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
     programs: &[Program],
 ) -> Result<Program, Vec<Diagnostic>> {
+    let layout = private_layout::LayoutClosure::derive(program, authored, programs)?;
     let mut byte_proofs = import_stub::ByteHelperProofs::new(authored, programs);
     let mut synthetic = program.clone();
     synthetic.module_uses.clear();
@@ -798,9 +813,16 @@ pub(super) fn synthetic_program(
         let target = &authored[module_use.persistent_id.as_str()];
         let mut ty = target.ty.expect("validated type target").clone();
         ty.name = crate::bounded_output::budgeted_clone(&module_use.alias);
-        super::generic_type_import::rewrite_declaration(&mut ty, target.module, program, programs)?;
+        super::generic_type_import::rewrite_declaration_with_layout(
+            &mut ty,
+            target.module,
+            program,
+            programs,
+            Some(&layout),
+        )?;
         synthetic.types.push(ty);
     }
+    layout.append_types(&mut synthetic, program, programs)?;
     let type_index_bytes = synthetic
         .types
         .len()
@@ -846,9 +868,21 @@ pub(super) fn synthetic_program(
             continue;
         }
         for param in &mut function.params {
-            rewrite_type(&mut param.ty, target.module, program, programs)?;
+            type_rewrite::rewrite_with_layout(
+                &mut param.ty,
+                target.module,
+                program,
+                programs,
+                Some(&layout),
+            )?;
         }
-        rewrite_type(&mut function.return_type, target.module, program, programs)?;
+        type_rewrite::rewrite_with_layout(
+            &mut function.return_type,
+            target.module,
+            program,
+            programs,
+            Some(&layout),
+        )?;
         // Clearing would retain the cloned contracts' Vec capacities in every
         // finished stub. Replace the vectors so the full imported contracts
         // remain transient, matching the final peak-only pre-bound.

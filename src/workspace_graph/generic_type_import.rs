@@ -63,6 +63,70 @@ pub(super) fn rewrite_declaration_runtime_cost(
     Ok(())
 }
 
+pub(super) fn rewrite_declaration_runtime_cost_with_layout(
+    declaration: &TypeDeclaration,
+    target_module: &str,
+    caller: &Program,
+    programs: &[Program],
+    cost: &mut StructuralCost,
+    layout: Option<&super::expected_projection::private_layout::LayoutClosure<'_>>,
+) -> Result<(), Vec<Diagnostic>> {
+    if layout.is_none_or(|l| l.entries.is_empty()) {
+        return rewrite_declaration_runtime_cost(
+            declaration,
+            target_module,
+            caller,
+            programs,
+            cost,
+        );
+    }
+    if !declaration.type_parameters.is_empty()
+        || matches!(
+            declaration.kind,
+            TypeDeclarationKind::Class { .. } | TypeDeclarationKind::Resource { .. }
+        )
+    {
+        return rewrite_declaration_runtime_cost(
+            declaration,
+            target_module,
+            caller,
+            programs,
+            cost,
+        );
+    }
+    let mut rewrite = |ty: &Type| {
+        super::expected_projection::type_rewrite::runtime_cost_with_layout(
+            ty,
+            target_module,
+            caller,
+            programs,
+            cost,
+            layout,
+        )
+    };
+    match &declaration.kind {
+        TypeDeclarationKind::Record { fields } => {
+            for field in fields {
+                rewrite(&field.ty)?;
+            }
+        }
+        TypeDeclarationKind::Variant { cases } => {
+            for case in cases {
+                for field in &case.fields {
+                    rewrite(&field.ty)?;
+                }
+            }
+        }
+        TypeDeclarationKind::Class { .. } | TypeDeclarationKind::Resource { .. } => {
+            return Err(vec![super::graph_error(
+                "SPX-G172",
+                "private layout rewriting requires a monomorphic record or result variant",
+            )])
+        }
+    }
+    Ok(())
+}
+
 pub(super) fn rewrite_declaration(
     declaration: &mut TypeDeclaration,
     target_module: &str,
@@ -73,6 +137,56 @@ pub(super) fn rewrite_declaration(
     for ty in declaration_types_mut(declaration) {
         if !is_parameter(ty, &parameters) {
             super::expected_projection::rewrite_type(ty, target_module, caller, programs)?;
+        }
+    }
+    Ok(())
+}
+
+pub(super) fn rewrite_declaration_with_layout(
+    declaration: &mut TypeDeclaration,
+    target_module: &str,
+    caller: &Program,
+    programs: &[Program],
+    layout: Option<&super::expected_projection::private_layout::LayoutClosure<'_>>,
+) -> Result<(), Vec<Diagnostic>> {
+    if layout.is_none_or(|l| l.entries.is_empty()) {
+        return rewrite_declaration(declaration, target_module, caller, programs);
+    }
+    if !declaration.type_parameters.is_empty()
+        || matches!(
+            declaration.kind,
+            TypeDeclarationKind::Class { .. } | TypeDeclarationKind::Resource { .. }
+        )
+    {
+        return rewrite_declaration(declaration, target_module, caller, programs);
+    }
+    let mut rewrite = |ty: &mut Type| {
+        super::expected_projection::type_rewrite::rewrite_with_layout(
+            ty,
+            target_module,
+            caller,
+            programs,
+            layout,
+        )
+    };
+    match &mut declaration.kind {
+        TypeDeclarationKind::Record { fields } => {
+            for field in fields {
+                rewrite(&mut field.ty)?;
+            }
+        }
+        TypeDeclarationKind::Variant { cases } => {
+            for case in cases {
+                for field in &mut case.fields {
+                    rewrite(&mut field.ty)?;
+                }
+            }
+        }
+        TypeDeclarationKind::Class { .. } | TypeDeclarationKind::Resource { .. } => {
+            return Err(vec![super::graph_error(
+                "SPX-G172",
+                "private layout rewriting requires a monomorphic record or result variant",
+            )])
         }
     }
     Ok(())

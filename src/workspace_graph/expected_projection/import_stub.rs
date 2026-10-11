@@ -211,3 +211,66 @@ pub(super) fn default_expr_expanded_cost(
         allow_owned,
     )
 }
+
+#[allow(clippy::too_many_arguments)]
+pub(super) fn default_expr_expanded_cost_with_layout(
+    function: &Function,
+    module: &str,
+    caller: &crate::ast::Program,
+    authored: &std::collections::BTreeMap<&str, super::AuthoredDeclaration<'_>>,
+    programs: &[crate::ast::Program],
+    memo: &mut [std::collections::BTreeMap<String, super::ExpandedDefaultCost>; 2],
+    visiting: &mut std::collections::BTreeSet<String>,
+    allow_owned: bool,
+    allow_byte_forward: bool,
+    layout: Option<&super::private_layout::LayoutClosure<'_>>,
+) -> Result<super::ExpandedDefaultCost, Vec<crate::diagnostic::Diagnostic>> {
+    if layout.is_none_or(|l| l.entries.is_empty()) {
+        return default_expr_expanded_cost(
+            function,
+            module,
+            caller,
+            authored,
+            programs,
+            memo,
+            visiting,
+            allow_owned,
+            allow_byte_forward,
+        );
+    }
+    let byte_owner = function.params.iter().find(|parameter| {
+        allow_byte_forward && parameter.mode == ParamMode::Own && parameter.ty == Type::Bytes
+    });
+    if let Some(parameter) = byte_owner.or_else(|| {
+        forward_parameter(function, allow_owned, |ty| {
+            let Type::Named { name, arguments } = ty else {
+                return false;
+            };
+            arguments.is_empty()
+                && super::super::resolve_type_id(module, name, programs)
+                    .and_then(|id| authored.get(id.as_str()).and_then(|target| target.ty))
+                    .is_some_and(record_shape)
+        })
+    }) {
+        let string_bytes = parameter.name.len();
+        return Ok(super::ExpandedDefaultCost {
+            bytes: super::checked_builder_sum(std::mem::size_of::<Expr>(), string_bytes)?,
+            string_bytes,
+            // Ordinary Var HIR carries the expression/value/type identities;
+            // signature nominal identities are charged by the caller already.
+            identity_slots: 3,
+            identity_carriers: 3,
+        });
+    }
+    super::defaults::default_expr_expanded_cost_with_layout(
+        &function.return_type,
+        module,
+        caller,
+        authored,
+        programs,
+        memo,
+        visiting,
+        allow_owned,
+        layout,
+    )
+}
