@@ -145,7 +145,7 @@ fn merge_keys_preserve_pending_owned_commits_and_failure_classes() {
 
 #[test]
 fn lexical_failure_and_abrupt_duplicates_stay_separate() {
-    let source = "module separate.lexical; @id(\"probe\") fn probe(n:i64)->i64 {if n==0 {return 1;}; return 0;} @id(\"main\") fn main()->i64 {0}";
+    let source = "module separate.lexical; @id(\"probe\") fn probe(n:i64)->i64 {let owner=\"prefix\"; let mut i=0; while i<1 {i=i+1; if n==0 {return 1;}; 0} return 0;} @id(\"main\") fn main()->i64 {0}";
     let parsed = crate::check(source, "separate-lexical.spx").unwrap();
     let program = crate::hir::resolve(&parsed).unwrap();
     let function = program
@@ -153,6 +153,7 @@ fn lexical_failure_and_abrupt_duplicates_stay_separate() {
         .iter()
         .find(|function| function.id.as_str() == "probe")
         .unwrap();
+    assert!(function.cleanup_plan.lexical_control.is_some());
     let mut budget = ReplayBudget::with_physical(function, 1 << 20).unwrap();
     budget.skeleton_remaining = MAX_REPLAY_WORK_UNITS;
     budget.merge_paths = true;

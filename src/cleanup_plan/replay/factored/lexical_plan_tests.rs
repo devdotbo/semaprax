@@ -82,7 +82,7 @@ pub(super) fn enumerate(automaton: &Automaton, root: usize) -> Vec<SkeletonPath>
     result
 }
 
-fn assert_plan_oracle(function: &ResolvedFunction) {
+pub(super) fn assert_plan_oracle(function: &ResolvedFunction) {
     let mut budget = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
     let mut expected = plan_skeleton_paths(function, &mut budget).unwrap();
     expected.sort();

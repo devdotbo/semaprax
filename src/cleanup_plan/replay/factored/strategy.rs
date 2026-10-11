@@ -263,6 +263,9 @@ impl Candidate {
 #[path = "strategy/activation_tests.rs"]
 mod activation_tests;
 #[cfg(test)]
+#[path = "strategy/coverage_tests.rs"]
+mod coverage_tests;
+#[cfg(test)]
 #[path = "strategy/hostile_tests.rs"]
 mod hostile_tests;
 #[cfg(test)]
