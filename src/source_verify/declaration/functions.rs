@@ -971,6 +971,7 @@ pub(super) fn check_function_bodies<'p>(
     import_keys: &HashMap<&'p str, (&'p InterfaceDeclaration, &'p ImportDeclaration)>,
     types: &TypeTable<'p>,
     diagnostics: &mut Vec<Diagnostic>,
+    fused_producer: Option<&'p Expr>,
 ) {
     let byte_helpers = crate::loop_calls::byte_writer::SourceIndex::new(program);
     let function_value_targets =
@@ -1198,6 +1199,7 @@ pub(super) fn check_function_bodies<'p>(
                 true,
                 diagnostics,
                 Some(&byte_helpers),
+                fused_producer,
             ) {
                 if actual.native_unit {
                     reject_native_unit_value(program, &function.body, &actual, diagnostics);

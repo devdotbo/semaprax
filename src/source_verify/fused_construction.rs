@@ -7,8 +7,11 @@
 //! fixed-width Bytes-producing call. Such a function is the only kind the
 //! fused capacity rule may ever select.
 //!
-//! The proof is provisional. It is not a capacity flow, admission decision,
-//! cleanup certificate, schema or backend artifact. Whole-program source and
+//! The proof is provisional. It is not an admission decision, cleanup
+//! certificate, schema or backend artifact. Only the private
+//! [`candidate::check_candidate`] route hands a held proof to the source
+//! verifier and source capacity projection, and its result stays
+//! unvalidated. Whole-program source and
 //! HIR validation, an independent typed-HIR proof of the construction, closed
 //! suffix and current owners, and an equal [`RawJoinKey`] must all hold before
 //! any consumer may construct a fused capacity selection; the raw key alone is
@@ -16,7 +19,8 @@
 //! legacy strategy until every executor implements the lease domain. Counts at
 //! or below the legacy 32-event cap derive [`Derivation::Legacy32`] and keep
 //! the ordinary `FiniteOwnedLoop` route; String charges, left-to-right order
-//! and canonical cleanup are untouched because nothing here rewrites a flow.
+//! and canonical cleanup are untouched because a selection replaces only its
+//! own loop's capacity flow.
 //!
 //! Names select only exact lexical bindings and declarations. No filename,
 //! benchmark identity or helper-function name is a selector. Every builtin
@@ -25,12 +29,13 @@
     not(test),
     allow(
         dead_code,
-        reason = "consumed only by the pending HIR join and fused capacity selector"
+        reason = "the private candidate route awaits the HIR join and executors"
     )
 )]
 
 use crate::ast::{Expr, FieldDeclaration, Function, Program, Span, Statement, TypeDeclaration};
 
+pub(crate) mod candidate;
 mod shape;
 mod suffix;
 #[cfg(test)]

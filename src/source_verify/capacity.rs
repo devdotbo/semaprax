@@ -3,12 +3,16 @@ use super::*;
 mod command_io;
 mod empty_clone;
 mod functions;
+mod fused_selection;
 pub(super) use functions::{source_array_payload, source_capacity_functions};
+pub(super) use fused_selection::verify_selected_capacity;
 pub(super) struct SourceCapacityContext<'a> {
     pub(super) program: &'a Program,
     pub(super) types: &'a TypeTable<'a>,
     pub(super) ordinary: &'a BTreeMap<&'a str, &'a Function>,
     pub(super) enclosing_class: Option<&'a str>,
+    /// Held `FusedConstructionV1` selection; `None` on every default path.
+    pub(super) fused: Option<&'a crate::source_verify::fused_construction::SourceProof<'a>>,
 }
 
 struct SourceCapacityScope {
@@ -870,6 +874,7 @@ fn source_capacity_expr(
         Alternative(usize),
         Loop,
         FiniteOwnedLoop(u32),
+        FusedConstruction,
         Block {
             statements: &'a [Statement],
             next: usize,
@@ -1329,6 +1334,11 @@ fn source_capacity_expr(
                     },
                 ]));
             }
+            Frame::FusedConstruction => {
+                let body = results.pop().ok_or(())?;
+                let condition = results.pop().ok_or(())?;
+                results.push(fused_selection::selected_flow(context, condition, body)?);
+            }
             Frame::Loop => {
                 let body = results.pop().ok_or(())?;
                 let condition = results.pop().ok_or(())?;
@@ -1415,7 +1425,11 @@ fn source_capacity_expr(
                             } else {
                                 crate::source_verify::finite_row_loop(context.program, body)
                             };
-                            frames.push(finite.map_or(Frame::Loop, Frame::FiniteOwnedLoop));
+                            frames.push(if fused_selection::selected_loop(context, statement) {
+                                Frame::FusedConstruction
+                            } else {
+                                finite.map_or(Frame::Loop, Frame::FiniteOwnedLoop)
+                            });
                             frames.push(Frame::Visit {
                                 expression: body,
                                 path: format!("{statement_path}.body"),
@@ -1562,111 +1576,11 @@ fn source_capacity_expr(
     }
 }
 
+/// The unchanged default, analyzed under `AllocationStrategy::Legacy`.
+#[cfg(test)]
 pub(super) fn verify_byte_data_capacity(
     program: &Program,
     types: &TypeTable<'_>,
 ) -> Result<(), crate::byte_data_capacity::CapacityError> {
-    use crate::byte_data_capacity::{ArrayStorageKind, CapacityFlow, FunctionCapacityInput};
-
-    let ordinary = program
-        .functions
-        .iter()
-        .map(|function| (function.name.as_str(), function))
-        .collect::<BTreeMap<_, _>>();
-    let inputs = source_capacity_functions(program)
-        .into_iter()
-        .map(|(enclosing_class, function)| {
-            let context = SourceCapacityContext {
-                program,
-                types,
-                ordinary: &ordinary,
-                enclosing_class,
-            };
-            let mut slots = Vec::new();
-            let mut bindings = BTreeMap::new();
-            let mut transcript_roots = function
-                .params
-                .iter()
-                .map(|parameter| {
-                    (
-                        parameter.name.clone(),
-                        crate::byte_data_capacity::TranscriptSource::Unknown,
-                    )
-                })
-                .collect::<BTreeMap<_, _>>();
-            for (index, parameter) in function.params.iter().enumerate() {
-                source_capacity_slot(
-                    &mut slots,
-                    types,
-                    format!("{}.param.{index}", function.stable_id),
-                    ArrayStorageKind::Parameter,
-                    &parameter.ty,
-                )
-                .map_err(|()| command_io::source_capacity_invariant(&function.stable_id))?;
-                bindings.insert(parameter.name.clone(), parameter.ty.clone());
-            }
-            source_capacity_slot(
-                &mut slots,
-                types,
-                format!("{}.result", function.stable_id),
-                ArrayStorageKind::ProvisionalResult,
-                &function.return_type,
-            )
-            .map_err(|()| command_io::source_capacity_invariant(&function.stable_id))?;
-            let mut execution = function
-                .requires
-                .iter()
-                .enumerate()
-                .map(|(index, expression)| {
-                    source_capacity_expr(
-                        expression,
-                        &format!("{}.requires.{index}", function.stable_id),
-                        &mut bindings.clone(),
-                        &mut transcript_roots.clone(),
-                        &mut slots,
-                        &context,
-                        false,
-                    )
-                    .map_err(|()| command_io::source_capacity_invariant(&function.stable_id))
-                })
-                .collect::<Result<Vec<_>, _>>()?;
-            execution.push(
-                source_capacity_expr(
-                    &function.body,
-                    &format!("{}.body", function.stable_id),
-                    &mut bindings,
-                    &mut transcript_roots,
-                    &mut slots,
-                    &context,
-                    true,
-                )
-                .map_err(|()| command_io::source_capacity_invariant(&function.stable_id))?,
-            );
-            execution.extend(
-                function
-                    .ensures
-                    .iter()
-                    .enumerate()
-                    .map(|(index, expression)| {
-                        source_capacity_expr(
-                            expression,
-                            &format!("{}.ensures.{index}", function.stable_id),
-                            &mut bindings.clone(),
-                            &mut transcript_roots.clone(),
-                            &mut slots,
-                            &context,
-                            false,
-                        )
-                        .map_err(|()| command_io::source_capacity_invariant(&function.stable_id))
-                    })
-                    .collect::<Result<Vec<_>, _>>()?,
-            );
-            Ok(FunctionCapacityInput {
-                function: function.stable_id.clone(),
-                array_slots: slots,
-                execution: CapacityFlow::Sequence(execution),
-            })
-        })
-        .collect::<Result<Vec<_>, crate::byte_data_capacity::CapacityError>>()?;
-    crate::byte_data_capacity::analyze(&inputs).map(|_| ())
+    verify_selected_capacity(program, types, None)
 }

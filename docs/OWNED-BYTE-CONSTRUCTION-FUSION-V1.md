@@ -132,8 +132,9 @@ The rule only checks the flow it is given. It does not derive count, capacity,
 extent, destination Vec, fresh row or no-escape facts. Those still require
 independent source and typed-HIR derivation from current source. The executor
 must authenticate and reserve its actual lease metadata before the backing is
-allocated; this rule charges no metadata and assumes no slot layout. No source
-or HIR selector constructs the node yet, and no backend executes it. Owning
+allocated; this rule charges no metadata and assumes no slot layout. Only the
+private, unvalidated source candidate route described below constructs the
+node. No HIR selector constructs it, and no backend executes it. Owning
 gates are `byte_data_capacity::fused_tests::` (nine definitions, unexecuted in
 this tranche). The original fixture is not admitted, and the default check
 still reports `SPX-T267`.
@@ -284,8 +285,45 @@ size of a row or the heap it uses. In native code a String owner is an
 `i64` and String is 24 + 8 + 8 = 40 bytes. An executor must derive the
 actual target layout and fund its lease metadata separately. The existing
 65,536-byte inline frame cap cannot hold a roughly 165 KB administrative
-table on the stack. This proof raises no cap and no quota. Nothing in this
-module constructs a capacity flow, selects an
-allocation strategy, alters `SPX-T267` or default admission, or reaches a
-backend. The source-only definitions in `fused_construction::tests::` are
+table on the stack. This proof raises no cap and no quota. The proof module
+itself does not alter `SPX-T267` or default admission, and it does not reach
+a backend. The source-only definitions in `fused_construction::tests::` are
 authored but have not been executed.
+
+### Private source candidate route
+
+`source_verify::fused_construction::candidate::check_candidate(&Program)` is
+the only consumer of a selected proof. It takes one parsed program and no
+reader, path, library trust or other authority. It derives the single
+selected proof from that exact AST, refuses when none or more than one
+function selects, and re-authenticates the proof. Then it runs every
+ordinary source pass through `declaration::verify_selected` with the held
+selection. The selection is threaded explicitly; there is no global flag and
+no skip switch. It changes exactly two places:
+
+- The while-body byte-operation gate admits the proof's exact producer call
+  by node identity. Every other ownership, loan, type, status and invariant
+  check on that call and its loop still runs.
+- `capacity::fused_selection` projects that loop as
+  `CapacityFlow::FusedConstruction` from its actually projected condition and
+  body, with the proof's `producer_site`, rows and width. It analyzes the
+  program under `FusedConstructionV1` through the existing analyzer, so the
+  loop charges one event and its extent against the unchanged 32-event and
+  2 MiB limits. It then requires exactly one fused backing event in the
+  selected function. Every other loop keeps its Legacy flow, including counts
+  of 32 or fewer, which stay on `FiniteOwnedLoop`.
+
+No count is rewritten and no limit is raised. A foreign, stale or
+equal-text proof fails authentication: capacity reports an invariant, and the
+while gate does not match it. The default `verify`/`check` path passes no
+selection and is unchanged.
+
+Success is a `ProvisionalFusedSource` whose only status is
+`UnvalidatedUntilHirJoin`. It is not a checked program and grants no
+permission to emit, cache, graph or publish. Before any validated program or
+artifact, three steps remain: an independent typed-HIR derivation, an exact
+join with the held source proof, and full selected HIR validation. The HIR
+resolver's own 32-event while gate in `hir::resolve_statement` is unchanged
+and still refuses the selected producer. The three executors must also
+implement the lease domain before production enablement. Owning definitions
+are `fused_construction::candidate::tests::` (three, unexecuted).

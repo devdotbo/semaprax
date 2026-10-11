@@ -204,6 +204,9 @@ struct IterativeVerifier<'a, 'p> {
     /// Exact owned `for own` item bindings whose record payload may be matched
     /// inside the active loop body.
     owned_iterator_items: Vec<String>,
+    /// The held selection's exact producer call, set only by the private
+    /// `FusedConstructionV1` candidate route. `None` on every default path.
+    fused_producer: Option<&'p Expr>,
 }
 
 /// Declared in the module root, rather than beside the frame loop, because the
@@ -246,6 +249,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             buffer_reopen_sites: std::collections::BTreeSet::new(),
             loop_depth: 0,
             owned_iterator_items: Vec::new(),
+            fused_producer: None,
         }
     }
 

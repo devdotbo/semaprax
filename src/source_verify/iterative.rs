@@ -293,6 +293,7 @@ pub(super) fn check_expr_iterative(
         allow_moves,
         diagnostics,
         None,
+        None,
     )
 }
 #[allow(clippy::too_many_arguments)]
@@ -307,6 +308,7 @@ pub(super) fn check_expr_with_helpers<'a, 'p>(
     allow_moves: bool,
     diagnostics: &'a mut Vec<Diagnostic>,
     helpers: Option<&'a dyn crate::loop_calls::byte_writer::SourceHelpers>,
+    fused_producer: Option<&'p Expr>,
 ) -> Option<CheckedValue> {
     let initial = std::mem::take(variables);
     let mut verifier = IterativeVerifier::new(
@@ -320,6 +322,7 @@ pub(super) fn check_expr_with_helpers<'a, 'p>(
         diagnostics,
     );
     verifier.byte_helpers = helpers;
+    verifier.fused_producer = fused_producer;
     let result = verifier.run(expr);
     *variables = verifier
         .scopes

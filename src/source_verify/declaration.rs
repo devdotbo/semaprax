@@ -12,7 +12,7 @@ use self::functions::{
     check_function_bodies, check_function_declarations, check_generic_function_cycles,
 };
 use self::identity::{check_interface_identities, check_type_identities};
-use super::capacity::{source_capacity_functions, verify_byte_data_capacity};
+use super::capacity::{source_capacity_functions, verify_selected_capacity};
 use super::diagnostics::error;
 use super::type_table::TypeTable;
 use crate::ast::{Program, Span, Type};
@@ -26,6 +26,17 @@ pub(super) mod fusion;
 mod identity;
 
 pub(crate) fn verify(program: &Program) -> Vec<Diagnostic> {
+    verify_selected(program, None)
+}
+
+/// Every ordinary source pass. A held `FusedConstructionV1` selection only
+/// changes the two places that would otherwise apply the legacy 32-event rule
+/// to its own loop: the while-body producer admission and that loop's capacity
+/// flow. Callers outside the private candidate route always pass `None`.
+pub(in crate::source_verify) fn verify_selected<'p>(
+    program: &'p Program,
+    selected: Option<&crate::source_verify::fused_construction::SourceProof<'p>>,
+) -> Vec<Diagnostic> {
     let mut diagnostics = Vec::new();
     if let Err(diagnostic) = crate::static_protocol::validate(program) {
         diagnostics.push(diagnostic.at_path(&program.path));
@@ -126,7 +137,14 @@ pub(crate) fn verify(program: &Program) -> Vec<Diagnostic> {
     check_generic_function_cycles(program, &call_graph, &generic_functions, &mut diagnostics);
 
     super::lexical_exit::validate(program, &mut diagnostics);
-    check_function_bodies(program, &functions, &import_keys, &types, &mut diagnostics);
+    check_function_bodies(
+        program,
+        &functions,
+        &import_keys,
+        &types,
+        &mut diagnostics,
+        selected.map(|proof| proof.producer().call),
+    );
     crate::source_verify::record_invariants::check_record_invariants(
         program,
         &functions,
@@ -163,7 +181,7 @@ pub(crate) fn verify(program: &Program) -> Vec<Diagnostic> {
             .with_help(super::hints::LIBRARY_MODULE_HELP),
         );
     }
-    if let Err(capacity) = verify_byte_data_capacity(program, &types) {
+    if let Err(capacity) = verify_selected_capacity(program, &types, selected) {
         if capacity.diagnostic != crate::byte_data_capacity::CapacityDiagnostic::Invariant
             || !diagnostics
                 .iter()

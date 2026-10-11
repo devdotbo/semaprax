@@ -418,6 +418,9 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                                 self.program,
                                 expression,
                             )
+                            && !self
+                                .fused_producer
+                                .is_some_and(|producer| std::ptr::eq(producer, expression))
                             && !finite_scratch
                                 .as_ref()
                                 .is_some_and(|proof| proof.permits(expression)))

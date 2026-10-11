@@ -744,6 +744,7 @@ fn source_type_inference_mutates_one_owned_scope_for_many_inferred_lets() {
         types: &types,
         ordinary: &ordinary,
         enclosing_class: None,
+        fused: None,
     };
     let bindings = wide
         .params
