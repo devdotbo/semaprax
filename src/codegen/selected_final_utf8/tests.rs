@@ -155,8 +155,22 @@ fn selected_closure_refuses_alias_hidden_allocations_and_wrong_provenance_roles(
 }
 #[test]
 fn selected_checked_source_adapter_faults_and_lease_controls_at_o0_o2() {
+    run_checked_source_adapter_probe(SOURCE);
+}
+#[test]
+fn selected_nested_string_borrow_adapter_retains_all_fault_and_lease_controls() {
+    let nested = SOURCE
+        .replace("@id(\"data.report\") record Report { @id(\"data.raw\") raw:string,",
+            "@id(\"data.payload\") record Payload { @id(\"data.raw\") raw:string, }\n@id(\"data.report\") record Report { @id(\"data.report.payload\") payload:Payload,")
+        .replace("Report{raw:", "Report{payload:Payload{raw:")
+        .replace(",mode:mode}}", "},mode:mode}}")
+        .replace("value.raw", "value.payload.raw");
+    assert_ne!(nested, SOURCE);
+    run_checked_source_adapter_probe(&nested);
+}
+fn run_checked_source_adapter_probe(source: &str) {
     use std::process::Command;
-    let p = program(SOURCE);
+    let p = program(source);
     let artifact = emit(&p).unwrap();
     let root = std::env::temp_dir().join(format!(
         "selected-final-utf8-{}-{}",

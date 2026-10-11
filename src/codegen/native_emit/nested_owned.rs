@@ -7,7 +7,35 @@ use std::collections::BTreeSet;
 
 use crate::variant_layout::{VariantFieldValueKind, VariantLayout, VariantLayoutCache};
 
-use super::{COutput, backend_error, c_case_symbol, c_field_symbol, variant_declaration_id};
+use super::{backend_error, c_case_symbol, c_field_symbol, variant_declaration_id, COutput};
+
+/// Hidden borrow arguments for a physically materialized, authenticated record.
+/// Use the same declaration-order inventory and leaf types as ordinary calls.
+pub(in crate::codegen) fn emit_materialized_record_borrow_arguments(
+    output: &mut impl COutput,
+    program: &ResolvedProgram,
+    record_layouts: &AggregateLayoutCache,
+    variant_layouts: &VariantLayoutCache,
+    ty: &ResolvedType,
+    carrier: &str,
+) -> Result<(), Diagnostic> {
+    if !is_exact_record(program, ty)? {
+        return Err(backend_error(
+            "materialized borrow adapter requires a record",
+        ));
+    }
+    for path in borrowed_aggregate_byte_paths(program, record_layouts, variant_layouts, ty)? {
+        borrowed_leaf_pointer_type(program, record_layouts, variant_layouts, ty, &path)?;
+        write!(output, ", &(({carrier})")
+            .expect("writing materialized record arguments cannot fail");
+        for field in &path {
+            write!(output, ".{}", c_field_symbol(field))
+                .expect("writing materialized record field cannot fail");
+        }
+        output.push_str(")");
+    }
+    Ok(())
+}
 
 pub(super) fn borrowed_aggregate_byte_paths(
     program: &ResolvedProgram,

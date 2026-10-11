@@ -186,7 +186,9 @@ pub(super) fn emit_hir_c_with_options(
         closure::emit_thunks(&mut output, program, &emission)?;
     }
     if let Some(selection) = selected {
-        super::super::selected_final_utf8::emit_adapter(&mut output, program, selection)?;
+        super::super::selected_final_utf8::emit_adapter(
+            &mut output, program, selection, emission.record_layouts, emission.variant_layouts,
+        )?;
         return Ok(output.into_string());
     }
     if output_profile.is_command() {

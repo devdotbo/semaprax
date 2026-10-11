@@ -10,6 +10,8 @@ pub(in crate::codegen) fn emit_adapter(
     output: &mut impl COutput,
     program: &ResolvedProgram,
     selection: &Selection,
+    record_layouts: &crate::aggregate_layout::AggregateLayoutCache,
+    variant_layouts: &crate::variant_layout::VariantLayoutCache,
 ) -> Result<(), Diagnostic> {
     let root = program
         .functions
@@ -24,6 +26,15 @@ pub(in crate::codegen) fn emit_adapter(
         .case(&selection.refused_case)
         .ok_or_else(|| error("selected refusal case missing"))?;
     let input = c_record_symbol(&root.params[0].ty);
+    let mut borrowed_arguments = String::new();
+    super::super::native_emit::emit_materialized_record_borrow_arguments(
+        &mut borrowed_arguments,
+        program,
+        record_layouts,
+        variant_layouts,
+        &root.params[0].ty,
+        &format!("*(struct {input} *)lease->report_storage"),
+    )?;
     let result = c_variant_symbol(&root.return_type);
     let entry = c_function_symbol(&root.id);
     let enc = c_case_symbol(&selection.encoded_case);
@@ -101,7 +112,7 @@ bool semaprax_final_utf8_invoke_v1(struct spx_final_utf8_lease *lease,struct sem
     if(!spx_status_record_adapter(ctx,"semaprax.allocation.v1",UINT32_C(1),SPX_STATUS_CLASS_ADAPTER,
         SPX_RETRYABILITY_FALSE,&lease->allocation_refusal))spx_runtime_invariant_failure("selected allocation backing reservation failed");
     struct {result} value;
-    spx_status_token status={entry}(ctx,(struct {input} *)lease->report_storage,limit,&value);
+    spx_status_token status={entry}(ctx,(struct {input} *)lease->report_storage{borrowed_arguments},limit,&value);
     ctx->final_utf8_lease=NULL;
     if(status!=SPX_STATUS_SUCCESS){{
         if(slot->text!=NULL)spx_runtime_invariant_failure("selected failure retained a result owner");
