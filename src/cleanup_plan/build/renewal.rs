@@ -1,4 +1,6 @@
 use super::*;
+#[cfg(test)]
+mod join_trace;
 impl PlanBuilder<'_> {
     pub(super) fn merge_states(
         &self,
@@ -53,9 +55,10 @@ impl PlanBuilder<'_> {
             }
         }
         if live_order.len() != flags.len() {
-            return Err(plan_error(
-                "branch join has conflicting cleanup initialization histories",
-            ));
+            let error = plan_error("branch join has conflicting cleanup initialization histories");
+            #[cfg(test)]
+            let error = error.with_help(join_trace::describe(self, left, right));
+            return Err(error);
         }
         let left_variants = left
             .conditional_variants
