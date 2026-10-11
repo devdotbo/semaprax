@@ -34,7 +34,7 @@ fn canonical(text: &str) -> String {
 
 fn run(fixture: &Fixture, expected: i64) {
     project::with_authenticated_project(&fixture.root.join("semaprax.toml"), |snapshot| {
-        let execution = snapshot.execute_test(&project::ProjectExecutionOptions::default())?;
+        let execution = snapshot.execute_entry(&project::ProjectExecutionOptions::default())?;
         assert_eq!(
             execution.outcome(),
             &project::ProjectExecutionOutcome::Returned(expected)

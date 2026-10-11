@@ -291,9 +291,9 @@ Encoded::Encoded{text}=>0,}}
 match borrow outcome {
 Encoded::Refused{required:n}=>false,
 Encoded::Encoded{text}=>{
-let actual=str_as_bytes(string_as_str(text));let width=byte_len(expected);let mut at=0usize;
-let mut same=byte_len(actual)==total && offset<=total && width<=total-offset;
-while same && at<width{same=match byte_get(actual,offset+at){Option::Some{value:a}=>match byte_get(expected,at){Option::Some{value:b}=>a==b,Option::None{}=>false,},Option::None{}=>false,};at=at+1usize;same && at<width}
+let actual=string_as_str(text);let width=byte_len(expected);let mut at=0usize;
+let mut same=str_len(actual)==total && offset<=total && width<=total-offset;
+while same && at<width{same=match str_byte_at(actual,offset+at){Option::Some{value:a}=>match byte_get(expected,at){Option::Some{value:b}=>a==b,Option::None{}=>false,},Option::None{}=>false,};at=at+1usize;same && at<width}
 same
 },}}
 @id("consumer.release") fn release(outcome:own Encoded)->i64{0}
