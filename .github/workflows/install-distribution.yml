@@ -165,7 +165,9 @@ jobs:
                 -p "semaprax-v0.8.0-${{ matrix.target }}.${{ matrix.extension }}" \
                 -p SHA256SUMS -p release-manifest.json \
                 -p "release-attestation-${{ matrix.target }}.json"
-              echo "SEMAPRAX_JOURNEY_PREVIOUS_ASSETS=$PWD/previous-assets" >> "$GITHUB_ENV"
+              previous_assets="$PWD/previous-assets"
+                if [ "$RUNNER_OS" = Windows ]; then previous_assets="$(cygpath -w "$previous_assets")"; fi
+                echo "SEMAPRAX_JOURNEY_PREVIOUS_ASSETS=$previous_assets" >> "$GITHUB_ENV"
               echo 'SEMAPRAX_JOURNEY_PREVIOUS_TAG=v0.8.0' >> "$GITHUB_ENV"
               ;;
           esac

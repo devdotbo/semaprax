@@ -78,6 +78,24 @@ jobs:
               --repo wavect/semaprax --source-ref "refs/tags/$TAG" \
               --signer-workflow wavect/semaprax/.github/workflows/ci.yml --deny-self-hosted-runners
           done
+      - name: Prepare the attested prior WinGet package for upgrade qualification
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir prior-assets
+          gh release download v0.8.0 -R wavect/semaprax -D prior-assets \
+            -p SHA256SUMS -p release-manifest.json \
+            -p semaprax-v0.8.0-x86_64-pc-windows-msvc.zip \
+            -p release-attestation-x86_64-pc-windows-msvc.json
+          (cd prior-assets && grep '  semaprax-v0.8.0-x86_64-pc-windows-msvc.zip$' SHA256SUMS | sha256sum -c -)
+          gh attestation verify prior-assets/semaprax-v0.8.0-x86_64-pc-windows-msvc.zip \
+            --bundle prior-assets/release-attestation-x86_64-pc-windows-msvc.json \
+            --repo wavect/semaprax --source-ref refs/tags/v0.8.0 \
+            --signer-workflow wavect/semaprax/.github/workflows/ci.yml --deny-self-hosted-runners
+          python3 scripts/channel-manifests.py winget --tag v0.8.0 \
+            --sums prior-assets/SHA256SUMS --manifest prior-assets/release-manifest.json --out proposal/prior
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: channel-proposals
@@ -155,6 +173,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'WinGet manifest validation failed' }
           winget settings --enable LocalManifestFiles
           if ($LASTEXITCODE -ne 0) { throw 'Cannot enable local manifests on this disposable runner' }
+          $prior = "$PWD\proposal\prior\manifests\w\Wavect\Semaprax\0.8.0"
+          winget install --manifest $prior --accept-package-agreements --accept-source-agreements --disable-interactivity
+          if ($LASTEXITCODE -ne 0) { throw 'WinGet prior package installation failed' }
+          & ./scripts/channel-winget-journey.ps1 -Version '0.8.0'
           winget install --manifest $manifest --accept-package-agreements --accept-source-agreements --disable-interactivity
           if ($LASTEXITCODE -ne 0) { throw 'WinGet local package installation failed' }
           & ./scripts/channel-winget-journey.ps1 -Version $version
