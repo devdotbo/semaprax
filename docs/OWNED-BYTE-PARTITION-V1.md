@@ -57,19 +57,19 @@ a prefix Vec, initialize a caller result, leave hidden live leases, or replace
 the first selected status. A zero-child success settles the empty source owner.
 
 Proposed normalized domain: `semaprax.byte-partition.v1`. The following symbols
-are proposed stable meanings, with numeric codes UNASSIGNED pending the existing
-status/domain census and owning registry integration:
+have assigned additive codes in the private operation receiver. Ordinary
+registry and target activation remain pending:
 
-| Symbol | Selected condition |
-| --- | --- |
-| `width_zero` | width equals zero |
-| `extent_overflow` | count times width exceeds semantic usize |
-| `extent_mismatch` | product differs from authenticated input length |
-| `metadata_capacity` | count or complete administrative inventory exceeds its bounded capacity |
+| Symbol | Code | Selected condition |
+| --- | --- | --- |
+| `width_zero` | 1 | width equals zero |
+| `extent_overflow` | 2 | count times width exceeds semantic usize |
+| `extent_mismatch` | 3 | product differs from authenticated input length |
+| `metadata_capacity` | 4 | count or complete administrative inventory exceeds its bounded capacity |
 
 Operand-evaluation failures keep their existing domains and left-to-right
 precedence. These four operation failures occur before transfer. The eventual
-mapping must be collision-free on interpreter, native and selected Core-Wasm;
+mapping remains required on interpreter, native and selected Core-Wasm;
 no backend may invent a local code or reuse an unrelated arithmetic code.
 
 Physical allocator exhaustion is distinct from semantic capacity refusal.
@@ -255,3 +255,40 @@ empty backing accepts every positive semantic width, including the maximum;
 no target address-space conversion may add a 32-bit-only language fault. A
 nonempty range's width is bounded by its authenticated extent. Empty execution
 must not fabricate a child merely to force width into a target pointer word.
+
+## Ordinary receiver checkpoint (not activated)
+
+`construction_fusion/partition/operation.rs` classifies the fixed three-operand
+source/HIR candidate and performs dynamic semantic-usize preflight. It is no
+source/name-resolution grant, whole-owner certificate, or validation lease.
+The ordinary builtin registry remains closed until the complete receiving join.
+
+`interpreter/byte_partition.rs` supplies a safe invocation-owned registry of
+exact boxed contexts. Affine child receipts authenticate the current invocation,
+context, slot and generation; scoped loan callbacks expose only checked ranges.
+The context survives creator-function and parent-container cleanup, so internal
+returns and popped children remain usable. Handles never retain the registry
+themselves: a public copy-out must create a separately ordinary-charged whole
+owner and drop the provider child before invocation teardown. A host, async task
+or later invocation cannot retain these private handles. Unsupported escape
+routes stay closed.
+
+The registry holds one caller runtime account. Each backing core receives only
+a nonallocating handle to that same monotonic account; per-operation replacement
+accounts are not accepted. Registry
+headers, full replacement backing (including live overlap), boxed contexts and
+complete output carriers are reserved before allocation; existing core tables
+and identities retain their own reservations. These are conservative cumulative
+requested-layout debits, including the core's existing frame charge, not a claim
+of minimal heap bytes. Deep clone uses that same runtime's ordinary event/payload
+account. Per-leaf settlement must be called at the actual canonical finalizer;
+registry Drop is administrative abandonment, never canonical success.
+
+Authored unexecuted owners: `construction_fusion::partition::operation::tests::`
+(two bodies) and `interpreter::byte_partition::tests::` (three bodies). They cover
+dynamic preflight precedence, empty/maximal width, operand mutations, popped
+children, disjoint stores, clone charges, real requested allocator layouts,
+exact/one-short precommit reservations, replacement overlap, foreign/stale and
+loan refusal, and abandonment. Full source/HIR/graph/replay installation, ordinary
+Value consumer closure, native/Wasm execution and the public copy-out bridge
+remain required; these controls do not qualify an ordinary admitted program.

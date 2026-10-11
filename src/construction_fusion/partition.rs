@@ -2,6 +2,7 @@
 //! Full validated source/HIR, call-commit/loan replay and a complete selected
 //! executor remain prerequisites; this descriptor cannot supply those leases.
 use super::domain::Refusal;
+pub(crate) mod operation;
 use crate::{ast, hir};
 use std::fmt::{self, Write};
 pub(crate) const NAME: &str = "bytes_partition";

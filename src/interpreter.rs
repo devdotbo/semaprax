@@ -58,6 +58,8 @@
 //! persistence, no hot reload, no debugger mapping, executes no target, and
 //! changes no source.
 mod api_admission;
+#[allow(dead_code, reason = "ordinary partition receiving closure pending targets and public copy-out; no Value installer")]
+pub(crate) mod byte_partition;
 mod call_frame;
 mod closures;
 mod command_state;

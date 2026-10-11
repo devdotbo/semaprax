@@ -17,7 +17,7 @@ fn proposed() -> String {
 /// A pending-call receiver fixture built on a checked ordinary producer. It is
 /// deliberately NOT a fully validated/admitted partition program: the registry,
 /// canonical call commit, status inventory and backend are still closed.
-fn pending() -> (ast::Program, hir::ResolvedProgram) {
+pub(super) fn pending() -> (ast::Program, hir::ResolvedProgram) {
     let source = crate::parse(&proposed(), "partition.spx").unwrap();
     let checked = crate::check(BASE, "partition.spx").unwrap();
     let mut program = hir::resolve(&checked).unwrap();
