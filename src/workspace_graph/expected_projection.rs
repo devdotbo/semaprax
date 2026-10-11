@@ -878,6 +878,16 @@ pub(super) fn collect_expected_edges(
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
     edges: &mut Vec<WorkspaceEdge>,
 ) -> Result<(), Vec<Diagnostic>> {
+    collect_expected_edges_impl::<false>(program, programs, module_paths, authored, edges)
+}
+
+fn collect_expected_edges_impl<const VISIT_EMPTY_CALL_IMPORTS: bool>(
+    program: &Program,
+    programs: &[Program],
+    module_paths: &BTreeMap<&str, &str>,
+    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+    edges: &mut Vec<WorkspaceEdge>,
+) -> Result<(), Vec<Diagnostic>> {
     let function_uses = program
         .module_uses
         .iter()
@@ -1045,71 +1055,75 @@ pub(super) fn collect_expected_edges(
                     "ensures" => budgeted_format(format_args!("ensures.{root_index}")),
                     _ => unreachable!(),
                 };
-                let mut call_ordinal = 0usize;
-                visit_ast_call_sites(expression, &root, &mut |name, path| {
-                    let ordinal = call_ordinal;
-                    call_ordinal += 1;
-                    if let Some(module_use) = function_uses.get(name) {
-                        let target = &authored[module_use.persistent_id.as_str()];
-                        let edge = WorkspaceEdge {
-                            caller_path: crate::bounded_output::budgeted_clone(&program.path),
-                            caller: crate::bounded_output::budgeted_clone(&function.stable_id),
-                            target_path: crate::bounded_output::budgeted_clone(
-                                module_paths[target.module],
-                            ),
-                            target: crate::bounded_output::budgeted_clone(
-                                &module_use.persistent_id,
-                            ),
-                            kind: "call",
-                            site,
-                            expression: hir::workspace_expression_identity(
-                                &hir::DeclarationId::new(crate::bounded_output::budgeted_clone(
-                                    &function.stable_id,
-                                )),
-                                path,
-                            ),
-                            ast_path: crate::bounded_output::budgeted_clone(path),
-                            alias: crate::bounded_output::budgeted_clone(&module_use.alias),
-                            ordinal,
-                        };
-                        push_edge(edges, edge)?;
-                        if let Some(target_function) = target.function {
-                            for effect in &target_function.effects {
-                                push_edge(
-                                    edges,
-                                    WorkspaceEdge {
-                                        caller_path: crate::bounded_output::budgeted_clone(
-                                            &program.path,
-                                        ),
-                                        caller: crate::bounded_output::budgeted_clone(
-                                            &function.stable_id,
-                                        ),
-                                        target_path: crate::bounded_output::budgeted_clone(
-                                            target.path,
-                                        ),
-                                        target: crate::bounded_output::budgeted_clone(effect),
-                                        kind: "effect_requirement",
-                                        site,
-                                        expression: hir::workspace_expression_identity(
-                                            &hir::DeclarationId::new(
-                                                crate::bounded_output::budgeted_clone(
-                                                    &function.stable_id,
-                                                ),
+                // No call edge is possible without an authored function import.
+                // Type references and all later edge reconstruction still run.
+                if VISIT_EMPTY_CALL_IMPORTS || !function_uses.is_empty() {
+                    let mut call_ordinal = 0usize;
+                    visit_ast_call_sites(expression, &root, &mut |name, path| {
+                        let ordinal = call_ordinal;
+                        call_ordinal += 1;
+                        if let Some(module_use) = function_uses.get(name) {
+                            let target = &authored[module_use.persistent_id.as_str()];
+                            let edge = WorkspaceEdge {
+                                caller_path: crate::bounded_output::budgeted_clone(&program.path),
+                                caller: crate::bounded_output::budgeted_clone(&function.stable_id),
+                                target_path: crate::bounded_output::budgeted_clone(
+                                    module_paths[target.module],
+                                ),
+                                target: crate::bounded_output::budgeted_clone(
+                                    &module_use.persistent_id,
+                                ),
+                                kind: "call",
+                                site,
+                                expression: hir::workspace_expression_identity(
+                                    &hir::DeclarationId::new(
+                                        crate::bounded_output::budgeted_clone(&function.stable_id),
+                                    ),
+                                    path,
+                                ),
+                                ast_path: crate::bounded_output::budgeted_clone(path),
+                                alias: crate::bounded_output::budgeted_clone(&module_use.alias),
+                                ordinal,
+                            };
+                            push_edge(edges, edge)?;
+                            if let Some(target_function) = target.function {
+                                for effect in &target_function.effects {
+                                    push_edge(
+                                        edges,
+                                        WorkspaceEdge {
+                                            caller_path: crate::bounded_output::budgeted_clone(
+                                                &program.path,
                                             ),
-                                            path,
-                                        ),
-                                        ast_path: crate::bounded_output::budgeted_clone(path),
-                                        alias: crate::bounded_output::budgeted_clone(
-                                            &module_use.alias,
-                                        ),
-                                        ordinal,
-                                    },
-                                )?;
+                                            caller: crate::bounded_output::budgeted_clone(
+                                                &function.stable_id,
+                                            ),
+                                            target_path: crate::bounded_output::budgeted_clone(
+                                                target.path,
+                                            ),
+                                            target: crate::bounded_output::budgeted_clone(effect),
+                                            kind: "effect_requirement",
+                                            site,
+                                            expression: hir::workspace_expression_identity(
+                                                &hir::DeclarationId::new(
+                                                    crate::bounded_output::budgeted_clone(
+                                                        &function.stable_id,
+                                                    ),
+                                                ),
+                                                path,
+                                            ),
+                                            ast_path: crate::bounded_output::budgeted_clone(path),
+                                            alias: crate::bounded_output::budgeted_clone(
+                                                &module_use.alias,
+                                            ),
+                                            ordinal,
+                                        },
+                                    )?;
+                                }
                             }
                         }
-                    }
-                    Ok(())
-                })?;
+                        Ok(())
+                    })?;
+                }
                 collect_expression_type_edges(
                     program,
                     &function.stable_id,
@@ -1855,3 +1869,7 @@ pub(super) fn verify_resolved_call_edges(
 #[cfg(test)]
 #[path = "expected_projection/identity_prebound_tests.rs"]
 mod identity_prebound_tests;
+
+#[cfg(test)]
+#[path = "expected_projection/call_absence_tests.rs"]
+mod call_absence_tests;
