@@ -21,6 +21,7 @@
 // Loaded through `native_byte_data`, so children name their files explicitly.
 #[path = "native_shared_bytes/bridge.rs"]
 mod bridge;
+pub(in crate::codegen) mod source;
 #[path = "native_shared_bytes/closure.rs"]
 pub(in crate::codegen) mod closure;
 #[cfg(test)]

@@ -356,7 +356,7 @@ pub(crate) fn select(
     }
 }
 
-fn closed_over(reachable: impl IntoIterator<Item = Consumer>) -> Result<Selection, Diagnostic> {
+pub(super) fn closed_over(reachable: impl IntoIterator<Item = Consumer>) -> Result<Selection, Diagnostic> {
     let consumers: BTreeSet<Consumer> = reachable.into_iter().collect();
     if consumers.is_empty() {
         return Err(super::error("no reachable Bytes owner selects the profile"));

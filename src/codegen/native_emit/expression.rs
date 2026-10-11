@@ -24,6 +24,7 @@ mod lexical_lookup;
 mod list_ops;
 mod nested_owned;
 mod owned_buffer;
+mod partition;
 mod owned_try;
 mod owned_values;
 mod places;
@@ -196,7 +197,8 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         // plan owns the one remaining transfer out of it.
         if matches!(
             op,
-            crate::byte_ops::ByteOp::Set
+            crate::byte_ops::ByteOp::Partition
+                | crate::byte_ops::ByteOp::Set
                 | crate::byte_ops::ByteOp::Set5
                 | crate::byte_ops::ByteOp::Set1Or5
                 | crate::byte_ops::ByteOp::Set1Or6Or48
@@ -213,7 +215,9 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         }
         let return_type = op.return_type();
         self.require_type(result_type, &return_type, "byte operation result")?;
-        let temporary = if op.return_type() == ResolvedType::Bytes {
+        let temporary = if op.return_type() == ResolvedType::Bytes
+            || (op == crate::byte_ops::ByteOp::Partition
+                && self.output_profile == super::NativeOutputProfile::SelectedPartition) {
             self.bytes_plan
                 .as_ref()
                 .ok_or_else(|| {
@@ -228,7 +232,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         };
         match op {
             crate::byte_ops::ByteOp::Partition => {
-                return Err(backend_error("byte partition requires its checked private receiver"));
+                self.emit_partition_call(expression, &arguments, &temporary)?;
             }
             crate::byte_ops::ByteOp::Len => {
                 let helper = self.resource_text_len_helper(&args[0]);

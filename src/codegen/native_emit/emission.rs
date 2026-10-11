@@ -55,7 +55,39 @@ pub(super) fn emit_hir_c_with_options(
     semantic: Option<&NativeSemanticMetering>,
     selected: Option<&super::super::selected_final_utf8::Selection>,
 ) -> Result<String, Diagnostic> {
-    hir::validate(program)?;
+    emit_hir_c_with_receiving(program, contract_labels, output_profile, selected_command,
+        semantic, selected, None)
+}
+
+pub(in crate::codegen) fn emit_partition_source(
+    projection: &super::super::native_byte_data::native_shared_bytes::source::Projection<'_, '_>,
+) -> Result<String, Diagnostic> {
+    emit_hir_c_with_receiving(projection.owner().program(), &HashMap::new(),
+        NativeOutputProfile::SelectedPartition, None, None, None, Some(projection))
+}
+
+#[allow(clippy::too_many_arguments)]
+fn emit_hir_c_with_receiving(
+    program: &ResolvedProgram,
+    contract_labels: &HashMap<ExpressionId, String>,
+    output_profile: NativeOutputProfile,
+    selected_command: Option<&DeclarationId>,
+    semantic: Option<&NativeSemanticMetering>,
+    selected: Option<&super::super::selected_final_utf8::Selection>,
+    partition: Option<&super::super::native_byte_data::native_shared_bytes::source::Projection<'_, '_>>,
+) -> Result<String, Diagnostic> {
+    if let Some(projection) = partition {
+        if output_profile != NativeOutputProfile::SelectedPartition
+            || !std::ptr::eq(program, projection.owner().program()) {
+            return Err(backend_error("partition native receiving subject is not current"));
+        }
+        projection.owner().revalidate_compiler()?;
+    } else {
+        if output_profile == NativeOutputProfile::SelectedPartition {
+            return Err(backend_error("partition native emission requires its sealed source projection"));
+        }
+        hir::validate(program)?;
+    }
     // This remains the authoritative complete program. The selected view
     // intentionally omits ordinary main and cannot pass public HIR validation.
     let authoritative_program = program;
@@ -85,7 +117,9 @@ pub(super) fn emit_hir_c_with_options(
     }) {
         return Err(resource_lowering_gate());
     }
-    let resource_abi = native_resource::build_resource_abi(authoritative_program)?;
+    let resource_abi = if let Some(projection) = partition {
+        native_resource::build_partition_resource_abi(projection.owner())?
+    } else { native_resource::build_resource_abi(authoritative_program)? };
     let record_layouts = AggregateLayoutCache::build(program, AggregateTarget::Native64)?;
     let variant_layouts = VariantLayoutCache::build(program, VariantTarget::Native64)?;
     let functions = function_index(program)?;
@@ -119,6 +153,12 @@ pub(super) fn emit_hir_c_with_options(
             program,
             output_profile.string_runtime(),
         );
+    }
+    if let Some(projection) = partition {
+        let extended = super::super::native_byte_data::native_shared_bytes::extend_context(output.into_string());
+        output = crate::bounded_output::CappedString::new();
+        output.push_str(&extended);
+        projection.emit_bindings(&mut output);
     }
     if output_profile == NativeOutputProfile::NetworkCommandIo {
         network_io::emit_runtime(&mut output, program);
@@ -300,6 +340,10 @@ pub(super) fn emit_hir_c_with_options(
             .get(&FunctionExecutionId::Monomorphic(main.id.clone()))
             .ok_or_else(|| backend_error("native entry point is not indexed"))?
             .symbol;
+        if let Some(projection) = partition {
+            projection.emit_entry(&mut output, symbol);
+            return Ok(output.into_string());
+        }
         if output_profile == NativeOutputProfile::StdoutTranscript {
             native_host_output::emit_root_wrapper(&mut output, symbol);
             return Ok(output.into_string());

@@ -431,3 +431,27 @@ callee invocations take the maximum, rather than adding to simultaneous use.
 An upper bound above 256 refuses before installation. The private Wasm receiver
 runs this proof for its actual main. Native/interpreter receivers must retain
 their own actual root/call/edge binding and physical funding checks.
+
+### Private native source receiving checkpoint
+
+The original-source owner also has a private native projection for whole Bytes
+allocation, partition, Vec<Bytes> length/capacity reads, scalar expressions and
+monomorphic source calls. It renews the complete compiler proof, checks the
+current entry's conservative view bound, and independently refuses consumers
+without a complete shared carrier binding. The canonical native emitter and
+cleanup vectors remain unchanged: a versioned C binding fragment selects the
+shared carrier/helper ABI only after ordinary runtime definitions and before
+the sealed source functions. No caller can supply a raw program or closure.
+
+Partition preparation leaves the canonical staged Bytes live on failure; the
+actual operation status selects its existing exact failure exit. Successful
+commit clears that same carrier before result initialization. One registry
+covers the entry and all helpers, and detachment requires zero loans, leases,
+Vecs and pending reservations before result publication. The additional graph
+counter does not fund compiler proof or runtime heap storage. Ordinary/default
+and public callable routes remain closed. Consuming iteration, Borrow-parameter
+receiving and the complete caller-funded native account remain pending.
+
+Two owning source bodies retain original 4096/count geometry at O0/O2 and actual
+four-code failure/poison-result/reentry controls. These are authored controls,
+not an executed qualification or completed cross-backend admission claim.

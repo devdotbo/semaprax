@@ -11,6 +11,8 @@ use super::function_uses_strings;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum NativeOutputProfile {
     Legacy,
+    /// Private sealed partition source unit.
+    SelectedPartition,
     /// Exact rederived native-only final constructor and opaque lease boundary.
     SelectedFinalUtf8,
     OwnedDataProvider,
@@ -87,6 +89,7 @@ impl NativeOutputProfile {
         op: crate::byte_ops::ByteOp,
     ) -> (&'static str, &'static str) {
         match (self, op) {
+            (Self::SelectedPartition, crate::byte_ops::ByteOp::Zeroed) => ("spx_partition_zeroed", "spx_ctx, "),
             (Self::ReservedBytesProvider, crate::byte_ops::ByteOp::Copy) => {
                 ("spx_bytes_copy_in", "spx_ctx, ")
             }
@@ -107,7 +110,7 @@ impl NativeOutputProfile {
                 selected_final_utf8: true,
                 ..StringRuntimeSelection::FROZEN
             },
-            Self::Legacy | Self::StdoutTranscript | Self::OwnedDataProvider => {
+            Self::Legacy | Self::SelectedPartition | Self::StdoutTranscript | Self::OwnedDataProvider => {
                 StringRuntimeSelection {
                     length_delimited: true,
                     provider_carriers: false,
