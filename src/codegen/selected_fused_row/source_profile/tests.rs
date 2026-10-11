@@ -106,7 +106,7 @@ fn original_native_source_profile_is_deterministic_and_default_remains_closed() 
         let value: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
         assert_eq!(value["outcome"], "returned");
         assert_eq!(value["result"], "9223372036854775807");
-        assert_eq!(value["source_sha256"], source_digest(maximum));
+        assert_eq!(value["source_sha256"], source_digest(&maximum));
     }
 
     for binary in binaries(&source(ORIGINAL, 1), "refused") {
