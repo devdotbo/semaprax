@@ -26,9 +26,10 @@ static void maximum(void) {
         spx_fused_vec vec={rows,0,4096};
         for(size_t i=0;i<4096;i++) {
             if(i) {string=malloc(4);assert(string);memcpy(string,"\xc3\xa9\0",4);}
-            spx_fused_row row={(int64_t)i,string,{NULL,0,0,0}};
+            spx_fused_row row={(int64_t)i,string,{NULL,0,0}};
             assert(spx_fused_issue(ctx,i,&row.bytes));
             if (!i && round) assert(!spx_fused_find(ctx,previous));
+            size_t length=999;assert(spx_fused_len(ctx,row.bytes,&length));assert(length==3);
             assert(spx_fused_row_push(ctx,&vec,&row));
             assert(!row.string && !row.bytes.token);
         }
@@ -73,7 +74,7 @@ static void controls(void) {
     spx_fused_bytes stale=a;assert(spx_fused_move(ctx,&a,&moved));assert(!a.token);
     assert(!spx_fused_find(ctx,stale));
     spx_fused_bytes wrong=moved;wrong.issuer=&foreign;assert(!spx_fused_find(ctx,wrong));
-    wrong=moved;wrong.len++;assert(!spx_fused_find(ctx,wrong));
+    wrong=moved;wrong.slot=SPX_FUSED_ROWS;assert(!spx_fused_find(ctx,wrong));
     wrong=moved;wrong.token=UINT64_MAX;assert(!spx_fused_find(ctx,wrong));
     assert(spx_fused_complete(ctx));
     spx_fused_view first={0},second={0};
@@ -82,12 +83,13 @@ static void controls(void) {
     spx_fused_view old=first;assert(spx_fused_borrow_end(ctx,&first));
     assert(spx_fused_borrow_begin(ctx,moved,&first));assert(first.token!=old.token);
     assert(!spx_fused_view_find(ctx,old));
-    spx_fused_view fake=first;fake.ptr++;assert(!spx_fused_view_find(ctx,fake));
+    spx_fused_view fake=first;fake.len++;assert(!spx_fused_view_find(ctx,fake));
+    fake=first;fake.ptr++;assert(!spx_fused_view_find(ctx,fake));
     assert(!spx_fused_move(ctx,&moved,&a));assert(ctx->failure==1 && moved.token);
     assert(!spx_fused_drop(ctx,&moved));assert(moved.token);
     unsigned char unchanged=199;assert(!spx_fused_read(ctx,first,0,&unchanged));assert(unchanged==199);
     assert(spx_fused_borrow_end(ctx,&first));assert(spx_fused_borrow_end(ctx,&second));
-    spx_fused_bytes untouched={&foreign,999,999,999};
+    spx_fused_bytes untouched={&foreign,999,999};
     assert(!spx_fused_clone_closed(ctx,moved,&untouched));assert(untouched.token==999);
     assert(spx_fused_drop(ctx,&moved));assert(spx_fused_drop(ctx,&b));
     assert(!o.live && o.frees==1);
@@ -128,16 +130,18 @@ static void controls(void) {
     assert(spx_fused_drop(ctx,&rows[1].bytes));assert(spx_fused_drop(ctx,&rows[0].bytes));
     assert(!o.live && o.frees==1);free(ctx);
     /* Publication and phase refusals preserve every caller output. */
-    for(unsigned mode=0;mode<2;mode++) {
+    for(unsigned mode=0;mode<3;mode++) {
         o=(observer){0};o.phase=2;ctx=fresh();assert(ctx);
         assert(spx_fused_begin(ctx,&issuer,2,3,sizeof(*ctx),&o,allocate,release));
         spx_fused_bytes child={0};assert(spx_fused_issue(ctx,0,&child));
         if(!mode) {
-            spx_fused_bytes output={&foreign,999,999,999};
+            spx_fused_bytes output={&foreign,999,999};
             assert(!spx_fused_issue(ctx,1,&output));assert(output.token==999);
-        } else {
+        } else if(mode==1) {
             spx_fused_view output={&foreign,999,999,999,NULL,999};
             assert(!spx_fused_borrow_begin(ctx,child,&output));assert(output.token==999);
+        } else {
+            uint64_t token=child.token;assert(!spx_fused_drop(ctx,&child));assert(child.token==token);
         }
         assert(ctx->failure && ctx->issued==1);assert(spx_fused_abort(ctx));
         assert(!spx_fused_settle_abort(ctx));assert(spx_fused_drop(ctx,&child));

@@ -2,6 +2,7 @@
 //! No serializer, admission hook, ordinary resource discount or backend selector.
 use crate::{ast, hir};
 pub(crate) mod domain;
+pub(crate) mod native_provenance;
 #[cfg(test)]
 mod tests;
 pub(crate) struct Descriptor<'a> {

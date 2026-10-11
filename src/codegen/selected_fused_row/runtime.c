@@ -10,7 +10,7 @@
 #define SPX_FUSED_CUMULATIVE 2097152u
 static unsigned char spx_fused_module_identity;
 typedef struct spx_fused_issuer spx_fused_issuer;
-typedef struct { const spx_fused_issuer *issuer; size_t slot; uint64_t token; size_t len; } spx_fused_bytes;
+typedef struct { const spx_fused_issuer *issuer; size_t slot; uint64_t token; } spx_fused_bytes;
 typedef struct { const spx_fused_issuer *issuer; size_t slot; uint64_t token, owner; const unsigned char *ptr; size_t len; } spx_fused_view;
 typedef struct { uint64_t token; size_t offset, len; unsigned live, borrows, published; } spx_fused_slot;
 typedef struct { uint64_t token, owner; unsigned live; } spx_fused_borrow;
@@ -29,6 +29,14 @@ typedef struct spx_fused_context {
     spx_fused_slot slots[SPX_FUSED_ROWS];
     spx_fused_borrow views[SPX_FUSED_VIEWS];
 } spx_fused_context;
+#if UINTPTR_MAX == UINT64_MAX
+_Static_assert(sizeof(spx_fused_bytes)==24,"native64 Bytes carrier");
+_Static_assert(sizeof(spx_fused_view)==48,"native64 View carrier");
+_Static_assert(sizeof(spx_fused_slot)==40,"native64 slot layout");
+_Static_assert(sizeof(spx_fused_borrow)==24,"native64 borrow layout");
+_Static_assert(sizeof(spx_fused_issuer)==32,"native64 issuer layout");
+_Static_assert(sizeof(spx_fused_context)==165504,"native64 context layout");
+#endif
 /* Private states, not assigned language statuses. */
 enum { SPX_FUSED_UNSTARTED, SPX_FUSED_BUILDING, SPX_FUSED_COMPLETE,
        SPX_FUSED_ABORTED, SPX_FUSED_SETTLED };
@@ -74,7 +82,7 @@ static spx_fused_slot *spx_fused_find(spx_fused_context *ctx,spx_fused_bytes val
     if (!spx_fused_valid(ctx) || !value.token || value.issuer!=ctx->issuer) return NULL;
     if (value.slot>=ctx->issued) return NULL;
     size_t i=value.slot;spx_fused_slot *slot=&ctx->slots[i];
-    if (slot->live && slot->token==value.token && slot->len==value.len &&
+    if (slot->live && slot->token==value.token &&
         i<ctx->count && slot->offset==i*ctx->width && slot->len==ctx->width &&
         slot->offset<=ctx->extent && slot->len<=ctx->extent-slot->offset) return slot;
     return NULL;
@@ -105,21 +113,28 @@ static int spx_fused_issue(spx_fused_context *ctx,size_t ordinal,spx_fused_bytes
     spx_fused_slot *slot=&ctx->slots[ordinal];
     slot->token=token;slot->offset=ordinal*ctx->width;slot->len=ctx->width;
     slot->live=1;slot->borrows=0;ctx->issued++;ctx->live++;
-    *out=(spx_fused_bytes){ctx->issuer,ordinal,token,ctx->width};return 1;
+    *out=(spx_fused_bytes){ctx->issuer,ordinal,token};return 1;
+}
+static int spx_fused_len(spx_fused_context *ctx,spx_fused_bytes value,size_t *out) {
+    spx_fused_slot *slot=spx_fused_find(ctx,value);
+    if (!slot || !out || ctx->failure) return spx_fused_fail(ctx);
+    *out=slot->len;return 1;
 }
 static int spx_fused_move(spx_fused_context *ctx,spx_fused_bytes *source,spx_fused_bytes *out) {
     if (!source || !out || source==out) return spx_fused_fail(ctx);
     spx_fused_slot *slot=spx_fused_find(ctx,*source);uint64_t token;
     if (!slot || slot->borrows || ctx->failure || ctx->state==SPX_FUSED_ABORTED || !spx_fused_mint(ctx->issuer,&token))
         return spx_fused_fail(ctx);
-    slot->token=token;*out=(spx_fused_bytes){ctx->issuer,source->slot,token,slot->len};
-    *source=(spx_fused_bytes){NULL,0,0,0};return 1;
+    slot->token=token;*out=(spx_fused_bytes){ctx->issuer,source->slot,token};
+    *source=(spx_fused_bytes){NULL,0,0};return 1;
 }
 static int spx_fused_drop(spx_fused_context *ctx,spx_fused_bytes *value) {
     if (!value) return 0;
     spx_fused_slot *slot=spx_fused_find(ctx,*value);
-    if (!slot || slot->borrows) return spx_fused_fail(ctx);
-    slot->live=0;slot->token=0;ctx->live--;*value=(spx_fused_bytes){NULL,0,0,0};
+    if (!slot || slot->borrows ||
+        (ctx->state!=SPX_FUSED_COMPLETE && ctx->state!=SPX_FUSED_ABORTED))
+        return spx_fused_fail(ctx);
+    slot->live=0;slot->token=0;ctx->live--;*value=(spx_fused_bytes){NULL,0,0};
     spx_fused_settle(ctx);return 1;
 }
 static int spx_fused_borrow_begin(spx_fused_context *ctx,spx_fused_bytes owner,spx_fused_view *out) {
@@ -133,8 +148,8 @@ static int spx_fused_borrow_begin(spx_fused_context *ctx,spx_fused_bytes owner,s
     return spx_fused_fail(ctx);
 }
 static spx_fused_borrow *spx_fused_view_find(spx_fused_context *ctx,spx_fused_view view) {
-    spx_fused_slot *slot=spx_fused_find(ctx,(spx_fused_bytes){view.issuer,view.slot,view.owner,view.len});
-    if (!slot || !slot->borrows || view.ptr!=ctx->backing+slot->offset) return NULL;
+    spx_fused_slot *slot=spx_fused_find(ctx,(spx_fused_bytes){view.issuer,view.slot,view.owner});
+    if (!slot || !slot->borrows || view.len!=slot->len || view.ptr!=ctx->backing+slot->offset) return NULL;
     for (size_t i=0;i<SPX_FUSED_VIEWS;i++) if (ctx->views[i].live &&
         ctx->views[i].token==view.token && ctx->views[i].owner==view.owner) return &ctx->views[i];
     return NULL;
@@ -148,7 +163,7 @@ static int spx_fused_borrow_end(spx_fused_context *ctx,spx_fused_view *view) {
     if (!view) return 0;
     spx_fused_borrow *borrow=spx_fused_view_find(ctx,*view);
     if (!borrow) return spx_fused_fail(ctx);
-    spx_fused_slot *slot=spx_fused_find(ctx,(spx_fused_bytes){view->issuer,view->slot,view->owner,view->len});
+    spx_fused_slot *slot=spx_fused_find(ctx,(spx_fused_bytes){view->issuer,view->slot,view->owner});
     borrow->live=0;borrow->token=0;slot->borrows--;*view=(spx_fused_view){NULL,0,0,0,NULL,0};return 1;
 }
 static int spx_fused_complete(spx_fused_context *ctx) {
@@ -179,6 +194,9 @@ static int spx_fused_clone_closed(spx_fused_context *ctx,spx_fused_bytes value,s
 /* Owning Vec storage is supplied by its ordinary allocation, never by a hidden arena. */
 typedef struct { int64_t scalar; void *string; spx_fused_bytes bytes; } spx_fused_row;
 typedef struct { spx_fused_row *rows; size_t len,capacity; } spx_fused_vec;
+#if UINTPTR_MAX == UINT64_MAX
+_Static_assert(sizeof(spx_fused_row)==40,"native64 row layout");
+#endif
 static int spx_fused_row_push(spx_fused_context *ctx,spx_fused_vec *vec,spx_fused_row *row) {
     if (!spx_fused_valid(ctx) || ctx->failure || ctx->state!=SPX_FUSED_BUILDING ||
         !vec || !row || !vec->rows || vec->capacity!=ctx->count || vec->len>=vec->capacity)

@@ -22,8 +22,8 @@ lease move and every borrowed view issue a fresh nonce; exhaustion refuses witho
 wrap. The module uses a distinct mutable static identity object's address.
 The held issuer and module must outlive all children and borrowed views.
 
-Private native64 Bytes carries four words: issuer identity, exact slot index, nonce
-and logical length. The index gives O(1) lookup while retaining full nonce checks.
+Private native64 Bytes carries three words: issuer identity, exact slot index
+and nonce. Logical length is read only from the authenticated immutable slot. The index gives O(1) lookup while retaining full nonce checks.
 This deliberately does not implement the proposed two-word representation: two
 independent issuers may mint equal nonces. Exact issuer identity is checked before
 slot lookup or payload access. Leased Slice carries six words: issuer, exact owner slot index, view nonce, owner
@@ -51,7 +51,8 @@ separate physical backing, never disguised as a byte-work counter.
 Moves retire the old nonce. Views pin the exact live owner and range; each has its
 own nonce, and slot reuse retires earlier descriptors. Borrow begins only after Complete. Reads require authenticated
 view identity and exact bounds before dereference. Move/drop with active views
-refuses. Complete requires every issued row published and releases the construction pin;
+refuses. Drop is permitted only in Complete or Aborted; Building requires abort
+before canonical child cleanup. Complete requires every issued row published and releases the construction pin;
 the last live child then releases the single allocation once through the explicit
 callback. Abort retains the pin through canonical child cleanup; explicit
 `settle_abort` releases it only after all children are gone. Children
@@ -93,3 +94,40 @@ Enlarged local/view/metadata and record/Vec layouts must be physically reserved;
 the legacy record layout cannot be reinterpreted as this larger private carrier. Same-source
 interpreter/native/Core-Wasm, current graph/cache, ordinary public byte parity and
 original full application gates remain required before any admission activation.
+
+
+## Private mixed-view provenance prerequisite
+
+`construction_fusion::native_provenance` independently derives the current
+source/HIR descriptor, then walks the retained suffix with a precharged fixed
+cursor and lexical alias table. It records exact expression pointers and IDs,
+actual field declaration and vector root, and the original field-read producer.
+String fields and their `str_as_bytes` aliases retain ordinary borrowed carriers;
+Bytes fields retain leased carriers. Equal `Slice<u8>` types alone never select
+an executor representation. Source spans are matched to current source expression
+kind, field/alias name and call shape as additional binding checks. Unknown,
+foreign, mixed-result or escaping view producers refuse. Source field checks
+currently authenticate the field name and a variable-shaped base; they do not
+bind that source variable to the independently reconstructed lowered traversal
+alias/index. Complete source-to-HIR authentication must close this explicit seam
+before the mapping can become emitter authority. The mapping is private,
+nonserialized proof data with no source admission or emission hook.
+
+The native64 target mirror reports actual Bytes 24, View 48 and Row 40 byte
+layouts, context 165,504 bytes and separately held issuer 32 bytes. C static
+layout assertions bind these constants when the owning probe is compiled. The
+4,096-row arithmetic reaches the unchanged 131,072 owned-leaf byte envelope;
+full row storage includes its independently counted scalar bytes. Every view
+expression plus potential immutable alias receives a conservative two-slot,
+48-byte-per-slot frame upper bound. These are preparation requirements, not
+executed allocations or permission to hide context metadata in a checked frame.
+Actual selected lowering must charge these representations, metadata and
+replacement overlap before allocation at the original preparation boundary.
+
+Three authored `construction_fusion::native_provenance::tests::` bodies cover
+mixed origins and exact aliases, current producer/source drift, and complete
+proof scratch/fact backing exact and adjacent one-short budgets. Checked ordinary
+counts 1, 8 and 32 supply the HIR; the original 4,096 source remains T267-refused.
+These definitions and the updated C probe remain unexecuted. Complete lifetime
+release integration, producer-bound lowering, allocator-backed Vec authority,
+interpreter/Wasm equivalence and owning executable qualification remain pending.
