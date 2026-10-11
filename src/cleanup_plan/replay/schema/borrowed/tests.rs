@@ -181,10 +181,11 @@ fn independently_mutated_modes_roots_option_metadata_and_loan_generation_refuse(
 }
 #[test]
 fn original_lexical_and_writer_priorities_are_not_conferred_by_the_borrowed_profile() {
-    let source = "module lexical; @id(\"lexical.main\") fn main()->i64 {if true {return 42;}else{0} return 0;}";
+    let source = "module lexical; @id(\"lexical.main\") fn main()->i64 {while true {if true {return 42;}else{0} 0} return 0;}";
     let program =
         crate::hir::resolve(&crate::check(source, "lexical-profile.spx").unwrap()).unwrap();
     let function = &program.functions[0];
+    assert!(function.cleanup_plan.lexical_control.is_some());
     assert_eq!(
         selected_schema_with_index(&program, function, None).unwrap(),
         CLEANUP_PLAN_SCHEMA_V18

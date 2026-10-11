@@ -29,13 +29,13 @@ pub(crate) use renewal_profile::RenewalBindings as ReplayRenewalBindings;
 mod replay;
 #[cfg(test)]
 pub(crate) use replay::validate_retained_lexical_with_reservation;
-#[cfg(test)]
-pub(crate) use replay::ReplayBorrowedLease;
 pub(crate) use replay::{
     replay_btree_node_upper, replay_reserve_vec, ClonePayload as ReplayClonePayload,
     PhysicalReservation as ReplayPhysicalReservation, SelectedReplayPreparation,
     SelectedReplaySession,
 };
+#[cfg(test)]
+pub(crate) use replay::{ReplayBorrowedIdentity, ReplayBorrowedLease};
 mod validate;
 
 pub(crate) use build::build_plan;

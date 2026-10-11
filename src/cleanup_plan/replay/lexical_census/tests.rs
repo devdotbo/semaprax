@@ -232,11 +232,9 @@ fn exact_skeleton_reservation_covers_walk_and_one_short_refuses_before_materiali
     let function = run(&program);
     let bound = skeleton_work_upper(&program, function).unwrap();
     let mut exact = ReplayBudget::with_skeleton_limit(bound);
-    assert!(
-        !hir_skeleton_paths(&program, function, &mut exact)
-            .unwrap()
-            .is_empty()
-    );
+    assert!(!hir_skeleton_paths(&program, function, &mut exact)
+        .unwrap()
+        .is_empty());
     reset_skeleton_materializations();
     let mut short = ReplayBudget {
         remaining: bound - 1,
@@ -245,6 +243,8 @@ fn exact_skeleton_reservation_covers_walk_and_one_short_refuses_before_materiali
         lent_skeleton: false,
         merge_paths: false,
         physical: None,
+        refusal_text: None,
+        refusal_spent: false,
     };
     assert_eq!(
         factored::strategy::reserve_enumerated(function, &mut short, bound)

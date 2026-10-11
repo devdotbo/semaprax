@@ -64,6 +64,12 @@ impl PhysicalReservation {
         }
     }
 
+    pub(super) fn reject(&mut self) {
+        if self.refusal.is_none() {
+            self.refusal = Some(PhysicalRefusal::LocalLimit);
+        }
+    }
+
     fn fail(&mut self, refusal: PhysicalRefusal) -> Result<(), PhysicalRefusal> {
         self.refusal = Some(refusal);
         Err(refusal)

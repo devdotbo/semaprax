@@ -355,7 +355,14 @@ reads authenticated successors directly and reserves its colors and stack before
 construction. Selected vector and FIFO frontier growth request `max(required, 2 * capacity)`
 through checked arithmetic, charging the complete replacement backing while the
 old backing remains charged. Spare capacity cannot refund or reset a refusal.
-Ordinary replay retains its existing allocation route.
+Ordinary replay retains its existing allocation route. After selected-budget
+admission, one actual-capacity refusal-text buffer is prepaid from that same
+physical ledger. Budget exhaustion moves that buffer into the first SPX-H006
+without allocating after refusal; repeated refused receivers remain allocation-free
+and keep the error identity. Internal operation labels are bounded independently
+of authored identities. This does not grant storage credits or refund dropped
+proof/diagnostic backing. Initial budget-admission errors retain their existing
+route before a selected budget exists.
 
 Owning regressions observe requested allocator Layout bytes and overlapping
 backing independently of reservation arithmetic. They retain exact/+1 source

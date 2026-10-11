@@ -20,7 +20,9 @@ mod status_construction;
 mod structural_control;
 mod structural_maps;
 #[cfg(test)]
-pub(crate) use selected_context::borrowed::Lease as ReplayBorrowedLease;
+pub(crate) use selected_context::borrowed::{
+    Identity as ReplayBorrowedIdentity, Lease as ReplayBorrowedLease,
+};
 #[cfg(test)]
 pub(crate) use selected_entry::validate_retained_lexical_with_limit;
 #[cfg(test)]
@@ -147,6 +149,9 @@ struct ReplayBudget {
     merge_paths: bool,
     /// Present only for the selected retained lexical replay entry.
     physical: Option<Box<physical_storage::PhysicalReservation>>,
+    /// Prepaid selected-budget refusal text; consumed without a fresh allocation.
+    refusal_text: Option<String>,
+    refusal_spent: bool,
 }
 
 impl ReplayBudget {
@@ -158,6 +163,8 @@ impl ReplayBudget {
             lent_skeleton: false,
             merge_paths: false,
             physical: None,
+            refusal_text: None,
+            refusal_spent: false,
         }
     }
     #[cfg(test)]
@@ -169,6 +176,8 @@ impl ReplayBudget {
             lent_skeleton: false,
             merge_paths: false,
             physical: None,
+            refusal_text: None,
+            refusal_spent: false,
         }
     }
 
@@ -178,13 +187,17 @@ impl ReplayBudget {
         units: usize,
         phase: &str,
     ) -> Result<(), Diagnostic> {
+        if self.refusal_spent {
+            return Err(self.budget_refusal(function, "selected replay budget already failed", ""));
+        }
         if self.lent_skeleton {
             return self.charge_skeleton(function, units, phase);
         }
         self.remaining = self.remaining.checked_sub(units).ok_or_else(|| {
-            replay_error(
+            self.budget_refusal(
                 function,
-                format!("cleanup replay work budget exhausted during {phase}"),
+                "cleanup replay work budget exhausted during ",
+                phase,
             )
         })?;
         Ok(())
@@ -195,10 +208,14 @@ impl ReplayBudget {
         function: &ResolvedFunction,
         units: usize,
     ) -> Result<(), Diagnostic> {
+        if self.refusal_spent {
+            return Err(self.budget_refusal(function, "selected replay budget already failed", ""));
+        }
         self.remaining = self.remaining.checked_sub(units).ok_or_else(|| {
-            replay_error(
+            self.budget_refusal(
                 function,
                 "cleanup replay skeleton-work preflight exceeds the global budget",
+                "",
             )
         })?;
         self.skeleton_remaining = units;
@@ -211,13 +228,21 @@ impl ReplayBudget {
         units: usize,
         phase: &str,
     ) -> Result<(), Diagnostic> {
+        if self.refusal_spent {
+            return Err(self.budget_refusal(function, "selected replay budget already failed", ""));
+        }
         let spent = self.skeleton_spent.checked_add(units).ok_or_else(|| {
-            replay_error(function, "cleanup replay skeleton debit count overflowed")
+            self.budget_refusal(
+                function,
+                "cleanup replay skeleton debit count overflowed",
+                "",
+            )
         })?;
         self.skeleton_remaining = self.skeleton_remaining.checked_sub(units).ok_or_else(|| {
-            replay_error(
+            self.budget_refusal(
                 function,
-                format!("cleanup replay work budget exhausted during {phase}"),
+                "cleanup replay work budget exhausted during ",
+                phase,
             )
         })?;
         self.skeleton_spent = spent;

@@ -112,9 +112,13 @@ fn rows_width_extent_placement_and_overflow_refuse() {
     assert_eq!(metadata_bytes(0, 0), None);
     assert_eq!(metadata_bytes(4097, 0), None);
     assert_eq!(metadata_bytes(33, MAX_PLACEMENT + 1), None);
+    // Independent native64 ABI: current domain header, exact Slot and Borrow
+    // tables, then the remaining inline-frame placement envelope. The owning
+    // cross-source C compiler gate independently checks every size/offset.
+    assert_eq!(MAX_PLACEMENT, 65_536 - 240);
     assert_eq!(
         metadata_bytes(4096, MAX_PLACEMENT),
-        Some(100_008 + MAX_PLACEMENT)
+        Some(240 + 4096 * 24 + 64 * 24 + MAX_PLACEMENT)
     );
 }
 

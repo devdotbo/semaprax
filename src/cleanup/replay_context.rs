@@ -23,6 +23,10 @@ pub(crate) trait ReplayContext {
     ) -> Option<crate::cleanup_plan::ReplayBorrowedLease<'a>> {
         None
     }
+    #[cfg(test)]
+    fn borrowed_helper_identity(&self) -> Option<&crate::cleanup_plan::ReplayBorrowedIdentity> {
+        None
+    }
     /// Only the selected immutable replay lease implements this method. It
     /// lends freshly rederived, budgeted sites for one exact held function;
     /// ordinary and detached contexts never lend attached-plan authority.

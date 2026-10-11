@@ -83,6 +83,75 @@ fn actual_option_helpers_full_replay_matches_ordinary_and_metering_through_drop(
 
 #[test]
 fn option_profile_cannot_bless_forged_case_or_result_trace_and_failure_is_sticky() {
+    // A receiving lease is bound to a private nonzero brand, not duplicated
+    // dyn-vtable metadata. Forwarding a genuine lease through another provider
+    // does not mint that provider a receiving identity.
+    {
+        struct Forward<'a>(&'a dyn ReplayContext);
+        impl ReplayContext for Forward<'_> {
+            fn declarations(&self) -> &crate::hir::DeclarationIndex {
+                self.0.declarations()
+            }
+            fn types(&self) -> &[crate::hir::ResolvedTypeDeclaration] {
+                self.0.types()
+            }
+            fn interfaces(&self) -> &[crate::hir::ResolvedInterface] {
+                self.0.interfaces()
+            }
+            fn functions(&self) -> &[ResolvedFunction] {
+                self.0.functions()
+            }
+            fn function_templates(&self) -> &[crate::hir::ResolvedFunctionTemplate] {
+                self.0.function_templates()
+            }
+            fn function_instances(&self) -> &[crate::hir::ResolvedFunctionInstance] {
+                self.0.function_instances()
+            }
+            fn borrowed_helper_lease<'a>(
+                &'a self,
+                function: &ResolvedFunction,
+            ) -> Option<crate::cleanup_plan::ReplayBorrowedLease<'a>> {
+                self.0.borrowed_helper_lease(function)
+            }
+        }
+        let program = program();
+        let anchor = &program.functions[0];
+        let mut preparation =
+            Preparation::with_limits(anchor, MAX_REPLAY_WORK_UNITS, 1 << 24).unwrap();
+        let index = declarations(&program, &mut preparation).unwrap();
+        let provider = Provider {
+            program: &program,
+            declarations: index,
+        };
+        let mut budget = preparation.budget;
+        let context =
+            selected_context::borrowed::Context::new(&provider, anchor, &mut budget).unwrap();
+        let lease = context.borrowed_helper_lease(anchor).unwrap();
+        lease.validate(&context, anchor, &mut budget).unwrap();
+        let other =
+            selected_context::borrowed::Context::new(&provider, anchor, &mut budget).unwrap();
+        assert_eq!(
+            lease
+                .validate(&other, anchor, &mut budget)
+                .unwrap_err()
+                .code,
+            "SPX-H006"
+        );
+        let forwarded = Forward(&context);
+        assert!(forwarded.borrowed_helper_identity().is_none());
+        let forwarded_lease = forwarded.borrowed_helper_lease(anchor).unwrap();
+        assert_eq!(
+            forwarded_lease
+                .validate(&forwarded, anchor, &mut budget)
+                .unwrap_err()
+                .code,
+            "SPX-H006"
+        );
+        // The unchanged receiving context remains the sole exact brand. This
+        // is a low-level identity check; the Session's sticky refusal is still
+        // exercised by every original hostile trace below.
+        lease.validate(&context, anchor, &mut budget).unwrap();
+    }
     for mutation in 0..7 {
         let mut program = program();
         let other_result = program.functions[0].body.id.clone();

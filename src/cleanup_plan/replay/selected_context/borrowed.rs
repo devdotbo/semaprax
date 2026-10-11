@@ -3,6 +3,13 @@ use super::*;
 pub(in crate::cleanup_plan::replay) struct Context<'a> {
     source: &'a dyn ReplayContext,
     profile: schema::borrowed::Profile<'a>,
+    identity: Identity,
+}
+
+/// Non-zero-sized private receiver brand; ordinary/forwarding providers cannot
+/// construct one. Its borrowed address is stable for the lifetime of each lease.
+pub(crate) struct Identity {
+    _private: u8,
 }
 impl<'a> Context<'a> {
     pub(in crate::cleanup_plan::replay) fn new(
@@ -24,7 +31,11 @@ impl<'a> Context<'a> {
         }
         profile.validate_inventory(source, function, budget)?;
         budget.reserve_array::<Self>(function, 1, "guarded borrowed replay lease")?;
-        Ok(Self { source, profile })
+        Ok(Self {
+            source,
+            profile,
+            identity: Identity { _private: 0 },
+        })
     }
 }
 
@@ -70,10 +81,13 @@ impl ReplayContext for Context<'_> {
         self.profile
             .matches(self.source, function)
             .then_some(Lease {
-                context: self,
+                identity: &self.identity,
                 source: self.source,
                 profile: &self.profile,
             })
+    }
+    fn borrowed_helper_identity(&self) -> Option<&Identity> {
+        Some(&self.identity)
     }
     fn primitive_renewals<'a>(
         &'a self,
@@ -84,9 +98,10 @@ impl ReplayContext for Context<'_> {
 }
 
 /// Opaque current-context receiver. Only this private Context can mint it;
-/// forwarding a lease through another provider fails its context pointer check.
+/// forwarding a lease through another provider cannot mint its receiver brand.
+/// Trait-object vtable addresses are not stable identity across codegen units.
 pub(crate) struct Lease<'a> {
-    context: &'a dyn ReplayContext,
+    identity: &'a Identity,
     source: &'a dyn ReplayContext,
     profile: &'a schema::borrowed::Profile<'a>,
 }
@@ -98,7 +113,11 @@ impl Lease<'_> {
         budget: &mut ReplayBudget,
     ) -> Result<(), Diagnostic> {
         budget.charge(function, 1, "borrowed lease exact receiving context")?;
-        if !std::ptr::eq(self.context, context) || !self.profile.matches(self.source, function) {
+        if !context
+            .borrowed_helper_identity()
+            .is_some_and(|identity| std::ptr::eq(self.identity, identity))
+            || !self.profile.matches(self.source, function)
+        {
             return Err(replay_error(
                 function,
                 "borrowed profile belongs to another receiving context",
@@ -242,7 +261,7 @@ impl Lease<'_> {
         budget.charge(function, 1, "borrowed plan empty ownership headers")?;
         let plan = &function.cleanup_plan;
         if !plan.slots.is_empty()
-                || !plan.entry_state.live_owned_parameters.is_empty()
+            || !plan.entry_state.live_owned_parameters.is_empty()
             || !plan.entry_state.conditional_owned_parameters.is_empty()
         {
             return Err(replay_error(

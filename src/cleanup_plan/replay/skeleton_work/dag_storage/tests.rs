@@ -332,3 +332,49 @@ fn shared_prefix_creation_through_drop_has_exact_work_and_backing_limits() {
         assert!(observed.allocated <= charged && observed.highwater <= charged);
     }
 }
+
+#[test]
+fn selected_refusal_backing_is_prepaid_sticky_and_observed_through_drop() {
+    let program = fixture();
+    let function = &program.functions()[0];
+    let (result, observed) = crate::test_allocation_observer::measure(|| {
+        let mut budget = ReplayBudget::with_physical(function, 1 << 20).unwrap();
+        let paid = budget.physical.as_ref().unwrap().charged();
+        let first = budget
+            .reserve_bytes(function, 1 << 20, "hostile physical refusal")
+            .unwrap_err();
+        assert_eq!(first.code, "SPX-H006");
+        assert!(first
+            .message
+            .contains("physical reservation exhausted during hostile physical refusal"));
+        drop(first);
+        let after = budget.physical.as_ref().unwrap().charged();
+        assert_eq!(after, paid);
+        assert_eq!(
+            budget.reserve_bytes(function, 0, "retry").unwrap_err().code,
+            "SPX-H006"
+        );
+        assert_eq!(
+            budget.charge(function, 0, "retry work").unwrap_err().code,
+            "SPX-H006"
+        );
+        assert_eq!(
+            budget.reserve_skeleton(function, 0).unwrap_err().code,
+            "SPX-H006"
+        );
+        drop(budget);
+        paid
+    });
+    assert!(!observed.invalid && observed.live == 0);
+    assert_eq!(
+        observed.allocations, 2,
+        "one paid text buffer and one reservation owner"
+    );
+    assert_eq!(
+        observed.allocated,
+        std::mem::size_of::<super::super::super::physical_storage::PhysicalReservation>()
+            + function.id.as_str().len()
+            + 512
+    );
+    assert!(observed.allocated <= result && observed.highwater <= result);
+}

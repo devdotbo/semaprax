@@ -17,16 +17,17 @@ fn decisions(count: usize) -> String {
         .collect()
 }
 fn source(count: usize, extra_path: bool) -> String {
-    // A non-tail return authenticates lexical control and contributes two
-    // success routes. The preceding Copy choices contribute 2^(count-1).
-    // The optional earlier return contributes one additional success route.
-    let choices = decisions(count.checked_sub(1).unwrap());
+    // The exact break loop authenticates lexical control and has two normal
+    // exits. Copy choices contribute 2^(count-2), and the final two returning
+    // arms supply the last factor. An earlier return adds exactly one route.
+    let choices = decisions(count.checked_sub(2).unwrap());
     let early = if extra_path {
         "if n==2 {return 0;}else{0}"
     } else {
         ""
     };
-    let body = format!("{early} {choices} if n==1 {{return 0;}}else{{0}} return 0;");
+    let body =
+        format!("{early} while n==3 {{break;}} {choices} if n==1 {{return 0;}}else{{return 0;}}");
     format!(
         "module lexical.activation; @id(\"probe\") fn probe(n:i64)->i64 {{{body}}} @id(\"main\") fn main()->i64 {{0}}"
     )
@@ -50,6 +51,7 @@ fn exact_65536_and_65537_choose_distinct_routes_without_raising_ceiling() {
     for (extra_path, expected) in [(false, 65_536), (true, 65_537)] {
         let program = resolved(&source(16, extra_path));
         let function = probe(&program);
+        assert!(function.cleanup_plan.lexical_control.is_some());
         let before = function.cleanup_plan.clone();
         validate_structure(&program, function).unwrap();
         let mut budget = ReplayBudget::new();
@@ -91,6 +93,7 @@ fn exact_65536_and_65537_choose_distinct_routes_without_raising_ceiling() {
 fn above_cap_equal_terminal_totals_do_not_authenticate_reordered_decisions() {
     let program = resolved(&source(17, false));
     let function = probe(&program);
+    assert!(function.cleanup_plan.lexical_control.is_some());
     let mut forged = function.clone();
     let mut identities = Vec::new();
     for edge in &forged.cleanup_plan.edges {

@@ -251,6 +251,8 @@ mod tests {
             lent_skeleton: false,
             merge_paths: false,
             physical: None,
+            refusal_text: None,
+            refusal_spent: false,
         };
         let error =
             reserve_program_skeleton_work(&program, std::iter::once(function), &mut insufficient)
