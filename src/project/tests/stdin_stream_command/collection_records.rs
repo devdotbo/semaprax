@@ -111,7 +111,10 @@ use function @id("collection.verify") from collection.data as verify;
 }
 
 fn valid_fixture() -> PathBuf {
-    let root = fixture(PROJECT_PROFILE_STDIN_STREAM_COLLECTION_RECORD_COMMAND_IO_V1, false);
+    let root = fixture(
+        PROJECT_PROFILE_STDIN_STREAM_COLLECTION_RECORD_COMMAND_IO_V1,
+        false,
+    );
     for (path, source) in [
         ("a/app.spx", command_app()),
         ("b/data.spx", command_data()),
@@ -298,8 +301,7 @@ fn pre_v32_profiles_reject_unused_nested_outcome_runtime_with_exact_route_hint()
         )
         .unwrap();
         let before = file_inventory(&root);
-        let errors =
-            with_authenticated_project(&root.join(MANIFEST_FILE), |_| Ok(())).unwrap_err();
+        let errors = with_authenticated_project(&root.join(MANIFEST_FILE), |_| Ok(())).unwrap_err();
         assert!(errors.iter().any(|error| {
             error.code == "SPX-G172"
                 && error.message
@@ -312,7 +314,10 @@ fn pre_v32_profiles_reject_unused_nested_outcome_runtime_with_exact_route_hint()
 
 #[test]
 fn v32_nested_outcome_project_route_executes_native_command() {
-    let root = fixture(PROJECT_PROFILE_STDIN_STREAM_NESTED_OUTCOME_COMMAND_IO_V1, false);
+    let root = fixture(
+        PROJECT_PROFILE_STDIN_STREAM_NESTED_OUTCOME_COMMAND_IO_V1,
+        false,
+    );
     let app = r#"module collection.app;
 use function @id("n.decide") from collection.data as decide;
 permit {process.args.read,process.stderr.write,process.stdin.read,process.stdout.write}

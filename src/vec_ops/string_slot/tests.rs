@@ -47,34 +47,29 @@ fn slot_views_replay_exact_shape_loans_cache_and_selective_graph() {
     let graph = crate::graph::to_json(&reparsed).unwrap();
     assert!(graph.starts_with("{\"schema\":\"semaprax.graph.v80\""));
     crate::graph::verify_json(&reparsed, &graph).unwrap();
-    assert!(
-        crate::graph::verify_json(
-            &reparsed,
-            &graph.replacen("semaprax.graph.v80", "semaprax.graph.v79", 1)
-        )
-        .is_err()
-    );
+    assert!(crate::graph::verify_json(
+        &reparsed,
+        &graph.replacen("semaprax.graph.v80", "semaprax.graph.v79", 1)
+    )
+    .is_err());
 
-    assert!(
-        program
-            .declarations
-            .byte_slice_provenances()
-            .any(
-                |(_, p)| p.root_kind == hir::ByteSliceRootKind::OwnedVectorStringSlot
-                    && p.vector_field.is_none()
-            )
-    );
+    assert!(program
+        .declarations
+        .byte_slice_provenances()
+        .any(
+            |(_, p)| p.root_kind == hir::ByteSliceRootKind::OwnedVectorStringSlot
+                && p.vector_field.is_none()
+        ));
     let f = program
         .functions
         .iter()
         .find(|f| f.id.as_str() == "slots.inspect")
         .unwrap();
-    assert!(
-        f.loan_plan
-            .loans
-            .iter()
-            .any(|loan| loan.origin.projections.is_empty() && !loan.end_edges.is_empty())
-    );
+    assert!(f
+        .loan_plan
+        .loans
+        .iter()
+        .any(|loan| loan.origin.projections.is_empty() && !loan.end_edges.is_empty()));
     let wire = crate::cache_codec::encode(&program).unwrap();
     let restored: ResolvedProgram = crate::cache_codec::decode(&wire).unwrap();
     hir::validate(&restored).unwrap();

@@ -1,7 +1,7 @@
 //! Invocation-held function lookup scratch. It does not authenticate signatures,
 //! origins, source bodies or namespace ownership; the capture caller does all of
 //! those unchanged comparisons after every lookup.
-use super::{Program, capacity, fail, hir, pure, reserve_builder_structure};
+use super::{capacity, fail, hir, pure, reserve_builder_structure, Program};
 use crate::diagnostic::Diagnostic;
 use std::cmp::Ordering;
 

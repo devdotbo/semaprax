@@ -13,12 +13,12 @@ use super::{import, Refusal};
 use crate::ast::BinaryOp;
 use crate::cleanup_plan::CheckedOperation;
 use crate::construction_fusion::native_provenance::Carrier;
-use crate::loan_plan::LoanPointPhase;
 use crate::hir::{
     DeclarationId, OwnershipMode as O, Place, ResolvedBinding, ResolvedExpr as E,
     ResolvedExprKind as K, ResolvedMatchArm, ResolvedMatchPattern as P, ResolvedStatement as S,
     ResolvedType as T,
 };
+use crate::loan_plan::LoanPointPhase;
 use crate::wasm::aggregate::{STATUS_ADD_OVERFLOW, STATUS_SUB_OVERFLOW};
 use crate::wasm::numeric_conversions::OUT_OF_RANGE_STATUS;
 use wasm_encoder::{BlockType, Instruction as I, ValType};
@@ -308,8 +308,7 @@ impl<'a> Lower<'a> {
         operation: &DeclarationId,
         place: &Place,
     ) -> Result<Repr, Refusal> {
-        if operation.as_str() != crate::byte_ops::STR_AS_BYTES_ID || !place.projections.is_empty()
-        {
+        if operation.as_str() != crate::byte_ops::STR_AS_BYTES_ID || !place.projections.is_empty() {
             return Err(unsupported("borrowed place operation"));
         }
         let (local, repr) = self.lookup(&place.root)?;

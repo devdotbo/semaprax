@@ -83,7 +83,10 @@ fn rename_counter(program: &mut ResolvedProgram, id: ValueId) {
     let K::Block { statements, .. } = &mut body.kind else {
         panic!("iteration body")
     };
-    let S::Let { value: snapshot, .. } = &mut statements[0] else {
+    let S::Let {
+        value: snapshot, ..
+    } = &mut statements[0]
+    else {
         panic!("snapshot")
     };
     rename(snapshot, &from, &id);
@@ -156,10 +159,12 @@ fn authenticated_source_proof_joins_the_independent_typed_selection() {
         assert!(!joined.still_current(&source.clone(), &program));
         assert!(!joined.still_current(&source, &program.clone()));
         // Closed default: ordinary checking keeps the original refusal.
-        assert!(crate::check(&text(count), "fused-construction-join-refused.spx")
-            .unwrap_err()
-            .iter()
-            .any(|d| d.code == "SPX-T267"));
+        assert!(
+            crate::check(&text(count), "fused-construction-join-refused.spx")
+                .unwrap_err()
+                .iter()
+                .any(|d| d.code == "SPX-T267")
+        );
     }
     let legacy = parsed(&text(8));
     assert_eq!(current_source(&legacy).err(), Some(Refusal::Legacy));
@@ -197,7 +202,10 @@ fn changed_source_prefix_and_suffix_operands_refuse_against_unchanged_hir() {
         ("module app.leaf;", "module app.leap;"),
         ("items", "itemz"),
         ("let item = Row", "let iten = Row"),
-        ("total = total + row.priority", "total = total - row.priority"),
+        (
+            "total = total + row.priority",
+            "total = total - row.priority",
+        ),
         ("count = count + 1", "count = count + 2"),
         ("count ==   64", "count ==   65"),
         ("{ total } else { 0 }", "{ total } else { 1 }"),
@@ -265,7 +273,10 @@ fn same_span_hir_suffix_and_owner_forgeries_cannot_join_unchanged_source() {
             set_root(sort_operand(p), moved);
         }),
         ("foreign owner sort", |p| {
-            set_root(sort_operand(p), ValueId::local(&main_execution(), "body.s99"));
+            set_root(
+                sort_operand(p),
+                ValueId::local(&main_execution(), "body.s99"),
+            );
         }),
         ("sort target", |p| {
             let S::Let { value, .. } = block(p)

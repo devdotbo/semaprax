@@ -189,7 +189,9 @@ fn borrow_call() -> i64 {
     }
     let canonical = format::canonical(&parsed);
     assert!(canonical.contains("match own run(Request { leaf: Leaf { value: 1 } })"));
-    assert!(canonical.contains("match borrow inspect<Request>(Request { leaf: Leaf { value: 2 } })"));
+    assert!(
+        canonical.contains("match borrow inspect<Request>(Request { leaf: Leaf { value: 2 } })")
+    );
     assert!(canonical.contains("match (own(Request { leaf: Leaf { value: 3 } }))"));
     assert!(canonical.contains("match (borrow(Request { leaf: Leaf { value: 4 } }))"));
     let reparsed = parse(

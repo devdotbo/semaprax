@@ -961,11 +961,13 @@ fn byte_capacity_expression_in(
                                             program, condition, body,
                                         )
                                     });
-                                    frames.push(if fused_selection::selects(facts, condition, body) {
-                                        Frame::FusedConstruction
-                                    } else {
-                                        Frame::Loop(finite)
-                                    });
+                                    frames.push(
+                                        if fused_selection::selects(facts, condition, body) {
+                                            Frame::FusedConstruction
+                                        } else {
+                                            Frame::Loop(finite)
+                                        },
+                                    );
                                     frames.push(Frame::Visit(body, false));
                                     frames.push(Frame::Visit(condition, false));
                                 }

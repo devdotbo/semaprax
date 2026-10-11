@@ -20,7 +20,13 @@ pub(super) fn retain_workspace_module(
     } else {
         None
     };
-    let scalar_helpers=static_text::scalar_helpers::capture(program,&resolved,programs,authored,authenticated_sources)?;
+    let scalar_helpers = static_text::scalar_helpers::capture(
+        program,
+        &resolved,
+        programs,
+        authored,
+        authenticated_sources,
+    )?;
     let retained_output_only = loan_scratch.is_some();
     hir::replay_agent_source_associations(program, &resolved.agents)
         .map_err(|error| vec![error])?;

@@ -627,7 +627,7 @@ fn every_expression_shape_resolves_at_exact_depth_512_and_rejects_513() {
             | ExprKind::Float64(_)
             | ExprKind::Bool(_)
             | ExprKind::String(_)
-| ExprKind::BorrowedUtf8Literal(_)
+            | ExprKind::BorrowedUtf8Literal(_)
             | ExprKind::Var(_) => false,
         }
     }

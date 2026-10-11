@@ -39,12 +39,10 @@ fn completed_return_operand_clone_settles_before_ensures_and_keeps_root_owner() 
     let expression = lexical_control::expression_at(&function.body, id).unwrap();
     assert_eq!(expression.ty, ResolvedType::String);
     assert!(matches!(expression.kind, ResolvedExprKind::Place(_)));
-    assert!(
-        !exit
-            .finalize_in_order
-            .iter()
-            .any(|action| matches!(action.source.storage, StorageId::Value(_)))
-    );
+    assert!(!exit
+        .finalize_in_order
+        .iter()
+        .any(|action| matches!(action.source.storage, StorageId::Value(_))));
     let canonical =
         crate::format::canonical(&crate::check(SOURCE, "completed-string.spx").unwrap());
     let repeated = fixture(&canonical);
@@ -87,25 +85,19 @@ fn temporary_kind_and_live_staged_or_provisional_storage_cannot_mint_completion(
             _ => None,
         })
         .unwrap();
-    assert!(
-        builder
-            .completed_lexical_storage(&StorageId::Temporary(temp.clone()))
-            .unwrap()
-    );
-    assert!(
-        !builder
-            .completed_lexical_storage(&StorageId::ProvisionalResult)
-            .unwrap()
-    );
-    assert!(
-        !builder
-            .completed_lexical_storage(&StorageId::CallArgument {
-                call: temp.clone(),
-                parameter_index: 0,
-                value_expression: temp.clone()
-            })
-            .unwrap()
-    );
+    assert!(builder
+        .completed_lexical_storage(&StorageId::Temporary(temp.clone()))
+        .unwrap());
+    assert!(!builder
+        .completed_lexical_storage(&StorageId::ProvisionalResult)
+        .unwrap());
+    assert!(!builder
+        .completed_lexical_storage(&StorageId::CallArgument {
+            call: temp.clone(),
+            parameter_index: 0,
+            value_expression: temp.clone()
+        })
+        .unwrap());
     let mut changed = function.clone();
     let ResolvedExprKind::Block { statements, .. } = &mut changed.body.kind else {
         panic!("body")
@@ -116,11 +108,9 @@ fn temporary_kind_and_live_staged_or_provisional_storage_cannot_mint_completion(
     let fake_id = value.id.clone();
     value.kind = ResolvedExprKind::Int(9);
     let altered = PlanBuilder::new(&program, &changed).unwrap();
-    assert!(
-        !altered
-            .completed_lexical_storage(&StorageId::Temporary(fake_id))
-            .unwrap()
-    );
+    assert!(!altered
+        .completed_lexical_storage(&StorageId::Temporary(fake_id))
+        .unwrap());
 }
 #[test]
 fn owning_iterator_continue_settles_completed_string_read_without_consuming_remainder() {
@@ -149,22 +139,18 @@ fn owning_iterator_continue_settles_completed_string_read_without_consuming_rema
         .find(|exit| exit.kind == crate::ast::LexicalExitKind::Continue)
         .unwrap();
     let selected = &function.cleanup_plan.exits[certificate.exit.0 as usize];
-    assert!(
-        selected
-            .finalize_in_order
-            .iter()
-            .any(|action| matches!(action.source.storage, StorageId::Temporary(_)))
-    );
+    assert!(selected
+        .finalize_in_order
+        .iter()
+        .any(|action| matches!(action.source.storage, StorageId::Temporary(_))));
     let crate::hir::LoopLatchKind::OwnedIteratorStep { remainder, .. } = &control.loops[0].latch
     else {
         panic!("owning latch")
     };
-    assert!(
-        !selected
-            .finalize_in_order
-            .iter()
-            .any(|action| action.source.storage == StorageId::Value(remainder.clone()))
-    );
+    assert!(!selected
+        .finalize_in_order
+        .iter()
+        .any(|action| action.source.storage == StorageId::Value(remainder.clone())));
 }
 
 const TERMINAL_RECORD_SOURCE: &str = r#"module lexical.terminal_record;
@@ -190,13 +176,11 @@ fn terminal_owned_record_arm_has_no_second_normal_scope_terminator() {
     crate::hir::validate(&program).unwrap();
     let function = inspect(&program);
     assert!(function.cleanup_plan.lexical_control.is_some());
-    assert!(
-        function
-            .cleanup_plan
-            .slots
-            .iter()
-            .all(|slot| slot.ty != ResolvedType::Never)
-    );
+    assert!(function
+        .cleanup_plan
+        .slots
+        .iter()
+        .all(|slot| slot.ty != ResolvedType::Never));
     let returns: Vec<_> = function
         .cleanup_plan
         .exits
@@ -285,15 +269,13 @@ fn terminal_record_region_certificate_refuses_missing_duplicate_and_normal_endpo
         })
         .expect("both returns leave their owning record arm");
     let region_id = region.id;
-    assert!(
-        function
-            .cleanup_plan
-            .lexical_control
-            .as_ref()
-            .unwrap()
-            .abrupt_only_regions
-            .contains(&region_id)
-    );
+    assert!(function
+        .cleanup_plan
+        .lexical_control
+        .as_ref()
+        .unwrap()
+        .abrupt_only_regions
+        .contains(&region_id));
     for mutation in 0..3 {
         let mut forged = program.clone();
         let function = forged

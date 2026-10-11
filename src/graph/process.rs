@@ -138,7 +138,7 @@ pub(super) fn graph_json(
 #[cfg(test)]
 mod tests {
     use crate::{
-        command_io_ops::{CommandOperationProfile, validate_operation_profile},
+        command_io_ops::{validate_operation_profile, CommandOperationProfile},
         hir,
     };
     const SOURCE: &str = r#"module process.graph;
@@ -205,13 +205,11 @@ permit { process.environment.read, process.execute }
                     .is_err()
             );
         }
-        assert!(
-            crate::graph::verify_json(
-                &source,
-                &graph.replacen("semaprax.graph.v44", "semaprax.graph.v43", 1)
-            )
-            .is_err()
-        );
+        assert!(crate::graph::verify_json(
+            &source,
+            &graph.replacen("semaprax.graph.v44", "semaprax.graph.v43", 1)
+        )
+        .is_err());
         let pure = crate::check(
             &SOURCE.replace(
                 "process_run(0usize,argv,4usize,stdin,0usize,100usize,32usize,16usize)",
