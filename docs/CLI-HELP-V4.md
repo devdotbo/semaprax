@@ -124,7 +124,10 @@ The response is derived from the diagnostic-index table in the compiler-checked
 [agent quick reference](AGENT-QUICK-REFERENCE.md) through the pinned
 `semaprax.agent-diagnostic-help.v1`
 [JSON companion](AGENT-DIAGNOSTIC-HELP.json); the CLI does not maintain a second
-copy of the advice. The documentation gate also requires every marked failing
+copy of the advice. Typed Vec constructors add exact P220 shape/type/bound
+corrections and T318 forged-expansion/generated-owner corrections through that
+same table; neither code grants constructor or intermediate-owner authority.
+The documentation gate also requires every marked failing
 example in the card to have an indexed correction.
 
 No match exits two, emits no stdout, and reports the literal diagnostic

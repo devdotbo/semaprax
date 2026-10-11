@@ -59,3 +59,8 @@ The original ShiftSim15 and Catalog23 corpus bodies remain unchanged; their
 committed eight-server and two-item examples adopt the constructor. Exact old
 example sources remain independent controls. No token, turn, runtime or
 physical-work gain is claimed before matched observations and executable gates.
+
+Agent advice uses `help language author:vec-constructor` and exact diagnostic
+lookups for P220/T318 through the compiler-checked quick-reference table. The
+ordinary diagnostic-help producer regenerates its JSON companion after source
+integration; help does not independently authenticate a constructor.

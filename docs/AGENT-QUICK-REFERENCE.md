@@ -929,6 +929,27 @@ fn main() -> i64
 
 ## Lists and iterators
 
+`vec_of<T>(items)` uses one explicit admitted element type and exact capacity;
+`vec_of<T>()` is empty. Items run once left to right, with one ordinary push
+commit each. Existing bounds, failure cleanup and String clone rules stay.
+`vec_of` is reserved (`SPX-P220`); generated owner capture/forgery refuses
+(`SPX-T318`). See `help language author:vec-constructor`; qualification pending.
+
+```semaprax
+module app.constructor;
+
+@id("app.main")
+fn main() -> i64
+{
+    let values = vec_of<i64>(19, 23);
+    if vec_len<i64>(values) == 2usize {
+        42
+    } else {
+        0
+    }
+}
+```
+
 `vec_sort<T>(values)` consumes and returns a Copy-scalar vector in ascending
 order; use `values = vec_sort<T>(values)` for a mutable binding. Capacity and
 length stay unchanged. Floats use IEEE total order, including signed zeros and
@@ -999,6 +1020,20 @@ which keeps this iterator protocol's boundaries intact. See
 callbacks under [Generic Iterator Helpers v1](GENERIC-ITERATORS-V1.md).
 
 ## Habits from other languages: diagnostic examples
+
+`vec_of` requires one explicit element type.
+
+<!-- expect: SPX-P220 -->
+```semaprax
+module bad.constructor;
+
+@id("bad.main")
+fn main() -> i64
+{
+    let values = vec_of(1);
+    0
+}
+```
 
 Each block below shows a common first attempt. Its marker names the expected
 diagnostic; the following text gives the fix. Parser and source-verifier
@@ -1134,6 +1169,8 @@ Use `u8_from_i64(value)` then `char_from_u8(byte)` for byte conversion; use
 
 | You wrote|Code|Fix|
 | ---|---|---|
+| vec_of missing type/reserved name/oversized expansion|SPX-P220|Use vec_of<T>(items), one admitted type and existing bounds; vec_of is reserved|
+| forged constructor/generated owner capture|SPX-T318|Reparse canonical vec_of source; use an explicit Vec chain to read intermediate owners|
 | native cleanup refusal postcheck|SPX-B104|Check cleanup; String-condition scalar match “parent is not canonical”: backend bug|
 | for range|SPX-P106|while; mut counter; discard tail|
 | assignment loop|SPX-P203|Scalar tail, e.g. 0|

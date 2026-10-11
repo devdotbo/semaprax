@@ -2,7 +2,7 @@
 use std::fmt::Write as _;
 
 const MAX_BYTES: usize = 2_048;
-const ROUTES: &str = "Authoring routes (complete):\n  author:lexical-exits            statement-tail break/continue/return\n  author:stdin-json               v27 bounded native stream command\n  author:stream-data-v2           v29 private record/Vec stream command\n  author:owned-data               v30 private owned-leaf collections\n  author:collection-records       v31 nested records containing Vec\n  author:nested-outcomes         v32 typed nested success/error carriers\n  author:file-text                native UTF-8 file command\n  author:selected-file            native file; :selected-file-resource for v34\n  author:source-web               single-source web build\n  author:literal-format           checked literal String rendering\n  author:static-utf8              borrowed UTF-8\n  author:string-from-utf8         strict owned String construction from bytes\n  author:copy-record-vec          flat Copy-record vectors\n  author:record-sort-keys         explicit stable field sort policies\n  author:record-field-views       borrowed record and Vec field reads\n  author:record-traversal         scoped borrowed rows and optional indices\n  author:json-codec               checked source JSON codec derivation\n  author:json-identifier-views    one identifier as a token view\n  author:json-request-views       bounded identifier and record arrays\n  author:json-stream-request-views bounded native stream request view\n  author:json-owned-request      bounded owning request collections\n  author:json-utf8-owned-request bounded UTF-8 string values\n  author:json-stream-utf8-owned-request bounded UTF-8 stdin requests\n  author:json-collection-response bounded nested collection encoder\n  author:json-nested-request      bounded finite nested request decoder\n  author:json-stream-nested-request bounded finite nested stdin decoder\n  author:json-nested-response     bounded finite nested borrowed encoder\n  author:json-request-response    typed request/response composition boundaries\nLibrary-only search: help language find:<word>:0\nExact card sections: help language topics\n";
+const ROUTES: &str = "Authoring routes (complete):\n  author:vec-constructor typed Vec source; ordinary per-item commits\n  author:lexical-exits statement-tail break/continue/return\n  author:stdin-json v27 bounded native stream command\n  author:stream-data-v2           v29 private record/Vec stream command\n  author:owned-data v30 private owned-leaf collections\n  author:collection-records v31 nested records containing Vec\n  author:nested-outcomes v32 typed nested success/error carriers\n  author:file-text native UTF-8 file command\n  author:selected-file native file; :selected-file-resource for v34\n  author:source-web single-source web build\n  author:literal-format checked literal String rendering\n  author:static-utf8              borrowed UTF-8\n  author:string-from-utf8         strict owned String construction from bytes\n  author:copy-record-vec flat Copy-record vectors\n  author:record-sort-keys explicit stable field sort policies\n  author:record-field-views borrowed record and Vec field reads\n  author:record-traversal scoped borrowed rows and optional indices\n  author:json-codec checked source JSON codec derivation\n  author:json-identifier-views one identifier as a token view\n  author:json-request-views bounded identifier and record arrays\n  author:json-stream-request-views bounded native stream request view\n  author:json-owned-request bounded owning request collections\n  author:json-utf8-owned-request bounded UTF-8 string values\n  author:json-stream-utf8-owned-request bounded UTF-8 stdin requests\n  author:json-collection-response bounded nested collection encoder\n  author:json-nested-request bounded finite nested request decoder\n  author:json-stream-nested-request bounded finite nested stdin decoder\n  author:json-nested-response bounded finite nested borrowed encoder\n  author:json-request-response typed request/response composition boundaries\nLibrary-only search: help language find:<word>:0\nExact card sections: help language topics\n";
 
 #[cfg(test)]
 pub(super) fn assert_guide_contract() {
@@ -22,6 +22,13 @@ pub(super) fn assert_guide_contract() {
 pub(super) fn lookup(query: &str) -> Result<String, String> {
     match query {
         "author:routes" => Ok(ROUTES.to_owned()),
+        "author:vec-constructor" => Ok(concat!(
+            "Typed Vec source constructor; executable qualification pending.\n",
+            "let values = vec_of<i64>(19, 23); empty: vec_of<i64>(). One explicit admitted element type; exact count/capacity, existing Vec/event/payload/source bounds.\n",
+            "Capacity is allocated first; items evaluate once left to right. Each vec_push keeps ordinary staged-argument commit. Failure settles the committed prefix and staged owners once, keeps the selected status and evaluates no suffix.\n",
+            "P220: one explicit type, reserved vec_of name, and bounded expansion. T318: generated-owner shape/hygiene disagrees; reparse canonical source. Use an explicit Vec chain when intermediate owners must be authored/read.\n",
+            "A constructor is not a variadic Call or bulk allocator; String clone and Bytes event rules stay unchanged. Graph v81 preserves source provenance; frozen public/interop profiles refuse it. No new ABI or capability. docs/TYPED-VEC-CONSTRUCTORS-V1.md.\n"
+        ).to_owned()),
         "author:lexical-exits" => Ok(concat!(
             "Lexical structured exits v1: source implementation; executable qualification pending.\n",
             "Inside an admitted loop: if skip { continue; }; if done { break; }; followed by the ordinary body tail. An unconditional exit ends its block: do not append dummy 0 or unreachable effects.\n",
@@ -435,18 +442,14 @@ mod tests {
                 ..
             }
         )));
-        assert!(
-            control
-                .exits
-                .iter()
-                .any(|exit| exit.kind == semaprax::hir::LexicalExitKind::Continue)
-        );
-        assert!(
-            control
-                .exits
-                .iter()
-                .any(|exit| exit.kind == semaprax::hir::LexicalExitKind::Break)
-        );
+        assert!(control
+            .exits
+            .iter()
+            .any(|exit| exit.kind == semaprax::hir::LexicalExitKind::Continue));
+        assert!(control
+            .exits
+            .iter()
+            .any(|exit| exit.kind == semaprax::hir::LexicalExitKind::Break));
     }
 
     #[test]
@@ -471,11 +474,9 @@ mod tests {
         ] {
             assert!(card.contains(fact), "static UTF-8 guidance omits {fact}");
         }
-        assert!(
-            lookup("author:routes")
-                .unwrap()
-                .contains("author:static-utf8")
-        );
+        assert!(lookup("author:routes")
+            .unwrap()
+            .contains("author:static-utf8"));
         let source = r#"module help.static_text;
 @id("help.static_text.main") fn main()->i64 {
  let key=str"é\u{0}";
@@ -507,17 +508,16 @@ mod tests {
         ] {
             assert!(card.contains(text), "{text}");
         }
-        assert!(
-            lookup("author:routes")
-                .unwrap()
-                .contains("author:record-sort-keys")
-        );
+        assert!(lookup("author:routes")
+            .unwrap()
+            .contains("author:record-sort-keys"));
     }
 
     #[test]
     fn routes_and_search_are_bounded_exact_and_have_complete_continuations() {
         for route in [
             "author:routes",
+            "author:vec-constructor",
             "author:lexical-exits",
             "author:stdin-json",
             "author:stream-data-v2",
@@ -577,19 +577,15 @@ mod tests {
         ] {
             assert!(exits.contains(text), "{text}");
         }
-        assert!(
-            lookup("author:routes")
-                .unwrap()
-                .contains("author:lexical-exits")
-        );
+        assert!(lookup("author:routes")
+            .unwrap()
+            .contains("author:lexical-exits"));
         let codec = lookup("author:json-codec").unwrap();
         assert!(codec.contains("--profile <selector>"));
         assert!(codec.contains("--max-string-bytes 1..64"));
         assert!(codec.contains("Omit --profile for the default flat scalar record"));
         assert!(codec.contains("author:json-identifier-views"));
-        assert!(
-            codec.contains("Declared Vec<string> in a request-view schema is description only")
-        );
+        assert!(codec.contains("Declared Vec<string> in a request-view schema is description only"));
         assert!(codec.contains("post-Ready request/schema errors use normalized-input offsets"));
         let identifier_views = lookup("author:json-identifier-views").unwrap();
         assert!(identifier_views.contains("exactly one string identifier"));
@@ -920,5 +916,36 @@ mod tests {
         assert_eq!(page.len(), budget);
         assert!(search(query, budget - 1).is_err());
         assert!(page.contains("dependency ") && page.contains("profile "));
+    }
+    #[test]
+    fn typed_vector_constructor_route_preserves_commits_and_frozen_boundaries() {
+        for (code, required) in [
+            ("SPX-P220", "vec_of<T>(items)"),
+            ("SPX-T318", "explicit Vec chain"),
+        ] {
+            assert!(super::super::diagnostic_entry(code)
+                .unwrap()
+                .contains(required));
+        }
+
+        let card = lookup("author:vec-constructor").unwrap();
+        assert!(card.len() <= 2_048);
+        for expected in [
+            "vec_of<i64>()",
+            "left to right",
+            "staged-argument commit",
+            "no suffix",
+            "P220",
+            "T318",
+            "Graph v81",
+            "frozen public/interop",
+            "qualification pending",
+        ] {
+            assert!(card.contains(expected), "{expected}");
+        }
+        assert!(lookup("author:routes")
+            .unwrap()
+            .contains("author:vec-constructor"));
+        assert!(lookup("author:vec-constructor-extra").is_err());
     }
 }

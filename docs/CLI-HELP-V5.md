@@ -81,3 +81,10 @@ String fallback. Its independent source/canonical/HIR assertion and CLI selector
 checks are owning definitions pending execution. The card preserves the shared
 65536-byte admission bound, closed escape/public adapters, and pending
 Project/template qualification from the [static literal contract](STATIC-BORROWED-UTF8-LITERALS-V1.md).
+
+`author:vec-constructor` owns typed `vec_of<T>` advice: exact capacity, separate
+ordinary push commits, left-to-right items, sticky failure and unchanged resource
+bounds. P220 covers syntax/reservation refusal and T318 covers authenticated
+expansion/hygiene refusal. The card grants no public/interop profile, ABI or
+capability; [Typed Vec Constructors v1](TYPED-VEC-CONSTRUCTORS-V1.md) owns the
+authored implementation and pending executable qualification.
