@@ -66,10 +66,10 @@ fn sorted_patient_id_validation_matches_frozen_pairwise_bytes_and_256_bound() {
         (
             "unicode-nul",
             2,
-            "if index==0usize {\"é\\0\"}else{\"é\"}",
+            "if index==0usize {\"é\\u{0}\"}else{\"é\"}",
             true,
         ),
-        ("unicode-nul-duplicate", 2, "\"é\\0\"", false),
+        ("unicode-nul-duplicate", 2, "\"é\\u{0}\"", false),
         ("max-distinct", 256, "string_format(\"P{}\",index)", true),
         (
             "max-distant-duplicate",

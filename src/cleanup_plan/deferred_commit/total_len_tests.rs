@@ -38,8 +38,8 @@ fn total_plan(function: &ResolvedFunction, ids: &[crate::hir::ExpressionId]) {
 #[test]
 fn exact_total_length_keeps_commit_and_other_failures_and_rejects_forged_status() {
     for (source, lexical) in [
-        ("module total.length; @id(\"app.main\") fn main()->i64 {let text=\"é\\0\";let view=string_as_str(text);str_len_bytes(view)+1}", false),
-        ("module total.length; @id(\"app.main\") fn main()->i64 {let text=\"é\\0\";let view=string_as_str(text);while true {if true {return str_len_bytes(view)+1;}else{0} 0} 0}", true),
+        ("module total.length; @id(\"app.main\") fn main()->i64 {let text=\"é\\u{0}\";let view=string_as_str(text);str_len_bytes(view)+1}", false),
+        ("module total.length; @id(\"app.main\") fn main()->i64 {let text=\"é\\u{0}\";let view=string_as_str(text);while true {if true {return str_len_bytes(view)+1;}else{0} 0} 0}", true),
     ] {
         let ast = crate::check(source, "total-length.spx").unwrap();
         let program = crate::hir::resolve(&ast).unwrap();

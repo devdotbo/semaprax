@@ -672,7 +672,7 @@ fn generic_option_nominal_and_vec_provider_bodies_keep_the_route_closed() {
     ] {
         let rejected = build(CALLER, PROVIDER, &leaf)
             .err()
-            .expect("carrier provider remains closed");
+            .unwrap_or_else(|| panic!("{label} carrier provider remains closed"));
         assert!(
             rejected.iter().any(|e| e.code == "SPX-G410"),
             "{label} provider rejection: {rejected:?}"

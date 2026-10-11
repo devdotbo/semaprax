@@ -208,7 +208,19 @@ fn wide_source(count: usize) -> String {
 /// local program that never passes consumer source authentication.
 fn with_local(source: &str) -> WorkspaceGraphBuild {
     let mut build = build(CALLER, PROVIDER, LEAF).unwrap();
-    let program = hir::resolve(&crate::check(source, "graph-local.spx").unwrap()).unwrap();
+    let parsed = crate::parse(source, "graph-local.spx").unwrap();
+    let needs_entry = !parsed.functions.iter().any(|function| function.name == "main");
+    let checked_source = if needs_entry {
+        format!("{source}\n@id(\"graph.fixture.entry\") fn main()->i64 {{0}}\n")
+    } else {
+        source.to_owned()
+    };
+    let mut program =
+        hir::resolve(&crate::check(&checked_source, "graph-local.spx").unwrap()).unwrap();
+    // The executable-only check entry is not part of the graph-mutant corpus.
+    if needs_entry {
+        program.functions.retain(|function| function.id.as_str() != "graph.fixture.entry");
+    }
     module_mut(&mut build, "scalar.app").functions = program.functions;
     build
 }

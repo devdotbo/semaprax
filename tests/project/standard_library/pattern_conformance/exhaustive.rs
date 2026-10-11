@@ -173,16 +173,20 @@ fn run(scratch: &Path, label: &str, source: &str, expected: i64, live_bound: usi
     fs::write(
         directory.join("semaprax.toml"),
         r#"schema = "semaprax.manifest.v1"
+
 [package]
 name = "pattern-acceptance"
 version = "0.1.0"
 profile = "owned-data-api.v1"
+
 [modules]
 entry = "fixture.pattern.examples"
 sources = ["src/main.spx", "src/tests.spx"]
 tests = ["fixture.pattern.tests"]
+
 [exports]
 web = []
+
 [dependencies]
 std.pattern = "=0.1.0"
 "#,
