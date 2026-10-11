@@ -324,6 +324,25 @@ pub(super) fn validate_size_budget_with_expression_count(
     function: &ResolvedFunction,
     count: impl FnOnce() -> Result<usize, Diagnostic>,
 ) -> Result<(), Diagnostic> {
+    validate_census(program, function, count, false).map(|_| ())
+}
+
+/// Reuse the selected census backing and semantic walk for its skeleton
+/// reservation; constructing a second CFG census would allocate again.
+pub(super) fn validate_size_budget_and_skeleton(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+    count: impl FnOnce() -> Result<usize, Diagnostic>,
+) -> Result<usize, Diagnostic> {
+    validate_census(program, function, count, true)
+}
+
+fn validate_census(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+    count: impl FnOnce() -> Result<usize, Diagnostic>,
+    skeleton: bool,
+) -> Result<usize, Diagnostic> {
     let structure_units = plan_structure_units(&function.cleanup_plan);
     if structure_units > MAX_REPLAY_WORK_UNITS {
         return Err(replay_error(
@@ -332,7 +351,7 @@ pub(super) fn validate_size_budget_with_expression_count(
         ));
     }
     let cfg = branch_sensitive_cfg_bounds(function)?;
-    let (semantic_paths, _) = bounds(program, function)?;
+    let (semantic_paths, hir_weight) = bounds(program, function)?;
     path_budget_errors(function, cfg.terminal_paths, semantic_paths)?;
     let expression_units = count()?;
     if cfg.work.saturating_add(expression_units) > MAX_REPLAY_WORK_UNITS {
@@ -341,7 +360,11 @@ pub(super) fn validate_size_budget_with_expression_count(
             "cleanup replay combined path/work bound exceeds the global budget",
         ));
     }
-    Ok(())
+    if skeleton {
+        skeleton_from_bounds(program, function, semantic_paths, hir_weight, || Ok(cfg))
+    } else {
+        Ok(0)
+    }
 }
 
 /// Program-wide reservation for one lexical function's skeleton comparison.
@@ -351,6 +374,18 @@ pub(super) fn skeleton_work_upper(
     function: &ResolvedFunction,
 ) -> Result<usize, Diagnostic> {
     let (semantic_paths, hir_weight) = bounds(program, function)?;
+    skeleton_from_bounds(program, function, semantic_paths, hir_weight, || {
+        branch_sensitive_cfg_bounds(function)
+    })
+}
+
+fn skeleton_from_bounds(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+    semantic_paths: usize,
+    hir_weight: usize,
+    cfg: impl FnOnce() -> Result<CfgReplayBounds, Diagnostic>,
+) -> Result<usize, Diagnostic> {
     let semantic_paths = semantic_paths.max(1);
     if semantic_paths > MAX_REPLAY_PATHS {
         path_budget_errors(function, 0, semantic_paths)?;
@@ -379,7 +414,7 @@ pub(super) fn skeleton_work_upper(
             semantic_paths,
         )?,
     )?;
-    let cfg = branch_sensitive_cfg_bounds(function)?;
+    let cfg = cfg()?;
     if cfg.terminal_paths > MAX_REPLAY_PATHS {
         path_budget_errors(function, cfg.terminal_paths, 0)?;
     }

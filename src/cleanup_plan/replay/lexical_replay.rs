@@ -22,12 +22,15 @@ pub(super) fn validate_with_index(
     crate::hir::lexical_exit::validate_function(program, function, &owner)?;
     let held_facts = if let Some(physical) = budget.physical.as_deref_mut() {
         let mut held = None;
-        lexical_census::validate_size_budget_with_expression_count(program, function, || {
-            let facts = expression_facts::expression_facts_with_reservation(function, physical)?;
-            let count = facts.len();
-            held = Some(facts);
-            Ok(count)
-        })?;
+        let skeleton =
+            lexical_census::validate_size_budget_and_skeleton(program, function, || {
+                let facts =
+                    expression_facts::expression_facts_with_reservation(function, physical)?;
+                let count = facts.len();
+                held = Some(facts);
+                Ok(count)
+            })?;
+        budget.reserve_skeleton(function, skeleton)?;
         held
     } else {
         lexical_census::validate_size_budget(program, function)?;
