@@ -142,10 +142,12 @@ signature and digest authentication still precede inventory publication.
 `source_schema/static_text/primitive/helpers.rs` authenticates the demanded acyclic
 closure and exposes exact borrowed function members across modules; imported names
 never enter the consumer's local declaration-name index. Its `helpers/graph.rs`
-child walks each selected body once against a sorted borrowed directory holding
-only the caller's functions and already selected external members, grown with
-charged moves and comparisons, records contiguous outgoing-edge ranges, and visits each edge
-once in Kahn order; a directory hit carries no authority, so first discovery still
+child walks each selected body once against a balanced borrowed directory holding
+only the caller's functions and already selected external members in publication
+order. Charged comparisons, growth and rotations preserve that order; reached
+members reserve storage on demand. The closure retains the directory for later
+lookup, records contiguous outgoing-edge ranges, and visits each edge once in
+Kahn order; a directory hit carries no authority, so first discovery still
 runs unchanged target authentication and its provider receipt. The private
 `cleanup_plan/replay/selected_entry.rs` preparation transfers its single work and
 backing ledger into the existing session, while `scalar_replay.rs` independently

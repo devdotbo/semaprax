@@ -2,7 +2,8 @@
 //! modules only, no forged caller arrays. The saved complete entry and the
 //! current one each run on their own cumulative owner through the unchanged
 //! session and final Drop; irrelevant providers and long legal IDs must leave
-//! the graph's own work and backing unchanged relative to the saved lookup.
+//! the graph's own work unchanged relative to the saved lookup and reserve no
+//! member backing beyond the actual selected closure.
 use super::*;
 
 type Flow = for<'a> fn(
@@ -11,6 +12,8 @@ type Flow = for<'a> fn(
     &BTreeMap<String, WorkspaceDeclarationFact>,
     &mut SelectedReplayPreparation,
 ) -> Result<Closure<'a>, Vec<Diagnostic>>;
+/// The old algorithm on the current enlarged carrier: its totals include
+/// `oracle::carrier_delta` over the committed 296 carrier.
 fn saved<'a>(
     module: &'a WorkspaceResolvedModule,
     modules: &'a [WorkspaceResolvedModule],
@@ -206,9 +209,11 @@ fn tiny_closures_with_many_irrelevant_providers_and_long_legal_ids_keep_saved_co
         costs.push((old, new));
     }
     // Irrelevant providers reach only the unchanged fact, provider-module and
-    // inventory scans plus the saved member bound, so they add exactly the
-    // same work and backing to both entries: the graph's own directory, edge
-    // ranges and frontier stay sized to the actual selected closure.
+    // inventory scans plus the whole-input member bound, so they add exactly
+    // the same work to both entries. The saved entry also reserved one member
+    // slot per workspace function; the current members, directory, edge
+    // ranges and frontier stay sized to the actual selected closure, so the
+    // current backing delta is exactly the saved one less those slots.
     let delta = |noisy: usize, quiet: usize| noisy as i128 - quiet as i128;
     let (quiet_old, quiet_new) = &costs[0];
     let (noisy_old, noisy_new) = &costs[1];
@@ -217,11 +222,144 @@ fn tiny_closures_with_many_irrelevant_providers_and_long_legal_ids_keep_saved_co
         delta(noisy_old.work, quiet_old.work),
         "irrelevant providers add no current-only work"
     );
+    let functions = |build: &WorkspaceGraphBuild| {
+        build
+            .hir
+            .modules
+            .iter()
+            .map(|m| m.functions.len())
+            .sum::<usize>()
+    };
+    let unreached = delta(functions(&noisy), functions(&quiet));
+    assert_eq!(unreached, 24 * 5, "24 noise modules of 4 and 24 siblings");
     assert_eq!(
         delta(noisy_new.bytes, quiet_new.bytes),
-        delta(noisy_old.bytes, quiet_old.bytes),
-        "irrelevant providers add no current-only backing"
+        delta(noisy_old.bytes, quiet_old.bytes)
+            - unreached * std::mem::size_of::<Member<'_>>() as i128,
+        "irrelevant providers reserve no current member slots"
     );
+}
+
+/// Each published provider ID sorts before every earlier one, the saved
+/// directory's worst insertion order. The current arena keeps call order as
+/// ordinal order with a balanced tree, and its retained call-target lookup
+/// agrees with the saved first-match scan on every workspace and absent ID.
+#[test]
+fn descending_external_publications_keep_order_balance_and_saved_lookup() {
+    const K: usize = 24;
+    let imports = (0..K)
+        .map(|k| format!("use function @id(\"d{k:02}.step\") from scalar.d{k:02} as d{k:02};\n"))
+        .collect::<String>();
+    let sum = (0..K)
+        .rev()
+        .map(|k| format!("d{k:02}(0)"))
+        .collect::<Vec<_>>()
+        .join("+");
+    let caller_source = format!(
+        "module scalar.app;\n{imports}@id(\"app.main\") fn main()->i64 {{let label=str\"é\\u{{0}}\";let outcome={sum};let mut tick=0usize;while tick<1usize {{tick=tick+1usize;return outcome;}} 0}}\n"
+    );
+    let leaves = (0..K)
+        .map(|k| {
+            (
+                format!("d{k:02}.spx"),
+                format!(
+                    "module scalar.d{k:02};\n@id(\"d{k:02}.step\") fn step(n:i64)->i64 {{n+{k}}}\n"
+                ),
+            )
+        })
+        .collect::<Vec<_>>();
+    let mut sources = vec![("caller.spx", caller_source.as_str())];
+    sources.extend(leaves.iter().map(|(p, s)| (p.as_str(), s.as_str())));
+    let build = build_sources(&sources).unwrap();
+    let (_, new) = parity(&build).ok().unwrap();
+    assert_eq!(new.count, K + 1);
+    let published = (0..K)
+        .rev()
+        .map(|k| ptr(&build, &format!("scalar.d{k:02}"), &format!("d{k:02}.step")))
+        .collect::<Vec<_>>();
+    assert_eq!(new.helpers, published, "discovery order, not key order");
+    assert!(default_cap(&build, CURRENT).is_ok());
+    assert!(default_cap(&build, SAVED).is_ok());
+    let shape = super::parity(&build, "scalar.app").ok().unwrap();
+    assert_eq!(shape.edges, (1..=K).map(|to| (0, to)).collect::<Vec<_>>());
+
+    let module = caller(&build);
+    let anchor = &module.functions[0];
+    let mut resources =
+        SelectedReplayPreparation::with_limits(anchor, 32_000_000, 1 << 26).unwrap();
+    let context = authenticate(
+        module,
+        &build.hir.modules,
+        &build.hir.declarations,
+        &mut resources,
+    )
+    .unwrap();
+    let Lookup::Directory(directory) = &context.lookup else {
+        panic!("current entry retains its discovery directory");
+    };
+    let (arena, sorted, height) = directory.audit();
+    let ordinals = module
+        .functions
+        .iter()
+        .chain(context.helpers.iter().map(|m| m.function))
+        .map(|f| f as *const ResolvedFunction)
+        .collect::<Vec<_>>();
+    assert_eq!(arena, ordinals, "arena slot i is ordinal i");
+    // app.main, then d00.step (published last) through d23.step (first).
+    assert_eq!(
+        sorted,
+        std::iter::once(0).chain((1..=K).rev()).collect::<Vec<_>>()
+    );
+    assert!(height <= avl_bound(K + 1), "height {height}");
+    let helpers = context
+        .helpers
+        .iter()
+        .map(|m| m.function)
+        .collect::<Vec<_>>();
+    let mut ids = build
+        .hir
+        .modules
+        .iter()
+        .flat_map(|m| m.functions.iter().map(|f| f.id.as_str().to_owned()))
+        .collect::<Vec<_>>();
+    ids.extend(["", "a", "app.main0", "d", "d00.step\0", "zz"].map(String::from));
+    // The saved complete entry builds no directory: its session resolves by
+    // the saved linear scan, an independent reference for the current one.
+    let mut saved_resources =
+        SelectedReplayPreparation::with_limits(anchor, 32_000_000, 1 << 26).unwrap();
+    let saved_context = saved(
+        module,
+        &build.hir.modules,
+        &build.hir.declarations,
+        &mut saved_resources,
+    )
+    .unwrap();
+    assert!(matches!(saved_context.lookup, Lookup::Linear));
+    for name in &ids {
+        let id = hir::DeclarationId::new(name.as_str());
+        let actual = context
+            .resolve_call_target(&id, None)
+            .map(|f| f as *const ResolvedFunction);
+        let reference =
+            oracle::linear(&module.functions, &helpers, name).map(|f| f as *const ResolvedFunction);
+        let entry = saved_context
+            .resolve_call_target(&id, None)
+            .map(|f| f as *const ResolvedFunction);
+        assert_eq!(actual, reference, "{name:?}");
+        assert_eq!(entry, reference, "{name:?}");
+    }
+    drop(saved_context);
+    drop(context);
+
+    let (wide, allocation) = measured(&build, 32_000_000, 1 << 26);
+    let (work, bytes) = wide.unwrap();
+    assert!(!allocation.invalid && allocation.allocated <= bytes && allocation.highwater <= bytes);
+    assert_eq!(allocation.live, 0);
+    let (exact, allocation) = measured(&build, work, bytes);
+    assert_eq!(exact.unwrap(), (work, bytes));
+    assert_eq!(allocation.live, 0);
+    assert!(measured(&build, work - 1, bytes).0.is_err());
+    assert!(measured(&build, work, bytes - 1).0.is_err());
 }
 
 #[test]
@@ -244,6 +382,89 @@ fn noisy_tiny_entry_is_exact_one_short_and_drops_all_backing() {
     assert!(limited(&build, SAVED, old.work, old.bytes).is_ok());
     assert!(limited(&build, SAVED, old.work - 1, old.bytes).is_err());
     assert!(limited(&build, SAVED, old.work, old.bytes - 1).is_err());
+}
+
+/// Saved totals are the old algorithm on the current carrier, which embeds
+/// the call-target lookup. Against the independently restated 296 layout the
+/// carrier grew by exactly `carrier_delta`; the ledger charges that once at
+/// each owner reservation, with no refund, and every saved owner drops clean.
+#[test]
+fn saved_entry_totals_charge_the_enlarged_carrier_once_without_refund() {
+    let delta = oracle::carrier_delta();
+    assert!(
+        delta > 0,
+        "the current carrier embeds the call-target lookup"
+    );
+    assert!(
+        delta <= std::mem::size_of::<Lookup<'_>>(),
+        "only the lookup was added"
+    );
+
+    // Identical owners differing only in the carrier they reserve open one
+    // session each on the same real context; its ledger shows the exact sizes.
+    let noisy = tiny(24);
+    let module = caller(&noisy);
+    let anchor = &module.functions[0];
+    let mut wide = SelectedReplayPreparation::with_limits(anchor, 32_000_000, 1 << 26).unwrap();
+    let context = authenticate(
+        module,
+        &noisy.hir.modules,
+        &noisy.hir.declarations,
+        &mut wide,
+    )
+    .unwrap();
+    drop(wide);
+    let carrier = |current: Option<bool>| {
+        let mut owner =
+            SelectedReplayPreparation::with_limits(anchor, 32_000_000, 1 << 26).unwrap();
+        match current {
+            Some(true) => owner
+                .reserve_array::<Closure<'_>>(anchor, 1, "current carrier")
+                .unwrap(),
+            Some(false) => owner
+                .reserve_array::<oracle::SavedClosureLayout<'_>>(anchor, 1, "296 carrier")
+                .unwrap(),
+            None => {}
+        }
+        let session = SelectedReplaySession::from_preparation(&context, anchor, owner).unwrap();
+        session.metrics().1
+    };
+    let base = carrier(None);
+    assert_eq!(
+        carrier(Some(true)) - base,
+        std::mem::size_of::<Closure<'_>>()
+    );
+    assert_eq!(
+        carrier(Some(false)) - base,
+        std::mem::size_of::<oracle::SavedClosureLayout<'_>>()
+    );
+    assert_eq!(carrier(Some(true)) - carrier(Some(false)), delta);
+    drop(context);
+
+    // The saved total admits exactly with the delta; the 296-shaped total
+    // that omits it refuses, as does the current total less the delta.
+    let local = build_sources(&[("caller.spx", LOCAL_HELPER_CALLER), ("leaf.spx", LEAF)]).unwrap();
+    for (name, build) in [("quiet", tiny(0)), ("noisy", noisy), ("local", local)] {
+        let old = limited(&build, SAVED, 32_000_000, 1 << 26).ok().unwrap();
+        let (exact, allocation) = crate::test_allocation_observer::measure(|| {
+            limited(&build, SAVED, old.work, old.bytes).map(|o| (o.work, o.bytes))
+        });
+        assert_eq!(exact.ok(), Some((old.work, old.bytes)), "{name}");
+        assert!(!allocation.invalid, "{name}");
+        assert_eq!(
+            allocation.live, 0,
+            "{name}: saved owner and carrier dropped"
+        );
+        assert!(
+            limited(&build, SAVED, old.work, old.bytes - delta).is_err(),
+            "{name}"
+        );
+        let new = limited(&build, CURRENT, 32_000_000, 1 << 26).ok().unwrap();
+        assert!(
+            limited(&build, CURRENT, new.work, new.bytes - delta).is_err(),
+            "{name}"
+        );
+    }
 }
 
 #[test]

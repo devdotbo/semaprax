@@ -4,7 +4,36 @@
 //! It shares only the unchanged local, target, body-cursor and builtin code with
 //! production, records its observable shape without charging for the record,
 //! and hands the same `Closure` to the unchanged session through final Drop.
+//! Its `Closure` resolves call targets by the saved first-match linear scan
+//! and builds no directory; `linear` restates that scan over explicit slices
+//! as an independent reference for the retained directory lookup.
+//!
+//! Its totals are the old algorithm on the current, enlarged carrier: the
+//! owner reservation is the actual `Closure` it hands to the session, which
+//! now embeds the call-target `Lookup`. The committed 296 carrier is restated
+//! independently as `SavedClosureLayout`; `carrier_delta` is the fixed extra
+//! backing every saved total includes, charged in full and never refunded.
 use super::*;
+
+/// The committed 296 `Closure`, declared independently with its original
+/// fields, order and types under `cfg(test)`, and no call-target lookup. It is
+/// a layout witness only and is never constructed.
+#[allow(dead_code)]
+pub(super) struct SavedClosureLayout<'a> {
+    local: Context<'a>,
+    helpers: Vec<Member<'a>>,
+    lexical: Vec<&'a ResolvedFunction>,
+    count: usize,
+    types: Vec<&'a ResolvedTypeDeclaration>,
+    walks: usize,
+    edges: usize,
+}
+/// Current carrier backing less the committed 296 carrier backing.
+pub(super) fn carrier_delta() -> usize {
+    std::mem::size_of::<Closure<'_>>()
+        .checked_sub(std::mem::size_of::<SavedClosureLayout<'_>>())
+        .expect("the current carrier only adds the call-target lookup")
+}
 
 pub(super) struct Shape {
     pub(super) functions: Vec<*const ResolvedFunction>,
@@ -43,6 +72,19 @@ fn lookup<'a>(
         }
     }
     Ok(found)
+}
+
+/// Saved `resolve_call_target`: the first ordinal-order match over locals
+/// then selected helpers.
+pub(super) fn linear<'a>(
+    locals: &'a [ResolvedFunction],
+    helpers: &[&'a ResolvedFunction],
+    id: &str,
+) -> Option<&'a ResolvedFunction> {
+    locals
+        .iter()
+        .chain(helpers.iter().copied())
+        .find(|f| f.id.as_str() == id)
 }
 
 /// The saved closure discovery and Kahn order with all original debits. The
@@ -244,6 +286,7 @@ fn authenticate_inner<'a>(
     resources: &mut SelectedReplayPreparation,
 ) -> Result<(Closure<'a>, Shape), Vec<Diagnostic>> {
     let anchor = module.functions.first().ok_or_else(fail)?;
+    // The actual current carrier, `carrier_delta` above the 296 carrier.
     resources
         .reserve_array::<Closure<'_>>(anchor, 1, "imported scalar closure owner")
         .map_err(|_| fail())?;
@@ -285,10 +328,13 @@ fn authenticate_inner<'a>(
     let types = types::discover(module, modules, facts, &mut local.index, resources, anchor)?;
     let edges = shape.edges.len();
     let walks = shape.walks;
+    // The saved entry predates the retained directory: its session resolves
+    // call targets by the saved linear scan, so it builds no directory.
     Ok((
         Closure {
             local,
             helpers,
+            lookup: Lookup::Linear,
             lexical,
             count,
             types,

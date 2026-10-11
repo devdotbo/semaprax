@@ -26,6 +26,10 @@ fn current(
         .chain(graph.helpers.iter().map(|m| m.function))
         .map(|f| f as *const ResolvedFunction)
         .collect();
+    // Every ordinal keeps its arena slot; the linked tree stays AVL-bounded.
+    let (arena, sorted, height) = graph.directory.audit();
+    assert_eq!(arena, functions, "arena slot i is ordinal i");
+    assert!(height <= avl_bound(sorted.len()), "height {height}");
     let offsets = &graph.offsets;
     assert_eq!(offsets.len(), functions.len() + 1);
     assert_eq!(offsets[0], 0);
@@ -60,6 +64,16 @@ fn current(
         walks: graph.walks,
         visits,
     })
+}
+/// The greatest height of any AVL tree of `n` nodes: the largest `h` whose
+/// minimal node count `N(h) = N(h-1) + N(h-2) + 1` does not exceed `n`.
+fn avl_bound(n: usize) -> usize {
+    let (mut height, mut low, mut high) = (0, 0usize, 1usize);
+    while high <= n {
+        (low, high) = (high, low + high + 1);
+        height += 1;
+    }
+    height
 }
 fn codes(errors: &[Diagnostic]) -> Vec<&'static str> {
     errors.iter().map(|d| d.code).collect()
@@ -348,6 +362,98 @@ fn self_and_two_module_cycles_and_duplicate_current_ids_keep_saved_verdicts() {
         parity(&duplicate, "scalar.app").err().unwrap(),
         ["SPX-G410"]
     );
+}
+
+/// Graph-mutant: an equal later current ID stays in its arena ordinal but
+/// unlinked. The retained lookup answers the saved first match, while a
+/// discovery call to the shared ID still refuses like the saved lookup.
+#[test]
+fn shared_current_ids_resolve_to_the_saved_first_match_and_refuse_discovery() {
+    let mut duplicate = with_local(&dense_source(6));
+    let functions = &mut module_mut(&mut duplicate, "scalar.app").functions;
+    let second = functions
+        .iter()
+        .position(|f| f.id.as_str() == "dense.002")
+        .unwrap();
+    functions[second].id = hir::DeclarationId::new("dense.001");
+    let module = caller(&duplicate);
+    let anchor = &module.functions[0];
+    let mut resources =
+        SelectedReplayPreparation::with_limits(anchor, 32_000_000, 1 << 26).unwrap();
+    let mut path = graph::Path::new(&mut resources, anchor).unwrap();
+    let directory = graph::Directory::new(module, &mut path, &mut resources, anchor).unwrap();
+    let (arena, sorted, height) = directory.audit();
+    assert_eq!(
+        arena,
+        module
+            .functions
+            .iter()
+            .map(|f| f as *const ResolvedFunction)
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(sorted.len(), 5, "the later equal ID is not linked");
+    assert!(height <= avl_bound(5));
+    for id in [
+        "dense.000",
+        "dense.001",
+        "dense.003",
+        "dense.005",
+        "dense.009",
+    ] {
+        assert_eq!(
+            directory.resolve(id).map(|f| f as *const ResolvedFunction),
+            oracle::linear(&module.functions, &[], id).map(|f| f as *const ResolvedFunction),
+            "{id}"
+        );
+    }
+    assert!(std::ptr::eq(
+        directory.resolve("dense.001").unwrap(),
+        &module.functions[second]
+    ));
+    assert_eq!(
+        parity(&duplicate, "scalar.app").err().unwrap(),
+        ["SPX-G410"]
+    );
+}
+
+/// The insertion path scratch is initialized once per discovery after its
+/// whole initialization is debited; one short refuses before it exists and
+/// stays sticky. Each later insertion debits only the levels it writes, so
+/// reusing the scratch costs every directory the same exact work.
+#[test]
+fn directory_path_scratch_is_debited_once_before_initialization() {
+    let build = with_local(&dense_source(40));
+    let module = caller(&build);
+    let anchor = &module.functions[0];
+    let fresh = |work| SelectedReplayPreparation::with_limits(anchor, work, 1 << 26).unwrap();
+    let scratch = 2 * graph::PATH;
+
+    let mut short = fresh(scratch - 1);
+    assert!(graph::Path::new(&mut short, anchor).is_err());
+    assert!(short.charge(anchor, 0, "probe").is_err(), "sticky");
+
+    let mut wide = fresh(32_000_000);
+    let mut path = graph::Path::new(&mut wide, anchor).unwrap();
+    assert_eq!(wide.remaining(), 32_000_000 - scratch);
+    let first = graph::Directory::new(module, &mut path, &mut wide, anchor).unwrap();
+    let once = 32_000_000 - scratch - wide.remaining();
+    let before = wide.remaining();
+    let second = graph::Directory::new(module, &mut path, &mut wide, anchor).unwrap();
+    assert_eq!(before - wide.remaining(), once, "reused scratch, same work");
+    assert_eq!(first.audit(), second.audit());
+    assert!(
+        once < scratch * module.functions.len(),
+        "no per-insertion scratch initialization"
+    );
+
+    let mut exact = fresh(scratch + once);
+    let mut path = graph::Path::new(&mut exact, anchor).unwrap();
+    assert!(graph::Directory::new(module, &mut path, &mut exact, anchor).is_ok());
+    assert_eq!(exact.remaining(), 0);
+    let mut short = fresh(scratch + once - 1);
+    let mut path = graph::Path::new(&mut short, anchor).unwrap();
+    assert!(graph::Directory::new(module, &mut path, &mut short, anchor).is_err());
+    assert!(short.charge(anchor, 0, "probe").is_err(), "sticky");
 }
 
 #[test]

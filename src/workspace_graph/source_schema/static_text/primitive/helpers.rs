@@ -12,9 +12,20 @@ struct Member<'a> {
     module: &'a WorkspaceResolvedModule,
     function: &'a ResolvedFunction,
 }
+/// Call-target lookup over exactly `function_at(0..count)`. It selects a
+/// pointer and carries no authority.
+enum Lookup<'a> {
+    /// The discovery directory, retained.
+    Directory(graph::Directory<'a>),
+    /// The saved first-match linear scan, kept only for the independent
+    /// saved complete entry so it builds no directory and charges nothing new.
+    #[cfg(test)]
+    Linear,
+}
 pub(super) struct Closure<'a> {
     local: Context<'a>,
     helpers: Vec<Member<'a>>,
+    lookup: Lookup<'a>,
     lexical: Vec<&'a ResolvedFunction>,
     count: usize,
     types: Vec<&'a ResolvedTypeDeclaration>,
@@ -76,9 +87,13 @@ impl ReplayContext for Closure<'_> {
         if instance.is_some() {
             return None;
         }
-        (0..self.function_count())
-            .filter_map(|i| self.function_at(i))
-            .find(|f| f.id == *id)
+        match &self.lookup {
+            Lookup::Directory(directory) => directory.resolve(id.as_str()),
+            #[cfg(test)]
+            Lookup::Linear => (0..self.function_count())
+                .filter_map(|i| self.function_at(i))
+                .find(|f| f.id == *id),
+        }
     }
 }
 fn charge(
@@ -440,7 +455,9 @@ fn authenticate_inner<'a>(
     graph::order(&graph, resources, anchor, |_| {})?;
     #[cfg(test)]
     let walks = graph.walks;
-    let graph::Graph { helpers, .. } = graph;
+    let graph::Graph {
+        helpers, directory, ..
+    } = graph;
     let count = module
         .functions
         .len()
@@ -475,6 +492,7 @@ fn authenticate_inner<'a>(
     Ok(Closure {
         local,
         helpers,
+        lookup: Lookup::Directory(directory),
         lexical,
         count,
         types,

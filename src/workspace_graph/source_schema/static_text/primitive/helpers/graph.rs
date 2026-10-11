@@ -1,18 +1,34 @@
 //! One borrowed retained-helper closure graph under the caller's preparation.
-//! The sorted directory names only the caller's current functions and the
+//! The balanced directory names only the caller's current functions and the
 //! exact external members already selected, matching the saved linear lookup
 //! universe. A lookup hit grants no authority: every first external target
 //! still runs the unchanged `authenticate_target` and its provider receipt
 //! before its ordinal is published. Each selected body is walked once; its
 //! outgoing edges form one contiguous range in call order, which Kahn's
-//! frontier then visits exactly once per edge. Growth, comparisons and moves
-//! are debited on the same sticky preparation before they happen.
+//! frontier then visits exactly once per edge. Growth, comparisons, retained
+//! nodes and rebalancing are debited on the same sticky preparation before
+//! they happen, and the directory is retained for the closure's later lookup.
 use super::*;
 use std::cmp::Ordering;
 
-struct Entry<'a> {
+/// Absent arena link.
+const NIL: usize = usize::MAX;
+/// An AVL tree of `n` nodes is at most `1.4405 * log2(n + 2)` levels high,
+/// below 93 for any addressable node count; a deeper path refuses.
+pub(super) const PATH: usize = 96;
+
+/// Arena slot `i` is ordinal `i`: local functions in source order, then
+/// published helpers in discovery order. Only the key's borrowed defining
+/// pointer is held; provenance stays with the caller module and `Member`.
+struct Node<'a> {
     function: &'a ResolvedFunction,
-    ordinal: usize,
+    left: usize,
+    right: usize,
+    height: u8,
+    /// A later equal current ID exists. The first equal local stays linked,
+    /// so the retained lookup answers the saved first-match ordinal while a
+    /// discovery call to the shared ID refuses like the saved lookup.
+    shared: bool,
 }
 /// Local functions keep ordinals `0..local`; published helpers follow in
 /// discovery order. `offsets[from]..offsets[from + 1]` indexes `targets`.
@@ -20,20 +36,13 @@ pub(super) struct Graph<'a> {
     pub(super) helpers: Vec<Member<'a>>,
     pub(super) offsets: Vec<usize>,
     pub(super) targets: Vec<usize>,
+    pub(super) directory: Directory<'a>,
     #[cfg(test)]
     pub(super) walks: usize,
 }
-fn compare(
-    a: &str,
-    b: &str,
-    resources: &mut SelectedReplayPreparation,
-    anchor: &ResolvedFunction,
-) -> Result<Ordering, Vec<Diagnostic>> {
-    charge(
-        resources,
-        anchor,
-        a.len().min(b.len()).checked_add(1).ok_or_else(fail)?,
-    )?;
+type Debit<'d> = dyn FnMut(usize) -> Result<(), Vec<Diagnostic>> + 'd;
+fn compare(a: &str, b: &str, debit: &mut Debit<'_>) -> Result<Ordering, Vec<Diagnostic>> {
+    debit(a.len().min(b.len()).checked_add(1).ok_or_else(fail)?)?;
     Ok(a.cmp(b))
 }
 /// A full buffer relocates every retained element; that move is debited
@@ -67,141 +76,281 @@ fn push<T>(
     values.push(value);
     Ok(())
 }
-struct Directory<'a> {
-    entries: Vec<Entry<'a>>,
+/// The one insertion path scratch of a discovery. Insertion is never
+/// reentrant, so a single path is live at a time; its stack backing is
+/// reserved and its full initialization debited once, before it happens.
+/// Each insertion then writes only the slots of the levels it descends,
+/// debited per level, and reads back no slot beyond its own depth.
+pub(super) struct Path {
+    at: [usize; PATH],
+    right: [bool; PATH],
+}
+impl Path {
+    pub(super) fn new(
+        resources: &mut SelectedReplayPreparation,
+        anchor: &ResolvedFunction,
+    ) -> Result<Self, Vec<Diagnostic>> {
+        resources
+            .reserve_array::<usize>(anchor, PATH, "imported scalar closure directory path")
+            .map_err(|_| fail())?;
+        resources
+            .reserve_array::<bool>(anchor, PATH, "imported scalar closure directory path")
+            .map_err(|_| fail())?;
+        charge(resources, anchor, 2 * PATH)?;
+        Ok(Self {
+            at: [NIL; PATH],
+            right: [false; PATH],
+        })
+    }
+}
+/// Deterministic byte-order AVL directory over borrowed IDs. Publication
+/// appends one arena node and relinks at most one (double) rotation, so no
+/// retained entry ever shifts; no hashing or pointer order is consulted.
+pub(super) struct Directory<'a> {
+    nodes: Vec<Node<'a>>,
+    root: usize,
 }
 impl<'a> Directory<'a> {
     /// Seeded with exactly the caller's current functions; no provider
     /// function enters until its own authentication and receipt succeed.
-    fn new(
+    pub(super) fn new(
         module: &'a WorkspaceResolvedModule,
+        path: &mut Path,
         resources: &mut SelectedReplayPreparation,
         anchor: &ResolvedFunction,
     ) -> Result<Self, Vec<Diagnostic>> {
         let local = module.functions.len();
         resources
-            .reserve_array::<Entry<'_>>(anchor, local, "imported scalar closure directory")
+            .reserve_array::<Node<'_>>(anchor, local, "imported scalar closure directory")
             .map_err(|_| fail())?;
         charge(resources, anchor, local)?;
-        let mut entries = Vec::with_capacity(local);
-        if entries.capacity() != local {
+        let nodes = Vec::with_capacity(local);
+        if nodes.capacity() != local {
             return Err(fail());
         }
-        for (ordinal, function) in module.functions.iter().enumerate() {
-            entries.push(Entry { function, ordinal });
+        let mut directory = Self { nodes, root: NIL };
+        for function in &module.functions {
+            directory.link(function, false, path, &mut |n| charge(resources, anchor, n))?;
         }
-        for root in (0..local / 2).rev() {
-            sift(&mut entries, root, local, resources, anchor)?;
-        }
-        for end in (1..local).rev() {
-            charge(resources, anchor, 1)?;
-            entries.swap(0, end);
-            sift(&mut entries, 0, end, resources, anchor)?;
-        }
-        Ok(Self { entries })
+        Ok(directory)
     }
-    /// The insertion point plus the unique ordinal of an equal current ID.
-    /// Equal local IDs are retained, so a duplicate identity refuses like the
-    /// saved linear lookup over caller locals and selected helpers.
-    fn lookup(
-        &self,
-        id: &hir::DeclarationId,
-        resources: &mut SelectedReplayPreparation,
-        anchor: &ResolvedFunction,
-    ) -> Result<(usize, Option<usize>), Vec<Diagnostic>> {
-        let (mut low, mut high) = (0, self.entries.len());
-        while low < high {
-            charge(resources, anchor, 1)?;
-            let middle = low + (high - low) / 2;
-            if compare(
-                self.entries[middle].function.id.as_str(),
-                id.as_str(),
-                resources,
-                anchor,
-            )? == Ordering::Less
-            {
-                low = middle + 1;
-            } else {
-                high = middle;
-            }
+    /// Appends `function` as the next ordinal. A `fresh` key must be absent;
+    /// an equal local key marks the linked first occurrence shared and stays
+    /// unlinked. The search debits each level, comparison and the two path
+    /// slots it writes; the node and every retrace level, including a
+    /// possible double rotation, are debited together before the arena or
+    /// any link changes.
+    fn link(
+        &mut self,
+        function: &'a ResolvedFunction,
+        fresh: bool,
+        path: &mut Path,
+        debit: &mut Debit<'_>,
+    ) -> Result<usize, Vec<Diagnostic>> {
+        if self.nodes.len() == self.nodes.capacity() {
+            return Err(fail());
         }
-        let mut end = low;
-        let mut found = None;
-        while end < self.entries.len()
-            && compare(
-                self.entries[end].function.id.as_str(),
-                id.as_str(),
-                resources,
-                anchor,
-            )? == Ordering::Equal
-        {
-            if found.replace(self.entries[end].ordinal).is_some() {
+        let ordinal = self.nodes.len();
+        let mut depth = 0;
+        let mut at = self.root;
+        let mut equal = None;
+        while at != NIL {
+            debit(1)?;
+            if depth == PATH {
                 return Err(fail());
             }
-            end += 1;
+            let node = &self.nodes[at];
+            let order = compare(node.function.id.as_str(), function.id.as_str(), debit)?;
+            if order == Ordering::Equal {
+                equal = Some(at);
+                break;
+            }
+            debit(2)?;
+            path.at[depth] = at;
+            path.right[depth] = order == Ordering::Less;
+            at = if order == Ordering::Less {
+                node.right
+            } else {
+                node.left
+            };
+            depth += 1;
         }
-        Ok((low, found))
+        if let Some(first) = equal {
+            if fresh {
+                return Err(fail());
+            }
+            debit(1)?;
+            self.nodes[first].shared = true;
+            self.nodes.push(Node {
+                function,
+                left: NIL,
+                right: NIL,
+                height: 1,
+                shared: true,
+            });
+            return Ok(ordinal);
+        }
+        debit(depth.checked_add(3).ok_or_else(fail)?)?;
+        self.nodes.push(Node {
+            function,
+            left: NIL,
+            right: NIL,
+            height: 1,
+            shared: false,
+        });
+        let Some(last) = depth.checked_sub(1) else {
+            self.root = ordinal;
+            return Ok(ordinal);
+        };
+        self.attach(path.at[last], path.right[last], ordinal);
+        for level in (0..depth).rev() {
+            let top = self.rebalance(path.at[level]);
+            match level.checked_sub(1) {
+                Some(parent) => self.attach(path.at[parent], path.right[parent], top),
+                None => self.root = top,
+            }
+        }
+        Ok(ordinal)
     }
-    /// Publication binds the authenticated defining pointer at the unchanged
-    /// insertion point of a missed lookup; shifted entries are debited first.
+    fn attach(&mut self, parent: usize, right: bool, child: usize) {
+        if right {
+            self.nodes[parent].right = child;
+        } else {
+            self.nodes[parent].left = child;
+        }
+    }
+    fn height(&self, at: usize) -> u8 {
+        if at == NIL {
+            0
+        } else {
+            self.nodes[at].height
+        }
+    }
+    fn update(&mut self, at: usize) {
+        let node = &self.nodes[at];
+        let height = self.height(node.left).max(self.height(node.right)) + 1;
+        self.nodes[at].height = height;
+    }
+    fn rotate_right(&mut self, at: usize) -> usize {
+        let top = self.nodes[at].left;
+        self.nodes[at].left = self.nodes[top].right;
+        self.nodes[top].right = at;
+        self.update(at);
+        self.update(top);
+        top
+    }
+    fn rotate_left(&mut self, at: usize) -> usize {
+        let top = self.nodes[at].right;
+        self.nodes[at].right = self.nodes[top].left;
+        self.nodes[top].left = at;
+        self.update(at);
+        self.update(top);
+        top
+    }
+    /// Restores the AVL bound at `at` and returns the subtree's new root.
+    fn rebalance(&mut self, at: usize) -> usize {
+        let (left, right) = (self.nodes[at].left, self.nodes[at].right);
+        let (l, r) = (self.height(left), self.height(right));
+        if l > r + 1 {
+            if self.height(self.nodes[left].left) < self.height(self.nodes[left].right) {
+                self.nodes[at].left = self.rotate_left(left);
+            }
+            return self.rotate_right(at);
+        }
+        if r > l + 1 {
+            if self.height(self.nodes[right].right) < self.height(self.nodes[right].left) {
+                self.nodes[at].right = self.rotate_right(right);
+            }
+            return self.rotate_left(at);
+        }
+        self.update(at);
+        at
+    }
+    /// The unique current ordinal of `id`, if any. A shared current ID
+    /// refuses like the saved linear lookup over locals and selected helpers.
+    fn find(&self, id: &str, debit: &mut Debit<'_>) -> Result<Option<usize>, Vec<Diagnostic>> {
+        let mut at = self.root;
+        while at != NIL {
+            debit(1)?;
+            let node = &self.nodes[at];
+            match compare(node.function.id.as_str(), id, debit)? {
+                Ordering::Less => at = node.right,
+                Ordering::Greater => at = node.left,
+                Ordering::Equal if node.shared => return Err(fail()),
+                Ordering::Equal => return Ok(Some(at)),
+            }
+        }
+        Ok(None)
+    }
+    /// The retained replay lookup: the saved first match in ordinal order
+    /// over exactly the closure's functions, in one comparison per level of
+    /// the AVL-bounded height. It selects; it never authenticates.
+    pub(super) fn resolve(&self, id: &str) -> Option<&'a ResolvedFunction> {
+        let mut at = self.root;
+        while at != NIL {
+            let node = &self.nodes[at];
+            match node.function.id.as_str().cmp(id) {
+                Ordering::Less => at = node.right,
+                Ordering::Greater => at = node.left,
+                Ordering::Equal => return Some(node.function),
+            }
+        }
+        None
+    }
+    /// Publication binds the authenticated defining pointer as the next
+    /// ordinal; arena growth is reserved and its relocation debited first.
     fn publish(
         &mut self,
-        at: usize,
         function: &'a ResolvedFunction,
         ordinal: usize,
+        path: &mut Path,
         resources: &mut SelectedReplayPreparation,
         anchor: &ResolvedFunction,
     ) -> Result<(), Vec<Diagnostic>> {
-        let shifted = self.entries.len().checked_sub(at).ok_or_else(fail)?;
         grow(
-            &mut self.entries,
+            &mut self.nodes,
             "imported scalar closure directory",
             resources,
             anchor,
         )?;
-        charge(resources, anchor, shifted.checked_add(1).ok_or_else(fail)?)?;
-        self.entries.insert(at, Entry { function, ordinal });
+        if self.link(function, true, path, &mut |n| charge(resources, anchor, n))? != ordinal {
+            return Err(fail());
+        }
         Ok(())
     }
-}
-fn sift(
-    entries: &mut [Entry<'_>],
-    mut root: usize,
-    end: usize,
-    resources: &mut SelectedReplayPreparation,
-    anchor: &ResolvedFunction,
-) -> Result<(), Vec<Diagnostic>> {
-    while let Some(child) = root
-        .checked_mul(2)
-        .and_then(|n| n.checked_add(1))
-        .filter(|n| *n < end)
-    {
-        charge(resources, anchor, 1)?;
-        let mut greatest = child;
-        if child + 1 < end
-            && compare(
-                entries[child].function.id.as_str(),
-                entries[child + 1].function.id.as_str(),
-                resources,
-                anchor,
-            )? == Ordering::Less
-        {
-            greatest += 1;
+    /// Test audit: arena pointers in ordinal order, linked ordinals in key
+    /// order and the tree height, checking every stored height and balance.
+    #[cfg(test)]
+    pub(super) fn audit(&self) -> (Vec<*const ResolvedFunction>, Vec<usize>, usize) {
+        let arena = self
+            .nodes
+            .iter()
+            .map(|n| n.function as *const ResolvedFunction)
+            .collect();
+        let mut sorted = Vec::new();
+        let mut stack = Vec::new();
+        let mut at = self.root;
+        while at != NIL || !stack.is_empty() {
+            while at != NIL {
+                stack.push(at);
+                at = self.nodes[at].left;
+            }
+            let top = stack.pop().unwrap();
+            let node = &self.nodes[top];
+            let (l, r) = (self.height(node.left), self.height(node.right));
+            assert_eq!(node.height, l.max(r) + 1, "stored height");
+            assert!(l.abs_diff(r) <= 1, "AVL balance");
+            sorted.push(top);
+            at = node.right;
         }
-        if compare(
-            entries[root].function.id.as_str(),
-            entries[greatest].function.id.as_str(),
-            resources,
-            anchor,
-        )? != Ordering::Less
-        {
-            break;
+        for pair in sorted.windows(2) {
+            assert!(
+                self.nodes[pair[0]].function.id.as_str() < self.nodes[pair[1]].function.id.as_str(),
+                "strict key order"
+            );
         }
-        charge(resources, anchor, 1)?;
-        entries.swap(root, greatest);
-        root = greatest;
+        (arena, sorted, usize::from(self.height(self.root)))
     }
-    Ok(())
 }
 
 pub(super) fn discover<'a>(
@@ -211,15 +360,13 @@ pub(super) fn discover<'a>(
     resources: &mut SelectedReplayPreparation,
     anchor: &ResolvedFunction,
 ) -> Result<Graph<'a>, Vec<Diagnostic>> {
-    // The saved member, receipt and capacity bounds stay exactly as before.
+    // The saved whole-input member bound and receipt slots stay as before;
+    // members, like the directory, grow only by actual reachable demand.
     let maximum = modules
         .iter()
         .try_fold(0usize, |n, m| n.checked_add(m.functions.len()))
         .ok_or_else(fail)?;
     charge(resources, anchor, modules.len())?;
-    resources
-        .reserve_array::<Member<'_>>(anchor, maximum, "imported scalar closure members")
-        .map_err(|_| fail())?;
     resources
         .reserve_array::<u8>(
             anchor,
@@ -229,11 +376,9 @@ pub(super) fn discover<'a>(
         .map_err(|_| fail())?;
     charge(resources, anchor, modules.len())?;
     let mut charged = vec![0u8; modules.len()];
-    let mut helpers: Vec<Member<'a>> = Vec::with_capacity(maximum);
-    if helpers.capacity() != maximum {
-        return Err(fail());
-    }
-    let mut directory = Directory::new(module, resources, anchor)?;
+    let mut helpers: Vec<Member<'a>> = Vec::new();
+    let mut path = Path::new(resources, anchor)?;
+    let mut directory = Directory::new(module, &mut path, resources, anchor)?;
     let mut offsets: Vec<usize> = Vec::new();
     push(
         &mut offsets,
@@ -269,7 +414,7 @@ pub(super) fn discover<'a>(
                     Ok(())
                 };
             }
-            let (at, found) = directory.lookup(id, resources, anchor)?;
+            let found = directory.find(id.as_str(), &mut |n| charge(resources, anchor, n))?;
             let to = match found {
                 Some(to) => to,
                 None => {
@@ -303,9 +448,14 @@ pub(super) fn discover<'a>(
                         .len()
                         .checked_add(helpers.len())
                         .ok_or_else(fail)?;
-                    directory.publish(at, member.function, to, resources, anchor)?;
-                    charge(resources, anchor, 1)?;
-                    helpers.push(member);
+                    directory.publish(member.function, to, &mut path, resources, anchor)?;
+                    push(
+                        &mut helpers,
+                        member,
+                        "imported scalar closure members",
+                        resources,
+                        anchor,
+                    )?;
                     to
                 }
             };
@@ -334,6 +484,7 @@ pub(super) fn discover<'a>(
         helpers,
         offsets,
         targets,
+        directory,
         #[cfg(test)]
         walks,
     })
