@@ -178,16 +178,19 @@ fn cursor_wide_lookup_has_linear_work_and_exact_one_short_frame_backing() {
     let value = assignment_bounded(body, id, &mut work).unwrap();
     assert!(std::ptr::eq(value.1, values[0]));
     let charged = crate::cache_codec::MAX_NODES - work;
-    assert!(charged < 12 * 1026, "actual cursor work {charged}");
+    // Independent authored census: 1026 one-child statements, 1027
+    // expression children, one root and its final next(None) probe.
+    let expected = crate::cache_codec::MAX_DEPTH + 2 * 1027 + 1 + 1026;
+    assert_eq!(charged, expected);
     assert!(old_assignment(body, id)
         .unwrap_err()
         .message
         .contains("work exhausted"));
-    for limit in [charged, charged - 1] {
+    for limit in [expected, expected - 1] {
         let mut remaining = limit;
         let outcome = assignment_bounded(body, id, &mut remaining);
-        assert_eq!(outcome.is_ok(), limit == charged);
-        if limit == charged {
+        assert_eq!(outcome.is_ok(), limit == expected);
+        if limit == expected {
             assert_eq!(remaining, 0);
         }
     }
