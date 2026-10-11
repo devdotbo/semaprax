@@ -235,6 +235,18 @@ impl<'a> Session<'a> {
         self.failed = false;
         Ok(())
     }
+    /// Read-only owning-test observation; no constructor or work credits escape.
+    #[cfg(test)]
+    pub(crate) fn usage(&self) -> (usize, usize) {
+        (
+            self.budget.remaining,
+            self.budget
+                .physical
+                .as_ref()
+                .expect("held selected reservation")
+                .charged(),
+        )
+    }
     pub(crate) fn finish(mut self) -> Result<PhysicalReservation, Diagnostic> {
         if self.failed {
             return Err(replay_error(

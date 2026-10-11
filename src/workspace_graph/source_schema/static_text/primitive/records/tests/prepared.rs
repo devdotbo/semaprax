@@ -164,6 +164,32 @@ fn prepared_current_layout_namespace_and_signature_drift_are_independent_and_sti
 #[test]
 fn prepared_full_context_authentication_work_is_cumulative_exact_and_one_short() {
     let build = build_lexical();
+    // Unlike the authentication-only constructor counters below, this observes
+    // the actual held owner, session receivers, independent replay and Drop.
+    let measure =
+        |work, bytes| crate::test_allocation_observer::measure(|| full_chain(&build, work, bytes));
+    let (wide, allocation) = measure(32_000_000, usize::MAX);
+    let (full_work, full_bytes) = wide.unwrap();
+    assert!(
+        !allocation.invalid
+            && allocation.allocated <= full_bytes
+            && allocation.highwater <= full_bytes
+    );
+    assert_eq!(allocation.live, 0);
+    let (exact, allocation) = measure(full_work, full_bytes);
+    assert_eq!(exact.unwrap(), (full_work, full_bytes));
+    assert!(
+        !allocation.invalid
+            && allocation.allocated <= full_bytes
+            && allocation.highwater <= full_bytes
+    );
+    assert_eq!(allocation.live, 0);
+    for (work, bytes) in [(full_work - 1, full_bytes), (full_work, full_bytes - 1)] {
+        let (short, allocation) = measure(work, bytes);
+        assert!(short.is_err());
+        assert!(!allocation.invalid);
+        assert_eq!(allocation.live, 0);
+    }
     let source = module(&build);
     let (_, spent, bytes) =
         prepare(source, &build.hir.declarations, 32_000_000, usize::MAX).unwrap();
@@ -206,4 +232,58 @@ fn prepared_full_context_authentication_work_is_cumulative_exact_and_one_short()
     )
     .is_err());
     assert!(resources.charge(anchor, 0, "after refusal").is_err());
+}
+
+fn full_chain(
+    build: &WorkspaceGraphBuild,
+    work: usize,
+    bytes: usize,
+) -> Result<(usize, usize), ()> {
+    let module = module(build);
+    let anchor = module.functions.first().unwrap();
+    let mut resources =
+        SelectedReplayPreparation::with_limits(anchor, work, bytes).map_err(|_| ())?;
+    super::super::super::current_module(module, &build.hir.modules, &mut resources, anchor)
+        .map_err(|_| ())?;
+    resources
+        .reserve_array::<super::super::super::Context<'_>>(anchor, 1, "retained lexical context")
+        .map_err(|_| ())?;
+    let context = super::super::super::helpers::local::authenticate(
+        module,
+        &build.hir.declarations,
+        &mut resources,
+        anchor,
+    )
+    .map_err(|_| ())?;
+    resources
+        .reserve_array::<&hir::ResolvedFunction>(
+            anchor,
+            module.functions.len(),
+            "retained lexical member references",
+        )
+        .map_err(|_| ())?;
+    let mut members = Vec::with_capacity(module.functions.len());
+    assert_eq!(members.capacity(), module.functions.len());
+    for function in &module.functions {
+        if super::super::super::helpers::local::requires(function, &mut resources, anchor)
+            .map_err(|_| ())?
+        {
+            resources
+                .charge(anchor, 1, "retained lexical member insertion")
+                .map_err(|_| ())?;
+            members.push(function);
+        }
+    }
+    assert!(!members.is_empty());
+    let mut session =
+        crate::cleanup_plan::SelectedReplaySession::from_preparation(&context, anchor, resources)
+            .map_err(|_| ())?;
+    for function in members {
+        session.validate(function).map_err(|_| ())?;
+    }
+    let (remaining, charged) = session.usage();
+    let spent = work.checked_sub(remaining).unwrap();
+    drop(session);
+    drop(context);
+    Ok((spent, charged))
 }
