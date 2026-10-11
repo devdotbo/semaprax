@@ -179,11 +179,6 @@ pub fn explain_json_codec_suitability(
         {
             continue;
         }
-        if source.source().len() > MAX_SCHEMA_BYTES {
-            return Err(refusal(
-                "codec explanation schema source exceeds 65536 bytes",
-            ));
-        }
         let program = crate::parse(source.source(), source.path()).map_err(|d| vec![d])?;
         if program.types.iter().any(|t| t.stable_id == options.record) {
             if selected.is_some() {
@@ -195,6 +190,11 @@ pub fn explain_json_codec_suitability(
     let (source, program) = selected.ok_or_else(|| {
         refusal("codec explanation type identity was not found in exact authored source")
     })?;
+    if source.source().len() > MAX_SCHEMA_BYTES {
+        return Err(refusal(
+            "codec explanation schema source exceeds 65536 bytes",
+        ));
+    }
     let declaration = program
         .types
         .iter()

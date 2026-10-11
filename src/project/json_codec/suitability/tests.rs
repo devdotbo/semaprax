@@ -1,5 +1,8 @@
 use super::*;
 fn revision(field: &str) -> ProjectRevision {
+    revision_with_padding(field, None)
+}
+fn revision_with_padding(field: &str, padded_path: Option<&str>) -> ProjectRevision {
     let manifest = crate::project::ProjectManifest::parse(include_str!(
         "../../../../examples/calculator-project/semaprax.toml"
     ))
@@ -20,9 +23,16 @@ fn revision(field: &str) -> ProjectRevision {
         ),
     ]
     .into_iter()
-    .map(|(path, source)| SemanticWorkspaceSource {
-        path: path.into(),
-        source,
+    .map(|(path, mut source)| {
+        if padded_path == Some(path) {
+            source.push_str("\n//");
+            source.push_str(&"x".repeat(MAX_SCHEMA_BYTES + 1));
+            source.push('\n');
+        }
+        SemanticWorkspaceSource {
+            path: path.into(),
+            source,
+        }
     })
     .collect();
     let built = crate::project::build::build_owned(&manifest, sources).unwrap();
@@ -95,6 +105,24 @@ fn revision_path_identity_bounds_and_target_policy_are_independent_refusals() {
         max_bytes: 16384,
         ..Default::default()
     };
+    // An unrelated authored module is not the selected schema's byte budget.
+    let unrelated = revision_with_padding("i64", Some("src/app.spx"));
+    assert!(unrelated
+        .sources()
+        .iter()
+        .any(|source| source.path() == "src/app.spx" && source.source().len() > MAX_SCHEMA_BYTES));
+    let implicit = explain_json_codec_suitability(&unrelated, &base).unwrap();
+    let mut explicit = base.clone();
+    explicit.source = Some("src/core.spx".into());
+    assert_eq!(
+        implicit,
+        explain_json_codec_suitability(&unrelated, &explicit).unwrap()
+    );
+    // The exact defining source still obeys the unchanged schema ceiling.
+    let oversized_schema = revision_with_padding("i64", Some("src/core.spx"));
+    for options in [&base, &explicit] {
+        assert!(explain_json_codec_suitability(&oversized_schema, options).is_err());
+    }
     let mut stale = base.clone();
     stale.revision = Some(original.project_revision().into());
     assert!(explain_json_codec_suitability(&revision("usize"), &stale).is_err());
