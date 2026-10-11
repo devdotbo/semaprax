@@ -287,7 +287,7 @@ impl Evaluator<'_> {
                         };
                         staged[0] = *one;
                         if copy {
-                            source.read(&self.fused, |bytes| {
+                            source.read(&mut self.fused, |bytes| {
                                 for (at, byte) in staged[..width].iter_mut().enumerate() {
                                     *byte = usize::try_from(offset)
                                         .ok()

@@ -1,5 +1,5 @@
 //! Intermediate scalar expression statements use the ordinary immutable Let.
-use super::{Parser, for_loop, statement_if, statement_if::IfItem};
+use super::{for_loop, statement_if, statement_if::IfItem, Parser};
 use crate::ast::{Expr, LetSyntax, Span, Statement};
 use crate::diagnostic::Diagnostic;
 use crate::lexer::TokenKind;

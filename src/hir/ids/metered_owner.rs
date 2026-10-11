@@ -155,7 +155,7 @@ mod tests {
             let mut remaining = exact;
             let answer = matches(original, &owner, &mut |units| {
                 remaining = remaining.checked_sub(units).ok_or(())?;
-                Ok(())
+                Ok::<(), ()>(())
             });
             assert_eq!(remaining, 0);
             answer
@@ -168,7 +168,7 @@ mod tests {
         assert_eq!(
             matches(original, &owner, &mut |units| {
                 remaining = remaining.checked_sub(units).ok_or(())?;
-                Ok(())
+                Ok::<(), ()>(())
             }),
             Err(())
         );

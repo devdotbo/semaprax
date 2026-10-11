@@ -1,7 +1,7 @@
 //! Complete private checked-module wire carriers. Access stays behind the
 //! authenticated cache owner; this module grants no source or backend authority.
 use super::*;
-use crate::cache_codec::{Codec, Decoder, Encoder, codec_enum, codec_struct, codec_tuple};
+use crate::cache_codec::{codec_enum, codec_struct, codec_tuple, Codec, Decoder, Encoder};
 
 codec_tuple!(DeclarationId(0));
 codec_tuple!(FunctionInstanceId(0));

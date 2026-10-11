@@ -85,7 +85,7 @@ impl BorrowedSliceValue {
     }
     pub(in crate::interpreter) fn read<T>(
         &self,
-        registry: &Registry<'_>,
+        registry: &mut Registry<'_>,
         consumer: impl FnOnce(&[u8]) -> T,
     ) -> Result<T, Flow> {
         match self.lease {

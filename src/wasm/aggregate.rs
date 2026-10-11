@@ -55,7 +55,7 @@ mod string_replacement;
 pub(super) use static_text_profile::{emit_scalar_exports_with_static_text, emit_with_static_text};
 pub(super) mod text_toolkit;
 pub(super) use provider_lowering::{
-    PUBLIC_GENERIC_PROVIDER_SOURCE_INDEX_MIN, lower_public_generic_provider_closure,
+    lower_public_generic_provider_closure, PUBLIC_GENERIC_PROVIDER_SOURCE_INDEX_MIN,
 };
 pub(crate) fn owned_arena_capacity(
     program: &ResolvedProgram,
@@ -67,8 +67,8 @@ pub(crate) fn owned_arena_capacity(
 mod numeric_conversions;
 
 use super::{
-    F32, F64, I32, I64, SCALAR_IMPORT_COUNT, Signature, function_import, intern_type, section,
-    write_bytes, write_i64, write_name, write_u32,
+    function_import, intern_type, section, write_bytes, write_i64, write_name, write_u32,
+    Signature, F32, F64, I32, I64, SCALAR_IMPORT_COUNT,
 };
 use crate::aggregate_layout::{AggregateLayout, AggregateLayoutCache, AggregateTarget};
 use crate::ast::{BinaryOp, UnaryOp};

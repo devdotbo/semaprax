@@ -1,8 +1,8 @@
 // Independent allocating capture oracle retained verbatim for tests only.
 use super::{
-    AuthoredDeclaration, BTreeMap, DEPTH, Diagnostic, Function, Inventory, OwnershipMode,
-    Parameter, Program, WORK, WorkspaceSource, body_digest, capacity, debit, fail, hir, primitive,
-    pure, reserve_builder_structure,
+    body_digest, capacity, debit, fail, hir, primitive, pure, reserve_builder_structure,
+    AuthoredDeclaration, BTreeMap, Diagnostic, Function, Inventory, OwnershipMode, Parameter,
+    Program, WorkspaceSource, DEPTH, WORK,
 };
 pub(super) fn capture(
     program: &Program,

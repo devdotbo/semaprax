@@ -272,7 +272,7 @@ function Get-SemapraxChecksumFromText {
     }
     if ($found.Count -eq 0) { Stop-SemapraxInstall "SHA256SUMS has no entry for $Name" }
     $distinct = @($found | Sort-Object -Unique)
-    if ($distinct.Count -gt 1) { Stop-SemapraxInstall "SHA256SUMS lists conflicting digests for $Name" }
+    if ($found.Count -ne 1) { Stop-SemapraxInstall "SHA256SUMS must list $Name exactly once (duplicate or conflicting digests)" }
     return $distinct[0]
 }
 
@@ -284,6 +284,9 @@ function Assert-SemapraxManifestArtifact {
     }
     if ($Manifest.tag -cne $Tag) {
         Stop-SemapraxInstall "release-manifest.json is for tag '$($Manifest.tag)', not $Tag"
+    }
+    if ($Manifest.version -cne $Tag.Substring(1)) {
+        Stop-SemapraxInstall 'release-manifest.json version disagrees with its tag'
     }
     $artifacts = @($Manifest.artifacts)
     $matching = @($artifacts | Where-Object { $null -ne $_ -and $_.name -ceq $Name })
@@ -563,12 +566,25 @@ function Read-SemapraxReceipt {
     if ($r.installer -cne 'install.ps1') {
         Stop-SemapraxInstall "$path was written by '$($r.installer)', not install.ps1; refusing to touch this directory"
     }
+    if ($r.tag -cnotmatch '^v\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$') {
+        Stop-SemapraxInstall 'invalid version in install receipt'
+    }
     foreach ($f in @($r.files)) {
         $reason = $null
         if ($f -isnot [string] -or $f -eq '' -or $f.StartsWith('/') -or $f.StartsWith('\') -or $f -match '^[A-Za-z]:' -or ($f.Replace('\', '/').Split('/') -contains '..')) {
             $reason = 'unsafe path'
         }
         if ($null -ne $reason) { Stop-SemapraxInstall "receipt lists an unsafe file path; refusing to touch this directory" }
+        if ($f -cne 'bin/semaprax.exe' -and $f -cne 'bin/semapraxd.exe' -and -not $f.StartsWith("versions/$($r.tag)/", [System.StringComparison]::Ordinal)) {
+            Stop-SemapraxInstall 'receipt lists an unowned file path'
+        }
+        $parent = [System.IO.Path]::GetDirectoryName([System.IO.Path]::Combine($InstallDir, $f.Replace('/', [string][System.IO.Path]::DirectorySeparatorChar)))
+        while ($parent.Length -gt $InstallDir.Length) {
+            if ([System.IO.Directory]::Exists($parent) -and ([System.IO.File]::GetAttributes($parent) -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+                Stop-SemapraxInstall 'linked directory in install receipt'
+            }
+            $parent = [System.IO.Path]::GetDirectoryName($parent)
+        }
     }
     return $r
 }
@@ -673,6 +689,7 @@ function Remove-SemapraxEmptyDirs {
     # Removes $Path and empty children, never anything that still holds a file.
     param([string]$Path)
     if (-not [System.IO.Directory]::Exists($Path)) { return }
+    if (([System.IO.File]::GetAttributes($Path) -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) { return }
     foreach ($d in [System.IO.Directory]::GetDirectories($Path)) { Remove-SemapraxEmptyDirs -Path $d }
     if (@([System.IO.Directory]::GetFileSystemEntries($Path)).Count -eq 0) {
         try { [System.IO.Directory]::Delete($Path) } catch { }
@@ -827,6 +844,9 @@ function Invoke-SemapraxActivate {
     $binInstalled = $false
     try {
         if ([System.IO.Directory]::Exists($verDir)) {
+            if ($null -eq $OldReceipt -or $OldReceipt.tag -cne $Tag) {
+                Stop-SemapraxInstall "refusing to replace ${verDir}: the active receipt does not own this version"
+            }
             $verOld = $verDir + '.old-' + [Guid]::NewGuid().ToString('N').Substring(0, 8)
             [System.IO.Directory]::Move($verDir, $verOld)
         }
@@ -871,8 +891,22 @@ function Invoke-SemapraxActivate {
         }
         throw $failure
     }
-    if ($binMovedAside) { [void](Remove-SemapraxTree -Path $binOld) }
-    if ($null -ne $verOld) { [void](Remove-SemapraxTree -Path $verOld) }
+    # Retain rollback material until the caller publishes its receipt.
+    return @{ Bin = $bin; BinOld = $binOld; BinMovedAside = $binMovedAside; VerDir = $verDir; VerOld = $verOld }
+}
+
+function Complete-SemapraxActivation {
+    param($Activation, [bool]$Commit)
+    if ($null -eq $Activation) { return }
+    if ($Commit) {
+        if ($Activation.BinMovedAside) { [void](Remove-SemapraxTree -Path $Activation.BinOld) }
+        if ($null -ne $Activation.VerOld) { [void](Remove-SemapraxTree -Path $Activation.VerOld) }
+        return
+    }
+    [void](Remove-SemapraxTree -Path $Activation.Bin -Quiet)
+    if ($Activation.BinMovedAside) { [System.IO.Directory]::Move($Activation.BinOld, $Activation.Bin) }
+    [void](Remove-SemapraxTree -Path $Activation.VerDir -Quiet)
+    if ($null -ne $Activation.VerOld) { [System.IO.Directory]::Move($Activation.VerOld, $Activation.VerDir) }
 }
 
 function Invoke-SemapraxInstall {
@@ -927,6 +961,7 @@ function Invoke-SemapraxInstall {
     [void][System.IO.Directory]::CreateDirectory($installDir)
     $staging = [System.IO.Path]::Combine($installDir, '.staging-' + [Guid]::NewGuid().ToString('N').Substring(0, 12))
     $done = $false
+    $activation = $null
     try {
         $dl = [System.IO.Path]::Combine($staging, 'dl')
         [void][System.IO.Directory]::CreateDirectory($dl)
@@ -1002,7 +1037,7 @@ function Invoke-SemapraxInstall {
         if ($upToDate) {
             Write-SemapraxLine "semaprax $tag is already installed and up to date"
         } else {
-            Invoke-SemapraxActivate -InstallDir $installDir -Tag $tag -PackageDir $pkg -OldReceipt $receipt
+            $activation = Invoke-SemapraxActivate -InstallDir $installDir -Tag $tag -PackageDir $pkg -OldReceipt $receipt
         }
 
         # PATH, then receipt (written last).
@@ -1025,18 +1060,28 @@ function Invoke-SemapraxInstall {
         $receiptPath = [System.IO.Path]::Combine($installDir, $script:SemapraxReceiptName)
         try {
             Write-SemapraxTextFile -Path ($receiptPath + '.tmp') -Text $text
-            [System.IO.File]::Copy(($receiptPath + '.tmp'), $receiptPath, $true)
-            [System.IO.File]::Delete($receiptPath + '.tmp')
+            if ([System.IO.File]::Exists($receiptPath)) {
+                [System.IO.File]::Replace(($receiptPath + '.tmp'), $receiptPath, [System.Management.Automation.Language.NullString]::Value)
+            } else {
+                [System.IO.File]::Move(($receiptPath + '.tmp'), $receiptPath)
+            }
         } catch {
             if ($pathAdded) { try { [void](Remove-SemapraxUserPathEntry -Entry $binEntry) } catch { } }
             Stop-SemapraxInstall "could not write the install receipt: $($_.Exception.Message)"
         }
         $done = $true
+        Complete-SemapraxActivation -Activation $activation -Commit $true
 
         # Prune the superseded version only after successful activation.
         if ($null -ne $receipt -and $receipt.tag -cne $tag) {
             $old = [System.IO.Path]::Combine($installDir, 'versions', [string]$receipt.tag)
-            if ($old -ne [System.IO.Path]::Combine($installDir, 'versions', $tag)) { [void](Remove-SemapraxTree -Path $old) }
+            foreach ($rel in @($receipt.files)) {
+                if ($rel.StartsWith("versions/$($receipt.tag)/", [System.StringComparison]::Ordinal)) {
+                    $owned = [System.IO.Path]::Combine($installDir, $rel.Replace('/', [string][System.IO.Path]::DirectorySeparatorChar))
+                    try { [System.IO.File]::Delete($owned) } catch { Write-SemapraxLine "warning: could not prune $rel" }
+                }
+            }
+            Remove-SemapraxEmptyDirs -Path $old
         }
 
         Write-SemapraxLine "semaprax $tag installed to $installDir"
@@ -1056,6 +1101,7 @@ function Invoke-SemapraxInstall {
         }
         return 0
     } finally {
+        if (-not $done) { Complete-SemapraxActivation -Activation $activation -Commit $false }
         [void](Remove-SemapraxTree -Path $staging -Quiet)
         if (-not $done -and -not $dirExisted) {
             try {

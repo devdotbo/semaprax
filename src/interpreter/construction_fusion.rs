@@ -301,13 +301,13 @@ impl Registry<'_> {
         })
     }
     pub(super) fn read<T>(
-        &self,
+        &mut self,
         view: View,
         start: usize,
         end: usize,
         consumer: impl FnOnce(&[u8]) -> T,
     ) -> Result<T, Flow> {
-        let state = self.state(view.context)?;
+        let state = self.state_mut(view.context)?;
         let held = state
             .views
             .get(view.index)
@@ -325,6 +325,33 @@ impl Registry<'_> {
                     .ok_or_else(|| guard(Refusal::Range))
             })
             .map_err(guard)?
+    }
+    fn read_pair<T>(
+        &mut self,
+        left: View,
+        right: View,
+        consumer: impl FnOnce(&[u8], &[u8]) -> T,
+    ) -> Result<T, Flow> {
+        let state = self.state_mut(left.context)?;
+        if right.context != left.context {
+            return Err(guard(Refusal::Identity));
+        }
+        let held_left = state
+            .views
+            .get(left.index)
+            .and_then(Option::as_ref)
+            .filter(|held| held.nonce == left.nonce)
+            .ok_or_else(|| guard(Refusal::Identity))?;
+        let held_right = state
+            .views
+            .get(right.index)
+            .and_then(Option::as_ref)
+            .filter(|held| held.nonce == right.nonce)
+            .ok_or_else(|| guard(Refusal::Identity))?;
+        state
+            .core
+            .read_pair(&held_left.loan, &held_right.loan, consumer)
+            .map_err(guard)
     }
     pub(super) fn read_owner<T>(
         &mut self,
@@ -535,23 +562,16 @@ impl Registry<'_> {
                 }
             },
         };
-        let compare_b = |left: &[u8]| match (&b.bytes, bv) {
-            (Backing::Ordinary(right), _) => Ok(left.cmp(right)),
-            (Backing::Leased(_), Some(view)) => self.read(
-                view,
-                0,
-                self.len(match &b.bytes {
-                    Backing::Leased(lease) => lease,
-                    _ => unreachable!(),
-                })?,
-                |right| left.cmp(right),
-            ),
-            _ => Err(guard(Refusal::Identity)),
-        };
-        let result = match (&a.bytes, av) {
-            (Backing::Ordinary(left), _) => compare_b(left),
-            (Backing::Leased(lease), Some(view)) => {
-                self.read(view, 0, self.len(lease)?, compare_b)?
+        let result = match (&a.bytes, av, &b.bytes, bv) {
+            (Backing::Ordinary(left), _, Backing::Ordinary(right), _) => Ok(left.cmp(right)),
+            (Backing::Ordinary(left), _, Backing::Leased(lease), Some(view)) => {
+                self.read(view, 0, self.len(lease)?, |right| left.as_ref().cmp(right))
+            }
+            (Backing::Leased(lease), Some(view), Backing::Ordinary(right), _) => {
+                self.read(view, 0, self.len(lease)?, |left| left.cmp(right.as_ref()))
+            }
+            (Backing::Leased(_), Some(left), Backing::Leased(_), Some(right)) => {
+                self.read_pair(left, right, |left, right| left.cmp(right))
             }
             _ => Err(guard(Refusal::Identity)),
         };

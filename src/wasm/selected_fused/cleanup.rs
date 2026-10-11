@@ -141,7 +141,9 @@ impl<'a> Lower<'a> {
                 &mut Vec::new(),
                 &mut |place, flag, lifecycle| {
                     let lifecycle = match lifecycle.as_str() {
-                        VEC_DROP_LIFECYCLE_ID if &slot.ty == vector && place.projections.is_empty() => {
+                        VEC_DROP_LIFECYCLE_ID
+                            if &slot.ty == vector && place.projections.is_empty() =>
+                        {
                             Lifecycle::Vector
                         }
                         STRING_DROP_LIFECYCLE_ID => Lifecycle::Text,
@@ -214,7 +216,8 @@ impl<'a> Lower<'a> {
             return Err(Refusal::Cleanup);
         }
         for index in leaves {
-            let suffix = &self.cleanup.leaves[index].place.projections[destination.projections.len()..];
+            let suffix =
+                &self.cleanup.leaves[index].place.projections[destination.projections.len()..];
             let source = match (value, suffix) {
                 (Owned::Leaf(local), []) => *local,
                 (Owned::Record(fields), [field]) => fields
@@ -224,7 +227,10 @@ impl<'a> Lower<'a> {
                     .ok_or(Refusal::Cleanup)?,
                 _ => return Err(Refusal::Cleanup),
             };
-            let (carrier, flag) = (self.cleanup.leaves[index].carrier, self.cleanup.leaves[index].flag);
+            let (carrier, flag) = (
+                self.cleanup.leaves[index].carrier,
+                self.cleanup.leaves[index].flag,
+            );
             self.op(I::LocalGet(source));
             self.op(I::LocalSet(carrier));
             self.set(flag, 1);
@@ -257,7 +263,8 @@ impl<'a> Lower<'a> {
             return Err(Refusal::Cleanup);
         }
         for from in sources {
-            let suffix = self.cleanup.leaves[from].place.projections[source.projections.len()..].to_vec();
+            let suffix =
+                self.cleanup.leaves[from].place.projections[source.projections.len()..].to_vec();
             let mut target = destination.clone();
             target.projections.extend(suffix.iter().cloned());
             let to = self
@@ -269,9 +276,14 @@ impl<'a> Lower<'a> {
             if self.cleanup.leaves[from].lifecycle != self.cleanup.leaves[to].lifecycle {
                 return Err(Refusal::Cleanup);
             }
-            let (from_carrier, from_flag) =
-                (self.cleanup.leaves[from].carrier, self.cleanup.leaves[from].flag);
-            let (to_carrier, to_flag) = (self.cleanup.leaves[to].carrier, self.cleanup.leaves[to].flag);
+            let (from_carrier, from_flag) = (
+                self.cleanup.leaves[from].carrier,
+                self.cleanup.leaves[from].flag,
+            );
+            let (to_carrier, to_flag) = (
+                self.cleanup.leaves[to].carrier,
+                self.cleanup.leaves[to].flag,
+            );
             // Only a selected Vec handle is renewed by the host on transfer.
             match (value, suffix.as_slice(), self.cleanup.leaves[to].lifecycle) {
                 (Owned::Leaf(renewed), [], Lifecycle::Vector) => self.op(I::LocalGet(*renewed)),
@@ -291,7 +303,10 @@ impl<'a> Lower<'a> {
         for (block_index, block) in plan.blocks.iter().enumerate() {
             for (index, transition) in block.transitions.iter().enumerate() {
                 let hit = match transition {
-                    Tr::Initialize { at: point, destination } if point == at => {
+                    Tr::Initialize {
+                        at: point,
+                        destination,
+                    } if point == at => {
                         self.assign(destination, &value)?;
                         true
                     }
@@ -437,9 +452,10 @@ impl<'a> Lower<'a> {
     /// cleanup runs next and the result is published only after it.
     pub(super) fn commit(&mut self, tail: &ExpressionId) -> Result<(), Refusal> {
         let plan = self.cleanup.plan;
-        let mut commits = plan.exits.iter().enumerate().filter(|(_, exit)| {
-            matches!(exit.continuation, ExitContinuation::CommitResult { .. })
-        });
+        let mut commits =
+            plan.exits.iter().enumerate().filter(|(_, exit)| {
+                matches!(exit.continuation, ExitContinuation::CommitResult { .. })
+            });
         let (index, exit) = commits.next().ok_or(Refusal::Cleanup)?;
         if commits.next().is_some()
             || !matches!(&exit.continuation,
@@ -456,7 +472,12 @@ impl<'a> Lower<'a> {
     /// whose loans are live at `expression`, bracket an unfinished
     /// construction with abort/settle, then emit the exit's finalizers
     /// verbatim and return the selected failure.
-    pub(super) fn fail(&mut self, expression: &ExpressionId, failure: Failure, status: i32) -> Result<(), Refusal> {
+    pub(super) fn fail(
+        &mut self,
+        expression: &ExpressionId,
+        failure: Failure,
+        status: i32,
+    ) -> Result<(), Refusal> {
         let plan = self.cleanup.plan;
         let source = StatusSourceId {
             expression: expression.clone(),
@@ -478,9 +499,10 @@ impl<'a> Lower<'a> {
             (Failure::Conversion, StatusProducer::PropagatedCall { callee }) => {
                 callee.as_str() == crate::string_ops::I64_FROM_USIZE_ID
             }
-            (Failure::Arithmetic(expected), StatusProducer::CheckedArithmetic { operation, .. }) => {
-                *operation == expected
-            }
+            (
+                Failure::Arithmetic(expected),
+                StatusProducer::CheckedArithmetic { operation, .. },
+            ) => *operation == expected,
             _ => false,
         };
         if !agrees {
@@ -496,7 +518,8 @@ impl<'a> Lower<'a> {
         }
         for (block_index, block) in plan.blocks.iter().enumerate() {
             for (transition_index, transition) in block.transitions.iter().enumerate() {
-                if matches!(transition, Tr::SelectFailure { source: selected } if selected == &source) {
+                if matches!(transition, Tr::SelectFailure { source: selected } if selected == &source)
+                {
                     self.cleanup.applied[block_index][transition_index] = true;
                 }
             }
@@ -527,12 +550,20 @@ impl<'a> Lower<'a> {
     /// Every transition and every exit with observable work was reproduced.
     pub(super) fn census(&self) -> Result<(), Refusal> {
         let plan = self.cleanup.plan;
-        if self.cleanup.applied.iter().flatten().any(|applied| !applied) {
+        if self
+            .cleanup
+            .applied
+            .iter()
+            .flatten()
+            .any(|applied| !applied)
+        {
             return Err(Refusal::Cleanup);
         }
         for (exit, emitted) in plan.exits.iter().zip(&self.cleanup.emitted) {
             let required = match &exit.continuation {
-                ExitContinuation::CommitResult { .. } | ExitContinuation::ReturnFailure { .. } => true,
+                ExitContinuation::CommitResult { .. } | ExitContinuation::ReturnFailure { .. } => {
+                    true
+                }
                 ExitContinuation::Continue(_) => !exit.finalize_in_order.is_empty(),
                 _ => return Err(Refusal::Cleanup),
             };

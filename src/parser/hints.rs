@@ -22,7 +22,8 @@ const RETURN_MESSAGE: &str =
 const RETURN_HELP: &str =
     "delete `return` and the trailing `;` so the value is the block's last expression";
 const LOOP_MESSAGE: &str = "only `while` loops are admitted";
-const LOOP_HELP: &str = "write `while <condition> { <statements>; <tail> }`; the condition controls repetition and \
+const LOOP_HELP: &str =
+    "write `while <condition> { <statements>; <tail> }`; the condition controls repetition and \
                          the required body tail is discarded";
 const EXPRESSION_STATEMENT_HELP: &str = "a block is statements followed by exactly one final value \
                                          expression; an intermediate Copy scalar may use `expr;`, but the final value has no `;`; use an explicit binding for other values \
@@ -38,7 +39,8 @@ const WHILE_BODY_HELP: &str = "end the `while` body with a final expression; its
                                discarded because the condition controls repetition";
 const FOR_BODY_HELP: &str = "end the `for` body with a final expression, such as `0`; its value \
                              is discarded";
-const BRANCH_HELP: &str = "a statement `if` yields no value, so the enclosing block still ends with \
+const BRANCH_HELP: &str =
+    "a statement `if` yields no value, so the enclosing block still ends with \
                            a final expression after it; to make the `if` the value, end every \
                            branch with a value and add an `else` branch";
 const FUNCTION_BODY_HELP: &str = "end the function with a value expression or `return value;`; returning guards use `if condition { return value; }`; a terminal exhaustive `match` may use block arms that explicitly return on every path; loop and closure returns remain refused";

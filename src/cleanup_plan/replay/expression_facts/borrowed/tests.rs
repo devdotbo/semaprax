@@ -34,10 +34,11 @@ fn ordinary_fact_oracle_and_two_receivers_share_exact_work_and_backing_through_d
         }
     }
     let expected = expression_facts(function).unwrap();
-    let absent = [
-        ExpressionId::default(),
-        ExpressionId::from_owned("hostile.nearby".into()),
-    ];
+    let (empty, refused) =
+        crate::bounded_output::with_limit(0, || ExpressionId::from_owned(String::new()));
+    assert!(refused);
+    assert_eq!(empty.as_str(), "");
+    let absent = [empty, ExpressionId::from_owned("hostile.nearby".into())];
     fn run(
         function: &ResolvedFunction,
         expected: &BTreeMap<ExpressionId, Option<CallFact>>,

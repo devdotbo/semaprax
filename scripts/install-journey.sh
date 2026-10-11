@@ -160,6 +160,17 @@ if [ "${SEMAPRAX_JOURNEY_REQUIRE_PUBLISHER:-0}" = 1 ]; then
 fi
 
 step "install $TAG ($TARGET) into '$PREFIX'"
+if [ -n "${SEMAPRAX_JOURNEY_PREVIOUS_ASSETS:-}" ]; then
+  OLD_ASSETS="$SEMAPRAX_JOURNEY_PREVIOUS_ASSETS"
+  OLD_TAG="${SEMAPRAX_JOURNEY_PREVIOUS_TAG:?previous tag is required}"
+  mkdir -p "$BASE/$OLD_TAG"
+  cp "$OLD_ASSETS"/* "$BASE/$OLD_TAG/"
+  step "install previous release $OLD_TAG, then upgrade the same managed prefix"
+  # shellcheck disable=SC2086
+  run_installer "$BASE" --version "$OLD_TAG" --prefix "$PREFIX" $PUB_FLAG >"$WORK/previous.out" 2>&1 ||
+    { cat "$WORK/previous.out" >&2; fail "previous release install failed"; }
+  "$PREFIX/bin/semaprax" --version | grep -qF "semaprax ${OLD_TAG#v} " || fail "previous release did not activate"
+fi
 # shellcheck disable=SC2086  # PUB_FLAG is intentionally empty or one flag
 run_installer "$BASE" --version "$TAG" --prefix "$PREFIX" $PUB_FLAG >"$WORK/install.out" 2>&1 ||
   {
@@ -208,6 +219,10 @@ case "$VERSION_LINE" in
   "semaprax $VERSION "* | "semaprax $VERSION") ;;
   *) fail "semaprax --version does not name $VERSION: $VERSION_LINE" ;;
 esac
+EXPECTED_COMMIT="$(tr -d ' \t\r\n' <"$ASSETS/release-manifest.json" | grep -o '"commit":"[0-9a-f]*"' | head -1)"
+[ -n "$EXPECTED_COMMIT" ] || fail "release manifest has no commit"
+IDENTITY="$(in_journey semaprax version --json | tr -d ' \t\r\n')"
+printf '%s' "$IDENTITY" | grep -qF "$EXPECTED_COMMIT" || fail "installed CLI does not name the exact release commit"
 in_journey semaprax new first-semaprax
 in_journey semaprax check first-semaprax/semaprax.toml
 in_journey semaprax test first-semaprax/semaprax.toml

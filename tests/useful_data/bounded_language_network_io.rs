@@ -179,7 +179,9 @@ fn collect_operations(
             }
         }
         ResolvedExprKind::Block { statements, tail }
-        | ResolvedExprKind::VecConstructor { statements, tail, .. } => {
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             for statement in statements {
                 for index in 0..statement.child_count() {
                     if let Some(child) = statement.child(index) {

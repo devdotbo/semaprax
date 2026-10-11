@@ -75,8 +75,7 @@ fn forged_proofs_producers_counts_and_functions_refuse() {
 
     // Same text and fields, foreign AST: equal raw keys select nothing.
     let foreign_program = parsed(SOURCE);
-    let Ok(Derivation::Selected(foreign)) =
-        derive(&foreign_program, &foreign_program.functions[0])
+    let Ok(Derivation::Selected(foreign)) = derive(&foreign_program, &foreign_program.functions[0])
     else {
         panic!("foreign selection")
     };

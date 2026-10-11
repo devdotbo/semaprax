@@ -1,7 +1,7 @@
 //! Exact direct Copy-field mutation validation, relocated without policy changes.
 use super::{
-    DeclarationId, DeclarationKind, Diagnostic, HirValidator, ResolvedExpr, ResolvedType,
-    hir_diagnostic_at_span, hir_error_at_span,
+    hir_diagnostic_at_span, hir_error_at_span, DeclarationId, DeclarationKind, Diagnostic,
+    HirValidator, ResolvedExpr, ResolvedType,
 };
 impl HirValidator<'_> {
     /// Field Mutation v1 oracle check: the targeted field must exist on a

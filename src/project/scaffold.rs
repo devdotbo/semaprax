@@ -10,10 +10,10 @@
 
 use serde_json::Value;
 
-#[path = "scaffold/service_config.rs"]
-mod service_config;
 #[path = "scaffold/collection_records.rs"]
 mod collection_records;
+#[path = "scaffold/service_config.rs"]
+mod service_config;
 use collection_records::{APP as COLLECTION_RECORD_APP, CORE as COLLECTION_RECORD_CORE};
 use sha2::{Digest, Sha256};
 
@@ -25,9 +25,7 @@ use super::{
     validate_owned_project_test, ProjectExecutionOptions, PROJECT_SCHEMA, PROJECT_SCHEMA_V31,
 };
 
-pub use collection_records::{
-    TEMPLATE as PROJECT_SCAFFOLD_TEMPLATE_STDIN_STREAM_COLLECTION_RECORD,
-};
+pub use collection_records::TEMPLATE as PROJECT_SCAFFOLD_TEMPLATE_STDIN_STREAM_COLLECTION_RECORD;
 
 /// Decode a canonical service configuration and independently replay its
 /// bounded host-adapter handoff. This returns requirements only: it never
@@ -948,17 +946,19 @@ fn artifact_digest(
     canonical_without_digest: &str,
 ) -> String {
     let mut hash = Sha256::new();
-    hash.update(if template == PROJECT_SCAFFOLD_TEMPLATE_STDIN_STREAM_COLLECTION_RECORD {
-        DIGEST_DOMAIN_V7
-    } else if template == PROJECT_SCAFFOLD_TEMPLATE_STDIN_STREAM_DATA {
-        DIGEST_DOMAIN_V6
-    } else if template == PROJECT_SCAFFOLD_TEMPLATE_SOURCE_COMMAND_FILE_TEXT {
-        DIGEST_DOMAIN_V5
-    } else if template == PROJECT_SCAFFOLD_TEMPLATE_STDIN_STREAM_TEXT {
-        DIGEST_DOMAIN_V4
-    } else {
-        layout.digest_domain()
-    });
+    hash.update(
+        if template == PROJECT_SCAFFOLD_TEMPLATE_STDIN_STREAM_COLLECTION_RECORD {
+            DIGEST_DOMAIN_V7
+        } else if template == PROJECT_SCAFFOLD_TEMPLATE_STDIN_STREAM_DATA {
+            DIGEST_DOMAIN_V6
+        } else if template == PROJECT_SCAFFOLD_TEMPLATE_SOURCE_COMMAND_FILE_TEXT {
+            DIGEST_DOMAIN_V5
+        } else if template == PROJECT_SCAFFOLD_TEMPLATE_STDIN_STREAM_TEXT {
+            DIGEST_DOMAIN_V4
+        } else {
+            layout.digest_domain()
+        },
+    );
     hash.update((canonical_without_digest.len() as u64).to_le_bytes());
     hash.update(canonical_without_digest.as_bytes());
     format!("sha256:{:x}", crate::digest_hex::LowerHex(hash.finalize()))

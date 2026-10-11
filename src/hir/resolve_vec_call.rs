@@ -9,7 +9,7 @@ use crate::diagnostic::Diagnostic;
 
 use super::expr_nodes::{ResolvedExpr, ResolvedExprKind};
 use super::ids::{DeclarationId, ExpressionId, FunctionExecutionId};
-use super::nodes::{OwnershipMode, ResolvedBinding, ResolvedType, is_scalar_resolved_type};
+use super::nodes::{is_scalar_resolved_type, OwnershipMode, ResolvedBinding, ResolvedType};
 use super::resolve_expr_frame::Frame;
 use super::{Binding, Resolver};
 

@@ -6711,9 +6711,14 @@ impl<'a> HirValidator<'a> {
                         self.mark_value_sources_moved(argument, scope)?;
                     }
                 }
-                let ownership = if matches!(callee.as_str(), crate::vec_ops::string_slot::ID | crate::vec_ops::string_slot::BYTES_ID) {
+                let ownership = if matches!(
+                    callee.as_str(),
+                    crate::vec_ops::string_slot::ID | crate::vec_ops::string_slot::BYTES_ID
+                ) {
                     OwnershipMode::Borrow
-                } else { self.expected_ownership(&return_type, OwnershipMode::Own)? };
+                } else {
+                    self.expected_ownership(&return_type, OwnershipMode::Own)?
+                };
                 (return_type, ownership)
             }
             ResolvedExprKind::HostCommandCall(call) => {

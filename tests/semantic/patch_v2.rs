@@ -47,6 +47,10 @@ fn first_call<'a>(expression: &'a ResolvedExpr, template: &str) -> Option<&'a Re
             args.iter()
                 .find_map(|argument| first_call(argument, template))
         }
+        ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. } => args
+            .iter()
+            .find_map(|argument| first_call(argument, template)),
         ResolvedExprKind::NativeRustImportCall(call) => call
             .args
             .iter()
@@ -55,6 +59,9 @@ fn first_call<'a>(expression: &'a ResolvedExpr, template: &str) -> Option<&'a Re
             .args
             .iter()
             .find_map(|argument| first_call(argument, template)),
+        ResolvedExprKind::LexicalExit { value, .. } => value
+            .as_deref()
+            .and_then(|value| first_call(value, template)),
         ResolvedExprKind::Unary { value, .. }
         | ResolvedExprKind::Upcast { source: value }
         | ResolvedExprKind::Try { operand: value, .. }
@@ -68,7 +75,10 @@ fn first_call<'a>(expression: &'a ResolvedExpr, template: &str) -> Option<&'a Re
         } => first_call(source, template)
             .or_else(|| first_call(start, template))
             .or_else(|| first_call(end, template)),
-        ResolvedExprKind::Block { statements, tail } => statements
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => statements
             .iter()
             .find_map(|statement| first_call(statement.value(), template))
             .or_else(|| first_call(tail, template)),
@@ -106,6 +116,7 @@ fn first_call<'a>(expression: &'a ResolvedExpr, template: &str) -> Option<&'a Re
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
         | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. } => None,
     }

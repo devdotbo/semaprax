@@ -4,16 +4,16 @@ use super::*;
 #[path = "owned/vec_constructor_adoption.rs"]
 mod vec_constructor_adoption;
 
-#[path = "owned/stream.rs"]
-mod stream;
-#[path = "owned/public_example.rs"]
-mod public_example;
-#[path = "owned/stream_utf8_public_example.rs"]
-mod stream_utf8_public_example;
-#[path = "owned/shiftsim_typed_records.rs"]
-mod shiftsim_typed_records;
 #[path = "owned/catalog_scoped_records.rs"]
 mod catalog_scoped_records;
+#[path = "owned/public_example.rs"]
+mod public_example;
+#[path = "owned/shiftsim_typed_records.rs"]
+mod shiftsim_typed_records;
+#[path = "owned/stream.rs"]
+mod stream;
+#[path = "owned/stream_utf8_public_example.rs"]
+mod stream_utf8_public_example;
 
 const VALID: &[u8] = br#"{"patients":[{"id":"P2","arrival":2,"service":5,"priority":1,"deadline":8},{"id":"\u00501","arrival":1,"service":4,"priority":0,"deadline":9}],"servers":["S2","\u00531"]}"#;
 const EXPECTED: &[u8] = br#"{"servers":["S1","S2"],"patients":[{"id":"P1","arrival":2,"service":4,"priority":0,"deadline":9},{"id":"P2","arrival":2,"service":5,"priority":1,"deadline":8}]}"#;
@@ -122,26 +122,22 @@ fn install(label: &str, schema: &str, application: &str, root_id: &str) -> std::
         assert_eq!(canonical(&generated), generated);
         let forged = generated.replace("length <= 16", "length <= 17");
         assert_ne!(generated, forged);
-        assert!(
-            project::verify_json_codec_source_with_profile(
-                &revision,
-                "src/schema.spx",
-                root_id,
-                &forged,
-                project::JsonCodecProfile::OwnedRequest
-            )
-            .is_err()
-        );
-        assert!(
-            project::verify_json_codec_source_with_profile(
-                &revision,
-                "src/schema.spx",
-                root_id,
-                &generated,
-                project::JsonCodecProfile::RequestViews
-            )
-            .is_err()
-        );
+        assert!(project::verify_json_codec_source_with_profile(
+            &revision,
+            "src/schema.spx",
+            root_id,
+            &forged,
+            project::JsonCodecProfile::OwnedRequest
+        )
+        .is_err());
+        assert!(project::verify_json_codec_source_with_profile(
+            &revision,
+            "src/schema.spx",
+            root_id,
+            &generated,
+            project::JsonCodecProfile::RequestViews
+        )
+        .is_err());
         Ok(generated)
     })
     .unwrap();

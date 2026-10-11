@@ -93,6 +93,21 @@ fn held_registry_publishes_once_and_scopes_reads_stores_and_parent_cleanup() {
         let Backing::Leased(lease) = &bytes.bytes else {
             panic!()
         };
+        let Value::Record(second_record) = &second else {
+            panic!()
+        };
+        let Value::Bytes(second_bytes) = &second_record.fields[&DeclarationId::new("row.bytes")]
+        else {
+            panic!()
+        };
+        assert_eq!(
+            registry.compare_bytes(bytes, second_bytes).unwrap(),
+            std::cmp::Ordering::Equal
+        );
+        assert_eq!(
+            registry.compare_bytes(bytes, bytes).unwrap(),
+            std::cmp::Ordering::Equal
+        );
         let view = registry.borrow(lease).unwrap();
         assert_eq!(
             registry.read(view, 0, 3, |bytes| bytes.to_vec()).unwrap(),

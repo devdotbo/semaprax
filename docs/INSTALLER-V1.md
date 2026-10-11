@@ -4,7 +4,8 @@ Status: normative contract for `scripts/install.sh` (macOS and GNU/Linux) and,
 for the shared layout, receipt, verification order and release-asset rules,
 `scripts/install.ps1` (Windows). The installer is published as a release
 asset only from the first release whose inventory lists it; releases up to
-v0.8.0 do not carry it, but `install.sh --version v0.8.0` installs v0.8.0
+v0.8.0 do not carry it, v0.9.0 is the first published release carrying both scripts.
+`install.sh --version v0.8.0` still installs v0.8.0
 because it needs only assets that release already publishes.
 
 Audience: users installing SEMAPRAX, release engineers, and security reviewers.
@@ -189,8 +190,8 @@ previous installation untouched and prints no success line.
 ## Activation
 
 1. Move the staged package to `versions/<tag>` (kept if the same tag with the
-   same archive digest is already there; a same-tag, different-digest archive is
-   refused).
+   same archive digest is already there; a same-tag, different-digest archive or a changed installed executable is
+   refused). A destination the active receipt does not own is refused.
 2. Create `bin/semaprax` and `bin/semapraxd` as links to `../current/...`. An
    existing `bin/semaprax*` that is not the installer's link is never replaced
    and aborts the install.
@@ -199,8 +200,8 @@ previous installation untouched and prints no success line.
    otherwise `ln -sfn`).
 4. Add or refresh the profile block, if requested.
 5. Write `install-receipt.json` last. Only then is the install complete.
-6. Prune other `versions/*` directories, after success only. Pruning failure is
-   a warning.
+6. Prune only files owned by the previous receipt, after success only. Foreign
+   version directories and extra files are retained. Pruning failure is a warning.
 
 A failure after step 3 and before step 5 restores the previous `current` target
 (or removes `current` on a fresh install), removes what this run created, and
@@ -210,8 +211,8 @@ the pre-existing empty one).
 
 Rules: a non-empty prefix without a receipt is refused; rerunning the same
 version is idempotent (it re-verifies and reports `already installed and
-active`); upgrade and explicit downgrade both switch `current` and prune the
-other version; `current` that is not a symlink is refused.
+active`); upgrade and explicit downgrade both switch `current` and prune only the
+previous receipt's files; `current` that is not a symlink is refused.
 
 ## PATH behavior
 
@@ -281,3 +282,48 @@ The installer does not sign anything, run a background updater, configure
 third-party tools or agent harnesses, or install the standalone source build.
 Checksum-only installs are labelled as such and must not be described as
 signature-verified.
+
+## Windows receipt settlement
+
+Windows keeps the old `bin` directory and any replaced same-version directory
+until the new receipt is atomically published with `File.Replace` (or
+`File.Move` for a fresh install). A receipt-write failure restores both
+executables and leaves the old receipt unchanged. Only then can pruning remove
+files from the previous receipt. Removal refuses linked receipt parents and
+never treats a whole `versions/` directory as ownership authority.
+
+## Consolidated distribution qualification
+
+The Install distribution workflow uses v0.9.0 on all five native targets,
+both Windows PowerShell editions, and real v0.8.0 to v0.9.0 upgrades on the
+three targets that v0.8.0 shipped. The optional
+`SEMAPRAX_JOURNEY_PREVIOUS_ASSETS` and `SEMAPRAX_JOURNEY_PREVIOUS_TAG` variables
+provide the previous release's exact verified assets; they do not change any
+verification rule. Windows uses the same installed starter and bounded daemon
+handshake as the WinGet route. Linux's incompatible-runtime control runs on
+glibc 2.31, below the declared 2.35 baseline.
+
+Manual dispatch defaults to published-release qualification. Enable the
+`candidate` input to build new candidate packages as well. The Package channels
+workflow consumes published, tag-attested assets, tests Homebrew on both native
+macOS architectures and WinGet local manifests on Windows, then retains
+reviewable proposals. It never marks an externally pending channel published.
+
+The consolidated installer/channel qualification passed at implementation commit
+`0c9c2a2fe8e55733fddfa3fd8dba1682a93cc5aa` in
+[run 38156173827](https://github.com/wavect/semaprax/actions/runs/38156173827):
+all five native published-release journeys, both Windows shells, the Unix and
+Windows fixture suites, incompatible-glibc refusal, both native public Homebrew
+routes and the WinGet local upgrade/removal route. The v0.9.0 release's original
+[tag gate](https://github.com/wavect/semaprax/actions/runs/38131350918) separately
+passed all candidate archive/install cells at release commit
+`933196b9ef3cb611343f1401e9eb0b08fa404d0a`.
+
+Local distribution gates passed on 11 October 2026: 64 Unix installer fixtures,
+20 channel-manifest cases, 27 release-surface cases, 15 install-claim cases,
+60 generated-package cases and ShellCheck. The attempted full quality profile
+stopped compiling the inherited v0.10 base at
+`src/interpreter/construction_fusion.rs:319` (`E0596`: immutable state passed to
+mutable core read). No Rust compiler source is changed by this Install batch;
+this result is not a passing full quality profile. WinGet public exact-ID
+installation remains unverified pending Microsoft's submission acceptance.

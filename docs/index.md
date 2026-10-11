@@ -12,7 +12,7 @@ Audience: coding agents, tool authors, and integrators needing exact contracts.
 
 The [v0.4.0 baseline](RELEASE-0.4.0-STATUS.md) is the last release with a
 **HOSTED GREEN** implementation claim. The workspace is at version 0.9.0,
-installable from source; v0.9.0 has no published or signed archive yet. Read
+installable from source; v0.9.0 publishes five native archives and both per-user installers. Read
 the [completion matrix](COMPLETION-MATRIX.md) before treating a versioned
 contract as a supported feature: a specification is not proof of
 implementation. Contributors start with

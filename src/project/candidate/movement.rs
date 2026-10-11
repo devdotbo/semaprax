@@ -352,7 +352,7 @@ fn plan(revision: &ProjectRevision, programs: &[Program], target: &str) -> Resul
             | ExprKind::Usize(_)
             | ExprKind::Bool(_)
             | ExprKind::String(_)
-| ExprKind::BorrowedUtf8Literal(_)
+            | ExprKind::BorrowedUtf8Literal(_)
             | ExprKind::ArrayU8(_)
             | ExprKind::RepeatArrayU8 { .. }
             | ExprKind::Var(_)
