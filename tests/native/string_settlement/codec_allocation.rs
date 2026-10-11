@@ -25,6 +25,9 @@ fn app() -> String {
         .join(",");
     format!(
         r#"module consumer.app;
+use type @id("fault.report") from consumer.schema as Report;
+use type @id("fault.config") from consumer.schema as Config;
+use type @id("fault.row") from consumer.schema as Row;
 use type @id("fault.report.json.nested.decode-result") from consumer.schema as Decoded;
 use type @id("fault.report.json.nested-response.encode-result") from consumer.schema as Encoded;
 use function @id("fault.report.json.nested.decode") from consumer.schema as decode;

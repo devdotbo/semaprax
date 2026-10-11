@@ -213,7 +213,27 @@ fn missing_signature_import(
     let Type::Named { name, arguments } = ty else {
         return None;
     };
-    if !arguments.is_empty() || visiting.len() >= MAX_CHECKED_VALUE_DEPTH {
+    if visiting.len() >= MAX_CHECKED_VALUE_DEPTH {
+        return None;
+    }
+    // Diagnostic discovery only: the existing admission route independently
+    // authenticates the builtin vector and its declared element layout.
+    // A authored nominal shadow or another generic never supplies this hint.
+    if name == "Vec"
+        && arguments.len() == 1
+        && resolve_type_id(module, name, programs).is_none()
+        && matches!(&arguments[0], Type::Named { arguments, .. } if arguments.is_empty())
+    {
+        return missing_signature_import(
+            module,
+            &arguments[0],
+            caller,
+            authored,
+            programs,
+            visiting,
+        );
+    }
+    if !arguments.is_empty() {
         return None;
     }
     let id = resolve_type_id(module, name, programs)?;
@@ -235,11 +255,7 @@ fn missing_signature_import(
             target.module, declaration.name
         )));
     }
-    let fields = match &declaration.kind {
-        TypeDeclarationKind::Record { fields } => fields.as_slice(),
-        _ => return None,
-    };
-    fields.iter().find_map(|field| {
+    let mut inspect = |field: &crate::ast::FieldDeclaration| {
         missing_signature_import(
             target.module,
             &field.ty,
@@ -248,7 +264,15 @@ fn missing_signature_import(
             programs,
             visiting,
         )
-    })
+    };
+    match &declaration.kind {
+        TypeDeclarationKind::Record { fields } => fields.iter().find_map(&mut inspect),
+        TypeDeclarationKind::Variant { cases } => cases
+            .iter()
+            .flat_map(|case| &case.fields)
+            .find_map(&mut inspect),
+        _ => None,
+    }
 }
 
 pub(super) fn type_refusal(
