@@ -1,0 +1,390 @@
+//! Authentic-source complete production entry: checked and authenticated
+//! modules only, no forged caller arrays. The saved complete entry and the
+//! current one each run on their own cumulative owner through the unchanged
+//! session and final Drop; irrelevant providers and long legal IDs must leave
+//! the graph's own work and backing unchanged relative to the saved lookup.
+use super::*;
+
+type Flow = for<'a> fn(
+    &'a WorkspaceResolvedModule,
+    &'a [WorkspaceResolvedModule],
+    &BTreeMap<String, WorkspaceDeclarationFact>,
+    &mut SelectedReplayPreparation,
+) -> Result<Closure<'a>, Vec<Diagnostic>>;
+fn saved<'a>(
+    module: &'a WorkspaceResolvedModule,
+    modules: &'a [WorkspaceResolvedModule],
+    facts: &BTreeMap<String, WorkspaceDeclarationFact>,
+    resources: &mut SelectedReplayPreparation,
+) -> Result<Closure<'a>, Vec<Diagnostic>> {
+    oracle::authenticate(module, modules, facts, resources).map(|(closure, _)| closure)
+}
+const SAVED: Flow = saved;
+const CURRENT: Flow = authenticate;
+
+struct Outcome {
+    work: usize,
+    bytes: usize,
+    helpers: Vec<*const ResolvedFunction>,
+    lexical: Vec<*const ResolvedFunction>,
+    count: usize,
+    walks: usize,
+    edges: usize,
+}
+/// One owner from preparation through session validation to final Drop.
+fn entry(
+    build: &WorkspaceGraphBuild,
+    flow: Flow,
+    resources: impl FnOnce(&ResolvedFunction) -> SelectedReplayPreparation,
+    work: usize,
+) -> Result<Outcome, Vec<Diagnostic>> {
+    let module = caller(build);
+    let anchor = &module.functions[0];
+    let mut resources = resources(anchor);
+    let context = flow(
+        module,
+        &build.hir.modules,
+        &build.hir.declarations,
+        &mut resources,
+    )?;
+    let mut session =
+        SelectedReplaySession::from_preparation(&context, anchor, resources).map_err(|_| fail())?;
+    for helper in &context.helpers {
+        session
+            .validate_scalar(helper.function)
+            .map_err(|_| fail())?;
+    }
+    if context.lexical.is_empty() {
+        return Err(fail());
+    }
+    for function in &context.lexical {
+        session.validate(function).map_err(|_| fail())?;
+    }
+    let (remaining, bytes) = session.metrics();
+    drop(session);
+    let outcome = Outcome {
+        work: work.saturating_sub(remaining),
+        bytes,
+        helpers: context
+            .helpers
+            .iter()
+            .map(|m| m.function as *const ResolvedFunction)
+            .collect(),
+        lexical: context
+            .lexical
+            .iter()
+            .map(|f| *f as *const ResolvedFunction)
+            .collect(),
+        count: context.count,
+        walks: context.walks,
+        edges: context.edges,
+    };
+    drop(context);
+    Ok(outcome)
+}
+fn limited(
+    build: &WorkspaceGraphBuild,
+    flow: Flow,
+    work: usize,
+    bytes: usize,
+) -> Result<Outcome, Vec<Diagnostic>> {
+    entry(
+        build,
+        flow,
+        |anchor| SelectedReplayPreparation::with_limits(anchor, work, bytes).unwrap(),
+        work,
+    )
+}
+/// The unchanged production physical default and production work ceiling.
+fn default_cap(build: &WorkspaceGraphBuild, flow: Flow) -> Result<Outcome, Vec<Diagnostic>> {
+    entry(
+        build,
+        flow,
+        |anchor| {
+            SelectedReplayPreparation::new(
+                anchor,
+                crate::cleanup_plan::ReplayPhysicalReservation::new(MAX_CHANGE_BUILDER_BYTES),
+            )
+            .unwrap()
+        },
+        0,
+    )
+}
+/// Saved and current complete entries agree on verdict, exact selected
+/// pointers in ordinal order, lexical members and edge count; the current
+/// entry walks each selected body once where the saved one walked twice.
+fn parity(build: &WorkspaceGraphBuild) -> Result<(Outcome, Outcome), Vec<&'static str>> {
+    let old = limited(build, SAVED, 32_000_000, 1 << 26);
+    let new = limited(build, CURRENT, 32_000_000, 1 << 26);
+    match (old, new) {
+        (Ok(old), Ok(new)) => {
+            assert_eq!(new.helpers, old.helpers, "exact selected pointers");
+            assert_eq!(new.lexical, old.lexical);
+            assert_eq!(new.count, old.count);
+            assert_eq!(new.edges, old.edges, "edge multiplicity");
+            assert_eq!(old.walks, 2 * old.count);
+            assert_eq!(new.walks, new.count, "one discovery walk per body");
+            Ok((old, new))
+        }
+        (Err(old), Err(new)) => {
+            let codes = |e: &[Diagnostic]| e.iter().map(|d| d.code).collect::<Vec<_>>();
+            assert_eq!(codes(&new), codes(&old));
+            Err(codes(&new))
+        }
+        (old, new) => panic!(
+            "complete entry verdict split: saved {} current {}",
+            old.is_ok(),
+            new.is_ok()
+        ),
+    }
+}
+
+/// 116-byte identities: below every stable-ID bound the toolchain applies.
+fn long(tail: &str) -> String {
+    format!("{}.{tail}", "q".repeat(116 - 1 - tail.len()))
+}
+fn tiny(noise: usize) -> WorkspaceGraphBuild {
+    let leaf_id = long("leaf");
+    let caller_source = format!(
+        "module scalar.app;\nuse function @id(\"{leaf_id}\") from scalar.leaf as step;\n@id(\"{}\") fn main()->i64 {{let label=str\"é\\u{{0}}\";let result=step(41);return result;}}\n",
+        long("main")
+    );
+    // Same-provider siblings are captured but never called.
+    let mut leaf_source =
+        format!("module scalar.leaf;\n@id(\"{leaf_id}\") fn step(n:i64)->i64 {{n+1}}\n");
+    for j in 0..noise {
+        leaf_source.push_str(&format!(
+            "@id(\"{}\") fn sibling{j}(n:i64)->i64 {{n+{j}}}\n",
+            long(&format!("leaf.s{j:02}"))
+        ));
+    }
+    let mut owned = vec![
+        ("caller.spx".to_owned(), caller_source),
+        ("leaf.spx".to_owned(), leaf_source),
+    ];
+    for k in 0..noise {
+        let mut source = format!("module scalar.noise{k};\n");
+        for j in 0..4 {
+            source.push_str(&format!(
+                "@id(\"{}\") fn f{j}(n:i64)->i64 {{n+{j}}}\n",
+                long(&format!("noise{k:02}.f{j}"))
+            ));
+        }
+        owned.push((format!("noise{k}.spx"), source));
+    }
+    let sources = owned
+        .iter()
+        .map(|(p, s)| (p.as_str(), s.as_str()))
+        .collect::<Vec<_>>();
+    let build = build_sources(&sources).unwrap();
+    for k in 0..noise {
+        let name = format!("scalar.noise{k}");
+        let module = build.hir.modules.iter().find(|m| m.module == name);
+        assert_eq!(
+            module.map(|m| m.functions.len()),
+            Some(4),
+            "{name} retained"
+        );
+    }
+    build
+}
+
+#[test]
+fn tiny_closures_with_many_irrelevant_providers_and_long_legal_ids_keep_saved_costs() {
+    let quiet = tiny(0);
+    let noisy = tiny(24);
+    let mut costs = Vec::new();
+    for build in [&quiet, &noisy] {
+        assert_eq!(schema(build).unwrap(), "semaprax.graph.v77");
+        let (old, new) = parity(build).ok().unwrap();
+        assert_eq!(new.count, 2);
+        assert!(old.work > 0 && new.work > 0);
+        // The unchanged production defaults admit both complete entries.
+        let old_default = default_cap(build, SAVED).ok().unwrap();
+        let new_default = default_cap(build, CURRENT).ok().unwrap();
+        assert_eq!(new_default.helpers, old_default.helpers);
+        costs.push((old, new));
+    }
+    // Irrelevant providers reach only the unchanged fact, provider-module and
+    // inventory scans plus the saved member bound, so they add exactly the
+    // same work and backing to both entries: the graph's own directory, edge
+    // ranges and frontier stay sized to the actual selected closure.
+    let delta = |noisy: usize, quiet: usize| noisy as i128 - quiet as i128;
+    let (quiet_old, quiet_new) = &costs[0];
+    let (noisy_old, noisy_new) = &costs[1];
+    assert_eq!(
+        delta(noisy_new.work, quiet_new.work),
+        delta(noisy_old.work, quiet_old.work),
+        "irrelevant providers add no current-only work"
+    );
+    assert_eq!(
+        delta(noisy_new.bytes, quiet_new.bytes),
+        delta(noisy_old.bytes, quiet_old.bytes),
+        "irrelevant providers add no current-only backing"
+    );
+}
+
+#[test]
+fn noisy_tiny_entry_is_exact_one_short_and_drops_all_backing() {
+    let build = tiny(24);
+    let (wide, allocation) = measured(&build, 32_000_000, 1 << 26);
+    let (work, bytes) = wide.unwrap();
+    assert!(!allocation.invalid && allocation.allocated <= bytes && allocation.highwater <= bytes);
+    assert_eq!(allocation.live, 0);
+    let (exact, allocation) = measured(&build, work, bytes);
+    assert_eq!(exact.unwrap(), (work, bytes));
+    assert!(!allocation.invalid && allocation.allocated <= bytes);
+    assert_eq!(allocation.live, 0);
+    assert!(measured(&build, work - 1, bytes).0.is_err());
+    assert!(measured(&build, work, bytes - 1).0.is_err());
+    let current = limited(&build, CURRENT, work, bytes).ok().unwrap();
+    assert_eq!((current.work, current.bytes), (work, bytes));
+    // The saved entry's own exact boundary is equally sharp on its owner.
+    let old = limited(&build, SAVED, 32_000_000, 1 << 26).ok().unwrap();
+    assert!(limited(&build, SAVED, old.work, old.bytes).is_ok());
+    assert!(limited(&build, SAVED, old.work - 1, old.bytes).is_err());
+    assert!(limited(&build, SAVED, old.work, old.bytes - 1).is_err());
+}
+
+#[test]
+fn authentic_chain_diamond_repeated_alias_and_wide_entries_match_the_saved_entry() {
+    let wide_imports = (0..12)
+        .map(|k| format!("use function @id(\"w{k}.step\") from scalar.w{k} as w{k};\n"))
+        .collect::<String>();
+    let sum = (0..12)
+        .map(|k| format!("w{k}(0)"))
+        .collect::<Vec<_>>()
+        .join("+");
+    let wide_caller = format!(
+        "module scalar.app;\n{wide_imports}@id(\"app.main\") fn main()->i64 {{let label=str\"é\\u{{0}}\";let result={sum};return result;}}\n"
+    );
+    let wide_leaves = (0..12)
+        .map(|k| {
+            (
+                format!("w{k}.spx"),
+                format!("module scalar.w{k};\n@id(\"w{k}.step\") fn step(n:i64)->i64 {{n+{k}}}\n"),
+            )
+        })
+        .collect::<Vec<_>>();
+    let mut sources = vec![("caller.spx", wide_caller.as_str())];
+    sources.extend(wide_leaves.iter().map(|(p, s)| (p.as_str(), s.as_str())));
+    let wide = build_sources(&sources).unwrap();
+    for (name, build, count) in [
+        ("chain", build(CALLER, PROVIDER, LEAF).unwrap(), 3),
+        ("diamond", diamond("leaf_step(n)"), 4),
+        ("repeated", repeated(), 3),
+        ("aliases", aliases(), 3),
+        ("wide", wide, 13),
+    ] {
+        let (old, new) = parity(&build).ok().unwrap_or_else(|| panic!("{name}"));
+        assert_eq!(new.count, count, "{name}");
+        assert!(default_cap(&build, CURRENT).is_ok(), "{name} default cap");
+        assert!(
+            default_cap(&build, SAVED).is_ok(),
+            "{name} saved default cap"
+        );
+        assert!(old.work > 0, "{name}");
+    }
+}
+
+/// Consumer-local helper as authenticated source, not a replaced array: the
+/// admitted `static.writer` split (lexical `run()` called by `main`) carrying
+/// the admitted two-module continue/return body that calls the provider.
+const LOCAL_HELPER_CALLER: &str = r#"module scalar.app;
+use function @id("leaf.step") from scalar.leaf as step;
+@id("app.run") fn run()->i64 {
+ let label=str"é\u{0}";
+ let mut i=0;
+ while i<2 { i=step(i); if i==1 {continue;}else{0}; 0 }
+ return i;
+}
+@id("app.main") fn main()->i64 {run()}
+"#;
+#[test]
+fn admitted_local_helper_entry_keeps_saved_identity_exact_work_and_drop() {
+    let build = build_sources(&[("caller.spx", LOCAL_HELPER_CALLER), ("leaf.spx", LEAF)])
+        .expect("authenticated local-helper fixture is admitted");
+    assert_eq!(schema(&build).unwrap(), "semaprax.graph.v77");
+    let module = caller(&build);
+    let run = ptr(&build, "scalar.app", "app.run");
+    let main = ptr(&build, "scalar.app", "app.main");
+    let leaf = ptr(&build, "scalar.leaf", "leaf.step");
+    assert_eq!(
+        module
+            .functions
+            .iter()
+            .map(|f| f as *const ResolvedFunction)
+            .collect::<Vec<_>>(),
+        [run, main]
+    );
+    let (old, new) = parity(&build)
+        .ok()
+        .expect("saved and current entries admit");
+    // Ordinals: run 0, main 1, leaf 2; run -> leaf and main -> run (local).
+    assert_eq!(new.helpers, [leaf]);
+    assert_eq!(new.count, 3);
+    assert_eq!(new.edges, 2);
+    assert!(
+        new.lexical.contains(&run),
+        "lexical local helper is replayed"
+    );
+    assert_eq!(
+        (old.helpers, old.lexical),
+        (new.helpers.clone(), new.lexical.clone())
+    );
+    // Saved-oracle graph agreement on the same authentic source.
+    let shape = super::parity(&build, "scalar.app").ok().unwrap();
+    assert_eq!(shape.functions, [run, main, leaf]);
+    assert_eq!(shape.edges, [(0, 2), (1, 0)]);
+    assert_eq!(shape.order, [1, 0, 2]);
+    // Unchanged production defaults admit both complete entries.
+    let old_default = default_cap(&build, SAVED).ok().expect("saved default cap");
+    let new_default = default_cap(&build, CURRENT)
+        .ok()
+        .expect("current default cap");
+    assert_eq!(old_default.helpers, new_default.helpers);
+    assert_eq!(old_default.lexical, new_default.lexical);
+    // Exact and one-short work/backing on each entry's own owner, and no
+    // live backing after the current entry's final Drop.
+    let (wide, allocation) = measured(&build, 32_000_000, 1 << 26);
+    let (work, bytes) = wide.unwrap();
+    assert_eq!((work, bytes), (new.work, new.bytes));
+    assert!(!allocation.invalid && allocation.allocated <= bytes && allocation.highwater <= bytes);
+    assert_eq!(allocation.live, 0);
+    let (exact, allocation) = measured(&build, work, bytes);
+    assert_eq!(exact.unwrap(), (work, bytes));
+    assert_eq!(allocation.live, 0);
+    assert!(measured(&build, work - 1, bytes).0.is_err());
+    assert!(measured(&build, work, bytes - 1).0.is_err());
+    assert!(limited(&build, SAVED, old.work, old.bytes).is_ok());
+    assert!(limited(&build, SAVED, old.work - 1, old.bytes).is_err());
+    assert!(limited(&build, SAVED, old.work, old.bytes - 1).is_err());
+}
+
+#[test]
+fn stale_later_providers_keep_saved_entry_verdicts_and_sticky_owners() {
+    for side_name in ["a", "b"] {
+        let mut build = diamond("leaf_step(n)");
+        stale(&mut build, side_name);
+        assert_eq!(parity(&build).err().unwrap(), ["SPX-G410"], "{side_name}");
+        for flow in [SAVED, CURRENT] {
+            let module = caller(&build);
+            let anchor = &module.functions[0];
+            let mut resources =
+                SelectedReplayPreparation::with_limits(anchor, 32_000_000, 1 << 26).unwrap();
+            assert!(flow(
+                module,
+                &build.hir.modules,
+                &build.hir.declarations,
+                &mut resources
+            )
+            .is_err());
+            let remaining = resources.remaining();
+            assert_eq!(
+                resources.charge(anchor, 0, "retry").unwrap_err().code,
+                "SPX-H006"
+            );
+            assert_eq!(resources.remaining(), remaining);
+        }
+    }
+}

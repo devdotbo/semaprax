@@ -433,15 +433,13 @@ fn cloned_function_and_failed_later_provider_cannot_restart_a_lease_or_allowance
         crate::cleanup_plan::ReplayPhysicalReservation::new(1 << 26),
     )
     .unwrap();
-    assert!(
-        authenticate(
-            module,
-            &malformed.hir.modules,
-            &malformed.hir.declarations,
-            &mut resources
-        )
-        .is_err()
-    );
+    assert!(authenticate(
+        module,
+        &malformed.hir.modules,
+        &malformed.hir.declarations,
+        &mut resources
+    )
+    .is_err());
     assert_eq!(
         resources
             .charge(anchor, 0, "forbidden retry")
@@ -640,13 +638,11 @@ use function @id("leaf.step") from scalar.leaf as step;
 fn generic_option_nominal_and_vec_provider_bodies_keep_the_route_closed() {
     let generic_caller = CALLER.replace("step(41)", "step<i64>(41)");
     let generic_provider = r#"module scalar.helper; @id("helper.step") fn step<T>(n:T)->T{n}"#;
-    assert!(
-        build(&generic_caller, generic_provider, LEAF)
-            .err()
-            .expect("generic provider remains closed")
-            .iter()
-            .any(|e| e.code == "SPX-G410")
-    );
+    assert!(build(&generic_caller, generic_provider, LEAF)
+        .err()
+        .expect("generic provider remains closed")
+        .iter()
+        .any(|e| e.code == "SPX-G410"));
     for leaf in [
         LEAF.replace("n+1", "let choice=Option<i64>::Some {value:n}; n"),
         format!(
@@ -684,15 +680,13 @@ fn failed_later_body_authentication_keeps_actual_work_and_poisoned_preparation()
     let anchor = &module.functions[0];
     let mut resources =
         SelectedReplayPreparation::with_limits(anchor, 32_000_000, 1 << 26).unwrap();
-    assert!(
-        authenticate(
-            module,
-            &build.hir.modules,
-            &build.hir.declarations,
-            &mut resources
-        )
-        .is_err()
-    );
+    assert!(authenticate(
+        module,
+        &build.hir.modules,
+        &build.hir.declarations,
+        &mut resources
+    )
+    .is_err());
     let remaining = resources.remaining();
     let spent = 32_000_000 - remaining;
     assert!(
@@ -708,15 +702,13 @@ fn failed_later_body_authentication_keeps_actual_work_and_poisoned_preparation()
     );
     assert_eq!(resources.remaining(), remaining);
     let mut short = SelectedReplayPreparation::with_limits(anchor, spent - 1, 1 << 26).unwrap();
-    assert!(
-        authenticate(
-            module,
-            &build.hir.modules,
-            &build.hir.declarations,
-            &mut short
-        )
-        .is_err()
-    );
+    assert!(authenticate(
+        module,
+        &build.hir.modules,
+        &build.hir.declarations,
+        &mut short
+    )
+    .is_err());
     assert_eq!(
         short.charge(anchor, 0, "one-short retry").unwrap_err().code,
         "SPX-H006"
@@ -725,6 +717,7 @@ fn failed_later_body_authentication_keeps_actual_work_and_poisoned_preparation()
 }
 
 mod borrowed;
+mod closure_graph;
 mod runtime;
 
 #[test]

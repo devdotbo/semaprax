@@ -5,6 +5,7 @@ use crate::cleanup_plan::{SelectedReplayPreparation, SelectedReplaySession};
 use crate::workspace_graph::static_text::scalar_helpers;
 type Frame<'a> = Option<(hir::lexical_exit::ChildCursor<'a>, bool)>;
 const DEPTH: usize = 514;
+mod graph;
 mod local;
 struct Member<'a> {
     module: &'a WorkspaceResolvedModule,
@@ -15,6 +16,10 @@ pub(super) struct Closure<'a> {
     helpers: Vec<Member<'a>>,
     lexical: Vec<&'a ResolvedFunction>,
     count: usize,
+    #[cfg(test)]
+    walks: usize,
+    #[cfg(test)]
+    edges: usize,
 }
 impl ReplayContext for Closure<'_> {
     fn declarations(&self) -> &hir::DeclarationIndex {
@@ -87,36 +92,6 @@ fn fact<'a>(
         }
     }
     Err(fail())
-}
-fn lookup<'a>(
-    id: &hir::DeclarationId,
-    module: &'a WorkspaceResolvedModule,
-    helpers: &'a [Member<'a>],
-    resources: &mut SelectedReplayPreparation,
-    anchor: &ResolvedFunction,
-) -> Result<Option<usize>, Vec<Diagnostic>> {
-    let mut found = None;
-    for (i, function) in module
-        .functions
-        .iter()
-        .chain(helpers.iter().map(|m| m.function))
-        .enumerate()
-    {
-        charge(
-            resources,
-            anchor,
-            id.as_str()
-                .len()
-                .checked_add(function.id.as_str().len())
-                .ok_or_else(fail)?,
-        )?;
-        if function.id == *id {
-            if found.replace(i).is_some() {
-                return Err(fail());
-            }
-        }
-    }
-    Ok(found)
 }
 fn calls(
     function: &ResolvedFunction,
@@ -327,147 +302,19 @@ fn authenticate_inner<'a>(
         .reserve_array::<Closure<'_>>(anchor, 1, "imported scalar closure owner")
         .map_err(|_| fail())?;
     let local = local::authenticate(module, facts, resources, anchor)?;
-    let maximum = modules
-        .iter()
-        .try_fold(0usize, |n, m| n.checked_add(m.functions.len()))
-        .ok_or_else(fail)?;
-    charge(resources, anchor, modules.len())?;
-    resources
-        .reserve_array::<Member<'_>>(anchor, maximum, "imported scalar closure members")
-        .map_err(|_| fail())?;
-    resources
-        .reserve_array::<u8>(
-            anchor,
-            modules.len(),
-            "imported scalar defining source debits",
-        )
-        .map_err(|_| fail())?;
-    charge(resources, anchor, modules.len())?;
-    let mut charged = vec![0u8; modules.len()];
-    let mut helpers: Vec<Member<'a>> = Vec::with_capacity(maximum);
-    if helpers.capacity() != maximum {
-        return Err(fail());
-    }
-    let mut processed = 0;
-    loop {
-        let total = module
-            .functions
-            .len()
-            .checked_add(helpers.len())
-            .ok_or_else(fail)?;
-        if processed >= total {
-            break;
-        }
-        let function = if processed < module.functions.len() {
-            &module.functions[processed]
-        } else {
-            helpers[processed - module.functions.len()].function
-        };
-        let provider = processed >= module.functions.len();
-        calls(function, resources, anchor, |id, resources| {
-            if builtin(id) {
-                return if provider && !hir::borrowed_scalar::builtin(id.as_str()) {
-                    Err(fail())
-                } else {
-                    Ok(())
-                };
-            }
-            if lookup(id, module, &helpers, resources, anchor)?.is_none() {
-                let member = authenticate_target(id, modules, facts, resources, anchor)?;
-                if std::ptr::eq(member.module, module) {
-                    return Err(fail());
-                }
-                let ordinal = modules
-                    .iter()
-                    .position(|m| std::ptr::eq(m, member.module))
-                    .ok_or_else(fail)?;
-                charge(resources, anchor, modules.len())?;
-                if charged[ordinal] == 0 {
-                    charge(
-                        resources,
-                        anchor,
-                        member
-                            .module
-                            .scalar_helpers
-                            .as_deref()
-                            .ok_or_else(fail)?
-                            .capture_work,
-                    )?;
-                    charged[ordinal] = 1;
-                }
-                if helpers.len() == maximum {
-                    return Err(fail());
-                }
-                charge(resources, anchor, 1)?;
-                helpers.push(member);
-            }
-            Ok(())
-        })?;
-        processed = processed.checked_add(1).ok_or_else(fail)?;
-    }
+    let graph = graph::discover(module, modules, facts, resources, anchor)?;
+    #[cfg(test)]
+    let edges = graph::order(&graph, resources, anchor, |_| {})?;
+    #[cfg(not(test))]
+    graph::order(&graph, resources, anchor, |_| {})?;
+    #[cfg(test)]
+    let walks = graph.walks;
+    let graph::Graph { helpers, .. } = graph;
     let count = module
         .functions
         .len()
         .checked_add(helpers.len())
         .ok_or_else(fail)?;
-    resources
-        .reserve_array::<usize>(anchor, count, "imported scalar closure indegrees")
-        .map_err(|_| fail())?;
-    resources
-        .reserve_array::<usize>(anchor, count, "imported scalar closure ready frontier")
-        .map_err(|_| fail())?;
-    charge(resources, anchor, count)?;
-    let mut indegree = vec![0usize; count];
-    let mut pending = Vec::with_capacity(count);
-    let mut edges = Vec::new();
-    for (from, function) in module
-        .functions
-        .iter()
-        .chain(helpers.iter().map(|m| m.function))
-        .enumerate()
-    {
-        calls(function, resources, anchor, |id, resources| {
-            if builtin(id) {
-                return Ok(());
-            }
-            let to = lookup(id, module, &helpers, resources, anchor)?.ok_or_else(fail)?;
-            resources
-                .reserve_vec(anchor, &mut edges, 1, "imported scalar closure edges")
-                .map_err(|_| fail())?;
-            charge(resources, anchor, 1)?;
-            edges.push((from, to));
-            indegree[to] = indegree[to].checked_add(1).ok_or_else(fail)?;
-            Ok(())
-        })?;
-    }
-    for (i, n) in indegree.iter().enumerate() {
-        charge(resources, anchor, 1)?;
-        if *n == 0 {
-            charge(resources, anchor, 1)?;
-            pending.push(i);
-        }
-    }
-    let mut visited = 0usize;
-    while let Some(from) = pending.pop() {
-        charge(resources, anchor, 1)?;
-        visited = visited.checked_add(1).ok_or_else(fail)?;
-        for (source, to) in &edges {
-            charge(resources, anchor, 1)?;
-            if *source == from {
-                indegree[*to] = indegree[*to].checked_sub(1).ok_or_else(fail)?;
-                if indegree[*to] == 0 {
-                    if pending.len() == count {
-                        return Err(fail());
-                    }
-                    charge(resources, anchor, 1)?;
-                    pending.push(*to);
-                }
-            }
-        }
-    }
-    if visited != count {
-        return Err(fail());
-    }
     let mut local = local;
     for member in &helpers {
         resources
@@ -500,6 +347,10 @@ fn authenticate_inner<'a>(
         helpers,
         lexical,
         count,
+        #[cfg(test)]
+        walks,
+        #[cfg(test)]
+        edges,
     })
 }
 pub(super) fn authenticate<'a>(

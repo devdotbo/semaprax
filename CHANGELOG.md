@@ -1,5 +1,7 @@
 # Changelog
 
+- Author a single-walk retained helper closure graph (#763): a sorted borrowed directory of caller functions plus only authenticated selected members, grown with charged moves and comparisons, original-order ordinals, contiguous outgoing-edge ranges and one Kahn visit per edge under the existing preparation. Unchanged target authentication and provider receipts precede every publication; the saved complete-entry oracle, irrelevant-provider/long-ID default-cap controls, walk/visit counters and exact/one-short entry definitions await grouped qualification; no measured saving is claimed.
+
 - Author an invocation-local borrowed helper directory (#762), preserving provider inventory, source authority and authored order while classifying each eligible body once. Independent old-capture, hostile identity, and exact/one-short work/backing controls await grouped qualification; no measured cost gain is claimed.
 
 - Author ordinary checked LF-only NDJSON framing and Copy structured faults (#760), composed through actual receiving byte ranges in Catalog Normalizer. Preserve total legacy wrappers, frozen error ordering and 160M oracle; independent original/backend and hostile receiver definitions await qualification. Numeric frames carry no owner or generation authority.
