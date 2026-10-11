@@ -394,3 +394,66 @@ fn string_append_debits_the_lent_skeleton_allowance_exactly_and_stickily() {
         }
     }
 }
+
+#[test]
+fn string_append_reserved_refusal_and_retry_allocate_only_the_prepaid_diagnostic() {
+    let ordinary = direct(STRING);
+    let probe = function(&ordinary);
+    let (binding, value) = nodes(&probe.body)
+        .into_iter()
+        .find_map(|node| match &node.kind {
+            ResolvedExprKind::Block { statements, .. } => {
+                statements.iter().find_map(|statement| match statement {
+                    crate::hir::ResolvedStatement::Assign {
+                        binding, value, field: None, ..
+                    } if binding.ty == ResolvedType::String => Some((binding, value)),
+                    _ => None,
+                })
+            }
+            _ => None,
+        })
+        .expect("actual same-owner String append");
+    // Independent actual constructor-to-Drop allocation control. Append's
+    // cursor is fixed stack storage; a refused callback must allocate nothing
+    // beyond this actual prepaid budget constructor, even on retry.
+    let (_, baseline) = crate::test_allocation_observer::measure(|| {
+        let paid = ReplayBudget::from_reservation(probe, PhysicalReservation::new(usize::MAX))
+            .unwrap();
+        drop(paid);
+    });
+    assert!(!baseline.invalid);
+    assert_eq!(baseline.live, 0);
+    assert!(baseline.allocated > 0);
+    for lent in [false, true] {
+        let (charged, actual) = crate::test_allocation_observer::measure(|| {
+            let mut paid = ReplayBudget::from_reservation(
+                probe, PhysicalReservation::new(usize::MAX),
+            ).unwrap();
+            paid.remaining = 0;
+            paid.skeleton_remaining = 0;
+            paid.lent_skeleton = lent;
+            let first = collections::append(probe, binding, value, &mut paid).unwrap_err();
+            assert_eq!(first.code, "SPX-H006");
+            assert!(first.message.ends_with(
+                "cleanup replay work budget exhausted during selected String append"
+            ));
+            assert!(paid.refusal_spent);
+            assert_eq!((paid.remaining, paid.skeleton_remaining), (0, 0));
+            drop(first);
+            let charged = paid.physical.as_deref().unwrap().charged();
+            let retry = collections::append(probe, binding, value, &mut paid).unwrap_err();
+            assert_eq!(retry.code, "SPX-H006");
+            assert!(retry.message.is_empty(), "retry cannot allocate another message");
+            assert_eq!(paid.physical.as_deref().unwrap().charged(), charged);
+            drop(retry);
+            drop(paid);
+            charged
+        });
+        assert!(!actual.invalid);
+        assert_eq!(actual.live, 0);
+        assert_eq!(actual.allocated, baseline.allocated, "lent={lent}");
+        assert_eq!(actual.allocations, baseline.allocations, "lent={lent}");
+        assert_eq!(actual.reallocations, baseline.reallocations, "lent={lent}");
+        assert!(actual.highwater <= charged);
+    }
+}

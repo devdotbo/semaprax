@@ -248,7 +248,9 @@ pub(in crate::cleanup_plan::replay) fn append(
             };
             debited.ok_or_else(|| {
                 exhausted = true;
-                replay_error(function, "selected append work exhausted")
+                // This marker is consumed below, never published. The outer
+                // refusal owns the sole prepaid diagnostic String backing.
+                Diagnostic::io("SPX-H006", String::new())
             })
         },
     );
