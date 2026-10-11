@@ -86,7 +86,7 @@ impl Renderer {
         arguments: &[i64],
     ) -> Result<i64, RendererRefusal> {
         let entry = program
-            .function(&DeclarationId::new(entry))
+            .function_text(entry)
             .ok_or(RendererRefusal::MissingEntry)?;
         if arguments.len() > 2 {
             return Err(RendererRefusal::Evaluation);

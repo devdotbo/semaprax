@@ -88,3 +88,20 @@ This finite comparison route does not prove source/HIR correspondence, backend
 equivalence, an owned-buffer interface, or universal formatter equivalence.
 The self-hosting ladder remains at rung 1 until the independent requirements
 in [Semantic Kernel v1](SEMANTIC-KERNEL-V1.md) are accepted.
+
+## Borrowed entry discovery (OPT708)
+
+All five scalar renderers discover each length/byte entry by exact borrowed
+identity text in their already-held KernelProgram. This preserves the linear
+first-match order and actual current function pointer; persistent declaration
+IDs and exact-source replay are unchanged. It removes the temporary owned ID
+allocation per query, without caching another program's lookup or changing
+evaluation, fuel, settlement or Rust byte authority.
+
+Two focused owning controls compare a saved linear lookup, duplicate and foreign
+program pointers, 1,000 observed owned-ID versus borrowed queries, and actual
+authenticated integer-renderer evaluation including both i64 extremes. Their
+allocation scope is lookup only; compiler construction, evaluation and handoff
+are outside that observer. These controls are authored, not executed in this
+tranche. No whole-formatter speedup, full OPT708 completion or rung promotion is
+claimed.

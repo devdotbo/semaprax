@@ -79,7 +79,7 @@ impl Renderer {
         arguments: &[Value],
     ) -> Result<i64, RendererRefusal> {
         let entry = program
-            .function(&DeclarationId::new(entry))
+            .function_text(entry)
             .ok_or(RendererRefusal::MissingEntry)?;
         match eval_program(program, entry, arguments) {
             Ok(Value::Int(value)) => Ok(value),
