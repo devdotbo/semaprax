@@ -137,12 +137,12 @@ fn capture_with_matching<const LEGACY: bool>(
             || !function.effects.is_empty()
             || function.yields.is_some()
             || function.follows.is_some()
-            || !records::source_type_admitted(program, &function.return_type)
+            || !records::source_type_admitted(program, &function.return_type, &mut work)?
         {
             return Ok(None);
         }
         for param in &function.params {
-            if !records::source_type_admitted(program, &param.ty) {
+            if !records::source_type_admitted(program, &param.ty, &mut work)? {
                 return Ok(None);
             }
             if !matches!(param.ty, Type::Named { .. })
@@ -208,29 +208,30 @@ fn capture_with_matching<const LEGACY: bool>(
                     .ok_or_else(fail)?,
             )
             .ok_or_else(fail)?;
-        if !records::source_type_matches(program, &source.return_type, &function.return_type)
-            || source.params.len() != function.params.len()
-            || source
-                .params
-                .iter()
-                .zip(&function.params)
-                .any(|(source, current)| {
-                    !records::source_type_matches(program, &source.ty, &current.ty)
-                        || if matches!(source.ty, Type::Named { .. }) {
-                            match source.mode {
-                                ParamMode::Own => current.ownership != hir::OwnershipMode::Own,
-                                ParamMode::Borrow => {
-                                    current.ownership != hir::OwnershipMode::Borrow
-                                }
-                                ParamMode::Value => current.ownership != hir::OwnershipMode::Value,
-                                ParamMode::Shared => true,
-                            }
-                        } else {
-                            ownership(source, &current.ty) != Some(current.ownership)
-                        }
-                })
+        if !records::source_type_matches(
+            program,
+            &source.return_type,
+            &function.return_type,
+            &mut body_work,
+        )? || source.params.len() != function.params.len()
         {
             return Err(fail());
+        }
+        for (source, current) in source.params.iter().zip(&function.params) {
+            if !records::source_type_matches(program, &source.ty, &current.ty, &mut body_work)?
+                || if matches!(source.ty, Type::Named { .. }) {
+                    match source.mode {
+                        ParamMode::Own => current.ownership != hir::OwnershipMode::Own,
+                        ParamMode::Borrow => current.ownership != hir::OwnershipMode::Borrow,
+                        ParamMode::Value => current.ownership != hir::OwnershipMode::Value,
+                        ParamMode::Shared => true,
+                    }
+                } else {
+                    ownership(source, &current.ty) != Some(current.ownership)
+                }
+            {
+                return Err(fail());
+            }
         }
         if body_digest::typed_attempt_metered(
             function,
@@ -304,6 +305,10 @@ fn capture_with_matching<const LEGACY: bool>(
     if crate::bounded_output::active_refused() {
         return Err(capacity());
     }
+    capture_hash_work = capture_hash_work
+        .checked_add(WORK.checked_sub(work).ok_or_else(fail)?)
+        .and_then(|n| n.checked_add(WORK.checked_sub(body_work)?))
+        .ok_or_else(fail)?;
     let inventory = Inventory {
         functions,
         records,

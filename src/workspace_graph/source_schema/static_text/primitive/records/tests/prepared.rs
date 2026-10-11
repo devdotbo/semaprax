@@ -24,6 +24,42 @@ fn prepare<'a>(
 #[test]
 fn prepared_string_vec_and_borrowed_record_signatures_keep_current_type_pointers_and_canonical_vec()
 {
+    // Independent byte census: Row vs Vec fails on its first byte (2),
+    // one Type import probe (1), exact Row alias (4), and exact rows.row ID (9).
+    let parsed = crate::parse("module meter.app; use type @id(\"rows.row\") from static.rows as Row; @id(\"meter.main\") fn main()->i64{0}", "meter.spx").unwrap();
+    let named = crate::ast::Type::Named {
+        name: "Row".into(),
+        arguments: Vec::new(),
+    };
+    let nominal = hir::ResolvedType::Nominal {
+        declaration: hir::DeclarationId::new("rows.row"),
+        arguments: Vec::new(),
+    };
+    for cost in [7usize, 16usize] {
+        let mut work = cost;
+        let answer = if cost == 7 {
+            crate::workspace_graph::static_text::primitive::records::source_type_admitted(
+                &parsed, &named, &mut work,
+            )
+        } else {
+            crate::workspace_graph::static_text::primitive::records::source_type_matches(
+                &parsed, &named, &nominal, &mut work,
+            )
+        };
+        assert_eq!(answer.unwrap(), true);
+        assert_eq!(work, 0);
+        let mut short = cost - 1;
+        let answer = if cost == 7 {
+            crate::workspace_graph::static_text::primitive::records::source_type_admitted(
+                &parsed, &named, &mut short,
+            )
+        } else {
+            crate::workspace_graph::static_text::primitive::records::source_type_matches(
+                &parsed, &named, &nominal, &mut short,
+            )
+        };
+        assert!(answer.is_err());
+    }
     let imported = imported_build();
     let consumer = imported
         .hir

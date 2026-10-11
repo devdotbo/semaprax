@@ -21,6 +21,23 @@ fn field_type(ty: &Type) -> Option<hir::ResolvedType> {
         ))
     .then_some(current)
 }
+fn debit(work: &mut usize, n: usize) -> Result<(), Vec<Diagnostic>> {
+    *work = work.checked_sub(n).ok_or_else(fail)?;
+    Ok(())
+}
+fn equal(work: &mut usize, a: &str, b: &str) -> Result<bool, Vec<Diagnostic>> {
+    debit(work, 1)?;
+    if a.len() != b.len() {
+        return Ok(false);
+    }
+    for (a, b) in a.bytes().zip(b.bytes()) {
+        debit(work, 1)?;
+        if a != b {
+            return Ok(false);
+        }
+    }
+    Ok(true)
+}
 pub(in crate::workspace_graph) fn preflight(
     program: &Program,
     resolved: &hir::ResolvedProgram,
@@ -30,17 +47,19 @@ pub(in crate::workspace_graph) fn preflight(
         return Ok(false);
     }
     for (position, source) in program.types.iter().enumerate() {
-        *work = work
-            .checked_sub(position.checked_add(1).ok_or_else(fail)?)
-            .ok_or_else(fail)?;
+        debit(work, position.checked_add(1).ok_or_else(fail)?)?;
         if !source.type_parameters.is_empty()
             || source.extends.is_some()
             || !source.invariants().is_empty()
-            || program.types[..position]
-                .iter()
-                .any(|old| old.stable_id == source.stable_id || old.name == source.name)
         {
             return Ok(false);
+        }
+        for old in &program.types[..position] {
+            if equal(work, &old.stable_id, &source.stable_id)?
+                || equal(work, &old.name, &source.name)?
+            {
+                return Ok(false);
+            }
         }
         let TypeDeclarationKind::Record { fields } = &source.kind else {
             return Ok(false);
@@ -48,14 +67,17 @@ pub(in crate::workspace_graph) fn preflight(
         if !(1..=MAX_FIELDS).contains(&fields.len()) {
             return Ok(false);
         }
-        *work = work.checked_sub(resolved.types.len()).ok_or_else(fail)?;
-        let mut matches = resolved
-            .types
-            .iter()
-            .filter(|record| record.id.as_str() == source.stable_id);
-        let current = matches.next().ok_or_else(fail)?;
-        if matches.next().is_some()
-            || current.name != source.name
+        debit(work, resolved.types.len())?;
+        let mut selected = None;
+        for record in &resolved.types {
+            if equal(work, record.id.as_str(), &source.stable_id)?
+                && selected.replace(record).is_some()
+            {
+                return Err(fail());
+            }
+        }
+        let current = selected.ok_or_else(fail)?;
+        if !equal(work, &current.name, &source.name)?
             || current.span != source.span
             || !current.type_parameters.is_empty()
         {
@@ -71,93 +93,126 @@ pub(in crate::workspace_graph) fn preflight(
             return Err(fail());
         }
         for (ordinal, (source, current)) in fields.iter().zip(current_fields).enumerate() {
-            *work = work
-                .checked_sub(ordinal.checked_add(1).ok_or_else(fail)?)
-                .ok_or_else(fail)?;
+            debit(work, ordinal.checked_add(1).ok_or_else(fail)?)?;
             let Some(ty) = field_type(&source.ty) else {
                 return Ok(false);
             };
-            if source.stable_id != current.id.as_str()
-                || source.name != current.name
+            if !equal(work, &source.stable_id, current.id.as_str())?
+                || !equal(work, &source.name, &current.name)?
                 || source.span != current.span
                 || current.index as usize != ordinal
                 || current.ty != ty
-                || fields[..ordinal]
-                    .iter()
-                    .any(|old| old.stable_id == source.stable_id || old.name == source.name)
             {
                 return Err(fail());
+            }
+            for old in &fields[..ordinal] {
+                if equal(work, &old.stable_id, &source.stable_id)?
+                    || equal(work, &old.name, &source.name)?
+                {
+                    return Err(fail());
+                }
             }
         }
     }
     Ok(true)
 }
-pub(super) fn source_type_matches(
+pub(in crate::workspace_graph) fn source_type_matches(
     program: &Program,
     source: &Type,
     current: &hir::ResolvedType,
-) -> bool {
+    work: &mut usize,
+) -> Result<bool, Vec<Diagnostic>> {
     if let Type::Named { name, arguments } = source {
         let hir::ResolvedType::Nominal {
             declaration,
             arguments: actual,
         } = current
         else {
-            return false;
+            return Ok(false);
         };
-        if name == "Vec" {
-            return declaration.as_str() == crate::prelude::VEC_ID
-                && matches!((arguments.as_slice(), actual.as_slice()), ([element], [current])
-                    if vec_element_admitted(program, element) && source_type_matches(program, element, current));
+        if equal(work, name, "Vec")? {
+            let ([element], [current]) = (arguments.as_slice(), actual.as_slice()) else {
+                return Ok(false);
+            };
+            return Ok(equal(work, declaration.as_str(), crate::prelude::VEC_ID)?
+                && vec_element_admitted(program, element, work)?
+                && source_type_matches(program, element, current, work)?);
         }
-        arguments.is_empty()
-            && actual.is_empty()
-            && (program
-                .types
-                .iter()
-                .filter(|record| record.name == *name && record.stable_id == declaration.as_str())
-                .count()
-                + program
-                    .module_uses
-                    .iter()
-                    .filter(|import| {
-                        import.kind == crate::ast::ModuleUseKind::Type
-                            && import.alias == *name
-                            && import.persistent_id == declaration.as_str()
-                    })
-                    .count())
-                == 1
+        if !arguments.is_empty() || !actual.is_empty() {
+            return Ok(false);
+        }
+        let mut count = 0usize;
+        for record in &program.types {
+            if equal(work, &record.name, name)?
+                && equal(work, &record.stable_id, declaration.as_str())?
+            {
+                count = count.checked_add(1).ok_or_else(fail)?;
+            }
+        }
+        for import in &program.module_uses {
+            debit(work, 1)?;
+            if import.kind == crate::ast::ModuleUseKind::Type
+                && equal(work, &import.alias, name)?
+                && equal(work, &import.persistent_id, declaration.as_str())?
+            {
+                count = count.checked_add(1).ok_or_else(fail)?;
+            }
+        }
+        Ok(count == 1)
     } else {
-        super::ty(source).as_ref() == Some(current)
+        debit(work, 1)?;
+        Ok(super::ty(source).as_ref() == Some(current))
     }
 }
-pub(super) fn source_type_admitted(program: &Program, source: &Type) -> bool {
+pub(in crate::workspace_graph) fn source_type_admitted(
+    program: &Program,
+    source: &Type,
+    work: &mut usize,
+) -> Result<bool, Vec<Diagnostic>> {
     if let Type::Named { name, arguments } = source {
-        if name == "Vec" {
-            return matches!(arguments.as_slice(), [element] if vec_element_admitted(program, element));
+        if equal(work, name, "Vec")? {
+            let [element] = arguments.as_slice() else {
+                return Ok(false);
+            };
+            return vec_element_admitted(program, element, work);
         }
-        arguments.is_empty()
-            && (program
-                .types
-                .iter()
-                .filter(|record| record.name == *name)
-                .count()
-                + program
-                    .module_uses
-                    .iter()
-                    .filter(|import| {
-                        import.kind == crate::ast::ModuleUseKind::Type && import.alias == *name
-                    })
-                    .count())
-                == 1
+        if !arguments.is_empty() {
+            return Ok(false);
+        }
+        let mut count = 0usize;
+        for record in &program.types {
+            if equal(work, &record.name, name)? {
+                count = count.checked_add(1).ok_or_else(fail)?;
+            }
+        }
+        for import in &program.module_uses {
+            debit(work, 1)?;
+            if import.kind == crate::ast::ModuleUseKind::Type && equal(work, &import.alias, name)? {
+                count = count.checked_add(1).ok_or_else(fail)?;
+            }
+        }
+        Ok(count == 1)
     } else {
-        super::ty(source).is_some()
+        debit(work, 1)?;
+        Ok(super::ty(source).is_some())
     }
 }
-fn vec_element_admitted(program: &Program, element: &Type) -> bool {
-    crate::vec_ops::ast_element_is_admitted(element)
+fn vec_element_admitted(
+    program: &Program,
+    element: &Type,
+    work: &mut usize,
+) -> Result<bool, Vec<Diagnostic>> {
+    debit(work, 1)?;
+    if crate::vec_ops::ast_element_is_admitted(element)
         || matches!(element, Type::String | Type::Bytes)
-        || matches!(element, Type::Named { arguments, .. } if arguments.is_empty() && source_type_admitted(program, element))
+    {
+        return Ok(true);
+    }
+    if matches!(element, Type::Named { arguments, .. } if arguments.is_empty()) {
+        source_type_admitted(program, element, work)
+    } else {
+        Ok(false)
+    }
 }
 pub(super) fn clone_type(
     current: &hir::ResolvedType,
@@ -236,11 +291,14 @@ pub(in crate::workspace_graph) fn capture(
     let mut records = Vec::with_capacity(program.types.len());
     for source in &program.types {
         *work = work.checked_sub(resolved.types.len()).ok_or_else(fail)?;
-        let current = resolved
-            .types
-            .iter()
-            .find(|record| record.id.as_str() == source.stable_id)
-            .ok_or_else(fail)?;
+        let mut selected = None;
+        for record in &resolved.types {
+            if equal(work, record.id.as_str(), &source.stable_id)? {
+                selected = Some(record);
+                break;
+            }
+        }
+        let current = selected.ok_or_else(fail)?;
         let hir::ResolvedTypeDeclarationKind::Record { fields } = &current.kind else {
             return Err(fail());
         };
