@@ -177,7 +177,6 @@ fn borrowed_store_refuses_before_mutation_and_cleanup_preserves_first_failure() 
     );
     core.end_borrow(&mut right).unwrap();
     assert_eq!(core.store(&mut children[0], 0, 9), Err(Refusal::Borrowed));
-    let old_module = right.module;
     right.module ^= 1;
     let called = std::cell::Cell::new(false);
     assert_eq!(
@@ -185,7 +184,6 @@ fn borrowed_store_refuses_before_mutation_and_cleanup_preserves_first_failure() 
         Err(Refusal::Borrowed)
     );
     assert!(!called.get()); // existing left failure precedes hostile right
-    right.module = old_module;
     assert_eq!(Probe::bytes(core.backing.as_ref().unwrap()), &[1, 2, 3, 4]);
     assert_eq!(core.move_owner(&mut children[1]), Err(Refusal::Borrowed));
     core.end_borrow(&mut loan).unwrap();

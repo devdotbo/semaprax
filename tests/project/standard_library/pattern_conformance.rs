@@ -1,5 +1,6 @@
 //! Separate a one-owner Matcher claim from unchanged mixed-resource examples.
 #[cfg(test)]
+#[path = "pattern_conformance/exhaustive.rs"]
 mod exhaustive;
 
 use std::path::{Path, PathBuf};

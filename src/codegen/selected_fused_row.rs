@@ -21,14 +21,14 @@ mod selection;
 #[cfg(test)]
 mod tests;
 
-#[cfg_attr(
-    not(test),
-    allow(unused_imports, reason = "receiving entry has no production caller")
+#[allow(
+    unused_imports,
+    reason = "private receiving API types are retained for explicit engine callers"
 )]
 pub(crate) use emit::{emit_validated, Artifact, ENTRY};
-#[cfg_attr(
-    not(test),
-    allow(unused_imports, reason = "receiving entry has no production caller")
+#[allow(
+    unused_imports,
+    reason = "private receiving API types are retained for explicit engine callers"
 )]
 pub(crate) use selection::CarrierFacts;
 pub(super) const RUNTIME: &str = include_str!("selected_fused_row/runtime.c");

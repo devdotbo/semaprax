@@ -8,7 +8,6 @@ use super::{
     layout,
     lower::FUNCTION,
     precursor::{emit_unvalidated_precursor, UnvalidatedPrecursor},
-    selection::Sites,
     ENTRY,
 };
 use crate::cleanup_plan::{ExitContinuation, StatusLane};
