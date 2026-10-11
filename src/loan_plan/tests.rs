@@ -446,7 +446,6 @@ fn record_renewal_named_views_replay_origins_and_reject_owner_aliases() {
     assert_eq!(crate::hir::validate(&missing).unwrap_err().code, "SPX-H006");
 }
 
-
 #[test]
 fn alias_projection_reconstruction_accounts_cumulative_growth_not_only_final_extent() {
     use crate::hir::DeclarationId;
@@ -479,10 +478,13 @@ fn alias_projection_reconstruction_accounts_cumulative_growth_not_only_final_ext
     assert_eq!(actual.projections.len(), LINKS + 1);
     for (position, projection) in actual.projections[..LINKS].iter().enumerate() {
         let index = LINKS - position - 1;
-        assert_eq!(projection, &PlaceProjection::VariantField {
-            case: DeclarationId::new(format!("case.{index}")),
-            field: DeclarationId::new(format!("field.{index}")),
-        });
+        assert_eq!(
+            projection,
+            &PlaceProjection::VariantField {
+                case: DeclarationId::new(format!("case.{index}")),
+                field: DeclarationId::new(format!("field.{index}")),
+            }
+        );
     }
     // Every link allocates a new projection vector containing its one prefix
     // plus the previous complete vector. The old vector is then dropped, but
@@ -497,12 +499,25 @@ fn alias_projection_reconstruction_accounts_cumulative_growth_not_only_final_ext
 
     // These synthetic aliases exercise allocator behavior, not source or HIR
     // authority. Cyclic provenance remains an independently refused operation.
-    aliases.insert(actual.root.clone(), Place {
-        root: ValueId::intrinsic_parameter("root", 0),
-        projections: Vec::new(),
-    });
+    aliases.insert(
+        actual.root.clone(),
+        Place {
+            root: ValueId::intrinsic_parameter("root", 0),
+            projections: Vec::new(),
+        },
+    );
     let mut work = WorkCounter::new(MAX_LOAN_PLAN_WORK_V1);
-    assert_eq!(resolve_origin(&aliases, Place {
-        root: ValueId::intrinsic_parameter("root", 0), projections: Vec::new(),
-    }, &mut work).unwrap_err().code, "SPX-H006");
+    assert_eq!(
+        resolve_origin(
+            &aliases,
+            Place {
+                root: ValueId::intrinsic_parameter("root", 0),
+                projections: Vec::new(),
+            },
+            &mut work
+        )
+        .unwrap_err()
+        .code,
+        "SPX-H006"
+    );
 }

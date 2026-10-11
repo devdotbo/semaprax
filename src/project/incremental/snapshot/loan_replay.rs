@@ -306,26 +306,44 @@ module projection_cache;
             let wire = crate::cache_codec::encode(&original).unwrap();
             let mut decoded = crate::cache_codec::decode(&wire).unwrap();
             let (used, observed) = crate::test_allocation_observer::measure(|| {
-                reconstruct_with_limit(&mut decoded, MAX_PROJECT_CHECKED_MODULE_CACHE_PREBOUND).unwrap()
+                reconstruct_with_limit(&mut decoded, MAX_PROJECT_CHECKED_MODULE_CACHE_PREBOUND)
+                    .unwrap()
             });
             assert!(!observed.invalid);
             assert!(observed.allocated <= used);
             assert!(observed.highwater <= used);
             assert_eq!(crate::cache_codec::encode(&decoded).unwrap(), wire);
             crate::hir::validate(&decoded).unwrap();
-            assert_eq!(decoded.functions.iter().map(|f| &f.loan_plan).collect::<Vec<_>>(),
-                       original.functions.iter().map(|f| &f.loan_plan).collect::<Vec<_>>());
+            assert_eq!(
+                decoded
+                    .functions
+                    .iter()
+                    .map(|f| &f.loan_plan)
+                    .collect::<Vec<_>>(),
+                original
+                    .functions
+                    .iter()
+                    .map(|f| &f.loan_plan)
+                    .collect::<Vec<_>>()
+            );
 
             let mut exact = crate::cache_codec::decode(&wire).unwrap();
             assert_eq!(reconstruct_with_limit(&mut exact, used).unwrap(), used);
             let mut short = crate::cache_codec::decode(&wire).unwrap();
-            assert_eq!(reconstruct_with_limit(&mut short, used - 1).unwrap_err()[0].code, "SPX-G256");
+            assert_eq!(
+                reconstruct_with_limit(&mut short, used - 1).unwrap_err()[0].code,
+                "SPX-G256"
+            );
             assert_eq!(crate::cache_codec::encode(&short).unwrap(), wire);
             crate::hir::validate(&short).unwrap();
 
             let mut forged = crate::cache_codec::decode(&wire).unwrap();
-            let loan = forged.functions.iter_mut().flat_map(|f| &mut f.loan_plan.loans)
-                .find(|loan| !loan.origin.projections.is_empty()).unwrap();
+            let loan = forged
+                .functions
+                .iter_mut()
+                .flat_map(|f| &mut f.loan_plan.loans)
+                .find(|loan| !loan.origin.projections.is_empty())
+                .unwrap();
             loan.origin.projections[0] = crate::hir::PlaceProjection::VariantField {
                 case: crate::hir::DeclarationId::new("foreign.native.case"),
                 field: crate::hir::DeclarationId::new("foreign.native.field"),
@@ -336,5 +354,4 @@ module projection_cache;
             assert_eq!(crate::hir::validate(&forged).unwrap_err().code, "SPX-H006");
         }
     }
-
 }

@@ -1,7 +1,9 @@
 use std::mem::size_of;
 
 use crate::hir::{Place, PlaceProjection, ResolvedExpr, ValueId};
-use crate::loan_plan::{Loan, LoanEndpoint, LoanId, LoanPlan, LoanProgramPoint, MAX_LOANS_PER_FUNCTION_V1};
+use crate::loan_plan::{
+    Loan, LoanEndpoint, LoanId, LoanPlan, LoanProgramPoint, MAX_LOANS_PER_FUNCTION_V1,
+};
 
 use super::{add, capacity, function_bytes, product, sum, tree, vector, walk, Inventory, Result};
 
@@ -130,25 +132,30 @@ fn original_function_bytes(inventory: &Inventory) -> Result<usize> {
     Ok(bytes)
 }
 
-
 #[test]
 fn single_materialization_discount_changes_only_place_term_and_native_keeps_old_formula() {
     for (bindings, drafts, projections, text) in [
         (0usize, 0usize, 0usize, 0usize),
-        (3, 2, 0, 0), // empty-prefix chains
-        (8, 3, 2, 17), // initial multi-field and synthetic assignment
+        (3, 2, 0, 0),     // empty-prefix chains
+        (8, 3, 2, 17),    // initial multi-field and synthetic assignment
         (16, 8, 11, 201), // independent roots and distinct prefix occurrences
     ] {
         let mut inventory = Inventory {
-            expressions: 32, edges: 48, diagnostic_bytes: 32,
-            bindings, drafts, projections, projection_text: text,
-            identity_bytes: 1024, root_bytes: 64,
+            expressions: 32,
+            edges: 48,
+            diagnostic_bytes: 32,
+            bindings,
+            drafts,
+            projections,
+            projection_text: text,
+            identity_bytes: 1024,
+            root_bytes: 64,
             native_prefix_replication: false,
         };
         let old = original_function_bytes(&inventory).unwrap();
         let new = function_bytes(&inventory).unwrap();
-        let payload = text + 4 * projections.max(4) * size_of::<PlaceProjection>()
-            * usize::from(projections != 0);
+        let payload = text
+            + 4 * projections.max(4) * size_of::<PlaceProjection>() * usize::from(projections != 0);
         let recipients = 4 * (bindings + drafts + drafts.min(256) + 1);
         assert_eq!(old - new, recipients * 2 * bindings * payload);
         inventory.native_prefix_replication = true;
@@ -170,12 +177,22 @@ module prefix_forecast;
     let ast = crate::check(source, "prefix-forecast.spx").unwrap();
     let program = crate::hir::resolve(&ast).unwrap();
     crate::hir::validate(&program).unwrap();
-    let mut expression = program.functions.iter().find(|f| f.id.as_str() == "prefix.main")
-        .unwrap().body.clone();
+    let mut expression = program
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "prefix.main")
+        .unwrap()
+        .body
+        .clone();
     let crate::hir::ResolvedExprKind::Block { tail, .. } = &mut expression.kind else {
         panic!("fixture requires its actual Block");
     };
-    let crate::hir::ResolvedExprKind::Match { mode, arms, scrutinee } = &mut tail.kind else {
+    let crate::hir::ResolvedExprKind::Match {
+        mode,
+        arms,
+        scrutinee,
+    } = &mut tail.kind
+    else {
         panic!("fixture requires its actual Match");
     };
     assert!(arms.iter().any(|arm| matches!(&arm.pattern,
@@ -189,13 +206,18 @@ module prefix_forecast;
     // A long shared prefix, including foreign native field names, cannot
     // evade the fallback merely because interfaces do not authorize it.
     for index in 0..16 {
-        place.projections.push(PlaceProjection::Field(crate::hir::DeclarationId::new(
-            format!("foreign.native.é.\0.field.{index}"),
-        )));
+        place
+            .projections
+            .push(PlaceProjection::Field(crate::hir::DeclarationId::new(
+                format!("foreign.native.é.\0.field.{index}"),
+            )));
     }
     let mut inventory = Inventory::default();
     walk(&program, &expression, &mut inventory, 0).unwrap();
     assert!(inventory.native_prefix_replication);
-    assert_eq!(function_bytes(&inventory).unwrap(), original_function_bytes(&inventory).unwrap());
+    assert_eq!(
+        function_bytes(&inventory).unwrap(),
+        original_function_bytes(&inventory).unwrap()
+    );
     assert!(program.interfaces.is_empty());
 }

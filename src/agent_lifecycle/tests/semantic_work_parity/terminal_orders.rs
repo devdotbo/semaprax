@@ -358,7 +358,10 @@ fn opposing_terminal_orders_settle_exactly_on_every_native_route() {
     let host = native_stage_host().expect("terminal order evidence requires held clang");
     for route in ROUTES {
         let args = route.args.map(RetainedValue::I64).to_vec();
-        eprintln!("terminal-order lexical route={} leg=interpreter", route.name);
+        eprintln!(
+            "terminal-order lexical route={} leg=interpreter",
+            route.name
+        );
         let expected = metered(
             authorization::StageBackend::Interpreter,
             &program,

@@ -10,7 +10,9 @@ pub(super) fn resolve(
     work: &mut WorkCounter,
 ) -> Result<Place, Diagnostic> {
     if crate::bounded_output::active_refused() {
-        return Err(error("loan alias projection exceeds its active allocation budget"));
+        return Err(error(
+            "loan alias projection exceeds its active allocation budget",
+        ));
     }
     let mut current = &place.root;
     let mut seen = BTreeSet::new();
@@ -21,17 +23,21 @@ pub(super) fn resolve(
         if !seen.insert(current) {
             return Err(error("loan alias provenance contains a cycle"));
         }
-        count = count.checked_add(alias.projections.len())
+        count = count
+            .checked_add(alias.projections.len())
             .ok_or_else(|| error("loan alias projection allocation overflows"))?;
         for projection in &alias.projections {
             charge(work)?;
             let bytes = match projection {
                 PlaceProjection::Field(field) => field.as_str().len(),
-                PlaceProjection::VariantField { case, field } => case.as_str().len()
+                PlaceProjection::VariantField { case, field } => case
+                    .as_str()
+                    .len()
                     .checked_add(field.as_str().len())
                     .ok_or_else(|| error("loan alias projection allocation overflows"))?,
             };
-            text_bytes = text_bytes.checked_add(bytes)
+            text_bytes = text_bytes
+                .checked_add(bytes)
                 .ok_or_else(|| error("loan alias projection allocation overflows"))?;
         }
         current = &alias.root;
@@ -41,17 +47,23 @@ pub(super) fn resolve(
     }
     let root = current.clone();
     if count == 0 {
-        return Ok(Place { root, projections: Vec::new() });
+        return Ok(Place {
+            root,
+            projections: Vec::new(),
+        });
     }
     // The existing construction envelope remains unchanged. This actual new
     // materialization is additionally prepaid on the same active ledger;
     // neither the earlier envelope nor dropped storage is refunded.
-    let bytes = count.checked_mul(size_of::<PlaceProjection>())
+    let bytes = count
+        .checked_mul(size_of::<PlaceProjection>())
         .and_then(|bytes| bytes.checked_add(size_of::<Vec<PlaceProjection>>()))
         .and_then(|bytes| bytes.checked_add(text_bytes))
         .ok_or_else(|| error("loan alias projection allocation overflows"))?;
     if !crate::bounded_output::reserve_active_required(bytes) {
-        return Err(error("loan alias projection exceeds its active allocation budget"));
+        return Err(error(
+            "loan alias projection exceeds its active allocation budget",
+        ));
     }
     let mut projections = Vec::with_capacity(count);
     // Prefixes encountered near the original root precede the original

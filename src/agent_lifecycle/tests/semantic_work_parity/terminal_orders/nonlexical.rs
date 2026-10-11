@@ -340,7 +340,10 @@ fn nonlexical_opposing_terminal_orders_settle_exactly_on_every_native_route() {
             Entry::Enter | Entry::RunEntryRefused => &enter_prepared,
         };
         let args = route.args.map(RetainedValue::I64).to_vec();
-        eprintln!("terminal-order nonlexical route={} leg=interpreter", route.name);
+        eprintln!(
+            "terminal-order nonlexical route={} leg=interpreter",
+            route.name
+        );
         let expected = metered(
             authorization::StageBackend::Interpreter,
             &program,
