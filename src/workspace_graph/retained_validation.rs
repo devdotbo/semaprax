@@ -17,6 +17,7 @@ mod scalar_link;
 mod stream_admission;
 mod type_projection;
 mod type_reference;
+mod traversal_type_sites;
 pub(super) use profile_names::project_linker_name;
 pub(super) use stream_admission::{
     command_link, data_project_shape, entry_link, has_separate_command_root, owned_stream_command,
@@ -190,6 +191,10 @@ fn validate_retained_facts_inner(
                 &mut actual_type_sites,
             )?;
         }
+        // The traversal replay above authenticates compiler-introduced row
+        // reads and length calls. Their inferred element arguments are not
+        // explicit authored type sites.
+        traversal_type_sites::remove(source, programs, &imported_type_ids, &mut actual_type_sites)?;
     }
     let mut expected_type_sites = Vec::new();
     for edge in edges.iter().filter(|edge| edge.kind == "type_reference") {

@@ -136,7 +136,9 @@ fn pure_profile_metered(
                     | ResolvedExprKind::Unary { .. }
                     | ResolvedExprKind::Binary { .. }
                     | ResolvedExprKind::If { .. } => {}
-                    ResolvedExprKind::Place(place) if place.projections.is_empty() => {}
+                    // The receiver above has authenticated both bare scalar roots and
+                    // exact scalar Field projections of current Borrow records.
+                    ResolvedExprKind::Place(_) => {}
                     ResolvedExprKind::Project { base, .. }
                         if matches!(base.ty, ResolvedType::Nominal { .. }) => {}
                     ResolvedExprKind::BorrowPlace { .. } => {}
