@@ -15,6 +15,32 @@ fn checked(count: u32) -> ResolvedProgram {
 #[test]
 fn checked_one_eight_and_32_rows_rederive_exact_cumulative_events() {
     for count in [1, 8, 32] {
+        let parsed = crate::parse(&source(count), "finite-row.spx").unwrap();
+        let crate::ast::ExprKind::Block { statements, .. } = &parsed.functions[0].body.kind else {
+            panic!("source block")
+        };
+        let crate::ast::Statement::While { body, .. } = &statements[2] else {
+            panic!("source loop")
+        };
+        let crate::ast::ExprKind::Block { statements, .. } = &body.kind else {
+            panic!("source rows")
+        };
+        let crate::ast::Statement::Let { value, .. } = &statements[0] else {
+            panic!("source row")
+        };
+        let crate::ast::ExprKind::ConstructRecord { fields, .. } = &value.kind else {
+            panic!("source record")
+        };
+        let byte = &fields
+            .iter()
+            .find(|field| field.name == "payload")
+            .unwrap()
+            .value;
+        assert!(crate::source_verify::finite_row_allocation(&parsed, byte));
+        assert!(
+            !crate::source_verify::finite_row_allocation(&parsed, &(*byte).clone()),
+            "a clone cannot inherit the exact source-site authorization"
+        );
         let program = checked(count);
         crate::hir::validate(&program).unwrap();
         let proof = inspect(&program).unwrap();
@@ -33,6 +59,11 @@ fn count_33_original_4096_and_unsealed_source_keep_t267() {
             .iter()
             .any(|d| d.code == "SPX-T267"));
     }
+    let arbitrary = "module app; @id(\"app.main\") fn main()->i64 {let mut next=0;while next<1 {let data=bytes_zeroed(3usize);next=next+1;0}0}";
+    assert!(crate::check(arbitrary, "arbitrary-while.spx")
+        .unwrap_err()
+        .iter()
+        .any(|d| d.code == "SPX-T252"));
     for hostile in [
         source(8).replace("next = next + 1", "next = next + 2"),
         source(8).replace("while next < 8", "while next < 7"),

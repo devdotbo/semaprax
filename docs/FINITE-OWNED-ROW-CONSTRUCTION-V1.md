@@ -35,7 +35,11 @@ String allocation, fuel charging, left-to-right argument staging and failure
 selection remain ordinary.
 
 The source capacity fold selects only the exact pointer-held loop and producer
-recovered from current source. Typed HIR separately recovers the actual Vec and
+recovered from current source. Ordinary function-body verification borrows the
+original template instead of cloning it: an equal cloned expression cannot
+inherit exact source-site authority. Only actual generic substitutions create
+owned specialization bodies, and those retain their existing independent guards.
+Typed HIR separately recovers the actual Vec and
 record declarations, field IDs/order/types, whole binding IDs, ownership modes,
 capacity literal, comparison, fresh constructor, Bytes builtin target and
 literal extent, exact push/store and unit latch. It does not consume source
