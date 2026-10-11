@@ -136,8 +136,10 @@ fn borrowed_and_owned_slot_views_share_nul_utf8_storage_and_expire_before_owned_
     let long_str = r#"module app.slots;
 @id("app.main") fn main()->i64 {
  let data=bytes_zeroed(65537usize);
+ let second_data=bytes_copy(bytes_as_slice(data));
  let text=string_from_utf8(bytes_as_slice(data));
- let joined=string_concat(text,text);
+ let second_text=string_from_utf8(bytes_as_slice(second_data));
+ let joined=string_concat(text,second_text);
  let empty=vec_with_capacity<string>(1usize);
  let values=vec_push<string>(empty,joined);
  let selected=vec_str_at(values,0usize);
@@ -146,6 +148,12 @@ fn borrowed_and_owned_slot_views_share_nul_utf8_storage_and_expire_before_owned_
 "#;
     // String payload byte extent is independent of Vec's fixed carrier charge
     // and the Slice ceiling. This is a Str view, with no Slice publication.
+    // Preserve the original duplicate owning argument as a compile-time refusal.
+    // The positive path copies the full payload before either String transfer.
+    let duplicate_owner = long_str.replace("string_concat(text,second_text)", "string_concat(text,text)");
+    let diagnostics = semaprax::check(&duplicate_owner, std::path::Path::new("duplicate-owner.spx"))
+        .expect_err("one String owner cannot be transferred twice");
+    assert!(diagnostics.iter().any(|diagnostic| diagnostic.code == "SPX-O101"));
     run(long_str, false, "none", None);
     let maximum = r#"module app.slots;
 @id("app.main") fn main()->i64 {
