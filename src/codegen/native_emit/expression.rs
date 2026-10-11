@@ -293,7 +293,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             for line in transitions.lines() {
                 self.line(line);
             }
-            if matches!(return_type, ResolvedType::Bytes) {
+            if matches!(return_type, ResolvedType::Bytes) || op == crate::byte_ops::ByteOp::Partition {
                 code = plan
                     .result_at(expression)
                     .ok_or_else(|| {
