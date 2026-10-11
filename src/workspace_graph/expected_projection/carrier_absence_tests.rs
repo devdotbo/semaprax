@@ -254,7 +254,7 @@ fn add(value: i64) -> i64
 }
 
 @id("carrier.values.text")
-fn text(value: own string) -> string
+fn text(value: string) -> string
 {
     { value }
 }
@@ -464,6 +464,7 @@ fn raw_ast_resolved_and_cost_censuses_agree_on_every_carrier_free_root() {
             free: 26,
             ifs: 1,
             vars: 8,
+            blocks: 0,
         }
     );
     let cost = cost_census(&parsed);
@@ -713,6 +714,9 @@ fn resolver_and_replay_highwater_stays_within_the_reduced_forecast() {
                 census.exact_carrier_free_vars > 0,
                 "gate exercises variables"
             );
+        } else if path == "variable.spx" {
+            assert!(census.exact_carrier_free_vars >= 12,
+                "twelve named argument roots exercise the variable-carrier discount");
         } else if path == "block.spx" {
             assert_eq!(census.exact_carrier_free_blocks, 24,
                 "twelve free outer and independently free inner blocks");
