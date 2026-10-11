@@ -16,3 +16,13 @@ pub(in crate::wasm) fn emit_scalar_exports_with_static_text(
 ) -> Result<Vec<u8>, Diagnostic> {
     emit_profile_with_scalar_exports(program, false, false, plans, Some(selected))
 }
+
+/// Full compiler proof is separate from the metered current-graph receipt.
+pub(in crate::wasm) fn emit_partition(
+    owner: &crate::hir::byte_partition::ValidatedPartitionProgram<'_>,
+    receiving_work: &mut usize,
+) -> Result<Vec<u8>, Diagnostic> {
+    owner.revalidate_compiler()?;
+    owner.receive_current_graph(receiving_work)?;
+    emit_profile_with_scalar_exports(owner.program(), false, false, &[], Some(false))
+}

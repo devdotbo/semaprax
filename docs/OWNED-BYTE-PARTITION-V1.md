@@ -365,3 +365,30 @@ are uncertain roots and refuse at compile time; interprocedural Whole/Child
 provenance remains closed. Runtime funding and whole-owner provenance remain
 separate mandatory receiver checks. Native and Wasm ordinary lowering retain
 explicit refusal until their sealed receivers join this factory.
+
+### Private checked Core-Wasm producer checkpoint
+
+The internal Core-Wasm receiver accepts only `ValidatedPartitionProgram` from
+original-source compilation, repeats complete compiler validation, and debits
+its current-graph receipt separately. It emits a module and independently
+validates its complete import section together; no module-byte constructor or
+raw import receipt can authorize the producer. Ordinary source and public
+browser/provider routes remain closed pending the cross-backend join.
+
+The private producer import has exact signature `(i64,i64,i64)->(i64,i32)`:
+current whole owner, count, width; then result Vec handle and operation code.
+The host reserves registry entries, the final retained Vec array, and its handle
+before transferring the whole owner. Registry commit fills that same array and
+retains the original backing; no child payload or carrier-array copy is made.
+Allocation exceptions are administrative fail-stop. Language refusal leaves the
+whole owner live for the unchanged canonical operation-failure cleanup. Only
+success commits the staged owned argument.
+
+Private emitted failure status is `0x7000 + operation_code`, where codes 1–4
+remain the independently owned partition domain's width/overflow/extent/metadata
+codes. The offset distinguishes them from ordinary Core-Wasm statuses; it does
+not invent a new language failure. The graph receipt is not a runtime allocation
+ledger. Fixed host registry backing and ordinary payload limits retain their
+existing scope; JavaScript objects, Maps, carrier arrays and VM bookkeeping are
+excluded. This checkpoint does not claim complete physical-account funding,
+public installation, or completed OPT #746 qualification.

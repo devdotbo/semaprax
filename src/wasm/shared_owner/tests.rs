@@ -13,7 +13,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 static NEXT_ID: AtomicU64 = AtomicU64::new(0);
 
 const HOSTILE: &str = include_str!("tests/hostile.mjs");
-const ORDINARY: &str = include_str!("tests/ordinary.mjs");
+pub(super) const ORDINARY: &str = include_str!("tests/ordinary.mjs");
 /// The actual owning host of record/leaf Vec, record iterator and sort
 /// payloads; its `shared-owner` mode is the joined consumer.
 const LEAF_HOST: &str = include_str!("../../../tests/owned_data/owned_leaf_vec/host.js");
@@ -320,11 +320,11 @@ fn module(source: &str) -> Vec<u8> {
     crate::wasm::emit_module(&checked).unwrap()
 }
 
-fn node_available() -> bool {
+pub(super) fn node_available() -> bool {
     Command::new("node").arg("--version").output().is_ok()
 }
 
-fn stage(files: &[(&str, &[u8])]) -> PathBuf {
+pub(super) fn stage(files: &[(&str, &[u8])]) -> PathBuf {
     let directory = std::env::temp_dir().join(format!(
         "semaprax-wasm-shared-owner-{}-{}",
         std::process::id(),
@@ -343,7 +343,7 @@ fn stage(files: &[(&str, &[u8])]) -> PathBuf {
     directory
 }
 
-fn run_node(directory: &Path, script: &str, args: &[&str]) -> String {
+pub(super) fn run_node(directory: &Path, script: &str, args: &[&str]) -> String {
     let output = Command::new("node")
         .arg(directory.join(script))
         .args(args)
@@ -473,8 +473,12 @@ fn private_host_implements_exactly_the_lease_aware_consumers() {
         .0;
     assert_eq!(quoted_names(exported), payload);
     assert!(payload.is_subset(&expected));
-    // No `env` import issues a lease; producer admission stays closed.
-    assert!(!HOST_SOURCE.contains("spx_bytes_partition"));
+    // Producer remains a separate, exact private source-checked import;
+    // the raw import-only receipt continues to deny its admission.
+    assert_eq!(object_keys(HOST_SOURCE, "const producer = {", "\n  };"),
+        owned(&["spx_bytes_partition"]));
+    assert_eq!(classify(Host::PrivateOrdinary, "env", "spx_bytes_partition"),
+        Err(Refusal::Unknown("spx_bytes_partition".to_owned())));
     assert!(REGISTRY_SOURCE.contains(DOMAIN));
     // The registry's status domain and codes are the owning contract's.
     assert!(REGISTRY_SOURCE.contains(PARTITION_STATUS_DOMAIN));

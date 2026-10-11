@@ -7,7 +7,8 @@
 // whole-owner table or to a live lease in the shared-owner registry; nothing
 // else is readable, writable or droppable. This is not the public browser
 // adapter: public routes keep their own token tables and refuse lease
-// carriers as stale. Admission is closed: no `env` import issues a lease. The
+// carriers as stale. Ordinary admission is closed. The private source-checked
+// generated module alone declares the partition producer import. The
 // witness facade exists only for the owning regressions until the
 // cross-backend join admits `bytes_partition`.
 //
@@ -18,6 +19,7 @@ import {
   MAX_BACKINGS,
   MAX_BYTES_EXTENT,
   MAX_TOKEN,
+  PARTITION_STATUS_CODES,
   carrierOf,
   createSharedByteOwnerRegistry,
   decodeOwnedCarrier,
@@ -170,10 +172,14 @@ export function createPrivateOrdinaryByteHost(options = {}) {
     }
     const prepared = shared.prepare(wholeBytes[slot], count, width);
     if (prepared.refused !== undefined) return Object.freeze({ ok: false, refused: prepared.refused });
+    let children;
+    try { children = new Array(Number(count)); }
+    catch (error) { shared.abort(prepared.ticket); throw error; }
+    shared.commit(prepared.ticket, children);
     wholeToken[slot] = 0;
     wholeBytes[slot] = null;
     liveWhole -= 1;
-    return Object.freeze({ ok: true, children: Object.freeze(shared.commit(prepared.ticket)) });
+    return Object.freeze({ ok: true, children: Object.freeze(children) });
   };
   const own = bytes => {
     const serialNow = live();
@@ -372,6 +378,36 @@ export function createPrivateOrdinaryByteHost(options = {}) {
     return new DataView(memory().buffer, offset, 8);
   };
 
+  const producer = {
+    // Private generated producer: metadata and Vec storage precede transfer.
+    // Allocation exceptions are administrative fail-stop, never a language status.
+    spx_bytes_partition: (carrier, count, width) => {
+      const decoded = decodeOwnedCarrier(carrier);
+      const slot = whole(decoded);
+      if (slot < 0) throw new Error("SEMAPRAX partition requires current whole owner");
+      const prepared = shared.prepare(wholeBytes[slot], BigInt.asUintN(64, count), BigInt.asUintN(64, width));
+      if (prepared.refused !== undefined) {
+        return [0n, PARTITION_STATUS_CODES[prepared.refused]];
+      }
+      let handle;
+      let values;
+      try {
+        values = new Array(Number(count));
+        handle = nextHandle();
+        vectors.set(handle, { tag: OWNED_BYTES_TAG, capacity: count, values });
+      } catch (error) {
+        shared.abort(prepared.ticket);
+        throw error;
+      }
+      // commit fills this exact retained Vec array, sharing the original backing.
+      shared.commit(prepared.ticket, values);
+      wholeToken[slot] = 0;
+      wholeBytes[slot] = null;
+      liveWhole -= 1;
+      return [handle, 0];
+    },
+
+  };
   const consumers = {
     spx_bytes_zeroed: count => {
       if (typeof count !== "bigint" || count < 0n || count > BigInt(MAX_BYTES_EXTENT)) {
@@ -596,7 +632,7 @@ export function createPrivateOrdinaryByteHost(options = {}) {
     },
   };
   // Every import requires the live invocation before touching any table.
-  const imports = Object.freeze(Object.fromEntries(Object.entries(consumers).map(([name, body]) => [
+  const imports = Object.freeze(Object.fromEntries([...Object.entries(consumers), ...Object.entries(producer)].map(([name, body]) => [
     name,
     (...args) => {
       live();

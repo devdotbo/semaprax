@@ -284,14 +284,19 @@ export function createSharedByteOwnerRegistry({
 
   // The caller removes the whole owner from its table first; every check and
   // table entry was reserved, so commit only consumes those reservations.
-  const commit = ticket => {
+  const commit = (ticket, destination = undefined) => {
     const prepared = pending(ticket);
     const serial = current();
-    prepared.state = "committed";
     const { whole, children, width, backing } = prepared;
+    // Allocate all result storage while the whole owner and reservation live.
+    const carriers = destination === undefined ? new Array(children) : destination;
+    if (!Array.isArray(carriers) || carriers.length !== children) {
+      throw new Error("SEMAPRAX shared owner result capacity invariant");
+    }
+    prepared.state = "committed";
     prepared.whole = null;
     unreserve(prepared);
-    if (children === 0) return [];
+    if (children === 0) return carriers;
     backingState[backing] = LIVE;
     backingBytes[backing] = whole;
     backingExtent[backing] = whole.byteLength;
@@ -299,7 +304,6 @@ export function createSharedByteOwnerRegistry({
     backingInvocation[backing] = serial;
     liveBackings += 1;
     if (liveBackings > peakLiveBackings) peakLiveBackings = liveBackings;
-    const carriers = new Array(children);
     for (let child = 0; child < children; child += 1) {
       const token = tokens.mint();
       if (!Number.isInteger(token) || token < 1 || token > MAX_TOKEN) {
