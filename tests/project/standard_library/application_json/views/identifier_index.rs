@@ -54,7 +54,9 @@ fn colliding_ids() -> Vec<String> {
 /// Max-shape and ordering cases for the bucketed record index. Each case is
 /// `(input, expected)`: `Ok((count, last id offset))` or `Err((code, offset,
 /// field))`. Host decoding proves every deliberate collision and equality.
-fn bucket_cases() -> Vec<(String, Result<(usize, usize), (i64, usize, i64)>)> {
+type BucketCase = (String, Result<(usize, usize), (i64, usize, i64)>);
+
+fn bucket_cases() -> Vec<BucketCase> {
     let ids = colliding_ids();
     assert_eq!(ids.len(), 256);
     let decoded: HashSet<_> = ids.iter().map(|id| host_decoded(id)).collect();
