@@ -78,6 +78,8 @@ pub(crate) const MAX_BUFFER_FILL_SITES: usize = 256;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum ByteOp {
+    /// Private checked byte-partition profile; absent from the public operation list.
+    Partition,
     Len,
     Get,
     Range,
@@ -125,6 +127,7 @@ impl ByteOp {
 
     pub(crate) const fn name(self) -> &'static str {
         match self {
+            Self::Partition => crate::construction_fusion::partition::NAME,
             Self::Len => LEN_NAME,
             Self::Get => GET_NAME,
             Self::Range => RANGE_NAME,
@@ -143,6 +146,7 @@ impl ByteOp {
     }
     pub(crate) const fn id(self) -> &'static str {
         match self {
+            Self::Partition => crate::construction_fusion::partition::ID,
             Self::Len => LEN_ID,
             Self::Get => GET_ID,
             Self::Range => RANGE_ID,
@@ -163,7 +167,7 @@ impl ByteOp {
         match self {
             Self::Len => 1,
             Self::Get | Self::ZeroedBounded => 2,
-            Self::Range | Self::Set => 3,
+            Self::Range | Self::Set | Self::Partition => 3,
             Self::Set5 => 7,
             Self::Set1Or5 | Self::Set1Or6Or48 => 5,
             Self::Copy
@@ -176,6 +180,7 @@ impl ByteOp {
     }
     pub(crate) fn param_types(self) -> &'static [ResolvedType] {
         match self {
+            Self::Partition => &[ResolvedType::Bytes, ResolvedType::Usize, ResolvedType::Usize],
             Self::Len => &[ResolvedType::SliceU8],
             Self::Get => &[ResolvedType::SliceU8, ResolvedType::Usize],
             Self::Range => &[
@@ -218,6 +223,10 @@ impl ByteOp {
     }
     pub(crate) fn return_type(self) -> ResolvedType {
         match self {
+            Self::Partition => ResolvedType::Nominal {
+                declaration: DeclarationId::new(crate::prelude::VEC_ID),
+                arguments: vec![ResolvedType::Bytes],
+            },
             Self::Len => ResolvedType::Usize,
             Self::Get => ResolvedType::Nominal {
                 declaration: DeclarationId::new(crate::prelude::OPTION_ID),
@@ -237,6 +246,7 @@ impl ByteOp {
     }
     pub(crate) fn ast_return_type(self) -> Type {
         match self {
+            Self::Partition => Type::Named { name: "Vec".to_owned(), arguments: vec![Type::Bytes] },
             Self::Len => Type::Usize,
             Self::Get => Type::Named {
                 name: "Option".to_owned(),
@@ -257,6 +267,8 @@ impl ByteOp {
 
     pub(crate) fn accepts_resolved(self, index: usize, ty: &ResolvedType) -> bool {
         match (self, index) {
+            (Self::Partition, 0) => *ty == ResolvedType::Bytes,
+            (Self::Partition, 1 | 2) => *ty == ResolvedType::Usize,
             (Self::Len | Self::Copy, 0) => *ty == ResolvedType::SliceU8,
             (Self::Get, 0) => *ty == ResolvedType::SliceU8,
             (Self::Get, 1) => *ty == ResolvedType::Usize,
@@ -287,6 +299,8 @@ impl ByteOp {
 
     pub(crate) fn accepts_ast(self, index: usize, ty: &Type) -> bool {
         match (self, index) {
+            (Self::Partition, 0) => *ty == Type::Bytes,
+            (Self::Partition, 1 | 2) => *ty == Type::Usize,
             (Self::Len | Self::Copy, 0) => *ty == Type::SliceU8,
             (Self::Get, 0) => *ty == Type::SliceU8,
             (Self::Get, 1) => *ty == Type::Usize,
@@ -367,7 +381,7 @@ impl ByteOp {
     pub(crate) const fn is_fallible(self) -> bool {
         matches!(
             self,
-            Self::ZeroedBounded | Self::Set | Self::Set5 | Self::Set1Or5 | Self::Set1Or6Or48
+            Self::Partition | Self::ZeroedBounded | Self::Set | Self::Set5 | Self::Set1Or5 | Self::Set1Or6Or48
         )
     }
 
@@ -375,6 +389,7 @@ impl ByteOp {
     /// and synthetic parameters; the operations have no authored declaration.
     pub(crate) const fn param_names(self) -> &'static [&'static str] {
         match self {
+            Self::Partition => &["value", "count", "width"],
             Self::Get => &["value", "index"],
             Self::Range => &["value", "start", "end"],
             Self::Len
@@ -399,7 +414,7 @@ impl ByteOp {
     /// operand is an ordinary copied value.
     pub(crate) const fn param_ownership(self, index: usize) -> OwnershipMode {
         match (self, index) {
-            (Self::Set | Self::Set5 | Self::Set1Or5 | Self::Set1Or6Or48, 0) => OwnershipMode::Own,
+            (Self::Partition | Self::Set | Self::Set5 | Self::Set1Or5 | Self::Set1Or6Or48, 0) => OwnershipMode::Own,
             (Self::Set1Or5 | Self::Set1Or6Or48, 3) => OwnershipMode::Borrow,
             (Self::Zeroed | Self::ZeroedBounded, _)
             | (Self::Set | Self::Set5 | Self::Set1Or5 | Self::Set1Or6Or48, _) => {
@@ -413,6 +428,7 @@ impl ByteOp {
 
 pub(crate) fn by_name(name: &str) -> Option<ByteOp> {
     match name {
+        crate::construction_fusion::partition::NAME => Some(ByteOp::Partition),
         LEN_NAME => Some(ByteOp::Len),
         GET_NAME => Some(ByteOp::Get),
         RANGE_NAME => Some(ByteOp::Range),
@@ -432,6 +448,7 @@ pub(crate) fn by_name(name: &str) -> Option<ByteOp> {
 }
 pub(crate) fn by_id(id: &str) -> Option<ByteOp> {
     match id {
+        crate::construction_fusion::partition::ID => Some(ByteOp::Partition),
         LEN_ID => Some(ByteOp::Len),
         GET_ID => Some(ByteOp::Get),
         RANGE_ID => Some(ByteOp::Range),

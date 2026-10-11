@@ -227,6 +227,9 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             self.temporary(&return_type)?
         };
         match op {
+            crate::byte_ops::ByteOp::Partition => {
+                return Err(backend_error("byte partition requires its checked private receiver"));
+            }
             crate::byte_ops::ByteOp::Len => {
                 let helper = self.resource_text_len_helper(&args[0]);
                 self.line(&format!("{temporary} = {helper}({});", arguments[0].code));
@@ -556,7 +559,8 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                         ));
                         self.line(&format!("spx_str_require_valid({temporary});"));
                     }
-                    crate::byte_ops::ByteOp::Len
+                    crate::byte_ops::ByteOp::Partition
+                    | crate::byte_ops::ByteOp::Len
                     | crate::byte_ops::ByteOp::Get
                     | crate::byte_ops::ByteOp::Range
                     | crate::byte_ops::ByteOp::Copy

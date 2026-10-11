@@ -76,7 +76,7 @@ use binding::{Binding, CheckedValue};
 use scope::{VariantMatchState, VerifierFrame, VerifierScope};
 use type_table::{resolve_class_method, TypeTable};
 
-pub(crate) use declaration::{verify, verify_presenting};
+pub(crate) use declaration::{verify, verify_presenting, verify_partition};
 pub(crate) use declared_type::copy_record_collection::{
     resolved_source_admitted as copy_record_resolved_source_admitted,
     source_admitted as copy_record_source_admitted,
