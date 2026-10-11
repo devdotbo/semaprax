@@ -38,8 +38,10 @@ fn run(source: &str, failure: bool, mode: &str, allocations: Option<u64>) {
             2,
         );
     } else {
+        let generated = codegen::emit_c(&ast).unwrap();
+        assert!(generated.contains("(void)spx_canonical_cleanup_done;"));
         super::super::owned_collection_outcome::run_native_generated_with_allocation_count(
-            codegen::emit_c(&ast).unwrap(),
+            generated,
             &root,
             allocations,
         );

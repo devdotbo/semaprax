@@ -99,3 +99,82 @@ fn same_typed_field_substitution_cannot_rebind_authored_row_projection() {
         "SPX-G173"
     );
 }
+
+#[test]
+fn constructor_items_keep_the_ordinary_block_record_read_identity() {
+    let mut input = sources();
+    input[1] = canonical_source(
+        "app.spx",
+        &input[1].source.replace(
+            "let selected = row.left;",
+            "let selected = vec_of<i64>(row.left);",
+        ),
+    );
+    assert!(input[1].source.contains("vec_of<i64>(row.left)"));
+    let programs = input
+        .iter()
+        .map(|source| crate::parse(&source.source, Path::new(&source.path)).unwrap())
+        .collect::<Vec<_>>();
+    let build = build_owned(input).unwrap();
+    super::super::record_traversal::validate(&programs, &build.hir.modules).unwrap();
+}
+
+#[test]
+fn operation_projection_authenticates_constructor_provenance_and_children() {
+    let input = vec![canonical_source(
+        "constructor.spx",
+        r#"module constructor;
+@id("constructor.helper") fn helper(value:i64)->i64 { value + 1 }
+@id("constructor.main") fn main()->i64 {
+ let rows=vec_of<i64>(helper(19),helper(23));
+ if vec_len<i64>(rows)==2usize {42}else{0}
+}
+"#,
+    )];
+    let programs = input
+        .iter()
+        .map(|source| crate::parse(&source.source, Path::new(&source.path)).unwrap())
+        .collect::<Vec<_>>();
+    let (mut build, _) =
+        build_owned_retaining_sources_for_operations(input.clone(), MAX_BUILDER_BYTES, 67_108_864)
+            .unwrap();
+    let authored = super::super::index_authored(&programs).unwrap();
+    let sidecar = super::super::operation_sidecar::build_operation_sidecar(
+        &programs,
+        &input,
+        &build.hir.modules,
+        &authored,
+    )
+    .unwrap();
+    assert!(sidecar
+        .declarations
+        .iter()
+        .any(|declaration| declaration.id == "constructor.helper"
+            && declaration.occurrences.len() >= 3));
+    let function = build.hir.modules[0]
+        .functions
+        .iter_mut()
+        .find(|function| function.id.as_str() == "constructor.main")
+        .unwrap();
+    let hir::ResolvedExprKind::Block { statements, .. } = &mut function.body.kind else {
+        panic!("body")
+    };
+    let hir::ResolvedStatement::Let { value, .. } = &mut statements[0] else {
+        panic!("constructor")
+    };
+    let hir::ResolvedExprKind::VecConstructor { count, .. } = &mut value.kind else {
+        panic!("marker")
+    };
+    *count += 1;
+    assert_eq!(
+        super::super::operation_sidecar::build_operation_sidecar(
+            &programs,
+            &input,
+            &build.hir.modules,
+            &authored
+        )
+        .unwrap_err()[0]
+            .code,
+        "SPX-G173"
+    );
+}

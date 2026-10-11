@@ -95,6 +95,16 @@ fn inferred<'a>(
     bindings: &[Binding<'a>],
 ) -> Option<(&'a str, &'a TypeDeclaration)> {
     match &expression.kind {
+        ExprKind::VecConstructor { .. } => {
+            let expansion = crate::ast::vec_constructor::inspect(expression).ok()?;
+            let Type::Named { name, arguments } = expansion.element else {
+                return None;
+            };
+            if !arguments.is_empty() {
+                return None;
+            }
+            declaration(program, programs, name).map(|decl| (name.as_str(), decl))
+        }
         ExprKind::Var(name) => {
             bindings
                 .iter()
@@ -452,9 +462,21 @@ fn walk<'a>(
                 )?;
             }
         }
-        ExprKind::VecConstructor { value, .. } | ExprKind::Unary { value, .. } => {
-            child!(value, "value", bindings, row)?
+        ExprKind::VecConstructor { .. } => {
+            let expansion =
+                crate::ast::vec_constructor::inspect(expression).map_err(|_| refusal())?;
+            walk(
+                program,
+                programs,
+                function,
+                expansion.value,
+                path,
+                bindings,
+                row,
+                out,
+            )?;
         }
+        ExprKind::Unary { value, .. } => child!(value, "value", bindings, row)?,
         ExprKind::Binary { left, right, .. } => {
             child!(left, "left", bindings, row)?;
             child!(right, "right", bindings, row)?;
@@ -571,6 +593,7 @@ pub(super) fn validate(programs: &[Program], modules: &[WorkspaceResolvedModule]
             let mut actual_loops = 0;
             let mut matched_reads = 0;
             while let Some(expression) = pending.pop() {
+                hir::vec_constructor::authenticate(expression).map_err(|_| refusal())?;
                 if matches!(&expression.kind, hir::ResolvedExprKind::Block { statements, .. }
                     if matches!(statements.first(), Some(hir::ResolvedStatement::Let { binding, .. }) if binding.name == "#for-borrow-length"))
                 {

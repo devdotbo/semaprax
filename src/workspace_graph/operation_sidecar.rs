@@ -1,6 +1,7 @@
 //! Bounded, authenticated AST/HIR rename/alias facts with no filesystem, locking,
 //! staging, publication, or runtime authority.
 
+mod constructor;
 mod tokens;
 use std::collections::BTreeMap;
 use tokens::{find_identifier_token, module_use_alias_span, source_text_token};
@@ -810,6 +811,21 @@ fn collect_operation_expr_occurrences(
     imports: &mut [WorkspaceOperationImport],
 ) -> Result<(), Vec<Diagnostic>> {
     use hir::ResolvedExprKind as R;
+    if matches!(source.kind, ExprKind::VecConstructor { .. })
+        || matches!(resolved.kind, R::VecConstructor { .. })
+    {
+        return constructor::collect(
+            program,
+            source,
+            resolved,
+            tokens,
+            owner,
+            declaration_index,
+            import_index,
+            declarations,
+            imports,
+        );
+    }
     match (&source.kind, &resolved.kind) {
         (
             ExprKind::Call {
@@ -963,10 +979,7 @@ fn collect_operation_expr_occurrences(
                 imports,
             )?;
         }
-        (
-            ExprKind::VecConstructor { value, .. } | ExprKind::Unary { value, .. },
-            R::Unary { value: right, .. },
-        )
+        (ExprKind::Unary { value, .. }, R::Unary { value: right, .. })
         | (ExprKind::Try { operand: value }, R::Try { operand: right, .. })
         | (ExprKind::Try { operand: value }, R::TryOption { operand: right, .. }) => {
             collect_operation_expr_occurrences(
