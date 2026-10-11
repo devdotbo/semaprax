@@ -70,21 +70,16 @@ fn option_u8_replay_refuses_generic_compiler_owned_orphan_and_unfielded_entries(
     for attack in 0..10 {
         let mut index = replayed(&program);
         match attack {
-            0 => index
-                .type_parameters
-                .get_mut(&row_id)
-                .unwrap()
-                .push(ResolvedTypeParameterDeclaration {
+            0 => index.type_parameters.get_mut(&row_id).unwrap().push(
+                ResolvedTypeParameterDeclaration {
                     name: "T".into(),
                     index: 0,
                     span: crate::ast::Span::default(),
-                }),
+                },
+            ),
             1 => {
-                index
-                    .declarations
-                    .get_mut(&row_id)
-                    .unwrap()
-                    .identity_origin = IdentityOrigin::CompilerOwned
+                index.declarations.get_mut(&row_id).unwrap().identity_origin =
+                    IdentityOrigin::CompilerOwned
             }
             2 => {
                 index.record_fields.remove(&row_id).unwrap();

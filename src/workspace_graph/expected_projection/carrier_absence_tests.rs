@@ -416,7 +416,9 @@ fn malformed_variable_censuses_fail_closed_and_runtime_censuses_are_ignored() {
         malformed.exact_carrier_free_blocks = blocks;
         for mode in [5, 6] {
             assert!(super::fixed_hir_discount(mode, &malformed, &ordinary)
-                .unwrap_err().iter().all(|error| error.code == "SPX-G171"));
+                .unwrap_err()
+                .iter()
+                .all(|error| error.code == "SPX-G171"));
         }
     }
     // Even a valid disjoint count refuses if conversion to carrier bytes overflows.
@@ -426,8 +428,10 @@ fn malformed_variable_censuses_fail_closed_and_runtime_censuses_are_ignored() {
     let mut block_overflow = StructuralCost::new();
     block_overflow.exact_expressions = usize::MAX;
     block_overflow.exact_carrier_free_blocks = usize::MAX / carriers() + 1;
-    assert!(super::exact_absent_storage(&block_overflow).unwrap_err()
-        .iter().all(|error| error.code == "SPX-G171"));
+    assert!(super::exact_absent_storage(&block_overflow)
+        .unwrap_err()
+        .iter()
+        .all(|error| error.code == "SPX-G171"));
     assert!(super::exact_absent_storage(&huge)
         .unwrap_err()
         .iter()
@@ -715,11 +719,15 @@ fn resolver_and_replay_highwater_stays_within_the_reduced_forecast() {
                 "gate exercises variables"
             );
         } else if path == "variable.spx" {
-            assert!(census.exact_carrier_free_vars >= 12,
-                "twelve named argument roots exercise the variable-carrier discount");
+            assert!(
+                census.exact_carrier_free_vars >= 12,
+                "twelve named argument roots exercise the variable-carrier discount"
+            );
         } else if path == "block.spx" {
-            assert_eq!(census.exact_carrier_free_blocks, 24,
-                "twelve free outer and independently free inner blocks");
+            assert_eq!(
+                census.exact_carrier_free_blocks, 24,
+                "twelve free outer and independently free inner blocks"
+            );
         } else {
             assert!(
                 census.exact_carrier_free_roots >= 12,

@@ -15,7 +15,8 @@ fn original_source_resolves_only_through_the_private_current_owner() {
     assert!(ordinary.iter().any(|d| d.code == "SPX-T263"));
     let source = crate::parse(SOURCE, "partition_checked.spx").unwrap();
     assert!(crate::source_verify::verify_partition(&source)
-        .iter().all(|d| !d.severity.is_error()));
+        .iter()
+        .all(|d| !d.severity.is_error()));
     // The result remains affine, and borrowing still needs a named carrier.
     let moved = SOURCE.replace(
         "if vec_len<Bytes>(values)==3usize {7}else{0}",
@@ -23,14 +24,16 @@ fn original_source_resolves_only_through_the_private_current_owner() {
     );
     let moved = crate::parse(&moved, "partition_checked.spx").unwrap();
     assert!(crate::source_verify::verify_partition(&moved)
-        .iter().any(|d| d.severity.is_error()));
+        .iter()
+        .any(|d| d.severity.is_error()));
     let unnamed = SOURCE.replace(
         "if vec_len<Bytes>(values)==3usize {7}else{0}",
         "if vec_len<Bytes>(split())==3usize {7}else{0}",
     );
     let unnamed = crate::parse(&unnamed, "partition_checked.spx").unwrap();
     assert!(crate::source_verify::verify_partition(&unnamed)
-        .iter().any(|d| d.code == "SPX-O118"));
+        .iter()
+        .any(|d| d.code == "SPX-O118"));
     assert!(ValidatedPartitionProgram::compile_source(&source, &mut 0).is_err());
     let mut work = usize::MAX;
     let owner = ValidatedPartitionProgram::compile_source(&source, &mut work).unwrap();
