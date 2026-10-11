@@ -100,6 +100,37 @@ pub(super) fn assert_operation(program: &ResolvedProgram, wanted: &str) -> (usiz
                                 assert_eq!(args[1].ty, T::Usize);
                                 assert_eq!(args[1].ownership, O::Value);
                             }
+                            "core.vec.sort-owned" => {
+                                assert_eq!(args.len(), 1);
+                                assert_eq!(type_arguments.len(), 1);
+                                assert_eq!(expression.ty, args[0].ty);
+                                assert_eq!(expression.ownership, O::Own);
+                                assert_eq!(args[0].ownership, O::Own);
+                                assert!(
+                                    matches!(&args[0].ty, T::Nominal { declaration, arguments }
+                                    if declaration.as_str() == "core.vec"
+                                        && arguments.as_slice() == type_arguments.as_slice())
+                                );
+                                let commits: Vec<_> = function
+                                    .cleanup_plan
+                                    .blocks
+                                    .iter()
+                                    .flat_map(|block| &block.transitions)
+                                    .filter_map(|transition| match transition {
+                                        semaprax::cleanup_plan::CleanupTransition::CallCommit {
+                                            call,
+                                            arguments,
+                                        } if call == &expression.id => Some(arguments),
+                                        _ => None,
+                                    })
+                                    .collect();
+                                assert_eq!(commits.len(), 1);
+                                assert_eq!(
+                                    commits[0].len(),
+                                    1,
+                                    "sort consumes exactly its staged Vec owner"
+                                );
+                            }
                             "core.vec.push" => {
                                 assert_eq!(args.len(), 2);
                                 assert_eq!(type_arguments.len(), 1);

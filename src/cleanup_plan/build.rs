@@ -3811,6 +3811,12 @@ impl<'a> PlanBuilder<'a> {
                     result_expression,
                 } => {
                     let mut result = results.pop().expect("record match arm result retained");
+                    if self.flow_is_closed(result.block) {
+                        // The lexical exit already settled the arm contour and
+                        // terminated this path; it has no normal match join.
+                        results.push(result);
+                        continue;
+                    }
                     if let Some(destination) = destination.clone() {
                         let source = result.owned_source.take().ok_or_else(|| {
                             plan_error("owned record match arm has no cleanup source")
@@ -6032,6 +6038,9 @@ impl<'a> PlanBuilder<'a> {
                 state,
                 arm_region.unwrap_or(region),
             )?;
+            if self.flow_is_closed(result.block) {
+                return Ok(result);
+            }
             if let Some(source) = result.owned_source.take() {
                 let destination = self.expression_slot(expression, region)?.ok_or_else(|| {
                     plan_error("owned record match result has no cleanup destination")

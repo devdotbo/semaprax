@@ -166,3 +166,64 @@ fn owning_iterator_continue_settles_completed_string_read_without_consuming_rema
             .any(|action| action.source.storage == StorageId::Value(remainder.clone()))
     );
 }
+
+#[test]
+fn terminal_owned_record_arm_has_no_second_normal_scope_terminator() {
+    let source = r#"module lexical.terminal_record;
+@id("Token") record Token { @id("Token.text") text:string, }
+@id("inspect") fn inspect(token:own Token,flag:bool)->i64 ensures result==7 {
+ match own token { Token {text} => {
+  let mut index=0;
+  while index<1 {
+   index=index+1;
+   if flag {return string_len(text)+3;} else {0}
+   0
+  }
+  return 7;
+ }, }
+}
+@id("app.main") fn main()->i64 {0}
+"#;
+    let program = fixture(source);
+    crate::hir::validate(&program).unwrap();
+    let function = inspect(&program);
+    assert!(function.cleanup_plan.lexical_control.is_some());
+    let returns: Vec<_> = function
+        .cleanup_plan
+        .exits
+        .iter()
+        .filter(|exit| matches!(exit.continuation, ExitContinuation::FunctionReturn { .. }))
+        .collect();
+    assert_eq!(returns.len(), 2);
+    assert!(returns.iter().any(|exit| {
+        exit.finalize_in_order
+            .iter()
+            .any(|action| matches!(action.source.storage, StorageId::Value(_)))
+    }));
+    let canonical = crate::format::canonical(&crate::check(source, "terminal-record.spx").unwrap());
+    let repeated = fixture(&canonical);
+    crate::hir::validate(&repeated).unwrap();
+    assert_eq!(function.cleanup_plan, inspect(&repeated).cleanup_plan);
+    let mut forged = program.clone();
+    let function = forged
+        .functions
+        .iter_mut()
+        .find(|f| f.id.as_str() == "inspect")
+        .unwrap();
+    let exit = function
+        .cleanup_plan
+        .exits
+        .iter_mut()
+        .find(|exit| {
+            matches!(exit.continuation, ExitContinuation::FunctionReturn { .. })
+                && !exit.finalize_in_order.is_empty()
+        })
+        .unwrap();
+    exit.finalize_in_order.pop();
+    assert_eq!(
+        crate::cleanup_plan::validate_program(&forged)
+            .unwrap_err()
+            .code,
+        "SPX-H006"
+    );
+}
