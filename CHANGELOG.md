@@ -1,5 +1,7 @@
 # Changelog
 
+- Author an invocation-local borrowed helper directory (#762), preserving provider inventory, source authority and authored order while classifying each eligible body once. Independent old-capture, hostile identity, and exact/one-short work/backing controls await grouped qualification; no measured cost gain is claimed.
+
 - Author ordinary checked LF-only NDJSON framing and Copy structured faults (#760), composed through actual receiving byte ranges in Catalog Normalizer. Preserve total legacy wrappers, frozen error ordering and 160M oracle; independent original/backend and hostile receiver definitions await qualification. Numeric frames carry no owner or generation authority.
 - Authored exact borrowed Str/Slice helper-root and scalar-u8 conversion replay; added guarded Copy Option-u8 metadata, distinct-case, ordinary reader and factory-budget controls. Option receiving admission remains closed pending cumulative schema/inventory metering and executable qualification.
 
