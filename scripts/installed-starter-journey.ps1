@@ -14,7 +14,19 @@ function Invoke-SemapraxStarterProcess {
     $start.RedirectStandardOutput = $true
     $start.RedirectStandardError = $true
     $start.RedirectStandardInput = $true
-    $process = [System.Diagnostics.Process]::Start($start)
+    $utf8 = New-Object System.Text.UTF8Encoding($false)
+    $start.StandardOutputEncoding = $utf8
+    $start.StandardErrorEncoding = $utf8
+    # .NET Framework constructs and auto-flushes its stdin writer at Start,
+    # so even direct BaseStream writes need a BOM-free encoding beforehand.
+    $savedInputEncoding = [Console]::InputEncoding
+    try {
+        [Console]::InputEncoding = $utf8
+        if ($null -ne $start.PSObject.Properties['StandardInputEncoding']) {
+            $start.StandardInputEncoding = $utf8
+        }
+        $process = [System.Diagnostics.Process]::Start($start)
+    } finally { [Console]::InputEncoding = $savedInputEncoding }
     try {
         $output = $process.StandardOutput.ReadToEndAsync()
         $errors = $process.StandardError.ReadToEndAsync()
