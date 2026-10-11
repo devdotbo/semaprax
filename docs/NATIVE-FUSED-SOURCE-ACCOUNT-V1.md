@@ -50,7 +50,8 @@ selected result checks all succeed. The wrapper emits one deterministic JSON
 `semaprax.fused-source.v1` envelope with profile, source SHA256, target `native`,
 account limit and reserved bytes. Exactly one outcome is emitted:
 
-- `returned`, with the i64 result and process exit 0;
+- `returned`, with the i64 result as a canonical signed-decimal JSON string
+  (including the full i64 range without JSON-number precision loss) and process exit 0;
 - `language_failure`, with the actual normalized domain/code semantic pair and
   process exit 1; this pair is not a claim to serialize every status-detail field;
 - `administrative_refusal`, with a private reason and process exit 2, without a

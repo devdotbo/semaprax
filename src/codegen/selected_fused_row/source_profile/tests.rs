@@ -81,12 +81,30 @@ fn original_native_source_profile_is_deterministic_and_default_remains_closed() 
             String::from_utf8_lossy(&output.stderr)
         );
         let value: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
-        assert_eq!(value["result"], 8386560);
+        assert_eq!(value["result"], "8386560");
         assert_eq!(value["outcome"], "returned");
         assert_eq!(value["profile"], "fused-construction-v1");
         assert_eq!(
             value["source_sha256"],
             format!("{:x}", Sha256::digest(ORIGINAL.as_bytes()))
+        );
+    }
+
+    let maximum = ORIGINAL.replace("{ total } else { 0 }", "{ 9223372036854775807 } else { 0 }");
+    assert_ne!(maximum, ORIGINAL);
+    for binary in binaries(&source(&maximum, 1024 * 1024), "i64-maximum") {
+        let output = Command::new(&binary).output().unwrap();
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        let value: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+        assert_eq!(value["outcome"], "returned");
+        assert_eq!(value["result"], "9223372036854775807");
+        assert_eq!(
+            value["source_sha256"],
+            format!("{:x}", Sha256::digest(maximum.as_bytes()))
         );
     }
 

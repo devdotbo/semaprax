@@ -59,7 +59,7 @@ int main(void) {
            "\"managed_reserved\":%zu,",SPX_PROFILE_SOURCE_SHA256,account.limit,account.debited);
     int exit_code;
     if (outcome==SPX_FUSED_PUBLISHED) {
-        printf("\"outcome\":\"returned\",\"result\":%" PRId64 "}\n",result);exit_code=0;
+        printf("\"outcome\":\"returned\",\"result\":\"%" PRId64 "\"}\n",result);exit_code=0;
     } else if (outcome==SPX_FUSED_LANGUAGE_FAILURE) {
         const struct spx_normalized_status *status=selected_status;
         fputs("\"outcome\":\"language_failure\",\"status\":{\"domain\":",stdout);
