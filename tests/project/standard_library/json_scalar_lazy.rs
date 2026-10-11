@@ -44,7 +44,7 @@ fn source(body: &str) -> String {
 fn install(name: &str, source: &str) -> std::path::PathBuf {
     let root = super::super::temporary(name);
     std::fs::create_dir_all(root.join("src")).unwrap();
-    std::fs::write(root.join("semaprax.toml"), "schema = \"semaprax.manifest.v1\"\n\n[package]\nname = \"scalar-differential\"\nversion = \"0.1.0\"\nprofile = \"useful-data.v1\"\n\n[modules]\nentry = \"consumer.app\"\ntests = \"consumer.tests\"\nsources = [\"src/app.spx\", \"src/tests.spx\"]\n\n[exports]\nweb = [\"consumer.main\"]\n\n[dependencies]\nstd.data.json = \"=0.1.0\"\nstd.data.json.query = \"=0.1.0\"\nstd.data.json.utf8 = \"=0.1.0\"\n").unwrap();
+    std::fs::write(root.join("semaprax.toml"), "schema = \"semaprax.manifest.v1\"\n\n[package]\nname = \"scalar-differential\"\nversion = \"0.1.0\"\nprofile = \"useful-data.v1\"\n\n[modules]\nentry = \"consumer.app\"\nsources = [\"src/app.spx\", \"src/tests.spx\"]\ntests = [\"consumer.tests\"]\n\n[exports]\nweb = [\"consumer.main\"]\n\n[dependencies]\nstd.data.json = \"=0.1.0\"\nstd.data.json.query = \"=0.1.0\"\nstd.data.json.utf8 = \"=0.1.0\"\n").unwrap();
     std::fs::write(
         root.join("src/tests.spx"),
         semaprax::format::canonical(

@@ -906,6 +906,14 @@ impl super::WorkspaceGraphBuild {
         Ok(linked)
     }
 
+    #[cfg(test)]
+    pub(crate) fn linked_owned_data_program_for_test(
+        &self,
+        entry_module: &str,
+    ) -> Result<hir::ResolvedProgram, Vec<Diagnostic>> {
+        self.linked_owned_data_api_program_with_roots(entry_module, &[])
+    }
+
     pub(super) fn linked_owned_data_api_program_with_roots(
         &self,
         entry_module: &str,

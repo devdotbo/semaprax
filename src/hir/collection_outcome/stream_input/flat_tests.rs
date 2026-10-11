@@ -66,11 +66,10 @@ fn both_flat_families_and_unrelated_names_replay_normalized_input_source_hir_cac
             .find(|region| region.slots.contains(&bytes))
             .unwrap();
         let exit = &function.cleanup_plan.exits[region.normal_scope_end.0 as usize];
-        assert!(
-            exit.finalize_in_order
-                .iter()
-                .any(|action| action.source.storage == bytes)
-        );
+        assert!(exit
+            .finalize_in_order
+            .iter()
+            .any(|action| action.source.storage == bytes));
         assert!(
             matches!(
                 exit.continuation,
@@ -78,12 +77,11 @@ fn both_flat_families_and_unrelated_names_replay_normalized_input_source_hir_cac
             ),
             "input settles at its arm boundary before result publication"
         );
-        assert!(
-            exit.finalize_in_order
-                .iter()
-                .all(|action| action.source.storage
-                    != crate::cleanup_plan::StorageId::Temporary(join(&program).id.clone()))
-        );
+        assert!(exit
+            .finalize_in_order
+            .iter()
+            .all(|action| action.source.storage
+                != crate::cleanup_plan::StorageId::Temporary(join(&program).id.clone())));
 
         crate::codegen::emit_hir_c(&program).unwrap();
         wasmparser::Validator::new()
@@ -211,7 +209,7 @@ use function @id("decode") from normalized.flat as decode;
         };
         let built = build(provider, &caller).unwrap();
         let linked = built
-            .linked_owned_data_api_program_with_roots("normalized.consumer", &[])
+            .linked_owned_data_program_for_test("normalized.consumer")
             .unwrap();
         validate(&linked).unwrap();
         assert!(super::super::match_join(
@@ -231,13 +229,11 @@ use function @id("decode") from normalized.flat as decode;
             .unwrap();
         // A fresh explicit child identity is valid only after current provider
         // reconstruction; a stale HIR field identity is refused above.
-        assert!(
-            build(
-                &provider.replace("@id(\"input.bytes\")", "@id(\"fresh.bytes\")"),
-                &caller
-            )
-            .is_ok()
-        );
+        assert!(build(
+            &provider.replace("@id(\"input.bytes\")", "@id(\"fresh.bytes\")"),
+            &caller
+        )
+        .is_ok());
         for changed in [
             provider.replace("bytes: Bytes", "bytes: string"),
             provider.replace("length: usize", "length: i64"),
