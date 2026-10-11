@@ -1354,7 +1354,7 @@ mod tests {
             concat!(
                 "SPX-T208\n",
                 "wrote: index + 1 when index: usize\n",
-                "fix: Literals default to i64; use index + 1usize\n",
+                "fix: Default i64; index + 1usize\n",
             )
         );
         assert!(t208.len() <= 256);
@@ -1364,7 +1364,7 @@ mod tests {
         let g170 = diagnostic_entry("SPX-G170").unwrap();
         assert!(g170.contains("noncanonical Project source"));
         assert!(g170.contains("semaprax fmt --manifest <manifest>"));
-        assert!(g170.contains("declare its Project dependency"));
+        assert!(g170.contains("Project dependency + stable-ID import"));
         let t269 = diagnostic_entry("SPX-T269").unwrap();
         assert_eq!(
             t269,
@@ -1445,7 +1445,7 @@ mod tests {
 
         let p106 = diagnostic_entry("SPX-P106").unwrap();
         assert_eq!(p106.matches("\nwrote: ").count(), 9);
-        assert!(p106.contains("No tuples; declare a record"));
+        assert!(p106.contains("Declare a record"));
         assert_eq!(
             diagnostic_entry("spx-t208").unwrap_err(),
             "diagnostic help has no exact match for `spx-t208`"
