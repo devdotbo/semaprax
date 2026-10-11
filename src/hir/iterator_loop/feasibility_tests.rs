@@ -94,6 +94,18 @@ fn exact_true_predicate_authenticates_whole_done_leaf_and_yield_latch() {
 }
 #[test]
 fn abrupt_mixed_empty_and_nested_iterations_keep_full_hir_and_exact_backend_routes() {
+    // A break statement is represented by an abrupt initializer in its
+    // checked block; native lowering must not request a Never C local.
+    let abrupt_statement = fixture(
+        r#"module iterator.feasibility;
+@id("app.main") fn main()->i64 {
+ let mut seen=0;while seen<1 {seen=seen+1;break;} seen
+}"#,
+    );
+    crate::hir::validate(&abrupt_statement).unwrap();
+    assert!(!crate::codegen::emit_hir_c(&abrupt_statement)
+        .unwrap()
+        .is_empty());
     let mixed = SOURCE.replace("  break;", "  if seen==3 {break;} else {0} 0");
     let empty = SOURCE
         .replace(

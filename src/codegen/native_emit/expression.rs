@@ -1083,6 +1083,13 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                             }
                             let value_id = value.id.clone();
                             let value = self.emit_expr(value)?;
+                            // An abrupt initializer has no local carrier or
+                            // continuation, including a certified Yield-only match.
+                            if value.ty == ResolvedType::Never {
+                                self.variables = saved;
+                                self.resource_text_views = saved_resource_text_views;
+                                return Ok(value);
+                            }
                             self.require_type(&value.ty, &binding.ty, "local binding")?;
                             let local = if is_direct_plan_owned(self.program, &binding.ty) {
                                 let plan = self.bytes_plan.ok_or_else(|| {
