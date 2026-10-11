@@ -38,7 +38,9 @@ impl Lower<'_, '_> {
             || !std::ptr::eq(&**body, sites.body)
             || !std::ptr::eq(suffix, sites.suffix)
         {
-            return Err(error("selected prefix sites are not the selection's borrowed nodes"));
+            return Err(error(
+                "selected prefix sites are not the selection's borrowed nodes",
+            ));
         }
         let K::Call {
             callee,
@@ -56,10 +58,15 @@ impl Lower<'_, '_> {
         if callee.as_str() != crate::vec_ops::WITH_CAPACITY_ID
             || !matches!(capacity.kind, K::Usize(value) if value == u64::from(count))
         {
-            return Err(error("selected destination capacity is not the selection's row count"));
+            return Err(error(
+                "selected destination capacity is not the selection's row count",
+            ));
         }
         let rows = self.bind(vector, Kind::Rows)?;
-        self.register(StorageId::Value(vector.id.clone()), Physical::Rows(rows.clone()))?;
+        self.register(
+            StorageId::Value(vector.id.clone()),
+            Physical::Rows(rows.clone()),
+        )?;
         self.register(
             StorageId::Temporary(allocation.id.clone()),
             Physical::Rows(rows.clone()),
@@ -69,7 +76,9 @@ impl Lower<'_, '_> {
             "spx_status = spx_vec_failure(spx_ctx, UINT32_C(3));",
         )?;
         self.line("spx_fused_row_receipt *spx_row_funding = NULL;");
-        self.line(&format!("spx_fused_rows_reserve(spx_domain, UINT64_C({count}), &spx_row_funding);"));
+        self.line(&format!(
+            "spx_fused_rows_reserve(spx_domain, UINT64_C({count}), &spx_row_funding);"
+        ));
         self.line(&format!("if (!spx_fused_rows_allocate_funded(spx_domain, spx_row_funding, UINT64_C({count}), &{rows})) {failure}"));
         self.apply(&allocation.id)?;
         let start = self.scalar(start, Kind::I64)?;
@@ -114,7 +123,9 @@ impl Lower<'_, '_> {
             || destination.id != sites.vector.id
             || latch.id != sites.counter.id
         {
-            return Err(error("selected loop sites are not the selection's borrowed nodes"));
+            return Err(error(
+                "selected loop sites are not the selection's borrowed nodes",
+            ));
         }
         self.scopes.push(Vec::new());
         let staged = self.row_operands(item, constructor, rows)?;
@@ -136,7 +147,9 @@ impl Lower<'_, '_> {
     ) -> Result<String, Diagnostic> {
         let sites = self.sites;
         let K::ConstructRecord { record, fields } = &constructor.kind else {
-            return Err(error("selected row constructor is not a record construction"));
+            return Err(error(
+                "selected row constructor is not a record construction",
+            ));
         };
         if *record != sites.record.id || item.ty != constructor.ty || item.ty != sites.item.ty {
             return Err(error("selected row constructor targets a foreign record"));
@@ -148,12 +161,20 @@ impl Lower<'_, '_> {
         };
         if fields.len() != 3
             || declared.len() != 3
-            || fields.iter().zip(declared).any(|(value, field)| value.field != field.id)
+            || fields
+                .iter()
+                .zip(declared)
+                .any(|(value, field)| value.field != field.id)
         {
-            return Err(error("selected row initializers are not in declaration order"));
+            return Err(error(
+                "selected row initializers are not in declaration order",
+            ));
         }
         let staged = self.bind(item, Kind::Staged)?;
-        self.register(StorageId::Value(item.id.clone()), Physical::Staged(staged.clone()))?;
+        self.register(
+            StorageId::Value(item.id.clone()),
+            Physical::Staged(staged.clone()),
+        )?;
         self.register(
             StorageId::Temporary(constructor.id.clone()),
             Physical::Staged(staged.clone()),
@@ -228,7 +249,9 @@ impl Lower<'_, '_> {
             || !reads(destination, &sites.vector.id)
             || !reads(row, &item.id)
         {
-            return Err(error("selected vec_push does not move the held Vec and staged row"));
+            return Err(error(
+                "selected vec_push does not move the held Vec and staged row",
+            ));
         }
         for (index, argument, physical) in [
             (0u32, destination, Physical::Rows(rows.to_owned())),

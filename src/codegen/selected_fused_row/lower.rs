@@ -235,12 +235,18 @@ fn roles(sites: &Sites<'_>) -> Result<[Role; 3], Diagnostic> {
             T::I64 => Role::Scalar,
             T::String => Role::Text,
             T::Bytes => Role::Payload,
-            _ => return Err(error("selected record field is outside the closed row shape")),
+            _ => {
+                return Err(error(
+                    "selected record field is outside the closed row shape",
+                ))
+            }
         };
     }
     for role in [Role::Scalar, Role::Text, Role::Payload] {
         if order.iter().filter(|r| **r == role).count() != 1 {
-            return Err(error("selected record roles are not one scalar, String and Bytes"));
+            return Err(error(
+                "selected record roles are not one scalar, String and Bytes",
+            ));
         }
     }
     Ok(order)
@@ -320,7 +326,9 @@ impl Lower<'_, '_> {
         Ok(())
     }
     fn bound(&self, id: &ValueId) -> bool {
-        self.locals.iter().any(|local| local.id.as_ref() == Some(id))
+        self.locals
+            .iter()
+            .any(|local| local.id.as_ref() == Some(id))
     }
     fn lookup(&self, id: &ValueId) -> Result<(&str, Kind), Diagnostic> {
         self.locals
@@ -404,12 +412,16 @@ impl Lower<'_, '_> {
                 self.close("}");
                 Ok(())
             }
-            _ => Err(error("statement is outside the closed selected suffix domain")),
+            _ => Err(error(
+                "statement is outside the closed selected suffix domain",
+            )),
         }
     }
     fn let_statement(&mut self, binding: &ResolvedBinding, value: &E) -> Result<(), Diagnostic> {
         if binding.ty != value.ty || binding.ownership != value.ownership {
-            return Err(error("selected binding type or ownership drifted from its value"));
+            return Err(error(
+                "selected binding type or ownership drifted from its value",
+            ));
         }
         if self.is_vector(&binding.ty) {
             return self.rows_transfer(binding, value);
@@ -484,8 +496,14 @@ impl Lower<'_, '_> {
         }
         let from = from.to_owned();
         let to = self.bind(binding, Kind::Rows)?;
-        self.register(StorageId::Value(binding.id.clone()), Physical::Rows(to.clone()))?;
-        self.register(StorageId::Temporary(value.id.clone()), Physical::Rows(to.clone()))?;
+        self.register(
+            StorageId::Value(binding.id.clone()),
+            Physical::Rows(to.clone()),
+        )?;
+        self.register(
+            StorageId::Temporary(value.id.clone()),
+            Physical::Rows(to.clone()),
+        )?;
         if let Some(argument) = argument {
             self.register(
                 StorageId::CallArgument {
@@ -509,7 +527,9 @@ impl Lower<'_, '_> {
     fn scalar(&mut self, e: &E, kind: Kind) -> Result<String, Diagnostic> {
         match self.expression(e)? {
             Value::Scalar(code, actual) if actual == kind => Ok(code),
-            _ => Err(error("selected expression does not produce the required scalar")),
+            _ => Err(error(
+                "selected expression does not produce the required scalar",
+            )),
         }
     }
     /// Each used plan failure exit: end loans, administrative abort, the exit's
@@ -534,7 +554,9 @@ impl Lower<'_, '_> {
             for line in code.lines() {
                 self.line(line.trim_start());
             }
-            self.line(&format!("if (!spx_fused_settle_abort(spx_domain)) {AUTHORITY}"));
+            self.line(&format!(
+                "if (!spx_fused_settle_abort(spx_domain)) {AUTHORITY}"
+            ));
             let dead = self.all_dead();
             for line in dead.lines() {
                 self.line(line.trim_start());

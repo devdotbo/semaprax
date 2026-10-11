@@ -21,10 +21,10 @@
 //! `mod` in a test crate root resolves against `tests/`, so each module names
 //! its file explicitly.
 
-#[path = "language/borrowed_text_byte_at.rs"]
-mod borrowed_text_byte_at;
 #[path = "language/borrowed_str_equality.rs"]
 mod borrowed_str_equality;
+#[path = "language/borrowed_text_byte_at.rs"]
+mod borrowed_text_byte_at;
 #[path = "language/byte_widening.rs"]
 mod byte_widening;
 #[path = "language/character_scalars.rs"]

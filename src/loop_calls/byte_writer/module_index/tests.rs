@@ -106,12 +106,10 @@ fn irrelevant_modules_have_no_new_backing_and_allocating_legacy_helpers_keep_old
     // Immutable owned transfer is ordinary old-profile code, so no renewal
     // candidate requires a closure proof in its assignment census.
     assert_eq!(index.proof_count, 0);
-    assert!(
-        legacy
-            .functions
-            .iter()
-            .all(|function| !index.has_sites(function))
-    );
+    assert!(legacy
+        .functions
+        .iter()
+        .all(|function| !index.has_sites(function)));
     assert!(legacy.functions.iter().all(
         |function| function.cleanup_plan.schema != crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V19
     ));
@@ -142,12 +140,10 @@ fn irrelevant_modules_have_no_new_backing_and_allocating_legacy_helpers_keep_old
     };
     let hostile_index = ModuleIndex::new(&hostile).unwrap();
     assert_eq!(hostile_index.proof_count, 1);
-    assert!(
-        hostile
-            .functions
-            .iter()
-            .all(|function| !hostile_index.has_sites(function))
-    );
+    assert!(hostile
+        .functions
+        .iter()
+        .all(|function| !hostile_index.has_sites(function)));
     assert!(crate::hir::validate(&hostile).is_err());
 }
 #[test]
@@ -165,15 +161,13 @@ fn changed_contracts_cycles_and_missing_targets_cannot_reuse_prior_index_authori
         .requires[0]
         .kind = ResolvedExprKind::String("allocation".into());
     let changed = ModuleIndex::new(&program).unwrap();
-    assert!(
-        !changed.has_sites(
-            program
-                .functions
-                .iter()
-                .find(|f| f.id.as_str() == "app.main")
-                .unwrap()
-        )
-    );
+    assert!(!changed.has_sites(
+        program
+            .functions
+            .iter()
+            .find(|f| f.id.as_str() == "app.main")
+            .unwrap()
+    ));
     assert_eq!(crate::hir::validate(&program).unwrap_err().code, "SPX-H006");
     // Parse the same authenticated source independently; prior attached plans
     // and identities cannot make a new transitive self-call nonallocating.
@@ -199,12 +193,10 @@ fn changed_contracts_cycles_and_missing_targets_cannot_reuse_prior_index_authori
     let mut missing = self::program(SOURCE);
     missing.functions.retain(|function| function.name != "leaf");
     let changed = ModuleIndex::new(&missing).unwrap();
-    assert!(
-        missing
-            .functions
-            .iter()
-            .all(|function| !changed.has_sites(function))
-    );
+    assert!(missing
+        .functions
+        .iter()
+        .all(|function| !changed.has_sites(function)));
     assert_eq!(crate::hir::validate(&missing).unwrap_err().code, "SPX-H006");
 }
 
@@ -268,12 +260,10 @@ fn sparse_many_function_queries_keep_exact_identity_and_logarithmic_zero_backing
     );
     let foreign = program(&source);
     assert!(!index.matches_program(&foreign));
-    assert!(
-        foreign
-            .functions
-            .iter()
-            .all(|function| !index.target(function) && index.function_sites(function).is_none())
-    );
+    assert!(foreign
+        .functions
+        .iter()
+        .all(|function| !index.target(function) && index.function_sites(function).is_none()));
     assert_eq!(
         index.expressions.len(),
         index
@@ -367,19 +357,15 @@ fn numeric_directory_sort_work_and_duplicate_site_keys_preserve_saved_receivers(
         let old = checked_bindings(&typed, function).unwrap();
         // Exact original keys are compared directly without accepting clones.
         for (at, binding) in old {
-            assert!(
-                index
-                    .expressions
-                    .iter()
-                    .any(|site| std::ptr::eq(site.at, at) && site.binding == binding)
-            );
-            assert!(
-                index
-                    .function_sites(function)
-                    .unwrap()
-                    .get_exact(at)
-                    .is_some()
-            );
+            assert!(index
+                .expressions
+                .iter()
+                .any(|site| std::ptr::eq(site.at, at) && site.binding == binding));
+            assert!(index
+                .function_sites(function)
+                .unwrap()
+                .get_exact(at)
+                .is_some());
         }
     }
 }

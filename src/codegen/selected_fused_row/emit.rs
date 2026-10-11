@@ -4,12 +4,7 @@
 //! runtime, the heap frame type, one closed-domain function and one
 //! internal-linkage entry. It has no `main`, exported symbol, public carrier or
 //! provider route; the default emitter never reaches this module.
-use super::{
-    cleanup::PlanProof,
-    crossing, error, layout, lower,
-    selection::Sites,
-    RUNTIME,
-};
+use super::{cleanup::PlanProof, crossing, error, layout, lower, selection::Sites, RUNTIME};
 use crate::diagnostic::Diagnostic;
 use crate::hir;
 use std::fmt::Write as _;
@@ -47,31 +42,52 @@ pub(super) struct Unit {
 /// Accepting API for the full validated selected owner. The owner must still
 /// hold exactly the supplied programs; the receiver then proves crossings,
 /// layout and canonical cleanup order itself before emitting anything.
-pub(crate) fn emit_validated(owner: &hir::selected_fused_candidate::ValidatedFusedSelection<'_>) -> Result<Artifact, Diagnostic> {
-    owner.with_joined(|joined| {
-        if !joined.still_current(owner.source(), owner.program()) {
-            return Err(error("validated owner does not hold the joined programs"));
-        }
-        let mapping = crate::construction_fusion::native_provenance::derive(owner.source(),owner.program())
-            .filter(|mapping| mapping.still_held(owner.source(),owner.program()))
+pub(crate) fn emit_validated(
+    owner: &hir::selected_fused_candidate::ValidatedFusedSelection<'_>,
+) -> Result<Artifact, Diagnostic> {
+    owner
+        .with_joined(|joined| {
+            if !joined.still_current(owner.source(), owner.program()) {
+                return Err(error("validated owner does not hold the joined programs"));
+            }
+            let mapping = crate::construction_fusion::native_provenance::derive(
+                owner.source(),
+                owner.program(),
+            )
+            .filter(|mapping| mapping.still_held(owner.source(), owner.program()))
             .ok_or_else(|| error("current selected suffix provenance does not derive"))?;
-        let sites = Sites::from_joined(joined.selection(), &mapping);
-        let unit = unit_with_prelude(&sites, || super::super::native_emit::emit_validated_fused_row_prelude(owner))?;
-        Ok(Artifact { source:unit.source,count:sites.rows as usize,width:sites.width as usize,placement:unit.placement })
-    }).map_err(|_| error("current validated source/HIR join refused"))?
+            let sites = Sites::from_joined(joined.selection(), &mapping);
+            let unit = unit_with_prelude(&sites, || {
+                super::super::native_emit::emit_validated_fused_row_prelude(owner)
+            })?;
+            Ok(Artifact {
+                source: unit.source,
+                count: sites.rows as usize,
+                width: sites.width as usize,
+                placement: unit.placement,
+            })
+        })
+        .map_err(|_| error("current validated source/HIR join refused"))?
 }
 
 /// Shared receiver core. Ordinary HIR validation still runs inside the
 /// prelude hook as a necessary check; it is not selection authority.
 pub(super) fn unit(sites: &Sites<'_>) -> Result<Unit, Diagnostic> {
-    unit_with_prelude(sites, || super::super::native_emit::emit_selected_fused_row_prelude(sites.program))
+    unit_with_prelude(sites, || {
+        super::super::native_emit::emit_selected_fused_row_prelude(sites.program)
+    })
 }
-fn unit_with_prelude(sites: &Sites<'_>, prelude: impl FnOnce()->Result<String,Diagnostic>) -> Result<Unit,Diagnostic> {
+fn unit_with_prelude(
+    sites: &Sites<'_>,
+    prelude: impl FnOnce() -> Result<String, Diagnostic>,
+) -> Result<Unit, Diagnostic> {
     if !layout::native64() {
         return Err(error("the selected carriers are defined for native64 only"));
     }
     if !sites.held() || sites.program.functions.len() != 1 {
-        return Err(error("the selected function is not the held program's only function"));
+        return Err(error(
+            "the selected function is not the held program's only function",
+        ));
     }
     let count = usize::try_from(sites.rows).map_err(|_| error("row count overflow"))?;
     let width = usize::try_from(sites.width).map_err(|_| error("width overflow"))?;
@@ -82,14 +98,18 @@ fn unit_with_prelude(sites: &Sites<'_>, prelude: impl FnOnce()->Result<String,Di
         })
         .ok_or_else(|| error("selected backing extent is outside the individual Bytes envelope"))?;
     if count == 0 || count > 4096 {
-        return Err(error("selected row count is outside the 4096-row strategy ceiling"));
+        return Err(error(
+            "selected row count is outside the 4096-row strategy ceiling",
+        ));
     }
     // Row placement: the selected row equals the ordinary leaf stride, so the
     // ordinary Vec allocation boundary funds it unchanged.
     let ordinary = super::super::native_vec::owned_leaf::layout(sites.program, &sites.item.ty)
         .ok_or_else(|| error("the selected row has no ordinary leaf layout"))?;
     if ordinary.stride as usize != layout::row() {
-        return Err(error("the selected row differs from the ordinary leaf stride"));
+        return Err(error(
+            "the selected row differs from the ordinary leaf stride",
+        ));
     }
     crossing::refuse_crossings(sites)?;
     let cleanup = PlanProof::admit(sites.function)?;
@@ -99,7 +119,8 @@ fn unit_with_prelude(sites: &Sites<'_>, prelude: impl FnOnce()->Result<String,Di
         .ok_or_else(|| error("the selected frame exceeds its bound"))?;
     let metadata =
         layout::metadata(count, frame).ok_or_else(|| error("selected metadata overflow"))?;
-    let funding=layout::funding(count,frame).ok_or_else(||error("selected total physical funding overflow"))?;
+    let funding = layout::funding(count, frame)
+        .ok_or_else(|| error("selected total physical funding overflow"))?;
     let mut output = prelude()?;
     output.push_str(
         "#ifndef SPX_FUSED_FAIL_STOP\n#define SPX_FUSED_FAIL_STOP(message) spx_runtime_invariant_failure(message)\n#endif\n",

@@ -100,9 +100,11 @@ pub(super) fn plan(layout: &SelectedNativeLayout) -> [Allocation; 4] {
 /// from another account or issuer cannot be presented.
 static IDENTITIES: AtomicU64 = AtomicU64::new(1);
 fn next_identity(counter: &AtomicU64) -> Option<u64> {
-    counter.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |value| {
-        value.checked_add(1).filter(|_| value != 0)
-    }).ok()
+    counter
+        .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |value| {
+            value.checked_add(1).filter(|_| value != 0)
+        })
+        .ok()
 }
 fn identity() -> Option<u64> {
     next_identity(&IDENTITIES)

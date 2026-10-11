@@ -39,7 +39,10 @@ fn function_body(source: &str) -> &str {
     let start = source
         .find(&format!("spx_status_token {FUNCTION}("))
         .expect("selected function");
-    let end = source[start..].find("enum { SPX_FUSED_PUBLISHED").expect("entry") + start;
+    let end = source[start..]
+        .find("enum { SPX_FUSED_PUBLISHED")
+        .expect("entry")
+        + start;
     &source[start..end]
 }
 /// Every used failure exit's finalizers appear verbatim, in canonical order,
@@ -80,11 +83,21 @@ fn precursor_lowers_plan_bound_rows_and_leaves_default_emission_unchanged() {
         assert!(!emitted.contains("int main("));
         let body = function_body(emitted);
         // Interior ranges never reach the ordinary tag-10 drop or public carriers.
-        for closed in ["spx_bytes_drop", "spx_bytes_v1", "spx_leaf_", "free(", "spx_vec_v1"] {
+        for closed in [
+            "spx_bytes_drop",
+            "spx_bytes_v1",
+            "spx_leaf_",
+            "free(",
+            "spx_vec_v1",
+        ] {
             assert!(!body.contains(closed), "{closed} in selected body");
         }
         // Private carriers live in the admitted heap frame, never the C stack.
-        for carrier in ["spx_fused_staged spx_l", "spx_fused_rows spx_l", "spx_fused_view spx_l"] {
+        for carrier in [
+            "spx_fused_staged spx_l",
+            "spx_fused_rows spx_l",
+            "spx_fused_view spx_l",
+        ] {
             assert!(!body.contains(carrier), "{carrier} on the stack");
         }
         assert!(emitted.contains("} spx_fused_frame;") && body.contains("spx_frame->"));
@@ -101,7 +114,10 @@ fn precursor_lowers_plan_bound_rows_and_leaves_default_emission_unchanged() {
         assert!(!body.contains("spx_refused"));
         assert_exits_verbatim(body, &typed.functions[0]);
         let ordinary = crate::codegen::emit_hir_c(&typed).unwrap();
-        assert!(!ordinary.contains("spx_fused"), "default emitter reached the private route");
+        assert!(
+            !ordinary.contains("spx_fused"),
+            "default emitter reached the private route"
+        );
     }
 }
 
@@ -127,7 +143,10 @@ fn stale_foreign_decoded_and_drifted_precursors_refuse_before_lowering() {
         ),
     ] {
         let drifted = crate::parse(&text.replace(from, to), "drift.spx").unwrap();
-        assert!(UnvalidatedPrecursor::derive(&drifted, &typed).is_none(), "{to}");
+        assert!(
+            UnvalidatedPrecursor::derive(&drifted, &typed).is_none(),
+            "{to}"
+        );
     }
     let mut forged = typed.clone();
     let hir::ResolvedExprKind::Block { statements, .. } = &mut forged.functions[0].body.kind else {
@@ -176,7 +195,10 @@ fn closed_suffix_census_refuses_escape_clone_and_unknown_consumers() {
         let Ok(typed) = hir::resolve(&source) else {
             continue;
         };
-        assert!(UnvalidatedPrecursor::derive(&source, &typed).is_none(), "{to}");
+        assert!(
+            UnvalidatedPrecursor::derive(&source, &typed).is_none(),
+            "{to}"
+        );
     }
 }
 
@@ -192,19 +214,34 @@ fn original_maximum_remains_refused_until_independent_capacity_admission() {
 
 #[test]
 fn accepting_api_binds_concrete_current_owner_and_refuses_actual_source_mutations() {
-    let source=crate::parse(ORIGINAL,"original-selected-native.spx").unwrap();
-    let owner=hir::selected_fused_candidate::validate_selected(&source).unwrap_or_else(|e|panic!("selected factory refused: {e:?}"));
-    let artifact=super::emit_validated(&owner).unwrap();
-    assert_eq!(artifact.count(),4096);assert_eq!(artifact.width(),3);
-    assert!(std::ptr::eq(owner.source(),&source));
+    let source = crate::parse(ORIGINAL, "original-selected-native.spx").unwrap();
+    let owner = hir::selected_fused_candidate::validate_selected(&source)
+        .unwrap_or_else(|e| panic!("selected factory refused: {e:?}"));
+    let artifact = super::emit_validated(&owner).unwrap();
+    assert_eq!(artifact.count(), 4096);
+    assert_eq!(artifact.width(), 3);
+    assert!(std::ptr::eq(owner.source(), &source));
     // A cloned AST/HIR cannot be supplied to the concrete receiving API.
-    let cloned_source=source.clone();let cloned_program=owner.program().clone();
-    assert!(!std::ptr::eq(owner.source(),&cloned_source));assert!(!std::ptr::eq(owner.program(),&cloned_program));
-    assert_eq!(super::emit_validated(&owner).unwrap().source(),artifact.source());
-    for (from,to) in [("next < 4096","next <= 4096"),("bytes_zeroed(3usize)","bytes_zeroed(next)"),("next = next + 1","next = next + 2")] {
-        let changed=ORIGINAL.replace(from,to);assert_ne!(changed,ORIGINAL);
-        let mutated=crate::parse(&changed,"mutated-selected-native.spx").unwrap();
-        assert!(hir::selected_fused_candidate::validate_selected(&mutated).is_err(),"{from}");
+    let cloned_source = source.clone();
+    let cloned_program = owner.program().clone();
+    assert!(!std::ptr::eq(owner.source(), &cloned_source));
+    assert!(!std::ptr::eq(owner.program(), &cloned_program));
+    assert_eq!(
+        super::emit_validated(&owner).unwrap().source(),
+        artifact.source()
+    );
+    for (from, to) in [
+        ("next < 4096", "next <= 4096"),
+        ("bytes_zeroed(3usize)", "bytes_zeroed(next)"),
+        ("next = next + 1", "next = next + 2"),
+    ] {
+        let changed = ORIGINAL.replace(from, to);
+        assert_ne!(changed, ORIGINAL);
+        let mutated = crate::parse(&changed, "mutated-selected-native.spx").unwrap();
+        assert!(
+            hir::selected_fused_candidate::validate_selected(&mutated).is_err(),
+            "{from}"
+        );
     }
 }
 
@@ -229,14 +266,18 @@ fn canonical_cleanup_proof_refuses_unprovable_plan_shapes() {
     assert!(PlanProof::admit(&lane).is_err());
     let mut edgeless = function.clone();
     edgeless.cleanup_plan.edges.retain(|edge| {
-        !matches!(edge.condition, crate::cleanup_plan::EdgeCondition::StatusNonzero(_))
+        !matches!(
+            edge.condition,
+            crate::cleanup_plan::EdgeCondition::StatusNonzero(_)
+        )
     });
     assert!(PlanProof::admit(&edgeless).is_err());
     let mut variant = function.clone();
-    variant.cleanup_plan.slots[0].field_liveness_shape = crate::cleanup::FieldLivenessShape::Variant {
-        declaration: hir::DeclarationId::new("forged.variant"),
-        cases: Vec::new(),
-    };
+    variant.cleanup_plan.slots[0].field_liveness_shape =
+        crate::cleanup::FieldLivenessShape::Variant {
+            declaration: hir::DeclarationId::new("forged.variant"),
+            cases: Vec::new(),
+        };
     assert!(PlanProof::admit(&variant).is_err());
     // A finalizer whose lifecycle disagrees with its leaf refuses lowering.
     let mut forged = typed.clone();
@@ -261,8 +302,14 @@ fn receiver_layout_mirror_matches_runtime_and_ordinary_stride() {
     assert_eq!(layout::row(), 32);
     let frame = layout::frame(1, 3, 1).unwrap();
     assert_eq!(frame, 240 + 40 + 3 * 56 + 48);
-    assert_eq!(layout::metadata(4096, frame), Some(frame + 4096 * 24 + 64 * 24));
-    assert_eq!(layout::funding(4096, frame), Some(frame + 4096 * 24 + 64 * 24 + 4096 * 32));
+    assert_eq!(
+        layout::metadata(4096, frame),
+        Some(frame + 4096 * 24 + 64 * 24)
+    );
+    assert_eq!(
+        layout::funding(4096, frame),
+        Some(frame + 4096 * 24 + 64 * 24 + 4096 * 32)
+    );
     assert!(layout::frame(0, 0, 2048).is_none());
     let emitted = precursor_unit(&fixture(8));
     assert!(emitted.contains(&format!(
@@ -329,8 +376,9 @@ fn passes(output: &Output, mode: &str) {
 fn fail_stops(output: &Output, message: &str) {
     assert!(!output.status.success());
     assert!(
-        String::from_utf8_lossy(&output.stderr)
-            .contains(&format!("SEMAPRAX native runtime invariant failure: {message}")),
+        String::from_utf8_lossy(&output.stderr).contains(&format!(
+            "SEMAPRAX native runtime invariant failure: {message}"
+        )),
         "{}",
         String::from_utf8_lossy(&output.stderr)
     );
@@ -342,13 +390,29 @@ fn precursor_unit_admission_order_plan_exits_and_reentry_at_o0_o2() {
         let expected = (0..i64::from(count)).sum::<i64>();
         let emitted = precursor_unit(&fixture(count));
         for binary in compile(&emitted, expected, &format!("oracle{count}")) {
-            for mode in ["oracle", "one-short", "cumulative-short", "claim", "vec-failure", "call-depth"] {
+            for mode in [
+                "oracle",
+                "one-short",
+                "cumulative-short",
+                "claim",
+                "vec-failure",
+                "call-depth",
+            ] {
                 passes(&run(&binary, mode), mode);
             }
             fail_stops(&run(&binary, "oom-frame"), "fused frame allocation failed");
-            fail_stops(&run(&binary, "oom-table"), "fused lease table allocation failed");
-            fail_stops(&run(&binary, "oom-views"), "fused view table allocation failed");
-            fail_stops(&run(&binary, "oom-backing"), "owned byte buffer allocation failed");
+            fail_stops(
+                &run(&binary, "oom-table"),
+                "fused lease table allocation failed",
+            );
+            fail_stops(
+                &run(&binary, "oom-views"),
+                "fused view table allocation failed",
+            );
+            fail_stops(
+                &run(&binary, "oom-backing"),
+                "owned byte buffer allocation failed",
+            );
             fail_stops(
                 &run(&binary, "unsealed"),
                 "selected fused-row entry without held authority",
@@ -369,17 +433,41 @@ fn precursor_suffix_failure_ends_live_loan_through_plan_exit_at_o0_o2() {
 /// native receiving -> O0/O2 runtime oracle. No rescaled/precursor authority.
 #[test]
 fn original_4096_rows_publish_8386560_with_one_12288_byte_backing_at_o0_o2() {
-    let source=crate::parse(ORIGINAL,"original.spx").unwrap();
-    let owner=hir::selected_fused_candidate::validate_selected(&source).unwrap_or_else(|e|panic!("original selected factory refused: {e:?}"));
-    assert_eq!(owner.capacity().rows,4096);assert_eq!(owner.capacity().extent,12288);
-    let artifact=super::emit_validated(&owner).unwrap();
-    assert_eq!(artifact.count(),4096);assert_eq!(artifact.width(),3);
-    assert_exits_verbatim(function_body(artifact.source()),&owner.program().functions[0]);
-    for binary in compile(artifact.source(),8386560,"original4096") {
-        for mode in ["oracle","one-short","cumulative-short","claim","vec-failure","call-depth"] {passes(&run(&binary,mode),mode);}
-        fail_stops(&run(&binary,"oom-frame"),"fused frame allocation failed");
-        fail_stops(&run(&binary,"oom-table"),"fused lease table allocation failed");
-        fail_stops(&run(&binary,"oom-views"),"fused view table allocation failed");
-        fail_stops(&run(&binary,"oom-backing"),"owned byte buffer allocation failed");
+    let source = crate::parse(ORIGINAL, "original.spx").unwrap();
+    let owner = hir::selected_fused_candidate::validate_selected(&source)
+        .unwrap_or_else(|e| panic!("original selected factory refused: {e:?}"));
+    assert_eq!(owner.capacity().rows, 4096);
+    assert_eq!(owner.capacity().extent, 12288);
+    let artifact = super::emit_validated(&owner).unwrap();
+    assert_eq!(artifact.count(), 4096);
+    assert_eq!(artifact.width(), 3);
+    assert_exits_verbatim(
+        function_body(artifact.source()),
+        &owner.program().functions[0],
+    );
+    for binary in compile(artifact.source(), 8386560, "original4096") {
+        for mode in [
+            "oracle",
+            "one-short",
+            "cumulative-short",
+            "claim",
+            "vec-failure",
+            "call-depth",
+        ] {
+            passes(&run(&binary, mode), mode);
+        }
+        fail_stops(&run(&binary, "oom-frame"), "fused frame allocation failed");
+        fail_stops(
+            &run(&binary, "oom-table"),
+            "fused lease table allocation failed",
+        );
+        fail_stops(
+            &run(&binary, "oom-views"),
+            "fused view table allocation failed",
+        );
+        fail_stops(
+            &run(&binary, "oom-backing"),
+            "owned byte buffer allocation failed",
+        );
     }
 }

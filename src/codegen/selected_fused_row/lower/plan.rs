@@ -147,7 +147,11 @@ impl Lower<'_, '_> {
             }
             (Physical::Field(name, role), []) => (name.clone(), *role),
             (Physical::Staged(name), [projection]) => (name.clone(), self.role_of(projection)?),
-            _ => return Err(error("a canonical owner projection has no selected carrier")),
+            _ => {
+                return Err(error(
+                    "a canonical owner projection has no selected carrier",
+                ))
+            }
         };
         match (field.1, lifecycle.as_str()) {
             (Role::Text, crate::cleanup::STRING_DROP_LIFECYCLE_ID) => Ok(format!(

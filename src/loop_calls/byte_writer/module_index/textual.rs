@@ -1,7 +1,7 @@
 //! Constructor-only ID discovery, retaining the first original ordinal.
 //! Source spelling discovers a current pointer; complete target proof still
 //! supplies authority. No negative or transitive proof is cached here.
-use super::{Diagnostic, ResolvedFunction, directory, resolved};
+use super::{directory, resolved, Diagnostic, ResolvedFunction};
 use std::cmp::Ordering;
 #[derive(Debug)]
 pub(super) struct Functions<'a> {

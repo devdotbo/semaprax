@@ -64,7 +64,10 @@ pub mod selected_final_utf8;
 /// Private FusedConstructionV1 receiving entry; no default route selects it.
 #[cfg_attr(
     not(test),
-    allow(dead_code, reason = "private fused-row receiving entry has no production caller")
+    allow(
+        dead_code,
+        reason = "private fused-row receiving entry has no production caller"
+    )
 )]
 mod selected_fused_row;
 pub use native_stdin_stream::{

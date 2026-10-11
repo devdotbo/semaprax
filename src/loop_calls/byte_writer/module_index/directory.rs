@@ -1,5 +1,5 @@
 //! Borrowed numeric discovery only. Exact identity is checked by each receiver.
-use super::{Diagnostic, resolved};
+use super::{resolved, Diagnostic};
 use crate::hir::{ExpressionId, ResolvedBinding};
 #[derive(Clone, Copy, Debug)]
 pub(super) struct Site<'a> {

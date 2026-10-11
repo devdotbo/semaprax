@@ -11,7 +11,9 @@ impl Lower<'_, '_> {
     /// Lower one expression, then apply the canonical transitions keyed by it.
     pub(super) fn expression(&mut self, e: &E) -> Result<Value, Diagnostic> {
         if self.depth >= DEPTH {
-            return Err(error("selected expression nesting exceeds the lowering bound"));
+            return Err(error(
+                "selected expression nesting exceeds the lowering bound",
+            ));
         }
         self.depth += 1;
         let value = self.expression_inner(e);
@@ -46,10 +48,7 @@ impl Lower<'_, '_> {
                 let value = match value {
                     Value::Scalar(code, kind) => Value::Scalar(self.materialize(code, kind), kind),
                     Value::Leased { ref name, .. }
-                        if self
-                            .scopes
-                            .last()
-                            .is_some_and(|scope| scope.contains(name)) =>
+                        if self.scopes.last().is_some_and(|scope| scope.contains(name)) =>
                     {
                         return Err(error("leased view escapes its lexical iteration"));
                     }
@@ -92,7 +91,9 @@ impl Lower<'_, '_> {
                     && place.projections.is_empty() =>
             {
                 if self.carrier(e)? != Carrier::OrdinarySlice {
-                    return Err(error("str_as_bytes view does not have an ordinary carrier fact"));
+                    return Err(error(
+                        "str_as_bytes view does not have an ordinary carrier fact",
+                    ));
                 }
                 let (name, kind) = self.lookup(&place.root)?;
                 if kind != Kind::Text {
@@ -109,7 +110,9 @@ impl Lower<'_, '_> {
                 type_arguments,
                 args,
             } => self.call(e, callee.as_str(), type_arguments, args),
-            _ => Err(error("expression is outside the closed selected suffix domain")),
+            _ => Err(error(
+                "expression is outside the closed selected suffix domain",
+            )),
         }
     }
     fn place(&mut self, e: &E, root: &ValueId) -> Result<Value, Diagnostic> {
@@ -168,13 +171,20 @@ impl Lower<'_, '_> {
             if kind != Kind::Bool {
                 return Err(error("selected comparison is not bool"));
             }
-            return Ok(Value::Scalar(format!("({left} {symbol} {right})"), Kind::Bool));
+            return Ok(Value::Scalar(
+                format!("({left} {symbol} {right})"),
+                Kind::Bool,
+            ));
         }
         let (builtin, code, message) = match op {
             BinaryOp::Add => ("add", "ADD", "addition overflow"),
             BinaryOp::Sub => ("sub", "SUB", "subtraction overflow"),
             BinaryOp::Mul if operand == Kind::I64 => ("mul", "MUL", "multiplication overflow"),
-            _ => return Err(error("selected arithmetic operator is outside the closed domain")),
+            _ => {
+                return Err(error(
+                    "selected arithmetic operator is outside the closed domain",
+                ))
+            }
         };
         if kind != operand || !matches!(operand, Kind::I64 | Kind::Usize) {
             return Err(error("selected arithmetic is not i64 or usize"));
@@ -258,7 +268,9 @@ impl Lower<'_, '_> {
                     Carrier::OrdinaryStr
                 };
                 if self.carrier(e)? != expected {
-                    return Err(error("String field view does not have its ordinary carrier fact"));
+                    return Err(error(
+                        "String field view does not have its ordinary carrier fact",
+                    ));
                 }
                 let row = self.row(&e.id, &rows, &index)?;
                 let text = self.temp(Kind::Text);
@@ -269,7 +281,9 @@ impl Lower<'_, '_> {
             }
             (T::Bytes, false, T::SliceU8, O::Borrow) => {
                 if self.carrier(e)? != Carrier::LeasedSlice {
-                    return Err(error("Bytes field view does not have its leased carrier fact"));
+                    return Err(error(
+                        "Bytes field view does not have its leased carrier fact",
+                    ));
                 }
                 let _ = self.row(&e.id, &rows, &index)?;
                 let view = self.temp(Kind::Leased);
@@ -281,7 +295,9 @@ impl Lower<'_, '_> {
                     temporary: true,
                 })
             }
-            _ => Err(error("selected field read shape is outside the closed domain")),
+            _ => Err(error(
+                "selected field read shape is outside the closed domain",
+            )),
         }
     }
     /// A consumer of a temporary loan ends it immediately after its use.
@@ -379,10 +395,16 @@ impl Lower<'_, '_> {
         if callee.as_str() != crate::byte_ops::GET_ID {
             return Err(error("selected match scrutinee is not byte_get"));
         }
-        let some_arm = arms.iter().find(|arm| case(arm, crate::prelude::OPTION_SOME_ID));
-        let none_arm = arms.iter().find(|arm| case(arm, crate::prelude::OPTION_NONE_ID));
+        let some_arm = arms
+            .iter()
+            .find(|arm| case(arm, crate::prelude::OPTION_SOME_ID));
+        let none_arm = arms
+            .iter()
+            .find(|arm| case(arm, crate::prelude::OPTION_NONE_ID));
         let (Some(some_arm), Some(none_arm), 2) = (some_arm, none_arm, arms.len()) else {
-            return Err(error("selected byte_get match is not exactly Some and None"));
+            return Err(error(
+                "selected byte_get match is not exactly Some and None",
+            ));
         };
         let ResolvedMatchPattern::Variant { fields, .. } = &some_arm.pattern else {
             return Err(error("selected Some arm is not a variant pattern"));
@@ -390,8 +412,7 @@ impl Lower<'_, '_> {
         let [field] = fields.as_slice() else {
             return Err(error("selected Some arm does not bind exactly its value"));
         };
-        if field.field.as_str() != crate::prelude::OPTION_SOME_VALUE_ID
-            || field.binding.ty != T::U8
+        if field.field.as_str() != crate::prelude::OPTION_SOME_VALUE_ID || field.binding.ty != T::U8
         {
             return Err(error("selected Some arm does not bind the u8 value"));
         }

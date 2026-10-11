@@ -215,9 +215,8 @@ impl Request {
 /// The canonical destination identity of the fixture's `app.main`.
 #[cfg(test)]
 pub(super) fn test_destination() -> ExpressionId {
-    let main = crate::hir::FunctionExecutionId::Monomorphic(crate::hir::DeclarationId::new(
-        "app.main",
-    ));
+    let main =
+        crate::hir::FunctionExecutionId::Monomorphic(crate::hir::DeclarationId::new("app.main"));
     ExpressionId::new(&main, "body.s0.value")
 }
 
@@ -332,7 +331,9 @@ pub(crate) fn metadata_bytes(rows: usize, placement: usize) -> Option<usize> {
 fn retain(request: &Request) -> Result<(u32, u64), SelectedRefusal> {
     let mut operations = request.operations();
     if operations.next() != Some(Operation::Push) {
-        return Err(SelectedRefusal::Profile("profile does not begin at the push commit"));
+        return Err(SelectedRefusal::Profile(
+            "profile does not begin at the push commit",
+        ));
     }
     let mut held = Carrier::Stored;
     let mut slot_generation = 1u32.checked_add(retention::slot_renewals(Operation::Push));
@@ -342,13 +343,16 @@ fn retain(request: &Request) -> Result<(u32, u64), SelectedRefusal> {
         if settled {
             return Err(SelectedRefusal::Profile("operation after Vec settlement"));
         }
-        let transition = retention::transition(operation)
-            .ok_or(SelectedRefusal::Carrier("private carrier crossing or stored escape"))?;
+        let transition = retention::transition(operation).ok_or(SelectedRefusal::Carrier(
+            "private carrier crossing or stored escape",
+        ))?;
         // A receipt holds a full owner carrier with the held domain's issuer.
         let accepts = transition.input == held
             || (held == Carrier::Receipt && transition.input == Carrier::Owner);
         if !accepts {
-            return Err(SelectedRefusal::Carrier("operation does not receive its held carrier"));
+            return Err(SelectedRefusal::Carrier(
+                "operation does not receive its held carrier",
+            ));
         }
         if transition.context == Context::Settled {
             settled = true;
@@ -367,7 +371,9 @@ fn retain(request: &Request) -> Result<(u32, u64), SelectedRefusal> {
         }
     }
     if !settled {
-        return Err(SelectedRefusal::Profile("profile never settles the row Vec"));
+        return Err(SelectedRefusal::Profile(
+            "profile never settles the row Vec",
+        ));
     }
     match (slot_generation, vec_generation) {
         (Some(slot), Some(vec)) => Ok((slot, vec)),

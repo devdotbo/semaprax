@@ -79,7 +79,10 @@ fn rows_width_extent_placement_and_overflow_refuse() {
         (4096, 33, SelectedRefusal::Extent),
         (33, u64::MAX, SelectedRefusal::Extent),
     ] {
-        assert_eq!(derive(&request(rows, width, FIXTURE, &CLOSED)), Err(refusal));
+        assert_eq!(
+            derive(&request(rows, width, FIXTURE, &CLOSED)),
+            Err(refusal)
+        );
     }
     assert!(derive(&request(4096, 32, FIXTURE, &CLOSED)).is_ok());
     for placement in [
@@ -122,10 +125,26 @@ fn row_storage_is_reserved_at_the_destination_on_the_same_physical_ledger() {
     assert_eq!(
         plan.map(|allocation| (allocation.kind, allocation.account, allocation.boundary)),
         [
-            (Kind::RowStorage, Account::PhysicalLedger, Boundary::DestinationAllocation),
-            (Kind::SlotTable, Account::PhysicalLedger, Boundary::FirstBytesOperand),
-            (Kind::ViewTable, Account::PhysicalLedger, Boundary::FirstBytesOperand),
-            (Kind::Backing, Account::OrdinaryEvents, Boundary::FirstBytesOperand),
+            (
+                Kind::RowStorage,
+                Account::PhysicalLedger,
+                Boundary::DestinationAllocation
+            ),
+            (
+                Kind::SlotTable,
+                Account::PhysicalLedger,
+                Boundary::FirstBytesOperand
+            ),
+            (
+                Kind::ViewTable,
+                Account::PhysicalLedger,
+                Boundary::FirstBytesOperand
+            ),
+            (
+                Kind::Backing,
+                Account::OrdinaryEvents,
+                Boundary::FirstBytesOperand
+            ),
         ]
     );
     assert_eq!(
@@ -216,7 +235,10 @@ fn row_storage_is_reserved_at_the_destination_on_the_same_physical_ledger() {
             (layout.row_storage(), true)
         );
     }
-    assert_eq!(funding::settle_row_receipt(receipt).bytes, layout.row_storage());
+    assert_eq!(
+        funding::settle_row_receipt(receipt).bytes,
+        layout.row_storage()
+    );
     assert_eq!(held.ledger.debited(), layout.row_storage());
 }
 
@@ -243,7 +265,10 @@ fn second_invocation_debits_the_same_ledger_without_reset() {
     assert_eq!(funding::finish(&mut held), Some(first.invocation));
     // A finished invocation cannot reuse its receipt to skip a second row
     // reservation, even while the original receipt is still held.
-    assert_eq!(funding::activate(&layout, &mut held, &first_rows).err(), Some(SelectedRefusal::RowReceipt));
+    assert_eq!(
+        funding::activate(&layout, &mut held, &first_rows).err(),
+        Some(SelectedRefusal::RowReceipt)
+    );
     assert_eq!(held.ledger.debited(), total);
     assert_eq!(held.issuer.active(), None);
     funding::settle_row_receipt(first_rows);
@@ -378,7 +403,12 @@ fn ordinary_counters_and_nonce_headroom_refuse_without_wrapping() {
 
 #[test]
 fn owner_context_retention_refuses_unprovable_profiles() {
-    let pop_store = [Op::Push, Op::RowsPop, Op::RowsStore, Op::PassiveVecSettlement];
+    let pop_store = [
+        Op::Push,
+        Op::RowsPop,
+        Op::RowsStore,
+        Op::PassiveVecSettlement,
+    ];
     let layout = derive(&request(64, 3, FIXTURE, &pop_store)).unwrap();
     assert_eq!(layout.max_slot_generation(), 4);
     let settle = Op::PassiveVecSettlement;

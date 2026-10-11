@@ -154,7 +154,9 @@ impl<'s> ValidatedFusedSelection<'s> {
     pub(crate) fn revalidate_current(&self) -> Result<SelectedCapacity, SelectedRefusal> {
         let current = revalidate(self.source, self.producer, &self.program)?;
         if current != self.capacity {
-            return Err(SelectedRefusal::Validation(super::hir_error("selected owner capacity no longer agrees")));
+            return Err(SelectedRefusal::Validation(super::hir_error(
+                "selected owner capacity no longer agrees",
+            )));
         }
         Ok(current)
     }

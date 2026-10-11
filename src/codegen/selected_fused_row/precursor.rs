@@ -80,7 +80,9 @@ impl<'a> UnvalidatedPrecursor<'a> {
                     && a.vector() == b.vector()
             });
         if !same_sites || !same_facts {
-            return Err(error("supplied precursor disagrees with the current rederivation"));
+            return Err(error(
+                "supplied precursor disagrees with the current rederivation",
+            ));
         }
         Ok(())
     }

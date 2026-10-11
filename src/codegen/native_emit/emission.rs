@@ -4,7 +4,10 @@ use super::*;
 /// validation runs first; no function, entry wrapper or public carrier is emitted.
 #[cfg_attr(
     not(test),
-    allow(dead_code, reason = "private fused-row receiving entry has no production caller")
+    allow(
+        dead_code,
+        reason = "private fused-row receiving entry has no production caller"
+    )
 )]
 pub(in crate::codegen) fn emit_selected_fused_row_prelude(
     program: &ResolvedProgram,
@@ -25,13 +28,24 @@ pub(in crate::codegen) fn emit_selected_fused_row_prelude(
 }
 /// Concrete selected owner receiving; complete selected validation precedes
 /// the same ordinary resource/prelude generation, without a Legacy downgrade.
-pub(in crate::codegen) fn emit_validated_fused_row_prelude(owner:&hir::selected_fused_candidate::ValidatedFusedSelection<'_>) -> Result<String,Diagnostic> {
-    owner.revalidate_current().map_err(|_| backend_error("current validated fused owner refused"))?;
-    let program=owner.program();
-    let resource_abi=native_resource::build_resource_abi(program)?;
-    if !resource_abi.resources.is_empty() { return Err(resource_lowering_gate()); }
-    let mut output=crate::bounded_output::CappedString::new();
-    emit_native_prelude_profile(&mut output,&resource_abi,program,NativeOutputProfile::Legacy.string_runtime());
+pub(in crate::codegen) fn emit_validated_fused_row_prelude(
+    owner: &hir::selected_fused_candidate::ValidatedFusedSelection<'_>,
+) -> Result<String, Diagnostic> {
+    owner
+        .revalidate_current()
+        .map_err(|_| backend_error("current validated fused owner refused"))?;
+    let program = owner.program();
+    let resource_abi = native_resource::build_resource_abi(program)?;
+    if !resource_abi.resources.is_empty() {
+        return Err(resource_lowering_gate());
+    }
+    let mut output = crate::bounded_output::CappedString::new();
+    emit_native_prelude_profile(
+        &mut output,
+        &resource_abi,
+        program,
+        NativeOutputProfile::Legacy.string_runtime(),
+    );
     Ok(output.into_string())
 }
 pub(super) fn emit_hir_c_with_options(
@@ -221,7 +235,11 @@ pub(super) fn emit_hir_c_with_options(
     }
     if let Some(selection) = selected {
         super::super::selected_final_utf8::emit_adapter(
-            &mut output, program, selection, emission.record_layouts, emission.variant_layouts,
+            &mut output,
+            program,
+            selection,
+            emission.record_layouts,
+            emission.variant_layouts,
         )?;
         return Ok(output.into_string());
     }

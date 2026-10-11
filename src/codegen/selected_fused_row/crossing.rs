@@ -32,7 +32,9 @@ pub(super) fn refuse_crossings(sites: &Sites<'_>) -> Result<(), Diagnostic> {
         || !function.requires.is_empty()
         || !function.ensures.is_empty()
     {
-        return Err(error("selected function signature crosses a public boundary"));
+        return Err(error(
+            "selected function signature crosses a public boundary",
+        ));
     }
     let mut pending = vec![&function.body];
     let mut work = 0usize;
@@ -42,7 +44,9 @@ pub(super) fn refuse_crossings(sites: &Sites<'_>) -> Result<(), Diagnostic> {
             return Err(error("selected function exceeds the crossing scan bound"));
         }
         if expression.ty == T::Bytes && !std::ptr::eq(expression, sites.producer) {
-            return Err(error("a Bytes value other than the proven producer would cross the public ABI"));
+            return Err(error(
+                "a Bytes value other than the proven producer would cross the public ABI",
+            ));
         }
         match &expression.kind {
             K::Call {
@@ -58,7 +62,9 @@ pub(super) fn refuse_crossings(sites: &Sites<'_>) -> Result<(), Diagnostic> {
             | K::Yield { .. }
             | K::Try { .. }
             | K::TryOption { .. } => {
-                return Err(error("a call, callable or exit outside the closed selected domain"));
+                return Err(error(
+                    "a call, callable or exit outside the closed selected domain",
+                ));
             }
             _ => {}
         }

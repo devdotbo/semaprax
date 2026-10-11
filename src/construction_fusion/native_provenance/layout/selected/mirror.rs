@@ -249,8 +249,10 @@ pub(super) const DOMAIN: [Field; 25] = fields!("spx_fused_domain", Domain,
 
 /// Every measured field table, for the cross-source gate.
 pub(super) fn fields() -> [&'static [Field]; 14] {
-    [&ISSUER, &LEDGER, &PAYLOAD, &COPY, &RECEIPT, &BYTES, &STORED, &VIEW,
-     &SLOT, &BORROW, &ROW, &STAGED, &ROWS, &DOMAIN]
+    [
+        &ISSUER, &LEDGER, &PAYLOAD, &COPY, &RECEIPT, &BYTES, &STORED, &VIEW, &SLOT, &BORROW, &ROW,
+        &STAGED, &ROWS, &DOMAIN,
+    ]
 }
 
 pub(super) const DOMAIN_BYTES: usize = size_of::<Domain>();

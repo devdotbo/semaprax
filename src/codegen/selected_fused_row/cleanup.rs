@@ -111,7 +111,11 @@ impl<'p> PlanProof<'p> {
             return Err(refuse("the selected result is not a scalar commit"));
         }
         for exit in &plan.exits {
-            if exit.finalize_in_order.iter().any(|action| action.active_case.is_some()) {
+            if exit
+                .finalize_in_order
+                .iter()
+                .any(|action| action.active_case.is_some())
+            {
                 return Err(refuse("a conditional variant finalizer"));
             }
         }
@@ -234,7 +238,9 @@ fn failure_exit<'p>(
                 if selected != 1
                     || !matches!(&exit.continuation, ExitContinuation::ReturnFailure { source: chosen } if chosen == source)
                 {
-                    return Err(refuse("a failure path does not select exactly its own status"));
+                    return Err(refuse(
+                        "a failure path does not select exactly its own status",
+                    ));
                 }
                 return Ok(exit);
             }

@@ -34,10 +34,7 @@ pub(crate) use selection::CarrierFacts;
 pub(super) const RUNTIME: &str = include_str!("selected_fused_row/runtime.c");
 
 fn error(message: &str) -> Diagnostic {
-    Diagnostic::io(
-        "SPX-B104",
-        format!("selected fused-row profile: {message}"),
-    )
+    Diagnostic::io("SPX-B104", format!("selected fused-row profile: {message}"))
 }
 
 #[cfg(test)]

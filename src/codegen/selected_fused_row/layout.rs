@@ -96,9 +96,17 @@ struct Rows {
 }
 #[repr(C)]
 struct RowReceipt {
-    domain: *mut (), issuer: *const (), ledger: *mut (), invocation: u64,
-    pointer: *mut Row, capacity: usize, stride: usize, bytes: usize,
-    funded: u32, allocated: u32, settled: u32,
+    domain: *mut (),
+    issuer: *const (),
+    ledger: *mut (),
+    invocation: u64,
+    pointer: *mut Row,
+    capacity: usize,
+    stride: usize,
+    bytes: usize,
+    funded: u32,
+    allocated: u32,
+    settled: u32,
 }
 #[repr(C)]
 struct Domain {
@@ -140,7 +148,7 @@ pub(super) fn mirror() -> [(&'static str, usize); 13] {
         ("spx_fused_ledger", size_of::<Ledger>()),
         ("spx_fused_payload", size_of::<Payload>()),
         ("spx_fused_domain", size_of::<Domain>()),
-        ("spx_fused_row_receipt",size_of::<RowReceipt>()),
+        ("spx_fused_row_receipt", size_of::<RowReceipt>()),
     ]
 }
 
@@ -168,6 +176,6 @@ pub(super) fn metadata(count: usize, frame: usize) -> Option<usize> {
 
 /// Complete same-ledger invocation physical funding, including the exact
 /// row allocation debited at its original Vec boundary.
-pub(super) fn funding(count:usize,frame:usize)->Option<usize> {
-    metadata(count,frame)?.checked_add(count.checked_mul(size_of::<Row>())?)
+pub(super) fn funding(count: usize, frame: usize) -> Option<usize> {
+    metadata(count, frame)?.checked_add(count.checked_mul(size_of::<Row>())?)
 }

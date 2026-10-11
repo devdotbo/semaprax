@@ -43,14 +43,29 @@ pub(super) struct Sites<'a> {
 }
 
 impl<'a> Sites<'a> {
-    pub(super) fn from_joined(selection: &'a crate::hir::fused_construction::Selection<'a>, carriers: &'a dyn CarrierFacts) -> Self {
+    pub(super) fn from_joined(
+        selection: &'a crate::hir::fused_construction::Selection<'a>,
+        carriers: &'a dyn CarrierFacts,
+    ) -> Self {
         Self {
-            program: selection.program(), function: selection.function(), record: selection.record(),
-            vector: selection.vector(), counter: selection.counter(), item: selection.item(),
-            allocation: selection.allocation(), condition: selection.condition(), body: selection.body(),
-            constructor: selection.constructor(), producer: selection.producer(), push: selection.push(),
-            step: selection.step(), suffix: selection.suffix(), tail: selection.tail(),
-            rows: selection.rows(), width: selection.width(), carriers,
+            program: selection.program(),
+            function: selection.function(),
+            record: selection.record(),
+            vector: selection.vector(),
+            counter: selection.counter(),
+            item: selection.item(),
+            allocation: selection.allocation(),
+            condition: selection.condition(),
+            body: selection.body(),
+            constructor: selection.constructor(),
+            producer: selection.producer(),
+            push: selection.push(),
+            step: selection.step(),
+            suffix: selection.suffix(),
+            tail: selection.tail(),
+            rows: selection.rows(),
+            width: selection.width(),
+            carriers,
         }
     }
     /// The selected function must be a member of the held program.

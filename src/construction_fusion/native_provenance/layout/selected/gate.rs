@@ -25,7 +25,10 @@ fn static_asserts(out: &mut String) {
             "SPX_FUSED_EVENTS",
             u64::from(crate::byte_data_capacity::MAX_BYTES_COPY_SITES),
         ),
-        ("SPX_FUSED_FRAME_LIMIT", (MAX_PLACEMENT + mirror::DOMAIN_BYTES) as u64),
+        (
+            "SPX_FUSED_FRAME_LIMIT",
+            (MAX_PLACEMENT + mirror::DOMAIN_BYTES) as u64,
+        ),
         (
             "SPX_FUSED_CUMULATIVE",
             crate::byte_data_capacity::MAX_OWNED_BYTE_PAYLOAD_BYTES,
@@ -147,7 +150,8 @@ SPX_FUSED_FN void spx_gate_foreign_receipt(const char *mode) {
 "#;
 
 fn probe() -> String {
-    let mut out = String::from("#include <stdlib.h>\n#define SPX_FUSED_FAIL_STOP(message) exit(86)\n");
+    let mut out =
+        String::from("#include <stdlib.h>\n#define SPX_FUSED_FAIL_STOP(message) exit(86)\n");
     out.push_str(RUNTIME);
     out.push('\n');
     static_asserts(&mut out);
@@ -163,10 +167,19 @@ fn probe() -> String {
     for (rows, placement) in [(0usize, 0usize), (4097, 0), (33, MAX_PLACEMENT + 1)] {
         assert_eq!(metadata_bytes(rows, placement), None);
         let frame = mirror::DOMAIN_BYTES + placement;
-        writeln!(out, "    if (spx_fused_metadata_bytes({rows}u, {frame}u)) return 1;").unwrap();
+        writeln!(
+            out,
+            "    if (spx_fused_metadata_bytes({rows}u, {frame}u)) return 1;"
+        )
+        .unwrap();
     }
     let frame = mirror::DOMAIN_BYTES + MAX_PLACEMENT;
-    writeln!(out, "    if (spx_fused_metadata_bytes(4096u, {frame}u) != {}u) return 2;\n    return 0;\n}}", metadata_bytes(4096, MAX_PLACEMENT).unwrap()).unwrap();
+    writeln!(
+        out,
+        "    if (spx_fused_metadata_bytes(4096u, {frame}u) != {}u) return 2;\n    return 0;\n}}",
+        metadata_bytes(4096, MAX_PLACEMENT).unwrap()
+    )
+    .unwrap();
     out
 }
 
@@ -202,7 +215,11 @@ fn compile_and_run(name: &str, text: &str) {
         );
         for hostile in ["copied", "foreign"] {
             let refusal = Command::new(&binary).arg(hostile).output().unwrap();
-            assert_eq!(refusal.status.code(), Some(86), "actual receiving gate: {hostile}");
+            assert_eq!(
+                refusal.status.code(),
+                Some(86),
+                "actual receiving gate: {hostile}"
+            );
         }
         let run = Command::new(&binary).output().unwrap();
         assert!(
@@ -233,7 +250,10 @@ fn generated_probe_covers_every_mirrored_field_once() {
             fields += 1;
         }
     }
-    assert_eq!(fields, 4 + 5 + 6 + 2 + 11 + 4 + 3 + 7 + 5 + 4 + 3 + 3 + 7 + 25);
+    assert_eq!(
+        fields,
+        4 + 5 + 6 + 2 + 11 + 4 + 3 + 7 + 5 + 4 + 3 + 3 + 7 + 25
+    );
     for shape in mirror::SHAPES {
         assert!(text.contains(&format!("sizeof({}) ==", shape.name)));
     }

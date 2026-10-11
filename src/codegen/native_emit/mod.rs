@@ -1,6 +1,8 @@
 mod emission;
 use emission::emit_hir_c_with_options;
-pub(in crate::codegen) use emission::{emit_selected_fused_row_prelude,emit_validated_fused_row_prelude};
+pub(in crate::codegen) use emission::{
+    emit_selected_fused_row_prelude, emit_validated_fused_row_prelude,
+};
 mod owned_moves;
 pub(crate) mod public_generic_bridge;
 use super::{
