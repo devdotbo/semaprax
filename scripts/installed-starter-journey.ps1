@@ -18,8 +18,12 @@ function Invoke-SemapraxStarterProcess {
     try {
         $output = $process.StandardOutput.ReadToEndAsync()
         $errors = $process.StandardError.ReadToEndAsync()
-        $process.StandardInput.Write($InputText)
-        $process.StandardInput.Close()
+        # Write protocol bytes directly: Windows PowerShell 5.1's default
+        # StreamWriter can prepend a UTF-8 BOM, which is not JSON framing.
+        $inputBytes = [System.Text.Encoding]::UTF8.GetBytes($InputText)
+        $inputStream = $process.StandardInput.BaseStream
+        $inputStream.Write($inputBytes, 0, $inputBytes.Length)
+        $inputStream.Close()
         if (-not $process.WaitForExit(30000)) {
             $process.Kill()
             throw "Installed process timed out: $File"
@@ -53,7 +57,7 @@ function Invoke-SemapraxStarterJourney {
     if ($responses.Count -ne 2 -or $responses[0].id -ne 1 -or $responses[1].id -ne 2 -or
         $responses[0].result.version -cne $Version -or $responses[0].result.protocol -notlike 'semaprax.agent-transport.v*' -or
         $null -ne $responses[0].error -or $null -ne $responses[1].error) {
-        throw 'Installed daemon protocol/shutdown disagrees with the release'
+        throw "Installed daemon protocol/shutdown disagrees with the release: $output"
     }
     Write-Host "Installed starter printed 42; daemon protocol/shutdown passed ($Version)."
 }

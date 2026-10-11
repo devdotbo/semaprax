@@ -173,7 +173,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'WinGet manifest validation failed' }
           winget settings --enable LocalManifestFiles
           if ($LASTEXITCODE -ne 0) { throw 'Cannot enable local manifests on this disposable runner' }
-          $prior = "$PWD\proposal\prior\manifests\w\Wavect\Semaprax\0.8.0"
+          $prior = "$PWD\proposal\prior\winget\manifests\w\Wavect\Semaprax\0.8.0"
           winget install --manifest $prior --accept-package-agreements --accept-source-agreements --disable-interactivity
           if ($LASTEXITCODE -ne 0) { throw 'WinGet prior package installation failed' }
           & ./scripts/channel-winget-journey.ps1 -Version '0.8.0'
