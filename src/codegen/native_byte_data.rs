@@ -24,6 +24,10 @@ pub(super) fn emit_stream_epoch_additive_operations(output: &mut impl super::COu
 #[path = "native_byte_data/stream_epoch.rs"]
 mod stream_epoch;
 
+/// Selected ordinary shared-owner Bytes profile (OPT #746); admission closed.
+#[path = "native_shared_bytes.rs"]
+pub(super) mod native_shared_bytes;
+
 /// Emit byte-buffer store helpers introduced after the frozen default runtime.
 ///
 /// These functions depend only on the default byte runtime. Keeping them in a
