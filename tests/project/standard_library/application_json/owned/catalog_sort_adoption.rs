@@ -1,7 +1,7 @@
 //! Compare direct wire-row sorting against the retained independent declaration-
 //! order carrier pipeline. Both use the same checked compiler and frozen corpus;
 //! this is differential behavior, not historical runtime/cost evidence.
-use super::{CORPUS, compile_native, execute, hex, project, stage};
+use super::{compile_native, execute, hex, project, stage, CORPUS};
 
 const ORIGINAL_MODEL: &str = include_str!("catalog_sort_adoption/model_original.txt");
 const ORIGINAL_RESTOCK: &str = include_str!("catalog_sort_adoption/restock_original.txt");
@@ -28,9 +28,7 @@ fn direct_wire_row_sort_retains_independent_original_pipeline_and_all_23_cases()
                     sorts.push(callee.as_str());
                 }
             }
-            for index in (0..expression.child_count()).rev() {
-                pending.push(expression.child(index).unwrap());
-            }
+            push_children(expression, &mut pending);
         }
         assert_eq!(sorts.len(), 1);
         let descriptor = sorts[0];
@@ -114,4 +112,106 @@ fn direct_wire_row_sort_retains_independent_original_pipeline_and_all_23_cases()
         }
     }
     std::fs::remove_dir_all(root).unwrap();
+}
+
+// Independent exhaustive test traversal; compiler-private visitors remain private.
+fn push_children<'a>(
+    expression: &'a semaprax::hir::ResolvedExpr,
+    pending: &mut Vec<&'a semaprax::hir::ResolvedExpr>,
+) {
+    match &expression.kind {
+        semaprax::hir::ResolvedExprKind::Closure { captures, .. } => {
+            pending.extend(captures.iter().rev().map(|capture| &capture.value))
+        }
+        semaprax::hir::ResolvedExprKind::Block { statements, tail } => {
+            pending.push(tail);
+            for statement in statements.iter().rev() {
+                for index in (0..statement.child_count()).rev() {
+                    if let Some(child) = statement.child(index) {
+                        pending.push(child);
+                    }
+                }
+            }
+        }
+        semaprax::hir::ResolvedExprKind::FunctionReference { .. } => {}
+        semaprax::hir::ResolvedExprKind::Invoke { callable, args } => {
+            pending.extend(args.iter().rev());
+            pending.push(callable);
+        }
+        semaprax::hir::ResolvedExprKind::Call { args, .. }
+        | semaprax::hir::ResolvedExprKind::LiteralFormat { args, .. }
+        | semaprax::hir::ResolvedExprKind::VecFieldRead { args, .. } => {
+            pending.extend(args.iter().rev())
+        }
+        semaprax::hir::ResolvedExprKind::NativeRustImportCall(call) => {
+            pending.extend(call.args.iter().rev())
+        }
+        semaprax::hir::ResolvedExprKind::HostCommandCall(call) => {
+            pending.extend(call.args.iter().rev())
+        }
+        semaprax::hir::ResolvedExprKind::ByteRange {
+            source, start, end, ..
+        } => {
+            pending.push(end);
+            pending.push(start);
+            pending.push(source);
+        }
+        semaprax::hir::ResolvedExprKind::LexicalExit { value, .. } => {
+            if let Some(value) = value {
+                pending.push(value);
+            }
+        }
+        semaprax::hir::ResolvedExprKind::Unary { value, .. }
+        | semaprax::hir::ResolvedExprKind::Try { operand: value, .. }
+        | semaprax::hir::ResolvedExprKind::TryOption { operand: value, .. }
+        | semaprax::hir::ResolvedExprKind::Project { base: value, .. }
+        | semaprax::hir::ResolvedExprKind::Upcast { source: value }
+        | semaprax::hir::ResolvedExprKind::Yield { request: value } => pending.push(value),
+        semaprax::hir::ResolvedExprKind::Binary { left, right, .. } => {
+            pending.push(right);
+            pending.push(left);
+        }
+        semaprax::hir::ResolvedExprKind::If {
+            condition,
+            then_branch,
+            else_branch,
+        } => {
+            pending.push(else_branch);
+            pending.push(then_branch);
+            pending.push(condition);
+        }
+        semaprax::hir::ResolvedExprKind::ConstructRecord { fields, .. }
+        | semaprax::hir::ResolvedExprKind::ConstructVariant { fields, .. } => {
+            pending.extend(fields.iter().rev().map(|field| &field.value));
+        }
+        semaprax::hir::ResolvedExprKind::Match {
+            scrutinee, arms, ..
+        } => {
+            for arm in arms.iter().rev() {
+                pending.push(&arm.value);
+                if let Some(guard) = &arm.guard {
+                    pending.push(guard);
+                }
+            }
+            pending.push(scrutinee);
+        }
+        semaprax::hir::ResolvedExprKind::UpdateRecord { base, fields, .. } => {
+            pending.extend(fields.iter().rev().map(|field| &field.value));
+            pending.push(base);
+        }
+        semaprax::hir::ResolvedExprKind::Int(_)
+        | semaprax::hir::ResolvedExprKind::Int32(_)
+        | semaprax::hir::ResolvedExprKind::Char(_)
+        | semaprax::hir::ResolvedExprKind::Uint8(_)
+        | semaprax::hir::ResolvedExprKind::Usize(_)
+        | semaprax::hir::ResolvedExprKind::ArrayU8(_)
+        | semaprax::hir::ResolvedExprKind::RepeatArrayU8 { .. }
+        | semaprax::hir::ResolvedExprKind::Float32(_)
+        | semaprax::hir::ResolvedExprKind::Float64(_)
+        | semaprax::hir::ResolvedExprKind::Bool(_)
+        | semaprax::hir::ResolvedExprKind::String(_)
+        | semaprax::hir::ResolvedExprKind::BorrowedUtf8Literal(_)
+        | semaprax::hir::ResolvedExprKind::Place(_)
+        | semaprax::hir::ResolvedExprKind::BorrowPlace { .. } => {}
+    }
 }
