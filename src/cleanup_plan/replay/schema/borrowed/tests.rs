@@ -7,7 +7,10 @@ fn line_end() -> crate::hir::ResolvedProgram {
     let end = rest[4..]
         .find("@id(")
         .map_or(rest.len(), |offset| offset + 4);
-    let selected = format!("module std.io.lines;\n{}", &rest[..end]);
+    let selected = format!(
+        "module std.io.lines;\n{}\n@id(\"main\") fn main()->i64 {{0}}",
+        &rest[..end]
+    );
     crate::hir::resolve(&crate::check(&selected, "actual-line-end.spx").unwrap()).unwrap()
 }
 #[test]
@@ -94,14 +97,10 @@ fn independently_mutated_modes_roots_option_metadata_and_loan_generation_refuse(
                 program.functions[0].params[0].id =
                     crate::hir::ValueId::intrinsic_parameter("forged.view", 0)
             }
-            2 => {
-                program
-                    .declarations
-                    .type_parameters
-                    .get_mut(&crate::hir::DeclarationId::new(crate::prelude::OPTION_ID))
-                    .unwrap()[0]
-                    .index = 1
-            }
+            2 => crate::hir::borrowed_scalar::option_u8::forge_parameter_index_for_test(
+                &mut program.declarations,
+                1,
+            ),
             _ => program.functions[0].loan_plan.schema = "forged.loan.generation",
         }
         let function = &program.functions[0];
@@ -115,7 +114,7 @@ fn independently_mutated_modes_roots_option_metadata_and_loan_generation_refuse(
 }
 #[test]
 fn original_lexical_and_writer_priorities_are_not_conferred_by_the_borrowed_profile() {
-    let source = "module lexical; @id(\"lexical.main\") fn main()->i64 {return 42;}";
+    let source = "module lexical; @id(\"lexical.main\") fn main()->i64 {if true {return 42;}else{0} return 0;}";
     let program =
         crate::hir::resolve(&crate::check(source, "lexical-profile.spx").unwrap()).unwrap();
     let function = &program.functions[0];

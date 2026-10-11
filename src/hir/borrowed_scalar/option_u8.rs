@@ -42,4 +42,12 @@ pub(crate) fn selected_profile_ready() -> bool {
     false
 }
 #[cfg(test)]
+pub(crate) fn forge_parameter_index_for_test(index: &mut DeclarationIndex, value: u32) {
+    index
+        .type_parameters
+        .get_mut(&DeclarationId::new(crate::prelude::OPTION_ID))
+        .expect("canonical Option parameter fixture")[0]
+        .index = value;
+}
+#[cfg(test)]
 mod tests;
