@@ -28,7 +28,7 @@ const EXPRESSION_STATEMENT_HELP: &str = "a block is statements followed by exact
                                          expression; an intermediate Copy scalar may use `expr;`, but the final value has no `;`; use an explicit binding for other values \
                                          or move it to the end of the block; `_` is an ordinary binding, \
                                          so use fresh names for repeated discards";
-const IF_STATEMENT_HELP: &str = "an intermediate `if ... else ...` has no trailing `;`; omit it before the next statement or block tail. Keep break/continue/return in statement guards, never in a `let` initializer";
+const IF_STATEMENT_HELP: &str = "a final value expression has no trailing `;`; an intermediate Copy scalar `if ... else ...` may use `;` before another item. Keep break/continue/return in statement guards, never in a `let` initializer";
 /// `println("…");` as a statement: the habit is printing, not the statement.
 const PRINT_NAMES: [&str; 6] = ["print", "println", "printf", "puts", "console_log", "echo"];
 const PRINT_HELP: &str = "there is no print routine; bind the text, then `let view = \

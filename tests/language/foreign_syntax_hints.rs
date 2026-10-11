@@ -222,6 +222,23 @@ fn trailing_expression_semicolon_is_never_silently_rewritten() {
             "{diagnostic}"
         );
     }
+    let diagnostic =
+        rejection("module habit.if_tail; @id(\"app.main\") fn main()->i64 {if true {1} else {2};}");
+    assert_eq!(diagnostic.code, "SPX-P106");
+    assert_eq!(diagnostic.message, "expected `}` after block");
+    assert!(help(&diagnostic).contains("a final value expression has no trailing `;`"));
+    assert!(help(&diagnostic).contains("intermediate Copy scalar `if ... else ...` may use `;`"));
+    assert!(help(&diagnostic).contains("never in a `let` initializer"));
+    let program = semaprax::check(
+        "module habit.if_statement; @id(\"app.main\") fn main()->i64 {if true {1} else {2}; 3}",
+        "habit.spx",
+    )
+    .unwrap();
+    let canonical = semaprax::format::canonical(&program);
+    assert_eq!(
+        canonical,
+        semaprax::format::canonical(&parse(&canonical, "habit.spx").unwrap())
+    );
 }
 
 #[test]
