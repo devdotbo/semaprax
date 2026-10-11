@@ -238,40 +238,32 @@ impl<'a> LayoutClosure<'a> {
         }
         Ok(())
     }
-    /// Bind each copy `append_types` placed at the end of `synthetic` to its
-    /// provider module, identity and declared name for diagnostic presentation.
-    /// The provider name is only context; it is offered as an import alias only
-    /// when the caller has no import, type or function already spelling it.
-    pub(in crate::workspace_graph) fn provider_names(
-        &self,
-        caller: &Program,
-        synthetic: &Program,
-    ) -> Result<Vec<crate::source_verify::private_names::ProviderName>, Vec<Diagnostic>> {
+    /// Bind the copies `append_types` placed at the end of `synthetic` to this
+    /// closure for diagnostic presentation, after checking each is the exact
+    /// appended declaration. The view borrows the closure and both programs,
+    /// so success allocates no slot backing or string copy.
+    pub(in crate::workspace_graph) fn presentation<'s>(
+        &'s self,
+        caller: &'s Program,
+        synthetic: &'s Program,
+    ) -> Result<Option<crate::source_verify::private_names::PrivateNames<'s>>, Vec<Diagnostic>>
+    {
+        if self.entries.is_empty() {
+            return Ok(None);
+        }
         let base = synthetic
             .types
             .len()
             .checked_sub(self.entries.len())
             .ok_or_else(presentation_mismatch)?;
-        let spelled = |name: &str| {
-            caller.module_uses.iter().any(|u| u.alias == name)
-                || caller.types.iter().any(|t| t.name == name)
-                || caller.functions.iter().any(|f| f.name == name)
-        };
-        let mut names = Vec::with_capacity(self.entries.len());
         for (e, copy) in self.entries.iter().zip(&synthetic.types[base..]) {
             if copy.name != e.alias || copy.stable_id != e.declaration.stable_id {
                 return Err(presentation_mismatch());
             }
-            names.push(crate::source_verify::private_names::ProviderName {
-                declaration: copy as *const TypeDeclaration as usize,
-                module: e.module.to_owned(),
-                id: e.declaration.stable_id.clone(),
-                name: e.declaration.name.clone(),
-                explicit: e.declaration.explicit_id,
-                name_free: !spelled(&e.declaration.name),
-            });
         }
-        Ok(names)
+        Ok(Some(crate::source_verify::private_names::PrivateNames::new(
+            synthetic, caller, base, self,
+        )))
     }
     pub(super) fn alias<'b>(&'b self, caller: &'b Program, id: &str) -> Option<&'b str> {
         caller
@@ -292,6 +284,11 @@ impl<'a> LayoutClosure<'a> {
                     .ok()
                     .map(|index| self.entries[index].alias.as_str())
             })
+    }
+}
+impl crate::source_verify::private_names::Providers for LayoutClosure<'_> {
+    fn provider(&self, index: usize) -> Option<(&str, &TypeDeclaration)> {
+        self.entries.get(index).map(|e| (e.module, e.declaration))
     }
 }
 fn private_name(ordinal: u64) -> Result<String, Vec<Diagnostic>> {
