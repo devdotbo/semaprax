@@ -35,6 +35,15 @@ pub(crate) enum ReservationStage {
     SyntheticModule,
     CachedValidation,
     FreshResolution,
+    HirLowering,
+    HirLoanPlans,
+    HirInstanceLoanPlans,
+    HirCleanupInventories,
+    HirInstanceCleanupInventories,
+    HirCleanupPlans,
+    HirYieldProfiles,
+    HirValidation,
+
     RetainedModule,
     LoanIdentityInventory,
     RetainedLoanScratch,
@@ -63,6 +72,15 @@ impl ReservationStage {
             Self::SyntheticModule => "synthetic module construction",
             Self::CachedValidation => "cached HIR validation",
             Self::FreshResolution => "fresh HIR resolution",
+            Self::HirLowering => "HIR expression and type lowering",
+            Self::HirLoanPlans => "HIR function loan plans",
+            Self::HirInstanceLoanPlans => "HIR instance loan plans",
+            Self::HirCleanupInventories => "HIR function cleanup inventories",
+            Self::HirInstanceCleanupInventories => "HIR instance cleanup inventories",
+            Self::HirCleanupPlans => "HIR canonical cleanup plans",
+            Self::HirYieldProfiles => "HIR yield profile validation",
+            Self::HirValidation => "HIR final validation",
+
             Self::RetainedModule => "resolved module retention",
             Self::LoanIdentityInventory => "loan identity inventory",
             Self::RetainedLoanScratch => "retained loan scratch allocation",
@@ -172,21 +190,27 @@ pub(crate) fn with_reservation_stage<T>(
     stage: ReservationStage,
     operation: impl FnOnce() -> T,
 ) -> T {
-    struct Restore(Option<(Rc<Budget>, Option<ReservationStage>)>);
-    impl Drop for Restore {
-        fn drop(&mut self) {
-            if let Some((budget, previous)) = self.0.take() {
-                budget.stage.set(previous);
-            }
-        }
-    }
-    let restore = Restore(active().map(|budget| {
-        let previous = budget.stage.replace(Some(stage));
-        (budget, previous)
-    }));
+    let restore = reservation_stage_guard(stage);
     let value = operation();
     drop(restore);
     value
+}
+
+/// Fixed-size restoration handle. Cloning the existing budget Rc allocates no
+/// backing, and the handle never changes budget ownership or refusal selection.
+pub(crate) struct ReservationStageGuard(Option<(Rc<Budget>, Option<ReservationStage>)>);
+impl Drop for ReservationStageGuard {
+    fn drop(&mut self) {
+        if let Some((budget, previous)) = self.0.take() {
+            budget.stage.set(previous);
+        }
+    }
+}
+pub(crate) fn reservation_stage_guard(stage: ReservationStage) -> ReservationStageGuard {
+    ReservationStageGuard(active().map(|budget| {
+        let previous = budget.stage.replace(Some(stage));
+        (budget, previous)
+    }))
 }
 
 macro_rules! staged {
@@ -1169,3 +1193,6 @@ mod tests {
 
 #[cfg(test)]
 mod refusal_tests;
+
+#[cfg(test)]
+mod resolution_stage_tests;

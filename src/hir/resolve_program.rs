@@ -8,6 +8,7 @@ use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use crate::ast::{
     ImportFailure, ParamMode, ResourceLifecycleKind, Span, Type, TypeDeclarationKind,
 };
+use crate::bounded_output::{reservation_stage_guard, staged, ReservationStage};
 use crate::cleanup::CleanupInventory;
 use crate::cleanup_plan::CleanupPlan;
 use crate::diagnostic::Diagnostic;
@@ -192,6 +193,7 @@ impl Resolver<'_> {
     pub(super) fn resolve(
         mut self,
     ) -> Result<(ResolvedProgram, super::FunctionResolutionWork), Diagnostic> {
+        let _lowering_stage = reservation_stage_guard(ReservationStage::HirLowering);
         let entrypoint = self
             .program
             .functions
@@ -500,19 +502,25 @@ impl Resolver<'_> {
             self.fused_producer,
             &resolved,
         )?;
-        let loan_plans = resolved
-            .functions
-            .iter()
-            .map(|function| crate::loan_plan::build_plan(&resolved, function))
-            .collect::<Result<Vec<_>, _>>()?;
+        let loan_plans = staged!(
+            HirLoanPlans,
+            resolved
+                .functions
+                .iter()
+                .map(|function| crate::loan_plan::build_plan(&resolved, function))
+                .collect::<Result<Vec<_>, _>>()
+        )?;
         for (function, loan_plan) in resolved.functions.iter_mut().zip(loan_plans) {
             function.loan_plan = loan_plan;
         }
-        let instance_loan_plans = resolved
-            .function_instances
-            .iter()
-            .map(|instance| crate::loan_plan::build_plan(&resolved, &instance.function))
-            .collect::<Result<Vec<_>, _>>()?;
+        let instance_loan_plans = staged!(
+            HirInstanceLoanPlans,
+            resolved
+                .function_instances
+                .iter()
+                .map(|instance| crate::loan_plan::build_plan(&resolved, &instance.function))
+                .collect::<Result<Vec<_>, _>>()
+        )?;
         for (instance, loan_plan) in resolved
             .function_instances
             .iter_mut()
@@ -520,19 +528,25 @@ impl Resolver<'_> {
         {
             instance.function.loan_plan = loan_plan;
         }
-        let inventories = resolved
-            .functions
-            .iter()
-            .map(|function| crate::cleanup::build_inventory(&resolved, function))
-            .collect::<Result<Vec<_>, _>>()?;
+        let inventories = staged!(
+            HirCleanupInventories,
+            resolved
+                .functions
+                .iter()
+                .map(|function| crate::cleanup::build_inventory(&resolved, function))
+                .collect::<Result<Vec<_>, _>>()
+        )?;
         for (function, inventory) in resolved.functions.iter_mut().zip(inventories) {
             function.cleanup = inventory;
         }
-        let instance_inventories = resolved
-            .function_instances
-            .iter()
-            .map(|instance| crate::cleanup::build_inventory(&resolved, &instance.function))
-            .collect::<Result<Vec<_>, _>>()?;
+        let instance_inventories = staged!(
+            HirInstanceCleanupInventories,
+            resolved
+                .function_instances
+                .iter()
+                .map(|instance| crate::cleanup::build_inventory(&resolved, &instance.function))
+                .collect::<Result<Vec<_>, _>>()
+        )?;
         for (instance, inventory) in resolved
             .function_instances
             .iter_mut()
@@ -540,42 +554,62 @@ impl Resolver<'_> {
         {
             instance.function.cleanup = inventory;
         }
-        crate::cleanup_plan::attach_program_plans(&mut resolved)?;
-        for function in &resolved.functions {
-            if let Some(yields) = &function.yields {
-                if crate::cleanup_plan::owned_frame_parameter(
-                    &resolved.declarations,
-                    &function.params,
-                ) {
-                    crate::cleanup_plan::owned_frame_liveness(&resolved.declarations, function)?;
-                } else if crate::cleanup_plan::owned_frame_v2_parameter(
-                    &resolved.declarations,
-                    &function.params,
-                ) {
-                    crate::cleanup_plan::owned_frame_v2_liveness(&resolved.declarations, function)?;
-                } else {
-                    crate::cleanup_plan::admit_owned_bytes_profile(function)?;
+        staged!(
+            HirCleanupPlans,
+            crate::cleanup_plan::attach_program_plans(&mut resolved)
+        )?;
+        staged!(
+            HirYieldProfiles,
+            (|| {
+                for function in &resolved.functions {
+                    if let Some(yields) = &function.yields {
+                        if crate::cleanup_plan::owned_frame_parameter(
+                            &resolved.declarations,
+                            &function.params,
+                        ) {
+                            crate::cleanup_plan::owned_frame_liveness(
+                                &resolved.declarations,
+                                function,
+                            )?;
+                        } else if crate::cleanup_plan::owned_frame_v2_parameter(
+                            &resolved.declarations,
+                            &function.params,
+                        ) {
+                            crate::cleanup_plan::owned_frame_v2_liveness(
+                                &resolved.declarations,
+                                function,
+                            )?;
+                        } else {
+                            crate::cleanup_plan::admit_owned_bytes_profile(function)?;
+                        }
+                        if crate::hir::yield_aggregate::has_bytes_leaf(
+                            &resolved.declarations,
+                            &yields.request_type,
+                        ) || crate::hir::yield_aggregate::has_bytes_leaf(
+                            &resolved.declarations,
+                            &yields.response_type,
+                        ) {
+                            crate::cleanup_plan::admit_sequential_aggregate_bytes_profile(
+                                function,
+                            )?;
+                        }
+                    }
                 }
-                if crate::hir::yield_aggregate::has_bytes_leaf(
-                    &resolved.declarations,
-                    &yields.request_type,
-                ) || crate::hir::yield_aggregate::has_bytes_leaf(
-                    &resolved.declarations,
-                    &yields.response_type,
-                ) {
-                    crate::cleanup_plan::admit_sequential_aggregate_bytes_profile(function)?;
-                }
+                Ok::<(), Diagnostic>(())
+            })()
+        )?;
+        self.function_work.static_text = staged!(
+            HirValidation,
+            if self.partition_profile {
+                super::byte_partition::validate_private(&resolved)
+            } else {
+                super::selected_fused_candidate::resolution::validation(
+                    self.program,
+                    self.fused_producer,
+                    &resolved,
+                )
             }
-        }
-        self.function_work.static_text = if self.partition_profile {
-            super::byte_partition::validate_private(&resolved)?
-        } else {
-            super::selected_fused_candidate::resolution::validation(
-                self.program,
-                self.fused_producer,
-                &resolved,
-            )?
-        };
+        )?;
         Ok((resolved, self.function_work))
     }
 

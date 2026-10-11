@@ -493,3 +493,5 @@ fn fresh_resolver_reuses_authenticated_writer_proofs_across_actual_loop_scans() 
     crate::cleanup_plan::validate_program(&restored).unwrap();
     assert_eq!(crate::cache_codec::encode(&restored).unwrap(), wire);
 }
+
+mod reservation_stages;

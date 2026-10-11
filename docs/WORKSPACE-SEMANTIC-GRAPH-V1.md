@@ -593,3 +593,20 @@ scalar relations have no function dependency. Both arrays are derived from
 authenticated Project bytes and included in the graph digest. A Project
 without native laws keeps its previous graph schema and bytes. These rows are
 declarations, not proof or publication authority.
+
+### Nested fresh-resolution attribution (OPT778 diagnostic tranche)
+
+Fresh resolution now holds a fixed compiler-owned lowering label and nests labels
+for function and instance loan plans, function and instance cleanup inventories,
+canonical cleanup plans, yield profiles and final HIR validation. Instance discovery,
+type/expression lowering and provenance construction remain within lowering. The
+first refused reservation keeps its innermost label after return or unwind. Nested
+budgets retain their existing independent unlabelled start and parent restoration.
+
+Stage handles retain the existing budget Rc without allocating another control
+block. Labels are enum values and static strings; there are no per-node formatted
+labels, source-controlled names or hot-path logs. Staging changes neither budget
+layout, debits, floors, ceilings nor failure selection. It identifies the operation
+enclosing a refusal; it does not identify an allocator call or establish retained
+heap/RSS, application recovery or a path-arena saving. OPT778 path representation
+and accounting changes remain outside this diagnostic-only tranche.
