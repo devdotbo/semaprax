@@ -171,7 +171,7 @@ module prefix_forecast;
     let owned = bytes_zeroed(1usize);
     let view = bytes_as_slice(owned);
     let candidate = byte_get(view, 0usize);
-    match candidate { Option::Some { value } => if value == 0u8 { 0 } else { 1 }, Option::None {} => 0 }
+    match candidate { Option::Some { value } => if value == 0u8 { 0 } else { 1 }, Option::None {} => 0, }
 }
 "#;
     let ast = crate::check(source, "prefix-forecast.spx").unwrap();
