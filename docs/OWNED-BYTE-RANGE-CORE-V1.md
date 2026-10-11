@@ -46,3 +46,11 @@ abandonment, and empty/invalid shapes. They are authored, not executed. Actual
 interpreter/native/Wasm integration and all original partition/fusion owning
 gates remain required by [partition](OWNED-BYTE-PARTITION-V1.md) and
 [fusion](OWNED-BYTE-CONSTRUCTION-FUSION-V1.md).
+
+The authored allocator-observer gate separates actual requested table/backing
+bytes from conservative metadata header debits. It observes zero reallocations,
+one original payload backing and three nonempty metadata tables at counts 1 and
+4096 (only the view table at count zero), then zero live requested backing after
+canonical children and context settlement. One-short preflight observes no table
+allocation and preserves the exact original owner. This is an unexecuted
+requested-allocation gate, not malloc-usable-size, RSS or target-backend evidence.

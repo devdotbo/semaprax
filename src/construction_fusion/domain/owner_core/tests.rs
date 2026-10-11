@@ -306,3 +306,67 @@ fn zero_and_invalid_shapes_preserve_transaction_and_issuer_no_wrap() {
     drop(core);
     assert_eq!(p.0.borrow().releases, 1);
 }
+
+#[test]
+fn actual_requested_backing_is_precharged_without_child_payload_allocations() {
+    for count in [0, 1, 4096] {
+        let module = ModuleIdentity::new();
+        let mut issuer = Issuer::new();
+        let p = probe(count);
+        let layouts = Core::<Probe>::metadata_layouts(count).unwrap();
+        let tables = layouts[1].size() + layouts[2].size() + layouts[3].size();
+        let payload = count * 3;
+        let ((), observed) = crate::test_allocation_observer::measure(|| {
+            // Original ordinary producer: one actual backing, debited to the
+            // same account's existing event/payload fields before allocation.
+            let mut runtime = p.clone();
+            runtime.charge_clone(payload).unwrap();
+            let owner = runtime.allocate(payload);
+            let (mut core, mut children) =
+                Core::partition(owner, count, 3, &mut issuer, &module, runtime)
+                    .ok()
+                    .unwrap();
+            assert_eq!(children.len(), count);
+            for child in &mut children {
+                core.drop_owner(child).unwrap();
+            }
+            drop(children);
+            drop(core);
+        });
+        assert!(!observed.invalid);
+        assert_eq!(observed.reallocations, 0);
+        assert_eq!(observed.allocations, if count == 0 { 1 } else { 4 });
+        assert_eq!(observed.allocated, tables + payload);
+        assert_eq!(observed.highwater, tables + payload);
+        assert_eq!(observed.freed, observed.allocated);
+        assert_eq!(observed.live, 0);
+        let account = p.0.borrow();
+        assert_eq!(account.consumed, required(count));
+        assert_eq!(account.remaining, 0);
+        assert_eq!(account.events, 1);
+        assert_eq!(account.payload, payload);
+        assert_eq!(account.allocations, 1);
+        assert_eq!(account.releases, 1);
+        drop(account);
+
+        // All metadata reservations precede all table allocations. Returning
+        // the original owner after a one-short debit allocates no replacement.
+        let p = probe(count);
+        p.0.borrow_mut().remaining -= 1;
+        let original = vec![7u8; payload].into_boxed_slice();
+        let address = original.as_ptr();
+        let (result, refused) = crate::test_allocation_observer::measure(|| {
+            Core::partition(original, count, 3, &mut issuer, &module, p.clone())
+        });
+        let (error, original) = match result {
+            Err(pair) => pair,
+            Ok(_) => panic!("one-short actual preparation allocated tables"),
+        };
+        assert_eq!(error, Refusal::Metadata);
+        assert_eq!(original.as_ptr(), address);
+        assert_eq!(refused, crate::test_allocation_observer::Metrics::default());
+        assert!(p.0.borrow().failed);
+        assert_eq!(p.0.borrow().allocations, 0);
+        assert_eq!(p.0.borrow().releases, 0);
+    }
+}
