@@ -70,7 +70,7 @@ use std::cell::Cell;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 use type_names::type_contains_name_from;
-use validation::{expected_declaration_facts, validate_stub_signatures, WorkspaceValidationIndex};
+use validation::{WorkspaceValidationIndex, expected_declaration_facts, validate_stub_signatures};
 pub(crate) const MAX_FILES: usize = 32;
 const MAX_TOTAL_SOURCE_BYTES: usize = 16 * 1024 * 1024;
 const MAX_DECLARATIONS: usize = 4096;
@@ -1020,7 +1020,7 @@ pub(crate) fn build_owned(
 }
 
 pub(crate) use package::{
-    build_package_scalar_sources, PackageWorkspaceImport, PackageWorkspaceModule,
+    PackageWorkspaceImport, PackageWorkspaceModule, build_package_scalar_sources,
 };
 impl WorkspaceGraphBuild {
     pub(crate) fn contains_module(&self, module: &str) -> bool {
@@ -1337,15 +1337,17 @@ impl WorkspaceGraphBuild {
                     && function.name == "main"
                     && !dependency_anchor
                 {
-                    return Err(vec![project_function_error(
-                        module,
-                        format!(
-                            "workspace scalar provider module `{}` may not declare `main`",
-                            module.module
-                        ),
-                        Some(function.span),
-                    )
-                    .with_help(diagnostics::PROVIDER_MAIN_HELP)]);
+                    return Err(vec![
+                        project_function_error(
+                            module,
+                            format!(
+                                "workspace scalar provider module `{}` may not declare `main`",
+                                module.module
+                            ),
+                            Some(function.span),
+                        )
+                        .with_help(diagnostics::PROVIDER_MAIN_HELP),
+                    ]);
                 }
                 if dependency_anchor {
                     continue;
@@ -2071,15 +2073,17 @@ impl WorkspaceGraphBuild {
                     .iter()
                     .find(|function| function.name == "main")
                     .expect("predicate found provider main");
-                return Err(vec![project_function_error(
-                    module,
-                    format!(
-                        "workspace scalar provider module `{}` may not declare `main`",
-                        module.module
-                    ),
-                    Some(function.span),
-                )
-                .with_help(diagnostics::PROVIDER_MAIN_HELP)]);
+                return Err(vec![
+                    project_function_error(
+                        module,
+                        format!(
+                            "workspace scalar provider module `{}` may not declare `main`",
+                            module.module
+                        ),
+                        Some(function.span),
+                    )
+                    .with_help(diagnostics::PROVIDER_MAIN_HELP),
+                ]);
             }
             // Owned-data and v25 text admission are reachability-gated. Irrelevant
             // verified functions receive no runtime or target authority and
@@ -4111,8 +4115,21 @@ fn build_owned_inner(
     validate_synthetic_main_id_collisions(&programs, &authored)?;
     validate_uses(&programs, &module_paths, &authored)?;
     let dependency_depths = validate_dependency_dag(&programs)?;
+    let retention = if frontend
+        .as_deref()
+        .is_some_and(|cache| cache.retains_checked_hir())
+    {
+        expected_projection::cached_exact::Retention::Semantic
+    } else {
+        expected_projection::cached_exact::Retention::Parsed
+    };
     let (mut resolve_builder_bytes, checked_retention_prebound, allow_uncached_peak, initial_mode) =
-        expected_projection::initial_core_prebound(&programs, &authored, frontend.is_none())?;
+        expected_projection::cached_exact::initial(
+            &programs,
+            &authored,
+            frontend.is_none(),
+            retention,
+        )?;
     if let Some(cache) = frontend.as_deref() {
         cache.checked_retention_prebound(checked_retention_prebound)?;
     }
@@ -4158,7 +4175,14 @@ fn build_owned_inner(
         }
         // Drop partial trees; retain their debit in the maximum phase receipt.
         drop(core);
-        if fallback_mode >= if allow_uncached_peak { 6 } else { 4 } || !retry_allowed {
+        if fallback_mode
+            >= if allow_uncached_peak {
+                6
+            } else {
+                expected_projection::cached_exact::MODE
+            }
+            || !retry_allowed
+        {
             return Err(vec![diagnostics::live_builder_refusal(
                 active_builder_limit(),
                 refusal,
@@ -4177,13 +4201,23 @@ fn build_owned_inner(
             cache.rollback_core_attempt(saved);
             checkpoint = cache.checkpoint_core_attempt();
         }
-        let (tighter, total) = expected_projection::next_retention_prebound_with_uncached_peak(
-            &programs,
-            &authored,
-            resolve_builder_bytes,
-            &mut fallback_mode,
-            allow_uncached_peak,
-        )?;
+        let (tighter, total) = if allow_uncached_peak {
+            expected_projection::next_retention_prebound_with_uncached_peak(
+                &programs,
+                &authored,
+                resolve_builder_bytes,
+                &mut fallback_mode,
+                true,
+            )?
+        } else {
+            expected_projection::cached_exact::next(
+                &programs,
+                &authored,
+                resolve_builder_bytes,
+                &mut fallback_mode,
+                retention,
+            )?
+        };
         if let Some(cache) = frontend.as_deref() {
             cache.checked_retention_prebound(total)?;
         }
@@ -5417,15 +5451,15 @@ fn validate_imported_type(
     if !ty.invariants().is_empty() {
         // Record Invariants v1 checks a record's productions inside the module
         // that declares it; an importer would construct it unchecked.
-        return Err(vec![use_error(
-            caller,
-            module_use,
-            "a record that declares invariants cannot be imported by another module in \
+        return Err(vec![
+            use_error(
+                caller,
+                module_use,
+                "a record that declares invariants cannot be imported by another module in \
              Record Invariants v1",
-        )
-        .with_help(
-            "construct and update the record through functions of its own module",
-        )]);
+            )
+            .with_help("construct and update the record through functions of its own module"),
+        ]);
     }
     if owned_function_import::text_record_import(caller, target, authored, programs) {
         return Ok(());
@@ -5641,7 +5675,8 @@ fn reconstruct_workspace_declaration_facts(
             programs,
             module_uses_record_iterator,
         )?;
-        let private = expected_projection::private_layout::authority::PrivateTypes::derive(source, programs)?;
+        let private =
+            expected_projection::private_layout::authority::PrivateTypes::derive(source, programs)?;
         let synthetic_main = crate::bounded_output::budgeted_format(format_args!(
             "workspace.synthetic.main.{module}"
         ));
@@ -5694,7 +5729,10 @@ fn reconstruct_workspace_declaration_facts(
             };
             if top_fact.module.as_deref() != Some(module.as_str()) {
                 let expected_foreign = expected.get(declaration.id.as_str());
-                if (source.module_uses.iter().any(|u| u.persistent_id == top.as_str())
+                if (source
+                    .module_uses
+                    .iter()
+                    .any(|u| u.persistent_id == top.as_str())
                     || private.contains(top.as_str(), top_fact.module.as_deref())?)
                     && expected_foreign.is_some_and(|fact| {
                         fact.kind == declaration.kind

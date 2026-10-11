@@ -458,8 +458,11 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
         include_str!("../../src/workspace_graph/expected_projection/import_stub.rs"),
         include_str!("../../src/workspace_graph/expected_projection/import_stub/byte_helper.rs"),
     );
-    let projection_uncached_peak =
-        include_str!("../../src/workspace_graph/expected_projection/uncached_peak.rs");
+    let projection_uncached_peak = concat!(
+        include_str!("../../src/workspace_graph/expected_projection/uncached_peak.rs"),
+        include_str!("../../src/workspace_graph/expected_projection/retention.rs"),
+        include_str!("../../src/workspace_graph/expected_projection/cached_exact.rs"),
+    );
     let projection_type_rewrite =
         include_str!("../../src/workspace_graph/expected_projection/type_rewrite.rs");
     let projection_private_layout = concat!(
@@ -467,7 +470,9 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
         include_str!("../../src/workspace_graph/expected_projection/private_layout/names.rs"),
         include_str!("../../src/workspace_graph/expected_projection/private_layout/shape.rs"),
         include_str!("../../src/workspace_graph/expected_projection/private_layout/authority.rs"),
-        include_str!("../../src/workspace_graph/expected_projection/private_layout/authority_tests.rs"),
+        include_str!(
+            "../../src/workspace_graph/expected_projection/private_layout/authority_tests.rs"
+        ),
         include_str!("../../src/workspace_graph/expected_projection/private_layout/tests.rs"),
     );
     let projection = format!(
@@ -480,6 +485,7 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
     let exact_facade = [
         // These helpers are deliberately visible only inside workspace_graph;
         // the exact list prevents the analysis facade from growing silently.
+        "pub(super) mod cached_exact;",
         "pub(super) mod cost;",
         "pub(super) mod private_layout;",
         "pub(super) mod statement_segment;",

@@ -19,6 +19,8 @@ use super::{
     visit_ast_call_sites,
 };
 
+#[path = "expected_projection/cached_exact.rs"]
+pub(super) mod cached_exact;
 #[path = "expected_projection/call_identity.rs"]
 mod call_identity;
 #[path = "expected_projection/call_sites.rs"]
@@ -39,6 +41,8 @@ mod local_identity;
 pub(super) mod private_layout;
 #[path = "expected_projection/record_traversal.rs"]
 mod record_traversal;
+#[path = "expected_projection/retention.rs"]
+mod retention;
 #[path = "expected_projection/sort_keys.rs"]
 mod sort_keys;
 #[path = "expected_projection/statement_segment.rs"]
@@ -49,6 +53,7 @@ pub(super) mod type_rewrite;
 #[path = "expected_projection/uncached_peak.rs"]
 pub(super) mod uncached_peak;
 use cost::{ExpandedDefaultCost, GenericInstanceCost, StructuralCost};
+use retention::retention_prebound;
 // A private source-call admission only; scalar/public export gates are separate.
 pub(super) fn byte_writer_import_authorized<'a>(
     function: &'a Function,
@@ -96,6 +101,24 @@ pub(super) fn synthetic_builder_bytes_scoped(
     layout_mode: u8,
     include_imports: bool,
 ) -> Result<SyntheticBuilderCosts, Vec<Diagnostic>> {
+    synthetic_builder_bytes_scoped_with_retention(
+        program,
+        authored,
+        programs,
+        maximum_identity,
+        include_imports,
+        (layout_mode, cached_exact::Retention::Parsed),
+    )
+}
+fn synthetic_builder_bytes_scoped_with_retention(
+    program: &Program,
+    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+    programs: &[Program],
+    maximum_identity: Option<usize>,
+    include_imports: bool,
+    profile: (u8, cached_exact::Retention),
+) -> Result<SyntheticBuilderCosts, Vec<Diagnostic>> {
+    let (layout_mode, retention) = profile;
     let mut raw = StructuralCost::raw_ast(layout_mode >= 1).with_inline_values(layout_mode >= 2);
     ast_program_cost(program, &mut raw, include_imports)?;
     let layout = private_layout::LayoutClosure::derive(program, authored, programs)?;
@@ -258,9 +281,13 @@ pub(super) fn synthetic_builder_bytes_scoped(
             .max()
             .unwrap_or(0)
     });
-    let fixed_hir_upper = fixed_hir_upper
-        .checked_sub(cost::fixed_hir_discount(layout_mode, &raw, &runtime)?)
-        .expect("literal storage discount retains the complete reduced fixed bundle");
+    let fixed_hir_upper = if layout_mode == cached_exact::MODE {
+        cached_exact::fixed_upper(fixed_hir_upper, &raw, &runtime, retention)?
+    } else {
+        fixed_hir_upper
+            .checked_sub(cost::fixed_hir_discount(layout_mode, &raw, &runtime)?)
+            .expect("literal storage discount retains the complete reduced fixed bundle")
+    };
     let identity_occurrence_upper = identity_slots
         .checked_mul(maximum_identity_bytes)
         .and_then(|bytes| bytes.checked_mul(HIR_IDENTITY_COPY_FACTOR))
@@ -302,64 +329,22 @@ pub(super) fn synthetic_builder_bytes_scoped(
     })
 }
 
-/// Preserve the exact legacy receipt whenever it fits. Only a legacy builder
-/// refusal activates the narrower, still conservative identity universe.
 pub(super) fn checked_retention_prebound(
     programs: &[Program],
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
 ) -> Result<(usize, usize), Vec<Diagnostic>> {
-    checked_retention_prebound_with_uncached_peak(programs, authored, false)
+    retention::checked_retention_prebound(programs, authored)
 }
-
-/// Modes zero through four preserve existing receipts. The uncached core
-/// builds and drops one synthetic AST per source, so only that construction
-/// work may use the final peak-only receipt. A semantic frontend stages those
-/// synthetic ASTs and must retain the ordinary summed receipts.
 pub(super) fn checked_retention_prebound_with_uncached_peak(
     programs: &[Program],
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
     allow_uncached_peak: bool,
 ) -> Result<(usize, usize), Vec<Diagnostic>> {
-    match retention_prebound(programs, authored, false) {
-        Ok(costs) => Ok(costs),
-        Err(errors) if cost::is_builder_refusal(&errors) => {
-            match retention_prebound(programs, authored, true) {
-                Ok(costs) => Ok(costs),
-                Err(errors) if cost::is_builder_refusal(&errors) => {
-                    match retention_prebound_mode(programs, authored, true, 2) {
-                        Ok(costs) => Ok(costs),
-                        Err(errors) if cost::is_builder_refusal(&errors) => {
-                            match retention_prebound_mode(programs, authored, true, 3) {
-                                Err(errors) if cost::is_builder_refusal(&errors) => {
-                                    match retention_prebound_mode(programs, authored, true, 4) {
-                                        Err(errors)
-                                            if cost::is_builder_refusal(&errors)
-                                                && allow_uncached_peak =>
-                                        {
-                                            uncached_peak_prebound(programs, authored)
-                                        }
-                                        result => result,
-                                    }
-                                }
-                                result => result,
-                            }
-                        }
-                        Err(errors) => Err(errors),
-                    }
-                }
-                Err(errors) => Err(errors),
-            }
-        }
-        Err(errors) => Err(errors),
-    }
-}
-
-fn retention_prebound(
-    programs: &[Program],
-    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
-    dependency_scoped: bool,
-) -> Result<(usize, usize), Vec<Diagnostic>> {
-    retention_prebound_mode(programs, authored, dependency_scoped, 0)
+    retention::checked_retention_prebound_with_uncached_peak(
+        programs,
+        authored,
+        allow_uncached_peak,
+    )
 }
 pub(super) fn retention_prebound_mode(
     programs: &[Program],
@@ -367,67 +352,15 @@ pub(super) fn retention_prebound_mode(
     dependency_scoped: bool,
     layout_mode: u8,
 ) -> Result<(usize, usize), Vec<Diagnostic>> {
-    let _precharge = super::diagnostics::precharge_scope();
-    super::diagnostics::begin_precharge_pass();
-    let mut resolve = 0usize;
-    let mut runtime = 0usize;
-    // build_resolved_core calls synthetic_program once per source, in order.
-    // synthetic_program replaces each imported full-function clone's body and
-    // contracts before starting the next import; the finished synthetic
-    // module retains only its stub. Thus retained modules add, while at most
-    // one full imported body is transiently live across the whole loop.
-    let mut transient_peak = 0usize;
-    for program in programs {
-        super::diagnostics::begin_precharge_module(&program.path);
-        let maximum = if dependency_scoped {
-            Some(dependency_identity_max(program, authored, programs)?)
-        } else {
-            None
-        };
-        let costs = if maximum.is_some() {
-            synthetic_builder_bytes_scoped(program, authored, programs, maximum, layout_mode, true)?
-        } else {
-            synthetic_builder_bytes(program, authored, programs)?
-        };
-        let charged = if layout_mode >= 3 {
-            costs.retained_clone_and_hir
-        } else {
-            costs.raw_clone_and_hir
-        };
-        super::diagnostics::record_precharge_module(&program.path, charged);
-        resolve = checked_usage(resolve, charged, "builder_bytes", active_builder_limit())?;
-        transient_peak = transient_peak.max(costs.transient_import_clone);
-        runtime = checked_usage(
-            runtime,
-            costs.runtime,
-            "builder_bytes",
-            active_builder_limit(),
-        )?;
-    }
-    if layout_mode == 3 {
-        resolve = checked_usage(
-            resolve,
-            transient_peak,
-            "builder_bytes",
-            active_builder_limit(),
-        )?;
-    }
-    let total = checked_usage(resolve, runtime, "builder_bytes", active_builder_limit())?;
-    Ok((resolve, total))
+    retention::retention_prebound_mode(programs, authored, dependency_scoped, layout_mode)
 }
-
-/// Return the next strictly smaller core reservation after a real builder
-/// overflow. A refusal in one fallback is not authority to retry the same
-/// reservation or to skip an unrelated diagnostic. The caller owns attempt
-/// rollback and uses `layout_mode = 1` before the first retry, so modes 2
-/// through 4 are considered in order.
 pub(super) fn next_retention_prebound(
     programs: &[Program],
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
     current: usize,
     layout_mode: &mut u8,
 ) -> Result<(usize, usize), Vec<Diagnostic>> {
-    next_retention_prebound_with_uncached_peak(programs, authored, current, layout_mode, false)
+    retention::next_retention_prebound(programs, authored, current, layout_mode)
 }
 
 /// A synthetic module retains its own declarations and explicit imported

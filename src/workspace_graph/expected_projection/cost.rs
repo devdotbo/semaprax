@@ -47,6 +47,7 @@ pub(in crate::workspace_graph) struct StructuralCost {
     pub(super) identity_carriers: usize,
     pub(super) single_identity_carriers: usize,
     pub(super) exact_fixed_discount: usize,
+    pub(super) exact_expressions: usize,
 }
 
 // The final uncached profile uses the complete asserted expression bundle,
@@ -114,6 +115,7 @@ impl StructuralCost {
             identity_carriers: 0,
             single_identity_carriers: 0,
             exact_fixed_discount: 0,
+            exact_expressions: 0,
         }
     }
 
@@ -139,6 +141,12 @@ impl StructuralCost {
     }
 
     pub(super) fn note_exact_expr_fixed_bundle(&mut self) -> Result<(), Vec<Diagnostic>> {
+        self.exact_expressions = checked_usage(
+            self.exact_expressions,
+            1,
+            "builder_bytes",
+            active_builder_limit(),
+        )?;
         let slack = super::super::HIR_FIXED_EXPANSION_FACTOR
             * std::mem::size_of::<crate::ast::Expr>()
             - super::super::HIR_EXPR_FIXED_BUNDLE;
@@ -278,6 +286,7 @@ impl StructuralCost {
             identity_carriers: 0,
             single_identity_carriers: 0,
             exact_fixed_discount: 0,
+            exact_expressions: 0,
         }
     }
 
@@ -731,7 +740,7 @@ fn identity_prebound_carriers_include_transient_super_receivers_in_wide_calls() 
 
 #[cfg(test)]
 mod exact_bundle_tests {
-    use super::{fixed_hir_discount, identity_carriers, StructuralCost};
+    use super::{StructuralCost, fixed_hir_discount, identity_carriers};
 
     #[test]
     fn final_profile_retains_complete_fixed_bundle_and_single_root_carrier() {

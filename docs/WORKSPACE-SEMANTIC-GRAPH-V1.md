@@ -256,6 +256,20 @@ all ten fields from authenticated AST occurrences, rejects missing, extra and
 duplicate occurrences, then checks retained HIR and capability projections.
 Every allocation still consumes the live ledger; the 64 MiB cap is unchanged.
 
+A present frontend has a separate mode-seven exact fallback after every older
+fitting receipt has been considered. It sums the synthetic AST and runtime cost
+of every module; it never selects the mode-five sequential peak or mode-six
+filtered output lifetime. A parsed-only frontend retains one complete HIR bundle.
+A semantic frontend stages a checked-cache HIR clone while core construction
+retains the original, so this forecast charges two complete expression/cleanup
+bundles. The original eight bookkeeping footprints remain charged once;
+only the fixed HIR expression/cleanup bundle is doubled. Shared ExpressionId
+Arc backing is charged by actual constructor occurrence, not twice merely for
+a clone. Other string-copy, declaration, generic/default/import and identity
+ceilings remain charged. The same live builder ledger and checked-module cache
+limit still apply; an exact forecast is not evidence of physical allocation or
+of an application fitting the unchanged limits.
+
 Only an uncached core may use this final sequential-AST peak. The builder
 receipt begins after the authored source programs have been parsed and retained,
 and covers the core's synthetic AST/HIR construction; it does not re-charge

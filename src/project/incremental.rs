@@ -5,7 +5,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
 use crate::ast::Program;
@@ -13,7 +13,7 @@ use crate::diagnostic::Diagnostic;
 use crate::semantic_workspace::SemanticWorkspaceSource;
 use crate::workspace_graph::WorkspaceSource;
 
-use super::{ProjectManifest, ProjectRevision, MAX_PATH_BYTES, MAX_TOTAL_SOURCE_BYTES};
+use super::{MAX_PATH_BYTES, MAX_TOTAL_SOURCE_BYTES, ProjectManifest, ProjectRevision};
 
 #[cfg(all(
     unix,
@@ -409,6 +409,10 @@ impl SelectiveResolvedModule {
     }
 }
 impl FrontendPass {
+    pub(crate) fn retains_checked_hir(&self) -> bool {
+        self.semantic
+    }
+
     pub(crate) fn checkpoint_core_attempt(&self) -> Option<CoreAttemptCheckpoint> {
         if !self.next_checked.is_empty() {
             return None;
@@ -684,9 +688,10 @@ mod semantic_tests {
             functions_reused: 0,
         };
         let checkpoint = pass.checkpoint_core_attempt().unwrap();
-        assert!(pass
-            .checked_retention_prebound(MAX_PROJECT_CHECKED_MODULE_CACHE_PREBOUND)
-            .is_ok());
+        assert!(
+            pass.checked_retention_prebound(MAX_PROJECT_CHECKED_MODULE_CACHE_PREBOUND)
+                .is_ok()
+        );
         let capacity_error = pass
             .checked_retention_prebound(MAX_PROJECT_CHECKED_MODULE_CACHE_PREBOUND + 1)
             .expect_err("one byte over the checked-module cache prebound must refuse");
