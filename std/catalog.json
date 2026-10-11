@@ -3443,6 +3443,21 @@
           "kind": "function",
           "name": "decimal_end",
           "requires": 0
+        },
+        {
+          "description": [
+            "Validate one exact JSON text token after ordinary whole-document grammar.",
+            "The bound is an explicit decoded-byte policy, not an input capability."
+          ],
+          "effects": [],
+          "ensures": 0,
+          "head": [
+            "fn utf8_text_valid(input: borrow Slice<u8>, start: usize, end: usize, max_bytes: usize) -> bool"
+          ],
+          "id": "std.data.json.scan.utf8_text_valid",
+          "kind": "function",
+          "name": "utf8_text_valid",
+          "requires": 0
         }
       ],
       "dependency": "std.data.json.scan = \"^0.1.0\"",
@@ -3767,6 +3782,32 @@
           "id": "std.data.json.utf8.is_utf8",
           "kind": "function",
           "name": "is_utf8",
+          "requires": 0
+        },
+        {
+          "description": [
+            "Bounded JSON text kernels borrow bytes and never construct String owners."
+          ],
+          "effects": [],
+          "ensures": 0,
+          "head": [
+            "fn bounded_valid(input: borrow Slice<u8>, max_bytes: usize) -> bool"
+          ],
+          "id": "std.data.json.utf8.bounded_valid",
+          "kind": "function",
+          "name": "bounded_valid",
+          "requires": 0
+        },
+        {
+          "description": [],
+          "effects": [],
+          "ensures": 0,
+          "head": [
+            "fn quoted_len(input: borrow Slice<u8>, max_bytes: usize) -> usize"
+          ],
+          "id": "std.data.json.utf8.quoted_len",
+          "kind": "function",
+          "name": "quoted_len",
           "requires": 0
         }
       ],

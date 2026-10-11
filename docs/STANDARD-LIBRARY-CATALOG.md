@@ -1974,6 +1974,15 @@ Number bytes are preserved exactly: [start, decimal_end) is the source span.
 fn decimal_end(input: borrow Slice<u8>, start: usize) -> usize
 ```
 
+### `std.data.json.scan.utf8_text_valid`
+
+Validate one exact JSON text token after ordinary whole-document grammar.
+The bound is an explicit decoded-byte policy, not an input capability.
+
+```semaprax
+fn utf8_text_valid(input: borrow Slice<u8>, start: usize, end: usize, max_bytes: usize) -> bool
+```
+
 ## `std.data.json.token`
 
 Package `std/data-json-token`, tier `portable`, status partial. Required project profile: `useful-data.v1`. Dependency: `std.data.json.token = "^0.1.0"`. Targets: `interpreter`, `native-c11`, `core-wasm`.
@@ -2131,6 +2140,20 @@ fn utf8_end(input: borrow Slice<u8>, start: usize) -> usize
 
 ```semaprax
 fn is_utf8(input: borrow Slice<u8>) -> bool
+```
+
+### `std.data.json.utf8.bounded_valid`
+
+Bounded JSON text kernels borrow bytes and never construct String owners.
+
+```semaprax
+fn bounded_valid(input: borrow Slice<u8>, max_bytes: usize) -> bool
+```
+
+### `std.data.json.utf8.quoted_len`
+
+```semaprax
+fn quoted_len(input: borrow Slice<u8>, max_bytes: usize) -> usize
 ```
 
 ## `std.data.json.write`
