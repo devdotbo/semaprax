@@ -92,6 +92,14 @@ pub use static_text::StaticUtf8;
 mod capacity_probe;
 pub mod closure;
 mod expr_nodes;
+#[cfg_attr(
+    not(test),
+    allow(
+        dead_code,
+        reason = "selected only by the pending FusedConstructionV1 capacity and executor entries"
+    )
+)]
+pub(crate) mod fused_construction;
 pub mod lexical_exit;
 pub use lexical_exit::{
     ControlTarget, FlowCompletion, LexicalExitKind, LoopLatchKind, SourceForKind,
