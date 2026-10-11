@@ -1350,14 +1350,14 @@ web = ["calculator.add"]
 std.num = "^0.1.0"
 ```
 
-Tables: ordered sections, blank lines, one-line arrays, no comments. SPX-J100:
-first differing canonical manifest line; frozen v1: six ordered lines.
+Tables: ordered sections; blank lines; one-line arrays; no comments. SPX-J100:
+first differing canonical line; frozen v1: six ordered lines.
 Unknown/reserved keys: SPX-J120. `[package] profile`: boundary carriers.
-Bundled std.*: 0.1.0; unknown packages/ranges: SPX-J121; ordinary resolution separate. `[targets] matrix = ["wasm32"]` rejects native with SPX-J122.
+Bundled std.*: 0.1.0; unknown packages/ranges: SPX-J121; resolution separate. `[targets] matrix = ["wasm32"]` rejects native with SPX-J122.
 [Tables](PACKAGE-MANIFEST-V1.md); [frozen v1](PROJECT-MANIFEST-V1.md).
 
 After `module`: `use function @id("calculator.add") from calculator.core as add;`.
-`entry`: main module. V1: Copy scalars; profiles add stated carriers. SPX-G174: keep unsupported aggregates local or select an admitting profile.
+`entry`: main module. V1: Copy scalars; profiles add carriers. SPX-G174: unsupported aggregates stay local or need an admitting profile.
 H006, 4096 loan points: extract admitted helpers; other causes differ.
 
 Test `main`: 0 succeeds; each `@id` fn test_<name>() -> i64 runs separately.
@@ -1379,13 +1379,16 @@ use native `semaprax test .`. `doctor --profile`: reporting only. V28
 source-command.resource-output.v1 retains v26 ABI; bounded 1 MiB Strings,
 borrowed text/staged output: [limits](PROJECT-MANIFEST-V28.md).
 
-`new <dir> --template stdin-stream-data`/`project-scaffold`: v27
-language-command-io.stream-data.v1; private immutable borrow Vec<T> for all eight
-Copy scalars; main/command fn() -> i64.
-Web/Wasm/npm refuse the native command runtime; pure main/test closures may
-interpret without authority/stdin provider/command adapter.
+`new <dir> --template stdin-stream-data`/`project-scaffold`: v27,
+`language-command-io.stream-data.v1`; main/command fn() -> i64.
+V27 admits immutable `borrow Vec<T>` for
+all eight Copy scalars
+(`i64`, `i32`, `u8`, `usize`, `char`, `f32`, `f64`, `bool`);
+pure `main`/test closures may interpret without
+authority, stdin provider, or command adapter. Web/Wasm/npm refuse v27.
 `stdin-stream-text` stays v25
-for private owned-String helpers. V24/v25 helper boundaries stay closed.
+for private owned-String helpers.
+v24/v25 retain closed helper boundaries.
 [V27](STREAM-DATA-COMMAND-V1.md).
 
 V29: private Copy records/Vec<R>; v30 language-command-io.owned-data.v1:
