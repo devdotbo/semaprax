@@ -298,7 +298,7 @@
       "code": "SPX-T205",
       "rows": [
         {
-          "fix": "Bind String; pass string_as_str(s)",
+          "fix": "Static str\"text\"; or bind String and pass string_as_str(s)",
           "wrote": "literal/String as str arg"
         },
         {
@@ -482,6 +482,15 @@
         {
           "fix": "IDs; acyclic monomorphic; own/borrow; no invariants",
           "wrote": "String/collection record"
+        }
+      ]
+    },
+    {
+      "code": "SPX-T312",
+      "rows": [
+        {
+          "fix": "Bare statement guard; exact else { 0 }; move useful work after it",
+          "wrote": "exit guard has nonzero/owning/view normal arm or is bound"
         }
       ]
     },

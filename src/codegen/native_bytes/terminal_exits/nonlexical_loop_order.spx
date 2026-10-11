@@ -2,19 +2,26 @@ module test.native_terminal_nonlexical_loop;
 
 @id("test.native_terminal_nonlexical_loop.Choice")
 variant Choice {
-    @id("test.native_terminal_nonlexical_loop.Choice.none") None,
-    @id("test.native_terminal_nonlexical_loop.Choice.data") Data {
-        @id("test.native_terminal_nonlexical_loop.Choice.data.payload") payload: Bytes,
+    @id("test.native_terminal_nonlexical_loop.Choice.none")
+    None,
+    @id("test.native_terminal_nonlexical_loop.Choice.data")
+    Data {
+        @id("test.native_terminal_nonlexical_loop.Choice.data.payload")
+        payload: Bytes,
     },
 }
 
 @id("test.native_terminal_nonlexical_loop.weigh")
-fn weigh(value: i64, divisor: i64) -> i64 { value / divisor }
+fn weigh(value: i64, divisor: i64) -> i64
+{
+    value / divisor
+}
 
 // No break/continue: `run` stays nonlexical, so its plan carries no loop
 // execution-boundary certificate while both opposing owners are live.
 @id("test.native_terminal_nonlexical_loop.run")
-fn run(first: i64, second: i64, rounds: i64) -> i64 {
+fn run(first: i64, second: i64, rounds: i64) -> i64
+{
     let seed = [83u8, 87u8];
     let pad1 = 1;
     let older = Choice::Data { payload: bytes_copy(array_as_slice(seed)) };
@@ -38,4 +45,7 @@ fn run(first: i64, second: i64, rounds: i64) -> i64 {
 }
 
 @id("app.main")
-fn main() -> i64 { 0 }
+fn main() -> i64
+{
+    0
+}

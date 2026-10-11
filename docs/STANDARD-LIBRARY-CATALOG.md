@@ -1619,6 +1619,63 @@ with no intermediate buffer, so escapes decode before comparison and
 fn decoded_token_eq(input: borrow Slice<u8>, left: usize, right: usize) -> bool
 ```
 
+### `std.data.json.dec.decoded_byte_at`
+
+One canonical decoded byte at a pull cursor, or 256 when the cursor emits
+none. An admitted raw byte is its own decoded value; an escape uses
+`emit_at`. Unlike `emit_at`, a raw byte needs no `byte_code` probe.
+
+```semaprax
+fn decoded_byte_at(input: borrow Slice<u8>, index: usize, part: usize) -> usize
+    ensures result <= 256usize
+```
+
+### `std.data.json.dec.decoded_fingerprint`
+
+A bounded decoded-key fingerprint `length * 65536 + hash`. The hash folds
+the token's canonical decoded bytes as `(hash * 257 + byte) % 65521`, and
+`length` is its decoded byte count in 1..=limit. Zero means the token is
+not a complete JSON string of that size; the walk stops at the first
+decoded byte past `limit`. Equal fingerprints never prove equal keys.
+
+```semaprax
+fn decoded_fingerprint(input: borrow Slice<u8>, start: usize, limit: usize) -> usize
+    requires limit >= 1usize && limit <= 256usize
+    ensures result < 16842752usize
+```
+
+### `std.data.json.dec.fingerprint_entry`
+
+One bounded Copy index entry: a token's opening offset and fingerprint.
+Offsets admit the 131,072-byte internal owned-view bound.
+
+```semaprax
+fn fingerprint_entry(opening: usize, fingerprint: usize) -> usize
+    requires opening <= 131072usize && fingerprint < 16842752usize
+```
+
+### `std.data.json.dec.entry_opening`
+
+```semaprax
+fn entry_opening(entry: usize) -> usize
+```
+
+### `std.data.json.dec.entry_fingerprint`
+
+```semaprax
+fn entry_fingerprint(entry: usize) -> usize
+    ensures result < 16842752usize
+```
+
+### `std.data.json.dec.fingerprint_match`
+
+A fingerprint only rejects. Every equal fingerprint, including every hash
+collision, is decided by the exact decoded comparison `decoded_token_eq`.
+
+```semaprax
+fn fingerprint_match(input: borrow Slice<u8>, entry: usize, current: usize, fingerprint: usize) -> bool
+```
+
 ## `std.data.json.digits`
 
 Package `std/data-json-digits`, tier `core`, status partial. Required project profile: `scalar`. Dependency: `std.data.json.digits = "^0.1.0"`. Targets: `interpreter`, `native-c11`, `core-wasm`.

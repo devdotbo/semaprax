@@ -2738,6 +2738,99 @@
           "kind": "function",
           "name": "decoded_token_eq",
           "requires": 0
+        },
+        {
+          "description": [
+            "One canonical decoded byte at a pull cursor, or 256 when the cursor emits",
+            "none. An admitted raw byte is its own decoded value; an escape uses",
+            "`emit_at`. Unlike `emit_at`, a raw byte needs no `byte_code` probe."
+          ],
+          "effects": [],
+          "ensures": 1,
+          "head": [
+            "fn decoded_byte_at(input: borrow Slice<u8>, index: usize, part: usize) -> usize",
+            "    ensures result <= 256usize"
+          ],
+          "id": "std.data.json.dec.decoded_byte_at",
+          "kind": "function",
+          "name": "decoded_byte_at",
+          "requires": 0
+        },
+        {
+          "description": [
+            "A bounded decoded-key fingerprint `length * 65536 + hash`. The hash folds",
+            "the token's canonical decoded bytes as `(hash * 257 + byte) % 65521`, and",
+            "`length` is its decoded byte count in 1..=limit. Zero means the token is",
+            "not a complete JSON string of that size; the walk stops at the first",
+            "decoded byte past `limit`. Equal fingerprints never prove equal keys."
+          ],
+          "effects": [],
+          "ensures": 1,
+          "head": [
+            "fn decoded_fingerprint(input: borrow Slice<u8>, start: usize, limit: usize) -> usize",
+            "    requires limit >= 1usize && limit <= 256usize",
+            "    ensures result < 16842752usize"
+          ],
+          "id": "std.data.json.dec.decoded_fingerprint",
+          "kind": "function",
+          "name": "decoded_fingerprint",
+          "requires": 1
+        },
+        {
+          "description": [
+            "One bounded Copy index entry: a token's opening offset and fingerprint.",
+            "Offsets admit the 131,072-byte internal owned-view bound."
+          ],
+          "effects": [],
+          "ensures": 0,
+          "head": [
+            "fn fingerprint_entry(opening: usize, fingerprint: usize) -> usize",
+            "    requires opening <= 131072usize && fingerprint < 16842752usize"
+          ],
+          "id": "std.data.json.dec.fingerprint_entry",
+          "kind": "function",
+          "name": "fingerprint_entry",
+          "requires": 1
+        },
+        {
+          "description": [],
+          "effects": [],
+          "ensures": 0,
+          "head": [
+            "fn entry_opening(entry: usize) -> usize"
+          ],
+          "id": "std.data.json.dec.entry_opening",
+          "kind": "function",
+          "name": "entry_opening",
+          "requires": 0
+        },
+        {
+          "description": [],
+          "effects": [],
+          "ensures": 1,
+          "head": [
+            "fn entry_fingerprint(entry: usize) -> usize",
+            "    ensures result < 16842752usize"
+          ],
+          "id": "std.data.json.dec.entry_fingerprint",
+          "kind": "function",
+          "name": "entry_fingerprint",
+          "requires": 0
+        },
+        {
+          "description": [
+            "A fingerprint only rejects. Every equal fingerprint, including every hash",
+            "collision, is decided by the exact decoded comparison `decoded_token_eq`."
+          ],
+          "effects": [],
+          "ensures": 0,
+          "head": [
+            "fn fingerprint_match(input: borrow Slice<u8>, entry: usize, current: usize, fingerprint: usize) -> bool"
+          ],
+          "id": "std.data.json.dec.fingerprint_match",
+          "kind": "function",
+          "name": "fingerprint_match",
+          "requires": 0
         }
       ],
       "dependency": "std.data.json.dec = \"^0.1.0\"",

@@ -2,25 +2,34 @@ module test.native_terminal_variant_order;
 
 @id("test.native_terminal_variant_order.Choice")
 variant Choice {
-    @id("test.native_terminal_variant_order.Choice.none") None,
-    @id("test.native_terminal_variant_order.Choice.data") Data {
-        @id("test.native_terminal_variant_order.Choice.data.payload") payload: Bytes,
+    @id("test.native_terminal_variant_order.Choice.none")
+    None,
+    @id("test.native_terminal_variant_order.Choice.data")
+    Data {
+        @id("test.native_terminal_variant_order.Choice.data.payload")
+        payload: Bytes,
     },
 }
 
 @id("test.native_terminal_variant_order.Summary")
 record Summary {
-    @id("test.native_terminal_variant_order.Summary.tag") tag: Bytes,
-    @id("test.native_terminal_variant_order.Summary.total") total: i64,
+    @id("test.native_terminal_variant_order.Summary.tag")
+    tag: Bytes,
+    @id("test.native_terminal_variant_order.Summary.total")
+    total: i64,
 }
 
 @id("test.native_terminal_variant_order.descend")
-fn descend(depth: i64) -> i64 {
+fn descend(depth: i64) -> i64
+{
     if depth <= 0 { 0 } else { 1 + descend(depth - 1) }
 }
 
 @id("test.native_terminal_variant_order.weigh")
-fn weigh(value: i64, divisor: i64) -> i64 { value / divisor }
+fn weigh(value: i64, divisor: i64) -> i64
+{
+    value / divisor
+}
 
 @id("test.native_terminal_variant_order.run")
 fn run(depth: i64, first: i64, second: i64, rounds: i64, gate: i64, cap: i64) -> Summary
@@ -44,12 +53,15 @@ fn run(depth: i64, first: i64, second: i64, rounds: i64, gate: i64, cap: i64) ->
     let mut index = 0;
     while index < rounds {
         index = index + 1;
-        if index == 1 { continue; };
-        if index == 3 { break; };
+        if index == 1 { continue; }
+        if index == 3 { break; }
         0
     }
     Summary { tag: bytes_copy(array_as_slice(seed)), total: reached + before + joined + after + index }
 }
 
 @id("app.main")
-fn main() -> i64 { 0 }
+fn main() -> i64
+{
+    0
+}

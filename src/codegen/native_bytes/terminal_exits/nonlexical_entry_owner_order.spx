@@ -2,20 +2,27 @@ module test.native_terminal_nonlexical_entry;
 
 @id("test.native_terminal_nonlexical_entry.Choice")
 variant Choice {
-    @id("test.native_terminal_nonlexical_entry.Choice.none") None,
-    @id("test.native_terminal_nonlexical_entry.Choice.data") Data {
-        @id("test.native_terminal_nonlexical_entry.Choice.data.payload") payload: Bytes,
+    @id("test.native_terminal_nonlexical_entry.Choice.none")
+    None,
+    @id("test.native_terminal_nonlexical_entry.Choice.data")
+    Data {
+        @id("test.native_terminal_nonlexical_entry.Choice.data.payload")
+        payload: Bytes,
     },
 }
 
 @id("test.native_terminal_nonlexical_entry.weigh")
-fn weigh(value: i64, divisor: i64) -> i64 { value / divisor }
+fn weigh(value: i64, divisor: i64) -> i64
+{
+    value / divisor
+}
 
 // `label` is live at function entry. A nonlexical plan has no function-entry
 // boundary certificate, so call-depth or fuel refusal at entry has no exact
 // vector for it once the variant owners make terminal orders contradictory.
 @id("test.native_terminal_nonlexical_entry.run")
-fn run(label: own Bytes, first: i64, second: i64) -> i64 {
+fn run(label: own Bytes, first: i64, second: i64) -> i64
+{
     let seed = [83u8, 87u8];
     let pad1 = 1;
     let older = Choice::Data { payload: bytes_copy(array_as_slice(seed)) };
@@ -35,4 +42,7 @@ fn run(label: own Bytes, first: i64, second: i64) -> i64 {
 }
 
 @id("app.main")
-fn main() -> i64 { 0 }
+fn main() -> i64
+{
+    0
+}
