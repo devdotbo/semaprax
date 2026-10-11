@@ -137,7 +137,8 @@ pub(super) fn check_call(
                 None => {}
             }
         }
-        ByteOp::Len
+        ByteOp::Partition
+        | ByteOp::Len
         | ByteOp::Get
         | ByteOp::Range
         | ByteOp::Copy

@@ -47,6 +47,21 @@ pub(in crate::source_verify) fn verify_selected<'p>(
     selected: Option<&crate::source_verify::fused_construction::SourceProof<'p>>,
     private: Option<crate::source_verify::private_names::PrivateNames<'p>>,
 ) -> Vec<Diagnostic> {
+    verify_profile(program, selected, private, false)
+}
+
+/// Private factory only: all source passes, with the explicit partition
+/// availability guard removed. This does not grant HIR or runtime authority.
+pub(crate) fn verify_partition(program: &Program) -> Vec<Diagnostic> {
+    verify_profile(program, None, None, true)
+}
+
+fn verify_profile<'p>(
+    program: &'p Program,
+    selected: Option<&crate::source_verify::fused_construction::SourceProof<'p>>,
+    private: Option<crate::source_verify::private_names::PrivateNames<'p>>,
+    partition: bool,
+) -> Vec<Diagnostic> {
     let mut diagnostics = Vec::new();
     if let Err(diagnostic) = crate::static_protocol::validate(program) {
         diagnostics.push(diagnostic.at_path(&program.path));
@@ -65,6 +80,27 @@ pub(in crate::source_verify) fn verify_selected<'p>(
     }
     super::stdin_stream::check(program, &mut diagnostics);
     let capacity_functions = source_capacity_functions(program);
+    if !partition {
+        let mut private_call = None;
+        for (_, function) in &capacity_functions {
+            for root in function.requires.iter().chain(std::iter::once(&function.body)).chain(&function.ensures) {
+                root.visit_calls(&mut |name, span| {
+                    if name == crate::construction_fusion::partition::NAME && private_call.is_none() { private_call = Some(span); }
+                });
+            }
+        }
+        for declaration in &program.types {
+            for invariant in declaration.invariants() {
+                invariant.visit_calls(&mut |name, span| {
+                    if name == crate::construction_fusion::partition::NAME && private_call.is_none() { private_call = Some(span); }
+                });
+            }
+        }
+        if let Some(span) = private_call {
+            diagnostics.push(error(program, "SPX-T263", "byte partition requires the private checked source profile", span));
+            return diagnostics;
+        }
+    }
     if capacity_functions.len() > crate::byte_data_capacity::MAX_FUNCTIONS {
         let (_, function) = capacity_functions[crate::byte_data_capacity::MAX_FUNCTIONS];
         diagnostics.push(

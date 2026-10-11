@@ -133,6 +133,7 @@ mod resolve_variant_or;
 mod resolve_vec_call;
 mod resolve_yield;
 pub(crate) mod selected_fused_candidate;
+pub(crate) mod byte_partition;
 mod type_reachability;
 pub(crate) mod vec_constructor;
 pub(crate) use type_reachability::is_admitted_copy_aggregate_variant_field;
@@ -175,6 +176,7 @@ fn validate_selected_with_static_text(
     program: &ResolvedProgram,
     fused: Option<selected_fused_candidate::Selected<'_>>,
 ) -> Result<bool, Diagnostic> {
+    byte_partition::refuse_default(program)?;
     agent_validation::validate(program)?;
     let selected = inspection::validate_with_static_text(program, fused)?;
     crate::loan_plan::validate_program(program)?;
@@ -557,6 +559,7 @@ fn resolve_verified(
         },
         function_work: FunctionResolutionWork::default(),
         fused_producer: None,
+        partition_profile: false,
     })
     .resolve()?;
     let Some(desugared) = record_invariants::desugar(program, &resolved.0) else {
@@ -569,6 +572,7 @@ fn resolve_verified(
         reuse: None,
         function_work: FunctionResolutionWork::default(),
         fused_producer: None,
+        partition_profile: false,
     })
     .resolve()
 }
@@ -649,6 +653,7 @@ struct Resolver<'a> {
     /// The held source selection's exact producer call, set only by the
     /// private selected factory. `None` on every ordinary resolution.
     fused_producer: Option<&'a crate::ast::Expr>,
+    partition_profile: bool,
 }
 
 fn function_reuse_environment_is_exact(current: &Program, previous: &Program) -> bool {

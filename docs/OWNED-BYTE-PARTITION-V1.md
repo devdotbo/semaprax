@@ -333,3 +333,27 @@ host policy before installing the receiver. Computing the forecast never grants
 source authority or automatically creates that funding. The ordinary producer,
 Value installer, retained-frame/public SDK route and all-target activation remain
 closed until their complete receiving obligations are joined.
+
+### Private current-source owner (unqualified receiver integration)
+
+The private compiler factory `hir::byte_partition::ValidatedPartitionProgram`
+resolves the original immutable AST and retains its resulting HIR without
+cloning or replacing either subject. Its read-only `program()` and `source()`
+accessors do not let callers mint another owner. Acquisition and revalidation
+run full source/HIR, canonical cleanup/status and loan checks; the private
+availability selector only admits the exact compiler operation during those
+checks. Ordinary source verification, HIR validation and backend entry remain
+closed. This is source-only implementation awaiting backend qualification,
+not public partition support.
+
+The initial emitted callgraph is monomorphic and acyclic, at most 512 functions,
+with scalar, byte-array, Bytes, Slice and the demanded canonical Vec/Iter/IterStep
+of Bytes and Option of u8 or Bytes types. Authored types, module imports,
+effects, dynamic callable carriers and generic function instances are refused.
+Unused compiler-prelude declarations are not a reason to reject a program;
+actual signature and expression types determine this closed scope. Callgraph
+visits and identity probes consume the caller's held proof work, without a
+fresh receiver allowance. This work receipt does not claim full compiler or
+runtime physical accounting. Runtime funding and whole-owner provenance remain
+separate mandatory receiver checks. Native and Wasm ordinary lowering retain
+explicit refusal until their sealed receivers join this factory.

@@ -6751,6 +6751,9 @@ impl Emitter<'_> {
         }
         require_type(&expr.ty, &op.return_type(), "byte operation result")?;
         match op {
+            crate::byte_ops::ByteOp::Partition => {
+                return Err(error("byte partition requires its checked private receiver"));
+            }
             crate::byte_ops::ByteOp::Len => {
                 let local = self.plan.expr_scalar(expr)?;
                 self.get_scalar(&values[0]);

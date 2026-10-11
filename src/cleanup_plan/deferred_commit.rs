@@ -48,6 +48,7 @@ pub(super) fn call_behavior(
                     | crate::hir::ResolvedType::String
                     | crate::hir::ResolvedType::Nominal { .. }]
             ))
+        || callee.as_str() == crate::construction_fusion::partition::ID
         || is_fallible_byte_operation(callee)
         || (callee.as_str() == crate::box_ops::NEW_ID
             && matches!(type_arguments.as_slice(), [crate::hir::ResolvedType::Bytes]))

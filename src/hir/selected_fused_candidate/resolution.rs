@@ -94,6 +94,7 @@ pub(super) fn resolve_selected<'s>(
         reuse: None,
         function_work: FunctionResolutionWork::default(),
         fused_producer: Some(producer),
+        partition_profile: false,
     }
     .resolve()
     .map(|(resolved, _)| resolved)

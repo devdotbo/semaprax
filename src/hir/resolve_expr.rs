@@ -384,7 +384,7 @@ impl Resolver<'_> {
                                 path,
                                 expr.span,
                             )?;
-                        } else if let Some(op) = crate::byte_ops::by_name(name) {
+                        } else if let Some(op) = self.byte_operation(name)? {
                             if !type_arguments.is_empty() || args.len() != op.arity() {
                                 return Err(self.error(
                                     "SPX-H006",

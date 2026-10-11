@@ -432,6 +432,7 @@ mod tests {
             reuse: None,
             function_work: super::super::FunctionResolutionWork::default(),
             fused_producer: None,
+        partition_profile: false,
         }
     }
 
