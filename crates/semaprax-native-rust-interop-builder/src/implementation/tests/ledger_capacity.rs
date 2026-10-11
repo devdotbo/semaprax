@@ -134,6 +134,8 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
             "\n",
             include_str!("../../../../../src/hir/owned_collection_record.rs"),
             "\n",
+            include_str!("../../../../../src/hir/owned_record_subtree.rs"),
+            "\n",
             include_str!("../../../../../src/hir/projected_string_view.rs"),
             "\n",
             include_str!("../../../../../src/hir/vec_field.rs"),
