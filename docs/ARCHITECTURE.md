@@ -124,7 +124,10 @@ and Wasm emitters use private rendering workers, while Project snapshot replay
 re-resolves format-bearing synthetic source before accepting retained HIR.
 
 The additive retained scalar import route captures defining-source facts in
-`workspace_graph/static_text/scalar_helpers.rs` before HIR filtering.
+`workspace_graph/static_text/scalar_helpers.rs` before HIR filtering. Its
+`scalar_helpers/capture_directory.rs` child precharges borrowed lookup and
+authored-order selection storage, classifying each eligible body once; source,
+signature and digest authentication still precede inventory publication.
 `source_schema/static_text/primitive/helpers.rs` authenticates the demanded acyclic
 closure and exposes exact borrowed function members across modules; imported names
 never enter the consumer's local declaration-name index. The private

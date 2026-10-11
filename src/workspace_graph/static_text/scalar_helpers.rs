@@ -5,6 +5,9 @@ use crate::hir::{
     OwnershipMode, ResolvedExprKind, ResolvedFunction, ResolvedStatement, ResolvedType,
 };
 use primitive::body_digest;
+mod capture_directory;
+#[cfg(test)]
+mod legacy;
 const DEPTH: usize = 514;
 const WORK: usize = 1_048_576;
 pub(in crate::workspace_graph) struct Inventory {
@@ -235,57 +238,8 @@ pub(in crate::workspace_graph) fn capture(
             .ok_or_else(fail)?,
     )?;
     let revision = body_digest::source(&program.path, &program.module, &source.source);
-    let mut count = 0usize;
-    for source in &program.functions {
-        debit(
-            &mut work,
-            source.params.len().checked_add(1).ok_or_else(fail)?,
-        )?;
-        if !source.explicit_id
-            || !source.type_parameters.is_empty()
-            || source.follows.is_some()
-            || source.params.iter().any(|p| {
-                !matches!(
-                    p.mode,
-                    crate::ast::ParamMode::Value | crate::ast::ParamMode::Borrow
-                )
-            })
-        {
-            continue;
-        }
-        let mut current = None;
-        for function in &resolved.functions {
-            debit(
-                &mut work,
-                function
-                    .id
-                    .as_str()
-                    .len()
-                    .checked_add(source.stable_id.len())
-                    .and_then(|n| n.checked_add(1))
-                    .ok_or_else(fail)?,
-            )?;
-            if function.id.as_str() == source.stable_id {
-                if current.replace(function).is_some() {
-                    return Err(fail());
-                }
-            }
-        }
-        let function = current.ok_or_else(fail)?;
-        if source.explicit_id
-            && source.type_parameters.is_empty()
-            && source.follows.is_none()
-            && source.params.iter().all(|p| {
-                matches!(
-                    p.mode,
-                    crate::ast::ParamMode::Value | crate::ast::ParamMode::Borrow
-                )
-            })
-            && pure(function, &mut work)?
-        {
-            count = count.checked_add(1).ok_or_else(capacity)?;
-        }
-    }
+    let candidates = capture_directory::Directory::new(program, resolved, &mut work)?;
+    let count = candidates.count();
     if count == 0 {
         return Ok(None);
     }
@@ -302,55 +256,11 @@ pub(in crate::workspace_graph) fn capture(
     if functions.capacity() != count {
         return Err(capacity());
     }
-    for source in &program.functions {
-        debit(
-            &mut work,
-            source.params.len().checked_add(1).ok_or_else(fail)?,
-        )?;
-        if !source.explicit_id
-            || !source.type_parameters.is_empty()
-            || source.follows.is_some()
-            || source.params.iter().any(|p| {
-                !matches!(
-                    p.mode,
-                    crate::ast::ParamMode::Value | crate::ast::ParamMode::Borrow
-                )
-            })
-        {
+    for (ordinal, source) in program.functions.iter().enumerate() {
+        debit(&mut work, 1)?;
+        let Some(function) = candidates.selected(ordinal) else {
             continue;
-        }
-        let mut current = None;
-        for function in &resolved.functions {
-            debit(
-                &mut work,
-                function
-                    .id
-                    .as_str()
-                    .len()
-                    .checked_add(source.stable_id.len())
-                    .and_then(|n| n.checked_add(1))
-                    .ok_or_else(fail)?,
-            )?;
-            if function.id.as_str() == source.stable_id {
-                if current.replace(function).is_some() {
-                    return Err(fail());
-                }
-            }
-        }
-        let function = current.ok_or_else(fail)?;
-        if !source.explicit_id
-            || !source.type_parameters.is_empty()
-            || source.follows.is_some()
-            || source.params.iter().any(|p| {
-                !matches!(
-                    p.mode,
-                    crate::ast::ParamMode::Value | crate::ast::ParamMode::Borrow
-                )
-            })
-            || !pure(function, &mut work)?
-        {
-            continue;
-        }
+        };
         let mut selected = None;
         for (id, origin) in authored {
             debit(
