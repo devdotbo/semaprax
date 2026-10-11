@@ -17,13 +17,7 @@ fn offset_at(input: borrow Slice<u8>, index: usize, base: u8, span: i64) -> i64
     requires span >= 0 && span <= 127
     ensures result >= -1 && result <= 127
 {
-    match byte_get(input, index) {
-        Option::Some { value: byte } => {
-            let value = i64_from_u8(byte) - i64_from_u8(base);
-            if value >= 0 && value <= span { value } else { -1 }
-        },
-        Option::None {} => -1,
-    }
+    match byte_get(input, index) { Option::Some { value: byte } => { let value = i64_from_u8(byte) - i64_from_u8(base); if value >= 0 && value <= span { value } else { -1 } }, Option::None {} => -1, }
 }
 
 @id("std.data.json.utf8.continuation_at")

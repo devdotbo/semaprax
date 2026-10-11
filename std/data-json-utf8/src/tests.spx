@@ -102,7 +102,7 @@ fn all_offsets() -> bool
         failed = failed + offset_case(byte, 224u8, 15, expected - 224);
         failed = failed + offset_case(byte, 240u8, 4, expected - 240);
         failed = failed + offset_case(byte, 255u8, 127, expected - 255);
-        if expected < 255 { byte = byte + 1u8; 0 } else { 0 };
+        let _ = if expected < 255 { byte = byte + 1u8; 0 } else { 0 };
         expected = expected + 1;
         0
     }

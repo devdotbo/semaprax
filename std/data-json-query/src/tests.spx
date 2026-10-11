@@ -65,7 +65,7 @@ fn all_byte_codes() -> bool
     let mut failed = 0;
     while expected < 256 {
         failed = failed + if byte_code(byte) == expected { 0 } else { 1 };
-        if expected < 255 { byte = byte + 1u8; 0 } else { 0 };
+        let _ = if expected < 255 { byte = byte + 1u8; 0 } else { 0 };
         expected = expected + 1;
         0
     }
