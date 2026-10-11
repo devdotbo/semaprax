@@ -670,3 +670,54 @@ use function @id("rows.first") from rows.provider as first;
         "nested Vec elements remain outside the flat classifier"
     );
 }
+
+const BYTE_WRITER_PROVIDER: &str = r#"module writer.provider;
+@id("writer.write") fn write(text:borrow str,position:usize,output:own Bytes)->Bytes {
+ let first=match str_byte_at(text,0usize){Option::Some{value}=>value,Option::None{}=>0u8,};
+ bytes_set(output,position,first)
+}
+"#;
+const BYTE_WRITER_APP: &str = r#"module writer.app;
+use function @id("writer.write") from writer.provider as write;
+@id("writer.main") fn main()->i64 {
+ let text="A";let output=write(string_as_str(text),0usize,bytes_zeroed(1usize));
+ match byte_get(bytes_as_slice(output),0usize){Option::Some{value}=>i64_from_u8(value),Option::None{}=>0,}
+}
+"#;
+#[test]
+fn internal_byte_writer_import_authenticates_actual_body_and_preserves_public_refusal() {
+    let built = build_owned(sources(BYTE_WRITER_APP, BYTE_WRITER_PROVIDER)).unwrap();
+    let linked = built
+        .linked_owned_data_api_program_with_roots("writer.app", &[])
+        .unwrap();
+    hir::validate(&linked).unwrap();
+    assert!(linked
+        .functions
+        .iter()
+        .any(|function| function.id.as_str() == "writer.write"));
+    let result =
+        crate::interpreter::evaluate_resolved_zero_arg_i64(&linked, "writer.main", 100_000)
+            .unwrap();
+    assert!(matches!(
+        result.outcome,
+        crate::interpreter::ResolvedEvaluationOutcome::ReturnedI64(65)
+    ));
+    crate::codegen::emit_hir_c(&linked).unwrap();
+    let wasm = crate::wasm::emit_resolved_module(&linked).unwrap();
+    wasmparser::Validator::new().validate_all(&wasm).unwrap();
+    assert!(built.linked_scalar_program("writer.app").is_err());
+}
+#[test]
+fn internal_byte_writer_import_refuses_allocating_generic_and_mismatched_owner_providers() {
+    for provider in [
+        BYTE_WRITER_PROVIDER.replace("bytes_set(output,position,first)", "bytes_zeroed(1usize)"),
+        BYTE_WRITER_PROVIDER.replace("fn write(", "fn write<T>("),
+        BYTE_WRITER_PROVIDER.replace("output:own Bytes", "output:borrow Bytes"),
+        BYTE_WRITER_PROVIDER.replace("@id(\"writer.write\") ", ""),
+    ] {
+        let errors = build_owned(sources(BYTE_WRITER_APP, &provider))
+            .err()
+            .expect("unproved writer source must refuse");
+        assert!(errors.iter().any(|error| error.code == "SPX-G172"));
+    }
+}

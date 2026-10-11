@@ -500,6 +500,14 @@ import, source-repair, or filesystem authority.
 Non-executable import prototypes for exact one-Bytes-plus-usize owner renewal
 forward their existing owning parameter when the remaining operands are the
 admitted scalar values, borrowed records, or borrowed `Slice<u8>`/`str` views.
+The same internal source lane admits a monomorphic, effect-free Bytes writer
+with exactly one `own Bytes` parameter, a Bytes result, and only scalar value
+or borrowed `str`/`Slice<u8>` companions. Import validation independently proves
+the actual current provider's nonallocating transitive body before admission;
+the projection repeats that proof before forwarding the existing owner. A
+matching signature alone is insufficient. Allocating, generic, ambiguous or
+foreign-origin providers retain the ordinary refusal, and public scalar/host
+export roots gain no Bytes result authority.
 Factories retain their bounded default prototypes. Linked execution replaces
 every prototype with the real provider body and independently revalidates
 allocation reachability, ownership, loans and canonical cleanup. Forwarding

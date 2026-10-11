@@ -80,7 +80,7 @@ fn paired_plan_is_one_checked_revision_with_order_independent_exact_replay() {
             assert_eq!(
                 source.sha256,
                 format!(
-                    "{:x}",
+                    "sha256:{:x}",
                     semaprax::digest_hex::LowerHex(Sha256::digest(source.source.as_bytes()))
                 )
             );

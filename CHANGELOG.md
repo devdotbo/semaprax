@@ -770,6 +770,8 @@ format: `Unreleased` then release buckets, grouped by impact.
 
 ## Unreleased
 
+- Correct Catalog sorted-owner names, preserve canonical prefixed codec-plan digests, and reuse the canonical command manifest for the full 264-value UTF-8 oracle. Source-only Bytes writer imports independently authenticate their current nonallocating provider before forwarding an owner; public export profiles are unchanged.
+
 - Generated identifier-view JSON encoders renew one String prefix through ordinary consuming append, avoiding scope-long immutable prefix owners without changing wire bytes or limits. The codec-plan regression now authenticates unchanged dependency bytes and SHA-256 separately from canonical generated members, and checks canonical idempotence for every candidate.
 
 

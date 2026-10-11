@@ -327,6 +327,14 @@ pub(super) fn validate_imported_function(
     {
         return Ok(());
     }
+    if expected_projection::byte_writer_import_authorized(
+        function,
+        target.module,
+        authored,
+        programs,
+    )? {
+        return Ok(());
+    }
     let byte_parameter = package::admitted_byte_parameter;
     let borrowed_copy_vec_parameter = |param: &crate::ast::Param| {
         param.mode == ParamMode::Borrow && crate::vec_ops::ast_copy_vec(&param.ty)

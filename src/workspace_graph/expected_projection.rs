@@ -46,6 +46,16 @@ mod type_rewrite;
 #[path = "expected_projection/uncached_peak.rs"]
 pub(super) mod uncached_peak;
 use cost::{ExpandedDefaultCost, GenericInstanceCost, StructuralCost};
+// A private source-call admission only; scalar/public export gates are separate.
+pub(super) fn byte_writer_import_authorized<'a>(
+    function: &'a Function,
+    module: &str,
+    authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,
+    programs: &'a [Program],
+) -> Result<bool, Vec<Diagnostic>> {
+    import_stub::byte_writer_import_authorized(function, module, authored, programs)
+}
+
 use declaration_cost::{
     ast_field_cost, ast_function_contract_cost, ast_function_cost, ast_function_signature_cost,
     ast_program_cost,
@@ -1669,7 +1679,7 @@ fn collect_expression_type_edges(
         | ExprKind::Float64(_)
         | ExprKind::Bool(_)
         | ExprKind::String(_)
-| ExprKind::BorrowedUtf8Literal(_)
+        | ExprKind::BorrowedUtf8Literal(_)
         | ExprKind::ArrayU8(_)
         | ExprKind::RepeatArrayU8 { .. }
         | ExprKind::Var(_) => {}

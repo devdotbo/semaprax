@@ -15,6 +15,46 @@ pub(super) fn byte_helper_authorized<'a>(
         .map_err(|error| vec![error])
 }
 
+/// The import signature alone does not authorize a forwarding prototype.
+/// Reuse the ordinary provider/body proof before admitting this source-only
+/// Bytes writer; the later projection independently replays it again.
+pub(super) fn byte_writer_import_authorized<'a>(
+    function: &'a Function,
+    module: &str,
+    authored: &'a std::collections::BTreeMap<&'a str, super::AuthoredDeclaration<'a>>,
+    programs: &'a [crate::ast::Program],
+) -> Result<bool, Vec<crate::diagnostic::Diagnostic>> {
+    let closed = function.explicit_id
+        && function.type_parameters.is_empty()
+        && function.effects.is_empty()
+        && function.yields.is_none()
+        && function.follows.is_none()
+        && function.return_type == Type::Bytes
+        && function
+            .params
+            .iter()
+            .filter(|parameter| parameter.mode == ParamMode::Own && parameter.ty == Type::Bytes)
+            .count()
+            == 1
+        && function
+            .params
+            .iter()
+            .all(|parameter| match parameter.mode {
+                ParamMode::Own => parameter.ty == Type::Bytes,
+                ParamMode::Borrow => matches!(parameter.ty, Type::Str | Type::SliceU8),
+                ParamMode::Value => crate::source_verify::is_scalar_source_type(&parameter.ty),
+                ParamMode::Shared => false,
+            });
+    if !closed {
+        return Ok(false);
+    }
+    byte_helper_authorized(
+        function,
+        module,
+        &mut ByteHelperProofs::new(authored, programs),
+    )
+}
+
 pub(super) fn signature(function: &Function) -> Function {
     Function {
         stable_id: function.stable_id.clone(),
