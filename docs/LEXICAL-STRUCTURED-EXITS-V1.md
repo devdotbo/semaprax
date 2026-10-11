@@ -309,6 +309,25 @@ backing independently of reservation arithmetic. They retain exact/+1 source
 limits and one-short/sticky backing refusal; these observations do not establish
 RSS bounds or measured agent-token, billed-cost or application speed gains.
 
+### Inactive reachable context inventory prerequisite
+
+`cleanup_plan::replay::context_closure` constructs a private borrowed inventory
+for an exact held monomorphic function, its ordinary callees, and nongeneric
+record/variant signature dependencies. Contracts and bodies are scanned; current
+namespace membership, declaration kind/owner and field/case parity are checked.
+Callee and type cycles refuse. Reference/state tables and fixed cursors are
+reserved before construction against the same cumulative physical/work budgets.
+Unrelated declarations confer no authority and need not enter this inventory.
+
+This inventory is inactive and is not a current-source validation lease,
+`ReplayContext`, storage classification or selected replay admission. Ordinary
+whole-program validation remains mandatory. Reachable generic/import/dynamic
+callables, compiler intrinsics, resource/class types and expression metadata not
+fully reconstructed by this first inventory refuse. Nominal dependency discovery
+therefore does not admit nested/Vec storage or qualify an application. Owning
+executable qualification and the exact authenticated activation boundary remain
+pending for OPT #745.
+
 ## Iterator composition qualification
 
 The constructor declares lexical status producers in complete typed authored
