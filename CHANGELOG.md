@@ -1,6 +1,7 @@
 # Changelog
 
 - Borrow immutable Kernel-0 parameter and local identities in call-local evaluator environments (partial OPT708), removing larger inline identity slots and Arc clone/drop traffic. Reverse shadowing, fresh calls, lazy/first-fault behavior and source binding remain unchanged. Saved owned-environment and literal allocation controls are authored; execution and whole-formatter performance remain pending.
+- Add internal monomorphic whole-subtree `match own` record bindings (OPT779). Source/HIR checks retain exact field identities, full inherited limits and descendant-loan blocking; independent cleanup transfers map the complete child leaf suffixes. Native and Wasm use existing fieldwise carrier moves, and frozen public profiles remain closed. Recursive-control, failure, hidden-limit and plan-forgery gates are authored; qualification, cache/full-allocation accounting and original Catalog acceptance remain pending.
 
 - Remove temporary owned declaration IDs from all five Kernel-0 renderer entry lookups (partial OPT708). Exact current-program lookup order, source binding, evaluation and settlement are unchanged. Independent lookup allocation and authenticated evaluator parity controls are authored; qualification and whole-formatter performance remain pending.
 

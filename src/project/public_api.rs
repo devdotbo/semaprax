@@ -653,6 +653,9 @@ fn expression_reaches_import(root: &ResolvedExpr) -> Result<bool, Diagnostic> {
             } => {
                 pending.push(scrutinee);
                 for arm in arms {
+                    if crate::hir::owned_record_subtree::pattern_requires_profile(&arm.pattern) {
+                        return Err(api_error("whole owned-record subtree bindings are outside the frozen public profile"));
+                    }
                     if let Some(guard) = &arm.guard {
                         pending.push(guard);
                     }

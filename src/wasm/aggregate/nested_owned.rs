@@ -276,6 +276,12 @@ pub(super) fn owned_record_pattern_anchors(
             crate::hir::ResolvedRecordMatchFieldPattern::Binding(binding)
                 if matches!(binding.ty, ResolvedType::Bytes | ResolvedType::String)
                     || crate::map_ops::is_collection(&binding.ty)
+                    || (binding.ownership == crate::hir::OwnershipMode::Own
+                        && crate::hir::owned_record_subtree::admitted(
+                            &program.declarations,
+                            &binding.ty,
+                            &binding.ty,
+                        ))
                     || crate::hir::owned_collection_record::vector(
                         &program.declarations,
                         &binding.ty,
@@ -361,15 +367,25 @@ pub(super) fn bind_record_match_pattern(
                     value_type(&projected),
                     "record pattern binding",
                 )?;
-                if !nested_record_binding_is_exact(record_contains_owned_bytes(
-                    emitter.program,
-                    &binding.ty,
-                )?) {
+                let subtree = mode == crate::hir::ResolvedMatchMode::Own
+                    && binding.ownership == crate::hir::OwnershipMode::Own
+                    && crate::hir::owned_record_subtree::admitted(
+                        &emitter.program.declarations,
+                        frame.instance,
+                        &binding.ty,
+                    );
+                if !subtree
+                    && !nested_record_binding_is_exact(record_contains_owned_bytes(
+                        emitter.program,
+                        &binding.ty,
+                    )?)
+                {
                     return Err(error(
                         "owning nested record binding reached exact destructuring lowering",
                     ));
                 }
-                if matches!(binding.ty, ResolvedType::Bytes | ResolvedType::String)
+                if subtree
+                    || matches!(binding.ty, ResolvedType::Bytes | ResolvedType::String)
                     || crate::map_ops::is_collection(&binding.ty)
                     || crate::hir::owned_collection_record::vector(
                         &emitter.program.declarations,

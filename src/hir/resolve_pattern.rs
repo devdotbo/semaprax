@@ -111,6 +111,7 @@ impl Resolver<'_> {
         span: Span,
         mode: ResolvedMatchMode,
     ) -> Result<ResolvedMatchPattern, Diagnostic> {
+        let expected_root = expected;
         let exact_recursive = mode != ResolvedMatchMode::Value
             && super::type_reachability::is_nested_nonflat_owned_byte_record(
                 &self.declarations,
@@ -249,6 +250,12 @@ impl Resolver<'_> {
                     match &field.pattern {
                         crate::ast::RecordMatchFieldPattern::Binding { name, span } => {
                             if exact_recursive
+                                && !(mode == ResolvedMatchMode::Own
+                                    && super::owned_record_subtree::admitted(
+                                        &self.declarations,
+                                        expected_root,
+                                        &field_ty,
+                                    ))
                                 && !crate::map_ops::is_collection(&field_ty)
                                 && matches!(
                                     &field_ty,

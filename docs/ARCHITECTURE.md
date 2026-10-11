@@ -1104,6 +1104,13 @@ transition; Graph v28/v29 distinguish destructuring without and with an
 authenticated nested projected loan. The interpreter, native C11 and Core Wasm
 remain fieldwise, while variants, mutation and every public ABI stay closed.
 
+The additive internal [whole-subtree binding v2](NESTED-OWNED-RECORD-DESTRUCTURING-V2.md)
+uses `hir/owned_record_subtree.rs` and the independent source-type receiver to
+validate the complete monomorphic root, including hidden child descendants.
+Cleanup construction and replay map the existing exact field-prefix transfer
+onto a complete child binding inventory; native/Wasm retain fieldwise moves.
+Frozen public profiles explicitly reject these bindings. Qualification is pending.
+
 The successor [Acyclic Nested Owned-Record Immutable Update
 v1](NESTED-OWNED-RECORD-UPDATE-V1.md) admits only top-level immutable
 reconstruction of that same closed record tree. CleanupPlan v9 authenticates

@@ -1892,6 +1892,7 @@ impl<'a> HirValidator<'a> {
         path: &str,
         mode: ResolvedMatchMode,
     ) -> Result<(), Diagnostic> {
+        let expected_root = expected;
         let exact_recursive = mode != ResolvedMatchMode::Value
             && super::type_reachability::is_nested_nonflat_owned_byte_record(
                 &self.program.declarations,
@@ -2059,6 +2060,12 @@ impl<'a> HirValidator<'a> {
                                     || hir_error("resolved record field has no exact type facts"),
                                 )?;
                             if exact_recursive
+                                && !(mode == ResolvedMatchMode::Own
+                                    && super::owned_record_subtree::admitted(
+                                        &self.program.declarations,
+                                        expected_root,
+                                        &field_ty,
+                                    ))
                                 && type_profiles::requires_record_pattern(self.program, &field_ty)
                             {
                                 return Err(hir_error(

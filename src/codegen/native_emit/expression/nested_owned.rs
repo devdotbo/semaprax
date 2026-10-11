@@ -40,6 +40,12 @@ pub(super) fn owned_record_pattern_anchors(
             crate::hir::ResolvedRecordMatchFieldPattern::Binding(binding)
                 if matches!(binding.ty, ResolvedType::Bytes | ResolvedType::String)
                     || crate::map_ops::is_collection(&binding.ty)
+                    || (binding.ownership == hir::OwnershipMode::Own
+                        && hir::owned_record_subtree::admitted(
+                            &program.declarations,
+                            &binding.ty,
+                            &binding.ty,
+                        ))
                     || crate::hir::owned_collection_record::vector(
                         &program.declarations,
                         &binding.ty,
@@ -199,6 +205,21 @@ pub(super) fn bind_record_match_pattern<O: COutput>(
                             ));
                         }
                     }
+                } else if frame.binding_mode.mode == hir::ResolvedMatchMode::Own
+                    && binding.ownership == hir::OwnershipMode::Own
+                    && hir::owned_record_subtree::admitted(
+                        &emitter.program.declarations,
+                        &frame.expected,
+                        &layout_field.ty,
+                    )
+                {
+                    // Flags and leaf slots were transferred by the canonical
+                    // match phase. Materialize the ordinary aggregate carrier
+                    // fieldwise, including Copy fields, and clear staged owners.
+                    let name = emitter.temporary(&binding.ty)?;
+                    emitter.zero_owned_record_bytes(&name, &binding.ty)?;
+                    emitter.move_owned_record_fields(&name, &field_code, &binding.ty)?;
+                    name
                 } else if !nested_record_binding_is_exact(
                     emitter.record_contains_owned_bytes(&layout_field.ty)?,
                 ) {

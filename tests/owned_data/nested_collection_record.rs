@@ -3,6 +3,7 @@ use semaprax::interpreter::{self, InterpreterOptions};
 use std::sync::atomic::{AtomicU64, Ordering};
 #[path = "nested_collection_record/failure.rs"]
 pub(super) mod failure;
+mod subtree;
 
 static NEXT: AtomicU64 = AtomicU64::new(0);
 const ROWS: &str = include_str!("../fixtures/nested-collection-records.spx");

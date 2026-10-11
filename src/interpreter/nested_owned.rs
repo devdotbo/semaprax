@@ -648,6 +648,7 @@ fn pattern_is_exact(
     pattern: &hir::ResolvedMatchPattern,
     _active: &mut BTreeSet<hir::DeclarationId>,
 ) -> bool {
+    let expected_root = ty;
     enum Frame<'a> {
         Enter {
             ty: ResolvedType,
@@ -740,7 +741,14 @@ fn pattern_is_exact(
                     .is_some_and(|profile| profile.has_bytes);
             match &field.pattern {
                 hir::ResolvedRecordMatchFieldPattern::Binding(binding) => {
+                    let subtree = mode == hir::ResolvedMatchMode::Own
+                        && hir::owned_record_subtree::admitted(
+                            declarations,
+                            expected_root,
+                            &declared_ty,
+                        );
                     if owns
+                        && !subtree
                         && !(matches!(declared_ty, ResolvedType::Bytes | ResolvedType::String)
                             || crate::map_ops::is_collection(&declared_ty)
                             || hir::owned_collection_record::vector(declarations, &declared_ty))

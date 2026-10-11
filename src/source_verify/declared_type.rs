@@ -1226,6 +1226,7 @@ pub(super) fn check_record_pattern(
     span: Span,
     mode: MatchMode,
 ) {
+    let expected_root = expected;
     let exact_recursive = mode != MatchMode::Value
         && (types.is_nested_owned_byte_record(expected)
             || string_record::runtime_admitted(expected, types))
@@ -1356,7 +1357,10 @@ pub(super) fn check_record_pattern(
                 });
                 match &field.pattern {
                     RecordMatchFieldPattern::Binding { name, span } => {
+                        let subtree = mode == MatchMode::Own
+                            && subtree::admitted(expected_root, &field_ty, types);
                         if exact_recursive
+                            && !subtree
                             && !crate::map_ops::ast_collection(&field_ty)
                             && !collection_record::vector(types, &field_ty)
                             && types.record_fields(&field_ty).is_some()
@@ -1462,3 +1466,5 @@ pub(super) fn ordinary_record_match_result(
                 || types.is_nested_owned_byte_record(ty)
                 || string_record::runtime_admitted(ty, types)))
 }
+
+mod subtree;
