@@ -231,6 +231,11 @@ fn lexical_byte_renewal_has_direct_proof_and_retained_composition_stays_closed()
 fn retained_primitive_static_lexical_replays_graph_and_runtime() {
     let retained = build(LEXICAL_SOURCE);
     assert_eq!(
+        schema(writer(&retained), &retained.hir.declarations).unwrap(),
+        Some("semaprax.graph.v77"),
+        "exact literal-site authentication precedes primitive lexical replay"
+    );
+    assert_eq!(
         retained.source_graph_schemas().unwrap()["writer.spx"],
         "semaprax.graph.v77"
     );

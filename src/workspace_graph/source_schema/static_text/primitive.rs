@@ -147,7 +147,33 @@ pub(in crate::workspace_graph::source_schema) fn replay(
             physical = crate::cleanup_plan::validate_retained_lexical_with_reservation(
                 &context, function, physical,
             )
-            .map_err(|_| fail())?;
+            .map_err(|error| {
+                let errors = fail();
+                // Keep the public retained-source diagnostic stable. Owning
+                // tests must distinguish its independently replayed cause from
+                // a literal-site/namespace mismatch before proposing a repair.
+                #[cfg(test)]
+                let errors = errors
+                    .into_iter()
+                    .map(|diagnostic| {
+                        let prefix = error.message.get(..error.message.len().min(512));
+                        let detail = prefix.unwrap_or_else(|| {
+                            let mut end = error.message.len().min(512);
+                            while !error.message.is_char_boundary(end) {
+                                end -= 1;
+                            }
+                            &error.message[..end]
+                        });
+                        diagnostic.with_help(format!(
+                            "independent primitive lexical replay for `{}`: {}: {}",
+                            function.id, error.code, detail
+                        ))
+                    })
+                    .collect();
+                #[cfg(not(test))]
+                let _ = error;
+                errors
+            })?;
             found = true;
         }
     }
