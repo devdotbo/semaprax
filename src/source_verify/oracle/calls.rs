@@ -13,7 +13,7 @@ use crate::source_verify::declared_type::{
 use crate::source_verify::diagnostics::{error, reject_native_unit_value};
 use crate::source_verify::hints;
 use crate::source_verify::oracle::check_expr;
-use crate::source_verify::type_table::{resolve_class_method, TypeTable};
+use crate::source_verify::type_table::{TypeTable, resolve_class_method};
 use std::collections::HashMap;
 
 #[allow(clippy::too_many_arguments, clippy::ptr_arg)]
@@ -225,14 +225,32 @@ pub(super) fn oracle_call(
         args
     };
     if let Some(op) = crate::vec_ops::by_name(name) {
-        let element = type_arguments.first();
-        if type_arguments.len() != 1
-            || element.is_none_or(|ty| {
-                !crate::source_verify::declared_type::owned_leaf_collection::vec_operation_admitted(
-                    types, op, ty,
-                ) && !crate::vec_ops::source_parameter_is_admitted(program, current, op, ty)
-            })
+        if op == crate::vec_ops::VecOp::StrAt
+            && (!current.type_parameters.is_empty()
+                || crate::source_verify::string_slot::root(type_arguments, args, variables)
+                    .is_none())
         {
+            diagnostics.push(error(
+                program,
+                "SPX-T281",
+                crate::vec_ops::string_slot::SHAPE,
+                expr.span,
+            ));
+        }
+        let element = if op == crate::vec_ops::VecOp::StrAt {
+            Some(&Type::String)
+        } else {
+            type_arguments.first()
+        };
+        if (if op == crate::vec_ops::VecOp::StrAt {
+            !type_arguments.is_empty()
+        } else {
+            type_arguments.len() != 1
+        }) || element.is_none_or(|ty| {
+            !crate::source_verify::declared_type::owned_leaf_collection::vec_operation_admitted(
+                types, op, ty,
+            ) && !crate::vec_ops::source_parameter_is_admitted(program, current, op, ty)
+        }) {
             diagnostics.push(error(
                 program,
                 "SPX-T281",
@@ -319,7 +337,15 @@ pub(super) fn oracle_call(
             );
         }
         return element.map(|element| {
-            CheckedValue::returned(op.ast_return_type(element), op.returns_owner())
+            if op == crate::vec_ops::VecOp::StrAt {
+                CheckedValue {
+                    ty: Type::Str,
+                    mode: ParamMode::Borrow,
+                    native_unit: false,
+                }
+            } else {
+                CheckedValue::returned(op.ast_return_type(element), op.returns_owner())
+            }
         });
     }
     if let Some(op) = crate::list_ops::by_name(name) {

@@ -72,6 +72,7 @@ pub enum ByteSliceRootKind {
     OwnedBytes,
     /// Exact indexed field of a borrowed, generation-protected owned Vec.
     OwnedVectorField,
+    OwnedVectorStringSlot,
     /// Fused `str_as_bytes(string_as_str(owner))` over one exact owned
     /// String root. The fused HIR operation retains the root String identity.
     OwnedString,

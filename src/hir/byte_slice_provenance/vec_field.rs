@@ -13,6 +13,23 @@ pub(super) fn origin(
             return Some(fact);
         }
     }
+    if let Some(slot) = crate::vec_ops::string_slot::inspect(expression) {
+        let ResolvedExprKind::Place(place) = &slot.source.kind else {
+            return None;
+        };
+        return Some(ByteSliceProvenance {
+            vector_field: None,
+            root: place.root.clone(),
+            projections: Vec::new(),
+            projected_type: ResolvedType::String,
+            root_kind: ByteSliceRootKind::OwnedVectorStringSlot,
+            root_length: ByteSliceExtent::ValueLength,
+            offset: ByteSliceExtent::Constant(0),
+            length: ByteSliceExtent::ValueLength,
+            producer: Some(expression.id.clone()),
+            ranges: Vec::new(),
+        });
+    }
     let ResolvedExprKind::VecFieldRead {
         element,
         field,

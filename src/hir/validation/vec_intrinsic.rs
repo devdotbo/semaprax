@@ -113,6 +113,9 @@ pub(super) fn signature(
     {
         return Err(hir_error("invalid vector operation call shape"));
     }
+    if op == crate::vec_ops::VecOp::StrAt && !crate::vec_ops::string_slot::arguments(args) {
+        return Err(hir_error(crate::vec_ops::string_slot::SHAPE));
+    }
     if op == crate::vec_ops::VecOp::SortBy
         && crate::vec_ops::sort_keys::replay(declarations, &type_arguments[0], callee.as_str())
             .is_none()
@@ -123,6 +126,10 @@ pub(super) fn signature(
     }
     Ok(Some((
         crate::vec_ops::resolved_params_in(declarations, op, &type_arguments[0]),
-        op.resolved_return_type(&type_arguments[0]),
+        if callee.as_str() == crate::vec_ops::string_slot::BYTES_ID {
+            ResolvedType::SliceU8
+        } else {
+            op.resolved_return_type(&type_arguments[0])
+        },
     )))
 }

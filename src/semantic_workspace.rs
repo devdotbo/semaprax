@@ -14,7 +14,7 @@ use serde_json::{Map, Value};
 use sha2::{Digest, Sha256};
 
 use crate::bounded_output::CappedString;
-use crate::diagnostic::{quote_json, Diagnostic};
+use crate::diagnostic::{Diagnostic, quote_json};
 use crate::{graph, review, workspace, workspace_graph};
 
 pub(crate) const PATH_SET_SCHEMA: &str = "semaprax.workspace-semantic-path-set.v1";
@@ -1073,6 +1073,7 @@ fn is_source_graph_schema(value: &str) -> bool {
             | "semaprax.graph.v76"
             | "semaprax.graph.v78"
             | "semaprax.graph.v79"
+            | "semaprax.graph.v80"
             | "semaprax.graph.v77"
     )
 }

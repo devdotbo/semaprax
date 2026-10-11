@@ -56,6 +56,16 @@ pub(crate) fn graph_schema_from_parts_and_instances_with_renewal_authority(
     if functions
         .iter()
         .chain(instances.iter().map(|i| &i.function))
+        .any(crate::vec_ops::string_slot::function_uses)
+    {
+        return Err(Diagnostic::io(
+            "SPX-G410",
+            "String slot views require complete current source/HIR authority",
+        ));
+    }
+    if functions
+        .iter()
+        .chain(instances.iter().map(|i| &i.function))
         .any(hir::vec_loop_renewal::consuming::candidate)
     {
         return Err(Diagnostic::io(

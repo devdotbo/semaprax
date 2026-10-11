@@ -1057,9 +1057,13 @@ pub(crate) fn workspace_expression_identity(owner: &DeclarationId, path: &str) -
 /// Same monomorphic workspace identity without uncharged temporary owner/Arc
 /// reconstruction. Each append is reserved before its backing grows.
 pub(crate) fn budgeted_workspace_expression_identity(owner: &DeclarationId, path: &str) -> String {
+    budgeted_workspace_expression_identity_text(owner.as_str(), path)
+}
+
+pub(crate) fn budgeted_workspace_expression_identity_text(owner: &str, path: &str) -> String {
     crate::bounded_output::budgeted_format(format_args!(
         "declaration:{}:{}:expression:{}:{}",
-        owner.as_str().len(),
+        owner.len(),
         owner,
         path.len(),
         path

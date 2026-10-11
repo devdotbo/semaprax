@@ -145,6 +145,9 @@ pub(crate) fn vec_operation_admitted(
     op: crate::vec_ops::VecOp,
     element: &ResolvedType,
 ) -> bool {
+    if op == crate::vec_ops::VecOp::StrAt {
+        return *element == ResolvedType::String;
+    }
     crate::vec_ops::resolved_operation_element_is_admitted(op, element)
         || (!op.owned_leaf_only() && super::copy_record_collection::admitted(index, element))
         || super::owned_record_collection::admits_vec_operation_element(index, op, element)

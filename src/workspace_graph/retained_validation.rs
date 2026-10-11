@@ -29,8 +29,8 @@ pub(super) use dependency_closure::{
 };
 
 use super::{
+    CallOccurrenceKey, MAX_CALLS, WorkspaceDeclarationFact, WorkspaceEdge, WorkspaceResolvedModule,
     graph_error, limit_error, push_edge, reserve_builder_structure, visit_ast_call_sites,
-    CallOccurrenceKey, WorkspaceDeclarationFact, WorkspaceEdge, WorkspaceResolvedModule, MAX_CALLS,
 };
 use edge_projection::push_edge_reference;
 
@@ -894,7 +894,7 @@ fn collect_resolved_expression_type_sites<'a>(
                 collect_resolved_expression_type_sites(
                     owner,
                     argument,
-                    &crate::bounded_output::budgeted_format(format_args!("{path}.arg.{index}")),
+                    &crate::vec_ops::string_slot::argument_path(expression, path, index),
                     imported,
                     out,
                 )?;

@@ -4,7 +4,7 @@
 use super::arguments::source_byte_view_place_is_admitted;
 use super::binding::{Availability, Binding, BorrowOrigin, SourceLoan, SourceLoanId};
 use super::diagnostics::error;
-use super::place::{join_definitely_partial, join_moved_places, source_place, SourcePlace};
+use super::place::{SourcePlace, join_definitely_partial, join_moved_places, source_place};
 use super::type_table::TypeTable;
 use crate::ast::{Expr, ExprKind, MatchArm, ParamMode, Program, Span, Statement, Type};
 use crate::diagnostic::Diagnostic;
@@ -83,6 +83,14 @@ pub(super) fn local_borrow_origin(
             name,
             type_arguments,
             args,
+        } if name == crate::vec_ops::string_slot::NAME => {
+            let root = super::string_slot::root(type_arguments, args, variables)?;
+            (root.to_owned(), Vec::new(), None)
+        }
+        ExprKind::Call {
+            name,
+            type_arguments,
+            args,
         } if name == crate::vec_field::NAME => {
             let (_, result) =
                 super::vec_field::signature(types, type_arguments, args, expression.span)?;
@@ -137,7 +145,9 @@ pub(super) fn local_borrow_origin(
             } else {
                 let place = if operation == crate::byte_ops::ByteOp::StrAsBytes {
                     if let ExprKind::Call { name, args, .. } = &source.kind {
-                        if name == crate::vec_field::NAME {
+                        if name == crate::vec_field::NAME
+                            || name == crate::vec_ops::string_slot::NAME
+                        {
                             source_place(args.first()?, variables, types)?
                         } else if crate::byte_ops::by_name(name)
                             == Some(crate::byte_ops::ByteOp::StringAsStr)
@@ -306,7 +316,7 @@ pub(super) fn expression_uses_name(expression: &Expr, name: &str) -> bool {
             | ExprKind::Float64(_)
             | ExprKind::Bool(_)
             | ExprKind::String(_)
-| ExprKind::BorrowedUtf8Literal(_)
+            | ExprKind::BorrowedUtf8Literal(_)
             | ExprKind::Var(_) => {}
         }
     }

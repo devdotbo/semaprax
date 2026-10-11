@@ -15,8 +15,8 @@ pub(crate) fn digest_text() -> String {
         crate::digest_hex::LowerHex(Sha256::digest(contract_bytes()))
     )
 }
-pub(crate) fn selection(program: &crate::ast::Program) -> (bool, bool) {
-    let mut selected = (false, false);
+pub(crate) fn selection(program: &crate::ast::Program) -> (bool, bool, bool) {
+    let mut selected = (false, false, false);
     let mut uses = |function: &crate::ast::Function| {
         let mut pending = function
             .requires
@@ -31,6 +31,10 @@ pub(crate) fn selection(program: &crate::ast::Program) -> (bool, bool) {
             }
             if matches!(&expr.kind, crate::ast::ExprKind::BorrowedUtf8Literal(_)) {
                 selected.1 = true;
+            }
+            if matches!(&expr.kind, crate::ast::ExprKind::Call {name,..} if name == crate::vec_ops::string_slot::NAME)
+            {
+                selected.2 = true;
             }
             let mut i = 0;
             while let Some(child) = expr.child(i) {

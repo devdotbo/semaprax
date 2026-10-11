@@ -13,10 +13,10 @@ use crate::diagnostic::Diagnostic;
 use crate::{hir, prelude};
 
 use super::{
-    active_builder_limit, checked_usage, graph_error, limit_error, push_edge,
-    reserve_builder_structure, resolve_type_id, visit_ast_call_sites, AuthoredDeclaration,
-    WorkspaceEdge, HIR_IDENTITY_COPY_FACTOR, HIR_STRING_COPY_FACTOR,
-    HIR_STRUCTURE_EXPANSION_FACTOR, MAX_DEPENDENCY_DEPTH,
+    AuthoredDeclaration, HIR_IDENTITY_COPY_FACTOR, HIR_STRING_COPY_FACTOR,
+    HIR_STRUCTURE_EXPANSION_FACTOR, MAX_DEPENDENCY_DEPTH, WorkspaceEdge, active_builder_limit,
+    checked_usage, graph_error, limit_error, push_edge, reserve_builder_structure, resolve_type_id,
+    visit_ast_call_sites,
 };
 
 #[path = "expected_projection/call_identity.rs"]
@@ -43,6 +43,7 @@ mod record_traversal;
 mod sort_keys;
 #[path = "expected_projection/statement_segment.rs"]
 pub(super) mod statement_segment;
+mod string_slots;
 #[path = "expected_projection/type_rewrite.rs"]
 pub(super) mod type_rewrite;
 #[path = "expected_projection/uncached_peak.rs"]
@@ -1839,6 +1840,7 @@ pub(super) fn verify_resolved_call_edges(
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
 ) -> Result<(), Vec<Diagnostic>> {
     sort_keys::verify(program, resolved, authored)?;
+    string_slots::verify(program, resolved)?;
     let aliases = program
         .module_uses
         .iter()

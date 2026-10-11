@@ -50,6 +50,9 @@ pub(in crate::source_verify) fn vec_operation_admitted(
     op: crate::vec_ops::VecOp,
     element: &Type,
 ) -> bool {
+    if op == crate::vec_ops::VecOp::StrAt {
+        return *element == Type::String;
+    }
     crate::vec_ops::ast_operation_element_is_admitted(op, element)
         || (!op.owned_leaf_only() && super::copy_record_collection::admitted(types, element))
         || super::owned_record_collection::admits_vec_operation_element(types, op, element)

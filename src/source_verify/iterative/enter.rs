@@ -3,6 +3,7 @@
 
 use crate::ast::{Expr, ExprKind, ImportResult, ParamMode, Statement, Type, TypeDeclarationKind};
 use crate::diagnostic::Diagnostic;
+use crate::source_verify::IterativeVerifier;
 use crate::source_verify::arguments::{
     activate_borrowed_bytes_call_loans, source_byte_view_place_is_admitted,
 };
@@ -20,7 +21,6 @@ use crate::source_verify::scope::{
     VerifierCallTarget, VerifierFrame, VerifierFunctionSignature, VerifierScope,
 };
 use crate::source_verify::type_table::effective_record_fields;
-use crate::source_verify::IterativeVerifier;
 use std::collections::HashSet;
 
 impl<'a, 'p> IterativeVerifier<'a, 'p> {
@@ -68,7 +68,14 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             ExprKind::Float64(_) => self.values.push(Some(CheckedValue::value(Type::F64))),
             ExprKind::Bool(_) => self.values.push(Some(CheckedValue::value(Type::Bool))),
             ExprKind::String(_) => self.values.push(Some(CheckedValue::value(Type::String))),
-            ExprKind::BorrowedUtf8Literal(text) => self.values.push(Some(crate::source_verify::static_text::checked(self.program, expression.span, text)?)),
+            ExprKind::BorrowedUtf8Literal(text) => {
+                self.values
+                    .push(Some(crate::source_verify::static_text::checked(
+                        self.program,
+                        expression.span,
+                        text,
+                    )?))
+            }
             ExprKind::Var(name) if name == "result" => {
                 let value = self
                     .result_type
@@ -92,7 +99,12 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     .get(name)
                     .is_some_and(|binding| binding.traversal_row.is_some())
                 {
-                    return Err(error(self.program, "SPX-T284", "record traversal row cannot escape or materialize aggregate storage; select a field", expression.span));
+                    return Err(error(
+                        self.program,
+                        "SPX-T284",
+                        "record traversal row cannot escape or materialize aggregate storage; select a field",
+                        expression.span,
+                    ));
                 }
                 let value = self.scopes[scope].bindings.get(name).map(|binding| {
                     crate::source_verify::owning_closure::reject_escaping_read(
@@ -475,8 +487,28 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         implicit_unique_ownership: false,
                     }))
                 } else if let Some(op) = crate::vec_ops::by_name(name) {
-                    let element = type_arguments.first();
-                    if type_arguments.len() != 1
+                    if op == crate::vec_ops::VecOp::StrAt
+                        && (!self.current.type_parameters.is_empty()
+                            || crate::source_verify::string_slot::root(
+                                type_arguments,
+                                args,
+                                &self.scopes[scope].bindings,
+                            )
+                            .is_none())
+                    {
+                        self.diagnostics.push(error(
+                            self.program,
+                            "SPX-T281",
+                            crate::vec_ops::string_slot::SHAPE,
+                            expression.span,
+                        ));
+                    }
+                    let element = if op == crate::vec_ops::VecOp::StrAt {
+                        Some(&Type::String)
+                    } else {
+                        type_arguments.first()
+                    };
+                    if (if op == crate::vec_ops::VecOp::StrAt { !type_arguments.is_empty() } else { type_arguments.len() != 1 })
                         || element.is_none_or(|ty| {
                             !crate::source_verify::declared_type::owned_leaf_collection::vec_operation_admitted(self.types, op, ty)
                                 && !crate::vec_ops::source_parameter_is_admitted(self.program, self.current, op, ty)
@@ -639,9 +671,13 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                                 crate::byte_ops::ByteOp::StringAsStr
                                     | crate::byte_ops::ByteOp::StrAsBytes
                             ) {
-                                format!("borrowed view `{name}` requires a named String owner or an authenticated named-record path to a String field")
+                                format!(
+                                    "borrowed view `{name}` requires a named String owner or an authenticated named-record path to a String field"
+                                )
                             } else {
-                                format!("borrowed view `{name}` requires an exact admitted storage place")
+                                format!(
+                                    "borrowed view `{name}` requires an exact admitted storage place"
+                                )
                             },
                             expression.span,
                         );

@@ -3,6 +3,10 @@
 - Read each ordinary JSON string-framing byte once in the source scanners and Query plain-byte path, preserving eager offset arithmetic, escape policies and failure encoding. Retain independent original kernels and all-byte/backend differential definitions; grouped execution and measured benefits remain pending.
 
 - Repair terminal record-arm HIR admission and native resume-only scope cleanup; preserve independent contour/authority proofs. Add whole-token ASCII validation with the unchanged UTF-8 fallback, and correct owning fixture shapes and bounded help without changing limits. Consolidated qualification remains pending.
+- Authored the bounded primitive `vec_str_at` frontend, fixed String signature,
+  scoped whole-owner provenance, fused byte-view identity, and selective Prelude
+  v17/Graph v80 replay. Owning regressions are unexecuted; backend/application
+  qualification and cost evidence remain pending.
 
 - Add lazy ordinary JSON scalar paths for ASCII UTF-8 and selected escape kinds. Preserve the original checked arithmetic at near-limit offsets and retain independent original kernels in owning differential definitions; backend qualification and measured work remain pending.
 - Adopt explicit business sort keys over Catalog wire rows, removing the intermediate SortItem carrier and output Vec rebuild while retaining complete pre-selection validation, wire order, bounded metrics, and the independent original 23-case pipeline oracle. Owning qualification and measured benefits remain pending.

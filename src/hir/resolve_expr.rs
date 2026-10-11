@@ -13,10 +13,10 @@ use super::expr_nodes::{
 use super::ids::{DeclarationId, ExpressionId, FunctionExecutionId, ValueId};
 use super::monomorphize::substitute_type;
 use super::nodes::{
-    is_scalar_resolved_type, DeclarationKind, OwnershipMode, ResolvedBinding,
-    ResolvedImportResultKind, ResolvedMatchMode, ResolvedNativeRustImportCall, ResolvedType,
+    DeclarationKind, OwnershipMode, ResolvedBinding, ResolvedImportResultKind, ResolvedMatchMode,
+    ResolvedNativeRustImportCall, ResolvedType, is_scalar_resolved_type,
 };
-use super::resolve_expr_frame::{take_results, Frame};
+use super::resolve_expr_frame::{Frame, take_results};
 use super::type_reachability::record_args_ok;
 use super::{Binding, Place, PlaceProjection, Resolver};
 
@@ -110,7 +110,15 @@ impl Resolver<'_> {
                         kind: ResolvedExprKind::Int(*value),
                         span: expr.span,
                     }),
-                    ExprKind::BorrowedUtf8Literal(value) => results.push(ResolvedExpr { id: ExpressionId::new(function, &path), ty: ResolvedType::Str, ownership: OwnershipMode::Borrow, kind: ResolvedExprKind::BorrowedUtf8Literal(super::StaticUtf8::from_text(value)), span: expr.span }),
+                    ExprKind::BorrowedUtf8Literal(value) => results.push(ResolvedExpr {
+                        id: ExpressionId::new(function, &path),
+                        ty: ResolvedType::Str,
+                        ownership: OwnershipMode::Borrow,
+                        kind: ResolvedExprKind::BorrowedUtf8Literal(super::StaticUtf8::from_text(
+                            value,
+                        )),
+                        span: expr.span,
+                    }),
                     ExprKind::String(value) => {
                         let ty = ResolvedType::String;
                         results.push(ResolvedExpr {
@@ -1042,7 +1050,7 @@ impl Resolver<'_> {
                     op,
                     argument_count,
                 } => {
-                    let args = take_results(&mut results, argument_count);
+                    let mut args = take_results(&mut results, argument_count);
                     for (index, argument) in args.iter().enumerate() {
                         if !op.accepts_resolved(index, &argument.ty) {
                             return Err(self.error(
@@ -1083,6 +1091,12 @@ impl Resolver<'_> {
                             },
                             span,
                         });
+                        continue;
+                    }
+                    if let Some(fused) =
+                        crate::vec_ops::string_slot::fuse(function, &path, span, op, &mut args)
+                    {
+                        results.push(fused);
                         continue;
                     }
                     if let Some(fused) = self.fuse_vec_field_bytes(function, span, &path, op, &args)

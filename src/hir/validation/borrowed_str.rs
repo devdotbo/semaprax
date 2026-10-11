@@ -22,6 +22,16 @@ impl HirValidator<'_> {
                     false,
                 ))
             }
+            ResolvedExprKind::Call { .. }
+                if crate::vec_ops::string_slot::inspect(value).is_some() =>
+            {
+                Ok((
+                    crate::vec_ops::string_slot::place(value)
+                        .expect("authenticated slot place")
+                        .clone(),
+                    true,
+                ))
+            }
             ResolvedExprKind::VecFieldRead { args, .. } => {
                 let Some(ResolvedExpr {
                     kind: ResolvedExprKind::Place(place),

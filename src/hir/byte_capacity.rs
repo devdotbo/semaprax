@@ -227,6 +227,7 @@ pub(super) fn byte_slice_transcript_source(
                             ByteSliceRootKind::FunctionParameter
                             | ByteSliceRootKind::OwnedBytes
                             | ByteSliceRootKind::OwnedVectorField
+                            | ByteSliceRootKind::OwnedVectorStringSlot
                             | ByteSliceRootKind::OwnedString
                             | ByteSliceRootKind::BorrowedStr
                             | ByteSliceRootKind::StdinStreamReader => TranscriptSource::Unknown,

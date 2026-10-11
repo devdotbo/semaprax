@@ -4,6 +4,7 @@
 //! the parent module.
 use super::workspace_link::native_owner::admitted_ri06_regex_result as regex_result;
 use super::*;
+mod assign_field;
 use crate::loan_plan::{LoanCause, LoanId, LoanPointPhase};
 mod borrowed_argument;
 mod borrowed_str;
@@ -877,7 +878,7 @@ impl<'a> HirValidator<'a> {
                             ResolvedType::Never => {
                                 return Err(hir_error(
                                     "compiler-only completion marker cannot be a field type",
-                                ))
+                                ));
                             }
                             ResolvedType::I64 | ResolvedType::Bool => {}
                             ResolvedType::I32
@@ -1100,7 +1101,7 @@ impl<'a> HirValidator<'a> {
                             ResolvedType::Never => {
                                 return Err(hir_error(
                                     "compiler-only completion marker cannot be a field type",
-                                ))
+                                ));
                             }
                             ResolvedType::I64
                             | ResolvedType::I32
@@ -3124,13 +3125,13 @@ impl<'a> HirValidator<'a> {
                                             return Err(hir_error(format!(
                                                 "resolved value `{}` is partially moved",
                                                 place.root
-                                            )))
+                                            )));
                                         }
                                         Availability::MaybeMoved => {
                                             return Err(hir_error(format!(
                                                 "resolved value `{}` may be partially moved",
                                                 place.root
-                                            )))
+                                            )));
                                         }
                                     }
                                 }
@@ -3138,13 +3139,13 @@ impl<'a> HirValidator<'a> {
                                     return Err(hir_error(format!(
                                         "resolved value `{}` is used after it was moved",
                                         place.root
-                                    )))
+                                    )));
                                 }
                                 (true, Availability::MaybeMoved) => {
                                     return Err(hir_error(format!(
                                         "resolved value `{}` may have been moved",
                                         place.root
-                                    )))
+                                    )));
                                 }
                                 (false, _) => {
                                     match Self::place_availability(binding, &place.projections) {
@@ -3153,13 +3154,13 @@ impl<'a> HirValidator<'a> {
                                             return Err(hir_error(format!(
                                                 "resolved place rooted at `{}` is partially moved",
                                                 place.root
-                                            )))
+                                            )));
                                         }
                                         Availability::MaybeMoved => {
                                             return Err(hir_error(format!(
-                                        "resolved place rooted at `{}` may be conditionally moved",
-                                        place.root
-                                    )))
+                                                "resolved place rooted at `{}` may be conditionally moved",
+                                                place.root
+                                            )));
                                         }
                                     }
                                 }
@@ -3187,9 +3188,24 @@ impl<'a> HirValidator<'a> {
                         } => {
                             let owned_generic_intrinsic = box_intrinsic::is_call(callee, instance);
                             match instance {
-                                None if !type_arguments.is_empty() && !owned_generic_intrinsic => return Err(hir_error("monomorphic resolved call carries generic type arguments")),
-                                Some(actual) if FunctionInstanceId::derive(callee, type_arguments) != *actual => return Err(hir_error("resolved call instance disagrees with its template and arguments")),
-                                Some(_) if type_arguments.is_empty() => return Err(hir_error("generic resolved call has no concrete type arguments")),
+                                None if !type_arguments.is_empty() && !owned_generic_intrinsic => {
+                                    return Err(hir_error(
+                                        "monomorphic resolved call carries generic type arguments",
+                                    ));
+                                }
+                                Some(actual)
+                                    if FunctionInstanceId::derive(callee, type_arguments)
+                                        != *actual =>
+                                {
+                                    return Err(hir_error(
+                                        "resolved call instance disagrees with its template and arguments",
+                                    ));
+                                }
+                                Some(_) if type_arguments.is_empty() => {
+                                    return Err(hir_error(
+                                        "generic resolved call has no concrete type arguments",
+                                    ));
+                                }
                                 None | Some(_) => {}
                             }
                             if !owned_generic_intrinsic
@@ -3223,11 +3239,11 @@ impl<'a> HirValidator<'a> {
                                 }
                                 if args.len() != op.arity() {
                                     return Err(hir_error(format!(
-                                            "string operation `{}` expects {} arguments but received {}",
-                                            op.name(),
-                                            op.arity(),
-                                            args.len()
-                                        )));
+                                        "string operation `{}` expects {} arguments but received {}",
+                                        op.name(),
+                                        op.arity(),
+                                        args.len()
+                                    )));
                                 }
                                 intrinsic_parameters = Some(CallParameters::String(op));
                                 (Vec::new(), op.return_type())
@@ -3277,7 +3293,9 @@ impl<'a> HirValidator<'a> {
                                 if args.len() != op.arity() {
                                     return Err(hir_error(format!(
                                         "host I/O operation `{}` expects {} arguments but received {}",
-                                        op.name(), op.arity(), args.len()
+                                        op.name(),
+                                        op.arity(),
+                                        args.len()
                                     )));
                                 }
                                 match allowed_effects {
@@ -3290,7 +3308,7 @@ impl<'a> HirValidator<'a> {
                                     None => {
                                         return Err(hir_error(
                                             "contract calls effectful host I/O operation",
-                                        ))
+                                        ));
                                     }
                                     _ => {}
                                 }
@@ -3330,14 +3348,16 @@ impl<'a> HirValidator<'a> {
                                     Some(allowed) => {
                                         for effect in &target_effects {
                                             if !allowed.contains(effect) {
-                                                return Err(hir_error(format!("call to `{callee}` requires undeclared effect `{effect}`")));
+                                                return Err(hir_error(format!(
+                                                    "call to `{callee}` requires undeclared effect `{effect}`"
+                                                )));
                                             }
                                         }
                                     }
                                     None if !target_effects.is_empty() => {
                                         return Err(hir_error(format!(
                                             "contract calls effectful function `{callee}`"
-                                        )))
+                                        )));
                                     }
                                     None => {}
                                 }
@@ -3426,7 +3446,9 @@ impl<'a> HirValidator<'a> {
                         }
                         ResolvedExprKind::NativeRustImportCall(call) => {
                             if call.expression != expression.id {
-                                return Err(hir_error("native Rust import call has a non-canonical expression identity"));
+                                return Err(hir_error(
+                                    "native Rust import call has a non-canonical expression identity",
+                                ));
                             }
                             let import = self
                                 .program
@@ -3453,12 +3475,12 @@ impl<'a> HirValidator<'a> {
                                 {
                                     return Err(hir_error(
                                         "native Rust import call requires an undeclared effect",
-                                    ))
+                                    ));
                                 }
                                 None if !import.effects.is_empty() => {
                                     return Err(hir_error(
                                         "contract calls an effectful native Rust import",
-                                    ))
+                                    ));
                                 }
                                 _ => {}
                             }
@@ -3621,7 +3643,18 @@ impl<'a> HirValidator<'a> {
                                     "constructor target `{variant}` is not a variant"
                                 )));
                             }
-                            let expected = self.program.declarations.variant_cases(variant).and_then(|cases| cases.iter().find(|item| item.id == *case)).ok_or_else(|| hir_error(format!("constructor for `{variant}` contains foreign case `{case}`")))?.fields.clone();
+                            let expected = self
+                                .program
+                                .declarations
+                                .variant_cases(variant)
+                                .and_then(|cases| cases.iter().find(|item| item.id == *case))
+                                .ok_or_else(|| {
+                                    hir_error(format!(
+                                        "constructor for `{variant}` contains foreign case `{case}`"
+                                    ))
+                                })?
+                                .fields
+                                .clone();
                             frames.push(Frame::VariantNext {
                                 expression,
                                 fields,
@@ -3832,14 +3865,7 @@ impl<'a> HirValidator<'a> {
                         frames.push(Frame::Enter {
                             expression: &args[index],
                             scope,
-                            path: format!(
-                                "{path}.arg.{}",
-                                index
-                                    + usize::from(matches!(
-                                        expression.kind,
-                                        ResolvedExprKind::LiteralFormat { .. }
-                                    ))
-                            ),
+                            path: crate::vec_ops::string_slot::argument_path(expression, &path, index),
                         });
                     }
                 }
@@ -4473,6 +4499,9 @@ impl<'a> HirValidator<'a> {
                                 (place, origin)
                             }
                             ResolvedExprKind::BorrowPlace { place, .. } => (place, place.clone()),
+                            ResolvedExprKind::Call { .. } if crate::vec_ops::string_slot::inspect(value).is_some() => {
+                                let place = crate::vec_ops::string_slot::place(value).expect("authenticated slot"); (place, place.clone())
+                            }
                             ResolvedExprKind::VecFieldRead { args, .. } => {
                                 let ResolvedExprKind::Place(place) = &args[0].kind else {
                                     return Err(hir_error("vector view has no carrier place"));
@@ -4488,7 +4517,7 @@ impl<'a> HirValidator<'a> {
                                 ));
                             }
                         };
-                        let is_authenticated_view = matches!(
+                        let is_authenticated_view = crate::vec_ops::string_slot::inspect(value).is_some() || matches!(
                             &value.kind,
                             ResolvedExprKind::BorrowPlace { .. }
                                 | ResolvedExprKind::VecFieldRead { .. }
@@ -4501,6 +4530,7 @@ impl<'a> HirValidator<'a> {
                         self.byte_slice_aliases
                             .insert(binding.id.clone(), origin.clone());
                         let borrowed_origin = match &value.kind {
+                            ResolvedExprKind::Call { .. } if crate::vec_ops::string_slot::inspect(value).is_some() => Some(origin),
                             ResolvedExprKind::BorrowPlace { .. }
                             | ResolvedExprKind::VecFieldRead { .. }
                             | ResolvedExprKind::ByteRange { .. } => Some(origin),
@@ -5235,7 +5265,7 @@ impl<'a> HirValidator<'a> {
                             ResolvedMatchPattern::Variant { .. } => {
                                 return Err(hir_error(
                                     "resolved variant pattern has a record scrutinee",
-                                ))
+                                ));
                             }
                             ResolvedMatchPattern::Literal(_)
                             | ResolvedMatchPattern::Or(_)
@@ -5307,7 +5337,7 @@ impl<'a> HirValidator<'a> {
                             _ => {
                                 return Err(hir_error(
                                     "resolved variant match mode disagrees with its scrutinee",
-                                ))
+                                ));
                             }
                         }
                         let cases = self
@@ -5506,7 +5536,9 @@ impl<'a> HirValidator<'a> {
                                     self.insert_value(&field.binding.id)?;
                                     self.validate_type(&field.binding.ty)?;
                                     if arm_scope.contains_key(&field.binding.id) {
-                                        return Err(hir_error("resolved match pattern binding shadows an existing value"));
+                                        return Err(hir_error(
+                                            "resolved match pattern binding shadows an existing value",
+                                        ));
                                     }
                                     arm_scope.insert(
                                         field.binding.id.clone(),
@@ -5531,7 +5563,7 @@ impl<'a> HirValidator<'a> {
                             ResolvedMatchPattern::Record { .. } => {
                                 return Err(hir_error(
                                     "resolved record pattern has a variant scrutinee",
-                                ))
+                                ));
                             }
                             ResolvedMatchPattern::Or(alternatives) => {
                                 let mut candidate = covered.clone();
@@ -5562,7 +5594,9 @@ impl<'a> HirValidator<'a> {
                                 &arm.pattern,
                                 guard,
                             ) {
-                                return Err(hir_error("resolved Copy variant guard is outside its ordinary Boolean profile"));
+                                return Err(hir_error(
+                                    "resolved Copy variant guard is outside its ordinary Boolean profile",
+                                ));
                             }
                             self.validate_expr_iterative(
                                 function,
@@ -6618,11 +6652,12 @@ impl<'a> HirValidator<'a> {
                     None => {}
                 }
                 for (index, (argument, param)) in args.iter().zip(&params).enumerate() {
+                    let child = crate::vec_ops::string_slot::argument_path(expression, path, index);
                     self.validate_expr_recursive_reference(
                         function,
                         argument,
                         scope,
-                        &format!("{path}.arg.{index}"),
+                        &child,
                         allow_moves,
                         allowed_effects,
                     )?;
@@ -6873,6 +6908,9 @@ impl<'a> HirValidator<'a> {
                                     ResolvedExprKind::BorrowPlace { place, .. } => {
                                         (place, place.clone())
                                     }
+                                    ResolvedExprKind::Call { .. } if crate::vec_ops::string_slot::inspect(value).is_some() => {
+                                        let place = crate::vec_ops::string_slot::place(value).expect("authenticated slot"); (place, place.clone())
+                                    }
                                     ResolvedExprKind::VecFieldRead { args, .. } => {
                                         let ResolvedExprKind::Place(place) = &args[0].kind else {
                                             return Err(hir_error(
@@ -6890,7 +6928,7 @@ impl<'a> HirValidator<'a> {
                                         ));
                                     }
                                 };
-                                let is_authenticated_view = matches!(
+                                let is_authenticated_view = crate::vec_ops::string_slot::inspect(value).is_some() || matches!(
                                     &value.kind,
                                     ResolvedExprKind::BorrowPlace { .. }
                                         | ResolvedExprKind::VecFieldRead { .. }
@@ -6905,6 +6943,7 @@ impl<'a> HirValidator<'a> {
                                 self.byte_slice_aliases
                                     .insert(binding.id.clone(), origin.clone());
                                 let borrowed_origin = match &value.kind {
+                                    ResolvedExprKind::Call { .. } if crate::vec_ops::string_slot::inspect(value).is_some() => Some(origin),
                                     ResolvedExprKind::BorrowPlace { .. }
                                     | ResolvedExprKind::VecFieldRead { .. }
                                     | ResolvedExprKind::ByteRange { .. } => Some(origin),
@@ -7760,7 +7799,7 @@ impl<'a> HirValidator<'a> {
                     _ => {
                         return Err(hir_error(
                             "resolved variant match mode disagrees with its scrutinee",
-                        ))
+                        ));
                     }
                 }
                 let cases = self
@@ -7937,7 +7976,9 @@ impl<'a> HirValidator<'a> {
                             &arm.pattern,
                             guard,
                         ) {
-                            return Err(hir_error("resolved Copy variant guard is outside its ordinary Boolean profile"));
+                            return Err(hir_error(
+                                "resolved Copy variant guard is outside its ordinary Boolean profile",
+                            ));
                         }
                         self.validate_expr_recursive_reference(
                             function,
@@ -8700,69 +8741,6 @@ impl<'a> HirValidator<'a> {
                 "{context} has inconsistent resolved types"
             )))
         }
-    }
-
-    /// Field Mutation v1 oracle check: the targeted field must exist on a
-    /// record/class base, stay a direct scalar Copy field, and match the
-    /// assigned value's type exactly.
-    fn validate_assign_field(
-        &self,
-        target_ty: &ResolvedType,
-        field: &DeclarationId,
-        assigned: &ResolvedExpr,
-        span: crate::ast::Span,
-    ) -> Result<(), Diagnostic> {
-        let ResolvedType::Nominal {
-            declaration: owner,
-            arguments,
-        } = target_ty
-        else {
-            return Err(hir_error_at_span(
-                span,
-                "field assignment base is not a record",
-            ));
-        };
-        if self
-            .program
-            .declarations
-            .declaration(owner)
-            .is_none_or(|item| {
-                !matches!(item.kind, DeclarationKind::Record | DeclarationKind::Class)
-            })
-        {
-            return Err(hir_error_at_span(
-                span,
-                "field assignment base is not a record",
-            ));
-        }
-        let declared = self
-            .program
-            .declarations
-            .record_fields(owner)
-            .and_then(|fields| fields.iter().find(|item| &item.id == field))
-            .map(|item| item.ty.clone())
-            .ok_or_else(|| {
-                hir_error_at_span(
-                    span,
-                    format!("record `{owner}` has no assignment field `{field}`"),
-                )
-            })?;
-        let field_ty =
-            crate::hir::substitute_type(&declared, owner, arguments).map_err(|diagnostic| {
-                hir_error_at_span(
-                    span,
-                    format!("assignment field type substitution failed: {diagnostic}"),
-                )
-            })?;
-        self.require_type(&field_ty, &assigned.ty, "field assignment")
-            .map_err(|diagnostic| hir_diagnostic_at_span(diagnostic, span))?;
-        if !crate::hir::is_scalar_resolved_type(&field_ty) {
-            return Err(hir_error_at_span(
-                span,
-                "field mutation v1 supports only direct scalar Copy record fields",
-            ));
-        }
-        Ok(())
     }
 
     fn insert_value(&mut self, id: &ValueId) -> Result<(), Diagnostic> {

@@ -152,3 +152,17 @@ pub(super) fn if_expression(
         ownership,
     ))
 }
+
+impl Resolver<'_> {
+    #[cfg(test)]
+    #[allow(dead_code)]
+    pub(super) fn resolve_expr_recursive_reference(
+        &self,
+        function: &FunctionExecutionId,
+        expr: &Expr,
+        bindings: &BTreeMap<String, Binding>,
+        path: &str,
+    ) -> Result<ResolvedExpr, Diagnostic> {
+        self.resolve_expr_recursive_reference_inner(function, expr, bindings, path, None)
+    }
+}

@@ -58,6 +58,7 @@ mod scope;
 mod sort_keys;
 pub(crate) mod static_text;
 mod stdin_stream;
+mod string_slot;
 mod type_table;
 mod variant_guards;
 mod variant_or;

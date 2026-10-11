@@ -246,7 +246,9 @@ fn uses_vec_v3(program: &ResolvedProgram) -> bool {
 }
 
 pub(super) fn schema(program: &ResolvedProgram) -> &'static str {
-    if crate::vec_ops::sort_keys::uses(program) {
+    if crate::vec_ops::string_slot::resolved_uses(program) {
+        prelude::SCHEMA_V17
+    } else if crate::vec_ops::sort_keys::uses(program) {
         prelude::SCHEMA_V15
     } else if prelude::owned_leaf::resolved_program_uses(program) {
         prelude::SCHEMA_V14
@@ -280,7 +282,9 @@ pub(super) fn schema(program: &ResolvedProgram) -> &'static str {
 }
 
 pub(super) fn digest(program: &ResolvedProgram) -> String {
-    if crate::vec_ops::sort_keys::uses(program) {
+    if crate::vec_ops::string_slot::resolved_uses(program) {
+        prelude::string_slots::digest_text()
+    } else if crate::vec_ops::sort_keys::uses(program) {
         prelude::sort_keys::digest_text()
     } else if prelude::owned_leaf::resolved_program_uses(program) {
         prelude::owned_leaf::digest_text()
@@ -381,8 +385,20 @@ module iterator.binding;
 
 // Selection comes from the mandatory validator at the outer projection boundary.
 pub(super) fn schema_selected(program: &ResolvedProgram, selected: bool) -> &'static str {
-    if selected { prelude::SCHEMA_V16 } else { schema(program) }
+    if crate::vec_ops::string_slot::resolved_uses(program) {
+        prelude::SCHEMA_V17
+    } else if selected {
+        prelude::SCHEMA_V16
+    } else {
+        schema(program)
+    }
 }
 pub(super) fn digest_selected(program: &ResolvedProgram, selected: bool) -> String {
-    if selected { prelude::static_text::digest_text() } else { digest(program) }
+    if crate::vec_ops::string_slot::resolved_uses(program) {
+        prelude::string_slots::digest_text()
+    } else if selected {
+        prelude::static_text::digest_text()
+    } else {
+        digest(program)
+    }
 }
