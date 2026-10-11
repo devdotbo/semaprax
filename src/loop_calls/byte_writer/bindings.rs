@@ -66,7 +66,6 @@ impl<'a> HelperBindings<'a> {
     pub(crate) fn is_empty(&self) -> bool {
         self.entries.is_empty()
     }
-    #[cfg(test)]
     pub(crate) fn get_exact(&self, at: &ExpressionId) -> Option<&'a ResolvedBinding> {
         let index = self
             .entries

@@ -3974,7 +3974,7 @@ impl Evaluator<'_> {
                         crate::byte_ops::RANGE_END_OUT_OF_BOUNDS_CODE,
                     )));
                 };
-                if end > source.read(&self.fused, <[u8]>::len)? {
+                if end > source.read(&mut self.fused, <[u8]>::len)? {
                     return Err(Flow::Failure(normalize_byte_range(
                         crate::byte_ops::RANGE_END_OUT_OF_BOUNDS_CODE,
                     )));
@@ -4368,13 +4368,13 @@ impl Evaluator<'_> {
                     }
                     return match (op, values.as_slice()) {
                         (crate::byte_ops::ByteOp::Len, [Value::BorrowedSlice(value)]) => Ok(
-                            Value::Usize(value.read(&self.fused, |bytes| bytes.len() as u64)?),
+                            Value::Usize(value.read(&mut self.fused, |bytes| bytes.len() as u64)?),
                         ),
                         (
                             crate::byte_ops::ByteOp::Get,
                             [Value::BorrowedSlice(value), Value::Usize(index)],
                         ) => {
-                            let byte = value.read(&self.fused, |bytes| {
+                            let byte = value.read(&mut self.fused, |bytes| {
                                 usize::try_from(*index)
                                     .ok()
                                     .and_then(|index| bytes.get(index))
@@ -4383,10 +4383,10 @@ impl Evaluator<'_> {
                             Ok(Value::OptionU8(byte))
                         }
                         (crate::byte_ops::ByteOp::Copy, [Value::BorrowedSlice(value)]) => {
-                            let length = u64::try_from(value.read(&self.fused, <[u8]>::len)?)
+                            let length = u64::try_from(value.read(&mut self.fused, <[u8]>::len)?)
                                 .map_err(|_| {
-                                    Flow::Guard("owned byte payload length does not fit u64")
-                                })?;
+                                Flow::Guard("owned byte payload length does not fit u64")
+                            })?;
                             if length > crate::byte_ops::MAX_OWNED_BYTE_VALUE_BYTES {
                                 return Err(Flow::Guard(
                                     "owned byte payload exceeds the verified profile limit",
@@ -4421,7 +4421,7 @@ impl Evaluator<'_> {
                             Ok(Value::Bytes(OwnedBytesValue {
                                 allocation: next_count,
                                 bytes: value
-                                    .read(&self.fused, |bytes| Arc::<[u8]>::from(bytes))?
+                                    .read(&mut self.fused, |bytes| Arc::<[u8]>::from(bytes))?
                                     .into(),
                             }))
                         }

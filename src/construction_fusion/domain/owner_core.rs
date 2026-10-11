@@ -499,6 +499,26 @@ impl<'a, R: Runtime> Core<'a, R> {
         })();
         self.select(result)
     }
+    /// Resolve both authenticated loans together without nesting mutable reads.
+    /// Validation remains left-to-right and a refusal is selected once.
+    pub(crate) fn read_pair<T>(
+        &mut self,
+        left: &Loan<'_>,
+        right: &Loan<'_>,
+        apply: impl FnOnce(&[u8], &[u8]) -> T,
+    ) -> Result<T, Refusal> {
+        let result = (|| {
+            self.active()?;
+            let left = self.view(left)?;
+            let right = self.view(right)?;
+            let bytes = R::bytes(self.backing.as_ref().ok_or(Refusal::Identity)?);
+            Ok(apply(
+                &bytes[left.offset..left.offset + left.len],
+                &bytes[right.offset..right.offset + right.len],
+            ))
+        })();
+        self.select(result)
+    }
     /// Cleanup remains possible after sticky failure; it cannot replace it.
     pub(crate) fn end_borrow(&mut self, loan: &mut Loan<'_>) -> Result<(), Refusal> {
         let result = (|| {
