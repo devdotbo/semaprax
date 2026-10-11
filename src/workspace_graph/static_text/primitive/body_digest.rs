@@ -42,7 +42,10 @@ impl Encoder<'_> {
             arguments,
         } = ty
         {
-            if !arguments.is_empty() && !crate::hir::borrowed_scalar::option_u8::is_type(ty) {
+            if !arguments.is_empty()
+                && (!crate::hir::borrowed_scalar::option_u8::selected_profile_ready()
+                    || !crate::hir::borrowed_scalar::option_u8::is_type(ty))
+            {
                 return None;
             }
             self.text("nominal")?;
@@ -167,7 +170,9 @@ impl Encoder<'_> {
                 variant,
                 case,
                 fields,
-            } if crate::hir::borrowed_scalar::option_u8::pattern(pattern) => {
+            } if crate::hir::borrowed_scalar::option_u8::selected_profile_ready()
+                && crate::hir::borrowed_scalar::option_u8::pattern(pattern) =>
+            {
                 self.text("option-u8-pattern")?;
                 self.text(variant.as_str())?;
                 self.text(case.as_str())?;

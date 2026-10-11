@@ -43,6 +43,27 @@ pub(in crate::workspace_graph) fn pure_metered(
     work: &mut usize,
     charge: &mut dyn FnMut(usize) -> Result<(), Vec<Diagnostic>>,
 ) -> Result<bool, Vec<Diagnostic>> {
+    pure_profile_metered(
+        function,
+        work,
+        charge,
+        hir::borrowed_scalar::option_u8::selected_profile_ready(),
+    )
+}
+#[cfg(test)]
+pub(in crate::workspace_graph) fn pure_shape_metered(
+    function: &ResolvedFunction,
+    work: &mut usize,
+    charge: &mut dyn FnMut(usize) -> Result<(), Vec<Diagnostic>>,
+) -> Result<bool, Vec<Diagnostic>> {
+    pure_profile_metered(function, work, charge, true)
+}
+fn pure_profile_metered(
+    function: &ResolvedFunction,
+    work: &mut usize,
+    charge: &mut dyn FnMut(usize) -> Result<(), Vec<Diagnostic>>,
+    option_shape: bool,
+) -> Result<bool, Vec<Diagnostic>> {
     let mut take = |units| -> Result<(), Vec<Diagnostic>> {
         let remaining = work.checked_sub(units).ok_or_else(fail)?;
         charge(units)?;
@@ -72,7 +93,11 @@ pub(in crate::workspace_graph) fn pure_metered(
             let mut cursor = stack[depth - 1].take().ok_or_else(fail)?;
             let expr = cursor.expression();
             if !cursor.is_started() {
-                if !hir::borrowed_scalar::expression(function, expr, &mut take)? {
+                if (!option_shape
+                    && (hir::borrowed_scalar::option_u8::is_type(&expr.ty)
+                        || matches!(expr.kind, ResolvedExprKind::Match { .. })))
+                    || !hir::borrowed_scalar::expression(function, expr, &mut take)?
+                {
                     return Ok(false);
                 }
                 match &expr.kind {
@@ -88,7 +113,10 @@ pub(in crate::workspace_graph) fn pure_metered(
                     | ResolvedExprKind::Binary { .. }
                     | ResolvedExprKind::If { .. } => {}
                     ResolvedExprKind::Place(place) if place.projections.is_empty() => {}
-                    ResolvedExprKind::BorrowPlace { .. } | ResolvedExprKind::Match { .. } => {}
+                    ResolvedExprKind::BorrowPlace { .. } => {}
+                    ResolvedExprKind::Match { scrutinee, .. }
+                        if option_shape
+                            && hir::borrowed_scalar::option_u8::is_type(&scrutinee.ty) => {}
                     ResolvedExprKind::Call {
                         instance,
                         type_arguments,
@@ -105,9 +133,10 @@ pub(in crate::workspace_graph) fn pure_metered(
                                     ..
                                 } if binding.ownership == OwnershipMode::Value
                                     && (hir::is_scalar_resolved_type(&binding.ty)
-                                        || hir::borrowed_scalar::option_u8::is_type(
-                                            &binding.ty,
-                                        )) => {}
+                                        || (option_shape
+                                            && hir::borrowed_scalar::option_u8::is_type(
+                                                &binding.ty,
+                                            ))) => {}
                                 ResolvedStatement::While { .. } => {}
                                 _ => return Ok(false),
                             }

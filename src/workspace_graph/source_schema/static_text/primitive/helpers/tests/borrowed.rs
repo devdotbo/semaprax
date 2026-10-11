@@ -15,7 +15,7 @@ fn pure(source: &str) -> hir::ResolvedProgram {
         let mut remaining = 1_048_576;
         let mut debits = 0;
         assert!(
-            scalar_helpers::pure_metered(function, &mut remaining, &mut |units| {
+            scalar_helpers::pure_shape_metered(function, &mut remaining, &mut |units| {
                 debits += units;
                 Ok(())
             })
@@ -57,7 +57,21 @@ fn actual_lines_reader_body_preserves_ordinary_while_and_exact_option_eliminatio
 fn actual_json_byte_reader_and_u8_conversion_have_exact_nonowning_shapes() {
     let source = include_str!("../../../../../../../std/data-json-utf8/src/utf8.spx");
     for id in ["std.data.json.utf8.at_is", "std.data.json.utf8.at_in"] {
-        pure(&provider(source, "std.data.json.utf8", id));
+        let shape = pure(&provider(source, "std.data.json.utf8", id));
+        let function = &shape.functions[0];
+        let mut remaining = 1_048_576;
+        let mut debits = 0;
+        assert!(
+            !scalar_helpers::pure_metered(function, &mut remaining, &mut |units| {
+                debits += units;
+                Ok(())
+            })
+            .unwrap()
+        );
+        // The original profile stops at Block then Match, before inspecting
+        // alternative bodies or hashing/cloning a retained provider fact.
+        assert_eq!(debits, function.params.len() + 1 + 2);
+        assert_eq!(remaining, 1_048_576 - debits);
     }
     pure(
         r#"module scalar.leaf; @id("leaf.read") fn read(view:borrow Slice<u8>,at:usize)->i64 {
@@ -80,7 +94,10 @@ fn byte_reader_borrow_modes_owned_roots_and_non_u8_payloads_remain_closed() {
             _ => function.return_type = hir::ResolvedType::Bytes,
         }
         let mut remaining = 1_048_576;
-        assert!(!scalar_helpers::pure_metered(&function, &mut remaining, &mut |_| Ok(())).unwrap());
+        assert!(
+            !scalar_helpers::pure_shape_metered(&function, &mut remaining, &mut |_| Ok(()))
+                .unwrap()
+        );
     }
 }
 
@@ -99,4 +116,33 @@ fn imported_exact_u8_conversion_keeps_saved_local_status_and_result_control() {
     let control =
         hir::resolve(&crate::check(local_source, "conversion-control.spx").unwrap()).unwrap();
     runtime::run(&linked, &control);
+}
+
+#[test]
+fn supported_length_provider_does_not_retain_unrelated_option_or_scalar_match_facts() {
+    let caller_source = r#"module scalar.app;use function @id("leaf.length") from scalar.leaf as length;
+@id("app.main") fn main()->i64 {let text=str"abc";return if length(str_as_bytes(text))==3usize {42}else{0};}"#;
+    let provider_source = r#"module scalar.leaf;
+@id("leaf.length") fn length(view:borrow Slice<u8>)->usize {byte_len(view)}
+@id("leaf.unused") fn unused(view:borrow Slice<u8>)->bool {match byte_get(view,0usize) {Option::Some {value}=>value==0u8,Option::None {}=>false,}}
+@id("leaf.unused.scalar") fn scalar(value:bool)->i64 {match value {true=>1,false=>0,}}
+"#;
+    let build =
+        build_sources(&[("caller.spx", caller_source), ("leaf.spx", provider_source)]).unwrap();
+    let module = build
+        .hir
+        .modules
+        .iter()
+        .find(|m| m.module == "scalar.leaf")
+        .unwrap();
+    let inventory = module.scalar_helpers.as_ref().unwrap();
+    assert_eq!(
+        inventory
+            .functions
+            .iter()
+            .map(|f| f.id.as_str())
+            .collect::<Vec<_>>(),
+        ["leaf.length"]
+    );
+    assert_eq!(schema(&build).unwrap(), "semaprax.graph.v77");
 }
