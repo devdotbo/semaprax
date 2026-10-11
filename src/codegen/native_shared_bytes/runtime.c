@@ -449,8 +449,18 @@ SPX_SHB_FN void spx_shb_drop_row(spx_shb_registry *registry, const spx_shb_vec *
     if (value->rows[index].slot == UINT64_C(0))
         SPX_SHB_FAIL_STOP("shared Bytes Vec row below len is vacant");
     spx_shb_bytes owner = spx_shb_row_owner(value, index);
+    (void)spx_shb_resolve_unloaned(registry, &owner);
     value->rows[index] = (spx_shb_stored){0};
     spx_shb_drop(registry, &owner);
+}
+/* Refuse every live loan or invalid row before the first canonical finalizer. */
+SPX_SHB_FN void spx_shb_preflight_rows(
+    spx_shb_registry *registry, const spx_shb_vec *value, uint64_t start
+) {
+    for (uint64_t i = start; i < value->len; ++i) {
+        spx_shb_bytes owner = spx_shb_row_owner(value, i);
+        (void)spx_shb_resolve_unloaned(registry, &owner);
+    }
 }
 SPX_SHB_FN uint32_t spx_shb_vec_with_capacity(spx_shb_registry *registry, uint64_t capacity, spx_shb_vec *out) {
     spx_shb_require(registry);
@@ -522,6 +532,8 @@ SPX_SHB_FN uint32_t spx_shb_vec_set(
 /* Canonical ascending element order, as the legacy runtime settles rows. */
 SPX_SHB_FN void spx_shb_vec_clear(spx_shb_registry *registry, spx_shb_vec *source, spx_shb_vec *out) {
     spx_shb_vec_entry *e = spx_shb_vec_valid(registry, source);
+    if (out == NULL || out == source) SPX_SHB_FAIL_STOP("invalid shared Bytes Vec result");
+    spx_shb_preflight_rows(registry, source, UINT64_C(0));
     for (uint64_t i = UINT64_C(0); i < source->len; ++i) spx_shb_drop_row(registry, source, i);
     source->len = UINT64_C(0);
     spx_shb_vec_publish(registry, source, e, out);
@@ -566,6 +578,7 @@ SPX_SHB_FN spx_shb_vec spx_shb_vec_move(spx_shb_registry *registry, spx_shb_vec 
 }
 SPX_SHB_FN void spx_shb_vec_drop(spx_shb_registry *registry, spx_shb_vec *value) {
     spx_shb_vec_entry *e = spx_shb_vec_valid(registry, value);
+    spx_shb_preflight_rows(registry, value, UINT64_C(0));
     for (uint64_t i = UINT64_C(0); i < value->len; ++i) spx_shb_drop_row(registry, value, i);
     spx_shb_stored *rows = value->rows;
     *e = (spx_shb_vec_entry){0}; *value = (spx_shb_vec){0};
@@ -589,6 +602,7 @@ SPX_SHB_FN spx_shb_iter spx_shb_iter_from_vec(spx_shb_registry *registry, spx_sh
 }
 SPX_SHB_FN void spx_shb_iter_drop(spx_shb_registry *registry, spx_shb_iter *value) {
     spx_shb_vec_entry *e = spx_shb_iter_valid(registry, value);
+    spx_shb_preflight_rows(registry, &value->vec, value->cursor);
     for (uint64_t i = value->cursor; i < value->vec.len; ++i) spx_shb_drop_row(registry, &value->vec, i);
     spx_shb_stored *rows = value->vec.rows;
     *e = (spx_shb_vec_entry){0}; *value = (spx_shb_iter){0};
