@@ -240,8 +240,7 @@ fn decoded_eq(input: borrow Slice<u8>, start: usize, expect: borrow Slice<u8>) -
     let total = decoded_len(input, start);
     let ready = !is_failure(input, total) && total == byte_len(expect) && total <= 256usize;
     let mut out = bytes_zeroed(256usize);
-    let mut valid = start < byte_len(input) && at_is(input, start, 34u8);
-    let mut index = if valid { start + 1usize } else { start };
+    let mut index = start + 1usize;
     let mut part = 0usize;
     let mut write = 0usize;
     let mut running = ready && write < total;
@@ -311,7 +310,8 @@ fn decoded_fingerprint(input: borrow Slice<u8>, start: usize, limit: usize) -> u
     requires limit >= 1usize && limit <= 256usize
     ensures result < 16842752usize
 {
-    let mut index = start + 1usize;
+    let mut valid = start < byte_len(input) && at_is(input, start, 34u8);
+    let mut index = if valid { start + 1usize } else { start };
     let mut part = 0usize;
     let mut count = 0usize;
     let mut hash = 0usize;
