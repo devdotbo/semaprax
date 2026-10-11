@@ -1,6 +1,8 @@
 //! Copy frame observations never replace current byte-range provenance.
 use super::{packages, root, run_examples_and_conformance, temporary};
 use semaprax::{hir, project};
+#[path = "ndjson_failure.rs"]
+mod failure;
 
 #[test]
 fn bounded_ndjson_framing_and_structured_faults_execute_on_all_three_backends() {
@@ -111,6 +113,7 @@ fn ndjson_forged_frame_contract_is_sticky_and_failed_ranges_never_publish() {
                     semaprax::conformance::CONTRACT_REQUIRES_FALSE_CODE
                 );
             }
+            failure::check(snapshot.test_program(), &scratch)?;
             Ok(())
         })
         .unwrap();
