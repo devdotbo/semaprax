@@ -9,6 +9,10 @@ pub(super) fn validate(
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
+    #[cfg(test)]
+    if let Some(lease) = program.borrowed_helper_lease(function) {
+        return lease.validate(program, function, budget);
+    }
     if budget.physical.is_none() {
         return Ok(());
     }

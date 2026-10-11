@@ -7,6 +7,10 @@ pub(super) fn validate_inventory_coverage(
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
+    #[cfg(test)]
+    if let Some(lease) = program.borrowed_helper_lease(function) {
+        return lease.inventory(program, function, budget);
+    }
     let physical = budget.physical.as_deref_mut().ok_or_else(|| {
         replay_error(
             function,

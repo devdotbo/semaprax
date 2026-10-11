@@ -20,6 +20,8 @@ mod status_construction;
 mod structural_control;
 mod structural_maps;
 #[cfg(test)]
+pub(crate) use selected_context::borrowed::Lease as ReplayBorrowedLease;
+#[cfg(test)]
 pub(crate) use selected_entry::validate_retained_lexical_with_limit;
 #[cfg(test)]
 pub(crate) use selected_entry::validate_retained_lexical_with_reservation;
@@ -3262,7 +3264,12 @@ fn hir_skeleton_paths_with_index(
     }
     paths = sequence_expression(program, function, paths, &function.body, &mut work)?;
     let has_residual = paths.iter().any(|path| path.residual);
-    let owned_result = type_needs_drop(program, function, &function.return_type)?;
+    let owned_result = nested_shape::type_needs_drop_with_budget(
+        program,
+        function,
+        &function.return_type,
+        work.budget,
+    )?;
     if has_residual && !owned_result {
         if !function.cleanup_plan.slots.is_empty() {
             return Err(replay_error(
@@ -5302,7 +5309,7 @@ fn expression_skeleton(
                     continue;
                 }
                 let is_record =
-                    validate_match_skeleton_shape(program, function, expression, scrutinee, arms)?;
+                    validate_match_shape(program, function, expression, scrutinee, arms, work)?;
                 if is_record {
                     let ResolvedExprKind::Match { mode, .. } = &expression.kind else {
                         unreachable!("match skeleton frame retained its expression")
@@ -5722,6 +5729,22 @@ fn replay_option_arguments<'a>(
         ));
     }
     Ok(arguments)
+}
+
+fn validate_match_shape(
+    program: &dyn ReplayContext,
+    function: &ResolvedFunction,
+    expression: &ResolvedExpr,
+    scrutinee: &ResolvedExpr,
+    arms: &[ResolvedMatchArm],
+    work: &mut SkeletonWork<'_, '_>,
+) -> Result<bool, Diagnostic> {
+    #[cfg(test)]
+    if let Some(lease) = program.borrowed_helper_lease(function) {
+        return lease.match_shape(program, function, expression, work.budget);
+    }
+    let _ = work;
+    validate_match_skeleton_shape(program, function, expression, scrutinee, arms)
 }
 
 fn validate_match_skeleton_shape(

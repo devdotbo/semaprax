@@ -16,6 +16,13 @@ pub(crate) trait ReplayContext {
     }
     fn function_templates(&self) -> &[ResolvedFunctionTemplate];
     fn function_instances(&self) -> &[ResolvedFunctionInstance];
+    #[cfg(test)]
+    fn borrowed_helper_lease<'a>(
+        &'a self,
+        _function: &ResolvedFunction,
+    ) -> Option<crate::cleanup_plan::ReplayBorrowedLease<'a>> {
+        None
+    }
     /// Only the selected immutable replay lease implements this method. It
     /// lends freshly rederived, budgeted sites for one exact held function;
     /// ordinary and detached contexts never lend attached-plan authority.

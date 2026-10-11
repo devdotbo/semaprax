@@ -63,10 +63,100 @@ impl ReplayContext for Context<'_> {
     fn selected_flat_records(&self) -> bool {
         true
     }
+    fn borrowed_helper_lease<'a>(
+        &'a self,
+        function: &ResolvedFunction,
+    ) -> Option<crate::cleanup_plan::ReplayBorrowedLease<'a>> {
+        self.profile
+            .matches(self.source, function)
+            .then_some(Lease {
+                context: self,
+                source: self.source,
+                profile: &self.profile,
+            })
+    }
     fn primitive_renewals<'a>(
         &'a self,
         function: &ResolvedFunction,
     ) -> Option<&'a crate::cleanup_plan::ReplayRenewalBindings<'a>> {
         self.profile.renewals(self.source, function)
+    }
+}
+
+/// Opaque current-context receiver. Only this private Context can mint it;
+/// forwarding a lease through another provider fails its context pointer check.
+pub(crate) struct Lease<'a> {
+    context: &'a dyn ReplayContext,
+    source: &'a dyn ReplayContext,
+    profile: &'a schema::borrowed::Profile<'a>,
+}
+impl Lease<'_> {
+    pub(in crate::cleanup_plan::replay) fn validate(
+        &self,
+        context: &dyn ReplayContext,
+        function: &ResolvedFunction,
+        budget: &mut ReplayBudget,
+    ) -> Result<(), Diagnostic> {
+        budget.charge(function, 1, "borrowed lease exact receiving context")?;
+        if !std::ptr::eq(self.context, context) || !self.profile.matches(self.source, function) {
+            return Err(replay_error(
+                function,
+                "borrowed profile belongs to another receiving context",
+            ));
+        }
+        Ok(())
+    }
+    pub(in crate::cleanup_plan::replay) fn schema(
+        &self,
+        context: &dyn ReplayContext,
+        function: &ResolvedFunction,
+        budget: &mut ReplayBudget,
+    ) -> Result<&'static str, Diagnostic> {
+        self.validate(context, function, budget)?;
+        self.profile.schema(self.source, function, budget)
+    }
+    pub(in crate::cleanup_plan::replay) fn no_drop(
+        &self,
+        context: &dyn ReplayContext,
+        function: &ResolvedFunction,
+        ty: &ResolvedType,
+        budget: &mut ReplayBudget,
+    ) -> Result<bool, Diagnostic> {
+        self.validate(context, function, budget)?;
+        self.profile.no_drop(self.source, function, ty, budget)
+    }
+    pub(in crate::cleanup_plan::replay) fn match_shape(
+        &self,
+        context: &dyn ReplayContext,
+        function: &ResolvedFunction,
+        expression: &ResolvedExpr,
+        budget: &mut ReplayBudget,
+    ) -> Result<bool, Diagnostic> {
+        self.validate(context, function, budget)?;
+        self.profile
+            .match_shape(self.source, function, expression, budget)
+    }
+    pub(in crate::cleanup_plan::replay) fn inventory(
+        &self,
+        context: &dyn ReplayContext,
+        function: &ResolvedFunction,
+        budget: &mut ReplayBudget,
+    ) -> Result<(), Diagnostic> {
+        self.validate(context, function, budget)?;
+        self.profile
+            .validate_inventory(self.source, function, budget)?;
+        budget.charge(function, 1, "borrowed plan empty ownership headers")?;
+        let plan = &function.cleanup_plan;
+        if !plan.slots.is_empty()
+            || !plan.flags.is_empty()
+            || !plan.entry_state.live_owned_parameters.is_empty()
+            || !plan.entry_state.conditional_owned_parameters.is_empty()
+        {
+            return Err(replay_error(
+                function,
+                "nonowning helper plan claims owned storage",
+            ));
+        }
+        Ok(())
     }
 }

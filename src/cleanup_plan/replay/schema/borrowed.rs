@@ -12,6 +12,7 @@ pub(in crate::cleanup_plan::replay) struct Profile<'a> {
     inventory: crate::cleanup::CleanupInventory,
     renewals: crate::cleanup_plan::ReplayRenewalBindings<'a>,
     schema_facts: decision::Facts,
+    matches: Vec<&'a ResolvedExpr>,
 }
 impl<'a> Profile<'a> {
     pub(in crate::cleanup_plan::replay) fn matches(
@@ -23,6 +24,36 @@ impl<'a> Profile<'a> {
     }
     pub(in crate::cleanup_plan::replay) fn inventory(&self) -> &crate::cleanup::CleanupInventory {
         &self.inventory
+    }
+    pub(in crate::cleanup_plan::replay) fn no_drop(
+        &self,
+        program: &dyn crate::cleanup::ReplayContext,
+        function: &ResolvedFunction,
+        ty: &ResolvedType,
+        budget: &mut ReplayBudget,
+    ) -> Result<bool, Diagnostic> {
+        if !self.matches(program, function) || !copy_type(program, function, ty, budget)? {
+            return Err(fail(function));
+        }
+        Ok(false)
+    }
+    pub(in crate::cleanup_plan::replay) fn match_shape(
+        &self,
+        program: &dyn crate::cleanup::ReplayContext,
+        function: &ResolvedFunction,
+        expression: &ResolvedExpr,
+        budget: &mut ReplayBudget,
+    ) -> Result<bool, Diagnostic> {
+        if !self.matches(program, function) {
+            return Err(fail(function));
+        }
+        for candidate in &self.matches {
+            budget.charge(function, 1, "borrowed exact source match probe")?;
+            if std::ptr::eq(*candidate, expression) {
+                return Ok(false);
+            }
+        }
+        Err(fail(function))
     }
     pub(in crate::cleanup_plan::replay) fn validate_inventory(
         &self,
@@ -185,6 +216,7 @@ pub(in crate::cleanup_plan::replay) fn build<'a>(
         return Err(fail(function));
     }
     let mut schema_facts = decision::Facts::default();
+    let mut matches = Vec::new();
     schema_facts.ty(true);
     for parameter in &function.params {
         budget.charge(function, 1, "borrowed helper parameter profile")?;
@@ -195,8 +227,13 @@ pub(in crate::cleanup_plan::replay) fn build<'a>(
     }
     // Own-root absence is established by the complete typed walk below. The
     // attached empty loan proof is then a consistency guard, not its authority.
-    if function.loan_plan.schema != crate::loan_plan::LOAN_PLAN_SCHEMA_V1
-        || !function.loan_plan.loans.is_empty()
+    budget.charge(function, 1, "borrowed exact loan headers")?;
+    if !id_equal(
+        function,
+        function.loan_plan.schema,
+        crate::loan_plan::LOAN_PLAN_SCHEMA_V1,
+        budget,
+    )? || !function.loan_plan.loans.is_empty()
         || !function.loan_plan.endpoints.is_empty()
         || !function.loan_plan.edges.is_empty()
     {
@@ -228,9 +265,15 @@ pub(in crate::cleanup_plan::replay) fn build<'a>(
                 if !admitted_type {
                     return Err(fail(function));
                 }
-                if !crate::hir::borrowed_scalar::expression(function, expression, &mut |units| {
-                    budget.charge(function, units, "borrowed helper rooted operand")
-                })? {
+                if !matches!(expression.kind, ResolvedExprKind::Match { .. })
+                    && !crate::hir::borrowed_scalar::expression(
+                        function,
+                        expression,
+                        &mut |units| {
+                            budget.charge(function, units, "borrowed helper rooted operand")
+                        },
+                    )?
+                {
                     return Err(fail(function));
                 }
                 match &expression.kind {
@@ -255,9 +298,56 @@ pub(in crate::cleanup_plan::replay) fn build<'a>(
                     } if type_arguments.is_empty() => {
                         call(program, function, callee, args, budget)?
                     }
-                    ResolvedExprKind::Match { scrutinee, .. }
-                        if matches!(scrutinee.ty, ResolvedType::Nominal { .. })
-                            && copy_type(program, function, &scrutinee.ty, budget)? => {}
+                    ResolvedExprKind::Match {
+                        mode,
+                        scrutinee,
+                        arms,
+                    } if matches!(scrutinee.ty, ResolvedType::Nominal { .. })
+                        && copy_type(program, function, &scrutinee.ty, budget)? =>
+                    {
+                        budget.charge(function, 1, "borrowed Option match header")?;
+                        if *mode != crate::hir::ResolvedMatchMode::Value
+                            || expression.ownership != OwnershipMode::Value
+                            || !crate::hir::is_scalar_resolved_type(&expression.ty)
+                            || arms.len() != 2
+                        {
+                            return Err(fail(function));
+                        }
+                        for arm in arms {
+                            budget.charge(function, 1, "borrowed Option arm header")?;
+                            if arm.guard.is_some()
+                                || !crate::hir::borrowed_scalar::option_u8::pattern_metered(
+                                    &arm.pattern,
+                                    &mut |units| {
+                                        budget.charge(
+                                            function,
+                                            units,
+                                            "borrowed exact Option pattern",
+                                        )
+                                    },
+                                )?
+                            {
+                                return Err(fail(function));
+                            }
+                        }
+                        let (
+                            ResolvedMatchPattern::Variant { case: a, .. },
+                            ResolvedMatchPattern::Variant { case: b, .. },
+                        ) = (&arms[0].pattern, &arms[1].pattern)
+                        else {
+                            return Err(fail(function));
+                        };
+                        if id_equal(function, a.as_str(), b.as_str(), budget)? {
+                            return Err(fail(function));
+                        }
+                        budget.reserve_vec(
+                            function,
+                            &mut matches,
+                            1,
+                            "borrowed exact match references",
+                        )?;
+                        matches.push(expression);
+                    }
                     ResolvedExprKind::Block { statements, .. } => {
                         for statement in statements {
                             budget.charge(
@@ -335,6 +425,7 @@ pub(in crate::cleanup_plan::replay) fn build<'a>(
         // Writer absence additionally retains its original census limits above.
         renewals: crate::cleanup_plan::ReplayRenewalBindings::empty(),
         schema_facts,
+        matches,
     })
 }
 #[cfg(test)]

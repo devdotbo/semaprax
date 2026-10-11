@@ -184,3 +184,39 @@ pub(crate) fn authenticated<E>(
     charge(1)?;
     Ok(fields.is_empty())
 }
+
+/// Exact single-case pattern receiver; no source spelling or general variant.
+#[cfg(test)]
+pub(crate) fn pattern<E>(
+    pattern: &ResolvedMatchPattern,
+    charge: &mut impl FnMut(usize) -> Result<(), E>,
+) -> Result<bool, E> {
+    charge(1)?;
+    let ResolvedMatchPattern::Variant {
+        variant,
+        case,
+        fields,
+    } = pattern
+    else {
+        return Ok(false);
+    };
+    if !equal(variant.as_str(), crate::prelude::OPTION_ID, charge)? {
+        return Ok(false);
+    }
+    if equal(case.as_str(), crate::prelude::OPTION_NONE_ID, charge)? {
+        return Ok(fields.is_empty());
+    }
+    if !equal(case.as_str(), crate::prelude::OPTION_SOME_ID, charge)? {
+        return Ok(false);
+    }
+    charge(1)?;
+    let [field] = fields.as_slice() else {
+        return Ok(false);
+    };
+    Ok(equal(
+        field.field.as_str(),
+        crate::prelude::OPTION_SOME_VALUE_ID,
+        charge,
+    )? && field.binding.ty == ResolvedType::U8
+        && field.binding.ownership == OwnershipMode::Value)
+}

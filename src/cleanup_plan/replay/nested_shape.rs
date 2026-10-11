@@ -403,3 +403,19 @@ pub(super) fn type_needs_drop(
     crate::cleanup::type_needs_resource_cleanup(program, ty)
         .map_err(|message| replay_error(function, message))
 }
+
+/// The guarded helper receiver authenticates every nominal probe on the same
+/// ledger; ordinary replay retains its original classification and diagnostics.
+pub(super) fn type_needs_drop_with_budget(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+    ty: &ResolvedType,
+    budget: &mut ReplayBudget,
+) -> Result<bool, Diagnostic> {
+    #[cfg(test)]
+    if let Some(lease) = program.borrowed_helper_lease(function) {
+        return lease.no_drop(program, function, ty, budget);
+    }
+    let _ = budget;
+    type_needs_drop(program, function, ty)
+}

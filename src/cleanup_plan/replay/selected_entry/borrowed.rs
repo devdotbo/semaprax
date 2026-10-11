@@ -1,4 +1,4 @@
-//! Guarded receiving-only session witness, not a successful replay verdict.
+//! Guarded complete borrowed helper replay; production admission stays closed.
 use super::*;
 impl Preparation {
     fn append_option_authority(
@@ -12,6 +12,20 @@ impl Preparation {
     }
 }
 impl Session<'_> {
+    fn borrowed_replay(&mut self, function: &ResolvedFunction) -> Result<(), Diagnostic> {
+        if self.failed {
+            return Err(replay_error(
+                function,
+                "selected module replay already failed",
+            ));
+        }
+        self.failed = true;
+        let context =
+            selected_context::borrowed::Context::new(&self.indexed, function, &mut self.budget)?;
+        scalar_replay::validate(&context, function, &mut self.budget)?;
+        self.failed = false;
+        Ok(())
+    }
     fn borrowed_receivers(&mut self, function: &ResolvedFunction) -> Result<(), Diagnostic> {
         if self.failed {
             return Err(replay_error(

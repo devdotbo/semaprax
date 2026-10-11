@@ -12,23 +12,37 @@ pub(super) fn validate(
             "selected helper signature is outside Copy scalars",
         ));
     }
-    scalar_nodes(function, budget)?;
+    #[cfg(test)]
+    let borrowed = program.borrowed_helper_lease(function);
+    #[cfg(test)]
+    let has_borrowed = borrowed.is_some();
+    #[cfg(not(test))]
+    let has_borrowed = false;
+    if !has_borrowed {
+        scalar_nodes(function, budget)?;
+    }
     selected_profile::validate(program, function, budget)?;
     selected_owner::owner(program, function, budget)?;
-    if function.loan_plan.schema != crate::loan_plan::LOAN_PLAN_SCHEMA_V1
-        || !function.loan_plan.loans.is_empty()
-        || !function.loan_plan.endpoints.is_empty()
-        || !function.loan_plan.edges.is_empty()
+    if !has_borrowed
+        && (function.loan_plan.schema != crate::loan_plan::LOAN_PLAN_SCHEMA_V1
+            || !function.loan_plan.loans.is_empty()
+            || !function.loan_plan.endpoints.is_empty()
+            || !function.loan_plan.edges.is_empty())
     {
         return Err(replay_error(
             function,
             "pure scalar helper carries an unexpected loan proof",
         ));
     }
+    #[cfg(test)]
+    let selected_schema = match &borrowed {
+        Some(lease) => lease.schema(program, function, budget)?,
+        None => schema::selected_schema_with_index(program, function, None)?,
+    };
+    #[cfg(not(test))]
+    let selected_schema = schema::selected_schema_with_index(program, function, None)?;
     let plan = &function.cleanup_plan;
-    if budget.physical.is_none()
-        || plan.lexical_control.is_some()
-        || plan.schema != schema::selected_schema_with_index(program, function, None)?
+    if budget.physical.is_none() || plan.lexical_control.is_some() || plan.schema != selected_schema
     {
         return Err(replay_error(
             function,
