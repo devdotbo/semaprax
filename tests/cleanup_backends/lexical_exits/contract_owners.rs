@@ -45,6 +45,7 @@ fn fresh_contract_owners_settle_once_before_publication_and_preserve_sticky_refu
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
+#include <stdio.h>
 static size_t allocated=0, freed=0;
 static void *observed_malloc(size_t n) {
     void *p=malloc(n); if(p!=NULL) allocated+=1; return p;
@@ -71,7 +72,10 @@ int main(void) {{
    if(token==SPX_STATUS_SUCCESS||status==NULL||strcmp(status->domain_id,"semaprax.contract.v1")!=0||status->code!=(pass==1?UINT32_C(1):UINT32_C(2))||output!=INT64_C(1234567)) return 2;
   }} else if(token!=SPX_STATUS_SUCCESS||output!=INT64_C(29)) return 3;
   size_t expected=pass==1?1:4;
-  if(allocated-before_alloc!=expected||freed-before_free!=expected||allocated!=freed||context.call_depth!=0) return 4;
+  if(allocated-before_alloc!=expected||freed-before_free!=expected||allocated!=freed||context.call_depth!=0) {{
+   fprintf(stderr,"contract-owner observation pass=%d allocated=%zu freed=%zu expected=%zu total_allocated=%zu total_freed=%zu depth=%zu\n",pass,allocated-before_alloc,freed-before_free,expected,allocated,freed,(size_t)context.call_depth);
+   return 4;
+  }}
  }}
  return 0;
 }}

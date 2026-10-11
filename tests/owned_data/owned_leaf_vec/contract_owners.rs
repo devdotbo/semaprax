@@ -19,10 +19,29 @@ fn interpret(source: &str, value: i64, code: Option<u32>) {
         super::SEQUENCE.fetch_add(1, Ordering::Relaxed)
     ));
     std::fs::write(&path, format!("{}{}", super::DECLARATION, source)).unwrap();
+    // The helper's owned String signature selects the documented explicit
+    // internal-strings route; ordinary Interpreter v1 must remain closed.
+    let legacy =
+        semaprax::interpreter::interpret(&path, "app.main", &[], &Default::default()).unwrap_err();
+    assert!(
+        legacy
+            .iter()
+            .any(|error| error.code == "SPX-F102" && error.message.contains("unsupported_callee"))
+    );
     for _ in 0..3 {
-        let observed =
-            semaprax::interpreter::interpret(&path, "app.main", &[], &Default::default()).unwrap();
-        semaprax::interpreter::verify_envelope(&observed.envelope).unwrap();
+        let observed = semaprax::interpreter::internal_strings::interpret(
+            &path,
+            "app.main",
+            &[],
+            &Default::default(),
+        )
+        .unwrap();
+        semaprax::interpreter::internal_strings::verify_envelope(&observed.envelope).unwrap();
+        semaprax::interpreter::internal_strings::verify_envelope_against_source(
+            &observed.envelope,
+            &path,
+        )
+        .unwrap();
         let envelope: serde_json::Value = serde_json::from_str(&observed.envelope).unwrap();
         let outcome = &envelope["payload"]["outcome"];
         if let Some(code) = code {
