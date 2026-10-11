@@ -190,3 +190,136 @@ fn function_signature_closure_and_authority_reservations_are_exact_and_stale_fie
         "SPX-G173"
     );
 }
+
+#[test]
+fn decoded_ready_wire_and_cleanup_match_complete_imports_with_private_descendants_omitted() {
+    let complete = include_str!("ready_caller.spx");
+    let provider = format!("{PROVIDER}{}", include_str!("ready_extension.spx"));
+    let mut inferred = complete.to_owned();
+    for (id, name) in [("report", "Report"), ("config", "Config"), ("row", "Row")] {
+        let import = format!("use type @id(\"{id}\") from function_layout.provider as {name};\n");
+        assert_eq!(inferred.matches(&import).count(), 1);
+        inferred = inferred.replace(&import, "");
+    }
+    for caller in [complete, inferred.as_str()] {
+        for ready in [true, false] {
+            let caller = if ready {
+                caller.to_owned()
+            } else {
+                let changed = caller.replace("let input = [0u8];", "let input = [];");
+                assert_ne!(changed, caller);
+                changed
+            };
+            let build = build_owned(sources(&caller, &provider)).unwrap();
+            let type_imports = build
+                .edges
+                .iter()
+                .filter(|edge| edge.caller_path == "caller.spx" && edge.kind == "type_import")
+                .collect::<Vec<_>>();
+            assert_eq!(
+                type_imports.len(),
+                if caller.contains("as Report;") { 4 } else { 1 }
+            );
+            assert!(type_imports.iter().any(|edge| edge.target == "decoded"));
+            if !caller.contains("as Report;") {
+                assert!(type_imports.iter().all(|edge| edge.target == "decoded"));
+            }
+            let linked = build
+                .linked_owned_data_api_program_with_roots("function_layout.app", &[])
+                .unwrap();
+            crate::hir::validate(&linked).unwrap();
+            for id in ["decoded", "report", "config", "row"] {
+                assert!(linked.types.iter().any(|ty| ty.id.as_str() == id));
+            }
+            super::function_runtime::run_expected(&linked, false, if ready { 42 } else { 7 });
+        }
+        let failed = provider.replace(
+            "fn encode(value: borrow Report) -> string\n{",
+            "fn encode(value: borrow Report) -> string\nensures false\n{",
+        );
+        assert_ne!(failed, provider);
+        let linked = build_owned(sources(caller, &failed))
+            .unwrap()
+            .linked_owned_data_api_program_with_roots("function_layout.app", &[])
+            .unwrap();
+        crate::hir::validate(&linked).unwrap();
+        super::function_runtime::run_expected(&linked, true, 42);
+    }
+    let parsed = programs(&inferred, &provider);
+    let authored = index_authored(&parsed).unwrap();
+    let closure = LayoutClosure::derive(&parsed[0], &authored, &parsed).unwrap();
+    assert_eq!(
+        closure
+            .entries
+            .iter()
+            .map(|e| e.declaration.stable_id.as_str())
+            .collect::<Vec<_>>(),
+        ["config", "report", "row"]
+    );
+    let missing_root = inferred.replace(
+        "use type @id(\"decoded\") from function_layout.provider as Decoded;",
+        "",
+    );
+    assert!(build_owned(sources(&missing_root, &provider)).is_err());
+    let copied = parsed.clone();
+    assert!(LayoutClosure::derive(&parsed[0], &authored, &copied).is_err());
+    for changed in [
+        provider.replace("@id(\"config.text\")", ""),
+        provider.replace("rows: Vec<Row>", "rows: Vec<Vec<Row>>"),
+        provider.replace("config: Config", "config: Report"),
+    ] {
+        assert_ne!(changed, provider);
+        assert!(build_owned(sources(&inferred, &changed)).is_err());
+    }
+    // A fresh provider body is used, rather than an old stub or old wire value.
+    let drift = provider.replace("text: \"row\"", "text: \"changed\"");
+    assert_ne!(drift, provider);
+    let changed = build_owned(sources(&inferred, &drift))
+        .unwrap()
+        .linked_owned_data_api_program_with_roots("function_layout.app", &[])
+        .unwrap();
+    crate::hir::validate(&changed).unwrap();
+    super::function_runtime::run_expected(&changed, false, 0);
+    // Retained private layouts must match the current complete provider layout.
+    let mut modules = parsed
+        .iter()
+        .map(|p| {
+            let synthetic = crate::workspace_graph::expected_projection::synthetic_program(
+                p, &authored, &parsed,
+            )
+            .unwrap();
+            (p.module.clone(), crate::hir::resolve(&synthetic).unwrap())
+        })
+        .collect::<Vec<_>>();
+    crate::workspace_graph::validation::validate_stub_signatures(&parsed, &modules).unwrap();
+    let ready = modules[0]
+        .1
+        .types
+        .iter_mut()
+        .find(|t| t.id.as_str() == "decoded")
+        .unwrap();
+    let ResolvedTypeDeclarationKind::Variant { cases } = &mut ready.kind else {
+        panic!("variant")
+    };
+    cases
+        .iter_mut()
+        .find(|case| case.id.as_str() == "decoded.ready")
+        .unwrap()
+        .fields[0]
+        .ty = crate::hir::ResolvedType::I64;
+    assert_eq!(
+        crate::workspace_graph::validation::validate_stub_signatures(&parsed, &modules)
+            .unwrap_err()[0]
+            .code,
+        "SPX-G173"
+    );
+    let mut retained =
+        crate::workspace_graph::validation::WorkspaceValidationIndex::new(&parsed).unwrap();
+    for (module, program) in &modules {
+        retained.record_module(module, program, &parsed).unwrap();
+    }
+    assert_eq!(
+        retained.validate_stub_signatures(&parsed).unwrap_err()[0].code,
+        "SPX-G173"
+    );
+}

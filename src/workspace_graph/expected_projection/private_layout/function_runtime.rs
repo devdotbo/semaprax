@@ -4,17 +4,21 @@ use std::process::Command;
 use std::sync::atomic::{AtomicUsize, Ordering};
 static NEXT: AtomicUsize = AtomicUsize::new(0);
 pub(super) fn run(program: &ResolvedProgram, failure: bool) {
+    run_expected(program, failure, 42);
+}
+pub(super) fn run_expected(program: &ResolvedProgram, failure: bool, expected: i64) {
     let interpreted =
         crate::interpreter::evaluate_resolved_zero_arg_i64(program, "app.main", 100_000).unwrap();
     if failure {
         assert!(matches!(
             interpreted.outcome,
-            crate::interpreter::ResolvedEvaluationOutcome::LanguageFailure(_)
+            crate::interpreter::ResolvedEvaluationOutcome::LanguageFailure(ref status)
+                if status.domain_id() == "semaprax.contract.v1" && status.code() == 2
         ));
     } else {
         assert!(matches!(
             interpreted.outcome,
-            crate::interpreter::ResolvedEvaluationOutcome::ReturnedI64(42)
+            crate::interpreter::ResolvedEvaluationOutcome::ReturnedI64(value) if value == expected
         ));
     }
     let root = std::env::temp_dir().join(format!(
@@ -34,7 +38,8 @@ pub(super) fn run(program: &ResolvedProgram, failure: bool) {
         )
         .replace("free(", "layout_free(");
     let probe = include_str!("function_runtime.c")
-        .replace("/* expected failure */", if failure { "1" } else { "0" });
+        .replace("/* expected failure */", if failure { "1" } else { "0" })
+        .replace("/* expected value */", &expected.to_string());
     let allocator = r#"#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -83,13 +88,14 @@ static void layout_free(void*p){if(p){if(!layout_live)abort();--layout_live;free
         include_str!("../../../../tests/owned_data/owned_leaf_vec/host.js"),
     )
     .unwrap();
+    let expected = expected.to_string();
     let executed = Command::new("node")
         .arg(host)
         .arg(wasm)
         .args(if failure {
             ["10", "0", "prefix-failure"]
         } else {
-            ["0", "42", "prefix-failure"]
+            ["0", expected.as_str(), "prefix-failure"]
         })
         .output()
         .unwrap();

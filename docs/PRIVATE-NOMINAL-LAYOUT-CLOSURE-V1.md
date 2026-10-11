@@ -89,13 +89,23 @@ forged Vec-parameter refusal while checking descendant omission. The existing
 text-collection hostile shapes remain refused. The workspace source-boundary
 gate joins the new implementation and test children.
 
-The `private_layout::function_tests::` child adds three definitions covering
+The `private_layout::function_tests::` child adds four definitions covering
 function-only forwarding and borrowed nested String/Vec projections, exact root
 and descendant identities, absent sibling/ancestor/source-name authority, stale
 provider pointers, both signature parity paths, and exact/one-short storage.
 The same linked source has interpreter, native O0/O2 and strict CoreWasm owning
 success and failed-postcondition controls with repeated invocation and zero live
 native/String/Vec storage; no production source or backend ABI is substituted.
+The fourth definition compares complete imports with all three private descendant
+imports omitted on the same `Decoded.Ready` provider. Both callers check exact
+Unicode/NUL-containing encoded String bytes before and after forwarding the
+Report; `Decoded.Error` has a distinct result. Interpreter, native O0/O2 and
+strict Wasm repeat success, provider-body drift, and exact failed encoder
+postconditions. Native retains the poisoned result cell; Wasm requires the exact
+failure with no returned value. Both keep their zero-owner observers. Current source and
+retained Ready-field type mutations remain independently refused. These are
+authored gates; current-head execution is still required for qualification.
+
 Function-root admission consumes an invocation-held, precharged ownership and
 signature-site directory. A shared bounded postorder walk computes each reached
 nominal declaration's ownedness once; exact current function/type pointers bind

@@ -1,0 +1,24 @@
+module function_layout.app;
+use type @id("decoded") from function_layout.provider as Decoded;
+use type @id("report") from function_layout.provider as Report;
+use type @id("config") from function_layout.provider as Config;
+use type @id("row") from function_layout.provider as Row;
+use function @id("decode") from function_layout.provider as decode;
+use function @id("encode") from function_layout.provider as encode;
+use function @id("forward") from function_layout.provider as forward;
+
+@id("app.main")
+fn main() -> i64
+{
+    let input = [0u8];
+    let decoded = decode(array_as_slice(input));
+    match own decoded {
+        Decoded::Error { code, offset, field } => code,
+        Decoded::Ready { value } => {
+            let first = encode(value);
+            let moved = forward(value);
+            let second = encode(moved);
+            if first == "é\u{0}|row|21" && second == "é\u{0}|row|21" { 42 } else { 0 }
+        },
+    }
+}
