@@ -5,20 +5,9 @@ use super::*;
 #[path = "views/identifier_index.rs"]
 mod identifier_index;
 
-pub(super) const SCHEMA: &str = r#"module consumer.schema;
-@id("application.patient") record Patient {
- @id("application.patient.id") id:string,
- @id("application.patient.arrival") arrival:i64,
- @id("application.patient.service") service:i64,
- @id("application.patient.priority") priority:i64,
- @id("application.patient.deadline") deadline:i64,
-}
-@id("application.request") record Request {
- @id("application.request.servers") servers:Vec<string>,
- @id("application.request.patients") patients:Vec<Patient>,
-}
-@id("consumer.schema.anchor") fn schema_anchor()->i64 {0}
-"#;
+#[path = "views/identifier_fixture.rs"]
+mod identifier_fixture;
+pub(super) use identifier_fixture::SCHEMA;
 
 fn app() -> String {
     let imports = r#"module consumer.app;

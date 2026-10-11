@@ -881,3 +881,6 @@ fn persisted_selection_is_closed_startup_policy_not_a_legacy_extension() {
     let rejected = fixture.session(&selected, "");
     assert!(String::from_utf8_lossy(&rejected.stderr).contains("SPX-G280"));
 }
+
+#[path = "semantic_cache_store_cli_v1/application_profiles.rs"]
+mod application_profiles;
