@@ -124,6 +124,9 @@ pub(in crate::workspace_graph) fn input_carrier_delta() -> Result<usize, Vec<Dia
 }
 
 /// Cache keys and invariant transforms keep the old owned representation.
+// The reused inline owning fallback is priced by input_carrier_delta using
+// actual sizeof; a Box would introduce a separate unpriced allocation.
+#[allow(clippy::large_enum_variant)]
 pub(in crate::workspace_graph) enum Input<'a> {
     Owned(Program),
     Borrowed(SyntheticProgramView<'a>),

@@ -17,6 +17,9 @@ impl Deref for CheckedModuleLease {
         &self.0.resolved
     }
 }
+// Keep the owned fallback inline: its actual carrier delta is prepaid by
+// checked_retention::reserve_input_carriers. Boxing adds a new allocation.
+#[allow(clippy::large_enum_variant)]
 #[cfg_attr(test, derive(Clone))]
 pub(crate) enum ResolvedModuleInput {
     Owned(ResolvedProgram),

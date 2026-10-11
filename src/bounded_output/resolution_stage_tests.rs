@@ -88,3 +88,30 @@ fn resolver_first_inner_refusal_survives_unwind_and_nested_budget_restore() {
     );
     assert!(active().is_none());
 }
+
+#[test]
+fn sticky_required_refusal_rejects_zero_and_fitting_retries_without_spending_balance() {
+    let ((retry_usage, observed), overflow, charged, refusal) =
+        with_limit_usage_refusal(2, || {
+            assert!(reserve_active_required(0));
+            assert!(reserve_active_required(1));
+            with_reservation_stage(ReservationStage::HirLowering, || {
+                assert!(!reserve_active_required(2));
+            });
+            let (usage, observed) = crate::test_allocation_observer::measure(|| {
+                assert!(!reserve_active_required(0));
+                assert!(!reserve_active_required(1));
+                assert!(!reserve_active(0));
+                assert!(!reserve_active_preserving(0, 0));
+                active().unwrap().remaining.get()
+            });
+            (usage, observed)
+        });
+    assert!(overflow);
+    assert_eq!((charged, retry_usage), (1, 1));
+    let refusal = refusal.unwrap();
+    assert_eq!((refusal.requested, refusal.remaining), (2, 1));
+    assert_eq!(refusal.stage, Some(ReservationStage::HirLowering));
+    assert!(!observed.invalid);
+    assert_eq!(observed.allocations, 0);
+}

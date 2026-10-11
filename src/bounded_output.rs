@@ -227,6 +227,11 @@ fn reserve(budget: Option<&Budget>, length: usize) -> bool {
     let Some(budget) = budget else {
         return true;
     };
+    // A selected refusal remains authoritative even when a later request is
+    // zero or fits the unspent balance. No retry may restore admission.
+    if budget.overflowed.get() {
+        return false;
+    }
     let remaining = budget.remaining.get();
     if length > remaining {
         record_refusal(budget, length);

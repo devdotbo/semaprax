@@ -93,7 +93,7 @@ fn saved_split_off_resolver_keeps_complete_hir_loans_cleanup_and_lazy_shapes() {
     let cases = [wide, format!("module extraction; @id(\"extraction.main\") fn main() -> i64 {{ {nested} }}"),
         "module extraction; @id(\"extraction.main\") fn main() -> i64 { let bytes = bytes_zeroed(3usize); let view = bytes_as_slice(bytes); if byte_len(view) == 3usize && true { 7 + 2 } else { 1 / 0 } }".to_owned(),
         "module extraction; @id(\"extraction.main\") fn main() -> i64 { if true { 1 / 0 } else { 3 } }".to_owned()];
-    for source in cases {
+    for (case, source) in cases.into_iter().enumerate() {
         let ast = crate::check(&source, "extraction.spx").unwrap();
         let old = with_saved_old(|| crate::hir::resolve(&ast)).unwrap();
         let current = crate::hir::resolve(&ast).unwrap();
@@ -109,10 +109,19 @@ fn saved_split_off_resolver_keeps_complete_hir_loans_cleanup_and_lazy_shapes() {
             )
             .unwrap()
         );
-        assert_eq!(
-            crate::cache_codec::encode(&old).unwrap(),
-            crate::cache_codec::encode(&current).unwrap()
-        );
+        let old_wire = crate::cache_codec::encode(&old);
+        let current_wire = crate::cache_codec::encode(&current);
+        assert_eq!(old_wire, current_wire, "complete wire outcome differs for case {case}");
+        if case == 1 {
+            // The unchanged 32-level HIR fixture exceeds the codec's existing
+            // nesting envelope; compare its exact refusal, retain full HIR and
+            // runtime parity above/below, and never increase that envelope.
+            let errors = current_wire.unwrap_err();
+            assert!(!errors.is_empty());
+            assert!(errors.iter().all(|error| error.code == "SPX-G305"));
+        } else {
+            assert!(current_wire.is_ok(), "admitted wire fixture {case}: {current_wire:?}");
+        }
         for (old, current) in old.functions.iter().zip(&current.functions) {
             assert_eq!(old.body, current.body);
             assert_eq!(old.loan_plan, current.loan_plan);

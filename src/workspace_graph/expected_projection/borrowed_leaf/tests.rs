@@ -141,7 +141,7 @@ fn borrowed_leaf_full_pipeline_keeps_owned_fallback_and_original_diagnostics() {
     );
 
     let duplicate_types = [crate::parse(
-        "module duplicate_types; @id(\"first\") record Row { @id(\"first.value\") value:i64, } @id(\"second\") record Row { @id(\"second.value\") value:i64, }",
+        "module duplicate_types; @id(\"first\") record Row { @id(\"first.value\") value:i64, } @id(\"second\") record Row { @id(\"second.value\") value:i64, } @id(\"duplicate.main\") fn main()->i64 { 0 }",
         "duplicate_types.spx",
     ).unwrap()];
     let type_authored = index_authored(&duplicate_types).unwrap();
