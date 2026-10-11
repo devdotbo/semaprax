@@ -17,7 +17,11 @@ assert.deepEqual(imports,names.map(name=>({module:namespace,name,kind:'function'
 const grants=new WeakSet([module]);
 // Issuer is an explicitly held owner, never an ambient/global counter. Its
 // nonce cannot reset/wrap; exact object identity is an externref carrier field.
-function issuerOwner(){let next=1n;return Object.freeze({mint(){if(next>=0xffffffffffffffffn)throw new Error('issuer-exhaustion');return next++;}});}
+function issuerOwner(){let next=1n,active=null;return Object.freeze({
+  acquire(context){if(active!==null)throw new Error('issuer-active');active=context;},
+  release(context){if(active!==context)throw new Error('foreign-context');active=null;},
+  mint(){if(next>=0xffffffffffffffffn)throw new Error('issuer-exhaustion');return next++;}
+});}
 const phaseCode={Unstarted:0,Building:1,Complete:2,Aborted:3,Settled:4};
 async function instantiate(grant,issuer,metadataLimit=Infinity){
   if(!grants.has(grant))throw new Error('foreign-module');
@@ -25,6 +29,7 @@ async function instantiate(grant,issuer,metadataLimit=Infinity){
   // claimed physically charged; production activation remains closed.
   const required=count*(8+8+1+1+4)+64*(8+4+8+1);
   if(metadataLimit<required)throw new Error('metadata-preflight');
+  const context=Object.freeze({});issuer.acquire(context);
   let phase='Unstarted',issued=0,live=0,pin=false,payload=null,tables=null;
   let allocations=0,releases=0,metadataBytes=0,events=0,cumulative=0;
   function identity(value){if(value!==issuer)throw new Error('foreign-issuer');}
@@ -34,7 +39,7 @@ async function instantiate(grant,issuer,metadataLimit=Infinity){
     return slot;
   }
   function owner(value,index,nonce){identity(value);return slot(index,nonce);}
-  function release(){if(live===0&&!pin){if(payload!==null){payload=null;releases++;}phase='Settled';}}
+  function release(){if(live===0&&!pin){if(payload!==null){payload=null;releases++;}phase='Settled';issuer.release(context);}}
   function allocate(){
     // Complete fixed metadata and one payload acquired only at firstBytes.
     // Host physical OOM propagates, never becomes a recoverable source status.
@@ -89,11 +94,13 @@ for(let slot=0;slot<64;slot++){assert.equal(a.read(issuer,slot,concurrent[slot],
 
 const old=owners[0];owners[0]=a.move_owner(issuer,0,old);
 assert.throws(()=>a.drop_owner(issuer,0,old),/stale-owner/);
-const other=await instantiate(module,issuer);other.api.start(issuer);
-const foreign=other.api.issue(issuer,0);assert.throws(()=>a.drop_owner(issuer,0,foreign),/stale-owner/);
-other.api.abort(issuer);assert.throws(()=>other.api.settle_abort(issuer),/unsettled/);
-other.api.drop_owner(issuer,0,foreign);assert.equal(other.observation().releases,0);
-other.api.settle_abort(issuer);assert.equal(other.observation().releases,1);
+// Same held issuer cannot acquire a second domain while current children live.
+await assert.rejects(()=>instantiate(module,issuer),/issuer-active/);
+const otherIssuer=issuerOwner(),other=await instantiate(module,otherIssuer);other.api.start(otherIssuer);
+const foreign=other.api.issue(otherIssuer,0);assert.throws(()=>a.drop_owner(otherIssuer,0,foreign),/foreign-issuer/);
+other.api.abort(otherIssuer);assert.throws(()=>other.api.settle_abort(otherIssuer),/unsettled/);
+other.api.drop_owner(otherIssuer,0,foreign);assert.equal(other.observation().releases,0);
+other.api.settle_abort(otherIssuer);assert.equal(other.observation().releases,1);
 for(let index=0;index<count;index++){a.drop_owner(issuer,index,owners[index]);assert.equal(first.observation().releases,index===count-1?1:0);}
 assert.equal(a.phase(issuer),phaseCode.Settled);
 assert.equal(first.observation().events,1);

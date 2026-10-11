@@ -156,7 +156,9 @@ public Bytes ABI. Its host factory instantiates only the exact granted module;
 imports stay private to that factory. The private carrier supplies a held issuer
 `externref`, a slot and a never-reused nonce. Exact issuer object, invocation-held
 slot/nonce and generation validation precede every payload read or release.
-A different issuer, module grant, invocation or retired owner/view refuses.
+A different issuer, module grant, invocation or retired owner/view refuses. The
+held issuer grants exactly one active domain, retained until settlement; overlapping
+instantiation refuses, and sequential reentry retains the non-resettable nonce.
 
 The host acquires fixed lease and64-view typed tables and one zeroed payload at
 the first Bytes preparation. It retains the same publication, complete-only
