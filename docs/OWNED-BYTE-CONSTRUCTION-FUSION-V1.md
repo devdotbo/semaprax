@@ -234,3 +234,58 @@ engine, closure, nonce and bookkeeping allocations are not a claimed complete
 physical reservation or allocator measurement. Full executor storage accounting,
 source lowering and immutable source/HIR provenance still have to join before
 activation; this host namespace grants no production or ordinary admission.
+
+## Source half of the selected FusedConstructionV1 proof
+
+`source_verify::fused_construction` derives a borrowed, provisional source
+proof for one function from the exact current AST. Its derivation is separate
+from the diagnostic inventory above. The module must be closed, and no program
+function may shadow a builtin the proof resolves. The function is explicit,
+nongeneric, parameterless, effect-free and contract-free. Its body opens with
+a fresh mutable `vec_with_capacity<Row>(N)` destination and a fresh mutable
+zero induction, in either order, followed by `while i < N`. The loop body is
+exactly an immutable row constructor, `vec_push` into the same destination, a
+unit latch and a unit tail. The row record is explicit and nongeneric, with
+between two and eight uniquely identified `i64`/String/Bytes fields, exactly
+one Bytes field and at most two owned fields, matching the existing owned-leaf
+Vec slice. Integer fields take the induction or a literal, and
+String fields take literals; the proof reports their UTF-8 total, which is
+still charged in full. The only selected producer is direct `bytes_zeroed`
+with a positive literal width. Bounded, copying, stdin-reading or
+helper-produced Bytes refuse, and no helper name is a selector.
+
+The source constants are restated independently: 32 legacy rows, 4,096
+selected rows and a 131,072-byte backing. The record's existing Vec envelopes
+can only lower that bound: 8,192 rows overall, 8,192 divided by the scalar
+field count, and 131,072 divided by 16 per owned field. Counts 1 through 32 derive `Legacy32` and keep the
+unchanged `FiniteOwnedLoop` route. Counts 33 through 4,096 with
+`rows * width <= 131072` derive `Selected`. A closed suffix census admits
+immutable moves, `vec_sort_owned`, `for borrow` views and `vec_len`. It
+records each move, sort and borrow statement as an ordered owner event and
+refuses clones, unknown calls, owner mutation, shadowing, escaping views and
+use after transfer. Each refusal is a typed step in source order.
+
+The proof borrows its program, function, record, field, destination,
+induction, loop, row, push, latch, producer and owner-event nodes.
+`authenticate` re-derives the proof and requires the same nodes, and a clone
+refuses. `producer_site` is the source capacity walk's `BytesCopy` site for
+the producer. `raw_join_key` returns a freely constructible `RawJoinKey`.
+It is comparison data, never authority, and it omits the owner events after
+the loop and every current-owner fact. Before a join, the held proof must
+authenticate over the actual AST and the whole program must pass source and
+HIR validation. An independent typed-HIR proof must also cover the
+construction, the closed suffix and the current owner at each transfer.
+Only then may equal keys be compared.
+
+These bounds are semantic charges, not physical sizes. The 131,072-byte
+owned-carrier envelope charges 16 per owned field. It does not bound the
+size of a row or the heap it uses. In native code a String owner is an
+8-byte pointer (a borrowed str view is 16), so a selected row of Bytes,
+`i64` and String is 24 + 8 + 8 = 40 bytes. An executor must derive the
+actual target layout and fund its lease metadata separately. The existing
+65,536-byte inline frame cap cannot hold a roughly 165 KB administrative
+table on the stack. This proof raises no cap and no quota. Nothing in this
+module constructs a capacity flow, selects an
+allocation strategy, alters `SPX-T267` or default admission, or reaches a
+backend. The source-only definitions in `fused_construction::tests::` are
+authored but have not been executed.

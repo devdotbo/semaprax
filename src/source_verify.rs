@@ -43,6 +43,7 @@ pub(crate) use declared_type::owned_leaf_collection::{
 mod diagnostics;
 mod expression_statement;
 pub(crate) mod function_value_inventory;
+pub(crate) mod fused_construction;
 mod generic_inference;
 mod hints;
 mod iterative;
