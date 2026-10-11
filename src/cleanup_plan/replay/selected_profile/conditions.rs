@@ -105,7 +105,8 @@ fn condition_reads(
         if let Some(child) = cursor.next() {
             // Legacy condition_reads traverses a nested ordinary While's
             // condition, never its body. All other child shapes stay authored.
-            let skip = matches!(cursor.last_statement_child(),
+            let skip = matches!(expression.kind, ResolvedExprKind::Block { .. })
+                && matches!(cursor.last_statement_child(),
                 Some((crate::hir::ResolvedStatement::While { body, .. }, _))
                     if std::ptr::eq(body.as_ref(), child));
             frames[depth - 1] = Some((cursor, true));

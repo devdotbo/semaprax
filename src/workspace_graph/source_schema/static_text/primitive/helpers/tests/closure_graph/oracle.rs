@@ -282,6 +282,7 @@ fn authenticate_inner<'a>(
             lexical.push(function);
         }
     }
+    let types = types::discover(module, modules, facts, &mut local.index, resources, anchor)?;
     let edges = shape.edges.len();
     let walks = shape.walks;
     Ok((
@@ -290,6 +291,7 @@ fn authenticate_inner<'a>(
             helpers,
             lexical,
             count,
+            types,
             walks,
             edges,
         },
