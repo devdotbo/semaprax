@@ -12,7 +12,7 @@ use crate::source_verify::is_scalar_source_type;
 use super::expr_nodes::ResolvedExpr;
 use super::ids::{DeclarationId, FunctionExecutionId};
 use super::monomorphize::substitute_type;
-use super::nodes::{is_scalar_resolved_type, DeclarationKind, ResolvedBinding, ResolvedType};
+use super::nodes::{DeclarationKind, ResolvedBinding, ResolvedType, is_scalar_resolved_type};
 use super::{Binding, Resolver};
 
 impl Resolver<'_> {
@@ -283,8 +283,13 @@ impl Resolver<'_> {
                     }
                     if let Some(operation) = vec_operation {
                         if !operation.admitted_in_while()
-                            || type_arguments.len() != 1
-                            || !(crate::vec_ops::ast_element_is_admitted(&type_arguments[0]) || crate::source_verify::copy_record_source_admitted(self.program, &type_arguments[0]) || crate::source_verify::owned_leaf_source_admitted(self.program, &type_arguments[0]) || generic.is_some_and(|f| matches!(&type_arguments[0], Type::Named { name, arguments } if arguments.is_empty() && f.type_parameters.iter().any(|parameter| parameter.name == *name))))
+                            || (if operation == crate::vec_ops::VecOp::StrAt {
+                                !type_arguments.is_empty()
+                                    || !matches!(args.as_slice(), [source, _] if matches!(source.kind, ExprKind::Var(_)))
+                            } else {
+                                type_arguments.len() != 1
+                                    || !(crate::vec_ops::ast_element_is_admitted(&type_arguments[0]) || crate::source_verify::copy_record_source_admitted(self.program, &type_arguments[0]) || crate::source_verify::owned_leaf_source_admitted(self.program, &type_arguments[0]) || generic.is_some_and(|f| matches!(&type_arguments[0], Type::Named { name, arguments } if arguments.is_empty() && f.type_parameters.iter().any(|parameter| parameter.name == *name))))
+                            })
                             || args.len() != operation.arity()
                         {
                             return Err(self.error(

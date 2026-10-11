@@ -244,3 +244,29 @@ fn inline_string_copy_refuses_forged_view_operation_type_and_root() {
         );
     }
 }
+
+#[test]
+fn resolved_string_slot_fused_loop_keeps_named_monomorphic_admission() {
+    let source = include_str!("../../../tests/fixtures/string-slot-views.spx");
+    let parsed = crate::check(source, "resolved-slots-loop.spx").unwrap();
+    let resolved = crate::hir::resolve(&parsed).unwrap();
+    crate::hir::validate(&resolved).unwrap();
+}
+
+#[test]
+fn resolved_string_slot_loop_refuses_typed_computed_and_missing_operands() {
+    let source = include_str!("../../../tests/fixtures/string-slot-views.spx");
+    for replacement in [
+        "str_as_bytes(vec_str_at<string>(values,0usize))",
+        "str_as_bytes(vec_str_at({values},0usize))",
+        "str_as_bytes(vec_str_at(values))",
+    ] {
+        let changed = source.replace("str_as_bytes(vec_str_at(values,0usize))", replacement);
+        assert_ne!(changed, source);
+        // Bypass source verification to exercise the independent HIR guard.
+        let parsed =
+            crate::parse(&changed, std::path::Path::new("resolved-slots-loop.spx")).unwrap();
+        let error = crate::hir::resolve(&parsed).unwrap_err();
+        assert_eq!(error.code, "SPX-T283", "{replacement}: {error:?}");
+    }
+}
