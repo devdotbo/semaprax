@@ -12,7 +12,6 @@ use function @id("std.pattern.reason") from std.pattern as reason;
 use function @id("std.pattern.result-valid") from std.pattern as result_valid;
 use function @id("std.pattern.status") from std.pattern as status;
 use function @id("std.pattern.work-used") from std.pattern as work_used;
-
 use function @id("std.pattern.internal.carrier-valid") from std.pattern as carrier_valid;
 use function @id("std.pattern.internal.read") from std.pattern as read;
 use function @id("std.pattern.internal.load-8") from std.pattern as load8;
@@ -25,7 +24,6 @@ fn frozen_result_valid(state: borrow Matcher) -> bool
     let mut valid = carrier_valid(state);
     if valid { valid = read(state, 2696usize) == 83usize && read(state, 2697usize) == 80usize && read(state, 2698usize) == 65usize && read(state, 2699usize) == 84usize && read(state, 2700usize) == 1usize; if valid { let code = read(state, 2701usize); let count = read(state, 2702usize); let reason = read(state, 2703usize); let length = load8(state, 2704usize); let work = load8(state, 2712usize); let detail = load8(state, 2720usize); valid = code <= 4usize && count <= 16usize && work >= 32usize && work <= 262144usize; valid = valid && (code == 1usize || count == 0usize); valid = valid && (code == 4usize && (reason >= 1usize && reason <= 5usize || reason == 7usize) || code == 3usize && (reason == 1usize || reason == 2usize) || code <= 2usize && reason == 0usize); valid = valid && (code != 3usize || reason == 1usize && detail <= 1024usize || reason == 2usize && detail < 1664usize); valid = valid && (length <= 65536usize || code == 4usize && reason == 2usize); valid = valid && (code != 0usize || length == 0usize); valid = valid && (code != 3usize || reason != 1usize || length == 0usize); valid = valid && (code != 4usize || reason != 1usize || length == 0usize && detail > 1024usize); valid = valid && (code != 4usize || reason != 2usize || length > 65536usize && detail == length); valid = valid && (code != 4usize || reason < 3usize || reason > 5usize || length == 0usize && detail <= 1024usize); valid = valid && (code != 4usize || reason != 7usize || detail == 0usize); valid = valid && (code == 3usize || code == 4usize || detail == 0usize); let mut capture = 0usize; while valid && capture < count { let start = load8(state, 2728usize + capture * 16usize); let end = load8(state, 2736usize + capture * 16usize); valid = start <= end && end <= length; capture = capture + 1usize; 0 } valid } else { false } } else { false }
 }
-
 
 @id("std.pattern.tests.main")
 fn main() -> i64
