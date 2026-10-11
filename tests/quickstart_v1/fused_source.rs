@@ -166,6 +166,14 @@ fn fused_source_options_deny_wrong_profile_project_fuel_and_unrelated_routes_bef
     let fixture = Fixture::new("fused-options");
     for args in [
         vec![
+            "build",
+            "missing.spx",
+            "--profile",
+            "fused-construction-v1",
+            "--managed-bytes",
+            ACCOUNT,
+        ],
+        vec![
             "run",
             "missing.spx",
             "--profile",

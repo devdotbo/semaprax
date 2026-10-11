@@ -561,6 +561,10 @@ pub(crate) fn parse_with_capabilities(
         (None, None) => BuildInput::Project(PathBuf::from(DEFAULT_MANIFEST)),
         (Some(_), Some(_)) => unreachable!("ambiguity rejected above"),
     };
+    if profile.as_deref() == Some(semaprax::fused_source::PROFILE) && target.is_none() {
+        eprintln!("fused-construction-v1 requires explicit --target native or wasm");
+        return Err(2);
+    }
     let target = target.unwrap_or_else(|| {
         if matches!(&input, BuildInput::Project(_)) {
             "web".to_owned()

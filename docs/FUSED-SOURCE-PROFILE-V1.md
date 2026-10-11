@@ -22,6 +22,9 @@ Overflow, zero, leading zeros and unsupported option combinations are rejected
 before source IO. The limit grants capacity, not an eager allocation of that
 amount.
 
+Build requires an explicit `--target native` or `--target wasm`; an implicit
+ordinary build default cannot select an account policy.
+
 Only a source file with the exact independently selected closed construction
 shape and one `main() -> i64` entry is eligible. The original unmodified
 `tests/fixtures/record-traversal-maximum.spx` is the owning positive fixture.
