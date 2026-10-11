@@ -257,7 +257,7 @@ mod tests {
             let mut work = available;
             let result = pure_records_metered(function, &program.types, &mut work, &mut |_| Ok(()));
             if available == spent {
-                assert_eq!(result.unwrap(), true);
+                assert!(result.unwrap());
                 assert_eq!(work, 0);
             } else {
                 assert!(result.is_err());
