@@ -1,6 +1,7 @@
 //! Single-file source checking, build, execution, and diagnostic publication.
 
 use super::*;
+#[path = "source_execution/fused_profile.rs"]
 mod fused_profile;
 
 pub(super) fn checked(path: &Path) -> Result<semaprax::ast::Program, u8> {
