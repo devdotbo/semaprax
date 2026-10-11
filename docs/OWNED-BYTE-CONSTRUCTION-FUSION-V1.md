@@ -327,6 +327,89 @@ through the real factory. Only hostile precursor controls use rescaled HIR.
 All definitions remain unexecuted. Default admission still requires matching
 native and interpreter executors and owning acceptance checks.
 
+### Source-only `fused-construction-v1` Core-Wasm package (OPT #768)
+
+Status: authored adapter; owning definitions unexecuted. No CLI route, public
+provider, Project, cache, graph or evidence route reaches it, and the default
+route still reports `SPX-T267`.
+
+The crate-private `wasm::emit_fused_source_package(owner, account_bytes,
+source_sha256)` receives the sealed `ValidatedFusedSelection` that the source
+facade built from one read and one parse. It never rereads, reparses,
+re-resolves or falls back to ordinary admission. It calls the selected receiver
+once and builds the whole package from that one result:
+- `fused-construction-v1.wasm`, the module;
+- `fused-construction-v1.json`, the manifest;
+- `fused-construction-v1.mjs`, the generated entry with the manifest embedded;
+- `selected-host.mjs`, the private host, byte for byte.
+
+The manifest binds the profile, the strategy, the facade-supplied raw-source
+SHA-256, the module SHA-256, the grant (whose digest is that module SHA-256),
+the `i64` result and its envelope schema, and the funding policy. No input
+accepts a grant or a module. `wasm::publish_fused_source_package` re-verifies
+the file set and order, the shipped host and the single module digest bound by
+the manifest, grant and entry. It refuses any splice before writing, then
+publishes through the existing fresh-directory atomic package writer.
+
+`account_bytes` is the explicit compiled maximum: a positive integer of at most
+1,073,741,824 (1 GiB), with no default. The public entry's only function is
+`install(accountBytes)`. It takes the caller's explicit limit, a safe positive
+integer no larger than the compiled maximum or 1 GiB, and has no module, grant
+or path parameter. That one limit funds both buffers the host actually
+allocates, and both are allocated eagerly at install:
+1. the namespace registry, reserved first, exactly registry entries × 33 bytes;
+2. the account arena, from the remainder.
+
+A limit smaller than the registry buffer refuses before either buffer exists.
+The arena keeps the host's unchanged per-invocation debits (registry precharge
+bytes, row backing and lease and view tables), so registry bytes are reserved
+twice, conservatively. It stays held across invocation, cleanup and reentry,
+and it never resets or refunds. JavaScript objects, Maps, closures, String
+bytes and the ordinary Bytes payload are not funded by the limit; the payload
+stays under the ordinary 32-event and 2 MiB counters. The package therefore
+claims no total heap or RSS bound. It enforces no fuel, and the interpreter's
+test-only memory limit is not a Wasm budget.
+
+The entry is trusted first-install realm glue, not a JavaScript sandbox. It
+loads only the compiler-paired `fused-construction-v1.wasm`, through one fixed
+`import.meta.url` URL: `node:fs/promises` under Node, `fetch` elsewhere. It
+checks that file's SHA-256 before the realm namespace exists. Argument and
+funding refusals have no effect. After that, install proceeds at most once,
+and concurrent or repeated attempts are denied.
+
+Each invocation returns the shared frozen `semaprax.fused-source.v1` envelope:
+`schema`, `profile`, `source_sha256`, `target: "wasm"`, `account_limit`,
+`managed_reserved` and `outcome`. `managed_reserved` is the registry buffer
+plus the arena bytes charged so far, cumulatively.
+- `returned` carries `result`, the canonical signed decimal string of the full
+  `i64`.
+- `language_failure` carries `status {domain, code}` and no result. Raw
+  selected statuses map exactly: 1 and 2 to `semaprax.arithmetic.v1` codes 1
+  and 2; 15 to `semaprax.vec.v1` code 3; 21 to `semaprax.convert.v1` code 1.
+  Any other raw status becomes an administrative refusal.
+- `administrative_refusal` carries a `reason` string and neither result nor
+  status.
+
+A host fail-stop poisons the runner. Legacy reports are unchanged.
+
+Five authored definitions in `wasm::fused_source_package::tests::` own this
+adapter:
+- deterministic, bound artifacts from one owner, with the fixed paired loader
+  and no caller module, grant, path or fault input;
+- caller-input and ordinary-source refusal before any artifact;
+- spliced, foreign and tampered contents refused before publication, with no
+  destination left behind;
+- the facade package type carrying the same artifacts to publication;
+- published execution of the original 4,096 rows (8,386,560). It runs four
+  separate realms:
+  - argument refusals with no effect, a concurrent install denied, then three
+    `returned` results with cumulative reservations and an administrative
+    `account` refusal;
+  - one-short funding refused at `metadata`, then at `account`;
+  - a tampered paired file denied by the public loader before any namespace
+    exists;
+  - normalized `semaprax.vec.v1` code 3 interleaved with returned results.
+
 ## Source half of the selected FusedConstructionV1 proof
 
 `source_verify::fused_construction` derives a borrowed, provisional source

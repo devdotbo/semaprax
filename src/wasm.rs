@@ -54,6 +54,10 @@ mod scalar_algebra_component_v5;
 mod scalar_exports;
 /// Selected `FusedConstructionV1` executor; default admission stays closed.
 mod selected_fused;
+/// Versioned `fused-construction-v1` source-only Core-Wasm package adapter.
+mod fused_source_package;
+#[allow(unused_imports, reason = "consumed by the crate-private fused_source facade")]
+pub(crate) use fused_source_package::{emit_fused_source_package, publish_fused_source_package};
 mod string_ops_v2_use;
 use string_ops_v2_use::{program_uses_numeric_text, program_uses_string_ops_v2};
 mod borrowed_equality;
