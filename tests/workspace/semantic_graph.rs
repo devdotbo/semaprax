@@ -587,6 +587,18 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
         );
     }
 
+    // Keep the complete child union for structural audits. The native/Wasm
+    // fixture driver has host effects only behind its exact test-only module.
+    let private_root =
+        include_str!("../../src/workspace_graph/expected_projection/private_layout.rs");
+    assert!(private_root.contains(
+        "#[cfg(test)]\n#[path = \"private_layout/function_runtime.rs\"]\nmod function_runtime;"
+    ));
+    assert_eq!(private_root.matches("mod function_runtime;").count(), 1);
+    let runtime_fixture = include_str!(
+        "../../src/workspace_graph/expected_projection/private_layout/function_runtime.rs"
+    );
+    let authority_projection = projection.replace(runtime_fixture, "");
     for forbidden in [
         "workspace::",
         "std::fs",
@@ -600,7 +612,7 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
         "ACTIVE",
     ] {
         assert!(
-            !projection.contains(forbidden),
+            !authority_projection.contains(forbidden),
             "pure expected projection admitted authority or effects through `{forbidden}`"
         );
     }
