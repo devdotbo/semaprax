@@ -3685,6 +3685,7 @@ fn byte_slice_fact_json(
         ByteSliceRootKind::OwnedBytes => "owned_bytes",
         ByteSliceRootKind::OwnedString => "owned_string",
         ByteSliceRootKind::OwnedVectorField => "owned_vector_field",
+        ByteSliceRootKind::OwnedVectorStringSlot => "owned_vector_string_slot",
         ByteSliceRootKind::FixedArray => "fixed_array",
         ByteSliceRootKind::BorrowedStr => "borrowed_str",
         ByteSliceRootKind::CommandArguments => "command_arguments",

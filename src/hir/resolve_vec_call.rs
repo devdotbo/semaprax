@@ -178,14 +178,14 @@ pub(super) fn schedule<'expr>(
     site: VecCallSite,
 ) -> Result<(), Diagnostic> {
     let VecCallSite { path, span, op } = site;
-    if type_arguments.len() != 1 || args.len() != op.arity() {
+    if (if op == crate::vec_ops::VecOp::StrAt { !type_arguments.is_empty() || function.instance().is_some() } else { type_arguments.len() != 1 }) || args.len() != op.arity() {
         return Err(resolver.error(
             "SPX-H006",
             format!("invalid vector operation `{}` call shape", op.name()),
             span,
         ));
     }
-    let element = resolve_element(resolver, function, op, &type_arguments[0], span)?;
+    let element = if op == crate::vec_ops::VecOp::StrAt { ResolvedType::String } else { resolve_element(resolver, function, op, &type_arguments[0], span)? };
     if !super::owned_leaf_collection::vec_operation_admitted(&resolver.declarations, op, &element)
         && !crate::vec_ops::resolved_parameter_is_admitted(function, op, &element)
         && !(!op.owned_leaf_only()
@@ -239,7 +239,8 @@ pub(super) fn finish(
         }
     }
     let ty = op.resolved_return_type(&element);
-    let ownership = if op.returns_owner() {
+    if op == crate::vec_ops::VecOp::StrAt && !crate::vec_ops::string_slot::arguments(&args) { return Err(resolver.error("SPX-H006", crate::vec_ops::string_slot::SHAPE, span)); }
+    let ownership = if op == crate::vec_ops::VecOp::StrAt { OwnershipMode::Borrow } else if op.returns_owner() {
         OwnershipMode::Own
     } else {
         OwnershipMode::Value
@@ -274,14 +275,14 @@ pub(super) fn resolve_reference(
         span,
     } = call;
     let name = op.name();
-    if type_arguments.len() != 1 || args.len() != op.arity() {
+    if (if op == crate::vec_ops::VecOp::StrAt { !type_arguments.is_empty() || function.instance().is_some() } else { type_arguments.len() != 1 }) || args.len() != op.arity() {
         return Err(resolver.error(
             "SPX-H006",
             format!("invalid vector operation `{name}` call shape"),
             span,
         ));
     }
-    let element = resolve_element(resolver, function, op, &type_arguments[0], span)?;
+    let element = if op == crate::vec_ops::VecOp::StrAt { ResolvedType::String } else { resolve_element(resolver, function, op, &type_arguments[0], span)? };
     if !super::owned_leaf_collection::vec_operation_admitted(&resolver.declarations, op, &element)
         && !crate::vec_ops::resolved_parameter_is_admitted(function, op, &element)
         && !(!op.owned_leaf_only()

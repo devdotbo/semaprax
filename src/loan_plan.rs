@@ -235,6 +235,7 @@ fn has_own_root_candidate(
             }
         }
         let view = match &expression.kind {
+            ResolvedExprKind::Call { .. } if crate::vec_ops::string_slot::inspect(expression).is_some() => crate::vec_ops::string_slot::inspect(expression).and_then(|slot| expression_place(slot.source)),
             ResolvedExprKind::BorrowPlace { place, .. } => Some(place.clone()),
             ResolvedExprKind::VecFieldRead { args, .. }
                 if matches!(
@@ -432,6 +433,7 @@ fn build_cfg_plan_counted(
             drafts.push(draft);
         }
         let view = match &expression.kind {
+            ResolvedExprKind::Call { .. } if crate::vec_ops::string_slot::inspect(expression).is_some() => crate::vec_ops::string_slot::inspect(expression).and_then(|slot| expression_place(slot.source)),
             ResolvedExprKind::BorrowPlace { place, .. } => Some(place.clone()),
             ResolvedExprKind::VecFieldRead { args, .. }
                 if matches!(
@@ -1298,6 +1300,7 @@ fn resolve_origin(
 
 fn expression_place(expression: &ResolvedExpr) -> Option<Place> {
     match &expression.kind {
+        ResolvedExprKind::Call { .. } if crate::vec_ops::string_slot::inspect(expression).is_some() => crate::vec_ops::string_slot::inspect(expression).and_then(|slot| expression_place(slot.source)),
         ResolvedExprKind::VecFieldRead { args, .. } => args.first().and_then(expression_place),
         ResolvedExprKind::Place(place) | ResolvedExprKind::BorrowPlace { place, .. } => {
             Some(place.clone())
@@ -1453,7 +1456,7 @@ fn borrowed_call_arguments<'a>(
             args.iter()
                 .enumerate()
                 .filter(|(index, argument)| {
-                    record_vec_borrow::argument(program, expression, *index, argument)
+                    (crate::vec_ops::string_slot::inspect(expression).is_some() && *index == 0) || record_vec_borrow::argument(program, expression, *index, argument)
                         || target.map_or_else(
                             || {
                                 argument.ownership == OwnershipMode::Borrow

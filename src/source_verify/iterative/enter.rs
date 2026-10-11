@@ -475,8 +475,9 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         implicit_unique_ownership: false,
                     }))
                 } else if let Some(op) = crate::vec_ops::by_name(name) {
-                    let element = type_arguments.first();
-                    if type_arguments.len() != 1
+                    if op == crate::vec_ops::VecOp::StrAt && (!self.current.type_parameters.is_empty() || crate::source_verify::string_slot::root(type_arguments, args, &self.scopes[scope].bindings).is_none()) { self.diagnostics.push(error(self.program,"SPX-T281",crate::vec_ops::string_slot::SHAPE,expression.span)); }
+                    let element = if op == crate::vec_ops::VecOp::StrAt { Some(&Type::String) } else { type_arguments.first() };
+                    if (if op == crate::vec_ops::VecOp::StrAt { !type_arguments.is_empty() } else { type_arguments.len() != 1 })
                         || element.is_none_or(|ty| {
                             !crate::source_verify::declared_type::owned_leaf_collection::vec_operation_admitted(self.types, op, ty)
                                 && !crate::vec_ops::source_parameter_is_admitted(self.program, self.current, op, ty)

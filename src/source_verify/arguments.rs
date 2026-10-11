@@ -320,6 +320,9 @@ pub(super) fn source_byte_view_place_is_admitted(
             args,
         } = &expression.kind
         {
+            if name == crate::vec_ops::string_slot::NAME {
+                return super::string_slot::root(type_arguments, args, variables).is_some();
+            }
             if name == crate::vec_field::NAME {
                 return super::vec_field::signature(types, type_arguments, args, expression.span)
                     .is_some_and(|(_, result)| result == Type::Str)

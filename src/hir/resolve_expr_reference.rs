@@ -6,9 +6,9 @@ use super::expr_nodes::{
 use super::ids::{DeclarationId, ExpressionId, FunctionExecutionId, ValueId};
 use super::monomorphize::substitute_type;
 use super::nodes::{
-    is_scalar_resolved_type, resolver_admits_owned_variant, DeclarationKind, OwnershipMode,
-    ResolvedBinding, ResolvedImportResultKind, ResolvedMatchMode, ResolvedNativeRustImportCall,
-    ResolvedType,
+    DeclarationKind, OwnershipMode, ResolvedBinding, ResolvedImportResultKind, ResolvedMatchMode,
+    ResolvedNativeRustImportCall, ResolvedType, is_scalar_resolved_type,
+    resolver_admits_owned_variant,
 };
 use super::type_reachability::record_args_ok;
 use super::{Binding, Place, PlaceProjection, Resolver};
@@ -18,21 +18,10 @@ use std::collections::BTreeMap;
 
 mod control;
 mod literal_format;
-mod static_text;
 mod projection;
+mod static_text;
 
 impl Resolver<'_> {
-    #[cfg(test)]
-    #[allow(dead_code)]
-    pub(super) fn resolve_expr_recursive_reference(
-        &self,
-        function: &FunctionExecutionId,
-        expr: &Expr,
-        bindings: &BTreeMap<String, Binding>,
-        path: &str,
-    ) -> Result<ResolvedExpr, Diagnostic> {
-        self.resolve_expr_recursive_reference_inner(function, expr, bindings, path, None)
-    }
     pub(super) fn resolve_expr_recursive_reference_inner(
         &self,
         function: &FunctionExecutionId,
@@ -148,7 +137,11 @@ impl Resolver<'_> {
                 OwnershipMode::Value,
             ),
             ExprKind::String(value) => static_text::owned_string(value),
-            ExprKind::BorrowedUtf8Literal(value) => (ResolvedExprKind::BorrowedUtf8Literal(super::StaticUtf8::from_text(value)), ResolvedType::Str, OwnershipMode::Borrow),
+            ExprKind::BorrowedUtf8Literal(value) => (
+                ResolvedExprKind::BorrowedUtf8Literal(super::StaticUtf8::from_text(value)),
+                ResolvedType::Str,
+                OwnershipMode::Borrow,
+            ),
             ExprKind::Var(name) => {
                 if bindings
                     .get(name)
@@ -426,7 +419,7 @@ impl Resolver<'_> {
                             expr.span,
                         ));
                     }
-                    let args = args
+                    let mut args = args
                         .iter()
                         .enumerate()
                         .map(|(index, argument)| {
@@ -480,6 +473,11 @@ impl Resolver<'_> {
                             },
                             span: expr.span,
                         });
+                    }
+                    if let Some(fused) =
+                        crate::vec_ops::string_slot::fuse(function, path, expr.span, op, &mut args)
+                    {
+                        return Ok(fused);
                     }
                     if let Some(fused) =
                         self.fuse_vec_field_bytes(function, expr.span, path, op, &args)

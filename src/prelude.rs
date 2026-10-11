@@ -27,12 +27,15 @@ pub(crate) const SCHEMA_V9: &str = "semaprax.prelude.v9";
 pub(crate) const SCHEMA_V10: &str = "semaprax.prelude.v10";
 pub(crate) const SCHEMA_V11: &str = "semaprax.prelude.v11";
 pub(crate) const SCHEMA_V12: &str = "semaprax.prelude.v12";
+pub(crate) const SCHEMA_V17: &str = "semaprax.prelude.v17";
 pub(crate) const SCHEMA_V16: &str = "semaprax.prelude.v16";
 #[path = "prelude_static_text.rs"]
 pub(crate) mod static_text;
 pub(crate) const SCHEMA_V15: &str = "semaprax.prelude.v15";
 #[path = "prelude_sort_keys.rs"]
 pub(crate) mod sort_keys;
+#[path = "prelude_string_slots.rs"]
+pub(crate) mod string_slots;
 pub(crate) const SCHEMA_V14: &str = "semaprax.prelude.v14";
 #[path = "prelude_owned_leaf.rs"]
 pub(crate) mod owned_leaf;
@@ -694,9 +697,19 @@ pub(crate) fn selected_for_source(source: &str) -> (&'static str, Vec<u8>, Strin
 pub(crate) fn selected_for_program(
     program: &crate::ast::Program,
 ) -> (&'static str, Vec<u8>, String) {
-    let (sort_keys, static_text) = sort_keys::selection(program);
-    if static_text {
-        (SCHEMA_V16, self::static_text::contract_bytes(), self::static_text::digest_text())
+    let (sort_keys, static_text, string_slots) = sort_keys::selection(program);
+    if string_slots {
+        (
+            SCHEMA_V17,
+            self::string_slots::contract_bytes(),
+            self::string_slots::digest_text(),
+        )
+    } else if static_text {
+        (
+            SCHEMA_V16,
+            self::static_text::contract_bytes(),
+            self::static_text::digest_text(),
+        )
     } else if sort_keys {
         (
             SCHEMA_V15,

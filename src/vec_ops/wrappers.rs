@@ -8,7 +8,7 @@ use crate::hir::{
     ResolvedType,
 };
 
-use super::{resolved_vec, VecOp};
+use super::{VecOp, resolved_vec};
 
 pub(crate) const MODULE: &str = "std.collections";
 
@@ -48,7 +48,8 @@ pub(crate) fn wrapper_id(op: VecOp) -> Option<&'static str> {
         | VecOp::Replace
         | VecOp::ReserveOwned
         | VecOp::SortOwned
-        | VecOp::SortBy => return None,
+        | VecOp::SortBy
+        | VecOp::StrAt => return None,
     })
 }
 
@@ -67,7 +68,8 @@ pub(crate) fn wrapper_name(op: VecOp) -> Option<&'static str> {
         | VecOp::Replace
         | VecOp::ReserveOwned
         | VecOp::SortOwned
-        | VecOp::SortBy => return None,
+        | VecOp::SortBy
+        | VecOp::StrAt => return None,
     })
 }
 
@@ -117,7 +119,8 @@ pub(crate) fn source_wrapper(program: &Program, function: &Function) -> Option<V
         | VecOp::Replace
         | VecOp::ReserveOwned
         | VecOp::SortOwned
-        | VecOp::SortBy => return None,
+        | VecOp::SortBy
+        | VecOp::StrAt => return None,
     };
     if function.params.len() != expected.len()
         || function
@@ -211,7 +214,8 @@ pub(crate) fn hir_wrapper(template: &ResolvedFunctionTemplate) -> Option<VecOp> 
         | VecOp::Replace
         | VecOp::ReserveOwned
         | VecOp::SortOwned
-        | VecOp::SortBy => return None,
+        | VecOp::SortBy
+        | VecOp::StrAt => return None,
     };
     if template.params.len() != expected.len()
         || template
@@ -331,7 +335,8 @@ pub(crate) fn template_ownership(
             | VecOp::Replace
             | VecOp::ReserveOwned
             | VecOp::SortOwned
-            | VecOp::SortBy => {
+            | VecOp::SortBy
+            | VecOp::StrAt => {
                 return None;
             }
         })

@@ -79,6 +79,10 @@ pub(super) fn local_borrow_origin(
             }
             (root.clone(), Vec::new(), None)
         }
+        ExprKind::Call { name, type_arguments, args } if name == crate::vec_ops::string_slot::NAME => {
+            let root = super::string_slot::root(type_arguments, args, variables)?;
+            (root.to_owned(), Vec::new(), None)
+        }
         ExprKind::Call {
             name,
             type_arguments,
@@ -137,7 +141,7 @@ pub(super) fn local_borrow_origin(
             } else {
                 let place = if operation == crate::byte_ops::ByteOp::StrAsBytes {
                     if let ExprKind::Call { name, args, .. } = &source.kind {
-                        if name == crate::vec_field::NAME {
+                        if name == crate::vec_field::NAME || name == crate::vec_ops::string_slot::NAME {
                             source_place(args.first()?, variables, types)?
                         } else if crate::byte_ops::by_name(name)
                             == Some(crate::byte_ops::ByteOp::StringAsStr)

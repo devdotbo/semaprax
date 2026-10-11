@@ -62,6 +62,7 @@ mod type_table;
 mod variant_guards;
 mod variant_or;
 mod vec_field;
+mod string_slot;
 
 #[cfg(test)]
 mod high_water;

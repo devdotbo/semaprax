@@ -286,7 +286,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 VerifierCallTarget::Ordinary(None) => None,
             };
             let output = output.map(|mut value| {
-                if name == crate::vec_field::NAME && matches!(value.ty, Type::Str | Type::SliceU8) {
+                if (name == crate::vec_field::NAME || name == crate::vec_ops::string_slot::NAME) && matches!(value.ty, Type::Str | Type::SliceU8) {
                     value.mode = ParamMode::Borrow;
                 }
                 value
