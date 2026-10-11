@@ -20,8 +20,6 @@ pub(crate) use replay_context::ReplayContext;
 mod generic_record;
 #[cfg(test)]
 pub(crate) use inventory_builder::build_borrowed_helper_inventory_with_budget;
-#[cfg(test)]
-pub(crate) use inventory_builder::build_flat_record_inventory_with_reservation;
 mod inventory_builder;
 use inventory_builder::InventoryBuilder;
 pub(crate) use inventory_builder::{

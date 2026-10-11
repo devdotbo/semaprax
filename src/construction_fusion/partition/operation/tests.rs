@@ -65,13 +65,15 @@ fn dynamic_operands_are_borrowed_and_every_shape_mutant_refuses() {
     let ast::ExprKind::Block { tail, .. } = &source_program.functions[0].body.kind else {
         panic!("source")
     };
-    assert!(source(tail, &mut usize::MAX).unwrap().is_some());
+    let mut work = usize::MAX;
+    assert!(source(tail, &mut work).unwrap().is_some());
     let mut forged = tail.as_ref().clone();
     let ast::ExprKind::Call { args, .. } = &mut forged.kind else {
         panic!("source call")
     };
     args[0] = args[1].clone();
-    assert!(source(&forged, &mut usize::MAX).is_err());
+    let mut work = usize::MAX;
+    assert!(source(&forged, &mut work).is_err());
     // A shape fact cannot register the builtin or turn pending HIR into a lease.
     assert!(crate::check("module closed; @id(\"closed.main\") fn main()->i64{let b=bytes_zeroed(0usize);let v=bytes_partition(b,0usize,1usize);0}", "closed.spx").is_err());
 }
