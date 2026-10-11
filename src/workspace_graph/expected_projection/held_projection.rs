@@ -196,6 +196,8 @@ pub(in crate::workspace_graph) fn synthetic_builder_bytes_scoped_with_retention_
             .max()
             .unwrap_or(0)
     });
+    #[cfg(test)]
+    let prior_fixed_hir_upper = fixed_hir_upper;
     let fixed_hir_upper = if layout_mode == cached_exact::MODE {
         cached_exact::fixed_upper(fixed_hir_upper, &raw, &runtime, retention)?
     } else {
@@ -224,6 +226,52 @@ pub(in crate::workspace_graph) fn synthetic_builder_bytes_scoped_with_retention_
         "builder_bytes",
         active_builder_limit(),
     )?;
+    #[cfg(test)]
+    let original_mode7_fixed_upper = raw
+        .exact_expressions
+        .checked_add(runtime.exact_expressions)
+        .and_then(|count| {
+            count
+                .checked_mul(super::super::HIR_FIXED_EXPANSION_FACTOR)
+                .and_then(|n| n.checked_mul(std::mem::size_of::<crate::ast::Expr>()))
+                .and_then(|old| prior_fixed_hir_upper.checked_sub(old))
+                .and_then(|base| {
+                    count
+                        .checked_mul(if retention == cached_exact::Retention::Semantic {
+                            2
+                        } else {
+                            1
+                        })
+                        .and_then(|n| n.checked_mul(super::super::HIR_EXPR_FIXED_BUNDLE))
+                        .and_then(|exact| base.checked_add(exact))
+                })
+        })
+        .unwrap_or(usize::MAX);
+    #[cfg(test)]
+    super::super::forecast_observation::record(
+        &program.path,
+        layout_mode,
+        retention == cached_exact::Retention::Semantic,
+        [
+            raw.total,
+            raw.string_bytes,
+            raw.exact_expressions,
+            raw.literal_fixed_discount,
+            runtime.total,
+            runtime.string_bytes,
+            runtime.exact_expressions,
+            structure_input,
+            string_input,
+            prior_fixed_hir_upper,
+            fixed_hir_upper,
+            identity_occurrence_upper,
+            identity_carrier_bytes,
+            retained_clone_and_hir,
+            generic_instances.bytes,
+            transient_import_clone,
+            original_mode7_fixed_upper,
+        ],
+    );
     Ok(SyntheticBuilderCosts {
         raw_clone_and_hir: checked_usage(
             retained_clone_and_hir,

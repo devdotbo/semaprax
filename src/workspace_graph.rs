@@ -17,6 +17,8 @@ use checked_value_retention::retained_signature_type_facts;
 mod dependency_pruning;
 pub(crate) mod diagnostics;
 mod expected_projection;
+#[cfg(test)]
+pub(crate) mod forecast_observation;
 mod generic_type_import;
 mod operation_sidecar;
 mod owned_function_import;

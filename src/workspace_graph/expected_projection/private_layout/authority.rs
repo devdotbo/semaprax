@@ -46,7 +46,16 @@ impl<'a> PrivateTypes<'a> {
         debit(&mut remaining, indexed)?;
         let node = crate::cleanup_plan::replay_btree_node_upper::<&str, AuthoredDeclaration<'_>>()
             .ok_or_else(refusal)?;
-        reserve_builder_structure(indexed.checked_mul(node).ok_or_else(refusal)?)?;
+        let index_bytes = indexed.checked_mul(node).ok_or_else(refusal)?;
+        #[cfg(test)]
+        crate::workspace_graph::forecast_observation::authority_index(
+            &caller.path,
+            indexed,
+            node,
+            index_bytes,
+            crate::bounded_output::active_remaining(),
+        );
+        reserve_builder_structure(index_bytes)?;
         let mut authored = BTreeMap::new();
         for p in programs {
             for f in &p.functions {

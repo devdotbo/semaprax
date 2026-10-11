@@ -210,3 +210,6 @@ mod tests {
 
 #[cfg(test)]
 mod growth_tests;
+
+#[cfg(test)]
+mod representative_measurements;
