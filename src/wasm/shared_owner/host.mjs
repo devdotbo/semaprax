@@ -67,6 +67,16 @@ export const PAYLOAD_CONSUMERS = Object.freeze([
 // handles are therefore never reused across registries, hosts, instances or
 // invocations of this module record; each table still only resolves what its
 // own issuer recorded.
+// Trusted first installation. Copies may not adopt a duck-typed namespace
+// or start a second counter that could collide with live carriers. The marker
+// contains no mint/lookup authority; all counters remain module-private.
+const REALM_KEY = Symbol.for("semaprax.private.wasm-shared-byte-owner.realm.v1");
+if (Object.prototype.hasOwnProperty.call(globalThis, REALM_KEY)) {
+  throw new Error("SEMAPRAX shared owner namespace already installed");
+}
+Object.defineProperty(globalThis, REALM_KEY, {
+  value: Object.freeze({}), writable: false, configurable: false, enumerable: false,
+});
 let nextToken = 1;
 const TOKENS = Object.freeze({
   remaining: () => MAX_TOKEN - nextToken + 1,
@@ -119,7 +129,11 @@ export function createPrivateOrdinaryByteHost(options = {}) {
 
   const memory = () => {
     const candidate = instance?.exports.__spx_byte_memory ?? instance?.exports.memory;
-    if (!(candidate instanceof WebAssembly.Memory)) throw new Error("SEMAPRAX byte memory invariant");
+    if (!(candidate instanceof WebAssembly.Memory)
+        || (candidate.buffer.byteLength !== FIXED_MEMORY_BYTES
+            && candidate.buffer.byteLength !== 262144)) {
+      throw new Error("SEMAPRAX fixed byte memory invariant");
+    }
     return candidate;
   };
   const wholeSlot = token => {
@@ -221,8 +235,15 @@ export function createPrivateOrdinaryByteHost(options = {}) {
       // and can only narrow its range.
       return read(ultimate).subarray(Number(start), Number(start + extent));
     }
-    if (decoded.root > bytes.byteLength - decoded.extent) throw new Error("SEMAPRAX fixed byte range invariant");
-    return bytes.subarray(decoded.root, decoded.root + decoded.extent);
+    // Plain external roots retain the ordinary 64 KiB extent. The third
+    // page is private machinery; the fourth is compiler-owned literal data.
+    if (decoded.extent > 65536) throw new Error("SEMAPRAX byte carrier length invariant");
+    if (decoded.root <= FIXED_MEMORY_BYTES - decoded.extent
+        || (bytes.byteLength === 262144 && decoded.root >= 196608
+            && decoded.root < 262144 && decoded.root <= 262144 - decoded.extent)) {
+      return bytes.subarray(decoded.root, decoded.root + decoded.extent);
+    }
+    throw new Error("SEMAPRAX fixed byte range invariant");
   };
   // Ordinary drop: a whole owner frees its slot; a lease settles once and
   // the last live lease of a backing releases it exactly once.

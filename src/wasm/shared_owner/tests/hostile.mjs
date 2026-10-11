@@ -21,7 +21,8 @@ const throws = (body, pattern, message) => {
 const same = (a, b) => a.length === b.length && a.every((value, index) => value === b[index]);
 const fresh = options => {
   const host = createPrivateOrdinaryByteHost(options);
-  const memory = new WebAssembly.Memory({ initial: 2, maximum: 2 });
+  const pages = options?.memoryPages ?? 2;
+  const memory = new WebAssembly.Memory({ initial: pages, maximum: pages });
   host.bind({ exports: { memory } });
   const receipt = host.facade.beginInvocation();
   return { host, env: host.imports, facade: host.facade, memory, receipt };
@@ -435,6 +436,53 @@ test("abandonment after a trap releases remaining administration once", () => {
   throws(() => env.spx_bytes_get(children[1], 0n), /stale|malformed/, "abandoned child is stale");
   facade.endInvocation(next);
 });
+
+test("plain roots preserve external bounds and private memory pages", () => {
+  const { host, env, facade, receipt } = fresh();
+  const carrier = (root, extent) => (BigInt(root) << 32n) | BigInt(extent);
+  check(env.spx_bytes_get(carrier(0, 65536), 65535n) === 0, "exact external extent");
+  throws(() => env.spx_bytes_get(carrier(0, 65537), 0n), /length invariant/, "external extent plus one");
+  facade.endInvocation(receipt);
+  for (const pages of [1, 3, 5]) {
+    const invalid = fresh({memoryPages: pages});
+    throws(() => invalid.env.spx_bytes_get(carrier(0, 1), 0n), /memory invariant/, "nonprofile memory size");
+    invalid.facade.endInvocation(invalid.receipt);
+  }
+  const literal = fresh({memoryPages: 4});
+  new Uint8Array(literal.memory.buffer)[196608] = 42;
+  check(literal.env.spx_bytes_get(carrier(196608, 1), 0n) === 42, "fourth page literal");
+  throws(() => literal.env.spx_bytes_get(carrier(131072, 1), 0n), /range invariant/, "private third page");
+  throws(() => literal.env.spx_bytes_get(carrier(196607, 2), 0n), /range invariant/, "crossing literal boundary");
+  throws(() => literal.env.spx_bytes_get(carrier(262143, 2), 0n), /range invariant/, "literal extent overflow");
+  literal.facade.endInvocation(literal.receipt);
+});
+
+test("simultaneous host Vec and iterator authorities never collide", () => {
+  const first = fresh(), second = fresh();
+  const a = first.env.spx_vec_with_capacity_v2(9, 1n);
+  const b = second.env.spx_vec_with_capacity_v2(9, 1n);
+  check(a !== b, "Vec namespace is shared across populated hosts");
+  throws(() => first.env.spx_vec_len_v2(b, 9), /stale/, "foreign Vec");
+  check(first.env.spx_iter_bytes_into_v2(a, 65536) === 0, "first iterator");
+  check(second.env.spx_iter_bytes_into_v2(b, 65536) === 0, "second iterator");
+  const ia = new DataView(first.memory.buffer).getBigUint64(65536, true);
+  const ib = new DataView(second.memory.buffer).getBigUint64(65536, true);
+  check(ia !== ib, "iterator namespace is shared across populated hosts");
+  check(first.env.spx_iter_bytes_next_v2(ib, 0n, 65536) === 2, "foreign iterator refused");
+  first.env.spx_iter_bytes_drop_v2(ia, 0n);
+  second.env.spx_iter_bytes_drop_v2(ib, 0n);
+  first.facade.endInvocation(first.receipt);
+  second.facade.endInvocation(second.receipt);
+});
+
+// A separately evaluated host module cannot adopt the marker or rewind mint
+// state. The installed namespace exposes no duck-typed mint authority.
+try {
+  await import("./host.mjs?duplicate-copy");
+  throw new Error("duplicate host module was admitted");
+} catch (error) {
+  check(/namespace already installed/.test(error.message), "duplicate module refuses before populating a host");
+}
 
 let failed = 0;
 for (const [name, body] of cases) {

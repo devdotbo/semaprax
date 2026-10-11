@@ -222,6 +222,8 @@ pub(in crate::wasm) enum Refusal {
     Malformed,
     /// A non-function import cannot be authenticated as a consumer.
     NotFunction(String),
+    /// A known name with a different carrier calling convention.
+    Signature(String),
     /// An import outside the ordinary namespace.
     Namespace(String),
     /// A named crossing a lease must not reach.
@@ -286,6 +288,8 @@ pub(in crate::wasm) fn classify(
 #[derive(Debug, Eq, PartialEq)]
 pub(in crate::wasm) struct Closure {
     pub(in crate::wasm) host: Host,
+    // Exact module bytes, held privately; import names are not a module receipt.
+    module: Box<[u8]>,
     pub(in crate::wasm) lease_aware: Vec<String>,
     pub(in crate::wasm) carrier_free: Vec<String>,
 }
@@ -293,23 +297,37 @@ pub(in crate::wasm) struct Closure {
 /// Classifies the actual import section in order and refuses at the first
 /// import outside the closure of `host`.
 pub(in crate::wasm) fn consumer_closure(module: &[u8], host: Host) -> Result<Closure, Refusal> {
+    wasmparser::Validator::new()
+        .validate_all(module)
+        .map_err(|_| Refusal::Malformed)?;
+    let mut types = Vec::new();
     let mut closure = Closure {
         host,
+        module: module.into(),
         lease_aware: Vec::new(),
         carrier_free: Vec::new(),
     };
     for payload in wasmparser::Parser::new(0).parse_all(module) {
         let payload = payload.map_err(|_| Refusal::Malformed)?;
-        if let wasmparser::Payload::ImportSection(section) = payload {
+        if let wasmparser::Payload::TypeSection(section) = payload {
+            for ty in section.into_iter_err_on_gc_types() {
+                types.push(ty.map_err(|_| Refusal::Malformed)?);
+            }
+        } else if let wasmparser::Payload::ImportSection(section) = payload {
             for import in section.into_imports() {
                 let import = import.map_err(|_| Refusal::Malformed)?;
-                if !matches!(import.ty, wasmparser::TypeRef::Func(_)) {
+                let wasmparser::TypeRef::Func(index) = import.ty else {
                     return Err(Refusal::NotFunction(format!(
                         "{}.{}",
                         import.module, import.name
                     )));
+                };
+                let disposition = classify(host, import.module, import.name)?;
+                let ty = types.get(index as usize).ok_or(Refusal::Malformed)?;
+                if !signatures::matches(import.name, ty) {
+                    return Err(Refusal::Signature(import.name.to_owned()));
                 }
-                match classify(host, import.module, import.name)? {
+                match disposition {
                     Disposition::LeaseAware => closure.lease_aware.push(import.name.to_owned()),
                     Disposition::CarrierFree => closure.carrier_free.push(import.name.to_owned()),
                 }
@@ -327,3 +345,5 @@ pub(in crate::wasm) fn admit_producer(_closure: &Closure) -> Result<(), Refusal>
 
 #[cfg(test)]
 mod tests;
+
+mod signatures;

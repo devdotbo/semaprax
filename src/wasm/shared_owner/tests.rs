@@ -2,8 +2,8 @@
 //! closure. Node cases skip when Node is absent; they are source-authored.
 use super::{
     admit_producer, classify, consumer_closure, Crossing, Disposition, Host, Refusal, DOMAIN,
-    HOST_SOURCE, LEAF_FIXTURE_JOINED, LEASE_AWARE, PARTITION_STATUS_CODES,
-    PARTITION_STATUS_DOMAIN, PAYLOAD_CONSUMERS, REGISTRY_SOURCE,
+    HOST_SOURCE, LEAF_FIXTURE_JOINED, LEASE_AWARE, PARTITION_STATUS_CODES, PARTITION_STATUS_DOMAIN,
+    PAYLOAD_CONSUMERS, REGISTRY_SOURCE,
 };
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
@@ -397,14 +397,21 @@ fn every_ordinary_import_is_classified_without_an_unknown_default() {
                 "{host:?}"
             );
         }
-        assert_eq!(classify(host, "env", "spx_add"), Ok(Disposition::CarrierFree));
+        assert_eq!(
+            classify(host, "env", "spx_add"),
+            Ok(Disposition::CarrierFree)
+        );
         assert_eq!(
             classify(host, "env", "spx_box_drop_v2"),
             Ok(Disposition::LeaseAware)
         );
     }
     // Each host refuses the other's Vec-table consumers by name.
-    for name in ["spx_vec_leaf_replace_v1", "spx_iter_record_next_v3", "spx_vec_sort_v3"] {
+    for name in [
+        "spx_vec_leaf_replace_v1",
+        "spx_iter_record_next_v3",
+        "spx_vec_sort_v3",
+    ] {
         assert_eq!(
             classify(Host::PrivateOrdinary, "env", name),
             Err(Refusal::Crossing(name.to_owned(), Crossing::OtherHost))
@@ -478,7 +485,12 @@ fn private_host_implements_exactly_the_lease_aware_consumers() {
         );
     }
     // No global token authority and no hidden free/probe path.
-    for forbidden in ["globalThis", "Symbol.for", "FinalizationRegistry", "WeakRef"] {
+    for forbidden in [
+        "globalThis",
+        "Symbol.for",
+        "FinalizationRegistry",
+        "WeakRef",
+    ] {
         assert!(!HOST_SOURCE.contains(forbidden), "{forbidden}");
         assert!(!REGISTRY_SOURCE.contains(forbidden), "{forbidden}");
     }
@@ -488,11 +500,16 @@ fn private_host_implements_exactly_the_lease_aware_consumers() {
 fn leaf_host_serves_its_joined_consumers_through_the_shared_hooks() {
     let served = object_keys(LEAF_HOST, "const env = {", "\n};");
     for name in LEAF_FIXTURE_JOINED {
-        assert!(served.contains(*name), "{name} is not served by the leaf host");
+        assert!(
+            served.contains(*name),
+            "{name} is not served by the leaf host"
+        );
     }
     // Shared mode overrides exactly the private payload consumers, and every
     // host-local payload path has a shared branch.
-    assert!(LEAF_HOST.contains("for(const name of PAYLOAD_CONSUMERS)env[name]=shared.imports[name];"));
+    assert!(
+        LEAF_HOST.contains("for(const name of PAYLOAD_CONSUMERS)env[name]=shared.imports[name];")
+    );
     for hook in [
         "if (shared) return shared.payload.owned(carrier);",
         "shared.payload.clone(carrier)",
@@ -519,10 +536,14 @@ fn ordinary_modules_close_per_host_but_the_producer_stays_closed() {
     for source in [VEC_SOURCE, ITER_SOURCE, BOX_SOURCE] {
         let bytes = module(source);
         let closure = consumer_closure(&bytes, Host::PrivateOrdinary).unwrap();
-        assert!(closure.lease_aware.iter().any(|name| name == "spx_bytes_drop"
-            || name == "spx_vec_drop_v2"
-            || name == "spx_iter_bytes_drop_v2"
-            || name == "spx_box_drop_v2"));
+        assert!(closure
+            .lease_aware
+            .iter()
+            .any(|name| name == "spx_bytes_drop"
+                || name == "spx_vec_drop_v2"
+                || name == "spx_iter_bytes_drop_v2"
+                || name == "spx_box_drop_v2"));
+        assert_eq!(&*closure.module, bytes.as_slice());
         assert_eq!(admit_producer(&closure), Err(Refusal::ProducerClosed));
     }
     assert!(matches!(
@@ -545,7 +566,7 @@ fn ordinary_modules_close_per_host_but_the_producer_stays_closed() {
 fn closure_refuses_provider_and_non_function_crossings() {
     use wasm_encoder::{EntityType, ImportSection, MemoryType, Module, TypeSection, ValType};
     let mut types = TypeSection::new();
-    types.ty().function([] as [ValType; 0], [] as [ValType; 0]);
+    types.ty().function([ValType::I64], [] as [ValType; 0]);
     let mut imports = ImportSection::new();
     imports.import("env", "spx_bytes_drop", EntityType::Function(0));
     imports.import("env", "spx_filesystem_read_v1", EntityType::Function(0));
@@ -579,7 +600,29 @@ fn closure_refuses_provider_and_non_function_crossings() {
             consumer_closure(&memory, host),
             Err(Refusal::NotFunction("env.memory".to_owned()))
         );
-        assert_eq!(consumer_closure(b"\0asm\x02", host), Err(Refusal::Malformed));
+        assert_eq!(
+            consumer_closure(b"\0asm\x02", host),
+            Err(Refusal::Malformed)
+        );
+        // A valid Core module cannot authenticate a known import by name alone.
+        let mut types = TypeSection::new();
+        types.ty().function([] as [ValType; 0], [] as [ValType; 0]);
+        let mut imports = ImportSection::new();
+        imports.import("env", "spx_bytes_drop", EntityType::Function(0));
+        let mut wrong = Module::new();
+        wrong.section(&types).section(&imports);
+        assert_eq!(
+            consumer_closure(&wrong.finish(), host),
+            Err(Refusal::Signature("spx_bytes_drop".into()))
+        );
+        let mut imports = ImportSection::new();
+        imports.import("env", "spx_bytes_drop", EntityType::Function(9));
+        let mut invalid = Module::new();
+        invalid.section(&types).section(&imports);
+        assert_eq!(
+            consumer_closure(&invalid.finish(), host),
+            Err(Refusal::Malformed)
+        );
     }
 }
 
