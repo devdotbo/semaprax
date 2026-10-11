@@ -104,9 +104,12 @@ fn function_private_types_do_not_grant_names_siblings_ancestors_or_foreign_roots
     assert!(LayoutClosure::derive(&parsed[0], &authored, &copied).is_err());
     let local=format!("{CALLER}\n@id(\"local.config\") record Config {{@id(\"local.config.n\") n:i64,}}\n@id(\"local.row\") record Row {{@id(\"local.row.n\") n:i64,}}\n");
     build_owned(sources(&local, PROVIDER)).unwrap();
-    let explicit = format!(
-        "{CALLER}\nuse type @id(\"config\") from function_layout.provider as RenamedConfig;\n"
+    let explicit = CALLER.replacen(
+        "module function_layout.app;",
+        "module function_layout.app;\nuse type @id(\"config\") from function_layout.provider as RenamedConfig;",
+        1,
     );
+    assert_ne!(explicit, CALLER);
     let named = programs(&explicit, PROVIDER);
     let names = index_authored(&named).unwrap();
     let closure = LayoutClosure::derive(&named[0], &names, &named).unwrap();

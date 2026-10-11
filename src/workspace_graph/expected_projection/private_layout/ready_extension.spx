@@ -26,7 +26,7 @@ fn encode(value: borrow Report) -> string
 {
     let row_view = vec_field<Row>(value.rows, 0usize, "text");
     let row_text = string_from_utf8(str_as_bytes(row_view));
-    let prefix = string_concat(value.config.text, "|");
+    let prefix = string_concat(string_from_utf8(str_as_bytes(string_as_str(value.config.text))), "|");
     let joined = string_concat(prefix, row_text);
     if value.config.n == 21 && vec_field<Row>(value.rows, 0usize, "n") == 21 {
         string_concat(joined, "|21")

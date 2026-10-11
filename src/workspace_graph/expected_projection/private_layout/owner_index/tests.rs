@@ -53,8 +53,12 @@ fn held_signature_sites_match_independent_walk_without_per_query_backing() {
         .collect::<Vec<_>>()
         .join(",");
     let provider = format!("{PROVIDER}\n@id(\"wide\") fn wide({params})->i64 {{0}}\n");
-    let caller =
-        format!("{CALLER}\nuse function @id(\"wide\") from function_layout.provider as wide;\n");
+    let caller = CALLER.replacen(
+        "module function_layout.app;",
+        "module function_layout.app;\nuse function @id(\"wide\") from function_layout.provider as wide;",
+        1,
+    );
+    assert_ne!(caller, CALLER);
     let wide = [
         crate::parse(&caller, "caller.spx").unwrap(),
         crate::parse(&provider, "provider.spx").unwrap(),
@@ -180,9 +184,12 @@ fn duplicate_provider_names_and_aliases_remain_identity_distinct_and_layout_drif
     let second = PROVIDER
         .replace("function_layout.provider", "second_layout.provider")
         .replace("@id(\"", "@id(\"second.");
-    let caller = format!(
-        "{CALLER}\nuse function @id(\"second.read\") from second_layout.provider as read_again;\n"
+    let caller = CALLER.replacen(
+        "module function_layout.app;",
+        "module function_layout.app;\nuse function @id(\"second.read\") from second_layout.provider as read_again;",
+        1,
     );
+    assert_ne!(caller, CALLER);
     let parsed = [
         crate::parse(&caller, "caller.spx").unwrap(),
         crate::parse(PROVIDER, "provider.spx").unwrap(),

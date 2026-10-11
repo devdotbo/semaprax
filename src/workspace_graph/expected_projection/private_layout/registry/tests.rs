@@ -18,8 +18,12 @@ fn invocation_reuses_exact_closure_across_import_forecasts_stubs_and_retry_modes
         .collect::<Vec<_>>()
         .join(",");
     let provider = format!("{PROVIDER}\n@id(\"wide\") fn wide({params})->i64 {{0}}\n");
-    let caller =
-        format!("{CALLER}\nuse function @id(\"wide\") from function_layout.provider as wide;\n");
+    let caller = CALLER.replacen(
+        "module function_layout.app;",
+        "module function_layout.app;\nuse function @id(\"wide\") from function_layout.provider as wide;",
+        1,
+    );
+    assert_ne!(caller, CALLER);
     let parsed = [
         crate::parse(&caller, "caller.spx").unwrap(),
         crate::parse(&provider, "provider.spx").unwrap(),
@@ -157,7 +161,21 @@ fn preparation_has_exact_one_short_overlap_and_sticky_context_refusal() {
             candidate.get(&parsed[0], &authored, &parsed)
         });
         assert_eq!(answer.is_ok(), limit == used);
-        assert_eq!(overflowed, limit != used);
+        // Nested preparation refusal belongs to its child budget. The outer
+        // ledger receives only actual successful debits (bounded_output's
+        // nested_formatting_failures_stay_in_the_child_and_debit_the_parent).
+        // Registry failure is independently sticky across later core attempts.
+        assert!(!overflowed);
+        assert_eq!(candidate.is_failed(), limit != used);
+        if limit != used {
+            assert!(answer
+                .as_ref()
+                .err()
+                .unwrap()
+                .iter()
+                .any(|e| e.code == "SPX-G171"));
+            assert!(consumed < used);
+        }
         assert_eq!(candidate.receipt(), consumed);
         drop(answer);
         if limit == used {
