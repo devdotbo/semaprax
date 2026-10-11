@@ -159,3 +159,57 @@ fn entry_has_exact_one_short_shared_funding_and_scalar_frames_have_no_slots() {
         .is_err());
     assert_eq!(short.charged(), spent);
 }
+
+#[test]
+fn inherited_parameter_view_has_one_caller_finalizer_across_exact_local_end() {
+    let program = fixture();
+    let main = function(&program, "main");
+    let helper = function(&program, "helper");
+    let probe = account(usize::MAX);
+    let mut receiver = Loans::new(
+        LoanCapacity::checked(&program, main).unwrap(),
+        probe.clone(),
+    )
+    .unwrap();
+    let mut owners = receiver
+        .partition(vec![7].into_boxed_slice(), 1, 1)
+        .unwrap();
+    start(&mut receiver);
+    let caller = receiver
+        .borrow(&owners[0], main.loan_plan.loans[0].id)
+        .unwrap();
+    receiver
+        .enter_frame(LoanCapacity::checked(&program, helper).unwrap())
+        .unwrap();
+    start(&mut receiver);
+    let before = probe.charged();
+    let local = receiver
+        .inherit_view(helper.loan_plan.loans[0].id, caller)
+        .unwrap();
+    assert_eq!(probe.charged(), before);
+    assert_eq!(receiver.read(local, |bytes| bytes[0]).unwrap(), 7);
+    let loan = &helper.loan_plan.loans[0];
+    loop {
+        let (index, edge) = helper
+            .loan_plan
+            .edges
+            .iter()
+            .enumerate()
+            .find(|(_, edge)| edge.from == receiver.point)
+            .unwrap();
+        receiver.advance(edge.to).unwrap();
+        if loan.end_edges.contains(&(index as u16)) {
+            break;
+        }
+    }
+    // Local retirement neither owns nor ends the caller's physical Core loan.
+    assert_eq!(receiver.read(caller, |bytes| bytes[0]).unwrap(), 7);
+    receiver.leave_frame().unwrap();
+    assert_eq!(receiver.read(caller, |bytes| bytes[0]).unwrap(), 7);
+    assert!(receiver
+        .read(local, |_| panic!("stale inherited callback"))
+        .is_err());
+    assert!(receiver.read(caller, |_| ()).is_err());
+    receiver.abandon_views().unwrap();
+    receiver.settle(&mut owners[0]).unwrap();
+}

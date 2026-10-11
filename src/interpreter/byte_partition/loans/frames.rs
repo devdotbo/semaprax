@@ -28,12 +28,75 @@ pub(super) fn lookup<'a>(
             .slots
     };
     let slot = slots.get(id.index as usize).ok_or(Refusal::Identity)?;
-    if slot.generation != id.generation || slot.view.is_none() {
+    if slot.generation != id.generation || (slot.view.is_none() && slot.alias.is_none()) {
         return Err(Refusal::Identity);
     }
     Ok(slot)
 }
+/// Alias links always point strictly toward a held caller frame. The loop
+/// exposes only the original table-owned physical loan, never a cloned token.
+pub(super) fn resolve<'a>(
+    mut id: ViewId,
+    current: u64,
+    slots: &'a [Slot],
+    frames: &'a [Frame<'_>],
+) -> Result<&'a super::View, Refusal> {
+    for _ in 0..=frames.len() {
+        let slot = lookup(id, current, slots, frames)?;
+        if let Some(view) = &slot.view {
+            return Ok(view);
+        }
+        id = slot.alias.ok_or(Refusal::Identity)?;
+    }
+    Err(Refusal::Identity)
+}
 impl<'p, R: InvocationRuntime> Loans<'p, R> {
+    /// The actual argument binder must authenticate this parameter's borrowed
+    /// root. This receiver only binds its local plan loan to a held caller ID.
+    /// Caller loans keep their single finalizer; local aliases never end them.
+    pub(crate) fn inherit_view(
+        &mut self,
+        id: crate::loan_plan::LoanId,
+        caller: ViewId,
+    ) -> Result<ViewId, Refusal> {
+        let result = (|| {
+            self.registry.active()?;
+            if caller.invocation != self.registry.invocation
+                || !self.frames.iter().any(|frame| frame.nonce == caller.frame)
+            {
+                return Err(Refusal::Identity);
+            }
+            resolve(caller, self.frame, &self.slots, &self.frames)?;
+            let plan = &self.capacity.function().loan_plan;
+            let loan = plan
+                .loans
+                .get(id.0 as usize)
+                .filter(|loan| loan.id == id)
+                .ok_or(Refusal::Identity)?;
+            let endpoint = plan
+                .endpoints
+                .get(self.point as usize)
+                .ok_or(Refusal::Identity)?;
+            if loan.start != endpoint.point || !endpoint.starts.contains(&id) {
+                return Err(Refusal::Identity);
+            }
+            let slot = self.slots.get_mut(id.0 as usize).ok_or(Refusal::Identity)?;
+            if slot.view.is_some() || slot.alias.is_some() {
+                return Err(Refusal::Borrowed);
+            }
+            let generation = slot.generation.checked_add(1).ok_or(Refusal::Exhausted)?;
+            slot.generation = generation;
+            slot.alias = Some(caller);
+            Ok(ViewId {
+                invocation: self.registry.invocation,
+                frame: self.frame,
+                index: id.0,
+                generation,
+            })
+        })();
+        self.registry.select(result)
+    }
+
     /// This receiver requires separately authenticated call staging. Capacity
     /// authenticates the exact callee and program, not the actual call site.
     /// No evaluator entry installs this receiver before that proof is joined.
@@ -97,6 +160,7 @@ impl<'p, R: InvocationRuntime> Loans<'p, R> {
                 slots.resize_with(count, || Slot {
                     generation: 0,
                     view: None,
+                    alias: None,
                 });
                 slots.into_boxed_slice()
             };
@@ -133,6 +197,7 @@ impl<'p, R: InvocationRuntime> Loans<'p, R> {
         }
         let mut first = None;
         for slot in &mut self.slots {
+            slot.alias = None;
             if let Some(mut view) = slot.view.take() {
                 if let Err(error) = self.registry.end_view(&mut view) {
                     first.get_or_insert(error);

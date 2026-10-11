@@ -19,6 +19,7 @@ pub(crate) struct ViewId {
 struct Slot {
     generation: u64,
     view: Option<View>,
+    alias: Option<ViewId>,
 }
 pub(crate) struct Loans<'p, R: InvocationRuntime> {
     capacity: LoanCapacity<'p>,
@@ -57,6 +58,7 @@ impl<'p, R: InvocationRuntime> Loans<'p, R> {
         slots.resize_with(capacity.slots(), || Slot {
             generation: 0,
             view: None,
+            alias: None,
         });
         Ok(Self {
             capacity,
@@ -97,7 +99,7 @@ impl<'p, R: InvocationRuntime> Loans<'p, R> {
                 return Err(Refusal::Identity);
             }
             let slot = self.slots.get_mut(id.0 as usize).ok_or(Refusal::Identity)?;
-            if slot.view.is_some() {
+            if slot.view.is_some() || slot.alias.is_some() {
                 return Err(Refusal::Borrowed);
             }
             let generation = slot.generation.checked_add(1).ok_or(Refusal::Exhausted)?;
@@ -119,9 +121,8 @@ impl<'p, R: InvocationRuntime> Loans<'p, R> {
             if id.invocation != self.registry.invocation {
                 return Err(Refusal::Identity);
             }
-            let slot = frames::lookup(id, self.frame, &self.slots, &self.frames)?;
-            self.registry
-                .read(slot.view.as_ref().ok_or(Refusal::Identity)?, f)
+            let view = frames::resolve(id, self.frame, &self.slots, &self.frames)?;
+            self.registry.read(view, f)
         })();
         self.registry.select(result)
     }
@@ -137,9 +138,8 @@ impl<'p, R: InvocationRuntime> Loans<'p, R> {
             if id.invocation != self.registry.invocation {
                 return Err(Refusal::Identity);
             }
-            let slot = frames::lookup(id, self.frame, &self.slots, &self.frames)?;
-            self.registry
-                .read_range(slot.view.as_ref().ok_or(Refusal::Identity)?, start, end, f)
+            let view = frames::resolve(id, self.frame, &self.slots, &self.frames)?;
+            self.registry.read_range(view, start, end, f)
         })();
         self.registry.select(result)
     }
@@ -187,6 +187,7 @@ impl<'p, R: InvocationRuntime> Loans<'p, R> {
             let edge_index = u16::try_from(edge_index).map_err(|_| Refusal::Identity)?;
             for loan in &plan.loans {
                 if loan.end_edges.contains(&edge_index) {
+                    self.slots[loan.id.0 as usize].alias = None;
                     if let Some(view) = self.slots[loan.id.0 as usize].view.as_mut() {
                         self.registry.end_view(view)?;
                         self.slots[loan.id.0 as usize].view = None;
@@ -214,6 +215,7 @@ impl<'p, R: InvocationRuntime> Loans<'p, R> {
     pub(crate) fn abandon_views(&mut self) -> Result<(), Refusal> {
         let mut first = None;
         for slot in &mut self.slots {
+            slot.alias = None;
             if let Some(mut view) = slot.view.take() {
                 if let Err(error) = self.registry.end_view(&mut view) {
                     first.get_or_insert(error);
@@ -222,6 +224,7 @@ impl<'p, R: InvocationRuntime> Loans<'p, R> {
         }
         for frame in &mut self.frames {
             for slot in &mut frame.slots {
+                slot.alias = None;
                 if let Some(mut view) = slot.view.take() {
                     if let Err(error) = self.registry.end_view(&mut view) {
                         first.get_or_insert(error);
