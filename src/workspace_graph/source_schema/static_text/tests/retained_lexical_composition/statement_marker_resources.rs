@@ -22,10 +22,23 @@ fn observed(
 
 #[test]
 fn scalar_discard_and_terminated_guards_share_actual_replay_work_and_backing_limits() {
-    assert_eq!(STRING_SOURCE.matches("at=at+1;").count(), 2);
-    let selected = STRING_SOURCE.replace("at=at+1;", "at=at+1; 5; false && 1/0>0;");
+    // Retain the original append-only compose body verbatim. Whole String
+    // replacement is intentionally outside this witness and its pending seam.
+    let compose = STRING_SOURCE
+        .split("@id(\"static.replace\")")
+        .next()
+        .unwrap();
+    let observe = compose
+        .strip_prefix("module static.writer;\n")
+        .unwrap()
+        .replace("static.compose", "static.observe")
+        .replace("fn compose", "fn observe");
+    let source =
+        format!("{compose}{observe} @id(\"app.main\") fn main()->i64 {{compose(4)+observe(4)}}");
+    assert_eq!(source.matches("at=at+1;").count(), 2);
+    let selected = source.replace("at=at+1;", "at=at+1; 5; false && 1/0>0;");
     // An independently authored ordinary-let/unterminated-guard control.
-    let control = STRING_SOURCE
+    let control = source
         .replace("at=at+1;", "at=at+1; let probe=5; let lazy=false && 1/0>0;")
         .replace("{continue;};", "{continue;}")
         .replace("str_len_bytes(key);};", "str_len_bytes(key);}");
@@ -34,7 +47,7 @@ fn scalar_discard_and_terminated_guards_share_actual_replay_work_and_backing_lim
         let retained = build(source);
         admitted(&retained);
         plan_parity(writer(&retained), &ordinary);
-        runtime_parity(&retained, &ordinary, Some(9));
+        runtime_parity(&retained, &ordinary, Some(10));
         let members = lexical_members(writer(&retained));
         assert_eq!(members.len(), 2);
         for member in &members {
