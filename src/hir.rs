@@ -267,13 +267,12 @@ pub(crate) use type_reachability::{
     authored_nominal_declarations, is_admitted_nested_owned_byte_record, is_flat_owned_byte_record,
     reachable_authored_types, reachable_authored_types_with_roots, reachable_scalar_authored_types,
 };
-#[cfg(test)]
-use validation::HirValidator;
 pub(crate) use validation::resolved_type_contains_owned_bytes;
 pub(crate) use validation::validate_core;
+#[cfg(test)]
+use validation::HirValidator;
 pub(crate) use workspace_link::{
-    COPY_SCALAR_NAMES, LinkedScalarProjectParts, PACKAGE_SCALAR_NAME, copy_scalar_type,
-    link_https_command_io_workspace, link_https_entry_workspace,
+    copy_scalar_type, link_https_command_io_workspace, link_https_entry_workspace,
     link_language_command_io_workspace, link_line_command_io_workspace,
     link_network_command_io_workspace, link_network_entry_workspace, link_owned_data_api_workspace,
     link_package_scalar_workspace, link_scalar_project_exports, link_scalar_project_workspace,
@@ -289,7 +288,8 @@ pub(crate) use workspace_link::{
     useful_data_workspace_parameter_admitted, useful_data_workspace_return_admitted,
     validate_stream_collection_record_program, validate_stream_data_program,
     validate_stream_nested_outcome_program, validate_stream_owned_program,
-    validate_stream_record_program, validate_stream_text_program,
+    validate_stream_record_program, validate_stream_text_program, LinkedScalarProjectParts,
+    COPY_SCALAR_NAMES, PACKAGE_SCALAR_NAME,
 };
 
 #[allow(dead_code, reason = "private Workspace Semantic Graph Phase-A seam")]
@@ -307,7 +307,7 @@ thread_local! {
 
 mod cache_codec;
 mod declaration_index;
-pub use declaration_index::{DeclarationIndex, dispose_declaration_index_for_private_contract};
+pub use declaration_index::{dispose_declaration_index_for_private_contract, DeclarationIndex};
 
 // Resolved data model and shared probes, re-exported so this module and its
 // submodules keep reaching every HIR item through `hir::` as before.
@@ -392,6 +392,10 @@ pub(crate) fn bounded_owned_record_template_for_function<'a>(
     }
     matched
 }
+pub(crate) use nodes::{
+    admitted_owned_byte_prelude_instance, is_refutable_match_scalar, is_scalar_resolved_type,
+    LinkedDeclarationFact, LinkedOwnedDataParts, LinkedScalarFunction,
+};
 pub use nodes::{
     ByteSliceExtent, ByteSliceProvenance, ByteSliceRangeStep, ByteSliceRootKind, Declaration,
     DeclarationKind, IdentityOrigin, OwnershipMode, ResolvedBinding, ResolvedFieldDeclaration,
@@ -402,10 +406,6 @@ pub use nodes::{
     ResolvedResourceDropKind, ResolvedType, ResolvedTypeDeclaration, ResolvedTypeDeclarationKind,
     ResolvedTypeParameterDeclaration, ResolvedVariantCaseDeclaration, ResolvedYieldsClause,
     TypeFacts, VectorFieldProvenance,
-};
-pub(crate) use nodes::{
-    LinkedDeclarationFact, LinkedOwnedDataParts, LinkedScalarFunction,
-    admitted_owned_byte_prelude_instance, is_refutable_match_scalar, is_scalar_resolved_type,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]

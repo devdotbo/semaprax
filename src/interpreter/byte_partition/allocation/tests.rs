@@ -172,16 +172,14 @@ fn evaluator_account_reads_ignore_legacy_fields_and_whole_handoff_keeps_pointer(
         assert!(evaluator.clone_accounted_bytes(&foreign_value).is_err());
         assert!(evaluator.zeroed_bytes(0).is_err());
         // No ordinary source evaluator entry was opened by preparing this receiver.
-        assert!(
-            crate::check(
-                r#"module closed; @id("closed.main")
+        assert!(crate::check(
+            r#"module closed; @id("closed.main")
             fn main()->own Vec<Bytes>{
              let bytes=bytes_zeroed(1usize);bytes_partition(bytes,1usize,1usize)
             }"#,
-                "closed.spx"
-            )
-            .is_err()
-        );
+            "closed.spx"
+        )
+        .is_err());
     }
     assert_eq!((events, payload), (3, 15));
 }

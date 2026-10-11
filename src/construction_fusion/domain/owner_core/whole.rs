@@ -1,6 +1,6 @@
 //! Closed whole-owner holding for ordinary interpreter views. This is not a
 //! partition operation: an empty whole is valid and still has one affine owner.
-use super::{Child, Core, IssuerHolder, ModuleHolder, Runtime, Slot, View, exact_vec};
+use super::{exact_vec, Child, Core, IssuerHolder, ModuleHolder, Runtime, Slot, View};
 use crate::construction_fusion::domain::{Issuer, ModuleIdentity, Refusal};
 use std::{alloc::Layout, marker::PhantomData};
 impl<R: Runtime> Core<'static, R> {

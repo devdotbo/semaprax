@@ -4,7 +4,7 @@
 use crate::construction_fusion::domain::owner_core::{Child, Core, Loan, Receipt, Runtime};
 use crate::construction_fusion::{
     domain::{Issuer, ModuleIdentity, Refusal},
-    partition::{Preparation, operation},
+    partition::{operation, Preparation},
 };
 use std::{
     alloc::Layout,

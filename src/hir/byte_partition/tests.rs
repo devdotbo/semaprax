@@ -30,13 +30,11 @@ fn original_source_resolves_only_through_the_private_current_owner() {
         panic!("call")
     };
     assert!(std::ptr::eq(operands.owner, &args[0]));
-    assert!(
-        function
-            .cleanup_plan
-            .status_sources
-            .iter()
-            .any(|status| status.id.lane == crate::cleanup_plan::StatusLane::OperationFailure)
-    );
+    assert!(function
+        .cleanup_plan
+        .status_sources
+        .iter()
+        .any(|status| status.id.lane == crate::cleanup_plan::StatusLane::OperationFailure));
     let mut probe = usize::MAX;
     owner.receive_current_graph(&mut probe).unwrap();
     let used = usize::MAX - probe;
@@ -108,11 +106,9 @@ fn original_source_resolves_only_through_the_private_current_owner() {
                 assert_eq!(short, 0);
                 let clone = entry.clone();
                 let mut clone_work = usize::MAX;
-                assert!(
-                    owner
-                        .simultaneous_view_bound(&clone, &mut clone_work)
-                        .is_err()
-                );
+                assert!(owner
+                    .simultaneous_view_bound(&clone, &mut clone_work)
+                    .is_err());
                 assert_eq!(clone_work, 0);
             }
             None => {
@@ -155,11 +151,9 @@ fn private_owner_refuses_foreign_carriers_and_actual_call_or_plan_mutations() {
 }
 "#;
     let child_helper = crate::parse(child_helper, "partition_checked.spx").unwrap();
-    assert!(
-        crate::source_verify::verify_partition(&child_helper)
-            .iter()
-            .all(|d| !d.severity.is_error())
-    );
+    assert!(crate::source_verify::verify_partition(&child_helper)
+        .iter()
+        .all(|d| !d.severity.is_error()));
     let error = ValidatedPartitionProgram::compile_source(&child_helper, &mut usize::MAX)
         .err()
         .expect("child helper must refuse");
@@ -202,11 +196,9 @@ fn private_owner_refuses_foreign_carriers_and_actual_call_or_plan_mutations() {
             assert_eq!(work, 0);
         }
         let mut bound_work = usize::MAX;
-        assert!(
-            owner
-                .simultaneous_view_bound(&owner.program.functions[1], &mut bound_work)
-                .is_err()
-        );
+        assert!(owner
+            .simultaneous_view_bound(&owner.program.functions[1], &mut bound_work)
+            .is_err());
         assert_eq!(
             bound_work, 0,
             "failed compiler renewal must poison view receipt"

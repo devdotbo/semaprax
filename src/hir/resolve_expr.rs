@@ -13,10 +13,10 @@ use super::expr_nodes::{
 use super::ids::{DeclarationId, ExpressionId, FunctionExecutionId, ValueId};
 use super::monomorphize::substitute_type;
 use super::nodes::{
-    DeclarationKind, OwnershipMode, ResolvedBinding, ResolvedImportResultKind, ResolvedMatchMode,
-    ResolvedNativeRustImportCall, ResolvedType, is_scalar_resolved_type,
+    is_scalar_resolved_type, DeclarationKind, OwnershipMode, ResolvedBinding,
+    ResolvedImportResultKind, ResolvedMatchMode, ResolvedNativeRustImportCall, ResolvedType,
 };
-use super::resolve_expr_frame::{Frame, take_results};
+use super::resolve_expr_frame::{take_results, Frame};
 use super::type_reachability::record_args_ok;
 use super::{Binding, Place, PlaceProjection, Resolver};
 

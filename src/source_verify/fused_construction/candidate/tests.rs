@@ -1,7 +1,7 @@
 use super::*;
 use crate::byte_data_capacity::CapacityDiagnostic;
 use crate::source_verify::capacity::verify_selected_capacity;
-use crate::source_verify::fused_construction::{Derivation, derive};
+use crate::source_verify::fused_construction::{derive, Derivation};
 use crate::source_verify::type_table::TypeTable;
 
 const SOURCE: &str = include_str!("../../../../tests/fixtures/record-traversal-maximum.spx");
@@ -37,11 +37,9 @@ fn original_4096_passes_every_source_pass_as_an_unvalidated_candidate() {
     let errors = crate::check(SOURCE, PATH).unwrap_err();
     assert!(errors.iter().any(|error| error.code == "SPX-T267"));
     let program = parsed(SOURCE);
-    assert!(
-        crate::source_verify::verify(&program)
-            .iter()
-            .any(|diagnostic| diagnostic.code == "SPX-T267")
-    );
+    assert!(crate::source_verify::verify(&program)
+        .iter()
+        .any(|diagnostic| diagnostic.code == "SPX-T267"));
     let types = TypeTable::new(&program);
     let legacy = verify_selected_capacity(&program, &types, None).unwrap_err();
     assert!(matches!(legacy.diagnostic, CapacityDiagnostic::Allocation));

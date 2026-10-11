@@ -4,7 +4,7 @@
 //! joined grant or replacement artifact. Ordinary routes do not call this API.
 use crate::diagnostic::Diagnostic;
 use crate::hir::selected_fused_candidate::{
-    SelectedRefusal, ValidatedFusedSelection, validate_selected,
+    validate_selected, SelectedRefusal, ValidatedFusedSelection,
 };
 use sha2::{Digest, Sha256};
 use std::path::Path;
@@ -90,11 +90,9 @@ fn selection_errors(error: SelectedRefusal, path: &Path) -> Vec<Diagnostic> {
                     shape_help(reason),
                 ),
             };
-            vec![
-                Diagnostic::error("SPX-F130", message, miss.span)
-                    .at_path(path.display().to_string())
-                    .with_help(help),
-            ]
+            vec![Diagnostic::error("SPX-F130", message, miss.span)
+                .at_path(path.display().to_string())
+                .with_help(help)]
         }
 
         SelectedRefusal::Resolve(error)
@@ -167,7 +165,7 @@ pub fn run_interpreter(
     )
     .map_err(|error| vec![error])?;
     with_selected(source, path, |owner, digest| {
-        use crate::interpreter::construction_fusion::selected::{Failure, execute_accounted};
+        use crate::interpreter::construction_fusion::selected::{execute_accounted, Failure};
         let (answer, refused, used) = execute_accounted(owner, fuel, account.bytes);
         let mut value = serde_json::json!({"schema":ENVELOPE_SCHEMA,"profile":PROFILE,"source_sha256":digest,"target":"interpreter","account_limit":account.bytes,"managed_reserved":used,"account_policy":"interpreter.requested-layout.v1","max_steps":fuel,"account_refused":refused});
         let returned = match answer {

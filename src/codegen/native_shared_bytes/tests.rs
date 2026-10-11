@@ -2,12 +2,12 @@ use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use super::RUNTIME;
-use super::bridge::{Outcome, bridge_c_for_tests};
+use super::bridge::{bridge_c_for_tests, Outcome};
 use super::closure::{
-    Admission, CARRIER_SITES, Consumer, PARTITION_STATUS_CODES, Support, closed_over_for_tests,
-    select,
+    closed_over_for_tests, select, Admission, Consumer, Support, CARRIER_SITES,
+    PARTITION_STATUS_CODES,
 };
+use super::RUNTIME;
 
 pub(super) fn scratch(label: &str) -> PathBuf {
     let root = std::env::temp_dir().join(format!(

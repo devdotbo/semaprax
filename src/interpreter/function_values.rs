@@ -148,13 +148,11 @@ pub(super) fn scan_targets<'a>(
 ) -> Result<(), Vec<Diagnostic>> {
     let targets = match &expression.kind {
         ResolvedExprKind::FunctionReference { target } => {
-            vec![
-                program
-                    .functions
-                    .iter()
-                    .find(|function| &function.id == target)
-                    .ok_or_else(|| reject_scan(expression, REASON_UNSUPPORTED_CALLEE))?,
-            ]
+            vec![program
+                .functions
+                .iter()
+                .find(|function| &function.id == target)
+                .ok_or_else(|| reject_scan(expression, REASON_UNSUPPORTED_CALLEE))?]
         }
         ResolvedExprKind::Invoke { callable, .. } => {
             hir::function_value::compatible_targets(program, &callable.ty)

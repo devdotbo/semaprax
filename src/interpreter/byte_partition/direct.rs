@@ -11,8 +11,8 @@ use crate::{
     },
     hir::{self, ResolvedExpr, ResolvedExprKind as K, ResolvedStatement as S},
     interpreter::{
-        OwnedBytesValue, Value,
         construction_fusion::{Backing, WholeBacking},
+        OwnedBytesValue, Value,
     },
 };
 use std::alloc::Layout;
@@ -111,20 +111,17 @@ pub(crate) fn execute(
         let K::Block { statements, tail } = &entry.body.kind else {
             return Err(Refusal::Identity);
         };
-        let [
-            S::Let {
-                binding: whole_binding,
-                mutable: false,
-                value: producer,
-                ..
-            },
-            S::Let {
-                binding: vector_binding,
-                mutable: false,
-                value: operation,
-                ..
-            },
-        ] = statements.as_slice()
+        let [S::Let {
+            binding: whole_binding,
+            mutable: false,
+            value: producer,
+            ..
+        }, S::Let {
+            binding: vector_binding,
+            mutable: false,
+            value: operation,
+            ..
+        }] = statements.as_slice()
         else {
             return Err(Refusal::Identity);
         };

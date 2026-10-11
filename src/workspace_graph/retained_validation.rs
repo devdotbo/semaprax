@@ -30,8 +30,8 @@ pub(super) use dependency_closure::{
 };
 
 use super::{
-    CallOccurrenceKey, MAX_CALLS, WorkspaceDeclarationFact, WorkspaceEdge, WorkspaceResolvedModule,
     graph_error, limit_error, push_edge, reserve_builder_structure, visit_ast_call_sites,
+    CallOccurrenceKey, WorkspaceDeclarationFact, WorkspaceEdge, WorkspaceResolvedModule, MAX_CALLS,
 };
 use edge_projection::push_edge_reference;
 

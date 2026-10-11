@@ -6,10 +6,10 @@ pub(in crate::codegen) use emission::{
 mod owned_moves;
 pub(crate) mod public_generic_bridge;
 use super::{
-    COutput, NATIVE_SCALAR_RUNTIME_C, backend_error, c_i32, c_i64, native_box, native_byte_data,
-    native_bytes, native_command, native_command_io, native_host_output, native_iter,
-    native_resource, native_runtime, native_source_command, native_source_resource_command,
-    native_vec, resource_lowering_gate,
+    backend_error, c_i32, c_i64, native_box, native_byte_data, native_bytes, native_command,
+    native_command_io, native_host_output, native_iter, native_resource, native_runtime,
+    native_source_command, native_source_resource_command, native_vec, resource_lowering_gate,
+    COutput, NATIVE_SCALAR_RUNTIME_C,
 };
 #[cfg(test)]
 use super::{

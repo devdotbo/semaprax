@@ -58,12 +58,10 @@ fn binaries(unit: &str, label: &str) -> Vec<std::path::PathBuf> {
 fn original_native_source_profile_is_deterministic_and_default_remains_closed() {
     let unit = source(ORIGINAL, 1024 * 1024);
     assert_eq!(unit, source(ORIGINAL, 1024 * 1024));
-    assert!(
-        crate::check(ORIGINAL, "ordinary.spx")
-            .unwrap_err()
-            .iter()
-            .any(|d| d.code == "SPX-T267")
-    );
+    assert!(crate::check(ORIGINAL, "ordinary.spx")
+        .unwrap_err()
+        .iter()
+        .any(|d| d.code == "SPX-T267"));
     let legacy_text = ORIGINAL.replace("4096", "32");
     let legacy = crate::check(&legacy_text, "ordinary-32.spx").unwrap();
     assert!(

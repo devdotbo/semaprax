@@ -4,8 +4,8 @@
 use super::precursor::inspect;
 use super::*;
 use crate::byte_data_capacity::{
-    AllocationStrategy, CapacityFlow as F, FunctionCapacityInput, ProgramCapacitySummary,
-    analyze_with_strategy,
+    analyze_with_strategy, AllocationStrategy, CapacityFlow as F, FunctionCapacityInput,
+    ProgramCapacitySummary,
 };
 use crate::hir::{
     ResolvedExpr as E, ResolvedExprKind as K, ResolvedProgram, ResolvedStatement as S,
@@ -39,14 +39,9 @@ fn rescaled(count: u32) -> ResolvedProgram {
         panic!("body")
     };
     rescale(tail, 32, u64::from(count));
-    let [
-        S::Let {
-            value: allocation, ..
-        },
-        _,
-        S::While { condition, .. },
-        ..,
-    ] = statements.as_mut_slice()
+    let [S::Let {
+        value: allocation, ..
+    }, _, S::While { condition, .. }, ..] = statements.as_mut_slice()
     else {
         panic!("prefix")
     };
@@ -174,12 +169,10 @@ fn publishing_entry_requires_the_sealed_current_validation_owner() {
 
 #[test]
 fn unvalidated_precursor_stays_closed_outside_all_gates() {
-    assert!(
-        crate::check(ORIGINAL, "selected-fused-default.spx")
-            .unwrap_err()
-            .iter()
-            .any(|diagnostic| diagnostic.code == "SPX-T267")
-    );
+    assert!(crate::check(ORIGINAL, "selected-fused-default.spx")
+        .unwrap_err()
+        .iter()
+        .any(|diagnostic| diagnostic.code == "SPX-T267"));
     let selected = inputs(4096);
     let legacy = crate::byte_data_capacity::analyze(&[]).unwrap();
     assert_eq!(

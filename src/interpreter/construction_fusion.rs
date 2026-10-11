@@ -5,7 +5,7 @@ use super::{Flow, Value};
 mod carriers;
 pub(crate) mod selected;
 use crate::construction_fusion::domain::owner_core::{Child, Core, Loan, Receipt, Runtime};
-use crate::construction_fusion::domain::{Issuer, MAX_VIEWS, ModuleIdentity, Refusal};
+use crate::construction_fusion::domain::{Issuer, ModuleIdentity, Refusal, MAX_VIEWS};
 use crate::hir::ResolvedExpr;
 pub(super) use carriers::{Backing, BorrowedSliceValue, OwnedBytesValue, WholeBacking};
 use std::alloc::Layout;

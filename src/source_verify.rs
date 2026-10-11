@@ -74,7 +74,7 @@ mod oracle;
 
 use binding::{Binding, CheckedValue};
 use scope::{VariantMatchState, VerifierFrame, VerifierScope};
-use type_table::{TypeTable, resolve_class_method};
+use type_table::{resolve_class_method, TypeTable};
 
 pub(crate) use declaration::{verify, verify_partition, verify_presenting};
 pub(crate) use declared_type::copy_record_collection::{
@@ -172,12 +172,12 @@ use oracle::check_expr;
 
 #[cfg(test)]
 use capacity::{
-    SourceCapacityContext, reset_source_capacity_scope_peak, reset_source_transcript_scope_peak,
+    reset_source_capacity_scope_peak, reset_source_transcript_scope_peak,
     source_capacity_expr_type, source_capacity_functions, source_capacity_match_next_scratch_peak,
     source_capacity_scope_live, source_capacity_scope_peak, source_transcript_frame_scratch_peak,
     source_transcript_owned_map_allocations, source_transcript_scope_live,
     source_transcript_scope_peak, source_transcript_source_from_roots,
-    source_type_scope_copy_totals, verify_byte_data_capacity,
+    source_type_scope_copy_totals, verify_byte_data_capacity, SourceCapacityContext,
 };
 
 struct IterativeVerifier<'a, 'p> {

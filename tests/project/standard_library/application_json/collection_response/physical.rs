@@ -313,11 +313,9 @@ fn oracle(rows: usize) -> (String, String, usize) {
     let entries = parsed["entries"].as_array().unwrap();
     assert_eq!(entries.len(), rows);
     let label = "\0".repeat(64);
-    assert!(
-        entries
-            .iter()
-            .all(|entry| entry["label"].as_str() == Some(label.as_str()))
-    );
+    assert!(entries
+        .iter()
+        .all(|entry| entry["label"].as_str() == Some(label.as_str())));
     (head, row, length)
 }
 

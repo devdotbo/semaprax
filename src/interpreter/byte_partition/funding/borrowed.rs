@@ -2,7 +2,7 @@
 //! This trait is crate-private and its sole implementation is Account. It
 //! erases no lifetime: every handle still borrows the actual account.
 use super::Account;
-use crate::construction_fusion::domain::{Refusal, owner_core::Runtime};
+use crate::construction_fusion::domain::{owner_core::Runtime, Refusal};
 use std::alloc::Layout;
 
 pub(crate) trait ByteAccount {

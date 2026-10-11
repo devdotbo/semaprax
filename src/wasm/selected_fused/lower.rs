@@ -10,7 +10,7 @@
 //! (`cleanup`); this module never orders a finalizer itself.
 use super::cleanup::{Failure, Owned, Replay};
 use super::facts::Selected;
-use super::{ENTRY, IMPORTS, NAMESPACE, Refusal, import};
+use super::{import, Refusal, ENTRY, IMPORTS, NAMESPACE};
 use crate::hir::{
     ExpressionId, ResolvedBinding, ResolvedExpr as E, ResolvedExprKind as K,
     ResolvedStatement as S, ResolvedType as T, ValueId,
@@ -466,22 +466,17 @@ impl<'a> Lower<'a> {
         let K::Block { statements, tail } = &function.body.kind else {
             return Err(unsupported("function body"));
         };
-        let [
-            S::Let {
-                binding: vector,
-                value: allocation,
-                ..
-            },
-            S::Let {
-                binding: counter,
-                value: start,
-                ..
-            },
-            S::While {
-                condition, body, ..
-            },
-            suffix @ ..,
-        ] = statements.as_slice()
+        let [S::Let {
+            binding: vector,
+            value: allocation,
+            ..
+        }, S::Let {
+            binding: counter,
+            value: start,
+            ..
+        }, S::While {
+            condition, body, ..
+        }, suffix @ ..] = statements.as_slice()
         else {
             return Err(unsupported("construction prefix"));
         };
@@ -603,25 +598,21 @@ impl<'a> Lower<'a> {
         let K::Block { statements, tail } = &body.kind else {
             return Err(unsupported("row body"));
         };
-        let [
-            S::Let {
-                binding: item,
-                value: constructor,
-                ..
-            },
-            S::Assign {
-                binding: destination,
-                field: None,
-                value: push,
-                ..
-            },
-            S::Assign {
-                binding: latch,
-                field: None,
-                value: step,
-                ..
-            },
-        ] = statements.as_slice()
+        let [S::Let {
+            binding: item,
+            value: constructor,
+            ..
+        }, S::Assign {
+            binding: destination,
+            field: None,
+            value: push,
+            ..
+        }, S::Assign {
+            binding: latch,
+            field: None,
+            value: step,
+            ..
+        }] = statements.as_slice()
         else {
             return Err(unsupported("row body"));
         };

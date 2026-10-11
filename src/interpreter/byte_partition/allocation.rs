@@ -2,8 +2,8 @@
 //! Ordinary None execution keeps its existing allocation and status policy.
 use super::funding::{AllocationError, BorrowedAccount};
 use crate::interpreter::{
-    BorrowedSliceValue, Evaluator, Flow, OwnedBytesValue,
     construction_fusion::{Backing, WholeBacking},
+    BorrowedSliceValue, Evaluator, Flow, OwnedBytesValue,
 };
 use std::sync::Arc;
 

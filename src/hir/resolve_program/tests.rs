@@ -185,27 +185,21 @@ fn generic_type_arguments_are_limited_to_copy_scalars_and_the_owned_byte_prelude
     // `Option<Bytes>` and the two mixed `Result` shapes are the exact
     // compiler-owned carriers admitted past the copy-scalar rule.
     assert!(resolve(named("Option", vec![crate::ast::Type::Bytes])).is_ok());
-    assert!(
-        resolve(named(
-            "Result",
-            vec![crate::ast::Type::Bytes, crate::ast::Type::I64]
-        ))
-        .is_ok()
-    );
-    assert!(
-        resolve(named(
-            "Result",
-            vec![crate::ast::Type::I64, crate::ast::Type::Bytes]
-        ))
-        .is_ok()
-    );
-    assert!(
-        resolve(named(
-            "Result",
-            vec![crate::ast::Type::Bytes, crate::ast::Type::Bytes]
-        ))
-        .is_ok()
-    );
+    assert!(resolve(named(
+        "Result",
+        vec![crate::ast::Type::Bytes, crate::ast::Type::I64]
+    ))
+    .is_ok());
+    assert!(resolve(named(
+        "Result",
+        vec![crate::ast::Type::I64, crate::ast::Type::Bytes]
+    ))
+    .is_ok());
+    assert!(resolve(named(
+        "Result",
+        vec![crate::ast::Type::Bytes, crate::ast::Type::Bytes]
+    ))
+    .is_ok());
 
     // Anything else leaves the admitted profile.
     for rejected in [
@@ -325,11 +319,9 @@ fn main() -> i64
             .collect::<Vec<_>>(),
         vec![vec![ResolvedType::Bool], vec![ResolvedType::I64]]
     );
-    assert!(
-        instances
-            .iter()
-            .all(|instance| instance.template == DeclarationId::new("app.identity"))
-    );
+    assert!(instances
+        .iter()
+        .all(|instance| instance.template == DeclarationId::new("app.identity")));
     // Two resolutions of the same source agree, identities included.
     let repeated = resolver
         .discover_function_instances(&functions, &templates)

@@ -1,6 +1,6 @@
 //! Executor-neutral held backing/range core. No descriptor or source authority.
 //! The executor debits its REAL invocation account before metadata/clone allocation.
-use super::{Issuer, MAX_VIEWS, ModuleIdentity, Refusal};
+use super::{Issuer, ModuleIdentity, Refusal, MAX_VIEWS};
 use std::{alloc::Layout, marker::PhantomData, ops::Range};
 
 /// Implementations own unique backing, expose its actual extent, and fail-stop

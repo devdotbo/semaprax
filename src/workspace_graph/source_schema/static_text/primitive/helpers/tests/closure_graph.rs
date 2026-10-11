@@ -566,15 +566,13 @@ fn refused(build: &WorkspaceGraphBuild) -> usize {
     let anchor = &module.functions[0];
     let mut resources =
         SelectedReplayPreparation::with_limits(anchor, 32_000_000, 1 << 26).unwrap();
-    assert!(
-        authenticate(
-            module,
-            &build.hir.modules,
-            &build.hir.declarations,
-            &mut resources
-        )
-        .is_err()
-    );
+    assert!(authenticate(
+        module,
+        &build.hir.modules,
+        &build.hir.declarations,
+        &mut resources
+    )
+    .is_err());
     let remaining = resources.remaining();
     assert_eq!(
         resources
@@ -607,15 +605,13 @@ fn later_provider_failure_is_sticky_and_cold_rebuilt_sources_retry_with_exact_pa
     let module = caller(&later);
     let anchor = &module.functions[0];
     let mut short = SelectedReplayPreparation::with_limits(anchor, spent - 1, 1 << 26).unwrap();
-    assert!(
-        authenticate(
-            module,
-            &later.hir.modules,
-            &later.hir.declarations,
-            &mut short
-        )
-        .is_err()
-    );
+    assert!(authenticate(
+        module,
+        &later.hir.modules,
+        &later.hir.declarations,
+        &mut short
+    )
+    .is_err());
     assert_eq!(
         short.charge(anchor, 0, "one-short retry").unwrap_err().code,
         "SPX-H006"

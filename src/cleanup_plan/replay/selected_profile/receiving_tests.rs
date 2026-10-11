@@ -56,11 +56,9 @@ fn string_vec_and_borrowed_record_receiving_replay_match_complete_ordinary_plans
         let ordinary = direct(source);
         let expected = function(&ordinary);
         assert!(expected.cleanup_plan.lexical_control.is_some());
-        assert!(
-            nodes(&expected.body)
-                .iter()
-                .any(|node| node.ty == ResolvedType::Never)
-        );
+        assert!(nodes(&expected.body)
+            .iter()
+            .any(|node| node.ty == ResolvedType::Never));
         let fixture = SourceRecordReplayFixture::new(source);
         let retained = fixture
             .functions()

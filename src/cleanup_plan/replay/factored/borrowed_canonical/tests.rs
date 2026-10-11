@@ -202,12 +202,10 @@ fn ordinary_order_and_full_duplicate_multisets_match_with_one_budget_through_dro
         "wide Alt actual work {spent}"
     );
     assert_eq!(wide_automaton.nodes[start].epsilon.len(), WIDE);
-    assert!(
-        wide_automaton.nodes[start]
-            .epsilon
-            .iter()
-            .all(|target| *target == end)
-    );
+    assert!(wide_automaton.nodes[start]
+        .epsilon
+        .iter()
+        .all(|target| *target == end));
     let ObservationDagKind::Alt(members) = &root.kind else {
         unreachable!()
     };
@@ -258,29 +256,25 @@ fn ordinary_order_and_full_duplicate_multisets_match_with_one_budget_through_dro
         Vec::new(),
     )));
     let mut detached_budget = ReplayBudget::new();
-    assert!(
-        dag_memo::get(
-            function,
-            &memo,
-            &dag_memo::key(&detached, 1),
-            &mut detached_budget
-        )
-        .is_err()
-    );
+    assert!(dag_memo::get(
+        function,
+        &memo,
+        &dag_memo::key(&detached, 1),
+        &mut detached_budget
+    )
+    .is_err());
 
     // A detached construction ordinal never grants a cached continuation.
     let mut ledger = ReplayBudget::new();
     assert!(dag_memo::get(function, &memo, &dag_memo::test_key(99, 1, 1), &mut ledger).is_err());
-    assert!(
-        dag_memo::insert(
-            function,
-            &mut memo,
-            dag_memo::test_key(99, 1, 1),
-            50,
-            &mut ledger
-        )
-        .is_err()
-    );
+    assert!(dag_memo::insert(
+        function,
+        &mut memo,
+        dag_memo::test_key(99, 1, 1),
+        50,
+        &mut ledger
+    )
+    .is_err());
 
     // Two identical alternatives must remain two traces. A shared suffix
     // and a different terminal exercise weighted closure and label identity.
@@ -362,12 +356,10 @@ fn ordinary_order_and_full_duplicate_multisets_match_with_one_budget_through_dro
     let mut overflow_budget = ReplayBudget::new();
     let mut overflow =
         BorrowedCanonicalizer::new(function, &automaton, 0, &mut overflow_budget).unwrap();
-    assert!(
-        overflow
-            .id(function, vec![(7, u64::MAX)], &mut overflow_budget)
-            .unwrap()
-            .is_none()
-    );
+    assert!(overflow
+        .id(function, vec![(7, u64::MAX)], &mut overflow_budget)
+        .unwrap()
+        .is_none());
     assert!(overflow_budget.remaining < MAX_REPLAY_WORK_UNITS);
 
     fn run(

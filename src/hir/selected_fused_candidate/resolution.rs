@@ -8,8 +8,8 @@
 use super::Selected;
 use crate::ast;
 use crate::diagnostic::Diagnostic;
-use crate::hir::fused_construction::Refusal;
 use crate::hir::fused_construction::join::{self, Joined};
+use crate::hir::fused_construction::Refusal;
 use crate::hir::{DeclarationIndex, FunctionResolutionWork, ResolvedProgram, Resolver};
 
 /// Derive the current source proof, require its producer to be `producer`,

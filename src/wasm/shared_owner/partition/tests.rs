@@ -1,5 +1,5 @@
 //! Actual checked source -> module -> private host invocation, never witness substitution.
-use super::super::tests::{ORDINARY, node_available, run_node, stage};
+use super::super::tests::{node_available, run_node, stage, ORDINARY};
 use super::*;
 
 const SOURCE: &str = r#"module partition_wasm;
@@ -23,13 +23,11 @@ fn emitted(source: &str) -> PartitionModule {
     assert!(crate::check(source, "partition_wasm.spx").is_err());
     let module = PartitionModule::emit(&owner, &mut usize::MAX).unwrap();
     assert!(consumer_closure(module.bytes(), Host::PrivateOrdinary).is_err());
-    assert!(
-        module
-            .closure
-            .lease_aware
-            .iter()
-            .any(|name| name == "spx_bytes_partition")
-    );
+    assert!(module
+        .closure
+        .lease_aware
+        .iter()
+        .any(|name| name == "spx_bytes_partition"));
     assert_eq!(
         admit_producer(&module.closure),
         Err(Refusal::ProducerClosed)
@@ -78,10 +76,8 @@ fn actual_partition_failure_codes_keep_owner_live_until_canonical_cleanup_and_re
                 ("entry.mjs", entry.as_bytes()),
                 ("entry-test.mjs", ENTRY_TEST.as_bytes()),
             ]);
-            assert!(
-                run_node(&directory, "entry-test.mjs", &[&code.to_string()])
-                    .contains("partition-entry-ok")
-            );
+            assert!(run_node(&directory, "entry-test.mjs", &[&code.to_string()])
+                .contains("partition-entry-ok"));
         }
     }
 }

@@ -12,10 +12,10 @@ use crate::diagnostic::Diagnostic;
 use crate::filesystem_provider::FileProvider;
 use crate::hir::{self, ResolvedType};
 use crate::interpreter::{
-    CommandEvaluation, CommandEvaluationOutcome, CommandInputState, Evaluator, Flow,
-    FunctionLookup, MAX_STEPS_LIMIT, PreparedCancellation, REASON_UNSUPPORTED_CALLEE,
-    REASON_UNSUPPORTED_RESULT_TYPE, ResolvedTracePhase, Utf8MaterializationBudget, Value,
     option_error, resolved_data_signature_is_admitted, scan_closure, selection_error,
+    CommandEvaluation, CommandEvaluationOutcome, CommandInputState, Evaluator, Flow,
+    FunctionLookup, PreparedCancellation, ResolvedTracePhase, Utf8MaterializationBudget, Value,
+    MAX_STEPS_LIMIT, REASON_UNSUPPORTED_CALLEE, REASON_UNSUPPORTED_RESULT_TYPE,
 };
 
 use super::FileState;

@@ -53,15 +53,13 @@ fn explicit_source_factory_keeps_original_4096_and_ordinary_refusal_with_current
     assert!(report.returned());
     assert_eq!(value["result"], "9223372036854775807");
     let non_entry = SOURCE.replace("fn main()", "fn selected_helper()");
-    assert!(
-        run_interpreter(
-            &non_entry,
-            Path::new("non-entry.spx"),
-            RuntimeAccount::new(CALLER_ACCOUNT).unwrap(),
-            crate::interpreter::DEFAULT_MAX_STEPS,
-        )
-        .is_err()
-    );
+    assert!(run_interpreter(
+        &non_entry,
+        Path::new("non-entry.spx"),
+        RuntimeAccount::new(CALLER_ACCOUNT).unwrap(),
+        crate::interpreter::DEFAULT_MAX_STEPS,
+    )
+    .is_err());
     for (source, message, help) in [
         (
             SOURCE.replace("4096", "32"),

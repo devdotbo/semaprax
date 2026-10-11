@@ -17,7 +17,7 @@
 //! proof, and full selected HIR validation. Then each of the three executors
 //! must close the lease domain. The default `check` path never reaches this
 //! module.
-use super::{Derivation, Refusal, SourceProof, derive};
+use super::{derive, Derivation, Refusal, SourceProof};
 use crate::ast::{Program, Span};
 use crate::diagnostic::Diagnostic;
 

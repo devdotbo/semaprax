@@ -198,11 +198,9 @@ fn contradictory_shared_epilogue_names_function_exits_and_slots() {
     );
     let error = terminal_order(&function, &plan, &flags()).unwrap_err();
     assert_eq!(error.code, "SPX-B104");
-    assert!(
-        error
-            .message
-            .starts_with("Bytes cleanup exits contain contradictory finalizer precedence")
-    );
+    assert!(error
+        .message
+        .starts_with("Bytes cleanup exits contain contradictory finalizer precedence"));
     for expected in [
         format!("function `{function}`"),
         format!("exit 0 (failure from `{failed}` OperationFailure) finalizes `flag_a`"),
@@ -227,11 +225,9 @@ fn hostile_ambiguous_failure_selection_still_refuses_contradiction() {
     );
     let error = terminal_order(&function, &plan, &flags()).unwrap_err();
     assert!(error.message.contains("exit 0 (failure from"), "{error:?}");
-    assert!(
-        error
-            .message
-            .contains("is not exactly selected at its source site")
-    );
+    assert!(error
+        .message
+        .contains("is not exactly selected at its source site"));
 }
 
 /// Actual checked source: two conditional variant owners take opposing
@@ -738,12 +734,11 @@ fn checked_nonlexical_live_entry_owner_refuses() {
         "test.native_terminal_nonlexical_entry.run",
     );
     let run = program.functions.iter().find(|f| f.id == id).unwrap();
-    assert!(
-        !run.cleanup_plan
-            .entry_state
-            .live_owned_parameters
-            .is_empty()
-    );
+    assert!(!run
+        .cleanup_plan
+        .entry_state
+        .live_owned_parameters
+        .is_empty());
     assert_nonlexical_refusal(
         &NativeBytesPlan::build(run).unwrap_err(),
         "owned parameters are live at entry without a function-entry boundary certificate",

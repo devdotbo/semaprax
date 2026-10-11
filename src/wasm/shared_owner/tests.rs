@@ -1,9 +1,9 @@
 //! Owning regressions for the ordinary Core-Wasm shared-owner consumer
 //! closure. Node cases skip when Node is absent; they are source-authored.
 use super::{
-    Crossing, DOMAIN, Disposition, HOST_SOURCE, Host, LEAF_FIXTURE_JOINED, LEASE_AWARE,
-    PARTITION_STATUS_CODES, PARTITION_STATUS_DOMAIN, PAYLOAD_CONSUMERS, REGISTRY_SOURCE, Refusal,
-    admit_producer, classify, consumer_closure,
+    admit_producer, classify, consumer_closure, Crossing, Disposition, Host, Refusal, DOMAIN,
+    HOST_SOURCE, LEAF_FIXTURE_JOINED, LEASE_AWARE, PARTITION_STATUS_CODES, PARTITION_STATUS_DOMAIN,
+    PAYLOAD_CONSUMERS, REGISTRY_SOURCE,
 };
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
@@ -550,15 +550,13 @@ fn ordinary_modules_close_per_host_but_the_producer_stays_closed() {
     for source in [VEC_SOURCE, ITER_SOURCE, BOX_SOURCE] {
         let bytes = module(source);
         let closure = consumer_closure(&bytes, Host::PrivateOrdinary).unwrap();
-        assert!(
-            closure
-                .lease_aware
-                .iter()
-                .any(|name| name == "spx_bytes_drop"
-                    || name == "spx_vec_drop_v2"
-                    || name == "spx_iter_bytes_drop_v2"
-                    || name == "spx_box_drop_v2")
-        );
+        assert!(closure
+            .lease_aware
+            .iter()
+            .any(|name| name == "spx_bytes_drop"
+                || name == "spx_vec_drop_v2"
+                || name == "spx_iter_bytes_drop_v2"
+                || name == "spx_box_drop_v2"));
         assert_eq!(&*closure.module, bytes.as_slice());
         assert_eq!(admit_producer(&closure), Err(Refusal::ProducerClosed));
     }

@@ -1,6 +1,6 @@
 //! Closed whole-view registry receiver. No source installer is granted here.
-use super::{InvocationRuntime, Owner, Registry, State, authority::LoanCapacity};
-use crate::construction_fusion::domain::{Issuer, ModuleIdentity, Refusal, owner_core::Core};
+use super::{authority::LoanCapacity, InvocationRuntime, Owner, Registry, State};
+use crate::construction_fusion::domain::{owner_core::Core, Issuer, ModuleIdentity, Refusal};
 use std::alloc::Layout;
 impl<R: InvocationRuntime> Registry<R> {
     pub(crate) fn hold_whole(

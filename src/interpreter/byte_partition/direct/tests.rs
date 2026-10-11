@@ -1,5 +1,5 @@
 //! Source-entry controls. Authored but not executed in this implementation lane.
-use super::{Account, Outcome, execute};
+use super::{execute, Account, Outcome};
 use crate::hir::byte_partition::ValidatedPartitionProgram;
 fn source(extent: u64, count: u64, width: u64) -> String {
     format!(

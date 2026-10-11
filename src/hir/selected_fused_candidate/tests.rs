@@ -1,7 +1,7 @@
 use super::*;
 use crate::byte_data_capacity::{
-    AllocationStrategy, CapacityDiagnostic, CapacityFlow, FunctionCapacityInput,
-    analyze_with_strategy,
+    analyze_with_strategy, AllocationStrategy, CapacityDiagnostic, CapacityFlow,
+    FunctionCapacityInput,
 };
 use crate::hir::ResolvedStatement;
 
@@ -297,12 +297,10 @@ fn an_unused_unrelated_invariant_record_refuses_before_selected_resolution() {
     );
     assert_ne!(source, SOURCE);
     let program = parsed(&source);
-    assert!(
-        program
-            .types
-            .iter()
-            .any(|declaration| !declaration.invariants().is_empty())
-    );
+    assert!(program
+        .types
+        .iter()
+        .any(|declaration| !declaration.invariants().is_empty()));
     assert!(matches!(
         validate_selected(&program),
         Err(SelectedRefusal::Resolve(_))

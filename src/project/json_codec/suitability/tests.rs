@@ -66,12 +66,10 @@ fn actual_checked_type_reports_all_profiles_and_keeps_shape_separate_from_candid
     assert_eq!(rows[0]["selector"], "flat-scalars.v1");
     assert_eq!(rows[0]["shape_matches"], true);
     assert!(!rows[0]["required_modules"].as_array().unwrap().is_empty());
-    assert!(
-        !rows[0]["imports_absent_from_current_entry_index"]
-            .as_array()
-            .unwrap()
-            .is_empty()
-    );
+    assert!(!rows[0]["imports_absent_from_current_entry_index"]
+        .as_array()
+        .unwrap()
+        .is_empty());
     for row in rows {
         assert_eq!(row["candidate_admission"], "not_evaluated");
         assert_eq!(row["backend_admission"], "not_evaluated");
@@ -114,11 +112,10 @@ fn revision_path_identity_bounds_and_target_policy_are_independent_refusals() {
     };
     // An unrelated authored module is not the selected schema's byte budget.
     let unrelated = revision_with_padding("i64", Some("src/app.spx"));
-    assert!(
-        unrelated.sources().iter().any(
-            |source| source.path() == "src/app.spx" && source.source().len() > MAX_SCHEMA_BYTES
-        )
-    );
+    assert!(unrelated
+        .sources()
+        .iter()
+        .any(|source| source.path() == "src/app.spx" && source.source().len() > MAX_SCHEMA_BYTES));
     let implicit = explain_json_codec_suitability(&unrelated, &base).unwrap();
     let mut explicit = base.clone();
     explicit.source = Some("src/core.spx".into());
@@ -156,13 +153,11 @@ fn revision_path_identity_bounds_and_target_policy_are_independent_refusals() {
             serde_json::from_str(&explain_json_codec_suitability(&original, &o).unwrap()).unwrap();
         assert_eq!(value["target"], target);
         assert_eq!(value["target_manifest_policy"]["manifest_allows"], true);
-        assert!(
-            value["profiles"]
-                .as_array()
-                .unwrap()
-                .iter()
-                .all(|r| r["backend_admission"] == "not_evaluated")
-        );
+        assert!(value["profiles"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|r| r["backend_admission"] == "not_evaluated"));
     }
 }
 #[test]

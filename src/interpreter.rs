@@ -124,8 +124,8 @@ pub use failure_detail::{ContractArgument, ContractFailureDetail};
 use hir::ResolvedHostCommandOperation as Operation;
 pub(crate) use prepared::prepare_resolved_i64_with_profile;
 pub(crate) use resolved_case::{
-    ResolvedFunctionProfile, evaluate_resolved_i64_function_with_profile,
-    evaluate_resolved_profile_i64_entry, evaluate_resolved_zero_arg_i64_function,
+    evaluate_resolved_i64_function_with_profile, evaluate_resolved_profile_i64_entry,
+    evaluate_resolved_zero_arg_i64_function, ResolvedFunctionProfile,
 };
 use scalar_profile::{is_admitted_resolved_scalar, pattern_value_matches};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -134,10 +134,10 @@ use std::{path::Path, sync::Arc};
 use sha2::{Digest as _, Sha256};
 
 use crate::ast::{BinaryOp, Function, ParamMode, Program, Type, UnaryOp};
-use crate::bounded_output::{BudgetedJoin as _, with_limit};
+use crate::bounded_output::{with_limit, BudgetedJoin as _};
 use crate::cleanup_plan::{ContractPhase, StatusCase};
 use crate::conformance::{NormalizedStatus, Retryability, StatusClass};
-use crate::diagnostic::{Diagnostic, quote_json};
+use crate::diagnostic::{quote_json, Diagnostic};
 use crate::hir::{
     DeclarationId, ResolvedExpr, ResolvedExprKind, ResolvedFunction, ResolvedStatement,
     ResolvedType, ValueId,
@@ -146,10 +146,10 @@ use crate::runtime_status::{normalize_arithmetic, normalize_contract};
 use crate::{graph, hir, parse, patch, verify};
 
 pub(crate) use prepared::{
-    MAX_PREPARED_INDEX_BYTES, MAX_PREPARED_ORIGIN_NODES, PreparedCancellation,
-    PreparedResolvedEvaluation, PreparedResolvedEvaluationOutcome, PreparedResolvedI64,
-    ResolvedTraceEvent, ResolvedTracePhase, evaluate_prepared_resolved_zero_arg_i64,
-    prepare_resolved_zero_arg_i64, trace_child_expressions,
+    evaluate_prepared_resolved_zero_arg_i64, prepare_resolved_zero_arg_i64,
+    trace_child_expressions, PreparedCancellation, PreparedResolvedEvaluation,
+    PreparedResolvedEvaluationOutcome, PreparedResolvedI64, ResolvedTraceEvent, ResolvedTracePhase,
+    MAX_PREPARED_INDEX_BYTES, MAX_PREPARED_ORIGIN_NODES,
 };
 
 macro_rules! bformat {
@@ -5857,16 +5857,14 @@ fn main() -> i64 { 0 }
         };
         assert!(matches!(record.fields.get(&left), Some(Value::Moved)));
         assert_eq!(record.fields.get(&right), Some(&Value::Bytes(right_value)));
-        assert!(
-            take_owned_place(
-                &mut environment,
-                &hir::Place {
-                    root,
-                    projections: vec![hir::PlaceProjection::Field(left)],
-                },
-            )
-            .is_none()
-        );
+        assert!(take_owned_place(
+            &mut environment,
+            &hir::Place {
+                root,
+                projections: vec![hir::PlaceProjection::Field(left)],
+            },
+        )
+        .is_none());
     }
 
     fn resolved(source: &str) -> hir::ResolvedProgram {

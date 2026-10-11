@@ -1,7 +1,7 @@
 //! Exact private Value receivers. Their caller must hold the validated current
 //! partition program plus actual owner-root/edge binding; no default installer.
-use super::{InvocationRuntime, flat::PartitionVec, loans::Loans};
-use crate::interpreter::{Flow, Value, construction_fusion::Backing};
+use super::{flat::PartitionVec, loans::Loans, InvocationRuntime};
+use crate::interpreter::{construction_fusion::Backing, Flow, Value};
 
 fn refused(_: crate::construction_fusion::domain::Refusal) -> Flow {
     Flow::Guard("ordinary partition receiving authority refused")

@@ -3,7 +3,7 @@ use crate::construction_fusion::domain::owner_core::Child;
 use crate::interpreter::byte_partition::{
     authority::LoanCapacity,
     loans::Loans,
-    tests::{Probe, account},
+    tests::{account, Probe},
 };
 fn fixture() -> crate::hir::ResolvedProgram {
     let source = crate::check(
@@ -68,11 +68,9 @@ fn whole_views_end_on_exact_edge_before_original_backing_moves() {
     assert_eq!(original.as_ref(), &[7, 0]);
     assert_eq!(probe.charged(), paid);
     assert!(receiver.extent(&owner).is_err());
-    assert!(
-        receiver
-            .read(view, |_| panic!("expired whole view"))
-            .is_err()
-    );
+    assert!(receiver
+        .read(view, |_| panic!("expired whole view"))
+        .is_err());
     drop(receiver);
     drop(original);
 }

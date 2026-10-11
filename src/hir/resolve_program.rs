@@ -18,14 +18,13 @@ use super::hir_error;
 use super::ids::{DeclarationId, FunctionExecutionId, FunctionInstanceId, ValueId};
 use super::monomorphize::materialize_function_template;
 use super::nodes::{
-    DeclarationKind, OwnershipMode, ResolvedFunction, ResolvedFunctionInstance,
-    ResolvedFunctionTemplate, ResolvedImport, ResolvedImportFailure, ResolvedImportParameter,
-    ResolvedImportResult, ResolvedImportResultKind, ResolvedInterface, ResolvedParam,
-    ResolvedProgram, ResolvedResourceDrop, ResolvedResourceDropKind, ResolvedType,
+    admitted_owned_byte_prelude_instance, DeclarationKind, OwnershipMode, ResolvedFunction,
+    ResolvedFunctionInstance, ResolvedFunctionTemplate, ResolvedImport, ResolvedImportFailure,
+    ResolvedImportParameter, ResolvedImportResult, ResolvedImportResultKind, ResolvedInterface,
+    ResolvedParam, ResolvedProgram, ResolvedResourceDrop, ResolvedResourceDropKind, ResolvedType,
     ResolvedTypeDeclaration, ResolvedTypeDeclarationKind, ResolvedTypeParameterDeclaration,
-    admitted_owned_byte_prelude_instance,
 };
-use super::{Binding, Resolver, validate};
+use super::{validate, Binding, Resolver};
 
 impl Resolver<'_> {
     pub(super) fn resolve_call_type_argument(

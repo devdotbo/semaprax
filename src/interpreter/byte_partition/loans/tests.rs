@@ -1,6 +1,6 @@
 use super::{LoanCapacity, Loans};
-use crate::construction_fusion::domain::{Issuer, ModuleIdentity, owner_core::Core};
-use crate::interpreter::byte_partition::{InvocationRuntime, tests::account};
+use crate::construction_fusion::domain::{owner_core::Core, Issuer, ModuleIdentity};
+use crate::interpreter::byte_partition::{tests::account, InvocationRuntime};
 
 fn fixture(count: usize) -> crate::hir::ResolvedProgram {
     let mut source = String::from(
@@ -181,7 +181,7 @@ fn loan_table_and_core_backing_are_prepaid_through_drop_and_one_short() {
 
 #[test]
 fn finite_adapter_borrows_the_actual_logical_counters_without_reset_or_refund() {
-    use crate::interpreter::byte_partition::funding::{Account, upper};
+    use crate::interpreter::byte_partition::funding::{upper, Account};
     let program = fixture(1);
     let function = &program.functions[0];
     let authority = LoanCapacity::checked(&program, function).unwrap();
@@ -214,11 +214,9 @@ fn finite_adapter_borrows_the_actual_logical_counters_without_reset_or_refund() 
             first.charge_clone(1).unwrap();
         }
         assert!(second.charge_clone(1).is_err());
-        assert!(
-            first
-                .reserve_metadata(std::alloc::Layout::new::<u8>())
-                .is_err()
-        );
+        assert!(first
+            .reserve_metadata(std::alloc::Layout::new::<u8>())
+            .is_err());
     }
     assert_eq!(events, crate::byte_data_capacity::MAX_BYTES_COPY_SITES);
     assert_eq!(payload, u64::from(events));
@@ -256,13 +254,11 @@ fn affine_value_owner_cannot_copy_and_view_alias_never_owns_the_loan() {
             .unwrap(),
         7
     );
-    assert!(
-        borrowed_alias
-            .borrow_alias()
-            .unwrap()
-            .move_partition(&mut receiver)
-            .is_err()
-    );
+    assert!(borrowed_alias
+        .borrow_alias()
+        .unwrap()
+        .move_partition(&mut receiver)
+        .is_err());
     let view = borrowed
         .partition_view_as_slice(&mut receiver, loan.origin.root.clone())
         .unwrap();
@@ -301,10 +297,8 @@ fn affine_value_owner_cannot_copy_and_view_alias_never_owns_the_loan() {
     value.move_partition(&mut receiver).unwrap();
     value.store_partition(&mut receiver, 0, &[9]).unwrap();
     assert!(view.read_partition(&mut receiver, |_| ()).is_err());
-    assert!(
-        borrowed
-            .read_partition_bytes(&mut receiver, |_| ())
-            .is_err()
-    );
+    assert!(borrowed
+        .read_partition_bytes(&mut receiver, |_| ())
+        .is_err());
     value.settle_partition(&mut receiver).unwrap();
 }

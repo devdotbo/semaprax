@@ -2,7 +2,7 @@
 //! one owned runtime loan per plan ID. Copy descriptors never own finalization.
 //! The eventual installer must bind each Owner to the plan's actual root and
 //! drive `advance` from actual execution; this is not a source admission API.
-use super::{InvocationRuntime, Owner, Registry, View, authority::LoanCapacity};
+use super::{authority::LoanCapacity, InvocationRuntime, Owner, Registry, View};
 use crate::{
     construction_fusion::{domain::Refusal, partition::Preparation},
     loan_plan::LoanId,

@@ -12,8 +12,8 @@
 //! moves and the consuming sort happen only as top-level statements. Anything
 //! outside this domain refuses the module.
 use super::cleanup::{Failure, Owned};
-use super::lower::{Binding, Lower, Repr, Scope, unsupported};
-use super::{Refusal, import};
+use super::lower::{unsupported, Binding, Lower, Repr, Scope};
+use super::{import, Refusal};
 use crate::ast::BinaryOp;
 use crate::cleanup_plan::CheckedOperation;
 use crate::construction_fusion::native_provenance::Carrier;
