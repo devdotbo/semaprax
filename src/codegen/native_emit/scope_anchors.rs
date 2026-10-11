@@ -15,7 +15,11 @@ pub(super) fn block_anchors(
     plan: &crate::codegen::native_bytes::NativeBytesPlan,
     block: &ResolvedExpr,
 ) -> BTreeSet<StorageId> {
-    let ResolvedExprKind::Block { statements, tail } = &block.kind else {
+    let (ResolvedExprKind::Block { statements, tail }
+    | ResolvedExprKind::VecConstructor {
+        statements, tail, ..
+    }) = &block.kind
+    else {
         return BTreeSet::new();
     };
     let owned = |storage: &StorageId, ty: &crate::hir::ResolvedType| {
@@ -55,7 +59,11 @@ fn direct_block_anchors(
     plan: &crate::codegen::native_bytes::NativeBytesPlan,
     block: &ResolvedExpr,
 ) -> BTreeSet<StorageId> {
-    let ResolvedExprKind::Block { statements, tail } = &block.kind else {
+    let (ResolvedExprKind::Block { statements, tail }
+    | ResolvedExprKind::VecConstructor {
+        statements, tail, ..
+    }) = &block.kind
+    else {
         return BTreeSet::new();
     };
     let owned = |storage: &StorageId, ty: &crate::hir::ResolvedType| {
@@ -100,7 +108,9 @@ fn nested_temporaries(
             anchors.insert(storage);
         }
         match &expression.kind {
-            ResolvedExprKind::Block { .. } | ResolvedExprKind::Closure { .. } => {}
+            ResolvedExprKind::Block { .. }
+            | ResolvedExprKind::VecConstructor { .. }
+            | ResolvedExprKind::Closure { .. } => {}
             ResolvedExprKind::If {
                 condition,
                 then_branch,

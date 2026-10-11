@@ -38,6 +38,7 @@ pub(super) fn validate_expression(
             return Err(refuse());
         }
         match &expression.kind {
+            ResolvedExprKind::VecConstructor { .. } => return Err(refuse()),
             ResolvedExprKind::Int(_)
             | ResolvedExprKind::Int32(_)
             | ResolvedExprKind::Char(_)

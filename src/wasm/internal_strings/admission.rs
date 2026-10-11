@@ -1,6 +1,6 @@
 //! Closed selection and iterative work admission before recursive lowering.
 
-use super::{Export, PreparedSelection, error};
+use super::{error, Export, PreparedSelection};
 use crate::diagnostic::Diagnostic;
 use crate::hir::{
     self, DeclarationId, IdentityOrigin, OwnershipMode, ResolvedExprKind, ResolvedFunction,
@@ -285,7 +285,8 @@ fn prepare_profile(
                         ) => {}
                 ResolvedExprKind::BorrowPlace { operation, place }
                     if copy_variants && operation.as_str() == crate::byte_ops::ARRAY_AS_SLICE_ID && place.projections.is_empty() => {}
-                ResolvedExprKind::BorrowedUtf8Literal(_) => {
+                ResolvedExprKind::VecConstructor { .. } => return Err(error("Vec constructors are outside the standalone String arena profile")),
+                    ResolvedExprKind::BorrowedUtf8Literal(_) => {
                     return Err(error("static borrowed UTF-8 literals are outside the standalone String arena profile"));
                 }
                 ResolvedExprKind::String(value) => {

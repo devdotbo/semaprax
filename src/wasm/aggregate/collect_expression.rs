@@ -183,7 +183,10 @@ impl FunctionPlan {
                 parameter_count,
                 frame,
             )?,
-            ResolvedExprKind::Block { statements, tail } => self.collect_block(
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => self.collect_block(
                 program,
                 variant_layouts,
                 statements,

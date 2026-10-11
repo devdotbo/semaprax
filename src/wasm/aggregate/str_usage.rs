@@ -44,7 +44,10 @@ fn expression_uses_str_ops(expression: &ResolvedExpr) -> bool {
         ResolvedExprKind::Binary { left, right, .. } => {
             expression_uses_str_ops(left) || expression_uses_str_ops(right)
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             statements.iter().any(|statement| {
                 (0..statement.child_count())
                     .any(|index| statement.child(index).is_some_and(expression_uses_str_ops))

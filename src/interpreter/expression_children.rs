@@ -28,7 +28,10 @@ pub(super) fn child_expressions(expression: &ResolvedExpr) -> Vec<&ResolvedExpr>
         ResolvedExprKind::ByteRange {
             source, start, end, ..
         } => vec![source.as_ref(), start.as_ref(), end.as_ref()],
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             let mut collected = Vec::new();
             for statement in statements {
                 for index in 0..statement.child_count() {
@@ -81,7 +84,8 @@ pub(super) fn child_expressions(expression: &ResolvedExpr) -> Vec<&ResolvedExpr>
         | ResolvedExprKind::Float32(_)
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
+        | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. } => Vec::new(),
     }

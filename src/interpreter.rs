@@ -2649,7 +2649,8 @@ fn scan_closure(
                 }
                 Ok(())
             }
-            ResolvedExprKind::Block { statements, .. } => {
+            ResolvedExprKind::Block { statements, .. }
+            | ResolvedExprKind::VecConstructor { statements, .. } => {
                 for statement in statements {
                     if matches!(statement, ResolvedStatement::Unsafe { .. }) {
                         return Err(reject_scan(expression, REASON_UNSAFE_BOUNDARY));
@@ -2789,7 +2790,8 @@ fn resolved_function_value_types(function: &ResolvedFunction) -> BTreeMap<ValueI
         .collect::<Vec<_>>();
     while let Some(expression) = pending.pop() {
         match &expression.kind {
-            ResolvedExprKind::Block { statements, .. } => {
+            ResolvedExprKind::Block { statements, .. }
+            | ResolvedExprKind::VecConstructor { statements, .. } => {
                 for statement in statements {
                     if let ResolvedStatement::Let { binding, .. }
                     | ResolvedStatement::Assign { binding, .. } = statement
@@ -4542,7 +4544,10 @@ impl Evaluator<'_> {
                 }
                 self.call_frame(function, values, depth + 1)
             }
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 let base = environment.len();
                 let temporary_base = lexical_temporary::checkpoint(environment);
                 let mut interrupted = None;

@@ -42,7 +42,10 @@ impl Emitter<'_> {
                 target,
                 value,
             } => self.emit_lexical_exit(expr, *kind, target, value.as_deref()),
-            ResolvedExprKind::Block { statements, tail } => self.emit_block(expr, statements, tail),
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => self.emit_block(expr, statements, tail),
             ResolvedExprKind::Unary { op, value } => self.emit_unary(expr, *op, value),
             ResolvedExprKind::Binary { op, left, right } => {
                 self.emit_binary(expr, *op, left, right)
@@ -258,7 +261,10 @@ pub(super) fn expression_has_try(expression: &ResolvedExpr) -> bool {
         ResolvedExprKind::Binary { left, right, .. } => {
             expression_has_try(left) || expression_has_try(right)
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             statements.iter().any(|statement| {
                 (0..statement.child_count()).any(|index| {
                     expression_has_try(
@@ -370,11 +376,7 @@ impl Emitter<'_> {
             .last()
             .filter(|_| lexical)
             .and_then(|label| {
-                crate::hir::iterator_loop::true_body_match(
-                    condition,
-                    body,
-                    label.latch(),
-                )
+                crate::hir::iterator_loop::true_body_match(condition, body, label.latch())
             })
             .map(|value| value.id.clone());
         let body_result = self.emit_expr(body);
@@ -399,7 +401,11 @@ pub(super) fn block_direct_anchors(
     expression: &ResolvedExpr,
 ) -> std::collections::BTreeSet<crate::cleanup_plan::StorageId> {
     use crate::cleanup_plan::StorageId;
-    let ResolvedExprKind::Block { statements, tail } = &expression.kind else {
+    let (ResolvedExprKind::Block { statements, tail }
+    | ResolvedExprKind::VecConstructor {
+        statements, tail, ..
+    }) = &expression.kind
+    else {
         return std::collections::BTreeSet::new();
     };
     let mut anchors = std::collections::BTreeSet::new();
@@ -434,7 +440,11 @@ pub(super) fn block_scope_anchors(
     expression: &ResolvedExpr,
 ) -> std::collections::BTreeSet<crate::cleanup_plan::StorageId> {
     use crate::cleanup_plan::StorageId;
-    let ResolvedExprKind::Block { statements, tail } = &expression.kind else {
+    let (ResolvedExprKind::Block { statements, tail }
+    | ResolvedExprKind::VecConstructor {
+        statements, tail, ..
+    }) = &expression.kind
+    else {
         return std::collections::BTreeSet::new();
     };
     let mut anchors = std::collections::BTreeSet::new();
@@ -460,7 +470,9 @@ pub(super) fn block_scope_anchors(
             anchors.insert(storage);
         }
         match &expression.kind {
-            ResolvedExprKind::Block { .. } | ResolvedExprKind::Closure { .. } => {}
+            ResolvedExprKind::Block { .. }
+            | ResolvedExprKind::VecConstructor { .. }
+            | ResolvedExprKind::Closure { .. } => {}
             ResolvedExprKind::Match { scrutinee, .. } => pending.push(scrutinee),
             _ => pending.extend(crate::interpreter::trace_child_expressions(expression)),
         }

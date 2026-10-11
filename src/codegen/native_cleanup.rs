@@ -788,6 +788,12 @@ fn validate_expression(
                 format!("does not support function invocation `{}`", expression.id),
             ));
         }
+        ResolvedExprKind::VecConstructor { .. } => {
+            return Err(unsupported(
+                function,
+                "does not support Vec constructor markers",
+            ))
+        }
         ResolvedExprKind::Int(_)
         | ResolvedExprKind::Int32(_)
         | ResolvedExprKind::Char(_)

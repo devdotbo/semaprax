@@ -76,7 +76,10 @@ pub(super) fn collect_locals(
             collect_locals(left, parameter_count, layout)?;
             collect_locals(right, parameter_count, layout)?;
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             for statement in statements {
                 match statement {
                     ResolvedStatement::Let { binding, value, .. } => {

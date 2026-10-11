@@ -347,6 +347,9 @@ pub(super) fn derive(
                             ));
                         }
                     }
+                    K::VecConstructor { .. } => return Err(error(
+                        "Vec constructors are outside the selected final-UTF8 certificate profile",
+                    )),
                     K::BorrowedUtf8Literal(_) => {
                         return Err(error("static borrowed UTF-8 is outside the selected final-UTF8 certificate profile"));
                     }

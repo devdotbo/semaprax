@@ -137,6 +137,7 @@ fn expression(
             then_branch,
             else_branch,
         } => child(condition) && child(then_branch) && child(else_branch),
+        ResolvedExprKind::VecConstructor { .. } => false,
         ResolvedExprKind::Block { statements, tail } => {
             let mut locals = roots.clone();
             for statement in statements {

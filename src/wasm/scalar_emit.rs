@@ -82,6 +82,12 @@ pub(super) fn emit_with_control(
             output.push(0x41);
             write_i64(output, i64::from(*value));
         }
+        ResolvedExprKind::VecConstructor { .. } => {
+            return Err(Diagnostic::io(
+                "SPX-W116",
+                "Vec constructors require the aggregate collection profile",
+            ))
+        }
         ResolvedExprKind::BorrowedUtf8Literal(_) => {
             return Err(Diagnostic::io(
                 "SPX-W116",

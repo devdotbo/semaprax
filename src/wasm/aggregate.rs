@@ -4681,6 +4681,7 @@ impl Emitter<'_> {
             ResolvedExprKind::Unary { .. }
             | ResolvedExprKind::Binary { .. }
             | ResolvedExprKind::Block { .. }
+            | ResolvedExprKind::VecConstructor { .. }
             | ResolvedExprKind::If { .. }
             | ResolvedExprKind::Call { .. }
             | ResolvedExprKind::LiteralFormat { .. }

@@ -15,6 +15,8 @@ mod record_traversal;
 mod sort_keys;
 #[path = "owned_leaf_vec/string_slots.rs"]
 mod string_slots;
+#[path = "owned_leaf_vec/vec_constructor.rs"]
+mod vec_constructor;
 
 use std::process::Command;
 use std::sync::atomic::{AtomicU64, Ordering};

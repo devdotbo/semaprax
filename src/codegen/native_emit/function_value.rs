@@ -213,7 +213,10 @@ pub(super) fn resolved_expr_children<'a>(
         | ResolvedExprKind::Project { base: value, .. }
         | ResolvedExprKind::Upcast { source: value }
         | ResolvedExprKind::Yield { request: value } => Box::new(std::iter::once(value.as_ref())),
-        ResolvedExprKind::Block { statements, tail } => Box::new(
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => Box::new(
             statements
                 .iter()
                 .flat_map(|statement| {

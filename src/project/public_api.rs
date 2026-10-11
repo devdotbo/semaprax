@@ -555,7 +555,7 @@ pub(super) fn validate_closure_template(
             template.id
         )));
     }
-    if expression_reaches_import(&template.body) {
+    if expression_reaches_import(&template.body)? {
         return Err(api_error(format!(
             "public API closure template `{}` must be import-free",
             template.id
@@ -577,7 +577,7 @@ pub(super) fn validate_closure_function(function: &ResolvedFunction) -> Result<(
             function.id
         )));
     }
-    if expression_reaches_import(&function.body) {
+    if expression_reaches_import(&function.body)? {
         return Err(api_error(format!(
             "public API closure function `{}` must be import-free",
             function.id
@@ -586,10 +586,15 @@ pub(super) fn validate_closure_function(function: &ResolvedFunction) -> Result<(
     Ok(())
 }
 
-fn expression_reaches_import(root: &ResolvedExpr) -> bool {
+fn expression_reaches_import(root: &ResolvedExpr) -> Result<bool, Diagnostic> {
     let mut pending = vec![root];
     while let Some(expression) = pending.pop() {
         match &expression.kind {
+            ResolvedExprKind::VecConstructor { .. } => {
+                return Err(api_error(
+                    "public API closure Vec constructors are outside the frozen profile",
+                ))
+            }
             ResolvedExprKind::Closure { captures, .. } => {
                 pending.extend(captures.iter().map(|capture| &capture.value))
             }
@@ -599,7 +604,7 @@ fn expression_reaches_import(root: &ResolvedExpr) -> bool {
                 pending.push(callable);
             }
             ResolvedExprKind::NativeRustImportCall(_) | ResolvedExprKind::HostCommandCall(_) => {
-                return true
+                return Ok(true)
             }
             ResolvedExprKind::Call { args, .. }
             | ResolvedExprKind::LiteralFormat { args, .. }
@@ -625,7 +630,7 @@ fn expression_reaches_import(root: &ResolvedExpr) -> bool {
                         if let Some(child) = statement.child(index) {
                             pending.push(child);
                         } else {
-                            return true;
+                            return Ok(true);
                         }
                     }
                 }
@@ -666,14 +671,15 @@ fn expression_reaches_import(root: &ResolvedExpr) -> bool {
             | ResolvedExprKind::Float32(_)
             | ResolvedExprKind::Float64(_)
             | ResolvedExprKind::Bool(_)
-            | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
+            | ResolvedExprKind::String(_)
+            | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::ArrayU8(_)
             | ResolvedExprKind::RepeatArrayU8 { .. }
             | ResolvedExprKind::BorrowPlace { .. }
             | ResolvedExprKind::Place(_) => {}
         }
     }
-    false
+    Ok(false)
 }
 
 pub(super) fn parameter_type(

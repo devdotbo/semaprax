@@ -19,7 +19,8 @@ fn walk<'a>(
         // child() scans the Block/Match prefix. Debit the full possible scan,
         // including the final unsuccessful lookup, before touching it.
         let scan = match &expression.kind {
-            ResolvedExprKind::Block { statements, .. } => statements.len(),
+            ResolvedExprKind::Block { statements, .. }
+            | ResolvedExprKind::VecConstructor { statements, .. } => statements.len(),
             ResolvedExprKind::Match { arms, .. } => arms.len(),
             _ => 0,
         };
@@ -48,7 +49,8 @@ fn walk<'a>(
 }
 fn charge_inspection(expression: &ResolvedExpr, work: &mut usize) -> Result<(), Diagnostic> {
     let width = match &expression.kind {
-        ResolvedExprKind::Block { statements, .. } => statements.len(),
+        ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. } => statements.len(),
         _ => 0,
     };
     *work = work
@@ -76,7 +78,9 @@ pub(super) fn assignment<'a>(
 ) -> Result<(&'a hir::ResolvedBinding, &'a ResolvedExpr), Diagnostic> {
     let mut found = None;
     walk(root, |expression| {
-        if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+        if let (ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. }) = &expression.kind
+        {
             for statement in statements {
                 if let ResolvedStatement::Assign {
                     binding,
@@ -151,7 +155,9 @@ pub(super) fn owning_wrapper<'a>(
 ) -> Result<&'a ResolvedExpr, Diagnostic> {
     let mut found = None;
     walk(root, |expression| {
-        if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+        if let (ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. }) = &expression.kind
+        {
             if matches!(statements.last(), Some(ResolvedStatement::LexicalWhile { condition: candidate, .. }) if &candidate.id == condition)
                 && (found.replace(expression).is_some()
                     || hir::lexical_exit::source_for_wrapper(program, expression)?.is_none())

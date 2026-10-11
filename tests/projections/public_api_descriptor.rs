@@ -7,6 +7,9 @@ use semaprax::project::{
 };
 use sha2::{Digest, Sha256};
 
+#[path = "public_api_descriptor/vec_constructor.rs"]
+mod vec_constructor;
+
 #[path = "public_api_descriptor/parameter_identity.rs"]
 mod parameter_identity;
 

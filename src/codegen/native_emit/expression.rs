@@ -643,10 +643,15 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             ResolvedExprKind::Binary { op, left, right } => {
                 self.emit_binary(*op, left, right, &expr.ty)
             }
-            ResolvedExprKind::Block { statements, .. } if statements.is_empty() => {
+            ResolvedExprKind::Block { statements, .. }
+            | ResolvedExprKind::VecConstructor { statements, .. }
+                if statements.is_empty() =>
+            {
                 self.emit_empty_block_expr(expr)
             }
-            ResolvedExprKind::Block { .. } => self.emit_block_expr(expr),
+            ResolvedExprKind::Block { .. } | ResolvedExprKind::VecConstructor { .. } => {
+                self.emit_block_expr(expr)
+            }
             ResolvedExprKind::If { .. } => self.emit_if_expr(expr),
             ResolvedExprKind::ConstructRecord { .. } => self.emit_construct_record_expr(expr),
             ResolvedExprKind::ConstructVariant { .. } => self.emit_construct_variant_expr(expr),
@@ -1066,7 +1071,10 @@ impl<'a, O: COutput> CEmitter<'a, O> {
 
     fn emit_block_expr(&mut self, expr: &ResolvedExpr) -> Result<CValue, Diagnostic> {
         let value = match &expr.kind {
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 let saved = self.variables.clone();
                 let saved_resource_text_views = self.resource_text_views.clone();
                 for statement in statements {
@@ -1398,13 +1406,20 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         let mut blocks = Vec::new();
         let mut current = expr;
         loop {
-            let ResolvedExprKind::Block { statements, tail } = &current.kind else {
+            let (ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            }) = &current.kind
+            else {
                 unreachable!("non-Block expression reached emit_empty_block_expr")
             };
             debug_assert!(statements.is_empty());
             blocks.push(current);
             match &tail.kind {
-                ResolvedExprKind::Block { statements, .. } if statements.is_empty() => {
+                ResolvedExprKind::Block { statements, .. }
+                | ResolvedExprKind::VecConstructor { statements, .. }
+                    if statements.is_empty() =>
+                {
                     current = tail;
                 }
                 _ => {

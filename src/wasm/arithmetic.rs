@@ -52,7 +52,10 @@ pub(super) fn needs_i32_wide_scratch(expression: &ResolvedExpr) -> bool {
             ResolvedExprKind::ByteRange {
                 source, start, end, ..
             } => pending.extend([source.as_ref(), start.as_ref(), end.as_ref()]),
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 for statement in statements {
                     for index in 0..statement.child_count() {
                         if let Some(child) = statement.child(index) {
@@ -175,7 +178,10 @@ fn contains_checked_arithmetic(expression: &ResolvedExpr, target: &ResolvedType)
                 || contains_checked_arithmetic(start, target)
                 || contains_checked_arithmetic(end, target)
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             contains_checked_arithmetic(tail, target)
                 || statements.iter().any(|statement| {
                     (0..statement.child_count()).any(|index| {

@@ -511,7 +511,8 @@ fn validate_expression_profile(
             | ResolvedExprKind::Bool(_)
             | ResolvedExprKind::String(_)
         | ResolvedExprKind::BorrowedUtf8Literal(_) => {}
-            ResolvedExprKind::ArrayU8(_)
+            ResolvedExprKind::VecConstructor { .. }
+            | ResolvedExprKind::ArrayU8(_)
             | ResolvedExprKind::RepeatArrayU8 { .. }
             | ResolvedExprKind::BorrowPlace { .. }
             | ResolvedExprKind::ByteRange { .. } => {
