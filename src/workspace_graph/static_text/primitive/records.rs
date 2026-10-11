@@ -105,6 +105,11 @@ pub(super) fn source_type_matches(
         else {
             return false;
         };
+        if name == "Vec" {
+            return declaration.as_str() == crate::prelude::VEC_ID
+                && matches!((arguments.as_slice(), actual.as_slice()), ([element], [current])
+                    if vec_element_admitted(program, element) && source_type_matches(program, element, current));
+        }
         arguments.is_empty()
             && actual.is_empty()
             && program
@@ -119,6 +124,9 @@ pub(super) fn source_type_matches(
 }
 pub(super) fn source_type_admitted(program: &Program, source: &Type) -> bool {
     if let Type::Named { name, arguments } = source {
+        if name == "Vec" {
+            return matches!(arguments.as_slice(), [element] if vec_element_admitted(program, element));
+        }
         arguments.is_empty()
             && program
                 .types
@@ -130,6 +138,11 @@ pub(super) fn source_type_admitted(program: &Program, source: &Type) -> bool {
         super::ty(source).is_some()
     }
 }
+fn vec_element_admitted(program: &Program, element: &Type) -> bool {
+    crate::vec_ops::ast_element_is_admitted(element)
+        || matches!(element, Type::String | Type::Bytes)
+        || matches!(element, Type::Named { arguments, .. } if arguments.is_empty() && source_type_admitted(program, element))
+}
 pub(super) fn clone_type(
     current: &hir::ResolvedType,
 ) -> Result<hir::ResolvedType, Vec<Diagnostic>> {
@@ -138,12 +151,49 @@ pub(super) fn clone_type(
         arguments,
     } = current
     {
+        reserve_builder_structure(declaration.as_str().len())?;
+        if declaration.as_str() == crate::prelude::VEC_ID {
+            let [element] = arguments.as_slice() else {
+                return Err(fail());
+            };
+            if matches!(element, hir::ResolvedType::Nominal { arguments, .. } if !arguments.is_empty())
+            {
+                return Err(fail());
+            }
+            reserve_builder_structure(std::mem::size_of::<hir::ResolvedType>())?;
+            let mut cloned = Vec::with_capacity(1);
+            if cloned.capacity() != 1 {
+                return Err(fail());
+            }
+            cloned.push(clone_type(element)?);
+            return Ok(hir::ResolvedType::Nominal {
+                declaration: declaration.clone(),
+                arguments: cloned,
+            });
+        }
         if !arguments.is_empty() {
             return Err(fail());
         }
-        reserve_builder_structure(declaration.as_str().len())?;
     }
     Ok(current.clone())
+}
+pub(super) fn type_capacity_bytes(current: &hir::ResolvedType) -> Option<usize> {
+    if let hir::ResolvedType::Nominal {
+        declaration,
+        arguments,
+    } = current
+    {
+        arguments.iter().try_fold(
+            declaration.as_str().len().checked_add(
+                arguments
+                    .capacity()
+                    .checked_mul(std::mem::size_of::<hir::ResolvedType>())?,
+            )?,
+            |n, child| n.checked_add(type_capacity_bytes(child)?),
+        )
+    } else {
+        Some(0)
+    }
 }
 pub(super) fn capture(
     program: &Program,

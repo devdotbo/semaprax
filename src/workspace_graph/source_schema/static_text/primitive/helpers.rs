@@ -6,7 +6,7 @@ use crate::workspace_graph::static_text::scalar_helpers;
 type Frame<'a> = Option<(hir::lexical_exit::ChildCursor<'a>, bool)>;
 const DEPTH: usize = 514;
 mod graph;
-mod local;
+pub(super) mod local;
 struct Member<'a> {
     module: &'a WorkspaceResolvedModule,
     function: &'a ResolvedFunction,
@@ -318,6 +318,7 @@ fn authenticate_inner<'a>(
     resources: &mut SelectedReplayPreparation,
 ) -> Result<Closure<'a>, Vec<Diagnostic>> {
     let anchor = module.functions.first().ok_or_else(fail)?;
+    super::current_module(module, modules, resources, anchor)?;
     resources
         .reserve_array::<Closure<'_>>(anchor, 1, "imported scalar closure owner")
         .map_err(|_| fail())?;

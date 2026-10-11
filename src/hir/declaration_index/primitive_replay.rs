@@ -4,8 +4,10 @@ use super::*;
 mod flat_record;
 #[cfg(test)]
 mod option_u8;
+mod vector;
 use crate::cleanup_plan::ReplayPhysicalReservation;
 impl DeclarationIndex {
+    #[cfg(test)]
     pub(crate) fn primitive_replay<'a>(
         functions: impl Iterator<Item = (&'a ResolvedFunction, IdentityOrigin)>,
         physical: &mut ReplayPhysicalReservation,

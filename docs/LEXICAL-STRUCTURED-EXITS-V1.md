@@ -431,3 +431,30 @@ function validations. Physical storage debits remain cumulative too. Every
 function independently reconstructs its selected profile, ownership and renewal
 lease; a failed member makes the session refuse further replay or successful
 completion. Dropping the session publishes no diagnostic and refunds no debit.
+
+### Retained monomorphic type preparation (#745)
+
+The retained local lexical context now authenticates its current function
+signatures and flat-record layouts through the same `SelectedReplayPreparation`
+that funds subsequent independent replay. Record and field identities, origin,
+owner, defining path/module, spans, types and declaration order remain checked
+against the immutable source-captured facts. A refusal poisons that preparation;
+rebuilding an index does not restore credits. The earlier physical-only local
+constructor remains only as an independent test oracle.
+
+The private source signature inventory can represent one exact compiler-owned
+`Vec` argument over a scalar, String, Bytes or source-authored local flat record.
+Its cloned type-argument backing is reserved before construction. The minimal
+index reconstructs `core.vec` as the canonical compiler-owned Record with one
+`T` parameter at index zero and no fields. This metadata grants neither element
+admission nor generic function-instance authority: receiving inventory, status,
+call, ownership and lexical replay still apply independently. Nested Vecs,
+record fields containing Vecs, imported nominal types without defining-source
+layout facts, templates and generic function instances remain closed here.
+
+`ReplayContext::type_count` and `type_at` expose borrowed current members without
+a whole-program clone, analogous to the existing function accessors. Context
+construction also verifies that its defining module is the actual held member
+of the current module universe. These source-only changes have not been
+executed or qualified; #745 remains partial, including the imported nominal
+declaration/type closure and complete String/Vec receiving qualification.

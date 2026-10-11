@@ -331,24 +331,14 @@ impl Inventory {
                             .checked_mul(std::mem::size_of::<ParameterFact>())?,
                         |sum, param| {
                             sum.checked_add(param.name.capacity())?
-                                .checked_add(match &param.ty {
-                                    hir::ResolvedType::Nominal { declaration, .. } => {
-                                        declaration.as_str().len()
-                                    }
-                                    _ => 0,
-                                })
+                                .checked_add(records::type_capacity_bytes(&param.ty)?)
                         },
                     )?;
                     total
                         .checked_add(function.id.as_str().len())?
                         .checked_add(function.name.capacity())?
                         .checked_add(params)?
-                        .checked_add(match &function.result {
-                            hir::ResolvedType::Nominal { declaration, .. } => {
-                                declaration.as_str().len()
-                            }
-                            _ => 0,
-                        })
+                        .checked_add(records::type_capacity_bytes(&function.result)?)
                 },
             )?
             .checked_add(

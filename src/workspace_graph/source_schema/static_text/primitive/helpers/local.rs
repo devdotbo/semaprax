@@ -3,6 +3,8 @@
 use super::*;
 fn primitive(ty: &hir::ResolvedType) -> bool {
     hir::is_scalar_resolved_type(ty)
+        || matches!(ty, hir::ResolvedType::Nominal { declaration, arguments }
+            if arguments.is_empty() || declaration.as_str() == crate::prelude::VEC_ID && arguments.len() == 1)
         || matches!(
             ty,
             hir::ResolvedType::ArrayU8(_)
@@ -12,7 +14,19 @@ fn primitive(ty: &hir::ResolvedType) -> bool {
                 | hir::ResolvedType::SliceU8
         )
 }
-pub(super) fn authenticate<'a>(
+pub(in crate::workspace_graph::source_schema::static_text::primitive) fn authenticate<'a>(
+    module: &'a WorkspaceResolvedModule,
+    facts: &BTreeMap<String, WorkspaceDeclarationFact>,
+    resources: &mut SelectedReplayPreparation,
+    anchor: &ResolvedFunction,
+) -> Result<Context<'a>, Vec<Diagnostic>> {
+    let answer = authenticate_inner(module, facts, resources, anchor);
+    if answer.is_err() {
+        resources.fail();
+    }
+    answer
+}
+fn authenticate_inner<'a>(
     module: &'a WorkspaceResolvedModule,
     facts: &BTreeMap<String, WorkspaceDeclarationFact>,
     resources: &mut SelectedReplayPreparation,
@@ -23,10 +37,7 @@ pub(super) fn authenticate<'a>(
         .as_deref()
         .and_then(|i| i.lexical.as_deref())
         .ok_or_else(fail)?;
-    // Imported nominal/type/carrier provider closure is a separate obligation.
-    if !module.types.is_empty()
-        || inventory.records.is_some()
-        || !module.interfaces.is_empty()
+    if !module.interfaces.is_empty()
         || !module.permits.is_empty()
         || !module.agents.is_empty()
         || !module.function_templates.is_empty()
@@ -60,6 +71,8 @@ pub(super) fn authenticate<'a>(
             .and_then(|n| n.checked_add(1))
             .ok_or_else(fail)?;
         charge(resources, anchor, units)?;
+        debit_type(&source.result, resources, anchor)?;
+        debit_type(&function.return_type, resources, anchor)?;
         if origin.kind != hir::DeclarationKind::Function
             || origin.owner.is_some()
             || origin.origin
@@ -85,6 +98,8 @@ pub(super) fn authenticate<'a>(
             .checked_sub(source.params.len())
             .ok_or_else(fail)?;
         for (source, current) in source.params.iter().zip(&function.params) {
+            debit_type(&source.ty, resources, anchor)?;
+            debit_type(&current.ty, resources, anchor)?;
             charge(
                 resources,
                 anchor,
@@ -113,7 +128,7 @@ pub(super) fn authenticate<'a>(
             return Err(fail());
         }
     }
-    let index = resources
+    let mut index = resources
         .construct(anchor, |physical, debit| {
             hir::DeclarationIndex::primitive_replay_metered(
                 module
@@ -135,6 +150,14 @@ pub(super) fn authenticate<'a>(
             )
         })
         .map_err(|_| fail())?;
+    super::super::records::authenticate_prepared(
+        module,
+        inventory.records.as_deref(),
+        facts,
+        &mut index,
+        resources,
+        anchor,
+    )?;
     Ok(Context { index, module })
 }
 
@@ -182,4 +205,32 @@ pub(super) fn requires(
         }
     }
     Ok(false)
+}
+
+fn debit_type(
+    ty: &hir::ResolvedType,
+    resources: &mut SelectedReplayPreparation,
+    anchor: &ResolvedFunction,
+) -> Result<(), Vec<Diagnostic>> {
+    charge(resources, anchor, 1)?;
+    if let hir::ResolvedType::Nominal {
+        declaration,
+        arguments,
+    } = ty
+    {
+        charge(resources, anchor, declaration.as_str().len())?;
+        if declaration.as_str() == crate::prelude::VEC_ID {
+            let [element] = arguments.as_slice() else {
+                return Err(fail());
+            };
+            if matches!(element, hir::ResolvedType::Nominal { arguments, .. } if !arguments.is_empty())
+            {
+                return Err(fail());
+            }
+            debit_type(element, resources, anchor)?;
+        } else if !arguments.is_empty() {
+            return Err(fail());
+        }
+    }
+    Ok(())
 }

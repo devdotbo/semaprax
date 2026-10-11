@@ -34,6 +34,7 @@ impl ReplayContext for Context<'_> {
     }
 }
 
+#[cfg(test)]
 pub(super) fn authenticate<'a>(
     module: &'a WorkspaceResolvedModule,
     facts: &BTreeMap<String, WorkspaceDeclarationFact>,
@@ -137,8 +138,7 @@ pub(in crate::workspace_graph::source_schema) fn replay(
     if inventory.lexical.is_none() {
         return Ok(false);
     }
-    let mut physical =
-        crate::cleanup_plan::ReplayPhysicalReservation::new(MAX_CHANGE_BUILDER_BYTES);
+    let physical = crate::cleanup_plan::ReplayPhysicalReservation::new(MAX_CHANGE_BUILDER_BYTES);
     if inventory
         .lexical
         .as_deref()
@@ -147,13 +147,17 @@ pub(in crate::workspace_graph::source_schema) fn replay(
         helpers::replay(module, modules, facts, physical)?;
         return Ok(true);
     }
-    physical
-        .reserve_array::<Context<'_>>(1)
-        .map_err(|_| fail())?;
-    let context = authenticate(module, facts, &mut physical)?;
     let anchor = module.functions.first().ok_or_else(fail)?;
-    let mut session = crate::cleanup_plan::SelectedReplaySession::new(&context, anchor, physical)
+    let mut preparation = crate::cleanup_plan::SelectedReplayPreparation::new(anchor, physical)
         .map_err(|_| fail())?;
+    current_module(module, modules, &mut preparation, anchor)?;
+    preparation
+        .reserve_array::<Context<'_>>(anchor, 1, "retained lexical context")
+        .map_err(|_| fail())?;
+    let context = helpers::local::authenticate(module, facts, &mut preparation, anchor)?;
+    let mut session =
+        crate::cleanup_plan::SelectedReplaySession::from_preparation(&context, anchor, preparation)
+            .map_err(|_| fail())?;
     let mut found = false;
     for function in &module.functions {
         if crate::hir::lexical_exit::requires(function).map_err(|error| vec![error])? {
@@ -205,4 +209,41 @@ pub(in crate::workspace_graph) fn with_test_context<T>(
         crate::cleanup_plan::ReplayPhysicalReservation::new(MAX_CHANGE_BUILDER_BYTES);
     let context = authenticate(module, facts, &mut physical)?;
     Ok(apply(&context))
+}
+
+fn current_module(
+    module: &WorkspaceResolvedModule,
+    modules: &[WorkspaceResolvedModule],
+    preparation: &mut crate::cleanup_plan::SelectedReplayPreparation,
+    anchor: &ResolvedFunction,
+) -> Result<(), Vec<Diagnostic>> {
+    let mut exact = 0usize;
+    let mut namespace = 0usize;
+    for current in modules {
+        preparation
+            .charge(
+                anchor,
+                current
+                    .path
+                    .len()
+                    .checked_add(module.path.len())
+                    .and_then(|n| n.checked_add(current.module.len()))
+                    .and_then(|n| n.checked_add(module.module.len()))
+                    .and_then(|n| n.checked_add(1))
+                    .ok_or_else(fail)?,
+                "retained current module membership",
+            )
+            .map_err(|_| fail())?;
+        if std::ptr::eq(current, module) {
+            exact += 1;
+        }
+        if current.path == module.path || current.module == module.module {
+            namespace += 1;
+        }
+    }
+    if exact != 1 || namespace != 1 {
+        preparation.fail();
+        return Err(fail());
+    }
+    Ok(())
 }

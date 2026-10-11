@@ -2,12 +2,25 @@
 //! No type-key, generic, inheritance or import caches are materialized.
 use super::*;
 impl DeclarationIndex {
+    #[cfg(test)]
     pub(crate) fn append_flat_record_replay(
         &mut self,
         record: &ResolvedTypeDeclaration,
         origin: IdentityOrigin,
         field_origin: impl Fn(usize) -> Option<IdentityOrigin>,
         physical: &mut ReplayPhysicalReservation,
+    ) -> Result<(), crate::diagnostic::Diagnostic> {
+        self.append_flat_record_replay_metered(record, origin, field_origin, physical, &mut |_| {
+            Ok(())
+        })
+    }
+    pub(crate) fn append_flat_record_replay_metered(
+        &mut self,
+        record: &ResolvedTypeDeclaration,
+        origin: IdentityOrigin,
+        field_origin: impl Fn(usize) -> Option<IdentityOrigin>,
+        physical: &mut ReplayPhysicalReservation,
+        debit: &mut dyn FnMut(usize) -> Result<(), crate::diagnostic::Diagnostic>,
     ) -> Result<(), crate::diagnostic::Diagnostic> {
         let fail = || {
             crate::diagnostic::Diagnostic::io(
@@ -18,6 +31,26 @@ impl DeclarationIndex {
         let ResolvedTypeDeclarationKind::Record { fields } = &record.kind else {
             return Err(fail());
         };
+        debit(1)?;
+        // Visit retained keys before the map operations; the three debits cover
+        // duplicate discovery, lookup and insertion comparisons independently.
+        for key in self.declarations.keys() {
+            debit(
+                key.as_str()
+                    .len()
+                    .checked_add(record.id.as_str().len())
+                    .and_then(|n| n.checked_mul(3))
+                    .ok_or_else(fail)?,
+            )?;
+        }
+        for key in self.types_by_name.keys() {
+            debit(
+                key.len()
+                    .checked_add(record.name.len())
+                    .and_then(|n| n.checked_mul(3))
+                    .ok_or_else(fail)?,
+            )?;
+        }
         if !record.type_parameters.is_empty()
             || !(1..=8).contains(&fields.len())
             || self.declarations.contains_key(&record.id)
@@ -26,6 +59,27 @@ impl DeclarationIndex {
             return Err(fail());
         }
         for (ordinal, field) in fields.iter().enumerate() {
+            debit(1)?;
+            for key in self.declarations.keys() {
+                debit(
+                    key.as_str()
+                        .len()
+                        .checked_add(field.id.as_str().len())
+                        .and_then(|n| n.checked_mul(3))
+                        .ok_or_else(fail)?,
+                )?;
+            }
+            for old in &fields[..ordinal] {
+                debit(
+                    old.id
+                        .as_str()
+                        .len()
+                        .checked_add(field.id.as_str().len())
+                        .and_then(|n| n.checked_add(old.name.len()))
+                        .and_then(|n| n.checked_add(field.name.len()))
+                        .ok_or_else(fail)?,
+                )?;
+            }
             if field.index as usize != ordinal
                 || field_origin(ordinal).is_none()
                 || self.declarations.contains_key(&field.id)
@@ -81,6 +135,7 @@ impl DeclarationIndex {
                     .checked_add(field.name.len().checked_mul(2)?)
             })
             .ok_or_else(fail)?;
+        debit(bytes)?;
         physical.reserve(bytes).map_err(|_| fail())?;
         self.declarations.insert(
             record.id.clone(),

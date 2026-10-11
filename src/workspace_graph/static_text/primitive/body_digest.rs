@@ -42,7 +42,10 @@ impl Encoder<'_> {
             arguments,
         } = ty
         {
+            let vector = declaration.as_str() == crate::prelude::VEC_ID
+                && matches!(arguments.as_slice(), [element] if admitted_vec_element(element));
             if !arguments.is_empty()
+                && !vector
                 && (!crate::hir::borrowed_scalar::option_u8::selected_profile_ready()
                     || !crate::hir::borrowed_scalar::option_u8::is_type(ty))
             {
@@ -275,8 +278,17 @@ impl Encoder<'_> {
                 instance,
                 args,
             } => {
-                if !type_arguments.is_empty() || instance.is_some() {
+                if instance.is_some() {
                     return None;
+                }
+                if !type_arguments.is_empty() {
+                    if crate::vec_ops::by_id(callee.as_str()).is_none()
+                        || !matches!(type_arguments.as_slice(), [element] if admitted_vec_element(element))
+                    {
+                        return None;
+                    }
+                    self.text("monomorphic-vec-type-argument")?;
+                    self.ty(&type_arguments[0])?;
                 }
                 self.text("call")?;
                 self.text(callee.as_str())?;
@@ -557,4 +569,10 @@ pub(in crate::workspace_graph) fn scratch_bytes() -> usize {
     // Fixed SHA state; no formatter or materialized source is created.
     // Expression recursion is independently bounded to 256 and constructs no heap.
     std::mem::size_of::<Encoder<'_>>() + std::mem::size_of::<Sha256>()
+}
+
+fn admitted_vec_element(ty: &ResolvedType) -> bool {
+    crate::vec_ops::resolved_element_is_admitted(ty)
+        || matches!(ty, ResolvedType::String | ResolvedType::Bytes)
+        || matches!(ty, ResolvedType::Nominal { declaration, arguments } if arguments.is_empty() && declaration.as_str() != crate::prelude::VEC_ID)
 }

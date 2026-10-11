@@ -5,6 +5,14 @@ use crate::hir::*;
 pub(crate) trait ReplayContext {
     fn declarations(&self) -> &DeclarationIndex;
     fn types(&self) -> &[ResolvedTypeDeclaration];
+    /// Types may be borrowed from several authenticated defining modules.
+    /// The slice accessor remains the local contiguous projection.
+    fn type_count(&self) -> usize {
+        self.types().len()
+    }
+    fn type_at(&self, index: usize) -> Option<&ResolvedTypeDeclaration> {
+        self.types().get(index)
+    }
     fn interfaces(&self) -> &[ResolvedInterface];
     fn functions(&self) -> &[ResolvedFunction];
     /// Indexed borrowed members may come from several held defining modules.

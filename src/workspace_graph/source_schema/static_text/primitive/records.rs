@@ -1,6 +1,7 @@
 //! Independent source layout/current namespace comparison before record index construction.
 use super::*;
 use crate::workspace_graph::static_text::primitive::records::Records;
+#[cfg(test)]
 pub(super) fn authenticate(
     module: &WorkspaceResolvedModule,
     source: Option<&Records>,
@@ -60,6 +61,9 @@ pub(super) fn authenticate(
     }
     Ok(())
 }
+
+mod prepared;
+pub(super) use prepared::authenticate as authenticate_prepared;
 
 #[cfg(test)]
 mod tests;

@@ -290,3 +290,5 @@ fn direct_record_replay_rejects_retained_field_epoch_and_finalizer_mutations() {
         );
     }
 }
+
+mod prepared;
