@@ -370,14 +370,16 @@ fn get_set_and_reserve_exact_stay_refused_with_a_stable_diagnostic() {
     for op in crate::vec_ops::ALL {
         assert_eq!(
             super::admits_vec_operation(op),
-            !matches!(
-                op,
-                crate::vec_ops::VecOp::Get
-                    | crate::vec_ops::VecOp::Set
-                    | crate::vec_ops::VecOp::ReserveExact
-                    | crate::vec_ops::VecOp::Sort
-                    | crate::vec_ops::VecOp::StrAt
-            ),
+            // Independent frozen v1 specification vocabulary. New operations
+            // remain excluded unless this profile is explicitly extended.
+            [
+                "vec_with_capacity",
+                "vec_push",
+                "vec_len",
+                "vec_capacity",
+                "vec_clear"
+            ]
+            .contains(&op.name()),
             "unexpected admission for {}",
             op.name()
         );

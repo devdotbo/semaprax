@@ -23,7 +23,7 @@ mod selected_profile;
 mod status_validation;
 pub(crate) use physical_clone::ClonePayload;
 pub(crate) use physical_storage::{
-    btree_node_upper as replay_btree_node_upper, replay_reserve_vec, PhysicalReservation,
+    PhysicalReservation, btree_node_upper as replay_btree_node_upper, replay_reserve_vec,
 };
 #[cfg(test)]
 mod physical_observation_tests;
@@ -40,14 +40,15 @@ use crate::hir::ResolvedTypeDeclarationKind;
 use std::cell::Cell;
 
 use super::{
-    BlockId, CleanupPlace, CleanupRegionId, CleanupResultSource, CleanupTerminator,
-    CleanupTransition, ConditionalVariantCase, ConditionalVariantEntry, EdgeCondition, EdgeId,
-    ExitContinuation, ExitTarget, StagedCopyResultSource, StatusCase, StatusLane, StatusProducer,
-    StatusSource, StatusSourceId, StorageId, CLEANUP_PLAN_SCHEMA_V10, CLEANUP_PLAN_SCHEMA_V11,
+    BlockId, CLEANUP_PLAN_SCHEMA_V2, CLEANUP_PLAN_SCHEMA_V3, CLEANUP_PLAN_SCHEMA_V4,
+    CLEANUP_PLAN_SCHEMA_V5, CLEANUP_PLAN_SCHEMA_V6, CLEANUP_PLAN_SCHEMA_V7, CLEANUP_PLAN_SCHEMA_V8,
+    CLEANUP_PLAN_SCHEMA_V9, CLEANUP_PLAN_SCHEMA_V10, CLEANUP_PLAN_SCHEMA_V11,
     CLEANUP_PLAN_SCHEMA_V12, CLEANUP_PLAN_SCHEMA_V13, CLEANUP_PLAN_SCHEMA_V14,
-    CLEANUP_PLAN_SCHEMA_V15, CLEANUP_PLAN_SCHEMA_V16, CLEANUP_PLAN_SCHEMA_V2,
-    CLEANUP_PLAN_SCHEMA_V3, CLEANUP_PLAN_SCHEMA_V4, CLEANUP_PLAN_SCHEMA_V5, CLEANUP_PLAN_SCHEMA_V6,
-    CLEANUP_PLAN_SCHEMA_V7, CLEANUP_PLAN_SCHEMA_V8, CLEANUP_PLAN_SCHEMA_V9,
+    CLEANUP_PLAN_SCHEMA_V15, CLEANUP_PLAN_SCHEMA_V16, CleanupPlace, CleanupRegionId,
+    CleanupResultSource, CleanupTerminator, CleanupTransition, ConditionalVariantCase,
+    ConditionalVariantEntry, EdgeCondition, EdgeId, ExitContinuation, ExitTarget,
+    StagedCopyResultSource, StatusCase, StatusLane, StatusProducer, StatusSource, StatusSourceId,
+    StorageId,
 };
 use crate::ast::{BinaryOp, UnaryOp};
 use crate::cleanup::ReplayContext;
@@ -67,14 +68,14 @@ mod path_summary;
 mod skeleton_bound;
 mod skeleton_work;
 mod typed_storage;
+#[cfg(test)]
+use path_summary::{STATUS_ONLY_PATH_SUMMARY_THRESHOLD, cleanup_plan_requires_path_replay};
 use path_summary::{
     cleanup_inert_large_decisions_can_be_summarized, cleanup_inert_path_product_can_be_summarized,
     or_arm_path_counts, plan_structure_units, status_only_paths_can_be_summarized,
     validate_replay_size_budget,
 };
-#[cfg(test)]
-use path_summary::{cleanup_plan_requires_path_replay, STATUS_ONLY_PATH_SUMMARY_THRESHOLD};
-use skeleton_work::{empty_expr_path, Observations, SkeletonWork};
+use skeleton_work::{Observations, SkeletonWork, empty_expr_path};
 
 #[cfg(test)]
 mod context_tests;
@@ -100,8 +101,8 @@ mod transition_storage;
 use renewal::validate_join_compatibility;
 use strings::temporary_place;
 use transition::{
-    append_dead_flags, execute_replay_transition, find_resolved_expression, replay_exit,
-    replay_transfer, require_normal_flow_state, state_for_edge, validate_staged_target, ExitFlow,
+    ExitFlow, append_dead_flags, execute_replay_transition, find_resolved_expression, replay_exit,
+    replay_transfer, require_normal_flow_state, state_for_edge, validate_staged_target,
 };
 mod record_destructure;
 mod resolved_call;
@@ -971,6 +972,12 @@ fn expression_path_counts_with_while(
                             }
                         }
                     }
+                    _ if super::deferred_commit::infallible_borrowed_vector_observer(
+                        expression,
+                    ) =>
+                    {
+                        sequence(children)
+                    }
                     ResolvedExprKind::Invoke { .. }
                     | ResolvedExprKind::Call { .. }
                     | ResolvedExprKind::LiteralFormat { .. }
@@ -1466,6 +1473,9 @@ fn expression_path_counts(
             continue;
         }
         result = match &frame.expression.kind {
+            _ if super::deferred_commit::infallible_borrowed_vector_observer(frame.expression) => {
+                frame.accumulator
+            }
             kind if matches!(
                 kind,
                 ResolvedExprKind::Call { .. }

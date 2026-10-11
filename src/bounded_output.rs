@@ -17,6 +17,13 @@ pub(crate) struct ReservationRefusal {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum ReservationStage {
     CorePrebound,
+    ExpectedEdges,
+    ResolvedCallEdges,
+    StubSignatures,
+    DeclarationFacts,
+    RetainedFacts,
+    CoreDirectories,
+    EdgeProof,
     SyntheticModule,
     CachedValidation,
     FreshResolution,
@@ -30,6 +37,13 @@ impl ReservationStage {
     pub(crate) fn label(self) -> &'static str {
         match self {
             Self::CorePrebound => "resolved-core prebound",
+            Self::ExpectedEdges => "expected workspace edges",
+            Self::ResolvedCallEdges => "resolved call edges",
+            Self::StubSignatures => "workspace stub signatures",
+            Self::DeclarationFacts => "workspace declaration facts",
+            Self::RetainedFacts => "retained workspace facts",
+            Self::CoreDirectories => "resolved module directories",
+            Self::EdgeProof => "workspace edge proof",
             Self::SyntheticModule => "synthetic module construction",
             Self::CachedValidation => "cached HIR validation",
             Self::FreshResolution => "fresh HIR resolution",
@@ -483,12 +497,13 @@ impl Deref for CappedVec {
 
 #[cfg(test)]
 mod tests {
-    use std::panic::{catch_unwind, AssertUnwindSafe};
+    use std::panic::{AssertUnwindSafe, catch_unwind};
 
     use super::{
-        active_limit, active_remaining, budgeted_clone, budgeted_format, budgeted_join,
-        clear_active_floor, reserve_active, reserve_active_preserving, reserve_active_required,
-        set_active_floor, with_limit, with_limit_usage, BudgetedJoin as _, CappedString, CappedVec,
+        BudgetedJoin as _, CappedString, CappedVec, active_limit, active_remaining, budgeted_clone,
+        budgeted_format, budgeted_join, clear_active_floor, reserve_active,
+        reserve_active_preserving, reserve_active_required, set_active_floor, with_limit,
+        with_limit_usage,
     };
 
     /// Emits `first` on its first invocation and `later` on every other one,

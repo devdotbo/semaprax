@@ -4342,13 +4342,9 @@ fn build_resolved_core(
     let mut loan_scratch = loan_retention::RetentionScratch::default();
     let mut expected_edges = Vec::new();
     for program in programs {
-        collect_expected_edges(
-            program,
-            programs,
-            module_paths,
-            authored,
-            &mut expected_edges,
-        )?;
+        staged!(ExpectedEdges, collect_expected_edges(
+            program, programs, module_paths, authored, &mut expected_edges,
+        ))?;
     }
     reserve_builder_structure(
         programs
@@ -4464,7 +4460,7 @@ fn build_resolved_core(
             }
             (resolved, static_text)
         };
-        verify_resolved_call_edges(program, &resolved, authored)?;
+        staged!(ResolvedCallEdges, verify_resolved_call_edges(program, &resolved, authored))?;
         if let Some(validation) = validation.as_mut() {
             validation.record_module(&program.module, &resolved, programs)?;
             let (module, imported_instances) = staged!(
@@ -4497,11 +4493,11 @@ fn build_resolved_core(
         modules.sort_unstable_by(|left, right| left.path.cmp(&right.path));
     }
     let declarations = if let Some(validation) = validation {
-        validation.validate_stub_signatures(programs)?;
-        validation.finish(programs)?
+        staged!(StubSignatures, validation.validate_stub_signatures(programs))?;
+        staged!(DeclarationFacts, validation.finish(programs))?
     } else {
-        validate_stub_signatures(programs, &synthetic_modules)?;
-        let declarations = reconstruct_workspace_declaration_facts(&synthetic_modules, programs)?;
+        staged!(StubSignatures, validate_stub_signatures(programs, &synthetic_modules))?;
+        let declarations = staged!(DeclarationFacts, reconstruct_workspace_declaration_facts(&synthetic_modules, programs))?;
         let programs_by_module = programs
             .iter()
             .map(|program| (program.module.as_str(), program))
@@ -4534,14 +4530,11 @@ fn build_resolved_core(
         declarations
     };
     owned_generics::attach_imported_vec_instances(&mut modules, imported_vec_instances)?;
-    retained_validation::validate_core_facts(
-        programs,
-        &modules,
-        &expected_edges,
-        compact_order.is_some(),
-    )?;
-    validate_retained_declaration_shapes(&modules, &declarations)?;
-    let owned_module_paths = module_paths
+    staged!(RetainedFacts, retained_validation::validate_core_facts(
+        programs, &modules, &expected_edges, compact_order.is_some(),
+    ))?;
+    staged!(RetainedFacts, validate_retained_declaration_shapes(&modules, &declarations))?;
+    let owned_module_paths = staged!(CoreDirectories, module_paths
         .iter()
         .map(|(module, path)| {
             (
@@ -4549,7 +4542,7 @@ fn build_resolved_core(
                 crate::bounded_output::budgeted_clone(path),
             )
         })
-        .collect();
+        .collect());
     if dependency_depths.len() != module_paths.len()
         || dependency_depths
             .keys()
@@ -4560,11 +4553,11 @@ fn build_resolved_core(
             "workspace dependency-depth keys disagree with authenticated modules",
         )]);
     }
-    let owned_dependency_depths = dependency_depths
+    let owned_dependency_depths = staged!(CoreDirectories, dependency_depths
         .iter()
         .map(|(module, depth)| (crate::bounded_output::budgeted_clone(module), *depth))
-        .collect();
-    render_edge_proof(&expected_edges);
+        .collect());
+    staged!(EdgeProof, render_edge_proof(&expected_edges));
     Ok((
         modules,
         owned_module_paths,

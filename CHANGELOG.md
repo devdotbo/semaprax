@@ -1,5 +1,7 @@
 # Changelog
 
+- Attribute seven previously unlabelled live workspace reservation seams with compiler-owned operation stages. Keep exact ledger charges, nested-budget resets and sticky first refusals. Exclude only exact borrowed Vec length/capacity observations from invented census operation failures, retaining every child path and independent enumeration control. Pin the frozen two-Bytes record profile to its documented five operations. Grouped qualification remains pending.
+
 - Repair independent terminal-expression cleanup classification, exact borrowed String-slot result replay and matched loop admission. Preserve nested type refusals, cached-HIR hostile controls and existing lifetime boundaries. Replace audited projection wildcards, compact CLI prose within its unchanged budget and use saturating growth arithmetic. Grouped executable qualification remains pending.
 
 - Advance ASCII once in ordinary UTF-8 scans and reuse checked quoted lengths in generated UTF-8 sizing. Preserve fallback, earliest faults, invalid short circuits and all limits; frozen original/backend differential definitions await grouped qualification.

@@ -105,6 +105,20 @@ pub(super) fn expression_is_infallible_compiler_operation(
     )
 }
 
+/// These two reads have borrowed parameters and no owner-admission lane.
+/// Retain ordinary child failures; reject malformed shapes conservatively.
+pub(super) fn infallible_borrowed_vector_observer(expression: &crate::hir::ResolvedExpr) -> bool {
+    use crate::hir::{OwnershipMode, ResolvedExprKind, ResolvedType};
+    matches!(&expression.kind, ResolvedExprKind::Call { callee, instance: None, type_arguments, args }
+        if matches!(crate::vec_ops::by_id(callee.as_str()), Some(crate::vec_ops::VecOp::Len | crate::vec_ops::VecOp::Capacity))
+        && type_arguments.len() == 1
+        && matches!(args.as_slice(), [source]
+            if matches!(&source.ty, ResolvedType::Nominal { declaration, arguments }
+                if declaration.as_str() == crate::prelude::VEC_ID && arguments == type_arguments)
+            && matches!(source.ownership, OwnershipMode::Borrow | OwnershipMode::Own))
+        && expression.ty == ResolvedType::Usize && expression.ownership == OwnershipMode::Value)
+}
+
 fn is_fallible_byte_operation(callee: &DeclarationId) -> bool {
     crate::byte_ops::by_id(callee.as_str()).is_some_and(crate::byte_ops::ByteOp::is_fallible)
 }

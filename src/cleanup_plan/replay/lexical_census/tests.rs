@@ -124,6 +124,68 @@ fn generated_copy_and_owned_advancement_paths_are_counted_from_actual_hir() {
             enumerated(&program, function),
             "{ty}"
         );
+        if ty == "i64" {
+            let mut observer = None;
+            crate::hir::function_value::walk(function, |expression| {
+                if matches!(&expression.kind, ResolvedExprKind::Call { callee, .. }
+                    if callee.as_str() == crate::vec_ops::VecOp::Len.id())
+                {
+                    observer = Some(expression.clone());
+                }
+            });
+            let observer = observer.expect("generated condition retains its Vec length read");
+            let counts = expression_path_counts(function, &observer).unwrap();
+            assert_eq!((counts.normal, counts.failed), (1, 0));
+            let mut capacity = observer.clone();
+            let ResolvedExprKind::Call { callee, .. } = &mut capacity.kind else {
+                unreachable!()
+            };
+            *callee = crate::hir::DeclarationId::new(crate::vec_ops::VecOp::Capacity.id());
+            assert_eq!(
+                expression_path_counts(function, &capacity).unwrap().failed,
+                0
+            );
+            for mutation in 0..4 {
+                let mut ordinary = observer.clone();
+                let ResolvedExprKind::Call {
+                    callee,
+                    args,
+                    instance,
+                    type_arguments,
+                } = &mut ordinary.kind
+                else {
+                    unreachable!()
+                };
+                match mutation {
+                    0 => args.clear(),
+                    1 => *callee = crate::hir::DeclarationId::new("user.read"),
+                    2 => {
+                        *instance = Some(crate::hir::FunctionInstanceId::derive(
+                            callee,
+                            type_arguments,
+                        ))
+                    }
+                    3 => type_arguments[0] = ResolvedType::Bool,
+                    _ => unreachable!(),
+                }
+                let counts = expression_path_counts(function, &ordinary).unwrap();
+                assert_eq!((counts.normal, counts.failed), (1, 1));
+            }
+            // Census-only control: retain a child's failure without inventing a
+            // second observer failure. This is not an executable admission claim.
+            let mut child_failure = observer.clone();
+            let ResolvedExprKind::Call { args, .. } = &mut child_failure.kind else {
+                unreachable!()
+            };
+            args[0].kind = ResolvedExprKind::Call {
+                callee: crate::hir::DeclarationId::new("user.construct"),
+                type_arguments: Vec::new(),
+                instance: None,
+                args: Vec::new(),
+            };
+            let counts = expression_path_counts(function, &child_failure).unwrap();
+            assert_eq!((counts.normal, counts.failed), (1, 1));
+        }
         let mut malformed = program.clone();
         let function = malformed
             .functions
@@ -170,9 +232,11 @@ fn exact_skeleton_reservation_covers_walk_and_one_short_refuses_before_materiali
     let function = run(&program);
     let bound = skeleton_work_upper(&program, function).unwrap();
     let mut exact = ReplayBudget::with_skeleton_limit(bound);
-    assert!(!hir_skeleton_paths(&program, function, &mut exact)
-        .unwrap()
-        .is_empty());
+    assert!(
+        !hir_skeleton_paths(&program, function, &mut exact)
+            .unwrap()
+            .is_empty()
+    );
     reset_skeleton_materializations();
     let mut short = ReplayBudget {
         remaining: bound - 1,

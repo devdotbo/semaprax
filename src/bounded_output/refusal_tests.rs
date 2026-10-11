@@ -144,6 +144,35 @@ fn reservation_stage_is_first_failure_only_and_nested_budget_is_unlabelled() {
         assert!(!reserve_active_required(2));
     });
     assert_eq!(unlabelled.unwrap().stage, None);
+    for stage in [
+        ReservationStage::ExpectedEdges,
+        ReservationStage::ResolvedCallEdges,
+        ReservationStage::StubSignatures,
+        ReservationStage::DeclarationFacts,
+        ReservationStage::RetainedFacts,
+        ReservationStage::CoreDirectories,
+        ReservationStage::EdgeProof,
+    ] {
+        let (_, overflowed, used, refusal) = with_limit_usage_refusal(3, || {
+            with_reservation_stage(stage, || {
+                assert!(reserve_active_required(2));
+                assert!(!reserve_active_required(2));
+            });
+            assert!(!reserve_active_required(5));
+        });
+        assert!(overflowed);
+        assert_eq!(used, 2);
+        assert_eq!(
+            refusal.unwrap(),
+            ReservationRefusal {
+                requested: 2,
+                remaining: 1,
+                floor: 0,
+                stage: Some(stage)
+            }
+        );
+        assert!(!stage.label().is_empty());
+    }
 }
 
 #[test]
