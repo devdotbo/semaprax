@@ -151,6 +151,7 @@ impl Sources {
                     read(repository, "src/cli/json_codec.rs"),
                     read(repository, "src/cli/json_codec/plan.rs"),
                     read(repository, "src/cli/json_codec/profile.rs"),
+                    read(repository, "src/cli/json_codec/suitability.rs"),
                 ]
                 .join("\n"),
                 [

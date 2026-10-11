@@ -20,6 +20,10 @@ Existing destinations, including a racing creator, are refused; original source
 and manifest files are never overwritten. Install the reviewed replacement
 through the ordinary source or semantic transaction workflow.
 
+The read-only [suitability explanation](JSON-CODEC-SUITABILITY-V1.md) reports
+existing shape predicates for an exact checked type without selecting a profile
+or performing candidate/backend admission.
+
 The additive [codec plan v1](APPLICATION-JSON-CODEC-PLAN-V1.md) route accepts
 `--plan <plan-json> --output <new-bundle>` and derives 1..8 distinct module
 replacements against one immutable authored revision. Ordinary Project admission

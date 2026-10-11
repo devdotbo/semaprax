@@ -1,5 +1,7 @@
 //! Checked, ordinary-source application JSON codecs. Generated names confer no authority.
 
+mod suitability;
+pub use suitability::{explain_json_codec_suitability, JsonCodecSuitabilityOptions};
 mod collection_response;
 mod emit;
 mod nested_request;
@@ -135,42 +137,7 @@ fn derive_replacement(
         .ok_or_else(|| {
             refusal("JSON codec record identity was not found in the selected source")
         })?;
-    let fragment = match profile {
-        JsonCodecProfile::FlatScalars => {
-            validate_record(declaration)?;
-            emit::source(&program, declaration)
-        }
-        JsonCodecProfile::IdentifierViews => views::source(&program, declaration)?,
-        JsonCodecProfile::RequestViews => views::request_source(&program, declaration)?,
-        JsonCodecProfile::StreamRequestViews => {
-            views::stream_request_source(&program, declaration)?
-        }
-        JsonCodecProfile::OwnedRequest => owned::source(&program, declaration, false)?,
-        JsonCodecProfile::StreamOwnedRequest => owned::source(&program, declaration, true)?,
-        JsonCodecProfile::Utf8OwnedRequest { max_string_bytes } => {
-            utf8::source(&program, declaration, max_string_bytes)?
-        }
-        JsonCodecProfile::StreamUtf8OwnedRequest { max_string_bytes } => {
-            utf8::stream_source(&program, declaration, max_string_bytes)?
-        }
-        JsonCodecProfile::CollectionResponse { max_string_bytes } => {
-            collection_response::source(&program, declaration, max_string_bytes)?
-        }
-        JsonCodecProfile::NestedResponse {
-            max_string_bytes,
-            max_array_items,
-        } => nested_response::derive(&program, declaration, max_string_bytes, max_array_items)?,
-        JsonCodecProfile::NestedRequest {
-            max_string_bytes,
-            max_array_items,
-        } => nested_request::derive(&program, declaration, max_string_bytes, max_array_items)?,
-        JsonCodecProfile::StreamNestedRequest {
-            max_string_bytes,
-            max_array_items,
-        } => {
-            nested_request::derive_stream(&program, declaration, max_string_bytes, max_array_items)?
-        }
-    };
+    let fragment = profile_fragment(&program, declaration, profile)?;
     let fragment = template::discard_bindings(&fragment, source.source(), source_path)
         .map_err(|error| vec![error])?;
     if fragment.len() > MAX_GENERATED_BYTES {
@@ -324,4 +291,46 @@ fn identifier(value: &str) -> bool {
         && value.bytes().enumerate().all(|(index, byte)| {
             byte == b'_' || byte.is_ascii_alphabetic() || index > 0 && byte.is_ascii_digit()
         })
+}
+
+fn profile_fragment(
+    program: &crate::ast::Program,
+    declaration: &TypeDeclaration,
+    profile: JsonCodecProfile,
+) -> Result<String, Vec<Diagnostic>> {
+    let fragment = match profile {
+        JsonCodecProfile::FlatScalars => {
+            validate_record(declaration)?;
+            emit::source(program, declaration)
+        }
+        JsonCodecProfile::IdentifierViews => views::source(program, declaration)?,
+        JsonCodecProfile::RequestViews => views::request_source(program, declaration)?,
+        JsonCodecProfile::StreamRequestViews => views::stream_request_source(program, declaration)?,
+        JsonCodecProfile::OwnedRequest => owned::source(program, declaration, false)?,
+        JsonCodecProfile::StreamOwnedRequest => owned::source(program, declaration, true)?,
+        JsonCodecProfile::Utf8OwnedRequest { max_string_bytes } => {
+            utf8::source(program, declaration, max_string_bytes)?
+        }
+        JsonCodecProfile::StreamUtf8OwnedRequest { max_string_bytes } => {
+            utf8::stream_source(program, declaration, max_string_bytes)?
+        }
+        JsonCodecProfile::CollectionResponse { max_string_bytes } => {
+            collection_response::source(program, declaration, max_string_bytes)?
+        }
+        JsonCodecProfile::NestedResponse {
+            max_string_bytes,
+            max_array_items,
+        } => nested_response::derive(program, declaration, max_string_bytes, max_array_items)?,
+        JsonCodecProfile::NestedRequest {
+            max_string_bytes,
+            max_array_items,
+        } => nested_request::derive(program, declaration, max_string_bytes, max_array_items)?,
+        JsonCodecProfile::StreamNestedRequest {
+            max_string_bytes,
+            max_array_items,
+        } => {
+            nested_request::derive_stream(program, declaration, max_string_bytes, max_array_items)?
+        }
+    };
+    Ok(fragment)
 }

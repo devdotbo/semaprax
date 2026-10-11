@@ -52,7 +52,7 @@ pub(super) fn parse(
     }
 }
 
-fn bound(raw: &str, maximum: usize) -> Option<usize> {
+pub(super) fn bound(raw: &str, maximum: usize) -> Option<usize> {
     let value = raw.parse::<usize>().ok()?;
     ((1..=maximum).contains(&value) && value.to_string() == raw).then_some(value)
 }

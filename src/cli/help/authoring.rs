@@ -159,6 +159,7 @@ pub(super) fn lookup(query: &str) -> Result<String, String> {
             "Temporary/call roots, forged or stale paths, unsupported profiles, and nonliteral/unknown fields stay refused; SPX-T310 still requires one admitted record type. vec_clone_at creates an owned clone; use it only for detached owners. Contract: docs/SCOPED-VEC-FIELD-READS-V1.md.\n"
         ).to_owned()),
         "author:json-codec" => Ok(concat!(
+            "Read-only shape discovery: json-codec <project> --explain --type <stable-id>. Optional bounds report unmet policy; whole-row pages bind the current revision. Candidate/backend admission is not evaluated. Contract: docs/JSON-CODEC-SUITABILITY-V1.md.\n",
             "Checked source generator implementation; focused/application qualification pending.\n",
             "semaprax json-codec <project> --source <module-path> --type <record-id> --output <new-file> [--profile <selector>]\n",
             "UTF-8 owned request and bounded-collection-response.v1 profiles require --max-string-bytes 1..64. See their authoring cards.\n",

@@ -827,6 +827,14 @@ path readers.
 
 ### Validated HIR
 
+`project/json_codec/suitability.rs` owns the read-only exact-type explanation
+and bounded whole-row continuation. It shares the existing profile fragment
+predicate dispatch and codec selector descriptor, binding checked source and
+Project/workspace revisions while keeping candidate and backend admission
+unperformed. `cli/json_codec/suitability.rs` accepts strict optional policy and
+uses the ordinary authenticated held-input route; it has no output/publication
+boundary. Existing codec derivation remains the only source candidate consumer.
+
 `src/project/json_codec` owns checked-source application codec derivation and
 exact regeneration replay. Its `plan` child derives a bounded set against one
 immutable retained revision and admits the complete combined candidate through
