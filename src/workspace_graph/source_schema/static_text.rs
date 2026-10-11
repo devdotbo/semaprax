@@ -271,3 +271,6 @@ pub(super) fn schema(
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+pub(super) use primitive::with_test_context;

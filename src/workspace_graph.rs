@@ -5962,3 +5962,8 @@ mod tests;
 #[cfg(test)]
 #[path = "workspace_graph/type_proof_tests.rs"]
 mod type_proof_tests;
+
+#[cfg(test)]
+mod test_replay_context;
+#[cfg(test)]
+pub(crate) use test_replay_context::SourceRecordReplayFixture;

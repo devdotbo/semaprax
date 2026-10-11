@@ -465,3 +465,6 @@ mod tests {
         }
     }
 }
+
+#[cfg(test)]
+pub(super) use static_text::with_test_context;

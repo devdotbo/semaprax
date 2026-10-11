@@ -156,3 +156,16 @@ pub(in crate::workspace_graph::source_schema) fn replay(
     }
     Ok(true)
 }
+
+// Test callers acquire the real held-source context; no metadata is projected away.
+#[cfg(test)]
+pub(in crate::workspace_graph) fn with_test_context<T>(
+    module: &WorkspaceResolvedModule,
+    facts: &BTreeMap<String, WorkspaceDeclarationFact>,
+    apply: impl FnOnce(&dyn ReplayContext) -> T,
+) -> Result<T, Vec<Diagnostic>> {
+    let mut physical =
+        crate::cleanup_plan::ReplayPhysicalReservation::new(MAX_CHANGE_BUILDER_BYTES);
+    let context = authenticate(module, facts, &mut physical)?;
+    Ok(apply(&context))
+}

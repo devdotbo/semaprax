@@ -4,16 +4,16 @@ const SOURCE: &str = r#"module replay.flat_records;
  @id("flat.Packet.n") n:i64,@id("flat.Packet.text") text:string,@id("flat.Packet.data") data:Bytes,
 }
 @id("flat.identity") fn identity(value:own Packet,flag:bool)->Packet {
- let mut next=0;while next<1 {next=next+1;if flag {return value;};0} value
+ let mut next=0;while next<1 {next=next+1;if flag {return value;} else {0};0} value
 }
 @id("flat.make") fn make(input:borrow Slice<u8>)->Packet {
  let key=str"x";let value=Packet{n:7,text:"label",data:bytes_copy(input)};
- let mut next=0;while next<1 {next=next+1;if byte_len(input)>0usize {return value;};0} value
+ let mut next=0;while next<1 {next=next+1;if byte_len(input)>0usize {return value;} else {0};0} value
 }
 @id("flat.read") fn read(value:borrow Packet)->i64 {value.n}
 @id("flat.probe") fn probe(flag:bool)->i64 {
  let input=[1u8,2u8];let packet=identity(make(array_as_slice(input)),flag);
- let mut next=0;while next<2 {next=next+1;if flag {continue;};if next==2 {return read(packet);};0} read(packet)
+ let mut next=0;while next<2 {next=next+1;if flag {continue;} else {0};if next==2 {return read(packet);} else {0};0} read(packet)
 }
 @id("app.main") fn main()->i64 {probe(false)}
 "#;
@@ -21,52 +21,79 @@ fn program() -> ResolvedProgram {
     crate::hir::resolve(&crate::check(SOURCE, "selected-flat-records.spx").unwrap()).unwrap()
 }
 fn run(
-    program: &ResolvedProgram,
+    fixture: &crate::workspace_graph::SourceRecordReplayFixture,
     id: &str,
     bytes: usize,
 ) -> Result<PhysicalReservation, Diagnostic> {
-    let function = program
-        .functions
-        .iter()
-        .find(|f| f.id.as_str() == id)
-        .unwrap();
-    super::super::selected_entry::validate_retained_lexical_with_reservation(
-        program,
-        function,
-        PhysicalReservation::new(bytes),
-    )
+    // Authenticate held source independently before this replay-only reservation.
+    // Context construction has its own charged ledger; it is not included in this phase.
+    fixture.with_context(|context| {
+        let function = context
+            .functions()
+            .iter()
+            .find(|f| f.id.as_str() == id)
+            .unwrap();
+        super::super::selected_entry::validate_retained_lexical_with_reservation(
+            context,
+            function,
+            PhysicalReservation::new(bytes),
+        )
+    })
 }
 #[test]
 fn actual_nominal_make_identity_read_replay_matches_legacy_exact_and_one_short() {
-    let program = program();
+    let fixture = crate::workspace_graph::SourceRecordReplayFixture::new(SOURCE);
+    let standalone = program();
+    assert!(standalone.types.iter().any(|ty| matches!(
+        ty.kind,
+        crate::hir::ResolvedTypeDeclarationKind::Resource { .. }
+    )));
+    let standalone_function = standalone
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "flat.identity")
+        .unwrap();
+    assert_eq!(
+        super::super::selected_entry::validate_retained_lexical_with_reservation(
+            &standalone,
+            standalone_function,
+            PhysicalReservation::new(usize::MAX),
+        )
+        .err()
+        .unwrap()
+        .code,
+        "SPX-H006"
+    );
     for id in ["flat.make", "flat.identity", "flat.probe"] {
-        let function = program
-            .functions
+        let function = fixture
+            .functions()
             .iter()
             .find(|f| f.id.as_str() == id)
             .unwrap();
         assert!(crate::hir::lexical_exit::requires(function).unwrap());
-        super::super::lexical_replay::validate_with_index(
-            &program,
-            function,
-            &mut ReplayBudget::new(),
-            None,
-        )
-        .unwrap();
-        let measured = run(&program, id, usize::MAX).unwrap();
+        fixture.with_context(|context| {
+            super::super::lexical_replay::validate_with_index(
+                context,
+                function,
+                &mut ReplayBudget::new(),
+                None,
+            )
+            .unwrap();
+        });
+        let measured = run(&fixture, id, usize::MAX).unwrap();
         assert!(measured.charged() > 0);
-        let exact = run(&program, id, measured.charged()).unwrap();
+        let exact = run(&fixture, id, measured.charged()).unwrap();
         assert_eq!(exact.charged(), measured.charged());
         assert_eq!(
-            run(&program, id, measured.charged() - 1)
+            run(&fixture, id, measured.charged() - 1)
                 .err()
                 .unwrap()
                 .code,
             "SPX-H006"
         );
     }
-    let identity = program
-        .functions
+    let identity = fixture
+        .functions()
         .iter()
         .find(|f| f.id.as_str() == "flat.identity")
         .unwrap();
@@ -77,8 +104,8 @@ fn actual_nominal_make_identity_read_replay_matches_legacy_exact_and_one_short()
         .iter()
         .any(|slot| slot.storage == StorageId::ProvisionalResult
             && matches!(slot.field_liveness_shape, FieldLivenessShape::Record { .. })));
-    let probe = program
-        .functions
+    let probe = fixture
+        .functions()
         .iter()
         .find(|f| f.id.as_str() == "flat.probe")
         .unwrap();
@@ -96,12 +123,8 @@ fn actual_nominal_make_identity_read_replay_matches_legacy_exact_and_one_short()
 #[test]
 fn flags_projection_epoch_and_runtime_finalizer_order_forgery_refuse() {
     for attack in 0..4 {
-        let mut program = program();
-        let function = program
-            .functions
-            .iter_mut()
-            .find(|f| f.id.as_str() == "flat.probe")
-            .unwrap();
+        let mut fixture = crate::workspace_graph::SourceRecordReplayFixture::new(SOURCE);
+        let function = fixture.function_mut("flat.probe");
         match attack {
             0 => {
                 let slot = function
@@ -164,7 +187,7 @@ fn flags_projection_epoch_and_runtime_finalizer_order_forgery_refuse() {
             }
         }
         assert_eq!(
-            run(&program, "flat.probe", usize::MAX).err().unwrap().code,
+            run(&fixture, "flat.probe", usize::MAX).err().unwrap().code,
             "SPX-H006",
             "attack {attack}"
         );
