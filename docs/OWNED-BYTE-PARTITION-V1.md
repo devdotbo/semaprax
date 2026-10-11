@@ -304,11 +304,13 @@ node-union kills, retire that entry and stale descriptors fail sticky. Header,
 table, Core and replacement backing requests debit the same invocation account
 before allocation; no teardown refund replenishes it.
 
-This private receiver has no production authority constructor or ordinary Value
-installer yet. The eventual installer must bind each runtime child to the
-current checked owner root and drive transitions from actual execution. Public
-copy-out must precede registry teardown. Its authored controls are not evidence
-of source admission or complete native/Wasm/public partition support.
+The private loan-capacity constructor now receives only the immutable
+original-source owner and an exact current function pointer, after its complete
+compiler checks and metered graph proof. It has no ordinary Value installer.
+The eventual installer must bind each runtime child to the current checked owner
+root and drive transitions from actual execution. Public copy-out must precede
+registry teardown. Its authored controls are not evidence of source admission
+or complete native/Wasm/public partition support.
 
 ### Pending ordinary funding adapter
 
@@ -418,3 +420,33 @@ array through Value construction and consuming conversion and route canonical
 leaf/container settlement through its actual Loans receiver. This still does
 not install a registry in the ordinary evaluator or authorize a raw Value as a
 source proof; the sealed entry and language IterStep publication remain pending.
+
+### Invocation-held function frame checkpoint
+
+One ordinary interpreter registry remains alive through the complete invocation.
+Entering a checked function moves its caller's actual loan table and CFG point
+into a paid frame directory. A nonreused frame nonce distinguishes reused local
+loan slots from stale descriptors. Returning retires only the callee's physical
+loans and restores the caller table; affine returned children retain the same
+registry and backing context.
+
+The directory's complete replacement backing and overlapping transient header
+are prepaid before allocation. A callee allocates only its actual local loan
+slots; a scalar helper allocates none. Already-paid idle arrays and directory
+capacity are reused without charging a nonexistent allocation. Actual new
+requests remain cumulative through repeated calls, with no refund on return.
+The existing funding forecast covers one base frame; it does not certify
+arbitrary repeated frame allocations or replace the entry's finite account.
+
+A borrowed parameter descriptor refers to its held caller loan. The callee's
+local alias has no second physical loan or finalizer; its exact local end edge
+clears only that alias. The caller's own end edge retains sole retirement
+authority. Same-invocation identity, an actual held ancestor frame, local start
+point and generations are checked before publishing an alias. Actual parameter
+root and call staging correspondence still belong to the closed installer.
+
+Per-function 256-loan validation alone is not proof that a shared backing has at
+most 256 simultaneous physical views across calls. The eventual entry must join
+an independently checked current-callgraph view bound before using that Core
+inventory. These frame and alias controls do not authorize ordinary entry,
+public carrier escape, or a higher view quota.
