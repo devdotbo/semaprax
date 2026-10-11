@@ -53,7 +53,7 @@ fn warm(fixture: &Fixture, digest: &str) -> serde_json::Value {
     same_product(&cold, &report);
     assert_eq!(report["frontend_work"]["work"]["modules_resolved"], 0);
     assert_eq!(report["frontend_work"]["work"]["checked_HIR_reused"], 3);
-    assert_eq!(report["frontend_work"]["context_reset"], false);
+    assert_eq!(report["frontend_work"]["manifest_context_reset"], false);
     assert_eq!(
         report["frontend_work"]["invalidated_sources"],
         serde_json::json!([])

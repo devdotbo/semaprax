@@ -11,12 +11,40 @@ fn observed(
     crate::test_allocation_observer::Metrics,
 ) {
     crate::test_allocation_observer::measure(|| {
-        let (results, metrics, finished) = replay(retained, members, work, bytes).unwrap();
-        let successful = results.iter().all(Result::is_ok);
-        // Include diagnostics, preparation, index/session and Drop; retain no
-        // heap-owned observation/report after the measured closure returns.
-        drop(results);
-        (successful, metrics, finished)
+        let anchor = members[0];
+        let preparation = SelectedReplayPreparation::with_limits(anchor, work, bytes).unwrap();
+        super::super::super::primitive::with_prepared_test_context(
+            writer(retained),
+            &retained.hir.modules,
+            &retained.hir.declarations,
+            preparation,
+            |context, preparation| -> Result<(bool, (usize, usize), bool), Diagnostic> {
+                let mut session =
+                    SelectedReplaySession::from_preparation(context, anchor, preparation)?;
+                let mut successful = true;
+                for member in members {
+                    if let Err(diagnostic) = session.validate(member) {
+                        assert_eq!(diagnostic.code, "SPX-H006");
+                        successful = false;
+                        drop(diagnostic);
+                    }
+                }
+                let metrics = session.metrics();
+                if !successful {
+                    let diagnostic = session.validate(anchor).unwrap_err();
+                    assert_eq!(diagnostic.code, "SPX-H006");
+                    assert!(diagnostic.message.contains("already failed"));
+                    drop(diagnostic);
+                    assert_eq!(session.metrics(), metrics, "refused retry charges nothing");
+                }
+                // Diagnostics, finish and all index/session/context Drop remain
+                // observed. Only scalar observation data crosses this boundary.
+                let finished = session.finish().is_ok();
+                Ok((successful, metrics, finished))
+            },
+        )
+        .unwrap()
+        .unwrap()
     })
 }
 
@@ -78,7 +106,7 @@ fn scalar_discard_and_terminated_guards_share_actual_replay_work_and_backing_lim
             assert_eq!(allocation.live, 0);
             assert!(allocation.allocated <= debit);
             assert!(allocation.highwater <= debit);
-            // replay() also asserts H006 and unchanged metrics on retry after
+            // observed() also asserts H006 and unchanged metrics on retry after
             // refusal, using this same Preparation/Session, without a reset.
         }
     }
