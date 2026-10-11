@@ -52,12 +52,10 @@ pub(crate) fn authenticate(
         let item = program
             .type_at(ordinal)
             .ok_or_else(|| cleanup_error("selected Vec current directory is incomplete"))?;
-        if &item.id == id {
-            if current.replace(item).is_some() {
-                return Err(cleanup_error(
-                    "selected Vec current directory repeats its identity",
-                ));
-            }
+        if &item.id == id && current.replace(item).is_some() {
+            return Err(cleanup_error(
+                "selected Vec current directory repeats its identity",
+            ));
         }
     }
     let current = current

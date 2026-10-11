@@ -40,10 +40,8 @@ pub(in crate::cleanup::inventory_builder) fn declaration_fields<'a>(
     let mut matching = None;
     for ordinal in 0..program.type_count() {
         let item = program.type_at(ordinal).ok_or_else(fail)?;
-        if item.id == *declaration {
-            if matching.replace(item).is_some() {
-                return Err(fail());
-            }
+        if item.id == *declaration && matching.replace(item).is_some() {
+            return Err(fail());
         }
     }
     let record = matching.ok_or_else(fail)?;

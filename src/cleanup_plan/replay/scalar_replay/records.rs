@@ -125,10 +125,8 @@ pub(super) fn expression(
             )?;
             let mut found = None;
             for current in declared {
-                if current.id == *field {
-                    if found.replace(current).is_some() {
-                        return Ok(Some(false));
-                    }
+                if current.id == *field && found.replace(current).is_some() {
+                    return Ok(Some(false));
                 }
             }
             Ok(Some(found.is_some_and(|current| {
