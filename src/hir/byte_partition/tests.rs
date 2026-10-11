@@ -284,12 +284,18 @@ fn private_owner_refuses_foreign_carriers_and_actual_call_or_plan_mutations() {
             1 => args[0].ty = ResolvedType::I64,
             _ => args[0].ownership = OwnershipMode::Borrow,
         }
-        let mut work = usize::MAX;
+        // Actual receivers renew the full compiler proof before acquiring the
+        // additional graph receipt. Type/mode mutations belong to that proof,
+        // not to the graph's narrower admitted-type/call-universe predicate.
         assert!(
-            owner.receive_current_graph(&mut work).is_err(),
-            "conversion mutation{mutation}"
+            owner.revalidate_compiler().is_err(),
+            "compiler conversion mutation{mutation}"
         );
-        assert_eq!(work, 0);
+        if mutation == 0 {
+            let mut work = usize::MAX;
+            assert!(owner.receive_current_graph(&mut work).is_err());
+            assert_eq!(work, 0, "foreign-call graph refusal is sticky");
+        }
     }
     let unsupported = SOURCE.replace(
         "if vec_len<Bytes>(values)==3usize {7}else{0}",
