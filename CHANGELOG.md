@@ -842,6 +842,8 @@ format: `Unreleased` then release buckets, grouped by impact.
 
 ## Unreleased
 
+- Author public `std.pattern` acceptance gates for #706: four compile-once fixtures independently exhaust ASCII bytes in header/KV key and value positions, plus four 8192-byte valid/nonmatching records under the unchanged 1,000,000-step interpreter default. The same authenticated project snapshot supplies native `-O0`/`-O2` capture results, four-invocation physical settlement and repeated Core Wasm settlement with adjacent arena refusal. These gates are unexecuted; the full issue, long-input usefulness and performance claims remain pending.
+
 - Add phase-owned borrowed function and exact expression-ID directories to byte
   helper ModuleIndex queries (#738), retaining independent unseen-target proof,
   original census order and pointer authority. Fixed-pass radix work avoids
