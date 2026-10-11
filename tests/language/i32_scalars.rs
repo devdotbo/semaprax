@@ -148,7 +148,10 @@ fn children(expression: &hir::ResolvedExpr) -> Vec<&hir::ResolvedExpr> {
         | hir::ResolvedExprKind::Upcast { source: value }
         | hir::ResolvedExprKind::Yield { request: value } => vec![value.as_ref()],
         hir::ResolvedExprKind::Binary { left, right, .. } => vec![left.as_ref(), right.as_ref()],
-        hir::ResolvedExprKind::Block { statements, tail } => statements
+        hir::ResolvedExprKind::Block { statements, tail }
+        | hir::ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => statements
             .iter()
             .map(|statement| statement.value())
             .chain(std::iter::once(tail.as_ref()))

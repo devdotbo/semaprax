@@ -161,7 +161,10 @@ fn children(expression: &hir::ResolvedExpr) -> Vec<&hir::ResolvedExpr> {
         hir::ResolvedExprKind::ByteRange {
             source, start, end, ..
         } => vec![source.as_ref(), start.as_ref(), end.as_ref()],
-        hir::ResolvedExprKind::Block { statements, tail } => statements
+        hir::ResolvedExprKind::Block { statements, tail }
+        | hir::ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => statements
             .iter()
             .map(|statement| statement.value())
             .chain(std::iter::once(tail.as_ref()))
@@ -489,7 +492,10 @@ fn replace_f64_in_expression(expression: &mut hir::ResolvedExpr, bits: u64) -> b
         hir::ResolvedExprKind::Binary { left, right, .. } => {
             replace_f64_in_expression(left, bits) || replace_f64_in_expression(right, bits)
         }
-        hir::ResolvedExprKind::Block { statements, tail } => {
+        hir::ResolvedExprKind::Block { statements, tail }
+        | hir::ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             statements
                 .iter_mut()
                 .any(|statement| replace_f64_in_expression(statement.value_mut(), bits))
@@ -552,7 +558,10 @@ fn replace_f32_in_expression(expression: &mut hir::ResolvedExpr, bits: u32) -> b
         hir::ResolvedExprKind::Binary { left, right, .. } => {
             replace_f32_in_expression(left, bits) || replace_f32_in_expression(right, bits)
         }
-        hir::ResolvedExprKind::Block { statements, tail } => {
+        hir::ResolvedExprKind::Block { statements, tail }
+        | hir::ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             statements
                 .iter_mut()
                 .any(|statement| replace_f32_in_expression(statement.value_mut(), bits))

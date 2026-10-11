@@ -49,7 +49,7 @@ fn digest(root: &Path) -> String {
         hash.update((bytes.len() as u64).to_le_bytes());
         hash.update(bytes);
     }
-    format!("{:x}", hash.finalize())
+    format!("{:x}", crate::digest_hex::LowerHex(hash.finalize()))
 }
 fn generate(root: &Path, prefix: &str) -> Result<(), Vec<crate::diagnostic::Diagnostic>> {
     let entries = [
