@@ -58,14 +58,16 @@ fn utf8_stream_owned_request_preserves_empty_first_array_unicode_and_unbounded_w
             &source,
             profile,
         )?;
-        assert!(project::verify_json_codec_source_with_profile(
-            &revision,
-            "src/schema.spx",
-            "unicode.input",
-            &source,
-            project::JsonCodecProfile::StreamOwnedRequest,
-        )
-        .is_err());
+        assert!(
+            project::verify_json_codec_source_with_profile(
+                &revision,
+                "src/schema.spx",
+                "unicode.input",
+                &source,
+                project::JsonCodecProfile::StreamOwnedRequest,
+            )
+            .is_err()
+        );
         Ok(source)
     })
     .unwrap();
@@ -92,6 +94,43 @@ if written==byte_len(bytes){0}else{1}
 },}}
 @id("consumer.main") fn main()->i64{0}
 "#;
+    std::fs::write(root.join("src/app.spx"), canonical(&application)).unwrap();
+    let errors =
+        project::with_authenticated_project(&root.join("semaprax.toml"), |_| Ok(())).unwrap_err();
+    assert!(
+        errors
+            .iter()
+            .any(|error| matches!(error.code, "SPX-T258" | "SPX-T216")),
+        "{errors:?}"
+    );
+    // Decode settles the input in its callee epilogue before Outcome publication.
+    // Only the later scalar decision call can encode or publish stdout.
+    let application = application
+        .replace(
+            r#"@id("consumer.receive") fn receive()->Outcome uses{process.stdin.read}{
+let normalized=normalize();match own normalized{
+Input::Error{code,offset,field}=>{return Outcome::Error{code:code,offset:offset,field:field};},
+Input::Ready{bytes,length}=>{return decode(byte_range(bytes_as_slice(bytes),0usize,length));},
+}}"#,
+            r#"@id("consumer.receive") fn receive(bytes:own Bytes,length:usize)->Outcome{
+decode(byte_range(bytes_as_slice(bytes),0usize,length))
+}"#,
+        )
+        .replace(
+            r#"@id("consumer.command") fn command()->i64 uses{process.stdin.read,process.stdout.write}{
+let outcome=receive();match own outcome{"#,
+            r#"@id("consumer.decide") fn decide(outcome:own Outcome)->i64 uses{process.stdout.write}{
+match own outcome{"#,
+        )
+        .replace(
+            r#"@id("consumer.main") fn main()->i64{0}"#,
+            r#"@id("consumer.command") fn command()->i64 uses{process.stdin.read,process.stdout.write}{
+let normalized=normalize();match own normalized{
+Input::Error{code,offset,field}=>2,
+Input::Ready{bytes,length}=>{let outcome=receive(bytes,length);decide(outcome)},
+}}
+@id("consumer.main") fn main()->i64{0}"#,
+        );
     std::fs::write(root.join("src/app.spx"), canonical(&application)).unwrap();
     let binary = root.join(format!("utf8-json{}", std::env::consts::EXE_SUFFIX));
     project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {

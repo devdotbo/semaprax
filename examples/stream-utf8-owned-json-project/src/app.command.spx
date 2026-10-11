@@ -10,11 +10,9 @@ use function @id("catalog.request.json.utf8.owned.encode") from catalog.schema a
 permit { process.args.read, process.stderr.write, process.stdin.read, process.stdout.write }
 
 @id("catalog.receive")
-fn receive() -> Outcome
-    uses { process.stdin.read }
+fn receive(bytes: own Bytes, length: usize) -> Outcome
 {
-    let normalized = normalize();
-    match own normalized { StreamInput::Error { code, offset, field } => { return Outcome::Error { code: code, offset: offset, field: field }; }, StreamInput::Ready { bytes, length } => { return decode(byte_range(bytes_as_slice(bytes), 0usize, length)); }, }
+    decode(byte_range(bytes_as_slice(bytes), 0usize, length))
 }
 
 @id("catalog.bump")
@@ -23,12 +21,19 @@ fn bump(value: own Row) -> Row
     match own value { Row { number, text } => Row { number: number + 1, text: text }, }
 }
 
+@id("catalog.decide")
+fn decide(outcome: own Outcome) -> i64
+    uses { process.stdout.write }
+{
+    match own outcome { Outcome::Error { code, offset, field } => 2, Outcome::Decoded { labels, rows } => { if vec_len<Row>(rows) == 0usize { 2 } else { let first = vec_clone_at<Row>(rows, 0usize); let revised = bump(first); let revised_rows = vec_replace<Row>(rows, 0usize, revised); let rendered = encode(labels, revised_rows, 131072usize); match own rendered { Encoded::Refused { required } => 2, Encoded::Encoded { text } => { let bytes = str_as_bytes(string_as_str(text)); let written = stdout_write(bytes); if written == byte_len(bytes) { 0 } else { 1 } }, } } }, }
+}
+
 @id("catalog.command")
 fn command() -> i64
     uses { process.stdin.read, process.stdout.write }
 {
-    let outcome = receive();
-    match own outcome { Outcome::Error { code, offset, field } => 2, Outcome::Decoded { labels, rows } => { if vec_len<Row>(rows) == 0usize { 2 } else { let first = vec_clone_at<Row>(rows, 0usize); let revised = bump(first); let revised_rows = vec_replace<Row>(rows, 0usize, revised); let rendered = encode(labels, revised_rows, 131072usize); match own rendered { Encoded::Refused { required } => 2, Encoded::Encoded { text } => { let bytes = str_as_bytes(string_as_str(text)); let written = stdout_write(bytes); if written == byte_len(bytes) { 0 } else { 1 } }, } } }, }
+    let normalized = normalize();
+    match own normalized { StreamInput::Error { code, offset, field } => 2, StreamInput::Ready { bytes, length } => { let outcome = receive(bytes, length); decide(outcome) }, }
 }
 
 @id("catalog.app.main")

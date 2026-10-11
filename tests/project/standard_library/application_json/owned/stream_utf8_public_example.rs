@@ -1,5 +1,5 @@
 //! Public bootstrap and native stdin execution for the streamed UTF-8 profile.
-use super::public_example::{compile_native, execute};
+use super::public_example::{assert_original_stream_controls, compile_native, execute};
 use super::*;
 
 const EXPECTED: &[u8] = r#"{"labels":["","\u0000","é","é"],"rows":[{"number":5,"text":"é\u0000😀"},{"number":4,"text":""},{"number":4,"text":""}]}"#.as_bytes();
@@ -69,6 +69,10 @@ fn public_stream_utf8_owned_request_bootstraps_and_runs_native_stdin() {
     })
     .unwrap();
     std::fs::copy(&generated, root.join("src/schema.spx")).unwrap();
+    assert_original_stream_controls(
+        &root,
+        include_str!("stream-utf8-owned-json-project-original.txt"),
+    );
     std::fs::copy(root.join("src/app.command.spx"), root.join("src/app.spx")).unwrap();
 
     let c = project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {

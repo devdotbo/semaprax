@@ -60,6 +60,31 @@ pub(super) fn execute(binary: &std::path::Path, input: &[u8]) -> std::process::O
     output
 }
 
+// Retain the original bytes independently of the repaired committed examples.
+// The pure receive callee settles its owned input before publishing Outcome;
+// decide is a later call and therefore cannot encode while that input is live.
+pub(super) fn assert_original_stream_controls(root: &std::path::Path, original: &str) {
+    let app = root.join("src/app.spx");
+    let bootstrap = std::fs::read(&app).unwrap();
+    std::fs::write(&app, original).unwrap();
+    let errors =
+        project::with_authenticated_project(&root.join("semaprax.toml"), |_| Ok(())).unwrap_err();
+    assert!(
+        errors.iter().any(|error| error.code == "SPX-G170"),
+        "{errors:?}"
+    );
+    std::fs::write(&app, canonical(original)).unwrap();
+    let errors =
+        project::with_authenticated_project(&root.join("semaprax.toml"), |_| Ok(())).unwrap_err();
+    assert!(
+        errors
+            .iter()
+            .any(|error| matches!(error.code, "SPX-T258" | "SPX-T216")),
+        "{errors:?}"
+    );
+    std::fs::write(app, bootstrap).unwrap();
+}
+
 #[test]
 fn public_owned_json_command_bootstraps_and_runs_valid_and_malformed_stdin() {
     let source = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -103,6 +128,10 @@ fn public_owned_json_command_bootstraps_and_runs_valid_and_malformed_stdin() {
     })
     .unwrap();
     std::fs::copy(&generated, root.join("src/schema.spx")).unwrap();
+    assert_original_stream_controls(
+        &root,
+        include_str!("owned-json-command-project-original.txt"),
+    );
     std::fs::copy(root.join("src/app.command.spx"), root.join("src/app.spx")).unwrap();
 
     let c = project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
