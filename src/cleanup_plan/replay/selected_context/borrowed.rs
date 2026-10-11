@@ -242,8 +242,7 @@ impl Lease<'_> {
         budget.charge(function, 1, "borrowed plan empty ownership headers")?;
         let plan = &function.cleanup_plan;
         if !plan.slots.is_empty()
-            || !plan.flags.is_empty()
-            || !plan.entry_state.live_owned_parameters.is_empty()
+                || !plan.entry_state.live_owned_parameters.is_empty()
             || !plan.entry_state.conditional_owned_parameters.is_empty()
         {
             return Err(replay_error(
