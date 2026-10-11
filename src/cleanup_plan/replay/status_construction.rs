@@ -330,8 +330,6 @@ fn cases(
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[cfg(test)]
-    mod borrowed;
     fn program() -> ResolvedProgram {
         let source = crate::check(
             r#"module replay.status_owner;
