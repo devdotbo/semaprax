@@ -163,7 +163,7 @@ fn actual_metadata_probes_preserve_exact_one_short_cumulative_failure_without_al
 
 #[test]
 fn borrowed_option_inventory_matches_independent_ordinary_inventory_and_whole_drop_budget() {
-    let source = r#"module option.helper; @id("option.read") fn read(view:borrow Slice<u8>,at:usize)->i64 {match byte_get(view,at) {Option::Some {value}=>i64_from_u8(value),Option::None {}=>0,}}"#;
+    let source = r#"module option.helper; @id("option.read") fn read(view:borrow Slice<u8>,at:usize)->i64 {match byte_get(view,at) {Option::Some {value}=>i64_from_u8(value),Option::None {}=>0,}} @id("option.main") fn main()->i64 { 0 }"#;
     let program =
         crate::hir::resolve(&crate::check(source, "option-inventory.spx").unwrap()).unwrap();
     let function = &program.functions[0];
