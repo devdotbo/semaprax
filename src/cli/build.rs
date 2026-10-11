@@ -6,7 +6,7 @@ use same_file::Handle;
 use semaprax::diagnostic::Diagnostic;
 
 use super::project::{
-    is_project_manifest, normalize_project_path, resolve_positional, DEFAULT_MANIFEST,
+    DEFAULT_MANIFEST, is_project_manifest, normalize_project_path, resolve_positional,
 };
 
 pub(crate) struct BuildOptions {
@@ -578,7 +578,9 @@ pub(crate) fn parse_with_capabilities(
             || !exports.is_empty()
             || function.is_some()
         {
-            eprintln!("fused-construction-v1 requires a source file, --target native or wasm, no --export or --function");
+            eprintln!(
+                "fused-construction-v1 requires a source file, --target native or wasm, no --export or --function"
+            );
             return Err(2);
         }
         Some(managed.ok_or_else(|| {
@@ -593,22 +595,21 @@ pub(crate) fn parse_with_capabilities(
         None
     };
     if let Some(profile) = &profile {
-        if fused_account.is_none() {
-            if !matches!(profile.as_str(), "internal-strings-v1" | "text-toolkit-v1")
+        if fused_account.is_none()
+            && (!matches!(profile.as_str(), "internal-strings-v1" | "text-toolkit-v1")
                 || !matches!(&input, BuildInput::Source(_))
                 || !matches!(target.as_str(), "web" | "wasm")
-                || !(1..=32).contains(&exports.len())
-            {
-                eprintln!(
+                || !(1..=32).contains(&exports.len()))
+        {
+            eprintln!(
                 "--profile {profile} requires a source file, --target web or wasm, and 1..=32 --export selections"
             );
-                if target == "native" && matches!(&input, BuildInput::Source(_)) {
-                    eprintln!(
+            if target == "native" && matches!(&input, BuildInput::Source(_)) {
+                eprintln!(
                     "for a native command, omit --profile: semaprax build <file> --target native --output <fresh-path>; text operations are selected from the source"
                 );
-                }
-                return Err(2);
             }
+            return Err(2);
         }
     }
     let available_targets = target_catalog(&input, private_toolchain);
