@@ -4,15 +4,20 @@
 use crate::construction_fusion::domain::owner_core::{Child, Core, Loan, Receipt, Runtime};
 use crate::construction_fusion::{
     domain::{Issuer, ModuleIdentity, Refusal},
-    partition::{operation, Preparation},
+    partition::{Preparation, operation},
 };
 use std::{
     alloc::Layout,
     sync::atomic::{AtomicU64, Ordering},
 };
+mod allocation;
 pub(crate) mod authority;
+pub(crate) mod flat;
 pub(crate) mod funding;
+pub(in crate::interpreter) mod invocation;
 pub(crate) mod loans;
+mod values;
+mod whole;
 static NEXT_INVOCATION: AtomicU64 = AtomicU64::new(1);
 /// Implemented only by the actual evaluator account adapter. The handle must
 /// borrow/share the SAME monotonic invocation account without allocation or
@@ -25,6 +30,7 @@ struct State<R: Runtime> {
     children: Vec<Child<'static>>,
 }
 /// Affine private receipt: no Clone, serializer, pointer adapter, or public ABI.
+#[derive(Debug, PartialEq)]
 pub(crate) struct Owner {
     invocation: u64,
     context: usize,
@@ -115,7 +121,7 @@ impl<R: InvocationRuntime> Registry<R> {
                     return Err((
                         self.preparation_failure(Preparation::Authority(Refusal::Metadata)),
                         owner,
-                    ))
+                    ));
                 }
             }
         } else {
@@ -153,7 +159,7 @@ impl<R: InvocationRuntime> Registry<R> {
                     return Err((
                         self.preparation_failure(Preparation::Authority(Refusal::Range)),
                         owner,
-                    ))
+                    ));
                 }
             }
         };
@@ -230,6 +236,15 @@ impl<R: InvocationRuntime> Registry<R> {
         })();
         self.select(result)
     }
+    pub(super) fn reserve_consumer(&mut self, layout: Layout) -> Result<(), Refusal> {
+        let result = self
+            .active()
+            .and_then(|()| self.runtime.reserve_metadata(layout));
+        self.select(result)
+    }
+    pub(super) fn preflight_owner(&mut self, owner: &Owner) -> Result<(), Refusal> {
+        self.apply(owner, false, |core, child| core.check_move(child))
+    }
     pub(crate) fn moved(&mut self, owner: &mut Owner) -> Result<(), Refusal> {
         owner.receipt = self.apply(owner, false, |core, child| {
             core.move_owner(child)?;
@@ -248,6 +263,11 @@ impl<R: InvocationRuntime> Registry<R> {
             Ok(child.receipt())
         })?;
         Ok(())
+    }
+    pub(crate) fn extent(&mut self, owner: &Owner) -> Result<usize, Refusal> {
+        self.apply(owner, false, |core, child| {
+            core.authenticate_receipt(child, owner.receipt)
+        })
     }
     pub(crate) fn deep_clone(&mut self, owner: &Owner) -> Result<R::Owner, Refusal> {
         self.apply(owner, false, |core, child| core.deep_clone(child))
@@ -318,3 +338,14 @@ impl<R: InvocationRuntime> Registry<R> {
 }
 #[cfg(test)]
 mod tests;
+
+// Registration is not evaluator authority. The ordinary dispatcher rejects
+// before evaluating arguments; only the future checked owner entry may install.
+pub(super) fn refuse_ordinary_operation(op: crate::byte_ops::ByteOp) -> Result<(), super::Flow> {
+    match op {
+        crate::byte_ops::ByteOp::Partition => Err(super::Flow::Guard(
+            "byte partition requires its sealed ordinary interpreter receiver",
+        )),
+        _ => Ok(()),
+    }
+}

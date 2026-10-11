@@ -59,6 +59,30 @@ fn ordinary_capacity_keeps_256_and_private_capacity_stays_64() {
     private.drop_owner(&mut children[0]).unwrap();
     let detached = function.clone();
     assert!(LoanCapacity::checked(&program, &detached).is_err());
+    let source = crate::parse(
+        "module partition.seal; @id(\"seal.main\") fn main()->i64 {let original=bytes_zeroed(1usize);let parts=bytes_partition(original,1usize,1usize);if vec_len<Bytes>(parts)==1usize {7}else{0}}",
+        "partition-seal.spx",
+    ).unwrap();
+    let sealed = crate::hir::byte_partition::ValidatedPartitionProgram::compile_source(
+        &source,
+        &mut usize::MAX,
+    )
+    .unwrap();
+    let current = &sealed.program().functions[0];
+    let mut remaining = usize::MAX;
+    let capacity = LoanCapacity::from_source(&sealed, current, &mut remaining).unwrap();
+    assert!(std::ptr::eq(capacity.program(), sealed.program()));
+    let used = usize::MAX - remaining;
+    let mut exact = used;
+    LoanCapacity::from_source(&sealed, current, &mut exact).unwrap();
+    assert_eq!(exact, 0);
+    let mut short = used - 1;
+    assert!(LoanCapacity::from_source(&sealed, current, &mut short).is_err());
+    assert_eq!(short, 0);
+    let copied = current.clone();
+    let mut foreign_work = usize::MAX;
+    assert!(LoanCapacity::from_source(&sealed, &copied, &mut foreign_work).is_err());
+    assert_eq!(foreign_work, 0);
 }
 #[test]
 fn exact_end_edge_retires_one_loan_and_copied_descriptor_stays_stale() {
@@ -194,4 +218,85 @@ fn finite_adapter_borrows_the_actual_logical_counters_without_reset_or_refund() 
     }
     assert_eq!(events, crate::byte_data_capacity::MAX_BYTES_COPY_SITES);
     assert_eq!(payload, u64::from(events));
+}
+
+#[test]
+fn affine_value_owner_cannot_copy_and_view_alias_never_owns_the_loan() {
+    use crate::interpreter::OwnedBytesValue;
+    let program = fixture(1);
+    let function = &program.functions[0];
+    let authority = LoanCapacity::checked(&program, function).unwrap();
+    let mut receiver = Loans::new(authority, account(usize::MAX)).unwrap();
+    let mut owners = receiver
+        .partition(vec![7].into_boxed_slice(), 1, 1)
+        .unwrap();
+    let mut value = OwnedBytesValue::partition(1, owners.pop().unwrap());
+    assert!(value.borrow_alias().is_err());
+    let loan = &function.loan_plan.loans[0];
+    while function.loan_plan.endpoints[receiver.point as usize].point != loan.start {
+        let edge = function
+            .loan_plan
+            .edges
+            .iter()
+            .find(|edge| edge.from == receiver.point)
+            .unwrap();
+        receiver.advance(edge.to).unwrap();
+    }
+    let borrowed = value
+        .borrow_partition_bytes(&mut receiver, loan.id)
+        .unwrap();
+    let borrowed_alias = borrowed.borrow_alias().unwrap();
+    assert_eq!(
+        borrowed_alias
+            .read_partition_bytes(&mut receiver, |bytes| bytes[0])
+            .unwrap(),
+        7
+    );
+    assert!(borrowed_alias
+        .borrow_alias()
+        .unwrap()
+        .move_partition(&mut receiver)
+        .is_err());
+    let view = borrowed
+        .partition_view_as_slice(&mut receiver, loan.origin.root.clone())
+        .unwrap();
+    let alias = view.clone();
+    let range = alias.range(0, 1);
+    assert_eq!(
+        view.read_partition(&mut receiver, |bytes| bytes[0])
+            .unwrap(),
+        7
+    );
+    assert_eq!(
+        range
+            .read_partition(&mut receiver, |bytes| bytes[0])
+            .unwrap(),
+        7
+    );
+    drop(alias); // no Loan clone and no physical end_borrow
+    assert_eq!(
+        view.read_partition(&mut receiver, |bytes| bytes[0])
+            .unwrap(),
+        7
+    );
+    loop {
+        let (index, edge) = function
+            .loan_plan
+            .edges
+            .iter()
+            .enumerate()
+            .find(|(_, edge)| edge.from == receiver.point)
+            .unwrap();
+        receiver.advance(edge.to).unwrap();
+        if loan.end_edges.contains(&(index as u16)) {
+            break;
+        }
+    }
+    value.move_partition(&mut receiver).unwrap();
+    value.store_partition(&mut receiver, 0, &[9]).unwrap();
+    assert!(view.read_partition(&mut receiver, |_| ()).is_err());
+    assert!(borrowed
+        .read_partition_bytes(&mut receiver, |_| ())
+        .is_err());
+    value.settle_partition(&mut receiver).unwrap();
 }

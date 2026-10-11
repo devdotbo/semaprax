@@ -219,7 +219,7 @@ fn hostile_alias_refuses_before_first_leaf_and_retains_unsettled_root() {
     let Value::Bytes(bytes) = &record.fields[&hir::DeclarationId::new("fixture.state.z")] else {
         panic!()
     };
-    let alias = bytes.bytes.clone();
+    let alias = bytes.bytes.borrow_alias().unwrap();
     let mut budget = OwnedFrameBudget::new(100).unwrap();
     budget.cancel();
     let terminal = staged(start_owned_frame(&plan, argument, &mut budget));

@@ -296,19 +296,21 @@ remain required; these controls do not qualify an ordinary admitted program.
 ### Ordinary loan receiver checkpoint
 
 The pending ordinary interpreter receiver holds the actual fully validated
-function and its immutable loan plan. Its separately charged fixed loan table
-uses the existing 256-loan limit; the private fused Core's 64-view path remains
+function and its immutable loan plan. Its separately charged local loan table
+retains the existing 256-loan limit; the private fused Core's 64-view path remains
 unchanged. A copied view descriptor carries no finalization ownership: one
 registry entry retains the affine Core loan. Exact CFG `end_edges`, rather than
 node-union kills, retire that entry and stale descriptors fail sticky. Header,
 table, Core and replacement backing requests debit the same invocation account
 before allocation; no teardown refund replenishes it.
 
-This private receiver has no production authority constructor or ordinary Value
-installer yet. The eventual installer must bind each runtime child to the
-current checked owner root and drive transitions from actual execution. Public
-copy-out must precede registry teardown. Its authored controls are not evidence
-of source admission or complete native/Wasm/public partition support.
+The private loan-capacity constructor now receives only the immutable
+original-source owner and an exact current function pointer, after its complete
+compiler checks and metered graph proof. It has no ordinary Value installer.
+The eventual installer must bind each runtime child to the current checked owner
+root and drive transitions from actual execution. Public copy-out must precede
+registry teardown. Its authored controls are not evidence of source admission
+or complete native/Wasm/public partition support.
 
 ### Pending ordinary funding adapter
 
@@ -333,6 +335,51 @@ host policy before installing the receiver. Computing the forecast never grants
 source authority or automatically creates that funding. The ordinary producer,
 Value installer, retained-frame/public SDK route and all-target activation remain
 closed until their complete receiving obligations are joined.
+
+### Affine interpreter carrier checkpoint
+
+The closed interpreter carrier holds a partition child as an affine owner. The
+central ordinary Bytes alias receiver returns a guard for this carrier rather
+than copying its receipt. Legacy whole backing aliases and private fused aliases
+retain their existing behavior. A partition Slice alias copies only an opaque
+view descriptor; the checked loan table retains the single finalization owner.
+Scoped reads authenticate that descriptor on every use, and actual loan-plan
+end edges expire all its aliases before owner renewal.
+
+The authored carrier control covers descriptor aliasing, exact edge expiry,
+move/store after expiry, stale-view sticky refusal and leaf settlement. The
+ordinary evaluator installer, borrowed Bytes parameter adapter, aggregate leaf
+finalization, and cross-function execution remain closed pending the fresh
+validated partition callgraph and all ordinary consumers. These private controls
+do not qualify ordinary source admission or public carrier escape.
+
+Borrowed Bytes uses the same nonowning view descriptor as Slice. Its central
+alias operation copies only that descriptor; Bytes-to-Slice conversion retains
+the exact checked loan instead of creating an Arc or another Core loan. Owner
+move/store/finalizer adapters reject view carriers. Reads after the actual end
+edge fail for both Bytes and Slice aliases. This receiving adapter remains
+private and needs the joined installer to bind the actual source owner root.
+
+### Flat container receiver checkpoint
+
+The private affine container retains the original paid Vec<Owner> output; it
+creates no second value array or Arc control block. Its actual header is charged
+before partition publication. Consuming iteration moves that same array into
+IntoIter<Owner> after preflight and an exact paid iterator header. Extracted
+children survive container settlement in the held invocation registry. Clear
+preflights every child before its first finalizer; leaf settlement uses ascending
+row order and stays available after sticky refusal once live loans end.
+
+These private receiving operations are not an ordinary vec_pop declaration or
+a language IterStep constructor. Actual Value dispatch, current source/root
+binding, canonical call/result handoff and language iterator publication still
+require the sealed entry join. The authored controls are unexecuted.
+
+The private funding upper also includes the exact flat container and iterator
+headers per partition. Its eventual installer must prove at most one consuming
+iterator transition per partition, as well as one consuming partition per whole
+backing event. Additional container construction cannot reuse that header debit.
+The bound still grants no host funding or source authority.
 
 ### Private current-source owner (unqualified receiver integration)
 
@@ -366,6 +413,44 @@ provenance remains closed. Runtime funding and whole-owner provenance remain
 separate mandatory receiver checks. Native and Wasm ordinary lowering retain
 explicit refusal until their sealed receivers join this factory.
 
+The interpreter now has distinct affine flat Vec and iterator Value carriers.
+Central semantic copy refuses both; default legacy/fused finalizers reject them
+before any physical action. Private exact consumer adapters retain the paid
+array through Value construction and consuming conversion and route canonical
+leaf/container settlement through its actual Loans receiver. This still does
+not install a registry in the ordinary evaluator or authorize a raw Value as a
+source proof; the sealed entry and language IterStep publication remain pending.
+
+### Invocation-held function frame checkpoint
+
+One ordinary interpreter registry remains alive through the complete invocation.
+Entering a checked function moves its caller's actual loan table and CFG point
+into a paid frame directory. A nonreused frame nonce distinguishes reused local
+loan slots from stale descriptors. Returning retires only the callee's physical
+loans and restores the caller table; affine returned children retain the same
+registry and backing context.
+
+The directory's complete replacement backing and overlapping transient header
+are prepaid before allocation. A callee allocates only its actual local loan
+slots; a scalar helper allocates none. Already-paid idle arrays and directory
+capacity are reused without charging a nonexistent allocation. Actual new
+requests remain cumulative through repeated calls, with no refund on return.
+The existing funding forecast covers one base frame; it does not certify
+arbitrary repeated frame allocations or replace the entry's finite account.
+
+A borrowed parameter descriptor refers directly to its held caller loan.
+Canonical Borrow-parameter-only helpers have empty loan plans: the receiver does
+not invent a callee LoanId, start point or end edge. Same-invocation identity,
+an actual held ancestor frame, exact current parameter pointer, Borrow mode and
+Bytes/Slice type are checked before binding the descriptor. Only the caller's
+real end edge retires its one physical loan. Actual argument-root correspondence
+and call staging still belong to the closed installer.
+
+Per-function 256-loan validation alone is not proof that a shared backing has at
+most 256 simultaneous physical views across calls. The eventual entry must join
+an independently checked current-callgraph view bound before using that Core
+inventory. These frame and alias controls do not authorize ordinary entry,
+public carrier escape, or a higher view quota.
 ### Private checked Core-Wasm producer checkpoint
 
 The internal Core-Wasm receiver accepts only `ValidatedPartitionProgram` from
@@ -455,3 +540,60 @@ receiving and the complete caller-funded native account remain pending.
 Two owning source bodies retain original 4096/count geometry at O0/O2 and actual
 four-code failure/poison-result/reentry controls. These are authored controls,
 not an executed qualification or completed cross-backend admission claim.
+### Closed interpreter invocation account and whole backing receiver
+
+The private interpreter receiver now lends one stack-held account into the
+optional evaluator state and the invocation loan registry. The account borrows
+the actual allocation-event and payload counters; no callee constructs a new
+allowance or copies a counter snapshot. Its borrowed handle preserves the
+account lifetime through a private object interface. Ordinary evaluators keep
+None and their existing allocation behavior.
+
+Selected zeroed, bounded-zeroed, copy, and explicit owned-leaf deep-clone
+receivers debit that same account before each exact boxed payload allocation.
+Both allocation-ID checks consult its current event count. A direct whole
+backing carries a nonreused account identity and is affine: ordinary aliases
+cannot clone it. Partition handoff moves its original Box without conversion,
+payload copying, or another event debit; semantic precommit faults return that
+same owner. Foreign-account whole carriers are administrative refusals rather
+than operation statuses. Logical clone exhaustion retains the ordinary Vec
+allocation failure; exhausted metadata funding remains administrative.
+
+Preparation consumes the shared current-source view bound once at the exact
+invocation entry and pays the invocation header remainder plus actual local
+loan storage before allocation. Funding remains explicit caller input, not
+an amount automatically minted from a forecast. The older funding::upper
+describes the typed handle and one base frame only; it does not fund arbitrary
+dynamic frames or certify this new invocation wrapper.
+
+This is a closed receiving checkpoint, not ordinary source activation. The
+actual root/argument/CFG installer, direct-whole view registry, every flat
+Vec/IterStep publication, canonical leaf finalization, and final public copyout
+must still join before installing the optional evaluator state. Effects,
+resumption, imported foreign carriers, and unsupported view paths remain
+outside the sealed profile. Receiver tests prepare a real source-held owner
+but invoke individual receivers; they do not claim whole-program execution.
+
+### Closed whole-view holding and move-out
+
+The ordinary interpreter registry has a separate whole-holder constructor.
+It takes the already allocated complete Box and prepays the actual context,
+one owner slot, checked ordinary view table, temporary headers, fixed identity
+boxes and registry replacement overlap before publication. It accepts an empty
+whole owner without changing the partition operation's positive-width rule.
+No payload allocation or ordinary event debit occurs while holding it.
+
+The Core records that this context was formed for a whole owner. Move-out
+requires its exact affine child, zero remaining views, one live complete slot,
+and the current backing; it moves the original owner and invalidates the old
+receipt. A partition child cannot pass this receiver, including the special
+case where one child spans all bytes. Current checked loan end edges retire
+views before move-out; administrative teardown does not certify canonical
+settlement or success.
+
+Two additional receiving bodies cover genuine current Own-root loans, exact
+CFG expiration, original-pointer preservation, independent metadata request
+sums, one-short refusal before allocation, empty whole views and child-to-whole
+refusal. These are unexecuted private receiver controls. Evaluator root binding,
+call/return transitions and all canonical finalizers still must be joined
+before ordinary source installation.

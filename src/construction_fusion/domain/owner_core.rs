@@ -125,6 +125,7 @@ pub(crate) struct Core<'a, R: Runtime> {
     width: usize,
     extent: usize,
     failure: Option<Refusal>,
+    whole: bool,
 }
 /// One-use evidence of actual metadata debits, never spendable credit or
 /// language authority. Fields are private and only the metered core creates it.
@@ -397,6 +398,7 @@ impl<'a, R: Runtime> Core<'a, R> {
             width,
             extent: count * width,
             failure: None,
+            whole: false,
         };
         core.release_last();
         Ok((core, children))
@@ -704,3 +706,5 @@ fn exact_vec<T>(count: usize) -> Vec<T> {
 }
 #[cfg(test)]
 mod tests;
+
+mod whole;

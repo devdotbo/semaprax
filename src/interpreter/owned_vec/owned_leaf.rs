@@ -49,6 +49,9 @@ impl Evaluator<'_> {
     }
     fn clone_owned_vec_leaf(&mut self, value: &Value) -> Result<Value, Flow> {
         if let Value::Bytes(value) = value {
+            if self.partition.is_some() {
+                return self.clone_accounted_bytes(value).map(Value::Bytes);
+            }
             let length = value.read(&mut self.fused, <[u8]>::len)? as u64;
             let count = self
                 .next_byte_allocation

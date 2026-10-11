@@ -831,7 +831,7 @@ fn borrow_alias(value: &Value) -> Result<Value, Flow> {
         Value::Float32(value) => Value::Float32(*value),
         Value::Float64(value) => Value::Float64(*value),
         Value::Bool(value) => Value::Bool(*value),
-        Value::Bytes(value) => Value::Bytes(value.clone()),
+        Value::Bytes(value) => Value::Bytes(value.borrow_alias()?),
         Value::String(value) => Value::String(value.clone()),
         Value::Map(value) => Value::Map(Arc::clone(value)),
         Value::Collection(value) => Value::Collection(Arc::clone(value)),

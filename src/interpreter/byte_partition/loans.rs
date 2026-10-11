@@ -2,16 +2,17 @@
 //! one owned runtime loan per plan ID. Copy descriptors never own finalization.
 //! The eventual installer must bind each Owner to the plan's actual root and
 //! drive `advance` from actual execution; this is not a source admission API.
-use super::{authority::LoanCapacity, InvocationRuntime, Owner, Registry, View};
+use super::{InvocationRuntime, Owner, Registry, View, authority::LoanCapacity};
 use crate::{
     construction_fusion::{domain::Refusal, partition::Preparation},
     loan_plan::LoanId,
 };
 use std::alloc::Layout;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) struct ViewId {
     invocation: u64,
+    frame: u64,
     index: u16,
     generation: u64,
 }
@@ -24,32 +25,34 @@ pub(crate) struct Loans<'p, R: InvocationRuntime> {
     registry: Registry<R>,
     slots: Box<[Slot]>,
     point: u16,
+    frame: u64,
+    next_frame: u64,
+    frames: Vec<frames::Frame<'p>>,
+    spare: Option<Box<[Slot]>>,
 }
 impl<'p, R: InvocationRuntime> Loans<'p, R> {
-    /// Header and complete fixed loan inventory are paid before allocation.
-    /// Construction is inaccessible to source because LoanCapacity has no
-    /// production constructor until the full ordinary factory is joined.
+    /// Header and actual checked local inventory are paid before allocation.
+    /// The source-held capacity exists, but no ordinary evaluator installer
+    /// can mint runtime roots until its complete receiving proof is joined.
     pub(super) fn metadata_layouts(capacity: &LoanCapacity<'p>) -> Result<[Layout; 3], Refusal> {
         Ok([
             Layout::new::<Self>(),
             Layout::new::<Vec<Slot>>(),
-            Layout::array::<Slot>(capacity.slots()).map_err(|_| Refusal::Metadata)?,
+            Layout::array::<Slot>(capacity.function().loan_plan.loans.len())
+                .map_err(|_| Refusal::Metadata)?,
         ])
     }
     pub(crate) fn new(capacity: LoanCapacity<'p>, mut runtime: R) -> Result<Self, Refusal> {
-        if capacity.function().loan_plan.endpoints.is_empty() {
-            return Err(Refusal::Identity);
-        }
         for layout in Self::metadata_layouts(&capacity)? {
             runtime.reserve_metadata(layout)?;
         }
         let registry = Registry::new(runtime)?;
         let mut slots = Vec::new();
         slots
-            .try_reserve_exact(capacity.slots())
+            .try_reserve_exact(capacity.function().loan_plan.loans.len())
             .expect("ordinary partition loan allocation invariant failure");
-        assert_eq!(slots.capacity(), capacity.slots());
-        slots.resize_with(capacity.slots(), || Slot {
+        assert_eq!(slots.capacity(), capacity.function().loan_plan.loans.len());
+        slots.resize_with(capacity.function().loan_plan.loans.len(), || Slot {
             generation: 0,
             view: None,
         });
@@ -58,6 +61,10 @@ impl<'p, R: InvocationRuntime> Loans<'p, R> {
             registry,
             slots: slots.into_boxed_slice(),
             point: 0,
+            frame: 1,
+            next_frame: 2,
+            frames: Vec::new(),
+            spare: None,
         })
     }
     pub(crate) fn partition(
@@ -97,6 +104,7 @@ impl<'p, R: InvocationRuntime> Loans<'p, R> {
             slot.view = Some(view);
             Ok(ViewId {
                 invocation: self.registry.invocation,
+                frame: self.frame,
                 index: id.0,
                 generation,
             })
@@ -109,12 +117,8 @@ impl<'p, R: InvocationRuntime> Loans<'p, R> {
             if id.invocation != self.registry.invocation {
                 return Err(Refusal::Identity);
             }
-            let slot = self.slots.get(id.index as usize).ok_or(Refusal::Identity)?;
-            if slot.generation != id.generation {
-                return Err(Refusal::Identity);
-            }
-            self.registry
-                .read(slot.view.as_ref().ok_or(Refusal::Identity)?, f)
+            let view = frames::view(id, self.frame, &self.slots, &self.frames)?;
+            self.registry.read(view, f)
         })();
         self.registry.select(result)
     }
@@ -130,14 +134,35 @@ impl<'p, R: InvocationRuntime> Loans<'p, R> {
             if id.invocation != self.registry.invocation {
                 return Err(Refusal::Identity);
             }
-            let slot = self.slots.get(id.index as usize).ok_or(Refusal::Identity)?;
-            if slot.generation != id.generation {
-                return Err(Refusal::Identity);
-            }
-            self.registry
-                .read_range(slot.view.as_ref().ok_or(Refusal::Identity)?, start, end, f)
+            let view = frames::view(id, self.frame, &self.slots, &self.frames)?;
+            self.registry.read_range(view, start, end, f)
         })();
         self.registry.select(result)
+    }
+    pub(super) fn active(&self) -> Result<(), Refusal> {
+        self.registry.active()
+    }
+    #[cfg(test)]
+    pub(super) fn endpoint(&self) -> u16 {
+        self.point
+    }
+    pub(super) fn reserve_consumer(&mut self, layout: Layout) -> Result<(), Refusal> {
+        self.registry.reserve_consumer(layout)
+    }
+    pub(super) fn preparation_failure(&mut self, error: Preparation) -> Preparation {
+        self.registry.preparation_failure(error)
+    }
+    pub(super) fn preflight_owner(&mut self, owner: &Owner) -> Result<(), Refusal> {
+        self.registry.preflight_owner(owner)
+    }
+    pub(crate) fn extent(&mut self, owner: &Owner) -> Result<usize, Refusal> {
+        self.registry.extent(owner)
+    }
+    pub(crate) fn moved(&mut self, owner: &mut Owner) -> Result<(), Refusal> {
+        self.registry.moved(owner)
+    }
+    pub(crate) fn deep_clone(&mut self, owner: &Owner) -> Result<R::Owner, Refusal> {
+        self.registry.deep_clone(owner)
     }
     pub(crate) fn copy_out_and_settle(&mut self, owner: &mut Owner) -> Result<R::Owner, Refusal> {
         self.registry.copy_out_and_settle(owner)
@@ -194,6 +219,15 @@ impl<'p, R: InvocationRuntime> Loans<'p, R> {
                 }
             }
         }
+        for frame in &mut self.frames {
+            for slot in &mut frame.slots {
+                if let Some(mut view) = slot.view.take() {
+                    if let Err(error) = self.registry.end_view(&mut view) {
+                        first.get_or_insert(error);
+                    }
+                }
+            }
+        }
         first.map_or(Ok(()), Err)
     }
 }
@@ -205,3 +239,20 @@ impl<R: InvocationRuntime> Drop for Loans<'_, R> {
 
 #[cfg(test)]
 mod tests;
+
+mod frames;
+
+impl Loans<'_, super::funding::BorrowedAccount<'_>> {
+    pub(super) fn account_identity(&self) -> u64 {
+        self.registry.runtime.identity()
+    }
+}
+
+impl<'p, R: InvocationRuntime> Loans<'p, R> {
+    pub(crate) fn hold_whole(&mut self, owner: R::Owner) -> Result<Owner, (Refusal, R::Owner)> {
+        self.registry.hold_whole(owner, &self.capacity)
+    }
+    pub(crate) fn take_whole(&mut self, owner: &mut Owner) -> Result<R::Owner, Refusal> {
+        self.registry.take_whole(owner)
+    }
+}

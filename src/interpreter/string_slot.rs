@@ -63,6 +63,7 @@ impl Evaluator<'_> {
                 invocation_root: root,
                 backing: Some(backing),
                 lease: None,
+                partition: None,
                 start: 0,
                 end: length,
             })

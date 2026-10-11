@@ -1163,7 +1163,7 @@ fn snapshot_environment(environment: &Environment) -> Vec<(ValueId, Value)> {
 
 fn clone_environment_value(value: &Value) -> Option<Value> {
     match value {
-        Value::Bytes(inner) => Some(Value::Bytes(inner.clone())),
+        Value::Bytes(inner) => inner.borrow_alias().ok().map(Value::Bytes),
         other => clone_scalar(other),
     }
 }
