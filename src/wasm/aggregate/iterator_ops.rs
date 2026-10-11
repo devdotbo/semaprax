@@ -1,5 +1,6 @@
 //! Core Wasm lowering for the closed owning scalar iterator protocol.
 mod owned;
+mod resume_epoch;
 use super::*;
 pub(super) const OWNED_IMPORT_COUNT: u32 = owned::IMPORT_COUNT;
 pub(super) const RECORD_IMPORT_COUNT: u32 = owned::RECORD_IMPORT_COUNT;

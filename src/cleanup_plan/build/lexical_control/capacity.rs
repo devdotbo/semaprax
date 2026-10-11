@@ -47,6 +47,7 @@ impl LexicalBuildState {
             + crate::private_capacity_contract::lexical_plan_owned_capacity(Some(&self.certificate))
                 .expect("lexical retained capacity fits")
             - std::mem::size_of::<super::super::super::LexicalControlPlan>()
+            + self.status_normal_visits.capacity()
             + self.returns.capacity() * std::mem::size_of::<PendingReturn>()
             + self
                 .returns
@@ -230,6 +231,8 @@ mod tests {
             wrapper_breaks: Vec::new(),
             building_resume: false,
             replicated_statuses: BTreeSet::new(),
+            status_normal_visits: Vec::new(),
+            status_work: 0,
             ensure_regions: Vec::new(),
             current_ensure: None,
         }

@@ -3,8 +3,8 @@ use crate::cleanup::FieldLivenessShape;
 use crate::cleanup_plan::{
     StorageId, CLEANUP_PLAN_SCHEMA_V10, CLEANUP_PLAN_SCHEMA_V11, CLEANUP_PLAN_SCHEMA_V12,
     CLEANUP_PLAN_SCHEMA_V13, CLEANUP_PLAN_SCHEMA_V14, CLEANUP_PLAN_SCHEMA_V15,
-    CLEANUP_PLAN_SCHEMA_V16, CLEANUP_PLAN_SCHEMA_V17, CLEANUP_PLAN_SCHEMA_V7,
-    CLEANUP_PLAN_SCHEMA_V8, CLEANUP_PLAN_SCHEMA_V9,
+    CLEANUP_PLAN_SCHEMA_V16, CLEANUP_PLAN_SCHEMA_V17, CLEANUP_PLAN_SCHEMA_V18,
+    CLEANUP_PLAN_SCHEMA_V7, CLEANUP_PLAN_SCHEMA_V8, CLEANUP_PLAN_SCHEMA_V9,
 };
 use crate::diagnostic::Diagnostic;
 use crate::hir::{PlaceProjection, ResolvedFunction, ResolvedProgram};
@@ -60,25 +60,29 @@ pub(super) fn nested_cleanup_graph_schema<'a>(
     }
 
     let mut has_authenticated_nested_projected_loan = false;
+    let mut lexical_replayed = false;
     for function in &functions {
         if function.loan_plan.loans.is_empty() {
             continue;
         }
+        let lexical_overlay =
+            authenticate_lexical_overlay(program, function, &mut lexical_replayed)?;
         for loan in &function.loan_plan.loans {
             if loan.origin.projections.len() < 2
-                || !matches!(
-                    function.cleanup_plan.schema,
-                    CLEANUP_PLAN_SCHEMA_V7
-                        | CLEANUP_PLAN_SCHEMA_V8
-                        | CLEANUP_PLAN_SCHEMA_V9
-                        | CLEANUP_PLAN_SCHEMA_V10
-                        | CLEANUP_PLAN_SCHEMA_V11
-                        | CLEANUP_PLAN_SCHEMA_V12
-                        | CLEANUP_PLAN_SCHEMA_V13
-                        | CLEANUP_PLAN_SCHEMA_V15
-                        | CLEANUP_PLAN_SCHEMA_V16
-                        | CLEANUP_PLAN_SCHEMA_V17
-                )
+                || !(lexical_overlay
+                    || matches!(
+                        function.cleanup_plan.schema,
+                        CLEANUP_PLAN_SCHEMA_V7
+                            | CLEANUP_PLAN_SCHEMA_V8
+                            | CLEANUP_PLAN_SCHEMA_V9
+                            | CLEANUP_PLAN_SCHEMA_V10
+                            | CLEANUP_PLAN_SCHEMA_V11
+                            | CLEANUP_PLAN_SCHEMA_V12
+                            | CLEANUP_PLAN_SCHEMA_V13
+                            | CLEANUP_PLAN_SCHEMA_V15
+                            | CLEANUP_PLAN_SCHEMA_V16
+                            | CLEANUP_PLAN_SCHEMA_V17
+                    ))
                 || !function_has_nested_storage(function)?
                 || !loan_origin_is_nested_owned_leaf(function, loan)
                 || program.is_some_and(|program| {
@@ -317,6 +321,7 @@ pub(super) fn pre_filesystem_schema_from_parts_with_renewal_authority(
                     | CLEANUP_PLAN_SCHEMA_V15
                     | CLEANUP_PLAN_SCHEMA_V16
                     | CLEANUP_PLAN_SCHEMA_V17
+                    | CLEANUP_PLAN_SCHEMA_V18
             )
         })
         && super::native_import::declares_native_rust_import(interfaces)
@@ -427,6 +432,7 @@ pub(super) fn pre_filesystem_graph_schema(
                     | CLEANUP_PLAN_SCHEMA_V15
                     | CLEANUP_PLAN_SCHEMA_V16
                     | CLEANUP_PLAN_SCHEMA_V17
+                    | CLEANUP_PLAN_SCHEMA_V18
             )
         })
         && super::native_import::declares_native_rust_import(&program.interfaces)
@@ -838,7 +844,10 @@ fn iterator_loop_schema<'a>(
     let mut has_renewal = templates
         .iter()
         .any(crate::hir::iterator_loop::template_requires_renewal);
+    let mut lexical_replayed = false;
     for function in functions {
+        let lexical_overlay =
+            authenticate_lexical_overlay(program, function, &mut lexical_replayed)?;
         let expected_renewal = crate::hir::iterator_loop::function_requires_renewal(function)
             || program.map_or_else(
                 || crate::hir::iterator_loop::function_may_require_record_renewal(function),
@@ -859,6 +868,7 @@ fn iterator_loop_schema<'a>(
                 },
             );
         if owned_iterator
+            && !lexical_overlay
             && !matches!(
                 function.cleanup_plan.schema,
                 CLEANUP_PLAN_SCHEMA_V13
@@ -882,26 +892,31 @@ fn iterator_loop_schema<'a>(
         );
         let string_replacement = crate::string_ops::replacement::requires(function);
         let byte_renewal = crate::byte_ops::requires_same_owner_set(function);
-        if (function.cleanup_plan.schema == CLEANUP_PLAN_SCHEMA_V17) != byte_renewal {
+        if !lexical_overlay
+            && (function.cleanup_plan.schema == CLEANUP_PLAN_SCHEMA_V17) != byte_renewal
+        {
             return Err(composition_error(
                 "byte-buffer renewal cleanup schema disagrees",
             ));
         }
-        if (function.cleanup_plan.schema == CLEANUP_PLAN_SCHEMA_V16)
-            != (!byte_renewal && string_replacement)
+        if !lexical_overlay
+            && (function.cleanup_plan.schema == CLEANUP_PLAN_SCHEMA_V16)
+                != (!byte_renewal && string_replacement)
         {
             return Err(composition_error(
                 "String replacement cleanup schema disagrees",
             ));
         }
-        if (function.cleanup_plan.schema == CLEANUP_PLAN_SCHEMA_V15)
-            != (!byte_renewal && !string_replacement && ordinary_renewal)
+        if !lexical_overlay
+            && (function.cleanup_plan.schema == CLEANUP_PLAN_SCHEMA_V15)
+                != (!byte_renewal && !string_replacement && ordinary_renewal)
         {
             return Err(composition_error(
                 "ordinary Vec renewal cleanup schema disagrees",
             ));
         }
-        if !owned_iterator
+        if !lexical_overlay
+            && !owned_iterator
             && !ordinary_renewal
             && !string_replacement
             && !byte_renewal
@@ -935,6 +950,7 @@ pub(super) fn has_iterator_cleanup(function: &ResolvedFunction) -> bool {
             | CLEANUP_PLAN_SCHEMA_V15
             | CLEANUP_PLAN_SCHEMA_V16
             | CLEANUP_PLAN_SCHEMA_V17
+            | CLEANUP_PLAN_SCHEMA_V18
     ) {
         return function
             .cleanup
@@ -975,3 +991,35 @@ pub(super) fn has_nested_cleanup(function: &ResolvedFunction) -> bool {
         CLEANUP_PLAN_SCHEMA_V7 | CLEANUP_PLAN_SCHEMA_V8 | CLEANUP_PLAN_SCHEMA_V9
     )
 }
+
+// A source-bound lexical overlay cannot stand in for underlying family facts.
+fn authenticate_lexical_overlay(
+    program: Option<&ResolvedProgram>,
+    function: &ResolvedFunction,
+    replayed: &mut bool,
+) -> Result<bool, Diagnostic> {
+    let selected = function.cleanup_plan.schema == CLEANUP_PLAN_SCHEMA_V18;
+    let required = crate::hir::lexical_exit::requires(function)?;
+    if !selected && !required && function.cleanup_plan.lexical_control.is_none() {
+        return Ok(false);
+    }
+    let program = program.ok_or_else(|| {
+        composition_error("lexical composition requires retained typed program authority")
+    })?;
+    if selected && !required {
+        return Err(composition_error(
+            "lexical cleanup schema has no authored exits",
+        ));
+    }
+    let owner = crate::hir::lexical_exit::owner(program, function)?;
+    crate::hir::lexical_exit::validate_function(program, function, &owner)?;
+    if !*replayed {
+        crate::cleanup_plan::validate_program(program)?;
+        *replayed = true;
+    }
+    Ok(selected)
+}
+
+#[cfg(test)]
+#[path = "nested_owned/lexical_composition_tests.rs"]
+mod lexical_composition_tests;

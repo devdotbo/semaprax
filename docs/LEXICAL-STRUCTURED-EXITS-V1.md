@@ -240,3 +240,22 @@ Owning regressions observe requested allocator Layout bytes and overlapping
 backing independently of reservation arithmetic. They retain exact/+1 source
 limits and one-short/sticky backing refusal; these observations do not establish
 RSS bounds or measured agent-token, billed-cost or application speed gains.
+
+## Iterator composition qualification
+
+The constructor declares lexical status producers in complete typed authored
+postorder before CFG lowering. Continue copies reuse exact producer identities;
+an unreachable ordinary latch does not remove or reorder its authored status.
+The declaration walk and CFG membership checks share one bounded work counter,
+and status backing is reserved before construction.
+
+Graph composition authenticates a lexical overlay from retained typed HIR, its
+exact execution owner and independent cleanup replay. A schema tag alone, or a
+frozen projection without its retained program, supplies no overlay authority.
+Wasm repeats the authored owning-iterator Next only inside distinct certified
+resume contexts: its exact argument carrier is saved and restored around the
+complete latch. Duplicate carriers within one context remain refused.
+
+The status exact/one-short, hostile metadata and closed normal-latch regression
+definitions require owning executable qualification; this change does not claim
+that those gates have executed.

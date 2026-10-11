@@ -124,3 +124,6 @@ fn successful_contract_temporaries_settle_before_selected_return_publication() {
 mod finite_scratch;
 #[path = "lexical_exits/graph_projection.rs"]
 mod graph_projection;
+
+#[path = "lexical_exits/iterator_composition.rs"]
+mod iterator_composition;

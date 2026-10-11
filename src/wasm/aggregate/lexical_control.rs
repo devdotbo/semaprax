@@ -257,40 +257,47 @@ impl<'a> Emitter<'a> {
                 if &tail.id != next || &rest.binding.id != remainder {
                     return Err(error("owned latch next or remainder identity differs"));
                 }
-                let produced = self.emit_expr(tail)?;
-                // Complete only the authenticated Yield-arm tail and enclosing
-                // result handoffs. The authored arm prefix has already run.
-                let arm_result = self.materialize(&yielded.value, &produced)?;
-                let yield_storage =
-                    crate::cleanup_plan::StorageId::Temporary(yielded.value.id.clone());
-                let phase = self.lexical_transfer_block(&yielded.value.id, &yield_storage)?;
-                self.apply_post_transitions_storage(
-                    &yielded.value.id,
-                    &arm_result,
-                    &yield_storage,
-                    true,
-                )?;
-                self.emit_lexical_transfer_scope(phase)?;
-                let joined = self.materialize(value, &arm_result)?;
-                let match_storage = crate::cleanup_plan::StorageId::Temporary(assignment.clone());
-                let phase = self.lexical_transfer_block(&yielded.value.id, &match_storage)?;
-                self.apply_post_transitions_storage(
-                    &yielded.value.id,
-                    &joined,
-                    &match_storage,
-                    true,
-                )?;
-                self.emit_lexical_transfer_scope(phase)?;
-                let step_storage = crate::cleanup_plan::StorageId::Value(step.clone());
-                let phase = self.lexical_transfer_block(assignment, &step_storage)?;
-                self.apply_post_transitions_storage(assignment, &joined, &step_storage, true)?;
-                let destination = self
-                    .bindings
-                    .get(step)
-                    .cloned()
-                    .ok_or_else(|| error("owned latch Step carrier is absent"))?;
-                self.copy_value(&destination, &joined, "owned iterator latch")?;
-                self.emit_lexical_transfer_scope(phase)
+                let previous_epoch = self.take_latch_epoch(tail, remainder)?;
+                let outcome = (|| {
+                    let produced = self.emit_expr(tail)?;
+                    // Complete only the authenticated Yield-arm tail and enclosing
+                    // result handoffs. The authored arm prefix has already run.
+                    let arm_result = self.materialize(&yielded.value, &produced)?;
+                    let yield_storage =
+                        crate::cleanup_plan::StorageId::Temporary(yielded.value.id.clone());
+                    let phase = self.lexical_transfer_block(&yielded.value.id, &yield_storage)?;
+                    self.apply_post_transitions_storage(
+                        &yielded.value.id,
+                        &arm_result,
+                        &yield_storage,
+                        true,
+                    )?;
+                    self.emit_lexical_transfer_scope(phase)?;
+                    let joined = self.materialize(value, &arm_result)?;
+                    let match_storage =
+                        crate::cleanup_plan::StorageId::Temporary(assignment.clone());
+                    let phase = self.lexical_transfer_block(&yielded.value.id, &match_storage)?;
+                    self.apply_post_transitions_storage(
+                        &yielded.value.id,
+                        &joined,
+                        &match_storage,
+                        true,
+                    )?;
+                    self.emit_lexical_transfer_scope(phase)?;
+                    let step_storage = crate::cleanup_plan::StorageId::Value(step.clone());
+                    let phase = self.lexical_transfer_block(assignment, &step_storage)?;
+                    self.apply_post_transitions_storage(assignment, &joined, &step_storage, true)?;
+                    let destination = self
+                        .bindings
+                        .get(step)
+                        .cloned()
+                        .ok_or_else(|| error("owned latch Step carrier is absent"))?;
+                    self.copy_value(&destination, &joined, "owned iterator latch")?;
+                    self.emit_lexical_transfer_scope(phase)
+                })();
+                let restored = self.restore_latch_epoch(tail, previous_epoch);
+                outcome?;
+                restored
             }
         }
     }

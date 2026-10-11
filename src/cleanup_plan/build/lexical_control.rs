@@ -15,6 +15,8 @@ pub(super) struct LexicalBuildState {
     pub(super) wrapper_breaks: Vec<super::lexical_break::PendingWrapperBreak>,
     pub(super) building_resume: bool,
     pub(super) replicated_statuses: BTreeSet<StatusSourceId>,
+    pub(super) status_normal_visits: Vec<u8>,
+    pub(super) status_work: usize,
     pub(super) ensure_regions: Vec<Vec<CleanupRegionId>>,
     pub(super) current_ensure: Option<(usize, usize)>,
 }
@@ -91,6 +93,8 @@ fn build_with_helpers<'a>(
             wrapper_breaks: Vec::new(),
             building_resume: false,
             replicated_statuses: BTreeSet::new(),
+            status_normal_visits: Vec::new(),
+            status_work: 0,
             ensure_regions: Vec::new(),
             current_ensure: None,
             certificate: super::super::LexicalControlPlan {
@@ -757,24 +761,5 @@ impl PlanBuilder<'_> {
         }
         *normal_end = exit;
         Ok(())
-    }
-}
-
-impl PlanBuilder<'_> {
-    // A resume can encounter the source-for latch before ordinary HIR reaches
-    // it. Its first ordinary visit determines canonical source status order;
-    // repeated resume copies retain the same one authenticated producer.
-    pub(super) fn finish_resume_status(&mut self, id: &StatusSourceId) {
-        if self.lexical.as_ref().is_some_and(|control| {
-            !control.building_resume && control.replicated_statuses.contains(id)
-        }) {
-            let index = self
-                .status_sources
-                .iter()
-                .position(|source| &source.id == id)
-                .expect("existing resume status");
-            let source = self.status_sources.remove(index);
-            self.status_sources.push(source);
-        }
     }
 }

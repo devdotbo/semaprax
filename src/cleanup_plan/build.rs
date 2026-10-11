@@ -46,6 +46,7 @@ mod lexical_break;
 mod lexical_contract;
 pub(super) mod lexical_control;
 mod lexical_iterator;
+mod lexical_status;
 mod owned_try;
 mod record_destructure;
 mod renewal;
@@ -705,6 +706,12 @@ impl<'a> PlanBuilder<'a> {
         Ok(())
     }
     fn build(mut self) -> Result<CleanupPlan, Diagnostic> {
+        if let Some(control) = &mut self.lexical {
+            let (sources, seen, work) = lexical_status::declare(self.program, self.function)?;
+            self.status_sources = sources;
+            control.status_normal_visits = seen;
+            control.status_work = work;
+        }
         let root = CleanupRegionId(0);
         let mut current = BlockId(0);
         let mut state = self.initial_state.clone();
@@ -1197,12 +1204,53 @@ impl<'a> PlanBuilder<'a> {
         id: StatusSourceId,
         producer: StatusProducer,
     ) -> Result<(), Diagnostic> {
+        if let Some(control) = &mut self.lexical {
+            let mut found = None;
+            for (index, source) in self.status_sources.iter().enumerate() {
+                let cost = 1usize
+                    .checked_add(source.id.expression.as_str().len())
+                    .ok_or_else(|| plan_error("lexical status lookup work overflow"))?;
+                control.status_work = control
+                    .status_work
+                    .checked_sub(cost)
+                    .ok_or_else(|| plan_error("lexical status lookup work exhausted"))?;
+                if source.id == id {
+                    found = Some(index);
+                    break;
+                }
+            }
+            let index = found
+                .ok_or_else(|| plan_error("CFG status is absent from typed authored inventory"))?;
+            let comparison = match &producer {
+                StatusProducer::PropagatedCall { callee } => callee.as_str().len(),
+                StatusProducer::CheckedArithmetic {
+                    normalized_cases, ..
+                } => normalized_cases.len(),
+                StatusProducer::ContractFalse { .. } => 1,
+            };
+            control.status_work = control
+                .status_work
+                .checked_sub(comparison)
+                .ok_or_else(|| plan_error("lexical status producer comparison work exhausted"))?;
+            if self.status_sources[index].producer != producer {
+                return Err(plan_error(
+                    "CFG status producer differs from typed authored inventory",
+                ));
+            }
+            if !control.building_resume {
+                if control.status_normal_visits[index] != 0 {
+                    return Err(plan_error("duplicate normal lexical status visit"));
+                }
+                control.status_normal_visits[index] = 1;
+            }
+            self.note_resume_status(&id);
+            return Ok(());
+        }
         if let Some(existing) = self.status_sources.iter().find(|source| source.id == id) {
             if self.lexical.as_ref().is_some_and(|control| {
                 control.building_resume || control.replicated_statuses.contains(&id)
             }) && existing.producer == producer
             {
-                self.finish_resume_status(&id);
                 return Ok(());
             }
             return Err(plan_error(format!(
@@ -2202,7 +2250,8 @@ impl<'a> PlanBuilder<'a> {
                     | ResolvedExprKind::Float32(_)
                     | ResolvedExprKind::Float64(_)
                     | ResolvedExprKind::Bool(_)
-                    | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_) => results.push(EvalResult {
+                    | ResolvedExprKind::String(_)
+                    | ResolvedExprKind::BorrowedUtf8Literal(_) => results.push(EvalResult {
                         block,
                         state,
                         owned_source: None,
@@ -4511,7 +4560,8 @@ impl<'a> PlanBuilder<'a> {
             | ResolvedExprKind::Float32(_)
             | ResolvedExprKind::Float64(_)
             | ResolvedExprKind::Bool(_)
-            | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_) => Ok(EvalResult {
+            | ResolvedExprKind::String(_)
+            | ResolvedExprKind::BorrowedUtf8Literal(_) => Ok(EvalResult {
                 block,
                 state,
                 owned_source: None,
