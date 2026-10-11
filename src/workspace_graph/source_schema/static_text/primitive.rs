@@ -141,13 +141,13 @@ pub(in crate::workspace_graph::source_schema) fn replay(
         .reserve_array::<Context<'_>>(1)
         .map_err(|_| fail())?;
     let context = authenticate(module, facts, &mut physical)?;
+    let anchor = module.functions.first().ok_or_else(fail)?;
+    let mut session = crate::cleanup_plan::SelectedReplaySession::new(&context, anchor, physical)
+        .map_err(|_| fail())?;
     let mut found = false;
     for function in &module.functions {
         if crate::hir::lexical_exit::requires(function).map_err(|error| vec![error])? {
-            physical = crate::cleanup_plan::validate_retained_lexical_with_reservation(
-                &context, function, physical,
-            )
-            .map_err(|error| {
+            session.validate(function).map_err(|error| {
                 let errors = fail();
                 // Keep the public retained-source diagnostic stable. Owning
                 // tests must distinguish its independently replayed cause from
@@ -180,6 +180,7 @@ pub(in crate::workspace_graph::source_schema) fn replay(
     if !found {
         return Err(fail());
     }
+    session.finish().map_err(|_| fail())?;
     Ok(true)
 }
 

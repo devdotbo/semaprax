@@ -820,6 +820,8 @@ format: `Unreleased` then release buckets, grouped by impact.
 
 ## Unreleased
 
+- Retain one callee inventory and cumulative replay work ledger across captured primitive lexical module members; reconstruct each function lease independently. Executable qualification pending.
+
 - Factor ShiftSim Copy-state scans and metric decisions into checked helpers, retaining the original semantic path-budget refusal and all 15 wire cases; qualification pending.
 - Precharge geometric selected-replay FIFO frontier growth in full before allocation, preserving wrapped order, sticky refusal and the ordinary route; actual-layout regression definitions await qualification.
 

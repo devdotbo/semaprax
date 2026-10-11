@@ -20,6 +20,8 @@ mod structural_control;
 mod structural_maps;
 #[cfg(test)]
 pub(crate) use selected_entry::validate_retained_lexical_with_limit;
+pub(crate) use selected_entry::Session as SelectedReplaySession;
+#[cfg(test)]
 pub(crate) use selected_entry::validate_retained_lexical_with_reservation;
 mod selected_owner;
 mod selected_profile;

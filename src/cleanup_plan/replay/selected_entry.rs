@@ -13,22 +13,88 @@ pub(crate) fn validate_retained_lexical_with_limit(
         .map(|_| ())
 }
 
+#[cfg(test)]
 pub(crate) fn validate_retained_lexical_with_reservation(
     program: &dyn ReplayContext,
     function: &ResolvedFunction,
     physical: PhysicalReservation,
 ) -> Result<PhysicalReservation, Diagnostic> {
-    require_entry(function)?;
-    let mut budget = ReplayBudget::from_reservation(function, physical)?;
-    execute(program, function, &mut budget)?;
-    // All per-function constructors have dropped before the ledger is returned.
-    // The debit is cumulative: this is no refund or phase reset.
-    let physical = budget
-        .physical
-        .take()
-        .ok_or_else(|| replay_error(function, "selected replay lost its physical reservation"))?;
-    Ok(*physical)
+    let mut session = Session::new(program, function, physical)?;
+    session.validate(function)?;
+    session.finish()
 }
+
+/// One held provider, borrowed callee inventory, and cumulative work ledger.
+/// Each selected member still obtains a fresh function-bound renewal lease.
+pub(crate) struct Session<'a> {
+    indexed: selected_callees::Context<'a>,
+    budget: ReplayBudget,
+    anchor: &'a ResolvedFunction,
+    failed: bool,
+}
+impl<'a> Session<'a> {
+    pub(crate) fn new(
+        program: &'a dyn ReplayContext,
+        anchor: &'a ResolvedFunction,
+        physical: PhysicalReservation,
+    ) -> Result<Self, Diagnostic> {
+        let budget = ReplayBudget::from_reservation(anchor, physical)?;
+        Self::from_budget(program, anchor, budget)
+    }
+
+    fn from_budget(
+        program: &'a dyn ReplayContext,
+        anchor: &'a ResolvedFunction,
+        mut budget: ReplayBudget,
+    ) -> Result<Self, Diagnostic> {
+        budget.reserve_array::<Self>(anchor, 1, "selected module replay session")?;
+        let indexed = selected_callees::Context::new(program, anchor, &mut budget)?;
+        Ok(Self {
+            indexed,
+            budget,
+            anchor,
+            failed: false,
+        })
+    }
+
+    pub(crate) fn validate(&mut self, function: &ResolvedFunction) -> Result<(), Diagnostic> {
+        if self.failed {
+            return Err(replay_error(
+                function,
+                "selected module replay already failed",
+            ));
+        }
+        // Keep refusal sticky without publishing a diagnostic from Drop or
+        // allowing another member to restart the spent work allowance.
+        self.failed = true;
+        require_entry(function)?;
+        let context = selected_context::Context::new(&self.indexed, function, &mut self.budget)?;
+        lexical_replay::validate_with_index(&context, function, &mut self.budget, None)?;
+        self.failed = false;
+        Ok(())
+    }
+
+    pub(crate) fn finish(mut self) -> Result<PhysicalReservation, Diagnostic> {
+        if self.failed {
+            return Err(replay_error(
+                self.anchor,
+                "selected module replay already failed",
+            ));
+        }
+        // The function lease has dropped; the shared inventory drops with this
+        // session. Returning the debit grants neither a work reset nor a refund.
+        self.budget
+            .physical
+            .take()
+            .map(|physical| *physical)
+            .ok_or_else(|| {
+                replay_error(self.anchor, "selected replay lost its physical reservation")
+            })
+    }
+}
+
+#[cfg(test)]
+mod tests;
 
 fn require_entry(function: &ResolvedFunction) -> Result<(), Diagnostic> {
     if !crate::hir::lexical_exit::requires(function)?
@@ -44,16 +110,6 @@ fn require_entry(function: &ResolvedFunction) -> Result<(), Diagnostic> {
     }
     Ok(())
 }
-fn execute(
-    program: &dyn ReplayContext,
-    function: &ResolvedFunction,
-    budget: &mut ReplayBudget,
-) -> Result<(), Diagnostic> {
-    let indexed = selected_callees::Context::new(program, function, budget)?;
-    let context = selected_context::Context::new(&indexed, function, budget)?;
-    lexical_replay::validate_with_index(&context, function, budget, None)
-}
-
 /// Whole-entry unit oracle uses the same constructors and proof owner as the
 /// selected production entry, with independently supplied exact work/bytes.
 #[cfg(test)]
@@ -66,16 +122,18 @@ pub(in crate::cleanup_plan::replay) fn validate_with_limits(
     require_entry(function)?;
     let mut budget = ReplayBudget::with_physical(function, bytes)?;
     budget.remaining = work;
-    execute(program, function, &mut budget)?;
+    let mut session = Session::from_budget(program, function, budget)?;
+    session.validate(function)?;
     let spent = work
-        .checked_sub(budget.remaining)
+        .checked_sub(session.budget.remaining)
         .expect("work never increases");
-    let charged = budget
+    let charged = session
+        .budget
         .physical
         .as_ref()
         .expect("selected reservation retained")
         .charged();
     // Drop the whole budget and all constructors inside the caller's observer.
-    drop(budget);
+    drop(session);
     Ok((spent, charged))
 }

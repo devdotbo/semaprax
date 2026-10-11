@@ -8,6 +8,11 @@ pub(super) struct Context<'a> {
     targets: Vec<&'a ResolvedFunction>,
 }
 impl<'a> Context<'a> {
+    #[cfg(test)]
+    pub(super) fn storage_identity(&self) -> *const &'a ResolvedFunction {
+        self.targets.as_ptr()
+    }
+
     pub(super) fn new(
         source: &'a dyn ReplayContext,
         function: &ResolvedFunction,
@@ -147,8 +152,8 @@ impl ReplayContext for Context<'_> {
 #[cfg(test)]
 mod tests {
     use super::{Context, ReplayContext};
-    use crate::cleanup_plan::replay::{selected_context, ReplayBudget};
     use crate::cleanup_plan::ReplayPhysicalReservation;
+    use crate::cleanup_plan::replay::{ReplayBudget, selected_context};
     fn program() -> crate::hir::ResolvedProgram {
         let source = crate::check("module callees; @id(\"z.last\") fn last()->i64 {7} @id(\"app.main\") fn main()->i64 {last()} @id(\"mid.third\") fn third()->i64 {9}", "selected-callees.spx").unwrap();
         crate::hir::resolve(&source).unwrap()

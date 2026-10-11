@@ -378,3 +378,10 @@ complete latch. Duplicate carriers within one context remain refused.
 The status exact/one-short, hostile metadata and closed normal-latch regression
 definitions require owning executable qualification; this change does not claim
 that those gates have executed.
+
+The captured primitive module owns one selected replay session: its borrowed
+callee inventory and the 32-million-unit work ledger survive all selected
+function validations. Physical storage debits remain cumulative too. Every
+function independently reconstructs its selected profile, ownership and renewal
+lease; a failed member makes the session refuse further replay or successful
+completion. Dropping the session publishes no diagnostic and refunds no debit.
