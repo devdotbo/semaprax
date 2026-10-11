@@ -666,10 +666,9 @@ fn main() -> i64
 | `arg_utf8` | `(i: usize) -> borrow str` |
 | `stdin_read` | `() -> own Bytes` |
 | `file_read` | `(path: borrow Slice<u8>, length: usize, max: usize) -> own Bytes` |
-| `file_write_new` | `(path: borrow Slice<u8>, length: usize, data: borrow Slice<u8>, data_length: usize) -> usize` |
+| `file_write_new`, `file_write_atomic` | `(path: borrow Slice<u8>, length: usize, data: borrow Slice<u8>, data_length: usize) -> usize` |
 | `file_stat`, `file_create_dir`, `file_remove` | `(path: borrow Slice<u8>, length: usize) -> usize` |
 | `file_list` | `(path: borrow Slice<u8>, length: usize, max: usize) -> own Bytes` |
-| `file_write_atomic` | `(path: borrow Slice<u8>, length: usize, data: borrow Slice<u8>, data_length: usize) -> usize` |
 | `box_new<T>` | `(value: T) -> Box<T>` for an explicit admitted Copy scalar |
 | `box_get<T>` | `(value: borrow Box<T>) -> T` Copy read |
 | `box_into_inner<T>` | `(value: own Box<T>) -> T` consumes |

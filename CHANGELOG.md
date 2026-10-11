@@ -1,6 +1,6 @@
 # Changelog
 
-- Read each ordinary JSON string-framing byte once in the two source scanners, preserving eager offset arithmetic, escape policies and failure encoding. Retain independent original kernels and all-byte/backend differential definitions; grouped execution and measured benefits remain pending.
+- Read each ordinary JSON string-framing byte once in the source scanners and Query plain-byte path, preserving eager offset arithmetic, escape policies and failure encoding. Retain independent original kernels and all-byte/backend differential definitions; grouped execution and measured benefits remain pending.
 
 - Repair terminal record-arm HIR admission and native resume-only scope cleanup; preserve independent contour/authority proofs. Add whole-token ASCII validation with the unchanged UTF-8 fallback, and correct owning fixture shapes and bounded help without changing limits. Consolidated qualification remains pending.
 

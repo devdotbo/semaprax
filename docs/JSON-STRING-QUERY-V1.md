@@ -78,3 +78,9 @@ and compare all byte values, opening positions, malformed framing, escapes,
 absent input and near-maximum offsets. Interpreter, native O0/O2 and Core-Wasm
 normal-result checks are authored; current-head execution and fuel benefits
 remain pending.
+
+`std.data.json.query.scan_string` also classifies one byte before its ordinary
+plain-byte path. That path advances and counts one raw byte directly; escapes,
+controls and absent input still use the original checked helpers. Both measuring
+and framing modes retain independent original-kernel differential definitions.
+No fuel-limit qualification is inferred from this source change.

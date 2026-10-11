@@ -11,6 +11,9 @@ use function @id("std.data.json.utf8.offset_at") from std.data.json.utf8 as offs
 use function @id("std.data.json.utf8.continuation_at") from std.data.json.utf8 as continuation_at;
 use function @id("std.data.json.utf8.is_shortest") from std.data.json.utf8 as is_shortest;
 use function @id("std.data.json.query.scalar_at") from std.data.json.query as current_query;
+use function @id("std.data.json.query.scan_string") from std.data.json.query as current_query_scan;
+use function @id("std.data.json.query.token_end") from std.data.json.query as token_end;
+use function @id("std.data.json.query.emit_len") from std.data.json.query as emit_len;
 use function @id("std.data.json.escape_kind") from std.data.json as escape_kind;
 use function @id("std.data.json.code_unit") from std.data.json as code_unit;
 use function @id("std.data.json.at_is") from std.data.json as at_is;
@@ -66,20 +69,30 @@ fn source(body: &str) -> String {
             original
         });
     }
+    source.push_str(
+        &include_str!("json_scalar_lazy/query_scan_string_original.txt")
+            .replace(
+                "std.data.json.query.scan_string",
+                "consumer.original.query.scan_string",
+            )
+            .replace("fn scan_string(", "fn original_query_scan("),
+    );
     source.push_str(r#"@id("consumer.check") fn check(input: borrow Slice<u8>, start: usize) -> bool {
         current_utf8(input,start)==original_utf8(input,start) && current_query(input,start)==original_query(input,start)
     }
     @id("consumer.main") fn main() -> i64 {
 "#);
     source.push_str(body);
-    source.push_str("}\n");
+    source.push_str(
+        "}\n@id(\"consumer.export\") fn export(input: borrow Slice<u8>) -> i64 { main() }\n",
+    );
     source
 }
 
 fn install(name: &str, source: &str) -> std::path::PathBuf {
     let root = super::super::temporary(name);
     std::fs::create_dir_all(root.join("src")).unwrap();
-    std::fs::write(root.join("semaprax.toml"), "schema = \"semaprax.manifest.v1\"\n\n[package]\nname = \"scalar-differential\"\nversion = \"0.1.0\"\nprofile = \"useful-data.v1\"\n\n[modules]\nentry = \"consumer.app\"\nsources = [\"src/app.spx\", \"src/tests.spx\"]\ntests = [\"consumer.tests\"]\n\n[exports]\nweb = [\"consumer.main\"]\n\n[dependencies]\nstd.data.json = \"=0.1.0\"\nstd.data.json.doc = \"=0.1.0\"\nstd.data.json.query = \"=0.1.0\"\nstd.data.json.utf8 = \"=0.1.0\"\n").unwrap();
+    std::fs::write(root.join("semaprax.toml"), "schema = \"semaprax.manifest.v1\"\n\n[package]\nname = \"scalar-differential\"\nversion = \"0.1.0\"\nprofile = \"useful-data.v1\"\n\n[modules]\nentry = \"consumer.app\"\nsources = [\"src/app.spx\", \"src/tests.spx\"]\ntests = [\"consumer.tests\"]\n\n[exports]\nweb = [\"consumer.export\"]\n\n[dependencies]\nstd.data.json = \"=0.1.0\"\nstd.data.json.doc = \"=0.1.0\"\nstd.data.json.query = \"=0.1.0\"\nstd.data.json.utf8 = \"=0.1.0\"\n").unwrap();
     std::fs::write(
         root.join("src/tests.spx"),
         semaprax::format::canonical(
@@ -175,18 +188,22 @@ fn lazy_scalar_kernels_match_original_on_all_bytes_unicode_and_absent_offsets() 
 #[test]
 fn near_max_escape_offsets_preserve_original_normalized_arithmetic_failure() {
     let mut expected = None;
-    for function in [
-        "original_query",
-        "current_query",
-        "original_doc_end",
-        "current_doc_end",
-        "original_json_end",
-        "current_json_end",
+    for (function, extra) in [
+        ("original_query", ""),
+        ("current_query", ""),
+        ("original_doc_end", ""),
+        ("current_doc_end", ""),
+        ("original_json_end", ""),
+        ("current_json_end", ""),
+        ("original_query_scan", ",true"),
+        ("current_query_scan", ",true"),
+        ("original_query_scan", ",false"),
+        ("current_query_scan", ",false"),
     ] {
         let root = install(
             function,
             &source(&format!(
-                "let raw=[0u8];let probe={function}(array_as_slice(raw),18446744073709551615usize);if probe==probe {{0}}else{{1}}"
+                "let raw=[0u8];let probe={function}(array_as_slice(raw),18446744073709551615usize{extra});if probe==probe {{0}}else{{1}}"
             )),
         );
         project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
@@ -263,7 +280,7 @@ fn qualify_normal(root: &std::path::Path) {
 fn string_scanners_read_once_and_match_original_framing_and_failure_offsets() {
     let mut body = String::from("let mut bad=0;\n");
     let all: Vec<u8> = (0..=255).flat_map(|byte| [34, byte, 34]).collect();
-    body.push_str(&format!("let all={};let input=array_as_slice(all);let mut index=0usize;while index<256usize {{let mut offset=0usize;while offset<3usize {{let at=index*3usize+offset;bad=bad+if current_doc_end(input,at)==original_doc_end(input,at) && current_json_end(input,at)==original_json_end(input,at){{0}}else{{1}};offset=offset+1usize;0}}index=index+1usize;0}}\n",array(&all)));
+    body.push_str(&format!("let all={};let input=array_as_slice(all);let mut index=0usize;while index<256usize {{let mut offset=0usize;while offset<3usize {{let at=index*3usize+offset;bad=bad+if current_doc_end(input,at)==original_doc_end(input,at) && current_json_end(input,at)==original_json_end(input,at) && current_query_scan(input,at,true)==original_query_scan(input,at,true) && current_query_scan(input,at,false)==original_query_scan(input,at,false){{0}}else{{1}};offset=offset+1usize;0}}index=index+1usize;0}}\n",array(&all)));
     let cases = [
         b"\"\"".to_vec(),
         b"\"ABC\"".to_vec(),
@@ -276,7 +293,7 @@ fn string_scanners_read_once_and_match_original_framing_and_failure_offsets() {
         Vec::new(),
     ];
     for (i, raw) in cases.iter().enumerate() {
-        body.push_str(&format!("let failed_{i}={{let raw={};let input=array_as_slice(raw);let mut at=0usize;let mut count=0;while at<={}usize {{count=count+if current_doc_end(input,at)==original_doc_end(input,at) && current_json_end(input,at)==original_json_end(input,at){{0}}else{{1}};at=at+1usize;0}}count}};bad=bad+failed_{i};\n",array(raw),raw.len()));
+        body.push_str(&format!("let failed_{i}={{let raw={};let input=array_as_slice(raw);let mut at=0usize;let mut count=0;while at<={}usize {{count=count+if current_doc_end(input,at)==original_doc_end(input,at) && current_json_end(input,at)==original_json_end(input,at) && current_query_scan(input,at,true)==original_query_scan(input,at,true) && current_query_scan(input,at,false)==original_query_scan(input,at,false){{0}}else{{1}};at=at+1usize;0}}count}};bad=bad+failed_{i};\n",array(raw),raw.len()));
     }
     body.push_str("if bad==0{0}else{1}\n");
     let root = install("json-scanner-single-read", &source(&body));
