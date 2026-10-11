@@ -34,8 +34,8 @@ static __attribute__((unused)) int spx_profile_invoke(spx_profile_account *a,
 static void spx_profile_json_string(const char *s) {
     fputc('"',stdout);
     for (const unsigned char *p=(const unsigned char *)s;*p;p++) {
-        if (*p=='"' || *p=='\') { fputc('\',stdout);fputc(*p,stdout); }
-        else if (*p<32u) fprintf(stdout,"\u%04x",(unsigned)*p);
+        if (*p=='"' || *p=='\\') { fputc('\\',stdout);fputc(*p,stdout); }
+        else if (*p<32u) fprintf(stdout,"\\u%04x",(unsigned)*p);
         else fputc(*p,stdout);
     }
     fputc('"',stdout);
