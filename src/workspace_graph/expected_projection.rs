@@ -53,7 +53,6 @@ pub(super) mod type_rewrite;
 #[path = "expected_projection/uncached_peak.rs"]
 pub(super) mod uncached_peak;
 use cost::{ExpandedDefaultCost, GenericInstanceCost, StructuralCost};
-use retention::retention_prebound;
 // A private source-call admission only; scalar/public export gates are separate.
 pub(super) fn byte_writer_import_authorized<'a>(
     function: &'a Function,

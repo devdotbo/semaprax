@@ -51,7 +51,7 @@ codec_struct!(Declaration {
     identity_origin,
     owner
 });
-codec_enum!(ByteSliceRootKind {0=>FunctionParameter,1=>OwnedBytes,2=>FixedArray,3=>BorrowedStr,4=>CommandArguments,5=>StdinStreamReader,6=>OwnedString,7=>OwnedVectorField,8=>SourceExprStatic});
+codec_enum!(ByteSliceRootKind {0=>FunctionParameter,1=>OwnedBytes,2=>FixedArray,3=>BorrowedStr,4=>CommandArguments,5=>StdinStreamReader,6=>OwnedString,7=>OwnedVectorField,8=>SourceExprStatic,9=>OwnedVectorStringSlot});
 codec_enum!(ByteSliceExtent {0=>Constant(value),1=>ParameterLength,2=>ValueLength});
 codec_struct!(ByteSliceRangeStep {
     source,
