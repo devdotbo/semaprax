@@ -499,6 +499,44 @@ impl<'a, R: Runtime> Core<'a, R> {
         })();
         self.select(result)
     }
+    /// Authenticate a relative range before exposing it; range refusal is sticky.
+    pub(crate) fn read_range<T>(
+        &mut self,
+        loan: &Loan<'_>,
+        range: Range<usize>,
+        apply: impl FnOnce(&[u8]) -> T,
+    ) -> Result<T, Refusal> {
+        let result = (|| {
+            self.active()?;
+            let v = self.view(loan)?;
+            let bytes = R::bytes(self.backing.as_ref().ok_or(Refusal::Identity)?);
+            let selected = bytes[v.offset..v.offset + v.len]
+                .get(range)
+                .ok_or(Refusal::Range)?;
+            Ok(apply(selected))
+        })();
+        self.select(result)
+    }
+    /// Both loans belong to this held Core. Authenticate left then right before
+    /// either slice reaches the callback; references cannot escape that scope.
+    pub(crate) fn read_pair<T>(
+        &mut self,
+        left: &Loan<'_>,
+        right: &Loan<'_>,
+        apply: impl FnOnce(&[u8], &[u8]) -> T,
+    ) -> Result<T, Refusal> {
+        let result = (|| {
+            self.active()?;
+            let left = self.view(left)?;
+            let right = self.view(right)?;
+            let bytes = R::bytes(self.backing.as_ref().ok_or(Refusal::Identity)?);
+            Ok(apply(
+                &bytes[left.offset..left.offset + left.len],
+                &bytes[right.offset..right.offset + right.len],
+            ))
+        })();
+        self.select(result)
+    }
     /// Cleanup remains possible after sticky failure; it cannot replace it.
     pub(crate) fn end_borrow(&mut self, loan: &mut Loan<'_>) -> Result<(), Refusal> {
         let result = (|| {

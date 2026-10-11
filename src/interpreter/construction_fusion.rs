@@ -307,46 +307,91 @@ impl Registry<'_> {
             nonce,
         })
     }
+    fn receive<T>(
+        &mut self,
+        operation: impl FnOnce(&mut Self) -> Result<T, Flow>,
+    ) -> Result<T, Flow> {
+        if self.failed {
+            return Err(guard(Refusal::Phase));
+        }
+        let result = operation(self);
+        self.failed |= result.is_err();
+        result
+    }
     pub(super) fn read<T>(
-        &self,
+        &mut self,
         view: View,
         start: usize,
         end: usize,
         consumer: impl FnOnce(&[u8]) -> T,
     ) -> Result<T, Flow> {
-        let state = self.state(view.context)?;
-        let held = state
-            .views
-            .get(view.index)
-            .and_then(Option::as_ref)
-            .ok_or_else(|| guard(Refusal::Identity))?;
-        if held.nonce != view.nonce {
-            return Err(guard(Refusal::Identity));
-        }
-        state
-            .core
-            .read(&held.loan, |bytes| {
-                bytes
-                    .get(start..end)
-                    .map(consumer)
-                    .ok_or_else(|| guard(Refusal::Range))
-            })
-            .map_err(guard)?
+        self.receive(|registry| {
+            let state = registry.state_mut(view.context)?;
+            let held = state
+                .views
+                .get(view.index)
+                .and_then(Option::as_ref)
+                .ok_or_else(|| guard(Refusal::Identity))?;
+            if held.nonce != view.nonce {
+                return Err(guard(Refusal::Identity));
+            }
+            state
+                .core
+                .read_range(&held.loan, start..end, consumer)
+                .map_err(guard)
+        })
+    }
+    fn read_pair<T>(
+        &mut self,
+        left: View,
+        right: View,
+        consumer: impl FnOnce(&[u8], &[u8]) -> T,
+    ) -> Result<T, Flow> {
+        self.receive(|registry| {
+            let state = registry.state_mut(left.context)?;
+            if right.context != left.context {
+                return Err(guard(Refusal::Identity));
+            }
+            let held_left = state
+                .views
+                .get(left.index)
+                .and_then(Option::as_ref)
+                .filter(|held| held.nonce == left.nonce)
+                .ok_or_else(|| guard(Refusal::Identity))?;
+            let held_right = state
+                .views
+                .get(right.index)
+                .and_then(Option::as_ref)
+                .filter(|held| held.nonce == right.nonce)
+                .ok_or_else(|| guard(Refusal::Identity))?;
+            state
+                .core
+                .read_pair(&held_left.loan, &held_right.loan, consumer)
+                .map_err(guard)
+        })
     }
     pub(super) fn read_owner<T>(
         &mut self,
         lease: &Lease,
         consumer: impl FnOnce(&[u8]) -> T,
     ) -> Result<T, Flow> {
-        let state = self.state_mut(lease.context)?;
-        let length = Self::checked_child(state, lease)?;
-        let mut loan = state
-            .core
-            .borrow(&state.children[lease.index], 0..length)
-            .map_err(guard)?;
-        let result = state.core.read(&loan, consumer).map_err(guard);
-        state.core.end_borrow(&mut loan).map_err(guard)?;
-        result
+        self.receive(|registry| {
+            let state = registry.state_mut(lease.context)?;
+            let length = Self::checked_child(state, lease)?;
+            let mut loan = state
+                .core
+                .borrow(&state.children[lease.index], 0..length)
+                .map_err(guard)?;
+            let result = state.core.read(&loan, consumer).map_err(guard);
+            let cleanup = state.core.end_borrow(&mut loan).map_err(guard);
+            match result {
+                Err(error) => Err(error),
+                Ok(value) => {
+                    cleanup?;
+                    Ok(value)
+                }
+            }
+        })
     }
     pub(super) fn store(
         &mut self,
@@ -536,39 +581,36 @@ impl Registry<'_> {
                 Ok(view) => Some(view),
                 Err(error) => {
                     if let Some(view) = av {
-                        self.end_view(view)?;
+                        let _ = self.end_view(view);
                     }
                     return Err(error);
                 }
             },
         };
-        let compare_b = |left: &[u8]| match (&b.bytes, bv) {
-            (Backing::Ordinary(right), _) => Ok(left.cmp(right)),
-            (Backing::Leased(_), Some(view)) => self.read(
-                view,
-                0,
-                self.len(match &b.bytes {
-                    Backing::Leased(lease) => lease,
-                    _ => unreachable!(),
-                })?,
-                |right| left.cmp(right),
-            ),
-            _ => Err(guard(Refusal::Identity)),
-        };
-        let result = match (&a.bytes, av) {
-            (Backing::Ordinary(left), _) => compare_b(left),
-            (Backing::Leased(lease), Some(view)) => {
-                self.read(view, 0, self.len(lease)?, compare_b)?
+        let result = (|| match (&a.bytes, &b.bytes, av, bv) {
+            (Backing::Ordinary(left), Backing::Ordinary(right), _, _) => Ok(left.cmp(right)),
+            (Backing::Ordinary(left), Backing::Leased(lease), _, Some(view)) => {
+                self.read(view, 0, self.len(lease)?, |right| left.as_ref().cmp(right))
+            }
+            (Backing::Leased(lease), Backing::Ordinary(right), Some(view), _) => {
+                self.read(view, 0, self.len(lease)?, |left| left.cmp(right.as_ref()))
+            }
+            (Backing::Leased(_), Backing::Leased(_), Some(left_view), Some(right_view)) => {
+                self.read_pair(left_view, right_view, <[u8]>::cmp)
             }
             _ => Err(guard(Refusal::Identity)),
-        };
-        if let Some(view) = bv {
-            self.end_view(view)?;
+        })();
+        // Settle both temporary loans, retaining the original selected error.
+        let right_cleanup = bv.map_or(Ok(()), |view| self.end_view(view));
+        let left_cleanup = av.map_or(Ok(()), |view| self.end_view(view));
+        match result {
+            Err(error) => Err(error),
+            Ok(order) => {
+                right_cleanup?;
+                left_cleanup?;
+                Ok(order)
+            }
         }
-        if let Some(view) = av {
-            self.end_view(view)?;
-        }
-        result
     }
 }
 impl super::Evaluator<'_> {

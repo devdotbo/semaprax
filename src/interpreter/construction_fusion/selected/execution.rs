@@ -151,7 +151,7 @@ impl<'s, 'a> Engine<'s, 'a> {
                     } else if !fields.is_empty() {
                         return Err(refuse());
                     }
-                    let result = self.expression(&arm.body, depth + 1);
+                    let result = self.expression(&arm.value, depth + 1);
                     let cleanup = self.truncate(base);
                     return match result {
                         Ok(value) => {

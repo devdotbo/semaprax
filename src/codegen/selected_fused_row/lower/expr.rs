@@ -5,7 +5,6 @@
 use super::*;
 use crate::ast::BinaryOp;
 use crate::hir::{ResolvedMatchArm, ResolvedMatchPattern};
-use std::fmt::Write as _;
 
 impl Lower<'_, '_> {
     /// Lower one expression, then apply the canonical transitions keyed by it.

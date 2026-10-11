@@ -251,7 +251,7 @@ impl<'s, 'a> Engine<'s, 'a> {
         }
         Ok(())
     }
-    fn bytes<T>(&self, span: Span, receive: impl FnOnce(&[u8]) -> T) -> Result<T, Flow> {
+    fn bytes<T>(&mut self, span: Span, receive: impl FnOnce(&[u8]) -> T) -> Result<T, Flow> {
         match span {
             Span::Text(view) => {
                 let state = self.registry.state(view.context)?;

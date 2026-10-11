@@ -170,7 +170,22 @@ fn borrowed_store_refuses_before_mutation_and_cleanup_preserves_first_failure() 
     .ok()
     .unwrap();
     let mut loan = core.borrow(&children[0], 0..2).unwrap();
+    let mut right = core.borrow(&children[1], 0..2).unwrap();
+    assert_eq!(
+        core.read_pair(&loan, &right, <[u8]>::cmp).unwrap(),
+        std::cmp::Ordering::Less
+    );
+    core.end_borrow(&mut right).unwrap();
     assert_eq!(core.store(&mut children[0], 0, 9), Err(Refusal::Borrowed));
+    let old_module = right.module;
+    right.module ^= 1;
+    let called = std::cell::Cell::new(false);
+    assert_eq!(
+        core.read_pair(&loan, &right, |_, _| called.set(true)),
+        Err(Refusal::Borrowed)
+    );
+    assert!(!called.get()); // existing left failure precedes hostile right
+    right.module = old_module;
     assert_eq!(Probe::bytes(core.backing.as_ref().unwrap()), &[1, 2, 3, 4]);
     assert_eq!(core.move_owner(&mut children[1]), Err(Refusal::Borrowed));
     core.end_borrow(&mut loan).unwrap();
@@ -182,6 +197,40 @@ fn borrowed_store_refuses_before_mutation_and_cleanup_preserves_first_failure() 
 }
 #[test]
 fn foreign_stale_overlapping_and_exhausted_receipts_never_resolve_backing() {
+    {
+        let module = ModuleIdentity::new();
+        let mut issuer = Issuer::new();
+        let p = probe(2);
+        let (mut core, mut children) = Core::partition(
+            vec![1, 2, 3, 4].into_boxed_slice(),
+            2,
+            2,
+            &mut issuer,
+            &module,
+            p.clone(),
+        )
+        .ok()
+        .unwrap();
+        let mut left = core.borrow(&children[0], 0..2).unwrap();
+        let mut right = core.borrow(&children[1], 0..2).unwrap();
+        let module = right.module;
+        right.module ^= 1;
+        let called = std::cell::Cell::new(false);
+        assert_eq!(
+            core.read_pair(&left, &right, |_, _| called.set(true)),
+            Err(Refusal::Identity)
+        );
+        assert!(!called.get());
+        assert_eq!(core.failure(), Some(Refusal::Identity));
+        right.module = module;
+        core.end_borrow(&mut right).unwrap();
+        core.end_borrow(&mut left).unwrap();
+        for child in &mut children {
+            core.drop_owner(child).unwrap();
+        }
+        assert_eq!(p.0.borrow().releases, 1);
+    }
+
     for mutation in 0..6 {
         let module = ModuleIdentity::new();
         let mut issuer = Issuer::new();

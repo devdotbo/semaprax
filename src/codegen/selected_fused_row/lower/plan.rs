@@ -8,7 +8,6 @@
 use super::*;
 use crate::cleanup_plan::{CleanupPlace, CleanupTransition, ExitTarget, StorageId};
 use crate::hir::{DeclarationId, ExpressionId};
-use std::fmt::Write as _;
 
 /// Physical selected carrier backing one plan storage.
 #[derive(Clone, Debug, Eq, PartialEq)]

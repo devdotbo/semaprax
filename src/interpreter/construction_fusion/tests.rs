@@ -93,6 +93,17 @@ fn held_registry_publishes_once_and_scopes_reads_stores_and_parent_cleanup() {
         let Backing::Leased(lease) = &bytes.bytes else {
             panic!()
         };
+        let Value::Record(second_record) = &second else {
+            panic!()
+        };
+        let Value::Bytes(second_bytes) = &second_record.fields[&DeclarationId::new("row.bytes")]
+        else {
+            panic!()
+        };
+        assert_eq!(
+            registry.compare_bytes(bytes, second_bytes).unwrap(),
+            std::cmp::Ordering::Equal
+        );
         let view = registry.borrow(lease).unwrap();
         assert_eq!(
             registry.read(view, 0, 3, |bytes| bytes.to_vec()).unwrap(),
@@ -100,7 +111,7 @@ fn held_registry_publishes_once_and_scopes_reads_stores_and_parent_cleanup() {
         );
         assert!(registry.preflight_value(&first).is_err());
         registry.leave(scope).unwrap();
-        assert!(registry.read(view, 0, 3, <[u8]>::len).is_err());
+
         registry.preflight_value(&first).unwrap();
         let Value::Record(record) = &mut first else {
             panic!()
@@ -123,6 +134,31 @@ fn held_registry_publishes_once_and_scopes_reads_stores_and_parent_cleanup() {
             bytes.read(&mut registry, |bytes| bytes.to_vec()).unwrap(),
             [4, 5, 6]
         );
+        let Value::Record(second_record) = &second else {
+            panic!()
+        };
+        let Value::Bytes(second_bytes) = &second_record.fields[&DeclarationId::new("row.bytes")]
+        else {
+            panic!()
+        };
+        assert_eq!(
+            registry.compare_bytes(bytes, second_bytes).unwrap(),
+            std::cmp::Ordering::Greater
+        );
+        assert_eq!(
+            registry.compare_bytes(second_bytes, bytes).unwrap(),
+            std::cmp::Ordering::Less
+        );
+        let Backing::Leased(current_lease) = &bytes.bytes else {
+            panic!()
+        };
+        let current = registry.borrow(current_lease).unwrap();
+        // The unchanged expired-scope hostile is now last: its refusal is sticky.
+        assert!(registry.read(view, 0, 3, <[u8]>::len).is_err());
+        assert!(registry.failed);
+        assert!(registry.read(current, 0, 3, <[u8]>::len).is_err());
+        assert!(bytes.read(&mut registry, <[u8]>::len).is_err());
+        registry.end_view(current).unwrap(); // cleanup remains available
         assert!(registry.settle_value(&mut second).is_err());
         let Value::Record(second) = second else {
             panic!()
