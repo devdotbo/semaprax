@@ -39,10 +39,12 @@ fn completed_return_operand_clone_settles_before_ensures_and_keeps_root_owner() 
     let expression = lexical_control::expression_at(&function.body, id).unwrap();
     assert_eq!(expression.ty, ResolvedType::String);
     assert!(matches!(expression.kind, ResolvedExprKind::Place(_)));
-    assert!(!exit
-        .finalize_in_order
-        .iter()
-        .any(|action| matches!(action.source.storage, StorageId::Value(_))));
+    assert!(
+        !exit
+            .finalize_in_order
+            .iter()
+            .any(|action| matches!(action.source.storage, StorageId::Value(_)))
+    );
     let canonical =
         crate::format::canonical(&crate::check(SOURCE, "completed-string.spx").unwrap());
     let repeated = fixture(&canonical);
@@ -85,19 +87,25 @@ fn temporary_kind_and_live_staged_or_provisional_storage_cannot_mint_completion(
             _ => None,
         })
         .unwrap();
-    assert!(builder
-        .completed_lexical_storage(&StorageId::Temporary(temp.clone()))
-        .unwrap());
-    assert!(!builder
-        .completed_lexical_storage(&StorageId::ProvisionalResult)
-        .unwrap());
-    assert!(!builder
-        .completed_lexical_storage(&StorageId::CallArgument {
-            call: temp.clone(),
-            parameter_index: 0,
-            value_expression: temp.clone()
-        })
-        .unwrap());
+    assert!(
+        builder
+            .completed_lexical_storage(&StorageId::Temporary(temp.clone()))
+            .unwrap()
+    );
+    assert!(
+        !builder
+            .completed_lexical_storage(&StorageId::ProvisionalResult)
+            .unwrap()
+    );
+    assert!(
+        !builder
+            .completed_lexical_storage(&StorageId::CallArgument {
+                call: temp.clone(),
+                parameter_index: 0,
+                value_expression: temp.clone()
+            })
+            .unwrap()
+    );
     let mut changed = function.clone();
     let ResolvedExprKind::Block { statements, .. } = &mut changed.body.kind else {
         panic!("body")
@@ -108,9 +116,11 @@ fn temporary_kind_and_live_staged_or_provisional_storage_cannot_mint_completion(
     let fake_id = value.id.clone();
     value.kind = ResolvedExprKind::Int(9);
     let altered = PlanBuilder::new(&program, &changed).unwrap();
-    assert!(!altered
-        .completed_lexical_storage(&StorageId::Temporary(fake_id))
-        .unwrap());
+    assert!(
+        !altered
+            .completed_lexical_storage(&StorageId::Temporary(fake_id))
+            .unwrap()
+    );
 }
 #[test]
 fn owning_iterator_continue_settles_completed_string_read_without_consuming_remainder() {
@@ -139,23 +149,25 @@ fn owning_iterator_continue_settles_completed_string_read_without_consuming_rema
         .find(|exit| exit.kind == crate::ast::LexicalExitKind::Continue)
         .unwrap();
     let selected = &function.cleanup_plan.exits[certificate.exit.0 as usize];
-    assert!(selected
-        .finalize_in_order
-        .iter()
-        .any(|action| matches!(action.source.storage, StorageId::Temporary(_))));
+    assert!(
+        selected
+            .finalize_in_order
+            .iter()
+            .any(|action| matches!(action.source.storage, StorageId::Temporary(_)))
+    );
     let crate::hir::LoopLatchKind::OwnedIteratorStep { remainder, .. } = &control.loops[0].latch
     else {
         panic!("owning latch")
     };
-    assert!(!selected
-        .finalize_in_order
-        .iter()
-        .any(|action| action.source.storage == StorageId::Value(remainder.clone())));
+    assert!(
+        !selected
+            .finalize_in_order
+            .iter()
+            .any(|action| action.source.storage == StorageId::Value(remainder.clone()))
+    );
 }
 
-#[test]
-fn terminal_owned_record_arm_has_no_second_normal_scope_terminator() {
-    let source = r#"module lexical.terminal_record;
+const TERMINAL_RECORD_SOURCE: &str = r#"module lexical.terminal_record;
 @id("Token") record Token { @id("Token.text") text:string, }
 @id("inspect") fn inspect(token:own Token,flag:bool)->i64 ensures result==7 {
  match own token { Token {text} => {
@@ -170,6 +182,10 @@ fn terminal_owned_record_arm_has_no_second_normal_scope_terminator() {
 }
 @id("app.main") fn main()->i64 {0}
 "#;
+
+#[test]
+fn terminal_owned_record_arm_has_no_second_normal_scope_terminator() {
+    let source = TERMINAL_RECORD_SOURCE;
     let program = fixture(source);
     crate::hir::validate(&program).unwrap();
     let function = inspect(&program);
@@ -236,4 +252,82 @@ fn terminal_owned_record_arm_has_no_second_normal_scope_terminator() {
             .code,
         "SPX-H006"
     );
+}
+
+#[test]
+fn terminal_record_region_certificate_refuses_missing_duplicate_and_normal_endpoint_forgery() {
+    let program = fixture(TERMINAL_RECORD_SOURCE);
+    crate::cleanup_plan::validate_program(&program).unwrap();
+    let function = inspect(&program);
+    let returns: Vec<_> = function
+        .cleanup_plan
+        .exits
+        .iter()
+        .filter(|exit| matches!(exit.continuation, ExitContinuation::FunctionReturn { .. }))
+        .collect();
+    let region = function
+        .cleanup_plan
+        .regions
+        .iter()
+        .find(|region| {
+            !region.slots.is_empty()
+                && region.normal_scope_end == ExitTargetId(u32::MAX)
+                && returns
+                    .iter()
+                    .all(|exit| exit.leaves_regions.contains(&region.id))
+        })
+        .expect("both returns leave their owning record arm");
+    let region_id = region.id;
+    assert!(
+        function
+            .cleanup_plan
+            .lexical_control
+            .as_ref()
+            .unwrap()
+            .abrupt_only_regions
+            .contains(&region_id)
+    );
+    for mutation in 0..3 {
+        let mut forged = program.clone();
+        let function = forged
+            .functions
+            .iter_mut()
+            .find(|function| function.id.as_str() == "inspect")
+            .unwrap();
+        let control = function.cleanup_plan.lexical_control.as_mut().unwrap();
+        match mutation {
+            0 => control.abrupt_only_regions.retain(|id| *id != region_id),
+            1 => control.abrupt_only_regions.push(region_id),
+            _ => {
+                let normal = function
+                    .cleanup_plan
+                    .regions
+                    .iter()
+                    .find(|region| region.normal_scope_end != ExitTargetId(u32::MAX))
+                    .unwrap()
+                    .normal_scope_end;
+                function.cleanup_plan.regions[region_id.0 as usize].normal_scope_end = normal;
+            }
+        }
+        assert_eq!(
+            crate::cleanup_plan::validate_program(&forged)
+                .unwrap_err()
+                .code,
+            "SPX-H006"
+        );
+    }
+    let normal = fixture(&TERMINAL_RECORD_SOURCE.replace("return 7;", "7"));
+    crate::cleanup_plan::validate_program(&normal).unwrap();
+    let function = inspect(&normal);
+    assert!(function.cleanup_plan.regions.iter().any(|region| {
+        !region.slots.is_empty()
+            && region.normal_scope_end != ExitTargetId(u32::MAX)
+            && !function
+                .cleanup_plan
+                .lexical_control
+                .as_ref()
+                .unwrap()
+                .abrupt_only_regions
+                .contains(&region.id)
+    }));
 }
