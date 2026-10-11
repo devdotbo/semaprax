@@ -23,8 +23,14 @@
 //! 5. Only then is the immutable owner published.
 //!
 //! Resolution itself runs the capacity and validation hooks of steps 3 and 4
-//! before it returns, and the factory runs them again over the finished HIR.
-//! Nothing is written to a graph, cache or artifact.
+//! before it returns: a join and selected capacity before any loan, inventory
+//! or plan attachment, then full selected validation over the attached HIR.
+//! The factory then repeats the join, full validation and selected capacity
+//! over the finished HIR. That is deliberate, visible duplicate work. It may
+//! only be removed together with an immutable sealed owner proof, never by
+//! weakening a gate. Any invariant-bearing type refuses at step 2, because
+//! the ordinary route would resolve different, desugared ASTs. Nothing is
+//! written to a graph, cache or artifact.
 //!
 //! The owner privately holds the `ResolvedProgram` it resolved and borrows
 //! the original source. It stores no source/HIR proof that refers to itself.
