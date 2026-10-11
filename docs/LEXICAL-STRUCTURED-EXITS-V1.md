@@ -26,6 +26,13 @@ statement-tail routes. An exit cannot cross initializer, call argument, aggregat
 return operand, yield, unsafe or closure evaluation. SPX-T312 owns that refusal;
 SPX-T313 rejects an absent enclosing loop. Ordinary failures inside a returned
 expression or staged call argument remain admitted with existing atomic cleanup.
+After ordinary evaluation completes, a statement-shaped exit also settles retained
+ordinary owned String literal/read clones in the contour it leaves. Each temporary
+must resolve to the exact current owned String clone expression and inventory slot;
+a temporary-shaped identity alone is insufficient. Live staged call arguments,
+provisional results and other unfinished temporary kinds remain closed. Root locals
+remain live through ensures; this does not change String read cloning or the allocator
+failure contract.
 
 `ControlTarget::Function(FunctionExecutionId)` names the current ordinary
 function execution, including the exact generic instance. `ControlTarget::Loop

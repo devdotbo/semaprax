@@ -169,14 +169,8 @@ impl PlanBuilder<'_> {
             disposed.insert(StorageId::Value(fields[0].binding.id.clone()));
         }
         let finalizers = self.finalizers_for(state, |place| disposed.contains(&place.storage));
-        if finalizers
-            .iter()
-            .any(|action| !matches!(action.source.storage, StorageId::Value(_)))
-        {
-            return Err(plan_error(
-                "owning continuation retains unfinished authored value evaluation",
-            ));
-        }
+        self.require_completed_lexical_finalizers(&finalizers)?;
+
         let flags: BTreeSet<_> = state
             .live_order
             .iter()

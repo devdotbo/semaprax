@@ -25,6 +25,7 @@ use super::{
     CLEANUP_PLAN_SCHEMA_V4,
 };
 
+mod lexical_temporary;
 mod owned_frame_finalizers;
 pub(crate) use owned_frame_finalizers::{
     canonical_conditional_finalizers_for, canonical_finalizers_for,

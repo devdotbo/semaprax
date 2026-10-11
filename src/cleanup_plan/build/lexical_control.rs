@@ -144,14 +144,8 @@ impl PlanBuilder<'_> {
             .flat_map(|region| self.regions[region.0 as usize].slots.iter().cloned())
             .collect();
         let finalizers = self.finalizers_for(state, |place| storages.contains(&place.storage));
-        if finalizers
-            .iter()
-            .any(|action| !matches!(action.source.storage, StorageId::Value(_)))
-        {
-            return Err(plan_error(
-                "lexical success contour contains live unstaged temporary or call argument storage",
-            ));
-        }
+        self.require_completed_lexical_finalizers(&finalizers)?;
+
         let flags = state
             .live_order
             .iter()
