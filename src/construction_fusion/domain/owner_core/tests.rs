@@ -79,6 +79,15 @@ fn duplicate<'a>(c: &Child<'a>) -> Child<'a> {
         generation: c.generation,
     }
 }
+// Creator function/parent-container scope is deliberately shorter than the
+// invocation registry holding Core. Returning a child never destroys that Core.
+fn leave_creator<'a>(core: &mut Core<'a, Probe>, mut parent: Vec<Child<'a>>) -> Child<'a> {
+    let returned = parent.pop().unwrap();
+    for child in &mut parent {
+        core.drop_owner(child).unwrap();
+    }
+    returned
+}
 #[test]
 fn preparation_preserves_original_and_precharges_every_actual_table_and_header() {
     let module = ModuleIdentity::new();
@@ -114,7 +123,7 @@ fn popped_child_store_clone_and_last_release_preserve_disjoint_backing() {
     let module = ModuleIdentity::new();
     let mut issuer = Issuer::new();
     let p = probe(3);
-    let (mut core, mut children) = Core::partition(
+    let (mut core, children) = Core::partition(
         vec![1, 2, 3, 4, 5, 6].into_boxed_slice(),
         3,
         2,
@@ -124,11 +133,7 @@ fn popped_child_store_clone_and_last_release_preserve_disjoint_backing() {
     )
     .ok()
     .unwrap();
-    let mut popped = children.pop().unwrap();
-    for child in &mut children {
-        core.drop_owner(child).unwrap();
-    }
-    drop(children);
+    let mut popped = leave_creator(&mut core, children);
     assert_eq!(p.0.borrow().releases, 0);
     let cloned = core.deep_clone(&popped).unwrap();
     assert_eq!(&*cloned, &[5, 6]);

@@ -136,8 +136,14 @@ completion; active borrows block move/drop, and readonly callbacks resolve exact
 held backing ranges without cloning or exporting an owned backing. Writes are
 closed in this first profile. Issuer or generation exhaustion refuses without
 wrapping. The final child releases backing exactly once after the pin is gone.
-An abandoned private domain deliberately cannot implicitly free live backing;
-executor integration must provide the canonical explicit settlement boundary.
+Ordinary lexical/container cleanup cannot destroy the held invocation domain:
+executor integration must retain it in the invocation registry until every
+internal returned/popped child settles. Canonical abort cleanup still precedes
+explicit `settle_abort`; Rust `Drop` is not a successful settlement certificate.
+Whole-invocation abandonment releases the remaining administrative backing
+without publishing a result or inventing source finalizer order. The private
+range core and creator-scope returned-child control are described in
+[held range core](OWNED-BYTE-RANGE-CORE-V1.md).
 
 Two descriptor and five domain regression definitions are authored, including
 exact/one-short metadata, independent concurrent view capacity, stale/foreign
