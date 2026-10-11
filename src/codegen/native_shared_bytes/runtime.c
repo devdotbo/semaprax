@@ -453,7 +453,8 @@ SPX_SHB_FN void spx_shb_drop_row(spx_shb_registry *registry, const spx_shb_vec *
     value->rows[index] = (spx_shb_stored){0};
     spx_shb_drop(registry, &owner);
 }
-/* Refuse every live loan or invalid row before the first canonical finalizer. */
+/* Refuse live row loans before the first canonical finalizer. Individual
+   finalizers still authenticate their exact row before changing it. */
 SPX_SHB_FN void spx_shb_preflight_rows(
     spx_shb_registry *registry, const spx_shb_vec *value, uint64_t start
 ) {
