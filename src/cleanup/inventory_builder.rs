@@ -53,6 +53,7 @@ pub(crate) fn build_inventory(
 /// Copy/borrowed traversal. Nominal carriers, variants, Vec/Box/generic
 /// carriers, function types and type parameters refuse before delegated type
 /// classification. Constructor support grants no retained replay admission.
+#[cfg(test)]
 pub(crate) fn build_inventory_with_reservation<'a>(
     program: &'a dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,

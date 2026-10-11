@@ -169,9 +169,7 @@ pub(super) fn collect_slot_leaves(
         FieldLivenessShape::Leaf { flag, lifecycle } => insert_leaf(
             function,
             &slot.storage,
-            None,
-            *flag,
-            lifecycle,
+            (None, *flag, lifecycle),
             leaves,
             places,
             budget,
@@ -195,9 +193,7 @@ pub(super) fn collect_slot_leaves(
                     FieldLivenessShape::Leaf { flag, lifecycle } => insert_leaf(
                         function,
                         &slot.storage,
-                        Some(&field.field),
-                        *flag,
-                        lifecycle,
+                        (Some(&field.field), *flag, lifecycle),
                         leaves,
                         places,
                         budget,
@@ -221,13 +217,12 @@ pub(super) fn collect_slot_leaves(
 fn insert_leaf(
     function: &ResolvedFunction,
     storage: &StorageId,
-    field: Option<&DeclarationId>,
-    flag: LivenessFlagId,
-    lifecycle: &DeclarationId,
+    metadata: (Option<&DeclarationId>, LivenessFlagId, &DeclarationId),
     leaves: &mut BTreeMap<LivenessFlagId, Leaf>,
     places: &mut BTreeSet<CleanupPlace>,
     budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
+    let (field, flag, lifecycle) = metadata;
     if leaves.contains_key(&flag) {
         return Err(replay_error(function, "selected liveness flag is repeated"));
     }
