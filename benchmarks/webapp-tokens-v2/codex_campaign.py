@@ -13,6 +13,7 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import math
 import os
 import re
 import signal
@@ -956,40 +957,63 @@ def launch_calibration(repo: Path, artifacts: Path, commit: str, settings: dict[
     return row
 
 
+def _measurement(value: Any, *, integer: bool = False, signed: bool = False) -> bool:
+    return (type(value) in ((int,) if integer else (int, float))
+            and (type(value) is int or math.isfinite(value))
+            and (signed or value >= 0))
+
+
 def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
-    def complete_sum(values: list[Any]) -> int | float | None:
+    summary = _summarize(rows)
+    summary["by_arm"] = {arm: _summarize([row for row in rows if row.get("arm") == arm], (arm,))
+                         for arm in ARMS}
+    return summary
+
+
+def _summarize(rows: list[dict[str, Any]], arms: tuple[str, ...] = ARMS) -> dict[str, Any]:
+    def complete_sum(values: list[Any], *, integer: bool = False,
+                     signed: bool = False) -> int | float | None:
         complete = rows and len(values) == len(rows) and all(
-            isinstance(value, (int, float)) for value in values
-        )
-        return sum(values) if complete else None
+            _measurement(value, integer=integer, signed=signed) for value in values)
+        total = sum(values) if complete else None
+        return total if total is not None and _measurement(total, integer=integer, signed=signed) else None
 
     accepted_rows = [row for row in rows if row.get("status") == "accepted"]
     accepted = len(accepted_rows)
     prices = [row.get("list_price", {}).get("standard_short_context_api_equivalent_usd")
               for row in rows if isinstance(row.get("list_price"), dict)]
     price_total = complete_sum(prices)
-    raw_input = complete_sum([row.get("observed", {}).get("request_usage_sum", {}).get("input_tokens") for row in rows])
-    cached_input = complete_sum([row.get("observed", {}).get("request_usage_sum", {}).get("cached_input_tokens") for row in rows])
-    cache_write_input = complete_sum([row.get("observed", {}).get("request_usage_sum", {}).get("cache_write_input_tokens") for row in rows])
-    output = complete_sum([row.get("observed", {}).get("request_usage_sum", {}).get("output_tokens") for row in rows])
-    legacy_net = complete_sum([row.get("observed", {}).get("legacy_net_input_tokens") for row in rows])
+    raw_input = complete_sum([row.get("observed", {}).get("request_usage_sum", {}).get("input_tokens") for row in rows], integer=True)
+    cached_input = complete_sum([row.get("observed", {}).get("request_usage_sum", {}).get("cached_input_tokens") for row in rows], integer=True)
+    cache_write_input = complete_sum([row.get("observed", {}).get("request_usage_sum", {}).get("cache_write_input_tokens") for row in rows], integer=True)
+    output = complete_sum([row.get("observed", {}).get("request_usage_sum", {}).get("output_tokens") for row in rows], integer=True)
+    legacy_net = complete_sum([row.get("observed", {}).get("legacy_net_input_tokens") for row in rows], integer=True, signed=True)
     agent_wall = complete_sum([row.get("elapsed_seconds") for row in rows])
     acceptance_wall_values = [row.get("acceptance_elapsed_seconds",
-        row.get("acceptance", {}).get("seconds", None if "acceptance" in row else 0)) for row in rows]
-    acceptance_wall = (sum(acceptance_wall_values)
-                       if rows and all(isinstance(value, (int, float)) for value in acceptance_wall_values) else None)
+        row.get("acceptance", {}).get("seconds", None)) for row in rows]
+    acceptance_wall = complete_sum(acceptance_wall_values)
+    outer_turns = complete_sum([row.get("observed", {}).get("codex_outer_turns") for row in rows], integer=True)
+    model_requests = complete_sum([row.get("observed", {}).get("model_request_count") for row in rows], integer=True)
+    arm_counts = {arm: sum(row.get("arm") == arm for row in rows) for arm in arms}
     authored_values = [row.get("final_candidate_source_metrics", {}).get("total_tokens") for row in accepted_rows]
     authored_total = (sum(authored_values)
-                      if accepted and len(authored_values) == accepted and all(isinstance(value, int) for value in authored_values)
+                      if accepted and len(authored_values) == accepted and all(_measurement(value, integer=True) for value in authored_values)
                       else None)
     return {
-        "attempt_denominator": len(ARMS) * MIN_TRIALS_PER_ARM,
+        "attempt_denominator": len(arms) * MIN_TRIALS_PER_ARM,
         "recorded_attempts": len(rows),
         "resource_contaminated_attempts": sum(bool(row.get("resource_assessment", {}).get("contaminated")) for row in rows),
-        "clean_comparison_eligible": len(rows) >= len(ARMS) * MIN_TRIALS_PER_ARM and all(
-            row.get("resource_assessment", {}).get("clean_comparison_eligible") is True for row in rows),
+        "attempts_by_arm": arm_counts,
+        "unknown_arm_attempts": len(rows) - sum(arm_counts.values()),
+        "clean_comparison_eligible": all(count >= MIN_TRIALS_PER_ARM for count in arm_counts.values())
+            and sum(arm_counts.values()) == len(rows) and all(
+                row.get("resource_assessment", {}).get("clean_comparison_eligible") is True for row in rows),
         "accepted_attempts": accepted,
         "failed_or_rejected_attempts": len(rows) - accepted,
+        "codex_outer_turns_all_attempts": outer_turns,
+        "model_requests_all_attempts": model_requests,
+        "codex_outer_turns_per_accepted_task": outer_turns / accepted if outer_turns is not None and accepted else None,
+        "model_requests_per_accepted_task": model_requests / accepted if model_requests is not None and accepted else None,
         "usage_all_attempts": {
             "raw_input_tokens": raw_input, "cached_input_tokens_subset": cached_input,
             "cache_write_input_tokens_subset": cache_write_input, "output_tokens": output,
@@ -997,7 +1021,7 @@ def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
         },
         "accepted_authored_source_tokens": authored_total,
         "authored_source_tokens_per_accepted_task": authored_total / accepted if authored_total is not None and accepted else None,
-        "list_price_estimate_known_attempts": len([value for value in prices if isinstance(value, (int, float))]),
+        "list_price_estimate_known_attempts": len([value for value in prices if _measurement(value)]),
         "list_price_estimate_all_attempts_usd": round(price_total, 6) if price_total is not None else None,
         "list_price_estimate_per_accepted_task_usd": round(price_total / accepted, 6) if price_total is not None and accepted else None,
         "agent_wall_seconds_all_attempts": agent_wall,
@@ -1007,6 +1031,9 @@ def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "provider_receipt_actual_usd": None,
         "cost_claim": "conditional standard short-context API-equivalent estimate; no provider billing receipt",
         "calibration_separate": True,
+        "fixed_harness_context_tokens": None,
+        "legacy_net_claim": "historical first-request subtraction proxy; not task-only input",
+        "authored_source_claim": "final accepted-file Claude-BPE inventory proxy; not cumulative edits or exact GPT tokens",
     }
 
 

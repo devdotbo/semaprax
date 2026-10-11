@@ -1016,6 +1016,60 @@ class WebappCampaignTests(unittest.TestCase):
         self.assertEqual(summary["acceptance_wall_seconds_per_accepted_task"], 60)
         self.assertTrue(summary["calibration_separate"])
 
+    def test_summary_requires_measured_failed_attempt_wall_and_valid_numbers(self):
+        row = {"status": "accepted", "elapsed_seconds": 3,
+               "acceptance_elapsed_seconds": 4,
+               "list_price": {"standard_short_context_api_equivalent_usd": 2},
+               "final_candidate_source_metrics": {"total_tokens": 5}}
+        failed = {"status": "failed", "elapsed_seconds": 6}
+        summary = campaign.summarize([row, failed])
+        self.assertEqual(summary["agent_wall_seconds_per_accepted_task"], 9)
+        self.assertIsNone(summary["acceptance_wall_seconds_per_accepted_task"])
+        self.assertIsNone(summary["list_price_estimate_per_accepted_task_usd"])
+        # An explicit zero is measured; an absent failed-attempt duration is not.
+        failed["acceptance_elapsed_seconds"] = 0
+        self.assertEqual(campaign.summarize([row, failed])["acceptance_wall_seconds_all_attempts"], 4)
+        for invalid in (True, -1, float("nan"), float("inf")):
+            with self.subTest(invalid=invalid):
+                bad = dict(row, elapsed_seconds=invalid, acceptance_elapsed_seconds=invalid)
+                bad["list_price"] = {"standard_short_context_api_equivalent_usd": invalid}
+                bad["final_candidate_source_metrics"] = {"total_tokens": invalid}
+                report = campaign.summarize([bad])
+                for key in ("agent_wall_seconds_all_attempts", "acceptance_wall_seconds_all_attempts",
+                            "list_price_estimate_all_attempts_usd", "accepted_authored_source_tokens"):
+                    self.assertIsNone(report[key])
+                self.assertEqual(report["list_price_estimate_known_attempts"], 0)
+        self.assertIsNone(campaign.summarize([dict(row, elapsed_seconds=1e308)] * 2)
+                          ["agent_wall_seconds_all_attempts"])
+
+    def test_summary_keeps_arm_denominators_and_cli_turns_distinct(self):
+        def row(arm, status):
+            return {"arm": arm, "status": status,
+                    "resource_assessment": {"clean_comparison_eligible": True},
+                    "observed": {"codex_outer_turns": 1, "model_request_count": 7,
+                                 "legacy_net_input_tokens": -2},
+                    "elapsed_seconds": 2, "acceptance_elapsed_seconds": 3,
+                    "list_price": {"standard_short_context_api_equivalent_usd": 0.5},
+                    "final_candidate_source_metrics": {"total_tokens": 10}}
+        unbalanced = [row("semaprax", "accepted") for _ in range(10)]
+        self.assertFalse(campaign.summarize(unbalanced)["clean_comparison_eligible"])
+        balanced = unbalanced[:5] + [row("typescript", "failed") for _ in range(5)]
+        summary = campaign.summarize(balanced)
+        self.assertTrue(summary["clean_comparison_eligible"])
+        self.assertEqual(summary["attempts_by_arm"], {"semaprax": 5, "typescript": 5})
+        self.assertEqual(summary["codex_outer_turns_all_attempts"], 10)
+        self.assertEqual(summary["model_requests_all_attempts"], 70)
+        self.assertEqual(summary["model_requests_per_accepted_task"], 14)
+        self.assertEqual(summary["by_arm"]["semaprax"]["attempt_denominator"], 5)
+        self.assertEqual(summary["usage_all_attempts"]["legacy_net_input_tokens"], -20)
+        self.assertEqual(summary["list_price_estimate_per_accepted_task_usd"], 1)
+        self.assertEqual(summary["by_arm"]["semaprax"]["list_price_estimate_per_accepted_task_usd"], 0.5)
+        self.assertIsNone(summary["by_arm"]["typescript"]["list_price_estimate_per_accepted_task_usd"])
+        self.assertIsNone(summary["fixed_harness_context_tokens"])
+        self.assertIsNone(summary["provider_receipt_actual_usd"])
+        self.assertFalse(campaign.summarize(balanced + [row("foreign", "accepted")])
+                         ["clean_comparison_eligible"])
+
     def test_empty_attempts_keep_cost_usage_and_time_unknown(self):
         summary = campaign.summarize([])
         self.assertEqual(summary["recorded_attempts"], 0)
