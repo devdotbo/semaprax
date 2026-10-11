@@ -205,10 +205,32 @@ fn guarded_loop_transfers_cannot_hide_behind_a_later_function_return() {
                 .any(|d| matches!(d.code, "SPX-T252" | "SPX-O101" | "SPX-O104")),
             "{errors:?}"
         );
-        assert!(hir::resolve(&ast)
-            .unwrap_err()
-            .iter()
-            .any(|d| d.code == "SPX-H006"));
+        // Invalid source must stop before HIR construction. The public resolver
+        // preserves the complete source diagnostic set; it cannot manufacture
+        // an independent HIR invariant failure for this rejected program.
+        let expected: Vec<_> = errors.iter().map(|diagnostic| diagnostic.json()).collect();
+        let resolved_errors = hir::resolve(&ast).unwrap_err();
+        assert_eq!(
+            resolved_errors
+                .iter()
+                .map(|diagnostic| diagnostic.json())
+                .collect::<Vec<_>>(),
+            expected,
+            "{exit}: source refusal must survive the HIR boundary unchanged"
+        );
+        let analysis = hir::analyze(&ast);
+        assert!(
+            analysis.resolved.is_none(),
+            "{exit}: invalid source acquired HIR"
+        );
+        assert_eq!(
+            analysis
+                .diagnostics
+                .iter()
+                .map(|diagnostic| diagnostic.json())
+                .collect::<Vec<_>>(),
+            expected
+        );
     }
     let source = "module app.nested_return; @id(\"main\") fn probe()->string {let value=\"owner\";while true {while true {break;}return value;} value} @id(\"entry.main\") fn main()->i64 {0}";
     let ast = semaprax::check(source, "local-break-then-return.spx").unwrap();
