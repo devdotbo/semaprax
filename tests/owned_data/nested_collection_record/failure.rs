@@ -117,7 +117,7 @@ pub(crate) fn native_failure(
 static uint64_t live=0;
 static void *probe_malloc(size_t n){void*p=malloc(n);if(p)++live;return p;}
 static void *probe_calloc(size_t n,size_t s){void*p=calloc(n,s);if(p)++live;return p;}
-static void *probe_realloc(void*p,size_t n){void*r=realloc(p,n);if(r&&!p)++live;return r;}
+static __attribute__((unused)) void *probe_realloc(void*p,size_t n){void*r=realloc(p,n);if(r&&!p)++live;return r;}
 static void probe_free(void*p){if(p){if(!live)abort();--live;free(p);}}
 "#;
     let probe = r#"

@@ -44,10 +44,15 @@ pub(super) fn oracle_call(
     ) {
         return result;
     }
-    // The recursive oracle predates the byte vocabulary. Keep length inspection
-    // independently checked so streaming Chunk + Len exercises both walkers.
-    if name == crate::byte_ops::LEN_NAME {
-        let op = crate::byte_ops::ByteOp::Len;
+    // Independently check the readonly byte vocabulary used by normalization.
+    if let Some(op) = crate::byte_ops::by_name(name).filter(|op| {
+        matches!(
+            op,
+            crate::byte_ops::ByteOp::Len
+                | crate::byte_ops::ByteOp::Range
+                | crate::byte_ops::ByteOp::BytesAsSlice
+        )
+    }) {
         if !type_arguments.is_empty() {
             diagnostics.push(error(
                 program,
@@ -67,6 +72,24 @@ pub(super) fn oracle_call(
                 ),
                 expr.span,
             ));
+        }
+        if op.is_view()
+            && args.first().is_none_or(|argument| {
+                !crate::source_verify::arguments::source_byte_view_place_is_admitted(
+                    op, argument, variables, types,
+                )
+            })
+        {
+            let diagnostic = error(
+                program,
+                "SPX-T266",
+                format!("borrowed view `{name}` requires an exact admitted storage place"),
+                expr.span,
+            );
+            diagnostics.push(match args.first() {
+                Some(argument) => diagnostic.with_help(hints::view_place_help(name, argument)),
+                None => diagnostic,
+            });
         }
         for (index, argument) in args.iter().enumerate() {
             if let Some(actual) = check_expr(

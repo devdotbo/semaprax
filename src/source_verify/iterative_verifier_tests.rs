@@ -877,7 +877,9 @@ fn borrowed_text_byte_at_matches_recursive_oracle() {
         "module t; fn main(text:borrow str)->Option<u8> { str_byte_at(text,1) }",
         "module t; fn main(text:borrow str)->Option<u8> { str_byte_at(text) }",
         "module t; fn main(text:borrow str)->Option<u8> { str_byte_at<u8>(text,0usize) }",
-    ] { compare_scalar_body(source); }
+    ] {
+        compare_scalar_body(source);
+    }
 }
 
 #[test]
@@ -941,4 +943,11 @@ fn normalized_input_flat_aggregate_join_matches_recursive_oracle() {
             "vec_get<Row>(rows, 0usize)",
         );
     compare_scalar_body(&copy);
+    for source in [
+        "module t; fn main(value: own Bytes)->Slice<u8> {bytes_as_slice<i64>(value)}",
+        "module t; fn main()->Slice<u8> {bytes_as_slice(1)}",
+        "module t; fn main(value: borrow Slice<u8>)->Slice<u8> {byte_range(value,0,1usize)}",
+    ] {
+        compare_scalar_body(source);
+    }
 }

@@ -2592,6 +2592,7 @@ fn scan_closure(
                 if (!scalar
                     && !option_u8
                     && !owned_byte_record
+                    && !nested_owned::copy_record_scalar_match(declarations, expression)
                     && !owned_byte_variant
                     && !owned_record_result
                     && !agg)
@@ -4705,9 +4706,9 @@ impl Evaluator<'_> {
                             )?;
                         }
                         hir::ResolvedMatchMode::Value => {
-                            return Err(Flow::Guard(
-                                "owned-byte record reached a plain value match",
-                            ));
+                            nested_owned::bind_copy_record_pattern(
+                                self.declarations, expression, &record, fields, &mut bindings,
+                            )?;
                         }
                     }
                     let base = environment.len();

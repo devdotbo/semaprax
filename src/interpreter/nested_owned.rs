@@ -1,5 +1,10 @@
 //! Runtime-only support for the verifier-authenticated acyclic nested record profile.
 
+mod copy_record_match;
+pub(super) use copy_record_match::{
+    admitted as copy_record_scalar_match, bind as bind_copy_record_pattern,
+};
+
 use std::collections::BTreeSet;
 use std::sync::Arc;
 
