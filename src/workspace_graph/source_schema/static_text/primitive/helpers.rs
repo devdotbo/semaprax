@@ -276,6 +276,27 @@ fn authenticate_target<'a>(
     })? {
         return Err(fail());
     }
+    // The complete pure walk above independently excludes owned roots and
+    // lexical exits. Such a provider has exactly the ordinary empty V1 loan
+    // inventory; the attached plan is a consistency check, never authority.
+    charge(
+        resources,
+        anchor,
+        function
+            .loan_plan
+            .schema
+            .len()
+            .min(crate::loan_plan::LOAN_PLAN_SCHEMA_V1.len())
+            .checked_add(1)
+            .ok_or_else(fail)?,
+    )?;
+    if function.loan_plan.schema != crate::loan_plan::LOAN_PLAN_SCHEMA_V1
+        || !function.loan_plan.loans.is_empty()
+        || !function.loan_plan.endpoints.is_empty()
+        || !function.loan_plan.edges.is_empty()
+    {
+        return Err(fail());
+    }
     resources
         .reserve_array::<u8>(
             anchor,

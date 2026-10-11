@@ -640,24 +640,35 @@ use function @id("leaf.step") from scalar.leaf as step;
 fn generic_option_nominal_and_vec_provider_bodies_keep_the_route_closed() {
     let generic_caller = CALLER.replace("step(41)", "step<i64>(41)");
     let generic_provider = r#"module scalar.helper; @id("helper.step") fn step<T>(n:T)->T{n}"#;
-    assert!(build(&generic_caller, generic_provider, LEAF)
+    let rejected = build(&generic_caller, generic_provider, LEAF)
         .err()
-        .expect("generic provider remains closed")
-        .iter()
-        .any(|e| e.code == "SPX-G410"));
-    for leaf in [
-        LEAF.replace("n+1", "let choice=Option<i64>::Some {value:n}; n"),
-        format!(
-            "module scalar.leaf; @id(\"private.Row\") record Row {{@id(\"private.Row.n\") n:i64,}} @id(\"leaf.step\") fn step(n:i64)->i64{{let row=Row {{n:n}};row.n}}"
+        .expect("generic provider remains closed");
+    assert!(
+        rejected.iter().any(|e| e.code == "SPX-G410"),
+        "generic provider rejection: {rejected:?}"
+    );
+    for (label, leaf) in [
+        (
+            "Option<i64>",
+            LEAF.replace("n+1", "let choice=Option<i64>::Some {value:n}; n"),
         ),
-        LEAF.replace("n+1", "let values=vec_with_capacity<i64>(1usize);n"),
+        (
+            "private nominal",
+            format!(
+                "module scalar.leaf; @id(\"private.Row\") record Row {{@id(\"private.Row.n\") n:i64,}} @id(\"leaf.step\") fn step(n:i64)->i64{{let row=Row {{n:n}};row.n}}"
+            ),
+        ),
+        (
+            "owned Vec",
+            LEAF.replace("n+1", "let values=vec_with_capacity<i64>(1usize);n"),
+        ),
     ] {
+        let rejected = build(CALLER, PROVIDER, &leaf)
+            .err()
+            .expect("carrier provider remains closed");
         assert!(
-            build(CALLER, PROVIDER, &leaf)
-                .err()
-                .expect("carrier provider remains closed")
-                .iter()
-                .any(|e| e.code == "SPX-G410")
+            rejected.iter().any(|e| e.code == "SPX-G410"),
+            "{label} provider rejection: {rejected:?}"
         );
     }
 }
@@ -724,7 +735,7 @@ mod runtime;
 
 #[test]
 fn borrowed_provider_roots_and_transitive_length_reads_replay_actual_contracts() {
-    let caller_source = r#"module scalar.app;
+    let ordinary_caller_source = r#"module scalar.app;
 use function @id("helper.length") from scalar.helper as length;
 @id("app.main") fn main()->i64 {let text=str"é\u{0}";let size=length(str_as_bytes(text));return if size==3usize {42}else{0};}
 "#;
@@ -735,7 +746,21 @@ use function @id("leaf.length") from scalar.leaf as leaf_length;
     let leaf_source = r#"module scalar.leaf;
 @id("leaf.length") fn length(view:borrow Slice<u8>)->usize ensures result==byte_len(view) {byte_len(view)}
 "#;
-    let build = build(caller_source, provider_source, leaf_source).unwrap();
+    // Keep the original tail-return source as an ordinary execution control;
+    // it is not evidence for the selected physical helper lease.
+    let ordinary = build(ordinary_caller_source, provider_source, leaf_source).unwrap();
+    let ordinary_linked = ordinary
+        .linked_owned_data_api_program_with_roots("scalar.app", &[])
+        .unwrap();
+    assert_eq!(
+        crate::interpreter::evaluate_resolved_zero_arg_i64(&ordinary_linked, "app.main", 100_000)
+            .unwrap()
+            .outcome,
+        crate::interpreter::ResolvedEvaluationOutcome::ReturnedI64(42)
+    );
+    let caller_source = selected_borrowed_caller(ordinary_caller_source);
+    let build = build(&caller_source, provider_source, leaf_source).unwrap();
+    assert_selected_borrowed_inventory(&build);
     assert_eq!(schema(&build).unwrap(), "semaprax.graph.v77");
     let linked = build
         .linked_owned_data_api_program_with_roots("scalar.app", &[])
@@ -748,15 +773,35 @@ use function @id("leaf.length") from scalar.leaf as leaf_length;
             crate::interpreter::ResolvedEvaluationOutcome::ReturnedI64(42)
         );
     }
-    let local_source = r#"module scalar.local;
+    let ordinary_local_source = r#"module scalar.local;
 @id("leaf.length") fn leaf_length(view:borrow Slice<u8>)->usize ensures result==byte_len(view) {byte_len(view)}
 @id("helper.length") fn length(view:borrow Slice<u8>)->usize {leaf_length(view)}
 @id("app.main") fn main()->i64 {let text=str"é\u{0}";let size=length(str_as_bytes(text));return if size==3usize {42}else{0};}
 "#;
-    let control = hir::resolve(&crate::check(local_source, "borrowed-local.spx").unwrap()).unwrap();
+    let ordinary_local =
+        hir::resolve(&crate::check(ordinary_local_source, "borrowed-ordinary-local.spx").unwrap())
+            .unwrap();
+    assert_eq!(
+        crate::interpreter::evaluate_resolved_zero_arg_i64(&ordinary_local, "app.main", 100_000)
+            .unwrap()
+            .outcome,
+        crate::interpreter::ResolvedEvaluationOutcome::ReturnedI64(42)
+    );
+    let local_source = selected_borrowed_caller(ordinary_local_source);
+    let control =
+        hir::resolve(&crate::check(&local_source, "borrowed-local.spx").unwrap()).unwrap();
+    assert!(control
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "app.main")
+        .unwrap()
+        .cleanup_plan
+        .lexical_control
+        .is_some());
     runtime::run(&linked, &control);
     let (wide, allocation) = measured(&build, 32_000_000, 1 << 26);
-    let (work, bytes) = wide.unwrap();
+    let (work, bytes) =
+        wide.expect("selected borrowed replay must expose its actual refusing phase");
     assert!(!allocation.invalid && allocation.allocated <= bytes && allocation.live == 0);
     assert_eq!(measured(&build, work, bytes).0.unwrap(), (work, bytes));
     assert!(measured(&build, work - 1, bytes).0.is_err());
@@ -765,12 +810,37 @@ use function @id("leaf.length") from scalar.leaf as leaf_length;
 
 #[test]
 fn borrowed_provider_parameter_modes_roots_and_loan_proofs_cannot_be_forged() {
-    let caller_source = r#"module scalar.app; use function @id("leaf.length") from scalar.leaf as length;
+    let ordinary_caller_source = r#"module scalar.app; use function @id("leaf.length") from scalar.leaf as length;
 @id("app.main") fn main()->i64 {let text=str"abc";let size=length(str_as_bytes(text));return if size==3usize {42}else{0};}"#;
     let leaf_source = r#"module scalar.leaf; @id("leaf.length") fn length(view:borrow Slice<u8>)->usize {byte_len(view)}"#;
-    for mutation in 0..3 {
+    let caller_source = selected_borrowed_caller(ordinary_caller_source);
+    let ordinary = build_sources(&[
+        ("caller.spx", ordinary_caller_source),
+        ("leaf.spx", leaf_source),
+    ])
+    .unwrap();
+    let ordinary_linked = ordinary
+        .linked_owned_data_api_program_with_roots("scalar.app", &[])
+        .unwrap();
+    assert_eq!(
+        crate::interpreter::evaluate_resolved_zero_arg_i64(&ordinary_linked, "app.main", 100_000)
+            .unwrap()
+            .outcome,
+        crate::interpreter::ResolvedEvaluationOutcome::ReturnedI64(42)
+    );
+    for (mutation, label) in [
+        (0, "parameter ownership"),
+        (1, "parameter root identity"),
+        (2, "loan schema"),
+    ] {
         let mut build =
-            build_sources(&[("caller.spx", caller_source), ("leaf.spx", leaf_source)]).unwrap();
+            build_sources(&[("caller.spx", &caller_source), ("leaf.spx", leaf_source)]).unwrap();
+        assert_selected_borrowed_inventory(&build);
+        assert_eq!(
+            schema(&build).unwrap(),
+            "semaprax.graph.v77",
+            "baseline {label}"
+        );
         let function = &mut build
             .hir
             .modules
@@ -783,6 +853,57 @@ fn borrowed_provider_parameter_modes_roots_and_loan_proofs_cannot_be_forged() {
             1 => function.params[0].id = hir::ValueId::intrinsic_parameter("forged.root", 0),
             _ => function.loan_plan.schema = "forged.loan.schema",
         }
-        assert!(schema(&build).is_err());
+        let module = caller(&build);
+        let anchor = &module.functions[0];
+        let mut resources =
+            SelectedReplayPreparation::with_limits(anchor, 32_000_000, 1 << 26).unwrap();
+        let rejected = authenticate(
+            module,
+            &build.hir.modules,
+            &build.hir.declarations,
+            &mut resources,
+        )
+        .err()
+        .expect("the actual helper receiving seam must refuse mutated authority");
+        assert!(
+            rejected.iter().any(|e| e.code == "SPX-G410"),
+            "mutation {mutation} ({label}): {rejected:?}"
+        );
+        assert_eq!(
+            resources
+                .charge(anchor, 0, "mutated helper retry")
+                .unwrap_err()
+                .code,
+            "SPX-H006",
+            "mutation {mutation} ({label})"
+        );
+        let observed = schema(&build);
+        assert!(
+            observed.is_err(),
+            "mutation {mutation} ({label}): {observed:?}"
+        );
     }
+}
+
+// A loop-containing return cannot normalize into an ordinary tail value. The
+// helper read remains before the one-iteration loop and executes exactly once.
+fn selected_borrowed_caller(original: &str) -> String {
+    let needle = "return if size==3usize {42}else{0};";
+    assert_eq!(original.matches(needle).count(), 1);
+    original.replace(needle, "let mut tick=0usize;while tick<1usize {tick=tick+1usize;return if size==3usize {42}else{0};} 0")
+}
+fn assert_selected_borrowed_inventory(build: &WorkspaceGraphBuild) {
+    let module = caller(build);
+    assert!(
+        module.functions[0].cleanup_plan.lexical_control.is_some(),
+        "actual lexical caller"
+    );
+    let inventory = module
+        .static_text
+        .as_ref()
+        .expect("literal source inventory")
+        .lexical
+        .as_ref()
+        .expect("source-bound primitive inventory");
+    assert!(inventory.imported, "selected imported-helper source route");
 }

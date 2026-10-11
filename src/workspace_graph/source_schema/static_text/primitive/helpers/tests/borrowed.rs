@@ -91,7 +91,11 @@ fn actual_json_byte_reader_and_u8_conversion_have_exact_nonowning_shapes() {
 fn byte_reader_borrow_modes_owned_roots_and_non_u8_payloads_remain_closed() {
     let source = r#"module scalar.leaf; @id("leaf.read") fn read(view:borrow Slice<u8>,at:usize)->i64 {match byte_get(view,at) {Option::Some {value}=>i64_from_u8(value),Option::None {}=>0,}}"#;
     let program = pure(source);
-    for mutation in 0..3 {
+    for (mutation, label) in [
+        (0, "owned parameter"),
+        (1, "foreign root identity"),
+        (2, "owned result"),
+    ] {
         let mut function = program.functions[0].clone();
         match mutation {
             0 => function.params[0].ownership = hir::OwnershipMode::Own,
@@ -104,7 +108,8 @@ fn byte_reader_borrow_modes_owned_roots_and_non_u8_payloads_remain_closed() {
         let mut remaining = 1_048_576;
         assert!(
             !scalar_helpers::pure_shape_metered(&function, &mut remaining, &mut |_| Ok(()))
-                .unwrap()
+                .unwrap(),
+            "mutation {mutation} ({label})"
         );
     }
 }
