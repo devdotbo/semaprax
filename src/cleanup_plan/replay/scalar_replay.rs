@@ -1,12 +1,13 @@
 //! Physically metered proof replay for independently source-bound scalar helpers.
 //! Full structure and path states precede exact observation equality.
 use super::*;
+pub(super) mod records;
 pub(super) fn validate(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
-    if !crate::hir::borrowed_scalar::signature(function) {
+    if !records::signature(program, function, budget)? {
         return Err(replay_error(
             function,
             "selected helper signature is outside Copy scalars",
@@ -19,7 +20,7 @@ pub(super) fn validate(
     #[cfg(not(test))]
     let has_borrowed = false;
     if !has_borrowed {
-        scalar_nodes(function, budget)?;
+        scalar_nodes(program, function, budget)?;
     }
     selected_profile::validate(program, function, budget)?;
     selected_owner::owner(program, function, budget)?;
@@ -116,7 +117,11 @@ pub(super) fn validate(
     }
 }
 
-fn scalar_nodes(function: &ResolvedFunction, budget: &mut ReplayBudget) -> Result<(), Diagnostic> {
+fn scalar_nodes(
+    program: &dyn ReplayContext,
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+) -> Result<(), Diagnostic> {
     type Frame<'a> = Option<(crate::hir::lexical_exit::ChildCursor<'a>, bool)>;
     budget.reserve_array::<Frame<'_>>(function, 514, "selected scalar body profile cursor")?;
     let mut stack = [None; 514];
@@ -133,14 +138,22 @@ fn scalar_nodes(function: &ResolvedFunction, budget: &mut ReplayBudget) -> Resul
             let (mut cursor, entered) = stack[depth - 1]
                 .take()
                 .ok_or_else(|| replay_error(function, "scalar profile cursor is empty"))?;
+            let record = if !entered {
+                records::expression(program, function, cursor.expression(), budget)?
+            } else {
+                None
+            };
             if !entered
-                && !crate::hir::borrowed_scalar::expression(
-                    function,
-                    cursor.expression(),
-                    &mut |units| {
-                        budget.charge(function, units, "selected borrowed helper root identity")
-                    },
-                )?
+                && !match record {
+                    Some(admitted) => admitted,
+                    None => crate::hir::borrowed_scalar::expression(
+                        function,
+                        cursor.expression(),
+                        &mut |units| {
+                            budget.charge(function, units, "selected borrowed helper root identity")
+                        },
+                    )?,
+                }
             {
                 return Err(replay_error(
                     function,

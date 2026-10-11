@@ -107,6 +107,52 @@ fn nodes(root: &ResolvedExpr) -> Vec<&ResolvedExpr> {
 }
 #[test]
 fn exact_vec_call_and_field_modes_types_ids_and_elements_remain_closed() {
+    let helper = direct(
+        r#"module receiving;
+@id("app.Row") record Row {@id("app.Row.n") n:i64,@id("app.Row.text") text:string,}
+@id("app.weight") fn weight(row:borrow Row)->i64 {row.n}
+@id("app.main") fn main()->i64 {let row=Row{n:42,text:"x"};weight(row)}
+"#,
+    );
+    let current_helper = helper
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "app.weight")
+        .unwrap();
+    super::super::scalar_replay::validate(&helper, current_helper, &mut budget()).unwrap();
+    let projection = nodes(&current_helper.body)
+        .into_iter()
+        .find(|node| matches!(node.kind, ResolvedExprKind::Project { .. }))
+        .unwrap();
+    for mutation in 0..5 {
+        let mut forged = projection.clone();
+        let ResolvedExprKind::Project { base, field } = &mut forged.kind else {
+            unreachable!()
+        };
+        match mutation {
+            0 => *field = DeclarationId::new("foreign.field"),
+            1 => base.ownership = OwnershipMode::Own,
+            2 => {
+                let ResolvedExprKind::Place(place) = &mut base.kind else {
+                    unreachable!()
+                };
+                place.root = crate::hir::ValueId::intrinsic_parameter("foreign.parameter", 0);
+            }
+            3 => forged.ty = ResolvedType::Bool,
+            _ => forged.ownership = OwnershipMode::Borrow,
+        }
+        assert_eq!(
+            super::super::scalar_replay::records::expression_for_test(
+                &helper,
+                current_helper,
+                &forged,
+                &mut budget()
+            )
+            .unwrap(),
+            Some(false),
+            "record projection mutation {mutation}"
+        );
+    }
     for source in [VECTOR, RECORD] {
         let ordinary = direct(source);
         let current = function(&ordinary);
