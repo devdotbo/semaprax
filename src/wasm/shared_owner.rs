@@ -34,12 +34,25 @@
 /// Private authority domain; distinct from every public token table.
 pub(in crate::wasm) const DOMAIN: &str = "semaprax.private.wasm-shared-byte-owner.v1";
 /// Partition status domain and codes, in refusal precedence order.
-pub(in crate::wasm) const PARTITION_STATUS_DOMAIN: &str = "semaprax.byte-partition.v1";
+pub(in crate::wasm) const PARTITION_STATUS_DOMAIN: &str =
+    crate::construction_fusion::partition::operation::STATUS_DOMAIN;
 pub(in crate::wasm) const PARTITION_STATUS_CODES: [(&str, u32); 4] = [
-    ("width_zero", 1),
-    ("extent_overflow", 2),
-    ("extent_mismatch", 3),
-    ("metadata_capacity", 4),
+    (
+        "width_zero",
+        crate::construction_fusion::partition::operation::STATUS_CODES[0],
+    ),
+    (
+        "extent_overflow",
+        crate::construction_fusion::partition::operation::STATUS_CODES[1],
+    ),
+    (
+        "extent_mismatch",
+        crate::construction_fusion::partition::operation::STATUS_CODES[2],
+    ),
+    (
+        "metadata_capacity",
+        crate::construction_fusion::partition::operation::STATUS_CODES[3],
+    ),
 ];
 /// Authenticated lease registry: backings, ranges, generations, issuer.
 pub(in crate::wasm) const REGISTRY_SOURCE: &str = include_str!("shared_owner/registry.mjs");
