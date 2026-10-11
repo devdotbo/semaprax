@@ -191,7 +191,9 @@ Any refusal falls back to an owned cache or native context and is reported, neve
 
 Semaprax-owned caches use `GenerationStore`: a `mkdir` single-flight `RefreshLock` (dead holders reclaimed,
 `SPX-HPF010` on wait timeout), `begin` into `gen/g<N>.partial`, `publish` by directory rename then `CURRENT` rename, and
-pruning that keeps the previous generation. A reader sees a complete old or a complete new generation. The broker's
+pruning that keeps the previous generation. Rust readers use `read_current` to hold the same lock through all
+file reads; a raw `current` path requires the caller to hold that lock. Publication and pruning wait until the read
+finishes, so a reader sees a complete old or a complete new generation. The broker's
 `ResultCache` writes each entry through a unique temp file, so concurrent writers cannot cross entries.
 
 `Outcome` reports what happened: `reused-user-index`, `copied-validated-index`, `incremental-refresh`, `rebuilt`,

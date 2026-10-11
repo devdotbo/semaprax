@@ -229,11 +229,24 @@ impl GenerationStore {
     }
 
     /// Directory of the live generation, if a complete one is published.
+    /// Hold the refresh lock while using this path, or use [`Self::read_current`].
     pub fn current(&self) -> Option<(u64, PathBuf)> {
         let name = std::fs::read_to_string(self.root.join("CURRENT")).ok()?;
         let n: u64 = name.trim().strip_prefix('g')?.parse().ok()?;
         let dir = self.gens().join(format!("g{n}"));
         dir.is_dir().then_some((n, dir))
+    }
+
+    /// Reads one complete generation while excluding publication and pruning.
+    /// The callback must finish all file reads before returning and must not
+    /// reacquire this store's lock. Lock timeout retains `SPX-HPF010`.
+    pub fn read_current<T>(
+        &self,
+        wait: std::time::Duration,
+        read: impl FnOnce(u64, &Path) -> HarnessResult<T>,
+    ) -> HarnessResult<Option<T>> {
+        let _lock = self.lock(wait)?;
+        self.current().map(|(n, dir)| read(n, &dir)).transpose()
     }
 
     /// Single-flight: at most one holder; a dead holder's lock is reclaimed. `Err` if the wait expires.
@@ -293,7 +306,7 @@ impl GenerationStore {
     }
 
     /// Makes generation `n` live atomically (directory rename, then CURRENT rename) and prunes all but
-    /// the previous one, which an in-flight reader may still be using.
+    /// the previous one. Hold the refresh lock; readers retain it through their file reads.
     pub fn publish(&self, n: u64) -> HarnessResult<PathBuf> {
         let fin = self.gens().join(format!("g{n}"));
         std::fs::rename(self.gens().join(format!("g{n}.partial")), &fin).map_err(io)?;
