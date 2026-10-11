@@ -4,6 +4,7 @@ mod copy_record;
 mod field_read;
 mod owned_leaf;
 mod owned_payload;
+mod plan_infallible;
 mod record_payload;
 mod sort_keys;
 mod string_slot;
@@ -229,7 +230,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 self.line(&format!(
                     "spx_status = {operation}(spx_ctx, UINT32_C({tag}), &{source}, &{destination});"
                 ));
-                self.emit_operation_failure_check()?;
+                self.emit_plan_infallible_vec_status(expr, op)?;
                 self.line(&format!("{source_flag} = false;"));
                 for line in plan.apply_at(&expr.id)?.lines() {
                     self.line(line);
