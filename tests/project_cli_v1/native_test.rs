@@ -84,6 +84,9 @@ impl NativeFixture {
     }
 
     fn cli(&self, arguments: &[&str]) -> Output {
+        if let Some(directory) = std::env::var_os("SEMAPRAX_NATIVE_TEST_DIAGNOSTICS") {
+            return diagnostic_capture::run(self, arguments, Path::new(&directory));
+        }
         Command::new(env!("CARGO_BIN_EXE_semaprax"))
             .args(arguments)
             .current_dir(&self.root)
@@ -427,3 +430,6 @@ fn main() -> i64 uses { process.stderr.write, process.stdout.write }
 
 #[path = "native_test/recovery.rs"]
 mod recovery;
+
+#[path = "native_test/diagnostic_capture.rs"]
+mod diagnostic_capture;

@@ -129,3 +129,16 @@ nor changes timeout, output refusal, result publication, or settlement.
 Timing values are diagnostic observations, not deterministic pins or acceptance
 criteria. The original 100 ms recovery control remains unchanged and unqualified
 until its owning executable gate actually passes.
+
+
+The owning test harness alone accepts an explicit
+`SEMAPRAX_NATIVE_TEST_DIAGNOSTICS=<directory>` output directory. It uses a local
+compiler wrapper to snapshot C, compiler arguments and the linked executable
+before entry, then retains only deadline-failed cases with source/command hashes
+and the existing timing object. Each fresh attempt allows at most 64 capture
+bundles (192 files) and 64 MiB of artifact bytes. Read-only receipts are diagnostic
+data; they grant no execution or source authority. Compiler environment changes
+and copying occur outside the deadline, so captured runs support no performance
+comparison or loader-cost conclusion. The helper runs each program once and
+leaves CLI scratch cleanup, the 100 ms control, and acceptance assertions intact.
+Without the variable, the original harness path is unchanged.
