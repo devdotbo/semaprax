@@ -34,6 +34,50 @@ fn original_source_resolves_only_through_the_private_current_owner() {
     let mut short = used - 1;
     assert!(owner.receive_current_graph(&mut short).is_err());
     assert_eq!(short, 0);
+
+    let inherited = SOURCE.replace("@id(\"partition_checked.main\")", r#"
+@id("partition_checked.inherited") fn inherited(input:borrow Bytes)->usize {
+ let alias=bytes_as_slice(input);byte_len(alias)
+}
+@id("partition_checked.main")"#);
+    let inherited = crate::parse(&inherited, "partition_checked.spx").unwrap();
+    let inherited = ValidatedPartitionProgram::compile_source(&inherited, &mut usize::MAX).unwrap();
+    let helper = inherited.program().functions.iter().find(|f| f.name == "inherited").unwrap();
+    assert!(helper.loan_plan.loans.is_empty(), "Borrow parameter descriptor cannot mint an Own-root loan");
+    assert_eq!(inherited.simultaneous_view_bound(helper, &mut usize::MAX).unwrap(), 0);
+
+    // Four live caller frames over four whole backings. Each caller retains
+    // its 64 independent SliceView sites until after the nested call returns.
+    for (leaf_views, expected) in [(63, Some(256)), (64, None)] {
+        let text = view_chain(leaf_views);
+        let ast = crate::parse(&text, "partition_view_bound.spx").unwrap();
+        let owner = ValidatedPartitionProgram::compile_source(&ast, &mut usize::MAX).unwrap();
+        let entry = &owner.program().functions[0];
+        let counts: Vec<_> = owner.program().functions.iter().map(|f| f.loan_plan.loans.len()).collect();
+        assert_eq!(counts, vec![64, 64, 64, leaf_views + 1]);
+        let mut work = usize::MAX;
+        match expected {
+            Some(bound) => {
+                assert_eq!(owner.simultaneous_view_bound(entry, &mut work).unwrap(), bound);
+                let spent = usize::MAX - work;
+                let mut exact = spent;
+                assert_eq!(owner.simultaneous_view_bound(entry, &mut exact).unwrap(), bound);
+                assert_eq!(exact, 0);
+                let mut short = spent - 1;
+                assert!(owner.simultaneous_view_bound(entry, &mut short).is_err());
+                assert_eq!(short, 0);
+                let clone = entry.clone();
+                let mut clone_work = usize::MAX;
+                assert!(owner.simultaneous_view_bound(&clone, &mut clone_work).is_err());
+                assert_eq!(clone_work, 0);
+            }
+            None => {
+                let diagnostic = owner.simultaneous_view_bound(entry, &mut work).unwrap_err();
+                assert!(diagnostic.message.contains("exceeds 256"), "{diagnostic:?}");
+                assert_eq!(work, 0);
+            }
+        }
+    }
 }
 #[test]
 fn private_owner_refuses_foreign_carriers_and_actual_call_or_plan_mutations() {
@@ -80,4 +124,23 @@ fn private_owner_refuses_foreign_carriers_and_actual_call_or_plan_mutations() {
         assert!(owner.revalidate_compiler().is_err() || owner.receive_current_graph(&mut work).is_err(), "mutation {mutation}");
         if mutation != 3 { assert!(owner.receive_current_graph(&mut work).is_err()); assert_eq!(work, 0); }
     }
+}
+
+fn view_chain(leaf_views: usize) -> String {
+    use std::fmt::Write;
+    let mut source = String::from("module partition_view_bound;\n");
+    for frame in 0..4 {
+        let name = if frame == 0 { "main".to_owned() } else { format!("frame{frame}") };
+        writeln!(source, "@id(\"partition_view_bound.{name}\") fn {name}()->i64 {{").unwrap();
+        source.push_str("let buffer=bytes_zeroed(1usize);\n");
+        let views = if frame == 3 { leaf_views } else { 64 };
+        for site in 0..views { writeln!(source, "let view{site}=bytes_as_slice(buffer);").unwrap(); }
+        if frame < 3 { writeln!(source, "let value=frame{}();", frame + 1).unwrap(); }
+        for site in 0..views { writeln!(source, "let observed{site}=byte_len(view{site});").unwrap(); }
+        if frame == 3 {
+            source.push_str("let children=bytes_partition(buffer,1usize,1usize);if vec_len<Bytes>(children)==1usize {7}else{0}\n");
+        } else { source.push_str("value\n"); }
+        source.push_str("}\n");
+    }
+    source
 }

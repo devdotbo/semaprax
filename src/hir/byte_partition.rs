@@ -5,6 +5,9 @@
 //! No caller can mint this owner from HIR, a descriptor, or module bytes.
 use super::*;
 
+/// Closed installer limit for simultaneous physical partition views.
+pub(crate) const MAX_SIMULTANEOUS_PARTITION_VIEWS: usize = 256;
+
 /// The original immutable AST and the HIR resolved from that same AST.
 /// The resolved subject stays private and is never replaced by a clone.
 pub(crate) struct ValidatedPartitionProgram<'source> {
@@ -57,6 +60,17 @@ impl<'source> ValidatedPartitionProgram<'source> {
         if result.is_err() { *receiving_work = 0; }
         result
     }
+    /// Conservative max-call-path sum of independently validated local loans.
+    /// Borrow-parameter descriptors are inherited, not new Core loan authority.
+    pub(crate) fn simultaneous_view_bound(
+        &self, entry: &ResolvedFunction, receiving_work: &mut usize,
+    ) -> Result<usize, Diagnostic> {
+        self.revalidate_compiler()?;
+        let result = scope_with_views(&self.program, receiving_work, Some(entry));
+        if result.is_err() { *receiving_work = 0; }
+        result
+    }
+
 }
 
 impl Resolver<'_> {
@@ -134,14 +148,41 @@ fn admitted_type(ty: &ResolvedType, work: &mut usize) -> Result<bool, Diagnostic
 }
 
 fn scope(program: &ResolvedProgram, work: &mut usize) -> Result<(), Diagnostic> {
+    scope_with_views(program, work, None).map(|_| ())
+}
+
+fn scope_with_views(
+    program: &ResolvedProgram, work: &mut usize, entry: Option<&ResolvedFunction>,
+) -> Result<usize, Diagnostic> {
     if program.functions.len() > 512 { return Err(hir_error("private byte partition emitted callgraph exceeds 512 functions")); }
+    debit(work, 512 * 8 + 512)?; // actual fixed adjacency/local-count initialization
     let mut edges = [[0_u64; 8]; 512];
+    let mut local_views = [0usize; 512];
+    let mut entry_ordinal = None;
     if !program.function_instances.is_empty() || !program.function_templates.is_empty() {
         return Err(hir_error("private byte partition refuses generic instances"));
     }
     let mut found = false;
     for (ordinal, function) in program.functions.iter().enumerate() {
         debit(work, 1)?;
+        if entry.is_some() {
+            debit(work, 1)?;
+            if entry.is_some_and(|entry| std::ptr::eq(entry, function)) { entry_ordinal = Some(ordinal); }
+            for loan in &function.loan_plan.loans {
+                debit(work, 1)?;
+                let mut inherited = false;
+                for parameter in &function.params {
+                    if equal(loan.origin.root.as_str(), parameter.id.as_str(), work)? {
+                        inherited = parameter.ownership == OwnershipMode::Borrow;
+                        break;
+                    }
+                }
+                if !inherited {
+                    local_views[ordinal] = local_views[ordinal].checked_add(1)
+                        .ok_or_else(|| hir_error("partition local view bound overflows"))?;
+                }
+            }
+        }
         if !admitted_type(&function.return_type, work)? { return Err(hir_error("private byte partition result crosses an unsupported carrier")); }
         for parameter in &function.params {
             debit(work, 1)?;
@@ -184,6 +225,7 @@ fn scope(program: &ResolvedProgram, work: &mut usize) -> Result<(), Diagnostic> 
     // Fixed backing and deterministic source-order Kahn traversal. Each edge
     // bit is examined once for indegree and once when its source is removed.
     let count = program.functions.len();
+    debit(work, 512 * 2)?; // exact indegree/queue initialization
     let mut indegree = [0usize; 512];
     let mut queue = [0usize; 512];
     for row in &edges[..count] {
@@ -198,21 +240,38 @@ fn scope(program: &ResolvedProgram, work: &mut usize) -> Result<(), Diagnostic> 
         debit(work, 1)?;
         if *degree == 0 { queue[end] = ordinal; end += 1; }
     }
+    debit(work, 512)?; // exact retained max-path slots
+    let mut path_views = [None; 512];
+    if entry.is_some() {
+        let ordinal = entry_ordinal.ok_or_else(|| hir_error("partition view entry is not the current source-held function"))?;
+        path_views[ordinal] = Some(local_views[ordinal]);
+    }
+    let mut maximum = 0;
     let mut head = 0;
     while head < end {
         debit(work, 1)?;
         let ordinal = queue[head];
         head += 1;
+        if let Some(views) = path_views[ordinal] { maximum = maximum.max(views); }
         for (target, degree) in indegree[..count].iter_mut().enumerate() {
             debit(work, 1)?;
             if edges[ordinal][target / 64] & (1 << (target % 64)) != 0 {
+                if let Some(views) = path_views[ordinal] {
+                    debit(work, 1)?;
+                    let views = views.checked_add(local_views[target])
+                        .ok_or_else(|| hir_error("partition call-path view bound overflows"))?;
+                    path_views[target] = Some(path_views[target].map_or(views, |old: usize| old.max(views)));
+                }
                 *degree -= 1;
                 if *degree == 0 { queue[end] = target; end += 1; }
             }
         }
     }
     if head != count { return Err(hir_error("private byte partition refuses recursive callgraphs")); }
-    Ok(())
+    if maximum > MAX_SIMULTANEOUS_PARTITION_VIEWS {
+        return Err(hir_error("partition whole-callgraph simultaneous view bound exceeds 256"));
+    }
+    Ok(maximum)
 }
 fn walk<'a>(root: &'a ResolvedExpr, work: &mut usize, visit: &mut impl FnMut(&'a ResolvedExpr, &mut usize) -> Result<(), Diagnostic>) -> Result<(), Diagnostic> {
     // Same accepted HIR depth as the lexical borrowed cursor; no heap scratch.

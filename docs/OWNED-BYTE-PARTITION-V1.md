@@ -417,3 +417,17 @@ Maps, objects/tickets, module bytes, Wasm memory/engine, GC retention, allocator
 headers and process memory are excluded. It is not complete physical funding or
 an engine-wide memory ceiling. Managed private entries have no copy-out bridge;
 public copy-out funding remains a separate prerequisite.
+
+The source owner also supplies a receiving-only simultaneous-view bound for an
+exact current entry-function pointer. Complete independent compiler validation
+precedes this additional graph proof. The same caller graph-work counter pays
+for current function/loan origin comparisons and the fixed-array acyclic graph
+traversal. No HIR clone or new allowance is created. The conservative bound is
+the maximum current call-path sum of each frame's total validated local loan
+sites. Exact Borrow-parameter roots are inherited descriptors and contribute no
+new Core loans. This count can overestimate actual lifetime overlap; it is an
+upper bound, not permission to mint any loan or override NLL edges. Sequential
+callee invocations take the maximum, rather than adding to simultaneous use.
+An upper bound above 256 refuses before installation. The private Wasm receiver
+runs this proof for its actual main. Native/interpreter receivers must retain
+their own actual root/call/edge binding and physical funding checks.
