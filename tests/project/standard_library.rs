@@ -1297,3 +1297,6 @@ mod composition_inventory;
 mod imported_view_composition;
 #[path = "standard_library/owned_failure_composition.rs"]
 mod owned_failure_composition;
+
+#[path = "standard_library/ndjson.rs"]
+mod ndjson;

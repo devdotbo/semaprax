@@ -134,6 +134,12 @@ const PACKAGES: &[BundledPackage] = &[
         dependencies: &["std.io"],
     },
     BundledPackage {
+        name: "std.data.ndjson",
+        path: "dependencies/std.data.ndjson/0.1.0/ndjson.spx",
+        source: include_str!("../../std/data-ndjson/src/ndjson.spx"),
+        dependencies: &["std.io.lines", "std.data.json.utf8"],
+    },
+    BundledPackage {
         name: "std.data.toml",
         path: "dependencies/std.data.toml/0.1.0/toml.spx",
         source: include_str!("../../std/data-toml/src/toml.spx"),

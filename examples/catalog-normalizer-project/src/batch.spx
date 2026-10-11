@@ -1,4 +1,8 @@
 module catalog_normalizer.batch;
+use type @id("std.data.ndjson.fault") from std.data.ndjson as FramingFault;
+use function @id("std.data.ndjson.line-start") from std.data.ndjson as framed_line_start;
+use function @id("std.data.ndjson.line-end") from std.data.ndjson as framed_line_end;
+use function @id("std.data.ndjson.basic-line-fault") from std.data.ndjson as framing_fault;
 use function @id("std.data.json.dec.at_in") from std.data.json.dec as byte_in;
 use function @id("catalog_normalizer.record.id-value") from catalog_normalizer.record as record_id_value;
 use function @id("catalog_normalizer.record.same-id") from catalog_normalizer.record as same_decoded_id;
@@ -34,33 +38,13 @@ fn record_count(body: borrow Slice<u8>) -> usize
 @id("catalog_normalizer.batch.line-start")
 fn line_start(body: borrow Slice<u8>, record: usize) -> usize
 {
-    let length = byte_len(body);
-    let mut index = 0usize;
-    let mut seen = 0usize;
-    let mut found = record == 0usize;
-    while index < length && !found {
-        let byte = match byte_get(body, index) { Option::Some { value: matched_value } => matched_value, Option::None {} => 0u8, };
-        seen = if byte == 10u8 { seen + 1usize } else { seen };
-        index = index + 1usize;
-        found = seen == record;
-        index < length && !found
-    }
-    index
+    framed_line_start(body, record)
 }
 
 @id("catalog_normalizer.batch.line-end")
 fn line_end(body: borrow Slice<u8>, start: usize) -> usize
 {
-    let length = byte_len(body);
-    let mut index = start;
-    let mut scanning = index < length;
-    while scanning {
-        let byte = match byte_get(body, index) { Option::Some { value: matched_value } => matched_value, Option::None {} => 0u8, };
-        index = if byte == 10u8 { index } else { index + 1usize };
-        scanning = byte != 10u8 && index < length;
-        scanning
-    }
-    index
+    if start > byte_len(body) { start } else { framed_line_end(body, start) }
 }
 
 @id("catalog_normalizer.batch.body-too-long")
@@ -233,14 +217,7 @@ fn failure_offset(failure: usize) -> usize
 @id("catalog_normalizer.batch.record-basic-failure")
 fn record_basic_failure(body: borrow Slice<u8>, record: usize, start: usize, end: usize) -> usize
 {
-    let line = byte_range(body, start, end);
-    let too_long = end - start > 512usize;
-    let utf8_marker = if too_long { end - start } else { line_utf8_end_range(body, start, end) };
-    let utf8 = utf8_marker == end - start;
-    let empty = end == start;
-    let parsed = if !too_long && utf8 && !empty { record_problem(line) } else { 0usize };
-    let utf8_fault = if utf8_marker > end - start { utf8_marker - (end - start) - 1usize } else { 0usize };
-    if too_long { pack_failure(1usize, record + 1usize, 512usize) } else { if !utf8 { pack_failure(2usize, record + 1usize, utf8_fault) } else { if empty { pack_failure(3usize, record + 1usize, 0usize) } else { if parsed != 0usize { pack_failure(record_problem_category(parsed), record + 1usize, record_problem_offset(parsed)) } else { 0usize } } } }
+    if record < 256usize { let line = byte_range(body, start, end); let fault = framing_fault(line, record); let parsed = if fault.category == 0 { record_problem(line) } else { 0usize }; if fault.category != 0 { pack_failure(usize_from_i64(fault.category), record + 1usize, fault.byte_offset) } else { if parsed != 0usize { pack_failure(record_problem_category(parsed), record + 1usize, record_problem_offset(parsed)) } else { 0usize } } } else { let line = byte_range(body, start, end); let too_long = end - start > 512usize; let utf8_marker = if too_long { end - start } else { line_utf8_end_range(body, start, end) }; let utf8 = utf8_marker == end - start; let empty = end == start; let parsed = if !too_long && utf8 && !empty { record_problem(line) } else { 0usize }; let utf8_fault = if utf8_marker > end - start { utf8_marker - (end - start) - 1usize } else { 0usize }; if too_long { pack_failure(1usize, record + 1usize, 512usize) } else { if !utf8 { pack_failure(2usize, record + 1usize, utf8_fault) } else { if empty { pack_failure(3usize, record + 1usize, 0usize) } else { if parsed != 0usize { pack_failure(record_problem_category(parsed), record + 1usize, record_problem_offset(parsed)) } else { 0usize } } } } }
 }
 
 @id("catalog_normalizer.batch.record-is-duplicate")

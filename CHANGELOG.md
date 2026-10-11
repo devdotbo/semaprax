@@ -1,5 +1,7 @@
 # Changelog
 
+- Author ordinary checked LF-only NDJSON framing and Copy structured faults (#760), composed through actual receiving byte ranges in Catalog Normalizer. Preserve total legacy wrappers, frozen error ordering and 160M oracle; independent original/backend and hostile receiver definitions await qualification. Numeric frames carry no owner or generation authority.
+
 - Author a defining-source-bound retained static-UTF-8 composition with imported pure monomorphic scalar helpers (#745). Borrow exact provider HIR, authenticate the whole acyclic closure and replay every helper's real status/cleanup proof with one cumulative work/backing owner. Equal-name aliases, checked failures, stale/hostile provider and plan controls, saved local backend comparisons and exact/one-short allocation/work definitions await grouped qualification; broader #745 remains open.
 
 - Activate deferred lexical replay resource selection and exact expression-scoped Copy factoring (#759), retaining independent lexical/certificate/ownership validation, multiset traces and unchanged enumerated/work ceilings. Keep selected physical provider/type exclusions and cumulative backing/work ledgers. Whole-entry, forced-strategy and immutable original ShiftSim qualification remain pending.

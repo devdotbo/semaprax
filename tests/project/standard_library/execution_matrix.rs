@@ -51,6 +51,7 @@ fn declared_owners() -> Vec<(&'static str, Owner)> {
         ("std.data.json.token", Test("data_encoding_backend_audit::data_encoding_url_path_execute_on_all_three_backends")),
         ("std.data.json.utf8", Test("logging::utf8_ascii_scan_preserves_package_conformance")),
         ("std.data.json.write", Test("json_cursors::json_cursors_write_execute_on_all_three_backends")),
+        ("std.data.ndjson", Test("ndjson::bounded_ndjson_framing_and_structured_faults_execute_on_all_three_backends")),
         ("std.data.toml", Test("toml_cursors::toml_cursors_execute_on_all_three_backends")),
         ("std.db", Test("db_jobs_backend_audit::db_and_jobs_execute_on_all_three_backends")),
         ("std.email", Test("email_backend_audit::email_executes_on_all_three_backends")),

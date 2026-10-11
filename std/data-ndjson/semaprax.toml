@@ -1,0 +1,18 @@
+schema = "semaprax.manifest.v1"
+
+[package]
+name = "std-data-ndjson"
+version = "0.1.0"
+profile = "owned-data-api.v1"
+
+[modules]
+entry = "std.data.ndjson.examples"
+sources = ["src/examples.spx", "src/ndjson.spx", "src/tests.spx"]
+tests = ["std.data.ndjson.tests"]
+
+[exports]
+web = []
+
+[dependencies]
+std.io.lines = "=0.1.0"
+std.data.json.utf8 = "=0.1.0"

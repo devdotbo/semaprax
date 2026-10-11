@@ -466,6 +466,20 @@ fn catalog_normalizer_compact_core_fits_production_builder_cap() {
             source: include_str!("../../../std/io/src/io.spx").to_owned(),
         },
     ]);
+    sources.extend([
+        WorkspaceSource {
+            path: "dependencies/std.data.ndjson/0.1.0/ndjson.spx".to_owned(),
+            source: include_str!("../../../std/data-ndjson/src/ndjson.spx").to_owned(),
+        },
+        WorkspaceSource {
+            path: "dependencies/std.io.lines/0.1.0/lines.spx".to_owned(),
+            source: include_str!("../../../std/io-lines/src/lines.spx").to_owned(),
+        },
+        WorkspaceSource {
+            path: "dependencies/std.data.json.utf8/0.1.0/utf8.spx".to_owned(),
+            source: include_str!("../../../std/data-json-utf8/src/utf8.spx").to_owned(),
+        },
+    ]);
     sources.sort_by(|left, right| left.path.cmp(&right.path));
     let built = build_owned_with_builder_limit(sources.clone(), MAX_BUILDER_BYTES)
         .unwrap_or_else(|errors| {

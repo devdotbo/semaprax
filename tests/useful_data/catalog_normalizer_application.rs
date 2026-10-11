@@ -694,7 +694,10 @@ fn focused_r05_controls_agree_across_interpreter_native_and_core_wasm() {
 
 #[test]
 fn batch_boundaries_and_string_normalization_agree_across_backends() {
-    let root = fixture();
+    assert_batch_backend_matrix(&fixture());
+}
+
+fn assert_batch_backend_matrix(root: &Path) {
     for source in SOURCE_FILES {
         let path = root.join("src").join(source);
         let bytes = std::fs::read_to_string(&path).unwrap();
@@ -1079,3 +1082,6 @@ fn batch_boundaries_and_string_normalization_agree_across_backends() {
         "false",
     );
 }
+
+#[path = "catalog_normalizer_application/ndjson.rs"]
+mod ndjson;
