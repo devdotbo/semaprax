@@ -15,6 +15,8 @@ use function @id("std.pattern.work-used") from std.pattern as work_used;
 use function @id("std.pattern.internal.carrier-valid") from std.pattern as carrier_valid;
 use function @id("std.pattern.internal.read") from std.pattern as read;
 use function @id("std.pattern.internal.load-8") from std.pattern as load8;
+use function @id("std.pattern.internal.store-1") from std.pattern as store1;
+use function @id("std.pattern.internal.store-8") from std.pattern as store8;
 
 // Immutable pre-optimization packet validator, independent of the new view reads.
 @id("std.pattern.tests.frozen-result-valid")
@@ -28,7 +30,86 @@ fn frozen_result_valid(state: borrow Matcher) -> bool
 @id("std.pattern.tests.main")
 fn main() -> i64
 {
-    if test_public_api() == 0 && test_invalid_pattern() == 0 && test_truncated_escape_offsets() == 0 && test_escaped_byte() == 0 && test_bounded_resource_refusal() == 0 && test_no_match() == 0 && test_empty_capture() == 0 && test_malformed_carrier() == 0 && test_bounded_reentry() == 0 { 0 } else { 1 }
+    if test_public_api() == 0 && test_invalid_pattern() == 0 && test_truncated_escape_offsets() == 0 && test_escaped_byte() == 0 && test_bounded_resource_refusal() == 0 && test_no_match() == 0 && test_empty_capture() == 0 && test_malformed_carrier() == 0 && test_bounded_reentry() == 0 && test_packet_predicate_agreement() == 0 { 0 } else { 1 }
+}
+
+// Reuse one affine carrier; every packet byte and both capture slots are
+// overwritten before either independent validator runs. No case allocates.
+@id("std.pattern.tests.packet-agrees")
+fn packet_agrees(state: own Matcher, tag: usize, code: usize, count: usize, reason: usize, length: usize, work: usize, detail: usize, start: usize, end: usize) -> Matcher
+    requires tag <= 255usize && code <= 255usize && count <= 255usize && reason <= 255usize
+{
+    let tagged = store1(store1(store1(store1(store1(state, 2696usize, 83usize), 2697usize, 80usize), 2698usize, 65usize), 2699usize, 84usize), 2700usize, tag);
+    let scalars = store1(store1(store1(tagged, 2701usize, code), 2702usize, count), 2703usize, reason);
+    let words = store8(store8(store8(scalars, 2704usize, length), 2712usize, work), 2720usize, detail);
+    store8(store8(store8(store8(words, 2728usize, start), 2736usize, end), 2744usize, start), 2752usize, end)
+}
+
+// All 45 original hand-derived tuples remain: 13 accepted, 12 bounded-field,
+// 12 refusal-field and 8 code/tag cases. The frozen oracle remains unchanged.
+@id("std.pattern.tests.packet-predicate-agreement")
+fn test_packet_predicate_agreement() -> i64
+{
+    let high = 72057594037927936usize;
+    let third = 16777216usize;
+    let full = 18446744073709551615usize;
+    let mut matcher: Matcher = make();
+    let mut iteration = 0usize;
+    let mut expected = false;
+    let mut correct = 0usize;
+    while iteration < 45usize {
+        if iteration == 0usize { expected = true; matcher = packet_agrees(matcher, 1usize, 1usize, 2usize, 0usize, 3usize, 100usize, 0usize, 0usize, 3usize); 0 }
+        else if iteration == 1usize { expected = true; matcher = packet_agrees(matcher, 1usize, 0usize, 0usize, 0usize, 0usize, 96usize, 0usize, 0usize, 0usize); 0 }
+        else if iteration == 2usize { expected = true; matcher = packet_agrees(matcher, 1usize, 2usize, 0usize, 0usize, 65536usize, 262144usize, 0usize, 0usize, 0usize); 0 }
+        else if iteration == 3usize { expected = true; matcher = packet_agrees(matcher, 1usize, 3usize, 0usize, 1usize, 0usize, 32usize, 1024usize, 0usize, 0usize); 0 }
+        else if iteration == 4usize { expected = true; matcher = packet_agrees(matcher, 1usize, 3usize, 0usize, 2usize, 65536usize, 32usize, 1663usize, 0usize, 0usize); 0 }
+        else if iteration == 5usize { expected = true; matcher = packet_agrees(matcher, 1usize, 4usize, 0usize, 1usize, 0usize, 33usize, full, 0usize, 0usize); 0 }
+        else if iteration == 6usize { expected = true; matcher = packet_agrees(matcher, 1usize, 4usize, 0usize, 1usize, 0usize, 33usize, high, 0usize, 0usize); 0 }
+        else if iteration == 7usize { expected = true; matcher = packet_agrees(matcher, 1usize, 4usize, 0usize, 2usize, full, 50usize, full, 0usize, 0usize); 0 }
+        else if iteration == 8usize { expected = true; matcher = packet_agrees(matcher, 1usize, 4usize, 0usize, 2usize, 65537usize, 50usize, 65537usize, 0usize, 0usize); 0 }
+        else if iteration == 9usize { expected = true; matcher = packet_agrees(matcher, 1usize, 4usize, 0usize, 2usize, third, 50usize, third, 0usize, 0usize); 0 }
+        else if iteration == 10usize { expected = true; matcher = packet_agrees(matcher, 1usize, 4usize, 0usize, 2usize, high + 5usize, 50usize, high + 5usize, 0usize, 0usize); 0 }
+        else if iteration == 11usize { expected = true; matcher = packet_agrees(matcher, 1usize, 4usize, 0usize, 3usize, 0usize, 40usize, 1024usize, 0usize, 0usize); 0 }
+        else if iteration == 12usize { expected = true; matcher = packet_agrees(matcher, 1usize, 4usize, 0usize, 7usize, 65536usize, 262144usize, 0usize, 0usize, 0usize); 0 }
+        else if iteration == 13usize { expected = false; matcher = packet_agrees(matcher, 1usize, 1usize, 2usize, 0usize, 3usize, 100usize + high, 0usize, 0usize, 3usize); 0 }
+        else if iteration == 14usize { expected = false; matcher = packet_agrees(matcher, 1usize, 1usize, 2usize, 0usize, 3usize, 100usize + third, 0usize, 0usize, 3usize); 0 }
+        else if iteration == 15usize { expected = false; matcher = packet_agrees(matcher, 1usize, 1usize, 2usize, 0usize, 3usize, 31usize, 0usize, 0usize, 3usize); 0 }
+        else if iteration == 16usize { expected = false; matcher = packet_agrees(matcher, 1usize, 1usize, 2usize, 0usize, 3usize, 262145usize, 0usize, 0usize, 3usize); 0 }
+        else if iteration == 17usize { expected = false; matcher = packet_agrees(matcher, 1usize, 1usize, 2usize, 0usize, 3usize + 4294967296usize, 100usize, 0usize, 0usize, 3usize); 0 }
+        else if iteration == 18usize { expected = false; matcher = packet_agrees(matcher, 1usize, 1usize, 2usize, 0usize, 3usize, 100usize, 0usize, 0usize, 3usize + high); 0 }
+        else if iteration == 19usize { expected = false; matcher = packet_agrees(matcher, 1usize, 1usize, 2usize, 0usize, 3usize, 100usize, 0usize, high, 3usize); 0 }
+        else if iteration == 20usize { expected = false; matcher = packet_agrees(matcher, 1usize, 1usize, 2usize, 0usize, 3usize, 100usize, 0usize, third, third); 0 }
+        else if iteration == 21usize { expected = false; matcher = packet_agrees(matcher, 1usize, 1usize, 2usize, 0usize, 3usize, 100usize, 0usize, 2usize, 1usize); 0 }
+        else if iteration == 22usize { expected = false; matcher = packet_agrees(matcher, 1usize, 2usize, 0usize, 0usize, 0usize, 100usize, high, 0usize, 0usize); 0 }
+        else if iteration == 23usize { expected = false; matcher = packet_agrees(matcher, 1usize, 2usize, 0usize, 0usize, 0usize, 100usize, third, 0usize, 0usize); 0 }
+        else if iteration == 24usize { expected = false; matcher = packet_agrees(matcher, 1usize, 0usize, 0usize, 0usize, high, 100usize, 0usize, 0usize, 0usize); 0 }
+        else if iteration == 25usize { expected = false; matcher = packet_agrees(matcher, 1usize, 3usize, 0usize, 1usize, 0usize, 32usize, 1024usize + high, 0usize, 0usize); 0 }
+        else if iteration == 26usize { expected = false; matcher = packet_agrees(matcher, 1usize, 3usize, 0usize, 1usize, 0usize, 32usize, 1025usize, 0usize, 0usize); 0 }
+        else if iteration == 27usize { expected = false; matcher = packet_agrees(matcher, 1usize, 3usize, 0usize, 2usize, 0usize, 32usize, 1663usize + 4294967296usize, 0usize, 0usize); 0 }
+        else if iteration == 28usize { expected = false; matcher = packet_agrees(matcher, 1usize, 3usize, 0usize, 2usize, 65536usize + high, 32usize, 0usize, 0usize, 0usize); 0 }
+        else if iteration == 29usize { expected = false; matcher = packet_agrees(matcher, 1usize, 4usize, 0usize, 1usize, high, 33usize, full, 0usize, 0usize); 0 }
+        else if iteration == 30usize { expected = false; matcher = packet_agrees(matcher, 1usize, 4usize, 0usize, 1usize, 0usize, 33usize, 1024usize, 0usize, 0usize); 0 }
+        else if iteration == 31usize { expected = false; matcher = packet_agrees(matcher, 1usize, 4usize, 0usize, 2usize, 65536usize, 50usize, 65536usize, 0usize, 0usize); 0 }
+        else if iteration == 32usize { expected = false; matcher = packet_agrees(matcher, 1usize, 4usize, 0usize, 2usize, high + 5usize, 50usize, 5usize, 0usize, 0usize); 0 }
+        else if iteration == 33usize { expected = false; matcher = packet_agrees(matcher, 1usize, 4usize, 0usize, 2usize, third, 50usize, third + third, 0usize, 0usize); 0 }
+        else if iteration == 34usize { expected = false; matcher = packet_agrees(matcher, 1usize, 4usize, 0usize, 3usize, 0usize, 40usize, third, 0usize, 0usize); 0 }
+        else if iteration == 35usize { expected = false; matcher = packet_agrees(matcher, 1usize, 4usize, 0usize, 7usize, 0usize, 40usize, 4294967296usize * 256usize, 0usize, 0usize); 0 }
+        else if iteration == 36usize { expected = false; matcher = packet_agrees(matcher, 1usize, 4usize, 0usize, 7usize, third, 40usize, 0usize, 0usize, 0usize); 0 }
+        else if iteration == 37usize { expected = false; matcher = packet_agrees(matcher, 2usize, 0usize, 0usize, 0usize, 0usize, 96usize, 0usize, 0usize, 0usize); 0 }
+        else if iteration == 38usize { expected = false; matcher = packet_agrees(matcher, 1usize, 5usize, 0usize, 0usize, 0usize, 96usize, 0usize, 0usize, 0usize); 0 }
+        else if iteration == 39usize { expected = false; matcher = packet_agrees(matcher, 1usize, 4usize, 0usize, 6usize, 0usize, 40usize, 0usize, 0usize, 0usize); 0 }
+        else if iteration == 40usize { expected = false; matcher = packet_agrees(matcher, 1usize, 4usize, 0usize, 0usize, 0usize, 40usize, 0usize, 0usize, 0usize); 0 }
+        else if iteration == 41usize { expected = false; matcher = packet_agrees(matcher, 1usize, 1usize, 17usize, 0usize, 3usize, 100usize, 0usize, 0usize, 3usize); 0 }
+        else if iteration == 42usize { expected = false; matcher = packet_agrees(matcher, 1usize, 2usize, 1usize, 0usize, 3usize, 100usize, 0usize, 0usize, 3usize); 0 }
+        else if iteration == 43usize { expected = false; matcher = packet_agrees(matcher, 1usize, 0usize, 0usize, 1usize, 0usize, 96usize, 0usize, 0usize, 0usize); 0 }
+        else { expected = false; matcher = packet_agrees(matcher, 1usize, 3usize, 0usize, 0usize, 0usize, 32usize, 0usize, 0usize, 0usize); 0 }
+        let current = result_valid(matcher);
+        let frozen = frozen_result_valid(matcher);
+        if current == expected && frozen == expected { correct = correct + 1usize; 0 } else { 0 }
+        iteration = iteration + 1usize;
+        0
+    }
+    if iteration == 45usize && correct == 45usize { 0 } else { 1 }
 }
 
 @id("std.pattern.tests.public-api")
