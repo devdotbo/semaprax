@@ -734,9 +734,13 @@ module outcome.provider;
 }
 @id("outcome.decoded") variant Decoded {
     @id("outcome.decoded.ready") Ready { @id("outcome.decoded.ready.value") value:Report, },
-    @id("outcome.decoded.error") Error { @id("outcome.decoded.error.code") code:i64, },
+    @id("outcome.decoded.error") Error {
+        @id("outcome.decoded.error.code") code:i64,
+        @id("outcome.decoded.error.offset") offset:usize,
+        @id("outcome.decoded.error.field") field:i64,
+    },
 }
-@id("outcome.decode") fn decode(input:borrow Slice<u8>)->Decoded { Decoded::Error { code:0 } }
+@id("outcome.decode") fn decode(input:borrow Slice<u8>)->Decoded { Decoded::Error { code:0, offset:0usize, field:0 } }
 "#;
     let app = r#"
 module outcome.app;
@@ -747,7 +751,7 @@ use type @id("outcome.row") from outcome.provider as Row;
 use function @id("outcome.decode") from outcome.provider as decode;
 @id("outcome.main") fn main()->i64 {
     let input=[0u8]; let decoded=decode(array_as_slice(input));
-    match own decoded { Decoded::Error { code } => code, Decoded::Ready { value } => 0, }
+    match own decoded { Decoded::Error { code, offset, field } => code, Decoded::Ready { value } => 0, }
 }
 "#;
     for (id, name) in [
