@@ -53,33 +53,54 @@ fn candidate(statement: &hir::ResolvedStatement) -> bool {
                     if place.root == binding.id && place.projections.is_empty()))))
 }
 
+#[cfg(test)]
 fn census<'a>(roots: impl IntoIterator<Item = &'a hir::ResolvedExpr>) -> Option<(bool, bool)> {
-    let mut stack = [None; crate::cache_codec::MAX_DEPTH];
     let mut work = crate::cache_codec::MAX_NODES;
+    census_with_work(roots, &mut work, |_| {})
+}
+#[cfg(test)]
+fn census_with_work<'a>(
+    roots: impl IntoIterator<Item = &'a hir::ResolvedExpr>,
+    work: &mut usize,
+    mut visit: impl FnMut(&'a hir::ResolvedExpr),
+) -> Option<(bool, bool)> {
+    reserve_builder_structure(std::mem::size_of::<proofs::Walk<'_>>()).ok()?;
+    let mut stack = [None; crate::cache_codec::MAX_DEPTH];
+    census_in(roots, work, &mut visit, &mut stack)
+}
+fn census_in<'a>(
+    roots: impl IntoIterator<Item = &'a hir::ResolvedExpr>,
+    work: &mut usize,
+    visit: &mut impl FnMut(&'a hir::ResolvedExpr),
+    stack: &mut proofs::Walk<'a>,
+) -> Option<(bool, bool)> {
+    stack.fill(None);
     let mut found = false;
     let mut static_text = false;
     for root in roots {
-        stack[0] = Some((root, 0usize));
+        stack[0] = Some(hir::lexical_exit::ChildCursor::new(root));
         let mut depth = 1usize;
         while depth != 0 {
-            work = work.checked_sub(1)?;
+            *work = work.checked_sub(1)?;
             let index = depth - 1;
-            let (expression, next) = stack[index]?;
-            if next == 0 {
+            let mut cursor = stack[index]?;
+            let expression = cursor.expression();
+            if !cursor.is_started() {
+                visit(expression);
                 static_text |= matches!(expression.kind, ResolvedExprKind::BorrowedUtf8Literal(_));
                 if let ResolvedExprKind::Block { statements, .. }
                 | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
                 {
-                    work = work.checked_sub(statements.len())?;
+                    *work = work.checked_sub(statements.len())?;
                     found |= statements.iter().any(candidate);
                 }
             }
-            stack[index] = Some((expression, next.checked_add(1)?));
-            if let Some(child) = hir::lexical_exit::child(expression, next) {
+            if let Some(child) = cursor.next() {
                 if depth == stack.len() {
                     return None;
                 }
-                stack[depth] = Some((child, 0));
+                stack[index] = Some(cursor);
+                stack[depth] = Some(hir::lexical_exit::ChildCursor::new(child));
                 depth += 1;
             } else {
                 depth -= 1;
@@ -116,18 +137,24 @@ pub(super) fn schema_with_proofs<'a>(
             sum.checked_add(module.functions.len())
         })
         .ok_or_else(fail)?;
+    reserve_builder_structure(std::mem::size_of::<proofs::Walk<'a>>())?;
+    let mut census_stack = [None; crate::cache_codec::MAX_DEPTH];
     let mut any = false;
     for function in module
         .functions
         .iter()
         .chain(module.function_instances.iter().map(|i| &i.function))
     {
-        let (potential, static_text) = census(
+        let mut census_work = crate::cache_codec::MAX_NODES;
+        let (potential, static_text) = census_in(
             function
                 .requires
                 .iter()
                 .chain(std::iter::once(&function.body))
                 .chain(&function.ensures),
+            &mut census_work,
+            &mut |_| {},
+            &mut census_stack,
         )
         .ok_or_else(fail)?;
         if static_text && module.static_text.is_none() {
@@ -147,14 +174,15 @@ pub(super) fn schema_with_proofs<'a>(
         let required = function.cleanup_plan.schema == crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V19;
         let mut found = false;
         let mut stack = proofs.take_walk()?;
-        stack[0] = Some((&function.body, 0usize));
+        stack[0] = Some(hir::lexical_exit::ChildCursor::new(&function.body));
         let mut depth = 1usize;
         let mut work = crate::cache_codec::MAX_NODES;
         while depth != 0 {
             work = work.checked_sub(1).ok_or_else(fail)?;
             let index = depth - 1;
-            let (expression, next) = stack[index].ok_or_else(fail)?;
-            if next == 0 {
+            let mut cursor = stack[index].ok_or_else(fail)?;
+            let expression = cursor.expression();
+            if !cursor.is_started() {
                 if let ResolvedExprKind::Block { statements, .. }
                 | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
                 {
@@ -219,12 +247,12 @@ pub(super) fn schema_with_proofs<'a>(
                     }
                 }
             }
-            stack[index] = Some((expression, next.checked_add(1).ok_or_else(fail)?));
-            if let Some(child) = hir::lexical_exit::child(expression, next) {
+            if let Some(child) = cursor.next() {
                 if depth == stack.len() {
                     return Err(fail());
                 }
-                stack[depth] = Some((child, 0));
+                stack[index] = Some(cursor);
+                stack[depth] = Some(hir::lexical_exit::ChildCursor::new(child));
                 depth += 1;
             } else {
                 depth -= 1;
@@ -238,12 +266,16 @@ pub(super) fn schema_with_proofs<'a>(
     }
     if any && module.static_text.is_none() {
         for template in &module.function_templates {
-            let (_, static_text) = census(
+            let mut census_work = crate::cache_codec::MAX_NODES;
+            let (_, static_text) = census_in(
                 template
                     .requires
                     .iter()
                     .chain(std::iter::once(&template.body))
                     .chain(&template.ensures),
+                &mut census_work,
+                &mut |_| {},
+                &mut census_stack,
             )
             .ok_or_else(fail)?;
             if static_text && module.static_text.is_none() {

@@ -230,3 +230,12 @@ argument, active-call-cycle and ownership checks. Source indexed traversal keeps
 its existing prefix charges. Physical reservations, work/depth bounds, runtime
 fuel and helper schema authority are unchanged; owning executable qualification
 of this authored accounting change remains pending.
+
+The retained source-schema byte-helper census and held proof walker also use
+saved authored child cursors. Census scratch is charged before construction;
+the invocation-held proof Box is reserved once and reused without authority
+across contexts. Logical node/advance and one-time statement work remain the
+same; helper signatures, actual bodies, owner facts and schema selection still
+replay independently. The fixed scratch charge can change a near-limit builder
+receipt and is never refunded or hidden. Remaining indexed lookup calls in
+independent test oracles are intentionally retained.

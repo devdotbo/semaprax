@@ -66,7 +66,8 @@ fn prove<'a>(
     }
     if !crate::bounded_output::reserve_active_required(
         std::mem::size_of::<ResolvedScratch<'_>>()
-            + std::mem::size_of::<[Option<(&ResolvedExpr, usize)>; DEPTH]>(),
+            + std::mem::size_of::<[Option<(crate::hir::lexical_exit::ChildCursor<'_>, bool)>; DEPTH]>(
+            ),
     ) {
         return None;
     }
@@ -108,14 +109,18 @@ fn prove<'a>(
         return None;
     }
     let mut frames = [None; DEPTH];
-    frames[0] = Some((protocol.authored_body, usize::MAX));
+    frames[0] = Some((
+        crate::hir::lexical_exit::ChildCursor::new(protocol.authored_body),
+        false,
+    ));
     let mut depth = 1;
     while depth != 0 {
         work = work.checked_sub(1)?;
         let slot = depth - 1;
-        let (expression, next) = frames[slot]?;
-        if next == usize::MAX {
-            frames[slot] = Some((expression, 0));
+        let (mut cursor, entered) = frames[slot]?;
+        let expression = cursor.expression();
+        if !entered {
+            frames[slot] = Some((cursor, true));
             match &expression.kind {
                 K::BorrowPlace { operation, place }
                     if operation.as_str() == crate::byte_ops::BYTES_AS_SLICE_ID
@@ -127,7 +132,7 @@ fn prove<'a>(
                     let parent = depth
                         .checked_sub(2)
                         .and_then(|i| frames[i])
-                        .map(|(e, _)| e)?;
+                        .map(|(cursor, _)| cursor.expression())?;
                     if !matches!(&parent.kind, K::Call { callee, args, instance: None, .. } if matches!(crate::byte_ops::by_id(callee.as_str()), Some(crate::byte_ops::ByteOp::Len | crate::byte_ops::ByteOp::Get)) && args.first().is_some_and(|a| std::ptr::eq(a, expression)))
                     {
                         return None;
@@ -183,9 +188,10 @@ fn prove<'a>(
             }
             continue;
         }
-        if let Some(child) = crate::hir::lexical_exit::child(expression, next) {
-            frames[slot] = Some((expression, next + 1));
-            *frames.get_mut(depth)? = Some((child, usize::MAX));
+        if let Some(child) = cursor.next() {
+            frames[slot] = Some((cursor, true));
+            *frames.get_mut(depth)? =
+                Some((crate::hir::lexical_exit::ChildCursor::new(child), false));
             depth += 1;
         } else {
             depth -= 1;

@@ -46,7 +46,9 @@ repetitions. Zero iterations contribute no body allocation events. Each issued
 zero-sized owner still counts as one event when its constructor executes.
 
 The independent proof has a fixed256-frame cursor and65,536 work units; its
-scratch is reserved before proof use. Constructor provenance is iterative, with explicit predecessor lookup charges
+scratch, including saved child/entry cursor frames, is reserved at its actual
+layout before proof use. Child visits retain authored order without block
+prefix rescans. Constructor provenance is iterative, with explicit predecessor lookup charges
 and the same total work bound. Existing source/HIR
 admission bounds still apply. No test-derived trip count or cleanup back-edge
 enumeration supplies authority.

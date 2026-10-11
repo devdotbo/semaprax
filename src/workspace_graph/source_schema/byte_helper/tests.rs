@@ -567,3 +567,106 @@ fn retained_schema_walk_reuses_only_physical_backing_and_rechecks_claims() {
     assert_eq!(bytes, 0);
     assert_eq!(proofs.proof_count, 1);
 }
+
+#[test]
+fn retained_helper_census_cursor_matches_indexed_mixed_order_and_exact_work_depth() {
+    let mut source = String::from(
+        "module cursor; @id(\"main\") fn main()->i64 {let key=str\"x\";let mut next=0;",
+    );
+    for index in 0..64 {
+        source.push_str(&format!("let item_{index}={index};"));
+    }
+    source.push_str("while next<1 {next=next+1;if next==1 {continue;}else{0} 0} match true {true=>{let inside=7;inside},false=>{let later=8;later},}");
+    let source = crate::check(&source, "retained-helper-cursor.spx").unwrap();
+    let typed = hir::resolve(&source).unwrap();
+    let function = typed
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "main")
+        .unwrap();
+    let mut reference = Vec::new();
+    let mut pending = vec![(&function.body, 0usize)];
+    let mut expected_work = crate::cache_codec::MAX_NODES;
+    while let Some((expression, next)) = pending.pop() {
+        expected_work -= 1;
+        if next == 0 {
+            reference.push(expression as *const _);
+            if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+                expected_work -= statements.len();
+            }
+        }
+        if let Some(child) = hir::lexical_exit::child(expression, next) {
+            pending.push((expression, next + 1));
+            pending.push((child, 0));
+        }
+    }
+    let mut actual = Vec::new();
+    let mut work = crate::cache_codec::MAX_NODES;
+    assert_eq!(
+        census_with_work([&function.body], &mut work, |e| actual.push(e as *const _)),
+        Some((false, true))
+    );
+    assert_eq!(actual, reference);
+    assert_eq!(work, expected_work);
+    let spent = crate::cache_codec::MAX_NODES - work;
+    let mut exact = spent;
+    assert_eq!(
+        census_with_work([&function.body], &mut exact, |_| {}),
+        Some((false, true))
+    );
+    assert_eq!(exact, 0);
+    assert!(census_with_work([&function.body], &mut (spent - 1), |_| {}).is_none());
+    let mut deep = hir::resolve(
+        &crate::check(
+            "module depth; @id(\"main\") fn main()->i64 {0}",
+            "depth.spx",
+        )
+        .unwrap(),
+    )
+    .unwrap()
+    .functions
+    .remove(0)
+    .body;
+    deep.kind = ResolvedExprKind::Int(0); // One-node seed; the function Block has a tail child.
+    for _ in 1..crate::cache_codec::MAX_DEPTH {
+        let old = deep.clone();
+        deep.kind = ResolvedExprKind::Unary {
+            op: crate::ast::UnaryOp::Neg,
+            value: Box::new(old),
+        };
+    }
+    assert_eq!(census([&deep]), Some((false, false)));
+    let old = deep.clone();
+    deep.kind = ResolvedExprKind::Unary {
+        op: crate::ast::UnaryOp::Neg,
+        value: Box::new(old),
+    };
+    assert!(census([&deep]).is_none());
+}
+
+#[test]
+fn retained_helper_walk_reserves_observed_backing_once_and_refuses_one_short() {
+    let modules = [];
+    let facts = BTreeMap::new();
+    let mut proofs = Proofs::new(&modules, &facts);
+    let bytes = std::mem::size_of::<super::proofs::Walk<'_>>();
+    let (((), observed), refused, charged) = crate::bounded_output::with_limit_usage(bytes, || {
+        crate::test_allocation_observer::measure(|| {
+            let walk = proofs.take_walk().unwrap();
+            proofs.restore_walk(walk);
+            let walk = proofs.take_walk().unwrap();
+            proofs.restore_walk(walk);
+            drop(proofs);
+        })
+    });
+    assert!(!refused && !observed.invalid);
+    assert_eq!(charged, bytes);
+    assert_eq!(observed.allocations, 1);
+    assert_eq!(observed.allocated, bytes);
+    assert_eq!(observed.highwater, bytes);
+    assert_eq!(observed.live, 0);
+    let mut proofs = Proofs::new(&modules, &facts);
+    let (short, refused, _) =
+        crate::bounded_output::with_limit_usage(bytes - 1, || proofs.take_walk());
+    assert!(short.is_err() && refused);
+}

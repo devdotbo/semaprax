@@ -84,3 +84,27 @@ They bind wide and deep exact/one-short work, terminal probes, complete pattern
 and contract-root charges, shared renewal passes, physical exact/one-short frame
 reservation, unchanged depth refusal and late unsupported storage/callee refusal.
 They have not been executed in this tranche.
+
+## Remaining retained-helper and finite-scratch consumers
+
+The retained byte-helper source census and its invocation-held proof walk now
+save `ChildCursor` state rather than restarting indexed block prefixes. The
+fixed census scratch and reusable proof Box are charged at their actual cursor
+layout before construction. Census backing is reused across the complete held
+module function/template phase; the proof Box is reused inside its held invocation. This is an honest additional census reservation,
+not a claim that earlier near-limit builder receipts remain unchanged. The
+finite owned-iterator scratch proof reserves its cursor-plus-entry frame layout
+before use and keeps parent expression references for exact borrowed-use checks.
+Both retain their original depth, logical node/advance/statement debits and all
+source/body/helper/owner authentication; no authority survives context drift.
+
+Authored owning additions are two bodies under
+`workspace_graph::source_schema::byte_helper::tests::` (mixed indexed order,
+exact/one-short work/depth, and an actual thread-bound allocator observation of
+one reused proof backing), plus
+`finite_byte_scratch::tests::resolved_scratch_saved_cursor_precharges_its_complete_actual_frame_layout`.
+The allocator observer records requested Layout bytes, not RSS. Refusal
+reporting allocations are separate from the success-bound claim. These bodies
+remain unexecuted; representative retained-application work and runtime
+measurements, and the primitive function-inventory matching obligation in
+OPT #745, remain separate qualification requirements.

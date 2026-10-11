@@ -1,7 +1,8 @@
 //! Positive proof reuse belongs only to one held immutable provider inventory.
 use super::*;
 
-pub(super) type Walk<'a> = [Option<(&'a hir::ResolvedExpr, usize)>; crate::cache_codec::MAX_DEPTH];
+pub(super) type Walk<'a> =
+    [Option<hir::lexical_exit::ChildCursor<'a>>; crate::cache_codec::MAX_DEPTH];
 
 pub(in crate::workspace_graph) struct Proofs<'a> {
     modules: &'a [WorkspaceResolvedModule],

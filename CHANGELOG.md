@@ -6655,3 +6655,5 @@ The detailed 0.3.5, 0.2.0, and 0.1.0 history is preserved in the [changelog arch
   borrowed String conversion, numeric conversion/comparison, owned String
   variant transport/matching, explicit file-read provider authority, and a
   digest-bound standalone Web route. Combined executable gates remain pending.
+
+- OPT #750: remaining retained byte-helper and finite scratch proof walkers use saved borrowed cursors with actual enlarged scratch reservations; independent order/work/depth and allocator-layout regressions are authored, not yet executed.

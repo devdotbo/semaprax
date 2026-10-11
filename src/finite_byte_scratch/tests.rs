@@ -297,3 +297,38 @@ fn typed_unknown_constructor_and_forged_latch_lose_finite_authority() {
     *latch = hir::LoopLatchKind::Condition;
     assert!(hir::validate(&resolved).is_err());
 }
+
+#[test]
+fn resolved_scratch_saved_cursor_precharges_its_complete_actual_frame_layout() {
+    let source = parsed(SOURCE);
+    let typed = crate::hir::resolve(&source).unwrap();
+    let function = typed
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "app.main")
+        .unwrap();
+    let (condition, body) = finite_byte_scratch::loops(function).next().unwrap();
+    let ((proof, observed), refused, charged) =
+        crate::bounded_output::with_limit_usage(crate::workspace_graph::MAX_BUILDER_BYTES, || {
+            crate::test_allocation_observer::measure(|| {
+                finite_byte_scratch::resolved(&typed, condition, body)
+            })
+        });
+    assert_eq!(proof.unwrap().iterations, 2);
+    assert!(!refused && !observed.invalid);
+    let frame_bytes = std::mem::size_of::<
+        [Option<(crate::hir::lexical_exit::ChildCursor<'_>, bool)>; super::DEPTH],
+    >();
+    assert!(charged >= frame_bytes);
+    assert!(observed.allocated <= charged && observed.highwater <= charged);
+    let (exact, refused, used) = crate::bounded_output::with_limit_usage(charged, || {
+        finite_byte_scratch::resolved(&typed, condition, body)
+    });
+    assert_eq!(exact.unwrap().iterations, 2);
+    assert!(!refused);
+    assert_eq!(used, charged);
+    let (short, refused, _) = crate::bounded_output::with_limit_usage(charged - 1, || {
+        finite_byte_scratch::resolved(&typed, condition, body)
+    });
+    assert!(short.is_none() && refused);
+}
