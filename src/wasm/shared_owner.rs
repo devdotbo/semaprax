@@ -5,20 +5,24 @@
 //! every reachable Bytes operation before any producer is admitted. Ordinary
 //! Core-Wasm Bytes are host-owned tokens behind the frozen two-word carrier
 //! `((0x80000000 | token) << 32) | extent`, so the domain lives host-side:
-//! `shared_owner/registry.mjs` owns backing, range, generation and issuer
-//! authority, and `shared_owner/host.mjs` routes every implemented ordinary
-//! consumer through it. The guest never receives a pointer, offset or header,
-//! and no consumer classifies a carrier by probing memory.
+//! `shared_owner/registry.mjs` owns backing, range, generation, invocation
+//! and issuer authority in fixed typed tables, and `shared_owner/host.mjs`
+//! routes every implemented ordinary consumer through it. The guest never
+//! receives a pointer, offset or header, and no consumer classifies a carrier
+//! by probing memory.
 //!
-//! This module decides, from a module's actual import section, whether every
-//! import is a lease-aware consumer of that private host or carries no Bytes
-//! authority. Any other crossing (public owned envelopes, providers,
-//! collections, record/leaf/Box payloads and the remaining String toolkit)
-//! refuses by name before a lease could reach it. Producer admission is
-//! closed: [`admit_producer`] refuses until the cross-backend source/HIR join
-//! supplies a validated `bytes_partition` selection, and no `env` import
-//! issues a lease. Neither the closure receipt nor the private fused lease
-//! proof grants that authority.
+//! This module decides, from a module's actual import section and one
+//! selected owning host, whether every import is a lease-aware consumer of
+//! that host or carries no Bytes authority. A joined host takes its payload
+//! consumers from the private host and reads, allocates and drops every
+//! payload through the private host's hooks. Any other crossing (public owned
+//! envelopes, providers, collections, the remaining String toolkit, legacy
+//! scalar Vec/Box, and imports another host serves) refuses by name before a
+//! lease could reach it. Producer admission is closed: [`admit_producer`]
+//! refuses until the cross-backend source/HIR join supplies a validated
+//! `bytes_partition` selection, and no `env` import issues a lease. Neither
+//! the closure receipt nor the private fused lease proof grants that
+//! authority.
 #![cfg_attr(
     not(test),
     allow(
@@ -29,12 +33,34 @@
 
 /// Private authority domain; distinct from every public token table.
 pub(in crate::wasm) const DOMAIN: &str = "semaprax.private.wasm-shared-byte-owner.v1";
+/// Partition status domain and codes, in refusal precedence order.
+pub(in crate::wasm) const PARTITION_STATUS_DOMAIN: &str = "semaprax.byte-partition.v1";
+pub(in crate::wasm) const PARTITION_STATUS_CODES: [(&str, u32); 4] = [
+    ("width_zero", 1),
+    ("extent_overflow", 2),
+    ("extent_mismatch", 3),
+    ("metadata_capacity", 4),
+];
 /// Authenticated lease registry: backings, ranges, generations, issuer.
 pub(in crate::wasm) const REGISTRY_SOURCE: &str = include_str!("shared_owner/registry.mjs");
 /// Private strict host composing the registry into ordinary consumers.
 pub(in crate::wasm) const HOST_SOURCE: &str = include_str!("shared_owner/host.mjs");
 /// The only namespace the ordinary emitter uses for these consumers.
 const NAMESPACE: &str = "env";
+
+/// The owning host a module would be instantiated against.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(in crate::wasm) enum Host {
+    /// `shared_owner/host.mjs` alone.
+    PrivateOrdinary,
+    /// The private owned-leaf Vec host
+    /// (`tests/owned_data/owned_leaf_vec/host.js`) in its `shared-owner`
+    /// mode: it takes [`PAYLOAD_CONSUMERS`] from the private host, and its
+    /// own record/leaf Vec, iterator, sort and String-toolkit consumers read,
+    /// allocate and drop every payload through the private host's hooks. It
+    /// is a private test host, not a public adapter.
+    OwnedLeafVecFixture,
+}
 
 /// Ordinary `env` consumers the private host resolves through the registry.
 /// Each accepts a whole owner or a live lease, and rejects anything else.
@@ -50,10 +76,18 @@ pub(in crate::wasm) const LEASE_AWARE: &[&str] = &[
     "spx_bytes_set1_or6_or48",
     "spx_string_from_utf8_v1",
     "spx_string_from_str_v2",
+    "spx_string_concat_v1",
+    "spx_string_from_char_v1",
+    "spx_string_from_i64_v1",
+    "spx_string_from_usize_v1",
     "spx_string_len_chars_v1",
     "spx_string_starts_with_v1",
     "spx_string_contains_v1",
     "spx_string_compare_v2",
+    "spx_box_new_v2",
+    "spx_box_get_v2",
+    "spx_box_into_inner_v2",
+    "spx_box_drop_v2",
     "spx_vec_with_capacity_v2",
     "spx_vec_push_v2",
     "spx_vec_len_v2",
@@ -66,6 +100,64 @@ pub(in crate::wasm) const LEASE_AWARE: &[&str] = &[
     "spx_iter_bytes_into_v2",
     "spx_iter_bytes_next_v2",
     "spx_iter_bytes_drop_v2",
+];
+
+/// The private host's payload consumers a joined host takes unchanged. Vec
+/// and iterator authorities stay with the host that owns the Vec table.
+pub(in crate::wasm) const PAYLOAD_CONSUMERS: &[&str] = &[
+    "spx_bytes_zeroed",
+    "spx_bytes_copy",
+    "spx_bytes_get",
+    "spx_bytes_as_slice",
+    "spx_bytes_drop",
+    "spx_bytes_set",
+    "spx_bytes_set5",
+    "spx_bytes_set1_or5",
+    "spx_bytes_set1_or6_or48",
+    "spx_string_from_utf8_v1",
+    "spx_string_from_str_v2",
+    "spx_string_len_chars_v1",
+    "spx_string_starts_with_v1",
+    "spx_string_contains_v1",
+    "spx_string_compare_v2",
+    "spx_box_new_v2",
+    "spx_box_get_v2",
+    "spx_box_into_inner_v2",
+    "spx_box_drop_v2",
+];
+
+/// Consumers the owned-leaf Vec host implements itself in `shared-owner`
+/// mode, with every payload read, allocation and drop on the private hooks.
+pub(in crate::wasm) const LEAF_FIXTURE_JOINED: &[&str] = &[
+    "spx_vec_with_capacity_v2",
+    "spx_vec_push_v2",
+    "spx_vec_record_push_v2",
+    "spx_vec_len_v2",
+    "spx_vec_capacity_v2",
+    "spx_vec_get_v2",
+    "spx_vec_drop_v2",
+    "spx_vec_reserve_exact_v2",
+    "spx_vec_set_v2",
+    "spx_vec_clear_v2",
+    "spx_vec_sort_v3",
+    "spx_vec_sort_by_v1",
+    "spx_vec_leaf_new_v1",
+    "spx_vec_leaf_field_read_v1",
+    "spx_vec_leaf_push_v1",
+    "spx_vec_leaf_clone_at_v1",
+    "spx_vec_leaf_replace_v1",
+    "spx_vec_leaf_reserve_v1",
+    "spx_vec_leaf_sort_v1",
+    "spx_vec_leaf_into_iter_v1",
+    "spx_vec_leaf_iter_next_v1",
+    "spx_vec_leaf_iter_drop_v1",
+    "spx_iter_record_into_v3",
+    "spx_iter_record_next_v3",
+    "spx_iter_record_drop_v3",
+    "spx_string_concat_v1",
+    "spx_string_from_char_v1",
+    "spx_string_from_i64_v1",
+    "spx_string_from_usize_v1",
 ];
 
 /// Imports that never receive or return a Bytes carrier.
@@ -96,11 +188,10 @@ const REFUSED: &[(&str, Crossing)] = &[
     ("spx_collection_", Crossing::Collection),
     ("spx_format_step_v1", Crossing::Format),
     ("spx_string_", Crossing::StringToolkit),
-    ("spx_vec_leaf_", Crossing::RecordPayload),
-    ("spx_vec_record_", Crossing::RecordPayload),
-    ("spx_iter_record_", Crossing::RecordPayload),
-    ("spx_vec_sort_", Crossing::RecordPayload),
-    ("spx_box_", Crossing::BoxPayload),
+    ("spx_box_new", Crossing::LegacyBox),
+    ("spx_box_get", Crossing::LegacyBox),
+    ("spx_box_into_inner", Crossing::LegacyBox),
+    ("spx_box_drop", Crossing::LegacyBox),
     ("spx_vec_", Crossing::LegacyVec),
 ];
 
@@ -114,14 +205,15 @@ pub(in crate::wasm) enum Crossing {
     Collection,
     /// Literal format worker owns its own allocation-failure lane.
     Format,
-    /// String toolkit operations not yet routed through the registry.
+    /// String toolkit operations no selected host routes through the hooks.
     StringToolkit,
-    /// Record/owned-leaf Vec rows whose leaf drop is host-local.
-    RecordPayload,
-    /// Box payload drop is host-local.
-    BoxPayload,
-    /// Legacy scalar-only Vec imports are not part of the private host.
+    /// Legacy scalar Box v1 imports are not served by a lease-aware host.
+    LegacyBox,
+    /// Legacy scalar-only Vec imports are not served by a lease-aware host.
     LegacyVec,
+    /// A lease-aware consumer of another host; the selected host does not
+    /// serve it, so mixing the two Vec tables is refused.
+    OtherHost,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -146,15 +238,34 @@ pub(in crate::wasm) enum Disposition {
     CarrierFree,
 }
 
-pub(in crate::wasm) fn classify(module: &str, name: &str) -> Result<Disposition, Refusal> {
+fn served(host: Host, name: &str) -> bool {
+    match host {
+        Host::PrivateOrdinary => LEASE_AWARE.contains(&name),
+        Host::OwnedLeafVecFixture => {
+            PAYLOAD_CONSUMERS.contains(&name) || LEAF_FIXTURE_JOINED.contains(&name)
+        }
+    }
+}
+
+pub(in crate::wasm) fn classify(
+    host: Host,
+    module: &str,
+    name: &str,
+) -> Result<Disposition, Refusal> {
     if module != NAMESPACE {
         return Err(Refusal::Namespace(format!("{module}.{name}")));
     }
-    if LEASE_AWARE.contains(&name) {
+    if served(host, name) {
         return Ok(Disposition::LeaseAware);
     }
     if CARRIER_FREE.contains(&name) {
         return Ok(Disposition::CarrierFree);
+    }
+    if [Host::PrivateOrdinary, Host::OwnedLeafVecFixture]
+        .into_iter()
+        .any(|other| served(other, name))
+    {
+        return Err(Refusal::Crossing(name.to_owned(), Crossing::OtherHost));
     }
     for (pattern, crossing) in REFUSED {
         let matched = if pattern.ends_with('_') {
@@ -169,19 +280,21 @@ pub(in crate::wasm) fn classify(module: &str, name: &str) -> Result<Disposition,
     Err(Refusal::Unknown(name.to_owned()))
 }
 
-/// Receipt that every import of one exact module is closed over the domain.
-/// It is proof data about that module's imports only; it grants no producer,
-/// source or public-adapter authority.
+/// Receipt that every import of one exact module is closed over the domain
+/// for one owning host. It is proof data about that module's imports only;
+/// it grants no producer, source or public-adapter authority.
 #[derive(Debug, Eq, PartialEq)]
 pub(in crate::wasm) struct Closure {
+    pub(in crate::wasm) host: Host,
     pub(in crate::wasm) lease_aware: Vec<String>,
     pub(in crate::wasm) carrier_free: Vec<String>,
 }
 
 /// Classifies the actual import section in order and refuses at the first
-/// import outside the closure.
-pub(in crate::wasm) fn consumer_closure(module: &[u8]) -> Result<Closure, Refusal> {
+/// import outside the closure of `host`.
+pub(in crate::wasm) fn consumer_closure(module: &[u8], host: Host) -> Result<Closure, Refusal> {
     let mut closure = Closure {
+        host,
         lease_aware: Vec::new(),
         carrier_free: Vec::new(),
     };
@@ -196,7 +309,7 @@ pub(in crate::wasm) fn consumer_closure(module: &[u8]) -> Result<Closure, Refusa
                         import.module, import.name
                     )));
                 }
-                match classify(import.module, import.name)? {
+                match classify(host, import.module, import.name)? {
                     Disposition::LeaseAware => closure.lease_aware.push(import.name.to_owned()),
                     Disposition::CarrierFree => closure.carrier_free.push(import.name.to_owned()),
                 }

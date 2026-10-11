@@ -1,7 +1,14 @@
 // Hostile and lifecycle regressions for the private shared-owner host.
 // Authored for `shared_owner::tests`; each case uses a fresh host.
 import { createPrivateOrdinaryByteHost, MAX_BACKING_EVENTS } from "./host.mjs";
-import { MAX_LEASE_GENERATION, carrierOf, decodeOwnedCarrier } from "./registry.mjs";
+import {
+  MAX_BACKINGS,
+  MAX_LEASE_GENERATION,
+  PARTITION_STATUS_CODES,
+  PARTITION_REFUSALS,
+  carrierOf,
+  decodeOwnedCarrier,
+} from "./registry.mjs";
 
 const check = (condition, message) => { if (!condition) throw new Error(`FAILED: ${message}`); };
 const throws = (body, pattern, message) => {
@@ -16,8 +23,8 @@ const fresh = options => {
   const host = createPrivateOrdinaryByteHost(options);
   const memory = new WebAssembly.Memory({ initial: 2, maximum: 2 });
   host.bind({ exports: { memory } });
-  host.facade.beginInvocation();
-  return { host, env: host.imports, facade: host.facade, memory };
+  const receipt = host.facade.beginInvocation();
+  return { host, env: host.imports, facade: host.facade, memory, receipt };
 };
 // NUL, Unicode (U+00E9, U+1F600) and non-UTF-8 bytes in one 12-byte owner.
 const PAYLOAD = [0x00, 0x41, 0xff, 0xc3, 0xa9, 0x42, 0xf0, 0x9f, 0x98, 0x80, 0x00, 0xfe];
@@ -37,8 +44,14 @@ const partition = (facade, carrier, count, width) => {
 const cases = [];
 const test = (name, body) => cases.push([name, body]);
 
+test("status domain codes follow refusal precedence", () => {
+  check(same(PARTITION_REFUSALS, ["width_zero", "extent_overflow", "extent_mismatch", "metadata_capacity"]),
+    "refusal precedence");
+  check(PARTITION_REFUSALS.every((symbol, index) => PARTITION_STATUS_CODES[symbol] === index + 1), "codes 1..4");
+});
+
 test("exact order, NUL, Unicode and non-UTF-8 preserved without a charge", () => {
-  const { env, facade } = fresh();
+  const { env, facade, receipt } = fresh();
   const children = partition(facade, filled(env), 4, 3);
   const joined = children.flatMap(child => [...facade.peek(child)]);
   check(same(joined, PAYLOAD), "concatenated children reproduce the owner");
@@ -51,13 +64,15 @@ test("exact order, NUL, Unicode and non-UTF-8 preserved without a charge", () =>
   check(env.spx_bytes_get(children[0], 3n) === -1, "get past the lease extent is out of range");
   for (const child of children) env.spx_bytes_drop(child);
   check(facade.stats().releasedBackings === 1 && facade.stats().liveBackings === 0, "final backing released once");
+  facade.endInvocation(receipt);
 });
 
 test("refusals precede transfer and keep the whole owner", () => {
-  const { env, facade } = fresh({ maxLeaseSlots: 4 });
+  const { env, facade, receipt } = fresh({ maxLeaseSlots: 4 });
   const owner = filled(env);
   for (const [count, width, symbol] of [
     [4n, 0n, "width_zero"],
+    [0n, 0n, "width_zero"],
     [1n << 63n, 4n, "extent_overflow"],
     [5n, 3n, "extent_mismatch"],
     [12n, 1n, "metadata_capacity"],
@@ -67,28 +82,68 @@ test("refusals precede transfer and keep the whole owner", () => {
     check(same([...facade.peek(owner)], PAYLOAD), `owner unchanged after ${symbol}`);
     check(facade.stats().reservedSlots === 0 && facade.stats().entries === 1, `no reservation after ${symbol}`);
   }
-  // Exact slot bound succeeds; one short refused above.
+  // Exact slot bound succeeds; one more is refused above.
   const children = partition(facade, owner, 4, 3);
   throws(() => env.spx_bytes_get(owner, 0n), /stale or malformed/, "consumed whole owner is stale");
   for (const child of children) env.spx_bytes_drop(child);
+  facade.endInvocation(receipt);
 });
 
 test("Vec carrier capacity bounds child metadata exactly", () => {
-  const { env, facade } = fresh();
+  const { env, facade, receipt } = fresh();
   const over = env.spx_bytes_zeroed(8193n);
   const refused = facade.partitionForWitness(over, 8193n, 1n);
   check(!refused.ok && refused.refused === "metadata_capacity", "8193 children refused");
   env.spx_bytes_drop(over);
   const exact = env.spx_bytes_zeroed(8192n);
   const children = partition(facade, exact, 8192, 1);
-  check(facade.stats().peakLiveLeases === 8192, "exact 8192 children");
+  check(facade.stats().peakLiveLeases === 8192 && facade.stats().freeSlots === 0, "exact 8192 children");
   const vec = facade.vecForWitness(children);
   env.spx_vec_drop_v2(vec);
   check(facade.stats().liveLeases === 0 && facade.stats().releasedBackings === 1, "Vec drop settles all children once");
+  check(facade.stats().freeSlots === 8192, "every slot returned to the fixed table");
+  facade.endInvocation(receipt);
+});
+
+test("simultaneous partitioned owners share one fixed slot table", () => {
+  const { env, facade, receipt } = fresh();
+  const left = partition(facade, env.spx_bytes_zeroed(4096n), 4096, 1);
+  const right = partition(facade, env.spx_bytes_zeroed(4096n), 2048, 2);
+  check(facade.stats().liveBackings === 2 && facade.stats().freeSlots === 2048, "two live backings");
+  const third = env.spx_bytes_zeroed(2049n);
+  check(facade.partitionForWitness(third, 2049n, 1n).refused === "metadata_capacity", "slot table exhausted");
+  check(facade.stats().entries === 1 && facade.stats().reservedSlots === 0, "refused owner stays whole");
+  const fits = partition(facade, third, 1, 2049);
+  check(facade.stats().liveBackings === 3, "third backing within the remaining slots");
+  // Dropping one backing's children releases only that backing.
+  for (const child of left) env.spx_bytes_drop(child);
+  check(facade.stats().liveBackings === 2 && facade.stats().releasedBackings === 1, "left backing released alone");
+  check(facade.peek(right[2047]).length === 2 && facade.peek(fits[0]).length === 2049, "other backings readable");
+  env.spx_vec_drop_v2(facade.vecForWitness(right));
+  env.spx_bytes_drop(fits[0]);
+  check(facade.stats().releasedBackings === 3, "every backing released once");
+  facade.endInvocation(receipt);
+});
+
+test("the 32-event limit funds every live backing", () => {
+  const { env, facade, receipt } = fresh();
+  check(MAX_BACKINGS === MAX_BACKING_EVENTS, "backing table equals the event limit");
+  const held = [];
+  for (let index = 0; index < MAX_BACKING_EVENTS; index += 1) {
+    held.push(...partition(facade, env.spx_bytes_zeroed(2n), 2, 1));
+  }
+  check(facade.stats().liveBackings === MAX_BACKINGS, "32 simultaneous backings");
+  throws(() => env.spx_bytes_zeroed(1n), /allocation budget exceeded/, "a 33rd owner is refused by the old limit");
+  // A popped child keeps only its own backing after its sibling drops.
+  for (let index = 1; index < held.length; index += 2) env.spx_bytes_drop(held[index]);
+  check(facade.stats().liveBackings === MAX_BACKINGS && facade.stats().liveLeases === 32, "siblings settled");
+  for (let index = 0; index < held.length; index += 2) env.spx_bytes_drop(held[index]);
+  check(facade.stats().releasedBackings === MAX_BACKINGS, "each backing released once");
+  facade.endInvocation(receipt);
 });
 
 test("zero count settles an empty owner without a backing", () => {
-  const { env, facade } = fresh();
+  const { env, facade, receipt } = fresh();
   const empty = env.spx_bytes_zeroed(0n);
   const result = facade.partitionForWitness(empty, 0n, (1n << 64n) - 1n);
   check(result.ok && result.children.length === 0, "empty partition with maximum width");
@@ -96,10 +151,11 @@ test("zero count settles an empty owner without a backing", () => {
   const nonempty = env.spx_bytes_zeroed(3n);
   check(facade.partitionForWitness(nonempty, 0n, 3n).refused === "extent_mismatch", "zero count needs empty input");
   env.spx_bytes_drop(nonempty);
+  facade.endInvocation(receipt);
 });
 
 test("mutation is isolated to one renewed range", () => {
-  const { env, facade } = fresh();
+  const { env, facade, receipt } = fresh();
   const [a, b] = partition(facade, filled(env), 2, 6);
   const sibling = [...facade.peek(b)];
   const renewed = env.spx_bytes_set5(a, 0n, 1, 2, 3, 4, 5);
@@ -114,20 +170,22 @@ test("mutation is isolated to one renewed range", () => {
   facade.audit();
   for (const child of [renewed, b]) env.spx_bytes_drop(child);
   check(facade.stats().releasedBackings === 1, "backing released once");
+  facade.endInvocation(receipt);
 });
 
 test("self-sourced choice store reads before it writes", () => {
-  const { env, facade } = fresh();
+  const { env, facade, receipt } = fresh();
   const [a, b] = partition(facade, filled(env), 2, 6);
   const expected = [...facade.peek(a)];
   const renewed = env.spx_bytes_set1_or6_or48(a, 0n, 0, a, 1n << 63n);
   check(same([...facade.peek(renewed)], expected), "six-byte self copy observes pre-store bytes");
   env.spx_bytes_drop(renewed);
   env.spx_bytes_drop(b);
+  facade.endInvocation(receipt);
 });
 
 test("iteration transfers children that survive Vec, sibling and iterator drop", () => {
-  const { env, facade, memory } = fresh();
+  const { env, facade, memory, receipt } = fresh();
   const children = partition(facade, filled(env), 4, 3);
   const vec = facade.vecForWitness(children);
   const out = 65536;
@@ -145,10 +203,11 @@ test("iteration transfers children that survive Vec, sibling and iterator drop",
   throws(() => env.spx_bytes_drop(children[1]), /double or stale/, "abandoned sibling already settled");
   env.spx_bytes_drop(popped);
   check(facade.stats().releasedBackings === 1 && facade.stats().liveBackings === 0, "last child releases the backing");
+  facade.endInvocation(receipt);
 });
 
 test("Vec set and clear drop replaced children in order", () => {
-  const { env, facade } = fresh();
+  const { env, facade, receipt } = fresh();
   const children = partition(facade, filled(env), 3, 4);
   let vec = facade.vecForWitness(children);
   const replacement = env.spx_bytes_zeroed(2n);
@@ -162,10 +221,32 @@ test("Vec set and clear drop replaced children in order", () => {
   const stats = facade.stats();
   check(stats.liveLeases === 0 && stats.releasedBackings === 1 && stats.entries === 0, "clear settles everything once");
   env.spx_vec_drop_v2(vec);
+  facade.endInvocation(receipt);
+});
+
+test("Box v2 owns a lease and drops or detaches it exactly once", () => {
+  const { env, facade, receipt } = fresh();
+  const [a, b] = partition(facade, filled(env), 2, 6);
+  const boxed = env.spx_box_new_v2(9, a);
+  throws(() => env.spx_box_get_v2(boxed, 9), /cannot be copied/, "owned Box payload get");
+  throws(() => env.spx_box_into_inner_v2(boxed, 1), /stale or mistyped Box/, "mistyped Box consume");
+  const inner = env.spx_box_into_inner_v2(boxed, 9);
+  check(inner === a && same([...facade.peek(inner)], PAYLOAD.slice(0, 6)), "into_inner detaches the same lease");
+  throws(() => env.spx_box_drop_v2(boxed), /stale Box drop/, "consumed Box drop");
+  const dropped = env.spx_box_new_v2(9, b);
+  env.spx_box_drop_v2(dropped);
+  check(facade.stats().liveLeases === 1 && facade.stats().boxes === 0, "Box drop settled its lease");
+  throws(() => env.spx_box_new_v2(9, b), /stale or malformed/, "settled lease cannot be boxed");
+  throws(() => env.spx_box_new_v2(9, BigInt.asIntN(64, (16n << 32n) | 2n)), /token invariant/, "borrowed carrier cannot be boxed");
+  const scalar = env.spx_box_new_v2(1, -5n);
+  check(env.spx_box_get_v2(scalar, 1) === -5n && env.spx_box_into_inner_v2(scalar, 1) === -5n, "scalar Box v2");
+  env.spx_bytes_drop(inner);
+  check(facade.stats().releasedBackings === 1, "backing released once");
+  facade.endInvocation(receipt);
 });
 
 test("deep clone is isolated and keeps ordinary charges", () => {
-  const { env, facade } = fresh();
+  const { env, facade, receipt } = fresh();
   const [a, b] = partition(facade, filled(env), 2, 6);
   const before = facade.stats();
   const clone = env.spx_bytes_copy(a);
@@ -182,19 +263,23 @@ test("deep clone is isolated and keeps ordinary charges", () => {
   check(facade.stats().releasedBackings === 1, "children settle the backing");
   check(facade.peek(mutatedClone)[0] === 0x7a, "clone survives backing release");
   env.spx_bytes_drop(mutatedClone);
+  facade.endInvocation(receipt);
 });
 
 test("stale, foreign, forged and child-partition carriers are rejected", () => {
   const first = fresh(), second = fresh();
   const [a, b] = partition(first.facade, filled(first.env), 2, 6);
   const [foreign] = partition(second.facade, second.env.spx_bytes_zeroed(4n), 1, 4);
+  const foreignWhole = second.env.spx_bytes_zeroed(6n);
   const token = decodeOwnedCarrier(a).token;
   throws(() => first.env.spx_bytes_get(carrierOf(token, 7), 0n), /extent invariant/, "forged longer extent");
   throws(() => first.env.spx_bytes_get(carrierOf(token, 5), 0n), /extent invariant/, "forged shorter extent");
-  // Realm-unique tokens: a foreign lease never names a live entry here.
+  // Never-reused tokens: a foreign lease or owner never names a live entry here.
   check(decodeOwnedCarrier(foreign).token !== token, "foreign token is distinct");
   throws(() => first.env.spx_bytes_get(foreign, 0n), /stale or malformed/, "foreign registry carrier");
   throws(() => first.env.spx_bytes_drop(foreign), /double or stale/, "foreign drop");
+  throws(() => first.env.spx_bytes_get(foreignWhole, 0n), /stale or malformed/, "foreign whole owner");
+  throws(() => first.facade.partitionForWitness(foreignWhole, 1n, 6n), /stale or malformed/, "foreign partition input");
   throws(() => first.facade.partitionForWitness(a, 1n, 6n), /child partition refused/, "child as partition input");
   throws(() => first.env.spx_bytes_drop(BigInt.asIntN(64, (0n << 32n) | 6n)), /borrowed Bytes drop/, "untagged drop");
   first.env.spx_bytes_drop(a);
@@ -206,18 +291,39 @@ test("stale, foreign, forged and child-partition carriers are rejected", () => {
   throws(() => first.facade.partitionForWitness(whole, 1n, 5n), /child partition refused/, "zero-offset whole-extent child");
   first.env.spx_bytes_drop(whole);
   second.env.spx_bytes_drop(foreign);
+  second.env.spx_bytes_drop(foreignWhole);
   check(first.facade.stats().releasedBackings === 2 && second.facade.stats().releasedBackings === 1, "each backing released once");
-  // Live-backing bound: a second concurrent whole-backing partition refuses.
-  const [held] = partition(first.facade, first.env.spx_bytes_zeroed(2n), 1, 2);
-  const other = first.env.spx_bytes_zeroed(2n);
-  check(first.facade.partitionForWitness(other, 1n, 2n).refused === "metadata_capacity", "second live backing refused");
-  check(first.facade.peek(other).length === 2, "refused owner stays whole");
-  first.env.spx_bytes_drop(other);
-  first.env.spx_bytes_drop(held);
+  first.facade.endInvocation(first.receipt);
+  second.facade.endInvocation(second.receipt);
+});
+
+test("invocation receipts settle before fresh reentry", () => {
+  const { host, env, facade, receipt } = fresh();
+  throws(() => facade.beginInvocation(), /before fresh reentry/, "nested begin refused");
+  const [a, b] = partition(facade, filled(env), 2, 6);
+  throws(() => facade.endInvocation(Object.freeze(Object.create(null))), /receipt invariant/, "forged receipt");
+  throws(() => facade.endInvocation(receipt), /unsettled/, "unsettled end refused");
+  check(facade.stats().liveLeases === 2 && facade.stats().invocation !== 0, "refused end keeps the invocation");
+  env.spx_bytes_drop(a);
+  env.spx_bytes_drop(b);
+  const events = facade.stats().events;
+  facade.endInvocation(receipt);
+  throws(() => env.spx_bytes_zeroed(1n), /no live invocation/, "idle host refuses every import");
+  throws(() => facade.endInvocation(receipt), /receipt invariant/, "receipt cannot end twice");
+  const next = facade.beginInvocation();
+  check(facade.stats().events === 0 && events > 0, "counters reset only at a fresh begin");
+  const carrier = env.spx_bytes_zeroed(2n);
+  throws(() => facade.abandon(receipt), /receipt invariant/, "old receipt cannot abandon");
+  check(facade.abandon(next) === 0 && facade.stats().entries === 0, "abandon releases the whole owner");
+  const third = facade.beginInvocation();
+  throws(() => env.spx_bytes_get(carrier, 0n), /stale or malformed/, "prior invocation owner is stale");
+  check(decodeOwnedCarrier(env.spx_bytes_zeroed(2n)).token > decodeOwnedCarrier(carrier).token, "tokens never rewind");
+  facade.abandon(third);
+  check(host.payload.own !== undefined, "payload hooks exported");
 });
 
 test("range descriptor views narrow the current lease generation", () => {
-  const { env, facade, memory } = fresh();
+  const { env, facade, memory, receipt } = fresh();
   const [a, b] = partition(facade, filled(env), 2, 6);
   const pointer = 4096, identity = 7;
   const descriptor = new DataView(memory.buffer, pointer, 32);
@@ -238,10 +344,11 @@ test("range descriptor views narrow the current lease generation", () => {
   check(env.spx_bytes_get(write(renewed, 0, 2), 0n) === 1, "view over the current generation");
   env.spx_bytes_drop(a);
   env.spx_bytes_drop(renewed);
+  facade.endInvocation(receipt);
 });
 
 test("String consumers read leases and copy out ordinary owners", () => {
-  const { env, facade, memory } = fresh();
+  const { env, facade, memory, receipt } = fresh();
   const [, unicode] = partition(facade, filled(env), 4, 3);
   const out = 65536;
   check(env.spx_string_from_utf8_v1(unicode, out) === 0, "UTF-8 range accepted");
@@ -251,11 +358,11 @@ test("String consumers read leases and copy out ordinary owners", () => {
   check(env.spx_string_compare_v2(text, unicode) === 0n, "copy equals lease");
   const invalid = partition(facade, env.spx_bytes_zeroed(0n), 0, 1);
   check(invalid.length === 0, "empty");
-  facade.abandon();
+  facade.abandon(receipt);
 });
 
 test("ordinary 32-event and payload controls are unchanged", () => {
-  const { env, facade } = fresh();
+  const { env, facade, receipt } = fresh();
   const owner = env.spx_bytes_zeroed(32n);
   const children = partition(facade, owner, 32, 1);
   const kept = [];
@@ -264,7 +371,7 @@ test("ordinary 32-event and payload controls are unchanged", () => {
   throws(() => env.spx_bytes_copy(children[0]), /allocation budget exceeded/, "+1 event refused");
   throws(() => env.spx_bytes_zeroed(1n), /allocation budget exceeded/, "+1 constructor refused");
   check(facade.stats().liveLeases === 32, "refused clone leaves the source lease");
-  facade.abandon();
+  facade.abandon(receipt);
   const payload = fresh();
   const big = payload.env.spx_bytes_zeroed(131072n);
   const halves = partition(payload.facade, big, 2, 65536);
@@ -274,11 +381,24 @@ test("ordinary 32-event and payload controls are unchanged", () => {
   payload.env.spx_bytes_drop(payload.env.spx_bytes_copy(halves[1]));
   check(payload.facade.stats().payload === 2097152, "exact 2 MiB payload including deep clones");
   throws(() => payload.env.spx_bytes_zeroed(1n), /allocation budget exceeded/, "+1 payload byte refused");
-  payload.facade.abandon();
+  payload.facade.abandon(payload.receipt);
+});
+
+test("lease witness charges exactly the ordinary allocation", () => {
+  const plain = fresh(), witnessed = fresh({ leaseWitness: true });
+  for (const { env } of [plain, witnessed]) {
+    env.spx_bytes_drop(env.spx_bytes_copy(env.spx_bytes_zeroed(5n)));
+    env.spx_bytes_drop(env.spx_bytes_zeroed(0n));
+  }
+  const a = plain.facade.stats(), b = witnessed.facade.stats();
+  check(a.events === b.events && a.payload === b.payload, "identical ordinary charges");
+  check(b.releasedBackings === 2 && a.releasedBackings === 0, "witness allocations were leases");
+  plain.facade.endInvocation(plain.receipt);
+  witnessed.facade.endInvocation(witnessed.receipt);
 });
 
 test("public copy-out plus provider drop never exports the backing", () => {
-  const { env, facade } = fresh();
+  const { env, facade, receipt } = fresh();
   const [a, b] = partition(facade, filled(env), 2, 6);
   const snapshot = facade.copyOutAndDrop(a);
   check(same([...snapshot], PAYLOAD.slice(0, 6)), "copy-out bytes");
@@ -288,10 +408,11 @@ test("public copy-out plus provider drop never exports the backing", () => {
   check(facade.peek(b)[0] === PAYLOAD[6], "snapshot writes cannot reach siblings");
   facade.copyOutAndDrop(b);
   check(facade.stats().releasedBackings === 1 && facade.stats().liveBackings === 0, "final provider drop releases once");
+  facade.endInvocation(receipt);
 });
 
 test("generation exhaustion refuses before writing", () => {
-  const { env, facade } = fresh();
+  const { env, facade, receipt } = fresh();
   let [child] = partition(facade, env.spx_bytes_zeroed(1n), 1, 1);
   for (let generation = 1; generation < MAX_LEASE_GENERATION; generation += 1) {
     child = env.spx_bytes_set(child, 0n, generation & 255);
@@ -300,15 +421,19 @@ test("generation exhaustion refuses before writing", () => {
   throws(() => env.spx_bytes_set(child, 0n, 0), /generation exhausted/, "exhausted generation");
   check(env.spx_bytes_get(child, 0n) === last, "refused store wrote nothing and kept the generation");
   env.spx_bytes_drop(child);
+  facade.endInvocation(receipt);
 });
 
 test("abandonment after a trap releases remaining administration once", () => {
-  const { env, facade } = fresh();
+  const { env, facade, receipt } = fresh();
   const children = partition(facade, filled(env), 3, 4);
   env.spx_bytes_drop(children[0]);
-  check(facade.abandon() === 1, "abandon releases the backing once");
+  check(facade.abandon(receipt) === 1, "abandon releases the backing once");
   check(facade.stats().liveLeases === 0 && facade.stats().liveBackings === 0, "nothing hidden stays live");
+  throws(() => env.spx_bytes_get(children[1], 0n), /no live invocation/, "idle after abandonment");
+  const next = facade.beginInvocation();
   throws(() => env.spx_bytes_get(children[1], 0n), /stale|malformed/, "abandoned child is stale");
+  facade.endInvocation(next);
 });
 
 let failed = 0;

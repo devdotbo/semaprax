@@ -4,9 +4,19 @@
 // record owns the original whole-owner allocation; each child lease owns one
 // immutable disjoint range of it. The guest still sees the frozen two-word
 // owned carrier `((0x80000000 | token) << 32) | extent`: tokens are opaque,
-// minted by the enclosing host's single monotonic counter and resolved only
-// through this registry's private table. No pointer, offset or header ever
-// crosses into the guest, and nothing here probes memory to classify a value.
+// minted by the enclosing host's never-reset token authority and resolved
+// only through this registry's private index. No pointer, offset or header
+// ever crosses into the guest, and nothing here probes memory to classify a
+// value.
+//
+// Metadata lives in fixed typed tables sized at creation: a lease-slot table
+// bounded by the existing Vec<Bytes> carrier capacity, a backing table bounded
+// by the existing per-invocation allocation-event limit, and an open-addressed
+// token index at most half full. Preparation reserves exact free entries of
+// those tables, so a committed partition never grows any structure. The
+// reported table bytes are typed-array payload only, not physical proof: JS
+// object headers, the backing reference array and transient views are host
+// context overhead outside managed guest storage.
 //
 // The registry is not a producer. Partition preparation is reachable only
 // through the enclosing host's witness facade; no Wasm import calls it until
@@ -16,6 +26,11 @@ export const SHARED_OWNER_DOMAIN = "semaprax.private.wasm-shared-byte-owner.v1";
 // Child metadata is bounded by the existing Vec<Bytes> carrier capacity
 // (`vec_ops::MAX_CAPACITY`); the registry never raises it.
 export const MAX_LEASE_SLOTS = 8192;
+// Every backing was one whole owner charged as one ordinary allocation event
+// of the current invocation, and the host settles every owner before a fresh
+// invocation. The existing 32-event limit therefore funds at most 32 live
+// backings without any additional quota.
+export const MAX_BACKINGS = 32;
 // The existing individual Bytes extent (`vec_ops::MAX_OWNED_PAYLOAD_BYTES`).
 export const MAX_BYTES_EXTENT = 131072;
 // A store renews its lease generation. Exhaustion refuses the store before
@@ -23,16 +38,29 @@ export const MAX_BYTES_EXTENT = 131072;
 export const MAX_LEASE_GENERATION = 0xffff;
 export const MAX_TOKEN = 0x7fffffff;
 const U64_MAX = (1n << 64n) - 1n;
+// Open-addressed token index: a power of two at least twice the slot bound.
+const INDEX_CAPACITY = 16384;
+const INDEX_SHIFT = 32 - 14;
+const FREE = 0;
+const RESERVED = 1;
+const LIVE = 2;
 
-// Partition refusals in the proposed `semaprax.byte-partition.v1` domain.
-// Numeric codes are unassigned by the owning contract; the registry reports
-// stable symbols only and never invents a local code.
+// Partition refusals of `semaprax.byte-partition.v1`, in precedence order.
+// Codes are assigned by the owning contract: 1 WidthZero, 2 ExtentOverflow,
+// 3 ExtentMismatch, 4 MetadataCapacity.
 export const PARTITION_REFUSALS = Object.freeze([
   "width_zero",
   "extent_overflow",
   "extent_mismatch",
   "metadata_capacity",
 ]);
+export const PARTITION_STATUS_DOMAIN = "semaprax.byte-partition.v1";
+export const PARTITION_STATUS_CODES = Object.freeze({
+  width_zero: 1,
+  extent_overflow: 2,
+  extent_mismatch: 3,
+  metadata_capacity: 4,
+});
 
 export function carrierOf(token, extent) {
   if (!Number.isInteger(token) || token < 1 || token > MAX_TOKEN
@@ -50,75 +78,160 @@ export function decodeOwnedCarrier(carrier) {
   return { word, extent, root, tagged: (root & 0x80000000) !== 0, token: root & 0x7fffffff };
 }
 
+// Fixed open-addressed map from a nonzero 31-bit token to a lease slot.
+// Linear probing with backward-shift deletion; it never resizes.
+function createTokenIndex() {
+  const keys = new Uint32Array(INDEX_CAPACITY);
+  const values = new Uint16Array(INDEX_CAPACITY);
+  const mask = INDEX_CAPACITY - 1;
+  const home = key => Math.imul(key, 0x9e3779b1) >>> INDEX_SHIFT;
+  const find = key => {
+    for (let at = home(key); ; at = (at + 1) & mask) {
+      if (keys[at] === 0) return -1;
+      if (keys[at] === key) return at;
+    }
+  };
+  return Object.freeze({
+    bytes: keys.byteLength + values.byteLength,
+    get(key) {
+      const at = find(key);
+      return at < 0 ? -1 : values[at];
+    },
+    set(key, value) {
+      let at = home(key);
+      while (keys[at] !== 0) {
+        if (keys[at] === key) throw new Error("SEMAPRAX shared owner token reuse invariant");
+        at = (at + 1) & mask;
+      }
+      keys[at] = key;
+      values[at] = value;
+    },
+    delete(key) {
+      let hole = find(key);
+      if (hole < 0) throw new Error("SEMAPRAX shared owner token index invariant");
+      keys[hole] = 0;
+      for (let at = (hole + 1) & mask; keys[at] !== 0; at = (at + 1) & mask) {
+        const wanted = home(keys[at]);
+        const stays = hole <= at ? wanted > hole && wanted <= at : wanted > hole || wanted <= at;
+        if (stays) continue;
+        keys[hole] = keys[at];
+        values[hole] = values[at];
+        keys[at] = 0;
+        hole = at;
+      }
+    },
+  });
+}
+
 // `tokens` is the enclosing host's single never-reset token authority:
 // `remaining()` reports how many fresh tokens `mint()` can still return.
-export function createSharedByteOwnerRegistry({ tokens, maxLeaseSlots = MAX_LEASE_SLOTS, maxBackings = 1 } = {}) {
+// `invocation()` is the host's current invocation serial (0 when idle); every
+// lease is stamped with it and authenticates only inside that invocation.
+export function createSharedByteOwnerRegistry({
+  tokens,
+  invocation,
+  maxLeaseSlots = MAX_LEASE_SLOTS,
+  maxBackings = MAX_BACKINGS,
+} = {}) {
   if (tokens === null || typeof tokens !== "object"
       || typeof tokens.mint !== "function" || typeof tokens.remaining !== "function") {
     throw new TypeError("SEMAPRAX shared owner token authority is required");
   }
+  if (typeof invocation !== "function") {
+    throw new TypeError("SEMAPRAX shared owner invocation authority is required");
+  }
   if (!Number.isSafeInteger(maxLeaseSlots) || maxLeaseSlots < 1 || maxLeaseSlots > MAX_LEASE_SLOTS) {
     throw new RangeError("invalid SEMAPRAX shared owner lease-slot bound");
   }
-  // Child repartitioning is closed, and one whole-backing partition is the
-  // only proven metadata shape. A larger backing count needs its own proof.
-  if (!Number.isSafeInteger(maxBackings) || maxBackings < 1 || maxBackings > 1) {
+  if (!Number.isSafeInteger(maxBackings) || maxBackings < 1 || maxBackings > MAX_BACKINGS) {
     throw new RangeError("invalid SEMAPRAX shared owner backing bound");
   }
-  // Unforgeable issuer identity: only records minted here carry it.
-  const issuer = Object.freeze(Object.create(null));
-  const leases = new Map();
+  const index = createTokenIndex();
+  // Lease slot table.
+  const leaseToken = new Uint32Array(maxLeaseSlots);
+  const leaseBacking = new Uint8Array(maxLeaseSlots);
+  const leaseOffset = new Uint32Array(maxLeaseSlots);
+  const leaseExtent = new Uint32Array(maxLeaseSlots);
+  const leaseGeneration = new Uint16Array(maxLeaseSlots);
+  const leaseInvocation = new Uint32Array(maxLeaseSlots);
+  const leaseState = new Uint8Array(maxLeaseSlots);
+  const freeSlots = new Uint16Array(maxLeaseSlots);
+  for (let slot = 0; slot < maxLeaseSlots; slot += 1) freeSlots[slot] = maxLeaseSlots - 1 - slot;
+  let freeTop = maxLeaseSlots;
+  // Backing table. `backingBytes` holds only references to the former whole
+  // owners' exact buffers; its length never changes.
+  const backingBytes = new Array(maxBackings).fill(null);
+  const backingExtent = new Uint32Array(maxBackings);
+  const backingLive = new Uint16Array(maxBackings);
+  const backingInvocation = new Uint32Array(maxBackings);
+  const backingState = new Uint8Array(maxBackings);
+  const tableBytes = index.bytes + leaseToken.byteLength + leaseBacking.byteLength
+    + leaseOffset.byteLength + leaseExtent.byteLength + leaseGeneration.byteLength
+    + leaseInvocation.byteLength + leaseState.byteLength + freeSlots.byteLength
+    + backingExtent.byteLength + backingLive.byteLength + backingInvocation.byteLength
+    + backingState.byteLength;
+
+  // Unforgeable ticket identity: only tickets minted here are pending.
   const tickets = new WeakMap();
+  let epoch = 1;
   let reservedSlots = 0;
+  let reservedTokens = 0;
   let liveLeases = 0;
   let peakLiveLeases = 0;
   let liveBackings = 0;
-  let reservedBackings = 0;
+  let peakLiveBackings = 0;
   let releasedBackings = 0;
-  let nextBacking = 1;
 
-  const mintFresh = () => {
-    const token = tokens.mint();
-    if (!Number.isInteger(token) || token < 1 || token > MAX_TOKEN || leases.has(token)) {
-      throw new Error("SEMAPRAX shared owner token authority invariant");
+  const current = () => {
+    const serial = invocation();
+    if (!Number.isInteger(serial) || serial < 1) {
+      throw new Error("SEMAPRAX shared owner has no live invocation");
     }
-    return token;
+    return serial;
   };
 
-  // Authenticates one carrier against the current lease generation. Every
-  // consumer resolves through here before obtaining any backing bytes.
+  // Authenticates one carrier against the current lease generation and
+  // invocation. Returns the lease slot, or -1 when this registry never
+  // issued the token or already settled it.
   const authenticate = decoded => {
-    if (!decoded.tagged || decoded.token === 0) return null;
-    const lease = leases.get(decoded.token);
-    if (lease === undefined) return null;
-    const backing = lease.backing;
-    if (lease.issuer !== issuer || backing.issuer !== issuer || lease.token !== decoded.token
-        || !lease.live || backing.released || backing.bytes === null) {
+    if (!decoded.tagged || decoded.token === 0) return -1;
+    const slot = index.get(decoded.token);
+    if (slot < 0) return -1;
+    const backing = leaseBacking[slot];
+    if (leaseState[slot] !== LIVE || leaseToken[slot] !== decoded.token
+        || backingState[backing] !== LIVE || backingBytes[backing] === null
+        || leaseInvocation[slot] !== current() || backingInvocation[backing] !== leaseInvocation[slot]) {
       throw new Error("SEMAPRAX shared owner lease authority invariant");
     }
-    if (decoded.extent !== lease.extent) {
+    if (decoded.extent !== leaseExtent[slot]) {
       throw new Error("SEMAPRAX shared owner lease extent invariant");
     }
-    return lease;
+    return slot;
   };
 
   const requireLease = carrier => {
-    const lease = authenticate(decodeOwnedCarrier(carrier));
-    if (lease === null) throw new Error("SEMAPRAX stale, foreign or unleased Bytes carrier");
-    return lease;
+    const slot = authenticate(decodeOwnedCarrier(carrier));
+    if (slot < 0) throw new Error("SEMAPRAX stale, foreign or unleased Bytes carrier");
+    return slot;
+  };
+
+  const viewOf = slot => {
+    const offset = leaseOffset[slot];
+    return backingBytes[leaseBacking[slot]].subarray(offset, offset + leaseExtent[slot]);
+  };
+
+  const freeBacking = () => {
+    for (let backing = 0; backing < maxBackings; backing += 1) {
+      if (backingState[backing] === FREE) return backing;
+    }
+    return -1;
   };
 
   // Validation order: width, checked extent, exact extent, then complete
-  // metadata. No state changes; the caller still owns the whole input.
-  const prepare = (wholeToken, whole, count, width) => {
-    if (!Number.isInteger(wholeToken) || wholeToken < 1 || wholeToken > MAX_TOKEN) {
-      throw new Error("SEMAPRAX shared owner partition input invariant");
-    }
-    // A child, even one at offset zero covering the whole backing extent, is
-    // never an eligible partition input.
-    if (leases.has(wholeToken)) {
-      throw new Error("SEMAPRAX shared owner child partition refused");
-    }
+  // metadata. Only the final success reserves exact table entries; the caller
+  // still owns the whole input until commit.
+  const prepare = (whole, count, width) => {
+    current();
     if (!(whole instanceof Uint8Array) || whole.byteLength > MAX_BYTES_EXTENT
         || whole.byteOffset !== 0 || whole.byteLength !== whole.buffer.byteLength) {
       throw new Error("SEMAPRAX shared owner whole backing invariant");
@@ -131,177 +244,204 @@ export function createSharedByteOwnerRegistry({ tokens, maxLeaseSlots = MAX_LEAS
     const extent = count * width;
     if (extent > U64_MAX) return { refused: "extent_overflow" };
     if (extent !== BigInt(whole.byteLength)) return { refused: "extent_mismatch" };
+    if (count > BigInt(maxLeaseSlots)) return { refused: "metadata_capacity" };
     const children = Number(count);
-    if (count > BigInt(MAX_LEASE_SLOTS)
-        || children > maxLeaseSlots - reservedSlots
-        || (children > 0 && reservedBackings >= maxBackings)
-        || tokens.remaining() < children) {
+    const backing = children > 0 ? freeBacking() : -1;
+    if (children > freeTop - reservedSlots
+        || (children > 0 && backing < 0)
+        || tokens.remaining() - reservedTokens < children) {
       return { refused: "metadata_capacity" };
     }
     reservedSlots += children;
-    if (children > 0) reservedBackings += 1;
+    reservedTokens += children;
+    if (backing >= 0) backingState[backing] = RESERVED;
     const ticket = Object.freeze(Object.create(null));
-    tickets.set(ticket, { state: "prepared", wholeToken, whole, children, width: Number(width) });
+    tickets.set(ticket, { state: "prepared", epoch, whole, children, width: Number(width), backing });
     return { ticket };
   };
 
   const pending = ticket => {
     const prepared = tickets.get(ticket);
-    if (prepared === undefined || prepared.state !== "prepared") {
+    if (prepared === undefined || prepared.state !== "prepared" || prepared.epoch !== epoch) {
       throw new Error("SEMAPRAX shared owner partition ticket invariant");
     }
     return prepared;
+  };
+
+  const unreserve = prepared => {
+    reservedSlots -= prepared.children;
+    reservedTokens -= prepared.children;
+    if (prepared.backing >= 0) backingState[prepared.backing] = FREE;
   };
 
   // Releases only the unpublished reservation; the whole owner is untouched.
   const abort = ticket => {
     const prepared = pending(ticket);
     prepared.state = "aborted";
-    reservedSlots -= prepared.children;
-    if (prepared.children > 0) reservedBackings -= 1;
+    unreserve(prepared);
     prepared.whole = null;
   };
 
   // The caller removes the whole owner from its table first; every check and
-  // reservation already succeeded, so commit cannot fail after that point.
+  // table entry was reserved, so commit only consumes those reservations.
   const commit = ticket => {
     const prepared = pending(ticket);
+    const serial = current();
     prepared.state = "committed";
-    const { whole, children, width } = prepared;
+    const { whole, children, width, backing } = prepared;
     prepared.whole = null;
+    unreserve(prepared);
     if (children === 0) return [];
-    const backing = {
-      issuer,
-      id: nextBacking++,
-      bytes: whole,
-      extent: whole.byteLength,
-      live: children,
-      released: false,
-    };
+    backingState[backing] = LIVE;
+    backingBytes[backing] = whole;
+    backingExtent[backing] = whole.byteLength;
+    backingLive[backing] = children;
+    backingInvocation[backing] = serial;
     liveBackings += 1;
+    if (liveBackings > peakLiveBackings) peakLiveBackings = liveBackings;
     const carriers = new Array(children);
-    for (let index = 0; index < children; index += 1) {
-      const token = mintFresh();
-      const offset = index * width;
-      const lease = {
-        issuer,
-        backing,
-        token,
-        index,
-        offset,
-        extent: width,
-        generation: 1,
-        live: true,
-        view: whole.subarray(offset, offset + width),
-      };
-      leases.set(token, lease);
-      carriers[index] = carrierOf(token, width);
+    for (let child = 0; child < children; child += 1) {
+      const token = tokens.mint();
+      if (!Number.isInteger(token) || token < 1 || token > MAX_TOKEN) {
+        throw new Error("SEMAPRAX shared owner token authority invariant");
+      }
+      const slot = freeSlots[--freeTop];
+      leaseToken[slot] = token;
+      leaseBacking[slot] = backing;
+      leaseOffset[slot] = child * width;
+      leaseExtent[slot] = width;
+      leaseGeneration[slot] = 1;
+      leaseInvocation[slot] = serial;
+      leaseState[slot] = LIVE;
+      index.set(token, slot);
+      carriers[child] = carrierOf(token, width);
     }
     liveLeases += children;
     if (liveLeases > peakLiveLeases) peakLiveLeases = liveLeases;
     return carriers;
   };
 
-  const settle = lease => {
-    lease.live = false;
-    lease.view = null;
-    leases.delete(lease.token);
+  // Settles one lease. Returns whether it was the final lease of its backing
+  // and therefore that backing's single release.
+  const settle = slot => {
+    index.delete(leaseToken[slot]);
+    leaseState[slot] = FREE;
+    leaseToken[slot] = 0;
+    freeSlots[freeTop++] = slot;
     liveLeases -= 1;
-    reservedSlots -= 1;
-    const backing = lease.backing;
-    backing.live -= 1;
-    if (backing.live > 0) return false;
-    // Last live lease: the backing is released exactly once.
-    if (backing.released) throw new Error("SEMAPRAX shared owner backing release invariant");
-    backing.released = true;
-    backing.bytes = null;
+    const backing = leaseBacking[slot];
+    backingLive[backing] -= 1;
+    if (backingLive[backing] > 0) return false;
+    if (backingState[backing] !== LIVE) throw new Error("SEMAPRAX shared owner backing release invariant");
+    backingState[backing] = FREE;
+    backingBytes[backing] = null;
+    backingExtent[backing] = 0;
     liveBackings -= 1;
-    reservedBackings -= 1;
     releasedBackings += 1;
     return true;
   };
 
   return Object.freeze({
     domain: SHARED_OWNER_DOMAIN,
-    // True only for a live lease of this registry; whole owners and foreign
-    // tokens are left to the caller's own table, which rejects them.
+    // True only for a live lease of this registry in the current invocation;
+    // whole owners and foreign tokens are left to the caller's own table.
     owns(carrier) {
-      return authenticate(decodeOwnedCarrier(carrier)) !== null;
+      return authenticate(decodeOwnedCarrier(carrier)) >= 0;
     },
     // Bounded view of exactly the authenticated range. Typed-array bounds
     // are the read/write fence: an index outside the range cannot reach a
     // sibling's bytes.
     view(carrier) {
-      return requireLease(carrier).view;
+      return viewOf(requireLease(carrier));
     },
     // A renewed store keeps the exact range and advances the generation.
     // `mutate` validates its operands before writing; it runs only after
     // renewal capacity is proven, and its failure leaves the old generation.
     store(carrier, mutate) {
-      const lease = requireLease(carrier);
-      if (lease.generation >= MAX_LEASE_GENERATION) {
+      const slot = requireLease(carrier);
+      if (leaseGeneration[slot] >= MAX_LEASE_GENERATION) {
         throw new Error("SEMAPRAX shared owner lease generation exhausted");
       }
-      if (tokens.remaining() < 1) throw new Error("SEMAPRAX owned Bytes token space exhausted");
-      mutate(lease.view);
-      const token = mintFresh();
-      leases.delete(lease.token);
-      lease.token = token;
-      lease.generation += 1;
-      leases.set(token, lease);
-      return carrierOf(token, lease.extent);
+      if (tokens.remaining() - reservedTokens < 1) throw new Error("SEMAPRAX owned Bytes token space exhausted");
+      mutate(viewOf(slot));
+      const token = tokens.mint();
+      if (!Number.isInteger(token) || token < 1 || token > MAX_TOKEN) {
+        throw new Error("SEMAPRAX shared owner token authority invariant");
+      }
+      index.delete(leaseToken[slot]);
+      leaseToken[slot] = token;
+      leaseGeneration[slot] += 1;
+      index.set(token, slot);
+      return carrierOf(token, leaseExtent[slot]);
     },
-    // Ordinary drop of one child. Returns whether this was the final lease
-    // and therefore the single backing release.
+    // Ordinary drop of one child.
     release(carrier) {
       return settle(requireLease(carrier));
     },
     // Public copy-out plus provider drop: a fresh unshared snapshot, then
     // the private lease settles. No interior view or offset is returned.
     copyOutAndRelease(carrier) {
-      const lease = requireLease(carrier);
-      const snapshot = new Uint8Array(lease.extent);
-      snapshot.set(lease.view);
-      settle(lease);
+      const slot = requireLease(carrier);
+      const snapshot = new Uint8Array(leaseExtent[slot]);
+      snapshot.set(viewOf(slot));
+      settle(slot);
       return snapshot;
     },
     prepare,
     commit,
     abort,
     // Context abandonment after a trap: releases remaining administration
-    // without synthesizing source finalizer order or publishing a result.
+    // and invalidates every pending ticket, without synthesizing source
+    // finalizer order or publishing a result.
     abandon() {
       let released = 0;
-      for (const lease of [...leases.values()]) if (settle(lease)) released += 1;
+      for (let slot = 0; slot < maxLeaseSlots; slot += 1) {
+        if (leaseState[slot] === LIVE && settle(slot)) released += 1;
+      }
+      for (let backing = 0; backing < maxBackings; backing += 1) {
+        if (backingState[backing] === RESERVED) backingState[backing] = FREE;
+      }
+      reservedSlots = 0;
+      reservedTokens = 0;
+      epoch += 1;
       return released;
+    },
+    settled() {
+      return liveLeases === 0 && liveBackings === 0 && reservedSlots === 0;
     },
     // Independent inventory audit: every live range lies inside its live
     // backing, live counts agree, and no two live ranges overlap.
     audit() {
-      const byBacking = new Map();
-      for (const [token, lease] of leases) {
-        const backing = lease.backing;
-        if (lease.token !== token || !lease.live || backing.released || lease.issuer !== issuer
-            || lease.offset < 0 || lease.extent < 0 || lease.offset + lease.extent > backing.extent
-            || lease.view === null || lease.view.byteLength !== lease.extent) {
+      const ranges = new Map();
+      let leases = 0;
+      for (let slot = 0; slot < maxLeaseSlots; slot += 1) {
+        if (leaseState[slot] !== LIVE) continue;
+        leases += 1;
+        const backing = leaseBacking[slot];
+        if (backingState[backing] !== LIVE || index.get(leaseToken[slot]) !== slot
+            || leaseOffset[slot] + leaseExtent[slot] > backingExtent[backing]
+            || leaseInvocation[slot] !== backingInvocation[backing]) {
           throw new Error("SEMAPRAX shared owner audit: malformed lease");
         }
-        if (!byBacking.has(backing)) byBacking.set(backing, []);
-        byBacking.get(backing).push(lease);
+        if (!ranges.has(backing)) ranges.set(backing, []);
+        ranges.get(backing).push([leaseOffset[slot], leaseExtent[slot]]);
       }
-      for (const [backing, list] of byBacking) {
-        if (list.length !== backing.live) throw new Error("SEMAPRAX shared owner audit: live count");
-        const ordered = [...list];
-        ordered.sort((a, b) => a.offset - b.offset);
-        for (let i = 1; i < ordered.length; i += 1) {
-          const previous = ordered[i - 1];
-          if (previous.offset + previous.extent > ordered[i].offset
-              && previous.extent > 0 && ordered[i].extent > 0) {
+      let backings = 0;
+      for (let backing = 0; backing < maxBackings; backing += 1) {
+        if (backingState[backing] !== LIVE) continue;
+        backings += 1;
+        const list = ranges.get(backing) ?? [];
+        if (list.length !== backingLive[backing] || backingBytes[backing]?.byteLength !== backingExtent[backing]) {
+          throw new Error("SEMAPRAX shared owner audit: live count");
+        }
+        list.sort((a, b) => a[0] - b[0]);
+        for (let at = 1; at < list.length; at += 1) {
+          if (list[at - 1][0] + list[at - 1][1] > list[at][0]) {
             throw new Error("SEMAPRAX shared owner audit: overlapping live ranges");
           }
         }
       }
-      if (byBacking.size !== liveBackings || leases.size !== liveLeases) {
+      if (leases !== liveLeases || backings !== liveBackings || freeTop + liveLeases !== maxLeaseSlots) {
         throw new Error("SEMAPRAX shared owner audit: inventory");
       }
       return true;
@@ -311,8 +451,13 @@ export function createSharedByteOwnerRegistry({ tokens, maxLeaseSlots = MAX_LEAS
         liveLeases,
         peakLiveLeases,
         liveBackings,
+        peakLiveBackings,
         releasedBackings,
         reservedSlots,
+        freeSlots: freeTop,
+        leaseSlotCapacity: maxLeaseSlots,
+        backingCapacity: maxBackings,
+        tableBytes,
       });
     },
   });

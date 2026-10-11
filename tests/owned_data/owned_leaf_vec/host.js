@@ -13,6 +13,13 @@ const copyRecordCodec = refusal === 'copy-record-codec';
 const expectedDomain = scalarView ? process.argv[6] : null;
 if (scalarView && !['ok', 'semaprax.convert.v1'].includes(expectedDomain))
   throw Error('scalar-view requires an exact admitted normalized status domain');
+// OPT #746: `shared-owner` and `shared-owner-lease` route every payload read,
+// allocation and drop through the private shared-owner host's hooks
+// (src/wasm/shared_owner/host.mjs, staged beside this file) and take its
+// payload consumers. `-lease` makes every nonempty allocation a registry
+// lease. Every other mode keeps the host-local payload table unchanged.
+const sharedOwner = refusal === 'shared-owner' || refusal === 'shared-owner-lease';
+let shared = null;
 const codecPushFailure = /^codec-push-([1-4])$/.exec(refusal);
 let codecPushAttempts = 0;
 let instance, fieldOutput, nextPayload = 1, nextVec = 1n, nextIter = 1n << 62n, copies = 0, drops = 0;
@@ -53,6 +60,7 @@ const read = carrier => {
   allocationOutsideSort('payload view');
   const {length, origin} = split(carrier);
   if (origin & 0x80000000) {
+    if (shared) return shared.payload.owned(carrier);
     const bytes = payloads.get(origin & 0x7fffffff);
     if (!bytes || bytes.length !== length) throw Error('stale payload');
     return bytes;
@@ -75,6 +83,7 @@ const read = carrier => {
 };
 const alloc = carrier => {
   allocationOutsideSort('payload clone');
+  if (shared) { const owned = shared.payload.clone(carrier); copies++; return owned; }
   if(copyRecordCodec && payloads.size>=16)throw Error('Copy codec owned entry capacity');
   const bytes = new Uint8Array(read(carrier));
   const id = nextPayload++;
@@ -84,6 +93,7 @@ const alloc = carrier => {
 };
 const ownBytes = bytes => {
   allocationOutsideSort('owned payload');
+  if (shared) { const owned = shared.payload.own(new Uint8Array(bytes)); copies++; return owned; }
   if(copyRecordCodec && payloads.size>=16)throw Error('Copy codec owned entry capacity');
   const id = nextPayload++;
   payloads.set(id, new Uint8Array(bytes));
@@ -93,6 +103,7 @@ const ownBytes = bytes => {
 const drop = carrier => {
   allocationOutsideSort('payload drop');
   if (carrier === 0n) return;
+  if (shared) { shared.payload.drop(carrier); drops++; return; }
   read(carrier);
   const {origin} = split(carrier);
   if (!(origin & 0x80000000) || !payloads.delete(origin & 0x7fffffff))
@@ -242,6 +253,7 @@ const ownedSortBytes = word => {
   if(word===0n)return EMPTY_BYTES;
   const raw=BigInt.asUintN(64,word),origin=Number(raw>>32n),length=Number(raw&0xffffffffn);
   if(!(origin&0x80000000))throw Error('borrowed payload in owned sort');
+  if(shared)return shared.payload.owned(word);
   const bytes=payloads.get(origin&0x7fffffff);
   if(!bytes||bytes.length!==length)throw Error('stale sort payload');
   return bytes;
@@ -346,7 +358,7 @@ const env = {
   spx_vec_push_v2:(handle,tag,word)=>{
     if(tag===10)throw Error('legacy record requires exact push');
     const value=vec(handle,tag);
-    if(tag===9)read(word);
+    if(tag===9)(shared?shared.payload.owned:read)(word);
     if(BigInt(value.values.length)>=value.capacity)return 0n;
     value.values.push(word);return move(handle,value);
   },
@@ -382,7 +394,7 @@ const env = {
   spx_vec_set_v2:(handle,tag,index,word)=>{
     const value=vec(handle,tag);
     if(tag===10||index<0n||index>=BigInt(value.values.length))return 0n;
-    if(tag===9){read(word);drop(value.values[Number(index)])}
+    if(tag===9){(shared?shared.payload.owned:read)(word);drop(value.values[Number(index)])}
     value.values[Number(index)]=word;
     return move(handle,value);
   },
@@ -431,7 +443,7 @@ const env = {
       if(code>=9&&word!==0n){
         const raw=BigInt.asUintN(64,word),origin=raw>>32n,length=Number(raw&0xffffffffn);
         if(!(origin&0x80000000n))throw Error('borrowed field-read leaf');
-        const payload=payloads.get(Number(origin&0x7fffffffn));
+        const payload=shared?shared.payload.owned(word):payloads.get(Number(origin&0x7fffffffn));
         if(!payload||payload.length!==length)throw Error('stale field-read leaf');
       }else if(code<9)checkWord(word,code);
       if(copies!==beforeCopies||drops!==beforeDrops||nextPayload!==beforePayload
@@ -644,6 +656,11 @@ const env = {
 };
 if(copyRecordCodec)require('./copy_scalar_imports.js')(env,vectorValue);
 (async()=>{
+  if(sharedOwner){
+    const {createPrivateOrdinaryByteHost,PAYLOAD_CONSUMERS}=await import('./host.mjs');
+    shared=createPrivateOrdinaryByteHost({leaseWitness:refusal==='shared-owner-lease'});
+    for(const name of PAYLOAD_CONSUMERS)env[name]=shared.imports[name];
+  }
   const requiredImports=WebAssembly.Module.imports(new WebAssembly.Module(moduleBytes));
   if(copyRecordCodec){
     if(!requiredImports.some(entry=>entry.name==='spx_vec_with_capacity') ||
@@ -720,10 +737,12 @@ if(copyRecordCodec)require('./copy_scalar_imports.js')(env,vectorValue);
     return;
   }
   ({instance}=await WebAssembly.instantiate(moduleBytes,{env}));
+  if(shared)shared.bind(instance);
   fieldOutput=new DataView(memory().buffer);
   for(let run=0;run<(copyRecordCodec?16:3);run++){
     codecPushAttempts=0;fieldReads=0;
     const beforeSlotCopies=copies;
+    const receipt=shared?shared.facade.beginInvocation():null;
     let selected=0,returned;
     try{returned=instance.exports.semaprax_main()}
     catch(error){if(!error.message.startsWith('status:'))throw error;selected=Number(error.message.slice(7))}
@@ -735,13 +754,64 @@ if(copyRecordCodec)require('./copy_scalar_imports.js')(env,vectorValue);
       if(selected&&returned!==undefined)throw Error('failed scalar view published a result');
     }else if(selected!==expectedStatus)throw Error(`status ${selected}, expected ${expectedStatus}`);
     if(!selected&&returned!==expectedValue)throw Error(`value ${returned}, expected ${expectedValue}`);
-    if(vectors.size||iterators.size||payloads.size||copies!==drops)
+    // Shared mode splits payload allocation between both hosts' imports, so
+    // the private host's own settlement proof replaces the local balance.
+    if(vectors.size||iterators.size||payloads.size||(!shared&&copies!==drops))
       throw Error(`leaks vec=${vectors.size} iter=${iterators.size} payload=${payloads.size} copies=${copies} drops=${drops}`);
+    if(shared){shared.facade.audit();shared.facade.endInvocation(receipt)}
     if(refusal==='field-index-failure'&&fieldReads!==0)throw Error('index failure accessed row storage');
     if((refusal==='field-no-allocation'||refusal==='slot-no-copy')&&fieldReads<64)throw Error('repeated read guard was not exercised');
     if(refusal==='slot-no-copy'&&copies-beforeSlotCopies!==3)throw Error('String-slot reads copied payload storage');
     if(codecPushFailure&&codecPushAttempts!==Number(codecPushFailure[1]))
       throw Error('partial codec allocation failure did not reach its exact owning commit');
+  }
+  if(sharedOwner){
+    // Leaf rows own registry leases: renewal, stale/foreign refusal, clone,
+    // two simultaneous backings, and a popped child that outlives its Vec,
+    // its iterator and both siblings.
+    const {facade,payload}=shared,shape=0x90n,identity=41n,out=0,zeros=[0n,0n,0n,0n,0n,0n,0n];
+    const refused=body=>{try{body()}catch(error){return true}return false};
+    const receipt=facade.beginInvocation();
+    if(refusal==='shared-owner-lease'){
+      const lease=env.spx_bytes_zeroed(6n);
+      if(!refused(()=>facade.partitionForWitness(lease,3n,2n)))throw Error('lease accepted as partition input');
+      env.spx_bytes_drop(lease);
+    }else{
+      const first=facade.partitionForWitness(env.spx_bytes_zeroed(6n),3n,2n);
+      const second=facade.partitionForWitness(env.spx_bytes_zeroed(4n),2n,2n);
+      if(!first.ok||!second.ok||facade.stats().liveBackings!==2)throw Error('two simultaneous backings refused');
+      const [a,b,c]=first.children;
+      let rows=env.spx_vec_leaf_new_v1(identity,shape,3n);
+      const renewed=env.spx_bytes_set(a,0n,7);
+      if(renewed===a||!refused(()=>env.spx_vec_leaf_push_v1(rows,identity,shape,a,...zeros)))
+        throw Error('stale lease generation entered a leaf row');
+      const {createPrivateOrdinaryByteHost}=await import('./host.mjs');
+      const other=createPrivateOrdinaryByteHost(),otherReceipt=other.facade.beginInvocation();
+      const foreign=other.imports.spx_bytes_zeroed(2n);
+      if(!refused(()=>env.spx_vec_leaf_push_v1(rows,identity,shape,foreign,...zeros)))
+        throw Error('foreign host owner entered a leaf row');
+      other.imports.spx_bytes_drop(foreign);other.facade.endInvocation(otherReceipt);
+      for(const child of [renewed,b,c])rows=env.spx_vec_leaf_push_v1(rows,identity,shape,child,...zeros);
+      for(const child of second.children)env.spx_bytes_drop(child);
+      if(facade.stats().liveBackings!==1||facade.stats().releasedBackings!==1)throw Error('second backing release');
+      if(env.spx_vec_leaf_clone_at_v1(rows,identity,shape,0n,out)!==0)throw Error('lease row clone');
+      const clone=view(out,8).getBigInt64(0,true);
+      if(clone===renewed||payload.owned(clone)[0]!==7)throw Error('lease row clone is not a deep copy');
+      payload.drop(clone);
+      if(env.spx_vec_leaf_into_iter_v1(rows,identity,shape,out)!==0)throw Error('lease rows into iterator');
+      const iter=view(out,16).getBigUint64(0,true);
+      if(env.spx_vec_leaf_iter_next_v1(iter,0n,identity,shape,out)!==0)throw Error('lease rows next');
+      const words=view(out,88),popped=words.getBigInt64(8,true);
+      const next=words.getBigUint64(72,true),cursor=words.getBigUint64(80,true);
+      if(popped!==renewed||cursor!==1n)throw Error('next did not transfer the original child');
+      env.spx_vec_leaf_iter_drop_v1(next,cursor,identity,shape);
+      const stats=facade.stats();
+      if(stats.liveLeases!==1||stats.liveBackings!==1||payload.owned(popped)[0]!==7)
+        throw Error('popped child did not survive its Vec, iterator and siblings');
+      payload.drop(popped);
+      if(facade.stats().liveBackings!==0||facade.stats().releasedBackings!==2)throw Error('final backing release');
+    }
+    facade.audit();facade.endInvocation(receipt);
   }
   if(refusal==='none'||refusal==='sort-no-allocation'){
     if(AUTHORITY_ENCODING!=='semaprax.test.owned-leaf-authority.v2')throw Error('fixture authority version');
