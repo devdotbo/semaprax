@@ -46,7 +46,9 @@ The authored source-only `fused-construction-v1` opt-in uses
 `run <file> --profile fused-construction-v1 --managed-bytes N` or
 `build <file> --profile fused-construction-v1 --managed-bytes N --target native|wasm`.
 It requires a finite explicit caller account, keeps ordinary admission closed,
-and awaits executable qualification. See [its versioned contract](FUSED-SOURCE-PROFILE-V1.md)
+and awaits executable qualification. SPX-F130 identifies the failed shape rule
+at its source location; legacy counts of at most 32 rows use the ordinary route
+without changing requirements. See [its versioned contract](FUSED-SOURCE-PROFILE-V1.md)
 for the exact shape, target accounting, fuel and publication boundary.
 
 `fmt` and single-file `patch` preserve `//` comments. Workspace transactions
