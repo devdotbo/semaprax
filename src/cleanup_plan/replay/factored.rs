@@ -16,6 +16,8 @@
 //!   Every later skeleton step reads only that state, so the merged walk
 //!   denotes exactly the enumerated paths, and its size follows the number of
 //!   distinct cleanup states rather than the number of decision combinations.
+//!   Lexical functions restrict those merges to independently identified Copy
+//!   expression scopes; every abrupt/failure/owning state remains separate.
 //! * Both the merged HIR paths and the cleanup CFG become acyclic automata
 //!   over skeleton observations, each accepting sequence ending in one
 //!   terminal label.
@@ -25,7 +27,6 @@
 use super::skeleton_work::{ObservationDag, ObservationDagKind};
 use super::*;
 use std::rc::Rc;
-#[cfg(test)] // Inactive discovery has no production strategy authority yet.
 pub(super) mod copy_regions;
 mod storage;
 use storage::{memo_insert, push_end, push_frame, reserve_transition_observation};
@@ -147,7 +148,7 @@ struct BuiltComparison {
 }
 
 /// Reconstruct both exact observation languages once, retaining every debit.
-/// The inactive strategy census borrows this same physical owner; it never
+/// The exact strategy census borrows this same physical owner; it never
 /// retries construction after choosing a representation.
 fn build_comparison(
     program: &dyn crate::cleanup::ReplayContext,
@@ -158,9 +159,11 @@ fn build_comparison(
     // Lend the remaining program-wide budget to the merged skeleton walk.
     let skeleton_reserve = budget.skeleton_remaining;
     budget.skeleton_remaining = std::mem::take(&mut budget.remaining);
+    budget.lent_skeleton = true;
     budget.merge_paths = true;
     let hir_paths = hir_skeleton_paths_with_index(program, function, budget, helpers);
     budget.merge_paths = false;
+    budget.lent_skeleton = false;
     budget.remaining = std::mem::replace(&mut budget.skeleton_remaining, skeleton_reserve);
     let hir_paths = hir_paths?;
 
@@ -195,9 +198,8 @@ fn build_comparison(
     })
 }
 
-#[cfg(test)]
 #[path = "factored/strategy.rs"]
-mod strategy;
+pub(super) mod strategy;
 
 #[derive(Default)]
 struct Automaton {

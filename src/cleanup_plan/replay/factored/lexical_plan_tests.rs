@@ -230,7 +230,7 @@ fn expand_hir(paths: &[SkeletonPath]) -> Vec<(Vec<Rc<SkeletonObservation>>, Skel
     result
 }
 
-fn assert_copy_scope_oracle(source: &str) {
+pub(super) fn assert_copy_scope_oracle(source: &str) {
     let (program, function) = fixture(source);
     let mut enumerating = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
     let expected = hir_skeleton_paths(&program, &function, &mut enumerating).unwrap();

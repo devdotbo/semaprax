@@ -247,6 +247,8 @@ mod tests {
         let mut insufficient = ReplayBudget {
             remaining: bound - 1,
             skeleton_remaining: 0,
+            skeleton_spent: 0,
+            lent_skeleton: false,
             merge_paths: false,
             physical: None,
         };

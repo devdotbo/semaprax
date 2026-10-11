@@ -133,6 +133,10 @@ const MAX_REPLAY_WORK_UNITS: usize = 32_000_000;
 struct ReplayBudget {
     remaining: usize,
     skeleton_remaining: usize,
+    /// Actual successful skeleton debits, including deferred lexical walks.
+    skeleton_spent: usize,
+    /// Ordinary constructors share the temporarily lent skeleton allowance.
+    lent_skeleton: bool,
     /// Factored replay: merge equal-state skeleton paths (`skeleton_work`).
     merge_paths: bool,
     /// Present only for the selected retained lexical replay entry.
@@ -144,6 +148,8 @@ impl ReplayBudget {
         Self {
             remaining: MAX_REPLAY_WORK_UNITS,
             skeleton_remaining: 0,
+            skeleton_spent: 0,
+            lent_skeleton: false,
             merge_paths: false,
             physical: None,
         }
@@ -153,6 +159,8 @@ impl ReplayBudget {
         Self {
             remaining: MAX_REPLAY_WORK_UNITS,
             skeleton_remaining: limit,
+            skeleton_spent: 0,
+            lent_skeleton: false,
             merge_paths: false,
             physical: None,
         }
@@ -164,6 +172,9 @@ impl ReplayBudget {
         units: usize,
         phase: &str,
     ) -> Result<(), Diagnostic> {
+        if self.lent_skeleton {
+            return self.charge_skeleton(function, units, phase);
+        }
         self.remaining = self.remaining.checked_sub(units).ok_or_else(|| {
             replay_error(
                 function,
@@ -194,12 +205,16 @@ impl ReplayBudget {
         units: usize,
         phase: &str,
     ) -> Result<(), Diagnostic> {
+        let spent = self.skeleton_spent.checked_add(units).ok_or_else(|| {
+            replay_error(function, "cleanup replay skeleton debit count overflowed")
+        })?;
         self.skeleton_remaining = self.skeleton_remaining.checked_sub(units).ok_or_else(|| {
             replay_error(
                 function,
                 format!("cleanup replay work budget exhausted during {phase}"),
             )
         })?;
+        self.skeleton_spent = spent;
         Ok(())
     }
 }
@@ -435,6 +450,13 @@ fn reserve_program_skeleton_work<'a>(
     let mut first = None;
     for function in functions {
         first.get_or_insert(function);
+        // Actual lexical HIR selects a deferred resource plan before the
+        // capped enumerating census. This is no proof or zero-work estimate.
+        if factored::strategy::provisional(function)
+            == factored::strategy::ResourceStrategy::DeferredLexical
+        {
+            continue;
+        }
         let function_upper = skeleton_work_upper(program, function)?;
         total = total.checked_add(function_upper).ok_or_else(|| {
             replay_error(
@@ -3382,7 +3404,6 @@ fn expression_skeleton(
 ) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
     enum Frame<'a> {
         Eval(&'a ResolvedExpr),
-        #[cfg(test)]
         FinishCopyRegion {
             previous: Option<ExpressionId>,
         },
@@ -3681,8 +3702,8 @@ fn expression_skeleton(
     }
 
     // Depth excludes the body block; the machine retains its evaluated child, that block, and 512 expression ancestors.
-    // An inactive lexical Copy scope adds one metadata frame in test builds.
-    let frame_capacity = 515 + usize::from(cfg!(test));
+    // One independently authenticated lexical Copy scope adds a metadata frame.
+    let frame_capacity = 516;
     work.budget.reserve_array::<Frame<'_>>(
         function,
         frame_capacity,
@@ -3709,7 +3730,6 @@ fn expression_skeleton(
     let mut active_loops: Vec<ActiveLoop<'_>> = Vec::new();
     while let Some(frame) = frames.pop() {
         match frame {
-            #[cfg(test)]
             Frame::FinishCopyRegion { previous } => {
                 let paths = produced
                     .take()
@@ -3725,7 +3745,6 @@ fn expression_skeleton(
             }
             Frame::Eval(expression) => {
                 debug_assert!(produced.is_none());
-                #[cfg(test)]
                 if work.budget.merge_paths
                     && function.cleanup_plan.lexical_control.is_some()
                     && work.active_copy_region.is_none()

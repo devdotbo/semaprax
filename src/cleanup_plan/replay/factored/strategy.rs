@@ -1,7 +1,23 @@
-//! Inactive representation selection from exact reconstructed route censuses.
-//! Counts carry no observation equality or lexical authentication authority.
-//! Legacy enumerating census and production selection remain unchanged.
+//! Deferred lexical resources and exact post-authentication representation.
+//! A resource plan or terminal census carries no equality/ownership authority.
+//! Factored admission retains the independently rebuilt observation languages.
 use super::*;
+
+/// Selected from actual lexical HIR before an enumerating census may refuse.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(in crate::cleanup_plan::replay) enum ResourceStrategy {
+    EnumeratedUpper,
+    DeferredLexical,
+}
+pub(in crate::cleanup_plan::replay) fn provisional(
+    function: &ResolvedFunction,
+) -> ResourceStrategy {
+    if lexical_cert::requires_lexical(function) {
+        ResourceStrategy::DeferredLexical
+    } else {
+        ResourceStrategy::EnumeratedUpper
+    }
+}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum Number {
@@ -190,7 +206,7 @@ fn census(
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum Strategy {
+pub(in crate::cleanup_plan::replay) enum Strategy {
     Enumerated,
     LexicalFactored,
     RefusedArithmeticOverflow,
@@ -203,6 +219,7 @@ struct Candidate {
     strategy: Strategy,
 }
 impl Candidate {
+    #[cfg(test)]
     fn reconstruct(
         program: &dyn ReplayContext,
         function: &ResolvedFunction,
@@ -211,7 +228,7 @@ impl Candidate {
         if function.cleanup_plan.lexical_control.is_none() {
             return Err(replay_error(
                 function,
-                "inactive lexical strategy requires a lexical function",
+                "lexical strategy requires a lexical function",
             ));
         }
         let built = build_comparison(program, function, budget, None)?;
@@ -231,8 +248,8 @@ impl Candidate {
             (Census::Known { .. }, Census::Known { .. }) => Strategy::Enumerated,
             _ => Strategy::LexicalFactored,
         };
-        // No equality proof, independent ownership replay, or public admission
-        // follows from this candidate. Its backing remains owned and charged.
+        // No equality or ownership authority follows from this census.
+        // The backing remains owned and charged through the selected proof.
         Ok(Self {
             built,
             hir,
@@ -242,5 +259,138 @@ impl Candidate {
     }
 }
 
+#[cfg(test)]
+#[path = "strategy/activation_tests.rs"]
+mod activation_tests;
+#[cfg(test)]
+#[path = "strategy/hostile_tests.rs"]
+mod hostile_tests;
+#[cfg(test)]
 #[path = "strategy/tests.rs"]
 mod tests;
+
+/// Called only after structural IDs, HIR/certificates, acyclicity and the
+/// unchanged exact ownership-state replay have authenticated the lexical plan.
+pub(in crate::cleanup_plan::replay) fn validate_authenticated(
+    program: &dyn ReplayContext,
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
+    expression_count: usize,
+) -> Result<(), Diagnostic> {
+    let built = build_comparison(program, function, budget, helpers)?;
+    let mut candidate = Candidate::from_built(function, built, budget)?;
+    if candidate.strategy == Strategy::RefusedArithmeticOverflow {
+        return Err(replay_error(
+            function,
+            "cleanup replay exact terminal multiplicity overflowed",
+        ));
+    }
+    // Selected physical replay has no unmetered legacy census fallback.
+    // Its independently closed provider/type profile is unchanged.
+    if budget.physical.is_some() {
+        candidate.strategy = Strategy::LexicalFactored;
+    }
+    #[cfg(test)]
+    if let Some(forced) = forced_strategy() {
+        candidate.strategy = forced;
+    }
+    match candidate.strategy {
+        Strategy::Enumerated => {
+            for census in [candidate.hir, candidate.plan] {
+                if let Census::Exceeded { total, .. } = census {
+                    let total = usize::try_from(total).map_err(|_| {
+                        replay_error(
+                            function,
+                            "cleanup replay exact path count exceeds address space",
+                        )
+                    })?;
+                    return path_summary::path_budget_errors(function, total, total);
+                }
+            }
+            if budget.physical.is_some() {
+                return Err(replay_error(
+                    function,
+                    "selected physical replay requires its metered factored strategy",
+                ));
+            }
+            // The actual census attempt remains spent. The legacy ordinary
+            // route keeps its exact path/work ceilings and enumerating proof.
+            let upper =
+                lexical_census::validate_size_budget_and_skeleton(program, function, || {
+                    Ok(expression_count)
+                })?;
+            reserve_enumerated(function, budget, upper)?;
+            validate_typed_control_skeleton_with_index(program, function, budget, helpers)
+        }
+        Strategy::LexicalFactored => {
+            let BuiltComparison {
+                automaton,
+                sink,
+                hir_root,
+                plan_root,
+            } = &candidate.built;
+            let mut canonical = Canonicalizer::new(automaton, *sink);
+            budget.reserve_array::<(usize, u64)>(function, 1, "lexical HIR weighted root")?;
+            let hir = canonical.id(function, vec![(*hir_root, 1)], budget)?;
+            budget.reserve_array::<(usize, u64)>(function, 1, "lexical plan weighted root")?;
+            let plan = canonical.id(function, vec![(*plan_root, 1)], budget)?;
+            match (hir, plan) {
+                (Some(hir), Some(plan)) if hir == plan => Ok(()),
+                (Some(_), Some(_)) => Err(skeleton_mismatch(function)),
+                _ => Err(replay_error(
+                    function,
+                    "cleanup replay factored trace multiplicity overflowed",
+                )),
+            }
+        }
+        Strategy::RefusedArithmeticOverflow => unreachable!("overflow census already refused"),
+    }
+}
+
+/// Add this function's enumerating reservation to the held program pool; never
+/// overwrite a reservation belonging to another function and never refund.
+pub(in crate::cleanup_plan::replay) fn reserve_enumerated(
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+    upper: usize,
+) -> Result<(), Diagnostic> {
+    let held = budget
+        .skeleton_remaining
+        .checked_add(upper)
+        .ok_or_else(|| replay_error(function, "cleanup replay skeleton reservation overflowed"))?;
+    let remaining = budget.remaining.checked_sub(upper).ok_or_else(|| {
+        replay_error(
+            function,
+            "cleanup replay skeleton-work preflight exceeds the global budget",
+        )
+    })?;
+    budget.skeleton_remaining = held;
+    budget.remaining = remaining;
+    Ok(())
+}
+
+#[cfg(test)]
+thread_local! {
+    static FORCED_STRATEGY: std::cell::Cell<Option<Strategy>> = const { std::cell::Cell::new(None) };
+}
+#[cfg(test)]
+fn forced_strategy() -> Option<Strategy> {
+    FORCED_STRATEGY.with(std::cell::Cell::get)
+}
+#[cfg(test)]
+pub(in crate::cleanup_plan::replay) fn with_strategy<T>(
+    strategy: Strategy,
+    operation: impl FnOnce() -> T,
+) -> T {
+    struct Restore(Option<Strategy>);
+    impl Drop for Restore {
+        fn drop(&mut self) {
+            FORCED_STRATEGY.with(|cell| cell.set(self.0));
+        }
+    }
+    let restore = Restore(FORCED_STRATEGY.with(|cell| cell.replace(Some(strategy))));
+    let result = operation();
+    drop(restore);
+    result
+}

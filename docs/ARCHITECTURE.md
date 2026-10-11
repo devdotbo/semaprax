@@ -97,6 +97,13 @@ own transfer mappings and exact atomic call commits; staging never debits the
 reserved history. This tracking retains no declaration index and changes no
 serialized proof authority or physical cleanup operation.
 
+`cleanup_plan/replay/factored/strategy.rs` owns deferred lexical resource selection
+and post-authentication Enumerated/LexicalFactored dispatch. Exact certificate and
+ownership replay precede observation-automaton construction; terminal census alone
+has no authority. Expression-scoped Copy discovery closes before caller-prefix
+sequencing. The held automata, weighted proof and selected physical backing share
+one cumulative ledger; the selected provider/type profile remains separate.
+
 `hir/validation/byte_range.rs` re-derives named-slice and exact inline
 owned-Bytes range origins from live scope. Source loan origin bookkeeping
 independently retains the same owner for immutable composed-range locals;

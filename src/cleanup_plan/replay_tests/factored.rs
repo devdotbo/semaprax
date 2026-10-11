@@ -108,6 +108,8 @@ fn budget_exhausted_factored_comparison_keeps_the_path_budget_diagnostic() {
     let mut starved = ReplayBudget {
         remaining: 64,
         skeleton_remaining: 0,
+        skeleton_spent: 0,
+        lent_skeleton: false,
         merge_paths: false,
         physical: None,
     };

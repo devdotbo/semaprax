@@ -1,0 +1,212 @@
+//! Whole authenticated entry regressions; no source rewriting or quota change.
+use super::*;
+
+fn resolved(source: &str) -> ResolvedProgram {
+    crate::hir::resolve(&crate::check(source, "lexical-activation.spx").unwrap()).unwrap()
+}
+fn probe(program: &ResolvedProgram) -> &ResolvedFunction {
+    program
+        .functions()
+        .iter()
+        .find(|function| function.id.as_str() == "probe")
+        .unwrap()
+}
+fn decisions(count: usize) -> String {
+    (0..count)
+        .map(|index| format!("let choice_{index}=if n==0 {{0}}else{{1}};\n"))
+        .collect()
+}
+fn source(count: usize, extra_path: bool) -> String {
+    let choices = decisions(count);
+    let body = if extra_path {
+        format!("if n==1 {{{choices} return 0;}}else{{return 0;}}")
+    } else {
+        format!("{choices} return 0;")
+    };
+    format!(
+        "module lexical.activation; @id(\"probe\") fn probe(n:i64)->i64 {{{body}}} @id(\"main\") fn main()->i64 {{0}}"
+    )
+}
+
+#[test]
+fn forced_authenticated_strategies_agree_on_small_full_multisets() {
+    for authored in [lexical_plan_tests::WHILE, lexical_plan_tests::GENERATED] {
+        let (program, function) = lexical_plan_tests::fixture(authored);
+        for strategy in [Strategy::Enumerated, Strategy::LexicalFactored] {
+            with_strategy(strategy, || validate_structure(&program, &function)).unwrap();
+        }
+        // Independent HIR Cartesian expansion and plan-route enumeration are
+        // separately retained in lexical_plan_tests, including duplicates.
+        lexical_plan_tests::assert_copy_scope_oracle(authored);
+    }
+}
+
+#[test]
+fn exact_65536_and_65537_choose_distinct_routes_without_raising_ceiling() {
+    for (extra_path, expected) in [(false, 65_536), (true, 65_537)] {
+        let program = resolved(&source(16, extra_path));
+        let function = probe(&program);
+        let before = function.cleanup_plan.clone();
+        validate_structure(&program, function).unwrap();
+        let mut budget = ReplayBudget::new();
+        let candidate = Candidate::reconstruct(&program, function, &mut budget).unwrap();
+        assert_eq!(candidate.hir, candidate.plan);
+        assert_eq!(
+            candidate.hir,
+            TerminalCounts {
+                success: Number::Known(expected),
+                ..TerminalCounts::ZERO
+            }
+            .census()
+        );
+        assert_eq!(
+            candidate.strategy,
+            if extra_path {
+                Strategy::LexicalFactored
+            } else {
+                Strategy::Enumerated
+            }
+        );
+        with_strategy(Strategy::LexicalFactored, || {
+            validate_structure(&program, function)
+        })
+        .unwrap();
+        let enumerated = with_strategy(Strategy::Enumerated, || {
+            validate_structure(&program, function)
+        });
+        if extra_path {
+            assert_eq!(enumerated.unwrap_err().code, "SPX-H006");
+        } else {
+            enumerated.unwrap();
+        }
+        assert_eq!(function.cleanup_plan, before);
+    }
+}
+
+#[test]
+fn above_cap_equal_terminal_totals_do_not_authenticate_reordered_decisions() {
+    let program = resolved(&source(17, false));
+    let function = probe(&program);
+    let mut forged = function.clone();
+    let mut identities = Vec::new();
+    for edge in &forged.cleanup_plan.edges {
+        if let EdgeCondition::BooleanResult(expression, _) = &edge.condition {
+            if !identities.contains(expression) {
+                identities.push(expression.clone());
+            }
+        }
+        if identities.len() == 2 {
+            break;
+        }
+    }
+    assert_eq!(identities.len(), 2);
+    for edge in &mut forged.cleanup_plan.edges {
+        if let EdgeCondition::BooleanResult(expression, _) = &mut edge.condition {
+            if expression == &identities[0] {
+                *expression = identities[1].clone();
+            } else if expression == &identities[1] {
+                *expression = identities[0].clone();
+            }
+        }
+    }
+    let mut budget = ReplayBudget::new();
+    let candidate = Candidate::reconstruct(&program, &forged, &mut budget).unwrap();
+    assert_eq!(
+        candidate.hir, candidate.plan,
+        "hostile graph retains all terminal classes and totals"
+    );
+    assert!(matches!(
+        candidate.hir,
+        Census::Exceeded { total: 131_072, .. }
+    ));
+    assert_eq!(
+        validate_structure(&program, &forged).unwrap_err().code,
+        "SPX-H006"
+    );
+}
+
+fn whole_entry(
+    program: &ResolvedProgram,
+    function: &ResolvedFunction,
+    work: usize,
+    bytes: usize,
+) -> (
+    Result<(usize, usize), Diagnostic>,
+    crate::test_allocation_observer::Metrics,
+) {
+    let context = primitive_fixture::Context::new(program);
+    crate::test_allocation_observer::measure(|| {
+        selected_entry::validate_with_limits(&context, function, work, bytes)
+    })
+}
+
+#[test]
+fn selected_whole_entry_to_drop_obeys_exact_and_one_short_work_and_backing() {
+    let (program, _) = lexical_plan_tests::fixture(lexical_plan_tests::WHILE);
+    let function = probe(&program);
+    let unchanged = function.cleanup_plan.clone();
+    let (wide, observed) = whole_entry(&program, function, MAX_REPLAY_WORK_UNITS, 1 << 26);
+    let (work, bytes) = wide.unwrap();
+    assert!(!observed.invalid && observed.allocated <= bytes && observed.highwater <= bytes);
+    assert_eq!(observed.live, 0);
+    let (exact, observed) = whole_entry(&program, function, work, bytes);
+    assert_eq!(exact.unwrap(), (work, bytes));
+    assert!(!observed.invalid && observed.allocated <= bytes && observed.highwater <= bytes);
+    assert_eq!(
+        observed.live, 0,
+        "the whole successful entry and Drop retain no allocation"
+    );
+    assert_eq!(
+        whole_entry(&program, function, work - 1, bytes)
+            .0
+            .unwrap_err()
+            .code,
+        "SPX-H006"
+    );
+    assert_eq!(
+        whole_entry(&program, function, work, bytes - 1)
+            .0
+            .unwrap_err()
+            .code,
+        "SPX-H006"
+    );
+    assert_eq!(function.cleanup_plan, unchanged);
+}
+
+fn module_run(program: &ResolvedProgram, work: usize) -> Result<usize, Diagnostic> {
+    let mut budget = ReplayBudget::new();
+    budget.remaining = work;
+    reserve_program_skeleton_work(program, program.functions(), &mut budget)?;
+    for function in program.functions() {
+        validate_structure_with_budget(program, function, &mut budget, None)?;
+    }
+    Ok(work - budget.remaining)
+}
+
+#[test]
+fn deferred_functions_share_one_cumulative_module_work_ledger() {
+    let choices = decisions(4);
+    let source = format!(
+        "module lexical.cumulative;
+@id(\"probe\") fn probe(n:i64)->i64 {{{choices} return 0;}}
+@id(\"second\") fn second(n:i64)->i64 {{{choices} return 1;}}
+@id(\"main\") fn main()->i64 {{0}}"
+    );
+    let program = resolved(&source);
+    let work = module_run(&program, MAX_REPLAY_WORK_UNITS).unwrap();
+    assert_eq!(module_run(&program, work).unwrap(), work);
+    assert_eq!(module_run(&program, work - 1).unwrap_err().code, "SPX-H006");
+}
+
+#[test]
+fn deferred_enumerated_reservation_adds_to_held_pool_without_refund() {
+    let (program, function) = lexical_plan_tests::fixture(lexical_plan_tests::WHILE);
+    let upper = lexical_census::skeleton_work_upper(&program, &function).unwrap();
+    let mut budget = ReplayBudget::new();
+    budget.reserve_skeleton(&function, 101).unwrap();
+    let remaining = budget.remaining;
+    reserve_enumerated(&function, &mut budget, upper).unwrap();
+    assert_eq!(budget.skeleton_remaining, 101 + upper);
+    assert_eq!(budget.remaining, remaining - upper);
+    assert_eq!(budget.skeleton_spent, 0);
+}

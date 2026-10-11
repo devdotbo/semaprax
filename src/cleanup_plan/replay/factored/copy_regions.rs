@@ -1,4 +1,4 @@
-//! Inactive independent Copy-inert region discovery from authenticated HIR.
+//! Independent Copy-inert region discovery from authenticated HIR.
 //! A borrowed owned receiver is admitted by its parameter mode, never by
 //! rewriting its Own Place expression into a Copy expression. Unknown call
 //! families, ownership transfers, loops, residuals and lexical exits stay closed.

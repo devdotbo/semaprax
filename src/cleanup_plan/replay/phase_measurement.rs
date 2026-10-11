@@ -20,7 +20,6 @@ pub(in crate::cleanup_plan) fn replay(
         ),
         &mut budget,
     )?;
-    let skeleton_reserved = budget.skeleton_remaining;
     for function in program.functions.iter().chain(
         program
             .function_instances
@@ -31,6 +30,6 @@ pub(in crate::cleanup_plan) fn replay(
     }
     Ok((
         MAX_REPLAY_WORK_UNITS - budget.remaining,
-        skeleton_reserved - budget.skeleton_remaining,
+        budget.skeleton_spent,
     ))
 }

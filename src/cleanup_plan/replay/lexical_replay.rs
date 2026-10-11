@@ -20,30 +20,19 @@ pub(super) fn validate_with_index(
     selected_profile::validate(program, function, budget)?;
     let owner = selected_owner::owner(program, function, budget)?;
     crate::hir::lexical_exit::validate_function(program, function, &owner)?;
-    let held_facts = if let Some(physical) = budget.physical.as_deref_mut() {
-        let mut held = None;
-        let skeleton =
-            lexical_census::validate_size_budget_and_skeleton(program, function, || {
-                let facts =
-                    expression_facts::expression_facts_with_reservation(function, physical)?;
-                let count = facts.len();
-                held = Some(facts);
-                Ok(count)
-            })?;
-        budget.reserve_skeleton(function, skeleton)?;
-        held
-    } else {
-        lexical_census::validate_size_budget(program, function)?;
-        None
-    };
-    budget.charge(
-        function,
-        plan_structure_units(plan),
-        "structural validation",
-    )?;
-
-    let expression_facts = match held_facts {
-        Some(facts) => facts,
+    // The lexical resource plan was deferred before enumerating path refusal.
+    // Bound structure now, but construct no plan automaton until every exact
+    // lexical/certificate/ownership check below has authenticated its meaning.
+    let structure_units = plan_structure_units(plan);
+    if structure_units > MAX_REPLAY_WORK_UNITS {
+        return Err(replay_error(
+            function,
+            "cleanup replay structure exceeds the global work budget",
+        ));
+    }
+    budget.charge(function, structure_units, "structural validation")?;
+    let expression_facts = match budget.physical.as_deref_mut() {
+        Some(physical) => expression_facts::expression_facts_with_reservation(function, physical)?,
         None => expression_facts(function)?,
     };
     let selected = budget.physical.is_some();
@@ -141,5 +130,11 @@ pub(super) fn validate_with_index(
         Some(&auth),
         helpers,
     )?;
-    validate_typed_control_skeleton_with_index(program, function, budget, helpers)
+    factored::strategy::validate_authenticated(
+        program,
+        function,
+        budget,
+        helpers,
+        expression_facts.len(),
+    )
 }

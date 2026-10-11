@@ -241,16 +241,20 @@ fn exact_skeleton_reservation_covers_walk_and_one_short_refuses_before_materiali
     let mut short = ReplayBudget {
         remaining: bound - 1,
         skeleton_remaining: 0,
+        skeleton_spent: 0,
+        lent_skeleton: false,
         merge_paths: false,
         physical: None,
     };
     assert_eq!(
-        reserve_program_skeleton_work(&program, std::iter::once(function), &mut short)
+        factored::strategy::reserve_enumerated(function, &mut short, bound)
             .unwrap_err()
             .code,
         "SPX-H006"
     );
     assert_eq!(skeleton_materializations(), 0);
+    // The explicit Enumerated route keeps its pre-materialization refusal.
+    // Deferred lexical selection supplies no enumerating work discount.
     // The unchanged terminal bound is inclusive; no Copy-only exemption.
     path_budget_errors(function, 0, MAX_REPLAY_PATHS).unwrap();
     assert_eq!(

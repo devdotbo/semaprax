@@ -73,57 +73,62 @@ tails: normal execution, an exact continue marker awaiting generated advancement
 an exact abrupt marker, or an exact target-qualified latch. Sequencing retains
 the advancement phase until its latch; releasing a return or consuming the exact
 loop break clears its abrupt continuation. Shared marker references retain site,
-kind and complete owner/target identity without cloning identity payloads. This
-is groundwork only: lexical factoring is not selected by this state change.
-Inactive selected DAG storage helpers precharge node/refcount headers, tails,
-alternative/concatenation members, merge indexes and vectors. Every child edge
-registers against one held destruction frontier before node allocation, including
-old/new backing overlap. That shared frontier releases the DAG iteratively with
-no destructor allocation; cross-reservation children fail closed. Duplicate
-alternatives retain multiplicity. Production Copy region-to-frontier binding and
-pre-census strategy admission remain barriers to selecting lexical factoring. Inactive automaton construction now precharges
-nodes, moves, epsilon vectors, observation identity/projection payloads, DAG
-frames/ends/memo and block-entry backing. Attempted factored comparisons retain
-spent work and physical debits when falling back. An authored allocator witness
-covers complete lexical plan automaton creation/release and exact/one-short
-limits, independently of weighted canonicalization. Its inactive storage owner now
-precharges closure/shared-map headers, weighted subset maps, successor vectors,
-open/state/signature indexes, weighted key clones and every canonical frame
-replacement. Authored allocator and exact/one-short probes include complete
-canonicalizer creation/release and duplicate-route/checked-overflow regressions. The inactive plan converter emits exact certified
-return/break marker edges to their existing continuation and exact continue/latch
-marker edges to authenticated advancement resumes or the third latch terminal.
-Lexical exits create no epsilon edge. Inactive Copy discovery accepts scalar/static
-Copy regions and exact authored read-only call signatures, including compiler-owned
-Vec len/capacity/Copy get with a borrowed receiver. A receiver may retain its Own
-Place HIR mode; exact parameter mode and Copy result decide inertness. Owned
-parameters, unknown targets, wrong result/receiver types, loops, lexical exits and
-residual forms stay closed. Its fixed cursor is reserved before use. Lexical
-failed/residual/abrupt/owned-source and pending-commit paths remain separate even
-in the inactive merged walk; only normal states can reach a merge. A test-only
-scope binds discovery to the exact expression identity before evaluation and closes
-before a caller sequences its retained prefix. Normal lexical paths outside that
-scope remain separate. An independent small HIR-DAG expansion compares complete
-multisets against ordinary enumeration, including owning prefixes and borrowed Vec
-read status traces; these definitions still require executable qualification. The
-production walker has no Copy scope and discovery grants no strategy admission.
-The inactive representation candidate reconstructs each observation language once
-under the same cumulative work and physical ledger, then counts accepted routes
-per Success, Failure and LoopLatch terminal. Its census distinguishes exact Known
-and Exceeded totals from ArithmeticOverflow without capping or reclassifying any
-terminal class. Duplicate routes contribute separately; cycles, unknown targets
-and nonterminal sinks refuse. It chooses a distinct Enumerated or LexicalFactored
-candidate, or refuses arithmetic overflow, and supplies no equality, ownership or
-source admission authority. Exact/one-short allocator and hostile graph definitions
-remain pending executable qualification. Production census ceilings and errors
-remain unchanged.
-An independent small automaton enumerator
-compares the complete multiset with the existing plan walk, with authored marker
-site/owner and missing generated-resume attacks. Authored small multiset and physical storage
-regressions remain unexecuted until grouped qualification. All
-authored children remain structurally scanned, including infeasible Done, and
-the 65,536-path, depth and replay-work limits remain unchanged. Independent small
-enumeration and exact/one-short reservation definitions await executable qualification.
+kind and complete owner/target identity without cloning identity payloads.
+
+The resource strategy is selected before the enumerating preflight can refuse.
+Actual lexical HIR selects DeferredLexical resources, with no zero-work estimate
+or proof authority. The independent HIR/structural/inventory/status/region/exit,
+certificate and acyclicity checks still precede the unchanged exact ownership
+replay. Only then does the strategy owner reconstruct both observation languages
+once under the same cumulative work ledger and retained selected backing ledger.
+
+DAG storage precharges node/refcount headers, tails, alternative/concatenation
+members, merge indexes and vectors. Every child edge registers against one held
+destruction frontier before node allocation, including old/new backing overlap.
+The shared frontier releases the DAG iteratively without destructor allocation;
+cross-reservation children refuse. Duplicate alternatives retain multiplicity.
+Automaton and weighted canonicalization storage precharge vectors, map/refcount
+headers, identity/projection payloads, frames, weighted key clones and replacement
+backing. During the HIR walk, ordinary checked constructors and skeleton steps
+share one temporarily lent work allowance. The held nonlexical skeleton pool is
+restored unchanged after success or error; spent actual work is never refunded.
+
+Copy discovery accepts scalar/static regions and exact authored call parameter
+modes with Copy results, including compiler-owned Vec len/capacity/Copy get with
+a borrowed receiver. That receiver may retain its Own Place HIR mode. Owned
+parameters, unknown targets, wrong result/receiver types, nominal results, loops,
+lexical exits and residual forms remain closed. Discovery binds an exact
+expression identity before evaluation and closes before a caller sequences its
+retained prefix. Only normal paths inside that scope may merge. Failure, residual,
+abrupt, owned-source and pending-own-commit paths stay separate even if their
+metadata matches. No function-wide or statement-run merge is admitted.
+
+The exact census counts accepted routes per Success, Failure and LoopLatch
+terminal. It distinguishes Known and Exceeded totals from ArithmeticOverflow
+without capping or reclassifying any terminal class. Duplicate routes contribute
+separately; cycles, unknown targets and nonterminal sinks refuse. A census alone
+grants no equality or ownership authority. Ordinary Known cases choose Enumerated,
+retain the legacy ceilings and reserve their old upper in addition to every held
+program reservation. Exceeded cases choose LexicalFactored and compare the same
+retained observation automata by checked weighted multiset equality. Multiplicity
+overflow, work exhaustion or backing refusal cannot fall back or retry with fresh
+credits. The selected physical profile always uses this metered factored route;
+its existing primitive/direct-record provider and Vec/type exclusions are unchanged.
+
+The plan converter emits exact certified return/break markers to their existing
+continuation and exact continue/latch markers to authenticated advancement resumes
+or the third latch terminal. Lexical exits create no epsilon edge. All authored
+children remain structurally scanned, including infeasible Done. The enumerated
+65,536-path ceiling, depth ceiling and 32,000,000 program-wide work budget remain
+unchanged. Actual skeleton debits are observed separately from held reservations.
+
+Independent small HIR-DAG Cartesian and plan-route multiset oracles include
+duplicates, owning prefixes, borrowed Vec status traces, marker site/owner attacks
+and omitted generated resumes. Forced ordinary strategies, exact 65,536/65,537
+boundaries, above-cap equal-total hostile decisions, whole selected entry-to-Drop
+work/backing exact/one-short limits and cumulative module ledgers are authored
+qualification definitions. Their execution and original immutable ShiftSim all15
+acceptance remain pending grouped qualification.
 Unknown conditions, forged Done leaves, field modes and latch identities grant
 no feasibility selection. Owning executable qualification remains pending. SourceForStep carries its exact
 step ExpressionId; it is not identified by generated variable spelling.
