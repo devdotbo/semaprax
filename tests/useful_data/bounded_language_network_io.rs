@@ -178,7 +178,8 @@ fn collect_operations(
                 collect_operations(argument, operations);
             }
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor { statements, tail, .. } => {
             for statement in statements {
                 for index in 0..statement.child_count() {
                     if let Some(child) = statement.child(index) {
@@ -256,6 +257,7 @@ fn collect_operations(
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
         | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. } => {}
     }
