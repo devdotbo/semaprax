@@ -4,6 +4,8 @@
 use super::{capacity, fail, hir, pure, reserve_builder_structure, Program};
 use crate::diagnostic::Diagnostic;
 use std::cmp::Ordering;
+mod authored;
+pub(super) use authored::Authored;
 
 struct Index<'a> {
     targets: Vec<&'a hir::ResolvedFunction>,
@@ -123,6 +125,49 @@ fn sift(
 type Classify<'c> =
     dyn FnMut(&hir::ResolvedFunction, &mut usize) -> Result<bool, Vec<Diagnostic>> + 'c;
 
+/// Lazy flat-record layout proof shared by one directory classification. The
+/// proof reads only the program and resolved type declarations, never the
+/// classified function, so it is bound to those exact borrowed values and any
+/// other binding refuses before reading. A failed proof is never cached.
+struct RecordProof<'p> {
+    program: &'p Program,
+    resolved: &'p hir::ResolvedProgram,
+    admitted: Option<bool>,
+}
+impl<'p> RecordProof<'p> {
+    fn new(program: &'p Program, resolved: &'p hir::ResolvedProgram) -> Self {
+        Self {
+            program,
+            resolved,
+            admitted: None,
+        }
+    }
+    fn admitted(
+        &mut self,
+        program: &Program,
+        resolved: &hir::ResolvedProgram,
+        work: &mut usize,
+    ) -> Result<bool, Vec<Diagnostic>> {
+        if !std::ptr::eq(self.program, program) || !std::ptr::eq(self.resolved, resolved) {
+            *work = 0;
+            return Err(fail());
+        }
+        if let Some(admitted) = self.admitted {
+            return Ok(admitted);
+        }
+        match super::primitive::records::preflight(program, resolved, work) {
+            Ok(admitted) => {
+                self.admitted = Some(admitted);
+                Ok(admitted)
+            }
+            Err(error) => {
+                *work = 0;
+                Err(error)
+            }
+        }
+    }
+}
+
 /// Borrowed facts only; source origin and complete signature authentication stay
 /// in capture before any fact is published. Selected functions keep AST order.
 pub(super) struct Directory<'a> {
@@ -135,11 +180,12 @@ impl<'a> Directory<'a> {
         resolved: &'a hir::ResolvedProgram,
         work: &mut usize,
     ) -> Result<Self, Vec<Diagnostic>> {
+        let mut records = RecordProof::new(program, resolved);
         Self::classify(program, resolved, work, &mut |function, work| {
             if hir::borrowed_scalar::signature(function) {
                 return pure(function, work);
             }
-            if !super::primitive::records::preflight(program, resolved, work)? {
+            if !records.admitted(program, resolved, work)? {
                 return Ok(false);
             }
             super::pure_records_metered(function, &resolved.types, work, &mut |_| Ok(()))

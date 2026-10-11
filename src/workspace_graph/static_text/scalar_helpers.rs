@@ -279,26 +279,15 @@ pub(in crate::workspace_graph) fn capture(
     if functions.capacity() != count {
         return Err(capacity());
     }
+    // One borrowed sorted view replaces a full authored-map scan per selected
+    // function; a hit grants nothing until every unchanged guard below passes.
+    let origins = capture_directory::Authored::new(authored, &mut work)?;
     for (ordinal, source) in program.functions.iter().enumerate() {
         debit(&mut work, 1)?;
         let Some(function) = candidates.selected(ordinal) else {
             continue;
         };
-        let mut selected = None;
-        for (id, origin) in authored {
-            debit(
-                &mut work,
-                id.len()
-                    .checked_add(source.stable_id.len())
-                    .and_then(|n| n.checked_add(1))
-                    .ok_or_else(fail)?,
-            )?;
-            if *id == source.stable_id {
-                selected = Some(origin);
-                break;
-            }
-        }
-        let origin = selected.ok_or_else(fail)?;
+        let origin = origins.find(&source.stable_id, &mut work)?;
         debit(
             &mut work,
             origin
