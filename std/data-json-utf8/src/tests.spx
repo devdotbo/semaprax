@@ -75,6 +75,40 @@ fn documents() -> bool
     utf8_end(view, 0usize) == 10usize && utf8_end(view, 1usize) == 10usize && utf8_end(view, 6usize) == 10usize && utf8_end(view, 12usize) == 10usize && is_utf8(view) && utf8_end(mixed, 0usize) > byte_len(mixed) && utf8_end(mixed, 0usize) - byte_len(mixed) - 1usize == 2usize && !is_utf8(mixed)
 }
 
+@id("std.data.json.utf8.tests.offset_case")
+fn offset_case(byte:u8, base:u8, span:i64, expected:i64) -> i64
+    requires span >= 0 && span <= 127
+{
+    let input = [byte];
+    let view = array_as_slice(input);
+    let wanted = if expected >= 0 && expected <= span { expected } else { -1 };
+    let present = offset_at(view, 0usize, base, span);
+    let absent = offset_at(view, 1usize, base, span);
+    if present == wanted && absent == -1 { 0 } else { 1 }
+}
+
+@id("std.data.json.utf8.tests.all_offsets")
+fn all_offsets() -> bool
+{
+    let mut byte = 0u8;
+    let mut expected = 0;
+    let mut failed = 0;
+    while expected < 256 {
+        failed = failed + offset_case(byte, 0u8, 0, expected);
+        failed = failed + offset_case(byte, 0u8, 127, expected);
+        failed = failed + offset_case(byte, 128u8, 63, expected - 128);
+        failed = failed + offset_case(byte, 128u8, 127, expected - 128);
+        failed = failed + offset_case(byte, 194u8, 29, expected - 194);
+        failed = failed + offset_case(byte, 224u8, 15, expected - 224);
+        failed = failed + offset_case(byte, 240u8, 4, expected - 240);
+        failed = failed + offset_case(byte, 255u8, 127, expected - 255);
+        if expected < 255 { byte = byte + 1u8; 0 } else { 0 };
+        expected = expected + 1;
+        0
+    }
+    failed == 0
+}
+
 @id("std.data.json.utf8.tests.main")
 fn main() -> i64
 {
@@ -86,5 +120,6 @@ fn main() -> i64
     failed = failed + if surrogates() { 0 } else { 16 };
     failed = failed + if boundaries() { 0 } else { 32 };
     failed = failed + if documents() { 0 } else { 64 };
+    failed = failed + if all_offsets() { 0 } else { 128 };
     failed
 }

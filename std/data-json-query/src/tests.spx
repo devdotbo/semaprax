@@ -57,11 +57,26 @@ fn invalid_escapes() -> bool
     is_failure(zero, decoded_len(zero, 0usize)) && failure_offset(zero, decoded_len(zero, 0usize), 99usize) == 1usize && failure_offset(hex, decoded_len(hex, 0usize), 99usize) == 1usize && failure_offset(lone_high, decoded_len(lone_high, 0usize), 99usize) == 1usize && failure_offset(lone_low, decoded_len(lone_low, 0usize), 99usize) == 1usize && failure_offset(pair, decoded_len(pair, 0usize), 99usize) == 1usize && failure_offset(raw_control, decoded_len(raw_control, 0usize), 99usize) == 1usize && failure_offset(short, decoded_len(short, 0usize), 99usize) == 2usize && !decoded_token_eq(zero, 0usize, 0usize)
 }
 
+@id("std.data.json.query.tests.all_byte_codes")
+fn all_byte_codes() -> bool
+{
+    let mut byte = 0u8;
+    let mut expected = 0;
+    let mut failed = 0;
+    while expected < 256 {
+        failed = failed + if byte_code(byte) == expected { 0 } else { 1 };
+        if expected < 255 { byte = byte + 1u8; 0 } else { 0 };
+        expected = expected + 1;
+        0
+    }
+    failed == 0
+}
+
 @id("std.data.json.query.tests.main")
 fn main() -> i64
 {
     let quoted = [34u8, 97u8, 34u8];
     let escaped = [92u8, 110u8];
     let trailing = [34u8, 97u8, 34u8, 120u8];
-    if is_string(array_as_slice(quoted)) && !is_string(array_as_slice(trailing)) && escaped_names() && unicode_decode() && scalar_pull() && invalid_escapes() && scan_string(array_as_slice(quoted), 0usize, false) == 3usize && token_end(array_as_slice(escaped), 0usize) == 2usize { 0 } else { 1 }
+    if is_string(array_as_slice(quoted)) && !is_string(array_as_slice(trailing)) && escaped_names() && unicode_decode() && all_byte_codes() && scalar_pull() && invalid_escapes() && scan_string(array_as_slice(quoted), 0usize, false) == 3usize && token_end(array_as_slice(escaped), 0usize) == 2usize { 0 } else { 1 }
 }

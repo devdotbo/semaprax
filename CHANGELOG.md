@@ -1,5 +1,7 @@
 # Changelog
 
+- Replace value-proportional JSON byte and UTF-8 offset probes with existing checked numeric conversions; retain contracts, grammar and fuel limits, with all-byte source conformance awaiting grouped execution.
+
 - Author OPT #750 linear saved-cursor work debits for selected primitive replay,
   renewal reconstruction and resolved byte-helper proofs, preserving work/depth
   and physical bounds with exact/one-short gates; owning execution remains pending.
