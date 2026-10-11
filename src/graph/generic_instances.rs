@@ -132,7 +132,7 @@ pub(super) fn pre_filesystem_graph_json(
         && !super::finite_byte_scratch::requires(program)
         && !super::consuming_vec_renewal::requires(program)
         && !crate::vec_ops::string_slot::resolved_uses(program)
-        && !crate::hir::vec_constructor::program_uses(program)
+        && !crate::hir::vec_constructor::program_uses(program)?
         && !view.static_text()
         && !program
             .declarations
