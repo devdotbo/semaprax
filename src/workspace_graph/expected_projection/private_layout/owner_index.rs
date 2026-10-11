@@ -488,4 +488,5 @@ fn site_owner<'a>(
 }
 
 #[cfg(test)]
+#[path = "owner_index/tests.rs"]
 mod tests;
