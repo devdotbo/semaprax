@@ -1,5 +1,8 @@
 # Changelog
 
+- Repair exact owned-record clone loans, independently authenticated cross-row Vec renewal, selected lexical skeleton reservation, and Wasm continuation after certified bottom statements. Preserve owned Str carriers and derive npm's exact fixed memory extent independently of public result authority. Reconstruct compiler Vec facts for retained nominal fields without widening imports. Grouped owning qualification remains pending; quotas and public ABI admission are unchanged.
+- Preserve exact native String-copy and encoder Bytes-OOM observations, all full-bound UTF-8 wire cases, ordinary-versus-lexical record authority and owning closure refusals. Clarify fresh discard names in agent guidance; `_` remains an ordinary binding.
+
 - Repair borrowed-Str byte-writer proof signatures, exact-extent interpreter search, nested final-UTF8 native borrow arguments, and certified bottom-binding Wasm lowering. Consolidated owning qualification remains pending; foreign ingress, source admission and resource limits are unchanged.
 
 - Replace value-proportional JSON byte and UTF-8 offset probes with existing checked numeric conversions; retain contracts, grammar and fuel limits, with all-byte source conformance awaiting grouped execution.
