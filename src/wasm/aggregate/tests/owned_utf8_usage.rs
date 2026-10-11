@@ -23,7 +23,7 @@ fn scalar_signature_lexical_body_string_selects_existing_owned_literal_storage()
     let mut next=0;
     while next<1 {
         next=next+1;
-        if next==1 {return 7;}else{0};
+        if next==1 {return 7;}else{0}
         0
     }
     0

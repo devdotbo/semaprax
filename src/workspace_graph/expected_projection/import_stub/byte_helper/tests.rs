@@ -268,6 +268,7 @@ fn imported_record_lookup_key_cannot_relabel_a_different_current_nominal() {
     let mut programs = vector_programs();
     let other=crate::parse(r#"module leaf;
 @id("other.row") record Other {@id("other.row.label") label:string,@id("other.row.index") index:usize,}
+@id("other.anchor") fn anchor()->i64 {0}
 "#,"leaf-other.spx").unwrap().types.remove(0);
     programs[0].types.push(other);
     let mut authored = facts(&programs);

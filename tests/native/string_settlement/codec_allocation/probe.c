@@ -98,6 +98,9 @@ int main(void) {
                 REQUIRE(WEXITSTATUS(status)==42 && length==0);++returned;
             }else{
                 REQUIRE(WIFSIGNALED(status) && WTERMSIG(status)==SIGABRT);
+                if(strcmp(message,"SEMAPRAX native runtime invariant failure: string allocation failed\n"))
+                    fprintf(stderr,"fault census repetition=%u selected=%zu decoded=%zu composed=%zu: %s",
+                            repetition,selected,decoded,composed,message);
                 REQUIRE(!strcmp(message,"SEMAPRAX native runtime invariant failure: string allocation failed\n"));
                 if(selected<=decoded)++fatal_decode;else ++fatal_encode;
                 /* No claim about live-owner cleanup at these fatal sites. */

@@ -34,7 +34,7 @@ fn entries() -> Vec<project::JsonCodecPlanEntry> {
 // (standard_dependencies.rs PACKAGES), before deriving any receipt.
 fn paired_originals(root: &std::path::Path) -> std::collections::BTreeMap<String, String> {
     let mut originals = std::collections::BTreeMap::new();
-    for path in ["src/schema.spx", "src/second.spx"] {
+    for path in ["src/schema.spx", "src/second.spx", "src/app.spx", "src/tests.spx"] {
         assert!(
             originals
                 .insert(
