@@ -1,5 +1,8 @@
 //! HIR execution, not a precomputed sum or source-spelling shortcut.
-use super::*;
+use super::{
+    refuse, Backing, BinaryOp, Engine, Flat, Flow, OwnedBytesValue, OwnershipMode, Pattern,
+    Registry, Role, Span, TextView, UnaryOp, Value, DEPTH, E, K, S,
+};
 impl<'s, 'a> Engine<'s, 'a> {
     pub(super) fn expression(&mut self, expression: &'a E, depth: usize) -> Result<Flat, Flow> {
         if depth > DEPTH {
