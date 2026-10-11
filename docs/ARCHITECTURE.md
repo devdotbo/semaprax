@@ -123,6 +123,17 @@ stages dynamic owned arguments in ordinary CallArgument epochs. The native
 and Wasm emitters use private rendering workers, while Project snapshot replay
 re-resolves format-bearing synthetic source before accepting retained HIR.
 
+The private retained record carrier is produced by
+`workspace_graph/static_text/record_closure.rs` before defining HIR is filtered.
+`source_schema/static_text/primitive/helpers/types.rs` authenticates demanded
+flat declarations against that source revision and namespace, then exposes the
+actual borrowed type members through `ReplayContext::type_count/type_at`.
+`primitive/records/prepared.rs` compares layouts and constructs the minimal index
+on the same preparation ledger; imported type names and layout facts alone grant
+no helper-body or owned-construction permission. The borrowed-record scalar
+producer and independent replay receiver restrict reads to current borrowed
+parameter roots and exact declared scalar fields.
+
 The additive retained scalar import route captures defining-source facts in
 `workspace_graph/static_text/scalar_helpers.rs` before HIR filtering. Its
 `scalar_helpers/capture_directory.rs` child precharges borrowed lookup and

@@ -929,3 +929,40 @@ fn assert_selected_borrowed_inventory(build: &WorkspaceGraphBuild) {
         .expect("source-bound primitive inventory");
     assert!(inventory.imported, "selected imported-helper source route");
 }
+
+#[test]
+fn imported_record_signature_equality_debits_the_actual_nominal_prefix() {
+    fn nominal(id: &str) -> hir::ResolvedType {
+        hir::ResolvedType::Nominal {
+            declaration: hir::DeclarationId::new(id),
+            arguments: Vec::new(),
+        }
+    }
+    let a = nominal("rows.Row");
+    for (b, expected, units) in [
+        (nominal("rows.Row"), true, 10),
+        (nominal("rows.Rox"), false, 10),
+        (nominal("other.Id"), false, 3),
+        (nominal("short"), false, 2),
+        (hir::ResolvedType::I64, false, 1),
+    ] {
+        let mut spent = 0;
+        assert_eq!(
+            same_type(&a, &b, |n| {
+                spent += n;
+                Ok(())
+            })
+            .unwrap(),
+            expected
+        );
+        assert_eq!(spent, units);
+        for available in [units, units - 1] {
+            let mut left = available;
+            let result = same_type(&a, &b, |n| {
+                left = left.checked_sub(n).ok_or_else(fail)?;
+                Ok(())
+            });
+            assert_eq!(result.is_ok(), available == units);
+        }
+    }
+}

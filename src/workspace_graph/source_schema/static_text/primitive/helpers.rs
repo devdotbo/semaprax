@@ -170,6 +170,48 @@ fn builtin(id: &hir::DeclarationId) -> bool {
         || crate::str_ops::by_id(id.as_str()).is_some()
         || crate::vec_ops::by_id(id.as_str()).is_some()
 }
+// Imported helper signatures are scalar/view or argument-free borrowed records.
+// Compare nominal identity bytes at the receiving equality, rather than relying
+// on an earlier layout probe to pay for this separate comparison.
+fn same_type(
+    source: &hir::ResolvedType,
+    current: &hir::ResolvedType,
+    mut debit: impl FnMut(usize) -> Result<(), Vec<Diagnostic>>,
+) -> Result<bool, Vec<Diagnostic>> {
+    debit(1)?;
+    if hir::is_scalar_resolved_type(source)
+        || matches!(source, hir::ResolvedType::Str | hir::ResolvedType::SliceU8)
+    {
+        return Ok(source == current);
+    }
+    let (
+        hir::ResolvedType::Nominal {
+            declaration: a,
+            arguments: aa,
+        },
+        hir::ResolvedType::Nominal {
+            declaration: b,
+            arguments: bb,
+        },
+    ) = (source, current)
+    else {
+        return Ok(false);
+    };
+    if !aa.is_empty() || !bb.is_empty() {
+        return Ok(false);
+    }
+    debit(1)?;
+    if a.as_str().len() != b.as_str().len() {
+        return Ok(false);
+    }
+    for (a, b) in a.as_str().bytes().zip(b.as_str().bytes()) {
+        debit(1)?;
+        if a != b {
+            return Ok(false);
+        }
+    }
+    Ok(true)
+}
 fn authenticate_target<'a>(
     id: &hir::DeclarationId,
     modules: &'a [WorkspaceResolvedModule],
@@ -280,7 +322,7 @@ fn authenticate_target<'a>(
         )?;
         if source.id != current.id
             || source.name != current.name
-            || source.ty != current.ty
+            || !same_type(&source.ty, &current.ty, |n| charge(resources, anchor, n))?
             || source.ownership != current.ownership
         {
             return Err(fail());
