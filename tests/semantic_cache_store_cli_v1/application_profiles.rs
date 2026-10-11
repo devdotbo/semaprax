@@ -53,9 +53,22 @@ fn unchanged(fixture: &Fixture, digest: &str) {
     let cold = value(fixture.cold_open());
     let restored = value(fixture.load(digest));
     assert_eq!(restored["work"]["modules_resolved"], 0);
+    let closure_count = cold["frontend_work"]["work"]["modules_resolved"]
+        .as_u64()
+        .unwrap();
+    assert!(
+        closure_count > 3,
+        "actual bundled closure accompanies the three authored files"
+    );
+    assert_eq!(restored["work"]["checked_HIR_reused"], closure_count);
     let warm = value(fixture.warm_open(digest));
     same_product(&cold, &warm);
     assert_eq!(warm["frontend_work"]["work"]["modules_resolved"], 0);
+    assert_eq!(
+        warm["frontend_work"]["work"]["checked_HIR_reused"], closure_count,
+        "every exact current authored and bundled module is reused"
+    );
+    assert_eq!(warm["frontend_work"]["manifest_context_reset"], false);
     assert!(
         warm["frontend_work"]["work"]["checked_HIR_reused"]
             .as_u64()

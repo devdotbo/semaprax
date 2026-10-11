@@ -181,6 +181,40 @@ impl ProjectFrontendCache {
         selections: &[super::ProjectIndexedRustImport],
     ) -> Result<ProjectFrontendBuild> {
         let indexed_identity = super::indexed_rust::validate(selections, sources)?;
+        // Live Project loads supply authored files; stored entries also retain
+        // compiler-bundled dependencies. Form the same current closure before
+        // invalidation, otherwise absent dependency keys lose their source
+        // entries and cannot pass checked_module's exact association replay.
+        if sources.len() > MAX_PROJECT_FRONTEND_CACHE_MODULES {
+            return Err(capacity(
+                "frontend source inventory exceeds its module bound",
+            ));
+        }
+        let mut input_bytes = 0usize;
+        for source in sources {
+            input_bytes = input_bytes
+                .checked_add(source.source.len())
+                .ok_or_else(|| capacity("frontend source accounting overflow"))?;
+            if input_bytes > MAX_TOTAL_SOURCE_BYTES {
+                return Err(capacity("frontend source inventory exceeds its byte bound"));
+            }
+        }
+        let mut complete = sources
+            .iter()
+            .map(|source| SemanticWorkspaceSource {
+                path: source.path.clone(),
+                source: source.source.clone(),
+            })
+            .collect::<Vec<_>>();
+        super::standard_dependencies::extend_sources(manifest, &mut complete)?;
+        let complete = complete
+            .into_iter()
+            .map(|source| ProjectFrontendSource {
+                path: source.path,
+                source: source.source,
+            })
+            .collect::<Vec<_>>();
+        let sources = complete.as_slice();
         if sources.len() > MAX_PROJECT_FRONTEND_CACHE_MODULES {
             return Err(capacity(
                 "frontend source inventory exceeds its module bound",
