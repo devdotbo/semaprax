@@ -74,3 +74,73 @@ fn noncontiguous_output_carrier_reservation_is_exact_sticky_and_precedes_clone()
     // body is published on the refused output-carrier boundary.
     assert_eq!(owner.functions.len(), 3);
 }
+
+#[test]
+fn noncontiguous_three_and_five_backings_have_no_growth_and_input_headers_pay_actual_delta() {
+    let source = (0..9).fold(String::from("module local;"), |mut source, index| {
+        source.push_str(&format!(
+            " @id(\"local.f{index}\") fn f{index}() -> i64 {{ {index} }}"
+        ));
+        source
+    });
+    let (_, _, owner) = crate::project::incremental::checked_hir::tests::cold_source(&source);
+    for count in [3usize, 5] {
+        let keep = |function: &hir::ResolvedFunction| {
+            let index = function
+                .name
+                .strip_prefix('f')
+                .unwrap()
+                .parse::<usize>()
+                .unwrap();
+            index % 2 == 0 && index / 2 < count
+        };
+        // Independent output construction has an authored exact count and no
+        // iterator growth strategy. Both observations include nested HIR clone
+        // backing and destruction; this is not a fixed-header-only heap claim.
+        let (_, old) = crate::test_allocation_observer::measure(|| {
+            let mut output = Vec::with_capacity(count);
+            for function in owner.functions.iter().filter(|function| keep(function)) {
+                output.push(function.clone());
+            }
+            assert_eq!(output.capacity(), count);
+            drop(output);
+        });
+        let debit = count * std::mem::size_of::<hir::ResolvedFunction>();
+        let (_, observed) = crate::test_allocation_observer::measure(|| {
+            let (view, overflow, charged, _) =
+                crate::bounded_output::with_limit_usage_refusal(debit, || {
+                    Retained::select(owner.clone(), |program| &program.functions, keep)
+                });
+            assert!(!overflow);
+            assert_eq!(charged, debit);
+            let Retained::Owned(output) = view.unwrap() else {
+                panic!("noncontiguous selection")
+            };
+            assert_eq!((output.len(), output.capacity()), (count, count));
+            drop(output);
+        });
+        // with_limit owns one real Budget Rc allocation; observe the same
+        // infrastructure separately rather than guessing its private layout.
+        let (_, ledger) = crate::test_allocation_observer::measure(|| {
+            crate::bounded_output::with_limit_usage_refusal(0, || ());
+        });
+        assert!(!observed.invalid && !old.invalid && !ledger.invalid);
+        assert_eq!(observed.reallocations, 0);
+        assert_eq!(observed.allocated, old.allocated + ledger.allocated);
+        assert_eq!(observed.live, 0);
+    }
+    let old = std::mem::size_of::<(String, hir::ResolvedProgram)>();
+    let new = std::mem::size_of::<(String, ResolvedModuleInput)>();
+    let expected = 3
+        * (std::mem::size_of::<String>()
+            + GRAPH_ACCOUNTED_RESOLVED_PROGRAM_BYTES
+            + new.saturating_sub(old));
+    let (result, overflow, charged, _) =
+        crate::bounded_output::with_limit_usage_refusal(expected, || reserve_input_carriers(3));
+    assert!(result.is_ok());
+    assert!(!overflow);
+    assert_eq!(charged, expected);
+    let (result, overflow, _, _) =
+        crate::bounded_output::with_limit_usage_refusal(expected - 1, || reserve_input_carriers(3));
+    assert!(result.is_err() && overflow);
+}

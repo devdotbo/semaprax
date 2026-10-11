@@ -4399,12 +4399,7 @@ fn build_resolved_core(
             )
         )?;
     }
-    reserve_builder_structure(
-        programs
-            .len()
-            .checked_mul(std::mem::size_of::<String>() + GRAPH_ACCOUNTED_RESOLVED_PROGRAM_BYTES)
-            .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?,
-    )?;
+    checked_retention::reserve_input_carriers(programs.len())?;
     // The final uncached attempt uses a compact index and sequential HIR
     // filtering; earlier receipts retain the complete synthetic HIR vector.
     let mut validation = retained_output_only

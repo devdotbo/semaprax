@@ -64,14 +64,22 @@ impl<T: Clone> Retained<T> {
             // prebound still funds the copied HIR. The actual output carrier is
             // reserved before allocation, as with ordinary retained filtering.
             let count = items.iter().filter(|item| keep(item)).count();
-            reserve_builder_structure(
-                count
-                    .checked_mul(std::mem::size_of::<T>())
-                    .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?,
-            )?;
-            Ok(Self::Owned(
-                items.iter().filter(|item| keep(item)).cloned().collect(),
-            ))
+            let reserved = count
+                .checked_mul(std::mem::size_of::<T>())
+                .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?;
+            reserve_builder_structure(reserved)?;
+            let mut output = Vec::with_capacity(count);
+            let actual = output
+                .capacity()
+                .checked_mul(std::mem::size_of::<T>())
+                .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?;
+            if actual > reserved {
+                reserve_builder_structure(actual - reserved)?;
+            }
+            for item in items.iter().filter(|item| keep(item)) {
+                output.push(item.clone());
+            }
+            Ok(Self::Owned(output))
         }
     }
     pub(super) fn into_owned(self) -> Vec<T> {
@@ -132,3 +140,19 @@ impl<T: std::fmt::Debug> std::fmt::Debug for Retained<T> {
 
 #[cfg(test)]
 mod tests;
+
+// Preserve the legacy full-program carrier price and pay any actual enum tag
+// growth. The new representation is not authority to reduce the old forecast.
+pub(super) fn reserve_input_carriers(count: usize) -> Result<(), Vec<Diagnostic>> {
+    let old = std::mem::size_of::<(String, hir::ResolvedProgram)>();
+    let new = std::mem::size_of::<(String, ResolvedModuleInput)>();
+    let each = std::mem::size_of::<String>()
+        .checked_add(GRAPH_ACCOUNTED_RESOLVED_PROGRAM_BYTES)
+        .and_then(|bytes| bytes.checked_add(new.saturating_sub(old)))
+        .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?;
+    reserve_builder_structure(
+        count
+            .checked_mul(each)
+            .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?,
+    )
+}

@@ -5,7 +5,10 @@ const SOURCE: &str = "module local; @id(\"local.first\") fn first() -> i64 { 1 }
 
 // Actual cold insertion API; no decoded or forged lease constructor.
 pub(crate) fn cold() -> (FrontendPass, Program, CheckedModuleLease) {
-    let synthetic = crate::check(SOURCE, "local.spx").unwrap();
+    cold_source(SOURCE)
+}
+pub(crate) fn cold_source(source: &str) -> (FrontendPass, Program, CheckedModuleLease) {
+    let synthetic = crate::check(source, "local.spx").unwrap();
     let resolved = crate::hir::resolve(&synthetic).unwrap();
     crate::hir::validate(&resolved).unwrap();
     let original = resolved.functions.as_ptr();
@@ -14,7 +17,7 @@ pub(crate) fn cold() -> (FrontendPass, Program, CheckedModuleLease) {
         entries: BTreeMap::from([(
             "local.spx".to_owned(),
             Arc::new(CachedModule {
-                source: SOURCE.to_owned(),
+                source: source.to_owned(),
                 program: Arc::new(synthetic.clone()),
             }),
         )]),
