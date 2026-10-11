@@ -221,8 +221,11 @@ struct RcBacking<T> {
     weak: std::cell::Cell<usize>,
     value: T,
 }
+pub(super) fn rc_backing_bytes<T>() -> usize {
+    size_of::<RcBacking<T>>()
+}
 pub(super) fn observation_rc_bytes() -> usize {
-    size_of::<RcBacking<SkeletonObservation>>()
+    rc_backing_bytes::<SkeletonObservation>()
 }
 pub(super) trait IntoReplay<T>: Into<T> {
     fn conversion_bytes() -> usize;

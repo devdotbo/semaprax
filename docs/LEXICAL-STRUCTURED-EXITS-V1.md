@@ -74,7 +74,16 @@ an exact abrupt marker, or an exact target-qualified latch. Sequencing retains
 the advancement phase until its latch; releasing a return or consuming the exact
 loop break clears its abrupt continuation. Shared marker references retain site,
 kind and complete owner/target identity without cloning identity payloads. This
-is groundwork only: lexical factoring is not selected by this state change. All
+is groundwork only: lexical factoring is not selected by this state change.
+Inactive selected DAG storage helpers precharge node/refcount headers, tails,
+alternative/concatenation members, merge indexes and vectors. Every child edge
+registers against one held destruction frontier before node allocation, including
+old/new backing overlap. That shared frontier releases the DAG iteratively with
+no destructor allocation; cross-reservation children fail closed. Duplicate
+alternatives retain multiplicity. Automaton/frontier/canonicalizer storage,
+Copy-inert region eligibility and pre-census strategy admission remain barriers
+to selecting lexical factoring. Authored small multiset and physical storage
+regressions remain unexecuted until grouped qualification. All
 authored children remain structurally scanned, including infeasible Done, and
 the 65,536-path, depth and replay-work limits remain unchanged. Independent small
 enumeration and exact/one-short reservation definitions await executable qualification.

@@ -20,9 +20,8 @@ fn return_marker_survives_an_empty_tail_and_releases_once() {
     path.continuation.record(&observation);
     path.failed = true;
     // A marker in a merged prefix has no flat tail to inspect.
-    path.observations.prefix = Some(std::rc::Rc::new(skeleton_work::ObservationDag::Seq(
-        None,
-        vec![observation],
+    path.observations.prefix = Some(std::rc::Rc::new(skeleton_work::ObservationDag::legacy(
+        skeleton_work::ObservationDagKind::Seq(None, vec![observation]),
     )));
     assert!(path.observations.is_empty());
     assert!(matches!(

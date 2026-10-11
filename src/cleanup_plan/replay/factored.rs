@@ -22,7 +22,7 @@
 //! * Bottom-up hash-consing of the weighted subset construction assigns two
 //!   states the same id exactly when they accept every sequence the same
 //!   number of times, so equal roots prove equal path multisets.
-use super::skeleton_work::ObservationDag;
+use super::skeleton_work::{ObservationDag, ObservationDagKind};
 use super::*;
 use std::rc::Rc;
 
@@ -241,19 +241,19 @@ impl Automaton {
                         ends.push(*end);
                         continue;
                     }
-                    match dag.as_ref() {
-                        ObservationDag::Seq(prefix, _) => {
+                    match &dag.kind {
+                        ObservationDagKind::Seq(prefix, _) => {
                             frames.push(BuildFrame::Seq(dag, start));
                             match prefix {
                                 Some(prefix) => frames.push(BuildFrame::Visit(prefix, start)),
                                 None => ends.push(start),
                             }
                         }
-                        ObservationDag::Cat(_) => {
+                        ObservationDagKind::Cat(_) => {
                             ends.push(start);
                             frames.push(BuildFrame::Cat(dag, start, 0));
                         }
-                        ObservationDag::Alt(members) => {
+                        ObservationDagKind::Alt(members) => {
                             frames.push(BuildFrame::Alt(dag, start, members.len()));
                             for member in members {
                                 frames.push(BuildFrame::Visit(member, start));
@@ -262,7 +262,7 @@ impl Automaton {
                     }
                 }
                 BuildFrame::Seq(dag, start) => {
-                    let ObservationDag::Seq(_, items) = dag.as_ref() else {
+                    let ObservationDagKind::Seq(_, items) = &dag.kind else {
                         unreachable!("sequence frame holds a sequence node");
                     };
                     let prefix_end = ends.pop().expect("sequence prefix end retained");
@@ -272,7 +272,7 @@ impl Automaton {
                     ends.push(end);
                 }
                 BuildFrame::Cat(dag, start, index) => {
-                    let ObservationDag::Cat(parts) = dag.as_ref() else {
+                    let ObservationDagKind::Cat(parts) = &dag.kind else {
                         unreachable!("concatenation frame holds a concatenation node");
                     };
                     let end = ends.pop().expect("concatenation part end retained");
