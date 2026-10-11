@@ -53,6 +53,15 @@ additively admits these exact named views in loop bodies. Each iteration
 retains ordinary root provenance, shared loans, and owner cleanup; constructing
 a view does not release or transfer the owner.
 
+`str_len_bytes` reads the authenticated view extent and selects no recoverable
+operation failure. Its cleanup plan retains the ordinary call commit and all
+owner/loan checks, without an impossible operation-failure source or exit.
+Invariant failures for forged roots or UTF-8 stay invariant failures. Other
+String/Str operation producer facts remain unchanged by this correction.
+Authored `cleanup_plan::deferred_commit::total_len_tests::` controls cover a
+real String cleanup root, preserved arithmetic failure, forged status rejection,
+and the unchanged selected 33/4,096-row source plans; execution is pending.
+
 Native lowering forms the existing length-aware `spx_str_v1` carrier over the
 owner allocation. Frozen terminated-string profiles use their existing
 terminated representation; length-delimited profiles use the authenticated

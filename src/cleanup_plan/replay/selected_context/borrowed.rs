@@ -146,7 +146,9 @@ impl Lease<'_> {
             self.profile
                 .call(self.source, function, expression, budget)?,
             schema::borrowed::Call::Builtin(
-                schema::borrowed::operands::Builtin::Get | schema::borrowed::operands::Builtin::Len
+                schema::borrowed::operands::Builtin::Get
+                    | schema::borrowed::operands::Builtin::Len
+                    | schema::borrowed::operands::Builtin::Str(crate::str_ops::StrOp::LenBytes)
             )
         ))
     }

@@ -1083,7 +1083,8 @@ impl<'a> Executor<'a> {
                 ..
             } = &expression.kind
             {
-                if crate::byte_ops::by_id(callee.as_str()).is_some_and(|op| !op.is_fallible())
+                if super::deferred_commit::is_total_str_len_bytes(callee)
+                    || crate::byte_ops::by_id(callee.as_str()).is_some_and(|op| !op.is_fallible())
                     || crate::host_io_ops::by_id(callee.as_str()).is_some()
                     || matches!(
                         crate::vec_ops::by_id(callee.as_str()),

@@ -91,6 +91,17 @@ pub(super) fn is_infallible_box_operation(callee: &DeclarationId) -> bool {
     )
 }
 
+/// Borrowed UTF-8 byte length reads the authenticated carrier's stored extent.
+/// Runtime root/UTF-8 violations remain invariant failure, not a language
+/// operation status. Keep this fact exact; other Str operations retain their
+/// existing producer model until independently changed.
+pub(super) fn is_total_str_len_bytes(callee: &DeclarationId) -> bool {
+    matches!(
+        crate::str_ops::by_id(callee.as_str()),
+        Some(crate::str_ops::StrOp::LenBytes)
+    )
+}
+
 pub(super) fn expression_is_infallible_compiler_operation(
     expression: &crate::hir::ResolvedExpr,
 ) -> bool {
@@ -98,6 +109,7 @@ pub(super) fn expression_is_infallible_compiler_operation(
         &expression.kind,
         crate::hir::ResolvedExprKind::Call { callee, instance: None, .. }
             if crate::byte_ops::by_id(callee.as_str()).is_some_and(|op| !op.is_fallible())
+                || is_total_str_len_bytes(callee)
                 || crate::host_io_ops::by_id(callee.as_str()).is_some()
                 || is_infallible_vec_operation(crate::vec_ops::by_id(callee.as_str()))
                 || is_infallible_box_operation(callee)
@@ -122,6 +134,9 @@ pub(super) fn infallible_borrowed_vector_observer(expression: &crate::hir::Resol
 fn is_fallible_byte_operation(callee: &DeclarationId) -> bool {
     crate::byte_ops::by_id(callee.as_str()).is_some_and(crate::byte_ops::ByteOp::is_fallible)
 }
+
+#[cfg(test)]
+mod total_len_tests;
 
 #[cfg(test)]
 mod tests {

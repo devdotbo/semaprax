@@ -1956,10 +1956,12 @@ fn collect_expression_statuses(
                 callee, instance, ..
             } => {
                 if instance.is_none()
-                    && (crate::byte_ops::by_id(callee.as_str()).is_some_and(|op| !op.is_fallible())
+                    && (super::deferred_commit::is_total_str_len_bytes(callee)
+                        || crate::byte_ops::by_id(callee.as_str()).is_some_and(|op| !op.is_fallible())
                         || crate::host_io_ops::by_id(callee.as_str()).is_some()
                         || callee.as_str() == crate::stdin_stream_ops::EOF_ID)
                 {
+                    // The borrowed Str byte-length read is total after HIR admission.
                     // Byte-data operations are total after HIR admission, with
                     // the bounded `bytes_set`, `bytes_set5`, and `bytes_set1_or5_from_slice` stores, whose computed
                     // element index is checked at run time. Physical allocation
