@@ -2,25 +2,31 @@
 //! it neither copies them nor creates a second logical payload allowance.
 //! A caller supplies real finite physical funding. The layout-derived upper is
 //! a forecast, not proof that a host has funded it or source admission authority.
-use super::{authority::LoanCapacity, loans::Loans, InvocationRuntime, Owner, Registry, State};
+use super::{InvocationRuntime, Owner, Registry, State, authority::LoanCapacity, loans::Loans};
 use crate::construction_fusion::domain::{
-    owner_core::{Core, Runtime},
     Issuer, ModuleIdentity, Refusal,
+    owner_core::{Core, Runtime},
 };
 use std::{
     alloc::Layout,
     cell::{Cell, RefCell},
 };
 
+mod borrowed;
+pub(crate) use borrowed::{AllocationError, BorrowedAccount};
+
 struct Logical<'a> {
     events: &'a mut u32,
     payload: &'a mut u64,
 }
+static NEXT_ACCOUNT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
 pub(crate) struct Account<'a> {
+    identity: u64,
     logical: RefCell<Logical<'a>>,
     remaining: Cell<usize>,
     charged: Cell<usize>,
     failed: Cell<bool>,
+    logical_refused: Cell<bool>,
 }
 #[derive(Clone, Copy)]
 pub(crate) struct Handle<'a, 'c>(&'a Account<'c>);
@@ -40,13 +46,23 @@ impl<'c> Account<'c> {
         let headers = Layout::new::<Self>()
             .size()
             .checked_add(Layout::new::<Handle<'_, '_>>().size())
+            .and_then(|bytes| bytes.checked_add(Layout::new::<BorrowedAccount<'_>>().size()))
             .ok_or(Refusal::Metadata)?;
         let remaining = funded_bytes.checked_sub(headers).ok_or(Refusal::Metadata)?;
+        let identity = NEXT_ACCOUNT
+            .fetch_update(
+                std::sync::atomic::Ordering::Relaxed,
+                std::sync::atomic::Ordering::Relaxed,
+                |n| n.checked_add(1),
+            )
+            .map_err(|_| Refusal::Exhausted)?;
         Ok(Self {
+            identity,
             logical: RefCell::new(Logical { events, payload }),
             remaining: Cell::new(remaining),
             charged: Cell::new(headers),
             failed: Cell::new(false),
+            logical_refused: Cell::new(false),
         })
     }
     pub(crate) fn handle(&self) -> Handle<'_, 'c> {
@@ -137,6 +153,7 @@ pub(crate) fn upper(capacity: &LoanCapacity<'_>) -> Result<usize, Refusal> {
     };
     add(Layout::new::<Account<'_>>().size())?;
     add(Layout::new::<Handle<'_, '_>>().size())?;
+    add(Layout::new::<BorrowedAccount<'_>>().size())?;
     add(Layout::new::<Registry<Handle<'_, '_>>>().size())?;
     for layout in Loans::<Handle<'_, '_>>::metadata_layouts(capacity)? {
         add(layout.size())?;

@@ -516,3 +516,37 @@ callee invocations take the maximum, rather than adding to simultaneous use.
 An upper bound above 256 refuses before installation. The private Wasm receiver
 runs this proof for its actual main. Native/interpreter receivers must retain
 their own actual root/call/edge binding and physical funding checks.
+
+### Closed interpreter invocation account and whole backing receiver
+
+The private interpreter receiver now lends one stack-held account into the
+optional evaluator state and the invocation loan registry. The account borrows
+the actual allocation-event and payload counters; no callee constructs a new
+allowance or copies a counter snapshot. Its borrowed handle preserves the
+account lifetime through a private object interface. Ordinary evaluators keep
+None and their existing allocation behavior.
+
+Selected zeroed, bounded-zeroed, copy, and explicit owned-leaf deep-clone
+receivers debit that same account before each exact boxed payload allocation.
+Both allocation-ID checks consult its current event count. A direct whole
+backing carries a nonreused account identity and is affine: ordinary aliases
+cannot clone it. Partition handoff moves its original Box without conversion,
+payload copying, or another event debit; semantic precommit faults return that
+same owner. Foreign-account whole carriers are administrative refusals rather
+than operation statuses. Logical clone exhaustion retains the ordinary Vec
+allocation failure; exhausted metadata funding remains administrative.
+
+Preparation consumes the shared current-source view bound once at the exact
+invocation entry and pays the invocation header remainder plus actual local
+loan storage before allocation. Funding remains explicit caller input, not
+an amount automatically minted from a forecast. The older funding::upper
+describes the typed handle and one base frame only; it does not fund arbitrary
+dynamic frames or certify this new invocation wrapper.
+
+This is a closed receiving checkpoint, not ordinary source activation. The
+actual root/argument/CFG installer, direct-whole view registry, every flat
+Vec/IterStep publication, canonical leaf finalization, and final public copyout
+must still join before installing the optional evaluator state. Effects,
+resumption, imported foreign carriers, and unsupported view paths remain
+outside the sealed profile. Receiver tests prepare a real source-held owner
+but invoke individual receivers; they do not claim whole-program execution.

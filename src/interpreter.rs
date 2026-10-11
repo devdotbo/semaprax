@@ -124,8 +124,8 @@ pub use failure_detail::{ContractArgument, ContractFailureDetail};
 use hir::ResolvedHostCommandOperation as Operation;
 pub(crate) use prepared::prepare_resolved_i64_with_profile;
 pub(crate) use resolved_case::{
-    evaluate_resolved_i64_function_with_profile, evaluate_resolved_profile_i64_entry,
-    evaluate_resolved_zero_arg_i64_function, ResolvedFunctionProfile,
+    ResolvedFunctionProfile, evaluate_resolved_i64_function_with_profile,
+    evaluate_resolved_profile_i64_entry, evaluate_resolved_zero_arg_i64_function,
 };
 use scalar_profile::{is_admitted_resolved_scalar, pattern_value_matches};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -134,10 +134,10 @@ use std::{path::Path, sync::Arc};
 use sha2::{Digest as _, Sha256};
 
 use crate::ast::{BinaryOp, Function, ParamMode, Program, Type, UnaryOp};
-use crate::bounded_output::{with_limit, BudgetedJoin as _};
+use crate::bounded_output::{BudgetedJoin as _, with_limit};
 use crate::cleanup_plan::{ContractPhase, StatusCase};
 use crate::conformance::{NormalizedStatus, Retryability, StatusClass};
-use crate::diagnostic::{quote_json, Diagnostic};
+use crate::diagnostic::{Diagnostic, quote_json};
 use crate::hir::{
     DeclarationId, ResolvedExpr, ResolvedExprKind, ResolvedFunction, ResolvedStatement,
     ResolvedType, ValueId,
@@ -146,10 +146,10 @@ use crate::runtime_status::{normalize_arithmetic, normalize_contract};
 use crate::{graph, hir, parse, patch, verify};
 
 pub(crate) use prepared::{
-    evaluate_prepared_resolved_zero_arg_i64, prepare_resolved_zero_arg_i64,
-    trace_child_expressions, PreparedCancellation, PreparedResolvedEvaluation,
-    PreparedResolvedEvaluationOutcome, PreparedResolvedI64, ResolvedTraceEvent, ResolvedTracePhase,
-    MAX_PREPARED_INDEX_BYTES, MAX_PREPARED_ORIGIN_NODES,
+    MAX_PREPARED_INDEX_BYTES, MAX_PREPARED_ORIGIN_NODES, PreparedCancellation,
+    PreparedResolvedEvaluation, PreparedResolvedEvaluationOutcome, PreparedResolvedI64,
+    ResolvedTraceEvent, ResolvedTracePhase, evaluate_prepared_resolved_zero_arg_i64,
+    prepare_resolved_zero_arg_i64, trace_child_expressions,
 };
 
 macro_rules! bformat {
@@ -3084,6 +3084,7 @@ pub(crate) fn evaluate_resolved_language_command(
         budget: max_steps,
         next_byte_allocation: 0,
         allocated_byte_payload: 0,
+        partition: None,
         fused: Default::default(),
         box_live_allocations: Arc::new(std::sync::atomic::AtomicUsize::new(0)),
         utf8_materialization_budget: Utf8MaterializationBudget::UnlimitedLegacy,
@@ -3491,6 +3492,7 @@ struct Evaluator<'a> {
     budget: usize,
     next_byte_allocation: u32,
     allocated_byte_payload: u64,
+    partition: Option<byte_partition::invocation::Invocation<'a>>,
     fused: construction_fusion::Registry<'a>,
     box_live_allocations: Arc<std::sync::atomic::AtomicUsize>,
     utf8_materialization_budget: Utf8MaterializationBudget,
@@ -3529,6 +3531,7 @@ impl Evaluator<'_> {
             budget,
             next_byte_allocation: 0,
             allocated_byte_payload: 0,
+            partition: None,
             fused: Default::default(),
             box_live_allocations: Arc::new(std::sync::atomic::AtomicUsize::new(0)),
             utf8_materialization_budget: Utf8MaterializationBudget::UnlimitedLegacy,
@@ -3746,7 +3749,7 @@ impl Evaluator<'_> {
                 "borrowed Bytes call place does not contain owned bytes",
             ));
         };
-        if value.allocation == 0 || value.allocation > self.next_byte_allocation {
+        if value.allocation == 0 || value.allocation > self.byte_allocation_count() {
             return Err(Flow::Guard(
                 "borrowed Bytes call has an invalid logical allocation",
             ));
@@ -3934,7 +3937,8 @@ impl Evaluator<'_> {
                     .ok_or(Flow::Guard("unresolved byte view storage root"))?;
                 match (op, source) {
                     (crate::byte_ops::ByteOp::BytesAsSlice, Value::Bytes(value)) => {
-                        if value.allocation == 0 || value.allocation > self.next_byte_allocation {
+                        if value.allocation == 0 || value.allocation > self.byte_allocation_count()
+                        {
                             return Err(Flow::Guard(
                                 "owned byte view has an invalid logical allocation",
                             ));
@@ -4394,47 +4398,7 @@ impl Evaluator<'_> {
                             Ok(Value::OptionU8(byte))
                         }
                         (crate::byte_ops::ByteOp::Copy, [Value::BorrowedSlice(value)]) => {
-                            let length = u64::try_from(value.read(&mut self.fused, <[u8]>::len)?)
-                                .map_err(|_| {
-                                Flow::Guard("owned byte payload length does not fit u64")
-                            })?;
-                            if length > crate::byte_ops::MAX_OWNED_BYTE_VALUE_BYTES {
-                                return Err(Flow::Guard(
-                                    "owned byte payload exceeds the verified profile limit",
-                                ));
-                            }
-                            let next_count = self
-                                .next_byte_allocation
-                                .checked_add(1)
-                                .ok_or(Flow::Guard("owned byte allocation count overflowed"))?;
-                            if next_count > crate::byte_data_capacity::MAX_BYTES_COPY_SITES {
-                                return Err(Flow::Guard(
-                                    "owned byte allocation count exceeds verified capacity",
-                                ));
-                            }
-                            let next_payload = self
-                                .allocated_byte_payload
-                                .checked_add(length)
-                                .ok_or(Flow::Guard("owned byte payload accounting overflowed"))?;
-                            if next_payload
-                                > crate::byte_data_capacity::MAX_OWNED_BYTE_PAYLOAD_BYTES
-                            {
-                                return Err(Flow::Guard(
-                                    "owned byte payload exceeds verified capacity",
-                                ));
-                            }
-                            self.next_byte_allocation = next_count;
-                            self.allocated_byte_payload = next_payload;
-                            // `Arc::from(&[u8])` copies into a fresh backing
-                            // allocation for every non-empty input. The
-                            // logical identity above distinguishes empty
-                            // allocations as required by the language model.
-                            Ok(Value::Bytes(OwnedBytesValue {
-                                allocation: next_count,
-                                bytes: value
-                                    .read(&mut self.fused, |bytes| Arc::<[u8]>::from(bytes))?
-                                    .into(),
-                            }))
+                            self.copy_bytes(value).map(Value::Bytes)
                         }
                         (crate::byte_ops::ByteOp::Range, _) => Err(Flow::Guard(
                             "byte_range reached interpreter as an ordinary call",
@@ -5868,8 +5832,14 @@ fn main() -> i64 { 0 }
             Value::Record(Arc::new(OwnedRecordValue {
                 record: hir::DeclarationId::new("test.packet"),
                 fields: BTreeMap::from([
-                    (left.clone(), Value::Bytes(left_value.borrow_alias().unwrap())),
-                    (right.clone(), Value::Bytes(right_value.borrow_alias().unwrap())),
+                    (
+                        left.clone(),
+                        Value::Bytes(left_value.borrow_alias().unwrap()),
+                    ),
+                    (
+                        right.clone(),
+                        Value::Bytes(right_value.borrow_alias().unwrap()),
+                    ),
                 ]),
             })),
         )]);
@@ -5887,14 +5857,16 @@ fn main() -> i64 { 0 }
         };
         assert!(matches!(record.fields.get(&left), Some(Value::Moved)));
         assert_eq!(record.fields.get(&right), Some(&Value::Bytes(right_value)));
-        assert!(take_owned_place(
-            &mut environment,
-            &hir::Place {
-                root,
-                projections: vec![hir::PlaceProjection::Field(left)],
-            },
-        )
-        .is_none());
+        assert!(
+            take_owned_place(
+                &mut environment,
+                &hir::Place {
+                    root,
+                    projections: vec![hir::PlaceProjection::Field(left)],
+                },
+            )
+            .is_none()
+        );
     }
 
     fn resolved(source: &str) -> hir::ResolvedProgram {
@@ -6058,6 +6030,7 @@ fn main() -> i64 { 0 }
                 budget: 10_000,
                 next_byte_allocation: 0,
                 allocated_byte_payload: 0,
+                partition: None,
                 fused: Default::default(),
                 box_live_allocations: Arc::new(std::sync::atomic::AtomicUsize::new(0)),
                 utf8_materialization_budget: Utf8MaterializationBudget::UnlimitedLegacy,
@@ -6148,6 +6121,7 @@ fn inspect(value: borrow Either<Bytes, Bytes>) -> i64 {
                 budget: 10_000,
                 next_byte_allocation: 0,
                 allocated_byte_payload: 0,
+                partition: None,
                 fused: Default::default(),
                 box_live_allocations: Arc::new(std::sync::atomic::AtomicUsize::new(0)),
                 utf8_materialization_budget: Utf8MaterializationBudget::UnlimitedLegacy,

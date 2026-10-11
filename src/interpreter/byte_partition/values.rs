@@ -1,7 +1,7 @@
 //! Exact private Value receivers. Their caller must hold the validated current
 //! partition program plus actual owner-root/edge binding; no default installer.
-use super::{flat::PartitionVec, loans::Loans, InvocationRuntime};
-use crate::interpreter::{construction_fusion::Backing, Flow, Value};
+use super::{InvocationRuntime, flat::PartitionVec, loans::Loans};
+use crate::interpreter::{Flow, Value, construction_fusion::Backing};
 
 fn refused(_: crate::construction_fusion::domain::Refusal) -> Flow {
     Flow::Guard("ordinary partition receiving authority refused")
@@ -48,4 +48,59 @@ pub(super) fn partition<R: InvocationRuntime>(
     width: u64,
 ) -> Result<Value, (crate::construction_fusion::partition::Preparation, R::Owner)> {
     PartitionVec::partition(receiver, owner, count, width).map(Value::PartitionVec)
+}
+
+/// Actual owned carrier handoff: move the original Box without copy, recharge,
+/// or conversion from a shared Arc. A fault returns the identical whole value.
+pub(super) fn partition_whole(
+    receiver: &mut Loans<'_, super::funding::BorrowedAccount<'_>>,
+    value: crate::interpreter::OwnedBytesValue,
+    count: u64,
+    width: u64,
+) -> Result<
+    Value,
+    (
+        crate::construction_fusion::partition::Preparation,
+        crate::interpreter::OwnedBytesValue,
+    ),
+> {
+    let crate::interpreter::OwnedBytesValue { allocation, bytes } = value;
+    let Backing::Whole(owner) = bytes else {
+        return Err((
+            receiver.preparation_failure(
+                crate::construction_fusion::partition::Preparation::Authority(
+                    crate::construction_fusion::domain::Refusal::Identity,
+                ),
+            ),
+            crate::interpreter::OwnedBytesValue { allocation, bytes },
+        ));
+    };
+    if owner.account != receiver.account_identity() {
+        let error = receiver.preparation_failure(
+            crate::construction_fusion::partition::Preparation::Authority(
+                crate::construction_fusion::domain::Refusal::Identity,
+            ),
+        );
+        return Err((
+            error,
+            crate::interpreter::OwnedBytesValue {
+                allocation,
+                bytes: Backing::Whole(owner),
+            },
+        ));
+    }
+    let account = owner.account;
+    match partition(receiver, owner.bytes, count, width) {
+        Ok(value) => Ok(value),
+        Err((error, owner)) => Err((
+            error,
+            crate::interpreter::OwnedBytesValue {
+                allocation,
+                bytes: Backing::Whole(crate::interpreter::construction_fusion::WholeBacking {
+                    account,
+                    bytes: owner,
+                }),
+            },
+        )),
+    }
 }

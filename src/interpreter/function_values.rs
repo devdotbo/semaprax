@@ -20,7 +20,7 @@ impl Evaluator<'_> {
             Value::PartitionVec(_) | Value::PartitionIter(_) => {
                 return Err(Flow::Guard(
                     "affine partition container requires a checked borrow receiver",
-                ))
+                ));
             }
             Value::Vec(value) => Value::Vec(Arc::clone(value)),
             Value::Iter(value) => Value::Iter(Arc::clone(value)),
@@ -40,7 +40,7 @@ impl Evaluator<'_> {
             Value::Variant(value) => Value::Variant(Arc::clone(value)),
             Value::Function(target) => Value::Function(target.clone()),
             Value::Closure(value) if value.mutable.is_some() => {
-                return Err(Flow::Guard("mutable callback cannot be copied"))
+                return Err(Flow::Guard("mutable callback cannot be copied"));
             }
             Value::Closure(value) => Value::Closure(Arc::clone(value)),
             Value::OnceClosure(_) => return Err(Flow::Guard("affine callable cannot be copied")),
@@ -148,11 +148,13 @@ pub(super) fn scan_targets<'a>(
 ) -> Result<(), Vec<Diagnostic>> {
     let targets = match &expression.kind {
         ResolvedExprKind::FunctionReference { target } => {
-            vec![program
-                .functions
-                .iter()
-                .find(|function| &function.id == target)
-                .ok_or_else(|| reject_scan(expression, REASON_UNSUPPORTED_CALLEE))?]
+            vec![
+                program
+                    .functions
+                    .iter()
+                    .find(|function| &function.id == target)
+                    .ok_or_else(|| reject_scan(expression, REASON_UNSUPPORTED_CALLEE))?,
+            ]
         }
         ResolvedExprKind::Invoke { callable, .. } => {
             hir::function_value::compatible_targets(program, &callable.ty)
@@ -208,7 +210,7 @@ pub(super) fn evaluate_resolved_entry_with_utf8_budget<'a>(
                 0,
                 Vec::new(),
                 (0, 0),
-            )
+            );
         }
     };
     let mut evaluator = Evaluator {
@@ -219,6 +221,7 @@ pub(super) fn evaluate_resolved_entry_with_utf8_budget<'a>(
         budget,
         next_byte_allocation: 0,
         allocated_byte_payload: 0,
+        partition: None,
         fused: Default::default(),
         box_live_allocations: Arc::new(std::sync::atomic::AtomicUsize::new(0)),
         utf8_materialization_budget,

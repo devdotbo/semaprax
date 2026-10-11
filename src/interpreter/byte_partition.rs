@@ -4,15 +4,17 @@
 use crate::construction_fusion::domain::owner_core::{Child, Core, Loan, Receipt, Runtime};
 use crate::construction_fusion::{
     domain::{Issuer, ModuleIdentity, Refusal},
-    partition::{operation, Preparation},
+    partition::{Preparation, operation},
 };
 use std::{
     alloc::Layout,
     sync::atomic::{AtomicU64, Ordering},
 };
+mod allocation;
 pub(crate) mod authority;
 pub(crate) mod flat;
 pub(crate) mod funding;
+pub(in crate::interpreter) mod invocation;
 pub(crate) mod loans;
 mod values;
 static NEXT_INVOCATION: AtomicU64 = AtomicU64::new(1);
@@ -118,7 +120,7 @@ impl<R: InvocationRuntime> Registry<R> {
                     return Err((
                         self.preparation_failure(Preparation::Authority(Refusal::Metadata)),
                         owner,
-                    ))
+                    ));
                 }
             }
         } else {
@@ -156,7 +158,7 @@ impl<R: InvocationRuntime> Registry<R> {
                     return Err((
                         self.preparation_failure(Preparation::Authority(Refusal::Range)),
                         owner,
-                    ))
+                    ));
                 }
             }
         };

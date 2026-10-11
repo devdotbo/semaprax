@@ -81,7 +81,7 @@ pub(super) fn set(
             crate::byte_ops::SET_INDEX_OUT_OF_BOUNDS_CODE,
         )));
     };
-    let filled = Arc::make_mut(buffer.bytes.ordinary_mut());
+    let filled = buffer.bytes.write_bytes();
     filled[slot] = byte;
     Ok(buffer)
 }
@@ -108,7 +108,7 @@ pub(super) fn set5(
             crate::byte_ops::SET_INDEX_OUT_OF_BOUNDS_CODE,
         )));
     };
-    let filled = Arc::make_mut(buffer.bytes.ordinary_mut());
+    let filled = buffer.bytes.write_bytes();
     filled[slot..slot + 5].copy_from_slice(&bytes);
     Ok(buffer)
 }
@@ -138,7 +138,7 @@ pub(super) fn set1_or5(
             crate::byte_ops::SET_INDEX_OUT_OF_BOUNDS_CODE,
         )));
     };
-    let filled = Arc::make_mut(buffer.bytes.ordinary_mut());
+    let filled = buffer.bytes.write_bytes();
     if wide {
         let start = usize::try_from(source_start).ok();
         for offset in 0..5 {
@@ -166,15 +166,7 @@ pub(super) fn set1_or6_or48(
     let copy = selector & crate::byte_ops::SET1_OR6_OR48_COPY_TAG != 0;
     let wide48 = selector & crate::byte_ops::SET1_OR6_OR48_WIDE48_TAG != 0;
     let source_start = selector & crate::byte_ops::SET1_OR6_OR48_OFFSET_MASK;
-    let width = if copy {
-        if wide48 {
-            48
-        } else {
-            6
-        }
-    } else {
-        1
-    };
+    let width = if copy { if wide48 { 48 } else { 6 } } else { 1 };
     let Some(slot) = usize::try_from(index).ok().filter(|slot| {
         buffer
             .bytes
@@ -186,7 +178,7 @@ pub(super) fn set1_or6_or48(
             crate::byte_ops::SET_INDEX_OUT_OF_BOUNDS_CODE,
         )));
     };
-    let filled = Arc::make_mut(buffer.bytes.ordinary_mut());
+    let filled = buffer.bytes.write_bytes();
     if copy {
         let start = usize::try_from(source_start).ok();
         for offset in 0..width {
@@ -211,7 +203,9 @@ impl Evaluator<'_> {
         op: crate::byte_ops::ByteOp,
         mut values: Vec<Value>,
     ) -> Result<Value, Flow> {
-        if let (crate::byte_ops::ByteOp::Zeroed, [Value::Usize(capacity)]) = (op, values.as_slice())
+        if self.partition.is_none()
+            && let (crate::byte_ops::ByteOp::Zeroed, [Value::Usize(capacity)]) =
+                (op, values.as_slice())
         {
             if let Some(owner) = self.fused.produce(
                 expression,
@@ -236,6 +230,11 @@ impl Evaluator<'_> {
             None
         };
         if let Some(Value::Bytes(buffer)) = owner.as_ref() {
+            if self.partition.is_some() {
+                // Interior children require their actual loan/root store adapter;
+                // no ordinary raw-slice store may receive a private receipt.
+                self.preflight_accounted_store(buffer)?;
+            }
             if matches!(buffer.bytes, super::construction_fusion::Backing::Leased(_)) {
                 let mut buffer = take_buffer(owner)?;
                 let mut staged = [0u8; 48];
@@ -249,14 +248,28 @@ impl Evaluator<'_> {
                     }
                     (
                         crate::byte_ops::ByteOp::Set5,
-                        [Value::Moved, Value::Usize(index), Value::Uint8(a), Value::Uint8(b), Value::Uint8(c), Value::Uint8(d), Value::Uint8(e)],
+                        [
+                            Value::Moved,
+                            Value::Usize(index),
+                            Value::Uint8(a),
+                            Value::Uint8(b),
+                            Value::Uint8(c),
+                            Value::Uint8(d),
+                            Value::Uint8(e),
+                        ],
                     ) => {
                         staged[..5].copy_from_slice(&[*a, *b, *c, *d, *e]);
                         (*index, 5)
                     }
                     (
                         kind,
-                        [Value::Moved, Value::Usize(index), Value::Uint8(one), Value::BorrowedSlice(source), Value::Usize(selector)],
+                        [
+                            Value::Moved,
+                            Value::Usize(index),
+                            Value::Uint8(one),
+                            Value::BorrowedSlice(source),
+                            Value::Usize(selector),
+                        ],
                     ) if matches!(
                         kind,
                         crate::byte_ops::ByteOp::Set1Or5 | crate::byte_ops::ByteOp::Set1Or6Or48
@@ -328,26 +341,26 @@ impl Evaluator<'_> {
                         crate::byte_ops::CAPACITY_EXCEEDED_CODE,
                     )));
                 }
-                zeroed(
-                    *requested,
-                    &mut self.next_byte_allocation,
-                    &mut self.allocated_byte_payload,
-                )
-                .map(Value::Bytes)
+                self.zeroed_bytes(*requested).map(Value::Bytes)
             }
-            (crate::byte_ops::ByteOp::Zeroed, [Value::Usize(capacity)]) => zeroed(
-                *capacity,
-                &mut self.next_byte_allocation,
-                &mut self.allocated_byte_payload,
-            )
-            .map(Value::Bytes),
+            (crate::byte_ops::ByteOp::Zeroed, [Value::Usize(capacity)]) => {
+                self.zeroed_bytes(*capacity).map(Value::Bytes)
+            }
             (
                 crate::byte_ops::ByteOp::Set,
                 [Value::Moved, Value::Usize(index), Value::Uint8(byte)],
             ) => set(take_buffer(owner)?, *index, *byte).map(Value::Bytes),
             (
                 crate::byte_ops::ByteOp::Set5,
-                [Value::Moved, Value::Usize(index), Value::Uint8(first), Value::Uint8(second), Value::Uint8(third), Value::Uint8(fourth), Value::Uint8(fifth)],
+                [
+                    Value::Moved,
+                    Value::Usize(index),
+                    Value::Uint8(first),
+                    Value::Uint8(second),
+                    Value::Uint8(third),
+                    Value::Uint8(fourth),
+                    Value::Uint8(fifth),
+                ],
             ) => set5(
                 take_buffer(owner)?,
                 *index,
@@ -356,12 +369,24 @@ impl Evaluator<'_> {
             .map(Value::Bytes),
             (
                 crate::byte_ops::ByteOp::Set1Or5,
-                [Value::Moved, Value::Usize(index), Value::Uint8(one), Value::BorrowedSlice(source), Value::Usize(selector)],
+                [
+                    Value::Moved,
+                    Value::Usize(index),
+                    Value::Uint8(one),
+                    Value::BorrowedSlice(source),
+                    Value::Usize(selector),
+                ],
             ) => set1_or5(take_buffer(owner)?, *index, *one, source.bytes(), *selector)
                 .map(Value::Bytes),
             (
                 crate::byte_ops::ByteOp::Set1Or6Or48,
-                [Value::Moved, Value::Usize(index), Value::Uint8(one), Value::BorrowedSlice(source), Value::Usize(selector)],
+                [
+                    Value::Moved,
+                    Value::Usize(index),
+                    Value::Uint8(one),
+                    Value::BorrowedSlice(source),
+                    Value::Usize(selector),
+                ],
             ) => set1_or6_or48(take_buffer(owner)?, *index, *one, source.bytes(), *selector)
                 .map(Value::Bytes),
             _ => Err(Flow::Guard("ill-typed borrowed byte operation operand")),

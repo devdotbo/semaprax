@@ -2,7 +2,7 @@
 //! one owned runtime loan per plan ID. Copy descriptors never own finalization.
 //! The eventual installer must bind each Owner to the plan's actual root and
 //! drive `advance` from actual execution; this is not a source admission API.
-use super::{authority::LoanCapacity, InvocationRuntime, Owner, Registry, View};
+use super::{InvocationRuntime, Owner, Registry, View, authority::LoanCapacity};
 use crate::{
     construction_fusion::{domain::Refusal, partition::Preparation},
     loan_plan::LoanId,
@@ -161,6 +161,9 @@ impl<'p, R: InvocationRuntime> Loans<'p, R> {
     pub(crate) fn moved(&mut self, owner: &mut Owner) -> Result<(), Refusal> {
         self.registry.moved(owner)
     }
+    pub(crate) fn deep_clone(&mut self, owner: &Owner) -> Result<R::Owner, Refusal> {
+        self.registry.deep_clone(owner)
+    }
     pub(crate) fn copy_out_and_settle(&mut self, owner: &mut Owner) -> Result<R::Owner, Refusal> {
         self.registry.copy_out_and_settle(owner)
     }
@@ -238,3 +241,9 @@ impl<R: InvocationRuntime> Drop for Loans<'_, R> {
 mod tests;
 
 mod frames;
+
+impl Loans<'_, super::funding::BorrowedAccount<'_>> {
+    pub(super) fn account_identity(&self) -> u64 {
+        self.registry.runtime.identity()
+    }
+}

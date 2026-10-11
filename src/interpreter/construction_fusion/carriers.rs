@@ -2,8 +2,15 @@
 use super::super::{Arc, BorrowedRoot, Flow, Utf8Backing, ValueId};
 use super::{Lease, Registry, View};
 #[derive(Debug, PartialEq)]
+pub(in crate::interpreter) struct WholeBacking {
+    pub(in crate::interpreter) account: u64,
+    pub(in crate::interpreter) bytes: Box<[u8]>,
+}
+#[derive(Debug, PartialEq)]
 pub(in crate::interpreter) enum Backing {
     Ordinary(Arc<[u8]>),
+    // Direct affine whole backing on the closed accounted partition route.
+    Whole(WholeBacking),
     Leased(Lease),
     // Affine token retained by its exact invocation registry; never cloned.
     Partition(super::super::byte_partition::Owner),
@@ -21,7 +28,7 @@ impl Backing {
             Self::Ordinary(bytes) => Ok(Self::Ordinary(Arc::clone(bytes))),
             Self::Leased(lease) => Ok(Self::Leased(lease.clone())),
             Self::PartitionView(view) => Ok(Self::PartitionView(*view)),
-            Self::Partition(_) => Err(Flow::Guard(
+            Self::Whole(_) | Self::Partition(_) => Err(Flow::Guard(
                 "affine partition owner requires an authenticated loan descriptor",
             )),
         }
@@ -29,7 +36,7 @@ impl Backing {
     pub(in crate::interpreter) fn ordinary(&self) -> &Arc<[u8]> {
         match self {
             Self::Ordinary(bytes) => bytes,
-            Self::Leased(_) | Self::Partition(_) | Self::PartitionView(_) => {
+            Self::Whole(_) | Self::Leased(_) | Self::Partition(_) | Self::PartitionView(_) => {
                 panic!("private leased backing reached an ordinary adapter")
             }
         }
@@ -37,22 +44,37 @@ impl Backing {
     pub(in crate::interpreter) fn ordinary_mut(&mut self) -> &mut Arc<[u8]> {
         match self {
             Self::Ordinary(bytes) => bytes,
-            Self::Leased(_) | Self::Partition(_) | Self::PartitionView(_) => {
+            Self::Whole(_) | Self::Leased(_) | Self::Partition(_) | Self::PartitionView(_) => {
                 panic!("private leased backing reached an ordinary store")
             }
+        }
+    }
+}
+impl Backing {
+    pub(in crate::interpreter) fn write_bytes(&mut self) -> &mut [u8] {
+        match self {
+            Self::Ordinary(bytes) => Arc::make_mut(bytes),
+            Self::Whole(whole) => &mut whole.bytes,
+            _ => panic!("leased backing requires its authenticated store receiver"),
         }
     }
 }
 // These legacy-only adapters never recover a lease as a raw byte pointer.
 impl AsRef<[u8]> for Backing {
     fn as_ref(&self) -> &[u8] {
-        self.ordinary().as_ref()
+        match self {
+            Self::Whole(whole) => &whole.bytes,
+            _ => self.ordinary().as_ref(),
+        }
     }
 }
 impl std::ops::Deref for Backing {
     type Target = [u8];
     fn deref(&self) -> &[u8] {
-        self.ordinary().as_ref()
+        match self {
+            Self::Whole(whole) => &whole.bytes,
+            _ => self.ordinary().as_ref(),
+        }
     }
 }
 #[derive(Debug, PartialEq)]
@@ -134,6 +156,7 @@ impl OwnedBytesValue {
     ) -> Result<T, Flow> {
         match &self.bytes {
             Backing::Ordinary(bytes) => Ok(consumer(bytes)),
+            Backing::Whole(whole) => Ok(consumer(&whole.bytes)),
             Backing::Leased(lease) => registry.read_owner(lease, consumer),
             Backing::Partition(_) | Backing::PartitionView(_) => Err(Flow::Guard(
                 "partition owner requires its ordinary receiving registry",

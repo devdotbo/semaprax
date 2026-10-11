@@ -12,10 +12,10 @@ use crate::diagnostic::Diagnostic;
 use crate::filesystem_provider::FileProvider;
 use crate::hir::{self, ResolvedType};
 use crate::interpreter::{
-    option_error, resolved_data_signature_is_admitted, scan_closure, selection_error,
     CommandEvaluation, CommandEvaluationOutcome, CommandInputState, Evaluator, Flow,
-    FunctionLookup, PreparedCancellation, ResolvedTracePhase, Utf8MaterializationBudget, Value,
-    MAX_STEPS_LIMIT, REASON_UNSUPPORTED_CALLEE, REASON_UNSUPPORTED_RESULT_TYPE,
+    FunctionLookup, MAX_STEPS_LIMIT, PreparedCancellation, REASON_UNSUPPORTED_CALLEE,
+    REASON_UNSUPPORTED_RESULT_TYPE, ResolvedTracePhase, Utf8MaterializationBudget, Value,
+    option_error, resolved_data_signature_is_admitted, scan_closure, selection_error,
 };
 
 use super::FileState;
@@ -124,6 +124,7 @@ pub(crate) fn evaluate_profile(
         budget: max_steps,
         next_byte_allocation: 0,
         allocated_byte_payload: 0,
+        partition: None,
         fused: Default::default(),
         box_live_allocations: Arc::new(std::sync::atomic::AtomicUsize::new(0)),
         utf8_materialization_budget: Utf8MaterializationBudget::UnlimitedLegacy,
