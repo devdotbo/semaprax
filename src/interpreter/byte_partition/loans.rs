@@ -113,6 +113,30 @@ impl<'p, R: InvocationRuntime> Loans<'p, R> {
         })();
         self.registry.select(result)
     }
+    pub(crate) fn read_range<T>(
+        &mut self,
+        id: ViewId,
+        start: usize,
+        end: usize,
+        f: impl FnOnce(&[u8]) -> T,
+    ) -> Result<T, Refusal> {
+        let result = (|| {
+            self.registry.active()?;
+            if id.invocation != self.registry.invocation {
+                return Err(Refusal::Identity);
+            }
+            let slot = self.slots.get(id.index as usize).ok_or(Refusal::Identity)?;
+            if slot.generation != id.generation {
+                return Err(Refusal::Identity);
+            }
+            self.registry
+                .read_range(slot.view.as_ref().ok_or(Refusal::Identity)?, start, end, f)
+        })();
+        self.registry.select(result)
+    }
+    pub(crate) fn copy_out_and_settle(&mut self, owner: &mut Owner) -> Result<R::Owner, Refusal> {
+        self.registry.copy_out_and_settle(owner)
+    }
     /// The actual execution receiver supplies its next dense endpoint. Only an
     /// edge from the held current point can retire loans; an ambiguous edge is
     /// refused. All terminations are selected from exact end_edges.

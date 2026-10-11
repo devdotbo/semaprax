@@ -84,6 +84,10 @@ fn exact_end_edge_retires_one_loan_and_copied_descriptor_stays_stale() {
     let view = receiver.borrow(&owners[0], loan.id).unwrap();
     let alias = view;
     assert_eq!(receiver.read(view, |bytes| bytes[0]).unwrap(), 7);
+    assert_eq!(
+        receiver.read_range(alias, 0, 1, |bytes| bytes[0]).unwrap(),
+        7
+    );
     loop {
         let (index, edge) = function
             .loan_plan
@@ -117,6 +121,9 @@ fn loan_table_and_core_backing_are_prepaid_through_drop_and_one_short() {
         receiver.settle(&mut owners[0]).unwrap();
     });
     let charged = probe.charged();
+    assert!(!observed.invalid);
+    assert_eq!(observed.reallocations, 0);
+    assert_eq!(observed.allocations, 9);
     assert!(observed.allocated <= charged);
     assert!(observed.highwater <= charged);
     assert_eq!(observed.live, 0);

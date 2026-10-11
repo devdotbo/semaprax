@@ -251,6 +251,20 @@ impl<R: InvocationRuntime> Registry<R> {
     pub(crate) fn deep_clone(&mut self, owner: &Owner) -> Result<R::Owner, Refusal> {
         self.apply(owner, false, |core, child| core.deep_clone(child))
     }
+    /// Public boundary receives an ordinary fresh owner only after provider
+    /// settlement. No interior pointer or registry handle crosses the boundary.
+    /// Failed settlement releases the staged copy and preserves its refusal;
+    /// its ordinary event/payload debit is never refunded.
+    pub(crate) fn copy_out_and_settle(&mut self, owner: &mut Owner) -> Result<R::Owner, Refusal> {
+        let copied = self.deep_clone(owner)?;
+        match self.settle(owner) {
+            Ok(()) => Ok(copied),
+            Err(error) => {
+                self.runtime.release(copied);
+                Err(error)
+            }
+        }
+    }
     pub(crate) fn borrow(&mut self, owner: &Owner) -> Result<View, Refusal> {
         let loan = self.apply(owner, false, |core, child| {
             let extent = core.authenticate_receipt(child, owner.receipt)?;

@@ -108,9 +108,13 @@ fn popped_child_and_internal_return_survive_parent_settlement_with_disjoint_stor
     assert_eq!(cloned.as_ref(), &[9, 8]);
     assert_eq!(probe.0.borrow().events, 2);
     assert_eq!(probe.0.borrow().payload, 8);
-    registry.settle(&mut returned).unwrap();
+    let public = registry.copy_out_and_settle(&mut returned).unwrap();
+    assert_eq!(public.as_ref(), &[7, 8]);
+    assert_eq!(probe.0.borrow().events, 3);
+    assert_eq!(probe.0.borrow().payload, 10);
     assert_eq!(probe.0.borrow().releases, 1);
     drop(registry);
+    assert_eq!(public.as_ref(), &[7, 8]);
     assert_eq!(probe.0.borrow().releases, 1);
     let probe = account(usize::MAX);
     probe.0.borrow_mut().payload = 12288;
@@ -312,6 +316,27 @@ fn foreign_stale_live_loan_and_clone_exhaustion_refuse_without_publication() {
         crate::test_allocation_observer::Metrics::default()
     );
     assert_eq!(probe.0.borrow().charged, 0);
+    // Failed public handoff cannot publish the staged copy or retire a loaned
+    // child. The consumed clone debit stays spent; cleanup retains authority.
+    let probe = account(usize::MAX);
+    let mut registry = Registry::new(probe.clone()).unwrap();
+    let mut owners = registry
+        .partition(vec![7; 6].into_boxed_slice(), 3, 2)
+        .unwrap();
+    let mut view = registry.borrow(&owners[0]).unwrap();
+    assert_eq!(
+        registry.copy_out_and_settle(&mut owners[0]).err(),
+        Some(Refusal::Borrowed)
+    );
+    assert_eq!(probe.0.borrow().events, 2);
+    assert_eq!(probe.0.borrow().payload, 8);
+    assert_eq!(probe.0.borrow().releases, 1); // staged ordinary copy only
+    assert!(registry.deep_clone(&owners[1]).is_err());
+    registry.end_view(&mut view).unwrap();
+    for owner in &mut owners {
+        registry.settle(owner).unwrap();
+    }
+    assert_eq!(probe.0.borrow().releases, 2);
     let probe = account(usize::MAX);
     probe.0.borrow_mut().payload = 0;
     let mut registry = Registry::new(probe.clone()).unwrap();
