@@ -122,37 +122,29 @@ fn exact_vec_call_and_field_modes_types_ids_and_elements_remain_closed() {
     super::super::scalar_replay::validate(&helper, current_helper, &mut budget()).unwrap();
     let projection = nodes(&current_helper.body)
         .into_iter()
-        .find(|node| matches!(node.kind, ResolvedExprKind::Project { .. }))
-        .unwrap();
-    for mutation in 0..5 {
+        .find(|node| matches!(&node.kind, ResolvedExprKind::Place(place) if !place.projections.is_empty()))
+        .expect("actual resolved row.n Field place");
+    assert_eq!(super::super::scalar_replay::records::expression_for_test(
+        &helper, current_helper, projection, &mut budget()).unwrap(), Some(true));
+    for mutation in 0..6 {
         let mut forged = projection.clone();
-        let ResolvedExprKind::Project { base, field } = &mut forged.kind else {
-            unreachable!()
-        };
+        let ResolvedExprKind::Place(place) = &mut forged.kind else { unreachable!() };
         match mutation {
-            0 => *field = DeclarationId::new("foreign.field"),
-            1 => base.ownership = OwnershipMode::Own,
-            2 => {
-                let ResolvedExprKind::Place(place) = &mut base.kind else {
-                    unreachable!()
-                };
-                place.root = crate::hir::ValueId::intrinsic_parameter("foreign.parameter", 0);
-            }
+            0 => place.projections[0] = crate::hir::PlaceProjection::Field(DeclarationId::new("foreign.field")),
+            1 => forged.ownership = OwnershipMode::Own,
+            2 => place.root = crate::hir::ValueId::intrinsic_parameter("foreign.parameter", 0),
             3 => forged.ty = ResolvedType::Bool,
-            _ => forged.ownership = OwnershipMode::Borrow,
+            4 => forged.ownership = OwnershipMode::Borrow,
+            _ => place.projections.push(place.projections[0].clone()),
         }
-        assert_eq!(
-            super::super::scalar_replay::records::expression_for_test(
-                &helper,
-                current_helper,
-                &forged,
-                &mut budget()
-            )
-            .unwrap(),
-            Some(false),
-            "record projection mutation {mutation}"
-        );
+        assert_eq!(super::super::scalar_replay::records::expression_for_test(
+            &helper, current_helper, &forged, &mut budget()).unwrap(), Some(false),
+            "record projection mutation {mutation}");
     }
+    let mut wrong_parameter = current_helper.clone();
+    wrong_parameter.params[0].ownership = OwnershipMode::Own;
+    assert_eq!(super::super::scalar_replay::records::expression_for_test(
+        &helper, &wrong_parameter, projection, &mut budget()).unwrap(), Some(false));
     for source in [VECTOR, RECORD] {
         let ordinary = direct(source);
         let current = function(&ordinary);

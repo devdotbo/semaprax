@@ -93,6 +93,54 @@ fn root(
     Ok(found)
 }
 
+fn projected_place(
+    program: &dyn ReplayContext,
+    function: &ResolvedFunction,
+    expression: &ResolvedExpr,
+    place: &crate::hir::Place,
+    budget: &mut ReplayBudget,
+) -> Result<bool, Diagnostic> {
+    budget.charge(function, 1, "scalar record projection shape")?;
+    let [crate::hir::PlaceProjection::Field(field)] = place.projections.as_slice() else {
+        return Ok(false);
+    };
+    if expression.ownership != OwnershipMode::Value
+        || !crate::hir::is_scalar_resolved_type(&expression.ty)
+    {
+        return Ok(false);
+    }
+    let mut root = None;
+    for parameter in &function.params {
+        budget.charge(function, parameter.id.as_str().len()
+            .checked_add(place.root.as_str().len()).and_then(|n| n.checked_add(1))
+            .ok_or_else(|| replay_error(function, "scalar record root work overflow"))?,
+            "scalar projected record parameter identity")?;
+        if parameter.id == place.root && root.replace(parameter).is_some() {
+            return Ok(false);
+        }
+    }
+    let Some(root) = root else { return Ok(false); };
+    budget.charge(function, 1, "scalar projected record parameter mode")?;
+    if root.ownership != OwnershipMode::Borrow
+        || !matches!(&root.ty, ResolvedType::Nominal { arguments, .. } if arguments.is_empty())
+    {
+        return Ok(false);
+    }
+    let declared = fields(program, function, &root.ty, budget)?;
+    let mut found = None;
+    for current in declared {
+        budget.charge(function, current.id.as_str().len()
+            .checked_add(field.as_str().len()).and_then(|n| n.checked_add(1))
+            .ok_or_else(|| replay_error(function, "scalar record field work overflow"))?,
+            "scalar projected record field identity")?;
+        if current.id == *field && found.replace(current).is_some() {
+            return Ok(false);
+        }
+    }
+    budget.charge(function, 1, "scalar projected record field type")?;
+    Ok(found.is_some_and(|f| crate::hir::is_scalar_resolved_type(&f.ty) && f.ty == expression.ty))
+}
+
 pub(super) fn expression(
     program: &dyn ReplayContext,
     function: &ResolvedFunction,
@@ -100,6 +148,9 @@ pub(super) fn expression(
     budget: &mut ReplayBudget,
 ) -> Result<Option<bool>, Diagnostic> {
     match &expression.kind {
+        ResolvedExprKind::Place(place) if !place.projections.is_empty() => {
+            Ok(Some(projected_place(program, function, expression, place, budget)?))
+        }
         ResolvedExprKind::Place(_) if matches!(expression.ty, ResolvedType::Nominal { .. }) => {
             Ok(Some(root(program, function, expression, budget)?))
         }
