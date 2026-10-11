@@ -302,7 +302,9 @@ fn authenticate_target<'a>(
     )?;
     if !source.explicit
         || source.name != function.name
-        || source.result != function.return_type
+        || !same_type(&source.result, &function.return_type, |n| {
+            charge(resources, anchor, n)
+        })?
         || source.params.len() != function.params.len()
     {
         return Err(fail());
