@@ -13,7 +13,7 @@
       "code": "SPX-F102",
       "rows": [
         {
-          "fix": "Interpreter lacks argv/files; semaprax build <manifest> --target native -o <fresh-path>; run in Project dir. Tests: semaprax test <project> --target native [Tests][native-tests]",
+          "fix": "Interpreter lacks argv/files; semaprax build <manifest> --target native -o <fresh-path>; run in Project dir. Tests: semaprax test <project> --target native [Tests](PROJECT-NATIVE-TEST-V1.md)",
           "wrote": "interpreter: source-command.v1/v28 Project"
         }
       ]
@@ -53,7 +53,7 @@
       "code": "SPX-H006",
       "rows": [
         {
-          "fix": "Fewer loans; fixed cap [Loans][loans]",
+          "fix": "Fewer loans; fixed cap [Loans](SHARED-LOAN-PLAN-V1.md)",
           "wrote": "function: >256 shared loans"
         },
         {
@@ -83,7 +83,7 @@
       "code": "SPX-J100",
       "rows": [
         {
-          "fix": "2–16 sorted sources; one bounded nonentry test module: entry=\"app\", sources=[\"a.spx\",\"b.spx\"], tests=[\"app.tests\"] [Manifest][manifest]",
+          "fix": "2–16 sorted sources; one bounded nonentry test module: entry=\"app\", sources=[\"a.spx\",\"b.spx\"], tests=[\"app.tests\"] [Manifest](PACKAGE-MANIFEST-V1.md)",
           "wrote": "bad [modules]"
         }
       ]
@@ -152,10 +152,6 @@
         {
           "fix": "while; mut counter; discard tail",
           "wrote": "for range"
-        },
-        {
-          "fix": "let _ = f(x) or tail result",
-          "wrote": "statement call"
         },
         {
           "fix": "Declare a record",
@@ -315,7 +311,7 @@
       "code": "SPX-T209",
       "rows": [
         {
-          "fix": "Rename",
+          "fix": "Fresh name; `_` is an ordinary binding",
           "wrote": "shadowed binding"
         }
       ]
@@ -360,7 +356,7 @@
       "code": "SPX-T252",
       "rows": [
         {
-          "fix": "vec_len<T>; imported generic aliases closed [While][while]",
+          "fix": "vec_len<T>; imported generic aliases closed [While](WHILE-LOOPS-V1.md)",
           "wrote": "generic while call"
         },
         {
@@ -372,7 +368,7 @@
           "wrote": "outer owner changes in while"
         },
         {
-          "fix": "Pure nongeneric call; whole same-type owner return; whole named independent Slice/str borrows [renewal hook][renewal], executable gate pending",
+          "fix": "Pure nongeneric call; whole same-type owner return; whole named independent Slice/str borrows [renewal hook](IO-LINES-V1.md#cursor-transitions), executable gate pending",
           "wrote": "Bytes+usize renewal/input views"
         }
       ]
@@ -399,7 +395,7 @@
       "code": "SPX-T265",
       "rows": [
         {
-          "fix": "Pure nongeneric call; whole same-type owner return; whole named independent Slice/str borrows [renewal hook][renewal], executable gate pending",
+          "fix": "Pure nongeneric call; whole same-type owner return; whole named independent Slice/str borrows [renewal hook](IO-LINES-V1.md#cursor-transitions), executable gate pending",
           "wrote": "Bytes+usize renewal/input views"
         }
       ]
@@ -448,7 +444,7 @@
       "code": "SPX-T282",
       "rows": [
         {
-          "fix": "Reduce vec_with_capacity<T>; Vec cap [Vec][vec]",
+          "fix": "Reduce vec_with_capacity<T>; Vec cap [Vec](OWNED-BOUNDED-VEC-V1.md)",
           "wrote": "Vec capacity >8192"
         }
       ]
@@ -457,7 +453,7 @@
       "code": "SPX-T283",
       "rows": [
         {
-          "fix": "Exact std.collections.vec.* ID only [Vec][vec]",
+          "fix": "Exact std.collections.vec.* ID only [Vec](OWNED-BOUNDED-VEC-V1.md)",
           "wrote": "lookalike Vec wrapper"
         }
       ]
@@ -468,6 +464,15 @@
         {
           "fix": "IDs; acyclic monomorphic; own/borrow; no invariants",
           "wrote": "String/collection record"
+        }
+      ]
+    },
+    {
+      "code": "SPX-T315",
+      "rows": [
+        {
+          "fix": "Bind explicitly; intermediate Copy scalar expr; admitted",
+          "wrote": "owned/aggregate/borrowed statement result"
         }
       ]
     },
