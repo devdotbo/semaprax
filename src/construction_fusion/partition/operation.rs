@@ -5,7 +5,7 @@ use crate::{ast, hir};
 
 pub(crate) const STATUS_DOMAIN: &str = "semaprax.byte-partition.v1";
 /// Codes are local to the new partition domain; existing byte domains do not change.
-pub(crate) fn fault_code(fault: super::Fault) -> u32 {
+pub(crate) const fn fault_code(fault: super::Fault) -> u32 {
     match fault {
         super::Fault::WidthZero => 1,
         super::Fault::ExtentOverflow => 2,
@@ -13,6 +13,13 @@ pub(crate) fn fault_code(fault: super::Fault) -> u32 {
         super::Fault::MetadataCapacity => 4,
     }
 }
+/// Shared bindings generated from the authoritative operation variants.
+pub(crate) const STATUS_CODES: [u32; 4] = [
+    fault_code(super::Fault::WidthZero),
+    fault_code(super::Fault::ExtentOverflow),
+    fault_code(super::Fault::ExtentMismatch),
+    fault_code(super::Fault::MetadataCapacity),
+];
 pub(crate) struct Operands<'a> {
     pub(crate) owner: &'a hir::ResolvedExpr,
     pub(crate) count: &'a hir::ResolvedExpr,
