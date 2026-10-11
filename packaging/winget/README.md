@@ -62,6 +62,12 @@ or any tag, version, name or digest disagrees between `SHA256SUMS` and
    to the install guide. A rejected or delayed submission leaves the guide on
    the manual/PowerShell route.
 
-Not yet verified: `winget validate`, local installation, aliases, upgrade and
-uninstall. They need a Windows host or Windows Sandbox; none was available while
-this tooling was written.
+The v0.8.0 local-manifest journey passed on Windows 2025 in
+[run 37454638162](https://github.com/wavect/semaprax/actions/runs/37454638162):
+validation, both aliases, starter result 42, daemon handshake, paths with spaces
+and uninstall. The [submission](https://github.com/microsoft/winget-pkgs/pull/447495)
+passed Microsoft manifest, URL and installer checks; moderator approval remains
+pending. The v0.9.0 manifests are retained under
+[`../releases/v0.9.0/winget`](../releases/v0.9.0/winget). The Package channels
+workflow validates and installs new proposals on Windows before retention.
+Public availability and public upgrade/removal are still unverified.

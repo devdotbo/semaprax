@@ -133,6 +133,20 @@ class ReleaseNotes(unittest.TestCase):
     def test_small_changelog_is_not_truncated(self):
         self.assertNotIn("truncated for GitHub", render())
 
+    def test_multibyte_changelog_is_bounded_by_utf8_bytes(self):
+        section = "- 意味と検証 🦀\n" * 10000
+        body = notes.render_release_body(VERSION, section)
+        self.assertLess(len(body.encode("utf-8")), notes.GITHUB_BODY_LIMIT)
+        self.assertIn(f"/blob/{TAG}/CHANGELOG.md", body)
+        self.assertIn("</details>", body)
+
+    def test_release_contains_literal_checkout_free_quickstart(self):
+        body = render()
+        for command in ("new first-semaprax", "check first-semaprax/semaprax.toml",
+                        "test first-semaprax/semaprax.toml", "run first-semaprax/semaprax.toml"):
+            self.assertIn("semaprax " + command, body)
+        self.assertIn("prints `42`", body)
+
 
 def rendered_readme(kind, target):
     template = (ROOT / "packaging" / "archive" / f"README.{kind}.md").read_text(
@@ -287,6 +301,26 @@ class ManifestInstallers(unittest.TestCase):
 
 
 class ClosedTargetInventory(unittest.TestCase):
+    def test_published_journey_covers_every_target_and_real_upgrades(self):
+        workflow = (ROOT / ".github/workflows/install-distribution.yml").read_text()
+        published = workflow.split("  published-journey:", 1)[1].split("  incompatible-runtime-control:", 1)[0]
+        for target in TARGETS:
+            self.assertIn("target: " + target, published)
+        self.assertIn("JOURNEY_TAG: v0.9.0", workflow)
+        self.assertIn("SEMAPRAX_JOURNEY_PREVIOUS_TAG=v0.8.0", published)
+        self.assertIn("SEMAPRAX_JOURNEY_MODIFY_PATH", published)
+        self.assertIn("-e JOURNEY_TAG ubuntu:20.04", workflow)
+
+    def test_channel_gate_uses_published_attested_bytes_and_both_package_managers(self):
+        workflow = (ROOT / ".github/workflows/package-channels.yml").read_text()
+        for needle in ("gh release view", "isPrerelease", "gh attestation verify",
+                       "--source-ref", "--signer-workflow", "macos-15-intel",
+                       "brew upgrade", "brew test", "brew audit --strict",
+                       "winget validate", "winget uninstall", "channel-winget-journey.ps1"):
+            self.assertIn(needle, workflow)
+        self.assertNotIn("contents: write", workflow)
+        self.assertNotIn("gh pr create", workflow)
+
     def test_five_targets_in_the_expected_order(self):
         self.assertEqual(
             TARGETS,

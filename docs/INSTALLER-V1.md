@@ -291,3 +291,20 @@ until the new receipt is atomically published with `File.Replace` (or
 executables and leaves the old receipt unchanged. Only then can pruning remove
 files from the previous receipt. Removal refuses linked receipt parents and
 never treats a whole `versions/` directory as ownership authority.
+
+## Consolidated distribution qualification
+
+The Install distribution workflow uses v0.9.0 on all five native targets,
+both Windows PowerShell editions, and real v0.8.0 to v0.9.0 upgrades on the
+three targets that v0.8.0 shipped. The optional
+`SEMAPRAX_JOURNEY_PREVIOUS_ASSETS` and `SEMAPRAX_JOURNEY_PREVIOUS_TAG` variables
+provide the previous release's exact verified assets; they do not change any
+verification rule. Windows uses the same installed starter and bounded daemon
+handshake as the WinGet route. Linux's incompatible-runtime control runs on
+glibc 2.31, below the declared 2.35 baseline.
+
+Manual dispatch defaults to published-release qualification. Enable the
+`candidate` input to build new candidate packages as well. The Package channels
+workflow consumes published, tag-attested assets, tests Homebrew on both native
+macOS architectures and WinGet local manifests on Windows, then retains
+reviewable proposals. It never marks an externally pending channel published.

@@ -1,9 +1,9 @@
 # Homebrew channel
 
-Status: tooling only. The channel is **pending** until
-[`../channels.json`](../channels.json) says `"homebrew": {"status": "published"}`;
-no document may advertise `brew install` before then
-(`scripts/release-reconcile.py` fails if one does).
+Status: the canonical `wavect/tap` channel serves v0.8.0 on Apple Silicon.
+The v0.9.0 Apple Silicon/Intel update is retained as a proposal under
+[`../releases/v0.9.0/homebrew`](../releases/v0.9.0/homebrew).
+[`../channels.json`](../channels.json) records the last publicly verified version.
 
 The package is a binary formula, `semaprax`, in the tap `wavect/tap`
 (repository `wavect/homebrew-tap`, formula `Formula/semaprax.rb`). It installs the
@@ -60,5 +60,7 @@ host at the archive's glibc baseline.
 
 Locally validated for v0.8.0 on macOS 26 arm64 with Homebrew 7.0.8: install,
 `brew test` (the beginner journey printing `42`, `semapraxd` present, both
-executables from the same archive) and `brew audit --strict` all pass. Upgrade
-between two releases and the public tap command are not yet exercised.
+executables from the same archive) and `brew audit --strict` all pass. The v0.9.0 update must pass the public install/upgrade/removal gate before this
+record advances. The Package channels workflow tests both native macOS recipes
+and retains deterministic proposals after a qualifying release, without
+changing the tap or the published-state record.

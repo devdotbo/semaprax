@@ -1,0 +1,158 @@
+name: Package channels
+
+# Generate reviewed channel proposals only from already published, attested
+# release bytes. External channel acceptance remains a separate state.
+on:
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Exact published release tag
+        required: true
+        default: v0.9.0
+        type: string
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: package-channels-${{ inputs.tag || github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
+
+jobs:
+  proposals:
+    if: ${{ inputs.tag != '' || (github.event.workflow_run.conclusion == 'success' && startsWith(github.event.workflow_run.head_branch, 'v')) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Select the exact published release
+        id: release
+        env:
+          REQUESTED_TAG: ${{ inputs.tag || github.event.workflow_run.head_branch }}
+          EXPECTED_COMMIT: ${{ github.event.workflow_run.head_sha }}
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$REQUESTED_TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
+          mkdir release-assets
+          gh release view "$REQUESTED_TAG" -R wavect/semaprax --json isDraft,isPrerelease,tagName > release.json
+          python3 -c 'import json; r=json.load(open("release.json")); assert not r["isDraft"] and not r["isPrerelease"]'
+          gh release download "$REQUESTED_TAG" -R wavect/semaprax -D release-assets \
+            -p SHA256SUMS -p release-manifest.json
+          python3 -c 'import json,os; m=json.load(open("release-assets/release-manifest.json")); assert m["tag"]==os.environ["REQUESTED_TAG"]; assert not os.environ["EXPECTED_COMMIT"] or m["commit"]==os.environ["EXPECTED_COMMIT"]'
+          echo "tag=$REQUESTED_TAG" >> "$GITHUB_OUTPUT"
+      - name: Generate deterministic channel proposals
+        shell: bash
+        run: |
+          python3 scripts/channel-manifests.py all --tag '${{ steps.release.outputs.tag }}' \
+            --sums release-assets/SHA256SUMS --manifest release-assets/release-manifest.json --out proposal
+      - name: Verify the publisher of each channel payload
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release.outputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for target in aarch64-apple-darwin x86_64-apple-darwin x86_64-pc-windows-msvc; do
+            extension=tar.gz
+            [ "$target" != x86_64-pc-windows-msvc ] || extension=zip
+            archive="semaprax-$TAG-$target.$extension"
+            gh release download "$TAG" -R wavect/semaprax -D release-assets \
+              -p "$archive" -p "release-attestation-$target.json"
+            (cd release-assets && grep "  $archive$" SHA256SUMS | sha256sum -c -)
+            gh attestation verify "release-assets/$archive" \
+              --bundle "release-assets/release-attestation-$target.json" \
+              --repo wavect/semaprax --source-ref "refs/tags/$TAG" \
+              --signer-workflow wavect/semaprax/.github/workflows/ci.yml --deny-self-hosted-runners
+          done
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: channel-proposals
+          path: proposal
+          if-no-files-found: error
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: channel-release-metadata
+          path: |
+            release-assets/SHA256SUMS
+            release-assets/release-manifest.json
+          if-no-files-found: error
+
+  homebrew:
+    needs: proposals
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, macos-15-intel]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: channel-proposals
+          path: proposal
+      - name: Install, test, audit and remove the proposed binary formula
+        shell: bash
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: "1"
+        run: |
+          set -euo pipefail
+          brew tap wavect/tap
+          brew install --formula wavect/tap/semaprax
+          brew test wavect/tap/semaprax
+          # Upgrade the same canonical formula on this disposable host using
+          # the proposal, keeping the public tap unchanged until review.
+          cp proposal/homebrew/semaprax.rb "$(brew --repository wavect/tap)/Formula/"
+          brew upgrade --formula wavect/tap/semaprax
+          brew test wavect/tap/semaprax
+          brew tap homebrew/core --force
+          brew audit --strict wavect/tap/semaprax
+          brew uninstall semaprax
+          brew untap wavect/tap
+          echo 'Validated proposal; wavect/homebrew-tap still needs its reviewed update.' >> "$GITHUB_STEP_SUMMARY"
+
+  winget:
+    needs: proposals
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          sparse-checkout: scripts
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: channel-proposals
+          path: proposal
+      - name: Validate and exercise both portable aliases
+        shell: pwsh
+        env:
+          TAG: ${{ needs.proposals.outputs.tag }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = $env:TAG.Substring(1)
+          $manifest = "$PWD\proposal\winget\manifests\w\Wavect\Semaprax\$version"
+          winget validate --manifest $manifest
+          if ($LASTEXITCODE -ne 0) { throw 'WinGet manifest validation failed' }
+          winget settings --enable LocalManifestFiles
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot enable local manifests on this disposable runner' }
+          winget install --manifest $manifest --accept-package-agreements --accept-source-agreements --disable-interactivity
+          if ($LASTEXITCODE -ne 0) { throw 'WinGet local package installation failed' }
+          & ./scripts/channel-winget-journey.ps1 -Version $version
+          if ($LASTEXITCODE -ne 0) { throw 'WinGet installed journey failed' }
+          winget uninstall --id Wavect.Semaprax --exact --disable-interactivity
+          if ($LASTEXITCODE -ne 0) { throw 'WinGet uninstall failed' }
+          'Validated local proposal; Microsoft index acceptance remains pending.' >> $env:GITHUB_STEP_SUMMARY
