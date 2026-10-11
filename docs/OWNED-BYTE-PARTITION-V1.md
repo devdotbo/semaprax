@@ -333,3 +333,125 @@ host policy before installing the receiver. Computing the forecast never grants
 source authority or automatically creates that funding. The ordinary producer,
 Value installer, retained-frame/public SDK route and all-target activation remain
 closed until their complete receiving obligations are joined.
+
+### Private current-source owner (unqualified receiver integration)
+
+The private compiler factory `hir::byte_partition::ValidatedPartitionProgram`
+resolves the original immutable AST and retains its resulting HIR without
+cloning or replacing either subject. Its read-only `program()` and `source()`
+accessors do not let callers mint another owner. `compile_source` runs full
+source/resolution/HIR, canonical cleanup/status and loan checks under the
+ordinary bounded compiler policy. `revalidate_compiler` repeats the compiler
+validation boundary; the private
+availability selector only admits the exact compiler operation during those
+checks. Ordinary source verification, HIR validation and backend entry remain
+closed. This is source-only implementation awaiting backend qualification,
+not public partition support.
+
+The initial emitted callgraph is monomorphic and acyclic, at most 512 functions,
+with scalar, byte-array, Bytes, Slice and the demanded canonical Vec/Iter/IterStep
+of Bytes and Option of u8 or Bytes types. Authored types, module imports,
+effects, dynamic callable carriers and generic function instances are refused.
+Unused compiler-prelude declarations are not a reason to reject a program;
+actual signature and expression types determine this closed scope. `receive_current_graph` consumes only the caller's held graph/provenance
+proof work, without a fresh receiver allowance. It meters actual type/opcode
+identity and child/statement probes. Neither this counter nor its exact/short
+tests pay for the separate source/resolver/full compiler passes, compiler
+physical storage, or runtime allocations. Compiler acquisition errors poison
+the extra graph counter and zero graph credit refuses before compilation.
+Partition roots must resolve through immutable current let moves to a direct
+whole Bytes allocation or copy. Own parameters, helper returns and children
+are uncertain roots and refuse at compile time; interprocedural Whole/Child
+provenance remains closed. Runtime funding and whole-owner provenance remain
+separate mandatory receiver checks. Native and Wasm ordinary lowering retain
+explicit refusal until their sealed receivers join this factory.
+
+### Private checked Core-Wasm producer checkpoint
+
+The internal Core-Wasm receiver accepts only `ValidatedPartitionProgram` from
+original-source compilation, repeats complete compiler validation, and debits
+its current-graph receipt separately. It emits a module and independently
+validates its complete import section together; no module-byte constructor or
+raw import receipt can authorize the producer. Ordinary source and public
+browser/provider routes remain closed pending the cross-backend join.
+
+The private producer import has exact signature `(i64,i64,i64)->(i64,i32)`:
+current whole owner, count, width; then result Vec handle and operation code.
+The host reserves registry entries, the final retained Vec array, and its handle
+before transferring the whole owner. Registry commit fills that same array and
+retains the original backing; no child payload or carrier-array copy is made.
+Allocation exceptions are administrative fail-stop. Language refusal leaves the
+whole owner live for the unchanged canonical operation-failure cleanup. Only
+success commits the staged owned argument.
+
+Private emitted failure status is `0x7000 + operation_code`, where codes 1–4
+remain the independently owned partition domain's width/overflow/extent/metadata
+codes. The offset distinguishes them from ordinary Core-Wasm statuses; it does
+not invent a new language failure. The graph receipt is not a runtime allocation
+ledger. Fixed host registry backing and ordinary payload limits retain their
+existing scope; JavaScript objects, Maps, carrier arrays and VM bookkeeping are
+excluded. This checkpoint does not claim complete physical-account funding,
+public installation, or completed OPT #746 qualification.
+
+The private paired entry embeds its own compiler-produced module bytes and accepts
+only a positive safe-integer managed-byte amount at installation. It accepts no
+replacement module, imports, witness, or issuer. `invoke()` publishes either
+`{outcome:"returned",result:"<signed decimal i64>"}` or
+`{outcome:"language_failure",status:{domain,code}}` after canonical settlement.
+Partition guest codes normalize to the owning partition domain and code, not a
+new semantic domain. Unknown traps and account exhaustion produce an
+administrative refusal with no result/status and poison subsequent entry use.
+
+One installation-held account reserves the exact index, lease/backing typed
+arrays and whole-token/invocation typed arrays before construction. It then
+reserves each fresh payload at its original allocation boundary. Whole-owner
+release or final-child settlement releases that payload charge exactly once;
+transfer into a partition does not release or recharge it. The fixed requested
+metadata is `16384*6 + 8192*22 + 32*11 + 32*8` bytes. Metadata remains held across
+reentry. Existing 32 events, 2 MiB cumulative payload and individual extent limits
+are unchanged, and no caller amount raises them. Zeroed payload allocates one
+funded buffer directly rather than an unfunded temporary plus copy.
+
+This is requested typed-array/live payload accounting. Carrier/reference arrays,
+Maps, objects/tickets, module bytes, Wasm memory/engine, GC retention, allocator
+headers and process memory are excluded. It is not complete physical funding or
+an engine-wide memory ceiling. Managed private entries have no copy-out bridge;
+public copy-out funding remains a separate prerequisite.
+
+The source owner also supplies a receiving-only simultaneous-view bound for an
+exact current entry-function pointer. Complete independent compiler validation
+precedes this additional graph proof. The same caller graph-work counter pays
+for current function/loan origin comparisons and the fixed-array acyclic graph
+traversal. No HIR clone or new allowance is created. The conservative bound is
+the maximum current call-path sum of each frame's total validated local loan
+sites. Exact Borrow-parameter roots are inherited descriptors and contribute no
+new Core loans. This count can overestimate actual lifetime overlap; it is an
+upper bound, not permission to mint any loan or override NLL edges. Sequential
+callee invocations take the maximum, rather than adding to simultaneous use.
+An upper bound above 256 refuses before installation. The private Wasm receiver
+runs this proof for its actual main. Native/interpreter receivers must retain
+their own actual root/call/edge binding and physical funding checks.
+
+### Private native source receiving checkpoint
+
+The original-source owner also has a private native projection for whole Bytes
+allocation, partition, Vec<Bytes> length/capacity reads, scalar expressions and
+monomorphic source calls. It renews the complete compiler proof, checks the
+current entry's conservative view bound, and independently refuses consumers
+without a complete shared carrier binding. The canonical native emitter and
+cleanup vectors remain unchanged: a versioned C binding fragment selects the
+shared carrier/helper ABI only after ordinary runtime definitions and before
+the sealed source functions. No caller can supply a raw program or closure.
+
+Partition preparation leaves the canonical staged Bytes live on failure; the
+actual operation status selects its existing exact failure exit. Successful
+commit clears that same carrier before result initialization. One registry
+covers the entry and all helpers, and detachment requires zero loans, leases,
+Vecs and pending reservations before result publication. The additional graph
+counter does not fund compiler proof or runtime heap storage. Ordinary/default
+and public callable routes remain closed. Consuming iteration, Borrow-parameter
+receiving and the complete caller-funded native account remain pending.
+
+Two owning source bodies retain original 4096/count geometry at O0/O2 and actual
+four-code failure/poison-result/reentry controls. These are authored controls,
+not an executed qualification or completed cross-backend admission claim.

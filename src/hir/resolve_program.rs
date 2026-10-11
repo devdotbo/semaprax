@@ -567,11 +567,15 @@ impl Resolver<'_> {
                 }
             }
         }
-        self.function_work.static_text = super::selected_fused_candidate::resolution::validation(
-            self.program,
-            self.fused_producer,
-            &resolved,
-        )?;
+        self.function_work.static_text = if self.partition_profile {
+            super::byte_partition::validate_private(&resolved)?
+        } else {
+            super::selected_fused_candidate::resolution::validation(
+                self.program,
+                self.fused_producer,
+                &resolved,
+            )?
+        };
         Ok((resolved, self.function_work))
     }
 

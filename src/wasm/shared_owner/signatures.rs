@@ -5,6 +5,7 @@ use ValType::{I32, I64};
 
 pub(super) fn matches(name: &str, ty: &FuncType) -> bool {
     let (params, results): (&[ValType], &[ValType]) = match name {
+        "spx_bytes_partition" => (&[I64, I64, I64], &[I64, I32]),
         "spx_add"
         | "spx_sub"
         | "spx_mul"

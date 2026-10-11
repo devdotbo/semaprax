@@ -20,6 +20,7 @@ pub(in crate::wasm) use function_value::{
 };
 use function_value::{executable_functions, hex_execution_identity, program_uses_byte_range};
 mod binary_ops;
+mod byte_partition;
 mod borrowed_call;
 mod contract_scope;
 pub(super) mod conversions;
@@ -53,7 +54,7 @@ mod process_io;
 mod provider_lowering;
 mod static_text_profile;
 mod string_replacement;
-pub(super) use static_text_profile::{emit_scalar_exports_with_static_text, emit_with_static_text};
+pub(super) use static_text_profile::{emit_partition, emit_scalar_exports_with_static_text, emit_with_static_text};
 pub(super) mod text_toolkit;
 pub(super) use provider_lowering::{
     lower_public_generic_provider_closure, PUBLIC_GENERIC_PROVIDER_SOURCE_INDEX_MIN,
@@ -2077,6 +2078,10 @@ fn emit_profile_with_scalar_exports(
 
     let mut types = Vec::<Signature>::new();
     let mut type_indexes = HashMap::<Signature, u32>::new();
+    let partition_type = byte_partition::uses(program).then(|| intern_type(
+        Signature { params: vec![I64, I64, I64], results: vec![I64, I32] },
+        &mut types, &mut type_indexes,
+    ));
     let binary_checked = intern_type(
         Signature {
             params: vec![I64, I64],
@@ -2381,12 +2386,21 @@ fn emit_profile_with_scalar_exports(
                     } else {
                         0
                     }
+                    + u32::from(partition_type.is_some())
                     + text_helper_count
                     + u32::try_from(index).unwrap_or(u32::MAX),
             )
         })
         .collect::<HashMap<_, _>>();
+    let partition_index = partition_type.map(|_| {
+        function_indexes.values().copied().min().expect("checked main function")
+            - text_helper_count - 1
+    });
     str_helpers::insert_indexes(text_helper_count, &mut function_indexes)?;
+    if let Some(index) = partition_index {
+        function_indexes.insert(FunctionExecutionId::Monomorphic(
+            crate::hir::DeclarationId::new(crate::construction_fusion::partition::ID)), index);
+    }
 
     let mut module = b"\0asm\x01\0\0\0".to_vec();
     let mut type_section = Vec::new();
@@ -2433,6 +2447,7 @@ fn emit_profile_with_scalar_exports(
                 0
             }
             + map_count
+            + u32::from(partition_type.is_some())
             + if uses_owned_leaf_vec {
                 vec_owned_leaf::import_count(program)
             } else {
@@ -2604,6 +2619,9 @@ fn emit_profile_with_scalar_exports(
     }
     if let Some(types) = owned_leaf_types {
         vec_owned_leaf::emit_imports(&mut imports, types);
+    }
+    if let Some(ty) = partition_type {
+        function_import(&mut imports, "env", "spx_bytes_partition", ty);
     }
     section(&mut module, 2, imports);
 
@@ -2782,6 +2800,7 @@ fn emit_profile_with_scalar_exports(
             })
         })
         .and_then(|value| value.checked_add(map_count))
+        .and_then(|value| value.checked_add(u32::from(partition_type.is_some())))
         .and_then(|value| {
             value.checked_add(if uses_owned_leaf_vec {
                 vec_owned_leaf::import_count(program)
@@ -6692,6 +6711,9 @@ impl Emitter<'_> {
                 &expr.id, &values[0], &values[1], &values[4],
             )?;
         }
+        if op == crate::byte_ops::ByteOp::Partition {
+            return self.emit_byte_partition(expr, &values);
+        }
         self.apply_call_commit(&expr.id)?;
         if self.standalone_strings
             && matches!(
@@ -6751,6 +6773,9 @@ impl Emitter<'_> {
         }
         require_type(&expr.ty, &op.return_type(), "byte operation result")?;
         match op {
+            crate::byte_ops::ByteOp::Partition => {
+                return Err(error("byte partition requires its checked private receiver"));
+            }
             crate::byte_ops::ByteOp::Len => {
                 let local = self.plan.expr_scalar(expr)?;
                 self.get_scalar(&values[0]);

@@ -24,6 +24,7 @@ fn resolver(program: &crate::ast::Program) -> Resolver<'_> {
         reuse: None,
         function_work: super::super::FunctionResolutionWork::default(),
         fused_producer: None,
+        partition_profile: false,
     }
 }
 

@@ -33,6 +33,8 @@
 
 /// Private authority domain; distinct from every public token table.
 pub(in crate::wasm) const DOMAIN: &str = "semaprax.private.wasm-shared-byte-owner.v1";
+/// Private guest encoding; normalized at the paired source entry only.
+pub(in crate::wasm) const PARTITION_GUEST_STATUS_BASE: u32 = 0x7000;
 /// Partition status domain and codes, in refusal precedence order.
 pub(in crate::wasm) const PARTITION_STATUS_DOMAIN: &str =
     crate::construction_fusion::partition::operation::STATUS_DOMAIN;
@@ -310,6 +312,10 @@ pub(in crate::wasm) struct Closure {
 /// Classifies the actual import section in order and refuses at the first
 /// import outside the closure of `host`.
 pub(in crate::wasm) fn consumer_closure(module: &[u8], host: Host) -> Result<Closure, Refusal> {
+    closure_impl(module, host, false)
+}
+
+fn closure_impl(module: &[u8], host: Host, partition: bool) -> Result<Closure, Refusal> {
     // Components also validate, but are not this ordinary Core-Wasm boundary.
     if module.get(..8) != Some(b"\0asm\x01\0\0\0".as_slice()) {
         return Err(Refusal::Malformed);
@@ -339,7 +345,10 @@ pub(in crate::wasm) fn consumer_closure(module: &[u8], host: Host) -> Result<Clo
                         import.module, import.name
                     )));
                 };
-                let disposition = classify(host, import.module, import.name)?;
+                let disposition = if partition && host == Host::PrivateOrdinary
+                    && import.module == NAMESPACE && import.name == "spx_bytes_partition" {
+                    Disposition::LeaseAware
+                } else { classify(host, import.module, import.name)? };
                 let ty = types.get(index as usize).ok_or(Refusal::Malformed)?;
                 if !signatures::matches(import.name, ty) {
                     return Err(Refusal::Signature(import.name.to_owned()));
@@ -364,3 +373,4 @@ pub(in crate::wasm) fn admit_producer(_closure: &Closure) -> Result<(), Refusal>
 mod tests;
 
 mod signatures;
+pub(in crate::wasm) mod partition;

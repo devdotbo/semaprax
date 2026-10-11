@@ -9,7 +9,7 @@ use super::closure::{
 };
 use super::RUNTIME;
 
-fn scratch(label: &str) -> PathBuf {
+pub(super) fn scratch(label: &str) -> PathBuf {
     let root = std::env::temp_dir().join(format!(
         "shared-owner-bytes-{label}-{}-{}",
         std::process::id(),
@@ -22,7 +22,7 @@ fn scratch(label: &str) -> PathBuf {
     root
 }
 
-fn compile_and_run(root: &Path, source: &str, extra: &[&str]) {
+pub(super) fn compile_and_run(root: &Path, source: &str, extra: &[&str]) {
     let path = root.join("probe.c");
     std::fs::write(&path, source).unwrap();
     for optimization in ["-O0", "-O2"] {
@@ -170,6 +170,10 @@ fn context_extension_is_exact_and_rejects_drift() {
 
 #[test]
 fn admission_stays_closed_even_for_a_complete_closure() {
+    assert_eq!(
+        Consumer::from_byte_op(crate::byte_ops::ByteOp::Partition),
+        Consumer::Partition
+    );
     let complete = [
         Consumer::Zeroed,
         Consumer::Partition,

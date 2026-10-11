@@ -114,7 +114,7 @@ typedef struct { const void *module; uint64_t next; uint32_t sealed, reserved; }
 typedef struct spx_shb_registry {
     const void *module; uint64_t issuer, next_nonce, next_generation, cumulative;
     uint64_t child_debited, child_held;
-    uint32_t sealed, finished, events, reserved;
+    uint32_t sealed, finished, events, loans;
     spx_shb_backing backing[SPX_SHB_EVENTS];
     spx_shb_vec_entry vec[SPX_SHB_VECS];
 } spx_shb_registry;
@@ -284,16 +284,16 @@ SPX_SHB_FN uint64_t spx_shb_len(spx_shb_registry *registry, const spx_shb_bytes 
    cannot be dropped, moved, stored into, transferred or partitioned. */
 SPX_SHB_FN spx_shb_loan spx_shb_loan_begin(spx_shb_registry *registry, const spx_shb_bytes *value) {
     spx_shb_resolved r = spx_shb_resolve(registry, value);
-    if (r.lease->loans == UINT32_MAX) SPX_SHB_FAIL_STOP("shared Bytes loan count exhausted");
-    r.lease->loans++;
+    if (r.lease->loans == UINT32_MAX || registry->loans == UINT32_MAX) SPX_SHB_FAIL_STOP("shared Bytes loan count exhausted");
+    r.lease->loans++; registry->loans++;
     return (spx_shb_loan){ .issuer = value->issuer, .slot = value->slot, .nonce = value->nonce };
 }
 SPX_SHB_FN void spx_shb_loan_end(spx_shb_registry *registry, spx_shb_loan *loan) {
     if (loan == NULL) SPX_SHB_FAIL_STOP("shared Bytes loan has a null carrier");
     spx_shb_bytes bound = { .issuer = loan->issuer, .slot = loan->slot, .nonce = loan->nonce };
     spx_shb_resolved r = spx_shb_resolve(registry, &bound);
-    if (r.lease->loans == 0u) SPX_SHB_FAIL_STOP("shared Bytes loan ended twice");
-    r.lease->loans--; *loan = (spx_shb_loan){0};
+    if (r.lease->loans == 0u || registry->loans == 0u) SPX_SHB_FAIL_STOP("shared Bytes loan ended twice");
+    r.lease->loans--; registry->loans--; *loan = (spx_shb_loan){0};
 }
 
 SPX_SHB_FN spx_shb_bytes spx_shb_move(spx_shb_registry *registry, spx_shb_bytes *source) {
@@ -449,8 +449,22 @@ SPX_SHB_FN void spx_shb_drop_row(spx_shb_registry *registry, const spx_shb_vec *
     if (value->rows[index].slot == UINT64_C(0))
         SPX_SHB_FAIL_STOP("shared Bytes Vec row below len is vacant");
     spx_shb_bytes owner = spx_shb_row_owner(value, index);
+    (void)spx_shb_resolve_unloaned(registry, &owner);
     value->rows[index] = (spx_shb_stored){0};
     spx_shb_drop(registry, &owner);
+}
+/* Refuse live row loans before the first canonical finalizer. Individual
+   finalizers still authenticate their exact row before changing it. */
+SPX_SHB_FN void spx_shb_preflight_rows(
+    spx_shb_registry *registry, const spx_shb_vec *value, uint64_t start
+) {
+    spx_shb_require(registry);
+    /* No live loans is the common iterator path: never rescan its suffix. */
+    if (registry->loans == 0u) return;
+    for (uint64_t i = start; i < value->len; ++i) {
+        spx_shb_bytes owner = spx_shb_row_owner(value, i);
+        (void)spx_shb_resolve_unloaned(registry, &owner);
+    }
 }
 SPX_SHB_FN uint32_t spx_shb_vec_with_capacity(spx_shb_registry *registry, uint64_t capacity, spx_shb_vec *out) {
     spx_shb_require(registry);
@@ -475,6 +489,7 @@ SPX_SHB_FN uint32_t spx_shb_vec_push(
     spx_shb_registry *registry, spx_shb_vec *source, spx_shb_bytes *value, spx_shb_vec *out
 ) {
     spx_shb_vec_entry *e = spx_shb_vec_valid(registry, source);
+    spx_shb_preflight_rows(registry, source, UINT64_C(0));
     (void)spx_shb_resolve_unloaned(registry, value);
     if (out == NULL || out == source) SPX_SHB_FAIL_STOP("invalid shared Bytes Vec result");
     if (source->len == source->capacity) return SPX_SHB_VEC_FULL;
@@ -486,7 +501,9 @@ SPX_SHB_FN void spx_shb_vec_pop(
     spx_shb_registry *registry, spx_shb_vec *source, uint32_t *tag, spx_shb_bytes *item, spx_shb_vec *out
 ) {
     spx_shb_vec_entry *e = spx_shb_vec_valid(registry, source);
-    if (tag == NULL || item == NULL) SPX_SHB_FAIL_STOP("invalid shared Bytes Vec pop output");
+    spx_shb_preflight_rows(registry, source, UINT64_C(0));
+    if (tag == NULL || item == NULL || out == NULL || out == source)
+        SPX_SHB_FAIL_STOP("invalid shared Bytes Vec pop output");
     *tag = 0u; *item = (spx_shb_bytes){0};
     if (source->len != UINT64_C(0)) {
         uint64_t last = source->len - 1u;
@@ -510,6 +527,7 @@ SPX_SHB_FN uint32_t spx_shb_vec_set(
     spx_shb_registry *registry, spx_shb_vec *source, uint64_t index, spx_shb_bytes *value, spx_shb_vec *out
 ) {
     spx_shb_vec_entry *e = spx_shb_vec_valid(registry, source);
+    spx_shb_preflight_rows(registry, source, UINT64_C(0));
     (void)spx_shb_resolve_unloaned(registry, value);
     if (out == NULL || out == source) SPX_SHB_FAIL_STOP("invalid shared Bytes Vec result");
     if (index >= source->len) return SPX_SHB_VEC_INDEX;
@@ -522,6 +540,8 @@ SPX_SHB_FN uint32_t spx_shb_vec_set(
 /* Canonical ascending element order, as the legacy runtime settles rows. */
 SPX_SHB_FN void spx_shb_vec_clear(spx_shb_registry *registry, spx_shb_vec *source, spx_shb_vec *out) {
     spx_shb_vec_entry *e = spx_shb_vec_valid(registry, source);
+    if (out == NULL || out == source) SPX_SHB_FAIL_STOP("invalid shared Bytes Vec result");
+    spx_shb_preflight_rows(registry, source, UINT64_C(0));
     for (uint64_t i = UINT64_C(0); i < source->len; ++i) spx_shb_drop_row(registry, source, i);
     source->len = UINT64_C(0);
     spx_shb_vec_publish(registry, source, e, out);
@@ -530,6 +550,7 @@ SPX_SHB_FN uint32_t spx_shb_vec_reserve_exact(
     spx_shb_registry *registry, spx_shb_vec *source, uint64_t additional, spx_shb_vec *out
 ) {
     spx_shb_vec_entry *e = spx_shb_vec_valid(registry, source);
+    spx_shb_preflight_rows(registry, source, UINT64_C(0));
     if (out == NULL || out == source) SPX_SHB_FAIL_STOP("invalid shared Bytes Vec result");
     if (additional > UINT64_MAX - source->len) return SPX_SHB_VEC_CAPACITY_REFUSED;
     uint64_t required = source->len + additional;
@@ -562,10 +583,12 @@ SPX_SHB_FN uint64_t spx_shb_vec_capacity(spx_shb_registry *registry, const spx_s
 }
 SPX_SHB_FN spx_shb_vec spx_shb_vec_move(spx_shb_registry *registry, spx_shb_vec *source) {
     (void)spx_shb_vec_valid(registry, source);
+    spx_shb_preflight_rows(registry, source, UINT64_C(0));
     spx_shb_vec moved = *source; *source = (spx_shb_vec){0}; return moved;
 }
 SPX_SHB_FN void spx_shb_vec_drop(spx_shb_registry *registry, spx_shb_vec *value) {
     spx_shb_vec_entry *e = spx_shb_vec_valid(registry, value);
+    spx_shb_preflight_rows(registry, value, UINT64_C(0));
     for (uint64_t i = UINT64_C(0); i < value->len; ++i) spx_shb_drop_row(registry, value, i);
     spx_shb_stored *rows = value->rows;
     *e = (spx_shb_vec_entry){0}; *value = (spx_shb_vec){0};
@@ -582,6 +605,7 @@ SPX_SHB_FN spx_shb_vec_entry *spx_shb_iter_valid(spx_shb_registry *registry, con
 }
 SPX_SHB_FN spx_shb_iter spx_shb_iter_from_vec(spx_shb_registry *registry, spx_shb_vec *source) {
     spx_shb_vec_entry *e = spx_shb_vec_valid(registry, source);
+    spx_shb_preflight_rows(registry, source, UINT64_C(0));
     spx_shb_iter r = { .vec = *source, .cursor = UINT64_C(0) };
     r.vec.generation = spx_shb_fresh_generation(registry);
     e->state = SPX_SHB_ITER_LIVE; e->end = source->len; e->len = UINT64_C(0); e->generation = r.vec.generation;
@@ -589,6 +613,7 @@ SPX_SHB_FN spx_shb_iter spx_shb_iter_from_vec(spx_shb_registry *registry, spx_sh
 }
 SPX_SHB_FN void spx_shb_iter_drop(spx_shb_registry *registry, spx_shb_iter *value) {
     spx_shb_vec_entry *e = spx_shb_iter_valid(registry, value);
+    spx_shb_preflight_rows(registry, &value->vec, value->cursor);
     for (uint64_t i = value->cursor; i < value->vec.len; ++i) spx_shb_drop_row(registry, &value->vec, i);
     spx_shb_stored *rows = value->vec.rows;
     *e = (spx_shb_vec_entry){0}; *value = (spx_shb_iter){0};
@@ -598,6 +623,7 @@ SPX_SHB_FN void spx_shb_iter_next(
     spx_shb_registry *registry, spx_shb_iter *source, uint32_t *tag, spx_shb_bytes *item, spx_shb_iter *rest
 ) {
     spx_shb_vec_entry *e = spx_shb_iter_valid(registry, source);
+    spx_shb_preflight_rows(registry, &source->vec, source->cursor);
     if (tag == NULL || item == NULL || rest == NULL || rest == source)
         SPX_SHB_FAIL_STOP("invalid shared Bytes iterator output");
     *tag = 0u; *item = (spx_shb_bytes){0}; *rest = (spx_shb_iter){0};
@@ -726,6 +752,7 @@ SPX_SHB_FN void spx_shb_provider_drop(spx_bytes_v1 *value) {
    no partition hold outstanding. A leak is an invariant failure. */
 SPX_SHB_FN void spx_shb_registry_finish(spx_shb_registry *registry) {
     spx_shb_require(registry);
+    if (registry->loans != 0u) SPX_SHB_FAIL_STOP("shared Bytes registry finished with a live loan");
     if (registry->child_held != UINT64_C(0)) SPX_SHB_FAIL_STOP("shared Bytes partition hold outlived its call");
     for (uint32_t i = 0u; i < registry->events; ++i)
         if (registry->backing[i].state != SPX_SHB_RELEASED || registry->backing[i].live != 0u)

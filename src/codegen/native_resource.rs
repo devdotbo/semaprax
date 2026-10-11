@@ -192,6 +192,13 @@ pub(super) fn build_selected_resource_abi(
     build_validated_resource_abi(owner.program())
 }
 
+pub(super) fn build_partition_resource_abi(
+    owner: &hir::byte_partition::ValidatedPartitionProgram<'_>,
+) -> Result<NativeResourceAbi, Diagnostic> {
+    owner.revalidate_compiler()?;
+    build_validated_resource_abi(owner.program())
+}
+
 fn build_validated_resource_abi(
     program: &ResolvedProgram,
 ) -> Result<NativeResourceAbi, Diagnostic> {

@@ -118,6 +118,7 @@ interface HostEcho permits { host.echo } {
         reuse: None,
         function_work: FunctionResolutionWork::default(),
         fused_producer: None,
+        partition_profile: false,
     };
     for source_function in &parsed.functions {
         let Some(resolved_function) = resolved

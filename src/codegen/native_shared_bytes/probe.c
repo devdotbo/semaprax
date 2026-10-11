@@ -325,6 +325,49 @@ PROBE_FN void loans_pin_their_generation(void) {
     spx_shb_registry_finish(&reg);
 }
 
+/* A loan on a later row refuses before any earlier canonical settlement. */
+PROBE_FN void loans_preflight_all_container_finalizers(void) {
+    static spx_shb_stored saved_rows[3];
+    static spx_shb_vec saved_vec;
+    static spx_shb_iter saved_iter;
+    census_reset(); fresh(&reg);
+    spx_shb_zeroed(&reg, 6u, &a); partition(&a, 3u, 2u, &v);
+    b = spx_shb_row_owner(&v, 1u); loan = spx_shb_loan_begin(&reg, &b);
+    saved_vec = v; memcpy(saved_rows, v.rows, sizeof(saved_rows));
+    assert(reg.loans == 1u);
+    EXPECT_STOP("outstanding borrow", (void)spx_shb_vec_move(&reg, &v));
+    EXPECT_STOP("outstanding borrow", (void)spx_shb_iter_from_vec(&reg, &v));
+    EXPECT_STOP("outstanding borrow", spx_shb_vec_pop(&reg, &v, &tag, &c, &w));
+    EXPECT_STOP("outstanding borrow", (void)spx_shb_vec_reserve_exact(&reg, &v, 1u, &w));
+    EXPECT_STOP("outstanding borrow", spx_shb_vec_clear(&reg, &v, &w));
+    assert(memcmp(&v, &saved_vec, sizeof(v)) == 0);
+    assert(memcmp(v.rows, saved_rows, sizeof(saved_rows)) == 0);
+    EXPECT_STOP("outstanding borrow", spx_shb_vec_drop(&reg, &v));
+    assert(memcmp(&v, &saved_vec, sizeof(v)) == 0);
+    assert(memcmp(v.rows, saved_rows, sizeof(saved_rows)) == 0);
+    assert(payload_pool.frees == 0u && metadata_pool.frees == 0u);
+    spx_shb_loan_end(&reg, &loan);
+    assert(reg.loans == 0u);
+    EXPECT_STOP("pop output", spx_shb_vec_pop(&reg, &v, &tag, &c, NULL));
+    assert(memcmp(&v, &saved_vec, sizeof(v)) == 0);
+    assert(memcmp(v.rows, saved_rows, sizeof(saved_rows)) == 0);
+    spx_shb_vec_clear(&reg, &v, &w); spx_shb_vec_drop(&reg, &w);
+    assert(payload_pool.frees == 1u); spx_shb_registry_finish(&reg);
+
+    census_reset(); fresh(&reg);
+    spx_shb_zeroed(&reg, 6u, &a); partition(&a, 3u, 2u, &v);
+    it = spx_shb_iter_from_vec(&reg, &v);
+    b = spx_shb_row_owner(&it.vec, 1u); loan = spx_shb_loan_begin(&reg, &b);
+    saved_iter = it; memcpy(saved_rows, it.vec.rows, sizeof(saved_rows));
+    EXPECT_STOP("outstanding borrow", spx_shb_iter_next(&reg, &it, &tag, &c, &rest));
+    EXPECT_STOP("outstanding borrow", spx_shb_iter_drop(&reg, &it));
+    assert(memcmp(&it, &saved_iter, sizeof(it)) == 0);
+    assert(memcmp(it.vec.rows, saved_rows, sizeof(saved_rows)) == 0);
+    assert(payload_pool.frees == 0u && metadata_pool.frees == 0u);
+    spx_shb_loan_end(&reg, &loan); spx_shb_iter_drop(&reg, &it);
+    assert(payload_pool.frees == 1u); spx_shb_registry_finish(&reg);
+}
+
 /* Public copy-out never exports an interior pointer; provider failure
    leaves the private owner intact. */
 PROBE_FN void copy_out_and_provider_drop(void) {
@@ -425,6 +468,7 @@ int main(void) {
     metadata_exact_and_one_over();
     unchanged_quotas_and_plus_one();
     loans_pin_their_generation();
+    loans_preflight_all_container_finalizers();
     copy_out_and_provider_drop();
     plans_and_final_settlement();
     generation_exhaustion();
