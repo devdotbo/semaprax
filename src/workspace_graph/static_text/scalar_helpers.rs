@@ -42,7 +42,7 @@ pub(in crate::workspace_graph) fn pure_metered(
     work: &mut usize,
     charge: &mut dyn FnMut(usize) -> Result<(), Vec<Diagnostic>>,
 ) -> Result<bool, Vec<Diagnostic>> {
-    let mut take = |units| {
+    let mut take = |units| -> Result<(), Vec<Diagnostic>> {
         let remaining = work.checked_sub(units).ok_or_else(fail)?;
         charge(units)?;
         *work = remaining;
@@ -129,7 +129,7 @@ pub(in crate::workspace_graph) fn pure_metered(
     }
     Ok(true)
 }
-pub(super) fn capture(
+pub(in crate::workspace_graph) fn capture(
     program: &Program,
     resolved: &hir::ResolvedProgram,
     programs: &[Program],
