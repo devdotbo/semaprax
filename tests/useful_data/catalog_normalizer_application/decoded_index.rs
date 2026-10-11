@@ -141,9 +141,24 @@ fn index_cases() -> Vec<IndexCase> {
     let overflow_first = b"{\"id\":\"a\",\"label\":\"l\",\"quantity\":9223372036854775807}\n{\"id\":\"b\",\"label\":\"l\",\"quantity\":1}\n{\"id\":\"a\",\"label\":\"l\",\"quantity\":1}\n".to_vec();
 
     let mut cases = vec![
-        case("ascii-collision-distinct", body(&["\"BAA\"", "\"ACO\""]), None, None),
-        case("prefix-64-collision-distinct", body(&[&long_left, &long_right]), None, None),
-        case("raw-nonascii-collision-distinct", body(&["\"\u{c1}\u{410}\"", "\"\u{c0}\u{49e}\""]), None, None),
+        case(
+            "ascii-collision-distinct",
+            body(&["\"BAA\"", "\"ACO\""]),
+            None,
+            None,
+        ),
+        case(
+            "prefix-64-collision-distinct",
+            body(&[&long_left, &long_right]),
+            None,
+            None,
+        ),
+        case(
+            "raw-nonascii-collision-distinct",
+            body(&["\"\u{c1}\u{410}\"", "\"\u{c0}\u{49e}\""]),
+            None,
+            None,
+        ),
         case(
             "escaped-nonascii-collision-distinct",
             body(&["\"\\u00c1\\u0410\"", "\"\u{c0}\u{49e}\""]),
@@ -158,7 +173,13 @@ fn index_cases() -> Vec<IndexCase> {
         ),
         case(
             "nul-and-nonascii-distinct",
-            body(&["\"\\u0000\"", "\"\\u0080\"", "\"a\\u0000\"", "\"a\"", "\"\\u0000a\""]),
+            body(&[
+                "\"\\u0000\"",
+                "\"\\u0080\"",
+                "\"a\\u0000\"",
+                "\"a\"",
+                "\"\\u0000a\"",
+            ]),
             None,
             None,
         ),
@@ -170,7 +191,11 @@ fn index_cases() -> Vec<IndexCase> {
         ),
         case(
             "collision-then-escaped-nonascii-duplicate",
-            body(&["\"\u{c0}\u{49e}\"", "\"\u{c1}\u{410}\"", "\"\\u00c1\\u0410\""]),
+            body(&[
+                "\"\u{c0}\u{49e}\"",
+                "\"\u{c1}\u{410}\"",
+                "\"\\u00c1\\u0410\"",
+            ]),
             Some("duplicate_id"),
             Some(2),
         ),
@@ -234,7 +259,12 @@ fn index_cases() -> Vec<IndexCase> {
             Some("overflow"),
             Some(1),
         ),
-        case("rows-256-colliding-distinct", colliding_rows(None), None, None),
+        case(
+            "rows-256-colliding-distinct",
+            colliding_rows(None),
+            None,
+            None,
+        ),
         case(
             "rows-256-last-raw-duplicates-escaped-first",
             colliding_rows(Some(first_raw)),
@@ -255,16 +285,22 @@ fn index_cases() -> Vec<IndexCase> {
 
 /// Runs every decoded-index case through one already-authenticated project
 /// program, so no additional capacity-sensitive graph is constructed.
-pub(super) fn assert_decoded_index_cases(
-    program: &ResolvedProgram,
-) -> Result<(), Vec<Diagnostic>> {
+pub(super) fn assert_decoded_index_cases(program: &ResolvedProgram) -> Result<(), Vec<Diagnostic>> {
     for case in index_cases() {
         let expected = run_oracle_with(&case.input, case.enriched);
         let response: serde_json::Value = serde_json::from_slice(&expected).unwrap();
         match case.category {
             Some(category) => {
-                assert_eq!(response["status"], "error", "oracle status for {}", case.name);
-                assert_eq!(response["category"], category, "oracle category for {}", case.name);
+                assert_eq!(
+                    response["status"], "error",
+                    "oracle status for {}",
+                    case.name
+                );
+                assert_eq!(
+                    response["category"], category,
+                    "oracle category for {}",
+                    case.name
+                );
                 assert_eq!(
                     response["record_index"].as_u64(),
                     case.record_index,
@@ -279,8 +315,7 @@ pub(super) fn assert_decoded_index_cases(
         } else {
             "catalog_normalizer.app.normalize"
         };
-        let actual =
-            evaluate_resolved_owned_data(program, function, &case.input, MAX_STEPS_LIMIT)?;
+        let actual = evaluate_resolved_owned_data(program, function, &case.input, MAX_STEPS_LIMIT)?;
         assert_eq!(
             actual.outcome,
             OwnedDataEvaluationOutcome::Returned(OwnedDataValue::Bytes(expected)),
@@ -296,7 +331,11 @@ fn decoded_index_cases_are_deliberate_under_the_host_decoded_byte_oracle() {
     let cases = index_cases();
     assert_eq!(cases.len(), 21, "decoded-index case inventory drifted");
     for case in &cases {
-        assert!(case.input.len() <= 65_536, "{} exceeds the request bound", case.name);
+        assert!(
+            case.input.len() <= 65_536,
+            "{} exceeds the request bound",
+            case.name
+        );
     }
 }
 
