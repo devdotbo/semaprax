@@ -29,6 +29,8 @@ const MODULE_URL = new URL('./fused-construction-v1.wasm', import.meta.url);
 const STATUS = Object.freeze({
   1: Object.freeze({domain: 'semaprax.arithmetic.v1', code: 1}),
   2: Object.freeze({domain: 'semaprax.arithmetic.v1', code: 2}),
+  13: Object.freeze({domain: 'semaprax.vec.v1', code: 1}),
+  14: Object.freeze({domain: 'semaprax.vec.v1', code: 2}),
   15: Object.freeze({domain: 'semaprax.vec.v1', code: 3}),
   21: Object.freeze({domain: 'semaprax.convert.v1', code: 1}),
 });

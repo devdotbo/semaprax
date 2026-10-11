@@ -157,8 +157,8 @@ if (mode === 'original') {
   // selected status first and sticky, one release, nothing refunded.
   for (const cut of [0, 1, 2, rows >> 1, rows - 2, rows - 1]) {
     const result = instance.invoke({account: exact(), faults: {push: cut}}), o = result.observation;
-    assert.equal(result.status, 15);
-    assert.equal(o.selected, 15);
+    assert.equal(result.status, 13);
+    assert.equal(o.selected, 13);
     assert.equal(result.value, undefined);
     assert.equal(o.domains[0].phase, 'Settled');
     assert.equal(o.domains[0].allocations, 1);

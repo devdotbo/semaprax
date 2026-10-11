@@ -91,11 +91,18 @@ if (mode === 'exact') {
     const raw = instance.invoke(run);
     return entry.normalize(raw, limit, reserved(raw.observation));
   };
+  // An injected push refusal takes the push's own failure exit: push_full.
   const failed = bound(step({account, faults: {push: 7}}), 'language_failure', limit, registry + perInvocation);
-  assert.deepEqual(failed.status, {domain: 'semaprax.vec.v1', code: 3});
+  assert.deepEqual(failed.status, {domain: 'semaprax.vec.v1', code: 1});
   assert.equal(bound(step({account}), 'returned', limit, registry + 2 * perInvocation).result, expectedText);
   const again = bound(step({account, faults: {push: 4095}}), 'language_failure', limit, limit);
-  assert.deepEqual(again.status, {domain: 'semaprax.vec.v1', code: 3});
+  assert.deepEqual(again.status, {domain: 'semaprax.vec.v1', code: 1});
+  // The pure normalizer keeps push-full, read and allocation codes distinct;
+  // these raw records are direct helper inputs, not source witnesses.
+  for (const [raw, code] of [[13, 1], [14, 2], [15, 3]]) {
+    const normalized = bound(entry.normalize({status: raw}, limit, limit), 'language_failure', limit, limit);
+    assert.deepEqual(normalized.status, {domain: 'semaprax.vec.v1', code});
+  }
   assert.throws(() => instance.invoke({account}), error => {
     const refused = entry.administrative(error.code, limit, reserved(error.observation));
     assert.equal(bound(refused, 'administrative_refusal', limit, limit).reason, 'account');

@@ -602,7 +602,7 @@ impl<'a> Lower<'a> {
         self.fail(
             &push.id,
             Failure::VecPush,
-            crate::wasm::aggregate::STATUS_VEC_ALLOCATION_FAILURE,
+            crate::wasm::aggregate::STATUS_VEC_PUSH_FULL,
         )?;
         self.op(I::End);
         self.post(&push.id, Owned::Leaf(renewed))?;
