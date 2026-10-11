@@ -44,3 +44,19 @@ pub(crate) fn owner(
         )
     })
 }
+
+#[cfg(test)]
+pub(crate) fn validate_monomorphic_owner_with_work(
+    function: &ResolvedFunction,
+    owner: &FunctionExecutionId,
+    charge: &mut impl FnMut(usize) -> Result<(), Diagnostic>,
+) -> Result<(), Diagnostic> {
+    if crate::hir::ids::monomorphic_owner_matches_with_work(function, owner, charge)? {
+        Ok(())
+    } else {
+        Err(Diagnostic::io(
+            "SPX-H006",
+            "lexical function owner differs from canonical result/body identities",
+        ))
+    }
+}

@@ -424,3 +424,8 @@ pub(super) fn checked_scoped_path<'a>(
     }
     matches_scoped_identity(value, owner, kind, parsed, path).then_some(path)
 }
+
+#[cfg(test)]
+mod metered_owner;
+#[cfg(test)]
+pub(crate) use metered_owner::matches as monomorphic_owner_matches_with_work;

@@ -39,6 +39,16 @@ pub(super) fn owner(
     }
     budget.reserve_clone(function, &function.id, "selected execution owner")?;
     let owner = crate::hir::FunctionExecutionId::Monomorphic(function.id.clone());
+    #[cfg(test)]
+    if let Some(lease) = program.borrowed_helper_lease(function) {
+        lease.validate(program, function, budget)?;
+        crate::hir::lexical_exit::validate_monomorphic_owner_with_work(
+            function,
+            &owner,
+            &mut |units| budget.charge(function, units, "borrowed exact owner identity"),
+        )?;
+        return Ok(owner);
+    }
     crate::hir::lexical_exit::validate_owner(function, &owner)?;
     Ok(owner)
 }

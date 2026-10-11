@@ -64,6 +64,8 @@ mod walk;
 pub(crate) use walk::{child, contains, requires, ChildCursor};
 
 mod owner;
+#[cfg(test)]
+pub(crate) use owner::validate_monomorphic_owner_with_work;
 pub(crate) use owner::{owner, validate_owner};
 
 pub(super) mod rekey;
