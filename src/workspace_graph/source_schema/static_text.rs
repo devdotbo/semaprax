@@ -273,4 +273,4 @@ pub(super) fn schema(
 mod tests;
 
 #[cfg(test)]
-pub(in crate::workspace_graph) use primitive::with_test_context;
+pub(in crate::workspace_graph) use primitive::{with_prepared_test_context, with_test_context};

@@ -614,24 +614,57 @@ fn retained_vec_composition_rejects_element_layout_finalizer_and_renewal_drift()
             }
             4 => {
                 let plan = &mut function_mut(module, "static.collect").cleanup_plan;
-                let target = plan
-                    .lexical_control
-                    .as_ref()
-                    .unwrap()
+                let control = plan.lexical_control.as_ref().unwrap();
+                let certificate = control
                     .exits
                     .iter()
                     .find(|exit| exit.kind == LexicalExitKind::Return)
-                    .expect("in-loop Return certificate")
-                    .exit;
+                    .expect("in-loop Return certificate");
+                let return_exit = plan
+                    .exits
+                    .iter()
+                    .find(|exit| exit.id == certificate.exit)
+                    .expect("certified Return exit target");
+                assert!(
+                    matches!(
+                        return_exit.continuation,
+                        crate::cleanup_plan::ExitContinuation::FunctionReturn { .. }
+                    ),
+                    "original Return continuation remains authenticated"
+                );
+                let resume = control
+                    .resumes
+                    .iter()
+                    .find(|resume| Some(resume.entry) == certificate.resume)
+                    .expect("exact certified Return resume");
+                // The nested Return contour leaves inner regions. Its held
+                // root owners settle only after resumed postconditions.
+                let terminal = plan
+                    .exits
+                    .iter()
+                    .filter(|exit| {
+                        resume.blocks.contains(&exit.from)
+                            && matches!(
+                                exit.continuation,
+                                crate::cleanup_plan::ExitContinuation::CommitResult { .. }
+                            )
+                    })
+                    .collect::<Vec<_>>();
+                assert_eq!(
+                    terminal.len(),
+                    1,
+                    "one current resumed successful publication"
+                );
+                let terminal_id = terminal[0].id;
                 let exit = plan
                     .exits
                     .iter_mut()
-                    .find(|exit| exit.id == target)
-                    .expect("certified Return exit target");
+                    .find(|exit| exit.id == terminal_id)
+                    .unwrap();
                 assert!(
                     exit.finalize_in_order.len() >= 2
                         && exit.finalize_in_order[0] != exit.finalize_in_order[1],
-                    "the in-loop Return settles both outer owners"
+                    "the certified Return resume settles both outer owners"
                 );
                 exit.finalize_in_order.swap(0, 1);
             }

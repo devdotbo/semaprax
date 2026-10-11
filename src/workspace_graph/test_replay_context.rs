@@ -46,6 +46,40 @@ impl SourceRecordReplayFixture {
             .find(|function| function.id.as_str() == id)
             .unwrap()
     }
+    /// Positive receiving controls borrow the actual prepared production
+    /// directory, including its independently rebuilt canonical Vec type.
+    /// The legacy callback below remains available for its closed negatives.
+    pub(crate) fn with_prepared_context<T>(
+        &self,
+        apply: impl FnOnce(&dyn crate::cleanup::ReplayContext) -> T,
+    ) -> T {
+        let anchor = self
+            .module()
+            .functions
+            .first()
+            .expect("source fixture function");
+        let preparation = crate::cleanup_plan::SelectedReplayPreparation::new(
+            anchor,
+            crate::cleanup_plan::ReplayPhysicalReservation::new(MAX_CHANGE_BUILDER_BYTES),
+        )
+        .unwrap();
+        source_schema::with_prepared_test_context(
+            self.module(),
+            &self.0.hir.modules,
+            &self.0.hir.declarations,
+            preparation,
+            |context, _held_preparation| {
+                assert!(
+                    (0..context.type_count()).any(|i| context
+                        .type_at(i)
+                        .is_some_and(|ty| ty.id.as_str() == crate::prelude::VEC_ID)),
+                    "prepared current directory retains the canonical builtin Vec"
+                );
+                apply(context)
+            },
+        )
+        .unwrap()
+    }
     pub(crate) fn with_context<T>(
         &self,
         apply: impl FnOnce(&dyn crate::cleanup::ReplayContext) -> T,

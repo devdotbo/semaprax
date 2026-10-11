@@ -67,7 +67,7 @@ fn string_vec_and_borrowed_record_receiving_replay_match_complete_ordinary_plans
             .unwrap();
         assert_eq!(retained.cleanup, expected.cleanup);
         assert_eq!(retained.cleanup_plan, expected.cleanup_plan);
-        fixture.with_context(|context| {
+        fixture.with_prepared_context(|context| {
             let measured =
                 super::super::selected_entry::validate_retained_lexical_with_reservation(
                     context,
@@ -215,7 +215,22 @@ fn exact_vec_call_and_field_modes_types_ids_and_elements_remain_closed() {
         let ordinary = direct(source);
         let current = function(&ordinary);
         let fixture = SourceRecordReplayFixture::new(source);
-        fixture.with_context(|context|{
+        fixture.with_context(|context| {
+            let call = nodes(&current.body).into_iter().find(|expression| {
+                matches!(&expression.kind, ResolvedExprKind::Call { callee, .. }
+                    if callee.as_str() == crate::vec_ops::WITH_CAPACITY_ID)
+            });
+            if let Some(call) = call {
+                assert_eq!(
+                    collections::call(context, current, call, &mut budget())
+                        .unwrap_err()
+                        .code,
+                    "SPX-H006",
+                    "legacy directory without current Vec remains closed"
+                );
+            }
+        });
+        fixture.with_prepared_context(|context|{
    let call=nodes(&current.body).into_iter().find(|e|matches!(&e.kind,ResolvedExprKind::Call{callee,..} if crate::vec_ops::by_id(callee.as_str()).is_some()));
    if let Some(call)=call{assert!(collections::call(context,current,call,&mut budget()).unwrap());for mutation in 0..4{let mut forged=call.clone();let ResolvedExprKind::Call{type_arguments,args,..}=&mut forged.kind else{unreachable!()};match mutation{0=>type_arguments.clear(),1=>args[0].ownership=OwnershipMode::Shared,2=>args[0].ty=ResolvedType::Bool,_=>forged.ownership=OwnershipMode::Borrow}assert_eq!(collections::call(context,current,&forged,&mut budget()).unwrap_err().code,"SPX-H006","call mutation {mutation}");}}
    if let Some(field)=nodes(&current.body).into_iter().find(|e|matches!(e.kind,ResolvedExprKind::VecFieldRead{..})){collections::field(context,current,field,&mut budget()).unwrap();for mutation in 0..5{let mut forged=field.clone();let ResolvedExprKind::VecFieldRead{field,args,element,..}=&mut forged.kind else{unreachable!()};match mutation{0=>*field=DeclarationId::new("foreign.field"),1=>args[0].ownership=OwnershipMode::Shared,2=>args[1].ty=ResolvedType::Bool,3=>*element=ResolvedType::Bytes,_=>forged.ownership=OwnershipMode::Own}assert_eq!(collections::field(context,current,&forged,&mut budget()).unwrap_err().code,"SPX-H006","field mutation {mutation}");}}

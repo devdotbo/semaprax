@@ -575,4 +575,4 @@ mod tests {
 }
 
 #[cfg(test)]
-pub(super) use static_text::with_test_context;
+pub(super) use static_text::{with_prepared_test_context, with_test_context};
