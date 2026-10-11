@@ -126,8 +126,8 @@ fit inside a tiny failed replay budget.
 
 An additive selected route has authored implementation and owning regression
 controls for imported pure monomorphic Copy-scalar helpers. The defining module
-captures its own checked source revision, explicit function identity, scalar
-signature and complete requires/body/ensures guard before HIR retention, including
+captures its own checked source revision, explicit function identity, exact
+parameter modes and scalar-result signature and complete requires/body/ensures guard before HIR retention, including
 providers without static literals. Import stubs and caller aliases grant no body
 authority. Replay authenticates each demanded provider against the current
 namespace, exact defining module/path, signature and body, rejects cycles, and
@@ -146,9 +146,18 @@ whole-entry-to-Drop ledgers are authored but unexecuted in this batch.
 
 The imported consumer route admits primitive signatures and no local nominal type
 inventory; the existing no-import route retains its separately specified record
-profile. Helper-local lexical control, templates/instances, borrowed or owning
-helper parameters/results, nominal/Vec/Option carriers, intrinsics and dynamic
-callable providers remain closed. Full OPT #745 remains open for these provider,
+profile. A further authored tranche admits Borrow Str/Slice parameters and Value scalar
+parameters with scalar results. View expressions must name the exact current
+borrowed parameter; StrAsBytes lowers to its authenticated BorrowPlace. Only
+byte length and Str length/empty/prefix/contains reads are permitted intrinsic
+calls, with exact argument and result shapes. Borrowed aliases, ranges, owned
+roots and borrowed results remain closed, and the helper must retain its exact
+empty v1 loan plan. Ordinary scalar While statements have no lexical exits.
+The cumulative preparation ledger also pays every root-identity comparison.
+
+Helper-local lexical control, templates/instances, owning helper parameters,
+nominal/Vec/Option carriers, other intrinsics and dynamic callable providers
+remain closed. Full OPT #745 remains open for these provider,
 loan/path, storage/instance and exact intrinsic metadata obligations. No wider
 production or executable qualification is claimed.
 A separate private inventory constructor profile supports exact current

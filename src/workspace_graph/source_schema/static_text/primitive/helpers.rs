@@ -287,7 +287,7 @@ fn authenticate_target<'a>(
         if source.id != current.id
             || source.name != current.name
             || source.ty != current.ty
-            || current.ownership != hir::OwnershipMode::Value
+            || source.ownership != current.ownership
         {
             return Err(fail());
         }
@@ -366,7 +366,11 @@ fn authenticate_inner<'a>(
         let provider = processed >= module.functions.len();
         calls(function, resources, anchor, |id, resources| {
             if builtin(id) {
-                return if provider { Err(fail()) } else { Ok(()) };
+                return if provider && !hir::borrowed_scalar::builtin(id.as_str()) {
+                    Err(fail())
+                } else {
+                    Ok(())
+                };
             }
             if lookup(id, module, &helpers, resources, anchor)?.is_none() {
                 let member = authenticate_target(id, modules, facts, resources, anchor)?;

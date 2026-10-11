@@ -176,12 +176,7 @@ impl DeclarationIndex {
             }
         }
         debit(function.params.len().checked_add(1).ok_or_else(fail)?)?;
-        if !is_scalar_resolved_type(&function.return_type)
-            || function
-                .params
-                .iter()
-                .any(|p| p.ownership != OwnershipMode::Value || !is_scalar_resolved_type(&p.ty))
-        {
+        if !crate::hir::borrowed_scalar::signature(function) {
             return Err(fail());
         }
         let node = crate::cleanup_plan::replay_btree_node_upper::<DeclarationId, Declaration>()

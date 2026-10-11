@@ -354,6 +354,7 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
                 include_str!("../../src/workspace_graph/static_text.rs"),
                 include_str!("../../src/workspace_graph/static_text/primitive.rs"),
                 include_str!("../../src/workspace_graph/static_text/scalar_helpers.rs"),
+                include_str!("../../src/hir/borrowed_scalar.rs"),
                 include_str!(
                     "../../src/workspace_graph/static_text/primitive/function_matching.rs"
                 ),
@@ -367,10 +368,18 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
                 include_str!("../../src/workspace_graph/source_schema.rs"),
                 include_str!("../../src/workspace_graph/source_schema/static_text.rs"),
                 include_str!("../../src/workspace_graph/source_schema/static_text/primitive.rs"),
-                include_str!("../../src/workspace_graph/source_schema/static_text/primitive/helpers.rs"),
-                include_str!("../../src/workspace_graph/source_schema/static_text/primitive/helpers/local.rs"),
-                include_str!("../../src/workspace_graph/source_schema/static_text/primitive/helpers/tests.rs"),
-                include_str!("../../src/workspace_graph/source_schema/static_text/primitive/helpers/tests/runtime.rs"),
+                include_str!(
+                    "../../src/workspace_graph/source_schema/static_text/primitive/helpers.rs"
+                ),
+                include_str!(
+                    "../../src/workspace_graph/source_schema/static_text/primitive/helpers/local.rs"
+                ),
+                include_str!(
+                    "../../src/workspace_graph/source_schema/static_text/primitive/helpers/tests.rs"
+                ),
+                include_str!(
+                    "../../src/workspace_graph/source_schema/static_text/primitive/helpers/tests/runtime.rs"
+                ),
                 include_str!(
                     "../../src/workspace_graph/source_schema/static_text/primitive/records.rs"
                 ),

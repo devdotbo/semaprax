@@ -6,11 +6,7 @@ pub(super) fn validate(
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
-    if !crate::hir::is_scalar_resolved_type(&function.return_type)
-        || function.params.iter().any(|p| {
-            p.ownership != OwnershipMode::Value || !crate::hir::is_scalar_resolved_type(&p.ty)
-        })
-    {
+    if !crate::hir::borrowed_scalar::signature(function) {
         return Err(replay_error(
             function,
             "selected helper signature is outside Copy scalars",
@@ -104,8 +100,13 @@ fn scalar_nodes(function: &ResolvedFunction, budget: &mut ReplayBudget) -> Resul
                 .take()
                 .ok_or_else(|| replay_error(function, "scalar profile cursor is empty"))?;
             if !entered
-                && (!crate::hir::is_scalar_resolved_type(&cursor.expression().ty)
-                    || cursor.expression().ownership != OwnershipMode::Value)
+                && !crate::hir::borrowed_scalar::expression(
+                    function,
+                    cursor.expression(),
+                    &mut |units| {
+                        budget.charge(function, units, "selected borrowed helper root identity")
+                    },
+                )?
             {
                 return Err(replay_error(
                     function,

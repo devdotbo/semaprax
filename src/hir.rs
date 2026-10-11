@@ -84,6 +84,7 @@ pub(crate) mod vec_field;
 mod agent_nodes;
 mod agent_validation;
 mod byte_capacity;
+pub(crate) mod borrowed_scalar;
 mod byte_slice_provenance;
 pub(crate) mod static_text;
 pub use static_text::StaticUtf8;

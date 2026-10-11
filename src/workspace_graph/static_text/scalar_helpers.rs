@@ -24,6 +24,7 @@ pub(in crate::workspace_graph) struct Parameter {
     pub(in crate::workspace_graph) id: hir::ValueId,
     pub(in crate::workspace_graph) name: String,
     pub(in crate::workspace_graph) ty: ResolvedType,
+    pub(in crate::workspace_graph) ownership: OwnershipMode,
 }
 fn debit(work: &mut usize, units: usize) -> Result<(), Vec<Diagnostic>> {
     *work = work.checked_sub(units).ok_or_else(fail)?;
@@ -51,11 +52,7 @@ pub(in crate::workspace_graph) fn pure_metered(
     take(function.params.len().checked_add(1).ok_or_else(fail)?)?;
     if !function.effects.is_empty()
         || function.yields.is_some()
-        || !hir::is_scalar_resolved_type(&function.return_type)
-        || function
-            .params
-            .iter()
-            .any(|p| p.ownership != OwnershipMode::Value || !hir::is_scalar_resolved_type(&p.ty))
+        || !hir::borrowed_scalar::signature(function)
     {
         return Ok(false);
     }
@@ -75,8 +72,7 @@ pub(in crate::workspace_graph) fn pure_metered(
             let mut cursor = stack[depth - 1].take().ok_or_else(fail)?;
             let expr = cursor.expression();
             if !cursor.is_started() {
-                if !hir::is_scalar_resolved_type(&expr.ty) || expr.ownership != OwnershipMode::Value
-                {
+                if !hir::borrowed_scalar::expression(function, expr, &mut take)? {
                     return Ok(false);
                 }
                 match &expr.kind {
@@ -92,6 +88,7 @@ pub(in crate::workspace_graph) fn pure_metered(
                     | ResolvedExprKind::Binary { .. }
                     | ResolvedExprKind::If { .. } => {}
                     ResolvedExprKind::Place(place) if place.projections.is_empty() => {}
+                    ResolvedExprKind::BorrowPlace { .. } => {}
                     ResolvedExprKind::Call {
                         instance,
                         type_arguments,
@@ -108,6 +105,7 @@ pub(in crate::workspace_graph) fn pure_metered(
                                     ..
                                 } if binding.ownership == OwnershipMode::Value
                                     && hir::is_scalar_resolved_type(&binding.ty) => {}
+                                ResolvedStatement::While { .. } => {}
                                 _ => return Ok(false),
                             }
                         }
@@ -214,10 +212,12 @@ pub(in crate::workspace_graph) fn capture(
         if !source.explicit_id
             || !source.type_parameters.is_empty()
             || source.follows.is_some()
-            || source
-                .params
-                .iter()
-                .any(|p| p.mode != crate::ast::ParamMode::Value)
+            || source.params.iter().any(|p| {
+                !matches!(
+                    p.mode,
+                    crate::ast::ParamMode::Value | crate::ast::ParamMode::Borrow
+                )
+            })
         {
             continue;
         }
@@ -243,10 +243,12 @@ pub(in crate::workspace_graph) fn capture(
         if source.explicit_id
             && source.type_parameters.is_empty()
             && source.follows.is_none()
-            && source
-                .params
-                .iter()
-                .all(|p| p.mode == crate::ast::ParamMode::Value)
+            && source.params.iter().all(|p| {
+                matches!(
+                    p.mode,
+                    crate::ast::ParamMode::Value | crate::ast::ParamMode::Borrow
+                )
+            })
             && pure(function, &mut work)?
         {
             count = count.checked_add(1).ok_or_else(capacity)?;
@@ -276,10 +278,12 @@ pub(in crate::workspace_graph) fn capture(
         if !source.explicit_id
             || !source.type_parameters.is_empty()
             || source.follows.is_some()
-            || source
-                .params
-                .iter()
-                .any(|p| p.mode != crate::ast::ParamMode::Value)
+            || source.params.iter().any(|p| {
+                !matches!(
+                    p.mode,
+                    crate::ast::ParamMode::Value | crate::ast::ParamMode::Borrow
+                )
+            })
         {
             continue;
         }
@@ -305,10 +309,12 @@ pub(in crate::workspace_graph) fn capture(
         if !source.explicit_id
             || !source.type_parameters.is_empty()
             || source.follows.is_some()
-            || source
-                .params
-                .iter()
-                .any(|p| p.mode != crate::ast::ParamMode::Value)
+            || source.params.iter().any(|p| {
+                !matches!(
+                    p.mode,
+                    crate::ast::ParamMode::Value | crate::ast::ParamMode::Borrow
+                )
+            })
             || !pure(function, &mut work)?
         {
             continue;
@@ -365,6 +371,15 @@ pub(in crate::workspace_graph) fn capture(
                 .zip(&function.params)
                 .any(|(source, current)| {
                     source.name != current.name
+                        || match source.mode {
+                            crate::ast::ParamMode::Value => {
+                                current.ownership != OwnershipMode::Value
+                            }
+                            crate::ast::ParamMode::Borrow => {
+                                current.ownership != OwnershipMode::Borrow
+                            }
+                            _ => true,
+                        }
                         || primitive::ty(&source.ty).as_ref() != Some(&current.ty)
                 })
         {
@@ -412,6 +427,7 @@ pub(in crate::workspace_graph) fn capture(
                 id: param.id.clone(),
                 name: param.name.clone(),
                 ty: param.ty.clone(),
+                ownership: param.ownership,
             });
         }
         let digest = body_digest::typed_attempt_metered(
