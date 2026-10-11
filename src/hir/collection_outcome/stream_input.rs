@@ -1,4 +1,4 @@
-//! Independent replay of the exact normalization-owner to nested outcome join.
+//! Independent replay of the exact normalization-owner to existing outcome join.
 use super::*;
 
 pub(super) fn match_result(
@@ -11,7 +11,7 @@ pub(super) fn match_result(
     mode == ResolvedMatchMode::Own
         && ownership == OwnershipMode::Own
         && admitted(index, input)
-        && super::nested::admitted(index, result)
+        && super::runtime_admitted(index, result)
 }
 
 fn admitted(index: &DeclarationIndex, ty: &ResolvedType) -> bool {
@@ -73,3 +73,6 @@ fn admitted(index: &DeclarationIndex, ty: &ResolvedType) -> bool {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod flat_tests;

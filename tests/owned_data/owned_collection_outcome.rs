@@ -1,4 +1,6 @@
 //! Same-source success and error outcomes carrying an owned-leaf collection.
+#[path = "owned_collection_outcome/normalized_input.rs"]
+mod normalized_input;
 use semaprax::{codegen, interpreter, wasm};
 use std::process::Command;
 use std::sync::atomic::{AtomicU64, Ordering};

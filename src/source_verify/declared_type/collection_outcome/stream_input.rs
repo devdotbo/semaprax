@@ -1,4 +1,4 @@
-//! Exact normalizer-owner to finite nested outcome join; no name-based privilege.
+//! Exact normalizer-owner to independently admitted collection outcome join; no name-based privilege.
 use super::*;
 
 pub(super) fn match_result(
@@ -14,7 +14,7 @@ pub(super) fn match_result(
     let (
         Type::Named { name, arguments },
         Type::Named {
-            name: output,
+            name: _,
             arguments: output_arguments,
         },
     ) = (input, result)
@@ -47,7 +47,5 @@ pub(super) fn match_result(
     let error = |fields: &[FieldDeclaration]| matches!(fields, [code, offset, field] if code.ty==Type::I64 && offset.ty==Type::Usize && field.ty==Type::I64);
     ((ready(&cases[0].fields) && error(&cases[1].fields))
         || (ready(&cases[1].fields) && error(&cases[0].fields)))
-        && types
-            .declaration(output)
-            .is_some_and(|declaration| super::nested::admitted(types, declaration))
+        && super::runtime_admitted(types, result)
 }

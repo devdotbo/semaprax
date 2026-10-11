@@ -113,18 +113,24 @@ fn stage(root: &Path) {
     for (path, generated) in candidates {
         std::fs::write(root.join(path), generated).unwrap();
     }
-    // Original aggregate match and projected owner remain independent negative
-    // controls against the same actual generated schemas and manifest.
+    // The original ordinary Input→Decode tail now composes. Preserve its
+    // independent projected-owner refusal against the same generated schemas.
     let original = include_str!("catalog-scoped-record-command-original.txt");
     std::fs::write(root.join("src/app.spx"), canonical(original)).unwrap();
     let errors =
         project::with_authenticated_project(&root.join("semaprax.toml"), |_| Ok(())).unwrap_err();
-    for code in ["SPX-T258", "SPX-T216", "SPX-O118"] {
+    for code in ["SPX-O118"] {
         assert!(
             errors.iter().any(|error| error.code == code),
             "{code}: {errors:?}"
         );
     }
+    assert!(
+        !errors
+            .iter()
+            .any(|error| matches!(error.code, "SPX-T258" | "SPX-T216")),
+        "{errors:?}"
+    );
     std::fs::copy(root.join("src/app.command.spx"), root.join("src/app.spx")).unwrap();
 }
 
@@ -172,28 +178,50 @@ fn typed_catalog_derives_codecs_and_preserves_all_23_functional_cases() {
         .map_err(|error| vec![error])
     })
     .unwrap();
-    // The independently frozen corpus carries exact raw bytes and exact all-channel
-    // results; never reserialize requests, infer expected output, or skip a case.
-    for optimization in ["-O0", "-O2"] {
-        let binary = compile_native(&c_source, &root, optimization);
-        for case in cases {
-            let name = case["name"].as_str().unwrap();
-            let output = execute(&binary, &hex(case["input_hex"].as_str().unwrap()));
-            assert_eq!(
-                output.status.code(),
-                Some(i32::try_from(case["status"].as_i64().unwrap()).unwrap()),
-                "{optimization}: {name}"
-            );
-            assert_eq!(
-                output.stdout,
-                hex(case["stdout_hex"].as_str().unwrap()),
-                "{optimization}: {name}"
-            );
-            assert_eq!(
-                output.stderr,
-                hex(case["stderr_hex"].as_str().unwrap()),
-                "{optimization}: {name}"
-            );
+    // Differential source retains the original ordinary normalized-input join,
+    // while retaining the admitted owned-record command destructuring. The old
+    // receive/decide workaround remains independently executed below.
+    let workaround = std::fs::read_to_string(root.join("src/app.spx")).unwrap();
+    let original_receive = "fn receive(bytes: own Bytes, length: usize) -> Decode\n{\n    decode(byte_range(bytes_as_slice(bytes), 0usize, length))\n}";
+    assert!(workaround.contains(original_receive));
+    let old_command = "let normalized = normalize();\n    match own normalized { StreamInput::Error { code: _code, offset: _offset, field: _field } => reject(), StreamInput::Ready { bytes, length } => { let outcome = receive(bytes, length); decide(outcome) }, }";
+    assert!(workaround.contains(old_command));
+    let joined = workaround.replace(original_receive,
+        "fn receive() -> Decode uses { process.stdin.read } {let normalized=normalize();match own normalized {StreamInput::Error{code,offset,field}=>Decode::Error{code:code,offset:offset,field:field},StreamInput::Ready{bytes,length}=>decode(byte_range(bytes_as_slice(bytes),0usize,length)),}}")
+        .replace(old_command,"decide(receive())");
+    std::fs::write(root.join("src/app.spx"), canonical(&joined)).unwrap();
+    let joined_c = project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
+        codegen::emit_hir_c_with_stdin_stream_collection_records(
+            snapshot.public_api_program(),
+            "catalog.command",
+        )
+        .map_err(|error| vec![error])
+    })
+    .unwrap();
+    std::fs::write(root.join("src/app.spx"), workaround).unwrap();
+    // Both sources execute every frozen raw-byte/all-channel row unchanged.
+    for (route, source) in [("workaround", &c_source), ("joined", &joined_c)] {
+        for optimization in ["-O0", "-O2"] {
+            let binary = compile_native(source, &root, optimization);
+            for case in cases {
+                let name = case["name"].as_str().unwrap();
+                let output = execute(&binary, &hex(case["input_hex"].as_str().unwrap()));
+                assert_eq!(
+                    output.status.code(),
+                    Some(i32::try_from(case["status"].as_i64().unwrap()).unwrap()),
+                    "{route}: {optimization}: {name}"
+                );
+                assert_eq!(
+                    output.stdout,
+                    hex(case["stdout_hex"].as_str().unwrap()),
+                    "{route}: {optimization}: {name}"
+                );
+                assert_eq!(
+                    output.stderr,
+                    hex(case["stderr_hex"].as_str().unwrap()),
+                    "{route}: {optimization}: {name}"
+                );
+            }
         }
     }
     // Also bind the ordinary Project native-build artifact to every original row.

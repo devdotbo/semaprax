@@ -923,3 +923,22 @@ fn unicode_scalar_conversion_matches_recursive_oracle() {
         compare_scalar_body(source);
     }
 }
+
+#[test]
+fn normalized_input_flat_aggregate_join_matches_recursive_oracle() {
+    let source = include_str!("../../tests/fixtures/normalized-input-flat-outcome.spx")
+        .replace("fn main()", "fn probe()")
+        .replace("fn join(", "fn main(")
+        .replace("join(Input::", "main(Input::");
+    compare_scalar_body(&source);
+    let copy = source
+        .replace("label: string", "label: bool")
+        .replace("label: \"ok\"", "label: true")
+        .replace("label == \"ok\"", "label")
+        .replace("match own first", "match first")
+        .replace(
+            "vec_clone_at<Row>(rows, 0usize)",
+            "vec_get<Row>(rows, 0usize)",
+        );
+    compare_scalar_body(&copy);
+}

@@ -22,6 +22,9 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/hir/validation/nominal_facts/tests.rs"),
         include_str!("../src/hir/validation/borrowed_argument.rs"),
         include_str!("../src/hir/projected_string_view.rs"),
+        include_str!("../src/hir/collection_outcome.rs"),
+        include_str!("../src/hir/collection_outcome/owned.rs"),
+        include_str!("../src/hir/collection_outcome/stream_input.rs"),
         include_str!("../src/hir/collection_outcome/nested.rs"),
         include_str!("../src/hir/collection_outcome/nested/profile.rs"),
         include_str!("../src/hir/validation/stdin_stream.rs"),
@@ -110,8 +113,10 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
     let format_macro = root.find("macro_rules! format {").unwrap();
     let validation_module = root.find("mod validation;").unwrap();
     assert!(format_macro < validation_module);
-    assert!(root[format_macro..validation_module]
-        .contains("crate::bounded_output::budgeted_format(format_args!"));
+    assert!(
+        root[format_macro..validation_module]
+            .contains("crate::bounded_output::budgeted_format(format_args!")
+    );
     assert!(validation.contains("format!("));
     for forbidden in ["std::format", "::format!", "use std::format"] {
         assert!(

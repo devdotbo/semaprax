@@ -130,6 +130,8 @@ bounded flat Copy-record Vec element shape. `hir/collection_outcome.rs` and
 `source_verify/declared_type/collection_outcome.rs` independently classify direct
 two-case results with one or two of these owned vectors; ordinary variant
 layout and conditional cleanup own transport, without new graph authority.
+The independent `collection_outcome/stream_input` classifiers compose exact
+normalization owners with these existing results; [the join contract](INPUT-COLLECTION-OUTCOME-JOIN-V1.md) preserves ordinary carriers and settlement.
 Native lowering lives under
 `native_emit/expression/vec_ops/copy_record.rs`; Core Wasm lowers the same
 checked field words in `wasm/aggregate/vec_copy_record.rs`. Both retain one
