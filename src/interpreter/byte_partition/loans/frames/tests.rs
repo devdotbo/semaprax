@@ -6,7 +6,10 @@ use std::alloc::Layout;
 
 fn fixture() -> ResolvedProgram {
     let source = r#"module partition.frames;
-        @id("frames.helper") fn helper(value:borrow Bytes)->i64 {
+        @id("frames.helper") fn helper(value:own Bytes)->i64 {
+            let view=bytes_as_slice(value); 0
+        }
+        @id("frames.borrowed") fn borrowed(value:borrow Bytes)->i64 {
             let view=bytes_as_slice(value); 0
         }
         @id("frames.scalar") fn scalar()->i64 {0}
@@ -113,7 +116,7 @@ fn entry_has_exact_one_short_shared_funding_and_scalar_frames_have_no_slots() {
     // implementation's metadata-layout or measured-charge helper.
     let independent = Layout::new::<Loans<'_, Probe>>().size()
         + Layout::new::<Vec<Slot>>().size()
-        + Layout::array::<Slot>(crate::loan_plan::MAX_LOANS_PER_FUNCTION_V1)
+        + Layout::array::<Slot>(main.loan_plan.loans.len())
             .unwrap()
             .size()
         + Layout::new::<Vec<Frame<'_>>>().size()
@@ -161,10 +164,12 @@ fn entry_has_exact_one_short_shared_funding_and_scalar_frames_have_no_slots() {
 }
 
 #[test]
-fn inherited_parameter_view_has_one_caller_finalizer_across_exact_local_end() {
+fn inherited_parameter_view_has_one_caller_finalizer_across_exact_caller_end() {
     let program = fixture();
     let main = function(&program, "main");
-    let helper = function(&program, "helper");
+    let helper = function(&program, "borrowed");
+    assert!(helper.loan_plan.loans.is_empty());
+    assert!(helper.loan_plan.endpoints.is_empty());
     let probe = account(usize::MAX);
     let mut receiver = Loans::new(
         LoanCapacity::checked(&program, main).unwrap(),
@@ -175,22 +180,24 @@ fn inherited_parameter_view_has_one_caller_finalizer_across_exact_local_end() {
         .partition(vec![7].into_boxed_slice(), 1, 1)
         .unwrap();
     start(&mut receiver);
-    let caller = receiver
-        .borrow(&owners[0], main.loan_plan.loans[0].id)
-        .unwrap();
+    let loan = &main.loan_plan.loans[0];
+    let caller = receiver.borrow(&owners[0], loan.id).unwrap();
     receiver
         .enter_frame(LoanCapacity::checked(&program, helper).unwrap())
         .unwrap();
-    start(&mut receiver);
+    assert!(receiver.slots.is_empty());
     let before = probe.charged();
     let local = receiver
-        .inherit_view(helper.loan_plan.loans[0].id, caller)
+        .inherit_parameter(&helper.params[0], caller)
         .unwrap();
+    assert_eq!(local, caller);
     assert_eq!(probe.charged(), before);
     assert_eq!(receiver.read(local, |bytes| bytes[0]).unwrap(), 7);
-    let loan = &helper.loan_plan.loans[0];
+    receiver.leave_frame().unwrap();
+    // Returning never ends the caller's physical loan or mints a callee loan.
+    assert_eq!(receiver.read(caller, |bytes| bytes[0]).unwrap(), 7);
     loop {
-        let (index, edge) = helper
+        let (index, edge) = main
             .loan_plan
             .edges
             .iter()
@@ -202,14 +209,28 @@ fn inherited_parameter_view_has_one_caller_finalizer_across_exact_local_end() {
             break;
         }
     }
-    // Local retirement neither owns nor ends the caller's physical Core loan.
-    assert_eq!(receiver.read(caller, |bytes| bytes[0]).unwrap(), 7);
-    receiver.leave_frame().unwrap();
-    assert_eq!(receiver.read(caller, |bytes| bytes[0]).unwrap(), 7);
+    receiver.store(&mut owners[0], 0, &[9]).unwrap();
     assert!(receiver
         .read(local, |_| panic!("stale inherited callback"))
         .is_err());
     assert!(receiver.read(caller, |_| ()).is_err());
     receiver.abandon_views().unwrap();
     receiver.settle(&mut owners[0]).unwrap();
+    let mut fresh = Loans::new(
+        LoanCapacity::checked(&program, main).unwrap(),
+        account(usize::MAX),
+    )
+    .unwrap();
+    let mut owners = fresh.partition(vec![7].into_boxed_slice(), 1, 1).unwrap();
+    start(&mut fresh);
+    let caller = fresh.borrow(&owners[0], loan.id).unwrap();
+    fresh
+        .enter_frame(LoanCapacity::checked(&program, helper).unwrap())
+        .unwrap();
+    let copied = helper.params[0].clone();
+    assert!(fresh.inherit_parameter(&copied, caller).is_err());
+    assert!(fresh.inherit_parameter(&helper.params[0], caller).is_err());
+    fresh.leave_frame().unwrap();
+    fresh.abandon_views().unwrap();
+    fresh.settle(&mut owners[0]).unwrap();
 }

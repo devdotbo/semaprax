@@ -296,8 +296,8 @@ remain required; these controls do not qualify an ordinary admitted program.
 ### Ordinary loan receiver checkpoint
 
 The pending ordinary interpreter receiver holds the actual fully validated
-function and its immutable loan plan. Its separately charged fixed loan table
-uses the existing 256-loan limit; the private fused Core's 64-view path remains
+function and its immutable loan plan. Its separately charged local loan table
+retains the existing 256-loan limit; the private fused Core's 64-view path remains
 unchanged. A copied view descriptor carries no finalization ownership: one
 registry entry retains the affine Core loan. Exact CFG `end_edges`, rather than
 node-union kills, retire that entry and stale descriptors fail sticky. Header,
@@ -438,12 +438,13 @@ requests remain cumulative through repeated calls, with no refund on return.
 The existing funding forecast covers one base frame; it does not certify
 arbitrary repeated frame allocations or replace the entry's finite account.
 
-A borrowed parameter descriptor refers to its held caller loan. The callee's
-local alias has no second physical loan or finalizer; its exact local end edge
-clears only that alias. The caller's own end edge retains sole retirement
-authority. Same-invocation identity, an actual held ancestor frame, local start
-point and generations are checked before publishing an alias. Actual parameter
-root and call staging correspondence still belong to the closed installer.
+A borrowed parameter descriptor refers directly to its held caller loan.
+Canonical Borrow-parameter-only helpers have empty loan plans: the receiver does
+not invent a callee LoanId, start point or end edge. Same-invocation identity,
+an actual held ancestor frame, exact current parameter pointer, Borrow mode and
+Bytes/Slice type are checked before binding the descriptor. Only the caller's
+real end edge retires its one physical loan. Actual argument-root correspondence
+and call staging still belong to the closed installer.
 
 Per-function 256-loan validation alone is not proof that a shared backing has at
 most 256 simultaneous physical views across calls. The eventual entry must join

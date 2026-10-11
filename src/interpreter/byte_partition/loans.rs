@@ -19,7 +19,6 @@ pub(crate) struct ViewId {
 struct Slot {
     generation: u64,
     view: Option<View>,
-    alias: Option<ViewId>,
 }
 pub(crate) struct Loans<'p, R: InvocationRuntime> {
     capacity: LoanCapacity<'p>,
@@ -32,33 +31,30 @@ pub(crate) struct Loans<'p, R: InvocationRuntime> {
     spare: Option<Box<[Slot]>>,
 }
 impl<'p, R: InvocationRuntime> Loans<'p, R> {
-    /// Header and complete fixed loan inventory are paid before allocation.
-    /// Construction is inaccessible to source because LoanCapacity has no
-    /// production constructor until the full ordinary factory is joined.
+    /// Header and actual checked local inventory are paid before allocation.
+    /// The source-held capacity exists, but no ordinary evaluator installer
+    /// can mint runtime roots until its complete receiving proof is joined.
     pub(super) fn metadata_layouts(capacity: &LoanCapacity<'p>) -> Result<[Layout; 3], Refusal> {
         Ok([
             Layout::new::<Self>(),
             Layout::new::<Vec<Slot>>(),
-            Layout::array::<Slot>(capacity.slots()).map_err(|_| Refusal::Metadata)?,
+            Layout::array::<Slot>(capacity.function().loan_plan.loans.len())
+                .map_err(|_| Refusal::Metadata)?,
         ])
     }
     pub(crate) fn new(capacity: LoanCapacity<'p>, mut runtime: R) -> Result<Self, Refusal> {
-        if capacity.function().loan_plan.endpoints.is_empty() {
-            return Err(Refusal::Identity);
-        }
         for layout in Self::metadata_layouts(&capacity)? {
             runtime.reserve_metadata(layout)?;
         }
         let registry = Registry::new(runtime)?;
         let mut slots = Vec::new();
         slots
-            .try_reserve_exact(capacity.slots())
+            .try_reserve_exact(capacity.function().loan_plan.loans.len())
             .expect("ordinary partition loan allocation invariant failure");
-        assert_eq!(slots.capacity(), capacity.slots());
-        slots.resize_with(capacity.slots(), || Slot {
+        assert_eq!(slots.capacity(), capacity.function().loan_plan.loans.len());
+        slots.resize_with(capacity.function().loan_plan.loans.len(), || Slot {
             generation: 0,
             view: None,
-            alias: None,
         });
         Ok(Self {
             capacity,
@@ -99,7 +95,7 @@ impl<'p, R: InvocationRuntime> Loans<'p, R> {
                 return Err(Refusal::Identity);
             }
             let slot = self.slots.get_mut(id.0 as usize).ok_or(Refusal::Identity)?;
-            if slot.view.is_some() || slot.alias.is_some() {
+            if slot.view.is_some() {
                 return Err(Refusal::Borrowed);
             }
             let generation = slot.generation.checked_add(1).ok_or(Refusal::Exhausted)?;
@@ -121,7 +117,7 @@ impl<'p, R: InvocationRuntime> Loans<'p, R> {
             if id.invocation != self.registry.invocation {
                 return Err(Refusal::Identity);
             }
-            let view = frames::resolve(id, self.frame, &self.slots, &self.frames)?;
+            let view = frames::view(id, self.frame, &self.slots, &self.frames)?;
             self.registry.read(view, f)
         })();
         self.registry.select(result)
@@ -138,7 +134,7 @@ impl<'p, R: InvocationRuntime> Loans<'p, R> {
             if id.invocation != self.registry.invocation {
                 return Err(Refusal::Identity);
             }
-            let view = frames::resolve(id, self.frame, &self.slots, &self.frames)?;
+            let view = frames::view(id, self.frame, &self.slots, &self.frames)?;
             self.registry.read_range(view, start, end, f)
         })();
         self.registry.select(result)
@@ -187,7 +183,6 @@ impl<'p, R: InvocationRuntime> Loans<'p, R> {
             let edge_index = u16::try_from(edge_index).map_err(|_| Refusal::Identity)?;
             for loan in &plan.loans {
                 if loan.end_edges.contains(&edge_index) {
-                    self.slots[loan.id.0 as usize].alias = None;
                     if let Some(view) = self.slots[loan.id.0 as usize].view.as_mut() {
                         self.registry.end_view(view)?;
                         self.slots[loan.id.0 as usize].view = None;
@@ -215,7 +210,6 @@ impl<'p, R: InvocationRuntime> Loans<'p, R> {
     pub(crate) fn abandon_views(&mut self) -> Result<(), Refusal> {
         let mut first = None;
         for slot in &mut self.slots {
-            slot.alias = None;
             if let Some(mut view) = slot.view.take() {
                 if let Err(error) = self.registry.end_view(&mut view) {
                     first.get_or_insert(error);
@@ -224,7 +218,6 @@ impl<'p, R: InvocationRuntime> Loans<'p, R> {
         }
         for frame in &mut self.frames {
             for slot in &mut frame.slots {
-                slot.alias = None;
                 if let Some(mut view) = slot.view.take() {
                     if let Err(error) = self.registry.end_view(&mut view) {
                         first.get_or_insert(error);
