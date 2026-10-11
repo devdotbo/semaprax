@@ -78,6 +78,10 @@ This does not widen public Project/package ABI admission or frozen source-less
 owning bodies: omitted private descendants with real provider evaluation and
 exact Vec facts; full name hygiene and source visibility; provider identity,
 layout and body drift; exact/one-short frame, directory and String reservations.
+The `private_layout::authority::tests::` child adds two definitions: exact/one-short
+borrowed authority storage and fresh/retained signature parity with missing,
+stale and forged private fields. Proven complete provider type imports require
+no new backing.
 The original owned-function outcome gate retains complete HIR validation and
 forged Vec-parameter refusal while checking descendant omission. The existing
 text-collection hostile shapes remain refused. The workspace source-boundary

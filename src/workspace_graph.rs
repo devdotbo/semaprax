@@ -5641,11 +5641,7 @@ fn reconstruct_workspace_declaration_facts(
             programs,
             module_uses_record_iterator,
         )?;
-        let direct_targets = source
-            .module_uses
-            .iter()
-            .map(|module_use| module_use.persistent_id.as_str())
-            .collect::<BTreeSet<_>>();
+        let private = expected_projection::private_layout::authority::PrivateTypes::derive(source, programs)?;
         let synthetic_main = crate::bounded_output::budgeted_format(format_args!(
             "workspace.synthetic.main.{module}"
         ));
@@ -5698,7 +5694,8 @@ fn reconstruct_workspace_declaration_facts(
             };
             if top_fact.module.as_deref() != Some(module.as_str()) {
                 let expected_foreign = expected.get(declaration.id.as_str());
-                if direct_targets.contains(top.as_str())
+                if (source.module_uses.iter().any(|u| u.persistent_id == top.as_str())
+                    || private.contains(top.as_str(), top_fact.module.as_deref())?)
                     && expected_foreign.is_some_and(|fact| {
                         fact.kind == declaration.kind
                             && fact.origin == declaration.identity_origin

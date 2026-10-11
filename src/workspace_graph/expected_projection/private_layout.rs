@@ -1,14 +1,16 @@
 //! Invocation-local private layout closure; never a source import or graph edge.
-use super::super::{graph_error, reserve_builder_structure, AuthoredDeclaration};
+use super::super::{AuthoredDeclaration, graph_error, reserve_builder_structure};
 use crate::ast::{ModuleUseKind, Program, Type, TypeDeclaration, TypeDeclarationKind};
 use crate::diagnostic::Diagnostic;
 use std::collections::BTreeMap;
 use std::fmt::Write;
+#[path = "private_layout/authority.rs"]
+pub(in crate::workspace_graph) mod authority;
 #[path = "private_layout/names.rs"]
 mod names;
 #[path = "private_layout/shape.rs"]
 mod shape;
-use shape::{debit, explicit_only, scalar, validate_declaration, validate_root, Absence};
+use shape::{Absence, debit, explicit_only, scalar, validate_declaration, validate_root};
 
 pub(super) struct Entry<'a> {
     pub(super) module: &'a str,

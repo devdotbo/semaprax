@@ -13,8 +13,8 @@ use crate::diagnostic::Diagnostic;
 use crate::hir;
 
 use super::{
-    graph_error, prelude_binding, reserve_builder_structure, top_level_declaration,
-    WorkspaceDeclarationFact,
+    WorkspaceDeclarationFact, graph_error, prelude_binding, reserve_builder_structure,
+    top_level_declaration,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -166,6 +166,9 @@ impl WorkspaceValidationIndex {
                 prelude_binding::expected_declaration_facts_for_programs(programs, true)?;
             self.resolved_record_iterator = true;
         }
+        let private = super::expected_projection::private_layout::authority::PrivateTypes::derive(
+            source, programs,
+        )?;
         let expected_module_compiler = prelude_binding::expected_module_declaration_facts(
             source,
             programs,
@@ -224,10 +227,11 @@ impl WorkspaceValidationIndex {
             };
             if top_fact.module.as_deref() != Some(module) {
                 let expected_foreign = self.expected.get(declaration.id.as_str());
-                if source
+                if (source
                     .module_uses
                     .iter()
                     .any(|item| item.persistent_id == top.as_str())
+                    || private.contains(top.as_str(), top_fact.module.as_deref())?)
                     && expected_foreign.is_some_and(|fact| {
                         fact.kind == declaration.kind
                             && fact.origin == declaration.identity_origin
@@ -366,6 +370,24 @@ impl WorkspaceValidationIndex {
                     ModuleUseKind::Protocol => unreachable!(),
                 }
             }
+            let private =
+                super::expected_projection::private_layout::authority::PrivateTypes::derive(
+                    caller, programs,
+                )?;
+            private.validate_signatures(|module, id| {
+                caller_facts
+                    .types
+                    .get(id)
+                    .zip(
+                        self.modules
+                            .get(module)
+                            .and_then(|facts| facts.types.get(id)),
+                    )
+                    .is_some_and(|(stub, authority)| {
+                        stub.type_parameters == authority.type_parameters
+                            && stub.kind == authority.kind
+                    })
+            })?;
         }
         Ok(())
     }
@@ -733,6 +755,24 @@ pub(super) fn validate_stub_signatures(
                 ModuleUseKind::Protocol => unreachable!(),
             }
         }
+        let private = super::expected_projection::private_layout::authority::PrivateTypes::derive(
+            caller, programs,
+        )?;
+        private.validate_signatures(|module, id| {
+            caller_hir
+                .types
+                .iter()
+                .find(|t| t.id.as_str() == id)
+                .zip(
+                    modules
+                        .iter()
+                        .find(|(m, _)| m == module)
+                        .and_then(|(_, p)| p.types.iter().find(|t| t.id.as_str() == id)),
+                )
+                .is_some_and(|(stub, authority)| {
+                    stub.type_parameters == authority.type_parameters && stub.kind == authority.kind
+                })
+        })?;
     }
     Ok(())
 }

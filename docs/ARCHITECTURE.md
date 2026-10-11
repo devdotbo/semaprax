@@ -3676,7 +3676,8 @@ replays finite String/vector result variants and explicit root imports.
 `expected_projection/private_layout.rs` independently reconstructs their private
 record descendants from held provider declarations; its `names` child reserves
 fresh synthetic names against every identifier in the bounded plain-module
-caller. Copied declarations and prototypes use those names without adding source
+caller. Its `authority` child reconstructs borrowed private type/provider roots
+and both signature validators compare exact current provider layouts. Copied declarations and prototypes use those names without adding source
 imports or graph edges. `expected_projection/type_rewrite.rs` rewrites exact
 compiler-owned Vec elements through the current imported/private alias closure,
 with matching clone, identity and default-cost replay. See
