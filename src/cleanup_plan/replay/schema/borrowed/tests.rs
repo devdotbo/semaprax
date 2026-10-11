@@ -13,6 +13,19 @@ fn line_end() -> crate::hir::ResolvedProgram {
     );
     crate::hir::resolve(&crate::check(&selected, "actual-line-end.spx").unwrap()).unwrap()
 }
+fn at_is() -> crate::hir::ResolvedProgram {
+    let source = include_str!("../../../../../std/data-json-utf8/src/utf8.spx");
+    let start = source.find("@id(\"std.data.json.utf8.at_is\")").unwrap();
+    let rest = &source[start..];
+    let end = rest[4..]
+        .find("@id(")
+        .map_or(rest.len(), |offset| offset + 4);
+    let selected = format!(
+        "module std.data.json.utf8;\n{}\n@id(\"main\") fn main()->i64 {{0}}",
+        &rest[..end]
+    );
+    crate::hir::resolve(&crate::check(&selected, "actual-at-is.spx").unwrap()).unwrap()
+}
 #[test]
 fn actual_provider_profile_is_current_and_keeps_the_original_value_match_schema_oracle() {
     let program = line_end();
@@ -72,6 +85,18 @@ fn actual_provider_profile_is_current_and_keeps_the_original_value_match_schema_
         profile.schema(&forged, function, &mut budget).unwrap(),
         original
     );
+    // The second independently retained provider has a Value Option match at
+    // the function root, rather than inside line_end's ordinary loop.
+    let direct = at_is();
+    let function = &direct.functions[0];
+    let ordinary = selected_schema_with_index(&direct, function, None).unwrap();
+    let mut budget = ReplayBudget::with_physical(function, 1 << 24).unwrap();
+    let profile = build(&direct, function, &mut budget).unwrap();
+    assert_eq!(
+        profile.schema(&direct, function, &mut budget).unwrap(),
+        ordinary
+    );
+    assert_eq!(ordinary, CLEANUP_PLAN_SCHEMA_V2);
 }
 #[test]
 fn complete_profile_and_inventory_share_exact_work_backing_and_held_pool_through_drop() {
