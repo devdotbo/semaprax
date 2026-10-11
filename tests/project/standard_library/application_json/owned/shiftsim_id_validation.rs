@@ -124,7 +124,8 @@ fn sorted_arrival_cursor_matches_frozen_event_scans_and_host_count_oracle() {
         "@id(\"shiftsim.schedule.advance_arrivals\")",
         "@id(\"shiftsim.schedule.run\")",
     );
-    let mut source = format!("module shiftsim.events;\n{states}\n{old}\n{fast}\n");
+    let dispatch = include_str!("shiftsim_id_validation/original_dispatch_helpers.txt");
+    let mut source = format!("module shiftsim.events;\n{states}\n{old}\n{dispatch}\n{fast}\n");
     for (case, (count, time)) in [
         (0usize, 0i64),
         (1, 0),
@@ -167,6 +168,17 @@ fn sorted_arrival_cursor_matches_frozen_event_scans_and_host_count_oracle() {
  let workers1=vec_push<WorkerState>(workers0,WorkerState{{free_at:0}});
  let workers2=vec_push<WorkerState>(workers1,WorkerState{{free_at:3}});
  let workers=vec_push<WorkerState>(workers2,WorkerState{{free_at:5}});
+ let before_patient=next_patient(patients,{count}usize,{time});
+ let before_server=next_server(workers,3usize,{time});
+ let before_selected=before_patient!={count}usize && before_server!=3usize;
+ let after_server=next_server(workers,3usize,{time});
+ let after_selected=if after_server==3usize {{false}}else{{let after_patient=next_patient(patients,{count}usize,{time}); after_patient!={count}usize && after_patient==before_patient && after_server==before_server}};
+ let blocked0=vec_with_capacity<WorkerState>(1usize);
+ let blocked=vec_push<WorkerState>(blocked0,WorkerState{{free_at:{time}+1}});
+ let blocked_patient=next_patient(patients,{count}usize,{time});
+ let blocked_server=next_server(blocked,1usize,{time});
+ let before_blocked=blocked_patient!={count}usize && blocked_server!=1usize;
+ let after_blocked=if next_server(blocked,1usize,{time})==1usize {{false}}else{{next_patient(patients,{count}usize,{time})!={count}usize}};
  let arrived=advance_arrivals(ordered,{count}usize,0usize,{time});
  // Reusing the same cursor is idempotent, and advancing from time zero
  // preserves all equal-time arrivals before dispatch.
@@ -177,7 +189,7 @@ fn sorted_arrival_cursor_matches_frozen_event_scans_and_host_count_oracle() {
  let after_wait=i64_from_usize(arrived-dispatched);
  let before_next=next_time(patients,{count}usize,workers,3usize,{time});
  let after_next=next_time_from_arrivals(ordered,arrived,{count}usize,workers,3usize,{time});
- if arrived=={arrived}usize && advanced==arrived && again==arrived && before_wait=={waiting} && after_wait=={waiting} && before_next=={next} && after_next=={next} {{0}}else{{1}}
+ if before_selected==after_selected && !before_blocked && !after_blocked && arrived=={arrived}usize && advanced==arrived && again==arrived && before_wait=={waiting} && after_wait=={waiting} && before_next=={next} && after_next=={next} {{0}}else{{1}}
 }}
 "#));
     }

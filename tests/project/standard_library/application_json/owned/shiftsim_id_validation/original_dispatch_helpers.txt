@@ -1,0 +1,26 @@
+@id("shiftsim.schedule.next_patient")
+fn next_patient(states: borrow Vec<PatientState>, count: usize, time: i64) -> usize
+{
+    let mut index = 0usize;
+    while index < count {
+        let state = vec_get<PatientState>(states, index);
+        if !state.assigned && state.arrival <= time { return index; }
+        index = index + 1usize;
+        0
+    }
+    count
+}
+
+@id("shiftsim.schedule.next_server")
+fn next_server(states: borrow Vec<WorkerState>, count: usize, time: i64) -> usize
+{
+    let mut index = 0usize;
+    while index < count {
+        let state = vec_get<WorkerState>(states, index);
+        if state.free_at <= time { return index; }
+        index = index + 1usize;
+        0
+    }
+    count
+}
+

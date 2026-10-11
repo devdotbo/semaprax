@@ -22,6 +22,12 @@ their original vectors. Frozen full-scan waiting/next-time helpers and the old
 scheduler remain independent controls. This adds a Copy vector allocation and
 changes physical failure ordinals; the original 256/8 bounds, corpus, and fuel
 limit stay unchanged.
+Dispatch checks for a free worker before scanning waiting patients. After the
+existing validation branch, both Copy-state lookups use their exact retained
+lengths (at most 8 workers and 256 patients), have no effects or contracts,
+and perform bounded arithmetic. Skipping the patient scan when no worker is
+free skips no language failure on these valid states. General indexed reads
+keep their checked bounds and failure rules.
 The exact Server-wrapper program remains a differential control for all 15
 cases and original invalid-input checks. Qualification is pending. Conversion
 vector removal changes allocation-failure ordinals; no allocation gain is claimed.
