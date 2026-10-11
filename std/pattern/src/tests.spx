@@ -13,6 +13,20 @@ use function @id("std.pattern.result-valid") from std.pattern as result_valid;
 use function @id("std.pattern.status") from std.pattern as status;
 use function @id("std.pattern.work-used") from std.pattern as work_used;
 
+use function @id("std.pattern.internal.carrier-valid") from std.pattern as carrier_valid;
+use function @id("std.pattern.internal.read") from std.pattern as read;
+use function @id("std.pattern.internal.load-8") from std.pattern as load8;
+
+// Immutable pre-optimization packet validator, independent of the new view reads.
+@id("std.pattern.tests.frozen-result-valid")
+fn frozen_result_valid(state: borrow Matcher) -> bool
+    ensures !result || carrier_valid(state)
+{
+    let mut valid = carrier_valid(state);
+    if valid { valid = read(state, 2696usize) == 83usize && read(state, 2697usize) == 80usize && read(state, 2698usize) == 65usize && read(state, 2699usize) == 84usize && read(state, 2700usize) == 1usize; if valid { let code = read(state, 2701usize); let count = read(state, 2702usize); let reason = read(state, 2703usize); let length = load8(state, 2704usize); let work = load8(state, 2712usize); let detail = load8(state, 2720usize); valid = code <= 4usize && count <= 16usize && work >= 32usize && work <= 262144usize; valid = valid && (code == 1usize || count == 0usize); valid = valid && (code == 4usize && (reason >= 1usize && reason <= 5usize || reason == 7usize) || code == 3usize && (reason == 1usize || reason == 2usize) || code <= 2usize && reason == 0usize); valid = valid && (code != 3usize || reason == 1usize && detail <= 1024usize || reason == 2usize && detail < 1664usize); valid = valid && (length <= 65536usize || code == 4usize && reason == 2usize); valid = valid && (code != 0usize || length == 0usize); valid = valid && (code != 3usize || reason != 1usize || length == 0usize); valid = valid && (code != 4usize || reason != 1usize || length == 0usize && detail > 1024usize); valid = valid && (code != 4usize || reason != 2usize || length > 65536usize && detail == length); valid = valid && (code != 4usize || reason < 3usize || reason > 5usize || length == 0usize && detail <= 1024usize); valid = valid && (code != 4usize || reason != 7usize || detail == 0usize); valid = valid && (code == 3usize || code == 4usize || detail == 0usize); let mut capture = 0usize; while valid && capture < count { let start = load8(state, 2728usize + capture * 16usize); let end = load8(state, 2736usize + capture * 16usize); valid = start <= end && end <= length; capture = capture + 1usize; 0 } valid } else { false } } else { false }
+}
+
+
 @id("std.pattern.tests.main")
 fn main() -> i64
 {
@@ -23,13 +37,13 @@ fn main() -> i64
 fn test_public_api() -> i64
 {
     let fresh = make();
-    let fresh_is_unpublished = !result_valid(fresh);
+    let fresh_is_unpublished = !result_valid(fresh) && result_valid(fresh) == frozen_result_valid(fresh);
     let pattern = "([A-Z]+)";
     let pattern_text = string_as_str(pattern);
     let pattern_view = str_as_bytes(pattern_text);
     let compiled: Matcher = compile(fresh, pattern_view, 262144usize);
-    let compile_packet = result_valid(compiled);
-    if compile_packet { let compile_status = status(compiled); let compile_reason = reason(compiled); let compile_detail = detail(compiled); let compile_domain = detail_domain(compiled); let compile_captures = capture_count(compiled); let compile_work = work_used(compiled); let input = "ABC"; let input_text = string_as_str(input); let input_view = str_as_bytes(input_text); if fresh_is_unpublished && compile_status == 0usize && compile_reason == 0usize && compile_detail == 0usize && compile_domain == 0usize && compile_captures == 0usize && compile_work <= 262144usize { let matcher = full_match(compiled, input_view, 262144usize); if result_valid(matcher) { if status(matcher) == 1usize && reason(matcher) == 0usize && detail(matcher) == 0usize && detail_domain(matcher) == 0usize && work_used(matcher) <= 262144usize && capture_count(matcher) == 1usize && capture_start(matcher, 0usize) == 0usize && capture_end(matcher, 0usize) == 3usize { 0 } else { 1 } } else { 1 } } else { 1 } } else { 1 }
+    let compile_packet = result_valid(compiled) && result_valid(compiled) == frozen_result_valid(compiled);
+    if compile_packet { let compile_status = status(compiled); let compile_reason = reason(compiled); let compile_detail = detail(compiled); let compile_domain = detail_domain(compiled); let compile_captures = capture_count(compiled); let compile_work = work_used(compiled); let input = "ABC"; let input_text = string_as_str(input); let input_view = str_as_bytes(input_text); if fresh_is_unpublished && compile_status == 0usize && compile_reason == 0usize && compile_detail == 0usize && compile_domain == 0usize && compile_captures == 0usize && compile_work <= 262144usize { let matcher = full_match(compiled, input_view, 262144usize); if result_valid(matcher) && result_valid(matcher) == frozen_result_valid(matcher) { if status(matcher) == 1usize && reason(matcher) == 0usize && detail(matcher) == 0usize && detail_domain(matcher) == 0usize && work_used(matcher) <= 262144usize && capture_count(matcher) == 1usize && capture_start(matcher, 0usize) == 0usize && capture_end(matcher, 0usize) == 3usize { 0 } else { 1 } } else { 1 } } else { 1 } } else { 1 }
 }
 
 @id("std.pattern.tests.invalid-pattern")
@@ -123,7 +137,7 @@ fn test_malformed_carrier() -> i64
 {
     let storage = bytes_zeroed(3072usize);
     let malformed = Matcher { storage: storage, position: 3073usize };
-    let carrier_rejected = !result_valid(malformed);
+    let carrier_rejected = !result_valid(malformed) && result_valid(malformed) == frozen_result_valid(malformed);
     // Header padding must still report the first corrupt byte, and the
     // original two-unit preflight must win before an unread corrupt byte.
     let mut header = bytes_zeroed(3072usize);
@@ -138,10 +152,10 @@ fn test_malformed_carrier() -> i64
     let input = "";
     let input_text = string_as_str(input);
     let input_view = str_as_bytes(input_text);
-    let mut checked: Matcher = full_match(Matcher { storage: header, position: 0usize }, input_view, 262144usize);
-    let corrupt = result_valid(checked) && status(checked) == 3usize && reason(checked) == 2usize && detail(checked) == 9usize && detail_domain(checked) == 2usize && work_used(checked) == 52usize;
-    checked = full_match(checked, input_view, 50usize);
-    let preflight = result_valid(checked) && status(checked) == 4usize && reason(checked) == 7usize && detail(checked) == 0usize && work_used(checked) == 50usize;
+    let checked: Matcher = full_match(Matcher { storage: header, position: 0usize }, input_view, 262144usize);
+    let corrupt = result_valid(checked) == frozen_result_valid(checked) && result_valid(checked) && status(checked) == 3usize && reason(checked) == 2usize && detail(checked) == 9usize && detail_domain(checked) == 2usize && work_used(checked) == 52usize;
+    let checked_preflight = full_match(checked, input_view, 50usize);
+    let preflight = result_valid(checked_preflight) == frozen_result_valid(checked_preflight) && result_valid(checked_preflight) && status(checked_preflight) == 4usize && reason(checked_preflight) == 7usize && detail(checked_preflight) == 0usize && work_used(checked_preflight) == 50usize;
     if carrier_rejected && corrupt && preflight { 0 } else { 1 }
 }
 

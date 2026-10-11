@@ -84,7 +84,16 @@ fn encoding() -> bool
 @id("std.data.json.dec.tests.conversion")
 fn conversion() -> bool
 {
-    byte_code(0u8) == 0 && byte_code(65u8) == 65 && byte_code(255u8) == 255 && code_byte(0) == 0u8 && code_byte(65) == 65u8 && code_byte(255) == 255u8
+    let mut byte = 0u8;
+    let mut expected = 0;
+    let mut valid = true;
+    while expected < 255 {
+        valid = valid && byte_code(byte) == expected && code_byte(expected) == byte;
+        byte = byte + 1u8;
+        expected = expected + 1;
+        0
+    }
+    valid && byte_code(0u8) == 0 && byte_code(65u8) == 65 && byte_code(255u8) == 255 && code_byte(0) == 0u8 && code_byte(65) == 65u8 && code_byte(255) == 255u8 && code_byte(-1) == 0u8 && code_byte(-9223372036854775808) == 0u8 && code_byte(256) == 255u8 && code_byte(9223372036854775807) == 255u8
 }
 
 @id("std.data.json.dec.tests.tokens")
