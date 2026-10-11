@@ -1,12 +1,15 @@
 # Changelog summary
 
-Status: public release summary; v0.9.0 is a source candidate, not published.
+Status: public release summary; v0.9.0 was published on 11 October 2026.
 Audience: users and contributors who need the recent changes.
 
 This is a quick orientation, not a feature-support claim. For exact changes, read
 the [full changelog](https://github.com/wavect/semaprax/blob/main/CHANGELOG.md).
 For implementation status and required evidence, use the
 [completion matrix](COMPLETION-MATRIX.md).
+
+Published release and exact-tag evidence: [v0.9.0](https://github.com/wavect/semaprax/releases/tag/v0.9.0),
+[hosted gate](https://github.com/wavect/semaprax/actions/runs/38131350918).
 
 ## 0.9.0 highlights
 
@@ -117,11 +120,13 @@ attempts are recorded separately. See
   owner identities in the signing certificate. This implementation does not
   establish a signed release before the exact tag gate passes.
 
-## Latest published archive: v0.8.0
+## Latest published archives: v0.9.0
 
-The [v0.8.0 release page](https://github.com/wavect/semaprax/releases/tag/v0.8.0)
-lists archives for Linux x86-64, Apple Silicon macOS, and Windows x86-64,
-alongside checksums and release provenance.
+The [v0.9.0 release page](https://github.com/wavect/semaprax/releases/tag/v0.9.0)
+lists native archives for Apple Silicon and Intel macOS, x86-64 and ARM64
+GNU/Linux, and Windows x86-64, alongside both installers, checksums and
+per-target release attestations. Homebrew serves v0.9.0 on both macOS
+architectures; WinGet public indexing is pending Microsoft review.
 
 ## Earlier milestones
 

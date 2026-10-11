@@ -1,6 +1,6 @@
 # WinGet channel
 
-Status: tooling only. The channel is **pending** until
+Status: submitted and locally qualified; Microsoft moderation is pending. The channel is **pending** until
 [`../channels.json`](../channels.json) says `"winget": {"status": "published"}`;
 no document may advertise `winget install` before then
 (`scripts/release-reconcile.py` fails if one does). A local manifest or an open
@@ -67,7 +67,11 @@ The v0.8.0 local-manifest journey passed on Windows 2025 in
 validation, both aliases, starter result 42, daemon handshake, paths with spaces
 and uninstall. The [submission](https://github.com/microsoft/winget-pkgs/pull/447495)
 passed Microsoft manifest, URL and installer checks; moderator approval remains
-pending. The v0.9.0 manifests are retained under
+pending. The submission was updated to v0.9.0 at `7cce7c45fdb03ad5543458df3bc0808df4994d68`.
+Its local v0.8.0 to v0.9.0 upgrade, both version-matched aliases, starter result
+`42`, bounded daemon protocol/shutdown and local-manifest removal passed in
+[run 38156173827](https://github.com/wavect/semaprax/actions/runs/38156173827).
+The v0.9.0 manifests are retained under
 [`../releases/v0.9.0/winget`](../releases/v0.9.0/winget). The Package channels
 workflow validates and installs new proposals on Windows before retention.
 Public availability and public upgrade/removal are still unverified.

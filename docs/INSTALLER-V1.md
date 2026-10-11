@@ -308,3 +308,22 @@ Manual dispatch defaults to published-release qualification. Enable the
 workflow consumes published, tag-attested assets, tests Homebrew on both native
 macOS architectures and WinGet local manifests on Windows, then retains
 reviewable proposals. It never marks an externally pending channel published.
+
+The consolidated installer/channel qualification passed at implementation commit
+`0c9c2a2fe8e55733fddfa3fd8dba1682a93cc5aa` in
+[run 38156173827](https://github.com/wavect/semaprax/actions/runs/38156173827):
+all five native published-release journeys, both Windows shells, the Unix and
+Windows fixture suites, incompatible-glibc refusal, both native public Homebrew
+routes and the WinGet local upgrade/removal route. The v0.9.0 release's original
+[tag gate](https://github.com/wavect/semaprax/actions/runs/38131350918) separately
+passed all candidate archive/install cells at release commit
+`933196b9ef3cb611343f1401e9eb0b08fa404d0a`.
+
+Local distribution gates passed on 11 October 2026: 64 Unix installer fixtures,
+20 channel-manifest cases, 27 release-surface cases, 15 install-claim cases,
+60 generated-package cases and ShellCheck. The attempted full quality profile
+stopped compiling the inherited v0.10 base at
+`src/interpreter/construction_fusion.rs:319` (`E0596`: immutable state passed to
+mutable core read). No Rust compiler source is changed by this Install batch;
+this result is not a passing full quality profile. WinGet public exact-ID
+installation remains unverified pending Microsoft's submission acceptance.

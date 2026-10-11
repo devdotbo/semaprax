@@ -1,14 +1,14 @@
 # Release process
 
-Status: tag-release procedure and historical evidence; v0.8.0 is a source candidate.
+Status: tag-release procedure and historical evidence; v0.9.0 is published.
 
 Audience: maintainers and release reviewers.
 
 Only the repository CI workflow can publish a tag release, and only after the
 exact tag commit passes every job in `release-gate`. A local archive can test
 packaging, but cannot certify a release. This page combines the procedure with
-historical v0.4.x evidence; use [v0.8.0 status](RELEASE-0.8.0-STATUS.md) for
-the current candidate. The [v0.6.0 gate record](RELEASE-0.6.0-STATUS.md)
+historical v0.4.x evidence and the [v0.9.0 publication record](#090-hosted-release-evidence).
+The [v0.8.0 candidate status](RELEASE-0.8.0-STATUS.md) remains dated history. The [v0.6.0 gate record](RELEASE-0.6.0-STATUS.md)
 remains historical evidence.
 
 For a new release:
@@ -363,6 +363,28 @@ This older retained local artifact is distinct from the later v0.2.0 tag and
 published archives recorded above. Its local acceptance results must not be
 relabeled as evidence from the tag commit; changes to either require separate
 evidence.
+
+## 0.9.0 hosted release evidence
+
+The stable [v0.9.0 release](https://github.com/wavect/semaprax/releases/tag/v0.9.0)
+was published at `2026-10-11T15:07:29Z` from exact commit
+`933196b9ef3cb611343f1401e9eb0b08fa404d0a`.
+[CI run 38131350918](https://github.com/wavect/semaprax/actions/runs/38131350918)
+completed successfully, including the five native target packages and six
+installed-distribution cells (Windows PowerShell 5.1 and 7 both execute the
+Windows archive). GNU/Linux packages use the glibc 2.35 baseline; macOS
+arm64/x86-64 and Linux arm64/x86-64 are separate native archives.
+
+The published inventory includes both installers, all five CLI/daemon archives,
+`SHA256SUMS`, the aggregate `release-manifest.json`, five per-target attestations,
+provenance and its verification material. The installed CLI identifies the
+release commit above. [Run 38156173827](https://github.com/wavect/semaprax/actions/runs/38156173827)
+subsequently qualified the Install implementation at `0c9c2a2fe8e55733fddfa3fd8dba1682a93cc5aa`
+against those published bytes, with previous-release upgrades, hostile-artifact
+controls, native public Homebrew installation and local WinGet upgrades/removal.
+That later distribution evidence does not replace the original exact-tag gate
+or claim that the v0.10 source branch passed its full compiler quality profile.
+
 
 ## 0.4.0 hosted release evidence
 

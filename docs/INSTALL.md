@@ -33,8 +33,8 @@ irm https://github.com/wavect/semaprax/releases/latest/download/install.ps1 | ie
 
 Open a new terminal and follow the checkout-free [first project](../handbook/getting-started/install.md#run-your-first-project).
 For version pinning, inspectable downloads, custom locations, verification and
-removal, use [Installer v1](INSTALLER-V1.md). Homebrew currently serves v0.8.0
-on Apple Silicon through `brew install wavect/tap/semaprax`; its lifecycle is
+removal, use [Installer v1](INSTALLER-V1.md). Homebrew serves v0.9.0
+on Apple Silicon and Intel macOS through `brew install wavect/tap/semaprax`; its lifecycle is
 owned by Homebrew. WinGet remains pending external moderator review.
 
 ## Which binary do you need?

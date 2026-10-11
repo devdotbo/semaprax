@@ -68,10 +68,10 @@ Each archive unpacks to a directory named after itself. It contains `semaprax`
 `README.md`, a per-archive `release-manifest.json`, and a `smoke/` program. On
 Windows the two programs are `semaprax.exe` and `semapraxd.exe`.
 
-## Homebrew (Apple Silicon macOS)
+## Homebrew (Apple Silicon and Intel macOS)
 
-Apple Silicon only for now; Homebrew installs the same prebuilt archive, it does
-not compile Semaprax.
+Homebrew installs the matching native v0.9.0 archive on Apple Silicon or Intel
+macOS; it does not compile Semaprax.
 
 ```sh
 brew install wavect/tap/semaprax
@@ -87,7 +87,7 @@ brew uninstall semaprax
 ```
 
 Homebrew owns `semaprax` and `semapraxd` in its `bin` directory
-(`/opt/homebrew/bin`). If you also installed by hand or with the installer, the
+(`/opt/homebrew/bin` on Apple Silicon, `/usr/local/bin` on Intel). If you also installed by hand or with the installer, the
 first `semaprax` on your `PATH` wins; check which with `command -v semaprax` and
 `type -a semaprax`. Homebrew never overwrites another manager's files, so remove
 or reorder the other entry rather than expecting it to be replaced.
