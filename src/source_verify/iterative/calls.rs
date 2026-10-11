@@ -258,7 +258,11 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     Some(value)
                 }
                 VerifierCallTarget::Byte(op) => {
-                    Some(CheckedValue::returned(op.ast_return_type(), false))
+                    // A private partition returns a nominal owned Vec;
+                    // scalar/view byte results remain non-owning.
+                    let ty = op.ast_return_type();
+                    let owns = self.types.needs_drop(&ty);
+                    Some(CheckedValue::returned(ty, owns))
                 }
                 VerifierCallTarget::HostIo(op) => {
                     Some(CheckedValue::returned(op.ast_return_type(), false))

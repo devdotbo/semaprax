@@ -924,7 +924,9 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                             value
                         }
                         VerifierCallTarget::Byte(op) => {
-                            CheckedValue::returned(op.ast_return_type(), false)
+                            let ty = op.ast_return_type();
+                            let owns = self.types.needs_drop(&ty);
+                            CheckedValue::returned(ty, owns)
                         }
                         VerifierCallTarget::HostIo(op) => {
                             CheckedValue::returned(op.ast_return_type(), false)

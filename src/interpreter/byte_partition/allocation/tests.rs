@@ -90,7 +90,7 @@ fn empty_backings_count_and_logical_failure_is_distinct_from_funding_refusal() {
 fn evaluator_account_reads_ignore_legacy_fields_and_whole_handoff_keeps_pointer() {
     let source = crate::parse(
         r#"module partition.account;
-        @id("partition.account.main") fn main()->own Vec<Bytes> {
+        @id("partition.account.main") fn main()->Vec<Bytes> {
             let whole=bytes_zeroed(6usize);bytes_partition(whole,2usize,3usize)
         }"#,
         "partition-account.spx",
@@ -175,7 +175,7 @@ fn evaluator_account_reads_ignore_legacy_fields_and_whole_handoff_keeps_pointer(
         // No ordinary source evaluator entry was opened by preparing this receiver.
         assert!(crate::check(
             r#"module closed; @id("closed.main")
-            fn main()->own Vec<Bytes>{
+            fn main()->Vec<Bytes>{
              let bytes=bytes_zeroed(1usize);bytes_partition(bytes,1usize,1usize)
             }"#,
             "closed.spx"
