@@ -4049,6 +4049,158 @@
     {
       "declarations": [
         {
+          "description": [
+            "Copy observations only: neither record contains a borrowed carrier or owner token."
+          ],
+          "effects": [],
+          "ensures": 0,
+          "head": [
+            "record Frame {",
+            "    ordinal: usize,",
+            "    start: usize,",
+            "    end: usize,",
+            "    next: usize,",
+            "}"
+          ],
+          "id": "std.data.ndjson.frame",
+          "kind": "record",
+          "name": "Frame",
+          "requires": 0
+        },
+        {
+          "description": [],
+          "effects": [],
+          "ensures": 0,
+          "head": [
+            "record Fault {",
+            "    category: i64,",
+            "    record_index: i64,",
+            "    byte_offset: usize,",
+            "}"
+          ],
+          "id": "std.data.ndjson.fault",
+          "kind": "record",
+          "name": "Fault",
+          "requires": 0
+        },
+        {
+          "description": [],
+          "effects": [],
+          "ensures": 0,
+          "head": [
+            "fn record_count(body: borrow Slice<u8>) -> usize"
+          ],
+          "id": "std.data.ndjson.record-count",
+          "kind": "function",
+          "name": "record_count",
+          "requires": 0
+        },
+        {
+          "description": [],
+          "effects": [],
+          "ensures": 0,
+          "head": [
+            "fn line_start(body: borrow Slice<u8>, ordinal: usize) -> usize"
+          ],
+          "id": "std.data.ndjson.line-start",
+          "kind": "function",
+          "name": "line_start",
+          "requires": 0
+        },
+        {
+          "description": [],
+          "effects": [],
+          "ensures": 0,
+          "head": [
+            "fn line_end(body: borrow Slice<u8>, start: usize) -> usize",
+            "    requires start <= byte_len(body)"
+          ],
+          "id": "std.data.ndjson.line-end",
+          "kind": "function",
+          "name": "line_end",
+          "requires": 1
+        },
+        {
+          "description": [],
+          "effects": [],
+          "ensures": 0,
+          "head": [
+            "fn global_fault(body: borrow Slice<u8>) -> Fault"
+          ],
+          "id": "std.data.ndjson.global-fault",
+          "kind": "function",
+          "name": "global_fault",
+          "requires": 0
+        },
+        {
+          "description": [],
+          "effects": [],
+          "ensures": 0,
+          "head": [
+            "fn frame_at(body: borrow Slice<u8>, ordinal: usize) -> Frame",
+            "    requires byte_len(body) <= 65536usize && ordinal < 256usize && ordinal < record_count(body)"
+          ],
+          "id": "std.data.ndjson.frame-at",
+          "kind": "function",
+          "name": "frame_at",
+          "requires": 1
+        },
+        {
+          "description": [],
+          "effects": [],
+          "ensures": 0,
+          "head": [
+            "fn frame_matches(body: borrow Slice<u8>, frame: Frame) -> bool"
+          ],
+          "id": "std.data.ndjson.frame-matches",
+          "kind": "function",
+          "name": "frame_matches",
+          "requires": 0
+        },
+        {
+          "description": [
+            "Receives an ACTUAL current borrowed view, whose existing byte-range loan is replayed independently."
+          ],
+          "effects": [],
+          "ensures": 0,
+          "head": [
+            "fn basic_line_fault(line: borrow Slice<u8>, ordinal: usize) -> Fault",
+            "    requires ordinal < 256usize"
+          ],
+          "id": "std.data.ndjson.basic-line-fault",
+          "kind": "function",
+          "name": "basic_line_fault",
+          "requires": 1
+        },
+        {
+          "description": [],
+          "effects": [],
+          "ensures": 0,
+          "head": [
+            "fn basic_fault(body: borrow Slice<u8>, frame: Frame) -> Fault",
+            "    requires frame_matches(body, frame)"
+          ],
+          "id": "std.data.ndjson.basic-fault",
+          "kind": "function",
+          "name": "basic_fault",
+          "requires": 1
+        }
+      ],
+      "dependency": "std.data.ndjson = \"^0.1.0\"",
+      "module": "std.data.ndjson",
+      "package": "std/data-ndjson",
+      "required_profile": "owned-data-api.v1",
+      "status": "partial",
+      "targets": [
+        "interpreter",
+        "native-c11",
+        "core-wasm"
+      ],
+      "tier": "portable"
+    },
+    {
+      "declarations": [
+        {
           "description": [],
           "effects": [],
           "ensures": 0,

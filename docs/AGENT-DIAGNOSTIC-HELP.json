@@ -206,6 +206,15 @@
       ]
     },
     {
+      "code": "SPX-P220",
+      "rows": [
+        {
+          "fix": "Use vec_of<T>(items), one admitted type and existing bounds; vec_of is reserved",
+          "wrote": "vec_of missing type/reserved name/oversized expansion"
+        }
+      ]
+    },
+    {
       "code": "SPX-S109",
       "rows": [
         {
@@ -473,6 +482,15 @@
         {
           "fix": "Bind explicitly; intermediate Copy scalar expr; admitted",
           "wrote": "owned/aggregate/borrowed statement result"
+        }
+      ]
+    },
+    {
+      "code": "SPX-T318",
+      "rows": [
+        {
+          "fix": "Reparse canonical vec_of source; use an explicit Vec chain to read intermediate owners",
+          "wrote": "forged constructor/generated owner capture"
         }
       ]
     },

@@ -2272,6 +2272,87 @@ fn count_into(value: usize, output: own Writer) -> Writer
     requires match borrow output { Writer { data, position } => position <= byte_len(bytes_as_slice(data)) && usize_len(value) <= byte_len(bytes_as_slice(data)) - position, }
 ```
 
+## `std.data.ndjson`
+
+Package `std/data-ndjson`, tier `portable`, status partial. Required project profile: `owned-data-api.v1`. Dependency: `std.data.ndjson = "^0.1.0"`. Targets: `interpreter`, `native-c11`, `core-wasm`.
+
+### `std.data.ndjson.frame`
+
+Copy observations only: neither record contains a borrowed carrier or owner token.
+
+```semaprax
+record Frame {
+    ordinal: usize,
+    start: usize,
+    end: usize,
+    next: usize,
+}
+```
+
+### `std.data.ndjson.fault`
+
+```semaprax
+record Fault {
+    category: i64,
+    record_index: i64,
+    byte_offset: usize,
+}
+```
+
+### `std.data.ndjson.record-count`
+
+```semaprax
+fn record_count(body: borrow Slice<u8>) -> usize
+```
+
+### `std.data.ndjson.line-start`
+
+```semaprax
+fn line_start(body: borrow Slice<u8>, ordinal: usize) -> usize
+```
+
+### `std.data.ndjson.line-end`
+
+```semaprax
+fn line_end(body: borrow Slice<u8>, start: usize) -> usize
+    requires start <= byte_len(body)
+```
+
+### `std.data.ndjson.global-fault`
+
+```semaprax
+fn global_fault(body: borrow Slice<u8>) -> Fault
+```
+
+### `std.data.ndjson.frame-at`
+
+```semaprax
+fn frame_at(body: borrow Slice<u8>, ordinal: usize) -> Frame
+    requires byte_len(body) <= 65536usize && ordinal < 256usize && ordinal < record_count(body)
+```
+
+### `std.data.ndjson.frame-matches`
+
+```semaprax
+fn frame_matches(body: borrow Slice<u8>, frame: Frame) -> bool
+```
+
+### `std.data.ndjson.basic-line-fault`
+
+Receives an ACTUAL current borrowed view, whose existing byte-range loan is replayed independently.
+
+```semaprax
+fn basic_line_fault(line: borrow Slice<u8>, ordinal: usize) -> Fault
+    requires ordinal < 256usize
+```
+
+### `std.data.ndjson.basic-fault`
+
+```semaprax
+fn basic_fault(body: borrow Slice<u8>, frame: Frame) -> Fault
+    requires frame_matches(body, frame)
+```
+
 ## `std.data.toml`
 
 Package `std/data-toml`, tier `portable`, status partial. Required project profile: `useful-data.v1`. Dependency: `std.data.toml = "^0.1.0"`. Targets: `interpreter`, `native-c11`, `core-wasm`.
