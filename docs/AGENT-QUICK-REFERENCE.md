@@ -1147,7 +1147,7 @@ Use `u8_from_i64(value)` then `char_from_u8(byte)` for byte conversion; use
 | for range|`SPX-P106`|while; mutable counter; discard tail|
 | assignment loop|`SPX-P203`|Scalar tail discard, e.g. 0|
 | local named result|`SPX-S109`, `SPX-T201`|Rename binding and uses to outcome; result names the return value only in ensures|
-| statement call|`SPX-P106`|let _ = f(x) or tail result|
+| statement call|`SPX-P106`|let discarded = f(x) with a fresh name each time, or tail result|
 | tuple|`SPX-P106`|No tuples; declare a record|
 | Option::Some { value: 1 }|`SPX-T221`|Option<i64>::Some { value: 1 }|
 | index + 1 when index: usize|`SPX-T208`|Literals default to i64; use index + 1usize|
@@ -1162,7 +1162,7 @@ Use `u8_from_i64(value)` then `char_from_u8(byte)` for byte conversion; use
 | implicit helper ownership|`SPX-O001`|own/borrow required; results move|
 | String/collection record|`SPX-T309`|IDs; monomorphic acyclic; own/borrow; no invariants|
 | record method|`SPX-T203`|get(point) or class; records lack methods|
-| shadowed binding|`SPX-T209`|Rename binding|
+| shadowed binding|`SPX-T209`|Rename binding; `_` is also an ordinary name, not an anonymous discard|
 | assign immutable|`SPX-U101`|let mut|
 | bool main|`SPX-T104`|i64 result; CLI 0 succeeds|
 | reuse after own|`SPX-O101`|Callee borrow, or fresh value|

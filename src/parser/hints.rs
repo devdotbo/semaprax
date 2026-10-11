@@ -27,7 +27,8 @@ const LOOP_HELP: &str =
                          the required body tail is discarded";
 const EXPRESSION_STATEMENT_HELP: &str = "a block is statements followed by exactly one final value \
                                          expression; discard an intermediate call with `let _ = …;` \
-                                         or move it to the end of the block";
+                                         or move it to the end of the block; `_` is an ordinary binding, \
+                                         so use fresh names for repeated discards";
 const IF_STATEMENT_HELP: &str = "an intermediate `if ... else ...` has no trailing `;`; omit it before the next statement or block tail. Keep break/continue/return in statement guards, never in a `let` initializer";
 /// `println("…");` as a statement: the habit is printing, not the statement.
 const PRINT_NAMES: [&str; 6] = ["print", "println", "printf", "puts", "console_log", "echo"];
