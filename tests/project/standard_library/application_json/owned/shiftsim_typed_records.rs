@@ -131,6 +131,35 @@ fn expected_wire(value: &serde_json::Value) -> String {
 }
 
 #[test]
+fn unfactored_schedule_retains_exact_semantic_path_budget_refusal() {
+    let original = include_str!("shiftsim_schedule_unfactored.txt");
+    let root = crate::standard_library::temporary("shiftsim-unfactored-path-refusal");
+    write_example(&root);
+    std::fs::write(root.join("src/schedule.spx"), original).unwrap();
+    let entered = std::cell::Cell::new(false);
+    let errors = project::with_authenticated_project(&root.join("semaprax.toml"), |_| {
+        entered.set(true);
+        Ok(())
+    })
+    .expect_err("original independent branch combinations exceed the frozen path bound");
+    assert!(!entered.get());
+    assert!(
+        errors.iter().any(|error| {
+            error.code == "SPX-H006"
+                && error.message.contains("shiftsim.schedule.run")
+                && error.message.contains("65537 semantic terminal paths")
+                && error.message.contains("65536 path budget")
+        }),
+        "{errors:?}"
+    );
+    assert_eq!(
+        std::fs::read_to_string(root.join("src/schedule.spx")).unwrap(),
+        original
+    );
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
 fn original_copy_state_replacement_calls_keep_both_t281_refusals() {
     let root = crate::standard_library::temporary("shiftsim-copy-replace-refusal");
     write_example(&root);

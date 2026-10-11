@@ -56,3 +56,12 @@ compiler/backend execution and all 15 retained acceptance cases remain
 pending. The historical SEM03 candidate, SPEC, corpus, oracle, output, and
 qualification records are unchanged. This example makes no performance or
 token-savings claim.
+
+The scheduler keeps Copy-only state scans and metric decisions in ordinary
+checked helper functions. Each scan preserves ascending order, first-match
+sentinels and lazy arithmetic; arrival candidates are scanned before completion
+candidates. This prevents independent internal branch combinations from being
+multiplied inside the owning dispatcher. The 65,536 cleanup path limit remains
+unchanged, and the exact earlier schedule is retained as a refusal control.
+The existing 15-case wire corpus owns qualification of this source factoring;
+no runtime performance improvement is claimed without execution.
