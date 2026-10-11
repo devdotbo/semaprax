@@ -1329,6 +1329,11 @@ in precharged frame slots until their exact canonical region or exit finalizers;
 inactive flags distinguish skipped lazy operands from unknown carriers.
 This is a development/conformance lane, not a target backend or proof engine.
 
+`src/interpreter/construction_fusion.rs` holds the private invocation range
+registry; its `carriers` child keeps internal owner/view receipts distinct from
+ordinary Arc backing. The receiver remains closed pending selected validation
+and complete original container allocation accounting.
+
 `src/interpreter/variant_admission.rs` shares the concrete Copy-scalar payload
 classifier with `src/loop_calls.rs`; constructor and pattern replay still
 authenticate identities, inventories and ownership independently.

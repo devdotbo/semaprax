@@ -151,7 +151,12 @@ impl<'a> Evaluator<'a> {
             Some(value) => Some(self.evaluate(value, environment, depth)?),
             None => None,
         };
-        settle_actions(environment, &route.finalize_in_order, None)?;
+        settle_actions_with_fused(
+            environment,
+            &route.finalize_in_order,
+            None,
+            Some(&mut self.fused),
+        )?;
         match kind {
             LexicalExitKind::Break => Err(Flow::Lexical(ExitFlow::Break(target.clone()))),
             LexicalExitKind::Continue => {
@@ -171,10 +176,19 @@ impl<'a> Evaluator<'a> {
     }
 }
 
+#[cfg(test)]
 pub(super) fn settle_actions(
     environment: &mut Environment,
     actions: &[FinalizeAction],
+    provisional: Option<&mut Value>,
+) -> Result<(), Flow> {
+    settle_actions_with_fused(environment, actions, provisional, None)
+}
+pub(super) fn settle_actions_with_fused(
+    environment: &mut Environment,
+    actions: &[FinalizeAction],
     mut provisional: Option<&mut Value>,
+    mut fused: Option<&mut super::construction_fusion::Registry<'_>>,
 ) -> Result<(), Flow> {
     for action in actions {
         if let Some(active) = &action.active_case {
@@ -244,6 +258,9 @@ pub(super) fn settle_actions(
         if !matches!(value, Value::Moved) {
             // Ordered replacement physically releases this exact leaf before
             // the next canonical action. Never sort or rebuild the action list.
+            if let Some(fused) = fused.as_deref_mut() {
+                fused.settle_value(value)?;
+            }
             drop(std::mem::replace(value, Value::Moved));
         }
     }
@@ -425,7 +442,7 @@ fn find_assignment<'a>(
 
 impl Evaluator<'_> {
     pub(super) fn settle_lexical_epilogue(
-        &self,
+        &mut self,
         function: &ResolvedFunction,
         environment: &mut Environment,
         failure: Option<&hir::ExpressionId>,
@@ -454,13 +471,18 @@ impl Evaluator<'_> {
                 "lexical epilogue repeats its exact proof route",
             ));
         }
-        settle_actions(environment, &route.finalize_in_order, provisional)
+        settle_actions_with_fused(
+            environment,
+            &route.finalize_in_order,
+            provisional,
+            Some(&mut self.fused),
+        )
     }
 }
 
 impl Evaluator<'_> {
     fn settle_lexical_transfer_scope(
-        &self,
+        &mut self,
         function: &ResolvedFunction,
         environment: &mut Environment,
         at: &hir::ExpressionId,
@@ -497,13 +519,18 @@ impl Evaluator<'_> {
                 "lexical transfer scope completion is duplicated",
             ));
         }
-        settle_actions(environment, &exit.finalize_in_order, None)
+        settle_actions_with_fused(
+            environment,
+            &exit.finalize_in_order,
+            None,
+            Some(&mut self.fused),
+        )
     }
 }
 
 impl Evaluator<'_> {
     pub(super) fn settle_execution_boundary(
-        &self,
+        &mut self,
         function: &ResolvedFunction,
         environment: &mut Environment,
         kind: crate::cleanup_plan::ExecutionBoundaryKind,
@@ -520,6 +547,11 @@ impl Evaluator<'_> {
             .cleanup_plan
             .execution_boundary(kind, site, resume)
             .ok_or(Flow::Guard("execution guard has no exact cleanup boundary"))?;
-        settle_actions(environment, &boundary.finalize_in_order, None)
+        settle_actions_with_fused(
+            environment,
+            &boundary.finalize_in_order,
+            None,
+            Some(&mut self.fused),
+        )
     }
 }

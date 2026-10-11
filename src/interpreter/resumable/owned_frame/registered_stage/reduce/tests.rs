@@ -47,7 +47,7 @@ fn record_weak(value: &Value) -> Weak<[u8]> {
     else {
         panic!()
     };
-    Arc::downgrade(&b.bytes)
+    Arc::downgrade(b.bytes.ordinary())
 }
 /// Test-only producer uses an actual evaluator seeded with the same namespace.
 /// It bypasses the external effect layer and grants no dispatch/effect evidence.
@@ -251,7 +251,7 @@ fn owned_frame_v2_reduce_moves_state_outcome_step_without_remint_and_matches_sou
                 else {
                     panic!()
                 };
-                assert!(Weak::ptr_eq(&weak[0], &Arc::downgrade(&b.bytes)));
+                assert!(Weak::ptr_eq(&weak[0], &Arc::downgrade(b.bytes.ordinary())));
                 assert_eq!(b.allocation, 1);
                 assert_eq!(
                     r.fields[&DeclarationId::new("fixture.agent.type.state.epoch")],
@@ -280,7 +280,7 @@ fn owned_frame_v2_reduce_moves_state_outcome_step_without_remint_and_matches_sou
                 else {
                     panic!()
                 };
-                assert!(Weak::ptr_eq(&weak[1], &Arc::downgrade(&b.bytes)));
+                assert!(Weak::ptr_eq(&weak[1], &Arc::downgrade(b.bytes.ordinary())));
                 assert_eq!(b.allocation, 2);
                 drop(report);
             }

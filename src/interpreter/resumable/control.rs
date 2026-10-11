@@ -278,7 +278,7 @@ fn evaluate(
                     value_id.clone(),
                     Value::Bytes(OwnedBytesValue {
                         allocation: index as u32 + 1,
-                        bytes: Arc::from(bytes.as_slice()),
+                        bytes: Arc::<[u8]>::from(bytes.as_slice()).into(),
                     }),
                 );
             }

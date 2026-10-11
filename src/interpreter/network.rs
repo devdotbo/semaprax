@@ -390,7 +390,7 @@ impl Evaluator<'_> {
                 self.allocated_byte_payload = next_payload;
                 Ok(Value::Bytes(OwnedBytesValue {
                     allocation: next_count,
-                    bytes: Arc::from(received),
+                    bytes: Arc::<[u8]>::from(received).into(),
                 }))
             }
             (Operation::HttpsGet, [Value::BorrowedSlice(url), Value::Usize(max)]) => {
@@ -415,7 +415,7 @@ impl Evaluator<'_> {
                 self.allocated_byte_payload = next_payload;
                 Ok(Value::Bytes(OwnedBytesValue {
                     allocation: next_count,
-                    bytes: Arc::from(response),
+                    bytes: Arc::<[u8]>::from(response).into(),
                 }))
             }
             (
@@ -452,7 +452,7 @@ impl Evaluator<'_> {
                 self.allocated_byte_payload = next_payload;
                 Ok(Value::Bytes(OwnedBytesValue {
                     allocation: next_count,
-                    bytes: Arc::from(response),
+                    bytes: Arc::<[u8]>::from(response).into(),
                 }))
             }
             (Operation::NetStreamStdout, [Value::Usize(handle), Value::Usize(max)]) => {

@@ -103,7 +103,7 @@ impl Evaluator<'_> {
         self.allocated_byte_payload += bytes.len() as u64;
         Ok(Value::Bytes(OwnedBytesValue {
             allocation: next,
-            bytes: Arc::from(bytes),
+            bytes: Arc::<[u8]>::from(bytes).into(),
         }))
     }
 }

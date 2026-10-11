@@ -219,6 +219,7 @@ pub(crate) fn evaluate_profile(
         budget: max_steps,
         next_byte_allocation: 0,
         allocated_byte_payload: 0,
+        fused: Default::default(),
         box_live_allocations: Arc::new(std::sync::atomic::AtomicUsize::new(0)),
         utf8_materialization_budget: Utf8MaterializationBudget::UnlimitedLegacy,
         stdout_transcript: Some(Vec::new()),

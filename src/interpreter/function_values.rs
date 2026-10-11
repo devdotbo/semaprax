@@ -214,6 +214,7 @@ pub(super) fn evaluate_resolved_entry_with_utf8_budget<'a>(
         budget,
         next_byte_allocation: 0,
         allocated_byte_payload: 0,
+        fused: Default::default(),
         box_live_allocations: Arc::new(std::sync::atomic::AtomicUsize::new(0)),
         utf8_materialization_budget,
         stdout_transcript: host_stdout.then(Vec::new),

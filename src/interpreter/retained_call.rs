@@ -568,7 +568,7 @@ impl ByteStaging {
         self.payload = payload;
         Ok(Value::Bytes(OwnedBytesValue {
             allocation,
-            bytes: Arc::from(bytes),
+            bytes: Arc::<[u8]>::from(bytes).into(),
         }))
     }
 }

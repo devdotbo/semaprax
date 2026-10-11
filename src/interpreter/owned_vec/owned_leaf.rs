@@ -49,7 +49,7 @@ impl Evaluator<'_> {
     }
     fn clone_owned_vec_leaf(&mut self, value: &Value) -> Result<Value, Flow> {
         if let Value::Bytes(value) = value {
-            let length = value.bytes.len() as u64;
+            let length = value.read(&mut self.fused, <[u8]>::len)? as u64;
             let count = self
                 .next_byte_allocation
                 .checked_add(1)
@@ -71,15 +71,15 @@ impl Evaluator<'_> {
                 )));
             }
             let mut bytes = Vec::new();
-            bytes.try_reserve_exact(value.bytes.len()).map_err(|_| {
+            bytes.try_reserve_exact(length as usize).map_err(|_| {
                 Flow::Failure(normalize_vec(crate::vec_ops::ALLOCATION_FAILURE_CODE))
             })?;
-            bytes.extend_from_slice(&value.bytes);
+            value.read(&mut self.fused, |source| bytes.extend_from_slice(source))?;
             self.next_byte_allocation = count;
             self.allocated_byte_payload = payload;
             return Ok(Value::Bytes(super::super::OwnedBytesValue {
                 allocation: count,
-                bytes: Arc::from(bytes),
+                bytes: Arc::<[u8]>::from(bytes).into(),
             }));
         }
         if let Value::String(value) = value {
@@ -116,6 +116,9 @@ impl Evaluator<'_> {
         }
         let mut vector =
             Arc::try_unwrap(vector).map_err(|_| Flow::Guard("aliased owned Vec sort carrier"))?;
+        for value in &vector.values {
+            self.fused.preflight_value(value)?;
+        }
         // Stable insertion sort has no payload clone or temporary allocation.
         for index in 1..vector.values.len() {
             let mut cursor = index;
@@ -124,7 +127,8 @@ impl Evaluator<'_> {
                     &vector.values[cursor],
                     &vector.values[cursor - 1],
                     layout.fields,
-                )
+                    &mut self.fused,
+                )?
                 .is_lt()
             {
                 vector.values.swap(cursor, cursor - 1);
@@ -138,29 +142,36 @@ impl Evaluator<'_> {
         Ok(Value::Vec(Arc::new(vector)))
     }
 }
-fn leaf_compare(a: &Value, b: &Value) -> std::cmp::Ordering {
-    match (a, b) {
+fn leaf_compare(
+    a: &Value,
+    b: &Value,
+    registry: &mut super::super::construction_fusion::Registry<'_>,
+) -> Result<std::cmp::Ordering, Flow> {
+    Ok(match (a, b) {
         (Value::String(a), Value::String(b)) => a.as_bytes().cmp(b.as_bytes()),
-        (Value::Bytes(a), Value::Bytes(b)) => a.bytes.as_ref().cmp(b.bytes.as_ref()),
+        (Value::Bytes(a), Value::Bytes(b)) => return registry.compare_bytes(a, b),
         _ => super::compare_scalar(a, b),
-    }
+    })
 }
 fn compare(
     a: &Value,
     b: &Value,
     fields: Option<&[crate::hir::ResolvedFieldDeclaration]>,
-) -> std::cmp::Ordering {
+    registry: &mut super::super::construction_fusion::Registry<'_>,
+) -> Result<std::cmp::Ordering, Flow> {
     if let Some(fields) = fields {
         let (Value::Record(a), Value::Record(b)) = (a, b) else {
             unreachable!("authenticated record carriers")
         };
-        fields
-            .iter()
-            .map(|field| leaf_compare(&a.fields[&field.id], &b.fields[&field.id]))
-            .find(|order| !order.is_eq())
-            .unwrap_or(std::cmp::Ordering::Equal)
+        for field in fields {
+            let order = leaf_compare(&a.fields[&field.id], &b.fields[&field.id], registry)?;
+            if !order.is_eq() {
+                return Ok(order);
+            }
+        }
+        Ok(std::cmp::Ordering::Equal)
     } else {
-        leaf_compare(a, b)
+        leaf_compare(a, b, registry)
     }
 }
 

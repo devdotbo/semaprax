@@ -1,6 +1,6 @@
 //! Executor-neutral held backing/range core. No descriptor or source authority.
 //! The executor debits its REAL invocation account before metadata/clone allocation.
-use super::{Issuer, MAX_VIEWS, ModuleIdentity, Refusal};
+use super::{Issuer, ModuleIdentity, Refusal, MAX_VIEWS};
 use std::{alloc::Layout, marker::PhantomData, ops::Range};
 
 /// Implementations own unique backing, expose its actual extent, and fail-stop
@@ -87,6 +87,29 @@ impl ModuleHolder<'_> {
         }
     }
 }
+/// An opaque comparison key. Copying this key never copies an owner; only
+/// the current held core and affine Child can authenticate it.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) struct Receipt {
+    issuer: usize,
+    module: usize,
+    domain: u64,
+    slot: usize,
+    nonce: u64,
+    generation: u64,
+}
+impl Child<'_> {
+    pub(crate) fn receipt(&self) -> Receipt {
+        Receipt {
+            issuer: self.issuer,
+            module: self.module,
+            domain: self.domain,
+            slot: self.slot,
+            nonce: self.nonce,
+            generation: self.generation,
+        }
+    }
+}
 /// Must outlive every carrier/container using its tokens. Container cleanup
 /// settles its children in canonical order; a popped child stays in this held
 /// context. Abandoning the context releases backing, never a language result.
@@ -103,7 +126,63 @@ pub(crate) struct Core<'a, R: Runtime> {
     extent: usize,
     failure: Option<Refusal>,
 }
+/// One-use evidence of actual metadata debits, never spendable credit or
+/// language authority. Fields are private and only the metered core creates it.
+pub(crate) struct OwnedPreparation<R: Runtime> {
+    count: usize,
+    runtime: R,
+}
+impl<R: Runtime> OwnedPreparation<R> {
+    pub(crate) fn allocate(&mut self, extent: usize) -> R::Owner {
+        self.runtime.allocate(extent)
+    }
+}
 impl<R: Runtime> Core<'static, R> {
+    pub(crate) fn prepare_owned_metadata(
+        count: usize,
+        mut runtime: R,
+    ) -> Result<OwnedPreparation<R>, Refusal> {
+        if count > crate::vec_ops::MAX_CAPACITY as usize {
+            return Err(Refusal::Metadata);
+        }
+        for layout in Self::metadata_layouts(count)? {
+            runtime.reserve_metadata(layout)?;
+        }
+        runtime.reserve_metadata(Layout::new::<Issuer>())?;
+        runtime.reserve_metadata(Layout::new::<ModuleIdentity>())?;
+        Ok(OwnedPreparation { count, runtime })
+    }
+    pub(crate) fn partition_owned_prepared(
+        owner: R::Owner,
+        count: usize,
+        width: usize,
+        issuer: Issuer,
+        module: ModuleIdentity,
+        preparation: OwnedPreparation<R>,
+    ) -> Result<(Self, Vec<Child<'static>>), (Refusal, R::Owner)> {
+        if preparation.count != count {
+            return Err((Refusal::Identity, owner));
+        }
+        let extent = count.checked_mul(width);
+        if width == 0
+            || extent != Some(R::bytes(&owner).len())
+            || extent.is_none_or(|n| n > crate::byte_ops::MAX_OWNED_BYTE_VALUE_BYTES as usize)
+        {
+            return Err((Refusal::Range, owner));
+        }
+        if issuer.next.checked_add(count as u64 + 1).is_none() {
+            return Err((Refusal::Exhausted, owner));
+        }
+        Self::partition_held(
+            owner,
+            count,
+            width,
+            IssuerHolder::Owned(Box::new(issuer)),
+            ModuleHolder::Owned(Box::new(module)),
+            preparation.runtime,
+            true,
+        )
+    }
     /// An invocation owner can retain this context without a self-reference.
     /// Tokens still require this exact live context; `'static` describes their
     /// lack of a borrowed host reference, never permission to escape a profile.
@@ -113,7 +192,7 @@ impl<R: Runtime> Core<'static, R> {
         width: usize,
         issuer: Issuer,
         module: ModuleIdentity,
-        mut runtime: R,
+        runtime: R,
     ) -> Result<(Self, Vec<Child<'static>>), (Refusal, R::Owner)> {
         let preparation = (|| {
             let extent = count.checked_mul(width).ok_or(Refusal::Range)?;
@@ -130,26 +209,13 @@ impl<R: Runtime> Core<'static, R> {
                 .next
                 .checked_add(count as u64 + 1)
                 .ok_or(Refusal::Exhausted)?;
-            for layout in Self::metadata_layouts(count)? {
-                runtime.reserve_metadata(layout)?;
-            }
-            runtime.reserve_metadata(Layout::new::<Issuer>())?;
-            runtime.reserve_metadata(Layout::new::<ModuleIdentity>())?;
-            Ok(())
+            Self::prepare_owned_metadata(count, runtime)
         })();
-        if let Err(error) = preparation {
-            return Err((error, owner));
-        }
-        // Every table and both address-stable holders have been predebited.
-        Self::partition_held(
-            owner,
-            count,
-            width,
-            IssuerHolder::Owned(Box::new(issuer)),
-            ModuleHolder::Owned(Box::new(module)),
-            runtime,
-            true,
-        )
+        let preparation = match preparation {
+            Ok(preparation) => preparation,
+            Err(error) => return Err((error, owner)),
+        };
+        Self::partition_owned_prepared(owner, count, width, issuer, module, preparation)
     }
 }
 impl<'a, R: Runtime> Core<'a, R> {
@@ -310,6 +376,45 @@ impl<'a, R: Runtime> Core<'a, R> {
             return Err(Refusal::Range);
         }
         Ok(s)
+    }
+    pub(crate) fn authenticate_receipt(
+        &self,
+        child: &Child<'_>,
+        key: Receipt,
+    ) -> Result<usize, Refusal> {
+        if child.receipt() != key {
+            return Err(Refusal::Identity);
+        }
+        Ok(self.slot(child)?.len)
+    }
+    pub(crate) fn check_move(&self, child: &Child<'_>) -> Result<(), Refusal> {
+        self.active()?;
+        if self.slot(child)?.borrows != 0 {
+            return Err(Refusal::Borrowed);
+        }
+        Ok(())
+    }
+    /// All-or-nothing fixed store: renew before writing, after every bound and
+    /// loan check. A later byte cannot introduce a new failure or partial store.
+    pub(crate) fn store_range(
+        &mut self,
+        child: &mut Child<'_>,
+        index: usize,
+        bytes: &[u8],
+    ) -> Result<(), Refusal> {
+        let result = (|| {
+            self.check_move(child)?;
+            let slot = *self.slot(child)?;
+            let end = index.checked_add(bytes.len()).ok_or(Refusal::Range)?;
+            if end > slot.len {
+                return Err(Refusal::Range);
+            }
+            self.move_owner(child)?;
+            let backing = self.backing.as_mut().ok_or(Refusal::Identity)?;
+            R::bytes_mut(backing)[slot.offset + index..slot.offset + end].copy_from_slice(bytes);
+            Ok(())
+        })();
+        self.select(result)
     }
     fn active(&self) -> Result<(), Refusal> {
         self.failure.map_or(Ok(()), Err)

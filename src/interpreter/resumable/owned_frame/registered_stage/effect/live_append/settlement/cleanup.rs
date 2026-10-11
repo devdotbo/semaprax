@@ -275,7 +275,7 @@ impl ExecutedOwnedAgentTurnV2<'_> {
         let Value::Bytes(bytes) = &outcome.fields[&metadata.bytes_field] else {
             panic!("actual owned payload");
         };
-        std::sync::Arc::downgrade(&bytes.bytes)
+        std::sync::Arc::downgrade(bytes.bytes.ordinary())
     }
 }
 

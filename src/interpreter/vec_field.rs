@@ -73,10 +73,7 @@ impl Evaluator<'_> {
             Value::Float32(v) => Value::Float32(*v),
             Value::Float64(v) => Value::Float64(*v),
             Value::Bool(v) => Value::Bool(*v),
-            Value::Bytes(v) => Value::BorrowedSlice(BorrowedSliceValue::whole(
-                place.root.clone(),
-                Arc::clone(&v.bytes),
-            )),
+            Value::Bytes(v) => Value::BorrowedSlice(self.fused.slice(v, place.root.clone())?),
             Value::String(text) => {
                 // Like projected String views, this immutable reference-model
                 // backing incurs no language String/Bytes allocation charge.

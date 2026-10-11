@@ -23,6 +23,9 @@ impl Evaluator<'_> {
         }
         let mut vector = Arc::try_unwrap(vector)
             .map_err(|_| Flow::Guard("aliased explicit Vec sort carrier"))?;
+        for value in &vector.values {
+            self.fused.preflight_value(value)?;
+        }
         for index in 1..vector.values.len() {
             let mut at = index;
             while at > 0 {
@@ -42,9 +45,9 @@ impl Evaluator<'_> {
                         .get(&key.field)
                         .ok_or(Flow::Guard("missing explicit sort field"))?;
                     order = if key.descending {
-                        leaf_compare(b, a)
+                        leaf_compare(b, a, &mut self.fused)?
                     } else {
-                        leaf_compare(a, b)
+                        leaf_compare(a, b, &mut self.fused)?
                     };
                     if !order.is_eq() {
                         break;

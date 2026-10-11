@@ -152,6 +152,7 @@ pub(super) fn is_intrinsic_call(
 impl Evaluator<'_> {
     pub(super) fn evaluate_vec_op(
         &mut self,
+        expression: &ResolvedExpr,
         op: crate::vec_ops::VecOp,
         identity: &str,
         type_arguments: &[ResolvedType],
@@ -261,6 +262,7 @@ impl Evaluator<'_> {
                 if vector.values.len() == vector.capacity {
                     return Err(Flow::Failure(normalize_vec(crate::vec_ops::PUSH_FULL_CODE)));
                 }
+                self.fused.publish(expression, &value)?;
                 vector.values.push(value);
                 vector.generation = vector
                     .generation
@@ -345,6 +347,8 @@ impl Evaluator<'_> {
                     })?;
                 let mut vector = Arc::try_unwrap(vector)
                     .map_err(|_| Flow::Guard("aliased owned bounded Vec carrier"))?;
+                self.fused.preflight_value(&vector.values[index])?;
+                self.fused.settle_value(&mut vector.values[index])?;
                 vector.values[index] = value;
                 vector.generation = vector
                     .generation
@@ -415,6 +419,12 @@ impl Evaluator<'_> {
                 };
                 let mut vector = Arc::try_unwrap(vector)
                     .map_err(|_| Flow::Guard("aliased owned bounded Vec carrier"))?;
+                for value in &vector.values {
+                    self.fused.preflight_value(value)?;
+                }
+                for value in &mut vector.values {
+                    self.fused.settle_value(value)?;
+                }
                 vector.values.clear();
                 vector.generation = vector
                     .generation

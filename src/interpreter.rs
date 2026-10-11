@@ -61,7 +61,9 @@ mod api_admission;
 mod call_frame;
 mod closures;
 mod command_state;
+mod construction_fusion;
 mod copy_projection;
+use construction_fusion::{BorrowedSliceValue, OwnedBytesValue};
 mod static_text;
 use static_text::{BorrowedRoot, Utf8Backing};
 pub(crate) mod environment;
@@ -117,8 +119,8 @@ pub use failure_detail::{ContractArgument, ContractFailureDetail};
 use hir::ResolvedHostCommandOperation as Operation;
 pub(crate) use prepared::prepare_resolved_i64_with_profile;
 pub(crate) use resolved_case::{
-    ResolvedFunctionProfile, evaluate_resolved_i64_function_with_profile,
-    evaluate_resolved_profile_i64_entry, evaluate_resolved_zero_arg_i64_function,
+    evaluate_resolved_i64_function_with_profile, evaluate_resolved_profile_i64_entry,
+    evaluate_resolved_zero_arg_i64_function, ResolvedFunctionProfile,
 };
 use scalar_profile::{is_admitted_resolved_scalar, pattern_value_matches};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -127,10 +129,10 @@ use std::{path::Path, sync::Arc};
 use sha2::{Digest as _, Sha256};
 
 use crate::ast::{BinaryOp, Function, ParamMode, Program, Type, UnaryOp};
-use crate::bounded_output::{BudgetedJoin as _, with_limit};
+use crate::bounded_output::{with_limit, BudgetedJoin as _};
 use crate::cleanup_plan::{ContractPhase, StatusCase};
 use crate::conformance::{NormalizedStatus, Retryability, StatusClass};
-use crate::diagnostic::{Diagnostic, quote_json};
+use crate::diagnostic::{quote_json, Diagnostic};
 use crate::hir::{
     DeclarationId, ResolvedExpr, ResolvedExprKind, ResolvedFunction, ResolvedStatement,
     ResolvedType, ValueId,
@@ -139,10 +141,10 @@ use crate::runtime_status::{normalize_arithmetic, normalize_contract};
 use crate::{graph, hir, parse, patch, verify};
 
 pub(crate) use prepared::{
-    MAX_PREPARED_INDEX_BYTES, MAX_PREPARED_ORIGIN_NODES, PreparedCancellation,
-    PreparedResolvedEvaluation, PreparedResolvedEvaluationOutcome, PreparedResolvedI64,
-    ResolvedTraceEvent, ResolvedTracePhase, evaluate_prepared_resolved_zero_arg_i64,
-    prepare_resolved_zero_arg_i64, trace_child_expressions,
+    evaluate_prepared_resolved_zero_arg_i64, prepare_resolved_zero_arg_i64,
+    trace_child_expressions, PreparedCancellation, PreparedResolvedEvaluation,
+    PreparedResolvedEvaluationOutcome, PreparedResolvedI64, ResolvedTraceEvent, ResolvedTracePhase,
+    MAX_PREPARED_INDEX_BYTES, MAX_PREPARED_ORIGIN_NODES,
 };
 
 macro_rules! bformat {
@@ -1659,6 +1661,9 @@ fn settle_interpreted_bytes(
     let Value::Bytes(value) = value else {
         return Err("owned-data result payload is not Bytes");
     };
+    if matches!(value.bytes, construction_fusion::Backing::Leased(_)) {
+        return Err("private invocation-owned range cannot cross the public ABI");
+    }
     if value.bytes.len() as u64 > crate::byte_ops::MAX_OWNED_BYTE_VALUE_BYTES {
         return Err("owned-data result exceeds the public output bound");
     }
@@ -3071,6 +3076,7 @@ pub(crate) fn evaluate_resolved_language_command(
         budget: max_steps,
         next_byte_allocation: 0,
         allocated_byte_payload: 0,
+        fused: Default::default(),
         box_live_allocations: Arc::new(std::sync::atomic::AtomicUsize::new(0)),
         utf8_materialization_budget: Utf8MaterializationBudget::UnlimitedLegacy,
         stdout_transcript: Some(Vec::new()),
@@ -3178,52 +3184,6 @@ enum Value {
 struct BorrowedStrValue {
     invocation_root: BorrowedRoot,
     bytes: Utf8Backing,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-struct BorrowedSliceValue {
-    invocation_root: BorrowedRoot,
-    backing: Utf8Backing,
-    start: usize,
-    end: usize,
-}
-
-impl BorrowedSliceValue {
-    fn whole(invocation_root: ValueId, backing: Arc<[u8]>) -> Self {
-        Self::from_view(invocation_root.into(), backing.into())
-    }
-
-    fn from_view(invocation_root: BorrowedRoot, backing: Utf8Backing) -> Self {
-        let end = backing.len();
-        Self {
-            invocation_root,
-            backing,
-            start: 0,
-            end,
-        }
-    }
-
-    fn bytes(&self) -> &[u8] {
-        &self.backing[self.start..self.end]
-    }
-
-    fn range(&self, start: usize, end: usize) -> Self {
-        Self {
-            invocation_root: self.invocation_root.clone(),
-            backing: self.backing.clone(),
-            start: self.start + start,
-            end: self.start + end,
-        }
-    }
-}
-
-/// One logical `bytes_copy` allocation. The monotonically assigned identity
-/// distinguishes even zero-length copies, for which allocators are permitted
-/// to reuse the same dangling physical pointer.
-#[derive(Clone, Debug, PartialEq)]
-struct OwnedBytesValue {
-    allocation: u32,
-    bytes: Arc<[u8]>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -3521,6 +3481,7 @@ struct Evaluator<'a> {
     budget: usize,
     next_byte_allocation: u32,
     allocated_byte_payload: u64,
+    fused: construction_fusion::Registry<'a>,
     box_live_allocations: Arc<std::sync::atomic::AtomicUsize>,
     utf8_materialization_budget: Utf8MaterializationBudget,
     stdout_transcript: Option<Vec<u8>>,
@@ -3558,6 +3519,7 @@ impl Evaluator<'_> {
             budget,
             next_byte_allocation: 0,
             allocated_byte_payload: 0,
+            fused: Default::default(),
             box_live_allocations: Arc::new(std::sync::atomic::AtomicUsize::new(0)),
             utf8_materialization_budget: Utf8MaterializationBudget::UnlimitedLegacy,
             stdout_transcript: None,
@@ -3967,10 +3929,9 @@ impl Evaluator<'_> {
                                 "owned byte view has an invalid logical allocation",
                             ));
                         }
-                        Ok(Value::BorrowedSlice(BorrowedSliceValue::whole(
-                            place.root.clone(),
-                            value.bytes,
-                        )))
+                        Ok(Value::BorrowedSlice(
+                            self.fused.slice(&value, place.root.clone())?,
+                        ))
                     }
                     (crate::byte_ops::ByteOp::ArrayAsSlice, Value::ArrayU8(bytes)) => Ok(
                         Value::BorrowedSlice(BorrowedSliceValue::whole(place.root.clone(), bytes)),
@@ -4013,7 +3974,7 @@ impl Evaluator<'_> {
                         crate::byte_ops::RANGE_END_OUT_OF_BOUNDS_CODE,
                     )));
                 };
-                if end > source.bytes().len() {
+                if end > source.read(&self.fused, <[u8]>::len)? {
                     return Err(Flow::Failure(normalize_byte_range(
                         crate::byte_ops::RANGE_END_OUT_OF_BOUNDS_CODE,
                     )));
@@ -4179,7 +4140,7 @@ impl Evaluator<'_> {
                             crate::command_io_ops::INPUT_CAPACITY_EXCEEDED,
                         )));
                     }
-                    let bytes = Arc::from(input.stdin.as_ref());
+                    let bytes = Arc::<[u8]>::from(input.stdin.as_ref());
                     self.next_byte_allocation = next_count;
                     self.allocated_byte_payload = next_payload;
                     self.command_input
@@ -4188,7 +4149,7 @@ impl Evaluator<'_> {
                         .stdin_consumed = true;
                     Ok(Value::Bytes(OwnedBytesValue {
                         allocation: next_count,
-                        bytes,
+                        bytes: bytes.into(),
                     }))
                 }
                 Operation::StderrWrite | Operation::StdoutAppend | Operation::StderrAppend => {
@@ -4403,26 +4364,29 @@ impl Evaluator<'_> {
                         values.push(self.evaluate(argument, environment, depth)?);
                     }
                     if op.is_owned_buffer_chain() {
-                        return self.evaluate_owned_buffer_operation(op, values);
+                        return self.evaluate_owned_buffer_operation(expression, op, values);
                     }
                     return match (op, values.as_slice()) {
-                        (crate::byte_ops::ByteOp::Len, [Value::BorrowedSlice(value)]) => {
-                            Ok(Value::Usize(value.bytes().len() as u64))
-                        }
+                        (crate::byte_ops::ByteOp::Len, [Value::BorrowedSlice(value)]) => Ok(
+                            Value::Usize(value.read(&self.fused, |bytes| bytes.len() as u64)?),
+                        ),
                         (
                             crate::byte_ops::ByteOp::Get,
                             [Value::BorrowedSlice(value), Value::Usize(index)],
                         ) => {
-                            let byte = usize::try_from(*index)
-                                .ok()
-                                .and_then(|index| value.bytes().get(index))
-                                .copied();
+                            let byte = value.read(&self.fused, |bytes| {
+                                usize::try_from(*index)
+                                    .ok()
+                                    .and_then(|index| bytes.get(index))
+                                    .copied()
+                            })?;
                             Ok(Value::OptionU8(byte))
                         }
                         (crate::byte_ops::ByteOp::Copy, [Value::BorrowedSlice(value)]) => {
-                            let length = u64::try_from(value.bytes().len()).map_err(|_| {
-                                Flow::Guard("owned byte payload length does not fit u64")
-                            })?;
+                            let length = u64::try_from(value.read(&self.fused, <[u8]>::len)?)
+                                .map_err(|_| {
+                                    Flow::Guard("owned byte payload length does not fit u64")
+                                })?;
                             if length > crate::byte_ops::MAX_OWNED_BYTE_VALUE_BYTES {
                                 return Err(Flow::Guard(
                                     "owned byte payload exceeds the verified profile limit",
@@ -4456,7 +4420,9 @@ impl Evaluator<'_> {
                             // allocations as required by the language model.
                             Ok(Value::Bytes(OwnedBytesValue {
                                 allocation: next_count,
-                                bytes: Arc::from(value.bytes()),
+                                bytes: value
+                                    .read(&self.fused, |bytes| Arc::<[u8]>::from(bytes))?
+                                    .into(),
                             }))
                         }
                         (crate::byte_ops::ByteOp::Range, _) => Err(Flow::Guard(
@@ -4476,6 +4442,7 @@ impl Evaluator<'_> {
                 }
                 if let Some(op) = crate::vec_ops::by_id(callee.as_str()) {
                     return self.evaluate_vec_op(
+                        expression,
                         op,
                         callee.as_str(),
                         type_arguments,
@@ -4548,6 +4515,7 @@ impl Evaluator<'_> {
             | ResolvedExprKind::VecConstructor {
                 statements, tail, ..
             } => {
+                let fused_scope = self.fused.enter()?;
                 let base = environment.len();
                 let temporary_base = lexical_temporary::checkpoint(environment);
                 let mut interrupted = None;
@@ -4629,7 +4597,15 @@ impl Evaluator<'_> {
                 if outcome.is_ok() && !retain_root {
                     self.settle_completed_string_scope(environment, temporary_base)?;
                 }
+                let fused_cleanup = self.fused.leave(fused_scope);
+                if outcome.is_ok() {
+                    fused_cleanup?;
+                }
                 if !retain_root {
+                    let fused_cleanup = self.settle_fused_environment(environment, base);
+                    if outcome.is_ok() {
+                        fused_cleanup?;
+                    }
                     environment.truncate(base);
                     lexical_temporary::truncate(environment, temporary_base);
                 }
@@ -4712,7 +4688,11 @@ impl Evaluator<'_> {
                         }
                         hir::ResolvedMatchMode::Value => {
                             nested_owned::bind_copy_record_pattern(
-                                self.declarations, expression, &record, fields, &mut bindings,
+                                self.declarations,
+                                expression,
+                                &record,
+                                fields,
+                                &mut bindings,
                             )?;
                         }
                     }
@@ -5859,11 +5839,11 @@ fn main() -> i64 { 0 }
         let right = hir::DeclarationId::new("test.packet.right");
         let left_value = OwnedBytesValue {
             allocation: 1,
-            bytes: Arc::from([1u8, 2u8].as_slice()),
+            bytes: Arc::<[u8]>::from([1u8, 2u8].as_slice()).into(),
         };
         let right_value = OwnedBytesValue {
             allocation: 2,
-            bytes: Arc::from([3u8].as_slice()),
+            bytes: Arc::<[u8]>::from([3u8].as_slice()).into(),
         };
         let mut environment = Environment::from(vec![(
             root.clone(),
@@ -5889,16 +5869,14 @@ fn main() -> i64 { 0 }
         };
         assert!(matches!(record.fields.get(&left), Some(Value::Moved)));
         assert_eq!(record.fields.get(&right), Some(&Value::Bytes(right_value)));
-        assert!(
-            take_owned_place(
-                &mut environment,
-                &hir::Place {
-                    root,
-                    projections: vec![hir::PlaceProjection::Field(left)],
-                },
-            )
-            .is_none()
-        );
+        assert!(take_owned_place(
+            &mut environment,
+            &hir::Place {
+                root,
+                projections: vec![hir::PlaceProjection::Field(left)],
+            },
+        )
+        .is_none());
     }
 
     fn resolved(source: &str) -> hir::ResolvedProgram {
@@ -6062,6 +6040,7 @@ fn main() -> i64 { 0 }
                 budget: 10_000,
                 next_byte_allocation: 0,
                 allocated_byte_payload: 0,
+                fused: Default::default(),
                 box_live_allocations: Arc::new(std::sync::atomic::AtomicUsize::new(0)),
                 utf8_materialization_budget: Utf8MaterializationBudget::UnlimitedLegacy,
                 stdout_transcript: None,
@@ -6151,6 +6130,7 @@ fn inspect(value: borrow Either<Bytes, Bytes>) -> i64 {
                 budget: 10_000,
                 next_byte_allocation: 0,
                 allocated_byte_payload: 0,
+                fused: Default::default(),
                 box_live_allocations: Arc::new(std::sync::atomic::AtomicUsize::new(0)),
                 utf8_materialization_budget: Utf8MaterializationBudget::UnlimitedLegacy,
                 stdout_transcript: None,

@@ -61,7 +61,8 @@ impl Evaluator<'_> {
         Ok(if slot.bytes {
             Value::BorrowedSlice(BorrowedSliceValue {
                 invocation_root: root,
-                backing,
+                backing: Some(backing),
+                lease: None,
                 start: 0,
                 end: length,
             })

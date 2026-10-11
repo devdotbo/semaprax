@@ -254,7 +254,7 @@ fn owned_frame_v8_effect_matching_acks_release_seal_then_mint_unique_outcome_and
             bytes.allocation, 3,
             "State=1, released seal=2 stay reserved"
         );
-        let outcome_weak = Arc::downgrade(&bytes.bytes);
+        let outcome_weak = Arc::downgrade(bytes.bytes.ordinary());
         assert!(executed.roots.allocations.validate(&[
             executed.roots.state.as_ref().unwrap(),
             executed.roots.outcome.as_ref().unwrap()
@@ -790,7 +790,7 @@ fn with_staged_reduce_fixture(
             panic!()
         };
         assert_eq!(bytes.allocation, 3);
-        let outcome_weak = Arc::downgrade(&bytes.bytes);
+        let outcome_weak = Arc::downgrade(bytes.bytes.ordinary());
         let plan = compile_owned_reduce_v2(b).unwrap();
         let prepared =
             super::super::reduce::prepare_executed_owned_reduce_v2(executed, &plan, |_| true)

@@ -199,7 +199,7 @@ impl Evaluator<'_> {
     }
 
     pub(super) fn settle_completed_string_scope(
-        &self,
+        &mut self,
         environment: &mut Environment,
         checkpoint: usize,
     ) -> Result<(), Flow> {
@@ -256,7 +256,12 @@ impl Evaluator<'_> {
                     "completed String is absent from canonical scope finalizers",
                 ));
             }
-            super::lexical_control::settle_actions(environment, &exit.finalize_in_order, None)?;
+            super::lexical_control::settle_actions_with_fused(
+                environment,
+                &exit.finalize_in_order,
+                None,
+                Some(&mut self.fused),
+            )?;
         }
     }
 }

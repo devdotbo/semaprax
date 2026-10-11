@@ -131,10 +131,10 @@ impl PreparedOwnedHandoff {
         let [(_, Value::Bytes(owner))] = invocation.values.as_slice() else {
             return Err(refusal());
         };
-        if Arc::strong_count(&owner.bytes) != 1 || owner.allocation != 1 {
+        if Arc::strong_count(owner.bytes.ordinary()) != 1 || owner.allocation != 1 {
             return Err(refusal());
         }
-        let observer = Arc::downgrade(&owner.bytes);
+        let observer = Arc::downgrade(owner.bytes.ordinary());
         #[cfg(test)]
         tests::after_staging(&observer);
         // No worker, stack allocation request, process, or second evaluator.

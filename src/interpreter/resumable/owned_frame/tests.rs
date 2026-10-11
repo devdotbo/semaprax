@@ -59,8 +59,8 @@ fn weak_backing(root: &Value) -> Vec<Weak<[u8]>> {
             let Value::Bytes(bytes) = &record.fields[&hir::DeclarationId::new(*field)] else {
                 panic!()
             };
-            assert_eq!(Arc::strong_count(&bytes.bytes), 1);
-            Arc::downgrade(&bytes.bytes)
+            assert_eq!(Arc::strong_count(bytes.bytes.ordinary()), 1);
+            Arc::downgrade(bytes.bytes.ordinary())
         })
         .collect()
 }

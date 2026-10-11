@@ -65,3 +65,22 @@ owned-context witness observes their actual requested layouts, context moves,
 creator-scope return, last-child settlement and allocation-free one-short
 refusal. This adapter enables the interpreter's held context implementation;
 it does not select that executor or authenticate a source/HIR profile.
+
+The interpreter precursor holds one boxed invocation context and affine Core
+children in `interpreter/construction_fusion`. Its opaque carrier aliases cannot
+mint another child. Byte reads use scoped callbacks; stores renew receipts;
+vector publication is ordered after row operand evaluation. Block loan expiry
+and canonical individual Bytes finalizers route back through the same live context.
+Mixed aggregate settlement refuses until exact typed leaf order is joined; it
+cannot sweep leased children ahead of ordinary String finalization.
+Preparation owns the paid Runtime, preventing a different account from receiving
+its metadata receipt. The enclosing State remainder plus the Core/header debit
+cover the exact State once; payload, tables, temporary headers and stable
+identity boxes are reserved before allocation.
+Ordinary deep clone uses the existing evaluator event/payload counters and a
+fresh ordinary backing. The private registry tests are protocol/account controls,
+not selected-source authority or an original4096 execution qualification.
+No production Plan installer exists in this precursor. Full sealed selected
+validation and original interpreter row/Vec container allocation accounting
+remain required before activation; legacy public/effect adapters cannot receive
+an internal lease or recover its backing through ordinary Arc access.

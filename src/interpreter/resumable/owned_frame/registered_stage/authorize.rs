@@ -23,7 +23,7 @@ impl StagedOwnedAuthorizeV2 {
         let mut leaves = super::super::snapshot::weak_leaves(self.state.root.as_ref().unwrap());
         if let Some(Value::Variant(decision)) = &self.decision {
             leaves.extend(decision.fields.values().filter_map(|value| match value {
-                Value::Bytes(bytes) => Some(Arc::downgrade(&bytes.bytes)),
+                Value::Bytes(bytes) => Some(Arc::downgrade(bytes.bytes.ordinary())),
                 _ => None,
             }));
         }
@@ -685,7 +685,7 @@ fn exclusive_decision(value: &Value) -> bool {
     };
     Arc::strong_count(v) == 1
         && v.fields.values().all(|v| match v {
-            Value::Bytes(b) => Arc::strong_count(&b.bytes) == 1,
+            Value::Bytes(b) => Arc::strong_count(b.bytes.ordinary()) == 1,
             _ => true,
         })
 }
