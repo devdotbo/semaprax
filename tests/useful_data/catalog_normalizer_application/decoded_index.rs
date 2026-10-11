@@ -318,3 +318,5 @@ fn frozen_pairwise_reference_preserves_the_complete_normalizer_oracle() {
     // observers run unchanged against the pre-index pairwise reference.
     assert_batch_backend_matrix(scratch.path());
 }
+
+mod backends;

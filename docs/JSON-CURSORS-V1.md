@@ -132,6 +132,10 @@ std.data.json.dec.fingerprint_match(input, entry, current, fingerprint) -> bool
 `256` when that cursor emits none. An admitted raw byte is its own value; an
 escape uses `emit_at`.
 
+The caller must validate the input's raw UTF-8 before using these token
+helpers; a fingerprint does not establish UTF-8 validity. This is the same
+prerequisite as the pull decoder and exact decoded-token comparison.
+
 `decoded_fingerprint` requires `1 <= limit <= 256`. It walks the token at
 `start` once through `emit_len`, `decoded_byte_at` and `token_end`, folding each
 decoded byte `b` as `hash = (hash * 257 + b) % 65521`. A complete string with
