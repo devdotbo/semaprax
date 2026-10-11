@@ -194,3 +194,5 @@ int main(void) {{
         );
     }
 }
+
+mod owned_views;

@@ -33,6 +33,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             contract_labels: emission.contract_labels,
             borrowed_aggregate_bytes,
             output_profile: emission.output_profile,
+            owned_str_views: emission.owned_str_views,
             semantic_metered: false,
             owned_strings: track_strings.then(owned_strings::OwnedStrings::default),
             try_target_enabled: false,

@@ -248,6 +248,8 @@ fn emit_native_prelude_inner(
     command_carriers: bool,
     strings: StringRuntimeSelection,
 ) {
+    let owned_str_views =
+        string_views::program_uses_string_as_str(program, strings.include_instances);
     let needs_borrowed_str = command_carriers
         || strings.command_carriers
         || program_uses_borrowed_str(program, strings.include_instances);
@@ -337,11 +339,13 @@ fn emit_native_prelude_inner(
         // reachability gate so every pre-text native projection is byte exact.
         output.push_str(if strings.resource_strings {
             resource_strings::BORROWED_STR_RUNTIME_C
+        } else if owned_str_views {
+            string_views::OWNED_RUNTIME_C
         } else {
             NATIVE_BORROWED_STR_RUNTIME_C
         });
     }
-    if string_views::program_uses_string_as_str(program, strings.include_instances) {
+    if owned_str_views {
         output.push_str(if strings.length_delimited {
             string_views::LENGTH_DELIMITED_RUNTIME_C
         } else {
@@ -1511,6 +1515,7 @@ pub(super) struct NativeEmissionContext<'a> {
     variant_layouts: &'a VariantLayoutCache,
     output_profile: NativeOutputProfile,
     semantic: Option<&'a NativeSemanticMetering>,
+    owned_str_views: bool,
 }
 
 fn emit_function(
@@ -1733,7 +1738,12 @@ fn emit_function(
         emitter.line("uint64_t spx_borrowed_root_bytes = UINT64_C(0);");
         if !borrowed_params.is_empty() {
             for index in &borrowed_params {
-                emitter.line(&format!("spx_str_require_valid(spx_param_{index});"));
+                let validator = if emission.owned_str_views {
+                    "spx_str_require_root_valid"
+                } else {
+                    "spx_str_require_valid"
+                };
+                emitter.line(&format!("{validator}(spx_param_{index});"));
                 emitter.line(&format!(
                     "if (spx_param_{index}.len > SPX_BORROWED_STR_MAX_BYTES - spx_borrowed_root_bytes) spx_runtime_invariant_failure(\"borrowed invocation exceeds cumulative root byte budget\");"
                 ));
@@ -2172,6 +2182,7 @@ struct CEmitter<'a, O: COutput> {
     contract_labels: &'a HashMap<ExpressionId, String>,
     borrowed_aggregate_bytes: HashMap<(ValueId, Vec<DeclarationId>), String>,
     output_profile: NativeOutputProfile,
+    owned_str_views: bool,
     semantic_metered: bool,
     owned_strings: Option<owned_strings::OwnedStrings>,
     try_target_enabled: bool,

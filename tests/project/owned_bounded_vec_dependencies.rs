@@ -246,7 +246,12 @@ pub(super) fn compile_and_run_c(source: &str, root: &Path, optimization: &str, e
         String::from_utf8_lossy(&output.stderr)
     );
     let output = Command::new(binary).output().unwrap();
-    assert!(output.status.success());
+    assert!(
+        output.status.success(),
+        "native execution failed: status {}; stderr (first 4096 bytes): {}",
+        output.status,
+        String::from_utf8_lossy(&output.stderr[..output.stderr.len().min(4096)])
+    );
     assert_eq!(String::from_utf8_lossy(&output.stdout).trim(), expected);
 }
 

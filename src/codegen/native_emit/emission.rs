@@ -137,6 +137,11 @@ pub(super) fn emit_hir_c_with_options(
         variant_layouts: &variant_layouts,
         output_profile,
         semantic,
+        owned_str_views: !output_profile.string_runtime().resource_strings
+            && string_views::program_uses_string_as_str(
+                program,
+                output_profile.string_runtime().include_instances,
+            ),
     };
     for function in &program.functions {
         let selected_root = selected.is_some_and(|s| s.entry == function.id);

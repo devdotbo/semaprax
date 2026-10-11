@@ -29,7 +29,11 @@ impl<O: COutput> CEmitter<'_, O> {
             "{destination} = (spx_slice_u8_v1) {{ .ptr = ({}).len == UINT64_C(0) ? NULL : (const uint8_t *)({}).data, .len = ({}).len }};",
             source_code, source_code, source_code
         ));
-        let validator = self.resource_text_validator(expression);
+        let validator = if self.owned_str_views {
+            self.resource_text_read_validator(expression)
+        } else {
+            self.resource_text_validator(expression)
+        };
         self.line(&format!("{validator}({destination});"));
         Ok(())
     }

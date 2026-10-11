@@ -80,3 +80,31 @@ This stage grants no escaping view, mutable view, projected String view, borrow
 of a temporary, borrow `Bytes`, external ABI compatibility, automatic package
 or consumer migration, network/filesystem/process authority, runtime execution,
 physical allocation claim, or hosted evidence.
+
+## Native owned extent and foreign ingress repair
+
+An authenticated owned String view retains the allocation's exact UTF-8 byte
+length. The ordinary String allocator and checked concatenation do not grant a
+fixed 128-KiB String limit. Native programs whose checked expressions reach
+`string_as_str` use an internal Str validator that checks non-null storage for
+nonempty views, `SIZE_MAX`, `INT64_MAX`, and canonical UTF-8. The distinct
+call-depth-zero entry validator rejects each foreign Str over 65,536 bytes
+before reading its payload and retains the existing cumulative invocation
+budget. Internal forwarding does not mint a new root or extend its lifetime.
+Pure foreign-Str programs retain their existing emitted runtime bytes.
+
+All internal Str consumers use the same exact extent. The selected ordinary
+native `str_contains` implementation uses critical factorization and constant
+scratch space with linear search work, including needles above 65,536 bytes;
+it allocates no prefix table or heap payload. The separate resource-output
+String runtime remains governed by its own profile. `str_as_bytes` still obeys
+the independently owned Slice envelope of 131,072 bytes: a larger String can
+be consumed through Str operations but gains no larger Slice authority.
+
+Owning executable qualification of this repair is pending. The authored
+`owned_data::borrowed_str_native::owned_views` gates retain the original bulk
+UTF-8 interpreter/native/Wasm settlement controls, add 131,072-byte byte views
+and 262,144-byte Str forwarding, and check foreign extent refusal before
+payload access. A separate native matcher oracle covers periodic near-matches,
+long needles, NUL and Unicode at O0/O2. These definitions are not execution
+receipts or a broader public ABI grant.

@@ -83,7 +83,12 @@ int main(void){{
     }
 }
 
-fn run(source: &str, expected: i64, failure: Option<(&str, u32, u32)>, allocations: i64) {
+pub(super) fn run(
+    source: &str,
+    expected: i64,
+    failure: Option<(&str, u32, u32)>,
+    allocations: i64,
+) {
     let root = directory();
     let path = root.join("app.spx");
     std::fs::write(&path, source).unwrap();

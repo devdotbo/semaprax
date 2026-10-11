@@ -87,3 +87,6 @@ pub(super) const LENGTH_DELIMITED_RUNTIME_C: &str = r#"static __attribute__((unu
     return view;
 }
 "#;
+
+// Selected only when typed reachability includes an owned String view.
+pub(super) const OWNED_RUNTIME_C: &str = include_str!("string_views/owned_runtime.c");
