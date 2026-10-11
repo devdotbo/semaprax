@@ -1,7 +1,7 @@
 //! Actual native routes through opposing canonical terminal orders.
 //!
-//! `run` holds two sealed conditional variant owners, `older` (`body.s2`) and
-//! `newer` (`body.s10`). Before the scalar `if` join they finalize newest-first;
+//! `run` holds two sealed conditional variant owners, `older` (`body.s999`) and
+//! `newer` (`body.s1000`). Before the scalar `if` join they finalize newest-first;
 //! the join rebuilds conditional roots by storage identity, so later exits
 //! finalize `older` first. No single shared epilogue order honors both, and
 //! lexical control selects every terminal exit at its source site instead.
@@ -18,8 +18,14 @@ use crate::cleanup_plan::{
 use crate::interpreter::retained_call::SemanticCleanupEvent;
 use crate::runtime_status::{normalize_arithmetic, normalize_contract};
 
-const ORDER_SOURCE: &str =
+mod fixtures {
+    include!("../../../codegen/native_bytes/terminal_exits/fixtures.rs");
+}
+const ORDER_TEMPLATE: &str =
     include_str!("../../../codegen/native_bytes/terminal_exits/variant_owner_order.spx");
+fn order_source() -> String {
+    fixtures::source(ORDER_TEMPLATE)
+}
 const ORDER_ENTRY: &str = "test.native_terminal_variant_order.run";
 /// `depth, first, second, rounds, gate, cap`.
 const OK: [i64; 6] = [0, 1, 1, 4, 1, 1_000];
@@ -171,13 +177,8 @@ const ROUTES: &[Route] = &[
     ),
 ];
 
-fn body_call(function: &hir::ResolvedFunction, index: usize) -> &hir::ExpressionId {
-    let hir::ResolvedExprKind::Block { statements, .. } = &function.body.kind else {
-        panic!("run body is a block");
-    };
-    let hir::ResolvedStatement::Let { value, .. } = &statements[index] else {
-        panic!("run statement {index} is a let");
-    };
+fn body_call<'a>(function: &'a hir::ResolvedFunction, name: &str) -> &'a hir::ExpressionId {
+    let (_, value) = fixtures::binding(function, name);
     assert!(matches!(value.kind, hir::ResolvedExprKind::Call { .. }));
     &value.id
 }
@@ -205,6 +206,7 @@ fn flags(actions: &[FinalizeAction]) -> Vec<u32> {
 
 /// Exact performed vectors per route, read only from the checked plan.
 fn traces(function: &hir::ResolvedFunction) -> impl Fn(Trace) -> Vec<u32> + '_ {
+    fixtures::assert_opposing_ids(function);
     let plan = &function.cleanup_plan;
     let control = plan.lexical_control.as_deref().expect("run is lexical");
     let mut success = control
@@ -232,8 +234,16 @@ fn traces(function: &hir::ResolvedFunction) -> impl Fn(Trace) -> Vec<u32> + '_ {
         .next()
         .expect("loop body charge has its boundary");
     assert!(iterations.next().is_none());
-    let before = failure_exit(plan, body_call(function, 11), StatusLane::OperationFailure);
-    let after = failure_exit(plan, body_call(function, 13), StatusLane::OperationFailure);
+    let before = failure_exit(
+        plan,
+        body_call(function, "before"),
+        StatusLane::OperationFailure,
+    );
+    let after = failure_exit(
+        plan,
+        body_call(function, "after"),
+        StatusLane::OperationFailure,
+    );
     let (before, after) = (
         flags(&before.finalize_in_order),
         flags(&after.finalize_in_order),
@@ -246,7 +256,11 @@ fn traces(function: &hir::ResolvedFunction) -> impl Fn(Trace) -> Vec<u32> + '_ {
     );
     let requires = failure_exit(plan, &function.requires[0].id, StatusLane::ContractFalse);
     let ensures = failure_exit(plan, &function.ensures[0].id, StatusLane::ContractFalse);
-    let descend = failure_exit(plan, body_call(function, 1), StatusLane::OperationFailure);
+    let descend = failure_exit(
+        plan,
+        body_call(function, "reached"),
+        StatusLane::OperationFailure,
+    );
     move |trace| match trace {
         Trace::Success => [scope.clone(), flags(&commit.finalize_in_order)].concat(),
         Trace::Ensures => [scope.clone(), flags(&ensures.finalize_in_order)].concat(),
@@ -321,8 +335,9 @@ fn assert_outcome(route: &Route, evaluation: &RetainedCallEvaluation) {
 
 #[test]
 fn opposing_terminal_orders_settle_exactly_on_every_native_route() {
-    let checked = crate::check(ORDER_SOURCE, std::path::Path::new("variant-order.spx"))
+    let checked = crate::check(&order_source(), std::path::Path::new("variant-order.spx"))
         .expect("variant owner order source checks");
+    fixtures::assert_projection(&checked);
     let program = hir::resolve(&checked).expect("variant owner order source resolves");
     hir::validate(&program).expect("variant owner order source validates");
     let run = program

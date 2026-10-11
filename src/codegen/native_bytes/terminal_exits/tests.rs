@@ -198,9 +198,11 @@ fn contradictory_shared_epilogue_names_function_exits_and_slots() {
     );
     let error = terminal_order(&function, &plan, &flags()).unwrap_err();
     assert_eq!(error.code, "SPX-B104");
-    assert!(error
-        .message
-        .starts_with("Bytes cleanup exits contain contradictory finalizer precedence"));
+    assert!(
+        error
+            .message
+            .starts_with("Bytes cleanup exits contain contradictory finalizer precedence")
+    );
     for expected in [
         format!("function `{function}`"),
         format!("exit 0 (failure from `{failed}` OperationFailure) finalizes `flag_a`"),
@@ -225,20 +227,29 @@ fn hostile_ambiguous_failure_selection_still_refuses_contradiction() {
     );
     let error = terminal_order(&function, &plan, &flags()).unwrap_err();
     assert!(error.message.contains("exit 0 (failure from"), "{error:?}");
-    assert!(error
-        .message
-        .contains("is not exactly selected at its source site"));
+    assert!(
+        error
+            .message
+            .contains("is not exactly selected at its source site")
+    );
 }
 
 /// Actual checked source: two conditional variant owners take opposing
 /// canonical terminal orders (`variant_owner_order.spx`).
-const VARIANT_OWNER_ORDER: &str = include_str!("variant_owner_order.spx");
+mod fixtures {
+    include!("fixtures.rs");
+}
+const VARIANT_OWNER_TEMPLATE: &str = include_str!("variant_owner_order.spx");
+fn variant_owner_source() -> String {
+    fixtures::source(VARIANT_OWNER_TEMPLATE)
+}
 /// The loop's `continue`/`break` are the source's only lexical exits.
 const LEXICAL_LOOP: &str = "    let mut index = 0;\n    while index < rounds {\n        index = index + 1;\n        if index == 1 { continue; }\n        if index == 3 { break; }\n        0\n    }\n";
 
 fn variant_owner_program(source: &str) -> (crate::ast::Program, crate::hir::ResolvedProgram) {
     let checked = crate::check(source, std::path::Path::new("variant-owner-order.spx"))
         .expect("variant owner order source checks");
+    fixtures::assert_projection(&checked);
     let program = crate::hir::resolve(&checked).expect("variant owner order source resolves");
     crate::hir::validate(&program).expect("independent replay admits the variant owner plan");
     (checked, program)
@@ -252,17 +263,14 @@ fn run_function(program: &crate::hir::ResolvedProgram) -> &crate::hir::ResolvedF
         .expect("run is declared")
 }
 
-fn body_let(
-    function: &crate::hir::ResolvedFunction,
-    index: usize,
-) -> (&crate::hir::ResolvedBinding, &crate::hir::ResolvedExpr) {
-    let crate::hir::ResolvedExprKind::Block { statements, .. } = &function.body.kind else {
-        panic!("run body is a block");
-    };
-    let crate::hir::ResolvedStatement::Let { binding, value, .. } = &statements[index] else {
-        panic!("run statement {index} is a let");
-    };
-    (binding, value)
+fn body_let<'a>(
+    function: &'a crate::hir::ResolvedFunction,
+    name: &str,
+) -> (
+    &'a crate::hir::ResolvedBinding,
+    &'a crate::hir::ResolvedExpr,
+) {
+    fixtures::binding(function, name)
 }
 
 /// The exact compiler-built failure exit selected by one callee call site.
@@ -283,25 +291,26 @@ fn payload_order(exit: &ExitTarget) -> Vec<StorageId> {
         .collect()
 }
 
-/// `older` (`body.s2`) and `newer` (`body.s10`) are sealed conditional variants.
-/// Before any join they finalize newest-first; the scalar `if` join rebuilds
-/// conditional roots by storage identity, where `…body.s10` precedes
-/// `…body.s2`, so later exits finalize `older` first. Both orders are canonical.
+/// Generated padding places older at body.s999 and newer at body.s1000.
+/// Before the join they finalize newest-first. At the join the decimal path
+/// length 10 sorts before 9, so the actual canonical vector reverses. The
+/// tests consume both original vectors verbatim.
 #[test]
 fn checked_variant_owners_take_opposing_terminal_orders_and_lexical_sites_select_each() {
-    let (checked, program) = variant_owner_program(VARIANT_OWNER_ORDER);
+    let (checked, program) = variant_owner_program(&variant_owner_source());
     let run = run_function(&program);
     let plan = &run.cleanup_plan;
     assert!(
         plan.lexical_control.is_some(),
         "loop exits make run lexical"
     );
-    let (older, _) = body_let(run, 2);
-    let (newer, _) = body_let(run, 10);
+    fixtures::assert_opposing_ids(run);
+    let (older, _) = body_let(run, "older");
+    let (newer, _) = body_let(run, "newer");
     let older = StorageId::Value(older.id.clone());
     let newer = StorageId::Value(newer.id.clone());
-    let before = call_failure(plan, &body_let(run, 11).1.id);
-    let after = call_failure(plan, &body_let(run, 13).1.id);
+    let before = call_failure(plan, &body_let(run, "before").1.id);
+    let after = call_failure(plan, &body_let(run, "after").1.id);
     assert_eq!(payload_order(before), [newer.clone(), older.clone()]);
     assert_eq!(payload_order(after), [older, newer]);
     assert!(plan.lexical_block_in_context(None, before.from));
@@ -332,8 +341,9 @@ const LEXICAL_TRAP: &str = "native terminal cleanup lacks its exact selected exi
 
 /// The same owners without the loop: `run` has no lexical control.
 fn nonlexical_variant_source() -> String {
-    assert_eq!(VARIANT_OWNER_ORDER.matches(LEXICAL_LOOP).count(), 1);
-    VARIANT_OWNER_ORDER.replace(LEXICAL_LOOP, "    let index = rounds;\n")
+    let source = variant_owner_source();
+    assert_eq!(source.matches(LEXICAL_LOOP).count(), 1);
+    source.replace(LEXICAL_LOOP, "    let index = rounds;\n")
 }
 
 fn live_flag(exit: &ExitTarget, index: usize) -> String {
@@ -365,12 +375,13 @@ fn checked_nonlexical_variant_owners_admit_exact_routes_with_actual_plan_vectors
     let run = run_function(&program);
     let plan = &run.cleanup_plan;
     assert!(plan.lexical_control.is_none());
-    let (older, _) = body_let(run, 2);
-    let (newer, _) = body_let(run, 10);
+    fixtures::assert_opposing_ids(run);
+    let (older, _) = body_let(run, "older");
+    let (newer, _) = body_let(run, "newer");
     let older = StorageId::Value(older.id.clone());
     let newer = StorageId::Value(newer.id.clone());
-    let before = call_failure(plan, &body_let(run, 11).1.id);
-    let after = call_failure(plan, &body_let(run, 13).1.id);
+    let before = call_failure(plan, &body_let(run, "before").1.id);
+    let after = call_failure(plan, &body_let(run, "after").1.id);
     assert_eq!(payload_order(before), [newer.clone(), older.clone()]);
     assert_eq!(payload_order(after), [older, newer]);
     assert_eq!(live_flag(before, 0), live_flag(after, 1));
@@ -462,7 +473,7 @@ fn assert_nonlexical_refusal(error: &Diagnostic, expected: &str) {
 fn hostile_forged_nonlexical_links_on_the_checked_plan_refuse() {
     let (_, program) = variant_owner_program(&nonlexical_variant_source());
     let run = run_function(&program);
-    let before = call_failure(&run.cleanup_plan, &body_let(run, 11).1.id).clone();
+    let before = call_failure(&run.cleanup_plan, &body_let(run, "before").1.id).clone();
     let commit = run.cleanup_plan.regions[0].normal_scope_end;
     let forge = |mutate: &dyn Fn(&mut CleanupPlan), expected: &str| {
         let mut forged = run.clone();
@@ -714,6 +725,7 @@ fn checked_nonlexical_run(
         .find(|function| function.id.as_str() == run)
         .expect("run is declared");
     assert!(function.cleanup_plan.lexical_control.is_none());
+    fixtures::assert_opposing_ids(function);
     let id = function.id.clone();
     (checked, program, id)
 }
@@ -722,15 +734,16 @@ fn checked_nonlexical_run(
 #[test]
 fn checked_nonlexical_live_entry_owner_refuses() {
     let (checked, program, id) = checked_nonlexical_run(
-        NONLEXICAL_ENTRY_OWNER,
+        &fixtures::source(NONLEXICAL_ENTRY_OWNER),
         "test.native_terminal_nonlexical_entry.run",
     );
     let run = program.functions.iter().find(|f| f.id == id).unwrap();
-    assert!(!run
-        .cleanup_plan
-        .entry_state
-        .live_owned_parameters
-        .is_empty());
+    assert!(
+        !run.cleanup_plan
+            .entry_state
+            .live_owned_parameters
+            .is_empty()
+    );
     assert_nonlexical_refusal(
         &NativeBytesPlan::build(run).unwrap_err(),
         "owned parameters are live at entry without a function-entry boundary certificate",
@@ -745,8 +758,10 @@ fn checked_nonlexical_live_entry_owner_refuses() {
 /// emission both refuse before any artifact exists.
 #[test]
 fn checked_nonlexical_plain_loop_refuses_on_ordinary_and_metered_emission() {
-    let (checked, program, id) =
-        checked_nonlexical_run(NONLEXICAL_LOOP, "test.native_terminal_nonlexical_loop.run");
+    let (checked, program, id) = checked_nonlexical_run(
+        &fixtures::source(NONLEXICAL_LOOP),
+        "test.native_terminal_nonlexical_loop.run",
+    );
     let run = program.functions.iter().find(|f| f.id == id).unwrap();
     assert_nonlexical_refusal(
         &NativeBytesPlan::build(run).unwrap_err(),
