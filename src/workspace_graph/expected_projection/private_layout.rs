@@ -251,16 +251,37 @@ impl<'a> LayoutClosure<'a> {
         if self.entries.is_empty() {
             return Ok(None);
         }
-        let base = synthetic
-            .types
-            .len()
-            .checked_sub(self.entries.len())
-            .ok_or_else(presentation_mismatch)?;
-        for (e, copy) in self.entries.iter().zip(&synthetic.types[base..]) {
-            if copy.name != e.alias || copy.stable_id != e.declaration.stable_id {
-                return Err(presentation_mismatch());
-            }
+        let ledger = &self.owners.as_ref().ok_or_else(refusal)?.ledger;
+        if ledger.failed.get() {
+            return Err(refusal());
         }
+        let mut work = ledger.remaining.get();
+        let result = (|| {
+            let base = synthetic
+                .types
+                .len()
+                .checked_sub(self.entries.len())
+                .ok_or_else(presentation_mismatch)?;
+            for (entry, copy) in self.entries.iter().zip(&synthetic.types[base..]) {
+                debit(&mut work, 1)?;
+                let name = sorting::identity(&copy.name, &entry.alias, &mut work)?;
+                let identity = sorting::identity(
+                    &copy.stable_id,
+                    &entry.declaration.stable_id,
+                    &mut work,
+                )?;
+                if name != std::cmp::Ordering::Equal || identity != std::cmp::Ordering::Equal {
+                    return Err(presentation_mismatch());
+                }
+            }
+            Ok(base)
+        })();
+        ledger.remaining.set(work);
+        if result.is_err() {
+            ledger.failed.set(true);
+            ledger.remaining.set(0);
+        }
+        let base = result?;
         Ok(Some(crate::source_verify::private_names::PrivateNames::new(
             synthetic, caller, base, self,
         )))

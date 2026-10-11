@@ -321,7 +321,7 @@ fn two_callers_share_one_derivation_query_ledger_and_sticky_refusal() {
     assert!(run(used - 1).0.is_err());
 }
 #[test]
-fn held_presentation_borrows_with_no_derivation_work_charge_or_allocation() {
+fn held_presentation_borrows_without_allocation_and_pays_shared_work() {
     let parsed = sources();
     let authored = index_authored(&parsed).unwrap();
     let registry = LayoutRegistry::new(&parsed, &authored);
@@ -358,7 +358,7 @@ fn held_presentation_borrows_with_no_derivation_work_charge_or_allocation() {
     assert_eq!((metrics.freed, metrics.live, metrics.highwater), (0, 0, 0));
     assert!(!overflowed);
     assert_eq!(charged, 0);
-    assert_eq!(registry.work_remaining(), work, "no work debit");
+    assert!(registry.work_remaining() < work, "same invocation pays comparisons");
     assert_eq!(registry.receipt(), receipt, "no preparation receipt");
     assert_eq!(registry.derivations.get(), 1, "no re-derivation");
     // A provider without imports is never held, so it has no presentation.
@@ -366,7 +366,9 @@ fn held_presentation_borrows_with_no_derivation_work_charge_or_allocation() {
     // One-short, renamed and foreign-identity copies are not the appended
     // declarations; the graph refuses them instead of presenting them.
     let mismatch = |synthetic: &crate::ast::Program| {
-        let held = registry.held(&parsed[0]).unwrap();
+        let candidate = LayoutRegistry::new(&parsed, &authored);
+        drop(candidate.get(&parsed[0], &authored, &parsed).unwrap());
+        let held = candidate.held(&parsed[0]).unwrap();
         let errors = held.presentation(&parsed[0], synthetic).err().unwrap();
         assert_eq!(errors[0].code, "SPX-G173", "{errors:?}");
     };
@@ -379,4 +381,40 @@ fn held_presentation_borrows_with_no_derivation_work_charge_or_allocation() {
     let mut foreign = synthetic.clone();
     foreign.types.last_mut().unwrap().stable_id = "sibling".to_owned();
     mismatch(&foreign);
+}
+
+#[test]
+fn held_presentation_work_is_exact_one_short_and_sticky() {
+    let parsed = sources();
+    let authored = index_authored(&parsed).unwrap();
+    let registry = LayoutRegistry::new(&parsed, &authored);
+    let synthetic = expected_projection::synthetic_program_with_registry(
+        &parsed[0], &authored, &parsed, Some(&registry),
+    ).unwrap();
+    let before = registry.work_remaining();
+    {
+        let held = registry.held(&parsed[0]).unwrap();
+        assert!(held.presentation(&parsed[0], &synthetic).unwrap().is_some());
+    }
+    let used = before - registry.work_remaining();
+    assert!(used > 0);
+    for limit in [used, used - 1] {
+        let candidate = LayoutRegistry::new(&parsed, &authored);
+        drop(candidate.get(&parsed[0], &authored, &parsed).unwrap());
+        candidate.set_remaining(limit);
+        {
+            let held = candidate.held(&parsed[0]).unwrap();
+            assert_eq!(held.presentation(&parsed[0], &synthetic).is_ok(), limit == used);
+        }
+        assert_eq!(candidate.work_remaining(), 0);
+        assert_eq!(candidate.is_failed(), limit != used);
+        if limit != used {
+            // Restoring a work remainder never restores a refused invocation.
+            candidate.set_remaining(used);
+            let held = candidate.held(&parsed[0]).unwrap();
+            assert!(held.presentation(&parsed[0], &synthetic).is_err());
+            drop(held);
+            assert!(candidate.get(&parsed[0], &authored, &parsed).is_err());
+        }
+    }
 }

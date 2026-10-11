@@ -48,7 +48,7 @@ source-derived and contain no invented child import.
 
 Minted names are never diagnostic text. Before fresh or selective resolution
 of a caller's synthetic program, the graph borrows that caller's already held
-closure (no derivation, work debit or lookup grant), checks that the copies at
+closure (no derivation or lookup grant), checks that the copies at
 the end of that exact synthetic program are the declarations it appended, and
 lends a borrowed view to that one verification through its type table. The
 view holds only references, so binding it allocates no slot backing or string
@@ -143,7 +143,9 @@ keep provider context without exposing aliases, as do a mismatched return and
 a private descendant nested in a declared-binding payload. A registry
 definition binds the held presentation under a zero-byte builder budget and
 the allocation observer: zero allocations, frees and live bytes through drop,
-no work debit, receipt change or re-derivation, while one-short, renamed and
+no receipt change or re-derivation. Entry and identity comparisons debit the
+same held invocation work ledger before reading their bytes; exact and
+one-short work cases preserve sticky refusal. Short, renamed and
 foreign-identity copies are refused. A verifier child binds a view to one
 program and proves that an equal clone, an unbound pass after it, and a view
 bound past the copy all keep ordinary text, and that an authored declaration
