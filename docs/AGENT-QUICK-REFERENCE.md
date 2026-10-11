@@ -1424,54 +1424,42 @@ pins targets; --verify checks. Build does not link dependencies.
 
 ## JSON documents and cursors
 
-Strict JSON uses `std.data.json.scan = "^0.1.0"` and `profile =
-"useful-data.v1"`. Call `strict_end(input, 32usize, policy)` by ID first.
-Policy `0` allows duplicate names; `1` rejects decoded duplicates. Success is
-input length; larger values encode the error offset. Navigation and exact
-number spans use borrowed bytes. See [Strict JSON Scan v1](STRICT-JSON-SCAN-V1.md).
-`std.data.json.query` decodes string tokens ([JSON String Query v1](JSON-STRING-QUERY-V1.md)).
+Strict JSON: `std.data.json.scan = "^0.1.0"`, profile `useful-data.v1`.
+Call `strict_end(input, 32usize, policy)` by ID first: 0 allows duplicate names,
+1 rejects decoded duplicates. Success = input length; larger values encode
+error offset. Navigation/numbers borrow bytes. `std.data.json.query`
+decodes strings. See [scan](STRICT-JSON-SCAN-V1.md), [query](JSON-STRING-QUERY-V1.md).
 
-`semaprax json-codec` derives checked source from an authenticated Project record.
-`help language author:json-owned-request` selects `owned-request.v1` or
-`stream-owned-request.v1`. A request has `Vec<string>` identifiers (≤8) and
-`Vec<Row>` (≤256). A flat stable-ID `Row` has a `string` identifier plus
-0–6 `i64`, `u8`, `usize` or `bool` fields; each field has an ID and order may
-vary. In the ASCII owned profiles, identifiers are unique, 1–16 ASCII
-letters, digits, `_` or `-`, and nonempty rows need an identifier. Encoders borrow
-both vectors and `output_limit`. `json_<Request>_owned_decode` returns
-independent Strings, so completed decode permits release of normalized input
-Bytes. Streaming errors before Ready use raw offsets; later errors use
-normalized-buffer offsets. The ASCII owned profile accepts only its identifier
-policy. The separate `utf8-owned-request.v1` selector requires
-`--max-string-bytes N` (canonical 1..64 decoded UTF-8 bytes per string); it
-accepts empty and duplicate values, including Unicode and NUL, in the same
-0..8 and 0..256 array bounds. The second array may be nonempty when the first
-is empty. External input retains the existing 65,536-byte borrowed-root
-limit; internal owned Bytes views retain their 131,072-byte bound. Neither
-limit is increased. Source field identifiers stay ASCII.
-This is not a stream selector; see `help language author:json-utf8-owned-request`.
-Owned runtime support is private to
-`owned-data-api.v1` or native v30; v29 views keep Copy tokens tied to source
-lifetime. Source and current-head qualification remain pending; this is not
-full #724.
+`json-codec` derives checked source from authenticated Project records.
+`author:json-owned-request`: `owned-request.v1`/`stream-owned-request.v1`;
+≤8 `Vec<string>` identifiers, ≤256 `Vec<Row>` rows. Stable-ID flat Row: one
+String identifier, 0–6 `i64`/`u8`/`usize`/`bool` fields, each with an ID,
+in any order. ASCII identifiers are unique, 1–16 letters/digits/`_`/`-`;
+nonempty rows need an identifier. Encoders borrow vectors, accept `output_limit`.
+`json_<Request>_owned_decode` returns independent Strings: release normalized
+Bytes after decode. Stream errors use raw offsets before Ready, normalized
+offsets afterwards. Nonstream `utf8-owned-request.v1` requires canonical
+`--max-string-bytes 1..64` decoded bytes; empty/duplicate/Unicode/NUL values
+are allowed, arrays remain 0..8/0..256, including rows with no identifiers.
+External borrowed input ≤65,536 bytes; internal owned Bytes views ≤131,072.
+Source field names stay ASCII. See `author:json-utf8-owned-request`.
+Owned runtime is private `owned-data-api.v1` or native v30; v29 Copy views
+retain source lifetime. Qualification/#724 pending.
 
-Typed source: `help language author:json-request-response` and the
-[ShiftSim README](../examples/shiftsim-typed-record-successor/README.md).
-Prefer the combined checked candidate for paired setup:
+Typed source: `author:json-request-response`, [ShiftSim](../examples/shiftsim-typed-record-successor/README.md).
+Combined candidate:
 
 ```sh
 cd examples/shiftsim-typed-record-successor
 semaprax json-codec . --plan codec-plan.json --output codecs.candidate.json
 ```
 
-All entries derive against one immutable authored revision; ordinary Project
-admission checks the combined candidate before the new reviewable bundle is
-published. The bundle preserves original authored schemas separately from
-candidate sources and exact per-entry receipts. Review/install through ordinary
-source or managed transaction authority; receipts cannot authorize publication.
-See [codec plan v1](APPLICATION-JSON-CODEC-PLAN-V1.md).
+One immutable authored revision per bundle. Project
+admission checks before publishing original schemas,
+candidate sources and exact receipts. Install through ordinary source/managed
+authority; receipts grant none. See [codec plans](APPLICATION-JSON-CODEC-PLAN-V1.md).
 
-Single-codec calls remain supported. Select one profile per call:
+Single-codec profiles:
 
 ```sh
 cd examples/shiftsim-typed-record-successor
@@ -1482,58 +1470,45 @@ semaprax json-codec . --source src/response.spx --type shiftsim.report \
   --max-string-bytes 16
 ```
 
-For a two-codec application, derive both outputs from the unchanged bootstrap,
-then replay each candidate against that same authenticated Project revision with
-its exact source path, record ID, profile and bounds before copying either output
-over an authored source. Installing one generated module first changes the revision; hand edits remove derivation
-evidence. The CLI never overwrites source or manifests. See the checked
-`standard_library::application_json::owned::catalog_scoped_records::` owner.
+Derive both from unchanged bootstrap; replay each against that revision with
+exact path/record ID/profile/bounds before installing either. First installation
+changes revision; edits remove evidence. CLI leaves source/manifests untouched. Owning tests: `catalog_scoped_records`.
 
-For finite nested borrowed encoding, select `bounded-nested-response.v1` with
-both `--max-string-bytes 1..64` and `--max-array-items 1..256`. Unlike the
-fixed collection response, it admits acyclic records (depth 8, 64 expanded
-paths, 1..8 fields) with up to two expanded Vec fields of Copy scalars or flat
-rows containing at most two Strings. Primitive `Vec<string>` refuses
-(SPX-J180); decoder admission does not create a primitive String view.
-`json_Root_nested_response_encoded_len(value: borrow Root)` preflights all
-fields; `json_Root_nested_response_encode(value: borrow Root, output_limit:
-usize)` returns `Encoded { text }` or `Refused { required }`. `usize::MAX`
-marks a value outside string/array or 131072-byte output bounds. Borrowed
-encoding allocates output only after complete preflight and renders declaration
-order without cloning owners. Existing owners retain runtime bounds; the
-request decoder's 264 new-String census does not limit this response selector.
-No capability, profile, decoder or business-data mapping is generated. See
-`help language author:json-nested-response` and
-[nested response contract](APPLICATION-JSON-NESTED-RESPONSE-V1.md).
+`author:json-nested-response`: `bounded-nested-response.v1` requires both
+`--max-string-bytes 1..64` and `--max-array-items 1..256`. Acyclic records:
+depth 8, ≤64 expanded paths, 1..8 fields, ≤2 expanded Vec fields of Copy scalars
+or flat rows with ≤2 Strings. Primitive `Vec<string>` refuses SPX-J180;
+decoder admission grants no primitive String view.
+`json_Root_nested_response_encoded_len(value: borrow Root)` preflights all fields;
+`json_Root_nested_response_encode(value: borrow Root, output_limit: usize)` returns
+`Encoded { text }` or `Refused { required }`. `usize::MAX` signals string/array
+or 131072-byte output bounds exceeded. Allocate output after full preflight,
+in declaration order, without clones. Owners retain runtime bounds;
+request decode's 264-String census does not limit response encoding.
+No capability/profile/decoder/business mapping.
+See [nested response](APPLICATION-JSON-NESTED-RESPONSE-V1.md).
 
-Choose `author:collection-records` for v31 `Report { rows: Vec<Row> }` data;
-choose `author:nested-outcomes` for v32 typed nested success/error carriers.
-Import explicit signature roots (SPX-G172). [Private record layouts](PRIVATE-NOMINAL-LAYOUT-CLOSURE-V1.md)
-may be inferred; authored child names still need imports.
-A projected variant is not a record root: bind its payload with `match own`
-first. Keep each match-arm comma **inside** its closing brace. Owning aggregate
-match results require their independently admitted finite collection outcome;
-ordinary String/general variant joins do not gain that authority.
+`author:collection-records`: v31 `Report { rows: Vec<Row> }`;
+`author:nested-outcomes`: v32 nested success/error carriers. Import signature
+roots (SPX-G172). [Private layouts](PRIVATE-NOMINAL-LAYOUT-CLOSURE-V1.md) may be
+inferred; authored child names need imports. Bind variant payloads with
+`match own`; keep arm commas inside braces. Aggregate results require an
+independently admitted finite collection outcome; ordinary String/general
+variants gain no authority.
 
-A streamed decoder owns its `Ready` payload. Use nested `match own` bindings
-to move its records, Strings and Vecs; keep borrowed views within the owner's
-lifetime. The success arm is `Outcome::Ready { value } => match own value`,
-followed by the exact record pattern `OrderRequest { configuration, lines, urgent }`
-and an owning match on `configuration`. Consume these owners once; do not retain
-a borrowed Ready byte slice beyond its owner. The checked example
-`examples/stream-nested-order-json-project/src/app.command.spx` shows success,
-stderr errors and output status. Do not substitute dummy owners. A normalizer's
-`Ready { bytes, length }` branch passes exactly
-`byte_range(bytes_as_slice(bytes), 0usize, length)` to the decoder while `bytes`
-remains live.
+Stream Ready owns its payload: `Outcome::Ready { value } => match own value`,
+then exact `OrderRequest { configuration, lines, urgent }`, then owning match
+on configuration. Consume owners once; views stay within owner lifetime;
+no dummy owners. Success/stderr/status:
+`examples/stream-nested-order-json-project/src/app.command.spx`.
+Normalizer `Ready { bytes, length }` passes exactly
+`byte_range(bytes_as_slice(bytes), 0usize, length)` while bytes remains live.
 
-After an owned `Request` is decoded, ordinary code can inspect a row with
-`vec_field<Patient>(request.patients,index,"priority")`; a selected String is
-a borrow that keeps the named vector live through its last use. The response
-selector only encodes `Report { assignments: Vec<Assignment>, metrics: Metrics }`;
-it does not decode requests or map business data. Helpers are ordinary checked
-source, and the caller's admitted Project profile still controls runtime
-support. Current-head application qualification remains pending.
+Decoded rows: `vec_field<Patient>(request.patients,index,"priority")`.
+String borrows retain the named Vec through last use. Response encoding
+of `Report { assignments: Vec<Assignment>, metrics: Metrics }` supplies no
+request decoding/business mapping. Checked helpers; caller's admitted
+Project profile controls runtime. Qualification pending.
 
 ## Where the rules live
 
