@@ -338,6 +338,14 @@ fn result_source(
     return_operands: &BTreeSet<ExpressionId>,
     budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
+    if matches!(function.return_type, ResolvedType::Nominal { .. }) {
+        super::super::selected_profile::collections::prepay(
+            program,
+            function,
+            super::super::selected_profile::collections::type_key_bytes(&function.return_type)?,
+            budget,
+        )?;
+    }
     let owned = crate::cleanup::selected_inventory_needs_drop_in(program, &function.return_type)?;
     match source {
         CleanupResultSource::Scalar { expression } => {
