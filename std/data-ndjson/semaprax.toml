@@ -14,5 +14,5 @@ tests = ["std.data.ndjson.tests"]
 web = []
 
 [dependencies]
-std.io.lines = "=0.1.0"
 std.data.json.utf8 = "=0.1.0"
+std.io.lines = "=0.1.0"
