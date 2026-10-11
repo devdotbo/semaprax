@@ -624,3 +624,12 @@ administrative paths publish no scalar, and report cleanup_complete=false:
 physical abandonment is not canonical failure settlement. The actual
 language-failure contour and broader loan/frame/finalizer installation remain
 required before activation. Authored controls are unexecuted.
+
+The private current-graph call whitelist includes exactly the checked
+`i64_from_usize` conversion used by that scalar publication contour; other
+numeric and String operations remain closed. The full compiler renewal still
+authenticates the conversion signature and operands. Its owning controls
+mutate the actual callee, argument type and ownership. The conservative
+256/257 view-bound control counts actual `SliceView` and `BorrowedCall` sites;
+`vec_len` borrows the container and contributes no Byte-root loan site. These
+source repairs remain pending executable qualification.

@@ -96,7 +96,10 @@ fn original_source_resolves_only_through_the_private_current_owner() {
 
     // Four live caller frames over four whole backings. Each caller retains
     // its 32 independent SliceView sites until after the nested call returns.
-    // Each later byte_len read also has one canonical BorrowedCall site.
+    // Each later named byte_len read has one canonical BorrowedCall site.
+    // VecLen<Bytes> borrows its container; it adds no Byte-root physical loan.
+    // The leaf has 31 views and 33/34 explicit byte_len calls, not a guessed
+    // extra VecLen loan. The original 256/257 max-path boundary stays exact.
     for (extra_read, expected) in [(false, Some(256)), (true, None)] {
         let text = view_chain(extra_read);
         let ast = crate::parse(&text, "partition_view_bound.spx").unwrap();
@@ -108,6 +111,37 @@ fn original_source_resolves_only_through_the_private_current_owner() {
             .iter()
             .map(|f| f.loan_plan.loans.len())
             .collect();
+        let slice_sites: Vec<_> = owner
+            .program()
+            .functions
+            .iter()
+            .map(|f| {
+                f.loan_plan
+                    .loans
+                    .iter()
+                    .filter(|loan| loan.cause == crate::loan_plan::LoanCause::SliceView)
+                    .count()
+            })
+            .collect();
+        let call_sites: Vec<_> = owner
+            .program()
+            .functions
+            .iter()
+            .map(|f| {
+                f.loan_plan
+                    .loans
+                    .iter()
+                    .filter(|loan| {
+                        matches!(
+                            loan.cause,
+                            crate::loan_plan::LoanCause::BorrowedCall { argument: 0 }
+                        )
+                    })
+                    .count()
+            })
+            .collect();
+        assert_eq!(slice_sites, [32, 32, 32, 31]);
+        assert_eq!(call_sites, [32, 32, 32, 33 + usize::from(extra_read)]);
         assert_eq!(counts, vec![64, 64, 64, 64 + usize::from(extra_read)]);
         let mut work = usize::MAX;
         match expected {
@@ -226,6 +260,46 @@ fn private_owner_refuses_foreign_carriers_and_actual_call_or_plan_mutations() {
             "failed compiler renewal must poison view receipt"
         );
     }
+    let converted = SOURCE.replace(
+        "if vec_len<Bytes>(values)==3usize {7}else{0}",
+        "i64_from_usize(vec_len<Bytes>(values))",
+    );
+    assert!(crate::check(&converted, "partition-conversion.spx")
+        .unwrap_err()
+        .iter()
+        .any(|d| d.code == "SPX-T263"));
+    let ast = crate::parse(&converted, "partition-conversion.spx").unwrap();
+    for mutation in 0..3 {
+        let mut owner =
+            ValidatedPartitionProgram::compile_source(&ast, &mut { usize::MAX }).unwrap();
+        let ResolvedExprKind::Block { tail, .. } = &mut owner.program.functions[1].body.kind else {
+            panic!("main block")
+        };
+        let ResolvedExprKind::Call { callee, args, .. } = &mut tail.kind else {
+            panic!("conversion")
+        };
+        assert_eq!(callee.as_str(), crate::string_ops::I64_FROM_USIZE_ID);
+        match mutation {
+            0 => *callee = DeclarationId::new("foreign.i64_from_usize"),
+            1 => args[0].ty = ResolvedType::I64,
+            _ => args[0].ownership = OwnershipMode::Borrow,
+        }
+        let mut work = usize::MAX;
+        assert!(
+            owner.receive_current_graph(&mut work).is_err(),
+            "conversion mutation{mutation}"
+        );
+        assert_eq!(work, 0);
+    }
+    let unsupported = SOURCE.replace(
+        "if vec_len<Bytes>(values)==3usize {7}else{0}",
+        "i64_from_u8(1u8)",
+    );
+    let ast = crate::parse(&unsupported, "partition-conversion.spx").unwrap();
+    let error = ValidatedPartitionProgram::compile_source(&ast, &mut { usize::MAX })
+        .err()
+        .unwrap();
+    assert!(error.message.contains("foreign calls"), "{error:?}");
 }
 
 fn view_chain(extra_read: bool) -> String {
@@ -254,7 +328,9 @@ fn view_chain(extra_read: bool) -> String {
             writeln!(source, "let observed{site}=byte_len(view{site});").unwrap();
         }
         if frame == 3 {
-            source.push_str("let final_observed=byte_len(view0);\n");
+            source.push_str(
+                "let penultimate_observed=byte_len(view0);\nlet final_observed=byte_len(view0);\n",
+            );
             if extra_read {
                 source.push_str("let extra_observed=byte_len(view0);\n");
             }

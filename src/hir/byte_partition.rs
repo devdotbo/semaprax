@@ -529,7 +529,10 @@ fn builtin(id: &str, work: &mut usize) -> Result<bool, Diagnostic> {
             return Ok(true);
         }
     }
-    Ok(false)
+    // The direct scalar publication receiver uses this one checked conversion.
+    // Full source/HIR validation still authenticates its canonical signature;
+    // this is not permission for other String or numeric intrinsics.
+    equal(id, crate::string_ops::I64_FROM_USIZE_ID, work)
 }
 
 /// First producer route: direct whole allocation/copy and immutable authored

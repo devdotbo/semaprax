@@ -90,9 +90,10 @@ fn empty_backings_count_and_logical_failure_is_distinct_from_funding_refusal() {
 fn evaluator_account_reads_ignore_legacy_fields_and_whole_handoff_keeps_pointer() {
     let source = crate::parse(
         r#"module partition.account;
-        @id("partition.account.main") fn main()->Vec<Bytes> {
+        @id("partition.account.split") fn split()->Vec<Bytes> {
             let whole=bytes_zeroed(6usize);bytes_partition(whole,2usize,3usize)
-        }"#,
+        }
+        @id("partition.account.main") fn main()->i64 {0}"#,
         "partition-account.spx",
     )
     .unwrap();
@@ -103,6 +104,12 @@ fn evaluator_account_reads_ignore_legacy_fields_and_whole_handoff_keeps_pointer(
         .unwrap();
     let program = owner.program();
     let entry = &program.functions[0];
+    assert_eq!(entry.id.as_str(), "partition.account.split");
+    assert!(matches!(
+        entry.return_type,
+        crate::hir::ResolvedType::Nominal { .. }
+    ));
+    assert_ne!(entry.id, program.entrypoint);
     let functions = program
         .functions
         .iter()
