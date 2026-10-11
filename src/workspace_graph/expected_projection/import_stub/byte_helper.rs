@@ -96,8 +96,11 @@ fn record<'a>(
         .types
         .iter()
         .find(|declaration| declaration.name == *name);
-    let fact = if let Some(declaration) = local {
-        authored.get(declaration.stable_id.as_str())?
+    let (identity, fact) = if let Some(declaration) = local {
+        (
+            declaration.stable_id.as_str(),
+            authored.get(declaration.stable_id.as_str())?,
+        )
     } else {
         let mut imports = defining
             .module_uses
@@ -111,10 +114,11 @@ fn record<'a>(
         if fact.module != import.target_module {
             return None;
         }
-        fact
+        (import.persistent_id.as_str(), fact)
     };
     let declaration = fact.ty?;
-    if !fact.explicit
+    if declaration.stable_id != identity
+        || !fact.explicit
         || fact.kind != AuthoredKind::Type
         || !declaration.type_parameters.is_empty()
         || !matches!(declaration.kind, TypeDeclarationKind::Record { .. })
@@ -141,6 +145,35 @@ fn record<'a>(
     }
     Some(declaration)
 }
+/// A borrowed builtin Vec needs its current imported element declaration,
+/// not the name-only local classifier. This supplies no provider body proof.
+fn borrowed_vector_record<'a>(
+    owner: &Program,
+    ty: &Type,
+    authored: &BTreeMap<&str, AuthoredDeclaration<'a>>,
+    programs: &'a [Program],
+) -> bool {
+    let Type::Named { name, arguments } = ty else {
+        return false;
+    };
+    if name != "Vec"
+        || owner
+            .types
+            .iter()
+            .any(|declaration| declaration.name == "Vec")
+        || owner
+            .module_uses
+            .iter()
+            .any(|import| import.kind == ModuleUseKind::Type && import.alias == "Vec")
+    {
+        return false;
+    }
+    let [element] = arguments.as_slice() else {
+        return false;
+    };
+    record(owner, element, authored, programs)
+        .is_some_and(super::super::type_rewrite::record_element)
+}
 fn parameter<'a>(
     owner: &Program,
     mode: ParamMode,
@@ -159,6 +192,7 @@ fn parameter<'a>(
         ParamMode::Borrow => {
             crate::loop_calls::ast_param_admitted(owner, mode, ty)
                 || record(owner, ty, authored, programs).is_some()
+                || borrowed_vector_record(owner, ty, authored, programs)
         }
         ParamMode::Shared => false,
     }
