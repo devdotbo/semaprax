@@ -46,6 +46,12 @@ impl ReplayContext for Context<'_> {
     fn types(&self) -> &[crate::hir::ResolvedTypeDeclaration] {
         self.source.types()
     }
+    fn type_count(&self) -> usize {
+        self.source.type_count()
+    }
+    fn type_at(&self, index: usize) -> Option<&crate::hir::ResolvedTypeDeclaration> {
+        self.source.type_at(index)
+    }
     fn interfaces(&self) -> &[crate::hir::ResolvedInterface] {
         self.source.interfaces()
     }

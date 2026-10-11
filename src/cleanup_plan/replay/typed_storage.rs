@@ -1,5 +1,7 @@
 //! Direct typed-HIR materializations that precede skeleton path construction.
 use super::*;
+mod collections;
+pub(super) use collections::{field_params, vector_params};
 
 pub(super) fn call_root(
     work: &mut SkeletonWork<'_, '_>,

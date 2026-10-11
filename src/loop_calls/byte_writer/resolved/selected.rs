@@ -8,7 +8,33 @@ pub(crate) fn checked_bindings_with_reservation<'a>(
     function: &'a ResolvedFunction,
     physical: &mut ReplayPhysicalReservation,
 ) -> Result<HelperBindings<'a>, crate::diagnostic::Diagnostic> {
-    if !potential(program) {
+    checked_bindings_with_reservation_and_work(program, function, physical, &mut |_| Ok(()))
+}
+pub(crate) fn checked_bindings_with_reservation_and_work<'a>(
+    program: &'a dyn crate::cleanup::ReplayContext,
+    function: &'a ResolvedFunction,
+    physical: &mut ReplayPhysicalReservation,
+    debit: &mut dyn FnMut(usize) -> Result<(), crate::diagnostic::Diagnostic>,
+) -> Result<HelperBindings<'a>, crate::diagnostic::Diagnostic> {
+    let mut possible = false;
+    for ordinal in 0..program.function_count() {
+        debit(1)?;
+        let member = program.function_at(ordinal).ok_or_else(census_error)?;
+        if member.return_type == ResolvedType::Bytes {
+            for parameter in &member.params {
+                debit(1)?;
+                if parameter.ownership == OwnershipMode::Own && parameter.ty == ResolvedType::Bytes
+                {
+                    possible = true;
+                    break;
+                }
+            }
+        }
+        if possible {
+            break;
+        }
+    }
+    if !possible {
         return Ok(HelperBindings::default());
     }
     physical
@@ -18,11 +44,14 @@ pub(crate) fn checked_bindings_with_reservation<'a>(
         frames: [(&function.body, 0, 0); CENSUS_DEPTH],
     };
     let mut proof: Option<ProofCursor<'a>> = None;
+    let mut storage = (physical, debit);
     checked_bindings_with_storage(
         function,
         &mut census,
-        physical,
-        |binding, value, physical| {
+        &mut storage,
+        |binding, value, storage| {
+            let (physical, debit) = storage;
+            debit(program.function_count())?;
             let ResolvedExprKind::Call {
                 callee,
                 instance: None,
@@ -56,23 +85,23 @@ pub(crate) fn checked_bindings_with_reservation<'a>(
                     frames: [None; DEPTH],
                 });
             }
-            let proved = nonallocating_with_cursor(
+            let proved = nonallocating_with_cursor_and_work(
                 target,
                 |id, instance| program.resolve_call_target(id, instance),
                 |_, mode, ty| primitive_param(mode, ty),
                 |_, ty| crate::hir::is_scalar_resolved_type(ty),
                 program
-                    .functions()
-                    .len()
+                    .function_count()
                     .saturating_add(program.function_instances().len()),
                 proof.as_mut().ok_or_else(census_error)?,
-            );
+                *debit,
+            )?;
             Ok(assignment_with_target(
                 program, binding, value, target, proved,
             ))
         },
-        |bytes, physical| physical.reserve(bytes).is_ok(),
-        |_, _| Ok(()),
+        |bytes, storage| storage.0.reserve(bytes).is_ok(),
+        |units, storage| (storage.1)(units),
     )
 }
 /// Guarded receiving proof for a complete nonowning helper profile. The

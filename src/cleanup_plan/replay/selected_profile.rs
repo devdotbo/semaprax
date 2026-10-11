@@ -2,6 +2,10 @@
 //! primitive/direct-flat-record and module-local. Refusal happens before delegated nested nominal,
 //! dynamic provider, replacement, format or iterator constructors allocate.
 use super::*;
+pub(super) mod collections;
+pub(super) mod conditions;
+#[cfg(test)]
+mod receiving_tests;
 const DEPTH: usize = 514;
 type Frame<'a> = Option<(crate::hir::lexical_exit::ChildCursor<'a>, bool)>;
 pub(super) fn validate(
@@ -53,6 +57,16 @@ pub(super) fn validate(
                 .ok_or_else(|| replay_error(function, "selected profile cursor is empty"))?;
             let expression = cursor.expression();
             if !entered {
+                if matches!(expression.ty, ResolvedType::Nominal { .. }) {
+                    budget.charge(
+                        function,
+                        program
+                            .type_count()
+                            .checked_add(9)
+                            .ok_or_else(|| replay_error(function, "selected type work overflow"))?,
+                        "selected current type facts",
+                    )?;
+                }
                 if expression.ty != ResolvedType::Never
                     && !flat_records::admitted(program, &expression.ty)?
                 {
@@ -60,9 +74,6 @@ pub(super) fn validate(
                 }
                 flat_records::expression(program, function, expression)?;
                 match &expression.kind {
-                    ResolvedExprKind::Place(_) if expression.ty == ResolvedType::String => {
-                        return Err(replay_error(function, "selected lexical replay String-place condition indexes are not reserved"));
-                    }
                     ResolvedExprKind::ConstructVariant { .. }
                     | ResolvedExprKind::UpdateRecord { .. }
                     | ResolvedExprKind::Upcast { .. }
@@ -74,9 +85,11 @@ pub(super) fn validate(
                     | ResolvedExprKind::FunctionReference { .. }
                     | ResolvedExprKind::NativeRustImportCall(_)
                     | ResolvedExprKind::HostCommandCall(_)
-                    | ResolvedExprKind::VecFieldRead { .. }
                     | ResolvedExprKind::Yield { .. } => {
                         return Err(replay_error(function, "selected lexical replay provider is outside the reserved primitive profile"));
+                    }
+                    ResolvedExprKind::VecFieldRead { .. } => {
+                        collections::field(program, function, expression, budget)?
                     }
                     ResolvedExprKind::BorrowedUtf8Literal(value) => {
                         if expression.ty != ResolvedType::Str
@@ -113,16 +126,72 @@ pub(super) fn validate(
                                 } => {
                                     return Err(replay_error(function, "selected primitive assignment cannot target a nominal field"));
                                 }
-                                crate::hir::ResolvedStatement::LexicalWhile { latch, .. }
-                                    if *latch != crate::hir::LoopLatchKind::Condition =>
-                                {
-                                    return Err(replay_error(function, "selected lexical replay source-for latch is outside the reserved primitive profile"));
+                                crate::hir::ResolvedStatement::LexicalWhile {
+                                    condition,
+                                    body,
+                                    latch,
+                                    ..
+                                } => {
+                                    if matches!(
+                                        latch,
+                                        crate::hir::LoopLatchKind::OwnedIteratorStep { .. }
+                                            | crate::hir::LoopLatchKind::SourceForStep {
+                                                kind: crate::hir::SourceForKind::OwnedIterator,
+                                                ..
+                                            }
+                                    ) {
+                                        return Err(replay_error(function,"selected lexical replay owning iterator latch remains closed"));
+                                    }
+                                    if matches!(
+                                        latch,
+                                        crate::hir::LoopLatchKind::SourceForStep {
+                                            kind: crate::hir::SourceForKind::Copy,
+                                            ..
+                                        }
+                                    ) {
+                                        let ResolvedExprKind::Block { statements, .. } = &body.kind
+                                        else {
+                                            return Err(replay_error(
+                                                function,
+                                                "selected Copy-for body is absent",
+                                            ));
+                                        };
+                                        let Some(crate::hir::ResolvedStatement::Let {
+                                            binding,
+                                            ..
+                                        }) = statements.first()
+                                        else {
+                                            return Err(replay_error(
+                                                function,
+                                                "selected Copy-for item is absent",
+                                            ));
+                                        };
+                                        if !crate::vec_ops::resolved_element_is_admitted(
+                                            &binding.ty,
+                                        ) {
+                                            return Err(replay_error(function,"selected Copy-for item is outside its scalar family"));
+                                        }
+                                        // Ordinary latch validation constructs exactly one Vec type
+                                        // (one argument and its owned declaration spelling).
+                                        budget.reserve_array::<ResolvedType>(
+                                            function,
+                                            1,
+                                            "selected Copy-for latch Vec argument",
+                                        )?;
+                                        budget.reserve_bytes(
+                                            function,
+                                            crate::prelude::VEC_ID.len(),
+                                            "selected Copy-for latch Vec identity",
+                                        )?;
+                                    }
+                                    crate::hir::lexical_exit::validate_latch(
+                                        condition, body, latch,
+                                    )?;
                                 }
-                                crate::hir::ResolvedStatement::Assign { binding, .. }
-                                    if binding.ty == ResolvedType::String
-                                        || matches!(binding.ty, ResolvedType::Nominal { .. }) =>
-                                {
-                                    return Err(replay_error(function, "selected lexical replay String replacement is outside the reserved primitive profile"));
+                                crate::hir::ResolvedStatement::Assign {
+                                    binding, value, ..
+                                } if binding.ty == ResolvedType::String => {
+                                    collections::append(function, binding, value, budget)?;
                                 }
                                 crate::hir::ResolvedStatement::Unsafe { .. } => {
                                     return Err(replay_error(
@@ -150,11 +219,11 @@ pub(super) fn validate(
                         type_arguments,
                         ..
                     } => {
-                        if instance.is_some()
-                            || !type_arguments.is_empty()
-                            || crate::string_ops::by_id(callee.as_str())
-                                .is_some_and(|op| matches!(op, crate::string_ops::StringOp::Concat))
-                        {
+                        if collections::call(program, function, expression, budget)? {
+                            frames[depth - 1] = Some((cursor, true));
+                            continue;
+                        }
+                        if instance.is_some() || !type_arguments.is_empty() {
                             return Err(replay_error(
                                 function,
                                 "selected lexical replay call needs an unsupported provider",

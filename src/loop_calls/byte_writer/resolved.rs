@@ -2,7 +2,9 @@ use super::*;
 mod selected;
 #[cfg(test)]
 pub(crate) use selected::checked_absent_with_work_reservation;
-pub(crate) use selected::checked_bindings_with_reservation;
+pub(crate) use selected::{
+    checked_bindings_with_reservation, checked_bindings_with_reservation_and_work,
+};
 #[derive(Clone, Copy)]
 enum Frame<'a> {
     Function(&'a ResolvedFunction, usize),
@@ -116,6 +118,7 @@ fn prove<'a>(
         result_admit,
         lookup_work,
         (&mut frames, WORK),
+        &mut |_| Some(()),
     )
 }
 
@@ -154,8 +157,46 @@ pub(crate) fn nonallocating_with_cursor<'a>(
         &result_admit,
         lookup_work,
         (&mut cursor.frames, WORK),
+        &mut |_| Some(()),
     )
     .is_some()
+}
+
+#[allow(clippy::too_many_arguments)]
+fn nonallocating_with_cursor_and_work<'a>(
+    target: &'a ResolvedFunction,
+    lookup: impl Fn(
+        &crate::hir::DeclarationId,
+        Option<&crate::hir::FunctionInstanceId>,
+    ) -> Option<&'a ResolvedFunction>,
+    param_admit: impl Fn(&ResolvedFunction, OwnershipMode, &ResolvedType) -> bool,
+    result_admit: impl Fn(&ResolvedFunction, &ResolvedType) -> bool,
+    lookup_work: usize,
+    cursor: &mut ProofCursor<'a>,
+    debit: &mut dyn FnMut(usize) -> Result<(), crate::diagnostic::Diagnostic>,
+) -> Result<bool, crate::diagnostic::Diagnostic> {
+    cursor.frames.fill(None);
+    let mut failure = None;
+    let proved = prove_with_frames(
+        target,
+        &lookup,
+        &param_admit,
+        &result_admit,
+        lookup_work,
+        (&mut cursor.frames, WORK),
+        &mut |units| match debit(units) {
+            Ok(()) => Some(()),
+            Err(error) => {
+                failure = Some(error);
+                None
+            }
+        },
+    )
+    .is_some();
+    match failure {
+        Some(error) => Err(error),
+        None => Ok(proved),
+    }
 }
 
 fn prove_with_frames<'a>(
@@ -168,11 +209,13 @@ fn prove_with_frames<'a>(
     result_admit: &impl Fn(&ResolvedFunction, &ResolvedType) -> bool,
     lookup_work: usize,
     cursor: (&mut [Option<Frame<'a>>; DEPTH], usize),
+    debit: &mut dyn FnMut(usize) -> Option<()>,
 ) -> Option<()> {
     let (frames, mut work) = cursor;
     frames[0] = Some(Frame::Function(target, 0));
     let mut depth = 1usize;
     while depth != 0 {
+        debit(1)?;
         work = work.checked_sub(1)?;
         let current = depth - 1;
         let child = match frames[current]? {
@@ -234,6 +277,7 @@ fn prove_with_frames<'a>(
                         }
                         ResolvedExprKind::Block { statements, .. }
                         | ResolvedExprKind::VecConstructor { statements, .. } => {
+                            debit(statements.len())?;
                             work = work.checked_sub(statements.len())?;
                             if statements
                                 .iter()
@@ -283,7 +327,9 @@ fn prove_with_frames<'a>(
                                     return None;
                                 }
                             } else {
-                                work = work.checked_sub(lookup_work.checked_add(depth)?)?;
+                                let units = lookup_work.checked_add(depth)?;
+                                debit(units)?;
+                                work = work.checked_sub(units)?;
                                 let target = lookup(callee, instance.as_ref())?;
                                 if instance.is_some() || !type_arguments.is_empty() || args.len() != target.params.len()
                                     || expression.ty != target.return_type
@@ -308,6 +354,7 @@ fn prove_with_frames<'a>(
                 }
                 // Two conservative constant units for the saved advance;
                 // growing indexed-prefix cost belongs only to indexed walks.
+                debit(2)?;
                 work = work.checked_sub(2)?;
                 let child = cursor.next();
                 frames[current] = Some(Frame::Expression(function, cursor, true, next + 1));

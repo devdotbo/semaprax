@@ -3,7 +3,9 @@ mod selected;
 #[cfg(test)]
 use crate::hir::ResolvedProgram;
 use crate::hir::{ExpressionId, ResolvedBinding, ResolvedFunction};
-pub(crate) use selected::bindings_with_reservation;
+pub(crate) use selected::{
+    bindings_with_reservation, bindings_with_reservation_and_work, selected_string_append,
+};
 use std::collections::BTreeMap;
 
 /// A held phase index authenticates exact program and function membership.
@@ -47,6 +49,7 @@ pub(crate) fn helper_binding_with_index<'a>(
 
 pub(crate) struct RenewalBindings<'a> {
     legacy: BTreeMap<ExpressionId, &'a ResolvedBinding>,
+    appends: BTreeMap<ExpressionId, ExpressionId>,
     helpers: HelperSites<'a>,
 }
 enum HelperSites<'a> {
@@ -65,8 +68,12 @@ impl<'a> RenewalBindings<'a> {
     pub(crate) fn empty() -> Self {
         Self {
             legacy: BTreeMap::new(),
+            appends: BTreeMap::new(),
             helpers: HelperSites::Owned(Default::default()),
         }
+    }
+    pub(crate) fn appends(&self) -> &BTreeMap<ExpressionId, ExpressionId> {
+        &self.appends
     }
     pub(crate) fn has_helpers(&self) -> bool {
         match &self.helpers {
@@ -105,6 +112,7 @@ pub(crate) fn bindings_with_index<'a>(
     found.extend(crate::string_ops::replacement::bindings(function));
     RenewalBindings {
         legacy: found,
+        appends: BTreeMap::new(),
         helpers: match index.and_then(|index| index.function_sites(function)) {
             Some(sites) => HelperSites::Borrowed(sites),
             None if index.is_some() => HelperSites::Owned(Default::default()),

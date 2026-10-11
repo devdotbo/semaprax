@@ -109,7 +109,6 @@ fn collect_expression_statuses(
             ResolvedExprKind::Invoke { .. }
             | ResolvedExprKind::Closure { .. }
             | ResolvedExprKind::FunctionReference { .. }
-            | ResolvedExprKind::VecFieldRead { .. }
             | ResolvedExprKind::LiteralFormat { .. }
             | ResolvedExprKind::HostCommandCall(_)
             | ResolvedExprKind::NativeRustImportCall(_)
@@ -123,6 +122,24 @@ fn collect_expression_statuses(
             _ => {}
         }
         match &expression.kind {
+            ResolvedExprKind::VecFieldRead { .. } => {
+                super::selected_profile::collections::field(program, function, expression, budget)?;
+                budget.reserve_vec(function, statuses, 1, "Vec field status vector")?;
+                budget.reserve_clone(
+                    function,
+                    crate::vec_field::operation_id(),
+                    "Vec field status callee",
+                )?;
+                statuses.push(StatusSource {
+                    id: StatusSourceId {
+                        expression: expression.id.clone(),
+                        lane: StatusLane::OperationFailure,
+                    },
+                    producer: StatusProducer::PropagatedCall {
+                        callee: crate::vec_field::operation_id().clone(),
+                    },
+                });
+            }
             ResolvedExprKind::ByteRange { operation, .. } => {
                 if operation.as_str() != crate::byte_ops::RANGE_ID {
                     return Err(replay_error(
@@ -279,7 +296,6 @@ fn collect_expression_statuses(
             ResolvedExprKind::Invoke { .. }
             | ResolvedExprKind::Closure { .. }
             | ResolvedExprKind::FunctionReference { .. }
-            | ResolvedExprKind::VecFieldRead { .. }
             | ResolvedExprKind::LiteralFormat { .. }
             | ResolvedExprKind::HostCommandCall(_)
             | ResolvedExprKind::NativeRustImportCall(_) => {

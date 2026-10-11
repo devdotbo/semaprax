@@ -22,7 +22,7 @@ fn is_condition_read(op: super::StringOp) -> bool {
     )
 }
 
-fn resolved_operands(expression: &ResolvedExpr) -> Option<&[ResolvedExpr]> {
+pub(crate) fn resolved_operands(expression: &ResolvedExpr) -> Option<&[ResolvedExpr]> {
     let ResolvedExprKind::Call {
         callee,
         type_arguments,

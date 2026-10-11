@@ -3998,15 +3998,18 @@ fn expression_skeleton(
                         }
                     }
                     ResolvedExprKind::VecFieldRead { args, .. } => {
-                        typed_storage::unsupported_provider(work)?;
-                        let params = resolved_call_params(
-                            program,
-                            function,
-                            expression,
-                            crate::vec_field::operation_id(),
-                            None,
-                            &[],
-                        )?;
+                        let params = if work.budget.physical.is_some() {
+                            typed_storage::field_params(program, expression, work)?
+                        } else {
+                            resolved_call_params(
+                                program,
+                                function,
+                                expression,
+                                crate::vec_field::operation_id(),
+                                None,
+                                &[],
+                            )?
+                        };
                         work.charge(1, "scoped vector read skeleton root state")?;
                         let states = typed_storage::call_root(work)?;
                         if let Some(argument) = args.first() {
@@ -4161,18 +4164,21 @@ fn expression_skeleton(
                                     type_arguments,
                                 )?
                             } else if let Some(op) = vec_intrinsic {
-                                typed_storage::unsupported_provider(work)?;
-                                let [element] = type_arguments.as_slice() else {
-                                    return Err(replay_error(
-                                        function,
-                                        "bounded Vec skeleton call has incorrect type arity",
-                                    ));
-                                };
-                                crate::vec_ops::resolved_params_in(
-                                    program.declarations(),
-                                    op,
-                                    element,
-                                )
+                                if work.budget.physical.is_some() {
+                                    typed_storage::vector_params(program, expression, work)?
+                                } else {
+                                    let [element] = type_arguments.as_slice() else {
+                                        return Err(replay_error(
+                                            function,
+                                            "bounded Vec skeleton call has incorrect type arity",
+                                        ));
+                                    };
+                                    crate::vec_ops::resolved_params_in(
+                                        program.declarations(),
+                                        op,
+                                        element,
+                                    )
+                                }
                             } else if let Some(op) = box_intrinsic {
                                 typed_storage::unsupported_provider(work)?;
                                 let [element] = type_arguments.as_slice() else {

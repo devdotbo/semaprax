@@ -3,6 +3,7 @@
 //! constructor closes its own backing; retained replay admission stays primitive.
 use super::*;
 pub(super) mod flat_record;
+pub(crate) mod vector;
 
 type Physical<'a> = Option<RefCell<&'a mut ReplayPhysicalReservation>>;
 pub(super) fn reserve<T>(
@@ -74,6 +75,9 @@ pub(super) fn needs_drop_in(
             Err(cleanup_error("selected Option metadata is unauthenticated"))
         };
     }
+    if vector::element(program, ty)?.is_some() {
+        return Ok(true);
+    }
     if let Some((_, fields)) = flat_record::fields(program, ty)? {
         return Ok(fields
             .iter()
@@ -120,6 +124,9 @@ impl InventoryBuilder<'_> {
             needs_drop_in(program, ty)?;
             return Ok(FieldLivenessShape::NoDrop);
         }
+        if self.flat_records && vector::element(program, ty)?.is_some() {
+            return self.selected_vector_shape(storage);
+        }
         if let Some((declaration, fields)) = if self.flat_records {
             flat_record::fields(program, ty)?
         } else {
@@ -146,6 +153,20 @@ impl InventoryBuilder<'_> {
         }
         let id = primitive_leaf_lifecycle(ty)
             .ok_or_else(|| cleanup_error("selected inventory has no primitive lifecycle"))?;
+        self.selected_lifecycle_shape(id, storage, projection)
+    }
+    fn selected_vector_shape(
+        &mut self,
+        storage: CleanupStorageId,
+    ) -> Result<FieldLivenessShape, Diagnostic> {
+        self.selected_lifecycle_shape(VEC_DROP_LIFECYCLE_ID, storage, None)
+    }
+    fn selected_lifecycle_shape(
+        &mut self,
+        id: &str,
+        storage: CleanupStorageId,
+        projection: Option<&DeclarationId>,
+    ) -> Result<FieldLivenessShape, Diagnostic> {
         let flag = LivenessFlagId(
             u32::try_from(self.flags.len())
                 .map_err(|_| cleanup_error("too many cleanup liveness flags"))?,

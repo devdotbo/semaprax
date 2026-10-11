@@ -3,6 +3,10 @@
 #![allow(clippy::items_after_test_module)]
 
 use super::*;
+mod selected;
+pub(super) use selected::{
+    publish_append as publish_selected_append, reserve_append as reserve_selected_append,
+};
 pub(super) fn owns_clone(expression: &ResolvedExpr) -> bool {
     expression.ty == ResolvedType::String
         && expression.ownership == OwnershipMode::Own

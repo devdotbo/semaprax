@@ -71,9 +71,10 @@ impl<'a, 'b> SkeletonWork<'a, 'b> {
                 "selected skeleton requires its independently rebuilt phase site inventory",
             )
         })?;
-        // The selected entry independently excludes literal formatting and
-        // owned String condition-place reads before this constructor. Those
-        // specialized legacy indexes must not be constructed then discarded.
+        // Literal formatting remains closed. Current String condition reads
+        // are rebuilt under this same ledger before their index is published.
+        let string_condition_reads = selected_profile::conditions::reads(function, budget)?;
+        let string_owner_moves = selected_profile::conditions::moves(function, budget)?;
         Ok(Self {
             function,
             budget,
@@ -81,8 +82,8 @@ impl<'a, 'b> SkeletonWork<'a, 'b> {
             active_copy_region: None,
             dag_scratch: None,
             held_renewals: Some(held_renewals),
-            string_owner_moves: BTreeSet::new(),
-            string_condition_reads: BTreeSet::new(),
+            string_owner_moves,
+            string_condition_reads,
             owner: Some(owner),
         })
     }

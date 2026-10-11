@@ -16,15 +16,28 @@ impl<'a> Context<'a> {
         selected_profile::validate(source, function, budget)?;
         selected_owner::owner(source, function, budget)?;
         budget.reserve_array::<Self>(function, 1, "selected immutable replay lease")?;
-        let physical = budget.physical.as_deref_mut().ok_or_else(|| {
-            replay_error(
-                function,
-                "selected replay lease requires its physical reservation",
-            )
-        })?;
-        let renewals = crate::cleanup_plan::renewal_profile::bindings_with_reservation(
-            source, function, physical,
-        )?;
+        let renewals = {
+            let ReplayBudget {
+                remaining,
+                physical,
+                ..
+            } = budget;
+            let physical = physical.as_deref_mut().ok_or_else(|| {
+                replay_error(function, "selected replay lost physical reservation")
+            })?;
+            let mut debit = |units| {
+                if let Some(next) = remaining.checked_sub(units) {
+                    *remaining = next;
+                    Ok(())
+                } else {
+                    *remaining = 0;
+                    Err(replay_error(function, "selected renewal work exhausted"))
+                }
+            };
+            crate::cleanup_plan::renewal_profile::bindings_with_reservation_and_work(
+                source, function, physical, &mut debit,
+            )?
+        };
         if (function.cleanup_plan.schema == super::super::CLEANUP_PLAN_SCHEMA_V19)
             != renewals.has_helpers()
         {
@@ -46,6 +59,12 @@ impl ReplayContext for Context<'_> {
     }
     fn types(&self) -> &[crate::hir::ResolvedTypeDeclaration] {
         self.source.types()
+    }
+    fn type_count(&self) -> usize {
+        self.source.type_count()
+    }
+    fn type_at(&self, index: usize) -> Option<&crate::hir::ResolvedTypeDeclaration> {
+        self.source.type_at(index)
     }
     fn interfaces(&self) -> &[crate::hir::ResolvedInterface] {
         self.source.interfaces()

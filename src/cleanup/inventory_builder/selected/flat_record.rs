@@ -34,15 +34,20 @@ pub(in crate::cleanup::inventory_builder) fn declaration_fields<'a>(
     let fail = || {
         cleanup_error("selected flat-record inventory has unauthenticated or unsupported fields")
     };
-    if program.types().len() > MAX_DECLARATIONS {
+    if program.type_count() > MAX_DECLARATIONS {
         return Err(fail());
     }
-    let mut matching = program
-        .types()
-        .iter()
-        .filter(|item| item.id == *declaration);
-    let record = matching.next().ok_or_else(fail)?;
-    if matching.next().is_some() || !record.type_parameters.is_empty() {
+    let mut matching = None;
+    for ordinal in 0..program.type_count() {
+        let item = program.type_at(ordinal).ok_or_else(fail)?;
+        if item.id == *declaration {
+            if matching.replace(item).is_some() {
+                return Err(fail());
+            }
+        }
+    }
+    let record = matching.ok_or_else(fail)?;
+    if !record.type_parameters.is_empty() {
         return Err(fail());
     }
     let ResolvedTypeDeclarationKind::Record { fields } = &record.kind else {

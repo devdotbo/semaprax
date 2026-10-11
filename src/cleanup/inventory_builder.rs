@@ -5,6 +5,19 @@ use crate::cleanup_plan::{replay_reserve_vec, ReplayClonePayload, ReplayPhysical
 use std::cell::RefCell;
 mod selected;
 
+pub(crate) fn selected_vector_element<'a>(
+    program: &dyn crate::cleanup::ReplayContext,
+    ty: &'a ResolvedType,
+) -> Result<Option<&'a ResolvedType>, Diagnostic> {
+    selected::vector::element(program, ty)
+}
+pub(crate) fn authenticate_selected_vector(
+    program: &dyn crate::cleanup::ReplayContext,
+    id: &DeclarationId,
+) -> Result<(), Diagnostic> {
+    selected::vector::authenticate(program, id)
+}
+
 pub(crate) fn selected_inventory_needs_drop(ty: &ResolvedType) -> Result<bool, Diagnostic> {
     selected::needs_drop(ty)
 }

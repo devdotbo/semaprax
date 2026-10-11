@@ -125,6 +125,12 @@ impl ReplayContext for Context<'_> {
     fn types(&self) -> &[crate::hir::ResolvedTypeDeclaration] {
         self.source.types()
     }
+    fn type_count(&self) -> usize {
+        self.source.type_count()
+    }
+    fn type_at(&self, index: usize) -> Option<&crate::hir::ResolvedTypeDeclaration> {
+        self.source.type_at(index)
+    }
     fn interfaces(&self) -> &[crate::hir::ResolvedInterface] {
         self.source.interfaces()
     }
@@ -161,8 +167,8 @@ impl ReplayContext for Context<'_> {
 #[cfg(test)]
 mod tests {
     use super::{Context, ReplayContext};
+    use crate::cleanup_plan::replay::{selected_context, ReplayBudget};
     use crate::cleanup_plan::ReplayPhysicalReservation;
-    use crate::cleanup_plan::replay::{ReplayBudget, selected_context};
     fn program() -> crate::hir::ResolvedProgram {
         let source = crate::check("module callees; @id(\"z.last\") fn last()->i64 {7} @id(\"app.main\") fn main()->i64 {last()} @id(\"mid.third\") fn third()->i64 {9}", "selected-callees.spx").unwrap();
         crate::hir::resolve(&source).unwrap()

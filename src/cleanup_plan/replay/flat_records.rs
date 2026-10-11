@@ -13,6 +13,9 @@ pub(super) fn admitted(program: &dyn ReplayContext, ty: &ResolvedType) -> Result
                 ),
         );
     }
+    if crate::cleanup::selected_vector_element(program, ty)?.is_some() {
+        return Ok(true);
+    }
     if matches!(ty, ResolvedType::Nominal { .. }) {
         return Ok(crate::cleanup::selected_flat_record_fields(program, ty)?.is_some());
     }
@@ -31,12 +34,19 @@ pub(super) fn module(
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
-    for record in program.types() {
+    for ordinal in 0..program.type_count() {
+        let record = program
+            .type_at(ordinal)
+            .ok_or_else(|| replay_error(function, "selected type inventory is incomplete"))?;
+        if record.id.as_str() == crate::prelude::VEC_ID {
+            budget.charge(function, 9, "selected Vec declaration header")?;
+            crate::cleanup::authenticate_selected_vector(program, &record.id)?;
+            continue;
+        }
         budget.charge(
             function,
             program
-                .types()
-                .len()
+                .type_count()
                 .checked_add(9)
                 .ok_or_else(|| replay_error(function, "record classification work overflowed"))?,
             "selected direct record declaration",
@@ -112,6 +122,14 @@ fn leaf(
     }
     let lifecycle = crate::cleanup::primitive_leaf_lifecycle(ty)
         .ok_or_else(|| replay_error(function, "selected field has no primitive lifecycle"))?;
+    lifecycle_leaf(function, lifecycle, next, budget)
+}
+fn lifecycle_leaf(
+    function: &ResolvedFunction,
+    lifecycle: &str,
+    next: &mut u32,
+    budget: &mut ReplayBudget,
+) -> Result<FieldLivenessShape, Diagnostic> {
     if *next as usize >= crate::cleanup::MAX_CLEANUP_OWNED_LEAVES {
         return Err(replay_error(
             function,
@@ -135,6 +153,14 @@ pub(super) fn shape(
     next: &mut u32,
     budget: &mut ReplayBudget,
 ) -> Result<FieldLivenessShape, Diagnostic> {
+    if crate::cleanup::selected_vector_element(program, ty)?.is_some() {
+        return lifecycle_leaf(
+            function,
+            crate::cleanup::VEC_DROP_LIFECYCLE_ID,
+            next,
+            budget,
+        );
+    }
     if let Some((owner, fields)) = crate::cleanup::selected_flat_record_fields(program, ty)? {
         if !fields
             .iter()

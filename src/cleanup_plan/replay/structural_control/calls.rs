@@ -77,6 +77,13 @@ enum Signature<'a> {
     String(crate::string_ops::StringOp),
     Str(crate::str_ops::StrOp),
     Function(&'a ResolvedFunction),
+    Vector(
+        crate::vec_ops::VecOp,
+        bool,
+        &'a ResolvedType,
+        &'a [ResolvedExpr],
+    ),
+    Field(&'a [ResolvedExpr]),
 }
 impl<'a> Signature<'a> {
     fn parameter(&self, index: usize) -> Option<(OwnershipMode, &ResolvedType)> {
@@ -100,6 +107,26 @@ impl<'a> Signature<'a> {
                 )
             }),
             Self::Function(target) => target.params.get(index).map(|p| (p.ownership, &p.ty)),
+            Self::Vector(op, owned, element, args) => args.get(index).map(|arg| {
+                (
+                    if *owned {
+                        op.param_ownership_for(index, element)
+                    } else {
+                        op.param_ownership(index)
+                    },
+                    &arg.ty,
+                )
+            }),
+            Self::Field(args) => args.get(index).map(|arg| {
+                (
+                    if index == 0 {
+                        OwnershipMode::Borrow
+                    } else {
+                        OwnershipMode::Value
+                    },
+                    &arg.ty,
+                )
+            }),
         }
     }
     fn accepts_type(&self, index: usize, ty: &ResolvedType) -> bool {
@@ -118,6 +145,7 @@ impl<'a> Signature<'a> {
             Self::String(op) => op.param_types().len(),
             Self::Str(op) => op.param_types().len(),
             Self::Function(target) => target.params.len(),
+            Self::Vector(_, _, _, args) | Self::Field(args) => args.len(),
         }
     }
 }
@@ -133,8 +161,38 @@ fn signature<'a>(
     program: &'a dyn ReplayContext,
     function: &ResolvedFunction,
     fact: &CallFact,
+    expression: &'a ResolvedExpr,
     budget: &mut ReplayBudget,
 ) -> Result<Signature<'a>, Diagnostic> {
+    if matches!(expression.kind, ResolvedExprKind::VecFieldRead { .. }) {
+        super::super::selected_profile::collections::field(program, function, expression, budget)?;
+        let ResolvedExprKind::VecFieldRead { args, .. } = &expression.kind else {
+            unreachable!()
+        };
+        return Ok(Signature::Field(args));
+    }
+    if super::super::selected_profile::collections::call(program, function, expression, budget)? {
+        let ResolvedExprKind::Call {
+            callee,
+            type_arguments,
+            args,
+            ..
+        } = &expression.kind
+        else {
+            unreachable!()
+        };
+        return Ok(Signature::Vector(
+            crate::vec_ops::by_id(callee.as_str()).expect("authenticated Vec operation"),
+            type_arguments[0] == ResolvedType::Bytes
+                || type_arguments[0] == ResolvedType::String
+                || crate::hir::owned_leaf_collection::runtime_element(
+                    program.declarations(),
+                    &type_arguments[0],
+                ),
+            &type_arguments[0],
+            args,
+        ));
+    }
     if fact.instance.is_some() || !fact.type_arguments.is_empty() {
         return Err(replay_error(
             function,
@@ -145,12 +203,6 @@ fn signature<'a>(
         return Ok(Signature::Byte(op));
     }
     if let Some(op) = crate::string_ops::by_id(fact.callee.as_str()) {
-        if op == crate::string_ops::StringOp::Concat {
-            return Err(replay_error(
-                function,
-                "selected call commit does not support String replacement",
-            ));
-        }
         return Ok(Signature::String(op));
     }
     if let Some(op) = crate::str_ops::by_id(fact.callee.as_str()) {
@@ -207,17 +259,30 @@ pub(super) fn validate<'a>(
     let expression = cursor
         .ok_or_else(|| replay_error(function, "selected call lacks its lookup cursor"))?
         .find(function, call, budget)?;
-    let ResolvedExprKind::Call {
-        callee,
-        type_arguments,
-        instance,
-        args,
-    } = &expression.kind
-    else {
-        return Err(replay_error(
-            function,
-            "call commit does not name a selected ordinary call",
-        ));
+    let (callee, type_arguments, instance, args) = match &expression.kind {
+        ResolvedExprKind::Call {
+            callee,
+            type_arguments,
+            instance,
+            args,
+        } => (
+            callee.as_str(),
+            type_arguments.as_slice(),
+            instance.as_ref(),
+            args.as_slice(),
+        ),
+        ResolvedExprKind::VecFieldRead { args, .. } => (
+            crate::vec_field::operation_id().as_str(),
+            &[][..],
+            None,
+            args.as_slice(),
+        ),
+        _ => {
+            return Err(replay_error(
+                function,
+                "call commit does not name a selected ordinary call",
+            ))
+        }
     };
     #[cfg(test)]
     let agrees = if held.is_some() {
@@ -227,12 +292,7 @@ pub(super) fn validate<'a>(
             && type_arguments.is_empty()
             && fact.type_arguments.is_empty()
             && args.len() == fact.arguments.len()
-            && schema::borrowed::same_schema(
-                function,
-                callee.as_str(),
-                fact.callee.as_str(),
-                budget,
-            )?;
+            && schema::borrowed::same_schema(function, callee, fact.callee.as_str(), budget)?;
         if agrees {
             for (arg, id) in args.iter().zip(&fact.arguments) {
                 budget.charge(function, 1, "borrowed commit actual argument probe")?;
@@ -244,9 +304,9 @@ pub(super) fn validate<'a>(
         }
         agrees
     } else {
-        callee == &fact.callee
-            && type_arguments == &fact.type_arguments
-            && instance == &fact.instance
+        callee == fact.callee.as_str()
+            && type_arguments == fact.type_arguments.as_slice()
+            && instance == fact.instance.as_ref()
             && args.len() == fact.arguments.len()
             && args
                 .iter()
@@ -254,9 +314,9 @@ pub(super) fn validate<'a>(
                 .all(|(arg, id)| &arg.id == id)
     };
     #[cfg(not(test))]
-    let agrees = callee == &fact.callee
-        && type_arguments == &fact.type_arguments
-        && instance == &fact.instance
+    let agrees = callee == fact.callee.as_str()
+        && type_arguments == fact.type_arguments.as_slice()
+        && instance == fact.instance.as_ref()
         && args.len() == fact.arguments.len()
         && args
             .iter()
@@ -282,10 +342,10 @@ pub(super) fn validate<'a>(
                 Call::Builtin(Builtin::Str(op)) => Signature::Str(*op),
             }
         }
-        None => signature(program, function, fact, budget)?,
+        None => signature(program, function, fact, expression, budget)?,
     };
     #[cfg(not(test))]
-    let signature = signature(program, function, fact, budget)?;
+    let signature = signature(program, function, fact, expression, budget)?;
     if signature.len() != fact.arguments.len() {
         return Err(replay_error(
             function,

@@ -477,3 +477,15 @@ construction, generic instances and allocating Vec helper bodies remain closed.
 The minimal imported function declaration checks that same borrowed signature
 against independently reconstructed record metadata. This producer shape does
 not substitute for the complete cleanup/loan/status replay required downstream.
+The next monomorphic receiving tranche independently reconstructs exact
+compiler-owned Vec signatures and one-field Vec lifecycle inventory from the
+current type directory. It checks actual operation, element, arity, type and
+ownership; generic instances, nested Vec elements, owning iterator latches and
+SortBy/StrAt remain closed. Borrowed flat-record source-for reads retain their
+actual field identities, index modes and current Vec roots. String condition
+reads and append moves are rebuilt with prepaid bounded borrowed cursors;
+append history is reserved and published in the ordinary canonical order.
+Renewal and byte-helper reconstruction debit the same invocation work balance.
+The authored independent ordinary-plan, malformed-fact and exact/one-short
+controls are unexecuted. These receiving facts grant neither imported layouts
+without a defining-source sidecar nor a completed #745 qualification claim.

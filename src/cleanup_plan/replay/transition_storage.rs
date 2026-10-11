@@ -88,8 +88,15 @@ pub(super) fn execute(
             destination,
         } => {
             renewal::reject_unmarked_finish(program, function, at, destination, helpers)?;
-            // The selected entry independently excludes concat reopen and Try
-            // routes, whose delegated scratch is outside this primitive tranche.
+            let append = strings::reserve_selected_append(
+                program,
+                function,
+                at,
+                source,
+                destination,
+                state,
+                budget,
+            )?;
             transfer(
                 function,
                 state,
@@ -99,6 +106,7 @@ pub(super) fn execute(
                 leaves,
                 budget,
             )?;
+            strings::publish_selected_append(function, append, state, budget)?;
         }
         CleanupTransition::CallCommit { call, arguments } => {
             let mut consumed = BTreeSet::new();

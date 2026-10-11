@@ -138,9 +138,42 @@ pub(super) fn validate_inventory_coverage(
 fn parameter<'a>(
     program: &'a dyn ReplayContext,
     function: &ResolvedFunction,
-    callee: &DeclarationId,
+    call: &'a ResolvedExpr,
     index: usize,
 ) -> Result<Option<(OwnershipMode, &'a ResolvedType)>, Diagnostic> {
+    let ResolvedExprKind::Call {
+        callee,
+        args,
+        type_arguments,
+        ..
+    } = &call.kind
+    else {
+        return Err(replay_error(
+            function,
+            "selected parameter receiver has no call",
+        ));
+    };
+    if let Some(op) = crate::vec_ops::by_id(callee.as_str()) {
+        let [element] = type_arguments.as_slice() else {
+            return Err(replay_error(
+                function,
+                "selected Vec parameter lacks exact element",
+            ));
+        };
+        let owned = *element == ResolvedType::Bytes
+            || *element == ResolvedType::String
+            || crate::hir::owned_leaf_collection::runtime_element(program.declarations(), element);
+        return Ok(args.get(index).map(|arg| {
+            (
+                if owned {
+                    op.param_ownership_for(index, element)
+                } else {
+                    op.param_ownership(index)
+                },
+                &arg.ty,
+            )
+        }));
+    }
     if let Some(op) = crate::byte_ops::by_id(callee.as_str()) {
         return Ok(op
             .param_types()
@@ -209,15 +242,18 @@ fn collect_supplemental(
                     args,
                 } = &expression.kind
                 {
-                    if instance.is_some() || !type_arguments.is_empty() {
+                    if instance.is_some()
+                        || (!type_arguments.is_empty()
+                            && crate::vec_ops::by_id(callee.as_str()).is_none())
+                    {
                         return Err(replay_error(
                             function,
                             "selected supplemental call does not support generic instances",
                         ));
                     }
-                    if parameter(program, function, callee, args.len())?.is_some()
+                    if parameter(program, function, expression, args.len())?.is_some()
                         || (!args.is_empty()
-                            && parameter(program, function, callee, args.len() - 1)?.is_none())
+                            && parameter(program, function, expression, args.len() - 1)?.is_none())
                     {
                         return Err(replay_error(
                             function,
@@ -245,7 +281,6 @@ fn collect_supplemental(
                             | ResolvedExprKind::Closure { .. }
                             | ResolvedExprKind::NativeRustImportCall(_)
                             | ResolvedExprKind::HostCommandCall(_)
-                            | ResolvedExprKind::VecFieldRead { .. }
                             | ResolvedExprKind::LiteralFormat { .. }
                     ) {
                         return Err(replay_error(
@@ -276,7 +311,7 @@ fn collect_supplemental(
                     ));
                 };
                 let (ownership, ty) =
-                    parameter(program, function, callee, index)?.ok_or_else(|| {
+                    parameter(program, function, expression, index)?.ok_or_else(|| {
                         replay_error(function, "supplemental call parameter is missing")
                     })?;
                 let argument = &args[index];
