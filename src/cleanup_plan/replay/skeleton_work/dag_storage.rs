@@ -156,7 +156,7 @@ impl SkeletonWork<'_, '_> {
         self.charged_dag(kind).map(Some)
     }
 
-    pub(super) fn union_observations(
+    pub(in crate::cleanup_plan::replay) fn union_observations(
         &mut self,
         members: Vec<Observations>,
     ) -> Result<Observations, Diagnostic> {

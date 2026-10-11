@@ -2,12 +2,14 @@
 //! Guarded keys use session construction order, never allocator address order.
 //! Every cached ordinal is still authenticated against the exact current Rc.
 use super::*;
+#[cfg(test)]
+pub(super) mod ordinal;
 #[cfg(not(test))]
 pub(super) type Memo = BTreeMap<(usize, usize), usize>;
 #[cfg(test)]
 pub(super) enum Memo {
     Ordinary(BTreeMap<(usize, usize), usize>),
-    Borrowed(borrowed_canonical::dictionary::Dictionary<(usize, usize), (usize, usize)>),
+    Borrowed(ordinal::Ordinals),
 }
 pub(super) fn new(
     program: &dyn crate::cleanup::ReplayContext,
@@ -19,7 +21,7 @@ pub(super) fn new(
         lease.validate(program, function, budget)?;
         budget.reserve_array::<Memo>(function, 1, "borrowed exact DAG memo header")?;
         return Ok(Memo::Borrowed(
-            borrowed_canonical::dictionary::Dictionary::new(),
+            ordinal::Ordinals::new(),
         ));
     }
     #[cfg(not(test))]

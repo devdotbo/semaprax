@@ -87,7 +87,7 @@ fn ordinary_order_and_full_duplicate_multisets_match_with_one_budget_through_dro
     }
     // One DAG pointer with different continuations is two distinct identities.
     // The saved BTree route remains an independent numeric tuple oracle.
-    let mut memo = dag_memo::Memo::Borrowed(dictionary::Dictionary::new());
+    let mut memo = dag_memo::Memo::Borrowed(dag_memo::ordinal::Ordinals::new());
     let mut old_memo = BTreeMap::new();
     let mut memo_budget = ReplayBudget::with_physical(function, 1 << 20).unwrap();
     for (key, end) in [((1, 1), 10), ((1, 2), 20), ((2, 1), 30), ((1, 1), 11)] {
@@ -104,7 +104,7 @@ fn ordinary_order_and_full_duplicate_multisets_match_with_one_budget_through_dro
     // The same discovery/continuation history has identical actual work under
     // different allocation-address ranks; each lookup still retains both keys.
     let history = |pointers: [usize; 3], ledger: &mut ReplayBudget| -> Result<(), Diagnostic> {
-        let mut current = dag_memo::Memo::Borrowed(dictionary::Dictionary::new());
+        let mut current = dag_memo::Memo::Borrowed(dag_memo::ordinal::Ordinals::new());
         for (ordinal, pointer) in pointers.iter().enumerate() {
             for continuation in [1usize, 2] {
                 dag_memo::insert(function, &mut current, dag_memo::test_key(*pointer, ordinal, continuation), ordinal, ledger)?;
@@ -132,6 +132,49 @@ fn ordinary_order_and_full_duplicate_multisets_match_with_one_budget_through_dro
             assert_eq!(history(pointers, &mut ledger).is_ok(), allowance == work);
             assert_eq!(ledger.remaining, 0);
         }
+    }
+
+    // A real wide Alt creates members in ascending construction order and
+    // visits them in reverse through the existing LIFO automaton builder.
+    // AVL arena inserts must remain logarithmic, preserving all epsilon copies.
+    const WIDE: usize = 4096;
+    let mut wide_budget = ReplayBudget::with_physical(function, 16 << 20).unwrap();
+    wide_budget.remaining = 0;
+    wide_budget.skeleton_remaining = MAX_REPLAY_WORK_UNITS;
+    wide_budget.lent_skeleton = true;
+    wide_budget.reserve_array::<Observations>(function, WIDE, "wide Alt input carriers").unwrap();
+    let mut walk = skeleton_work::SkeletonWork::new(&program, function, &mut wide_budget);
+    let alt = walk.union_observations(vec![Observations::default(); WIDE]).unwrap();
+    drop(walk);
+    let root = alt.prefix.as_ref().unwrap();
+    let mut wide_memo = dag_memo::Memo::Borrowed(dag_memo::ordinal::Ordinals::new());
+    wide_budget.reserve_array::<dag_memo::Memo>(function, 1, "wide Alt memo header").unwrap();
+    let mut wide_automaton = Automaton::default();
+    let start = wide_automaton.node(function, &mut wide_budget).unwrap();
+    let before = wide_budget.skeleton_remaining;
+    let end = wide_automaton.add_dag(function, root, start, &mut wide_memo, &mut wide_budget).unwrap();
+    let spent = before - wide_budget.skeleton_remaining;
+    // AVL height is bounded by twice log2(N)+2. Each search, ancestor and
+    // rotation has charged constant work; geometric arena relocation is linear.
+    let logarithm = (WIDE + 1).ilog2() as usize + 1;
+    assert!(spent <= (WIDE + 1) * (32 * logarithm + 100), "wide Alt actual work {spent}");
+    assert_eq!(wide_automaton.nodes[start].epsilon.len(), WIDE);
+    assert!(wide_automaton.nodes[start].epsilon.iter().all(|target| *target == end));
+    let ObservationDagKind::Alt(members) = &root.kind else { unreachable!() };
+    for member in members {
+        assert_eq!(dag_memo::get(function, &wide_memo, &dag_memo::key(member, start), &mut wide_budget).unwrap(), Some(start));
+    }
+    // Mixed ordinal/continuation insertions independently exercise both double
+    // rotations rather than relying on reversing one traversal's insertion order.
+    let mut mixed = dag_memo::Memo::Borrowed(dag_memo::ordinal::Ordinals::new());
+    let mut mixed_old = BTreeMap::new();
+    let mut mixed_budget = ReplayBudget::new();
+    for (ordinal, continuation) in [(3, 10), (1, 20), (2, 15), (5, 3), (4, 1), (4, 0), (0, 7)] {
+        mixed_old.insert((ordinal, continuation), ordinal + continuation);
+        dag_memo::insert(function, &mut mixed, dag_memo::test_key(ordinal + 100, ordinal, continuation), ordinal + continuation, &mut mixed_budget).unwrap();
+    }
+    for ((ordinal, continuation), end) in mixed_old {
+        assert_eq!(dag_memo::get(function, &mixed, &dag_memo::test_key(ordinal + 100, ordinal, continuation), &mut mixed_budget).unwrap(), Some(end));
     }
 
     // Legacy nodes have no session-minted construction ordinal.
