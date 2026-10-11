@@ -6089,12 +6089,7 @@ fn prepare_selected_match_path(
     Ok(())
 }
 
-/// Refutable Match v1 skeleton expectations for a Copy-scalar match. Each
-/// non-final arm contributes one `ArmSelected` pair (selected paths continue
-/// through the optional guard's Boolean join; rejected paths — including
-/// false guards — fall through), and the trailing catch-all arm consumes
-/// everything unconditionally, mirroring the canonical builder exactly.
-
+/// Clone a guarded scalar-match prefix under its existing payload reservation.
 fn clone_expr_path_shallow(
     path: &ExprSkeletonPath,
     work: &mut SkeletonWork<'_, '_>,

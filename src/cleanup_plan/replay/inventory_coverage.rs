@@ -212,7 +212,7 @@ fn collect_supplemental(
                         ));
                     }
                     if parameter(program, function, callee, args.len())?.is_some()
-                        || (args.len() != 0
+                        || (!args.is_empty()
                             && parameter(program, function, callee, args.len() - 1)?.is_none())
                     {
                         return Err(replay_error(

@@ -1,6 +1,10 @@
 //! Move authenticated module outputs into their retained carriers.
 use super::*;
 
+#[allow(
+    clippy::too_many_arguments,
+    reason = "keep independent held authority and canonical replay inputs explicit"
+)]
 pub(super) fn retain_workspace_module(
     program: &Program,
     module: String,
