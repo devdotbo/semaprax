@@ -1,10 +1,26 @@
 //! Independent typed constructor authentication. No new runtime operation.
-use super::{ResolvedExpr, ResolvedExprKind};
+use super::{ResolvedExpr, ResolvedExprKind, ResolvedStatement, ResolvedType};
 
-/// The descriptor fields are source provenance, never a supplied cleanup grant.
-pub(crate) fn value(expression: &ResolvedExpr) -> Option<&ResolvedExpr> {
+pub(crate) struct Expansion<'a> {
+    pub(crate) element: &'a ResolvedType,
+    pub(crate) count: u32,
+    pub(crate) statements: &'a [ResolvedStatement],
+    pub(crate) tail: &'a ResolvedExpr,
+}
+/// The marker occupies the ordinary Block node, not a second owning temporary.
+pub(crate) fn expansion(expression: &ResolvedExpr) -> Option<Expansion<'_>> {
     match &expression.kind {
-        ResolvedExprKind::VecConstructor { value, .. } => Some(value),
+        ResolvedExprKind::VecConstructor {
+            element,
+            count,
+            statements,
+            tail,
+        } => Some(Expansion {
+            element,
+            count: *count,
+            statements,
+            tail,
+        }),
         _ => None,
     }
 }

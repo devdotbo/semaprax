@@ -35,7 +35,8 @@ pub enum ResolvedExprKind {
     VecConstructor {
         element: ResolvedType,
         count: u32,
-        value: Box<ResolvedExpr>,
+        statements: Vec<ResolvedStatement>,
+        tail: Box<ResolvedExpr>,
     },
     /// A typed terminal flow, independently bound to its exact lexical target.
     LexicalExit {
