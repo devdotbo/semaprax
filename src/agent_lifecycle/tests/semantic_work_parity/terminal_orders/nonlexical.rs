@@ -14,7 +14,7 @@ use super::*;
 use crate::cleanup_plan::ExitTargetId;
 
 /// The loop's `continue`/`break` are the source's only lexical exits.
-const LEXICAL_LOOP: &str = "    let mut index = 0;\n    while index < rounds {\n        index = index + 1;\n        if index == 1 { continue; };\n        if index == 3 { break; };\n        0\n    }\n";
+const LEXICAL_LOOP: &str = "    let mut index = 0;\n    while index < rounds {\n        index = index + 1;\n        if index == 1 { continue; }\n        if index == 3 { break; }\n        0\n    }\n";
 const ENTER: &str = "test.native_terminal_variant_order.enter";
 /// Drives run's own frame entry from one ordinary caller frame.
 const ENTER_SOURCE: &str = "@id(\"test.native_terminal_variant_order.enter\")\nfn enter(depth: i64, first: i64, second: i64, rounds: i64, gate: i64, cap: i64) -> Summary {\n    run(depth, first, second, rounds, gate, cap)\n}\n\n@id(\"app.main\")";

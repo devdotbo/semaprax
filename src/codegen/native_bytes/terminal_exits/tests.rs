@@ -234,7 +234,7 @@ fn hostile_ambiguous_failure_selection_still_refuses_contradiction() {
 /// canonical terminal orders (`variant_owner_order.spx`).
 const VARIANT_OWNER_ORDER: &str = include_str!("variant_owner_order.spx");
 /// The loop's `continue`/`break` are the source's only lexical exits.
-const LEXICAL_LOOP: &str = "    let mut index = 0;\n    while index < rounds {\n        index = index + 1;\n        if index == 1 { continue; };\n        if index == 3 { break; };\n        0\n    }\n";
+const LEXICAL_LOOP: &str = "    let mut index = 0;\n    while index < rounds {\n        index = index + 1;\n        if index == 1 { continue; }\n        if index == 3 { break; }\n        0\n    }\n";
 
 fn variant_owner_program(source: &str) -> (crate::ast::Program, crate::hir::ResolvedProgram) {
     let checked = crate::check(source, std::path::Path::new("variant-owner-order.spx"))

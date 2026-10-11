@@ -7,9 +7,13 @@ fn revision_with_padding(field: &str, padded_path: Option<&str>) -> ProjectRevis
         "../../../../examples/calculator-project/semaprax.toml"
     ))
     .unwrap();
+    // Canonical projection writes type declarations before functions, so the
+    // record sits directly below the module line of the unchanged example.
+    let functions = include_str!("../../../../examples/calculator-project/src/core.spx")
+        .strip_prefix("module calculator.core;\n")
+        .unwrap();
     let core = format!(
-        "{}\n@id(\"explain.Row\") record Row {{@id(\"explain.Row.value\") value:{field},}}\n",
-        include_str!("../../../../examples/calculator-project/src/core.spx")
+        "module calculator.core;\n\n@id(\"explain.Row\")\nrecord Row {{\n    @id(\"explain.Row.value\")\n    value: {field},\n}}\n{functions}"
     );
     let sources = [
         (
@@ -25,7 +29,8 @@ fn revision_with_padding(field: &str, padded_path: Option<&str>) -> ProjectRevis
     .into_iter()
     .map(|(path, mut source)| {
         if padded_path == Some(path) {
-            source.push_str("\n//");
+            // A canonical end-of-file comment follows the final `}` directly.
+            source.push_str("//");
             source.push_str(&"x".repeat(MAX_SCHEMA_BYTES + 1));
             source.push('\n');
         }
