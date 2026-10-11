@@ -130,3 +130,6 @@ fn constructors_execute_zero_one_eight_and_byte_event_boundary_rows_on_all_engin
         std::fs::remove_dir_all(root).unwrap();
     }
 }
+
+#[path = "vec_constructor_failure.rs"]
+mod failure;

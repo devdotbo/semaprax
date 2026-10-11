@@ -71,3 +71,16 @@ Agent advice uses `help language author:vec-constructor` and exact diagnostic
 lookups for P220/T318 through the compiler-checked quick-reference table. The
 ordinary diagnostic-help producer regenerates its JSON companion after source
 integration; help does not independently authenticate a constructor.
+
+The bounded `owned_leaf_vec::vec_constructor::failure::` gate compares an
+independently authored explicit capacity/push program with the constructor.
+Native C11 O0/O2 sweeps every observed checked Vec allocation ordinal, including capacity
+before any element and middle-element checked-capacity failures after staged String/Bytes acquisition; exact element-entry traces,
+status tokens/domain/code, unpublished result sentinels, pointer-identity
+settlement, empty vector authority and immediate same-context reentry must
+agree. The same sources run on the strict private Core-Wasm host at success,
+capacity refusal and push commits 1/2/4 with its exact finalizer checks.
+This authored gate makes no claim of executable qualification until run.
+Legacy String/Bytes allocation sites are tracked for exact settlement but are
+not refused: their current NULL route is an invariant failure, not a checked
+semantic status. The fault sweep does not widen that source/runtime contract.
