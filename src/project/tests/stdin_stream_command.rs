@@ -353,9 +353,9 @@ mod stream_data;
 #[path = "stdin_stream_command/text.rs"]
 mod text;
 
-#[path = "stdin_stream_command/collection_records.rs"]
-mod collection_records;
 #[path = "stdin_stream_command/owned_data.rs"]
 mod owned_data;
+#[path = "stdin_stream_command/collection_records.rs"]
+mod collection_records;
 #[path = "stdin_stream_command/stream_records.rs"]
 mod stream_records;

@@ -528,7 +528,7 @@ mod loan {
 
 #[cfg(test)]
 mod tests {
-    use crate::cache_codec::{decode, encode, Codec};
+    use crate::cache_codec::{Codec, decode, encode};
     use std::fmt::Debug;
 
     fn roundtrip<T: Codec + Eq + Debug>(value: &T) {

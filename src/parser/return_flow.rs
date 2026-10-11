@@ -9,7 +9,7 @@ use crate::ast::{Expr, ExprKind, Span, Statement};
 use crate::diagnostic::Diagnostic;
 use crate::lexer::TokenKind;
 
-use super::{for_loop, statement_if, Parser};
+use super::{Parser, for_loop, statement_if};
 
 mod match_tail;
 mod preflight;

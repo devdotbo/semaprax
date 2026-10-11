@@ -117,53 +117,28 @@ fn current_generic_and_closure_body_inventory_includes_local_strings() {
     let closure = resolve(&owning_closure.replace("let text=\"closure local\";", ""));
     let functions = super::super::function_value::table_plan(&closure).unwrap();
     assert!(!functions.bodies.is_empty());
-    assert!(!crate::wasm::functions_use_strings(
-        closure.functions.iter()
-    ));
+    assert!(!crate::wasm::functions_use_strings(closure.functions.iter()));
     assert!(!crate::wasm::functions_use_strings(functions.bodies.iter()));
     let bytes = super::super::emit_owned_data_exports(&closure, &[plan()]).unwrap();
     wasmparser::Validator::new().validate_all(&bytes).unwrap();
 
     // A structural census must inspect private closure bodies even though the
     // source/ABI profile independently refuses owning closure construction.
-    let helper = resolve(
-        r#"module test.utf8_private;
+    let helper = resolve(r#"module test.utf8_private;
 @id("selected") fn selected()->i64 {let text="closure local";7}
 @id("app.main") fn main()->i64 {0}
-"#,
-    );
-    let string_body = helper
-        .functions
-        .iter()
-        .find(|f| f.id.as_str() == "selected")
-        .unwrap()
-        .body
-        .clone();
+"#);
+    let string_body = helper.functions.iter().find(|f| f.id.as_str()=="selected").unwrap().body.clone();
     let mut private_bodies = functions.bodies.clone();
     private_bodies[0].body = string_body.clone();
     assert!(crate::wasm::functions_use_strings(private_bodies.iter()));
     let mut forged = closure.clone();
-    let selected = forged
-        .functions
-        .iter_mut()
-        .find(|f| f.id.as_str() == "selected")
-        .unwrap();
-    let hir::ResolvedExprKind::Block { statements, .. } = &mut selected.body.kind else {
-        panic!("closure block")
-    };
-    let hir::ResolvedStatement::Let { value, .. } = &mut statements[0] else {
-        panic!("closure binding")
-    };
-    let hir::ResolvedExprKind::Closure { body, .. } = &mut value.kind else {
-        panic!("closure site")
-    };
+    let selected = forged.functions.iter_mut().find(|f| f.id.as_str()=="selected").unwrap();
+    let hir::ResolvedExprKind::Block { statements, .. } = &mut selected.body.kind else {panic!("closure block")};
+    let hir::ResolvedStatement::Let { value, .. } = &mut statements[0] else {panic!("closure binding")};
+    let hir::ResolvedExprKind::Closure { body, .. } = &mut value.kind else {panic!("closure site")};
     **body = string_body;
-    assert_eq!(
-        super::super::emit_owned_data_exports(&forged, &[plan()])
-            .unwrap_err()
-            .code,
-        "SPX-H006"
-    );
+    assert_eq!(super::super::emit_owned_data_exports(&forged, &[plan()]).unwrap_err().code, "SPX-H006");
 }
 #[test]
 fn local_static_text_still_refuses_public_owned_export_authority() {

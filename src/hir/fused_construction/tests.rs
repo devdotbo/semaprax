@@ -145,10 +145,7 @@ fn selected_counts_bind_exact_typed_sites_and_shape_digest() {
         assert_eq!(selection.rows(), count);
         assert_eq!(selection.width(), 3);
         assert_eq!(selection.extent(), u64::from(count) * 3);
-        assert_eq!(
-            selection.order(),
-            [Role::Induction, Role::Text, Role::Payload]
-        );
+        assert_eq!(selection.order(), [Role::Induction, Role::Text, Role::Payload]);
         assert!(matches!(&selection.producer().kind,
             K::Call { callee, .. } if callee.as_str() == crate::byte_ops::ZEROED_ID));
         assert!(matches!(&selection.push().kind,
@@ -263,21 +260,15 @@ fn decoded_hir_forgeries_refuse_and_original_shape_is_unchanged() {
             let record = record(p).clone();
             p.types.push(record);
         }),
-        ("entrypoint", |p| {
-            p.entrypoint = DeclarationId::new("app.other")
-        }),
+        ("entrypoint", |p| p.entrypoint = DeclarationId::new("app.other")),
         ("field index", |p| {
-            if let crate::hir::ResolvedTypeDeclarationKind::Record { fields } = &mut record(p).kind
-            {
+            if let crate::hir::ResolvedTypeDeclarationKind::Record { fields } = &mut record(p).kind {
                 fields.swap(0, 1);
             }
         }),
         ("field order", |p| fields(p).swap(1, 2)),
         ("shared value", |p| {
-            let S::Let {
-                binding: counter, ..
-            } = &block(p)[1]
-            else {
+            let S::Let { binding: counter, .. } = &block(p)[1] else {
                 panic!("induction")
             };
             let id = counter.id.clone();
@@ -287,10 +278,7 @@ fn decoded_hir_forgeries_refuse_and_original_shape_is_unchanged() {
             binding.id = id;
         }),
         ("suffix rebinding", |p| {
-            let S::Let {
-                binding: vector, ..
-            } = &block(p)[0]
-            else {
+            let S::Let { binding: vector, .. } = &block(p)[0] else {
                 panic!("destination")
             };
             let id = vector.id.clone();
@@ -351,16 +339,8 @@ fn decoded_consistent_renames_and_unique_foreign_identities_refuse() {
     let digest = selection.shape_digest().unwrap();
     assert!(vector.ends_with("body.s0") && counter.ends_with("body.s1"));
     for (name, from, to) in [
-        (
-            "renamed Vec",
-            vector.clone(),
-            vector.replace("body.s0", "body.q0"),
-        ),
-        (
-            "renamed induction",
-            counter.clone(),
-            counter.replace("body.s1", "body.q1"),
-        ),
+        ("renamed Vec", vector.clone(), vector.replace("body.s0", "body.q0")),
+        ("renamed induction", counter.clone(), counter.replace("body.s1", "body.q1")),
         (
             "unique foreign producer",
             producer.clone(),
@@ -390,10 +370,7 @@ fn vec_constructor_provenance_is_authenticated_not_walked_as_a_block() {
     let K::Block { statements, .. } = &constructor.functions[0].body.kind else {
         panic!("constructor body")
     };
-    let S::Let {
-        value: expansion, ..
-    } = &statements[0]
-    else {
+    let S::Let { value: expansion, .. } = &statements[0] else {
         panic!("constructor let")
     };
     assert!(crate::hir::vec_constructor::expansion(expansion).is_some());
@@ -443,10 +420,7 @@ fn census_scratch_is_charged_exactly_and_one_short_refuses() {
         crate::bounded_output::with_limit_usage(usize::MAX, || derive(&program).map(|s| s.rows()));
     assert_eq!(result, Ok(64));
     assert!(!refused);
-    assert!(
-        bytes > census,
-        "the borrowed traversal replay is charged too"
-    );
+    assert!(bytes > census, "the borrowed traversal replay is charged too");
     let (result, refused, used) =
         crate::bounded_output::with_limit_usage(bytes, || derive(&program).map(|s| s.rows()));
     assert_eq!((result, refused, used), (Ok(64), false, bytes));

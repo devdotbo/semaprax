@@ -170,10 +170,7 @@ else {{ if(value!=INT64_MAX) return 92; const struct spx_normalized_status *stat
                 // The same owning source contains Bytes and private String
                 // helpers: it belongs to the explicit private HIR route, not
                 // the nominal-free standalone String/public Web profiles.
-                assert_eq!(
-                    wasm::build_web(&selected, &web).unwrap_err().code,
-                    "SPX-W116"
-                );
+                assert_eq!(wasm::build_web(&selected, &web).unwrap_err().code, "SPX-W116");
                 assert!(!web.exists());
                 let resolved = semaprax::hir::resolve(&selected).unwrap();
                 let bytes = wasm::emit_resolved_module(&resolved).unwrap();
@@ -187,17 +184,9 @@ else {{ if(value!=INT64_MAX) return 92; const struct spx_normalized_status *stat
                 };
                 let host = Path::new(env!("CARGO_MANIFEST_DIR"))
                     .join("tests/owned_data/owned_leaf_vec/host.js");
-                let output = Command::new("node")
-                    .arg(host)
-                    .arg(path)
-                    .args([code, value, "scalar-view", domain])
-                    .output()
-                    .unwrap();
-                assert!(
-                    output.status.success(),
-                    "{id}: {}",
-                    String::from_utf8_lossy(&output.stderr)
-                );
+                let output = Command::new("node").arg(host).arg(path)
+                    .args([code, value, "scalar-view", domain]).output().unwrap();
+                assert!(output.status.success(), "{id}: {}", String::from_utf8_lossy(&output.stderr));
                 continue;
             }
             wasm::build_web(&selected, &web).unwrap();

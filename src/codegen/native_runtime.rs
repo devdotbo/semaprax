@@ -41,11 +41,7 @@ pub(super) fn emit_status_runtime_for_profile(
         if vec_fields {
             assert!(vec_authority);
             assert_eq!(runtime.matches(anchor).count(), 1);
-            runtime = runtime.replacen(
-                anchor,
-                &format!("{anchor}\n    const void *owned_leaf_layout;"),
-                1,
-            );
+            runtime = runtime.replacen(anchor, &format!("{anchor}\n    const void *owned_leaf_layout;"), 1);
         }
         output.push_str(&runtime);
     } else {

@@ -1,4 +1,4 @@
-use super::{record_vec_borrow, OwnershipMode, ResolvedExpr, ResolvedExprKind};
+use super::{OwnershipMode, ResolvedExpr, ResolvedExprKind, record_vec_borrow};
 
 // Native loans use the same exact place origins and CFG interval as ordinary
 // borrowed calls. The declared parameter mode is authoritative; a named owned

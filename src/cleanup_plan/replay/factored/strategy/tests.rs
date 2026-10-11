@@ -183,7 +183,9 @@ fn failed_census_keeps_spent_global_work() {
     budget.remaining = built.automaton.nodes.len() * 2 + 3;
     assert!(census(&function, &built, built.hir_root, &mut budget).is_err());
     assert_eq!(budget.remaining, 0);
-    assert!(budget
-        .charge(&function, 1, "attempted strategy retry")
-        .is_err());
+    assert!(
+        budget
+            .charge(&function, 1, "attempted strategy retry")
+            .is_err()
+    );
 }

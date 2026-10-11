@@ -171,7 +171,7 @@ pub fn quote_json(value: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{quote_json, Diagnostic};
+    use super::{Diagnostic, quote_json};
     use crate::ast::Span;
     use crate::bounded_output::with_limit;
 
@@ -231,9 +231,11 @@ mod tests {
 
         // The message itself is not escaped, so the escaping is specific to
         // the path rendering and cannot be assumed elsewhere.
-        assert!(Diagnostic::io("SPX-I001", "a\nb")
-            .to_string()
-            .contains('\n'));
+        assert!(
+            Diagnostic::io("SPX-I001", "a\nb")
+                .to_string()
+                .contains('\n')
+        );
     }
 
     #[test]
@@ -259,9 +261,11 @@ mod tests {
         // Message, path and help all flow through the JSON escaper, so a
         // quotation mark cannot terminate the string early.
         let hostile = Diagnostic::io("SPX-I003", "say \"hi\"\n").at_path("a\\b.spx");
-        assert!(hostile
-            .json()
-            .contains("\"message\":\"say \\\"hi\\\"\\n\",\"path\":\"a\\\\b.spx\""));
+        assert!(
+            hostile
+                .json()
+                .contains("\"message\":\"say \\\"hi\\\"\\n\",\"path\":\"a\\\\b.spx\"")
+        );
     }
 
     #[test]

@@ -3,7 +3,7 @@
 use crate::diagnostic::Diagnostic;
 use crate::hir::ExpressionId;
 
-use super::{backend_error, CEmitter, COutput, CValue};
+use super::{CEmitter, COutput, CValue, backend_error};
 
 impl<'a, O: COutput> CEmitter<'a, O> {
     pub(super) fn emit_owned_buffer_bounded_allocation(

@@ -67,7 +67,9 @@ impl<'a> Joined<'a> {
     }
     /// Pointer-only discovery while walking the joined HIR.
     pub(crate) fn selects(&self, condition: &E, body: &E) -> Option<SelectedFlow<'a>> {
-        self.selection.is_loop(condition, body).then(|| self.flow())
+        self.selection
+            .is_loop(condition, body)
+            .then(|| self.flow())
     }
     /// Both halves must still be the exact objects that were joined.
     pub(crate) fn still_current(
@@ -143,10 +145,7 @@ pub(crate) fn join<'a>(
     let record = proof.record();
     check(
         std::ptr::eq(function, proof.function())
-            && source
-                .types
-                .iter()
-                .any(|candidate| std::ptr::eq(candidate, record)),
+            && source.types.iter().any(|candidate| std::ptr::eq(candidate, record)),
         "source proof is not over current source declarations",
     )?;
     let hir_function = selection.function();
@@ -212,10 +211,7 @@ pub(crate) fn join<'a>(
             && std::ptr::eq(construction.body, body.as_ref()),
         "source proof nodes are not at their current positions",
     )?;
-    check(
-        tail.span == selection.tail().span,
-        "function result differs",
-    )?;
+    check(tail.span == selection.tail().span, "function result differs")?;
     // Destination and count operands.
     check(
         *vector == selection.vector().name && *counter == selection.counter().name,

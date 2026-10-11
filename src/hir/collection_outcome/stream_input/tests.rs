@@ -133,10 +133,8 @@ Input::Ready{{bytes,length}}=>"ready",
     // String is an admitted ordinary match result. It is refused here by the
     // owning input's closed result profile, rather than aggregate admission.
     assert_eq!(errors.iter().filter(|d| d.code == "SPX-T216").count(), 2);
-    assert!(errors
-        .iter()
-        .filter(|d| d.code == "SPX-T216")
-        .all(|d| d.message == "owned variant match arms must return a Copy i64 or bool value"));
+    assert!(errors.iter().filter(|d| d.code == "SPX-T216").all(|d|
+        d.message == "owned variant match arms must return a Copy i64 or bool value"));
     // An arbitrary owning aggregate also triggers the independent aggregate
     // refusal: it must not inherit the exact Input -> Output join authority.
     let aggregate = general

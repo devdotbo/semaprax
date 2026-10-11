@@ -7,7 +7,7 @@
 use crate::conformance::{NormalizedStatus, Retryability, StatusClass};
 use crate::hir::DeclarationId;
 
-use super::{invariant, CleanupExecutionError};
+use super::{CleanupExecutionError, invariant};
 
 pub(super) fn validate_propagated_status(
     callee: &DeclarationId,

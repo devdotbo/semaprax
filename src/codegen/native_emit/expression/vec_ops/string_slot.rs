@@ -1,5 +1,5 @@
 //! Primitive String descriptor access selected only by the exact slot intrinsic.
-use super::super::super::{backend_error, CEmitter, COutput, CValue};
+use super::super::super::{CEmitter, COutput, CValue, backend_error};
 use crate::diagnostic::Diagnostic;
 use crate::hir::{ResolvedExpr, ResolvedExprKind, ResolvedType};
 impl<O: COutput> CEmitter<'_, O> {

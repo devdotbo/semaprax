@@ -61,11 +61,15 @@ fn example_fixture() -> PathBuf {
         SERIAL.fetch_add(1, Ordering::Relaxed)
     ));
     std::fs::create_dir_all(root.join("src")).unwrap();
-    let example =
-        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("examples/owned-leaf-command-project");
+    let example = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("examples/owned-leaf-command-project");
     std::fs::copy(example.join(MANIFEST_FILE), root.join(MANIFEST_FILE)).unwrap();
     for file in ["app.spx", "data.spx", "tests.spx"] {
-        std::fs::copy(example.join("src").join(file), root.join("src").join(file)).unwrap();
+        std::fs::copy(
+            example.join("src").join(file),
+            root.join("src").join(file),
+        )
+        .unwrap();
     }
     root.canonicalize().unwrap()
 }

@@ -69,15 +69,9 @@ fn repeated_zero_argument_nominal_facts_reuse_the_exact_retained_entry() {
         retain_checked_nominal_type(&ty, &resolved.declarations, &mut retained).unwrap();
     }
     assert_eq!(retained.len(), 1);
-    assert_eq!(
-        retained.get_key_value(&key).unwrap().0.as_ptr(),
-        original_key
-    );
+    assert_eq!(retained.get_key_value(&key).unwrap().0.as_ptr(), original_key);
     assert_eq!(retained[&key].1.layout_key.as_ptr(), original_layout);
-    assert_eq!(
-        retained[&key].1,
-        resolved.declarations.type_facts(&ty).unwrap()
-    );
+    assert_eq!(retained[&key].1, resolved.declarations.type_facts(&ty).unwrap());
 }
 #[test]
 fn retained_value_facts_keep_the_4096_cap_and_reject_missing_checked_facts() {

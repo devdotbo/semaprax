@@ -476,23 +476,15 @@ fn exit_continuation_json(continuation: &ExitContinuation) -> String {
         ),
         ExitContinuation::ReturnUnit => "{\"kind\":\"return_unit\"}".to_owned(),
         ExitContinuation::LoopLatch { target } => format!(
-            "{{\"kind\":\"loop_latch\",\"target\":{}}}",
-            lexical_control::target_json(target)
+            "{{\"kind\":\"loop_latch\",\"target\":{}}}", lexical_control::target_json(target)
         ),
         ExitContinuation::LoopBreak { target, edge } => format!(
             "{{\"kind\":\"loop_break\",\"target\":{},\"edge\":{}}}",
-            lexical_control::target_json(target),
-            edge.0
+            lexical_control::target_json(target), edge.0
         ),
-        ExitContinuation::FunctionReturn {
-            target,
-            edge,
-            source,
-        } => format!(
+        ExitContinuation::FunctionReturn { target, edge, source } => format!(
             "{{\"kind\":\"function_return\",\"target\":{},\"edge\":{},\"source\":{}}}",
-            lexical_control::target_json(target),
-            edge.0,
-            result_source_json(source)
+            lexical_control::target_json(target), edge.0, result_source_json(source)
         ),
     }
 }

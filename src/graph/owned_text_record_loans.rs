@@ -168,10 +168,12 @@ module test.owned_text_graph;
             let graph = crate::graph::to_json(&program).unwrap();
             let document: serde_json::Value = serde_json::from_str(&graph).unwrap();
             assert_eq!(document["schema"], "semaprax.graph.v69", "{field}");
-            assert!(crate::graph::to_legacy_json(&program)
-                .unwrap_err()
-                .iter()
-                .any(|d| d.code == "SPX-G410"));
+            assert!(
+                crate::graph::to_legacy_json(&program)
+                    .unwrap_err()
+                    .iter()
+                    .any(|d| d.code == "SPX-G410")
+            );
         }
     }
     #[test]
@@ -184,10 +186,12 @@ module test.owned_text_graph;
         let document: serde_json::Value = serde_json::from_str(&graph).unwrap();
         assert_eq!(document["schema"], "semaprax.graph.v69");
         assert_eq!(document["owned_text_record_loans"]["authority"], false);
-        assert!(crate::graph::to_legacy_json(&source)
-            .unwrap_err()
-            .iter()
-            .any(|d| d.code == "SPX-G410"));
+        assert!(
+            crate::graph::to_legacy_json(&source)
+                .unwrap_err()
+                .iter()
+                .any(|d| d.code == "SPX-G410")
+        );
         assert!(crate::graph::reject_evidence_schema("semaprax.graph.v69").is_err());
         let program = hir::resolve(&source).unwrap();
         assert_eq!(graph_schema(&program).unwrap(), "semaprax.graph.v69");

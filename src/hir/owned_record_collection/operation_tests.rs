@@ -132,11 +132,13 @@ fn consuming_record_traversal_selects_the_frozen_v3_contract() {
     );
     let graph_json = crate::graph::to_json(&parsed).unwrap();
     crate::graph::verify_json(&parsed, &graph_json).unwrap();
-    assert!(crate::graph::verify_json(
-        &parsed,
-        &graph_json.replacen("semaprax.graph.v67", "semaprax.graph.v66", 1)
-    )
-    .is_err());
+    assert!(
+        crate::graph::verify_json(
+            &parsed,
+            &graph_json.replacen("semaprax.graph.v67", "semaprax.graph.v66", 1)
+        )
+        .is_err()
+    );
     let graph: serde_json::Value = serde_json::from_str(&graph_json).unwrap();
     assert_eq!(graph["schema"], "semaprax.graph.v67");
     assert_eq!(graph["prelude"]["schema"], crate::prelude::SCHEMA_V11);
@@ -405,9 +407,11 @@ module owned_record_collection.foreign;
 "#;
     let verified = crate::check(source, "owned-record-collection-foreign.spx")
         .expect_err("a foreign record shape must be refused");
-    assert!(verified
-        .iter()
-        .any(|diagnostic| diagnostic.code == "SPX-T281"));
+    assert!(
+        verified
+            .iter()
+            .any(|diagnostic| diagnostic.code == "SPX-T281")
+    );
     let parsed = crate::parse(
         source,
         std::path::Path::new("owned-record-collection-foreign.spx"),

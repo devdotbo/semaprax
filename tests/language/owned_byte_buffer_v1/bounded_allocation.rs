@@ -46,10 +46,12 @@ fn bounded_allocation_keeps_literal_bound_and_legacy_closed_rules() {
     ] {
         assert_rejected(&program_source(body), "SPX-T271");
     }
-    assert!(!error_codes(&program_source(
-        "let bytes=bytes_zeroed_bounded(1usize,0usize);0"
-    ))
-    .contains(&"SPX-T271"));
+    assert!(
+        !error_codes(&program_source(
+            "let bytes=bytes_zeroed_bounded(1usize,0usize);0"
+        ))
+        .contains(&"SPX-T271")
+    );
     let in_loop = program_source(
         "let mut at=0usize;while at<1usize{let bytes=bytes_zeroed_bounded(at,64usize);at=at+1usize;0}0",
     );

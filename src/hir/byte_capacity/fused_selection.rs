@@ -27,11 +27,7 @@ impl<'a> ValueFactIndex<'a> {
 }
 
 /// Pointer-only discovery of the joined loop during the walk.
-pub(super) fn selects(
-    facts: &ValueFactIndex<'_>,
-    condition: &ResolvedExpr,
-    body: &ResolvedExpr,
-) -> bool {
+pub(super) fn selects(facts: &ValueFactIndex<'_>, condition: &ResolvedExpr, body: &ResolvedExpr) -> bool {
     let matched = facts.selected.is_some_and(|flow| {
         std::ptr::eq(flow.condition, condition) && std::ptr::eq(flow.body, body)
     });

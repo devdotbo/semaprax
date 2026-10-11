@@ -2,8 +2,8 @@
 //! rejection of expression forms that are not yet admitted inside a loop.
 
 use crate::ast::{Expr, ExprKind, ParamMode, Statement, Type};
-use crate::source_verify::diagnostics::error;
 use crate::source_verify::IterativeVerifier;
+use crate::source_verify::diagnostics::error;
 
 impl<'a, 'p> IterativeVerifier<'a, 'p> {
     pub(super) fn reject_for_body_disallowed(

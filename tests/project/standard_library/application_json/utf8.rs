@@ -1,10 +1,10 @@
 //! Plain UTF-8 owned values, exact policy replay, and independent backend gates.
 use super::*;
 
-#[path = "utf8/ascii_fast_path.rs"]
-mod ascii_fast_path;
 #[path = "utf8/max_shape.rs"]
 mod max_shape;
+#[path = "utf8/ascii_fast_path.rs"]
+mod ascii_fast_path;
 #[path = "utf8/stream.rs"]
 mod stream;
 

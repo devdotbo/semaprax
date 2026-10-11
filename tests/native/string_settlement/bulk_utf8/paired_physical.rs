@@ -11,10 +11,7 @@ const HISTORICAL_SHA256: &str = "c3ece1ef543c28c39f2615cb77c9fa325f15c16b46e1ed1
 const OLD: &str = "1e9c886b2f34280ea8d37bae60478d59510853ff";
 const LEGACY: &str = include_str!("historical_text.spx");
 fn sha(bytes: &[u8]) -> String {
-    format!(
-        "{:x}",
-        semaprax::digest_hex::LowerHex(Sha256::digest(bytes))
-    )
+    format!("{:x}", semaprax::digest_hex::LowerHex(Sha256::digest(bytes)))
 }
 fn canonical(text: &str) -> String {
     format::canonical(&parse(text, "paired.spx").unwrap())
@@ -157,10 +154,7 @@ fn require_source_ancestry() {
         .args(["merge-base", "--is-ancestor", BASELINE, "HEAD"])
         .status()
         .unwrap();
-    assert!(
-        ancestry.success(),
-        "source must descend from the bulk UTF-8 baseline"
-    );
+    assert!(ancestry.success(), "source must descend from the bulk UTF-8 baseline");
 }
 fn git_identity(revision: &str) -> String {
     let output = Command::new("git")

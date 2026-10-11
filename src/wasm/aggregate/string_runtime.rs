@@ -18,21 +18,9 @@ pub(super) const COMPARE: u32 = 7;
 pub(super) const FORMAT_STEP_ID: &str = "core.string.format.private-step.v1";
 
 pub(super) fn program_uses_format(program: &ResolvedProgram) -> bool {
-    program
-        .functions
-        .iter()
-        .chain(
-            program
-                .function_instances
-                .iter()
-                .map(|instance| &instance.function),
-        )
-        .any(|function| {
-            std::iter::once(&function.body)
-                .chain(&function.requires)
-                .chain(&function.ensures)
-                .any(crate::literal_format::expression_uses)
-        })
+    program.functions.iter().chain(program.function_instances.iter().map(|instance| &instance.function))
+        .any(|function| std::iter::once(&function.body).chain(&function.requires).chain(&function.ensures)
+            .any(crate::literal_format::expression_uses))
 }
 
 pub(super) fn import_count(program: &ResolvedProgram) -> u32 {
@@ -125,19 +113,19 @@ pub(super) fn program_uses_runtime(program: &ResolvedProgram) -> bool {
         ),
     ) && super::program_uses_str_ops(program))
         || program
-            .functions
-            .iter()
-            .chain(
-                program
-                    .function_instances
-                    .iter()
-                    .map(|instance| &instance.function),
-            )
-            .any(|function| {
-                expression_uses_runtime(&function.body)
-                    || function.requires.iter().any(expression_uses_runtime)
-                    || function.ensures.iter().any(expression_uses_runtime)
-            })
+        .functions
+        .iter()
+        .chain(
+            program
+                .function_instances
+                .iter()
+                .map(|instance| &instance.function),
+        )
+        .any(|function| {
+            expression_uses_runtime(&function.body)
+                || function.requires.iter().any(expression_uses_runtime)
+                || function.ensures.iter().any(expression_uses_runtime)
+        })
 }
 
 fn expression_uses_runtime(expression: &ResolvedExpr) -> bool {

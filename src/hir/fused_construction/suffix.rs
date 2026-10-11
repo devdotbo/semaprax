@@ -16,9 +16,7 @@ pub(super) struct Owners<'a> {
 impl Owners<'_> {
     /// A suffix binding cannot reuse a construction value identity.
     fn fresh(&self, binding: &ResolvedBinding) -> Result<(), Refusal> {
-        if binding.id == self.vector.id
-            || binding.id == self.counter.id
-            || binding.id == self.item.id
+        if binding.id == self.vector.id || binding.id == self.counter.id || binding.id == self.item.id
         {
             return Err(Refusal::Forged("suffix rebinds a construction value"));
         }
@@ -101,17 +99,10 @@ impl<'a> Census<'a> {
         Ok(())
     }
 
-    fn node(
-        &mut self,
-        program: &ResolvedProgram,
-        owners: &Owners<'_>,
-        e: &'a E,
-    ) -> Result<(), Refusal> {
+    fn node(&mut self, program: &ResolvedProgram, owners: &Owners<'_>, e: &'a E) -> Result<(), Refusal> {
         if let Some(refusal) = super::shape::vec_constructor(e) {
             return Err(match refusal {
-                Refusal::Shape(_) => {
-                    Refusal::Suffix("Vec constructor allocates after construction")
-                }
+                Refusal::Shape(_) => Refusal::Suffix("Vec constructor allocates after construction"),
                 forged => forged,
             });
         }
@@ -172,9 +163,8 @@ impl<'a> Census<'a> {
                     match statement {
                         S::While { .. } | S::LexicalWhile { .. } if traversal => {}
                         other => {
-                            let (binding, _) = statement_allowed(other).ok_or(Refusal::Suffix(
-                                "owner mutation or unsupported statement",
-                            ))?;
+                            let (binding, _) = statement_allowed(other)
+                                .ok_or(Refusal::Suffix("owner mutation or unsupported statement"))?;
                             owners.fresh(binding)?;
                         }
                     }

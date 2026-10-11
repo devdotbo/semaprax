@@ -115,13 +115,10 @@ fn bounded_collection_outcome_graph_and_hostile_ownership_are_authenticated() {
     assert!(diagnostics.iter().all(|diagnostic| {
         !diagnostic.code.starts_with("SPX-P") && diagnostic.code != "SPX-S109"
     }));
-    assert!(
-        diagnostics.iter().any(|diagnostic| {
-            diagnostic.code == "SPX-O101"
-                && diagnostic.message == "use of resource `value` after ownership was moved"
-                && diagnostic.help.as_deref()
-                    == Some("borrow the resource if the callee does not need ownership")
-        }),
-        "{diagnostics:?}"
-    );
+    assert!(diagnostics.iter().any(|diagnostic| {
+        diagnostic.code == "SPX-O101"
+            && diagnostic.message == "use of resource `value` after ownership was moved"
+            && diagnostic.help.as_deref()
+                == Some("borrow the resource if the callee does not need ownership")
+    }), "{diagnostics:?}");
 }

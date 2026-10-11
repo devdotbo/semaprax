@@ -205,8 +205,7 @@ pub(super) fn authenticate_plans(
     function: &ResolvedFunction,
 ) -> Result<(), Refusal> {
     crate::cleanup_plan::validate_program(program).map_err(|_| Refusal::Cleanup)?;
-    let cleanup =
-        crate::cleanup_plan::build_plan(program, function).map_err(|_| Refusal::Cleanup)?;
+    let cleanup = crate::cleanup_plan::build_plan(program, function).map_err(|_| Refusal::Cleanup)?;
     if cleanup != function.cleanup_plan || function.cleanup_plan.lexical_control.is_some() {
         return Err(Refusal::Cleanup);
     }

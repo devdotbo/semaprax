@@ -16,7 +16,8 @@ use crate::source_verify::fused_construction::SourceProof;
 /// True only for the exact borrowed loop statement of a held selection.
 pub(super) fn selected_loop(context: &SourceCapacityContext<'_>, statement: &Statement) -> bool {
     context.fused.is_some_and(|proof| {
-        proof.still_held(context.program) && std::ptr::eq(statement, proof.construction().statement)
+        proof.still_held(context.program)
+            && std::ptr::eq(statement, proof.construction().statement)
     })
 }
 
@@ -46,10 +47,7 @@ pub(in crate::source_verify) fn verify_selected_capacity(
     use crate::byte_data_capacity::{ArrayStorageKind, CapacityFlow, FunctionCapacityInput};
 
     if selected.is_some_and(|proof| !proof.authenticate(program)) {
-        return Err(selection_invariant(
-            None,
-            "fused selection is not held by this program",
-        ));
+        return Err(selection_invariant(None, "fused selection is not held by this program"));
     }
     let ordinary = program
         .functions
