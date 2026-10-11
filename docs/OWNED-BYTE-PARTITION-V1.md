@@ -350,3 +350,10 @@ ordinary evaluator installer, borrowed Bytes parameter adapter, aggregate leaf
 finalization, and cross-function execution remain closed pending the fresh
 validated partition callgraph and all ordinary consumers. These private controls
 do not qualify ordinary source admission or public carrier escape.
+
+Borrowed Bytes uses the same nonowning view descriptor as Slice. Its central
+alias operation copies only that descriptor; Bytes-to-Slice conversion retains
+the exact checked loan instead of creating an Arc or another Core loan. Owner
+move/store/finalizer adapters reject view carriers. Reads after the actual end
+edge fail for both Bytes and Slice aliases. This receiving adapter remains
+private and needs the joined installer to bind the actual source owner root.

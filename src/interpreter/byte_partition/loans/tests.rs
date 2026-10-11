@@ -218,8 +218,23 @@ fn affine_value_owner_cannot_copy_and_view_alias_never_owns_the_loan() {
             .unwrap();
         receiver.advance(edge.to).unwrap();
     }
-    let view = value
-        .borrow_partition_slice(&mut receiver, loan.id, loan.origin.root.clone())
+    let borrowed = value
+        .borrow_partition_bytes(&mut receiver, loan.id)
+        .unwrap();
+    let borrowed_alias = borrowed.borrow_alias().unwrap();
+    assert_eq!(
+        borrowed_alias
+            .read_partition_bytes(&mut receiver, |bytes| bytes[0])
+            .unwrap(),
+        7
+    );
+    assert!(borrowed_alias
+        .borrow_alias()
+        .unwrap()
+        .move_partition(&mut receiver)
+        .is_err());
+    let view = borrowed
+        .partition_view_as_slice(&mut receiver, loan.origin.root.clone())
         .unwrap();
     let alias = view.clone();
     let range = alias.range(0, 1);
@@ -256,5 +271,8 @@ fn affine_value_owner_cannot_copy_and_view_alias_never_owns_the_loan() {
     value.move_partition(&mut receiver).unwrap();
     value.store_partition(&mut receiver, 0, &[9]).unwrap();
     assert!(view.read_partition(&mut receiver, |_| ()).is_err());
+    assert!(borrowed
+        .read_partition_bytes(&mut receiver, |_| ())
+        .is_err());
     value.settle_partition(&mut receiver).unwrap();
 }

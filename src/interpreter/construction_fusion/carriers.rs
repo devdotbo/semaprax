@@ -7,6 +7,8 @@ pub(in crate::interpreter) enum Backing {
     Leased(Lease),
     // Affine token retained by its exact invocation registry; never cloned.
     Partition(super::super::byte_partition::Owner),
+    // Nonowning Borrow Bytes descriptor; the loan table owns finalization.
+    PartitionView(super::super::byte_partition::loans::ViewId),
 }
 impl From<Arc<[u8]>> for Backing {
     fn from(bytes: Arc<[u8]>) -> Self {
@@ -18,6 +20,7 @@ impl Backing {
         match self {
             Self::Ordinary(bytes) => Ok(Self::Ordinary(Arc::clone(bytes))),
             Self::Leased(lease) => Ok(Self::Leased(lease.clone())),
+            Self::PartitionView(view) => Ok(Self::PartitionView(*view)),
             Self::Partition(_) => Err(Flow::Guard(
                 "affine partition owner requires an authenticated loan descriptor",
             )),
@@ -26,7 +29,7 @@ impl Backing {
     pub(in crate::interpreter) fn ordinary(&self) -> &Arc<[u8]> {
         match self {
             Self::Ordinary(bytes) => bytes,
-            Self::Leased(_) | Self::Partition(_) => {
+            Self::Leased(_) | Self::Partition(_) | Self::PartitionView(_) => {
                 panic!("private leased backing reached an ordinary adapter")
             }
         }
@@ -34,7 +37,7 @@ impl Backing {
     pub(in crate::interpreter) fn ordinary_mut(&mut self) -> &mut Arc<[u8]> {
         match self {
             Self::Ordinary(bytes) => bytes,
-            Self::Leased(_) | Self::Partition(_) => {
+            Self::Leased(_) | Self::Partition(_) | Self::PartitionView(_) => {
                 panic!("private leased backing reached an ordinary store")
             }
         }
@@ -132,7 +135,7 @@ impl OwnedBytesValue {
         match &self.bytes {
             Backing::Ordinary(bytes) => Ok(consumer(bytes)),
             Backing::Leased(lease) => registry.read_owner(lease, consumer),
-            Backing::Partition(_) => Err(Flow::Guard(
+            Backing::Partition(_) | Backing::PartitionView(_) => Err(Flow::Guard(
                 "partition owner requires its ordinary receiving registry",
             )),
         }
@@ -172,6 +175,59 @@ impl OwnedBytesValue {
             lease: None,
             partition: Some(view),
         })
+    }
+    /// Borrowed Bytes and Slice aliases share one checked view descriptor.
+    /// They never duplicate the affine owner or the loan table's finalizer.
+    pub(in crate::interpreter) fn borrow_partition_bytes<
+        R: super::super::byte_partition::InvocationRuntime,
+    >(
+        &self,
+        receiver: &mut super::super::byte_partition::loans::Loans<'_, R>,
+        loan: crate::loan_plan::LoanId,
+    ) -> Result<Self, Flow> {
+        let Backing::Partition(owner) = &self.bytes else {
+            return Err(Flow::Guard("partition borrow requires its affine owner"));
+        };
+        let view = receiver.borrow(owner, loan).map_err(super::guard)?;
+        Ok(Self {
+            allocation: self.allocation,
+            bytes: Backing::PartitionView(view),
+        })
+    }
+    pub(in crate::interpreter) fn partition_view_as_slice<
+        R: super::super::byte_partition::InvocationRuntime,
+    >(
+        &self,
+        receiver: &mut super::super::byte_partition::loans::Loans<'_, R>,
+        root: ValueId,
+    ) -> Result<BorrowedSliceValue, Flow> {
+        let Backing::PartitionView(view) = self.bytes else {
+            return Err(Flow::Guard("partition Slice requires a checked Bytes view"));
+        };
+        let end = receiver.read(view, <[u8]>::len).map_err(super::guard)?;
+        Ok(BorrowedSliceValue {
+            invocation_root: root.into(),
+            backing: None,
+            start: 0,
+            end,
+            lease: None,
+            partition: Some(view),
+        })
+    }
+    pub(in crate::interpreter) fn read_partition_bytes<
+        T,
+        R: super::super::byte_partition::InvocationRuntime,
+    >(
+        &self,
+        receiver: &mut super::super::byte_partition::loans::Loans<'_, R>,
+        f: impl FnOnce(&[u8]) -> T,
+    ) -> Result<T, Flow> {
+        let Backing::PartitionView(view) = self.bytes else {
+            return Err(Flow::Guard(
+                "partition Bytes read requires its checked view",
+            ));
+        };
+        receiver.read(view, f).map_err(super::guard)
     }
     pub(in crate::interpreter) fn move_partition<
         R: super::super::byte_partition::InvocationRuntime,
