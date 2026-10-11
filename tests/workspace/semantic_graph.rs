@@ -512,7 +512,10 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
         include_str!("../../src/workspace_graph/expected_projection/call_identity.rs");
     let projection_call_sites =
         include_str!("../../src/workspace_graph/expected_projection/call_sites.rs");
-    let projection_cost = include_str!("../../src/workspace_graph/expected_projection/cost.rs");
+    let projection_cost = concat!(
+        include_str!("../../src/workspace_graph/expected_projection/cost.rs"),
+        include_str!("../../src/workspace_graph/expected_projection/uncached_absence_tests.rs"),
+    );
     let projection_declaration_cost =
         include_str!("../../src/workspace_graph/expected_projection/declaration_cost.rs");
     let projection_identity_slots =
@@ -671,7 +674,20 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
     let runtime_fixture = include_str!(
         "../../src/workspace_graph/expected_projection/private_layout/function_runtime.rs"
     );
-    let authority_projection = projection.replace(runtime_fixture, "");
+    // Scoped builder-limit mutation belongs only to this exact test child;
+    // its complete bytes still participate in every structural audit above.
+    let cost_root = include_str!("../../src/workspace_graph/expected_projection/cost.rs");
+    assert!(cost_root.contains(
+        "#[cfg(test)]\n#[path = \"uncached_absence_tests.rs\"]\nmod uncached_absence_tests;"
+    ));
+    assert_eq!(cost_root.matches("mod uncached_absence_tests;").count(), 1);
+    let absence_fixture = include_str!(
+        "../../src/workspace_graph/expected_projection/uncached_absence_tests.rs"
+    );
+    assert_eq!(projection.matches(absence_fixture).count(), 1);
+    let authority_projection = projection
+        .replace(runtime_fixture, "")
+        .replace(absence_fixture, "");
     for forbidden in [
         "workspace::",
         "std::fs",
