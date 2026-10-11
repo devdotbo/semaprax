@@ -10,7 +10,10 @@ const MAX_ARTIFACTS: usize = 64;
 const MAX_BYTES: u64 = 64 * 1024 * 1024;
 
 fn hash(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
+    format!(
+        "{:x}",
+        semaprax::digest_hex::LowerHex(Sha256::digest(bytes))
+    )
 }
 fn file_hash(path: &Path) -> String {
     use std::io::Read as _;
@@ -24,7 +27,7 @@ fn file_hash(path: &Path) -> String {
         }
         digest.update(&bytes[..count]);
     }
-    format!("{:x}", digest.finalize())
+    format!("{:x}", semaprax::digest_hex::LowerHex(digest.finalize()))
 }
 fn compiler() -> PathBuf {
     std::env::split_paths(&std::env::var_os("PATH").expect("compiler PATH"))
