@@ -1,5 +1,5 @@
 //! Shared invocation work and sticky refusal; the physical carrier is precharged.
-use super::{refusal, reserve_builder_structure};
+use super::reserve_builder_structure;
 use crate::diagnostic::Diagnostic;
 use std::{cell::Cell, rc::Rc};
 pub(super) struct Ledger {

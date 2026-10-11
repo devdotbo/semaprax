@@ -63,7 +63,8 @@ impl<'a> LayoutClosure<'a> {
         authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,
         programs: &'a [Program],
     ) -> Result<Self, Vec<Diagnostic>> {
-        Self::derive_with_work(caller, authored, programs, &mut WORK, None)
+        let mut remaining = WORK;
+        Self::derive_with_work(caller, authored, programs, &mut remaining, None)
     }
     pub(in crate::workspace_graph) fn derive_with_work(
         caller: &Program,

@@ -95,7 +95,7 @@ impl SkeletonWork<'_, '_> {
     }
 
     /// Detect only a real factored suffix fanout; charge the inspected carriers.
-    pub(super) fn shares_prefix_tail(
+    pub(in crate::cleanup_plan::replay) fn shares_prefix_tail(
         &mut self,
         suffixes: &[ExprSkeletonPath],
     ) -> Result<bool, Diagnostic> {
@@ -111,7 +111,7 @@ impl SkeletonWork<'_, '_> {
     /// Move one authentic prefix tail into one immutable node before fanout.
     /// This changes representation only: path ownership, continuation, failure
     /// and pending commits remain carried separately by every sibling.
-    pub(super) fn share_prefix_tail(
+    pub(in crate::cleanup_plan::replay) fn share_prefix_tail(
         &mut self,
         observations: &mut Observations,
     ) -> Result<(), Diagnostic> {

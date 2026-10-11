@@ -1,7 +1,8 @@
 //! Ordinary authored import checks with optional held private layout facts.
 use super::expected_projection::private_layout::registry::LayoutRegistry;
 use super::{
-    type_contains_name_from, use_error, validate_imported_type, AuthoredDeclaration, AuthoredKind,
+    diagnostics, type_contains_name_from, use_error, validate_imported_type, AuthoredDeclaration,
+    AuthoredKind,
 };
 use crate::{
     ast::{ModuleUseKind, Program},

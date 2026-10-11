@@ -82,6 +82,10 @@ use identity_slots::{
 };
 use import_stub::default_expr;
 pub(in crate::workspace_graph) use retention::checked_retention_prebound_with_uncached_peak_with_registry;
+#[cfg(test)]
+use uncached_peak::uncached_peak_prebound;
+use uncached_peak::uncached_peak_prebound_with_registry;
+#[cfg(test)]
 pub(super) use uncached_peak::{
     initial_core_prebound, next_retention_prebound_with_uncached_peak,
     uncached_output_peak_prebound,
@@ -90,7 +94,6 @@ pub(in crate::workspace_graph) use uncached_peak::{
     initial_core_prebound_with_registry, next_retention_prebound_with_uncached_peak_with_registry,
     uncached_output_peak_prebound_with_registry,
 };
-use uncached_peak::{uncached_peak_prebound, uncached_peak_prebound_with_registry};
 pub(super) struct SyntheticBuilderCosts {
     pub(super) raw_clone_and_hir: usize,
     retained_clone_and_hir: usize,
