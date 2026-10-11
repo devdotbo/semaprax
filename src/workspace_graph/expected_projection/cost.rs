@@ -52,7 +52,8 @@ pub(in crate::workspace_graph) struct StructuralCost {
 }
 
 /// Per-kind census of authored roots whose root storage is proved absent.
-/// Only the constructor-exact profile consults it; earlier modes are unchanged.
+/// Exact uncached modes 5/6 and the cached constructor-exact profile consult
+/// it. Earlier modes retain their literal-only calculation.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum AbsentStorageRoot {
     Literal = 0,
@@ -61,7 +62,9 @@ pub(super) enum AbsentStorageRoot {
 }
 
 // The final uncached profile uses the complete asserted expression bundle,
-// retaining every map/tree allowance, literal exclusion and live debit.
+// retaining every map/tree allowance and live debit. Only the same four
+// independently absent root storage footprints are excluded, once per authored
+// root. Runtime/default expansions retain their complete storage bundles.
 pub(super) fn fixed_hir_discount(
     mode: u8,
     raw: &StructuralCost,
@@ -70,8 +73,13 @@ pub(super) fn fixed_hir_discount(
     if mode < 5 {
         return Ok(raw.literal_fixed_discount);
     }
+    let absent = if matches!(mode, 5 | 6) {
+        exact_absent_storage(raw)?
+    } else {
+        raw.literal_fixed_discount
+    };
     checked_usage(
-        raw.literal_fixed_discount,
+        absent,
         checked_usage(
             raw.exact_fixed_discount,
             runtime.exact_fixed_discount,
@@ -843,5 +851,111 @@ mod exact_bundle_tests {
             fixed_hir_discount(5, &raw, &runtime).unwrap(),
             raw.literal_fixed_discount + discount
         );
+    }
+}
+
+#[cfg(test)]
+mod uncached_absence_tests {
+    use super::{fixed_hir_discount, StructuralCost};
+
+    // Independent saved modes-5/6 formula: the former literal-only ceiling.
+    fn old_discount(raw: &StructuralCost, runtime: &StructuralCost) -> usize {
+        raw.literal_fixed_discount + raw.exact_fixed_discount + runtime.exact_fixed_discount
+    }
+    fn raw(body: &str) -> StructuralCost {
+        let source = format!("module absence; @id(\"absence.main\") fn main() -> i64 {{ {body} }}");
+        let program = crate::parse(&source, std::path::Path::new("absence.spx")).unwrap();
+        let mut cost = StructuralCost::raw_ast(true).with_inline_values(true);
+        super::super::declaration_cost::ast_expr_cost(&program.functions[0].body, &mut cost)
+            .unwrap();
+        cost
+    }
+    fn absent_storage() -> usize {
+        // Independent actual-layout oracle, not the implementation constant.
+        std::mem::size_of::<crate::cleanup::CleanupStorageSlot>()
+            + std::mem::size_of::<crate::cleanup::CleanupFlag>()
+            + std::mem::size_of::<crate::cleanup::CleanupPlace>()
+            + std::mem::size_of::<crate::cleanup_plan::CleanupSlot>()
+    }
+
+    #[test]
+    fn uncached_modes_remove_only_one_copy_of_proved_operator_root_storage() {
+        for (body, census) in [
+            ("1", [1, 0, 0]),
+            ("-(7 / 2) + (1 - 3)", [4, 1, 3]),
+            (
+                "let a = text(); if a == \"s\" && !flag { -(7 / 2) } else { (1 - 3) * f(2) }",
+                [5, 2, 5],
+            ),
+        ] {
+            let raw = raw(body);
+            assert_eq!(raw.exact_absent_roots, census);
+            let mut runtime = StructuralCost::new();
+            runtime.exact_fixed_discount = 71;
+            // Even a hostile runtime census cannot remove runtime storage.
+            runtime.exact_absent_roots = [usize::MAX; 3];
+            let old = old_discount(&raw, &runtime);
+            for mode in [7, 8] {
+                assert_eq!(fixed_hir_discount(mode, &raw, &runtime).unwrap(), old);
+            }
+            let additional = (census[1] + census[2]) * absent_storage();
+            for mode in [5, 6] {
+                assert_eq!(
+                    fixed_hir_discount(mode, &raw, &runtime).unwrap(),
+                    old + additional
+                );
+                let original_upper = old + additional + 123;
+                assert_eq!(
+                    original_upper - fixed_hir_discount(mode, &raw, &runtime).unwrap(),
+                    123
+                );
+                // No semantic-cache second copy, literal double count, or
+                // removed transitions/edges/control/identity backing.
+                assert_eq!(
+                    old - raw.literal_fixed_discount,
+                    raw.exact_fixed_discount + 71
+                );
+            }
+            for mode in [0, 1, 2, 3, 4] {
+                assert_eq!(
+                    fixed_hir_discount(mode, &raw, &runtime).unwrap(),
+                    raw.literal_fixed_discount
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn uncached_absence_rejects_malformed_census_and_preserves_exact_limit() {
+        let mut raw = raw("-(7 / 2) + (1 - 3)");
+        let runtime = StructuralCost::new();
+        let expected = old_discount(&raw, &runtime) + 4 * absent_storage();
+        struct Restore(usize);
+        impl Drop for Restore {
+            fn drop(&mut self) {
+                crate::workspace_graph::ACTIVE_BUILDER_LIMIT.with(|limit| limit.set(self.0));
+            }
+        }
+        let previous =
+            crate::workspace_graph::ACTIVE_BUILDER_LIMIT.with(|limit| limit.replace(expected));
+        let _restore = Restore(previous);
+        for mode in [5, 6] {
+            assert_eq!(fixed_hir_discount(mode, &raw, &runtime).unwrap(), expected);
+            crate::workspace_graph::ACTIVE_BUILDER_LIMIT.with(|limit| limit.set(expected - 1));
+            assert!(fixed_hir_discount(mode, &raw, &runtime)
+                .unwrap_err()
+                .iter()
+                .all(|error| error.code == "SPX-G171"));
+            crate::workspace_graph::ACTIVE_BUILDER_LIMIT.with(|limit| limit.set(expected));
+        }
+        for malformed in [[usize::MAX, 1, 0], [0, 0, raw.exact_expressions + 1]] {
+            raw.exact_absent_roots = malformed;
+            for mode in [5, 6] {
+                assert!(fixed_hir_discount(mode, &raw, &runtime)
+                    .unwrap_err()
+                    .iter()
+                    .all(|error| error.code == "SPX-G171"));
+            }
+        }
     }
 }
