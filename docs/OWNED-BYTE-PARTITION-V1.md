@@ -131,18 +131,23 @@ No unbounded registry, global cache or per-child hidden heap allocation is allow
 
 ## Proposed native representation and public boundary
 
-Only a new selected internal profile may use a two-word carrier:
+Only a new selected internal profile may use a three-word native carrier:
 
 ```text
-{ uint64_t opaque_lease; uint64_t length; }
+{ uint64_t held_issuer; uint64_t exact_slot; uint64_t nonce; }
 ```
 
-The lease word is a generation-authenticated table handle, not a pointer. Every
-operation receives or uses its explicitly held invocation/module owner domain
-and resolves the handle before obtaining backing plus offset. Length is checked
-against that record. No negative-offset header read, allocation-magic probe,
-foreign-address dereference or guessed pointer provenance is permitted.
-The exact handle bit layout and table size require their own target contract.
+The issuer identifies the explicitly held invocation/module context; slot and
+nonce authenticate the current generation before any backing access. Offset and
+length come only from the immutable authenticated slot, rather than redundant
+caller-supplied length or guessed pointer provenance. O(1) lookup must reject
+unknown issuer, slot and stale nonce before obtaining backing plus offset. No
+negative-offset header read, allocation-magic probe or foreign-address
+dereference is permitted. Exact target size, alignment, row stride and view
+carrier layout require their own assertions and physical predebits. The semantic
+Vec owned-leaf cap does not substitute for actual target backing bytes: row
+backing is funded at its original Vec allocation boundary, and invocation/slot/
+view metadata at its permitted first-Bytes preparation boundary, by one account.
 
 Selection must close over ALL reachable Bytes producers and consumers: literals
 and constructors, copies/clones, partition, stores, views, record/variant/Vec
@@ -220,3 +225,33 @@ Owning existing contracts: [byte data](PORTABLE-INDEXED-BYTE-DATA-V1.md),
 [cleanup](RFC-0003-CLEANUP-AND-RESOURCE-ABI.md),
 [call settlement](RFC-0004-NATIVE-CALL-SETTLEMENT.md) and
 [public owned data](PUBLIC-OWNED-DATA-API-V1.md).
+
+## Private receiving implementation checkpoint
+
+`construction_fusion::partition` independently matches a deliberately narrow
+pending operation against held current source and HIR: one immutable ordinary
+`bytes_zeroed` whole owner, literal count/width, exact `Own Bytes` / `Value usize`
+operands and `Own Vec<Bytes>` result, and canonical monomorphic identities.
+The borrowed proof exposes the actual left-to-right operands and checks the
+executor's authenticated whole extent against the original producer before
+geometry preflight. Source/HIR membership, scalar/name/identity comparison work
+shares the caller's counter; refusal consumes the remaining allowance.
+
+This is a lowering interface, not an admitted call or a validation lease. The
+ordinary intrinsic registry still refuses `bytes_partition`; independent full
+source/HIR validation, ordinary argument staging and atomic call commit, numeric
+status assignment, capacity proof and all three executor mappings remain
+required. Computed operands, imported/parameter owners, aliases and child inputs
+are outside this first receiving shape. The executor must keep the explicit
+invocation range context alive across creator, container and returned internal
+child cleanup, precharge actual metadata allocations through its real account,
+and preserve the original owner on preparation refusal. Copy proof data cannot
+extend that lifetime or grant a public carrier. Authored tests use a checked
+ordinary producer plus an explicitly unvalidated pending-call fixture; they
+assert that full validation and default source admission remain closed.
+
+Geometry retains width as the semantic unsigned 64-bit value. Zero count with
+empty backing accepts every positive semantic width, including the maximum;
+no target address-space conversion may add a 32-bit-only language fault. A
+nonempty range's width is bounded by its authenticated extent. Empty execution
+must not fabricate a child merely to force width into a target pointer word.

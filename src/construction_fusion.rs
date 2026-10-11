@@ -3,6 +3,7 @@
 use crate::{ast, hir};
 pub(crate) mod domain;
 pub(crate) mod native_provenance;
+pub(crate) mod partition;
 #[cfg(test)]
 mod tests;
 pub(crate) struct Descriptor<'a> {
