@@ -62,11 +62,9 @@ fn owned_aggregate_function_and_borrowed_results_require_explicit_binding() {
 #[test]
 fn final_tail_underscore_and_initializer_exit_priorities_stay_closed() {
     assert_eq!(parse(&source("1;"), PATH).unwrap_err().code, "SPX-P106");
-    assert!(
-        errors("let _=1; let _=2; 0")
-            .iter()
-            .any(|d| d.code == "SPX-T209")
-    );
+    assert!(errors("let _=1; let _=2; 0")
+        .iter()
+        .any(|d| d.code == "SPX-T209"));
     let diagnostics = errors("let mut i=0; while i<1 { {continue;}; i=i+1; 0 } i");
     assert!(
         diagnostics.iter().any(|d| d.code == "SPX-T312"),
@@ -100,11 +98,9 @@ fn forged_marker_never_hides_a_reader_mutability_annotation_or_duplicate() {
     if let ast::Statement::Let { mutable, .. } = &mut statements[0] {
         *mutable = true;
     }
-    assert!(
-        verify::verify(&program)
-            .iter()
-            .any(|d| d.code == "SPX-T315")
-    );
+    assert!(verify::verify(&program)
+        .iter()
+        .any(|d| d.code == "SPX-T315"));
     assert!(format::canonical(&program).contains("let mut"));
     if let ast::ExprKind::Block { statements, .. } = &mut program.functions[0].body.kind {
         if let ast::Statement::Let {
@@ -115,11 +111,9 @@ fn forged_marker_never_hides_a_reader_mutability_annotation_or_duplicate() {
             *declared = Some(ast::Type::I64);
         }
     }
-    assert!(
-        verify::verify(&program)
-            .iter()
-            .any(|d| d.code == "SPX-T315")
-    );
+    assert!(verify::verify(&program)
+        .iter()
+        .any(|d| d.code == "SPX-T315"));
     assert!(format::canonical(&program).contains(": i64"));
     if let ast::ExprKind::Block { statements, .. } = &mut program.functions[0].body.kind {
         if let ast::Statement::Let {
@@ -134,11 +128,9 @@ fn forged_marker_never_hides_a_reader_mutability_annotation_or_duplicate() {
         let duplicate = statements[0].clone();
         statements.push(duplicate);
     }
-    assert!(
-        verify::verify(&program)
-            .iter()
-            .any(|d| d.code == "SPX-T209")
-    );
+    assert!(verify::verify(&program)
+        .iter()
+        .any(|d| d.code == "SPX-T209"));
     assert!(format::canonical(&program).contains(&format!("let {name}")));
 }
 #[test]
@@ -194,4 +186,46 @@ fn normalizer_preserves_lazy_failure_and_consumed_arguments_across_backends() {
         semaprax::wasm::emit_module(&check(&scalar, PATH).unwrap()).unwrap(),
         semaprax::wasm::emit_module(&check(&ordinary_scalar, PATH).unwrap()).unwrap()
     );
+}
+#[test]
+fn contracts_authenticate_discard_markers_independently_of_the_function_body() {
+    for kind in ["requires", "ensures"] {
+        let text = format!(
+            "module scalar.contract; @id(\"main\") fn main()->i64 {kind} {{ true; true }} {{ 0 }}"
+        );
+        let mut program = check(&text, PATH).unwrap();
+        let canonical = format::canonical(&program);
+        let round = check(&canonical, PATH).unwrap();
+        assert_eq!(canonical, format::canonical(&round));
+        assert_eq!(
+            graph::to_json(&program).unwrap(),
+            graph::to_json(&round).unwrap()
+        );
+        let function = &mut program.functions[0];
+        let contract = if kind == "requires" {
+            &mut function.requires[0]
+        } else {
+            &mut function.ensures[0]
+        };
+        let ast::ExprKind::Block { statements, tail } = &mut contract.kind else {
+            unreachable!()
+        };
+        let ast::Statement::Let { name, .. } = &statements[0] else {
+            unreachable!()
+        };
+        let name = name.clone();
+        tail.kind = ast::ExprKind::Var(name.clone());
+        assert!(verify::verify(&program).is_empty());
+        let canonical = format::canonical(&program);
+        assert!(
+            canonical.contains(&format!("let {name} = true;")),
+            "{canonical}"
+        );
+        let round = check(&canonical, PATH).unwrap();
+        assert_eq!(canonical, format::canonical(&round));
+        assert_eq!(
+            graph::to_json(&program).unwrap(),
+            graph::to_json(&round).unwrap()
+        );
+    }
 }

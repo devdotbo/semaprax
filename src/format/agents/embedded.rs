@@ -7,7 +7,6 @@ pub(in super::super) fn write_function(
     placement: &comments::Placement,
     depth: usize,
 ) {
-    let _expression_scope = expression_statement::function_scope(&function.body, &function.params);
     placement.leading(output, function.span.start, depth);
     write_indent(output, depth);
     if function.explicit_id {
@@ -50,17 +49,20 @@ pub(in super::super) fn write_function(
         writeln!(output, "\"").unwrap();
     }
     for contract in &function.requires {
+        let _expression_scope = expression_statement::function_scope(contract, &function.params);
         write_indent(output, depth + 1);
         write!(output, "requires ").unwrap();
         write_record_literal_delimited_expr(output, contract);
         writeln!(output).unwrap();
     }
     for contract in &function.ensures {
+        let _expression_scope = expression_statement::function_scope(contract, &function.params);
         write_indent(output, depth + 1);
         write!(output, "ensures ").unwrap();
         write_record_literal_delimited_expr(output, contract);
         writeln!(output).unwrap();
     }
+    let _expression_scope = expression_statement::function_scope(&function.body, &function.params);
     write_indent(output, depth);
     if depth == 0 {
         write_function_body(output, &function.body, placement);
