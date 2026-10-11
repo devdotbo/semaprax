@@ -14,7 +14,8 @@ metadata reservations and nonwrapping issuer preparation. Every precommit
 refusal returns the original backing unchanged. Zero count requires empty
 backing and positive width; it releases that backing once.
 
-The context holds the actual issuer and module through Rust borrows. Tokens
+The context holds the actual issuer and module through Rust borrows or explicit
+address-stable owned boxes. Tokens
 carry invocation, slot, nonce and generation; every access validates them before
 resolving a slice. Slot index determines the immutable disjoint range. A child
 never gains whole-backing authority. Moves and stores renew nonce/generation;
@@ -54,3 +55,13 @@ one original payload backing and three nonempty metadata tables at counts 1 and
 canonical children and context settlement. One-short preflight observes no table
 allocation and preserves the exact original owner. This is an unexecuted
 requested-allocation gate, not malloc-usable-size, RSS or target-backend evidence.
+
+The private owned-holder constructor prepares the same core without a
+self-reference or erased borrowed lifetime. Its invocation owner must retain the
+context through every child and loan; the lifetime-free receipt alone grants no
+escape or source authority. Both holder boxes are included in the real account
+preflight before allocation, alongside all tables and headers. The authored
+owned-context witness observes their actual requested layouts, context moves,
+creator-scope return, last-child settlement and allocation-free one-short
+refusal. This adapter enables the interpreter's held context implementation;
+it does not select that executor or authenticate a source/HIR profile.

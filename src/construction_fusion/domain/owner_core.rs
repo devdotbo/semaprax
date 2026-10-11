@@ -1,6 +1,6 @@
 //! Executor-neutral held backing/range core. No descriptor or source authority.
 //! The executor debits its REAL invocation account before metadata/clone allocation.
-use super::{Issuer, ModuleIdentity, Refusal, MAX_VIEWS};
+use super::{Issuer, MAX_VIEWS, ModuleIdentity, Refusal};
 use std::{alloc::Layout, marker::PhantomData, ops::Range};
 
 /// Implementations own unique backing, expose its actual extent, and fail-stop
@@ -55,12 +55,44 @@ pub(crate) struct Loan<'a> {
     view: usize,
     nonce: u64,
 }
+// Owned holders keep their address stable when the context itself moves. The
+// borrowed route preserves its original Rust lifetime constraint.
+enum IssuerHolder<'a> {
+    Borrowed(&'a mut Issuer),
+    Owned(Box<Issuer>),
+}
+impl IssuerHolder<'_> {
+    fn get(&self) -> &Issuer {
+        match self {
+            Self::Borrowed(value) => value,
+            Self::Owned(value) => value,
+        }
+    }
+    fn get_mut(&mut self) -> &mut Issuer {
+        match self {
+            Self::Borrowed(value) => value,
+            Self::Owned(value) => value,
+        }
+    }
+}
+enum ModuleHolder<'a> {
+    Borrowed(&'a ModuleIdentity),
+    Owned(Box<ModuleIdentity>),
+}
+impl ModuleHolder<'_> {
+    fn get(&self) -> &ModuleIdentity {
+        match self {
+            Self::Borrowed(value) => value,
+            Self::Owned(value) => value,
+        }
+    }
+}
 /// Must outlive every carrier/container using its tokens. Container cleanup
 /// settles its children in canonical order; a popped child stays in this held
 /// context. Abandoning the context releases backing, never a language result.
 pub(crate) struct Core<'a, R: Runtime> {
-    issuer: &'a mut Issuer,
-    module: &'a ModuleIdentity,
+    issuer: IssuerHolder<'a>,
+    module: ModuleHolder<'a>,
     domain: u64,
     slots: Box<[Slot]>,
     views: Box<[View]>,
@@ -70,6 +102,55 @@ pub(crate) struct Core<'a, R: Runtime> {
     width: usize,
     extent: usize,
     failure: Option<Refusal>,
+}
+impl<R: Runtime> Core<'static, R> {
+    /// An invocation owner can retain this context without a self-reference.
+    /// Tokens still require this exact live context; `'static` describes their
+    /// lack of a borrowed host reference, never permission to escape a profile.
+    pub(crate) fn partition_owned(
+        owner: R::Owner,
+        count: usize,
+        width: usize,
+        issuer: Issuer,
+        module: ModuleIdentity,
+        mut runtime: R,
+    ) -> Result<(Self, Vec<Child<'static>>), (Refusal, R::Owner)> {
+        let preparation = (|| {
+            let extent = count.checked_mul(width).ok_or(Refusal::Range)?;
+            if width == 0
+                || extent != R::bytes(&owner).len()
+                || extent > crate::byte_ops::MAX_OWNED_BYTE_VALUE_BYTES as usize
+            {
+                return Err(Refusal::Range);
+            }
+            if count > crate::vec_ops::MAX_CAPACITY as usize {
+                return Err(Refusal::Metadata);
+            }
+            issuer
+                .next
+                .checked_add(count as u64 + 1)
+                .ok_or(Refusal::Exhausted)?;
+            for layout in Self::metadata_layouts(count)? {
+                runtime.reserve_metadata(layout)?;
+            }
+            runtime.reserve_metadata(Layout::new::<Issuer>())?;
+            runtime.reserve_metadata(Layout::new::<ModuleIdentity>())?;
+            Ok(())
+        })();
+        if let Err(error) = preparation {
+            return Err((error, owner));
+        }
+        // Every table and both address-stable holders have been predebited.
+        Self::partition_held(
+            owner,
+            count,
+            width,
+            IssuerHolder::Owned(Box::new(issuer)),
+            ModuleHolder::Owned(Box::new(module)),
+            runtime,
+            true,
+        )
+    }
 }
 impl<'a, R: Runtime> Core<'a, R> {
     /// All allocations made here: held context, exact slot/view backing, and
@@ -95,7 +176,26 @@ impl<'a, R: Runtime> Core<'a, R> {
         width: usize,
         issuer: &'a mut Issuer,
         module: &'a ModuleIdentity,
+        runtime: R,
+    ) -> Result<(Self, Vec<Child<'a>>), (Refusal, R::Owner)> {
+        Self::partition_held(
+            owner,
+            count,
+            width,
+            IssuerHolder::Borrowed(issuer),
+            ModuleHolder::Borrowed(module),
+            runtime,
+            false,
+        )
+    }
+    fn partition_held(
+        owner: R::Owner,
+        count: usize,
+        width: usize,
+        mut issuer: IssuerHolder<'a>,
+        module: ModuleHolder<'a>,
         mut runtime: R,
+        prepaid: bool,
     ) -> Result<(Self, Vec<Child<'a>>), (Refusal, R::Owner)> {
         let preparation = (|| {
             if width == 0 {
@@ -110,16 +210,19 @@ impl<'a, R: Runtime> Core<'a, R> {
             if count > crate::vec_ops::MAX_CAPACITY as usize {
                 return Err(Refusal::Metadata);
             }
-            for layout in Self::metadata_layouts(count)? {
-                runtime.reserve_metadata(layout)?;
+            if !prepaid {
+                for layout in Self::metadata_layouts(count)? {
+                    runtime.reserve_metadata(layout)?;
+                }
             }
             // Reserve all nonreusable identities transactionally BEFORE tables.
             let end = issuer
+                .get()
                 .next
                 .checked_add(count as u64 + 1)
                 .ok_or(Refusal::Exhausted)?;
-            let domain = issuer.next;
-            issuer.next = end;
+            let domain = issuer.get().next;
+            issuer.get_mut().next = end;
             Ok(domain)
         })();
         let domain = match preparation {
@@ -129,8 +232,8 @@ impl<'a, R: Runtime> Core<'a, R> {
         let mut slots = exact_vec(count);
         let mut children = exact_vec(count);
         let mut views = exact_vec(MAX_VIEWS);
-        let issuer_key = std::ptr::from_ref(&*issuer) as usize;
-        let module_key = std::ptr::from_ref(module) as usize;
+        let issuer_key = std::ptr::from_ref(issuer.get()) as usize;
+        let module_key = std::ptr::from_ref(module.get()) as usize;
         for i in 0..count {
             let nonce = domain + 1 + i as u64;
             slots.push(Slot {
@@ -179,8 +282,8 @@ impl<'a, R: Runtime> Core<'a, R> {
         Ok((core, children))
     }
     fn identity(&self, issuer: usize, module: usize, domain: u64) -> Result<(), Refusal> {
-        if issuer != std::ptr::from_ref(&*self.issuer) as usize
-            || module != std::ptr::from_ref(self.module) as usize
+        if issuer != std::ptr::from_ref(self.issuer.get()) as usize
+            || module != std::ptr::from_ref(self.module.get()) as usize
             || domain != self.domain
         {
             return Err(Refusal::Identity);
@@ -239,7 +342,7 @@ impl<'a, R: Runtime> Core<'a, R> {
                 .position(|v| !v.live)
                 .ok_or(Refusal::Metadata)?;
             let borrows = s.borrows.checked_add(1).ok_or(Refusal::Exhausted)?;
-            let nonce = self.issuer.mint()?;
+            let nonce = self.issuer.get_mut().mint()?;
             self.views[index] = View {
                 slot: child.slot,
                 offset: s.offset + range.start,
@@ -310,7 +413,7 @@ impl<'a, R: Runtime> Core<'a, R> {
                 return Err(Refusal::Borrowed);
             }
             let generation = s.generation.checked_add(1).ok_or(Refusal::Exhausted)?;
-            let nonce = self.issuer.mint()?;
+            let nonce = self.issuer.get_mut().mint()?;
             self.slots[child.slot].generation = generation;
             self.slots[child.slot].nonce = nonce;
             child.generation = generation;

@@ -203,7 +203,7 @@ fn foreign_stale_overlapping_and_exhausted_receipts_never_resolve_backing() {
             2 => forged.slot = usize::MAX,
             3 => core.slots[1].offset = 0,
             4 => {
-                core.issuer.next = u64::MAX;
+                core.issuer.get_mut().next = u64::MAX;
             }
             _ => {
                 core.slots[1].generation = u64::MAX;
@@ -369,4 +369,86 @@ fn actual_requested_backing_is_precharged_without_child_payload_allocations() {
         assert_eq!(p.0.borrow().allocations, 0);
         assert_eq!(p.0.borrow().releases, 0);
     }
+}
+
+#[test]
+fn owned_holders_keep_receipts_current_across_context_moves_and_exact_precharge() {
+    let count = 2usize;
+    let holder_bytes = Layout::new::<Issuer>().size() + Layout::new::<ModuleIdentity>().size();
+    let full = required(count) + holder_bytes;
+    let account = Rc::new(RefCell::new(Account {
+        remaining: full,
+        ..Account::default()
+    }));
+    let runtime = Probe(account.clone());
+    let ((), metrics) = crate::test_allocation_observer::measure(|| {
+        let mut runtime = runtime;
+        runtime.charge_clone(6).unwrap();
+        let owner = runtime.allocate(6);
+        let (core, children) = Core::partition_owned(
+            owner,
+            count,
+            3,
+            Issuer::new(),
+            ModuleIdentity::new(),
+            runtime,
+        )
+        .ok()
+        .unwrap();
+        // Moving the invocation context does not change either boxed identity.
+        let mut registry = [Some(core)];
+        let mut core = registry[0].take().unwrap();
+        let mut returned = leave_creator(&mut core, children);
+        core.store(&mut returned, 1, 9).unwrap();
+        let mut loan = core.borrow(&returned, 0..3).unwrap();
+        assert_eq!(
+            core.read(&loan, |bytes| <[u8; 3]>::try_from(bytes).unwrap())
+                .unwrap(),
+            [0, 9, 0]
+        );
+        core.end_borrow(&mut loan).unwrap();
+        core.drop_owner(&mut returned).unwrap();
+        drop(core);
+    });
+    let tables: usize = Core::<Probe>::metadata_layouts(count).unwrap()[1..=3]
+        .iter()
+        .map(Layout::size)
+        .sum();
+    assert!(!metrics.invalid);
+    assert_eq!(metrics.allocations, 6); // original, three tables, two holders
+    assert_eq!(metrics.reallocations, 0);
+    assert_eq!(metrics.allocated, 6 + tables + holder_bytes);
+    assert_eq!(metrics.highwater, metrics.allocated);
+    assert_eq!(metrics.freed, metrics.allocated);
+    assert_eq!(metrics.live, 0);
+    assert_eq!(account.borrow().consumed, full);
+    assert_eq!(account.borrow().remaining, 0);
+    assert_eq!(account.borrow().releases, 1);
+    // Observe preparation alone under one-short backing. Both boxes and all
+    // tables remain unallocated, and the exact original owner is returned.
+    let account = Rc::new(RefCell::new(Account {
+        remaining: full - 1,
+        ..Account::default()
+    }));
+    let runtime = Probe(account.clone());
+    let original: Box<[u8]> = vec![0; 6].into_boxed_slice();
+    let pointer = original.as_ptr();
+    let (returned, metrics) = crate::test_allocation_observer::measure(|| {
+        let (error, original) = Core::partition_owned(
+            original,
+            count,
+            3,
+            Issuer::new(),
+            ModuleIdentity::new(),
+            runtime,
+        )
+        .err()
+        .unwrap();
+        assert_eq!(error, Refusal::Metadata);
+        assert_eq!(original.as_ptr(), pointer);
+        original
+    });
+    assert_eq!(metrics, crate::test_allocation_observer::Metrics::default());
+    assert!(account.borrow().failed);
+    drop(returned);
 }
