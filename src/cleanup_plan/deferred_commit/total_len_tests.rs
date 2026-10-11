@@ -3,7 +3,7 @@ use super::*;
 use crate::cleanup_plan::{
     CleanupTransition, StatusLane, StatusProducer, StatusSource, StatusSourceId,
 };
-use crate::hir::{ResolvedExprKind, ResolvedFunction};
+use crate::hir::{FunctionInstanceId, ResolvedExprKind, ResolvedFunction, ResolvedType};
 
 fn length_calls(function: &ResolvedFunction) -> Vec<crate::hir::ExpressionId> {
     let mut ids = Vec::new();
@@ -37,9 +37,9 @@ fn total_plan(function: &ResolvedFunction, ids: &[crate::hir::ExpressionId]) {
 
 #[test]
 fn exact_total_length_keeps_commit_and_other_failures_and_rejects_forged_status() {
-    for source in [
-        "module total.length; @id(\"app.main\") fn main()->i64 {let text=\"é\\0\";let view=string_as_str(text);str_len_bytes(view)+1}",
-        "module total.length; @id(\"app.main\") fn main()->i64 {let text=\"é\\0\";let view=string_as_str(text);if true {return str_len_bytes(view)+1;}else{0} 0}",
+    for (source, lexical) in [
+        ("module total.length; @id(\"app.main\") fn main()->i64 {let text=\"é\\0\";let view=string_as_str(text);str_len_bytes(view)+1}", false),
+        ("module total.length; @id(\"app.main\") fn main()->i64 {let text=\"é\\0\";let view=string_as_str(text);while true {if true {return str_len_bytes(view)+1;}else{0} 0} 0}", true),
     ] {
         let ast = crate::check(source, "total-length.spx").unwrap();
         let program = crate::hir::resolve(&ast).unwrap();
@@ -50,6 +50,7 @@ fn exact_total_length_keeps_commit_and_other_failures_and_rejects_forged_status(
             .iter()
             .find(|function| function.id.as_str() == "app.main")
             .unwrap();
+        assert_eq!(function.cleanup_plan.lexical_control.is_some(), lexical);
         let ids = length_calls(function);
         total_plan(function, &ids);
         assert!(function
@@ -61,6 +62,38 @@ fn exact_total_length_keeps_commit_and_other_failures_and_rejects_forged_status(
             !function.cleanup_plan.slots.is_empty(),
             "the String owner remains a real cleanup root"
         );
+        if !lexical {
+            // Mutate the actual authenticated call, independently of plan forgery.
+            for mutation in 0..4 {
+                let mut forged = program.clone();
+                let function = forged.functions.iter_mut()
+                    .find(|function| function.id.as_str() == "app.main").unwrap();
+                let ResolvedExprKind::Block { tail, .. } = &mut function.body.kind else {
+                    panic!("ordinary fixture must retain its block");
+                };
+                let ResolvedExprKind::Binary { left, .. } = &mut tail.kind else {
+                    panic!("ordinary fixture must retain checked addition");
+                };
+                assert_eq!(left.id, ids[0]);
+                let ResolvedExprKind::Call { callee, type_arguments, instance, args } = &mut left.kind else {
+                    panic!("addition must consume the actual length call");
+                };
+                assert_eq!(callee.as_str(), crate::str_ops::LEN_BYTES_ID);
+                assert!(type_arguments.is_empty() && instance.is_none());
+                assert_eq!(args.len(), 1);
+                match mutation {
+                    0 => *callee = DeclarationId::new(crate::string_ops::LEN_ID),
+                    1 => args[0].ty = ResolvedType::Bool,
+                    2 => type_arguments.push(ResolvedType::I64),
+                    3 => *instance = Some(FunctionInstanceId::derive(
+                        &DeclarationId::new(crate::str_ops::LEN_BYTES_ID),
+                        &[ResolvedType::I64],
+                    )),
+                    _ => unreachable!(),
+                }
+                assert!(crate::hir::validate(&forged).is_err(), "HIR mutation {mutation}");
+            }
+        }
         let mut forged = program.clone();
         let function = forged
             .functions
