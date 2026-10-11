@@ -31,12 +31,12 @@ fn nested_targets_and_legacy_loop_labels_preserve_scalar_returns() {
         std::env::temp_dir().join(format!("lexical-scalar-{}-{sequence}", std::process::id()));
     std::fs::create_dir_all(&root).unwrap();
     let path = root.join("main.spx");
-    std::fs::write(&path, &source).unwrap();
+    std::fs::write(&path, source).unwrap();
     let envelope = envelope_for(&path, "app.main", &[], DEFAULT_MAX_STEPS);
     let parsed: serde_json::Value = serde_json::from_str(&envelope).unwrap();
     assert_eq!(parsed["payload"]["outcome"]["kind"], "returned");
     assert_eq!(parsed["payload"]["outcome"]["value"], "24");
-    let ast = semaprax::check(&source, &path).unwrap();
+    let ast = semaprax::check(source, &path).unwrap();
     let canonical = format::canonical(&ast);
     let reparsed = parse(&canonical, &path).unwrap();
     assert_eq!(canonical, format::canonical(&reparsed));
