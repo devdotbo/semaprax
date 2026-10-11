@@ -56,6 +56,14 @@ pub(in crate::cleanup::inventory_builder) fn declaration_fields<'a>(
     if !(1..=MAX_FIELDS).contains(&fields.len()) {
         return Err(fail());
     }
+    // Establish leaf-only equality before comparing against untrusted indexed
+    // fields; no nested type tree is walked by the selected classifier.
+    if fields.iter().any(|field| {
+        !(crate::hir::is_scalar_resolved_type(&field.ty)
+            || matches!(field.ty, ResolvedType::String | ResolvedType::Bytes))
+    }) {
+        return Err(fail());
+    }
     let index = program.declarations();
     let declared = index.declaration(declaration).ok_or_else(fail)?;
     if declared.kind != DeclarationKind::Record

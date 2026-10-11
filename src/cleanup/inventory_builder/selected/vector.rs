@@ -74,13 +74,77 @@ pub(crate) fn authenticate(
         || declaration.name != "Vec"
         || index.record_fields(id) != Some(&[])
         || current.name != "Vec"
+        || parameters.len() != 1
+        || current.type_parameters.len() != 1
         || current.type_parameters.as_slice() != parameters
         || !matches!(&current.kind,ResolvedTypeDeclarationKind::Record{fields} if fields.is_empty())
-        || parameters.len() != 1
         || parameters[0].name != "T"
         || parameters[0].index != 0
     {
         return Err(fail());
     }
     Ok(())
+}
+
+/// Conservative probe prepayment for one receiving classification. Length
+/// inspection is constant-time; every directory entry is debited before it is
+/// inspected. Supported leaf shapes are established before recursive equality.
+/// The namespace multiplier bounds even a linear ordered-map comparison path;
+/// it is not an authority lease or a new work allowance.
+pub(crate) fn prepay(
+    program: &dyn crate::cleanup::ReplayContext,
+    query_bytes: usize,
+    charge: &mut dyn FnMut(usize) -> Result<(), Diagnostic>,
+) -> Result<(), Diagnostic> {
+    let fail = || cleanup_error("selected collection probe prepayment refused");
+    if program.type_count() > 32 {
+        return Err(fail());
+    }
+    let mut bytes = query_bytes.checked_add(1).ok_or_else(fail)?;
+    for ordinal in 0..program.type_count() {
+        charge(1)?;
+        let item = program.type_at(ordinal).ok_or_else(fail)?;
+        bytes = bytes
+            .checked_add(item.id.as_str().len())
+            .and_then(|n| n.checked_add(item.name.len() + 1))
+            .ok_or_else(fail)?;
+        if item.type_parameters.len() > 1 {
+            return Err(fail());
+        }
+        for parameter in &item.type_parameters {
+            charge(1)?;
+            bytes = bytes
+                .checked_add(parameter.name.len() + 1)
+                .ok_or_else(fail)?;
+        }
+        if let ResolvedTypeDeclarationKind::Record { fields } = &item.kind {
+            if fields.len() > 8 {
+                return Err(fail());
+            }
+            for field in fields {
+                charge(1)?;
+                if !(crate::hir::is_scalar_resolved_type(&field.ty)
+                    || matches!(field.ty, ResolvedType::String | ResolvedType::Bytes))
+                {
+                    return Err(fail());
+                }
+                bytes = bytes
+                    .checked_add(field.id.as_str().len())
+                    .and_then(|n| n.checked_add(field.name.len() + 1))
+                    .ok_or_else(fail)?;
+            }
+        }
+    }
+    // Four root/argument/result Vec classifiers plus operation and ownership
+    // classification use fewer than 64 indexed probes per key. The separate
+    // 128 factor covers current-directory scans and bounded pairwise fields.
+    let probes = program
+        .declarations()
+        .declarations()
+        .len()
+        .checked_add(1)
+        .and_then(|n| n.checked_mul(64))
+        .and_then(|n| n.checked_add(128))
+        .ok_or_else(fail)?;
+    charge(bytes.checked_mul(probes).ok_or_else(fail)?)
 }

@@ -21,6 +21,14 @@ pub(super) fn validate(
         return Ok(());
     }
     flat_records::module(program, function, budget)?;
+    if matches!(function.return_type, ResolvedType::Nominal { .. }) {
+        collections::prepay(
+            program,
+            function,
+            collections::type_key_bytes(&function.return_type)?,
+            budget,
+        )?;
+    }
     if !program.interfaces().is_empty()
         || !program.function_templates().is_empty()
         || !program.function_instances().is_empty()
@@ -34,6 +42,14 @@ pub(super) fn validate(
         ));
     }
     for parameter in &function.params {
+        if matches!(parameter.ty, ResolvedType::Nominal { .. }) {
+            collections::prepay(
+                program,
+                function,
+                collections::type_key_bytes(&parameter.ty)?,
+                budget,
+            )?;
+        }
         if !flat_records::admitted(program, &parameter.ty)? {
             return Err(replay_error(
                 function,
@@ -58,13 +74,11 @@ pub(super) fn validate(
             let expression = cursor.expression();
             if !entered {
                 if matches!(expression.ty, ResolvedType::Nominal { .. }) {
-                    budget.charge(
+                    collections::prepay(
+                        program,
                         function,
-                        program
-                            .type_count()
-                            .checked_add(9)
-                            .ok_or_else(|| replay_error(function, "selected type work overflow"))?,
-                        "selected current type facts",
+                        collections::type_key_bytes(&expression.ty)?,
+                        budget,
                     )?;
                 }
                 if expression.ty != ResolvedType::Never

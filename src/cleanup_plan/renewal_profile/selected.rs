@@ -109,7 +109,7 @@ pub(crate) fn bindings_with_reservation_and_work<'a>(
                 if mutable.contains(&binding.id)
                     && (crate::byte_ops::is_same_owner_set_hir(value, &binding.id)
                         || (crate::string_ops::replacement::admitted(binding, value) && !appended)
-                        || (in_loop && cells::vector(program, binding, value)))
+                        || (in_loop && cells::vector(program, binding, value, charge)?))
                 {
                     if !legacy.contains_key(&value.id) {
                         physical

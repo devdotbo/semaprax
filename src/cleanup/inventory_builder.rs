@@ -11,6 +11,14 @@ pub(crate) fn selected_vector_element<'a>(
 ) -> Result<Option<&'a ResolvedType>, Diagnostic> {
     selected::vector::element(program, ty)
 }
+pub(crate) fn prepay_selected_collection_probes(
+    program: &dyn crate::cleanup::ReplayContext,
+    query_bytes: usize,
+    charge: &mut dyn FnMut(usize) -> Result<(), Diagnostic>,
+) -> Result<(), Diagnostic> {
+    selected::vector::prepay(program, query_bytes, charge)
+}
+
 pub(crate) fn authenticate_selected_vector(
     program: &dyn crate::cleanup::ReplayContext,
     id: &DeclarationId,

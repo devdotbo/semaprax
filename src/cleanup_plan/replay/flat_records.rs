@@ -38,6 +38,12 @@ pub(super) fn module(
         let record = program
             .type_at(ordinal)
             .ok_or_else(|| replay_error(function, "selected type inventory is incomplete"))?;
+        super::selected_profile::collections::prepay(
+            program,
+            function,
+            record.id.as_str().len(),
+            budget,
+        )?;
         if record.id.as_str() == crate::prelude::VEC_ID {
             budget.charge(function, 9, "selected Vec declaration header")?;
             crate::cleanup::authenticate_selected_vector(program, &record.id)?;

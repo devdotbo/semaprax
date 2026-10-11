@@ -22,7 +22,7 @@ const RECORD: &str = r#"module receiving;
 @id("app.Row") record Row {@id("app.Row.n") n:i64,@id("app.Row.text") text:string,}
 @id("app.probe") fn probe(rows:borrow Vec<Row>)->i64 {
  let key=str"x";let mut seen=0;
- for borrow row at index in rows {seen=seen+row.n;if index==0usize {continue;} else {0} if str_len_bytes(row.text)==str_len_bytes(key) {return seen;} else {0} 0}
+ for borrow row at index in rows {seen=seen+row.n;if index==0usize {continue;} else {0} let text=row.text;if str_len_bytes(text)==str_len_bytes(key) {return seen;} else {0} 0}
  seen
 }
 @id("app.main") fn main()->i64 {let first=vec_push<Row>(vec_with_capacity<Row>(2usize),Row{n:3,text:"x"});let rows=vec_push<Row>(first,Row{n:7,text:"x"});probe(rows)}
@@ -120,6 +120,30 @@ fn exact_vec_call_and_field_modes_types_ids_and_elements_remain_closed() {
 }
 #[test]
 fn string_read_move_and_renewal_censuses_keep_exact_work_backing_and_sticky_refusal() {
+    // Independent key-length witness: prepayment is cumulative, requires no
+    // backing, and a one-short receiver cannot retry using fresh work.
+    let vector = direct(VECTOR);
+    let probe_function = function(&vector);
+    let mut probe = budget();
+    let backing = probe.physical.as_deref().unwrap().charged();
+    collections::prepay(&vector, probe_function, 4, &mut probe).unwrap();
+    let short_key_work = MAX_REPLAY_WORK_UNITS - probe.remaining;
+    let mut long_probe = budget();
+    collections::prepay(&vector, probe_function, 256, &mut long_probe).unwrap();
+    assert!(MAX_REPLAY_WORK_UNITS - long_probe.remaining > short_key_work);
+    assert_eq!(probe.physical.as_deref().unwrap().charged(), backing);
+    for (limit, success) in [(short_key_work, true), (short_key_work - 1, false)] {
+        let mut current = budget();
+        current.remaining = limit;
+        assert_eq!(
+            collections::prepay(&vector, probe_function, 4, &mut current).is_ok(),
+            success
+        );
+        if !success {
+            assert_eq!(current.remaining, 0);
+            assert!(collections::prepay(&vector, probe_function, 4, &mut current).is_err());
+        }
+    }
     let ordinary = direct(STRING);
     let function = function(&ordinary);
     let mut measured = budget();

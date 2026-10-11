@@ -171,7 +171,9 @@ fn signature<'a>(
         };
         return Ok(Signature::Field(args));
     }
-    if super::super::selected_profile::collections::call(program, function, expression, budget)? {
+    if let Some(owned) = super::super::selected_profile::collections::call_facts(
+        program, function, expression, budget,
+    )? {
         let ResolvedExprKind::Call {
             callee,
             type_arguments,
@@ -183,12 +185,7 @@ fn signature<'a>(
         };
         return Ok(Signature::Vector(
             crate::vec_ops::by_id(callee.as_str()).expect("authenticated Vec operation"),
-            type_arguments[0] == ResolvedType::Bytes
-                || type_arguments[0] == ResolvedType::String
-                || crate::hir::owned_leaf_collection::runtime_element(
-                    program.declarations(),
-                    &type_arguments[0],
-                ),
+            owned,
             &type_arguments[0],
             args,
         ));

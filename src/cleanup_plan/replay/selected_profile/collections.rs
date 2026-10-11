@@ -8,6 +8,14 @@ pub(in crate::cleanup_plan::replay) fn call(
     expression: &ResolvedExpr,
     budget: &mut ReplayBudget,
 ) -> Result<bool, Diagnostic> {
+    Ok(call_facts(program, function, expression, budget)?.is_some())
+}
+pub(in crate::cleanup_plan::replay) fn call_facts(
+    program: &dyn ReplayContext,
+    function: &ResolvedFunction,
+    expression: &ResolvedExpr,
+    budget: &mut ReplayBudget,
+) -> Result<Option<bool>, Diagnostic> {
     let ResolvedExprKind::Call {
         callee,
         instance,
@@ -15,10 +23,21 @@ pub(in crate::cleanup_plan::replay) fn call(
         args,
     } = &expression.kind
     else {
-        return Ok(false);
+        return Ok(None);
     };
+    budget.charge(
+        function,
+        callee
+            .as_str()
+            .len()
+            .min(64)
+            .checked_add(1)
+            .and_then(|n| n.checked_mul(32))
+            .ok_or_else(|| replay_error(function, "selected Vec callee work overflow"))?,
+        "selected Vec callee byte comparisons",
+    )?;
     let Some(op) = crate::vec_ops::by_id(callee.as_str()) else {
-        return Ok(false);
+        return Ok(None);
     };
     if instance.is_some() || op == VecOp::SortBy || op == VecOp::StrAt {
         return Err(replay_error(
@@ -32,6 +51,7 @@ pub(in crate::cleanup_plan::replay) fn call(
             "selected Vec call has invalid type arguments",
         ));
     };
+    prepay(program, function, element_bytes(element)?, budget)?;
     let vector = if op == VecOp::WithCapacity {
         &expression.ty
     } else {
@@ -108,7 +128,7 @@ pub(in crate::cleanup_plan::replay) fn call(
             "selected Vec result type or mode disagrees",
         ));
     }
-    Ok(true)
+    Ok(Some(owned))
 }
 
 pub(in crate::cleanup_plan::replay) fn field(
@@ -132,6 +152,14 @@ pub(in crate::cleanup_plan::replay) fn field(
             "selected Vec field read has invalid arity",
         ));
     };
+    prepay(
+        program,
+        function,
+        element_bytes(element)?
+            .checked_add(field.as_str().len())
+            .ok_or_else(|| replay_error(function, "selected field key overflow"))?,
+        budget,
+    )?;
     let Some((_, fields)) = crate::cleanup::selected_flat_record_fields(program, element)? else {
         return Err(replay_error(
             function,
@@ -205,4 +233,57 @@ pub(in crate::cleanup_plan::replay) fn append(
             }
         },
     )
+}
+
+pub(in crate::cleanup_plan::replay) fn prepay(
+    program: &dyn ReplayContext,
+    function: &ResolvedFunction,
+    query_bytes: usize,
+    budget: &mut ReplayBudget,
+) -> Result<(), Diagnostic> {
+    crate::cleanup::prepay_selected_collection_probes(program, query_bytes, &mut |units| {
+        budget.charge(function, units, "selected collection key/probe work")
+    })
+}
+fn element_bytes(element: &ResolvedType) -> Result<usize, Diagnostic> {
+    match element {
+        ResolvedType::Nominal {
+            declaration,
+            arguments,
+        } if arguments.is_empty() => Ok(declaration.as_str().len()),
+        ResolvedType::Nominal { .. }
+        | ResolvedType::Function { .. }
+        | ResolvedType::TypeParameter { .. } => Err(Diagnostic::io(
+            "SPX-H006",
+            "selected collection element is not a bounded leaf",
+        )),
+        _ => Ok(1),
+    }
+}
+
+pub(in crate::cleanup_plan::replay) fn type_key_bytes(
+    ty: &ResolvedType,
+) -> Result<usize, Diagnostic> {
+    let ResolvedType::Nominal {
+        declaration,
+        arguments,
+    } = ty
+    else {
+        return Ok(1);
+    };
+    let nested = match arguments.as_slice() {
+        [] => 0,
+        [element] => element_bytes(element)?,
+        _ => {
+            return Err(Diagnostic::io(
+                "SPX-H006",
+                "selected type has unsupported argument count",
+            ))
+        }
+    };
+    declaration
+        .as_str()
+        .len()
+        .checked_add(nested)
+        .ok_or_else(|| Diagnostic::io("SPX-H006", "selected type key length overflow"))
 }

@@ -42,12 +42,14 @@ pub(in crate::cleanup_plan::replay) fn vector_params(
     expression: &ResolvedExpr,
     work: &mut SkeletonWork<'_, '_>,
 ) -> Result<Vec<crate::hir::ResolvedParam>, Diagnostic> {
-    if !selected_profile::collections::call(program, work.function, expression, work.budget)? {
+    let Some(owned) =
+        selected_profile::collections::call_facts(program, work.function, expression, work.budget)?
+    else {
         return Err(replay_error(
             work.function,
             "selected collection signature lacks exact Vec operation",
         ));
-    }
+    };
     let ResolvedExprKind::Call {
         callee,
         args,
@@ -59,9 +61,6 @@ pub(in crate::cleanup_plan::replay) fn vector_params(
     };
     let op = crate::vec_ops::by_id(callee.as_str()).expect("authenticated Vec call");
     let element = &type_arguments[0];
-    let owned = *element == ResolvedType::Bytes
-        || *element == ResolvedType::String
-        || crate::hir::owned_leaf_collection::runtime_element(program.declarations(), element);
     params(
         args,
         op.id(),
