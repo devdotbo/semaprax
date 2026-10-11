@@ -3,7 +3,11 @@ use super::*;
 use crate::test_allocation_observer;
 const EXPECTED: usize = 255 * std::mem::size_of::<u64>();
 fn function() -> ResolvedFunction {
-    let parsed = crate::check("@id(\"main\") fn main()->i64 {0}", "queue-growth.spx").unwrap();
+    let parsed = crate::check(
+        "module queue.growth;\n@id(\"main\") fn main()->i64 {0}",
+        "queue-growth.spx",
+    )
+    .unwrap();
     crate::hir::resolve(&parsed)
         .unwrap()
         .functions

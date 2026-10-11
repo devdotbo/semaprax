@@ -280,7 +280,7 @@ fn qualify_normal(root: &std::path::Path) {
 fn string_scanners_read_once_and_match_original_framing_and_failure_offsets() {
     let mut body = String::from("let mut bad=0;\n");
     let all: Vec<u8> = (0..=255).flat_map(|byte| [34, byte, 34]).collect();
-    body.push_str(&format!("let all={};let input=array_as_slice(all);let mut index=0usize;while index<256usize {{let mut offset=0usize;while offset<3usize {{let at=index*3usize+offset;bad=bad+if current_doc_end(input,at)==original_doc_end(input,at) && current_json_end(input,at)==original_json_end(input,at) && current_query_scan(input,at,true)==original_query_scan(input,at,true) && current_query_scan(input,at,false)==original_query_scan(input,at,false){{0}}else{{1}};offset=offset+1usize;0}}index=index+1usize;0}}\n",array(&all)));
+    body.push_str(&format!("let all={};let all_input=array_as_slice(all);let mut index=0usize;while index<256usize {{let mut offset=0usize;while offset<3usize {{let at=index*3usize+offset;bad=bad+if current_doc_end(all_input,at)==original_doc_end(all_input,at) && current_json_end(all_input,at)==original_json_end(all_input,at) && current_query_scan(all_input,at,true)==original_query_scan(all_input,at,true) && current_query_scan(all_input,at,false)==original_query_scan(all_input,at,false){{0}}else{{1}};offset=offset+1usize;0}}index=index+1usize;0}}\n",array(&all)));
     let cases = [
         b"\"\"".to_vec(),
         b"\"ABC\"".to_vec(),
