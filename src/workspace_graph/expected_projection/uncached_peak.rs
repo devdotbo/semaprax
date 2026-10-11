@@ -33,6 +33,8 @@ pub(in crate::workspace_graph) fn uncached_output_layout_with_registry(
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
     registry: Option<&LayoutRegistry<'_>>,
 ) -> Result<UncachedOutputLayout, Vec<Diagnostic>> {
+    #[cfg(test)]
+    let mut observation = super::super::forecast_observation::begin_pass(6);
     let _precharge = super::super::diagnostics::precharge_scope();
     let mut order = [0; super::super::MAX_FILES];
     let mut full_costs = [0usize; super::super::MAX_FILES];
@@ -71,6 +73,8 @@ pub(in crate::workspace_graph) fn uncached_output_layout_with_registry(
             active_builder_limit(),
         )?;
     }
+    #[cfg(test)]
+    observation.complete(peak.max(retained), retained, 0);
     Ok(UncachedOutputLayout {
         order,
         forecast: peak.max(retained),
@@ -171,6 +175,8 @@ pub(in crate::workspace_graph) fn uncached_peak_prebound_with_registry(
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
     registry: Option<&LayoutRegistry<'_>>,
 ) -> Result<(usize, usize), Vec<Diagnostic>> {
+    #[cfg(test)]
+    let mut observation = super::super::forecast_observation::begin_pass(5);
     let _precharge = super::super::diagnostics::precharge_scope();
     super::super::diagnostics::begin_precharge_pass();
     let mut retained_hir = 0usize;
@@ -196,6 +202,8 @@ pub(in crate::workspace_graph) fn uncached_peak_prebound_with_registry(
         "builder_bytes",
         active_builder_limit(),
     )?;
+    #[cfg(test)]
+    observation.complete(total, retained_hir, synthetic_ast_peak);
     Ok((total, total))
 }
 

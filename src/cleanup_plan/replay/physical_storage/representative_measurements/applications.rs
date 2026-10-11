@@ -92,6 +92,11 @@ fn generate(root: &Path, prefix: &str) -> Result<(), Vec<crate::diagnostic::Diag
     Ok(())
 }
 pub(super) fn run(report: impl Fn(&str, &str, &ResolvedProgram)) {
+    assert_eq!(crate::workspace_graph::MAX_BUILDER_BYTES, 67_108_864);
+    assert_eq!(
+        project::ProjectExecutionOptions::default().max_steps,
+        1_000_000
+    );
     let repository = Path::new(env!("CARGO_MANIFEST_DIR"));
     for (name, prefix) in [
         ("catalog-scoped-record-successor", Some("catalog")),
@@ -143,6 +148,10 @@ pub(super) fn run(report: impl Fn(&str, &str, &ResolvedProgram)) {
                 "diagnostics":result.as_ref().err().map(|errors| errors.iter().map(|e|
                     format!("{}: {}",e.code,e.message)).collect::<Vec<_>>()),
                 "application_execution":"not performed",
+                "builder_limit":crate::workspace_graph::MAX_BUILDER_BYTES,
+                "ordinary_execution_fuel":project::ProjectExecutionOptions::default().max_steps,
+                "receiving_route":"fresh scratch with_authenticated_project; no retained frontend supplied",
+                "forecast_interpretation":"completed module components are not global execution peaks; incomplete final passes report null totals",
                 "fixed_context":"source/snapshot and observer initialization excluded from paired constructor samples"
             })
         );
