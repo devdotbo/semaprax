@@ -32,7 +32,9 @@ pub(super) fn argument(
         && (crate::hir::copy_record_collection::admitted(program.declarations(), element)
             || (matches!(
                 op,
-                crate::vec_ops::VecOp::Len | crate::vec_ops::VecOp::Capacity
+                crate::vec_ops::VecOp::Len
+                    | crate::vec_ops::VecOp::Capacity
+                    | crate::vec_ops::VecOp::CloneAt
             ) && crate::hir::owned_leaf_collection::layout(program.declarations(), element)
                 .is_some_and(|layout| layout.fields.is_some())))
         && op.param_ownership_for(position, element) == OwnershipMode::Borrow
@@ -45,3 +47,7 @@ pub(super) fn argument(
             .all(|(index, arg)| op.accepts_resolved(index, &arg.ty, element))
         && call.ty == op.resolved_return_type(element)
 }
+
+#[cfg(test)]
+#[path = "record_vec_borrow/tests.rs"]
+mod tests;
