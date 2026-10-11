@@ -86,6 +86,10 @@ pub(super) struct Lower<'a> {
     pub(super) locals: Vec<ValType>,
     pub(super) bindings: Vec<Binding<'a>>,
     pub(super) scopes: Vec<Scope<'a>>,
+    /// Views whose loan already ended at the after point of a view operand
+    /// whose token is staged for a consuming host call that has not run yet.
+    /// They retire right after that call; a failure exit in between ends them.
+    pub(super) consumed: Vec<u32>,
     pub(super) cleanup: Replay<'a>,
     pub(super) domain: u32,
     pub(super) phase: Phase,
@@ -103,6 +107,7 @@ pub(super) fn module(selected: &Selected<'_>) -> Result<Vec<u8>, Refusal> {
         locals: Vec::new(),
         bindings: Vec::new(),
         scopes: Vec::new(),
+        consumed: Vec::new(),
         cleanup: Replay::empty(&selected.function.cleanup_plan),
         domain: 0,
         phase: Phase::Building,
@@ -266,9 +271,17 @@ impl<'a> Lower<'a> {
     /// destination of an edge from a live to a dead point, so the loan is dead
     /// on every path reaching it; the guarded end therefore runs once per
     /// path, whichever of the loan's ends (a short-circuit join, either match
-    /// arm) that path reaches. Views end only here (or on a failure path, for
-    /// exactly the loans live at that point).
+    /// arm) that path reaches. Views end only here, right after the consuming
+    /// call of an operand whose own after point ends them (`release_consumed`),
+    /// or on a failure path, for exactly the loans live at that point.
     pub(super) fn loan_points(&mut self, at: &ExpressionId, phase: LoanPointPhase) {
+        for view in self.loan_ends(at, phase) {
+            self.end_view(view);
+        }
+    }
+    /// Mark, in loan-plan vector order, every lowered end of an open view's own
+    /// loan at this program point and return the views it ends, unemitted.
+    pub(super) fn loan_ends(&mut self, at: &ExpressionId, phase: LoanPointPhase) -> Vec<u32> {
         let selected = self.selected;
         let mut ending = Vec::new();
         for loan in &selected.function.loan_plan.loans {
@@ -288,9 +301,7 @@ impl<'a> Lower<'a> {
                 }
             }
         }
-        for view in ending {
-            self.end_view(view);
-        }
+        ending
     }
     /// Leased views a failure at `at` must end: exactly the open views whose
     /// loans the plan holds live before `at`, in its live-set order. An open
@@ -351,7 +362,21 @@ impl<'a> Lower<'a> {
         {
             return Err(Refusal::Loans);
         }
+        // A consumed view's loan is already dead here, but its token still
+        // awaits the consuming call this exit skips, so the exit retires it.
+        for view in &self.consumed {
+            if !views.contains(view) {
+                views.push(*view);
+            }
+        }
         Ok(views)
+    }
+    /// Retire, in deferral order, the consumed views staged since `mark`, now
+    /// that their consuming host call has received every token.
+    pub(super) fn release_consumed(&mut self, mark: usize) {
+        for view in self.consumed.split_off(mark) {
+            self.end_view(view);
+        }
     }
     pub(super) fn end_view(&mut self, view: u32) {
         self.op(I::LocalGet(view));
@@ -372,7 +397,13 @@ impl<'a> Lower<'a> {
     pub(super) fn close_scope(&mut self, block: &E) -> Result<(), Refusal> {
         self.loan_points(&block.id, LoanPointPhase::After);
         let scope = self.scopes.pop().ok_or(unsupported("scope"))?;
-        if scope.views.iter().any(|view| view.lowered.contains(&false)) {
+        // A view still awaiting its consuming call cannot leave its scope.
+        if scope.views.iter().any(|view| view.lowered.contains(&false))
+            || scope
+                .views
+                .iter()
+                .any(|view| self.consumed.contains(&view.local))
+        {
             return Err(Refusal::Loans);
         }
         Ok(())

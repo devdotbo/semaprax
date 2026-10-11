@@ -5,9 +5,11 @@
 //! lowered expression the plan's transitions at that expression replay, so
 //! owner liveness follows the canonical cleanup plan exactly. Leased views end
 //! at every end point of their exact `SliceView` loan, and every such end must
-//! lie inside the lexical scope that produced them. Vec moves and the
-//! consuming sort happen only as top-level statements. Anything outside this
-//! domain refuses the module.
+//! lie inside the lexical scope that produced them. An end at the after point
+//! of a view operand retires the view only once its consuming host call has
+//! received the staged token, never between the read and that call. Vec
+//! moves and the consuming sort happen only as top-level statements. Anything
+//! outside this domain refuses the module.
 use super::cleanup::{Failure, Owned};
 use super::lower::{unsupported, Binding, Lower, Repr, Scope};
 use super::{import, Refusal};
@@ -206,6 +208,21 @@ impl<'a> Lower<'a> {
         self.loan_points(&e.id, LoanPointPhase::Before);
         let repr = self.expr_inner(e)?;
         self.loan_points(&e.id, LoanPointPhase::After);
+        self.post(&e.id, Owned::None)?;
+        Ok(repr)
+    }
+    /// The view operand of a consuming host call (`view_len`, `view_byte`).
+    /// Its token is already staged once the operand is read, so a loan end the
+    /// plan places at the operand's own after point (its last read) must not
+    /// retire the view before the call receives that token: the end is marked
+    /// lowered here and emitted by `release_consumed` right after the call.
+    /// Before points, nested points and the operand's transitions replay as in
+    /// `expr`; a failure exit in between retires the deferred view.
+    fn consumed_operand(&mut self, e: &'a E) -> Result<Repr, Refusal> {
+        self.loan_points(&e.id, LoanPointPhase::Before);
+        let repr = self.expr_inner(e)?;
+        let ending = self.loan_ends(&e.id, LoanPointPhase::After);
+        self.consumed.extend(ending);
         self.post(&e.id, Owned::None)?;
         Ok(repr)
     }
@@ -552,7 +569,8 @@ impl<'a> Lower<'a> {
                 Repr::I64
             }
             (crate::byte_ops::LEN_ID, [view]) => {
-                let carrier = self.expr(view)?;
+                let mark = self.consumed.len();
+                let carrier = self.consumed_operand(view)?;
                 let function = match carrier {
                     Repr::Slice => import::TEXT_LEN,
                     Repr::Leased => import::VIEW_LEN,
@@ -560,10 +578,12 @@ impl<'a> Lower<'a> {
                 };
                 let view = self.temp(carrier);
                 self.host(function, &[view]);
+                self.release_consumed(mark);
                 Repr::Usize
             }
             (crate::byte_ops::GET_ID, [view, index]) => {
-                let carrier = self.expr(view)?;
+                let mark = self.consumed.len();
+                let carrier = self.consumed_operand(view)?;
                 let function = match carrier {
                     Repr::Slice => import::TEXT_BYTE,
                     Repr::Leased => import::VIEW_BYTE,
@@ -575,6 +595,7 @@ impl<'a> Lower<'a> {
                 }
                 let index = self.temp(Repr::Usize);
                 self.host(function, &[view, index]);
+                self.release_consumed(mark);
                 return Ok(Repr::OptionU8);
             }
             (crate::vec_ops::LEN_ID, [vector])

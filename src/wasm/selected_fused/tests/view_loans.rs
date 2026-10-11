@@ -74,6 +74,69 @@ fn leased_payload_view_binds_only_its_slice_loan_and_lowers_every_end() {
     assert_eq!(first.bytes, accept(&owner).unwrap().bytes);
 }
 
+/// The view's last read is the operand of `byte_get`, and its loan ends at that
+/// operand's after point. Every consuming `view_len`/`view_byte` must receive
+/// a token staged straight from its local with no `end_borrow` in between;
+/// ending the view at the operand itself retired the token the call then read
+/// (the host's `stale` refusal on the original 4096 rows).
+#[test]
+fn consuming_view_calls_receive_unretired_tokens() {
+    use super::super::import;
+    use wasmparser::Operator as O;
+    let source = crate::parse(ORIGINAL, "selected-fused-view-consumers.spx").unwrap();
+    let owner = crate::hir::selected_fused_candidate::validate_selected(&source)
+        .expect("original source passes full selected validation");
+    let artifact = accept(&owner).expect("sealed owner lowers");
+    let mut ops = Vec::new();
+    for payload in wasmparser::Parser::new(0).parse_all(&artifact.bytes) {
+        if let wasmparser::Payload::CodeSectionEntry(body) = payload.unwrap() {
+            let mut reader = body.get_operators_reader().unwrap();
+            while !reader.eof() {
+                ops.push(reader.read().unwrap());
+            }
+        }
+    }
+    let ends = |range: &[O<'_>]| {
+        range.iter().any(
+            |op| matches!(op, O::Call { function_index } if *function_index == import::END_BORROW),
+        )
+    };
+    // Token operand distance from the call: (domain, token) or (domain, token, index).
+    let mut consumers = [0usize; 2];
+    for (at, op) in ops.iter().enumerate() {
+        let O::Call { function_index } = op else {
+            continue;
+        };
+        let operand = match *function_index {
+            import::VIEW_LEN => 1,
+            import::VIEW_BYTE => 2,
+            _ => continue,
+        };
+        let O::LocalGet {
+            local_index: staged,
+        } = &ops[at - operand]
+        else {
+            panic!("consuming call reads a staged token local")
+        };
+        let set = ops[..at]
+            .iter()
+            .rposition(|op| matches!(op, O::LocalSet { local_index } if local_index == staged))
+            .expect("token staged before its consuming call");
+        assert!(
+            matches!(ops[set - 1], O::LocalGet { .. }),
+            "token staged straight from its view local, not after an end: {:?}",
+            ops[set - 1]
+        );
+        assert!(!ends(&ops[set..at]), "view ended before its consuming call");
+        assert!(
+            ends(&ops[at + 1..]),
+            "consumed view still ends after its call"
+        );
+        consumers[operand - 1] += 1;
+    }
+    assert!(consumers.iter().all(|count| *count >= 1), "{consumers:?}");
+}
+
 #[test]
 fn forged_view_loans_at_the_payload_read_refuse_before_lowering() {
     let selected = inputs(4096);
@@ -140,4 +203,21 @@ fn lowering_ends_views_by_loan_identity_not_by_site() {
     assert!(!lower.contains("scope.views.retain("));
     let suffix = include_str!("../suffix.rs");
     assert!(suffix.contains("self.open_view(view, &e.id)?;"));
+    // A view operand's own after-point end waits for its consuming call, and
+    // a failure exit in between still retires it.
+    for guard in [
+        "let carrier = self.consumed_operand(view)?;",
+        "let ending = self.loan_ends(&e.id, LoanPointPhase::After);",
+        "self.release_consumed(mark);",
+    ] {
+        assert!(suffix.contains(guard), "{guard}");
+    }
+    assert_eq!(suffix.matches("self.release_consumed(mark);").count(), 2);
+    for guard in [
+        "for view in &self.consumed {",
+        "for view in self.consumed.split_off(mark) {",
+        ".any(|view| self.consumed.contains(&view.local))",
+    ] {
+        assert!(lower.contains(guard), "{guard}");
+    }
 }

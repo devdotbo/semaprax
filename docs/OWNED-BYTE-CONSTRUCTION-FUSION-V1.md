@@ -271,7 +271,12 @@ postconditions (this profile has none), emits the commit exit's non-result
 cleanup, and only then publishes. A census refuses unless every transition,
 failure exit, commit and nonempty scope end was reproduced. Each failure exit's
 status producer must match the lowered operation. Each leased view's loans must
-end inside the block where the view ends.
+end inside the block where the view ends. A view ends at every end of its own
+`SliceView` loan. When that end is the after point of the view operand of a
+consuming `view_len` or `view_byte`, the token is already staged for that call,
+so the view retires immediately after the call receives it, never between the
+operand read and the call. A failure exit in that interval retires it with the
+live views.
 
 The module imports 24 functions from `semaprax.private.selected-fused.v1`,
 exports only its literal memory and `semaprax_main`, and validates under
