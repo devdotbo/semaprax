@@ -7,7 +7,7 @@ use super::{
 };
 use crate::ast::program_source::SyntheticProgramView;
 use crate::ast::Span;
-use crate::ast::{Expr, ExprKind, Function, Program, Type};
+use crate::ast::{Expr, ExprKind, Function, Program, Type, TypeDeclaration};
 use crate::bounded_output::budgeted_format;
 use crate::diagnostic::Diagnostic;
 use crate::hir;
@@ -28,6 +28,22 @@ pub(in crate::workspace_graph) fn construct(
         return Err(vec![graph_error(
             "SPX-G173",
             "borrowed projection requires the owned route",
+        )]);
+    }
+    // Preserve the owned producer's type-name preflight and its diagnostic
+    // order. This directory borrows actual authored declarations; no body or
+    // declaration is materialized merely to run the ordinary check.
+    let index_bytes = type_index_bytes(program)?;
+    reserve_builder_structure(index_bytes)?;
+    let mut types = Vec::with_capacity(program.types.len());
+    for declaration in &program.types {
+        types.push((declaration.name.as_str(), declaration));
+    }
+    types.sort_by(|left, right| left.0.cmp(right.0));
+    if types.windows(2).any(|items| items[0].0 == items[1].0) {
+        return Err(vec![graph_error(
+            "SPX-G173",
+            "synthetic workspace type-name index is not unique",
         )]);
     }
     let mut generated = Vec::new();
@@ -75,12 +91,25 @@ pub(in crate::workspace_graph) fn ast_peak(program: &Program) -> Result<usize, V
     } else {
         synthetic_main_runtime_cost(&program.module)?.total
     };
-    checked_usage(
+    let owned = checked_usage(
         std::mem::size_of::<SyntheticProgramView<'_>>(),
         generated,
         "builder_bytes",
         active_builder_limit(),
+    )?;
+    checked_usage(
+        owned,
+        type_index_bytes(program)?,
+        "builder_bytes",
+        active_builder_limit(),
     )
+}
+fn type_index_bytes(program: &Program) -> Result<usize, Vec<Diagnostic>> {
+    program
+        .types
+        .len()
+        .checked_mul(std::mem::size_of::<(&str, &TypeDeclaration)>())
+        .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])
 }
 
 /// Cache keys and invariant transforms keep the old owned representation.

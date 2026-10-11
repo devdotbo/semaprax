@@ -14,6 +14,7 @@ fn borrowed_leaf_preserves_owned_resolution_and_actual_authored_pointers() {
     for source in [SOURCE,
         "module borrowed_leaf; @id(\"main\") fn main()->i64 { let x=3; if x>0 { x+1 } else { 0 } }",
         "module borrowed_leaf; @id(\"read\") fn read(data:borrow Slice<u8>)->usize requires byte_len(data)>0usize { byte_len(data) }",
+        "module borrowed_leaf; @id(\"row\") record Row { @id(\"row.value\") value:i64, } @id(\"main\") fn main()->i64 {0}",
     ] {
         let programs = [crate::parse(source, "leaf.spx").unwrap()];
         let authored = index_authored(&programs).unwrap();
@@ -85,6 +86,23 @@ fn borrowed_leaf_full_pipeline_keeps_owned_fallback_and_original_diagnostics() {
         hir::resolve_source(&view, None).err(),
         hir::resolve_with_function_reuse(&owned, None, None, None, None).err()
     );
+
+    let duplicate_types = [crate::parse(
+        "module duplicate_types; @id(\"first\") record Row { @id(\"first.value\") value:i64, } @id(\"second\") record Row { @id(\"second.value\") value:i64, }",
+        "duplicate_types.spx",
+    ).unwrap()];
+    let type_authored = index_authored(&duplicate_types).unwrap();
+    let old_error = synthetic_program_with_registry(
+        &duplicate_types[0],
+        &type_authored,
+        &duplicate_types,
+        None,
+    )
+    .err()
+    .unwrap();
+    let new_error = construct(&duplicate_types[0]).err().unwrap();
+    assert_eq!(new_error, old_error);
+    assert_eq!(new_error[0].code, "SPX-G173");
 
     let programs = [crate::parse(SOURCE, "leaf.spx").unwrap()];
     let authored = index_authored(&programs).unwrap();
