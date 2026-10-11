@@ -81,3 +81,6 @@ fn cold_and_warm_checked_owner_preserves_body_pointer_and_exact_source_guards() 
     drop(warm);
     assert!(pass.checked_module("local.spx", &synthetic).is_some());
 }
+
+#[path = "tests/lifecycle.rs"]
+mod lifecycle;

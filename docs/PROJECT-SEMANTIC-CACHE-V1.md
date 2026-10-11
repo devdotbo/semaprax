@@ -211,3 +211,14 @@ This tranche does not establish optimal noncontiguous retention, reduced forecas
 whole-compiler allocation fit, or completion of OPT777. New owner and wire controls
 are source-authored and require focused execution with the existing persisted
 application and semantic-cache controls.
+
+The additional lifecycle owners compare an actual three-source cold and warm
+Project build with the independent AST-only owned receiver, including fresh
+current cross-file checks, final owning publication, source-signature drift and
+restoration. Requested Rust Layout allocation/count/high-water/Drop observations
+separate cold acquisition, warm replay with a pre-held cache, and final owned
+materialization. Raw inputs, the saved oracle, common process-static initialization
+and fixed observer metadata are outside those scopes; in-scope equality and wire
+checks are included. Final publication remains a real deep clone. These authored
+controls require execution; they establish no quota reduction, process-memory
+bound, application fit or complete OPT777 acceptance by themselves.

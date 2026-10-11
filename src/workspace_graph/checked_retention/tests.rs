@@ -150,3 +150,6 @@ fn noncontiguous_three_and_five_backings_have_no_growth_and_input_headers_pay_ac
         crate::bounded_output::with_limit_usage_refusal(expected - 1, || reserve_input_carriers(3));
     assert!(result.is_err() && overflow);
 }
+
+#[path = "tests/publication.rs"]
+mod publication;
