@@ -44,6 +44,7 @@ impl<O: COutput> CEmitter<'_, O> {
             )?);
         }
         if matches!(op, VecOp::Len | VecOp::Capacity) {
+            self.validate_plan_infallible_vec_operation(expr, op)?;
             let out = self.temporary(&ResolvedType::Usize)?;
             let member = if op == VecOp::Len { "len" } else { "capacity" };
             self.line(&format!(
@@ -179,12 +180,12 @@ impl<O: COutput> CEmitter<'_, O> {
                 self.line(&format!(
                     "spx_status = {helper}(spx_ctx, &{source}, {descriptor}, {additional}&{out});"
                 ));
-                self.emit_operation_failure_check()?;
+                self.emit_vec_operation_status(expr, op)?;
                 self.line(&format!("{flag} = false;"));
             }
             _ => return Err(backend_error("unsupported owned leaf Vec operation")),
         }
-        self.emit_operation_failure_check()?;
+        self.emit_vec_operation_status(expr, op)?;
         if op == VecOp::CloneAt && fields.is_some() {
             for line in plan.initialize_record_result_at(&expr.id, &out)?.lines() {
                 self.line(line);

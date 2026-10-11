@@ -241,6 +241,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 })
             }
             crate::vec_ops::VecOp::Len | crate::vec_ops::VecOp::Capacity => {
+                self.validate_plan_infallible_vec_operation(expr, op)?;
                 self.require_type(
                     &values[0].ty,
                     &crate::vec_ops::resolved_vec(element.clone()),

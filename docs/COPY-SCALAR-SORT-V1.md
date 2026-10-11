@@ -57,3 +57,14 @@ The child `owned_data::vec_sort::lexical_context` covers a sort inside a
 function with lexical `return` on every engine, plus refusal of a forged sort
 status and of missing, wrong-context and foreign failure exits.
 These are authored cases, not a claim of current-head successful execution.
+
+The same native lane distinction applies to the existing admitted Copy-record,
+String, Bytes and owned-record Vec carriers: Clear, Sort, SortOwned and SortBy
+status-returning helpers must succeed or fail-stop, and Len/Capacity return a
+value without inspecting a previous status token. Each receiver refuses a
+declared status for its exact total occurrence. Fallible construction, push,
+get, set, clone and reserve retain their exact canonical failure routes.
+The two authored `owned_data::copy_record_vec::infallible_context` owners cover
+these carrier families in a genuine lexical-loop return, cross-engine settlement
+and forged status/missing/wrong-context/foreign failure exits; execution remains
+pending.

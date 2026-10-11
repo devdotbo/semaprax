@@ -113,10 +113,11 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 self.line(&format!(
                     "spx_status = spx_vec_bytes_clear(spx_ctx, &{source}, &{destination});"
                 ));
-                self.emit_operation_failure_check()?;
+                self.emit_plan_infallible_vec_status(expr, op)?;
                 self.line(&format!("{source_flag} = false;"));
             }
             crate::vec_ops::VecOp::Len | crate::vec_ops::VecOp::Capacity => {
+                self.validate_plan_infallible_vec_operation(expr, op)?;
                 self.require_type(
                     &values[0].ty,
                     &crate::vec_ops::resolved_vec(ResolvedType::Bytes),

@@ -43,6 +43,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             )?);
         }
         if matches!(op, VecOp::Len | VecOp::Capacity) {
+            self.validate_plan_infallible_vec_operation(expr, op)?;
             let temporary = self.temporary(&ResolvedType::Usize)?;
             let helper = if op == VecOp::Len {
                 "spx_vec_len"
@@ -153,10 +154,10 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 }
                 _ => return Err(backend_error("Copy record Vec owner operation is invalid")),
             }
-            self.emit_operation_failure_check()?;
+            self.emit_vec_operation_status(expr, op)?;
             self.line(&format!("{flag} = false;"));
         }
-        self.emit_operation_failure_check()?;
+        self.emit_vec_operation_status(expr, op)?;
         for line in plan.apply_at(&expr.id)?.lines() {
             self.line(line);
         }
