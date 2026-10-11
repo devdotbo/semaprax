@@ -26,7 +26,9 @@ impl Path {
             .max(32)
             .max(required);
         // The old backing remains live until replacement: debit the full new backing.
-        reserve(capacity).map_err(|_| fmt::Error)?;
+        if !crate::bounded_output::reserve_active_required(capacity) {
+            return Err(fmt::Error);
+        }
         self.value
             .try_reserve_exact(capacity - self.value.len())
             .map_err(|_| fmt::Error)?;

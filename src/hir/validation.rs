@@ -4751,7 +4751,9 @@ impl<'a> HirValidator<'a> {
                     let block_scope = scopes.pop().expect("block tail scope retained");
                     Self::merge_availability(&mut outer, &block_scope, &outer_ids);
                     publication.publish(&outer);
-                    let ResolvedExprKind::Block { tail, .. } = &expression.kind else {
+                    let (ResolvedExprKind::Block { tail, .. }
+                    | ResolvedExprKind::VecConstructor { tail, .. }) = &expression.kind
+                    else {
                         unreachable!()
                     };
                     self.finish_expr(expression, &tail.ty, tail.ownership)?;

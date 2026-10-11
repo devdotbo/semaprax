@@ -267,7 +267,12 @@ fn resolved_string_slot_loop_refuses_typed_computed_and_missing_operands() {
         let parsed =
             crate::parse(&changed, std::path::Path::new("resolved-slots-loop.spx")).unwrap();
         let error = crate::hir::resolve(&parsed).unwrap_err();
-        assert_eq!(error.len(), 1, "{replacement}: {error:?}");
+        // Resolution accumulates operand diagnostics after the primary loop refusal.
         assert_eq!(error[0].code, "SPX-T283", "{replacement}: {error:?}");
+        assert_eq!(
+            error[0].message,
+            "only exact typed scalar Vec update/read operations are admitted in while bodies",
+            "{replacement}: {error:?}"
+        );
     }
 }

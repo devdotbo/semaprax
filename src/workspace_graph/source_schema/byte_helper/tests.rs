@@ -576,7 +576,7 @@ fn retained_helper_census_cursor_matches_indexed_mixed_order_and_exact_work_dept
     for index in 0..64 {
         source.push_str(&format!("let item_{index}={index};"));
     }
-    source.push_str("while next<1 {next=next+1;if next==1 {continue;}else{0} 0} match true {true=>{let inside=7;inside},false=>{let later=8;later},}");
+    source.push_str("while next<1 {next=next+1;if next==1 {continue;}else{0}; 0} match true {true=>{let inside=7;inside},false=>{let later=8;later},}");
     let source = crate::check(&source, "retained-helper-cursor.spx").unwrap();
     let typed = hir::resolve(&source).unwrap();
     let function = typed
