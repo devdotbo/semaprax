@@ -42,6 +42,8 @@ fn constructor_roundtrips_source_cache_and_selective_graph_without_a_second_resu
         .unwrap_err();
     assert_eq!(error.code, "SPX-G410");
     let graph = crate::graph::to_json(&source).unwrap();
+    let rendered: serde_json::Value = serde_json::from_str(&graph).unwrap();
+    assert_eq!(rendered["schema"], "semaprax.graph.v81");
     assert!(graph.contains("\"kind\":\"vec_constructor\""));
     assert!(graph.contains("\"count\":2"));
     let hir::ResolvedExprKind::Block { statements, .. } = &typed.functions[0].body.kind else {

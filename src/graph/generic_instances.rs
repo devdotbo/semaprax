@@ -1,7 +1,7 @@
 //! Graph v34: exact concrete instance ownership, layered over frozen graph bytes.
 use super::*;
 use crate::cleanup::{CleanupStorageOrigin, FieldLivenessShape};
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 
 /// Render the pre-v34 graph contract, for consumers with frozen versioned bytes.
@@ -132,6 +132,7 @@ pub(super) fn pre_filesystem_graph_json(
         && !super::finite_byte_scratch::requires(program)
         && !super::consuming_vec_renewal::requires(program)
         && !crate::vec_ops::string_slot::resolved_uses(program)
+        && !crate::hir::vec_constructor::program_uses(program)
         && !view.static_text()
         && !program
             .declarations
