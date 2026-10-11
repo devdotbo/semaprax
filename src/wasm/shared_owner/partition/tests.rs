@@ -34,9 +34,13 @@ fn checked_source_partition_emits_real_4096_vec_and_consuming_iterator_with_sett
     for (source, expected) in [(SOURCE, "7"), (iterator.as_str(), "4096")] {
         let module = emitted(source);
         if node_available() {
-            let directory = stage(&[("ordinary.mjs", ORDINARY.as_bytes()), ("app.wasm", module.bytes())]);
-            assert!(run_node(&directory, "ordinary.mjs", &["app.wasm", expected, "plain"])
-                .contains("shared-owner-ordinary-ok"));
+            let entry = module.entry_source();
+            let script = format!("{ORDINARY}\n{SUCCESS_ENTRY_TEST}");
+            let directory = stage(&[("ordinary.mjs", script.as_bytes()), ("app.wasm", module.bytes()),
+                ("entry.mjs", entry.as_bytes())]);
+            let stdout = run_node(&directory, "ordinary.mjs", &["app.wasm", expected, "plain"]);
+            assert!(stdout.contains("shared-owner-ordinary-ok"));
+            assert!(stdout.contains("partition-paired-success-ok"));
         }
     }
 }
@@ -79,4 +83,19 @@ const refused = short.invoke();
 if (refused.outcome !== 'administrative_refusal' || 'status' in refused || 'result' in refused) throw new Error(JSON.stringify(refused));
 if (short.account().reserved !== metadata || short.invoke().reason !== 'private entry is poisoned') throw new Error('short account reused');
 console.log('partition-entry-ok');
+"#;
+
+// The unchanged raw control and paired entry run in one Node process per source.
+const SUCCESS_ENTRY_TEST: &str = r#"
+import { install } from './entry.mjs';
+const pairedMetadata = 16384*6 + 8192*22 + 32*11 + 32*8;
+const pairedEntry = await install(pairedMetadata+65536);
+for (let run=0; run<4; run+=1) {
+ const outcome = pairedEntry.invoke();
+ if (JSON.stringify(outcome) !== JSON.stringify({outcome:'returned',result:expected.toString()})) throw new Error(JSON.stringify(outcome));
+ if ('status' in outcome || 'reason' in outcome) throw new Error('success published failure');
+ const account = pairedEntry.account();
+ if (account.reserved !== pairedMetadata || account.peak !== pairedMetadata+65536) throw new Error(JSON.stringify(account));
+}
+console.log('partition-paired-success-ok');
 "#;
