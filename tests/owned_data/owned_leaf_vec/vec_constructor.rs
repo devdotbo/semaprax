@@ -75,7 +75,8 @@ fn constructors_execute_zero_one_eight_and_byte_event_boundary_rows_on_all_engin
         wasm(&ast, &root, 0, "none");
         if count == 8 {
             for mode in ["codec-push-1", "codec-push-4"] {
-                wasm(&ast, &root, 13, mode);
+                // A refused host push returns no handle: Vec allocation code 3, exit 15.
+                wasm(&ast, &root, 15, mode);
             }
         }
         if count == 8 {

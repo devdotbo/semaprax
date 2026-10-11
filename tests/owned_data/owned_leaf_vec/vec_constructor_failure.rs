@@ -1,5 +1,5 @@
 //! #758: independent ordinary-call control and actual checked allocator refusal observations.
-use super::{DECLARATION, SEQUENCE, wasm};
+use super::{wasm, DECLARATION, SEQUENCE};
 use std::{path::Path, process::Command, sync::atomic::Ordering};
 
 fn source(constructor: bool) -> String {
@@ -99,7 +99,7 @@ int main(void){
    if(token==SPX_STATUS_SUCCESS||value!=INT64_C(123456789)||attempts!=ordinal)return 4;
    if(trace!=expected_trace[ordinal]||!clean(&context))return 5;
    const struct spx_normalized_status *status=spx_status_resolve(&context,token);
-   if(!status||!status->code||context.status_arena.length!=before+1)return 6;
+   if(!status||strcmp(status->domain_id,"semaprax.vec.v1")||status->code!=3||context.status_arena.length!=before+1)return 6;
    printf("%u %u %llu %s %u %u %u %u\n",ordinal,repeat,(unsigned long long)token,
           status->domain_id,status->code,trace,acquired,settled);
    /* Reentry immediately after every physical refusal, with the same context. */
@@ -223,9 +223,9 @@ fn constructor_matches_explicit_chain_at_every_actual_native_allocation_and_wasm
         for (status, mode) in [
             (0, "none"),
             (15, "allocation"),
-            (13, "codec-push-1"),
-            (13, "codec-push-2"),
-            (13, "codec-push-4"),
+            (15, "codec-push-1"),
+            (15, "codec-push-2"),
+            (15, "codec-push-4"),
         ] {
             wasm(&ast, &root, status, mode);
         }
