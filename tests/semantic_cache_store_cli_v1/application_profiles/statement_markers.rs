@@ -34,9 +34,10 @@ fn canonical(text: &str) -> String {
 
 fn run(fixture: &Fixture, expected: i64) {
     project::with_authenticated_project(&fixture.root.join("semaprax.toml"), |snapshot| {
-        assert!(
-            matches!(snapshot.execute_test(semaprax::interpreter::InterpreterOptions::default()),
-            semaprax::interpreter::InterpreterOutcome::Returned(value) if value == expected)
+        let execution = snapshot.execute_test(&project::ProjectExecutionOptions::default())?;
+        assert_eq!(
+            execution.outcome(),
+            &project::ProjectExecutionOutcome::Returned(expected)
         );
         Ok(())
     })
@@ -215,10 +216,14 @@ fn terminated_guard_marker_persisted_reuse_keeps_lexical_shape_and_storage_guard
     let ast::ExprKind::Block { statements, .. } = &mut forged.functions[0].body.kind else {
         unreachable!()
     };
-    let ast::Statement::While { body, .. } = &mut statements[2] else {
+    let ast::Statement::While {
+        body: forged_loop_body,
+        ..
+    } = &mut statements[2]
+    else {
         unreachable!()
     };
-    let ast::ExprKind::Block { statements, .. } = &mut body.kind else {
+    let ast::ExprKind::Block { statements, .. } = &mut forged_loop_body.kind else {
         unreachable!()
     };
     let ast::Statement::Let { syntax, .. } = &mut statements[1] else {
