@@ -1,6 +1,6 @@
 //! Executor-neutral held backing/range core. No descriptor or source authority.
 //! The executor debits its REAL invocation account before metadata/clone allocation.
-use super::{Issuer, ModuleIdentity, Refusal, MAX_VIEWS};
+use super::{Issuer, MAX_VIEWS, ModuleIdentity, Refusal};
 use std::{alloc::Layout, marker::PhantomData, ops::Range};
 
 /// Implementations own unique backing, expose its actual extent, and fail-stop
@@ -125,6 +125,7 @@ pub(crate) struct Core<'a, R: Runtime> {
     width: usize,
     extent: usize,
     failure: Option<Refusal>,
+    whole: bool,
 }
 /// One-use evidence of actual metadata debits, never spendable credit or
 /// language authority. Fields are private and only the metered core creates it.
@@ -400,6 +401,7 @@ impl<'a, R: Runtime> Core<'a, R> {
             width,
             extent: count * width,
             failure: None,
+            whole: false,
         };
         core.release_last();
         Ok((core, children))
@@ -707,3 +709,5 @@ fn exact_vec<T>(count: usize) -> Vec<T> {
 }
 #[cfg(test)]
 mod tests;
+
+mod whole;

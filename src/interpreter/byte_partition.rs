@@ -17,6 +17,7 @@ pub(crate) mod funding;
 pub(in crate::interpreter) mod invocation;
 pub(crate) mod loans;
 mod values;
+mod whole;
 static NEXT_INVOCATION: AtomicU64 = AtomicU64::new(1);
 /// Implemented only by the actual evaluator account adapter. The handle must
 /// borrow/share the SAME monotonic invocation account without allocation or

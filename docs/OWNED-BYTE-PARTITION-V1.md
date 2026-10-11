@@ -550,3 +550,27 @@ must still join before installing the optional evaluator state. Effects,
 resumption, imported foreign carriers, and unsupported view paths remain
 outside the sealed profile. Receiver tests prepare a real source-held owner
 but invoke individual receivers; they do not claim whole-program execution.
+
+### Closed whole-view holding and move-out
+
+The ordinary interpreter registry has a separate whole-holder constructor.
+It takes the already allocated complete Box and prepays the actual context,
+one owner slot, checked ordinary view table, temporary headers, fixed identity
+boxes and registry replacement overlap before publication. It accepts an empty
+whole owner without changing the partition operation's positive-width rule.
+No payload allocation or ordinary event debit occurs while holding it.
+
+The Core records that this context was formed for a whole owner. Move-out
+requires its exact affine child, zero remaining views, one live complete slot,
+and the current backing; it moves the original owner and invalidates the old
+receipt. A partition child cannot pass this receiver, including the special
+case where one child spans all bytes. Current checked loan end edges retire
+views before move-out; administrative teardown does not certify canonical
+settlement or success.
+
+Two additional receiving bodies cover genuine current Own-root loans, exact
+CFG expiration, original-pointer preservation, independent metadata request
+sums, one-short refusal before allocation, empty whole views and child-to-whole
+refusal. These are unexecuted private receiver controls. Evaluator root binding,
+call/return transitions and all canonical finalizers still must be joined
+before ordinary source installation.

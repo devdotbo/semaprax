@@ -247,3 +247,12 @@ impl Loans<'_, super::funding::BorrowedAccount<'_>> {
         self.registry.runtime.identity()
     }
 }
+
+impl<'p, R: InvocationRuntime> Loans<'p, R> {
+    pub(crate) fn hold_whole(&mut self, owner: R::Owner) -> Result<Owner, (Refusal, R::Owner)> {
+        self.registry.hold_whole(owner, &self.capacity)
+    }
+    pub(crate) fn take_whole(&mut self, owner: &mut Owner) -> Result<R::Owner, Refusal> {
+        self.registry.take_whole(owner)
+    }
+}
