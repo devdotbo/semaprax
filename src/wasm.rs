@@ -56,6 +56,8 @@ mod scalar_algebra_component_v5;
 mod scalar_exports;
 /// Selected `FusedConstructionV1` executor; default admission stays closed.
 mod selected_fused;
+/// Ordinary shared-owner Bytes consumer closure; producer admission closed.
+mod shared_owner;
 #[allow(
     unused_imports,
     reason = "consumed by the crate-private fused_source facade"
