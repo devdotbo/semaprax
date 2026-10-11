@@ -226,7 +226,7 @@ fn omitted_private_layout_source_persisted_cache_reconstructs_provider_layout_an
     unchanged(&fixture, digest);
     envelope_hostile(&fixture, digest);
     let provider = std::fs::read_to_string(fixture.root.join("src/provider.spx")).unwrap();
-    let changed_layout = provider.replace("config.text", "config.text.revised");
+    let changed_layout = provider.replace("@id(\"config.text\")", "@id(\"config.text.revised\")");
     assert_ne!(changed_layout, provider);
     write(&fixture, "src/provider.spx", &changed_layout);
     changed(&fixture, digest, "src/provider.spx");

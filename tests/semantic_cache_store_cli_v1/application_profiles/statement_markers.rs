@@ -4,9 +4,11 @@ use super::{envelope_hostile, same_product, value, write, Fixture};
 use semaprax::{ast, check, format, graph, project, verify};
 
 const PATH: &str = "src/app.spx";
+// The entry is executed directly below. Test-module closure must not import
+// another module's `main` as a provider function; that route is independently
+// forbidden by the ordinary Project entry/provider boundary.
 const TESTS: &str = r#"module calculator.tests;
-use function @id("calculator.app.main") from calculator.app as run;
-@id("calculator.tests.main") fn main() -> i64 { run() }
+@id("calculator.tests.main") fn main() -> i64 { 0 }
 "#;
 
 fn source(body: &str) -> String {
