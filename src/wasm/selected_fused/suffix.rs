@@ -5,9 +5,12 @@
 //! lowered expression the plan's transitions at that expression replay, so
 //! owner liveness follows the canonical cleanup plan exactly. Leased views end
 //! at every end point of their exact `SliceView` loan, and every such end must
-//! lie inside the lexical scope that produced them. Vec moves and the
-//! consuming sort happen only as top-level statements. Anything outside this
-//! domain refuses the module.
+//! lie inside the lexical scope that produced them. Any end reached while a
+//! consuming host call holds a staged token of the view, including ends nested
+//! in that call's later operands, retires it only once every holder has
+//! received its token, never between a read and its call. Vec
+//! moves and the consuming sort happen only as top-level statements. Anything
+//! outside this domain refuses the module.
 use super::cleanup::{Failure, Owned};
 use super::lower::{unsupported, Binding, Lower, Repr, Scope};
 use super::{import, Refusal};
@@ -47,12 +50,19 @@ impl<'a> Lower<'a> {
                 if matches!(repr, Repr::Vector | Repr::OptionU8) {
                     return Err(unsupported("binding representation"));
                 }
+                // A leased value's exact view, where one is still open; a
+                // binding without one refuses as a consuming operand.
+                let view = match repr {
+                    Repr::Leased => self.view_of(value).ok(),
+                    _ => None,
+                };
                 let local = self.local(repr.val());
                 self.op(I::LocalSet(local));
                 self.bindings.push(Binding {
                     id: &binding.id,
                     local,
                     repr,
+                    view,
                 });
                 Ok(())
             }
@@ -153,6 +163,7 @@ impl<'a> Lower<'a> {
             id: &binding.id,
             local: self.vector_carrier(&binding.id)?,
             repr: Repr::Vector,
+            view: None,
         });
         Ok(())
     }
@@ -205,6 +216,25 @@ impl<'a> Lower<'a> {
     pub(super) fn expr(&mut self, e: &'a E) -> Result<Repr, Refusal> {
         self.loan_points(&e.id, LoanPointPhase::Before);
         let repr = self.expr_inner(e)?;
+        self.loan_points(&e.id, LoanPointPhase::After);
+        self.post(&e.id, Owned::None)?;
+        Ok(repr)
+    }
+    /// The view operand of a consuming host call (`view_len`, `view_byte`).
+    /// Its token is staged once the operand is read, so a leased operand holds
+    /// its exact open view from that read until the caller's `release` right
+    /// after the call. Every loan end of that view reached meanwhile, at the
+    /// operand's own after point or anywhere in a later operand (a nested
+    /// `byte_len` of the same view in the index), defers rather than retiring
+    /// the staged token; a failure exit in between retires it once. Loan
+    /// points and transitions otherwise replay exactly as in `expr`.
+    fn consumed_operand(&mut self, e: &'a E) -> Result<Repr, Refusal> {
+        self.loan_points(&e.id, LoanPointPhase::Before);
+        let repr = self.expr_inner(e)?;
+        if repr == Repr::Leased {
+            let view = self.view_of(e)?;
+            self.holds.push(view);
+        }
         self.loan_points(&e.id, LoanPointPhase::After);
         self.post(&e.id, Owned::None)?;
         Ok(repr)
@@ -552,7 +582,8 @@ impl<'a> Lower<'a> {
                 Repr::I64
             }
             (crate::byte_ops::LEN_ID, [view]) => {
-                let carrier = self.expr(view)?;
+                let mark = self.holds.len();
+                let carrier = self.consumed_operand(view)?;
                 let function = match carrier {
                     Repr::Slice => import::TEXT_LEN,
                     Repr::Leased => import::VIEW_LEN,
@@ -560,10 +591,14 @@ impl<'a> Lower<'a> {
                 };
                 let view = self.temp(carrier);
                 self.host(function, &[view]);
+                self.release(mark);
                 Repr::Usize
             }
             (crate::byte_ops::GET_ID, [view, index]) => {
-                let carrier = self.expr(view)?;
+                // The view's hold spans the index: a same-view end inside it
+                // (even a nested call's own release) cannot retire this token.
+                let mark = self.holds.len();
+                let carrier = self.consumed_operand(view)?;
                 let function = match carrier {
                     Repr::Slice => import::TEXT_BYTE,
                     Repr::Leased => import::VIEW_BYTE,
@@ -575,6 +610,7 @@ impl<'a> Lower<'a> {
                 }
                 let index = self.temp(Repr::Usize);
                 self.host(function, &[view, index]);
+                self.release(mark);
                 return Ok(Repr::OptionU8);
             }
             (crate::vec_ops::LEN_ID, [vector])
@@ -659,6 +695,7 @@ impl<'a> Lower<'a> {
             id: &binding.id,
             local: value,
             repr: Repr::U8,
+            view: None,
         });
         if self.expr(some)? != repr {
             return Err(unsupported("match arm type"));

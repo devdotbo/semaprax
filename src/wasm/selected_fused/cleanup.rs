@@ -472,7 +472,8 @@ impl<'a> Lower<'a> {
 
     /// The exact failure exit for `expression`: select the status first (the
     /// host keeps the first selection sticky), end exactly the leased views
-    /// whose loans are live at `expression`, bracket an unfinished
+    /// whose loans are live at `expression` and, once each, any deferred view
+    /// whose held token a consuming call this exit skips, bracket an unfinished
     /// construction with abort/settle, then emit the exit's finalizers
     /// verbatim and return the selected failure.
     pub(super) fn fail(
@@ -533,8 +534,9 @@ impl<'a> Lower<'a> {
         let live = self.live_views_at(expression)?;
         self.op(I::I32Const(status));
         self.op(I::Call(import::SELECT_FAILURE));
-        // Only the loans the plan holds live here end, and they end before any
-        // owner finalizer. Normal-path scopes are untouched: this code exits.
+        // Only the loans the plan holds live here (and deferred held views)
+        // end, before any owner finalizer. Normal-path scopes are untouched:
+        // this code exits.
         for view in live {
             self.end_view(view);
         }

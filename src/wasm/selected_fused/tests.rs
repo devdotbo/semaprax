@@ -127,8 +127,26 @@ fn run_node(module: &Artifact, text_bytes: u64, mode: &str, expected: i64) {
     );
 }
 
+/// Sealed-source same-token controls: the payload's last read moves into a
+/// `byte_len` of the same view nested in its own outer `byte_get`'s index,
+/// bare (index 3 is out of range, so the arms' results swap) and under checked
+/// subtraction (index 2). Both keep the original result.
+const LAST_PAYLOAD_GET: &str =
+    "match byte_get(data, 2usize) { Option::Some { value } => value == 0u8, Option::None {} => false, }";
+const NESTED_LEN: &str =
+    "match byte_get(data, byte_len(data)) { Option::Some { value } => value == 0u8, Option::None {} => true, }";
+const CHECKED_INDEX: &str =
+    "match byte_get(data, byte_len(data) - 1usize) { Option::Some { value } => value == 0u8, Option::None {} => false, }";
+fn nested(replacement: &str) -> String {
+    assert_eq!(ORIGINAL.matches(LAST_PAYLOAD_GET).count(), 1);
+    ORIGINAL.replace(LAST_PAYLOAD_GET, replacement)
+}
+
 fn accepted(count: u32) -> (Artifact, u64) {
-    let source = crate::parse(&text(count), "selected-fused-wasm.spx").unwrap();
+    sealed(&text(count), count)
+}
+fn sealed(source_text: &str, count: u32) -> (Artifact, u64) {
+    let source = crate::parse(source_text, "selected-fused-wasm.spx").unwrap();
     let owner = crate::hir::selected_fused_candidate::validate_selected(&source)
         .expect("original source passes full selected validation");
     let descriptor = crate::construction_fusion::derive(owner.source(), owner.program()).unwrap();
@@ -370,6 +388,13 @@ fn original_4096_rows_execute_exact_payload_and_sum_through_selected_host() {
     assert_eq!(u64::from(lowered.grant.rows) * lowered.grant.width, 12_288);
     assert_eq!(text * 4096, 12_288);
     run_node(&lowered, text, "original", expected);
+    // The outer `view_byte` must still receive a live token after the nested
+    // same-view `view_len` (the plan's last read) ran: no `stale` refusal.
+    for replacement in [NESTED_LEN, CHECKED_INDEX] {
+        let (variant, text) = sealed(&nested(replacement), 4096);
+        assert_ne!(variant.bytes, lowered.bytes);
+        run_node(&variant, text, "original", expected);
+    }
 }
 
 #[test]
