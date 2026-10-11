@@ -123,7 +123,26 @@ fn test_malformed_carrier() -> i64
 {
     let storage = bytes_zeroed(3072usize);
     let malformed = Matcher { storage: storage, position: 3073usize };
-    if !result_valid(malformed) { 0 } else { 1 }
+    let carrier_rejected = !result_valid(malformed);
+    // Header padding must still report the first corrupt byte, and the
+    // original two-unit preflight must win before an unread corrupt byte.
+    let mut header = bytes_zeroed(3072usize);
+    header = bytes_set(header, 0usize, 83u8);
+    header = bytes_set(header, 1usize, 80u8);
+    header = bytes_set(header, 2usize, 65u8);
+    header = bytes_set(header, 3usize, 67u8);
+    header = bytes_set(header, 4usize, 1u8);
+    header = bytes_set(header, 5usize, 1u8);
+    header = bytes_set(header, 9usize, 1u8);
+    header = bytes_set(header, 63usize, 1u8);
+    let input = "";
+    let input_text = string_as_str(input);
+    let input_view = str_as_bytes(input_text);
+    let mut checked: Matcher = full_match(Matcher { storage: header, position: 0usize }, input_view, 262144usize);
+    let corrupt = result_valid(checked) && status(checked) == 3usize && reason(checked) == 2usize && detail(checked) == 9usize && detail_domain(checked) == 2usize && work_used(checked) == 52usize;
+    checked = full_match(checked, input_view, 50usize);
+    let preflight = result_valid(checked) && status(checked) == 4usize && reason(checked) == 7usize && detail(checked) == 0usize && work_used(checked) == 50usize;
+    if carrier_rejected && corrupt && preflight { 0 } else { 1 }
 }
 
 @id("std.pattern.tests.bounded-reentry")

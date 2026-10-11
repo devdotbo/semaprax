@@ -624,10 +624,17 @@ fn full_match(state: own Matcher, input: borrow Slice<u8>, work_limit: usize) ->
     let mut captures = 0usize;
     let mut header = 0usize;
     if length > 65536usize { exhausted = true; reason = 2usize; detail = length; }
+    // Header validation is read-only. Lend one exact current storage view for
+    // this phase, rather than destructuring/revalidating the same Matcher for
+    // each byte. Every read retains its original work preflight and order.
+    let checked_header = match borrow matcher { Matcher { storage, position } => {
+        let compiled = bytes_as_slice(storage);
     while header < 64usize && !exhausted && !invalid {
-        if affords(work, 2usize, work_limit) { work = work + 2usize; let value = read(matcher, header); let expected = if header == 0usize { 83usize } else { if header == 1usize { 80usize } else { if header == 2usize { 65usize } else { if header == 3usize { 67usize } else { if header == 4usize || header == 5usize { 1usize } else { 0usize } } } } }; if header == 6usize { atoms = value; invalid = atoms > 128usize; } else { if header == 7usize { classes = value; invalid = classes > 16usize; } else { if header == 8usize { captures = value; invalid = captures > 16usize; } else { invalid = value != expected; } } } if invalid { detail = header; } header = header + 1usize; 0 } else { exhausted = true; reason = 7usize; 0 }
+        if affords(work, 2usize, work_limit) { work = work + 2usize; let value = input_byte(compiled, header); if header >= 9usize { invalid = value != 0usize; } else { let expected = if header == 0usize { 83usize } else { if header == 1usize { 80usize } else { if header == 2usize { 65usize } else { if header == 3usize { 67usize } else { if header == 4usize || header == 5usize { 1usize } else { 0usize } } } } }; if header == 6usize { atoms = value; invalid = atoms > 128usize; } else { if header == 7usize { classes = value; invalid = classes > 16usize; } else { if header == 8usize { captures = value; invalid = captures > 16usize; } else { invalid = value != expected; } } }  } if invalid { detail = header; } header = header + 1usize; 0 } else { exhausted = true; reason = 7usize; 0 }
         0
     }
+        0
+    }, };
     let mut checked_atom = 0usize;
     while checked_atom < atoms && !exhausted && !invalid {
         if affords(work, 9usize, work_limit) { work = work + 9usize; let offset = 64usize + checked_atom * 8usize; let kind = read(matcher, offset); let value = read(matcher, offset + 1usize); let minimum = load2(matcher, offset + 2usize); let maximum = load4(matcher, offset + 4usize); if kind > 2usize { invalid = true; detail = offset; } else { if kind == 1usize && value != 0usize || kind == 2usize && value >= classes { invalid = true; detail = offset + 1usize; } else { if minimum > 255usize { invalid = true; detail = offset + 2usize; } else { if maximum != 4294967295usize && (maximum < minimum || maximum > 255usize) { invalid = true; detail = offset + 4usize; } else { 0usize } } } } checked_atom = checked_atom + 1usize; 0 } else { exhausted = true; reason = 7usize; 0 }

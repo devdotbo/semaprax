@@ -51,7 +51,9 @@ fn decoded_index_collision_boundaries_and_failure_order_run_on_native_and_wasm()
             snapshot.check()?;
             assert_eq!(
                 snapshot.execute_test(&application_options())?.outcome(),
-                &project::ProjectExecutionOutcome::Returned(0)
+                &project::ProjectExecutionOutcome::Returned(0),
+                "decoded-index group {group}: {}",
+                cases.iter().map(|case| case.name).collect::<Vec<_>>().join(", ")
             );
             let c = codegen::emit_hir_c(snapshot.test_program()).map_err(|error| vec![error])?;
             for optimization in ["-O0", "-O2"] {
