@@ -1,5 +1,6 @@
 //! Same source, current sealed owner, actual execution and receiving controls.
-use super::{execute, reserve, Engine, Failure, Flat, Outcome, Row, Span, TextView};
+use super::{execute, refuse, reserve, Engine, Failure, Flat, Flow, Outcome, Row, Span, TextView};
+use crate::cleanup_plan::{ExitContinuation, StatusLane};
 use crate::hir::selected_fused_candidate::{validate_selected, ValidatedFusedSelection};
 use crate::interpreter::{Utf8MaterializationBudget, Value};
 use std::alloc::Layout;
@@ -182,12 +183,57 @@ fn fuel_exhaustion_settles_only_certified_empty_ownership_without_status_or_resu
     assert_eq!(run(&owner).0.result, baseline.result);
     let selected = include_str!("../selected.rs");
     for guard in [
-        "Err(Flow::Exhausted | Flow::DepthExceeded) => engine.settle_empty(),",
+        "let settled = engine.settle(&result);",
+        "Err(Flow::Failure(_)) => self.settle_exit(false),",
+        "Err(_) => self.settle_empty(),",
         "&& source.lane == StatusLane::OperationFailure",
         "|| self.registry.state.is_some()",
     ] {
         assert!(selected.contains(guard), "{guard}");
     }
+    assert!(!selected.contains("engine.settle_exit(result.is_ok())"));
+}
+/// A guard refusal stopping at an expression that owns a language failure exit
+/// selects no status, so it must not borrow that exit's finalizers: with owners
+/// live it stays unsettled. The actual language failure at the same site still
+/// settles through its exact exit, and an empty engine settles any flow.
+#[test]
+fn out_of_band_flows_never_reuse_the_failure_exit_of_their_stopping_site() {
+    let changed = SOURCE.replace("4096", "33").replace(
+        "{ total } else { 0 }",
+        "{ total + 9223372036854775807 } else { 0 }",
+    );
+    let source = parsed(&changed);
+    let owner = validate_selected(&source).unwrap();
+    let ((), refused, _) = crate::bounded_output::with_limit_usage(PHYSICAL, || {
+        owner
+            .with_joined(|joined| {
+                let selection = joined.selection();
+                let mut empty = Engine::new(selection, FUEL).unwrap();
+                empty.failed_site = Some(selection.tail());
+                assert!(empty.settle(&Err(refuse())).is_ok());
+                let mut engine = Engine::new(selection, FUEL).unwrap();
+                let result = engine.expression(&selection.function().body, 0);
+                assert!(matches!(result, Err(Flow::Failure(_))));
+                let site = engine.failed_site.expect("overflowing tail addition");
+                assert!(selection
+                    .function()
+                    .cleanup_plan
+                    .exits
+                    .iter()
+                    .any(|exit| matches!(&exit.continuation,
+                        ExitContinuation::ReturnFailure { source }
+                            if source.expression == site.id
+                                && source.lane == StatusLane::OperationFailure)));
+                assert!(!engine.rows.is_empty());
+                assert!(engine.settle(&Err(refuse())).is_err());
+                assert!(!engine.rows.is_empty(), "no finalizer ran for the refusal");
+                engine.settle(&result).unwrap();
+                assert!(engine.rows.is_empty() && engine.pending.is_none());
+            })
+            .unwrap()
+    });
+    assert!(!refused);
 }
 #[test]
 fn full_execution_exact_one_short_refuses_without_publication_or_drop_refund() {

@@ -4,8 +4,8 @@
 //! The canonical loan plan attaches two loans to the payload field read: the
 //! view's own `SliceView` loan and the transient shared loan of the row Vec
 //! operand, which ends right after the read. Only the former may end the view,
-//! and every end it has (the short-circuit join and both match arms of its last
-//! read) must be lowered.
+//! and every end it has (the operand after its last read and the short-circuit
+//! join skipping that read) must be lowered.
 use super::super::{accept, precursor::inspect, Refusal};
 use super::{capacity, inputs, ORIGINAL};
 use crate::hir::{ExpressionId, ResolvedProgram};

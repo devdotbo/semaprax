@@ -139,11 +139,7 @@ fn execute_selection(selection: &Selection<'_>, fuel: usize) -> Result<Outcome, 
         Box::new(Engine::new(selection, fuel).map_err(|flow| Failure::execution(&flow, 0))?);
     let body = &selection.function().body;
     let result = engine.expression(body, 0);
-    let settled = match &result {
-        // Fuel and depth exhaustion are out of band: no plan exit, no status.
-        Err(Flow::Exhausted | Flow::DepthExceeded) => engine.settle_empty(),
-        _ => engine.settle_exit(result.is_ok()),
-    };
+    let settled = engine.settle(&result);
     match result {
         Ok(Flat::Scalar(Value::Int(result))) if settled.is_ok() => {
             let (string_materializations, string_bytes) =
@@ -483,6 +479,19 @@ impl<'s, 'a> Engine<'s, 'a> {
         }
         self.rows.clear();
         Ok(())
+    }
+    /// The settlement a finished evaluation owes. Only the actual completed
+    /// result and an actual selected language failure have canonical plan
+    /// exits. Fuel and depth exhaustion and every other out-of-band flow
+    /// (guard refusal, cancellation, materialization limit) select no language
+    /// status, so they never reuse the failure exit of the expression they
+    /// stopped at; they settle only a certified empty ownership state.
+    fn settle(&mut self, result: &Result<Flat, Flow>) -> Result<(), Flow> {
+        match result {
+            Ok(_) => self.settle_exit(true),
+            Err(Flow::Failure(_)) => self.settle_exit(false),
+            Err(_) => self.settle_empty(),
+        }
     }
     fn settle_exit(&mut self, success: bool) -> Result<(), Flow> {
         let plan = &self.selection.function().cleanup_plan;
