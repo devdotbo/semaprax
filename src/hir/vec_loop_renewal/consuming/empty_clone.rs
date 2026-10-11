@@ -7,30 +7,32 @@ fn root(expr: &ResolvedExpr, id: &ValueId) -> bool {
     matches!(&expr.kind, K::Place(place) if place.root == *id && place.projections.is_empty())
 }
 fn walk<'a>(expr: &'a ResolvedExpr, mut visitor: impl FnMut(&'a ResolvedExpr)) -> bool {
-    let mut stack = [None; crate::cache_codec::MAX_DEPTH + 1];
-    if !crate::bounded_output::reserve_active_required(std::mem::size_of_val(&stack)) {
+    use crate::hir::lexical_exit::ChildCursor;
+    type Frames<'a> = [Option<ChildCursor<'a>>; crate::cache_codec::MAX_DEPTH + 1];
+    if !crate::bounded_output::reserve_active_required(std::mem::size_of::<Frames<'_>>()) {
         return false;
     }
-    stack[0] = Some((expr, 0usize));
+    let mut stack: Frames<'_> = [None; crate::cache_codec::MAX_DEPTH + 1];
+    stack[0] = Some(ChildCursor::new(expr));
     let mut len = 1;
     let mut work = 65_536usize;
     while len != 0 {
-        let (node, next) = stack[len - 1].expect("occupied empty-HIR frame");
-        if next == 0 {
+        let frame = stack[len - 1].as_mut().expect("occupied empty-HIR frame");
+        if !frame.is_started() {
             if work == 0 {
                 return false;
             }
             work -= 1;
-            visitor(node);
+            visitor(frame.expression());
         }
-        if let Some(child) = crate::hir::lexical_exit::child(node, next) {
+        if let Some(child) = frame.next() {
             if len == stack.len() {
                 return false;
             }
-            stack[len - 1] = Some((node, next + 1));
-            stack[len] = Some((child, 0));
+            stack[len] = Some(ChildCursor::new(child));
             len += 1;
         } else {
+            stack[len - 1] = None;
             len -= 1;
         }
     }

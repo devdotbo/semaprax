@@ -312,3 +312,154 @@ fn conditional_owned_row_transformation_reserves_the_destination_family_independ
     );
     assert!(crate::hir::validate(&forged).is_err());
 }
+
+// Independent pre-cursor authored-order oracle, including closure pruning and
+// the original MAX_DEPTH + 1 frame boundary. It does not share ChildCursor.
+fn old_visit<'a>(root: &'a ResolvedExpr, mut visitor: impl FnMut(&'a ResolvedExpr)) -> bool {
+    let mut stack = [None; crate::cache_codec::MAX_DEPTH + 1];
+    stack[0] = Some((root, 0usize));
+    let mut len = 1;
+    while len != 0 {
+        let (expr, next) = stack[len - 1].expect("occupied consuming renewal frame");
+        if next == 0 {
+            visitor(expr);
+        }
+        let child = if matches!(expr.kind, ResolvedExprKind::Closure { .. }) {
+            None
+        } else {
+            crate::hir::lexical_exit::child(expr, next)
+        };
+        if let Some(child) = child {
+            if len == stack.len() {
+                return false;
+            }
+            stack[len - 1] = Some((expr, next + 1));
+            stack[len] = Some((child, 0));
+            len += 1;
+        } else {
+            stack[len - 1] = None;
+            len -= 1;
+        }
+    }
+    true
+}
+fn compare_walk(root: &ResolvedExpr) -> bool {
+    let mut old = Vec::new();
+    let mut current = Vec::new();
+    let expected = old_visit(root, |node| old.push(node as *const ResolvedExpr));
+    let actual = visit(root, |node| current.push(node as *const ResolvedExpr));
+    assert_eq!(actual, expected);
+    assert_eq!(current, old, "exact borrowed authored expression order");
+    actual
+}
+#[test]
+fn consuming_cursor_keeps_old_authored_pointer_order_and_wide_statement_edges() {
+    let program = checked();
+    assert!(compare_walk(&program.functions[0].body));
+    let mut source = String::from("module wide; @id(\"main\") fn main()->i64 {\n");
+    for index in 0..1024 {
+        source.push_str(&format!("let pad{index}={index};\n"));
+    }
+    source.push_str("if true {1}else{2}}\n");
+    let parsed = crate::check(&source, "wide-consuming-cursor.spx").unwrap();
+    let program = crate::hir::resolve(&parsed).unwrap();
+    assert!(compare_walk(&program.functions[0].body));
+    let mut marked = program.functions[0].body.clone();
+    let ResolvedExprKind::Block { statements, tail } = marked.kind else {
+        panic!("authored marker payload");
+    };
+    marked.kind = ResolvedExprKind::VecConstructor {
+        element: ResolvedType::I64,
+        count: 1024,
+        statements,
+        tail,
+    };
+    assert!(compare_walk(&marked));
+    let mut closure = marked.clone();
+    closure.kind = ResolvedExprKind::Closure {
+        parameters: Vec::new(),
+        captures: Vec::new(),
+        body: Box::new(marked),
+    };
+    assert!(compare_walk(&closure));
+    let mut closure_visits = 0;
+    assert!(visit(&closure, |_| closure_visits += 1));
+    assert_eq!(
+        closure_visits, 1,
+        "closure execution remains a separate function"
+    );
+    let ResolvedExprKind::Block { statements, .. } = &program.functions[0].body.kind else {
+        panic!("authored block");
+    };
+    assert_eq!(statements.len(), 1024);
+    // Independent statement-prefix cost of the old indexed Block enumerator:
+    // retrieving each one-child statement and the final tail crosses this many
+    // statement entries. The cursor crosses each statement once.
+    assert_eq!((1..=1024usize).sum::<usize>() + 1024, 525_824);
+    assert_eq!(
+        statements
+            .iter()
+            .map(ResolvedStatement::child_count)
+            .sum::<usize>(),
+        1024
+    );
+}
+#[test]
+fn consuming_cursor_precharges_exact_frames_and_one_short_visits_nothing() {
+    let program = checked();
+    let root = &program.functions[0].body;
+    let exact = std::mem::size_of::<
+        [Option<crate::hir::lexical_exit::ChildCursor<'_>>; crate::cache_codec::MAX_DEPTH + 1],
+    >();
+    let ((complete, count), overflow, charged) =
+        crate::bounded_output::with_limit_usage(exact, || {
+            let mut count = 0;
+            let complete = visit(root, |_| count += 1);
+            (complete, count)
+        });
+    assert!(complete && count != 0 && !overflow);
+    assert_eq!(charged, exact);
+    let ((complete, count), overflow, charged) =
+        crate::bounded_output::with_limit_usage(exact - 1, || {
+            let mut count = 0;
+            let complete = visit(root, |_| count += 1);
+            (complete, count)
+        });
+    assert!(!complete && overflow);
+    assert_eq!(count, 0);
+    assert_eq!(charged, 0);
+}
+#[test]
+fn consuming_cursor_retains_exact_depth_refusal_and_detached_node_identity() {
+    let parsed = crate::check(
+        "module depth; @id(\"main\") fn main()->i64 {0}",
+        "cursor-depth.spx",
+    )
+    .unwrap();
+    let program = crate::hir::resolve(&parsed).unwrap();
+    let mut root = program.functions[0].body.clone();
+    // Use a leaf so the independently authored depth is unambiguous.
+    root.kind = ResolvedExprKind::Int(0);
+    for _ in 0..crate::cache_codec::MAX_DEPTH {
+        let mut parent = root.clone();
+        parent.kind = ResolvedExprKind::Block {
+            statements: Vec::new(),
+            tail: Box::new(root),
+        };
+        root = parent;
+    }
+    assert!(compare_walk(&root));
+    let mut parent = root.clone();
+    parent.kind = ResolvedExprKind::Block {
+        statements: Vec::new(),
+        tail: Box::new(root),
+    };
+    assert!(!compare_walk(&parent));
+    let detached = parent.clone();
+    assert!(!std::ptr::eq(&parent, &detached));
+    let mut first = None;
+    assert!(!visit(&detached, |node| {
+        first.get_or_insert(node as *const ResolvedExpr);
+    }));
+    assert_eq!(first, Some(&detached as *const ResolvedExpr));
+}

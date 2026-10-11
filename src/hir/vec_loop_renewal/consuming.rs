@@ -18,25 +18,32 @@ pub(crate) struct Site<'a> {
 /// Depth-first authored-order traversal with no heap frontier or ID clones.
 /// Overflow refuses this additive profile, without changing legacy collectors.
 fn visit<'a>(root: &'a ResolvedExpr, mut visitor: impl FnMut(&'a ResolvedExpr)) -> bool {
-    let mut stack = [None; crate::cache_codec::MAX_DEPTH + 1];
-    stack[0] = Some((root, 0usize));
+    use crate::hir::lexical_exit::ChildCursor;
+    type Frames<'a> = [Option<ChildCursor<'a>>; crate::cache_codec::MAX_DEPTH + 1];
+    if !crate::bounded_output::reserve_active_required(std::mem::size_of::<Frames<'_>>()) {
+        return false;
+    }
+    let mut stack: Frames<'_> = [None; crate::cache_codec::MAX_DEPTH + 1];
+    stack[0] = Some(ChildCursor::new(root));
     let mut len = 1;
     while len != 0 {
-        let (expr, next) = stack[len - 1].expect("occupied consuming renewal frame");
-        if next == 0 {
+        let frame = stack[len - 1]
+            .as_mut()
+            .expect("occupied consuming renewal frame");
+        let expr = frame.expression();
+        if !frame.is_started() {
             visitor(expr);
         }
         let child = if matches!(expr.kind, ResolvedExprKind::Closure { .. }) {
             None
         } else {
-            super::super::lexical_exit::child(expr, next)
+            frame.next()
         };
         if let Some(child) = child {
             if len == stack.len() {
                 return false;
             }
-            stack[len - 1] = Some((expr, next + 1));
-            stack[len] = Some((child, 0));
+            stack[len] = Some(ChildCursor::new(child));
             len += 1;
         } else {
             stack[len - 1] = None;
