@@ -80,7 +80,7 @@ alternative/concatenation members, merge indexes and vectors. Every child edge
 registers against one held destruction frontier before node allocation, including
 old/new backing overlap. That shared frontier releases the DAG iteratively with
 no destructor allocation; cross-reservation children fail closed. Duplicate
-alternatives retain multiplicity. Copy-inert region eligibility and pre-census strategy admission remain barriers
+alternatives retain multiplicity. Copy region-to-frontier binding and pre-census strategy admission remain barriers
 to selecting lexical factoring. Inactive automaton construction now precharges
 nodes, moves, epsilon vectors, observation identity/projection payloads, DAG
 frames/ends/memo and block-entry backing. Attempted factored comparisons retain
@@ -93,7 +93,15 @@ replacement. Authored allocator and exact/one-short probes include complete
 canonicalizer creation/release and duplicate-route/checked-overflow regressions. The inactive plan converter emits exact certified
 return/break marker edges to their existing continuation and exact continue/latch
 marker edges to authenticated advancement resumes or the third latch terminal.
-Lexical exits create no epsilon edge. An independent small automaton enumerator
+Lexical exits create no epsilon edge. Inactive Copy discovery accepts scalar/static
+Copy regions and exact authored read-only call signatures, including compiler-owned
+Vec len/capacity/Copy get with a borrowed receiver. A receiver may retain its Own
+Place HIR mode; exact parameter mode and Copy result decide inertness. Owned
+parameters, unknown targets, wrong result/receiver types, loops, lexical exits and
+residual forms stay closed. Its fixed cursor is reserved before use. Lexical
+failed/residual/abrupt/owned-source and pending-commit paths remain separate even
+in the inactive merged walk; only normal states can reach a merge. This discovery
+is not yet bound to individual merge frontiers and grants no strategy admission. An independent small automaton enumerator
 compares the complete multiset with the existing plan walk, with authored marker
 site/owner and missing generated-resume attacks. Authored small multiset and physical storage
 regressions remain unexecuted until grouped qualification. All

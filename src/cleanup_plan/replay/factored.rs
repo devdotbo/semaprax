@@ -25,6 +25,8 @@
 use super::skeleton_work::{ObservationDag, ObservationDagKind};
 use super::*;
 use std::rc::Rc;
+#[allow(dead_code)] // Discovery is authored groundwork; strategy selection stays closed.
+mod copy_regions;
 mod storage;
 use storage::{memo_insert, push_end, push_frame, reserve_transition_observation};
 

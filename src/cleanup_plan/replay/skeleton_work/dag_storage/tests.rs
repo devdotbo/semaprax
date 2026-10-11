@@ -142,3 +142,40 @@ fn merge_keys_preserve_pending_owned_commits_and_failure_classes() {
         "pending ownership commits must never coalesce"
     );
 }
+
+#[test]
+fn lexical_failure_and_abrupt_duplicates_stay_separate() {
+    let source = "module separate.lexical; @id(\"probe\") fn probe(n:i64)->i64 {if n==0 {return 1;}; return 0;} @id(\"main\") fn main()->i64 {0}";
+    let parsed = crate::check(source, "separate-lexical.spx").unwrap();
+    let program = crate::hir::resolve(&parsed).unwrap();
+    let function = program
+        .functions()
+        .iter()
+        .find(|function| function.id.as_str() == "probe")
+        .unwrap();
+    let mut budget = ReplayBudget::with_physical(function, 1 << 20).unwrap();
+    budget.skeleton_remaining = MAX_REPLAY_WORK_UNITS;
+    budget.merge_paths = true;
+    let mut work = SkeletonWork::new(&program, function, &mut budget);
+    let mut failed = empty_expr_path();
+    failed.failed = true;
+    let merged = work.merged_paths(vec![failed.clone(), failed]).unwrap();
+    assert_eq!(
+        merged.len(),
+        2,
+        "failure multiplicity is carried by separate paths first"
+    );
+    let normal = empty_expr_path();
+    let merged = work.merged_paths(vec![normal.clone(), normal]).unwrap();
+    assert_eq!(merged.len(), 1);
+    let commits = vec![(0, CleanupPlace::whole(StorageId::ProvisionalResult))];
+    let normal = empty_expr_path();
+    let calls = work
+        .merged_call_states(vec![(normal.clone(), commits.clone()), (normal, commits)])
+        .unwrap();
+    assert_eq!(
+        calls.len(),
+        2,
+        "pending-own epochs stay separate even if they match"
+    );
+}

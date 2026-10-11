@@ -519,6 +519,14 @@ impl Ord for Observations {
 }
 
 impl SkeletonWork<'_, '_> {
+    fn lexical_merge_normal(&self, path: &ExprSkeletonPath) -> bool {
+        self.function.cleanup_plan.lexical_control.is_none()
+            || (!path.failed
+                && !path.residual
+                && path.owned_source.is_none()
+                && path.continuation == lexical_skeleton::Continuation::Normal)
+    }
+
     /// Factored replay only: merge paths whose cleanup state is identical
     /// into one path carrying the union of their observation sequences. Every
     /// later skeleton step depends only on that state, so the union denotes
@@ -541,6 +549,12 @@ impl SkeletonWork<'_, '_> {
         let mut order = BTreeMap::<Key, usize>::new();
         let mut groups = Vec::<Group>::new();
         for path in paths {
+            if !self.lexical_merge_normal(&path) {
+                self.budget
+                    .reserve_vec(self.function, &mut groups, 1, "isolated lexical path")?;
+                groups.push((path, Vec::new()));
+                continue;
+            }
             let source = self.clone_payload(&path.owned_source, "factored merge source key")?;
             let key = (
                 source,
@@ -639,6 +653,18 @@ impl SkeletonWork<'_, '_> {
         let mut order = BTreeMap::<Key, usize>::new();
         let mut groups = Vec::<Group>::new();
         for (path, commits) in states {
+            if !self.lexical_merge_normal(&path)
+                || (self.function.cleanup_plan.lexical_control.is_some() && !commits.is_empty())
+            {
+                self.budget.reserve_vec(
+                    self.function,
+                    &mut groups,
+                    1,
+                    "isolated lexical call state",
+                )?;
+                groups.push(((path, commits), Vec::new()));
+                continue;
+            }
             let source = self.clone_payload(&path.owned_source, "factored call source key")?;
             let key_commits = self.clone_payload(&commits, "factored call commit key")?;
             let key = (
