@@ -362,3 +362,6 @@ fn typed_vec_constructor_retains_exact_explicit_chain_application_control() {
     super::vec_constructor_adoption::assert_application_control(&root, adopted, original);
     std::fs::remove_dir_all(root).unwrap();
 }
+
+#[path = "shiftsim_id_validation.rs"]
+mod shiftsim_id_validation;

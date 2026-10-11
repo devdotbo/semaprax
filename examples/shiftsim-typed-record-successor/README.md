@@ -6,8 +6,14 @@ in a sorted `Vec<string>` and use `vec_str_at` for validation and selection. The
 declared `Patient` field order is the dispatch key `(priority, arrival, id)`;
 the stable owned-record sort preserves those ties. Mutable scheduling state
 uses separate Copy records indexed alongside the sorted owners, so waiting and
-completion scans do not deep-clone patient IDs. IDs are cloned only when a
-completed assignment becomes part of the owned report.
+completion scans do not deep-clone patient IDs. Patient uniqueness now copies
+each ID once into a separate owned String vector,
+sorts it, and compares adjacent borrowed slots. Dispatch order stays in the
+original patient vector. The frozen pairwise helper remains an independent
+control, including 256 IDs; the application still uses its original one-million-step
+limit. These validation copies and the vector change allocation-failure ordinals.
+Output IDs are copied when a completed assignment enters the owned report.
+Runtime/fuel improvement is unqualified until the focused application gates run.
 The exact Server-wrapper program remains a differential control for all 15
 cases and original invalid-input checks. Qualification is pending. Conversion
 vector removal changes allocation-failure ordinals; no allocation gain is claimed.

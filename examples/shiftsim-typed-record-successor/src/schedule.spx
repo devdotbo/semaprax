@@ -40,8 +40,8 @@ fn unique_identifiers(values: own Vec<string>) -> bool
     let mut index = 1usize;
     let mut valid = true;
     while valid && index < length {
-        let previous = vec_clone_at<string>(sorted, index - 1usize);
-        let current = vec_clone_at<string>(sorted, index);
+        let previous = vec_str_at(sorted, index - 1usize);
+        let current = vec_str_at(sorted, index);
         valid = previous != current;
         index = index + 1usize;
         valid && index < length
@@ -53,21 +53,15 @@ fn unique_identifiers(values: own Vec<string>) -> bool
 fn unique_patient_ids(values: borrow Vec<Patient>) -> bool
 {
     let length = vec_len<Patient>(values);
+    let mut identifiers = vec_with_capacity<string>(length);
     let mut index = 0usize;
-    let mut valid = true;
-    while valid && index < length {
-        let current = vec_field<Patient>(values, index, "id");
-        let mut previous_index = 0usize;
-        while valid && previous_index < index {
-            let previous = vec_field<Patient>(values, previous_index, "id");
-            valid = current != previous;
-            previous_index = previous_index + 1usize;
-            valid && previous_index < index
-        }
+    while index < length {
+        let person_id_view = vec_field<Patient>(values, index, "id");
+        identifiers = vec_push<string>(identifiers, string_from_str(person_id_view));
         index = index + 1usize;
-        valid && index < length
+        0
     }
-    valid
+    unique_identifiers(identifiers)
 }
 
 @id("shiftsim.schedule.patient_fields_invalid")
