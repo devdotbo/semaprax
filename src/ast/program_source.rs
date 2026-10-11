@@ -31,9 +31,6 @@ impl<'a, T> DeclSlices<'a, T> {
     pub(crate) fn len(&self) -> usize {
         self.length
     }
-    pub(crate) fn is_empty(&self) -> bool {
-        self.length == 0
-    }
     pub(crate) fn first(&self) -> Option<&'a T> {
         self.get(0)
     }

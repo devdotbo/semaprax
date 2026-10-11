@@ -17,6 +17,7 @@ impl Deref for CheckedModuleLease {
         &self.0.resolved
     }
 }
+#[cfg_attr(test, derive(Clone))]
 pub(crate) enum ResolvedModuleInput {
     Owned(ResolvedProgram),
     Checked(CheckedModuleLease),
@@ -40,7 +41,7 @@ impl From<ResolvedProgram> for ResolvedModuleInput {
 impl std::ops::DerefMut for ResolvedModuleInput {
     fn deref_mut(&mut self) -> &mut ResolvedProgram {
         if let Self::Checked(owner) = self {
-            *self = Self::Owned(owner.deref().clone());
+            *self = Self::Owned((**owner).clone());
         }
         let Self::Owned(program) = self else {
             unreachable!()

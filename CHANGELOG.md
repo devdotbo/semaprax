@@ -1,5 +1,7 @@
 # Changelog
 
+- Borrow immutable Kernel-0 parameter and local identities in call-local evaluator environments (partial OPT708), removing larger inline identity slots and Arc clone/drop traffic. Reverse shadowing, fresh calls, lazy/first-fault behavior and source binding remain unchanged. Saved owned-environment and literal allocation controls are authored; execution and whole-formatter performance remain pending.
+
 - Remove temporary owned declaration IDs from all five Kernel-0 renderer entry lookups (partial OPT708). Exact current-program lookup order, source binding, evaluation and settlement are unchanged. Independent lookup allocation and authenticated evaluator parity controls are authored; qualification and whole-formatter performance remain pending.
 
 - Author actual-binary public CLI codec suitability controls (#773): twelve-profile receipts, whole-row bounded continuation, exact/+1/one-short output, source and manifest drift, capability versus shape, and read-only grammar refusals. Every query checks the complete fixture tree for writes. Source-only checkpoint; current-source execution qualification remains pending.

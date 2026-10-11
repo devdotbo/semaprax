@@ -142,6 +142,28 @@ impl Preparation {
         self.failed = answer.is_err();
         answer
     }
+    /// Status-only owning observation, distinct from an owned-Diagnostic retry.
+    /// It never restores work or replaces the held physical account.
+    #[cfg(test)]
+    fn probe_zero(&mut self, function: &ResolvedFunction) -> Result<(), ()> {
+        if self.failed {
+            return Err(());
+        }
+        let result = self
+            .budget
+            .charge(function, 0, "selected zero-unit state probe");
+        self.failed = result.is_err();
+        result.map_err(drop)
+    }
+
+    #[cfg(test)]
+    fn usage(&self) -> (usize, usize) {
+        (
+            self.budget.remaining,
+            self.budget.physical.as_ref().unwrap().charged(),
+        )
+    }
+
     pub(crate) fn fail(&mut self) {
         self.failed = true;
     }
@@ -173,22 +195,62 @@ impl<'a> Session<'a> {
         if preparation.failed {
             return Err(replay_error(anchor, "selected preparation already failed"));
         }
-        Self::from_budget(program, anchor, preparation.budget)
+        Self::try_from_preparation(program, anchor, preparation).map_err(|(preparation, error)| {
+            drop(preparation);
+            error
+        })
+    }
+
+    /// Preserve the exact cumulative owner and first diagnostic on construction
+    /// failure. The borrowed callee index is built once; no preflight is replayed.
+    pub(crate) fn try_from_preparation(
+        program: &'a dyn ReplayContext,
+        anchor: &'a ResolvedFunction,
+        mut preparation: Preparation,
+    ) -> Result<Self, (Preparation, Diagnostic)> {
+        if preparation.failed {
+            let error = preparation.budget.budget_refusal(
+                anchor,
+                "selected preparation already failed",
+                "",
+            );
+            return Err((preparation, error));
+        }
+        let indexed = (|| {
+            preparation.budget.reserve_array::<Self>(
+                anchor,
+                1,
+                "selected module replay session",
+            )?;
+            selected_callees::Context::new(program, anchor, &mut preparation.budget)
+        })();
+        match indexed {
+            Ok(indexed) => Ok(Self {
+                indexed,
+                budget: preparation.budget,
+                anchor,
+                failed: false,
+            }),
+            Err(error) => {
+                preparation.failed = true;
+                Err((preparation, error))
+            }
+        }
     }
 
     fn from_budget(
         program: &'a dyn ReplayContext,
         anchor: &'a ResolvedFunction,
-        mut budget: ReplayBudget,
+        budget: ReplayBudget,
     ) -> Result<Self, Diagnostic> {
-        budget.reserve_array::<Self>(anchor, 1, "selected module replay session")?;
-        let indexed = selected_callees::Context::new(program, anchor, &mut budget)?;
-        Ok(Self {
-            indexed,
-            budget,
+        Self::from_preparation(
+            program,
             anchor,
-            failed: false,
-        })
+            Preparation {
+                budget,
+                failed: false,
+            },
+        )
     }
 
     pub(crate) fn validate(&mut self, function: &ResolvedFunction) -> Result<(), Diagnostic> {

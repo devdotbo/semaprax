@@ -256,7 +256,12 @@ fn duplicate_provider_names_and_aliases_remain_identity_distinct_and_layout_drif
                 &baseline,
             )
             .unwrap();
-            (p.module.clone(), crate::hir::resolve(&synthetic).unwrap())
+            (
+                p.module.clone(),
+                crate::project::incremental::checked_hir::ResolvedModuleInput::Owned(
+                    crate::hir::resolve(&synthetic).unwrap(),
+                ),
+            )
         })
         .collect::<Vec<_>>();
     crate::workspace_graph::validation::validate_stub_signatures(&baseline, &old_modules).unwrap();
@@ -267,7 +272,12 @@ fn duplicate_provider_names_and_aliases_remain_identity_distinct_and_layout_drif
                 p, &current, &changed,
             )
             .unwrap();
-            (p.module.clone(), crate::hir::resolve(&synthetic).unwrap())
+            (
+                p.module.clone(),
+                crate::project::incremental::checked_hir::ResolvedModuleInput::Owned(
+                    crate::hir::resolve(&synthetic).unwrap(),
+                ),
+            )
         })
         .collect::<Vec<_>>();
     // Compare the retained caller's stub with the freshly resolved provider.

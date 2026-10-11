@@ -163,7 +163,12 @@ fn function_signature_closure_and_authority_reservations_are_exact_and_stale_fie
                 p, &authored, &parsed,
             )
             .unwrap();
-            (p.module.clone(), crate::hir::resolve(&synthetic).unwrap())
+            (
+                p.module.clone(),
+                crate::project::incremental::checked_hir::ResolvedModuleInput::Owned(
+                    crate::hir::resolve(&synthetic).unwrap(),
+                ),
+            )
         })
         .collect::<Vec<_>>();
     crate::workspace_graph::validation::validate_stub_signatures(&parsed, &modules).unwrap();
@@ -291,7 +296,12 @@ fn decoded_ready_wire_and_cleanup_match_complete_imports_with_private_descendant
                 p, &authored, &parsed,
             )
             .unwrap();
-            (p.module.clone(), crate::hir::resolve(&synthetic).unwrap())
+            (
+                p.module.clone(),
+                crate::project::incremental::checked_hir::ResolvedModuleInput::Owned(
+                    crate::hir::resolve(&synthetic).unwrap(),
+                ),
+            )
         })
         .collect::<Vec<_>>();
     crate::workspace_graph::validation::validate_stub_signatures(&parsed, &modules).unwrap();

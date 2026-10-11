@@ -146,8 +146,8 @@ fn helper_authority_rejects_missing_duplicate_and_wrong_source_owners() {
                     .iter_mut()
                     .find(|module| module.module == "lib.leaf")
                     .unwrap()
-                    .functions
-                    .clear();
+                    .functions =
+                    crate::workspace_graph::checked_retention::Retained::Owned(Vec::new());
             }
             5 => {
                 let duplicate = function_mut(&mut build, "leaf").clone();

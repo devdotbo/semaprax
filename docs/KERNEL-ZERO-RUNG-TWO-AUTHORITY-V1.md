@@ -105,3 +105,21 @@ allocation scope is lookup only; compiler construction, evaluation and handoff
 are outside that observer. These controls are authored, not executed in this
 tranche. No whole-formatter speedup, full OPT708 completion or rung promotion is
 claimed.
+
+## Borrowed evaluator bindings (OPT708)
+
+The reference evaluator's call-local environment stores borrowed ValueId
+references into the immutable current entry/term. It retains the same fresh
+callee environment, newest-first shadow lookup, left-to-right argument
+evaluation and pop on selected failure. No reference escapes evaluation.
+ValueId clones already share Arc backing; the removed work is reference-count
+traffic and the larger inline ValueId in each environment slot, not an ID
+payload allocation. Environment and argument vectors remain real allocations.
+
+The saved owned-environment evaluator is a test-only independent storage and
+traversal oracle. Two controls cover literal requested allocation totals for
+1,000 one-parameter calls through Drop, nested shadowing, fresh callee scopes,
+lazy and first-fault order, failed-let restoration, reentry, and authenticated
+integer renderer bytes. Construction and source replay are outside the
+allocation observer. Qualification and whole-formatter performance remain
+pending; this does not establish full OPT708 completion.

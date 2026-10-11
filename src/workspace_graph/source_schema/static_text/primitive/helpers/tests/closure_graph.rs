@@ -252,7 +252,8 @@ fn with_local(source: &str) -> WorkspaceGraphBuild {
             .functions
             .retain(|function| function.id.as_str() != "graph.fixture.entry");
     }
-    module_mut(&mut build, "scalar.app").functions = program.functions;
+    module_mut(&mut build, "scalar.app").functions =
+        crate::workspace_graph::checked_retention::Retained::Owned(program.functions);
     build
 }
 

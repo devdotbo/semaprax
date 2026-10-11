@@ -12,6 +12,10 @@ impl<'a> Context<'a> {
     pub(super) fn storage_identity(&self) -> *const &'a ResolvedFunction {
         self.targets.as_ptr()
     }
+    #[cfg(test)]
+    pub(super) fn storage_members(&self) -> &[&'a ResolvedFunction] {
+        &self.targets
+    }
 
     pub(super) fn new(
         source: &'a dyn ReplayContext,
@@ -22,9 +26,10 @@ impl<'a> Context<'a> {
             || !source.function_templates().is_empty()
             || !source.function_instances().is_empty()
         {
-            return Err(replay_error(
+            return Err(budget.budget_refusal(
                 function,
                 "selected callee index requires a reserved monomorphic context",
+                "",
             ));
         }
         budget.reserve_array::<Self>(function, 1, "selected callee index owner")?;
@@ -37,7 +42,7 @@ impl<'a> Context<'a> {
         )?;
         for index in 0..source.function_count() {
             let target = source.function_at(index).ok_or_else(|| {
-                replay_error(function, "selected callee member index is incomplete")
+                budget.budget_refusal(function, "selected callee member index is incomplete", "")
             })?;
             budget.charge(function, 1, "selected callee inventory member")?;
             targets.push(target);
@@ -65,13 +70,18 @@ impl<'a> Context<'a> {
                 .min(pair[1].id.as_str().len())
                 .checked_add(1)
                 .ok_or_else(|| {
-                    replay_error(function, "selected callee uniqueness work overflowed")
+                    budget.budget_refusal(
+                        function,
+                        "selected callee uniqueness work overflowed",
+                        "",
+                    )
                 })?;
             budget.charge(function, work, "selected callee unique identity")?;
             if pair[0].id == pair[1].id {
-                return Err(replay_error(
+                return Err(budget.budget_refusal(
                     function,
                     "selected callee inventory repeats a declaration identity",
+                    "",
                 ));
             }
         }
@@ -90,7 +100,9 @@ fn less(
         .len()
         .min(right.id.as_str().len())
         .checked_add(1)
-        .ok_or_else(|| replay_error(function, "selected callee comparison work overflowed"))?;
+        .ok_or_else(|| {
+            budget.budget_refusal(function, "selected callee comparison work overflowed", "")
+        })?;
     budget.charge(function, work, "selected callee identity comparison")?;
     Ok(left.id < right.id)
 }

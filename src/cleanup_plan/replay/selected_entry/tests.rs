@@ -151,3 +151,5 @@ fn malformed_later_certificate_body_and_target_cannot_reuse_an_earlier_lease() {
         assert_eq!(session.finish().err().unwrap().code, "SPX-H006");
     }
 }
+
+mod recovering;

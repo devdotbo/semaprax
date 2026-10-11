@@ -124,7 +124,7 @@ pub(in crate::source_verify) fn admits_vec_operation_element(
 mod tests {
     use super::*;
 
-    fn parsed(source: &str) -> Program {
+    fn parsed(source: &str) -> crate::ast::Program {
         crate::parse(source, std::path::Path::new("owned-record-collection.spx")).unwrap()
     }
 
