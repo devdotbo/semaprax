@@ -345,10 +345,15 @@ fn closure_impl(module: &[u8], host: Host, partition: bool) -> Result<Closure, R
                         import.module, import.name
                     )));
                 };
-                let disposition = if partition && host == Host::PrivateOrdinary
-                    && import.module == NAMESPACE && import.name == "spx_bytes_partition" {
+                let disposition = if partition
+                    && host == Host::PrivateOrdinary
+                    && import.module == NAMESPACE
+                    && import.name == "spx_bytes_partition"
+                {
                     Disposition::LeaseAware
-                } else { classify(host, import.module, import.name)? };
+                } else {
+                    classify(host, import.module, import.name)?
+                };
                 let ty = types.get(index as usize).ok_or(Refusal::Malformed)?;
                 if !signatures::matches(import.name, ty) {
                     return Err(Refusal::Signature(import.name.to_owned()));
@@ -372,5 +377,5 @@ pub(in crate::wasm) fn admit_producer(_closure: &Closure) -> Result<(), Refusal>
 #[cfg(test)]
 mod tests;
 
-mod signatures;
 pub(in crate::wasm) mod partition;
+mod signatures;

@@ -78,10 +78,10 @@ use std::collections::BTreeMap;
 
 use super::prepared::PreparedCancellation;
 use super::{
-    admitted_resolved_functions, argument_error, option_error, resolved_signature_is_admitted,
-    scan_closure, selection_error, ArgumentValue, Environment, Evaluator, Flow, FunctionLookup,
-    OwnedRecordValue, OwnedVariantValue, Value, EVALUATION_STACK_BYTES, MAX_STEPS_LIMIT,
-    REASON_AUTOMATIC_IDENTITY, REASON_UNSUPPORTED_CALLEE,
+    ArgumentValue, EVALUATION_STACK_BYTES, Environment, Evaluator, Flow, FunctionLookup,
+    MAX_STEPS_LIMIT, OwnedRecordValue, OwnedVariantValue, REASON_AUTOMATIC_IDENTITY,
+    REASON_UNSUPPORTED_CALLEE, Value, admitted_resolved_functions, argument_error, option_error,
+    resolved_signature_is_admitted, scan_closure, selection_error,
 };
 
 /// The function named for this lane declares no `yields` clause.

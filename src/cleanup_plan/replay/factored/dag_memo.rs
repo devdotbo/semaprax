@@ -20,9 +20,7 @@ pub(super) fn new(
     if let Some(lease) = program.borrowed_helper_lease(function) {
         lease.validate(program, function, budget)?;
         budget.reserve_array::<Memo>(function, 1, "borrowed exact DAG memo header")?;
-        return Ok(Memo::Borrowed(
-            ordinal::Ordinals::new(),
-        ));
+        return Ok(Memo::Borrowed(ordinal::Ordinals::new()));
     }
     #[cfg(not(test))]
     let _ = (program, function, budget);
@@ -55,7 +53,11 @@ pub(super) fn key(dag: &Rc<ObservationDag>, continuation: usize) -> Key {
 }
 #[cfg(test)]
 pub(super) fn test_key(pointer: usize, ordinal: usize, continuation: usize) -> Key {
-    Key { pointer, ordinal: Some(ordinal), continuation }
+    Key {
+        pointer,
+        ordinal: Some(ordinal),
+        continuation,
+    }
 }
 pub(super) fn get(
     function: &ResolvedFunction,
@@ -68,14 +70,26 @@ pub(super) fn get(
         match memo {
             Memo::Ordinary(memo) => Ok(memo.get(&(key.pointer, key.continuation)).copied()),
             Memo::Borrowed(memo) => {
-                let ordinal = key.ordinal.ok_or_else(|| replay_error(function, "borrowed DAG memo has no held construction ordinal"))?;
-                let Some((pointer, end)) = memo.get(function, &(ordinal, key.continuation), budget)? else { return Ok(None) };
+                let ordinal = key.ordinal.ok_or_else(|| {
+                    replay_error(
+                        function,
+                        "borrowed DAG memo has no held construction ordinal",
+                    )
+                })?;
+                let Some((pointer, end)) =
+                    memo.get(function, &(ordinal, key.continuation), budget)?
+                else {
+                    return Ok(None);
+                };
                 budget.charge(function, 1, "borrowed DAG memo exact current pointer")?;
                 if *pointer != key.pointer {
-                    return Err(replay_error(function, "borrowed DAG memo construction identity collides"));
+                    return Err(replay_error(
+                        function,
+                        "borrowed DAG memo construction identity collides",
+                    ));
                 }
                 Ok(Some(*end))
-            },
+            }
         }
     }
     #[cfg(not(test))]
@@ -94,16 +108,24 @@ pub(super) fn insert(
     #[cfg(test)]
     let ordinary = match memo {
         Memo::Borrowed(memo) => {
-            let ordinal = key.ordinal.ok_or_else(|| replay_error(function, "borrowed DAG memo has no held construction ordinal"))?;
+            let ordinal = key.ordinal.ok_or_else(|| {
+                replay_error(
+                    function,
+                    "borrowed DAG memo has no held construction ordinal",
+                )
+            })?;
             let numeric = (ordinal, key.continuation);
             if let Some((pointer, _)) = memo.get(function, &numeric, budget)? {
                 budget.charge(function, 1, "borrowed DAG memo exact insertion pointer")?;
                 if *pointer != key.pointer {
-                    return Err(replay_error(function, "borrowed DAG memo construction identity collides"));
+                    return Err(replay_error(
+                        function,
+                        "borrowed DAG memo construction identity collides",
+                    ));
                 }
             }
             return memo.insert(function, numeric, (key.pointer, end), budget);
-        },
+        }
         Memo::Ordinary(memo) => memo,
     };
     #[cfg(not(test))]

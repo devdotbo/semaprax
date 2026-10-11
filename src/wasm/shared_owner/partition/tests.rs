@@ -1,6 +1,6 @@
 //! Actual checked source -> module -> private host invocation, never witness substitution.
+use super::super::tests::{ORDINARY, node_available, run_node, stage};
 use super::*;
-use super::super::tests::{node_available, run_node, stage, ORDINARY};
 
 const SOURCE: &str = r#"module partition_wasm;
 @id("partition_wasm.split") fn split()->Vec<Bytes>{
@@ -16,12 +16,24 @@ const SOURCE: &str = r#"module partition_wasm;
 fn emitted(source: &str) -> PartitionModule {
     let ast = crate::parse(source, "partition_wasm.spx").unwrap();
     let owner = crate::hir::byte_partition::ValidatedPartitionProgram::compile_source(
-        &ast, &mut usize::MAX).unwrap();
+        &ast,
+        &mut usize::MAX,
+    )
+    .unwrap();
     assert!(crate::check(source, "partition_wasm.spx").is_err());
     let module = PartitionModule::emit(&owner, &mut usize::MAX).unwrap();
     assert!(consumer_closure(module.bytes(), Host::PrivateOrdinary).is_err());
-    assert!(module.closure.lease_aware.iter().any(|name| name == "spx_bytes_partition"));
-    assert_eq!(admit_producer(&module.closure), Err(Refusal::ProducerClosed));
+    assert!(
+        module
+            .closure
+            .lease_aware
+            .iter()
+            .any(|name| name == "spx_bytes_partition")
+    );
+    assert_eq!(
+        admit_producer(&module.closure),
+        Err(Refusal::ProducerClosed)
+    );
     module
 }
 
@@ -36,8 +48,11 @@ fn checked_source_partition_emits_real_4096_vec_and_consuming_iterator_with_sett
         if node_available() {
             let entry = module.entry_source();
             let script = format!("{ORDINARY}\n{SUCCESS_ENTRY_TEST}");
-            let directory = stage(&[("ordinary.mjs", script.as_bytes()), ("app.wasm", module.bytes()),
-                ("entry.mjs", entry.as_bytes())]);
+            let directory = stage(&[
+                ("ordinary.mjs", script.as_bytes()),
+                ("app.wasm", module.bytes()),
+                ("entry.mjs", entry.as_bytes()),
+            ]);
             let stdout = run_node(&directory, "ordinary.mjs", &["app.wasm", expected, "plain"]);
             assert!(stdout.contains("shared-owner-ordinary-ok"));
             assert!(stdout.contains("partition-paired-success-ok"));
@@ -49,16 +64,24 @@ fn checked_source_partition_emits_real_4096_vec_and_consuming_iterator_with_sett
 fn actual_partition_failure_codes_keep_owner_live_until_canonical_cleanup_and_reentry() {
     for (source, code) in [
         (SOURCE.replace("4096usize,16usize", "4096usize,0usize"), 1),
-        (SOURCE.replace("4096usize,16usize", "18446744073709551615usize,2usize"), 2),
+        (
+            SOURCE.replace("4096usize,16usize", "18446744073709551615usize,2usize"),
+            2,
+        ),
         (SOURCE.replace("4096usize,16usize", "4095usize,16usize"), 3),
         (SOURCE.replace("4096usize,16usize", "65536usize,1usize"), 4),
     ] {
         let module = emitted(&source);
         if node_available() {
             let entry = module.entry_source();
-            let directory = stage(&[("entry.mjs", entry.as_bytes()), ("entry-test.mjs", ENTRY_TEST.as_bytes())]);
-            assert!(run_node(&directory, "entry-test.mjs", &[&code.to_string()])
-                .contains("partition-entry-ok"));
+            let directory = stage(&[
+                ("entry.mjs", entry.as_bytes()),
+                ("entry-test.mjs", ENTRY_TEST.as_bytes()),
+            ]);
+            assert!(
+                run_node(&directory, "entry-test.mjs", &[&code.to_string()])
+                    .contains("partition-entry-ok")
+            );
         }
     }
 }

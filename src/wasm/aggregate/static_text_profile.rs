@@ -22,7 +22,11 @@ pub(in crate::wasm) fn emit_partition(
     owner: &crate::hir::byte_partition::ValidatedPartitionProgram<'_>,
     receiving_work: &mut usize,
 ) -> Result<Vec<u8>, Diagnostic> {
-    let entry = owner.program().functions.iter().find(|function| function.name == "main")
+    let entry = owner
+        .program()
+        .functions
+        .iter()
+        .find(|function| function.name == "main")
         .ok_or_else(|| error("private partition requires current main"))?;
     owner.simultaneous_view_bound(entry, receiving_work)?;
     emit_profile_with_scalar_exports(owner.program(), false, false, &[], Some(false))

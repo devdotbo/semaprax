@@ -150,10 +150,12 @@ pub(in crate::cleanup::inventory_builder) fn key_bytes(
     };
     let nested = match arguments.as_slice() {
         [] => 0,
-        [ResolvedType::Nominal {
-            declaration,
-            arguments,
-        }] if arguments.is_empty() => declaration.as_str().len(),
+        [
+            ResolvedType::Nominal {
+                declaration,
+                arguments,
+            },
+        ] if arguments.is_empty() => declaration.as_str().len(),
         [element]
             if crate::vec_ops::resolved_vec_element_is_admitted(element)
                 || *element == ResolvedType::String =>
@@ -163,7 +165,7 @@ pub(in crate::cleanup::inventory_builder) fn key_bytes(
         _ => {
             return Err(cleanup_error(
                 "selected inventory type has unsupported arguments",
-            ))
+            ));
         }
     };
     declaration

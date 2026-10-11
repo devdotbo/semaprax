@@ -73,13 +73,18 @@ fn array(bytes: &[u8]) -> String {
 fn prefix(grammar: Grammar) -> String {
     let imports = include_str!("../pattern_examples.spx");
     let imports = imports.split("// Compile once").next().unwrap();
-    format!("{imports}\n@id(\"fixture.pattern.examples.main\")\nfn main() -> i64 {{\nlet pattern = {}; let pattern_view = array_as_slice(pattern);\nlet initial = make(); let mut matcher: Matcher = compile(initial, pattern_view, 262144usize);\nlet ready = result_valid(matcher) && status(matcher) == 0usize;\n", array(grammar.pattern()))
+    format!(
+        "{imports}\n@id(\"fixture.pattern.examples.main\")\nfn main() -> i64 {{\nlet pattern = {}; let pattern_view = array_as_slice(pattern);\nlet initial = make(); let mut matcher: Matcher = compile(initial, pattern_view, 262144usize);\nlet ready = result_valid(matcher) && status(matcher) == 0usize;\n",
+        array(grammar.pattern())
+    )
 }
 fn observed() -> &'static str {
     "i64_from_usize(capture_count(matcher) * 101usize + capture_start(matcher, 0usize) * 11usize + capture_end(matcher, 0usize) * 13usize + capture_start(matcher, 1usize) * 17usize + capture_end(matcher, 1usize) * 19usize)"
 }
 fn packet(expected_match: &str, capture_check: &str) -> String {
-    format!("result_valid(matcher) && reason(matcher) == 0usize && detail(matcher) == 0usize && detail_domain(matcher) == 0usize && work_used(matcher) <= 262144usize && if {expected_match} {{ status(matcher) == 1usize && capture_count(matcher) == 2usize && {capture_check} }} else {{ status(matcher) == 2usize && capture_count(matcher) == 0usize }}")
+    format!(
+        "result_valid(matcher) && reason(matcher) == 0usize && detail(matcher) == 0usize && detail_domain(matcher) == 0usize && work_used(matcher) <= 262144usize && if {expected_match} {{ status(matcher) == 1usize && capture_count(matcher) == 2usize && {capture_check} }} else {{ status(matcher) == 2usize && capture_count(matcher) == 0usize }}"
+    )
 }
 fn ascii_source(grammar: Grammar, key: bool) -> (String, i64) {
     let inputs: Vec<_> = (0u8..=127)
@@ -128,8 +133,21 @@ fn ascii_source(grammar: Grammar, key: bool) -> (String, i64) {
         .flat_map(|input| input.iter().copied())
         .collect();
     assert_eq!(cases.len(), 128 * 3);
-    let packet = packet("expected", "capture_start(matcher, 0usize) == 0usize && capture_end(matcher, 0usize) == 1usize && capture_start(matcher, 1usize) == expected_start && capture_end(matcher, 1usize) == 3usize");
-    (format!("{}\nlet expected_bytes = {}; let expected_view = array_as_slice(expected_bytes);\nlet expected_starts = {}; let starts_view = array_as_slice(expected_starts);\nlet inputs = {}; let inputs_view = array_as_slice(inputs);\nlet mut index = 0usize; let mut correct = true; let mut total = 0;\nwhile index < 128usize {{\nlet offset = index * 3usize; let view = byte_range(inputs_view, offset, offset + 3usize);\nlet expected = match byte_get(expected_view, index) {{ Option::Some {{ value }} => value == 1u8, Option::None {{}} => false, }};\nlet expected_start = match byte_get(starts_view, index) {{ Option::Some {{ value }} => usize_from_u8(value), Option::None {{}} => 0usize, }};\nmatcher = full_match(matcher, view, 262144usize);\nif {packet} {{ 0 }} else {{ correct = false; 0 }}\nif status(matcher) == 1usize {{ total = total + {}; 0 }} else {{ 0 }}\nindex = index + 1usize; 0\n}}\nif ready && correct {{ total }} else {{ -1 }}\n}}\n", prefix(grammar), array(&expectations), array(&starts), array(&cases), observed()), expected)
+    let packet = packet(
+        "expected",
+        "capture_start(matcher, 0usize) == 0usize && capture_end(matcher, 0usize) == 1usize && capture_start(matcher, 1usize) == expected_start && capture_end(matcher, 1usize) == 3usize",
+    );
+    (
+        format!(
+            "{}\nlet expected_bytes = {}; let expected_view = array_as_slice(expected_bytes);\nlet expected_starts = {}; let starts_view = array_as_slice(expected_starts);\nlet inputs = {}; let inputs_view = array_as_slice(inputs);\nlet mut index = 0usize; let mut correct = true; let mut total = 0;\nwhile index < 128usize {{\nlet offset = index * 3usize; let view = byte_range(inputs_view, offset, offset + 3usize);\nlet expected = match byte_get(expected_view, index) {{ Option::Some {{ value }} => value == 1u8, Option::None {{}} => false, }};\nlet expected_start = match byte_get(starts_view, index) {{ Option::Some {{ value }} => usize_from_u8(value), Option::None {{}} => 0usize, }};\nmatcher = full_match(matcher, view, 262144usize);\nif {packet} {{ 0 }} else {{ correct = false; 0 }}\nif status(matcher) == 1usize {{ total = total + {}; 0 }} else {{ 0 }}\nindex = index + 1usize; 0\n}}\nif ready && correct {{ total }} else {{ -1 }}\n}}\n",
+            prefix(grammar),
+            array(&expectations),
+            array(&starts),
+            array(&cases),
+            observed()
+        ),
+        expected,
+    )
 }
 fn long_source(grammar: Grammar, matches: bool) -> (String, i64) {
     let mut input = match grammar {
@@ -151,7 +169,14 @@ fn long_source(grammar: Grammar, matches: bool) -> (String, i64) {
     let packet = packet(if matches { "true" } else { "false" }, &capture_check);
     // Whole-owner renewal is admitted only inside a loop body; one iteration
     // performs the single 8192-byte match, as the while-loop witness does.
-    (format!("{}\nlet input = \"{literal}\"; let text = string_as_str(input); let view = str_as_bytes(text);\nlet mut renewal = 0usize;\nwhile renewal < 1usize {{\nmatcher = full_match(matcher, view, 262144usize);\nrenewal = renewal + 1usize;\n0\n}}\nif ready && {packet} {{ if status(matcher) == 1usize {{ {} }} else {{ 0 }} }} else {{ -1 }}\n}}\n", prefix(grammar), observed()), expected)
+    (
+        format!(
+            "{}\nlet input = \"{literal}\"; let text = string_as_str(input); let view = str_as_bytes(text);\nlet mut renewal = 0usize;\nwhile renewal < 1usize {{\nmatcher = full_match(matcher, view, 262144usize);\nrenewal = renewal + 1usize;\n0\n}}\nif ready && {packet} {{ if status(matcher) == 1usize {{ {} }} else {{ 0 }} }} else {{ -1 }}\n}}\n",
+            prefix(grammar),
+            observed()
+        ),
+        expected,
+    )
 }
 
 fn run(scratch: &Path, label: &str, source: &str, expected: i64, live_bound: usize) {

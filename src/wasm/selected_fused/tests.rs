@@ -4,8 +4,8 @@
 use super::precursor::inspect;
 use super::*;
 use crate::byte_data_capacity::{
-    analyze_with_strategy, AllocationStrategy, CapacityFlow as F, FunctionCapacityInput,
-    ProgramCapacitySummary,
+    AllocationStrategy, CapacityFlow as F, FunctionCapacityInput, ProgramCapacitySummary,
+    analyze_with_strategy,
 };
 use crate::hir::{
     ResolvedExpr as E, ResolvedExprKind as K, ResolvedProgram, ResolvedStatement as S,
@@ -39,9 +39,14 @@ fn rescaled(count: u32) -> ResolvedProgram {
         panic!("body")
     };
     rescale(tail, 32, u64::from(count));
-    let [S::Let {
-        value: allocation, ..
-    }, _, S::While { condition, .. }, ..] = statements.as_mut_slice()
+    let [
+        S::Let {
+            value: allocation, ..
+        },
+        _,
+        S::While { condition, .. },
+        ..,
+    ] = statements.as_mut_slice()
     else {
         panic!("prefix")
     };
@@ -131,12 +136,9 @@ fn run_node(module: &Artifact, text_bytes: u64, mode: &str, expected: i64) {
 /// `byte_len` of the same view nested in its own outer `byte_get`'s index,
 /// bare (index 3 is out of range, so the arms' results swap) and under checked
 /// subtraction (index 2). Both keep the original result.
-const LAST_PAYLOAD_GET: &str =
-    "match byte_get(data, 2usize) { Option::Some { value } => value == 0u8, Option::None {} => false, }";
-const NESTED_LEN: &str =
-    "match byte_get(data, byte_len(data)) { Option::Some { value } => value == 0u8, Option::None {} => true, }";
-const CHECKED_INDEX: &str =
-    "match byte_get(data, byte_len(data) - 1usize) { Option::Some { value } => value == 0u8, Option::None {} => false, }";
+const LAST_PAYLOAD_GET: &str = "match byte_get(data, 2usize) { Option::Some { value } => value == 0u8, Option::None {} => false, }";
+const NESTED_LEN: &str = "match byte_get(data, byte_len(data)) { Option::Some { value } => value == 0u8, Option::None {} => true, }";
+const CHECKED_INDEX: &str = "match byte_get(data, byte_len(data) - 1usize) { Option::Some { value } => value == 0u8, Option::None {} => false, }";
 fn nested(replacement: &str) -> String {
     assert_eq!(ORIGINAL.matches(LAST_PAYLOAD_GET).count(), 1);
     ORIGINAL.replace(LAST_PAYLOAD_GET, replacement)
@@ -172,10 +174,12 @@ fn publishing_entry_requires_the_sealed_current_validation_owner() {
 
 #[test]
 fn unvalidated_precursor_stays_closed_outside_all_gates() {
-    assert!(crate::check(ORIGINAL, "selected-fused-default.spx")
-        .unwrap_err()
-        .iter()
-        .any(|diagnostic| diagnostic.code == "SPX-T267"));
+    assert!(
+        crate::check(ORIGINAL, "selected-fused-default.spx")
+            .unwrap_err()
+            .iter()
+            .any(|diagnostic| diagnostic.code == "SPX-T267")
+    );
     let selected = inputs(4096);
     let legacy = crate::byte_data_capacity::analyze(&[]).unwrap();
     assert_eq!(

@@ -348,15 +348,15 @@ pub(crate) fn select(
 ) -> Result<Selection, Diagnostic> {
     let _complete = closed_over(reachable)?;
     match admission {
-        Admission::ClosedUntilCrossBackendJoin => {
-            Err(super::error(
-                "actual producer admission stays closed until the interpreter, native and Core-Wasm closures join",
-            ))
-        }
+        Admission::ClosedUntilCrossBackendJoin => Err(super::error(
+            "actual producer admission stays closed until the interpreter, native and Core-Wasm closures join",
+        )),
     }
 }
 
-pub(super) fn closed_over(reachable: impl IntoIterator<Item = Consumer>) -> Result<Selection, Diagnostic> {
+pub(super) fn closed_over(
+    reachable: impl IntoIterator<Item = Consumer>,
+) -> Result<Selection, Diagnostic> {
     let consumers: BTreeSet<Consumer> = reachable.into_iter().collect();
     if consumers.is_empty() {
         return Err(super::error("no reachable Bytes owner selects the profile"));

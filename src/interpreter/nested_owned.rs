@@ -841,7 +841,7 @@ fn borrow_alias(value: &Value) -> Result<Value, Flow> {
         _ => {
             return Err(Flow::Guard(
                 "borrowed nested record contains a closed value kind",
-            ))
+            ));
         }
     })
 }

@@ -313,9 +313,11 @@ fn oracle(rows: usize) -> (String, String, usize) {
     let entries = parsed["entries"].as_array().unwrap();
     assert_eq!(entries.len(), rows);
     let label = "\0".repeat(64);
-    assert!(entries
-        .iter()
-        .all(|entry| entry["label"].as_str() == Some(label.as_str())));
+    assert!(
+        entries
+            .iter()
+            .all(|entry| entry["label"].as_str() == Some(label.as_str()))
+    );
     (head, row, length)
 }
 
@@ -346,7 +348,14 @@ fn probe(label: &str, root: &std::path::Path) -> Vec<Vec<Value>> {
     let copies = include_str!("../../../../native/string_settlement/bulk_utf8/copies.c");
     let hooks = include_str!("physical_hooks.c");
     let probe = include_str!("physical_probe.c");
-    let source = format!("#define FIXTURE_TRACK_CALLOC\n{observer}\n{copies}\n{hooks}\n#define main fixture_generated_main\n{generated}\n#undef main\n#undef malloc\n#undef calloc\n#undef realloc\n#undef free\n#undef memcpy\n#define IMPLEMENTATION \"{label}\"\n#define PREPARE spx_decl_{}\n#define REQUIRED spx_decl_{}\n#define RUN spx_decl_{}\n#define CONSUME spx_decl_{}\n#define REPORT spx_record_{}\n{probe}\nint main(void){{struct spx_status_entry entries[16];struct spx_context context={{0}};REQUIRE(spx_context_init(&context,737,entries,16,NULL,NULL,NULL));{cases}(void)puts(\"724\");return 0;}}", hex("consumer.prepare"), hex("consumer.required"), hex("consumer.run"), hex("consumer.consume"), hex("response.report"));
+    let source = format!(
+        "#define FIXTURE_TRACK_CALLOC\n{observer}\n{copies}\n{hooks}\n#define main fixture_generated_main\n{generated}\n#undef main\n#undef malloc\n#undef calloc\n#undef realloc\n#undef free\n#undef memcpy\n#define IMPLEMENTATION \"{label}\"\n#define PREPARE spx_decl_{}\n#define REQUIRED spx_decl_{}\n#define RUN spx_decl_{}\n#define CONSUME spx_decl_{}\n#define REPORT spx_record_{}\n{probe}\nint main(void){{struct spx_status_entry entries[16];struct spx_context context={{0}};REQUIRE(spx_context_init(&context,737,entries,16,NULL,NULL,NULL));{cases}(void)puts(\"724\");return 0;}}",
+        hex("consumer.prepare"),
+        hex("consumer.required"),
+        hex("consumer.run"),
+        hex("consumer.consume"),
+        hex("response.report")
+    );
     let mut runs = Vec::new();
     for optimization in ["-O0", "-O2"] {
         let path = root.join(format!("physical{optimization}.c"));

@@ -20,8 +20,8 @@ pub(in crate::wasm) use function_value::{
 };
 use function_value::{executable_functions, hex_execution_identity, program_uses_byte_range};
 mod binary_ops;
-mod byte_partition;
 mod borrowed_call;
+mod byte_partition;
 mod contract_scope;
 pub(super) mod conversions;
 mod filesystem_checked;
@@ -54,10 +54,12 @@ mod process_io;
 mod provider_lowering;
 mod static_text_profile;
 mod string_replacement;
-pub(super) use static_text_profile::{emit_partition, emit_scalar_exports_with_static_text, emit_with_static_text};
+pub(super) use static_text_profile::{
+    emit_partition, emit_scalar_exports_with_static_text, emit_with_static_text,
+};
 pub(super) mod text_toolkit;
 pub(super) use provider_lowering::{
-    lower_public_generic_provider_closure, PUBLIC_GENERIC_PROVIDER_SOURCE_INDEX_MIN,
+    PUBLIC_GENERIC_PROVIDER_SOURCE_INDEX_MIN, lower_public_generic_provider_closure,
 };
 pub(crate) fn owned_arena_capacity(
     program: &ResolvedProgram,
@@ -69,8 +71,8 @@ pub(crate) fn owned_arena_capacity(
 mod numeric_conversions;
 
 use super::{
-    function_import, intern_type, section, write_bytes, write_i64, write_name, write_u32,
-    Signature, F32, F64, I32, I64, SCALAR_IMPORT_COUNT,
+    F32, F64, I32, I64, SCALAR_IMPORT_COUNT, Signature, function_import, intern_type, section,
+    write_bytes, write_i64, write_name, write_u32,
 };
 use crate::aggregate_layout::{AggregateLayout, AggregateLayoutCache, AggregateTarget};
 use crate::ast::{BinaryOp, UnaryOp};
@@ -2078,10 +2080,16 @@ fn emit_profile_with_scalar_exports(
 
     let mut types = Vec::<Signature>::new();
     let mut type_indexes = HashMap::<Signature, u32>::new();
-    let partition_type = byte_partition::uses(program).then(|| intern_type(
-        Signature { params: vec![I64, I64, I64], results: vec![I64, I32] },
-        &mut types, &mut type_indexes,
-    ));
+    let partition_type = byte_partition::uses(program).then(|| {
+        intern_type(
+            Signature {
+                params: vec![I64, I64, I64],
+                results: vec![I64, I32],
+            },
+            &mut types,
+            &mut type_indexes,
+        )
+    });
     let binary_checked = intern_type(
         Signature {
             params: vec![I64, I64],
@@ -2393,13 +2401,22 @@ fn emit_profile_with_scalar_exports(
         })
         .collect::<HashMap<_, _>>();
     let partition_index = partition_type.map(|_| {
-        function_indexes.values().copied().min().expect("checked main function")
-            - text_helper_count - 1
+        function_indexes
+            .values()
+            .copied()
+            .min()
+            .expect("checked main function")
+            - text_helper_count
+            - 1
     });
     str_helpers::insert_indexes(text_helper_count, &mut function_indexes)?;
     if let Some(index) = partition_index {
-        function_indexes.insert(FunctionExecutionId::Monomorphic(
-            crate::hir::DeclarationId::new(crate::construction_fusion::partition::ID)), index);
+        function_indexes.insert(
+            FunctionExecutionId::Monomorphic(crate::hir::DeclarationId::new(
+                crate::construction_fusion::partition::ID,
+            )),
+            index,
+        );
     }
 
     let mut module = b"\0asm\x01\0\0\0".to_vec();
@@ -6774,7 +6791,9 @@ impl Emitter<'_> {
         require_type(&expr.ty, &op.return_type(), "byte operation result")?;
         match op {
             crate::byte_ops::ByteOp::Partition => {
-                return Err(error("byte partition requires its checked private receiver"));
+                return Err(error(
+                    "byte partition requires its checked private receiver",
+                ));
             }
             crate::byte_ops::ByteOp::Len => {
                 let local = self.plan.expr_scalar(expr)?;

@@ -15,9 +15,9 @@ mod edge_projection;
 mod profile_names;
 mod scalar_link;
 mod stream_admission;
+mod traversal_type_sites;
 mod type_projection;
 mod type_reference;
-mod traversal_type_sites;
 pub(super) use profile_names::project_linker_name;
 pub(super) use stream_admission::{
     command_link, data_project_shape, entry_link, has_separate_command_root, owned_stream_command,
@@ -30,8 +30,8 @@ pub(super) use dependency_closure::{
 };
 
 use super::{
+    CallOccurrenceKey, MAX_CALLS, WorkspaceDeclarationFact, WorkspaceEdge, WorkspaceResolvedModule,
     graph_error, limit_error, push_edge, reserve_builder_structure, visit_ast_call_sites,
-    CallOccurrenceKey, WorkspaceDeclarationFact, WorkspaceEdge, WorkspaceResolvedModule, MAX_CALLS,
 };
 use edge_projection::push_edge_reference;
 

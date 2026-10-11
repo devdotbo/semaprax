@@ -11,8 +11,8 @@ use std::{
     sync::atomic::{AtomicU64, Ordering},
 };
 mod allocation;
-pub(crate) mod direct;
 pub(crate) mod authority;
+pub(crate) mod direct;
 pub(crate) mod flat;
 pub(crate) mod funding;
 pub(in crate::interpreter) mod invocation;

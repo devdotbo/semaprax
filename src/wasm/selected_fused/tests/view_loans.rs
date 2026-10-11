@@ -6,8 +6,8 @@
 //! operand, which ends right after the read. Only the former may end the view,
 //! and every end it has (the operand after its last read and the short-circuit
 //! join skipping that read) must be lowered.
-use super::super::{accept, precursor::inspect, Refusal};
-use super::{capacity, inputs, nested, CHECKED_INDEX, NESTED_LEN, ORIGINAL};
+use super::super::{Refusal, accept, precursor::inspect};
+use super::{CHECKED_INDEX, NESTED_LEN, ORIGINAL, capacity, inputs, nested};
 use crate::hir::{ExpressionId, ResolvedProgram};
 use crate::loan_plan::{Loan, LoanCause};
 
@@ -61,14 +61,17 @@ fn leased_payload_view_binds_only_its_slice_loan_and_lowers_every_end() {
     let plan = &program.functions[0].loan_plan;
     for edge in &view.end_edges {
         let to = plan.edges[usize::from(*edge)].to;
-        assert!(!plan.endpoints[usize::from(to)]
-            .live_before
-            .contains(&view.id));
-        assert!(plan
-            .edges
-            .iter()
-            .filter(|entering| entering.to == to)
-            .all(|entering| !entering.live.contains(&view.id)));
+        assert!(
+            !plan.endpoints[usize::from(to)]
+                .live_before
+                .contains(&view.id)
+        );
+        assert!(
+            plan.edges
+                .iter()
+                .filter(|entering| entering.to == to)
+                .all(|entering| !entering.live.contains(&view.id))
+        );
     }
     let first = accept(&owner).expect("sealed owner lowers with every view end");
     assert_eq!(first.bytes, accept(&owner).unwrap().bytes);
@@ -267,9 +270,11 @@ fn checked_index_failure_retires_each_held_token_once() {
     );
     // Sticky selection precedes every end; the exit never publishes a result.
     assert!(calls(&ops[exit.start], import::SELECT_FAILURE));
-    assert!(!ops[exit.clone()]
-        .iter()
-        .any(|op| calls(op, import::VIEW_BYTE)));
+    assert!(
+        !ops[exit.clone()]
+            .iter()
+            .any(|op| calls(op, import::VIEW_BYTE))
+    );
 }
 
 #[test]

@@ -432,7 +432,7 @@ mod tests {
             reuse: None,
             function_work: super::super::FunctionResolutionWork::default(),
             fused_producer: None,
-        partition_profile: false,
+            partition_profile: false,
         }
     }
 
@@ -495,9 +495,11 @@ module test.hir_inference_bounds;
             resolver.infer_call_arguments(&caller, target, &[unary_chain(127)], &bindings),
             Some(vec![Type::I64])
         );
-        assert!(resolver
-            .infer_call_arguments(&caller, target, &[unary_chain(128)], &bindings)
-            .is_none());
+        assert!(
+            resolver
+                .infer_call_arguments(&caller, target, &[unary_chain(128)], &bindings)
+                .is_none()
+        );
 
         let mut wide = target.clone();
         wide.params = vec![target.params[0].clone(); MAX_EVIDENCE_NODES];
@@ -518,9 +520,11 @@ module test.hir_inference_bounds;
             kind: ExprKind::Int(1),
             span: Span::default(),
         });
-        assert!(resolver
-            .infer_call_arguments(&caller, &wide, &beyond, &bindings)
-            .is_none());
+        assert!(
+            resolver
+                .infer_call_arguments(&caller, &wide, &beyond, &bindings)
+                .is_none()
+        );
 
         let literal = || Expr {
             kind: ExprKind::Int(1),
@@ -538,9 +542,11 @@ module test.hir_inference_bounds;
         for _ in 0..128 {
             too_deep = omitted_id(too_deep);
         }
-        assert!(resolver
-            .infer_call_arguments(&caller, target, &[too_deep], &bindings)
-            .is_none());
+        assert!(
+            resolver
+                .infer_call_arguments(&caller, target, &[too_deep], &bindings)
+                .is_none()
+        );
 
         // 2,047 nested calls consume two evidence nodes each; two literal
         // siblings make the exact shared 4,096-node limit.
@@ -556,9 +562,11 @@ module test.hir_inference_bounds;
         );
         wide_nested.params.push(target.params[0].clone());
         nested_siblings.push(literal());
-        assert!(resolver
-            .infer_call_arguments(&caller, &wide_nested, &nested_siblings, &bindings)
-            .is_none());
+        assert!(
+            resolver
+                .infer_call_arguments(&caller, &wide_nested, &nested_siblings, &bindings)
+                .is_none()
+        );
     }
 
     #[test]
@@ -607,16 +615,18 @@ module test.hir_inference_bounds;
             owner: DeclarationId::new("app.id"),
             index: 0,
         };
-        assert!(resolver
-            .infer_call_arguments(
-                &caller,
-                target,
-                &[Expr {
-                    kind: ExprKind::Var("value".to_owned()),
-                    span: Span::default(),
-                }],
-                &bindings,
-            )
-            .is_none());
+        assert!(
+            resolver
+                .infer_call_arguments(
+                    &caller,
+                    target,
+                    &[Expr {
+                        kind: ExprKind::Var("value".to_owned()),
+                        span: Span::default(),
+                    }],
+                    &bindings,
+                )
+                .is_none()
+        );
     }
 }

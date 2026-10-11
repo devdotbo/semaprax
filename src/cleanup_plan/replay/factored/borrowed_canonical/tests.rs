@@ -92,11 +92,24 @@ fn ordinary_order_and_full_duplicate_multisets_match_with_one_budget_through_dro
     let mut memo_budget = ReplayBudget::with_physical(function, 1 << 20).unwrap();
     for (key, end) in [((1, 1), 10), ((1, 2), 20), ((2, 1), 30), ((1, 1), 11)] {
         old_memo.insert(key, end);
-        dag_memo::insert(function, &mut memo, dag_memo::test_key(key.0, key.0, key.1), end, &mut memo_budget).unwrap();
+        dag_memo::insert(
+            function,
+            &mut memo,
+            dag_memo::test_key(key.0, key.0, key.1),
+            end,
+            &mut memo_budget,
+        )
+        .unwrap();
     }
     for key in [(1, 1), (1, 2), (2, 1), (2, 2), (0, 1)] {
         assert_eq!(
-            dag_memo::get(function, &memo, &dag_memo::test_key(key.0, key.0, key.1), &mut memo_budget).unwrap(),
+            dag_memo::get(
+                function,
+                &memo,
+                &dag_memo::test_key(key.0, key.0, key.1),
+                &mut memo_budget
+            )
+            .unwrap(),
             old_memo.get(&key).copied()
         );
     }
@@ -107,14 +120,33 @@ fn ordinary_order_and_full_duplicate_multisets_match_with_one_budget_through_dro
         let mut current = dag_memo::test_borrowed();
         for (ordinal, pointer) in pointers.iter().enumerate() {
             for continuation in [1usize, 2] {
-                dag_memo::insert(function, &mut current, dag_memo::test_key(*pointer, ordinal, continuation), ordinal, ledger)?;
+                dag_memo::insert(
+                    function,
+                    &mut current,
+                    dag_memo::test_key(*pointer, ordinal, continuation),
+                    ordinal,
+                    ledger,
+                )?;
             }
         }
         for pointer in pointers {
             for continuation in [2usize, 1, 3] {
                 assert_eq!(
-                    dag_memo::get(function, &current, &dag_memo::test_key(pointer, pointers.iter().position(|p| *p == pointer).unwrap(), continuation), ledger)?,
-                    if continuation == 3 { None } else { Some(pointers.iter().position(|p| *p == pointer).unwrap()) },
+                    dag_memo::get(
+                        function,
+                        &current,
+                        &dag_memo::test_key(
+                            pointer,
+                            pointers.iter().position(|p| *p == pointer).unwrap(),
+                            continuation
+                        ),
+                        ledger
+                    )?,
+                    if continuation == 3 {
+                        None
+                    } else {
+                        Some(pointers.iter().position(|p| *p == pointer).unwrap())
+                    },
                 );
             }
         }
@@ -142,27 +174,54 @@ fn ordinary_order_and_full_duplicate_multisets_match_with_one_budget_through_dro
     wide_budget.remaining = 0;
     wide_budget.skeleton_remaining = MAX_REPLAY_WORK_UNITS;
     wide_budget.lent_skeleton = true;
-    wide_budget.reserve_array::<Observations>(function, WIDE, "wide Alt input carriers").unwrap();
+    wide_budget
+        .reserve_array::<Observations>(function, WIDE, "wide Alt input carriers")
+        .unwrap();
     let mut walk = skeleton_work::SkeletonWork::new(&program, function, &mut wide_budget);
-    let alt = walk.union_observations(vec![Observations::default(); WIDE]).unwrap();
+    let alt = walk
+        .union_observations(vec![Observations::default(); WIDE])
+        .unwrap();
     drop(walk);
     let root = alt.prefix.as_ref().unwrap();
     let mut wide_memo = dag_memo::test_borrowed();
-    wide_budget.reserve_array::<dag_memo::Memo>(function, 1, "wide Alt memo header").unwrap();
+    wide_budget
+        .reserve_array::<dag_memo::Memo>(function, 1, "wide Alt memo header")
+        .unwrap();
     let mut wide_automaton = Automaton::default();
     let start = wide_automaton.node(function, &mut wide_budget).unwrap();
     let before = wide_budget.skeleton_remaining;
-    let end = wide_automaton.add_dag(function, root, start, &mut wide_memo, &mut wide_budget).unwrap();
+    let end = wide_automaton
+        .add_dag(function, root, start, &mut wide_memo, &mut wide_budget)
+        .unwrap();
     let spent = before - wide_budget.skeleton_remaining;
     // AVL height is bounded by twice log2(N)+2. Each search, ancestor and
     // rotation has charged constant work; geometric arena relocation is linear.
     let logarithm = (WIDE + 1).ilog2() as usize + 1;
-    assert!(spent <= (WIDE + 1) * (32 * logarithm + 100), "wide Alt actual work {spent}");
+    assert!(
+        spent <= (WIDE + 1) * (32 * logarithm + 100),
+        "wide Alt actual work {spent}"
+    );
     assert_eq!(wide_automaton.nodes[start].epsilon.len(), WIDE);
-    assert!(wide_automaton.nodes[start].epsilon.iter().all(|target| *target == end));
-    let ObservationDagKind::Alt(members) = &root.kind else { unreachable!() };
+    assert!(
+        wide_automaton.nodes[start]
+            .epsilon
+            .iter()
+            .all(|target| *target == end)
+    );
+    let ObservationDagKind::Alt(members) = &root.kind else {
+        unreachable!()
+    };
     for member in members {
-        assert_eq!(dag_memo::get(function, &wide_memo, &dag_memo::key(member, start), &mut wide_budget).unwrap(), Some(start));
+        assert_eq!(
+            dag_memo::get(
+                function,
+                &wide_memo,
+                &dag_memo::key(member, start),
+                &mut wide_budget
+            )
+            .unwrap(),
+            Some(start)
+        );
     }
     // Mixed ordinal/continuation insertions independently exercise both double
     // rotations rather than relying on reversing one traversal's insertion order.
@@ -171,21 +230,57 @@ fn ordinary_order_and_full_duplicate_multisets_match_with_one_budget_through_dro
     let mut mixed_budget = ReplayBudget::new();
     for (ordinal, continuation) in [(3, 10), (1, 20), (2, 15), (5, 3), (4, 1), (4, 0), (0, 7)] {
         mixed_old.insert((ordinal, continuation), ordinal + continuation);
-        dag_memo::insert(function, &mut mixed, dag_memo::test_key(ordinal + 100, ordinal, continuation), ordinal + continuation, &mut mixed_budget).unwrap();
+        dag_memo::insert(
+            function,
+            &mut mixed,
+            dag_memo::test_key(ordinal + 100, ordinal, continuation),
+            ordinal + continuation,
+            &mut mixed_budget,
+        )
+        .unwrap();
     }
     for ((ordinal, continuation), end) in mixed_old {
-        assert_eq!(dag_memo::get(function, &mixed, &dag_memo::test_key(ordinal + 100, ordinal, continuation), &mut mixed_budget).unwrap(), Some(end));
+        assert_eq!(
+            dag_memo::get(
+                function,
+                &mixed,
+                &dag_memo::test_key(ordinal + 100, ordinal, continuation),
+                &mut mixed_budget
+            )
+            .unwrap(),
+            Some(end)
+        );
     }
 
     // Legacy nodes have no session-minted construction ordinal.
-    let detached = Rc::new(ObservationDag::legacy(ObservationDagKind::Seq(None, Vec::new())));
+    let detached = Rc::new(ObservationDag::legacy(ObservationDagKind::Seq(
+        None,
+        Vec::new(),
+    )));
     let mut detached_budget = ReplayBudget::new();
-    assert!(dag_memo::get(function, &memo, &dag_memo::key(&detached, 1), &mut detached_budget).is_err());
+    assert!(
+        dag_memo::get(
+            function,
+            &memo,
+            &dag_memo::key(&detached, 1),
+            &mut detached_budget
+        )
+        .is_err()
+    );
 
     // A detached construction ordinal never grants a cached continuation.
     let mut ledger = ReplayBudget::new();
     assert!(dag_memo::get(function, &memo, &dag_memo::test_key(99, 1, 1), &mut ledger).is_err());
-    assert!(dag_memo::insert(function, &mut memo, dag_memo::test_key(99, 1, 1), 50, &mut ledger).is_err());
+    assert!(
+        dag_memo::insert(
+            function,
+            &mut memo,
+            dag_memo::test_key(99, 1, 1),
+            50,
+            &mut ledger
+        )
+        .is_err()
+    );
 
     // Two identical alternatives must remain two traces. A shared suffix
     // and a different terminal exercise weighted closure and label identity.
@@ -267,10 +362,12 @@ fn ordinary_order_and_full_duplicate_multisets_match_with_one_budget_through_dro
     let mut overflow_budget = ReplayBudget::new();
     let mut overflow =
         BorrowedCanonicalizer::new(function, &automaton, 0, &mut overflow_budget).unwrap();
-    assert!(overflow
-        .id(function, vec![(7, u64::MAX)], &mut overflow_budget)
-        .unwrap()
-        .is_none());
+    assert!(
+        overflow
+            .id(function, vec![(7, u64::MAX)], &mut overflow_budget)
+            .unwrap()
+            .is_none()
+    );
     assert!(overflow_budget.remaining < MAX_REPLAY_WORK_UNITS);
 
     fn run(

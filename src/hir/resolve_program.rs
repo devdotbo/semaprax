@@ -18,13 +18,14 @@ use super::hir_error;
 use super::ids::{DeclarationId, FunctionExecutionId, FunctionInstanceId, ValueId};
 use super::monomorphize::materialize_function_template;
 use super::nodes::{
-    admitted_owned_byte_prelude_instance, DeclarationKind, OwnershipMode, ResolvedFunction,
-    ResolvedFunctionInstance, ResolvedFunctionTemplate, ResolvedImport, ResolvedImportFailure,
-    ResolvedImportParameter, ResolvedImportResult, ResolvedImportResultKind, ResolvedInterface,
-    ResolvedParam, ResolvedProgram, ResolvedResourceDrop, ResolvedResourceDropKind, ResolvedType,
+    DeclarationKind, OwnershipMode, ResolvedFunction, ResolvedFunctionInstance,
+    ResolvedFunctionTemplate, ResolvedImport, ResolvedImportFailure, ResolvedImportParameter,
+    ResolvedImportResult, ResolvedImportResultKind, ResolvedInterface, ResolvedParam,
+    ResolvedProgram, ResolvedResourceDrop, ResolvedResourceDropKind, ResolvedType,
     ResolvedTypeDeclaration, ResolvedTypeDeclarationKind, ResolvedTypeParameterDeclaration,
+    admitted_owned_byte_prelude_instance,
 };
-use super::{validate, Binding, Resolver};
+use super::{Binding, Resolver, validate};
 
 impl Resolver<'_> {
     pub(super) fn resolve_call_type_argument(
@@ -1047,7 +1048,7 @@ impl Resolver<'_> {
                 Frame::Enter(Type::Never) => {
                     return Err(hir_error(
                         "compiler-only completion marker cannot be declared",
-                    ))
+                    ));
                 }
                 Frame::Enter(ty @ Type::Function { .. }) => {
                     result = Some(super::function_value::resolve::source_type(ty).ok_or_else(

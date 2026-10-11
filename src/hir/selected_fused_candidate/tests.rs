@@ -1,7 +1,7 @@
 use super::*;
 use crate::byte_data_capacity::{
-    analyze_with_strategy, AllocationStrategy, CapacityDiagnostic, CapacityFlow,
-    FunctionCapacityInput,
+    AllocationStrategy, CapacityDiagnostic, CapacityFlow, FunctionCapacityInput,
+    analyze_with_strategy,
 };
 use crate::hir::ResolvedStatement;
 
@@ -64,7 +64,9 @@ fn ordinary_32_row_control_keeps_the_unchanged_legacy_routes() {
     assert_eq!((main.bytes_copy_sites, main.fused_backing_events), (32, 0));
     assert!(matches!(
         validate_selected(&program),
-        Err(SelectedRefusal::Source(CandidateRefusal::NoSelection { .. }))
+        Err(SelectedRefusal::Source(
+            CandidateRefusal::NoSelection { .. }
+        ))
     ));
 }
 
@@ -295,10 +297,12 @@ fn an_unused_unrelated_invariant_record_refuses_before_selected_resolution() {
     );
     assert_ne!(source, SOURCE);
     let program = parsed(&source);
-    assert!(program
-        .types
-        .iter()
-        .any(|declaration| !declaration.invariants().is_empty()));
+    assert!(
+        program
+            .types
+            .iter()
+            .any(|declaration| !declaration.invariants().is_empty())
+    );
     assert!(matches!(
         validate_selected(&program),
         Err(SelectedRefusal::Resolve(_))

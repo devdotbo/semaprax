@@ -89,7 +89,9 @@ impl NativeOutputProfile {
         op: crate::byte_ops::ByteOp,
     ) -> (&'static str, &'static str) {
         match (self, op) {
-            (Self::SelectedPartition, crate::byte_ops::ByteOp::Zeroed) => ("spx_partition_zeroed", "spx_ctx, "),
+            (Self::SelectedPartition, crate::byte_ops::ByteOp::Zeroed) => {
+                ("spx_partition_zeroed", "spx_ctx, ")
+            }
             (Self::ReservedBytesProvider, crate::byte_ops::ByteOp::Copy) => {
                 ("spx_bytes_copy_in", "spx_ctx, ")
             }
@@ -110,18 +112,19 @@ impl NativeOutputProfile {
                 selected_final_utf8: true,
                 ..StringRuntimeSelection::FROZEN
             },
-            Self::Legacy | Self::SelectedPartition | Self::StdoutTranscript | Self::OwnedDataProvider => {
-                StringRuntimeSelection {
-                    length_delimited: true,
-                    provider_carriers: false,
-                    include_instances: true,
-                    reserved_bytes: false,
-                    stream_epochs: false,
-                    command_carriers: false,
-                    resource_strings: false,
-                    selected_final_utf8: false,
-                }
-            }
+            Self::Legacy
+            | Self::SelectedPartition
+            | Self::StdoutTranscript
+            | Self::OwnedDataProvider => StringRuntimeSelection {
+                length_delimited: true,
+                provider_carriers: false,
+                include_instances: true,
+                reserved_bytes: false,
+                stream_epochs: false,
+                command_carriers: false,
+                resource_strings: false,
+                selected_final_utf8: false,
+            },
             Self::SourceCommand | Self::SourceSelectedFileCommand => StringRuntimeSelection {
                 length_delimited: true,
                 provider_carriers: false,

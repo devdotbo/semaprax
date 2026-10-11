@@ -55,15 +55,29 @@ pub(super) fn emit_hir_c_with_options(
     semantic: Option<&NativeSemanticMetering>,
     selected: Option<&super::super::selected_final_utf8::Selection>,
 ) -> Result<String, Diagnostic> {
-    emit_hir_c_with_receiving(program, contract_labels, output_profile, selected_command,
-        semantic, selected, None)
+    emit_hir_c_with_receiving(
+        program,
+        contract_labels,
+        output_profile,
+        selected_command,
+        semantic,
+        selected,
+        None,
+    )
 }
 
 pub(in crate::codegen) fn emit_partition_source(
     projection: &super::super::native_byte_data::native_shared_bytes::source::Projection<'_, '_>,
 ) -> Result<String, Diagnostic> {
-    emit_hir_c_with_receiving(projection.owner().program(), &HashMap::new(),
-        NativeOutputProfile::SelectedPartition, None, None, None, Some(projection))
+    emit_hir_c_with_receiving(
+        projection.owner().program(),
+        &HashMap::new(),
+        NativeOutputProfile::SelectedPartition,
+        None,
+        None,
+        None,
+        Some(projection),
+    )
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -74,17 +88,24 @@ fn emit_hir_c_with_receiving(
     selected_command: Option<&DeclarationId>,
     semantic: Option<&NativeSemanticMetering>,
     selected: Option<&super::super::selected_final_utf8::Selection>,
-    partition: Option<&super::super::native_byte_data::native_shared_bytes::source::Projection<'_, '_>>,
+    partition: Option<
+        &super::super::native_byte_data::native_shared_bytes::source::Projection<'_, '_>,
+    >,
 ) -> Result<String, Diagnostic> {
     if let Some(projection) = partition {
         if output_profile != NativeOutputProfile::SelectedPartition
-            || !std::ptr::eq(program, projection.owner().program()) {
-            return Err(backend_error("partition native receiving subject is not current"));
+            || !std::ptr::eq(program, projection.owner().program())
+        {
+            return Err(backend_error(
+                "partition native receiving subject is not current",
+            ));
         }
         projection.owner().revalidate_compiler()?;
     } else {
         if output_profile == NativeOutputProfile::SelectedPartition {
-            return Err(backend_error("partition native emission requires its sealed source projection"));
+            return Err(backend_error(
+                "partition native emission requires its sealed source projection",
+            ));
         }
         hir::validate(program)?;
     }
@@ -119,7 +140,9 @@ fn emit_hir_c_with_receiving(
     }
     let resource_abi = if let Some(projection) = partition {
         native_resource::build_partition_resource_abi(projection.owner())?
-    } else { native_resource::build_resource_abi(authoritative_program)? };
+    } else {
+        native_resource::build_resource_abi(authoritative_program)?
+    };
     let record_layouts = AggregateLayoutCache::build(program, AggregateTarget::Native64)?;
     let variant_layouts = VariantLayoutCache::build(program, VariantTarget::Native64)?;
     let functions = function_index(program)?;
@@ -155,7 +178,9 @@ fn emit_hir_c_with_receiving(
         );
     }
     if let Some(projection) = partition {
-        let extended = super::super::native_byte_data::native_shared_bytes::extend_context(output.into_string());
+        let extended = super::super::native_byte_data::native_shared_bytes::extend_context(
+            output.into_string(),
+        );
         output = crate::bounded_output::CappedString::new();
         output.push_str(&extended);
         projection.emit_bindings(&mut output);

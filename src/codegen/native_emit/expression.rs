@@ -1,7 +1,7 @@
 use super::{
-    backend_error, c_case_symbol, c_field_symbol, c_i32, c_i64, c_pattern_literal, c_string,
-    c_value_type, is_aggregate_type, is_direct_plan_owned, record_declaration_id,
-    variant_declaration_id, CBinding, CEmitter, COutput, CValue,
+    CBinding, CEmitter, COutput, CValue, backend_error, c_case_symbol, c_field_symbol, c_i32,
+    c_i64, c_pattern_literal, c_string, c_value_type, is_aggregate_type, is_direct_plan_owned,
+    record_declaration_id, variant_declaration_id,
 };
 use crate::aggregate_layout::AggregateLayout;
 use crate::ast::{BinaryOp, UnaryOp};
@@ -24,9 +24,9 @@ mod lexical_lookup;
 mod list_ops;
 mod nested_owned;
 mod owned_buffer;
-mod partition;
 mod owned_try;
 mod owned_values;
+mod partition;
 mod places;
 mod record_iterator_item;
 mod resource_text;
@@ -217,7 +217,8 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         self.require_type(result_type, &return_type, "byte operation result")?;
         let temporary = if op.return_type() == ResolvedType::Bytes
             || (op == crate::byte_ops::ByteOp::Partition
-                && self.output_profile == super::NativeOutputProfile::SelectedPartition) {
+                && self.output_profile == super::NativeOutputProfile::SelectedPartition)
+        {
             self.bytes_plan
                 .as_ref()
                 .ok_or_else(|| {
@@ -293,7 +294,9 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             for line in transitions.lines() {
                 self.line(line);
             }
-            if matches!(return_type, ResolvedType::Bytes) || op == crate::byte_ops::ByteOp::Partition {
+            if matches!(return_type, ResolvedType::Bytes)
+                || op == crate::byte_ops::ByteOp::Partition
+            {
                 code = plan
                     .result_at(expression)
                     .ok_or_else(|| {

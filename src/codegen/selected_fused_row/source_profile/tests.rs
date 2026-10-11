@@ -58,10 +58,12 @@ fn binaries(unit: &str, label: &str) -> Vec<std::path::PathBuf> {
 fn original_native_source_profile_is_deterministic_and_default_remains_closed() {
     let unit = source(ORIGINAL, 1024 * 1024);
     assert_eq!(unit, source(ORIGINAL, 1024 * 1024));
-    assert!(crate::check(ORIGINAL, "ordinary.spx")
-        .unwrap_err()
-        .iter()
-        .any(|d| d.code == "SPX-T267"));
+    assert!(
+        crate::check(ORIGINAL, "ordinary.spx")
+            .unwrap_err()
+            .iter()
+            .any(|d| d.code == "SPX-T267")
+    );
     let legacy_text = ORIGINAL.replace("4096", "32");
     let legacy = crate::check(&legacy_text, "ordinary-32.spx").unwrap();
     assert!(
@@ -165,9 +167,18 @@ static void *profile_counted_malloc(size_t size) {
 #undef malloc
 #define malloc profile_counted_malloc
 "#;
-    for binary in binaries(&format!("#define PROBE_KEEP_FAIL_STOP 1\n{PREFIX}\n{observer}\n#define main profile_unused_main\n{unit}\n#undef main\n{driver}"),"account") {
-        let output=Command::new(&binary).output().unwrap();
-        assert!(output.status.success(),"{}",String::from_utf8_lossy(&output.stderr));
+    for binary in binaries(
+        &format!(
+            "#define PROBE_KEEP_FAIL_STOP 1\n{PREFIX}\n{observer}\n#define main profile_unused_main\n{unit}\n#undef main\n{driver}"
+        ),
+        "account",
+    ) {
+        let output = Command::new(&binary).output().unwrap();
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 }
 #[test]
@@ -192,13 +203,23 @@ int main(void) {
     return profile_unused_main();
 }
 "#;
-    for binary in binaries(&format!("#define PROBE_KEEP_FAIL_STOP 1\n{PREFIX}\n#define main profile_unused_main\n{unit}\n#undef main\n{driver}"),"failure") {
-        let output=Command::new(&binary).output().unwrap();
-        assert_eq!(output.status.code(),Some(1),"{}",String::from_utf8_lossy(&output.stderr));
-        let value:serde_json::Value=serde_json::from_slice(&output.stdout).unwrap();
-        assert_eq!(value["outcome"],"language_failure");
-        assert_eq!(value["status"]["domain"],"semaprax.arithmetic.v1");
-        assert_eq!(value["status"]["code"],1);
+    for binary in binaries(
+        &format!(
+            "#define PROBE_KEEP_FAIL_STOP 1\n{PREFIX}\n#define main profile_unused_main\n{unit}\n#undef main\n{driver}"
+        ),
+        "failure",
+    ) {
+        let output = Command::new(&binary).output().unwrap();
+        assert_eq!(
+            output.status.code(),
+            Some(1),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        let value: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+        assert_eq!(value["outcome"], "language_failure");
+        assert_eq!(value["status"]["domain"], "semaprax.arithmetic.v1");
+        assert_eq!(value["status"]["code"], 1);
         assert!(value.get("result").is_none());
     }
 }

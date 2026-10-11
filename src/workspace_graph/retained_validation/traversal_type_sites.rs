@@ -12,17 +12,26 @@ fn remove_one(
     let expression = hir::budgeted_workspace_expression_identity(&owner_id, call_path);
     let path = crate::bounded_output::budgeted_format(format_args!("{call_path}.type_argument.0"));
     if crate::bounded_output::active_refused() {
-        return Err(vec![limit_error("builder_bytes", super::super::active_builder_limit())]);
+        return Err(vec![limit_error(
+            "builder_bytes",
+            super::super::active_builder_limit(),
+        )]);
     }
     let expected = (owner, expression.as_str(), path.as_str(), target);
     let mut found = None;
     for (index, site) in sites.iter().enumerate() {
         if site.projection() == expected && found.replace(index).is_some() {
-            return Err(vec![graph_error("SPX-G173", "generated traversal type-site multiplicity disagrees")]);
+            return Err(vec![graph_error(
+                "SPX-G173",
+                "generated traversal type-site multiplicity disagrees",
+            )]);
         }
     }
     let Some(index) = found else {
-        return Err(vec![graph_error("SPX-G173", "generated traversal type site is missing")]);
+        return Err(vec![graph_error(
+            "SPX-G173",
+            "generated traversal type site is missing",
+        )]);
     };
     sites.remove(index);
     Ok(())
@@ -40,8 +49,14 @@ pub(super) fn remove(
     let expected = super::super::record_traversal::collect(source, programs)?;
     for item in &expected.loops {
         if imported.contains(item.declaration.stable_id.as_str()) {
-            let path = crate::bounded_output::budgeted_format(format_args!("{}.s0.value", item.path));
-            remove_one(&item.function.stable_id, &path, &item.declaration.stable_id, sites)?;
+            let path =
+                crate::bounded_output::budgeted_format(format_args!("{}.s0.value", item.path));
+            remove_one(
+                &item.function.stable_id,
+                &path,
+                &item.declaration.stable_id,
+                sites,
+            )?;
         }
     }
     for read in &expected.reads {
@@ -53,7 +68,12 @@ pub(super) fn remove(
             } else {
                 crate::bounded_output::budgeted_clone(&read.path)
             };
-            remove_one(&read.function.stable_id, &path, &read.declaration.stable_id, sites)?;
+            remove_one(
+                &read.function.stable_id,
+                &path,
+                &read.declaration.stable_id,
+                sites,
+            )?;
         }
     }
     Ok(())
@@ -71,29 +91,62 @@ mod tests {
         let authored = hir::workspace_expression_identity(&owner, "body.tail");
         let fresh = || {
             let mut sites = Vec::new();
-            type_projection::TypeSite::push(&mut sites, "app.main", Some(expression.as_str()), &path, "rows.Row").unwrap();
+            type_projection::TypeSite::push(
+                &mut sites,
+                "app.main",
+                Some(expression.as_str()),
+                &path,
+                "rows.Row",
+            )
+            .unwrap();
             // Repeated authored type arguments remain repeated.
             for _ in 0..2 {
-                type_projection::TypeSite::push(&mut sites, "app.main", Some(authored.as_str()), "body.tail.type_argument.0", "rows.Row").unwrap();
+                type_projection::TypeSite::push(
+                    &mut sites,
+                    "app.main",
+                    Some(authored.as_str()),
+                    "body.tail.type_argument.0",
+                    "rows.Row",
+                )
+                .unwrap();
             }
             sites
         };
         let mut sites = fresh();
         remove_one("app.main", call, "rows.Row", &mut sites).unwrap();
         assert_eq!(sites.len(), 2);
-        assert!(sites.iter().all(|s| s.projection() == ("app.main", authored.as_str(), "body.tail.type_argument.0", "rows.Row")));
+        assert!(sites.iter().all(|s| s.projection()
+            == (
+                "app.main",
+                authored.as_str(),
+                "body.tail.type_argument.0",
+                "rows.Row"
+            )));
         for (caller, current_call, target) in [
             ("foreign.main", call, "rows.Row"),
             ("app.main", "body.s1.value.s0.value", "rows.Row"),
             ("app.main", call, "foreign.Row"),
         ] {
             let mut sites = fresh();
-            assert_eq!(remove_one(caller, current_call, target, &mut sites).unwrap_err()[0].code, "SPX-G173");
+            assert_eq!(
+                remove_one(caller, current_call, target, &mut sites).unwrap_err()[0].code,
+                "SPX-G173"
+            );
             assert_eq!(sites.len(), 3);
         }
         let mut sites = fresh();
-        type_projection::TypeSite::push(&mut sites, "app.main", Some(expression.as_str()), &path, "rows.Row").unwrap();
-        assert_eq!(remove_one("app.main", call, "rows.Row", &mut sites).unwrap_err()[0].code, "SPX-G173");
+        type_projection::TypeSite::push(
+            &mut sites,
+            "app.main",
+            Some(expression.as_str()),
+            &path,
+            "rows.Row",
+        )
+        .unwrap();
+        assert_eq!(
+            remove_one("app.main", call, "rows.Row", &mut sites).unwrap_err()[0].code,
+            "SPX-G173"
+        );
         assert_eq!(sites.len(), 4);
     }
 }

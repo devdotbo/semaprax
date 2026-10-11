@@ -9,10 +9,10 @@
 //! merged or repaired. After lowering, a census requires every transition and
 //! every reachable exit to have been reproduced, so a plan the lowering does
 //! not model refuses instead of being approximated.
-use super::lower::{unsupported, Lower};
-use super::{import, Refusal};
+use super::lower::{Lower, unsupported};
+use super::{Refusal, import};
 use crate::cleanup::{
-    FieldLivenessShape, LivenessFlagId, BYTES_DROP_LIFECYCLE_ID, STRING_DROP_LIFECYCLE_ID,
+    BYTES_DROP_LIFECYCLE_ID, FieldLivenessShape, LivenessFlagId, STRING_DROP_LIFECYCLE_ID,
     VEC_DROP_LIFECYCLE_ID,
 };
 use crate::cleanup_plan::{

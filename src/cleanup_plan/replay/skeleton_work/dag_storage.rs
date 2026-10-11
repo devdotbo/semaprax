@@ -100,7 +100,10 @@ impl SkeletonWork<'_, '_> {
             let mut held = scratch.borrow_mut();
             let ordinal = held.next_ordinal;
             held.next_ordinal = ordinal.checked_add(1).ok_or_else(|| {
-                replay_error(self.function, "factored DAG construction ordinal overflowed")
+                replay_error(
+                    self.function,
+                    "factored DAG construction ordinal overflowed",
+                )
             })?;
             ordinal
         };

@@ -355,7 +355,9 @@ fn delegated_children_and_nested_closures_cannot_reset_variable_exclusion() {
         "let x = vec_of<i64>({ value }); value",
         "while value > 0 { let x = { value }; value } value",
     ] {
-        let source = format!("module carrier.exclusion; @id(\"carrier.exclusion.main\") fn main() -> i64 {{ let callback = fn(value: i64) -> i64 {{ {body} }}; 0 }}");
+        let source = format!(
+            "module carrier.exclusion; @id(\"carrier.exclusion.main\") fn main() -> i64 {{ let callback = fn(value: i64) -> i64 {{ {body} }}; 0 }}"
+        );
         let parsed = crate::parse(&source, "exclusion.spx").unwrap();
         let mut ast = Census::default();
         ast_census(&parsed.functions[0].body, false, true, &mut ast);
@@ -381,10 +383,12 @@ fn malformed_variable_censuses_fail_closed_and_runtime_censuses_are_ignored() {
         let mut malformed = cost_census(&parsed);
         malformed.exact_carrier_free_vars = vars;
         for mode in [5, 6] {
-            assert!(super::fixed_hir_discount(mode, &malformed, &ordinary)
-                .unwrap_err()
-                .iter()
-                .all(|error| error.code == "SPX-G171"));
+            assert!(
+                super::fixed_hir_discount(mode, &malformed, &ordinary)
+                    .unwrap_err()
+                    .iter()
+                    .all(|error| error.code == "SPX-G171")
+            );
         }
         for retention in [
             cached_exact::Retention::Parsed,
@@ -402,10 +406,12 @@ fn malformed_variable_censuses_fail_closed_and_runtime_censuses_are_ignored() {
     let mut huge = StructuralCost::new();
     huge.exact_expressions = usize::MAX;
     huge.exact_carrier_free_vars = usize::MAX / carriers() + 1;
-    assert!(super::exact_absent_storage(&huge)
-        .unwrap_err()
-        .iter()
-        .all(|error| error.code == "SPX-G171"));
+    assert!(
+        super::exact_absent_storage(&huge)
+            .unwrap_err()
+            .iter()
+            .all(|error| error.code == "SPX-G171")
+    );
     for mode in [0, 4, 7, 8] {
         assert!(super::fixed_hir_discount(mode, &huge, &ordinary).is_ok());
     }
@@ -529,11 +535,13 @@ fn delegated_parents_keep_complete_bundles_and_guards_are_charged() {
 /// Same node multiset, strings, identities and calls; only the position of
 /// the `n` moved roots differs (let values versus call arguments).
 fn pair(n: usize, free: bool, moved: fn(usize) -> String) -> Vec<Program> {
-    vec![crate::parse(
-        &pair_source(n, free, moved),
-        std::path::Path::new("pair.spx"),
-    )
-    .unwrap()]
+    vec![
+        crate::parse(
+            &pair_source(n, free, moved),
+            std::path::Path::new("pair.spx"),
+        )
+        .unwrap(),
+    ]
 }
 
 /// A moved literal root: carrier- and storage-free as an argument.
@@ -644,15 +652,19 @@ fn moved_roots_differ_by_exact_carriers(moved: fn(usize) -> String) {
             free_sum
         );
         let twin = crate::workspace_graph::index_authored(&delegated).unwrap();
-        assert!(cached_exact::summed(&delegated, &twin, retention)
-            .unwrap_err()
-            .iter()
-            .any(|error| error.code == "SPX-G171"));
+        assert!(
+            cached_exact::summed(&delegated, &twin, retention)
+                .unwrap_err()
+                .iter()
+                .any(|error| error.code == "SPX-G171")
+        );
         crate::workspace_graph::ACTIVE_BUILDER_LIMIT.with(|limit| limit.set(free_sum.1 - 1));
-        assert!(cached_exact::summed(&free, &authored, retention)
-            .unwrap_err()
-            .iter()
-            .any(|error| error.code == "SPX-G171"));
+        assert!(
+            cached_exact::summed(&free, &authored, retention)
+                .unwrap_err()
+                .iter()
+                .any(|error| error.code == "SPX-G171")
+        );
     }
 }
 

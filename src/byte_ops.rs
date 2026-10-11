@@ -180,7 +180,11 @@ impl ByteOp {
     }
     pub(crate) fn param_types(self) -> &'static [ResolvedType] {
         match self {
-            Self::Partition => &[ResolvedType::Bytes, ResolvedType::Usize, ResolvedType::Usize],
+            Self::Partition => &[
+                ResolvedType::Bytes,
+                ResolvedType::Usize,
+                ResolvedType::Usize,
+            ],
             Self::Len => &[ResolvedType::SliceU8],
             Self::Get => &[ResolvedType::SliceU8, ResolvedType::Usize],
             Self::Range => &[
@@ -246,7 +250,10 @@ impl ByteOp {
     }
     pub(crate) fn ast_return_type(self) -> Type {
         match self {
-            Self::Partition => Type::Named { name: "Vec".to_owned(), arguments: vec![Type::Bytes] },
+            Self::Partition => Type::Named {
+                name: "Vec".to_owned(),
+                arguments: vec![Type::Bytes],
+            },
             Self::Len => Type::Usize,
             Self::Get => Type::Named {
                 name: "Option".to_owned(),
@@ -381,7 +388,12 @@ impl ByteOp {
     pub(crate) const fn is_fallible(self) -> bool {
         matches!(
             self,
-            Self::Partition | Self::ZeroedBounded | Self::Set | Self::Set5 | Self::Set1Or5 | Self::Set1Or6Or48
+            Self::Partition
+                | Self::ZeroedBounded
+                | Self::Set
+                | Self::Set5
+                | Self::Set1Or5
+                | Self::Set1Or6Or48
         )
     }
 
@@ -414,7 +426,9 @@ impl ByteOp {
     /// operand is an ordinary copied value.
     pub(crate) const fn param_ownership(self, index: usize) -> OwnershipMode {
         match (self, index) {
-            (Self::Partition | Self::Set | Self::Set5 | Self::Set1Or5 | Self::Set1Or6Or48, 0) => OwnershipMode::Own,
+            (Self::Partition | Self::Set | Self::Set5 | Self::Set1Or5 | Self::Set1Or6Or48, 0) => {
+                OwnershipMode::Own
+            }
             (Self::Set1Or5 | Self::Set1Or6Or48, 3) => OwnershipMode::Borrow,
             (Self::Zeroed | Self::ZeroedBounded, _)
             | (Self::Set | Self::Set5 | Self::Set1Or5 | Self::Set1Or6Or48, _) => {

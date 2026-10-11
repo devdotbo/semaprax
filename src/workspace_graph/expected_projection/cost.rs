@@ -927,7 +927,7 @@ fn identity_prebound_carriers_include_transient_super_receivers_in_wide_calls() 
 
 #[cfg(test)]
 mod exact_bundle_tests {
-    use super::{fixed_hir_discount, identity_carriers, StructuralCost};
+    use super::{StructuralCost, fixed_hir_discount, identity_carriers};
 
     #[test]
     fn final_profile_retains_complete_fixed_bundle_and_single_root_carrier() {
@@ -962,7 +962,7 @@ mod exact_bundle_tests {
 
 #[cfg(test)]
 mod uncached_absence_tests {
-    use super::{fixed_hir_discount, StructuralCost};
+    use super::{StructuralCost, fixed_hir_discount};
 
     // Independent saved modes-5/6 formula: the former literal-only ceiling.
     fn old_discount(raw: &StructuralCost, runtime: &StructuralCost) -> usize {
@@ -1081,10 +1081,12 @@ mod uncached_absence_tests {
         for mode in [5, 6] {
             assert_eq!(fixed_hir_discount(mode, &raw, &runtime).unwrap(), expected);
             crate::workspace_graph::ACTIVE_BUILDER_LIMIT.with(|limit| limit.set(expected - 1));
-            assert!(fixed_hir_discount(mode, &raw, &runtime)
-                .unwrap_err()
-                .iter()
-                .all(|error| error.code == "SPX-G171"));
+            assert!(
+                fixed_hir_discount(mode, &raw, &runtime)
+                    .unwrap_err()
+                    .iter()
+                    .all(|error| error.code == "SPX-G171")
+            );
             crate::workspace_graph::ACTIVE_BUILDER_LIMIT.with(|limit| limit.set(expected));
         }
         let census = raw.exact_absent_roots;
@@ -1107,10 +1109,12 @@ mod uncached_absence_tests {
             raw.exact_carrier_free_roots = free;
             raw.exact_carrier_free_ifs = ifs;
             for mode in [5, 6] {
-                assert!(fixed_hir_discount(mode, &raw, &runtime)
-                    .unwrap_err()
-                    .iter()
-                    .all(|error| error.code == "SPX-G171"));
+                assert!(
+                    fixed_hir_discount(mode, &raw, &runtime)
+                        .unwrap_err()
+                        .iter()
+                        .all(|error| error.code == "SPX-G171")
+                );
             }
         }
         // Counts that fit beside a huge expression census still refuse when
@@ -1120,10 +1124,12 @@ mod uncached_absence_tests {
         huge.exact_expressions = usize::MAX;
         huge.exact_carrier_free_ifs = usize::MAX / carriers() + 1;
         for mode in [5, 6] {
-            assert!(fixed_hir_discount(mode, &huge, &runtime)
-                .unwrap_err()
-                .iter()
-                .all(|error| error.code == "SPX-G171"));
+            assert!(
+                fixed_hir_discount(mode, &huge, &runtime)
+                    .unwrap_err()
+                    .iter()
+                    .all(|error| error.code == "SPX-G171")
+            );
         }
         // A real free `if`: body block, `if`, `flag`, two branch blocks and
         // two literal tails. Literals, `if` and `flag` omit carriers; only
@@ -1143,10 +1149,12 @@ mod uncached_absence_tests {
             crate::workspace_graph::ACTIVE_BUILDER_LIMIT.with(|limit| limit.set(exact));
             assert_eq!(fixed_hir_discount(mode, &branch, &runtime).unwrap(), exact);
             crate::workspace_graph::ACTIVE_BUILDER_LIMIT.with(|limit| limit.set(exact - 1));
-            assert!(fixed_hir_discount(mode, &branch, &runtime)
-                .unwrap_err()
-                .iter()
-                .all(|error| error.code == "SPX-G171"));
+            assert!(
+                fixed_hir_discount(mode, &branch, &runtime)
+                    .unwrap_err()
+                    .iter()
+                    .all(|error| error.code == "SPX-G171")
+            );
         }
         crate::workspace_graph::ACTIVE_BUILDER_LIMIT.with(|limit| limit.set(expected));
         // Modes 0-4 and 7+ never consult either census.

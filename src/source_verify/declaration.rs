@@ -83,21 +83,37 @@ fn verify_profile<'p>(
     if !partition {
         let mut private_call = None;
         for (_, function) in &capacity_functions {
-            for root in function.requires.iter().chain(std::iter::once(&function.body)).chain(&function.ensures) {
+            for root in function
+                .requires
+                .iter()
+                .chain(std::iter::once(&function.body))
+                .chain(&function.ensures)
+            {
                 root.visit_calls(&mut |name, span| {
-                    if name == crate::construction_fusion::partition::NAME && private_call.is_none() { private_call = Some(span); }
+                    if name == crate::construction_fusion::partition::NAME && private_call.is_none()
+                    {
+                        private_call = Some(span);
+                    }
                 });
             }
         }
         for declaration in &program.types {
             for invariant in declaration.invariants() {
                 invariant.visit_calls(&mut |name, span| {
-                    if name == crate::construction_fusion::partition::NAME && private_call.is_none() { private_call = Some(span); }
+                    if name == crate::construction_fusion::partition::NAME && private_call.is_none()
+                    {
+                        private_call = Some(span);
+                    }
                 });
             }
         }
         if let Some(span) = private_call {
-            diagnostics.push(error(program, "SPX-T263", "byte partition requires the private checked source profile", span));
+            diagnostics.push(error(
+                program,
+                "SPX-T263",
+                "byte partition requires the private checked source profile",
+                span,
+            ));
             return diagnostics;
         }
     }

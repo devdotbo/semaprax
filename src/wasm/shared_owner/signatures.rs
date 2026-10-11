@@ -1,7 +1,7 @@
 //! Exact ordinary aggregate import conventions, independently checked before
 //! an import-only closure receipt is created. No producer admission here.
-use wasmparser::{FuncType, ValType};
 use ValType::{I32, I64};
+use wasmparser::{FuncType, ValType};
 
 pub(super) fn matches(name: &str, ty: &FuncType) -> bool {
     let (params, results): (&[ValType], &[ValType]) = match name {

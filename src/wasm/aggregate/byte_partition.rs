@@ -27,35 +27,58 @@ pub(super) fn uses(program: &ResolvedProgram) -> bool {
 
 impl Emitter<'_> {
     pub(super) fn emit_byte_partition(
-        &mut self, expr: &ResolvedExpr, values: &[Value],
+        &mut self,
+        expr: &ResolvedExpr,
+        values: &[Value],
     ) -> Result<Value, Diagnostic> {
-        let [owner, count, width] = values else { return Err(error("partition operand census")); };
-        let index = *self.function_indexes.get(&FunctionExecutionId::Monomorphic(
-            DeclarationId::new(crate::construction_fusion::partition::ID)))
+        let [owner, count, width] = values else {
+            return Err(error("partition operand census"));
+        };
+        let index = *self
+            .function_indexes
+            .get(&FunctionExecutionId::Monomorphic(DeclarationId::new(
+                crate::construction_fusion::partition::ID,
+            )))
             .ok_or_else(|| error("partition producer is not current-module indexed"))?;
         let result = self.plan.expr_scalar(expr)?;
         self.get_scalar(owner);
         self.get_scalar(count);
         self.get_scalar(width);
-        self.output.push(0x10); write_u32(self.output, index);
+        self.output.push(0x10);
+        write_u32(self.output, index);
         // Exact import results are (Vec handle, status). Failure leaves owner live.
-        self.output.push(0x21); write_u32(self.output, self.plan.status);
-        self.output.push(0x21); write_u32(self.output, result);
-        self.output.push(0x20); write_u32(self.output, self.plan.status);
+        self.output.push(0x21);
+        write_u32(self.output, self.plan.status);
+        self.output.push(0x21);
+        write_u32(self.output, result);
+        self.output.push(0x20);
+        write_u32(self.output, self.plan.status);
         self.output.extend([0x04, 0x40]);
         // The private status namespace preserves the actual operation code,
         // and cannot collide with any ordinary arithmetic/Vec status.
-        self.output.push(0x20); write_u32(self.output, self.plan.status);
-        self.output.push(0x41); write_i64(self.output, i64::from(super::super::shared_owner::PARTITION_GUEST_STATUS_BASE));
+        self.output.push(0x20);
+        write_u32(self.output, self.plan.status);
+        self.output.push(0x41);
+        write_i64(
+            self.output,
+            i64::from(super::super::shared_owner::PARTITION_GUEST_STATUS_BASE),
+        );
         self.output.push(0x6a);
-        self.output.push(0x21); write_u32(self.output, self.plan.status);
+        self.output.push(0x21);
+        write_u32(self.output, self.plan.status);
         self.emit_failure_cleanup(&expr.id, StatusLane::OperationFailure)?;
         self.output.push(0x0c);
-        write_u32(self.output, self.control_depth + self.status_exit_extra_depth);
+        write_u32(
+            self.output,
+            self.control_depth + self.status_exit_extra_depth,
+        );
         self.output.push(0x0b);
         // Only the successful host transfer consumes the staged argument.
         self.apply_call_commit(&expr.id)?;
         self.clear_scalar(owner)?;
-        Ok(Value::Scalar { local: result, ty: expr.ty.clone() })
+        Ok(Value::Scalar {
+            local: result,
+            ty: expr.ty.clone(),
+        })
     }
 }

@@ -1,9 +1,9 @@
 //! Affine flat partition containers. No Arc control block or second value array.
 //! Actual language result/iterator installation remains sealed and closed.
-use super::{loans::Loans, InvocationRuntime, Owner};
+use super::{InvocationRuntime, Owner, loans::Loans};
 use crate::construction_fusion::{
     domain::Refusal,
-    partition::{operation, Preparation},
+    partition::{Preparation, operation},
 };
 use std::{alloc::Layout, vec::IntoIter};
 

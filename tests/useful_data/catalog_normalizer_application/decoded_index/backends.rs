@@ -14,7 +14,9 @@ fn decoded_index_collision_boundaries_and_failure_order_run_on_native_and_wasm()
     for (group, cases) in cases.chunks(5).enumerate() {
         let root = scratch.path().join(format!("decoded-index-{group}"));
         copy_fixture(&fixture(), &root);
-        let mut source = String::from("module catalog_normalizer.tests;\nuse function @id(\"catalog_normalizer.app.normalizes-to\") from catalog_normalizer.app as normalizes_to;\nuse function @id(\"catalog_normalizer.app.normalizes-enriched-to\") from catalog_normalizer.app as normalizes_enriched_to;\n@id(\"catalog_normalizer.tests.smoke\") fn smoke()->bool {true}\n@id(\"catalog_normalizer.tests.main\") fn main()->i64 {let mut failed=0;\n");
+        let mut source = String::from(
+            "module catalog_normalizer.tests;\nuse function @id(\"catalog_normalizer.app.normalizes-to\") from catalog_normalizer.app as normalizes_to;\nuse function @id(\"catalog_normalizer.app.normalizes-enriched-to\") from catalog_normalizer.app as normalizes_enriched_to;\n@id(\"catalog_normalizer.tests.smoke\") fn smoke()->bool {true}\n@id(\"catalog_normalizer.tests.main\") fn main()->i64 {let mut failed=0;\n",
+        );
         for (index, case) in cases.iter().enumerate() {
             let expected = run_oracle_with(&case.input, case.enriched);
             let response: serde_json::Value = serde_json::from_slice(&expected).unwrap();
@@ -53,7 +55,11 @@ fn decoded_index_collision_boundaries_and_failure_order_run_on_native_and_wasm()
                 snapshot.execute_test(&application_options())?.outcome(),
                 &project::ProjectExecutionOutcome::Returned(0),
                 "decoded-index group {group}: {}",
-                cases.iter().map(|case| case.name).collect::<Vec<_>>().join(", ")
+                cases
+                    .iter()
+                    .map(|case| case.name)
+                    .collect::<Vec<_>>()
+                    .join(", ")
             );
             let c = codegen::emit_hir_c(snapshot.test_program()).map_err(|error| vec![error])?;
             for optimization in ["-O0", "-O2"] {

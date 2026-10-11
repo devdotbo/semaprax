@@ -1,7 +1,7 @@
 use super::super::{LoanCapacity, Loans, Slot};
 use super::Frame;
 use crate::hir::{ResolvedFunction, ResolvedProgram};
-use crate::interpreter::byte_partition::tests::{account, Probe};
+use crate::interpreter::byte_partition::tests::{Probe, account};
 use std::alloc::Layout;
 
 fn fixture() -> ResolvedProgram {
@@ -151,15 +151,19 @@ fn entry_has_exact_one_short_shared_funding_and_scalar_frames_have_no_slots() {
     )
     .unwrap();
     let pointer = refused.slots.as_ptr();
-    assert!(refused
-        .enter_frame(LoanCapacity::checked(&program, helper).unwrap())
-        .is_err());
+    assert!(
+        refused
+            .enter_frame(LoanCapacity::checked(&program, helper).unwrap())
+            .is_err()
+    );
     assert_eq!(refused.slots.as_ptr(), pointer);
     assert!(refused.frames.is_empty());
     let spent = short.charged();
-    assert!(refused
-        .enter_frame(LoanCapacity::checked(&program, scalar).unwrap())
-        .is_err());
+    assert!(
+        refused
+            .enter_frame(LoanCapacity::checked(&program, scalar).unwrap())
+            .is_err()
+    );
     assert_eq!(short.charged(), spent);
 }
 
@@ -210,9 +214,11 @@ fn inherited_parameter_view_has_one_caller_finalizer_across_exact_caller_end() {
         }
     }
     receiver.store(&mut owners[0], 0, &[9]).unwrap();
-    assert!(receiver
-        .read(local, |_| panic!("stale inherited callback"))
-        .is_err());
+    assert!(
+        receiver
+            .read(local, |_| panic!("stale inherited callback"))
+            .is_err()
+    );
     assert!(receiver.read(caller, |_| ()).is_err());
     receiver.abandon_views().unwrap();
     receiver.settle(&mut owners[0]).unwrap();

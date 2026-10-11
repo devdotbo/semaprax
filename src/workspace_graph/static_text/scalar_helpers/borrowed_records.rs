@@ -147,8 +147,7 @@ fn projected_place(
     let [hir::PlaceProjection::Field(field)] = place.projections.as_slice() else {
         return Ok(false);
     };
-    if expression.ownership != OwnershipMode::Value
-        || !hir::is_scalar_resolved_type(&expression.ty)
+    if expression.ownership != OwnershipMode::Value || !hir::is_scalar_resolved_type(&expression.ty)
     {
         return Ok(false);
     }
@@ -160,7 +159,9 @@ fn projected_place(
             return Ok(false);
         }
     }
-    let Some(parameter) = found else { return Ok(false); };
+    let Some(parameter) = found else {
+        return Ok(false);
+    };
     take(1)?;
     if parameter.ownership != OwnershipMode::Borrow {
         return Ok(false);
@@ -170,8 +171,7 @@ fn projected_place(
     };
     let mut selected = None;
     for current in fields {
-        if equal(current.id.as_str(), field.as_str(), take)?
-            && selected.replace(current).is_some()
+        if equal(current.id.as_str(), field.as_str(), take)? && selected.replace(current).is_some()
         {
             return Ok(false);
         }
@@ -186,9 +186,9 @@ pub(super) fn expression(
     take: &mut dyn FnMut(usize) -> Result<(), Vec<Diagnostic>>,
 ) -> Result<Option<bool>, Vec<Diagnostic>> {
     match &expression.kind {
-        ResolvedExprKind::Place(place) if !place.projections.is_empty() => {
-            Ok(Some(projected_place(function, expression, place, records, take)?))
-        }
+        ResolvedExprKind::Place(place) if !place.projections.is_empty() => Ok(Some(
+            projected_place(function, expression, place, records, take)?,
+        )),
         ResolvedExprKind::Place(_) if matches!(expression.ty, ResolvedType::Nominal { .. }) => {
             Ok(Some(root(function, expression, records, take)?))
         }
@@ -232,33 +232,67 @@ mod tests {
 "#;
         let ast = crate::check(source, "rows.spx").unwrap();
         let program = hir::resolve(&ast).unwrap();
-        let function = program.functions.iter().find(|f| f.id.as_str() == "rows.read").unwrap();
-        let ResolvedExprKind::Block { tail, .. } = &function.body.kind else { panic!("resolved block") };
-        assert!(matches!(&tail.kind, ResolvedExprKind::Place(p) if matches!(p.projections.as_slice(), [hir::PlaceProjection::Field(_)])));
+        let function = program
+            .functions
+            .iter()
+            .find(|f| f.id.as_str() == "rows.read")
+            .unwrap();
+        let ResolvedExprKind::Block { tail, .. } = &function.body.kind else {
+            panic!("resolved block")
+        };
+        assert!(
+            matches!(&tail.kind, ResolvedExprKind::Place(p) if matches!(p.projections.as_slice(), [hir::PlaceProjection::Field(_)]))
+        );
         let mut spent = 0;
         let mut work = WORK;
-        assert!(pure_records_metered(function, &program.types, &mut work, &mut |n| { spent += n; Ok(()) }).unwrap());
-        assert_eq!(WORK-work, spent);
-        for available in [spent, spent-1] {
+        assert!(
+            pure_records_metered(function, &program.types, &mut work, &mut |n| {
+                spent += n;
+                Ok(())
+            })
+            .unwrap()
+        );
+        assert_eq!(WORK - work, spent);
+        for available in [spent, spent - 1] {
             let mut work = available;
             let result = pure_records_metered(function, &program.types, &mut work, &mut |_| Ok(()));
-            if available == spent { assert_eq!(result.unwrap(), true); assert_eq!(work, 0); }
-            else { assert!(result.is_err()); }
+            if available == spent {
+                assert_eq!(result.unwrap(), true);
+                assert_eq!(work, 0);
+            } else {
+                assert!(result.is_err());
+            }
         }
         for attack in 0..7 {
             let mut candidate = function.clone();
-            let ResolvedExprKind::Block { tail, .. } = &mut candidate.body.kind else { unreachable!() };
-            let ResolvedExprKind::Place(place) = &mut tail.kind else { unreachable!() };
+            let ResolvedExprKind::Block { tail, .. } = &mut candidate.body.kind else {
+                unreachable!()
+            };
+            let ResolvedExprKind::Place(place) = &mut tail.kind else {
+                unreachable!()
+            };
             match attack {
                 0 => place.root = hir::ValueId::intrinsic_parameter("foreign", 0),
-                1 => place.projections[0] = hir::PlaceProjection::Field(hir::DeclarationId::new("foreign.field")),
+                1 => {
+                    place.projections[0] =
+                        hir::PlaceProjection::Field(hir::DeclarationId::new("foreign.field"))
+                }
                 2 => tail.ty = ResolvedType::Bool,
                 3 => tail.ownership = OwnershipMode::Own,
                 4 => candidate.params[0].ownership = OwnershipMode::Own,
                 5 => place.projections.push(place.projections[0].clone()),
-                _ => candidate.params[0].ty = ResolvedType::Nominal {declaration:hir::DeclarationId::new("foreign.Row"),arguments:Vec::new()},
+                _ => {
+                    candidate.params[0].ty = ResolvedType::Nominal {
+                        declaration: hir::DeclarationId::new("foreign.Row"),
+                        arguments: Vec::new(),
+                    }
+                }
             }
-            assert!(!pure_records_metered(&candidate, &program.types, &mut { WORK }, &mut |_| Ok(())).unwrap(), "field place attack {attack}");
+            assert!(
+                !pure_records_metered(&candidate, &program.types, &mut { WORK }, &mut |_| Ok(()))
+                    .unwrap(),
+                "field place attack {attack}"
+            );
         }
     }
 }

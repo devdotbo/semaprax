@@ -48,8 +48,7 @@ fn pick(value: _spx_layout_1, other: _spx_layout_0) -> i64
 }
 ";
 
-const PRESENTED: &str =
-    "`if` branches return different types: Decoded [unimported @id(\"copy\") from held.provider] \
+const PRESENTED: &str = "`if` branches return different types: Decoded [unimported @id(\"copy\") from held.provider] \
      and _spx_layout_0";
 const ORDINARY: &str = "`if` branches return different types: _spx_layout_1 and _spx_layout_0";
 

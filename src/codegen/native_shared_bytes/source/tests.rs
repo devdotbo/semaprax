@@ -1,5 +1,5 @@
-use super::*;
 use super::super::tests::{compile_and_run, scratch};
+use super::*;
 const SOURCE: &str = r#"module partition_native;
 @id("partition_native.split") fn split()->Vec<Bytes>{
  let buffer=bytes_zeroed(65536usize);
@@ -13,14 +13,21 @@ const SOURCE: &str = r#"module partition_native;
 fn source(text: &str) -> String {
     let ast = crate::parse(text, "partition_native.spx").unwrap();
     assert!(crate::check(text, "partition_native.spx").is_err());
-    let owner = hir::byte_partition::ValidatedPartitionProgram::compile_source(&ast, &mut usize::MAX).unwrap();
+    let owner =
+        hir::byte_partition::ValidatedPartitionProgram::compile_source(&ast, &mut usize::MAX)
+            .unwrap();
     assert!(crate::codegen::emit_hir_c(owner.program()).is_err());
-    Projection::receive(&owner, &mut usize::MAX).unwrap().emit().unwrap()
+    Projection::receive(&owner, &mut usize::MAX)
+        .unwrap()
+        .emit()
+        .unwrap()
 }
 #[test]
 fn original_4096_source_reaches_shared_native_carriers_and_canonical_settlement_at_o0_o2() {
     let ast = crate::parse(SOURCE, "partition_native.spx").unwrap();
-    let owner = hir::byte_partition::ValidatedPartitionProgram::compile_source(&ast, &mut usize::MAX).unwrap();
+    let owner =
+        hir::byte_partition::ValidatedPartitionProgram::compile_source(&ast, &mut usize::MAX)
+            .unwrap();
     let mut work = usize::MAX;
     let projection = Projection::receive(&owner, &mut work).unwrap();
     let used = usize::MAX - work;
@@ -37,7 +44,11 @@ fn original_4096_source_reaches_shared_native_carriers_and_canonical_settlement_
     assert!(emitted.contains("#define spx_bytes_drop(value) spx_shb_drop"));
     assert!(emitted.contains("spx_shb_detach(&context);"));
     let root = scratch("source-original-4096");
-    compile_and_run(&root, &format!("#define SPX_NO_ENTRY_WRAPPER\n{emitted}\n{}", r#"
+    compile_and_run(
+        &root,
+        &format!(
+            "#define SPX_NO_ENTRY_WRAPPER\n{emitted}\n{}",
+            r#"
 int main(void) {
     for (uint32_t i = 0; i < 3u; ++i) {
         int64_t result = INT64_C(-999); const char *domain = NULL; uint32_t code = 0u;
@@ -46,14 +57,19 @@ int main(void) {
     }
     return 0;
 }
-"#), &[]);
+"#
+        ),
+        &[],
+    );
     std::fs::remove_dir_all(root).unwrap();
     // Genuine consuming iteration stays closed until its exact IterStep ABI
     // joins; an old two-word owned payload cannot leak into this unit.
     let iterator = SOURCE.replace("if vec_len<Bytes>(values)==4096usize {7}else{0}",
         "let mut seen=0; for own item in vec_into_iter<Bytes>(values) { let view=bytes_as_slice(item); if byte_len(view)==16usize {seen=seen+1;0}else{seen=0;0} } seen");
     let ast = crate::parse(&iterator, "partition_native.spx").unwrap();
-    let owner = hir::byte_partition::ValidatedPartitionProgram::compile_source(&ast, &mut usize::MAX).unwrap();
+    let owner =
+        hir::byte_partition::ValidatedPartitionProgram::compile_source(&ast, &mut usize::MAX)
+            .unwrap();
     let mut work = usize::MAX;
     assert!(Projection::receive(&owner, &mut work).is_err());
     assert_eq!(work, 0);
@@ -70,7 +86,8 @@ fn native_partition_failure_keeps_exact_status_and_poison_result_through_cleanup
         let text = SOURCE.replace("4096usize,16usize", &format!("{count}usize,{width}usize"));
         let emitted = source(&text);
         let root = scratch("source-operation-failure");
-        let probe = format!(r#"
+        let probe = format!(
+            r#"
 int main(void) {{
     for (uint32_t i = 0; i < 3u; ++i) {{
         int64_t result = INT64_C(-999); const char *domain = NULL; uint32_t code = 0u;
@@ -79,8 +96,13 @@ int main(void) {{
     }}
     return 0;
 }}
-"#);
-        compile_and_run(&root, &format!("#define SPX_NO_ENTRY_WRAPPER\n{emitted}\n{probe}"), &[]);
+"#
+        );
+        compile_and_run(
+            &root,
+            &format!("#define SPX_NO_ENTRY_WRAPPER\n{emitted}\n{probe}"),
+            &[],
+        );
         std::fs::remove_dir_all(root).unwrap();
     }
 }

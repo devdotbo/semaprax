@@ -575,14 +575,15 @@ impl Automaton {
                         ExitContinuation::ReturnFailure { .. } => failure,
                         ExitContinuation::LoopBreak { edge, .. }
                         | ExitContinuation::FunctionReturn { edge, .. } => {
-                            let marker =
-                                lexical_skeleton::plan_exit_observation(budget, function, exit.id)?
-                                    .ok_or_else(|| {
-                                        replay_error(
+                            let marker = lexical_skeleton::plan_exit_observation(
+                                budget, function, exit.id,
+                            )?
+                            .ok_or_else(|| {
+                                replay_error(
                                     function,
                                     "factored lexical exit lacks an exact certificate marker",
                                 )
-                                    })?;
+                            })?;
                             // The marker itself is the labelled continuation edge.
                             // A lexical exit must never become an epsilon edge.
                             self.observation(

@@ -355,7 +355,9 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
                 include_str!("../../src/workspace_graph/static_text.rs"),
                 include_str!("../../src/workspace_graph/static_text/primitive.rs"),
                 include_str!("../../src/workspace_graph/static_text/scalar_helpers.rs"),
-                include_str!("../../src/workspace_graph/static_text/scalar_helpers/borrowed_records.rs"),
+                include_str!(
+                    "../../src/workspace_graph/static_text/scalar_helpers/borrowed_records.rs"
+                ),
                 include_str!("../../src/workspace_graph/static_text/record_closure.rs"),
                 include_str!(
                     "../../src/workspace_graph/static_text/scalar_helpers/capture_directory.rs"
@@ -382,7 +384,9 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
                 include_str!(
                     "../../src/workspace_graph/source_schema/static_text/primitive/helpers.rs"
                 ),
-                include_str!("../../src/workspace_graph/source_schema/static_text/primitive/helpers/types.rs"),
+                include_str!(
+                    "../../src/workspace_graph/source_schema/static_text/primitive/helpers/types.rs"
+                ),
                 include_str!(
                     "../../src/workspace_graph/source_schema/static_text/primitive/helpers/graph.rs"
                 ),
@@ -407,10 +411,16 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
                 include_str!(
                     "../../src/workspace_graph/source_schema/static_text/primitive/records.rs"
                 ),
-                include_str!("../../src/workspace_graph/source_schema/static_text/primitive/records/prepared.rs"),
+                include_str!(
+                    "../../src/workspace_graph/source_schema/static_text/primitive/records/prepared.rs"
+                ),
                 include_str!("../../src/hir/declaration_index/primitive_replay/vector.rs"),
-                include_str!("../../src/hir/declaration_index/primitive_replay/helper_signature.rs"),
-                include_str!("../../src/workspace_graph/source_schema/static_text/primitive/records/tests/prepared.rs"),
+                include_str!(
+                    "../../src/hir/declaration_index/primitive_replay/helper_signature.rs"
+                ),
+                include_str!(
+                    "../../src/workspace_graph/source_schema/static_text/primitive/records/tests/prepared.rs"
+                ),
                 "\n",
                 include_str!("../../src/workspace_graph/source_schema/byte_helper.rs"),
                 "\n",

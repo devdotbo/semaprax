@@ -207,9 +207,8 @@ fn dense_source(count: usize) -> String {
 }
 fn wide_source(count: usize) -> String {
     let calls = flat_call_sum("g", count, "0");
-    let mut source = format!(
-        "module scalar.wide;\n\n@id(\"wide.main\")\nfn main() -> i64\n{{\n{calls}}}\n"
-    );
+    let mut source =
+        format!("module scalar.wide;\n\n@id(\"wide.main\")\nfn main() -> i64\n{{\n{calls}}}\n");
     for j in (0..count).rev() {
         source.push_str(&format!(
             "\n@id(\"wide.{j:03}\")\nfn g{j}(n: i64) -> i64\n{{\n    n\n}}\n"
@@ -567,13 +566,15 @@ fn refused(build: &WorkspaceGraphBuild) -> usize {
     let anchor = &module.functions[0];
     let mut resources =
         SelectedReplayPreparation::with_limits(anchor, 32_000_000, 1 << 26).unwrap();
-    assert!(authenticate(
-        module,
-        &build.hir.modules,
-        &build.hir.declarations,
-        &mut resources
-    )
-    .is_err());
+    assert!(
+        authenticate(
+            module,
+            &build.hir.modules,
+            &build.hir.declarations,
+            &mut resources
+        )
+        .is_err()
+    );
     let remaining = resources.remaining();
     assert_eq!(
         resources
@@ -606,13 +607,15 @@ fn later_provider_failure_is_sticky_and_cold_rebuilt_sources_retry_with_exact_pa
     let module = caller(&later);
     let anchor = &module.functions[0];
     let mut short = SelectedReplayPreparation::with_limits(anchor, spent - 1, 1 << 26).unwrap();
-    assert!(authenticate(
-        module,
-        &later.hir.modules,
-        &later.hir.declarations,
-        &mut short
-    )
-    .is_err());
+    assert!(
+        authenticate(
+            module,
+            &later.hir.modules,
+            &later.hir.declarations,
+            &mut short
+        )
+        .is_err()
+    );
     assert_eq!(
         short.charge(anchor, 0, "one-short retry").unwrap_err().code,
         "SPX-H006"
