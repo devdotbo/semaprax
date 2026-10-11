@@ -25,6 +25,8 @@
 use super::skeleton_work::{ObservationDag, ObservationDagKind};
 use super::*;
 use std::rc::Rc;
+mod storage;
+use storage::{memo_insert, push_end, push_frame, reserve_transition_observation};
 
 /// Path count above which the factored comparison replaces enumeration.
 const FACTORED_PATH_THRESHOLD: usize = 4_096;
@@ -76,14 +78,13 @@ pub(super) fn validate_with_index(
         cross_check(program, function);
         return Ok(false);
     }
-    let saved = (budget.remaining, budget.skeleton_remaining);
     match compare_with_index(program, function, budget, helpers) {
         Ok(Some(true)) => Ok(true),
         Ok(Some(false)) => Err(skeleton_mismatch(function)),
         verdict => {
             if cfg_paths <= MAX_REPLAY_PATHS && semantic_paths <= MAX_REPLAY_PATHS {
-                // Enumeration still fits: let it decide with the full budget.
-                (budget.remaining, budget.skeleton_remaining) = saved;
+                // Enumeration still fits; an attempted factored comparison
+                // keeps every work and physical debit already spent.
                 return Ok(false);
             }
             match verdict {
@@ -127,11 +128,11 @@ fn compare_with_index(
     let hir_paths = hir_paths?;
 
     let mut automaton = Automaton::default();
-    let sink = automaton.node();
-    let success = automaton.end(sink, SkeletonTerminal::Success);
-    let failure = automaton.end(sink, SkeletonTerminal::Failure);
-    let latch = automaton.end(sink, SkeletonTerminal::LoopLatch);
-    let hir_root = automaton.node();
+    let sink = automaton.node(function, budget)?;
+    let success = automaton.end(function, budget, sink, SkeletonTerminal::Success)?;
+    let failure = automaton.end(function, budget, sink, SkeletonTerminal::Failure)?;
+    let latch = automaton.end(function, budget, sink, SkeletonTerminal::LoopLatch)?;
+    let hir_root = automaton.node(function, budget)?;
     let mut memo = BTreeMap::new();
     for path in &hir_paths {
         let end = automaton.add_observations(
@@ -146,7 +147,7 @@ fn compare_with_index(
             SkeletonTerminal::Failure => failure,
             SkeletonTerminal::LoopLatch => latch,
         };
-        automaton.nodes[end].epsilon.push(terminal);
+        automaton.epsilon(function, budget, end, terminal)?;
     }
     let plan_root = automaton.add_plan(function, success, failure, latch, budget)?;
     let mut canonical = Canonicalizer::new(&automaton, sink);
@@ -172,26 +173,107 @@ enum BuildFrame<'d> {
 }
 
 impl Automaton {
-    fn node(&mut self) -> usize {
+    fn node(
+        &mut self,
+        function: &ResolvedFunction,
+        budget: &mut ReplayBudget,
+    ) -> Result<usize, Diagnostic> {
+        budget.charge(function, 1, "factored automaton node construction")?;
+        budget.reserve_vec(function, &mut self.nodes, 1, "factored automaton nodes")?;
         self.nodes.push(Node::default());
-        self.nodes.len() - 1
+        Ok(self.nodes.len() - 1)
     }
 
-    fn end(&mut self, sink: usize, terminal: SkeletonTerminal) -> usize {
-        let node = self.node();
-        self.nodes[node].moves.push((Label::End(terminal), sink));
-        node
+    fn movement(
+        &mut self,
+        function: &ResolvedFunction,
+        budget: &mut ReplayBudget,
+        from: usize,
+        label: Label,
+        to: usize,
+    ) -> Result<(), Diagnostic> {
+        budget.charge(function, 1, "factored automaton labelled movement")?;
+        budget.reserve_vec(
+            function,
+            &mut self.nodes[from].moves,
+            1,
+            "factored automaton moves",
+        )?;
+        self.nodes[from].moves.push((label, to));
+        Ok(())
     }
 
-    fn chain(&mut self, mut end: usize, items: &[Rc<SkeletonObservation>]) -> usize {
+    fn epsilon(
+        &mut self,
+        function: &ResolvedFunction,
+        budget: &mut ReplayBudget,
+        from: usize,
+        to: usize,
+    ) -> Result<(), Diagnostic> {
+        budget.charge(function, 1, "factored automaton epsilon movement")?;
+        budget.reserve_vec(
+            function,
+            &mut self.nodes[from].epsilon,
+            1,
+            "factored automaton epsilon moves",
+        )?;
+        self.nodes[from].epsilon.push(to);
+        Ok(())
+    }
+
+    fn observation(
+        &mut self,
+        function: &ResolvedFunction,
+        budget: &mut ReplayBudget,
+        from: usize,
+        observation: SkeletonObservation,
+        to: usize,
+    ) -> Result<(), Diagnostic> {
+        budget.reserve_bytes(
+            function,
+            physical_clone::observation_rc_bytes(),
+            "factored automaton observation header",
+        )?;
+        self.movement(
+            function,
+            budget,
+            from,
+            Label::Observation(Rc::new(observation)),
+            to,
+        )
+    }
+
+    fn end(
+        &mut self,
+        function: &ResolvedFunction,
+        budget: &mut ReplayBudget,
+        sink: usize,
+        terminal: SkeletonTerminal,
+    ) -> Result<usize, Diagnostic> {
+        let node = self.node(function, budget)?;
+        self.movement(function, budget, node, Label::End(terminal), sink)?;
+        Ok(node)
+    }
+
+    fn chain(
+        &mut self,
+        function: &ResolvedFunction,
+        budget: &mut ReplayBudget,
+        mut end: usize,
+        items: &[Rc<SkeletonObservation>],
+    ) -> Result<usize, Diagnostic> {
         for item in items {
-            let next = self.node();
-            self.nodes[end]
-                .moves
-                .push((Label::Observation(item.clone()), next));
+            let next = self.node(function, budget)?;
+            self.movement(
+                function,
+                budget,
+                end,
+                Label::Observation(item.clone()),
+                next,
+            )?;
             end = next;
         }
-        end
+        Ok(end)
     }
 
     /// Build `observations` forward from `start` and return its end node.
@@ -215,7 +297,7 @@ impl Automaton {
             items.len().saturating_add(1),
             "factored HIR automaton",
         )?;
-        Ok(self.chain(end, items))
+        self.chain(function, budget, end, items)
     }
 
     fn add_dag(
@@ -227,6 +309,7 @@ impl Automaton {
         budget: &mut ReplayBudget,
     ) -> Result<usize, Diagnostic> {
         let key = |dag: &Rc<ObservationDag>, start: usize| (Rc::as_ptr(dag) as usize, start);
+        budget.reserve_array::<BuildFrame<'_>>(function, 1, "factored DAG initial frame")?;
         let mut frames = vec![BuildFrame::Visit(root, start)];
         let mut ends = Vec::<usize>::new();
         while let Some(frame) = frames.pop() {
@@ -234,25 +317,45 @@ impl Automaton {
                 BuildFrame::Visit(dag, start) => {
                     budget.charge(function, 1, "factored HIR automaton")?;
                     if let Some(end) = memo.get(&key(dag, start)) {
-                        ends.push(*end);
+                        push_end(function, budget, &mut ends, *end)?;
                         continue;
                     }
                     match &dag.kind {
                         ObservationDagKind::Seq(prefix, _) => {
-                            frames.push(BuildFrame::Seq(dag, start));
+                            push_frame(function, budget, &mut frames, BuildFrame::Seq(dag, start))?;
                             match prefix {
-                                Some(prefix) => frames.push(BuildFrame::Visit(prefix, start)),
-                                None => ends.push(start),
+                                Some(prefix) => push_frame(
+                                    function,
+                                    budget,
+                                    &mut frames,
+                                    BuildFrame::Visit(prefix, start),
+                                )?,
+                                None => push_end(function, budget, &mut ends, start)?,
                             }
                         }
                         ObservationDagKind::Cat(_) => {
-                            ends.push(start);
-                            frames.push(BuildFrame::Cat(dag, start, 0));
+                            push_end(function, budget, &mut ends, start)?;
+                            push_frame(
+                                function,
+                                budget,
+                                &mut frames,
+                                BuildFrame::Cat(dag, start, 0),
+                            )?;
                         }
                         ObservationDagKind::Alt(members) => {
-                            frames.push(BuildFrame::Alt(dag, start, members.len()));
+                            push_frame(
+                                function,
+                                budget,
+                                &mut frames,
+                                BuildFrame::Alt(dag, start, members.len()),
+                            )?;
                             for member in members {
-                                frames.push(BuildFrame::Visit(member, start));
+                                push_frame(
+                                    function,
+                                    budget,
+                                    &mut frames,
+                                    BuildFrame::Visit(member, start),
+                                )?;
                             }
                         }
                     }
@@ -263,9 +366,9 @@ impl Automaton {
                     };
                     let prefix_end = ends.pop().expect("sequence prefix end retained");
                     budget.charge(function, items.len(), "factored HIR automaton")?;
-                    let end = self.chain(prefix_end, items);
-                    memo.insert(key(dag, start), end);
-                    ends.push(end);
+                    let end = self.chain(function, budget, prefix_end, items)?;
+                    memo_insert(function, budget, memo, key(dag, start), end)?;
+                    push_end(function, budget, &mut ends, end)?;
                 }
                 BuildFrame::Cat(dag, start, index) => {
                     let ObservationDagKind::Cat(parts) = &dag.kind else {
@@ -274,23 +377,33 @@ impl Automaton {
                     let end = ends.pop().expect("concatenation part end retained");
                     match parts.get(index) {
                         Some(part) => {
-                            frames.push(BuildFrame::Cat(dag, start, index + 1));
-                            frames.push(BuildFrame::Visit(part, end));
+                            push_frame(
+                                function,
+                                budget,
+                                &mut frames,
+                                BuildFrame::Cat(dag, start, index + 1),
+                            )?;
+                            push_frame(
+                                function,
+                                budget,
+                                &mut frames,
+                                BuildFrame::Visit(part, end),
+                            )?;
                         }
                         None => {
-                            memo.insert(key(dag, start), end);
-                            ends.push(end);
+                            memo_insert(function, budget, memo, key(dag, start), end)?;
+                            push_end(function, budget, &mut ends, end)?;
                         }
                     }
                 }
                 BuildFrame::Alt(dag, start, count) => {
-                    let join = self.node();
+                    let join = self.node(function, budget)?;
                     for _ in 0..count {
                         let end = ends.pop().expect("union member end retained");
-                        self.nodes[end].epsilon.push(join);
+                        self.epsilon(function, budget, end, join)?;
                     }
-                    memo.insert(key(dag, start), join);
-                    ends.push(join);
+                    memo_insert(function, budget, memo, key(dag, start), join)?;
+                    push_end(function, budget, &mut ends, join)?;
                 }
             }
         }
@@ -311,13 +424,23 @@ impl Automaton {
             plan_structure_units(plan),
             "factored cleanup-plan automaton",
         )?;
-        let entries = plan.blocks.iter().map(|_| self.node()).collect::<Vec<_>>();
+        budget.reserve_array::<usize>(
+            function,
+            plan.blocks.len(),
+            "factored plan block entries",
+        )?;
+        let mut entries = Vec::with_capacity(plan.blocks.len());
+        for _ in &plan.blocks {
+            entries.push(self.node(function, budget)?);
+        }
         let entry = |block: BlockId| entries[block.0 as usize];
         for (index, block) in plan.blocks.iter().enumerate() {
             let mut node = entries[index];
             for transition in &block.transitions {
-                if let Some(observation) = transition_observation(transition) {
-                    node = self.chain(node, &[Rc::new(observation)]);
+                if let Some(observation) = transition_observation(function, budget, transition)? {
+                    let next = self.node(function, budget)?;
+                    self.observation(function, budget, node, observation, next)?;
+                    node = next;
                 }
             }
             match &block.terminator {
@@ -325,21 +448,17 @@ impl Automaton {
                     let edge = &plan.edges[edge.0 as usize];
                     let to = entry(edge.to);
                     if let EdgeCondition::VariantCase { .. } = &edge.condition {
-                        let observation = edge_observation(function, &edge.condition)?;
-                        self.nodes[node]
-                            .moves
-                            .push((Label::Observation(Rc::new(observation)), to));
+                        let observation = edge_observation(function, budget, &edge.condition)?;
+                        self.observation(function, budget, node, observation, to)?;
                     } else {
-                        self.nodes[node].epsilon.push(to);
+                        self.epsilon(function, budget, node, to)?;
                     }
                 }
                 CleanupTerminator::Branch(edges) => {
                     for edge in edges {
                         let edge = &plan.edges[edge.0 as usize];
-                        let observation = edge_observation(function, &edge.condition)?;
-                        self.nodes[node]
-                            .moves
-                            .push((Label::Observation(Rc::new(observation)), entry(edge.to)));
+                        let observation = edge_observation(function, budget, &edge.condition)?;
+                        self.observation(function, budget, node, observation, entry(edge.to))?;
                     }
                 }
                 CleanupTerminator::Exit(exit) => {
@@ -362,10 +481,13 @@ impl Automaton {
                                     })?;
                             // The marker itself is the labelled continuation edge.
                             // A lexical exit must never become an epsilon edge.
-                            self.nodes[node].moves.push((
-                                Label::Observation(Rc::new(marker)),
+                            self.observation(
+                                function,
+                                budget,
+                                node,
+                                marker,
                                 entry(plan.edges[edge.0 as usize].to),
-                            ));
+                            )?;
                             continue;
                         }
                         ExitContinuation::LoopLatch { target } => {
@@ -384,13 +506,11 @@ impl Automaton {
                             };
                             let target =
                                 lexical_cert::latch_resume(plan, exit.id).map_or(latch, entry);
-                            self.nodes[node]
-                                .moves
-                                .push((Label::Observation(Rc::new(marker)), target));
+                            self.observation(function, budget, node, marker, target)?;
                             continue;
                         }
                     };
-                    self.nodes[node].epsilon.push(target);
+                    self.epsilon(function, budget, node, target)?;
                 }
             }
         }
@@ -400,8 +520,13 @@ impl Automaton {
 
 /// The skeleton observation one cleanup transition contributes, exactly as
 /// the enumerating `plan_skeleton_paths` records it.
-fn transition_observation(transition: &CleanupTransition) -> Option<SkeletonObservation> {
-    Some(match transition {
+fn transition_observation(
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+    transition: &CleanupTransition,
+) -> Result<Option<SkeletonObservation>, Diagnostic> {
+    reserve_transition_observation(function, budget, transition)?;
+    Ok(Some(match transition {
         CleanupTransition::Initialize { at, destination }
         | CleanupTransition::InitializeVariant {
             at, destination, ..
@@ -444,16 +569,20 @@ fn transition_observation(transition: &CleanupTransition) -> Option<SkeletonObse
             SkeletonObservation::StageCopyResult(source.clone())
         }
         CleanupTransition::AuthenticateVariantCase { .. }
-        | CleanupTransition::SelectFailure { .. } => return None,
-    })
+        | CleanupTransition::SelectFailure { .. } => return Ok(None),
+    }))
 }
 
 /// The skeleton observation one edge condition contributes, exactly as the
 /// enumerating `plan_skeleton_paths` records it.
 fn edge_observation(
     function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
     condition: &EdgeCondition,
 ) -> Result<SkeletonObservation, Diagnostic> {
+    if let EdgeCondition::VariantCase { case, .. } = condition {
+        budget.reserve_clone(function, case, "factored edge case identity")?;
+    }
     Ok(match condition {
         EdgeCondition::BooleanResult(expression, value) => SkeletonObservation::Boolean {
             expression: expression.clone(),

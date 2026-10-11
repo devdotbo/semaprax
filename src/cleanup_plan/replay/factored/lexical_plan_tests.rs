@@ -2,7 +2,7 @@
 //! This oracle never calls the weighted comparison or its closure/canonicalizer.
 use super::*;
 
-const WHILE: &str = r#"module factored.lexical;
+pub(super) const WHILE: &str = r#"module factored.lexical;
 @id("probe") fn probe(n:i64)->i64 {
     let mut i=0;
     while i<n {
@@ -16,7 +16,7 @@ const WHILE: &str = r#"module factored.lexical;
 }
 @id("main") fn main()->i64 {0}
 "#;
-const GENERATED: &str = r#"module factored.generated;
+pub(super) const GENERATED: &str = r#"module factored.generated;
 @id("probe") fn probe(n:i64)->i64 {
     let mut building=vec_with_capacity<i64>(3usize);
     building=vec_push<i64>(building,1);
@@ -34,7 +34,7 @@ const GENERATED: &str = r#"module factored.generated;
 @id("main") fn main()->i64 {0}
 "#;
 
-fn fixture(source: &str) -> (ResolvedProgram, ResolvedFunction) {
+pub(super) fn fixture(source: &str) -> (ResolvedProgram, ResolvedFunction) {
     let parsed = crate::check(source, "factored-lexical-plan.spx").unwrap();
     let program = crate::hir::resolve(&parsed).unwrap();
     let function = program
@@ -87,10 +87,16 @@ fn assert_plan_oracle(function: &ResolvedFunction) {
     let mut expected = plan_skeleton_paths(function, &mut budget).unwrap();
     expected.sort();
     let mut automaton = Automaton::default();
-    let sink = automaton.node();
-    let success = automaton.end(sink, SkeletonTerminal::Success);
-    let failure = automaton.end(sink, SkeletonTerminal::Failure);
-    let latch = automaton.end(sink, SkeletonTerminal::LoopLatch);
+    let sink = automaton.node(function, &mut budget).unwrap();
+    let success = automaton
+        .end(function, &mut budget, sink, SkeletonTerminal::Success)
+        .unwrap();
+    let failure = automaton
+        .end(function, &mut budget, sink, SkeletonTerminal::Failure)
+        .unwrap();
+    let latch = automaton
+        .end(function, &mut budget, sink, SkeletonTerminal::LoopLatch)
+        .unwrap();
     let root = automaton
         .add_plan(function, success, failure, latch, &mut budget)
         .unwrap();
