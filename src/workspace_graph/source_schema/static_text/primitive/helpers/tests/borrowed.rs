@@ -55,6 +55,7 @@ fn actual_lines_reader_body_preserves_ordinary_while_and_exact_option_eliminatio
 }
 #[test]
 fn actual_json_byte_reader_and_u8_conversion_have_exact_nonowning_shapes() {
+    supported_length_provider_does_not_retain_unrelated_option_or_scalar_match_facts();
     let source = include_str!("../../../../../../../std/data-json-utf8/src/utf8.spx");
     for id in ["std.data.json.utf8.at_is", "std.data.json.utf8.at_in"] {
         let shape = pure(&provider(source, "std.data.json.utf8", id));
@@ -118,7 +119,6 @@ fn imported_exact_u8_conversion_keeps_saved_local_status_and_result_control() {
     runtime::run(&linked, &control);
 }
 
-#[test]
 fn supported_length_provider_does_not_retain_unrelated_option_or_scalar_match_facts() {
     let caller_source = r#"module scalar.app;use function @id("leaf.length") from scalar.leaf as length;
 @id("app.main") fn main()->i64 {let text=str"abc";return if length(str_as_bytes(text))==3usize {42}else{0};}"#;
