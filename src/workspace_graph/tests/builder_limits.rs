@@ -496,7 +496,7 @@ fn catalog_normalizer_compact_core_fits_production_builder_cap() {
             );
             panic!("catalog compact core exceeds cap: {errors:?}; forecast={forecast:?}; live debit={debit}, overflow={overflow}, core_ok={}", core.is_ok());
         });
-    assert_eq!(built.hir.modules.len(), 9);
+    assert_eq!(built.hir.modules.len(), 12);
     assert!(built
         .hir
         .modules
@@ -509,6 +509,9 @@ fn catalog_normalizer_compact_core_fits_production_builder_cap() {
     assert!(built.hir.module_paths.contains_key("std.data.json.dec"));
     assert!(built.hir.module_paths.contains_key("std.data.json.doc"));
     assert!(built.hir.module_paths.contains_key("std.io"));
+    assert!(built.hir.module_paths.contains_key("std.data.ndjson"));
+    assert!(built.hir.module_paths.contains_key("std.io.lines"));
+    assert!(built.hir.module_paths.contains_key("std.data.json.utf8"));
     assert!(built.usage.builder_bytes <= MAX_BUILDER_BYTES);
 }
 
