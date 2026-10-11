@@ -94,7 +94,9 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         concat!(
             include_str!("../src/loop_calls/byte_writer/module_index.rs"),
             "\n",
-            include_str!("../src/loop_calls/byte_writer/module_index/directory.rs")
+            include_str!("../src/loop_calls/byte_writer/module_index/directory.rs"),
+            "\n",
+            include_str!("../src/loop_calls/byte_writer/module_index/textual.rs")
         ),
         include_str!("../src/hir/validation/proof_return.rs"),
         include_str!("../src/hir/validation/type_profiles.rs"),

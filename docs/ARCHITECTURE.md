@@ -1122,7 +1122,12 @@ order, with separately precharged borrowed numeric directories for functions,
 positive targets and exact expression-ID fields. Numeric keys only discover a
 candidate; receiving checks still require current pointer identity and original
 binding equality. Unseen/negative targets retain independent proof fallback.
-Directory heapsort charges actual comparisons and swaps before work; query
+Numeric directory radix passes have fixed work independent of allocator address
+order, with exact scratch and histogram reservation. Constructor-only function
+ID discovery uses a stable original-ordinal directory, actual byte comparison
+debits and merge relocation debits on the same existing work ledger. The first
+duplicate ID remains the old linear winner; discovery supplies no target proof.
+Query
 lookup allocates nothing and never clones IDs or grants equal-text authority. `graph/byte_helper_renewal` projects distinct Graph v76 authority;
 `workspace_graph/source_schema/byte_helper` replays retained declaration and
 callee bodies without cloning an entire program. Cleanup v19 composes helper

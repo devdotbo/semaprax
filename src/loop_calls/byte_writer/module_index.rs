@@ -4,6 +4,7 @@ use super::*;
 use crate::diagnostic::Diagnostic;
 use crate::hir::ResolvedProgram;
 mod directory;
+mod textual;
 use directory::Site;
 type Sites<'a> = (&'a ResolvedFunction, HelperBindings<'a>);
 #[derive(Debug, Default)]
@@ -65,6 +66,7 @@ impl<'a> ModuleIndex<'a> {
         let mut cursor = resolved::CensusCursor::new(first)?;
         let mut proof_cursor = None;
         let mut lookup_work = WORK;
+        let names = textual::Functions::new(&program.functions, &mut lookup_work)?;
         for function in program
             .functions
             .iter()
@@ -87,10 +89,7 @@ impl<'a> ModuleIndex<'a> {
                     if crate::byte_ops::by_id(callee.as_str()).is_some() {
                         return Ok(false);
                     }
-                    lookup_work = lookup_work
-                        .checked_sub(program.functions.len().checked_add(1).ok_or_else(error)?)
-                        .ok_or_else(error)?;
-                    let Some(index) = program.functions.iter().position(|f| &f.id == callee) else {
+                    let Some(index) = names.get(callee.as_str(), &mut lookup_work)? else {
                         return Ok(false);
                     };
                     let target = &program.functions[index];

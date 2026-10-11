@@ -844,7 +844,9 @@ format: `Unreleased` then release buckets, grouped by impact.
 
 - Add phase-owned borrowed function and exact expression-ID directories to byte
   helper ModuleIndex queries (#738), retaining independent unseen-target proof,
-  original census order and pointer authority. Sparse-module parity, logarithmic
+  original census order and pointer authority. Fixed-pass radix work avoids
+  allocator-address-dependent refusal; constructor-only textual ID discovery
+  retains the first linear winner with actual byte and merge-copy debits. Sparse-module parity, logarithmic
   zero-backing queries, duplicate-ID and exact/one-short controls are authored;
   execution qualification remains pending.
 

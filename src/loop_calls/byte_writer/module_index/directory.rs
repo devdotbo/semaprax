@@ -1,7 +1,7 @@
 //! Borrowed numeric discovery only. Exact identity is checked by each receiver.
 use super::{Diagnostic, resolved};
 use crate::hir::{ExpressionId, ResolvedBinding};
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub(super) struct Site<'a> {
     pub(super) at: &'a ExpressionId,
     pub(super) binding: &'a ResolvedBinding,
@@ -26,52 +26,59 @@ pub(super) fn reserve<T>(count: usize) -> Result<Vec<T>, Diagnostic> {
     }
     Ok(entries)
 }
-// In-place heapsort has no scratch allocation. Every actual comparison and
-// relocation is charged before evaluation; exhaustion never runs an uncharged
-// remainder or publishes a partial directory.
-pub(super) fn sort<T>(
+// Numeric addresses influence discovery order, never acceptance work. Fixed
+// byte passes visit every item and histogram cell regardless of address ranks.
+// Both replacement backing and fixed histogram are charged before allocation.
+pub(super) fn sort<T: Copy>(
     entries: &mut [T],
     key: impl Fn(&T) -> usize,
     work: &mut usize,
 ) -> Result<(), Diagnostic> {
-    fn sift<T>(
-        entries: &mut [T],
-        mut root: usize,
-        end: usize,
-        key: &impl Fn(&T) -> usize,
-        work: &mut usize,
-    ) -> Result<(), Diagnostic> {
-        while let Some(left) = root
-            .checked_mul(2)
-            .and_then(|n| n.checked_add(1))
-            .filter(|n| *n < end)
-        {
-            let mut child = left;
-            if left + 1 < end {
-                charge(work)?;
-                if key(&entries[left]) < key(&entries[left + 1]) {
-                    child = left + 1;
-                }
-            }
+    if entries.len() < 2 {
+        return Ok(());
+    }
+    if !crate::bounded_output::reserve_active_required(
+        std::mem::size_of::<[usize; 256]>() + std::mem::size_of::<Vec<T>>(),
+    ) {
+        return Err(resolved::census_error());
+    }
+    units(work, 256)?;
+    let mut offsets = [0usize; 256];
+    let mut scratch = reserve::<T>(entries.len())?;
+    units(work, entries.len())?;
+    scratch.extend_from_slice(entries);
+    for byte in 0..std::mem::size_of::<usize>() {
+        units(work, 256)?;
+        offsets.fill(0);
+        for item in entries.iter() {
             charge(work)?;
-            if key(&entries[root]) >= key(&entries[child]) {
-                break;
-            }
-            charge(work)?;
-            entries.swap(root, child);
-            root = child;
+            let digit = (key(item) >> (byte * 8)) & 255;
+            offsets[digit] = offsets[digit]
+                .checked_add(1)
+                .ok_or_else(resolved::census_error)?;
         }
-        Ok(())
+        let mut start = 0usize;
+        for offset in &mut offsets {
+            charge(work)?;
+            let length = *offset;
+            *offset = start;
+            start = start
+                .checked_add(length)
+                .ok_or_else(resolved::census_error)?;
+        }
+        for item in entries.iter() {
+            charge(work)?;
+            let digit = (key(item) >> (byte * 8)) & 255;
+            scratch[offsets[digit]] = *item;
+            offsets[digit] += 1;
+        }
+        units(work, entries.len())?;
+        entries.copy_from_slice(&scratch);
     }
-    let length = entries.len();
-    for root in (0..length / 2).rev() {
-        sift(entries, root, length, &key, work)?;
-    }
-    for end in (1..entries.len()).rev() {
-        charge(work)?;
-        entries.swap(0, end);
-        sift(entries, 0, end, &key, work)?;
-    }
+    Ok(())
+}
+pub(super) fn units(work: &mut usize, count: usize) -> Result<(), Diagnostic> {
+    *work = work.checked_sub(count).ok_or_else(resolved::census_error)?;
     Ok(())
 }
 pub(super) fn lower<T>(

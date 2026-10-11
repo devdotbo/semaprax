@@ -285,19 +285,26 @@ fn sparse_many_function_queries_keep_exact_identity_and_logarithmic_zero_backing
 }
 #[test]
 fn numeric_directory_sort_work_and_duplicate_site_keys_preserve_saved_receivers() {
-    let mut exact = [3usize, 1, 2];
-    let mut work = 5;
-    directory::sort(&mut exact, |key| *key, &mut work).unwrap();
-    assert_eq!(exact, [1, 2, 3]);
-    assert_eq!(work, 0);
-    let mut short = [3usize, 1, 2];
-    let mut work = 4;
-    assert_eq!(
-        directory::sort(&mut short, |key| *key, &mut work)
-            .unwrap_err()
-            .code,
-        "SPX-H006"
-    );
+    // Independent count: initial histogram+copy, then each word byte visits
+    // 256 reset cells, 256 prefix cells and three complete item/copy passes.
+    let exact_work = 256 + 3 + std::mem::size_of::<usize>() * (512 + 3 * 3);
+    for permutation in [[3usize, 1, 2], [1, 2, 3], [2, 3, 1], [usize::MAX, 0, 1]] {
+        let mut exact = permutation;
+        let mut work = exact_work;
+        directory::sort(&mut exact, |key| *key, &mut work).unwrap();
+        let mut expected = permutation;
+        expected.sort();
+        assert_eq!(exact, expected);
+        assert_eq!(work, 0);
+        let mut short = permutation;
+        let mut work = exact_work - 1;
+        assert_eq!(
+            directory::sort(&mut short, |key| *key, &mut work)
+                .unwrap_err()
+                .code,
+            "SPX-H006"
+        );
+    }
     let duplicate_source = SOURCE.replace(
         "output=relay(output,array_as_slice(input));",
         "output=relay(output,array_as_slice(input)); output=relay(output,array_as_slice(input));",
@@ -375,4 +382,72 @@ fn numeric_directory_sort_work_and_duplicate_site_keys_preserve_saved_receivers(
             );
         }
     }
+}
+
+#[test]
+fn textual_assignment_directory_matches_first_linear_winner_and_exact_byte_debits() {
+    let mut typed = program(SOURCE);
+    for (function, id) in
+        typed
+            .functions
+            .iter_mut()
+            .zip(["common.prefix.a", "common.prefix.aa", "common.prefix.a"])
+    {
+        function.id = crate::hir::DeclarationId::new(id);
+    }
+    let mut work = WORK;
+    let names = textual::Functions::new(&typed.functions, &mut work).unwrap();
+    for wanted in [
+        "",
+        "common.prefix",
+        "common.prefix.a",
+        "common.prefix.aa",
+        "common.prefix.b",
+        "missing",
+    ] {
+        let expected = typed
+            .functions
+            .iter()
+            .position(|function| function.id.as_str() == wanted);
+        let actual = names.get(wanted, &mut work).unwrap();
+        assert_eq!(actual, expected);
+    }
+    assert_eq!(names.get("common.prefix.a", &mut work).unwrap(), Some(0));
+    for (left, right, expected, units) in [
+        ("prefix.a", "prefix.a", std::cmp::Ordering::Equal, 9usize),
+        ("prefix.a", "prefix.b", std::cmp::Ordering::Less, 8),
+        ("prefix.", "prefix.a", std::cmp::Ordering::Less, 8),
+        ("é", "ê", std::cmp::Ordering::Less, 2),
+    ] {
+        let mut exact = units;
+        assert_eq!(textual::compare(left, right, &mut exact).unwrap(), expected);
+        assert_eq!(exact, 0);
+        let mut short = units - 1;
+        assert_eq!(
+            textual::compare(left, right, &mut short).unwrap_err().code,
+            "SPX-H006"
+        );
+    }
+    // Temporary sorted IDs and merge scratch borrow all spelling backing.
+    // Two Vec payloads plus their exact owner/header are the whole reservation.
+    let expected_bytes = std::mem::size_of::<textual::Functions<'_>>()
+        + std::mem::size_of::<Vec<usize>>()
+        + 2 * typed.functions.len() * std::mem::size_of::<usize>();
+    let (exact, overflowed, used) = crate::bounded_output::with_limit_usage(expected_bytes, || {
+        let mut work = WORK;
+        let names = textual::Functions::new(&typed.functions, &mut work)?;
+        let first = names.get("common.prefix.a", &mut work)?;
+        drop(names);
+        Ok::<_, Diagnostic>(first)
+    });
+    assert_eq!(exact.unwrap(), Some(0));
+    assert!(!overflowed);
+    assert_eq!(used, expected_bytes);
+    let (short, overflowed, _) =
+        crate::bounded_output::with_limit_usage(expected_bytes - 1, || {
+            let mut work = WORK;
+            textual::Functions::new(&typed.functions, &mut work)
+        });
+    assert_eq!(short.unwrap_err().code, "SPX-H006");
+    assert!(overflowed);
 }
