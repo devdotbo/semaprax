@@ -286,7 +286,8 @@ impl<'a, B: Backing> Domain<'a, B> {
     }
     pub(crate) fn complete(&mut self) -> Result<(), Refusal> {
         if self.phase != Phase::Building
-            || self.issued != self.slots.len()
+            || self.issued != self.descriptor.lease_slots()
+            || self.slots.len() != self.descriptor.lease_slots()
             || self.slots.iter().any(|slot| !slot.published)
         {
             return Err(Refusal::Unpublished);

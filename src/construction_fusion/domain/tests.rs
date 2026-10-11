@@ -61,6 +61,12 @@ fn lazy_backing_exact_metadata_and_last_child_release() {
     domain.start().unwrap();
     assert!(domain.slots.is_empty() && domain.views.is_empty());
     assert_eq!(probe.calls.get(), 0);
+    assert_eq!(domain.complete(), Err(Refusal::Unpublished));
+    assert_eq!(domain.phase(), Phase::Building);
+    assert!(domain.construction_pin);
+    assert!(domain.slots.is_empty() && domain.views.is_empty());
+    assert_eq!(probe.calls.get(), 0);
+    assert_eq!(probe.frees.get(), 0);
     let mut leases = Vec::with_capacity(8);
     for row in 0..8 {
         let lease = domain.issue(row).unwrap();
