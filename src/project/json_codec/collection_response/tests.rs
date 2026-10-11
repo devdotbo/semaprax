@@ -98,7 +98,16 @@ fn collection_response_is_closed_ordered_and_canonical_without_source_authority(
     // Full generator canonical round-trip below remains the authority-neutral
     // source gate; the declaration field assertions exercise the renamed shape.
     assert!(output.contains("count<=256usize"));
-    assert!(output.contains("length<=64usize"));
+    // The same byte ceiling is now enforced by the authenticated shared kernel.
+    assert!(output.contains("ju_bounded_valid(bytes,64usize)"));
+    assert!(output.contains("ju_quoted_len(bytes,64usize)"));
+    let smaller = source(&program, root, 63).unwrap();
+    assert!(smaller.contains("ju_bounded_valid(bytes,63usize)"));
+    assert!(smaller.contains("ju_quoted_len(bytes,63usize)"));
+    let kernel = include_str!("../../../../std/data-json-utf8/src/utf8.spx");
+    assert!(kernel.contains("if max_bytes > 64usize { false }"));
+    assert!(kernel.contains("if length > max_bytes { false }"));
+    assert!(kernel.contains("if !bounded_valid(input, max_bytes) { 18446744073709551615usize }"));
     assert!(output.contains("required>output_limit"));
     assert_eq!(output.matches("bytes_zeroed_bounded(").count(), 1);
     assert_eq!(output.matches("string_from_utf8(").count(), 1);
