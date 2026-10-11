@@ -69,9 +69,12 @@ verification and target checks remain mandatory. Unsupported shapes and policies
 retain their original refusals.
 
 Owning checks live in `project::json_codec::suitability::tests` and
-`cli::json_codec::suitability::tests`, with the existing codec derivation,
+`cli::json_codec::suitability::tests`, and the actual-binary Project harness
+`explore_cli::json_codec_suitability`, with the existing codec derivation,
 CLI/help and ordinary-source audit owners. They cover checked identity and source
 receipts, actual missing-policy and import facts, candidate-refusal separation,
 unknown/stale identities, exact/+1/one-short output and complete continuation,
-strict inert CLI grammar, and native64/wasm32 manifest-policy distinction. No
+strict inert CLI grammar, native64/wasm32 manifest-policy distinction, and
+source/manifest drift. The public CLI controls compare every fixture file and
+directory before and after each query, including refusals. No
 executable or measured discovery improvement is claimed before qualification.
