@@ -14,6 +14,18 @@ const SOURCE: &str = r#"module static.flat_records;
 fn build() -> WorkspaceGraphBuild {
     build_source(SOURCE)
 }
+fn lexical_source() -> String {
+    SOURCE
+        .replace("fn identity(value:own Packet)->Packet {value}",
+            "fn identity(value:own Packet,flag:bool)->Packet {let mut next=0;while next<1 {next=next+1;if flag {return value;} else {0} 0} value}")
+        .replace("Packet{n:7,text:\"label\",data:bytes_copy(input)}",
+            "let packet=Packet{n:7,text:\"label\",data:bytes_copy(input)};let mut next=0;while next<1 {next=next+1;if byte_len(input)>0usize {return packet;} else {0} 0} packet")
+        .replace("{let key=str\"x\";return str_len_bytes(key);}",
+            "{let key=str\"x\";let input=[65u8];let packet=identity(make(array_as_slice(input)),false);let mut next=0;while next<1 {next=next+1;if str_len_bytes(key)==1 {return read(packet);} else {0} 0} read(packet)}")
+}
+fn build_lexical() -> WorkspaceGraphBuild {
+    build_source(&lexical_source())
+}
 fn build_source(source: &str) -> WorkspaceGraphBuild {
     let sources = [
         ("flat.spx", source),
@@ -42,7 +54,19 @@ fn module(build: &WorkspaceGraphBuild) -> &WorkspaceResolvedModule {
 }
 #[test]
 fn captured_flat_layout_reconstructs_minimal_index_at_exact_and_one_short_without_admission() {
-    let build = build();
+    assert!(
+        build()
+            .source_graph_schemas()
+            .unwrap_err()
+            .iter()
+            .any(|error| error.code == "SPX-G410"),
+        "a normalized nonlexical fixture cannot select the retained lexical route"
+    );
+    let build = build_lexical();
+    assert_eq!(
+        build.source_graph_schemas().unwrap()["flat.spx"],
+        "semaprax.graph.v77"
+    );
     let module = module(&build);
     let inventory = module
         .static_text
@@ -87,19 +111,21 @@ fn captured_flat_layout_reconstructs_minimal_index_at_exact_and_one_short_withou
     let mut short = crate::cleanup_plan::ReplayPhysicalReservation::new(required - 1);
     assert!(super::super::authenticate(module, &build.hir.declarations, &mut short).is_err());
     assert!(short.reserve(0).is_err());
-    assert!(
-        build
-            .source_graph_schemas()
-            .unwrap_err()
-            .iter()
-            .any(|error| error.code == "SPX-G410"),
-        "a normalized nonlexical fixture cannot select the retained lexical route"
-    );
 }
 #[test]
 fn captured_record_layout_namespace_and_constructor_body_drift_are_independently_rejected() {
     for attack in 0..6 {
-        let mut build = build();
+        let mut build = build_lexical();
+        assert_eq!(
+            build.source_graph_schemas().unwrap()["flat.spx"],
+            "semaprax.graph.v77"
+        );
+        super::super::authenticate(
+            module(&build),
+            &build.hir.declarations,
+            &mut crate::cleanup_plan::ReplayPhysicalReservation::new(usize::MAX),
+        )
+        .unwrap();
         let mut facts = build.hir.declarations.clone();
         let module = build
             .hir
@@ -127,10 +153,13 @@ fn captured_record_layout_namespace_and_constructor_body_drift_are_independently
                     .iter_mut()
                     .find(|f| f.id.as_str() == "flat.make")
                     .unwrap();
-                let hir::ResolvedExprKind::Block { tail, .. } = &mut make.body.kind else {
+                let hir::ResolvedExprKind::Block { statements, .. } = &mut make.body.kind else {
                     panic!("make block")
                 };
-                let hir::ResolvedExprKind::ConstructRecord { fields, .. } = &mut tail.kind else {
+                let hir::ResolvedStatement::Let { value, .. } = &mut statements[0] else {
+                    panic!("source packet binding")
+                };
+                let hir::ResolvedExprKind::ConstructRecord { fields, .. } = &mut value.kind else {
                     panic!("source constructor")
                 };
                 let field = fields
@@ -155,14 +184,7 @@ fn captured_record_layout_namespace_and_constructor_body_drift_are_independently
 
 #[test]
 fn source_bound_nominal_make_identity_read_with_real_lexical_results_selects() {
-    let source=SOURCE
-        .replace("fn identity(value:own Packet)->Packet {value}",
-            "fn identity(value:own Packet,flag:bool)->Packet {let mut next=0;while next<1 {next=next+1;if flag {return value;} else {0} 0} value}")
-        .replace("Packet{n:7,text:\"label\",data:bytes_copy(input)}",
-            "let packet=Packet{n:7,text:\"label\",data:bytes_copy(input)};let mut next=0;while next<1 {next=next+1;if byte_len(input)>0usize {return packet;} else {0} 0} packet")
-        .replace("{let key=str\"x\";return str_len_bytes(key);}",
-            "{let key=str\"x\";let input=[65u8];let packet=identity(make(array_as_slice(input)),false);let mut next=0;while next<1 {next=next+1;if str_len_bytes(key)==1 {return read(packet);} else {0} 0} read(packet)}");
-    let build = build_source(&source);
+    let build = build_lexical();
     let module = module(&build);
     for id in ["flat.make", "flat.identity"] {
         let function = module
