@@ -146,3 +146,32 @@ observe the reference protocol, not physical allocator measurements. Native,
 interpreter and Core-Wasm integration, full source/HIR equivalence, physical
 fault/metadata observations and atomic selected admission remain prerequisites.
 No executable gate or allocation saving is claimed by this private tranche.
+
+
+### Private Core-Wasm host-boundary precursor
+
+`wasm::fused_row_host` is a test-only import/reexport probe, with namespace
+`semaprax.private.fused-row-host.v1`. It is not a source emitter or a frozen
+public Bytes ABI. Its host factory instantiates only the exact granted module;
+imports stay private to that factory. The private carrier supplies a held issuer
+`externref`, a slot and a never-reused nonce. Exact issuer object, invocation-held
+slot/nonce and generation validation precede every payload read or release.
+A different issuer, module grant, invocation or retired owner/view refuses.
+
+The host acquires fixed lease and64-view typed tables and one zeroed payload at
+the first Bytes preparation. It retains the same publication, complete-only
+borrow, abort pin and canonical settlement order as the reference domain. There
+is no per-child backing, copy-on-write or read-time table growth. Its ordinary
+32-event/2MiB counters are cumulative and do not refund on cleanup. Read views
+are readonly; move/drop refuses active views. The owning probe uses a genuinely
+checked eight-row descriptor and actual Core-Wasm imports, not4096 source
+admission. It exercises foreign/stale handles, range boundaries,64 simultaneous
+views, delayed abort release, last-child release, metadata exact/one-short and
+reentry. Its signature/inventory and Node boundary definitions are authored but
+unexecuted.
+
+Reported table sizes are actual typed-array `byteLength` values. JavaScript
+engine, closure, nonce and bookkeeping allocations are not a claimed complete
+physical reservation or allocator measurement. Full executor storage accounting,
+source lowering and immutable source/HIR provenance still have to join before
+activation; this host namespace grants no production or ordinary admission.
