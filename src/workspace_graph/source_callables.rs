@@ -135,14 +135,31 @@ pub(super) fn visit_ast_call_expressions(
     path: &str,
     visit: &mut impl FnMut(&Expr, &str) -> Result<(), Vec<Diagnostic>>,
 ) -> Result<(), Vec<Diagnostic>> {
+    visit_ast_expression_sites(expression, path, &mut |expression, path| {
+        if matches!(&expression.kind, ExprKind::Call { .. }) {
+            visit(expression, path)
+        } else {
+            Ok(())
+        }
+    })
+}
+
+pub(super) fn visit_ast_expression_sites(
+    expression: &Expr,
+    path: &str,
+    visit: &mut impl FnMut(&Expr, &str) -> Result<(), Vec<Diagnostic>>,
+) -> Result<(), Vec<Diagnostic>> {
+    visit(expression, path)?;
     match &expression.kind {
+        ExprKind::VecConstructor { value, .. } => {
+            visit_ast_expression_sites(value, path, visit)?;
+        }
         ExprKind::Closure { body, .. } => {
-            visit_ast_call_expressions(body, &format!("{path}.closure.body"), visit)?
+            visit_ast_expression_sites(body, &format!("{path}.closure.body"), visit)?
         }
         ExprKind::Call { args, .. } => {
-            visit(expression, path)?;
             for (index, argument) in args.iter().enumerate() {
-                visit_ast_call_expressions(
+                visit_ast_expression_sites(
                     argument,
                     &crate::bounded_output::budgeted_format(format_args!("{path}.arg.{index}")),
                     visit,
@@ -155,19 +172,19 @@ pub(super) fn visit_ast_call_expressions(
             value: Some(value), ..
         }
         | ExprKind::Unary { value, .. } => {
-            visit_ast_call_expressions(
+            visit_ast_expression_sites(
                 value,
                 &crate::bounded_output::budgeted_format(format_args!("{path}.value")),
                 visit,
             )?;
         }
         ExprKind::Binary { left, right, .. } => {
-            visit_ast_call_expressions(
+            visit_ast_expression_sites(
                 left,
                 &crate::bounded_output::budgeted_format(format_args!("{path}.left")),
                 visit,
             )?;
-            visit_ast_call_expressions(
+            visit_ast_expression_sites(
                 right,
                 &crate::bounded_output::budgeted_format(format_args!("{path}.right")),
                 visit,
@@ -177,14 +194,14 @@ pub(super) fn visit_ast_call_expressions(
             for (index, statement) in statements.iter().enumerate() {
                 match statement {
                     crate::ast::Statement::Let { value, .. }
-                    | crate::ast::Statement::Assign { value, .. } => visit_ast_call_expressions(
+                    | crate::ast::Statement::Assign { value, .. } => visit_ast_expression_sites(
                         value,
                         &crate::bounded_output::budgeted_format(format_args!(
                             "{path}.s{index}.value"
                         )),
                         visit,
                     )?,
-                    crate::ast::Statement::Unsafe { body, .. } => visit_ast_call_expressions(
+                    crate::ast::Statement::Unsafe { body, .. } => visit_ast_expression_sites(
                         body,
                         &crate::bounded_output::budgeted_format(format_args!(
                             "{path}.s{index}.value"
@@ -194,14 +211,14 @@ pub(super) fn visit_ast_call_expressions(
                     crate::ast::Statement::While {
                         condition, body, ..
                     } => {
-                        visit_ast_call_expressions(
+                        visit_ast_expression_sites(
                             condition,
                             &crate::bounded_output::budgeted_format(format_args!(
                                 "{path}.s{index}.condition"
                             )),
                             visit,
                         )?;
-                        visit_ast_call_expressions(
+                        visit_ast_expression_sites(
                             body,
                             &crate::bounded_output::budgeted_format(format_args!(
                                 "{path}.s{index}.body"
@@ -224,14 +241,14 @@ pub(super) fn visit_ast_call_expressions(
                         // call. Naming the authored paths is what keeps this
                         // reconstruction independent of the HIR while still
                         // describing the same program.
-                        visit_ast_call_expressions(
+                        visit_ast_expression_sites(
                             values,
                             &crate::bounded_output::budgeted_format(format_args!(
                                 "{path}.s{index}.value.s0.value.arg.0"
                             )),
                             visit,
                         )?;
-                        visit_ast_call_expressions(
+                        visit_ast_expression_sites(
                             body,
                             &crate::bounded_output::budgeted_format(format_args!(
                                 "{path}.s{index}.value.s2.body.s1.value"
@@ -245,14 +262,14 @@ pub(super) fn visit_ast_call_expressions(
                         // and the yielded-item binding is at
                         // `.s1.body.s0.value.arm.1.binding.0`; its authored
                         // body follows that binding at `.arm.1.value.s0.value`.
-                        visit_ast_call_expressions(
+                        visit_ast_expression_sites(
                             values,
                             &crate::bounded_output::budgeted_format(format_args!(
                                 "{path}.s{index}.value.s0.value.arg.0"
                             )),
                             visit,
                         )?;
-                        visit_ast_call_expressions(
+                        visit_ast_expression_sites(
                             body,
                             &crate::bounded_output::budgeted_format(format_args!(
                                 "{path}.s{index}.value.s1.body.s0.value.arm.1.value.s0.value"
@@ -262,7 +279,7 @@ pub(super) fn visit_ast_call_expressions(
                     }
                 }
             }
-            visit_ast_call_expressions(
+            visit_ast_expression_sites(
                 tail,
                 &crate::bounded_output::budgeted_format(format_args!("{path}.tail")),
                 visit,
@@ -273,17 +290,17 @@ pub(super) fn visit_ast_call_expressions(
             then_branch,
             else_branch,
         } => {
-            visit_ast_call_expressions(
+            visit_ast_expression_sites(
                 condition,
                 &crate::bounded_output::budgeted_format(format_args!("{path}.condition")),
                 visit,
             )?;
-            visit_ast_call_expressions(
+            visit_ast_expression_sites(
                 then_branch,
                 &crate::bounded_output::budgeted_format(format_args!("{path}.then")),
                 visit,
             )?;
-            visit_ast_call_expressions(
+            visit_ast_expression_sites(
                 else_branch,
                 &crate::bounded_output::budgeted_format(format_args!("{path}.else")),
                 visit,
@@ -291,7 +308,7 @@ pub(super) fn visit_ast_call_expressions(
         }
         ExprKind::ConstructRecord { fields, .. } | ExprKind::ConstructVariant { fields, .. } => {
             for (index, field) in fields.iter().enumerate() {
-                visit_ast_call_expressions(
+                visit_ast_expression_sites(
                     &field.value,
                     &crate::bounded_output::budgeted_format(format_args!(
                         "{path}.field.{index}.value"
@@ -303,14 +320,14 @@ pub(super) fn visit_ast_call_expressions(
         ExprKind::Match {
             scrutinee, arms, ..
         } => {
-            visit_ast_call_expressions(
+            visit_ast_expression_sites(
                 scrutinee,
                 &crate::bounded_output::budgeted_format(format_args!("{path}.scrutinee")),
                 visit,
             )?;
             for (index, arm) in arms.iter().enumerate() {
                 if let Some(guard) = &arm.guard {
-                    visit_ast_call_expressions(
+                    visit_ast_expression_sites(
                         guard.as_ref(),
                         &crate::bounded_output::budgeted_format(format_args!(
                             "{path}.arm.{index}.guard"
@@ -318,7 +335,7 @@ pub(super) fn visit_ast_call_expressions(
                         visit,
                     )?;
                 }
-                visit_ast_call_expressions(
+                visit_ast_expression_sites(
                     &arm.value,
                     &crate::bounded_output::budgeted_format(format_args!(
                         "{path}.arm.{index}.value"
@@ -328,20 +345,20 @@ pub(super) fn visit_ast_call_expressions(
             }
         }
         ExprKind::Try { operand } | ExprKind::Yield { request: operand } => {
-            visit_ast_call_expressions(
+            visit_ast_expression_sites(
                 operand,
                 &crate::bounded_output::budgeted_format(format_args!("{path}.operand")),
                 visit,
             )?;
         }
         ExprKind::UpdateRecord { base, fields } => {
-            visit_ast_call_expressions(
+            visit_ast_expression_sites(
                 base,
                 &crate::bounded_output::budgeted_format(format_args!("{path}.base")),
                 visit,
             )?;
             for (index, field) in fields.iter().enumerate() {
-                visit_ast_call_expressions(
+                visit_ast_expression_sites(
                     &field.value,
                     &crate::bounded_output::budgeted_format(format_args!(
                         "{path}.field.{index}.value"
@@ -351,7 +368,7 @@ pub(super) fn visit_ast_call_expressions(
             }
         }
         ExprKind::Project { base, .. } => {
-            visit_ast_call_expressions(
+            visit_ast_expression_sites(
                 base,
                 &crate::bounded_output::budgeted_format(format_args!("{path}.base")),
                 visit,
@@ -366,7 +383,7 @@ pub(super) fn visit_ast_call_expressions(
         | ExprKind::Float64(_)
         | ExprKind::Bool(_)
         | ExprKind::String(_)
-| ExprKind::BorrowedUtf8Literal(_)
+        | ExprKind::BorrowedUtf8Literal(_)
         | ExprKind::Var(_) => {}
         // Method calls resolve to hoisted functions in HIR; the AST-level
         // call-site walk sees them through the resolved Call edge instead.
