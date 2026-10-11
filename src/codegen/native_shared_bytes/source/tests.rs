@@ -1,5 +1,6 @@
 use super::super::tests::{compile_and_run, scratch};
-use super::*;
+use super::Projection;
+use crate::hir;
 const SOURCE: &str = r#"module partition_native;
 @id("partition_native.split") fn split()->Vec<Bytes>{
  let buffer=bytes_zeroed(65536usize);

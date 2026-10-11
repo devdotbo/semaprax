@@ -23,6 +23,7 @@
 mod bridge;
 #[path = "native_shared_bytes/closure.rs"]
 pub(in crate::codegen) mod closure;
+#[path = "native_shared_bytes/source.rs"]
 pub(in crate::codegen) mod source;
 #[cfg(test)]
 #[path = "native_shared_bytes/tests.rs"]

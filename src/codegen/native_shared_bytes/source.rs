@@ -218,4 +218,5 @@ fn check(expression: &ResolvedExpr, work: &mut usize) -> Result<(), Diagnostic> 
     }
 }
 #[cfg(test)]
+#[path = "source/tests.rs"]
 mod tests;
