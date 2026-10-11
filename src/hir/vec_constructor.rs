@@ -150,8 +150,7 @@ fn roots_use<'a>(
         if matches!(expression.kind, ResolvedExprKind::VecConstructor { .. }) {
             return Ok(true);
         }
-        let mut children = super::lexical_exit::ChildCursor::new(expression);
-        while let Some(child) = children.next() {
+        for child in super::lexical_exit::ChildCursor::new(expression) {
             if present(child, depth + 1, visits)? {
                 return Ok(true);
             }

@@ -528,12 +528,12 @@ impl Registry<'_> {
                     self.drop_lease(lease)?;
                 }
             }
-            Value::Record(_) | Value::Variant(_) | Value::Vec(_) => {
-                if self.contains_lease(value) {
-                    return Err(Flow::Guard(
-                        "private aggregate settlement requires exact typed leaf order",
-                    ));
-                }
+            Value::Record(_) | Value::Variant(_) | Value::Vec(_)
+                if self.contains_lease(value) =>
+            {
+                return Err(Flow::Guard(
+                    "private aggregate settlement requires exact typed leaf order",
+                ));
             }
             _ => {}
         }

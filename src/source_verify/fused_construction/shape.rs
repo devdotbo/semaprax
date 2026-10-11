@@ -340,15 +340,15 @@ pub(super) fn derive<'p>(
         induction: Induction {
             binding: induction_let,
             name: induction,
-            bound: &**bound,
+            bound,
             latch,
             step,
         },
         construction: Construction {
             statement: looped,
             index: 2,
-            condition: &**condition,
-            body: &**body,
+            condition,
+            body,
             item: item_let,
             constructor,
             push,

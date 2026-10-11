@@ -180,10 +180,9 @@ fn authenticate_target<'a>(
         )?;
         if Some(module.module.as_str()) == origin.module.as_deref()
             && Some(module.path.as_str()) == origin.path.as_deref()
+            && provider.replace(module).is_some()
         {
-            if provider.replace(module).is_some() {
-                return Err(fail());
-            }
+            return Err(fail());
         }
     }
     let module = provider.ok_or_else(fail)?;

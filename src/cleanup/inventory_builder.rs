@@ -91,12 +91,15 @@ pub(crate) fn build_borrowed_helper_inventory_with_budget<'a>(
     )
 }
 
+/// Optional per-unit work charge shared by one selected inventory build.
+type InventoryWork<'a> = Option<RefCell<&'a mut dyn FnMut(usize) -> Result<(), Diagnostic>>>;
+
 fn build_inventory_inner<'a>(
     program: &'a dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     physical: Option<RefCell<&'a mut ReplayPhysicalReservation>>,
     flat_records: bool,
-    work: Option<RefCell<&'a mut dyn FnMut(usize) -> Result<(), Diagnostic>>>,
+    work: InventoryWork<'a>,
 ) -> Result<CleanupInventory, Diagnostic> {
     let mut builder = InventoryBuilder {
         work,
@@ -178,7 +181,7 @@ fn build_inventory_inner<'a>(
 }
 
 pub(super) struct InventoryBuilder<'a> {
-    pub(super) work: Option<RefCell<&'a mut dyn FnMut(usize) -> Result<(), Diagnostic>>>,
+    pub(super) work: InventoryWork<'a>,
     pub(super) flat_records: bool,
     pub(super) physical: Option<RefCell<&'a mut ReplayPhysicalReservation>>,
     pub(super) program: &'a dyn crate::cleanup::ReplayContext,

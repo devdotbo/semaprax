@@ -87,7 +87,7 @@ fn view(binding: &ResolvedBinding) -> bool {
     matches!(binding.ty, T::Str | T::SliceU8) && binding.ownership == O::Borrow
 }
 
-fn call<'s>(e: &'s ast::Expr) -> Option<(&'s str, &'s [ast::Type], &'s [ast::Expr])> {
+fn call(e: &ast::Expr) -> Option<(&str, &[ast::Type], &[ast::Expr])> {
     match &e.kind {
         A::Call {
             name,

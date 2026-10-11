@@ -107,7 +107,7 @@ impl<'p> Census<'p> {
         let slot = self.slots[..self.len]
             .iter_mut()
             .flatten()
-            .find(|slot| &slot.name == name && slot.live)?;
+            .find(|slot| slot.name == name && slot.live)?;
         if slot.ty != Ty::Owner {
             return None;
         }

@@ -100,6 +100,9 @@ pub(crate) enum Refusal {
 }
 
 /// Result of a successful source derivation.
+// Keep the borrowed, fixed-size proof inline; boxing adds an allocation per
+// source derivation.
+#[allow(clippy::large_enum_variant)]
 pub(crate) enum Derivation<'p> {
     /// The shape is exact but the row count stays on the legacy finite route.
     Legacy32 { rows: u32 },
@@ -301,7 +304,7 @@ impl<'p> SourceProof<'p> {
                     (None, None) => true,
                     (Some(OwnerEvent::Move(a)), Some(OwnerEvent::Move(b)))
                     | (Some(OwnerEvent::Sort(a)), Some(OwnerEvent::Sort(b)))
-                    | (Some(OwnerEvent::Borrow(a)), Some(OwnerEvent::Borrow(b))) => s(*a, *b),
+                    | (Some(OwnerEvent::Borrow(a)), Some(OwnerEvent::Borrow(b))) => s(a, b),
                     _ => false,
                 })
             && (self.rows, self.width, self.extent, self.string_bytes)

@@ -4364,6 +4364,8 @@ const GRAPH_ACCOUNTED_RESOLVED_FUNCTION_INSTANCE_BYTES: usize =
     std::mem::size_of::<hir::ResolvedFunctionInstance>()
         - std::mem::size_of::<crate::loan_plan::LoanPlan>();
 
+// Keep the source-authority inputs explicit at this audited construction boundary.
+#[allow(clippy::too_many_arguments)]
 fn build_resolved_core(
     programs: &[Program],
     module_paths: &BTreeMap<&str, &str>,

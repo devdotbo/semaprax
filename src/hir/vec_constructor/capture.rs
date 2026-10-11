@@ -59,8 +59,7 @@ pub(super) fn reject_item_capture(
                 ));
             }
         }
-        let mut children = crate::hir::lexical_exit::ChildCursor::new(expression);
-        while let Some(child) = children.next() {
+        for child in crate::hir::lexical_exit::ChildCursor::new(expression) {
             inspect(child, owners, depth + 1, node_work, comparison_work)?;
         }
         Ok(())

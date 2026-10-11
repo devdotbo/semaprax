@@ -119,6 +119,10 @@ fn sift(
     Ok(())
 }
 
+/// Caller-supplied purity classifier, charged against the shared work budget.
+type Classify<'c> =
+    dyn FnMut(&hir::ResolvedFunction, &mut usize) -> Result<bool, Vec<Diagnostic>> + 'c;
+
 /// Borrowed facts only; source origin and complete signature authentication stay
 /// in capture before any fact is published. Selected functions keep AST order.
 pub(super) struct Directory<'a> {
@@ -137,10 +141,7 @@ impl<'a> Directory<'a> {
         program: &Program,
         resolved: &'a hir::ResolvedProgram,
         work: &mut usize,
-        classify: &mut dyn FnMut(
-            &hir::ResolvedFunction,
-            &mut usize,
-        ) -> Result<bool, Vec<Diagnostic>>,
+        classify: &mut Classify<'_>,
     ) -> Result<Self, Vec<Diagnostic>> {
         let result = Self::build(program, resolved, work, classify);
         if result.is_err() {
@@ -152,10 +153,7 @@ impl<'a> Directory<'a> {
         program: &Program,
         resolved: &'a hir::ResolvedProgram,
         work: &mut usize,
-        classify: &mut dyn FnMut(
-            &hir::ResolvedFunction,
-            &mut usize,
-        ) -> Result<bool, Vec<Diagnostic>>,
+        classify: &mut Classify<'_>,
     ) -> Result<Self, Vec<Diagnostic>> {
         let index = Index::new(&resolved.functions, work)?;
         let bytes = program

@@ -19,7 +19,7 @@ use crate::workspace_graph::AuthoredKind;
 pub(in crate::workspace_graph) trait Lookup<'a> {
     fn get(&self, id: &str) -> Option<&AuthoredDeclaration<'a>>;
 }
-impl<'k, 'a> Lookup<'a> for BTreeMap<&'k str, AuthoredDeclaration<'a>> {
+impl<'a> Lookup<'a> for BTreeMap<&str, AuthoredDeclaration<'a>> {
     fn get(&self, id: &str) -> Option<&AuthoredDeclaration<'a>> {
         BTreeMap::get(self, id)
     }

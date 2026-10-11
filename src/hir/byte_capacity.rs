@@ -1175,7 +1175,7 @@ fn byte_data_capacity_inputs_with(
                 .iter()
                 .map(|expression| {
                     byte_capacity_expression_in(
-                        &facts,
+                        facts,
                         Some(function),
                         expression,
                         &mut slots,
@@ -1184,7 +1184,7 @@ fn byte_data_capacity_inputs_with(
                 })
                 .collect::<Result<Vec<_>, _>>()?;
             execution.push(byte_capacity_expression_in(
-                &facts,
+                facts,
                 Some(function),
                 &function.body,
                 &mut slots,
@@ -1196,7 +1196,7 @@ fn byte_data_capacity_inputs_with(
                     .iter()
                     .map(|expression| {
                         byte_capacity_expression_in(
-                            &facts,
+                            facts,
                             Some(function),
                             expression,
                             &mut slots,

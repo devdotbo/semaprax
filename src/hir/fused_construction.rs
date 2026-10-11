@@ -249,7 +249,7 @@ fn distinct(ids: &[&ExpressionId]) -> bool {
         .enumerate()
         .all(|(index, id)| ids[..index].iter().all(|other| other != id))
 }
-fn binary<'a>(e: &'a E, op: BinaryOp) -> Option<(&'a E, &'a E)> {
+fn binary(e: &E, op: BinaryOp) -> Option<(&E, &E)> {
     match &e.kind {
         K::Binary {
             op: actual,

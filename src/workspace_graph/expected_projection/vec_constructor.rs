@@ -74,8 +74,7 @@ pub(super) fn verify(
         if matches!(expression.kind, ast::ExprKind::VecConstructor { .. }) {
             return Ok(true);
         }
-        let mut children = ast::vec_constructor::NodeCursor::new(expression);
-        while let Some(child) = children.next() {
+        for child in ast::vec_constructor::NodeCursor::new(expression) {
             if source_presence(child, depth + 1, work)? {
                 return Ok(true);
             }
@@ -121,7 +120,7 @@ pub(super) fn verify(
             ) {
                 hir::vec_constructor::authenticate(expression).map_err(|_| refused())?;
                 if sites.len() == sites.capacity() {
-                    let capacity = sites.capacity().checked_mul(2).unwrap_or(usize::MAX).max(4);
+                    let capacity = sites.capacity().saturating_mul(2).max(4);
                     reserve_builder_structure(
                         capacity
                             .checked_mul(std::mem::size_of::<&hir::ResolvedExpr>())

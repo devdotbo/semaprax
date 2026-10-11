@@ -6773,9 +6773,10 @@ fn finish_call_states(
     };
     #[cfg(not(test))]
     let borrowed_total: Option<bool> = None;
-    let infallible_compiler_operation = borrowed_total.unwrap_or_else(|| {
-        super::deferred_commit::expression_is_infallible_compiler_operation(expression)
-    });
+    let infallible_compiler_operation = match borrowed_total {
+        Some(total) => total,
+        None => super::deferred_commit::expression_is_infallible_compiler_operation(expression),
+    };
     // `vec_push` and the one fallible byte operation both check their bound before the owner transfer commits, so their status observation precedes the
     // call-commit and a failed call leaves the owner in its call-argument slot for the ordinary region cleanup.
     // The complete held profile excludes deferred owner-transfer opcodes.

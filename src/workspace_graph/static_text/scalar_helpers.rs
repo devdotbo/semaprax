@@ -209,10 +209,8 @@ pub(in crate::workspace_graph) fn capture(
                 .and_then(|n| n.checked_add(1))
                 .ok_or_else(fail)?,
         )?;
-        if source.path == program.path {
-            if selected.replace(source).is_some() {
-                return Err(fail());
-            }
+        if source.path == program.path && selected.replace(source).is_some() {
+            return Err(fail());
         }
     }
     let source = selected.ok_or_else(fail)?;
