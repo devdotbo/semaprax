@@ -28,6 +28,14 @@ remains authoritative for each starter's dependencies and commands.
 This is guidance, not an admission mechanism. A profile or capability is
 available only when the ordinary compiler route accepts it.
 
+## Explicit fused source usage
+
+Command usage now includes the authored `fused-construction-v1` source-only
+run/build opt-in with mandatory `--managed-bytes`. Interpreter fuel remains
+explicitly separate from native/Wasm account policy. The source, target and
+publication contract is [Fused source profile v1](FUSED-SOURCE-PROFILE-V1.md);
+executable qualification is pending. Existing command and help bounds remain.
+
 ## Bounded application discovery
 
 `help language author:routes` lists the complete application-route inventory.

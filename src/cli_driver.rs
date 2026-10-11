@@ -741,6 +741,9 @@ fn run(args: Vec<String>, host: Option<&PrivateHost>) -> Result<(), u8> {
         CommandId::Run => {
             let options = cli::execution::parse_run(&args[1..])?;
             match &options.input {
+                cli::execution::ExecutionInput::Source(path) if options.fused_account.is_some() => {
+                    run_fused_source(path, &options)
+                }
                 cli::execution::ExecutionInput::Source(path) if options.native => {
                     run_native_source(path, &options.arguments)
                 }

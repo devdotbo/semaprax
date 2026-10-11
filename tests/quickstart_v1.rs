@@ -18,6 +18,10 @@ mod project;
 )]
 #[path = "../src/cli/build.rs"]
 mod build_cli;
+#[path = "../src/cli/fused_profile.rs"]
+mod fused_profile;
+#[path = "quickstart_v1/fused_source.rs"]
+mod fused_source;
 
 static SERIAL: AtomicU64 = AtomicU64::new(0);
 

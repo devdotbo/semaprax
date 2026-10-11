@@ -160,7 +160,16 @@ impl Sources {
                 read(repository, "src/cli_driver/options/tests.rs"),
                 read(repository, "src/cli_driver/report_options.rs"),
                 read(repository, "src/cli_driver/report_options/tests.rs"),
-                read(repository, "src/cli_driver/source_execution.rs"),
+                [
+                    read(repository, "src/cli_driver/source_execution.rs"),
+                    read(
+                        repository,
+                        "src/cli_driver/source_execution/fused_profile.rs",
+                    ),
+                    read(repository, "src/cli/fused_profile.rs"),
+                    read(repository, "src/fused_source.rs"),
+                ]
+                .join("\n"),
                 read(repository, "src/cli_driver/project_scaffold_options.rs"),
                 read(repository, "src/cli_driver/supply_chain.rs"),
                 read(repository, "src/cli_driver/persistence_dispatch.rs"),

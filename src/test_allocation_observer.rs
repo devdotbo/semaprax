@@ -6,7 +6,13 @@
 use std::alloc::{GlobalAlloc, Layout, System};
 use std::cell::{Cell, RefCell};
 
-const SLOTS: usize = 4096;
+// Fixed test instrumentation capacity: the original 4096-row selected gate
+// holds 4096 title allocations plus its frame, row/slot tables and owned
+// backing. Four entries per maximum row leave a bounded margin for those
+// fixed allocations. This changes no runtime/compiler quota: exhaustion still
+// marks observation invalid, and the fixed tracking array is excluded from the
+// measured requested layouts just as before.
+const SLOTS: usize = 16_384;
 #[derive(Clone, Copy)]
 struct Slot {
     pointer: usize,

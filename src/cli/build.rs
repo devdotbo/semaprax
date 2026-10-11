@@ -16,6 +16,7 @@ pub(crate) struct BuildOptions {
     pub(crate) function: Option<String>,
     pub(crate) exports: Vec<String>,
     pub(crate) profile: Option<String>,
+    pub(crate) fused_account: Option<semaprax::fused_source::RuntimeAccount>,
     pub(crate) json: bool,
 }
 
@@ -461,6 +462,7 @@ pub(crate) fn parse_with_capabilities(
     let mut function = None::<String>;
     let mut exports = Vec::<String>::new();
     let mut profile = None::<String>;
+    let mut managed = None;
     let mut json = false;
     let mut index = 0;
     while index < args.len() {
@@ -489,6 +491,7 @@ pub(crate) fn parse_with_capabilities(
                 | "--function"
                 | "--export"
                 | "--profile"
+                | "--managed-bytes"
                 | "--manifest-path"
                 | "-o"
                 | "--output"
@@ -503,6 +506,7 @@ pub(crate) fn parse_with_capabilities(
                                 | "--function"
                                 | "--export"
                                 | "--profile"
+                                | "--managed-bytes"
                                 | "--manifest-path"
                                 | "-o"
                                 | "--output"
@@ -517,6 +521,9 @@ pub(crate) fn parse_with_capabilities(
             match argument.as_str() {
                 "--target" if target.is_none() => target = Some(value.clone()),
                 "--profile" if profile.is_none() => profile = Some(value.clone()),
+                "--managed-bytes" if managed.is_none() => {
+                    managed = Some(super::fused_profile::account(value)?)
+                }
                 "--function" if function.is_none() => function = Some(value.clone()),
                 "--export" => exports.push(value.clone()),
                 "--manifest-path" if manifest_path.is_none() => {
@@ -561,21 +568,43 @@ pub(crate) fn parse_with_capabilities(
             "native".to_owned()
         }
     });
-    if let Some(profile) = &profile {
-        if !matches!(profile.as_str(), "internal-strings-v1" | "text-toolkit-v1")
-            || !matches!(&input, BuildInput::Source(_))
-            || !matches!(target.as_str(), "web" | "wasm")
-            || !(1..=32).contains(&exports.len())
+    let fused_account = if profile.as_deref() == Some(semaprax::fused_source::PROFILE) {
+        if !matches!(&input, BuildInput::Source(_))
+            || !matches!(target.as_str(), "native" | "wasm")
+            || !exports.is_empty()
+            || function.is_some()
         {
-            eprintln!(
+            eprintln!("fused-construction-v1 requires a source file, --target native or wasm, no --export or --function");
+            return Err(2);
+        }
+        Some(managed.ok_or_else(|| {
+            eprintln!("fused-construction-v1 requires explicit --managed-bytes <1..=1073741824>");
+            2
+        })?)
+    } else {
+        if managed.is_some() {
+            eprintln!("--managed-bytes requires --profile fused-construction-v1");
+            return Err(2);
+        }
+        None
+    };
+    if let Some(profile) = &profile {
+        if fused_account.is_none() {
+            if !matches!(profile.as_str(), "internal-strings-v1" | "text-toolkit-v1")
+                || !matches!(&input, BuildInput::Source(_))
+                || !matches!(target.as_str(), "web" | "wasm")
+                || !(1..=32).contains(&exports.len())
+            {
+                eprintln!(
                 "--profile {profile} requires a source file, --target web or wasm, and 1..=32 --export selections"
             );
-            if target == "native" && matches!(&input, BuildInput::Source(_)) {
-                eprintln!(
+                if target == "native" && matches!(&input, BuildInput::Source(_)) {
+                    eprintln!(
                     "for a native command, omit --profile: semaprax build <file> --target native --output <fresh-path>; text operations are selected from the source"
                 );
+                }
+                return Err(2);
             }
-            return Err(2);
         }
     }
     let available_targets = target_catalog(&input, private_toolchain);
@@ -627,6 +656,7 @@ pub(crate) fn parse_with_capabilities(
         function,
         exports,
         profile,
+        fused_account,
         json,
     })
 }

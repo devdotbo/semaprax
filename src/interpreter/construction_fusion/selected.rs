@@ -38,6 +38,14 @@ pub(crate) struct Outcome {
 #[derive(Debug)]
 pub(crate) enum Failure {
     Authority,
+    FuelExhausted {
+        steps: usize,
+        cleanup_complete: bool,
+    },
+    DepthExceeded {
+        steps: usize,
+        cleanup_complete: bool,
+    },
     Execution {
         status: Option<crate::conformance::NormalizedStatus>,
         steps: usize,
@@ -46,6 +54,18 @@ pub(crate) enum Failure {
 }
 impl Failure {
     fn execution(flow: &Flow, steps: usize) -> Self {
+        if matches!(flow, Flow::Exhausted) {
+            return Self::FuelExhausted {
+                steps,
+                cleanup_complete: false,
+            };
+        }
+        if matches!(flow, Flow::DepthExceeded) {
+            return Self::DepthExceeded {
+                steps,
+                cleanup_complete: false,
+            };
+        }
         Self::Execution {
             status: match flow {
                 Flow::Failure(status) => Some(status.clone()),
@@ -61,50 +81,99 @@ pub(crate) fn execute(
     owner: &crate::hir::selected_fused_candidate::ValidatedFusedSelection<'_>,
     fuel: usize,
 ) -> Result<Outcome, Failure> {
+    with_current(owner, |selection| execute_selection(selection, fuel))?
+}
+
+/// Compiler proof joining precedes the runtime requested-layout account.
+/// Only the sealed owner enters; no joined/selection authority is public.
+pub(crate) fn execute_accounted(
+    owner: &crate::hir::selected_fused_candidate::ValidatedFusedSelection<'_>,
+    fuel: usize,
+    limit: usize,
+) -> (Result<Outcome, Failure>, bool, usize) {
+    with_current(owner, |selection| {
+        crate::bounded_output::with_limit_usage(limit, || execute_selection(selection, fuel))
+    })
+    .unwrap_or_else(|failure| (Err(failure), false, 0))
+}
+
+#[cfg(test)]
+pub(crate) fn execute_accounted_observed(
+    owner: &crate::hir::selected_fused_candidate::ValidatedFusedSelection<'_>,
+    fuel: usize,
+    limit: usize,
+) -> (
+    (
+        Result<Outcome, Failure>,
+        crate::test_allocation_observer::Metrics,
+    ),
+    bool,
+    usize,
+) {
+    with_current(owner, |selection| {
+        crate::bounded_output::with_limit_usage(limit, || {
+            crate::test_allocation_observer::measure(|| execute_selection(selection, fuel))
+        })
+    })
+    .expect("current sealed source owner")
+}
+
+fn with_current<R>(
+    owner: &crate::hir::selected_fused_candidate::ValidatedFusedSelection<'_>,
+    receive: impl FnOnce(&Selection<'_>) -> R,
+) -> Result<R, Failure> {
     owner
         .with_joined(|joined| {
             if !joined.still_current(owner.source(), owner.program()) {
                 return Err(Failure::Authority);
             }
-            let selection = joined.selection();
-            // Box allocation includes every fixed frame/header before allocation.
-            reserve(Layout::new::<Engine<'_, '_>>())
-                .map_err(|flow| Failure::execution(&flow, 0))?;
-            let mut engine = Box::new(
-                Engine::new(selection, fuel).map_err(|flow| Failure::execution(&flow, 0))?,
-            );
-            let body = &selection.function().body;
-            let result = engine.expression(body, 0);
-            let settled = engine.settle_exit(result.is_ok());
-            match result {
-                Ok(Flat::Scalar(Value::Int(result))) if settled.is_ok() => {
-                    let (string_materializations, string_bytes) =
-                        (engine.string_materializations, engine.string_bytes);
-                    Ok(Outcome {
-                        result,
-                        steps: engine.steps,
-                        byte_events: engine.events,
-                        byte_payload: engine.payload,
-                        string_materializations,
-                        string_bytes,
-                    })
-                }
-                // Actual engine failure is retained even if settlement refuses.
-                Err(flow) => {
-                    let mut failure = Failure::execution(&flow, engine.steps);
-                    if let Failure::Execution {
-                        cleanup_complete, ..
-                    } = &mut failure
-                    {
-                        *cleanup_complete = settled.is_ok();
-                    }
-                    Err(failure)
-                }
-                Ok(_) => Err(Failure::execution(&refuse(), engine.steps)),
-            }
+            Ok(receive(joined.selection()))
         })
         .map_err(|_| Failure::Authority)?
 }
+
+fn execute_selection(selection: &Selection<'_>, fuel: usize) -> Result<Outcome, Failure> {
+    // Box allocation includes every fixed frame/header before allocation.
+    reserve(Layout::new::<Engine<'_, '_>>()).map_err(|flow| Failure::execution(&flow, 0))?;
+    let mut engine =
+        Box::new(Engine::new(selection, fuel).map_err(|flow| Failure::execution(&flow, 0))?);
+    let body = &selection.function().body;
+    let result = engine.expression(body, 0);
+    let settled = engine.settle_exit(result.is_ok());
+    match result {
+        Ok(Flat::Scalar(Value::Int(result))) if settled.is_ok() => {
+            let (string_materializations, string_bytes) =
+                (engine.string_materializations, engine.string_bytes);
+            Ok(Outcome {
+                result,
+                steps: engine.steps,
+                byte_events: engine.events,
+                byte_payload: engine.payload,
+                string_materializations,
+                string_bytes,
+            })
+        }
+        // Actual engine failure is retained even if settlement refuses.
+        Err(flow) => {
+            let mut failure = Failure::execution(&flow, engine.steps);
+            match &mut failure {
+                Failure::Execution {
+                    cleanup_complete, ..
+                }
+                | Failure::FuelExhausted {
+                    cleanup_complete, ..
+                }
+                | Failure::DepthExceeded {
+                    cleanup_complete, ..
+                } => *cleanup_complete = settled.is_ok(),
+                Failure::Authority => {}
+            }
+            Err(failure)
+        }
+        Ok(_) => Err(Failure::execution(&refuse(), engine.steps)),
+    }
+}
+
 fn refuse() -> Flow {
     Flow::Guard("selected flat interpreter authority refused")
 }

@@ -250,6 +250,11 @@ The registry compiler and unpublished toolchain share one compiler library and
 bounded source, Project, and prepared Rust API context routes;
 `options.rs` parses bounded command options, `report_options.rs` parses report/analysis options, and
 `source_execution.rs` owns single-file build, run, and diagnostics.
+Its `fused_profile` child dispatches the explicit source-only profile before
+ordinary checking. Public `fused_source` parses once and lends a private full
+selected owner to each target; it accepts no caller HIR or grant.
+[Fused source profile v1](FUSED-SOURCE-PROFILE-V1.md) owns the finite caller
+account policy and pending executable admission qualification.
 `cli_driver/native_test.rs` owns explicit bounded execution of Project v26/v28
 native test artifacts; `project/native_test.rs` selects only authenticated test
 roots and reuses the existing native source-command emitters and publication

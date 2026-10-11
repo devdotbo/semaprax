@@ -86,6 +86,7 @@ mod finite_byte_scratch;
 mod finite_row_construction;
 #[allow(dead_code, reason = "private fusion prerequisite; ordinary admission and target selection remain closed")]
 mod construction_fusion;
+pub mod fused_source;
 pub(crate) mod byte_ops;
 pub mod c_header;
 pub(crate) mod cache_codec;

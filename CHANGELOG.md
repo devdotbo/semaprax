@@ -1,5 +1,7 @@
 # Changelog
 
+- Author the explicit source-only `fused-construction-v1` run/build facade (#768): read and parse once, hold the sealed full-validation owner through receiving, require a finite caller managed account, preserve ordinary route refusal and expose only settled results. Native/Wasm fuel is not advertised as interpreter fuel; paired package publication and target-specific account contracts remain mandatory. Original 4096, hostile option, failure and actual allocation/Drop gates are authored; qualification and broader #747 completion are pending.
+
 - Authored private native fused-row receiving now requires the concrete full
   selected owner and freshly revalidates its immutable source/HIR. Exact row
   backing is funded on the same held physical ledger at the original Vec

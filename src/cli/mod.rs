@@ -45,3 +45,5 @@ pub(crate) mod typed_workflow;
 pub(crate) mod verify;
 pub(crate) mod version;
 pub(crate) mod workspace_session;
+
+mod fused_profile;

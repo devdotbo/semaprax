@@ -17,6 +17,7 @@ pub(crate) struct ExecutionOptions {
     pub(crate) max_steps: Option<usize>,
     pub(crate) max_bytes: Option<usize>,
     pub(crate) native: bool,
+    pub(crate) fused_account: Option<semaprax::fused_source::RuntimeAccount>,
     pub(crate) native_test: Option<NativeTestLimits>,
     /// Program arguments after `--`, passed to a single-file command-line
     /// program (`docs/TEXT-TOOLKIT-V1.md`).
@@ -145,6 +146,8 @@ fn parse(args: &[String], command: &str, allow_source: bool) -> Result<Execution
     let mut max_steps = None;
     let mut max_bytes = None;
     let mut native = false;
+    let mut profile = None::<String>;
+    let mut managed = None;
     let mut target = None;
     let mut native_timing = false;
     let mut native_timeout_ms = None;
@@ -229,6 +232,16 @@ fn parse(args: &[String], command: &str, allow_source: bool) -> Result<Execution
                 )?);
                 index += 2;
             }
+            "--profile" if allow_source && profile.is_none() => {
+                profile = Some(option_value(args, index, command, argument)?.to_owned());
+                index += 2;
+            }
+            "--managed-bytes" if allow_source && managed.is_none() => {
+                managed = Some(super::fused_profile::account(option_value(
+                    args, index, command, argument,
+                )?)?);
+                index += 2;
+            }
             "--native" if allow_source && !native => {
                 native = true;
                 index += 1;
@@ -269,6 +282,29 @@ fn parse(args: &[String], command: &str, allow_source: bool) -> Result<Execution
         },
         (Some(_), Some(_)) => unreachable!("ambiguity rejected above"),
     };
+    let fused_account = match profile.as_deref() {
+        Some(semaprax::fused_source::PROFILE)
+            if matches!(input, ExecutionInput::Source(_))
+                && arguments.is_empty()
+                && max_bytes.is_none() =>
+        {
+            Some(managed.ok_or_else(|| {
+                eprintln!(
+                    "fused-construction-v1 requires explicit --managed-bytes <1..=1073741824>"
+                );
+                2
+            })?)
+        }
+        Some(_) => {
+            eprintln!("run profile requires fused-construction-v1, one source file, no arguments and no --max-bytes");
+            return Err(2);
+        }
+        None if managed.is_some() => {
+            eprintln!("--managed-bytes requires --profile fused-construction-v1");
+            return Err(2);
+        }
+        None => None,
+    };
     if native && !matches!(input, ExecutionInput::Source(_)) {
         eprintln!("run option `--native` requires a single .spx source file");
         return Err(2);
@@ -279,7 +315,7 @@ fn parse(args: &[String], command: &str, allow_source: bool) -> Result<Execution
         );
         return Err(2);
     }
-    if native && (json || max_steps.is_some() || max_bytes.is_some()) {
+    if native && ((json && fused_account.is_none()) || max_steps.is_some() || max_bytes.is_some()) {
         eprintln!(
             "native single-file run cannot combine `--native` with interpreter output or capacity options"
         );
@@ -318,6 +354,7 @@ fn parse(args: &[String], command: &str, allow_source: bool) -> Result<Execution
         max_steps,
         max_bytes,
         native,
+        fused_account,
         native_test,
         arguments,
     })
@@ -391,6 +428,7 @@ mod tests {
                 max_steps: None,
                 max_bytes: None,
                 native: false,
+                fused_account: None,
                 native_test: None,
                 arguments: Vec::new(),
             }
@@ -403,6 +441,7 @@ mod tests {
                 max_steps: None,
                 max_bytes: None,
                 native: false,
+                fused_account: None,
                 native_test: None,
                 arguments: Vec::new(),
             }
@@ -426,6 +465,7 @@ mod tests {
                 max_steps: Some(4096),
                 max_bytes: Some(65536),
                 native: false,
+                fused_account: None,
                 native_test: None,
                 arguments: Vec::new(),
             }
@@ -446,6 +486,7 @@ mod tests {
                 max_steps: Some(4096),
                 max_bytes: Some(65536),
                 native: false,
+                fused_account: None,
                 native_test: None,
                 arguments: Vec::new(),
             }
@@ -485,6 +526,7 @@ mod tests {
                 json: false,
                 max_steps: Some(1),
                 native: false,
+                fused_account: None,
                 native_test: None,
                 max_bytes: None,
                 arguments: Vec::new(),

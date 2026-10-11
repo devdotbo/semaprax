@@ -1,6 +1,7 @@
 //! Single-file source checking, build, execution, and diagnostic publication.
 
 use super::*;
+mod fused_profile;
 
 pub(super) fn checked(path: &Path) -> Result<semaprax::ast::Program, u8> {
     checked_for_output(path, false)
@@ -34,6 +35,9 @@ pub(super) fn required_path(args: &[String], index: usize) -> Result<PathBuf, u8
 }
 
 pub(super) fn build_source(options: &cli::build::BuildOptions, input: &Path) -> Result<(), u8> {
+    if options.fused_account.is_some() {
+        return fused_profile::build(options, input);
+    }
     if matches!(
         options.profile.as_deref(),
         Some("internal-strings-v1" | "text-toolkit-v1")
@@ -862,4 +866,12 @@ pub(super) fn webapp_command(args: &[String]) -> Result<(), u8> {
         output.join("server.mjs").display()
     );
     Ok(())
+}
+
+/// Already parsed options; route selection precedes ordinary checking/loading.
+pub(super) fn run_fused_source(
+    path: &Path,
+    options: &cli::execution::ExecutionOptions,
+) -> Result<(), u8> {
+    fused_profile::run(path, options)
 }

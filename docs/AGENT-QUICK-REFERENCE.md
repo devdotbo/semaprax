@@ -42,6 +42,13 @@ The installed compiler prints this page verbatim with
    `semaprax help all` and `semaprax help language all` are for broad
    questions.
 
+The authored source-only `fused-construction-v1` opt-in uses
+`run <file> --profile fused-construction-v1 --managed-bytes N` or
+`build <file> --profile fused-construction-v1 --managed-bytes N --target native|wasm`.
+It requires a finite explicit caller account, keeps ordinary admission closed,
+and awaits executable qualification. See [its versioned contract](FUSED-SOURCE-PROFILE-V1.md)
+for the exact shape, target accounting, fuel and publication boundary.
+
 `fmt` and single-file `patch` preserve `//` comments. Workspace transactions
 do not promise that, so put durable intent in stable `@id` names, contracts,
 and tests.
