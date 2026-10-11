@@ -212,3 +212,5 @@ fn canonical_option_metadata_is_current_and_failed_factory_cannot_restart_prepar
 }
 
 mod full;
+
+mod transitive;

@@ -5303,6 +5303,7 @@ fn expression_skeleton(
                         scrutinee,
                         arms,
                         scrutinee_paths,
+                        work,
                     )?
                     .next(work)?;
                     schedule_scalar!(next, frames, produced);

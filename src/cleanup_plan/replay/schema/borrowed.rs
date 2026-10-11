@@ -343,6 +343,22 @@ pub(in crate::cleanup_plan::replay) fn build<'a>(
                         )?;
                         matches.push(expression);
                     }
+                    ResolvedExprKind::Match {
+                        mode,
+                        scrutinee,
+                        arms,
+                    } if operands::scalar_match(
+                        function, expression, *mode, scrutinee, arms, budget,
+                    )? =>
+                    {
+                        budget.reserve_vec(
+                            function,
+                            &mut matches,
+                            1,
+                            "borrowed exact scalar match references",
+                        )?;
+                        matches.push(expression);
+                    }
                     ResolvedExprKind::Block { statements, .. } => {
                         for statement in statements {
                             budget.charge(

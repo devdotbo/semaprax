@@ -32,9 +32,18 @@ impl<'a> State<'a> {
         scrutinee: &'a ResolvedExpr,
         arms: &'a [ResolvedMatchArm],
         remaining: Vec<ExprSkeletonPath>,
+        work: &mut SkeletonWork<'_, '_>,
     ) -> Result<Self, Diagnostic> {
-        if type_needs_drop(program, function, &expression.ty)?
-            && !matches!(expression.ty, crate::hir::ResolvedType::String)
+        #[cfg(test)]
+        if let Some(lease) = program.borrowed_helper_lease(function) {
+            lease.match_shape(program, function, expression, work.budget)?;
+        }
+        if nested_shape::type_needs_drop_with_budget(
+            program,
+            function,
+            &expression.ty,
+            work.budget,
+        )? && !matches!(expression.ty, crate::hir::ResolvedType::String)
         {
             return Err(replay_error(
                 function,
