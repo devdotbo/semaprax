@@ -6,14 +6,17 @@ fn prepare<'a>(
     facts: &BTreeMap<String, WorkspaceDeclarationFact>,
     work: usize,
     bytes: usize,
-) -> Result<(super::super::super::Context<'a>, usize), Vec<Diagnostic>> {
+) -> Result<(super::super::super::Context<'a>, usize, usize), Vec<Diagnostic>> {
     let anchor = module.functions.first().unwrap();
     let mut resources =
         SelectedReplayPreparation::with_limits(anchor, work, bytes).map_err(|e| vec![e])?;
     let context =
         super::super::super::helpers::local::authenticate(module, facts, &mut resources, anchor)?;
     let spent = work - resources.remaining();
-    Ok((context, spent))
+    let bytes = resources
+        .construct(anchor, |physical, _| Ok(physical.charged()))
+        .map_err(|e| vec![e])?;
+    Ok((context, spent, bytes))
 }
 #[test]
 fn prepared_string_vec_and_borrowed_record_signatures_keep_current_type_pointers_and_canonical_vec()
@@ -22,7 +25,7 @@ fn prepared_string_vec_and_borrowed_record_signatures_keep_current_type_pointers
     let build = build_source(&source);
     let module = module(&build);
     assert!(module.static_text.as_ref().unwrap().lexical.is_some());
-    let (context, _) = prepare(module, &build.hir.declarations, 32_000_000, usize::MAX).unwrap();
+    let (context, _, _) = prepare(module, &build.hir.declarations, 32_000_000, usize::MAX).unwrap();
     assert_eq!(context.type_count(), module.types.len());
     for (i, current) in module.types.iter().enumerate() {
         assert!(std::ptr::eq(context.type_at(i).unwrap(), current));
@@ -114,7 +117,20 @@ fn prepared_current_layout_namespace_and_signature_drift_are_independent_and_sti
         .is_err());
         assert!(resources.charge(anchor, 0, "later signature").is_err());
     }
-    let (context, _) = prepare(source, &build.hir.declarations, 32_000_000, usize::MAX).unwrap();
+    let separate = build_lexical();
+    let mut resources =
+        SelectedReplayPreparation::with_limits(anchor, 32_000_000, usize::MAX).unwrap();
+    super::super::super::current_module(source, &build.hir.modules, &mut resources, anchor)
+        .unwrap();
+    assert!(super::super::super::current_module(
+        source,
+        &separate.hir.modules,
+        &mut resources,
+        anchor
+    )
+    .is_err());
+    assert!(resources.charge(anchor, 0, "detached module").is_err());
+    let (context, _, _) = prepare(source, &build.hir.declarations, 32_000_000, usize::MAX).unwrap();
     // Attached schema is not source-signature authority; the actual borrowed
     // member universe remains independently reconstructible.
     assert!(std::ptr::eq(
@@ -126,7 +142,15 @@ fn prepared_current_layout_namespace_and_signature_drift_are_independent_and_sti
 fn prepared_full_context_authentication_work_is_cumulative_exact_and_one_short() {
     let build = build_lexical();
     let source = module(&build);
-    let (_, spent) = prepare(source, &build.hir.declarations, 32_000_000, usize::MAX).unwrap();
+    let (_, spent, bytes) =
+        prepare(source, &build.hir.declarations, 32_000_000, usize::MAX).unwrap();
+    assert_eq!(
+        prepare(source, &build.hir.declarations, spent, bytes)
+            .unwrap()
+            .2,
+        bytes
+    );
+    assert!(prepare(source, &build.hir.declarations, spent, bytes - 1).is_err());
     assert!(spent > 0);
     assert_eq!(
         prepare(source, &build.hir.declarations, spent, usize::MAX)
@@ -140,6 +164,9 @@ fn prepared_full_context_authentication_work_is_cumulative_exact_and_one_short()
     let anchor = source.functions.first().unwrap();
     let mut resources =
         SelectedReplayPreparation::with_limits(anchor, spent * 2 - 1, usize::MAX).unwrap();
+    resources
+        .reserve_array::<super::super::super::Context<'_>>(anchor, 1, "owning prepared context")
+        .unwrap();
     let first = super::super::super::helpers::local::authenticate(
         source,
         &build.hir.declarations,
