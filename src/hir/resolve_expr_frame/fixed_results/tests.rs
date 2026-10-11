@@ -91,7 +91,8 @@ fn saved_split_off_resolver_keeps_complete_hir_loans_cleanup_and_lazy_shapes() {
         format!("if true {{ {tail} + 1 }} else {{ 1 / 0 }}")
     });
     let cases = [wide, format!("module extraction; @id(\"extraction.main\") fn main() -> i64 {{ {nested} }}"),
-        "module extraction; @id(\"extraction.main\") fn main() -> i64 { let bytes = bytes_zeroed(3usize); let view = bytes_as_slice(bytes); if byte_len(view) == 3usize && true { 7 + 2 } else { 1 / 0 } }".to_owned()];
+        "module extraction; @id(\"extraction.main\") fn main() -> i64 { let bytes = bytes_zeroed(3usize); let view = bytes_as_slice(bytes); if byte_len(view) == 3usize && true { 7 + 2 } else { 1 / 0 } }".to_owned(),
+        "module extraction; @id(\"extraction.main\") fn main() -> i64 { if true { 1 / 0 } else { 3 } }".to_owned()];
     for source in cases {
         let ast = crate::check(&source, "extraction.spx").unwrap();
         let old = with_saved_old(|| crate::hir::resolve(&ast)).unwrap();
