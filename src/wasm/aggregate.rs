@@ -6873,7 +6873,9 @@ impl Emitter<'_> {
                 }
             }
             crate::str_ops::StrOp::StartsWith | crate::str_ops::StrOp::Contains => {
-                let helper = if let Some(validator) = self.environment_utf8_index {
+                let helper = if let Some(runtime) = self.owned_str_predicate(op, &values) {
+                    runtime
+                } else if let Some(validator) = self.environment_utf8_index {
                     // Environment helper parameters retain aggregate byte
                     // carriers and authenticate every byte through the host.
                     self.emit_text_helper_view(&values[0]);

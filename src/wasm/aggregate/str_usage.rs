@@ -100,9 +100,18 @@ fn expression_uses_str_ops(expression: &ResolvedExpr) -> bool {
 }
 
 pub(super) fn program_uses_str_ops(program: &ResolvedProgram) -> bool {
-    program.functions.iter().any(|function| {
-        expression_uses_str_ops(&function.body)
-            || function.requires.iter().any(expression_uses_str_ops)
-            || function.ensures.iter().any(expression_uses_str_ops)
-    })
+    program
+        .functions
+        .iter()
+        .chain(
+            program
+                .function_instances
+                .iter()
+                .map(|instance| &instance.function),
+        )
+        .any(|function| {
+            expression_uses_str_ops(&function.body)
+                || function.requires.iter().any(expression_uses_str_ops)
+                || function.ensures.iter().any(expression_uses_str_ops)
+        })
 }

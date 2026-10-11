@@ -290,7 +290,14 @@ fn render_package(
     } else {
         16
     };
-    let runtime = render_runtime(&digest, exports, descriptor.project_schema(), capacity);
+    let memory_bytes = fixed_runtime_memory_bytes(wasm)?;
+    let runtime = render_runtime_with_memory(
+        &digest,
+        exports,
+        descriptor.project_schema(),
+        capacity,
+        memory_bytes,
+    );
     let bindings = render_bindings(exports, &digest);
     let declarations = render_declarations(exports);
     let metadata = render_metadata(package, version, descriptor, &digest, exports);
@@ -305,18 +312,82 @@ fn render_package(
     ])
 }
 
+// Presentation uses the exact compiler-emitted artifact, independently of
+// which public result types it admits. Replay compares these same artifact
+// bytes with fresh emission before reconstructing the facade.
+fn fixed_runtime_memory_bytes(wasm: &[u8]) -> Result<u32, Diagnostic> {
+    let mut extent = None;
+    for payload in wasmparser::Parser::new(0).parse_all(wasm) {
+        let payload =
+            payload.map_err(|_| package_error("owned-data memory inventory is invalid"))?;
+        match payload {
+            wasmparser::Payload::ImportSection(imports) => {
+                for import in imports.into_imports() {
+                    let import = import
+                        .map_err(|_| package_error("owned-data import inventory is invalid"))?;
+                    if matches!(import.ty, wasmparser::TypeRef::Memory(_)) {
+                        return Err(package_error(
+                            "owned-data runtime memory must be module-owned",
+                        ));
+                    }
+                }
+            }
+            wasmparser::Payload::MemorySection(memories) => {
+                for memory in memories {
+                    let memory = memory
+                        .map_err(|_| package_error("owned-data memory inventory is invalid"))?;
+                    if extent.is_some()
+                        || memory.memory64
+                        || memory.shared
+                        || memory.page_size_log2.is_some()
+                        || !matches!(memory.initial, 2 | 4)
+                        || memory.maximum != Some(memory.initial)
+                    {
+                        return Err(package_error(
+                            "owned-data runtime requires one exact fixed memory",
+                        ));
+                    }
+                    extent = Some(memory.initial as u32 * 65_536);
+                }
+            }
+            _ => {}
+        }
+    }
+    extent.ok_or_else(|| package_error("owned-data runtime memory is absent"))
+}
+#[cfg(test)]
 fn render_runtime(
     wasm_sha256: &str,
     exports: &[OwnedExport],
     project_schema: &str,
     capacity: u32,
 ) -> String {
+    let memory_bytes = if exports
+        .iter()
+        .any(|export| export.result == PublicApiResultType::OwnedUtf8)
+    {
+        262_144
+    } else {
+        131_072
+    };
+    render_runtime_with_memory(wasm_sha256, exports, project_schema, capacity, memory_bytes)
+}
+
+fn render_runtime_with_memory(
+    wasm_sha256: &str,
+    exports: &[OwnedExport],
+    project_schema: &str,
+    capacity: u32,
+    memory_bytes: u32,
+) -> String {
     let bounded = matches!(
         project_schema,
         PUBLIC_OWNED_DATA_PROJECT_SCHEMA | PUBLIC_OWNED_UTF8_PROJECT_SCHEMA
     );
     let mut runtime = render_runtime_prelude_with_admission(wasm_sha256, bounded, capacity);
-    let facade = if exports.iter().any(|export| {
+    let facade = if bounded {
+        render_bounded_facade_with_memory(exports, memory_bytes)
+    } else if exports.iter().any(|export| {
         matches!(
             export.result,
             PublicApiResultType::I64
@@ -490,6 +561,17 @@ export async function instantiate(bytes){{return facade(await instantiateCore(by
 }
 
 fn render_bounded_facade(exports: &[OwnedExport]) -> String {
+    let memory_bytes = if exports
+        .iter()
+        .any(|export| export.result == PublicApiResultType::OwnedUtf8)
+    {
+        262_144
+    } else {
+        131_072
+    };
+    render_bounded_facade_with_memory(exports, memory_bytes)
+}
+fn render_bounded_facade_with_memory(exports: &[OwnedExport], memory_bytes: u32) -> String {
     let facts = exports
         .iter()
         .map(|export| {
@@ -508,14 +590,6 @@ fn render_bounded_facade(exports: &[OwnedExport]) -> String {
         })
         .collect::<Vec<_>>()
         .join(",");
-    let memory_bytes = if exports
-        .iter()
-        .any(|export| export.result == PublicApiResultType::OwnedUtf8)
-    {
-        262_144
-    } else {
-        131_072
-    };
     invocation::facade(&facts, memory_bytes)
 }
 

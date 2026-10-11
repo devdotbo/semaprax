@@ -56,3 +56,33 @@ pub(super) fn append_bodies(count: u32, code: &mut Vec<u8>) {
     write_u32(code, body.len() as u32);
     code.extend(body);
 }
+
+// Internal aggregate String providers authenticate both tagged owned extents
+// and ordinary guest ranges. A Str view preserves that same carrier; rotating
+// it into a raw-memory helper would reinterpret a host token as a pointer.
+impl Emitter<'_> {
+    pub(super) fn owned_str_predicate(
+        &mut self,
+        op: crate::str_ops::StrOp,
+        values: &[Value],
+    ) -> Option<u32> {
+        let operation = match op {
+            crate::str_ops::StrOp::StartsWith => crate::string_ops::StringOp::StartsWith,
+            crate::str_ops::StrOp::Contains => crate::string_ops::StringOp::Contains,
+            _ => return None,
+        };
+        let index = self
+            .function_indexes
+            .get(&FunctionExecutionId::Monomorphic(DeclarationId::new(
+                operation.id(),
+            )))
+            .copied()?;
+        self.get_scalar(&values[0]);
+        self.get_scalar(&values[1]);
+        Some(index)
+    }
+}
+
+#[cfg(test)]
+#[path = "str_helpers/tests.rs"]
+mod tests;

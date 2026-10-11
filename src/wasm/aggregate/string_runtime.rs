@@ -104,7 +104,15 @@ pub(super) fn requires_runtime(operation: crate::string_ops::StringOp) -> bool {
 }
 
 pub(super) fn program_uses_runtime(program: &ResolvedProgram) -> bool {
-    program
+    (super::super::functions_use_strings(
+        program.functions.iter().chain(
+            program
+                .function_instances
+                .iter()
+                .map(|instance| &instance.function),
+        ),
+    ) && super::program_uses_str_ops(program))
+        || program
         .functions
         .iter()
         .chain(
