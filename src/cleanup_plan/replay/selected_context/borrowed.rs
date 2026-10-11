@@ -155,12 +155,18 @@ impl Lease<'_> {
             .call(self.source, function, expression, work.budget)?
         {
             schema::borrowed::Call::User(target) => {
-                work.budget.reserve_clone(
+                work.budget.reserve_array::<crate::hir::ResolvedParam>(
                     function,
-                    &target.params,
+                    target.params.len(),
                     "borrowed actual callee parameter clone",
                 )?;
                 for parameter in &target.params {
+                    work.charge(1, "borrowed actual parameter backing visit")?;
+                    work.budget.reserve_bytes(
+                        function,
+                        parameter.name.len(),
+                        "borrowed actual parameter name backing",
+                    )?;
                     work.charge(1, "borrowed actual parameter clone header")?;
                     for _ in parameter.name.bytes() {
                         work.charge(1, "borrowed actual parameter name clone byte")?;
