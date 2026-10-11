@@ -46,7 +46,7 @@ impl Emitter<'_> {
         // The private status namespace preserves the actual operation code,
         // and cannot collide with any ordinary arithmetic/Vec status.
         self.output.push(0x20); write_u32(self.output, self.plan.status);
-        self.output.push(0x41); write_i64(self.output, 0x7000);
+        self.output.push(0x41); write_i64(self.output, i64::from(super::super::shared_owner::PARTITION_GUEST_STATUS_BASE));
         self.output.push(0x6a);
         self.output.push(0x21); write_u32(self.output, self.plan.status);
         self.emit_failure_cleanup(&expr.id, StatusLane::OperationFailure)?;

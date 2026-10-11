@@ -105,10 +105,34 @@ export function createPrivateOrdinaryByteHost(options = {}) {
     if (current === null) throw new Error("SEMAPRAX private ordinary host has no live invocation");
     return current.serial;
   };
+  // Optional private-entry account. Ordinary callers retain their old limits.
+  // This funds requested typed-array metadata and live payload backing only.
+  const managed = options.managedBytes !== undefined;
+  if (managed && (!Number.isSafeInteger(options.managedBytes) || options.managedBytes < 1)) {
+    throw new RangeError("SEMAPRAX managed-byte limit must be a positive safe integer");
+  }
+  let managedReserved = 0;
+  let managedPeak = 0;
+  const reserve = bytes => {
+    if (!managed) return;
+    if (bytes > options.managedBytes - managedReserved) {
+      throw new Error("SEMAPRAX private managed-byte account exhausted");
+    }
+    managedReserved += bytes;
+    managedPeak = Math.max(managedPeak, managedReserved);
+  };
+  const releasePayload = bytes => {
+    if (!managed) return;
+    if (bytes > managedReserved) throw new Error("SEMAPRAX managed-byte release invariant");
+    managedReserved -= bytes;
+  };
+  reserve(WHOLE_SLOTS * 8);
   const shared = createSharedByteOwnerRegistry({
     tokens: TOKENS,
     invocation,
     maxLeaseSlots: options.maxLeaseSlots,
+    reserveStorage: reserve,
+    releasePayload,
   });
   // Witness-only: every nonempty owner this host allocates is returned as a
   // one-child lease of its own freshly charged backing. The charge is the
@@ -181,18 +205,20 @@ export function createPrivateOrdinaryByteHost(options = {}) {
     liveWhole -= 1;
     return Object.freeze({ ok: true, children: Object.freeze(children) });
   };
-  const own = bytes => {
+  const own = (bytes, fresh = false) => {
     const serialNow = live();
-    if (!(bytes instanceof Uint8Array) || bytes.byteLength > MAX_BYTES_EXTENT) {
+    const length = fresh ? bytes : (bytes instanceof Uint8Array ? bytes.byteLength : -1);
+    if (!Number.isSafeInteger(length) || length < 0 || length > MAX_BYTES_EXTENT) {
       throw new Error("SEMAPRAX owned Bytes length invariant");
     }
     if (TOKENS.remaining() < 2) throw new Error("SEMAPRAX owned Bytes token space exhausted");
     const slot = wholeSlot(0);
-    charge(bytes.byteLength);
+    charge(length);
     if (slot < 0) throw new Error("SEMAPRAX whole owner funding invariant");
     // Fresh exact backing: clone and copy never alias a lease or its backing.
-    const owned = new Uint8Array(bytes.byteLength);
-    owned.set(bytes);
+    reserve(length);
+    const owned = new Uint8Array(length);
+    if (!fresh) owned.set(bytes);
     const token = TOKENS.mint();
     wholeToken[slot] = token;
     wholeInvocation[slot] = serialNow;
@@ -260,6 +286,7 @@ export function createPrivateOrdinaryByteHost(options = {}) {
     if (!decoded.tagged) throw new Error("SEMAPRAX borrowed Bytes drop invariant");
     const slot = whole(decoded);
     if (slot >= 0) {
+      releasePayload(wholeBytes[slot].byteLength);
       wholeToken[slot] = 0;
       wholeBytes[slot] = null;
       liveWhole -= 1;
@@ -413,7 +440,7 @@ export function createPrivateOrdinaryByteHost(options = {}) {
       if (typeof count !== "bigint" || count < 0n || count > BigInt(MAX_BYTES_EXTENT)) {
         throw new Error("SEMAPRAX owned byte buffer capacity invariant");
       }
-      return own(new Uint8Array(Number(count)));
+      return own(Number(count), true);
     },
     // Clone and nonconsuming copy deep-copy only the authenticated range into
     // fresh ordinary backing with the ordinary event/payload charge.
@@ -651,6 +678,7 @@ export function createPrivateOrdinaryByteHost(options = {}) {
     vectors.clear();
     iterators.clear();
     boxes.clear();
+    for (const bytes of wholeBytes) if (bytes !== null) releasePayload(bytes.byteLength);
     wholeToken.fill(0);
     wholeBytes.fill(null);
     liveWhole = 0;
@@ -708,6 +736,7 @@ export function createPrivateOrdinaryByteHost(options = {}) {
     // Public copy-out plus provider drop for any owned carrier.
     copyOutAndDrop(carrier) {
       live();
+      if (managed) throw new Error("SEMAPRAX private managed entry has no copy-out bridge");
       if (shared.owns(carrier)) {
         drops += 1;
         return shared.copyOutAndRelease(carrier);
@@ -717,12 +746,15 @@ export function createPrivateOrdinaryByteHost(options = {}) {
       return snapshot;
     },
     peek(carrier) {
+      if (managed) throw new Error("SEMAPRAX private managed entry has no copy-out bridge");
       return new Uint8Array(read(carrier));
     },
     audit: () => shared.audit(),
     stats() {
       return Object.freeze({
         ...shared.stats(),
+        managedReserved,
+        managedPeak,
         entries: liveWhole,
         vectors: vectors.size,
         iterators: iterators.size,

@@ -392,3 +392,28 @@ ledger. Fixed host registry backing and ordinary payload limits retain their
 existing scope; JavaScript objects, Maps, carrier arrays and VM bookkeeping are
 excluded. This checkpoint does not claim complete physical-account funding,
 public installation, or completed OPT #746 qualification.
+
+The private paired entry embeds its own compiler-produced module bytes and accepts
+only a positive safe-integer managed-byte amount at installation. It accepts no
+replacement module, imports, witness, or issuer. `invoke()` publishes either
+`{outcome:"returned",result:"<signed decimal i64>"}` or
+`{outcome:"language_failure",status:{domain,code}}` after canonical settlement.
+Partition guest codes normalize to the owning partition domain and code, not a
+new semantic domain. Unknown traps and account exhaustion produce an
+administrative refusal with no result/status and poison subsequent entry use.
+
+One installation-held account reserves the exact index, lease/backing typed
+arrays and whole-token/invocation typed arrays before construction. It then
+reserves each fresh payload at its original allocation boundary. Whole-owner
+release or final-child settlement releases that payload charge exactly once;
+transfer into a partition does not release or recharge it. The fixed requested
+metadata is `16384*6 + 8192*22 + 32*11 + 32*8` bytes. Metadata remains held across
+reentry. Existing 32 events, 2 MiB cumulative payload and individual extent limits
+are unchanged, and no caller amount raises them. Zeroed payload allocates one
+funded buffer directly rather than an unfunded temporary plus copy.
+
+This is requested typed-array/live payload accounting. Carrier/reference arrays,
+Maps, objects/tickets, module bytes, Wasm memory/engine, GC retention, allocator
+headers and process memory are excluded. It is not complete physical funding or
+an engine-wide memory ceiling. Managed private entries have no copy-out bridge;
+public copy-out funding remains a separate prerequisite.

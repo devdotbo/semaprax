@@ -132,6 +132,8 @@ export function createSharedByteOwnerRegistry({
   invocation,
   maxLeaseSlots = MAX_LEASE_SLOTS,
   maxBackings = MAX_BACKINGS,
+  reserveStorage = () => {},
+  releasePayload = () => {},
 } = {}) {
   if (tokens === null || typeof tokens !== "object"
       || typeof tokens.mint !== "function" || typeof tokens.remaining !== "function") {
@@ -146,6 +148,8 @@ export function createSharedByteOwnerRegistry({
   if (!Number.isSafeInteger(maxBackings) || maxBackings < 1 || maxBackings > MAX_BACKINGS) {
     throw new RangeError("invalid SEMAPRAX shared owner backing bound");
   }
+  // Exact typed-array backing only; reference arrays and VM objects excluded.
+  reserveStorage(INDEX_CAPACITY * 6 + maxLeaseSlots * 22 + maxBackings * 11);
   const index = createTokenIndex();
   // Lease slot table.
   const leaseToken = new Uint32Array(maxLeaseSlots);
@@ -282,8 +286,8 @@ export function createSharedByteOwnerRegistry({
     prepared.whole = null;
   };
 
-  // The caller removes the whole owner from its table first; every check and
-  // table entry was reserved, so commit only consumes those reservations.
+  // Every table entry and result array is reserved before commit. The caller
+  // removes the whole owner only after this successful transfer completes.
   const commit = (ticket, destination = undefined) => {
     const prepared = pending(ticket);
     const serial = current();
@@ -338,6 +342,7 @@ export function createSharedByteOwnerRegistry({
     if (backingLive[backing] > 0) return false;
     if (backingState[backing] !== LIVE) throw new Error("SEMAPRAX shared owner backing release invariant");
     backingState[backing] = FREE;
+    releasePayload(backingExtent[backing]);
     backingBytes[backing] = null;
     backingExtent[backing] = 0;
     liveBackings -= 1;
