@@ -67,12 +67,10 @@ fn internal_strings_profile_is_explicit_and_source_only() {
     ] {
         assert!(parse(&arguments).is_err());
     }
-    assert!(
-        parse(&strings(&["app.spx", "--target", "web"]))
-            .unwrap()
-            .profile
-            .is_none()
-    );
+    assert!(parse(&strings(&["app.spx", "--target", "web"]))
+        .unwrap()
+        .profile
+        .is_none());
 }
 
 fn strings(values: &[&str]) -> Vec<String> {
@@ -167,18 +165,14 @@ fn repeated_scalar_exports_preserve_caller_order() {
 #[test]
 fn rejects_unknown_repeated_and_cross_target_flags() {
     assert!(parse(&strings(&["app.spx", "--unknown", "x"])).is_err());
-    assert!(
-        parse(&strings(&[
-            "app.spx", "--target", "web", "--target", "wasm",
-        ]))
-        .is_err()
-    );
-    assert!(
-        parse(&strings(&[
-            "app.spx", "--target", "native", "--export", "app.main",
-        ]))
-        .is_err()
-    );
+    assert!(parse(&strings(&[
+        "app.spx", "--target", "web", "--target", "wasm",
+    ]))
+    .is_err());
+    assert!(parse(&strings(&[
+        "app.spx", "--target", "native", "--export", "app.main",
+    ]))
+    .is_err());
 }
 
 #[test]
@@ -220,16 +214,14 @@ fn project_selectors_do_not_confuse_legacy_sources() {
     assert_eq!(from_directory.target, "web");
     std::fs::remove_dir(&directory).unwrap();
     assert!(parse(&strings(&["app.spx", "--manifest-path", DEFAULT_MANIFEST,])).is_err());
-    assert!(
-        parse(&strings(&[
-            DEFAULT_MANIFEST,
-            "--target",
-            "web",
-            "--export",
-            "app.main",
-        ]))
-        .is_err()
-    );
+    assert!(parse(&strings(&[
+        DEFAULT_MANIFEST,
+        "--target",
+        "web",
+        "--export",
+        "app.main",
+    ]))
+    .is_err());
 
     let npm = parse(&strings(&[
         "--manifest-path",
@@ -244,17 +236,15 @@ fn project_selectors_do_not_confuse_legacy_sources() {
     assert_eq!(npm.output, Some(PathBuf::from("package")));
     assert!(matches!(npm.input, BuildInput::Project(_)));
     assert!(parse(&strings(&["app.spx", "--target", "npm"])).is_err());
-    assert!(
-        parse(&strings(&[
-            "--manifest-path",
-            DEFAULT_MANIFEST,
-            "--target",
-            "npm",
-            "--export",
-            "app.main",
-        ]))
-        .is_err()
-    );
+    assert!(parse(&strings(&[
+        "--manifest-path",
+        DEFAULT_MANIFEST,
+        "--target",
+        "npm",
+        "--export",
+        "app.main",
+    ]))
+    .is_err());
 
     let rust = parse_with_capabilities(
         &strings(&[
@@ -272,17 +262,15 @@ fn project_selectors_do_not_confuse_legacy_sources() {
     assert_eq!(rust.output, Some(PathBuf::from("sdk")));
     assert!(matches!(rust.input, BuildInput::Project(_)));
     assert!(parse(&strings(&["app.spx", "--target", "rust"])).is_err());
-    assert!(
-        parse(&strings(&[
-            "--manifest-path",
-            DEFAULT_MANIFEST,
-            "--target",
-            "rust",
-            "--export",
-            "app.main",
-        ]))
-        .is_err()
-    );
+    assert!(parse(&strings(&[
+        "--manifest-path",
+        DEFAULT_MANIFEST,
+        "--target",
+        "rust",
+        "--export",
+        "app.main",
+    ]))
+    .is_err());
     let normalized = absolute_rust_output(Path::new("dist/rust")).unwrap();
     assert!(normalized.is_absolute());
     assert!(normalized.ends_with(Path::new("dist/rust")));
@@ -294,16 +282,14 @@ fn json_and_capability_selected_target_catalogs_are_explicit() {
     let source = parse(&strings(&["app.spx", "--json"])).unwrap();
     assert!(source.json);
     assert_eq!(source.target, "native");
-    assert!(
-        parse(&strings(&[
-            "semaprax.toml",
-            "--target",
-            "native-callable",
-            "--function",
-            "app.main",
-        ]))
-        .is_err()
-    );
+    assert!(parse(&strings(&[
+        "semaprax.toml",
+        "--target",
+        "native-callable",
+        "--function",
+        "app.main",
+    ]))
+    .is_err());
     assert!(parse(&strings(&["semaprax.toml", "--target", "rust"])).is_err());
     assert!(
         parse_with_capabilities(&strings(&["semaprax.toml", "--target", "rust"]), true,).is_ok()
