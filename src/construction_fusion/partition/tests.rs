@@ -1,4 +1,4 @@
-use super::{Fault, ID, NAME, Preparation, derive, geometry};
+use super::{derive, geometry, Fault, Preparation, ID, NAME};
 use crate::{ast, hir};
 
 const BASE: &str = r#"module partition_probe;
@@ -117,12 +117,10 @@ fn exact_pending_operands_are_borrowed_and_default_registry_remains_closed() {
     );
     assert!(crate::byte_ops::by_name(NAME).is_none());
     assert!(crate::byte_ops::by_id(ID).is_none());
-    assert!(
-        crate::check(&proposed(), "partition.spx")
-            .unwrap_err()
-            .iter()
-            .any(|diagnostic| diagnostic.code == "SPX-T203")
-    );
+    assert!(crate::check(&proposed(), "partition.spx")
+        .unwrap_err()
+        .iter()
+        .any(|diagnostic| diagnostic.code == "SPX-T203"));
     assert!(hir::validate(&program).is_err());
 }
 #[test]
@@ -247,16 +245,14 @@ fn exact_and_one_short_work_cover_current_inventory_and_identity_bytes() {
     );
     assert_eq!(exact, 0);
     let mut short = used - 1;
-    assert!(
-        derive(
-            &source,
-            &program,
-            &source.functions[0],
-            &program.functions[0],
-            &mut short
-        )
-        .is_err()
-    );
+    assert!(derive(
+        &source,
+        &program,
+        &source.functions[0],
+        &program.functions[0],
+        &mut short
+    )
+    .is_err());
     assert_eq!(short, 0);
 }
 #[test]

@@ -334,29 +334,25 @@ pub(crate) fn derive<'a>(
                 .checked_add(statements.len())
                 .ok_or(Refusal::Exhausted)?,
         )?;
-        let [
-            ast::Statement::Let {
-                syntax: ast::LetSyntax::Authored,
-                name,
-                mutable: false,
-                declared,
-                value: original,
-                span: source_statement_span,
-                ..
-            },
-        ] = source_statements.as_slice()
+        let [ast::Statement::Let {
+            syntax: ast::LetSyntax::Authored,
+            name,
+            mutable: false,
+            declared,
+            value: original,
+            span: source_statement_span,
+            ..
+        }] = source_statements.as_slice()
         else {
             return Err(Refusal::Identity);
         };
-        let [
-            hir::ResolvedStatement::Let {
-                binding,
-                mutable: false,
-                value: producer,
-                span: typed_statement_span,
-                ..
-            },
-        ] = statements.as_slice()
+        let [hir::ResolvedStatement::Let {
+            binding,
+            mutable: false,
+            value: producer,
+            span: typed_statement_span,
+            ..
+        }] = statements.as_slice()
         else {
             return Err(Refusal::Identity);
         };

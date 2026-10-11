@@ -484,7 +484,8 @@ pub(crate) mod owner_core;
 impl<B: Backing> Drop for Domain<'_, B> {
     fn drop(&mut self) {
         if let Some(owner) = self.backing.take() {
-            self.executor.release(std::mem::ManuallyDrop::into_inner(owner));
+            self.executor
+                .release(std::mem::ManuallyDrop::into_inner(owner));
         }
     }
 }
