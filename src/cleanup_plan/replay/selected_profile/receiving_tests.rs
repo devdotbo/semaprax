@@ -56,6 +56,7 @@ fn string_vec_and_borrowed_record_receiving_replay_match_complete_ordinary_plans
         let ordinary = direct(source);
         let expected = function(&ordinary);
         assert!(expected.cleanup_plan.lexical_control.is_some());
+        assert!(nodes(&expected.body).iter().any(|node| node.ty == ResolvedType::Never));
         let fixture = SourceRecordReplayFixture::new(source);
         let retained = fixture
             .functions()
@@ -71,7 +72,7 @@ fn string_vec_and_borrowed_record_receiving_replay_match_complete_ordinary_plans
                     retained,
                     PhysicalReservation::new(usize::MAX),
                 )
-                .unwrap();
+                .unwrap_or_else(|error| panic!("selected replay of {source}: {error:?}"));
             let bytes = measured.charged();
             drop(measured);
             let exact = super::super::selected_entry::validate_retained_lexical_with_reservation(
@@ -174,6 +175,25 @@ fn string_read_move_and_renewal_censuses_keep_exact_work_backing_and_sticky_refu
     let backing = probe.physical.as_deref().unwrap().charged();
     collections::prepay(&vector, probe_function, 4, &mut probe).unwrap();
     let short_key_work = MAX_REPLAY_WORK_UNITS - probe.remaining;
+    let mut key_bytes = 5usize;
+    let mut visits = 0usize;
+    for ty in &vector.types {
+        visits += 1;
+        key_bytes += ty.id.as_str().len() + ty.name.len() + 1;
+        for parameter in &ty.type_parameters {
+            visits += 1;
+            key_bytes += parameter.name.len() + 1;
+        }
+        if let ResolvedTypeDeclarationKind::Record { fields } = &ty.kind {
+            for field in fields {
+                visits += 1;
+                key_bytes += field.id.as_str().len() + field.name.len() + 1;
+            }
+        }
+    }
+    assert!(vector.types.iter().any(|ty| ty.type_parameters.len() > 1));
+    assert_eq!(short_key_work, visits + key_bytes * ((vector.declarations.declarations().len() + 1) * 64 + 128));
+
     let mut long_probe = budget();
     collections::prepay(&vector, probe_function, 256, &mut long_probe).unwrap();
     assert!(MAX_REPLAY_WORK_UNITS - long_probe.remaining > short_key_work);

@@ -11,6 +11,10 @@ use std::rc::Rc;
 pub(super) struct DestructionScratch {
     pub(super) pending: Vec<Rc<ObservationDag>>,
     registered_edges: usize,
+    // One checked construction sequence belongs to this shared frontier.
+    // Children must share it; a detached/other-session memo hit still checks Rc.
+    #[cfg(test)]
+    next_ordinal: usize,
 }
 
 impl ObservationDagKind {
@@ -43,6 +47,8 @@ impl SkeletonWork<'_, '_> {
             self.dag_scratch = Some(Rc::new(RefCell::new(DestructionScratch {
                 pending: Vec::new(),
                 registered_edges: 0,
+                #[cfg(test)]
+                next_ordinal: 0,
             })));
         }
         let scratch = self.dag_scratch.as_ref().expect("DAG scratch held").clone();
@@ -88,7 +94,19 @@ impl SkeletonWork<'_, '_> {
             physical_clone::rc_backing_bytes::<ObservationDag>(),
             "factored observation DAG header",
         )?;
+        #[cfg(test)]
+        let ordinal = {
+            self.charge(1, "factored DAG construction ordinal")?;
+            let mut held = scratch.borrow_mut();
+            let ordinal = held.next_ordinal;
+            held.next_ordinal = ordinal.checked_add(1).ok_or_else(|| {
+                replay_error(self.function, "factored DAG construction ordinal overflowed")
+            })?;
+            ordinal
+        };
         Ok(Rc::new(ObservationDag {
+            #[cfg(test)]
+            ordinal: Some(ordinal),
             kind,
             scratch: Some(scratch),
         }))
@@ -138,7 +156,7 @@ impl SkeletonWork<'_, '_> {
         self.charged_dag(kind).map(Some)
     }
 
-    pub(super) fn union_observations(
+    pub(in crate::cleanup_plan::replay) fn union_observations(
         &mut self,
         members: Vec<Observations>,
     ) -> Result<Observations, Diagnostic> {
