@@ -388,11 +388,16 @@ test("ordinary 32-event and payload controls are unchanged", () => {
 test("lease witness charges exactly the ordinary allocation", () => {
   const plain = fresh(), witnessed = fresh({ leaseWitness: true });
   for (const { env } of [plain, witnessed]) {
-    env.spx_bytes_drop(env.spx_bytes_copy(env.spx_bytes_zeroed(5n)));
+    // Copy borrows its source; settle both independently owned allocations.
+    const source = env.spx_bytes_zeroed(5n);
+    const copy = env.spx_bytes_copy(source);
+    env.spx_bytes_drop(copy);
+    env.spx_bytes_drop(source);
     env.spx_bytes_drop(env.spx_bytes_zeroed(0n));
   }
   const a = plain.facade.stats(), b = witnessed.facade.stats();
-  check(a.events === b.events && a.payload === b.payload, "identical ordinary charges");
+  check(a.events === 3 && b.events === 3 && a.payload === 10 && b.payload === 10,
+    "two nonempty allocations plus the empty owner keep exact ordinary charges");
   check(b.releasedBackings === 2 && a.releasedBackings === 0, "witness allocations were leases");
   plain.facade.endInvocation(plain.receipt);
   witnessed.facade.endInvocation(witnessed.receipt);
