@@ -384,8 +384,10 @@ The bound still grants no host funding or source authority.
 The private compiler factory `hir::byte_partition::ValidatedPartitionProgram`
 resolves the original immutable AST and retains its resulting HIR without
 cloning or replacing either subject. Its read-only `program()` and `source()`
-accessors do not let callers mint another owner. Acquisition and revalidation
-run full source/HIR, canonical cleanup/status and loan checks; the private
+accessors do not let callers mint another owner. `compile_source` runs full
+source/resolution/HIR, canonical cleanup/status and loan checks under the
+ordinary bounded compiler policy. `revalidate_compiler` repeats the compiler
+validation boundary; the private
 availability selector only admits the exact compiler operation during those
 checks. Ordinary source verification, HIR validation and backend entry remain
 closed. This is source-only implementation awaiting backend qualification,
@@ -396,10 +398,16 @@ with scalar, byte-array, Bytes, Slice and the demanded canonical Vec/Iter/IterSt
 of Bytes and Option of u8 or Bytes types. Authored types, module imports,
 effects, dynamic callable carriers and generic function instances are refused.
 Unused compiler-prelude declarations are not a reason to reject a program;
-actual signature and expression types determine this closed scope. Callgraph
-visits and identity probes consume the caller's held proof work, without a
-fresh receiver allowance. This work receipt does not claim full compiler or
-runtime physical accounting. Runtime funding and whole-owner provenance remain
+actual signature and expression types determine this closed scope. `receive_current_graph` consumes only the caller's held graph/provenance
+proof work, without a fresh receiver allowance. It meters actual type/opcode
+identity and child/statement probes. Neither this counter nor its exact/short
+tests pay for the separate source/resolver/full compiler passes, compiler
+physical storage, or runtime allocations. Compiler acquisition errors poison
+the extra graph counter and zero graph credit refuses before compilation.
+Partition roots must resolve through immutable current let moves to a direct
+whole Bytes allocation or copy. Own parameters, helper returns and children
+are uncertain roots and refuse at compile time; interprocedural Whole/Child
+provenance remains closed. Runtime funding and whole-owner provenance remain
 separate mandatory receiver checks. Native and Wasm ordinary lowering retain
 explicit refusal until their sealed receivers join this factory.
 
