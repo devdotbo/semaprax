@@ -395,7 +395,7 @@ fn normalize(law: &mut LawDefinition) -> Result<()> {
                         ));
                     }
                     crate::ast::ExprKind::VecConstructor { value, .. }
-                    | ExprKind::Unary { value, .. } => pending.push(value),
+                    | crate::ast::ExprKind::Unary { value, .. } => pending.push(value),
                     crate::ast::ExprKind::Binary { left, right, .. } => {
                         pending.push(left);
                         pending.push(right);
@@ -551,7 +551,7 @@ fn scalar_selector(expression: &crate::ast::Expr) -> Result<()> {
             ExprKind::Usize(_) | ExprKind::Char(_) | ExprKind::Float32(_) |
             ExprKind::Float64(_) | ExprKind::Bool(_) | ExprKind::Var(_) => {},
             ExprKind::VecConstructor { value, .. }
-            | ExprKind::Unary { value, .. } => pending.push(value),
+            | crate::ast::ExprKind::Unary { value, .. } => pending.push(value),
             ExprKind::Binary { left, right, .. } => { pending.push(left); pending.push(right); },
             _ => return Err(invalid("unsupported scalar contract selector; calls and aliases require a future resolved selector profile")),
         }

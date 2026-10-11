@@ -255,8 +255,7 @@ impl Drop for Program {
                     expressions.push(*receiver);
                     expressions.extend(args);
                 }
-                ExprKind::VecConstructor { value, .. }
-                | ExprKind::Unary { value, .. }
+                ExprKind::Unary { value, .. }
                 | ExprKind::Try { operand: value }
                 | ExprKind::Project { base: value, .. }
                 | ExprKind::Yield { request: value } => expressions.push(*value),

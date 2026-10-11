@@ -1120,6 +1120,7 @@ fn ast_children_mut(expression: &mut Expr) -> Vec<&mut Expr> {
 
 fn ast_kind(kind: &ExprKind) -> &'static str {
     match kind {
+        ExprKind::VecConstructor { .. } => "vec_constructor",
         ExprKind::Closure { .. } => "closure",
         ExprKind::Int(_) => "i64",
         ExprKind::Int32(_) => "i32",

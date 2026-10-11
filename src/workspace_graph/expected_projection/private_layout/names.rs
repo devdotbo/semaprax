@@ -281,6 +281,7 @@ impl<'a> Census<'a> {
             })?;
             if index == 0 {
                 match &e.kind {
+                    ExprKind::VecConstructor { element, .. } => self.ty(element)?,
                     ExprKind::Var(name) => self.name(name)?,
                     ExprKind::Closure {
                         params,

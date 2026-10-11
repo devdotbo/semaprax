@@ -191,6 +191,7 @@ pub fn check_declaration_supported(function: &Function) -> Result<(), Unsupporte
 #[must_use]
 pub fn expr_reason(expr: &Expr) -> Option<UnsupportedReason> {
     let what = match &expr.kind {
+        ExprKind::VecConstructor { .. } => "typed Vec construction",
         ExprKind::LexicalExit { .. } => "lexical exit",
         ExprKind::Closure { .. } => "closure",
         ExprKind::Char(_) => "char literal",

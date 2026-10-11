@@ -4696,7 +4696,8 @@ impl<'a> CheckedValueNode<'a> {
                     .get(index)
                     .copied()
                     .map(Self::Expression),
-                E::Block { statements, tail } => {
+                E::Block { statements, tail }
+                | E::VecConstructor { statements, tail, .. } => {
                     if index < statements.len() {
                         statements.get(index).map(Self::Statement)
                     } else {

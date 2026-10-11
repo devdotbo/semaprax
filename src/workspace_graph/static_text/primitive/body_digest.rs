@@ -268,6 +268,21 @@ impl Encoder {
                 self.expression(left, depth + 1)?;
                 self.expression(right, depth + 1)
             }
+            E::VecConstructor {
+                element,
+                count,
+                statements,
+                tail,
+            } => {
+                self.text("vec-constructor")?;
+                self.ty(element)?;
+                self.number(u64::from(*count))?;
+                self.number(statements.len() as u64)?;
+                for statement in statements {
+                    self.statement(statement, depth + 1)?;
+                }
+                self.expression(tail, depth + 1)
+            }
             E::Block { statements, tail } => {
                 self.text("block")?;
                 self.number(statements.len() as u64)?;

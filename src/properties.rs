@@ -669,6 +669,7 @@ impl<'a> Analyzer<'a> {
             return Outcome::Exhausted;
         }
         match &expression.kind {
+            ExprKind::VecConstructor { .. } => Outcome::Unsupported(REASON_BYTE_DATA_EXPRESSION),
             ExprKind::Closure { .. } => Outcome::Unsupported(REASON_UNSUPPORTED_CALLEE),
             ExprKind::Int(value) => Outcome::Value(Value::Int(*value)),
             ExprKind::Int32(value) => Outcome::Value(Value::Int32(*value)),
