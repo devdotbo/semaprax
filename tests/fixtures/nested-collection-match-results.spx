@@ -5,7 +5,7 @@ module collection_match;
  match own value {Report{words}=>Wrapped{report:Report{words:words},good:true},}
 }
 @id("terminal") fn terminal(value:own Report, early:bool)->Wrapped {
- match own value {Report{words}=>{let mut tick=0usize;while tick<1usize {tick=tick+1usize;if early {return Wrapped{report:Report{words:words},good:true};} else {0} 0} return Wrapped{report:Report{words:words},good:true};},}
+ match own value {Report{words}=>{let outcome=Wrapped{report:Report{words:words},good:true};let mut tick=0usize;while tick<1usize {tick=tick+1usize;if early {return outcome;} else {0} 0} return outcome;},}
 }
 @id("inspect") fn inspect(value:borrow Wrapped)->bool {value.good && vec_len<string>(value.report.words)==1usize}
 @id("app.main") fn main()->i64 {

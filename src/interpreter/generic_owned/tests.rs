@@ -126,4 +126,15 @@ fn collection_match_normal_and_terminal_results_require_exact_owned_pattern_and_
         &forged, function, tail, scrutinee, arms
     ));
     assert_eq!(hir::validate(&forged).unwrap_err().code, "SPX-H006");
+    // Collection-record loop construction stays closed: only the hoisted
+    // named owner may cross the loop return boundary.
+    let wrapped = "Wrapped{report:Report{words:words},good:true}";
+    let constructed = SOURCE
+        .replace(&format!("let outcome={wrapped};"), "")
+        .replace("return outcome;", &format!("return {wrapped};"));
+    assert_ne!(constructed, SOURCE);
+    let diagnostics =
+        crate::check(&constructed, "collection-match-loop-construct.spx").unwrap_err();
+    assert!(diagnostics.iter().any(|d| d.code == "SPX-T252"
+        && d.message == "record construction is not yet admitted in while bodies"));
 }
