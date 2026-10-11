@@ -294,7 +294,7 @@ pub(super) fn validate<'a>(
         let (mode, ty) = signature.parameter(index).expect("exact signature bound");
         #[cfg(test)]
         let drop = if held.is_some() {
-            type_needs_drop_with_budget(program, function, ty, budget)?
+            nested_shape::type_needs_drop_with_budget(program, function, ty, budget)?
         } else {
             needs_drop(program, function, ty)?
         };
