@@ -112,7 +112,9 @@ pub(super) fn ast_type_cost(ty: &Type, cost: &mut StructuralCost) -> Result<(), 
 /// or boxes its arguments): no binding, statement, field initializer, arm or
 /// pattern field is constructed for it there. Only literal/unary/binary and
 /// `if` roots in such a slot are censused; variable roots are also censused
-/// outside every authored closure subtree, retaining all their storage. Every
+/// outside every authored closure subtree, retaining all their storage.
+/// Block roots in those same positions are also carrier-free: their statements
+/// remain independently charged and their tail is boxed by finish_block. Every
 /// other child, and every root reached through `ast_expr_cost`, is `Delegated` and keeps its complete
 /// bundle.
 #[derive(Clone, Copy, Eq, PartialEq)]

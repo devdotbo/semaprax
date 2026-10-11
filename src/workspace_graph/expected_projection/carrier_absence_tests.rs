@@ -28,6 +28,8 @@ struct Census {
     ifs: usize,
     /// Free variable roots outside authored closures: never storage-free.
     vars: usize,
+    /// Free blocks outside closures, retaining storage and every child carrier.
+    blocks: usize,
 }
 
 fn ast_kind(kind: &ExprKind) -> Option<usize> {
@@ -58,6 +60,9 @@ fn ast_census(expression: &Expr, free: bool, outside_closure: bool, census: &mut
     }
     if outside_closure && matches!(expression.kind, ExprKind::Var(_)) {
         census.vars += usize::from(free);
+    }
+    if outside_closure && matches!(expression.kind, ExprKind::Block { .. }) {
+        census.blocks += usize::from(free);
     }
     let outside_children = outside_closure && !matches!(expression.kind, ExprKind::Closure { .. });
     let free_children: Vec<&Expr> = match &expression.kind {
@@ -122,6 +127,9 @@ fn hir_census(
         )
     {
         census.vars += usize::from(free);
+    }
+    if outside_closure && matches!(expression.kind, ResolvedExprKind::Block { .. }) {
+        census.blocks += usize::from(free);
     }
     match &expression.kind {
         ResolvedExprKind::Unary { value, .. } => hir_census(value, true, outside_closure, census),
@@ -248,19 +256,19 @@ fn add(value: i64) -> i64
 @id("carrier.values.text")
 fn text(value: own string) -> string
 {
-    value
+    { value }
 }
 
 @id("carrier.values.bytes")
 fn bytes(value: own Bytes) -> Bytes
 {
-    value
+    { value }
 }
 
 @id("carrier.values.record")
 fn move_packet(value: own Packet) -> Packet
 {
-    value
+    { value }
 }
 
 @id("carrier.values.reference")
@@ -319,6 +327,7 @@ fn variables_keep_storage_for_owned_values_references_and_closure_captures() {
         assert_eq!(cost.exact_carrier_free_roots, ast.free);
         assert_eq!(cost.exact_carrier_free_ifs, ast.ifs);
         assert_eq!(cost.exact_carrier_free_vars, ast.vars);
+        assert_eq!(cost.exact_carrier_free_blocks, ast.blocks);
         let checked = crate::check(source, "values.spx").unwrap();
         let resolved = crate::hir::resolve(&checked).unwrap();
         crate::hir::validate(&resolved).unwrap();
@@ -334,7 +343,7 @@ fn variables_keep_storage_for_owned_values_references_and_closure_captures() {
         assert_eq!(
             super::exact_absent_storage(&cost).unwrap(),
             ast.kinds.iter().sum::<usize>() * storage
-                + (ast.free + ast.ifs + ast.vars) * carriers(),
+                + (ast.free + ast.ifs + ast.vars + ast.blocks) * carriers(),
             "variables omit only the six auxiliary carriers"
         );
     }
@@ -363,6 +372,7 @@ fn delegated_children_and_nested_closures_cannot_reset_variable_exclusion() {
         ast_census(&parsed.functions[0].body, false, true, &mut ast);
         assert_eq!(ast.vars, 0, "{body}");
         assert_eq!(cost_census(&parsed).exact_carrier_free_vars, 0, "{body}");
+        assert_eq!(cost_census(&parsed).exact_carrier_free_blocks, 0, "{body}");
     }
 }
 
@@ -372,6 +382,7 @@ fn malformed_variable_censuses_fail_closed_and_runtime_censuses_are_ignored() {
     let raw = cost_census(&parsed);
     let mut runtime = StructuralCost::new();
     runtime.exact_carrier_free_vars = usize::MAX;
+    runtime.exact_carrier_free_blocks = usize::MAX;
     let ordinary = StructuralCost::new();
     for mode in [5, 6] {
         assert_eq!(
@@ -400,10 +411,23 @@ fn malformed_variable_censuses_fail_closed_and_runtime_censuses_are_ignored() {
             );
         }
     }
+    for blocks in [raw.exact_expressions, usize::MAX] {
+        let mut malformed = cost_census(&parsed);
+        malformed.exact_carrier_free_blocks = blocks;
+        for mode in [5, 6] {
+            assert!(super::fixed_hir_discount(mode, &malformed, &ordinary)
+                .unwrap_err().iter().all(|error| error.code == "SPX-G171"));
+        }
+    }
     // Even a valid disjoint count refuses if conversion to carrier bytes overflows.
     let mut huge = StructuralCost::new();
     huge.exact_expressions = usize::MAX;
     huge.exact_carrier_free_vars = usize::MAX / carriers() + 1;
+    let mut block_overflow = StructuralCost::new();
+    block_overflow.exact_expressions = usize::MAX;
+    block_overflow.exact_carrier_free_blocks = usize::MAX / carriers() + 1;
+    assert!(super::exact_absent_storage(&block_overflow).unwrap_err()
+        .iter().all(|error| error.code == "SPX-G171"));
     assert!(super::exact_absent_storage(&huge)
         .unwrap_err()
         .iter()
@@ -447,6 +471,7 @@ fn raw_ast_resolved_and_cost_censuses_agree_on_every_carrier_free_root() {
     assert_eq!(cost.exact_carrier_free_roots, ast.free);
     assert_eq!(cost.exact_carrier_free_ifs, ast.ifs);
     assert_eq!(cost.exact_carrier_free_vars, ast.vars);
+    assert_eq!(cost.exact_carrier_free_blocks, ast.blocks);
     // Legacy and runtime accumulators never count.
     let mut legacy = StructuralCost::new();
     for function in &parsed.functions {
@@ -455,6 +480,7 @@ fn raw_ast_resolved_and_cost_censuses_agree_on_every_carrier_free_root() {
     assert_eq!(legacy.exact_carrier_free_roots, 0);
     assert_eq!(legacy.exact_carrier_free_ifs, 0);
     assert_eq!(legacy.exact_carrier_free_vars, 0);
+    assert_eq!(legacy.exact_carrier_free_blocks, 0);
 
     let checked = crate::check(GATE, "gate.spx").unwrap();
     let resolved = crate::hir::resolve(&checked).unwrap();
@@ -481,6 +507,7 @@ fn raw_ast_resolved_and_cost_censuses_agree_on_every_carrier_free_root() {
                 - cost.exact_carrier_free_roots
                 - cost.exact_carrier_free_ifs
                 - cost.exact_carrier_free_vars
+                - cost.exact_carrier_free_blocks
     );
 }
 
@@ -496,6 +523,7 @@ fn delegated_parents_keep_complete_bundles_and_guards_are_charged() {
         assert_eq!(cost.exact_carrier_free_roots, oracle.free, "{body}");
         assert_eq!(cost.exact_carrier_free_ifs, oracle.ifs, "{body}");
         assert_eq!(cost.exact_carrier_free_vars, oracle.vars, "{body}");
+        assert_eq!(cost.exact_carrier_free_blocks, oracle.blocks, "{body}");
         (oracle, cost)
     };
     // Arm values and guards embed or box under a `ResolvedMatchArm`; the
@@ -553,6 +581,11 @@ fn variable(_: usize) -> String {
 fn branch(index: usize) -> String {
     format!("if true {{ {index} }} else {{ 0 }}")
 }
+/// The root block changes position; its binding and nested tail retain their
+/// own charges in both twins.
+fn block(index: usize) -> String {
+    format!("{{ let saved = {index}; {{ saved }} }}")
+}
 
 fn pair_source(n: usize, free: bool, moved: fn(usize) -> String) -> String {
     let params = (0..n)
@@ -591,7 +624,7 @@ impl Drop for LimitRestore {
 
 #[test]
 fn complete_forecast_differs_from_position_blind_formula_by_exact_carriers() {
-    for moved in [literal as fn(usize) -> String, branch, variable] {
+    for moved in [literal as fn(usize) -> String, branch, variable, block] {
         moved_roots_differ_by_exact_carriers(moved);
     }
 }
@@ -602,11 +635,12 @@ fn moved_roots_differ_by_exact_carriers(moved: fn(usize) -> String) {
     let (mut census, mut twin) = (Census::default(), Census::default());
     ast_census(&free[0].functions[2].body, false, true, &mut census);
     ast_census(&delegated[0].functions[2].body, false, true, &mut twin);
-    // Exactly N roots change position: literals, variables, or `if` roots
-    // whose own literals are free in both twins.
+    // Exactly N roots change position. Branch/block children retain their
+    // independent identical positions and carriers in both twins.
     assert_eq!(census.kinds, twin.kinds);
     assert_eq!(
-        (census.free + census.ifs + census.vars) - (twin.free + twin.ifs + twin.vars),
+        (census.free + census.ifs + census.vars + census.blocks)
+            - (twin.free + twin.ifs + twin.vars + twin.blocks),
         N,
         "{census:?} {twin:?}"
     );
@@ -668,6 +702,7 @@ fn resolver_and_replay_highwater_stays_within_the_reduced_forecast() {
         (pair_source(12, true, literal), "pair.spx"),
         (pair_source(12, true, branch), "branch.spx"),
         (pair_source(12, true, variable), "variable.spx"),
+        (pair_source(12, true, block), "block.spx"),
         (VALUES.to_owned(), "values.spx"),
         (CLOSURE.to_owned(), "closure.spx"),
     ] {
@@ -678,6 +713,9 @@ fn resolver_and_replay_highwater_stays_within_the_reduced_forecast() {
                 census.exact_carrier_free_vars > 0,
                 "gate exercises variables"
             );
+        } else if path == "block.spx" {
+            assert_eq!(census.exact_carrier_free_blocks, 24,
+                "twelve free outer and independently free inner blocks");
         } else {
             assert!(
                 census.exact_carrier_free_roots >= 12,
