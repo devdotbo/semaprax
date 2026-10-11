@@ -53,11 +53,11 @@ module test.lookup;
     let mut x=0;
     x=1;
     let generated=vec_of<i64>(1,2);
-    let result=match x {
+    let outcome=match x {
         0=>{let mut inner=0;inner=2;inner},
         _=>{let mut other=0;other=3;other},
     };
-    x=result;
+    x=outcome;
     x
 }
 "#,
