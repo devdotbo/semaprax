@@ -24,7 +24,9 @@ fn nested_scalar_guards_and_string_values_preserve_decisions_failure_and_owned_t
     let program = program();
     let function = function(&program);
     crate::hir::validate(&program).unwrap();
-    let paths = hir_skeleton_paths(&program, function, &mut ReplayBudget::new()).unwrap();
+    let mut budget = ReplayBudget::new();
+    reserve_program_skeleton_work(&program, std::iter::once(function), &mut budget).unwrap();
+    let paths = hir_skeleton_paths(&program, function, &mut budget).unwrap();
     assert!(paths
         .iter()
         .any(|path| path.terminal == SkeletonTerminal::Failure));
@@ -124,11 +126,13 @@ fn late_nested_scalar_value_catch_all_poison_is_not_skipped() {
         panic!("nested value match")
     };
     arms.last_mut().unwrap().guard = Some(guard);
+    let mut budget = ReplayBudget::new();
+    reserve_program_skeleton_work(&program, std::iter::once(&function), &mut budget).unwrap();
     let error = expression_skeleton(
         &program,
         &function,
         &function.body,
-        &mut SkeletonWork::new(&program, &function, &mut ReplayBudget::new()),
+        &mut SkeletonWork::new(&program, &function, &mut budget),
     )
     .err()
     .unwrap();
@@ -147,6 +151,7 @@ fn heap_continuation_backing_and_path_storage_refuse_one_short_before_growth() {
     ) -> (Result<Vec<ExprSkeletonPath>, Diagnostic>, usize, bool) {
         let function = function(program);
         let mut budget = ReplayBudget::new();
+        reserve_program_skeleton_work(program, std::iter::once(function), &mut budget).unwrap();
         let mut work = SkeletonWork::new(program, function, &mut budget);
         work.budget.physical = Some(Box::new(PhysicalReservation::new(bytes)));
         let result = expression_skeleton(program, function, &function.body, &mut work);
