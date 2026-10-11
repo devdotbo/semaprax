@@ -212,6 +212,42 @@ fn deferred_enumerated_reservation_adds_to_held_pool_without_refund() {
 }
 
 #[test]
+fn both_factored_constructors_share_free_work_and_preserve_held_reservations() {
+    let (program, function) = lexical_plan_tests::fixture(lexical_plan_tests::WHILE);
+    let held = 101;
+    let mut wide = ReplayBudget::new();
+    wide.reserve_skeleton(&function, held).unwrap();
+    let available = wide.remaining;
+    let _built = build_comparison(&program, &function, &mut wide, None).unwrap();
+    let spent = available - wide.remaining;
+    assert!(spent > 0);
+    assert_eq!(wide.skeleton_remaining, held);
+    assert_eq!(wide.skeleton_spent, spent);
+    assert!(!wide.lent_skeleton && !wide.merge_paths);
+
+    let mut exact = ReplayBudget::new();
+    exact.reserve_skeleton(&function, held).unwrap();
+    exact.remaining = spent;
+    let _built = build_comparison(&program, &function, &mut exact, None).unwrap();
+    assert_eq!(exact.remaining, 0);
+    assert_eq!(exact.skeleton_remaining, held);
+    assert_eq!(exact.skeleton_spent, spent);
+    assert!(!exact.lent_skeleton && !exact.merge_paths);
+
+    let mut short = ReplayBudget::new();
+    short.reserve_skeleton(&function, held).unwrap();
+    short.remaining = spent - 1;
+    let error = match build_comparison(&program, &function, &mut short, None) {
+        Ok(_) => panic!("one-short construction must refuse"),
+        Err(error) => error,
+    };
+    assert_eq!(error.code, "SPX-H006");
+    assert_eq!(short.skeleton_remaining, held);
+    assert_eq!(short.remaining + short.skeleton_spent, spent - 1);
+    assert!(!short.lent_skeleton && !short.merge_paths);
+}
+
+#[test]
 fn immutable_original_shiftsim_forced_enumerated_retains_frozen_refusal() {
     use std::sync::atomic::{AtomicU64, Ordering};
     static SERIAL: AtomicU64 = AtomicU64::new(0);

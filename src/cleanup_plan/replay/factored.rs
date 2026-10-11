@@ -156,46 +156,55 @@ fn build_comparison(
     budget: &mut ReplayBudget,
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
 ) -> Result<BuiltComparison, Diagnostic> {
-    // Lend the remaining program-wide budget to the merged skeleton walk.
+    // Both independent constructors debit skeleton helpers as well as ordinary
+    // constructors. Keep one active allowance through the HIR walk AND plan
+    // automaton construction; the held program reservation belongs to other
+    // enumerated functions and cannot pay for this deferred attempt.
     let skeleton_reserve = budget.skeleton_remaining;
     budget.skeleton_remaining = std::mem::take(&mut budget.remaining);
     budget.lent_skeleton = true;
-    budget.merge_paths = true;
-    let hir_paths = hir_skeleton_paths_with_index(program, function, budget, helpers);
+    let result = (|| {
+        budget.merge_paths = true;
+        let hir_paths = hir_skeleton_paths_with_index(program, function, budget, helpers);
+        budget.merge_paths = false;
+        let hir_paths = hir_paths?;
+
+        let mut automaton = Automaton::default();
+        let sink = automaton.node(function, budget)?;
+        let success = automaton.end(function, budget, sink, SkeletonTerminal::Success)?;
+        let failure = automaton.end(function, budget, sink, SkeletonTerminal::Failure)?;
+        let latch = automaton.end(function, budget, sink, SkeletonTerminal::LoopLatch)?;
+        let hir_root = automaton.node(function, budget)?;
+        let mut memo = BTreeMap::new();
+        for path in &hir_paths {
+            let end = automaton.add_observations(
+                function,
+                &path.observations,
+                hir_root,
+                &mut memo,
+                budget,
+            )?;
+            let terminal = match path.terminal {
+                SkeletonTerminal::Success => success,
+                SkeletonTerminal::Failure => failure,
+                SkeletonTerminal::LoopLatch => latch,
+            };
+            automaton.epsilon(function, budget, end, terminal)?;
+        }
+        let plan_root = automaton.add_plan(function, success, failure, latch, budget)?;
+        Ok(BuiltComparison {
+            automaton,
+            sink,
+            hir_root,
+            plan_root,
+        })
+    })();
+    // Restore only the unused allowance. Successful debits from either
+    // constructor remain spent, including an attempt ending in refusal.
     budget.merge_paths = false;
     budget.lent_skeleton = false;
     budget.remaining = std::mem::replace(&mut budget.skeleton_remaining, skeleton_reserve);
-    let hir_paths = hir_paths?;
-
-    let mut automaton = Automaton::default();
-    let sink = automaton.node(function, budget)?;
-    let success = automaton.end(function, budget, sink, SkeletonTerminal::Success)?;
-    let failure = automaton.end(function, budget, sink, SkeletonTerminal::Failure)?;
-    let latch = automaton.end(function, budget, sink, SkeletonTerminal::LoopLatch)?;
-    let hir_root = automaton.node(function, budget)?;
-    let mut memo = BTreeMap::new();
-    for path in &hir_paths {
-        let end = automaton.add_observations(
-            function,
-            &path.observations,
-            hir_root,
-            &mut memo,
-            budget,
-        )?;
-        let terminal = match path.terminal {
-            SkeletonTerminal::Success => success,
-            SkeletonTerminal::Failure => failure,
-            SkeletonTerminal::LoopLatch => latch,
-        };
-        automaton.epsilon(function, budget, end, terminal)?;
-    }
-    let plan_root = automaton.add_plan(function, success, failure, latch, budget)?;
-    Ok(BuiltComparison {
-        automaton,
-        sink,
-        hir_root,
-        plan_root,
-    })
+    result
 }
 
 #[path = "factored/strategy.rs"]
