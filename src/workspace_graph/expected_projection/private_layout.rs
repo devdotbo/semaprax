@@ -15,7 +15,7 @@ pub(super) struct Entry<'a> {
     pub(super) declaration: &'a TypeDeclaration,
     pub(super) alias: String,
 }
-pub(super) struct LayoutClosure<'a> {
+pub(in crate::workspace_graph) struct LayoutClosure<'a> {
     pub(super) entries: Vec<Entry<'a>>,
 }
 struct Frame<'a> {
@@ -27,6 +27,10 @@ const DEPTH: usize = crate::cleanup::MAX_CLEANUP_SHAPE_DEPTH;
 const WORK: usize = 1_048_576;
 
 impl<'a> LayoutClosure<'a> {
+    pub(in crate::workspace_graph) fn is_empty(&self) -> bool {
+        self.entries.is_empty()
+    }
+
     pub(super) fn derive(
         caller: &Program,
         authored: &BTreeMap<&str, AuthoredDeclaration<'a>>,

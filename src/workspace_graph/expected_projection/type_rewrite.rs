@@ -14,7 +14,7 @@ pub(super) fn runtime_cost(
     runtime_cost_with_layout(ty, target_module, caller, programs, cost, None)
 }
 
-pub(super) fn runtime_cost_with_layout(
+pub(in crate::workspace_graph) fn runtime_cost_with_layout(
     ty: &Type,
     target_module: &str,
     caller: &Program,
@@ -72,7 +72,7 @@ pub(super) fn rewrite(
     rewrite_with_layout(ty, target_module, caller, programs, None)
 }
 
-pub(super) fn rewrite_with_layout(
+pub(in crate::workspace_graph) fn rewrite_with_layout(
     ty: &mut Type,
     target_module: &str,
     caller: &Program,

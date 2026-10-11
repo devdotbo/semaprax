@@ -71,7 +71,7 @@ pub(super) fn rewrite_declaration_runtime_cost_with_layout(
     cost: &mut StructuralCost,
     layout: Option<&super::expected_projection::private_layout::LayoutClosure<'_>>,
 ) -> Result<(), Vec<Diagnostic>> {
-    if layout.is_none_or(|l| l.entries.is_empty()) {
+    if layout.is_none_or(|l| l.is_empty()) {
         return rewrite_declaration_runtime_cost(
             declaration,
             target_module,
@@ -149,7 +149,7 @@ pub(super) fn rewrite_declaration_with_layout(
     programs: &[Program],
     layout: Option<&super::expected_projection::private_layout::LayoutClosure<'_>>,
 ) -> Result<(), Vec<Diagnostic>> {
-    if layout.is_none_or(|l| l.entries.is_empty()) {
+    if layout.is_none_or(|l| l.is_empty()) {
         return rewrite_declaration(declaration, target_module, caller, programs);
     }
     if !declaration.type_parameters.is_empty()
