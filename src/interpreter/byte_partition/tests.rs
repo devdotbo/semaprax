@@ -13,7 +13,12 @@ struct Account {
     releases: usize,
 }
 #[derive(Clone)]
-struct Probe(Rc<RefCell<Account>>);
+pub(super) struct Probe(Rc<RefCell<Account>>);
+impl Probe {
+    pub(super) fn charged(&self) -> usize {
+        self.0.borrow().charged
+    }
+}
 impl InvocationRuntime for Probe {
     fn held_account(&self) -> Self {
         self.clone()
@@ -62,7 +67,7 @@ impl Runtime for Probe {
         self.0.borrow_mut().releases += 1;
     }
 }
-fn account(remaining: usize) -> Probe {
+pub(super) fn account(remaining: usize) -> Probe {
     Probe(Rc::new(RefCell::new(Account {
         remaining,
         events: 1,

@@ -10,6 +10,8 @@ use std::{
     alloc::Layout,
     sync::atomic::{AtomicU64, Ordering},
 };
+pub(crate) mod authority;
+pub(crate) mod loans;
 static NEXT_INVOCATION: AtomicU64 = AtomicU64::new(1);
 /// Implemented only by the actual evaluator account adapter. The handle must
 /// borrow/share the SAME monotonic invocation account without allocation or
@@ -89,6 +91,15 @@ impl<R: InvocationRuntime> Registry<R> {
         count: u64,
         width: u64,
     ) -> Result<Vec<Owner>, (Preparation, R::Owner)> {
+        self.partition_with_capacity(owner, count, width, None)
+    }
+    fn partition_with_capacity(
+        &mut self,
+        owner: R::Owner,
+        count: u64,
+        width: u64,
+        capacity: Option<&authority::LoanCapacity<'_>>,
+    ) -> Result<Vec<Owner>, (Preparation, R::Owner)> {
         if let Err(error) = self.active() {
             return Err((Preparation::Authority(error), owner));
         }
@@ -145,14 +156,26 @@ impl<R: InvocationRuntime> Registry<R> {
                 }
             }
         };
-        let (core, children) = match Core::partition_owned(
-            owner,
-            geometry.count,
-            host_width,
-            Issuer::new(),
-            ModuleIdentity::new(),
-            runtime,
-        ) {
+        let prepared = match capacity {
+            Some(capacity) => Core::partition_owned_ordinary(
+                owner,
+                geometry.count,
+                host_width,
+                Issuer::new(),
+                ModuleIdentity::new(),
+                runtime,
+                capacity,
+            ),
+            None => Core::partition_owned(
+                owner,
+                geometry.count,
+                host_width,
+                Issuer::new(),
+                ModuleIdentity::new(),
+                runtime,
+            ),
+        };
+        let (core, children) = match prepared {
             Ok(value) => value,
             Err((error, owner)) => {
                 self.select::<()>(Err(error)).ok();

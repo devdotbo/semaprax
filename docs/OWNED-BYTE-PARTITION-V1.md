@@ -292,3 +292,20 @@ exact/one-short precommit reservations, replacement overlap, foreign/stale and
 loan refusal, and abandonment. Full source/HIR/graph/replay installation, ordinary
 Value consumer closure, native/Wasm execution and the public copy-out bridge
 remain required; these controls do not qualify an ordinary admitted program.
+
+### Ordinary loan receiver checkpoint
+
+The pending ordinary interpreter receiver holds the actual fully validated
+function and its immutable loan plan. Its separately charged fixed loan table
+uses the existing 256-loan limit; the private fused Core's 64-view path remains
+unchanged. A copied view descriptor carries no finalization ownership: one
+registry entry retains the affine Core loan. Exact CFG `end_edges`, rather than
+node-union kills, retire that entry and stale descriptors fail sticky. Header,
+table, Core and replacement backing requests debit the same invocation account
+before allocation; no teardown refund replenishes it.
+
+This private receiver has no production authority constructor or ordinary Value
+installer yet. The eventual installer must bind each runtime child to the
+current checked owner root and drive transitions from actual execution. Public
+copy-out must precede registry teardown. Its authored controls are not evidence
+of source admission or complete native/Wasm/public partition support.

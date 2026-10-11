@@ -130,6 +130,7 @@ pub(crate) struct Core<'a, R: Runtime> {
 /// language authority. Fields are private and only the metered core creates it.
 pub(crate) struct OwnedPreparation<R: Runtime> {
     count: usize,
+    view_capacity: usize,
     runtime: R,
 }
 impl<R: Runtime> OwnedPreparation<R> {
@@ -140,17 +141,28 @@ impl<R: Runtime> OwnedPreparation<R> {
 impl<R: Runtime> Core<'static, R> {
     pub(crate) fn prepare_owned_metadata(
         count: usize,
+        runtime: R,
+    ) -> Result<OwnedPreparation<R>, Refusal> {
+        Self::prepare_owned_metadata_for_views(count, MAX_VIEWS, runtime)
+    }
+    fn prepare_owned_metadata_for_views(
+        count: usize,
+        view_capacity: usize,
         mut runtime: R,
     ) -> Result<OwnedPreparation<R>, Refusal> {
         if count > crate::vec_ops::MAX_CAPACITY as usize {
             return Err(Refusal::Metadata);
         }
-        for layout in Self::metadata_layouts(count)? {
+        for layout in Self::metadata_layouts_for_views(count, view_capacity)? {
             runtime.reserve_metadata(layout)?;
         }
         runtime.reserve_metadata(Layout::new::<Issuer>())?;
         runtime.reserve_metadata(Layout::new::<ModuleIdentity>())?;
-        Ok(OwnedPreparation { count, runtime })
+        Ok(OwnedPreparation {
+            count,
+            view_capacity,
+            runtime,
+        })
     }
     pub(crate) fn partition_owned_prepared(
         owner: R::Owner,
@@ -181,6 +193,7 @@ impl<R: Runtime> Core<'static, R> {
             ModuleHolder::Owned(Box::new(module)),
             preparation.runtime,
             true,
+            preparation.view_capacity,
         )
     }
     /// An invocation owner can retain this context without a self-reference.
@@ -193,6 +206,36 @@ impl<R: Runtime> Core<'static, R> {
         issuer: Issuer,
         module: ModuleIdentity,
         runtime: R,
+    ) -> Result<(Self, Vec<Child<'static>>), (Refusal, R::Owner)> {
+        Self::partition_owned_with_views(owner, count, width, issuer, module, runtime, MAX_VIEWS)
+    }
+    pub(crate) fn partition_owned_ordinary(
+        owner: R::Owner,
+        count: usize,
+        width: usize,
+        issuer: Issuer,
+        module: ModuleIdentity,
+        runtime: R,
+        capacity: &crate::interpreter::byte_partition::authority::LoanCapacity<'_>,
+    ) -> Result<(Self, Vec<Child<'static>>), (Refusal, R::Owner)> {
+        Self::partition_owned_with_views(
+            owner,
+            count,
+            width,
+            issuer,
+            module,
+            runtime,
+            capacity.slots(),
+        )
+    }
+    fn partition_owned_with_views(
+        owner: R::Owner,
+        count: usize,
+        width: usize,
+        issuer: Issuer,
+        module: ModuleIdentity,
+        runtime: R,
+        view_capacity: usize,
     ) -> Result<(Self, Vec<Child<'static>>), (Refusal, R::Owner)> {
         let preparation = (|| {
             let extent = count.checked_mul(width).ok_or(Refusal::Range)?;
@@ -209,7 +252,7 @@ impl<R: Runtime> Core<'static, R> {
                 .next
                 .checked_add(count as u64 + 1)
                 .ok_or(Refusal::Exhausted)?;
-            Self::prepare_owned_metadata(count, runtime)
+            Self::prepare_owned_metadata_for_views(count, view_capacity, runtime)
         })();
         let preparation = match preparation {
             Ok(preparation) => preparation,
@@ -222,10 +265,16 @@ impl<'a, R: Runtime> Core<'a, R> {
     /// All allocations made here: held context, exact slot/view backing, and
     /// the returned complete carrier inventory. No per-child allocation.
     pub(crate) fn metadata_layouts(count: usize) -> Result<[Layout; 7], Refusal> {
+        Self::metadata_layouts_for_views(count, MAX_VIEWS)
+    }
+    fn metadata_layouts_for_views(
+        count: usize,
+        view_capacity: usize,
+    ) -> Result<[Layout; 7], Refusal> {
         Ok([
             Layout::new::<Self>(),
             Layout::array::<Slot>(count).map_err(|_| Refusal::Metadata)?,
-            Layout::array::<View>(MAX_VIEWS).map_err(|_| Refusal::Metadata)?,
+            Layout::array::<View>(view_capacity).map_err(|_| Refusal::Metadata)?,
             Layout::array::<Child<'a>>(count).map_err(|_| Refusal::Metadata)?,
             Layout::new::<Vec<Child<'a>>>(),
             // Temporary table headers remain live while the context is formed.
@@ -252,6 +301,7 @@ impl<'a, R: Runtime> Core<'a, R> {
             ModuleHolder::Borrowed(module),
             runtime,
             false,
+            MAX_VIEWS,
         )
     }
     fn partition_held(
@@ -262,6 +312,7 @@ impl<'a, R: Runtime> Core<'a, R> {
         module: ModuleHolder<'a>,
         mut runtime: R,
         prepaid: bool,
+        view_capacity: usize,
     ) -> Result<(Self, Vec<Child<'a>>), (Refusal, R::Owner)> {
         let preparation = (|| {
             if width == 0 {
@@ -277,7 +328,7 @@ impl<'a, R: Runtime> Core<'a, R> {
                 return Err(Refusal::Metadata);
             }
             if !prepaid {
-                for layout in Self::metadata_layouts(count)? {
+                for layout in Self::metadata_layouts_for_views(count, view_capacity)? {
                     runtime.reserve_metadata(layout)?;
                 }
             }
@@ -297,7 +348,7 @@ impl<'a, R: Runtime> Core<'a, R> {
         };
         let mut slots = exact_vec(count);
         let mut children = exact_vec(count);
-        let mut views = exact_vec(MAX_VIEWS);
+        let mut views = exact_vec(view_capacity);
         let issuer_key = std::ptr::from_ref(issuer.get()) as usize;
         let module_key = std::ptr::from_ref(module.get()) as usize;
         for i in 0..count {
@@ -321,7 +372,7 @@ impl<'a, R: Runtime> Core<'a, R> {
             });
         }
         views.resize(
-            MAX_VIEWS,
+            view_capacity,
             View {
                 slot: 0,
                 offset: 0,
