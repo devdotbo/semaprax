@@ -289,3 +289,75 @@ fn decoded_token_eq(input: borrow Slice<u8>, left: usize, right: usize) -> bool
     }
     equal
 }
+
+// One canonical decoded byte at a pull cursor, or 256 when the cursor emits
+// none. An admitted raw byte is its own decoded value; an escape uses
+// `emit_at`. Unlike `emit_at`, a raw byte needs no `byte_code` probe.
+@id("std.data.json.dec.decoded_byte_at")
+fn decoded_byte_at(input: borrow Slice<u8>, index: usize, part: usize) -> usize
+    ensures result <= 256usize
+{
+    if at_is(input, index, 92u8) { let emitted = emit_at(input, index, part); if emitted >= 0 { usize_from_i64(emitted) } else { 256usize } } else { match byte_get(input, index) { Option::Some { value: byte } => if part == 0usize && byte >= 32u8 { usize_from_u8(byte) } else { 256usize }, Option::None {} => 256usize, } }
+}
+
+// A bounded decoded-key fingerprint `length * 65536 + hash`. The hash folds
+// the token's canonical decoded bytes as `(hash * 257 + byte) % 65521`, and
+// `length` is its decoded byte count in 1..=limit. Zero means the token is
+// not a complete JSON string of that size; the walk stops at the first
+// decoded byte past `limit`. Equal fingerprints never prove equal keys.
+@id("std.data.json.dec.decoded_fingerprint")
+fn decoded_fingerprint(input: borrow Slice<u8>, start: usize, limit: usize) -> usize
+    requires limit >= 1usize && limit <= 256usize
+    ensures result < 16842752usize
+{
+    let mut index = start + 1usize;
+    let mut part = 0usize;
+    let mut count = 0usize;
+    let mut hash = 0usize;
+    let mut valid = at_is(input, start, 34u8);
+    let mut running = valid && !at_is(input, index, 34u8);
+    while running {
+        let width = emit_len(input, index);
+        let value = decoded_byte_at(input, index, part);
+        let last = part + 1usize >= width;
+        let next = if last { token_end(input, index) } else { index };
+        valid = width > 0usize && value < 256usize && count < limit && !is_failure(input, next);
+        hash = if valid { (hash * 257usize + value) % 65521usize } else { hash };
+        count = if valid { count + 1usize } else { count };
+        index = if valid { next } else { index };
+        part = if valid && !last { part + 1usize } else { 0usize };
+        running = valid && !at_is(input, index, 34u8);
+        running
+    }
+    if valid && count > 0usize { count * 65536usize + hash } else { 0usize }
+}
+
+// One bounded Copy index entry: a token's opening offset and fingerprint.
+// Offsets admit the 131,072-byte internal owned-view bound.
+@id("std.data.json.dec.fingerprint_entry")
+fn fingerprint_entry(opening: usize, fingerprint: usize) -> usize
+    requires opening <= 131072usize && fingerprint < 16842752usize
+{
+    opening * 16842752usize + fingerprint
+}
+
+@id("std.data.json.dec.entry_opening")
+fn entry_opening(entry: usize) -> usize
+{
+    entry / 16842752usize
+}
+
+@id("std.data.json.dec.entry_fingerprint")
+fn entry_fingerprint(entry: usize) -> usize
+    ensures result < 16842752usize
+{
+    entry % 16842752usize
+}
+
+// A fingerprint only rejects. Every equal fingerprint, including every hash
+// collision, is decided by the exact decoded comparison `decoded_token_eq`.
+@id("std.data.json.dec.fingerprint_match")
+fn fingerprint_match(input: borrow Slice<u8>, entry: usize, current: usize, fingerprint: usize) -> bool
+{
+    entry_fingerprint(entry) == fingerprint && decoded_token_eq(input, entry_opening(entry), current)
+}

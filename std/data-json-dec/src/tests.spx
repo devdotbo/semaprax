@@ -12,6 +12,12 @@ use function @id("std.data.json.dec.decoded_eq") from std.data.json.dec as decod
 use function @id("std.data.json.dec.decoded_len") from std.data.json.dec as decoded_len;
 use function @id("std.data.json.dec.decoded_size") from std.data.json.dec as decoded_size;
 use function @id("std.data.json.dec.decoded_token_eq") from std.data.json.dec as decoded_token_eq;
+use function @id("std.data.json.dec.decoded_byte_at") from std.data.json.dec as decoded_byte_at;
+use function @id("std.data.json.dec.decoded_fingerprint") from std.data.json.dec as decoded_fingerprint;
+use function @id("std.data.json.dec.fingerprint_entry") from std.data.json.dec as fingerprint_entry;
+use function @id("std.data.json.dec.entry_opening") from std.data.json.dec as entry_opening;
+use function @id("std.data.json.dec.entry_fingerprint") from std.data.json.dec as entry_fingerprint;
+use function @id("std.data.json.dec.fingerprint_match") from std.data.json.dec as fingerprint_match;
 use function @id("std.data.json.dec.emit_at") from std.data.json.dec as emit_at;
 use function @id("std.data.json.dec.emit_len") from std.data.json.dec as emit_len;
 use function @id("std.data.json.dec.escape_end") from std.data.json.dec as escape_end;
@@ -139,8 +145,30 @@ fn token_equality() -> bool
     decoded_token_eq(source, 0usize, 3usize) && decoded_token_eq(source, 6usize, 10usize) && decoded_token_eq(source, 14usize, 18usize) && !decoded_token_eq(source, 6usize, 26usize) && !decoded_token_eq(source, 0usize, 6usize)
 }
 
+// Tokens at 0, 5, 10: "BAA", "ACO", "BAA". At 20, 26, 32: raw
+// U+00C1 U+0410, raw U+00C0 U+049E, "ÁА". At 46, 56: "\u0000CO",
+// "\u0001AA". At 66, 80: "😀" and raw U+1F600. Each unequal pair
+// is a deliberate hash collision; only exact decoded comparison separates it.
+@id("std.data.json.dec.tests.fingerprints")
+fn fingerprints() -> bool
+{
+    let raw = [34u8, 66u8, 65u8, 65u8, 34u8, 34u8, 65u8, 67u8, 79u8, 34u8, 34u8, 92u8, 117u8, 48u8, 48u8, 52u8, 50u8, 65u8, 65u8, 34u8, 34u8, 195u8, 129u8, 208u8, 144u8, 34u8, 34u8, 195u8, 128u8, 210u8, 158u8, 34u8, 34u8, 92u8, 117u8, 48u8, 48u8, 99u8, 49u8, 92u8, 117u8, 48u8, 52u8, 49u8, 48u8, 34u8, 34u8, 92u8, 117u8, 48u8, 48u8, 48u8, 48u8, 67u8, 79u8, 34u8, 34u8, 92u8, 117u8, 48u8, 48u8, 48u8, 49u8, 65u8, 65u8, 34u8, 34u8, 92u8, 117u8, 68u8, 56u8, 51u8, 68u8, 92u8, 117u8, 68u8, 69u8, 48u8, 48u8, 34u8, 34u8, 240u8, 159u8, 152u8, 128u8, 34u8];
+    let source = array_as_slice(raw);
+    let ascii = decoded_fingerprint(source, 0usize, 64usize);
+    let wide = decoded_fingerprint(source, 20usize, 64usize);
+    let nul = decoded_fingerprint(source, 46usize, 64usize);
+    let emoji = decoded_fingerprint(source, 66usize, 64usize);
+    let bytes = decoded_byte_at(source, 1usize, 0usize) == 66usize && decoded_byte_at(source, 11usize, 0usize) == 66usize && decoded_byte_at(source, 21usize, 0usize) == 195usize && decoded_byte_at(source, 47usize, 0usize) == 0usize && decoded_byte_at(source, 67usize, 1usize) == 159usize && decoded_byte_at(source, 1usize, 1usize) == 256usize && decoded_byte_at(source, 86usize, 0usize) == 256usize;
+    let values = ascii == 248226usize && decoded_fingerprint(source, 5usize, 64usize) == ascii && decoded_fingerprint(source, 10usize, 64usize) == ascii && wide == 308571usize && decoded_fingerprint(source, 26usize, 64usize) == wide && decoded_fingerprint(source, 32usize, 64usize) == wide && nul == 213906usize && decoded_fingerprint(source, 56usize, 64usize) == nul && emoji >= 262144usize && decoded_fingerprint(source, 80usize, 64usize) == emoji;
+    let bounds = decoded_fingerprint(source, 0usize, 2usize) == 0usize && decoded_fingerprint(source, 0usize, 3usize) == ascii && decoded_fingerprint(source, 1usize, 64usize) == 0usize && decoded_fingerprint(source, 86usize, 64usize) == 0usize;
+    let entry = fingerprint_entry(46usize, nul);
+    let packed = entry_opening(entry) == 46usize && entry_fingerprint(entry) == nul;
+    let matches = !fingerprint_match(source, fingerprint_entry(0usize, ascii), 5usize, ascii) && fingerprint_match(source, fingerprint_entry(0usize, ascii), 10usize, ascii) && !fingerprint_match(source, fingerprint_entry(0usize, ascii), 10usize, ascii + 1usize) && !fingerprint_match(source, fingerprint_entry(20usize, wide), 26usize, wide) && fingerprint_match(source, fingerprint_entry(20usize, wide), 32usize, wide) && !fingerprint_match(source, entry, 56usize, nul) && fingerprint_match(source, fingerprint_entry(66usize, emoji), 80usize, emoji);
+    bytes && values && bounds && packed && matches
+}
+
 @id("std.data.json.dec.tests.main")
 fn main() -> i64
 {
-    if primitives() && hex() && escapes() && surrogates() && lone_surrogate() && encoding() && conversion() && tokens() && lengths() && emission_dispatch() && buffer() && buffer_unicode() && token_equality() { 0 } else { 1 }
+    if primitives() && hex() && escapes() && surrogates() && lone_surrogate() && encoding() && conversion() && tokens() && lengths() && emission_dispatch() && buffer() && buffer_unicode() && token_equality() && fingerprints() { 0 } else { 1 }
 }

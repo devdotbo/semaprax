@@ -115,6 +115,45 @@ still Missing here; that object walk lives in `std.data.json.doc`, which
 compares member name spans byte for byte and does not yet consult decoded
 values either.
 
+## Decoded-key fingerprints
+
+Additive scalar helpers let a caller index decoded keys without an owned map:
+
+```text
+std.data.json.dec.decoded_byte_at(input, index, part) -> usize
+std.data.json.dec.decoded_fingerprint(input, start, limit) -> usize
+std.data.json.dec.fingerprint_entry(opening, fingerprint) -> usize
+std.data.json.dec.entry_opening(entry) -> usize
+std.data.json.dec.entry_fingerprint(entry) -> usize
+std.data.json.dec.fingerprint_match(input, entry, current, fingerprint) -> bool
+```
+
+`decoded_byte_at` returns the canonical decoded byte at one pull cursor, or
+`256` when that cursor emits none. An admitted raw byte is its own value; an
+escape uses `emit_at`.
+
+`decoded_fingerprint` requires `1 <= limit <= 256`. It walks the token at
+`start` once through `emit_len`, `decoded_byte_at` and `token_end`, folding each
+decoded byte `b` as `hash = (hash * 257 + b) % 65521`. A complete string with
+`1..=limit` decoded bytes returns `length * 65536 + hash`, below `16842752`.
+Any other token, including an empty string, malformed escape, unterminated
+token, or a token whose decoded size exceeds `limit`, returns `0`. The walk
+stops at the first decoded byte past `limit`, so its work is bounded by `limit`
+rather than by the token's source span. Escaped, surrogate-pair and raw
+spellings of the same bytes produce the same fingerprint.
+
+`fingerprint_entry` packs an opening offset of at most 131,072 and a
+fingerprint into one Copy `usize`; `entry_opening` and `entry_fingerprint`
+recover them. `fingerprint_match` returns `false` when the stored fingerprint
+differs from `fingerprint`. Otherwise it returns `decoded_token_eq(input,
+entry_opening(entry), current)`.
+
+A fingerprint is a rejection filter only, never equality authority. Every equal
+fingerprint, including every hash collision, is decided by exact decoded-byte
+comparison. Callers keep their own input order, first-match selection and
+error precedence. The helpers allocate nothing, add no compiler operation, and
+grant no capability.
+
 ## `quoted_into`
 
 `std.data.json.write.quoted_into` emits a quoted JSON string for every byte in

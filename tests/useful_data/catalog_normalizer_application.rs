@@ -943,6 +943,9 @@ fn assert_batch_backend_matrix(root: &Path) {
                 "catalog-normalizer application disagreed with the oracle for {name}"
             );
         }
+        // Deliberate fingerprint collisions, escaped/raw equivalence, 64/65,
+        // 256 rows and first-error order run in this same snapshot.
+        decoded_index::assert_decoded_index_cases(snapshot.test_program())?;
         let denied_input = b"{\"id\":\"widget-1\",\"label\":\"l\",\"quantity\":1}\n{\"id\":\"blocked-vendor\",\"label\":\"l\",\"quantity\":1}\n{\"id\":\"later\",\"label\":\"l\",\"quantity\":1}\n";
         let denied_expected = run_oracle_with(denied_input, true);
         let denied_response: serde_json::Value =
@@ -1085,3 +1088,6 @@ fn assert_batch_backend_matrix(root: &Path) {
 
 #[path = "catalog_normalizer_application/ndjson.rs"]
 mod ndjson;
+
+#[path = "catalog_normalizer_application/decoded_index.rs"]
+mod decoded_index;
