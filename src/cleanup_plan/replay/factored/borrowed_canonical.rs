@@ -45,12 +45,12 @@ impl<'a> BorrowedCanonicalizer<'a> {
             }
             let state = &self.automaton.nodes[node];
             if !expanded {
-                budget.reserve_vec(function, &mut stack, 1, "factored closure cursors")?;
+                grow(function, budget, &mut stack, 1, "factored closure cursors")?;
                 stack.push((node, true));
                 for target in &state.epsilon {
                     budget.charge(function, 1, "borrowed closure actual epsilon child")?;
                     if !self.closures.contains(function, target, budget)? {
-                        budget.reserve_vec(function, &mut stack, 1, "factored closure cursors")?;
+                        grow(function, budget, &mut stack, 1, "factored closure cursors")?;
                         stack.push((*target, false));
                     }
                 }
@@ -210,8 +210,9 @@ impl<'a> BorrowedCanonicalizer<'a> {
                         return Ok(None);
                     };
                     let child_count = successors.len();
-                    budget.reserve_vec(
+                    grow(
                         function,
+                        budget,
                         &mut frames,
                         1,
                         "factored canonical exit frame",
@@ -223,8 +224,9 @@ impl<'a> BorrowedCanonicalizer<'a> {
                             unreachable!("canonical exit retained below child frames");
                         };
                         let child = clone_weighted(function, budget, &successors[index].1)?;
-                        budget.reserve_vec(
+                        grow(
                             function,
+                            budget,
                             &mut frames,
                             1,
                             "factored canonical child frames",
@@ -291,3 +293,24 @@ fn clone_weighted(
 
 #[cfg(test)]
 mod tests;
+
+fn grow<T>(
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+    values: &mut Vec<T>,
+    additional: usize,
+    phase: &str,
+) -> Result<(), Diagnostic> {
+    let required = values
+        .len()
+        .checked_add(additional)
+        .ok_or_else(|| replay_error(function, "borrowed canonical cursor length overflowed"))?;
+    if required > values.capacity() {
+        budget.charge(
+            function,
+            values.len(),
+            "borrowed canonical actual cursor relocation",
+        )?;
+    }
+    budget.reserve_vec(function, values, additional, phase)
+}

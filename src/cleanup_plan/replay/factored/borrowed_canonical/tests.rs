@@ -105,7 +105,7 @@ fn ordinary_order_and_full_duplicate_multisets_match_with_one_budget_through_dro
     // and a different terminal exercise weighted closure and label identity.
     let mut automaton = Automaton::default();
     let mut build = ReplayBudget::new();
-    for _ in 0..7 {
+    for _ in 0..11 {
         automaton.node(function, &mut build).unwrap();
     }
     automaton
@@ -139,6 +139,11 @@ fn ordinary_order_and_full_duplicate_multisets_match_with_one_budget_through_dro
     automaton
         .movement(function, &mut build, 5, labels[0].clone(), 6)
         .unwrap();
+    // Cached shared epsilon closures, duplicate epsilon edges and a diamond
+    // all preserve the full duplicate multiset independently of node identity.
+    for (from, to) in [(7, 2), (7, 2), (8, 3), (8, 3), (9, 2), (9, 3), (10, 2)] {
+        automaton.epsilon(function, &mut build, from, to).unwrap();
+    }
     fn enumerate(automaton: &Automaton, node: usize, sink: usize) -> Vec<Vec<Label>> {
         if node == sink {
             return vec![Vec::new()];
@@ -156,20 +161,20 @@ fn ordinary_order_and_full_duplicate_multisets_match_with_one_budget_through_dro
         result.sort();
         result
     }
-    let multisets: Vec<_> = (2..6).map(|root| enumerate(&automaton, root, 0)).collect();
+    let multisets: Vec<_> = (2..11).map(|root| enumerate(&automaton, root, 0)).collect();
     assert_eq!(multisets[0].len(), 2);
     assert_eq!(multisets[2].len(), 1);
     let mut old = Canonicalizer::new(&automaton, 0);
     let mut budget = ReplayBudget::new();
-    let old_ids: Vec<_> = (2..6)
+    let old_ids: Vec<_> = (2..11)
         .map(|root| {
             old.id(function, vec![(root, 1)], &mut budget)
                 .unwrap()
                 .unwrap()
         })
         .collect();
-    for a in 0..4 {
-        for b in 0..4 {
+    for a in 0..9 {
+        for b in 0..9 {
             assert_eq!(old_ids[a] == old_ids[b], multisets[a] == multisets[b]);
         }
     }
@@ -177,7 +182,7 @@ fn ordinary_order_and_full_duplicate_multisets_match_with_one_budget_through_dro
     let mut overflow =
         BorrowedCanonicalizer::new(function, &automaton, 0, &mut overflow_budget).unwrap();
     assert!(overflow
-        .id(function, vec![(2, u64::MAX)], &mut overflow_budget)
+        .id(function, vec![(7, u64::MAX)], &mut overflow_budget)
         .unwrap()
         .is_none());
     assert!(overflow_budget.remaining < MAX_REPLAY_WORK_UNITS);
@@ -197,8 +202,8 @@ fn ordinary_order_and_full_duplicate_multisets_match_with_one_budget_through_dro
             for _ in 0..2 {
                 let mut canonical = BorrowedCanonicalizer::new(function, automaton, 0, &mut budget)
                     .map_err(|_| ())?;
-                let mut ids = [0; 4];
-                for root in 2..6 {
+                let mut ids = [0; 9];
+                for root in 2..11 {
                     budget
                         .reserve_array::<(usize, u64)>(function, 1, "test borrowed weighted root")
                         .map_err(|_| ())?;
@@ -210,6 +215,9 @@ fn ordinary_order_and_full_duplicate_multisets_match_with_one_budget_through_dro
                 assert_eq!(ids[0], ids[1]);
                 assert_ne!(ids[0], ids[2]);
                 assert_ne!(ids[0], ids[3]);
+                assert_eq!(ids[5], ids[6]);
+                assert_eq!(ids[5], ids[7]);
+                assert_ne!(ids[5], ids[8]);
                 drop(canonical);
             }
             let used = (
