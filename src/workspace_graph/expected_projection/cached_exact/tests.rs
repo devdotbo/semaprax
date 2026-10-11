@@ -192,6 +192,22 @@ fn fixed_upper_omits_absent_storage_per_retained_copy_and_rejects_malformed_cens
             upper - 7 * footprint + copies * (7 * bundle - 3 * storage - 2 * carriers)
         );
     }
+    // The other two raw expressions as free `if` roots: each copy omits two
+    // more carrier sets but no storage. A hostile runtime count is ignored.
+    raw.exact_carrier_free_ifs = 2;
+    runtime.exact_carrier_free_ifs = usize::MAX;
+    for (retention, copies) in [(Retention::Parsed, 1), (Retention::Semantic, 2)] {
+        assert_eq!(
+            super::fixed_upper(upper, &raw, &runtime, retention).unwrap(),
+            upper - 7 * footprint + copies * (7 * bundle - 3 * storage - 4 * carriers)
+        );
+    }
+    // Three `if` roots beside three storage roots exceed five expressions.
+    raw.exact_carrier_free_ifs = 3;
+    for retention in [Retention::Parsed, Retention::Semantic] {
+        assert!(super::fixed_upper(upper, &raw, &runtime, retention).is_err());
+    }
+    raw.exact_carrier_free_ifs = 0;
     raw.exact_carrier_free_roots = 4;
     for retention in [Retention::Parsed, Retention::Semantic] {
         assert!(super::fixed_upper(upper, &raw, &runtime, retention).is_err());

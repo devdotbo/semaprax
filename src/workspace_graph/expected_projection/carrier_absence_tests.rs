@@ -22,6 +22,8 @@ fn carriers() -> usize {
 struct Census {
     kinds: [usize; 3],
     free: usize,
+    /// Free `if` roots: carrier-free, but never storage-free.
+    ifs: usize,
 }
 
 fn ast_kind(kind: &ExprKind) -> Option<usize> {
@@ -46,6 +48,9 @@ fn ast_census(expression: &Expr, free: bool, census: &mut Census) {
     if let Some(kind) = ast_kind(&expression.kind) {
         census.kinds[kind] += 1;
         census.free += usize::from(free);
+    }
+    if matches!(expression.kind, ExprKind::If { .. }) {
+        census.ifs += usize::from(free);
     }
     let free_children: Vec<&Expr> = match &expression.kind {
         ExprKind::Unary { value, .. } => vec![value],
@@ -91,6 +96,9 @@ fn hir_census(expression: &ResolvedExpr, free: bool, census: &mut Census) -> usi
     if let Some(kind) = hir_kind(&expression.kind) {
         census.kinds[kind] += 1;
         census.free += usize::from(free);
+    }
+    if matches!(expression.kind, ResolvedExprKind::If { .. }) {
+        census.ifs += usize::from(free);
     }
     match &expression.kind {
         ResolvedExprKind::Unary { value, .. } => hir_census(value, true, census),
@@ -157,23 +165,27 @@ fn raw_ast_resolved_and_cost_censuses_agree_on_every_carrier_free_root() {
         ast_census(&function.body, false, &mut ast);
     }
     // Hand count: 14 literals, 2 unary, 13 binary; `1 + 2`, `total * 3` and
-    // the `let flag` conjunction are the only delegated censused roots.
+    // the `let flag` conjunction are the only delegated censused roots. The
+    // tail `if` is the one free `if` root.
     assert_eq!(
         ast,
         Census {
             kinds: [14, 2, 13],
-            free: 26
+            free: 26,
+            ifs: 1,
         }
     );
     let cost = cost_census(&parsed);
     assert_eq!(cost.exact_absent_roots, ast.kinds);
     assert_eq!(cost.exact_carrier_free_roots, ast.free);
+    assert_eq!(cost.exact_carrier_free_ifs, ast.ifs);
     // Legacy and runtime accumulators never count.
     let mut legacy = StructuralCost::new();
     for function in &parsed.functions {
         super::super::declaration_cost::ast_function_cost(function, &mut legacy).unwrap();
     }
     assert_eq!(legacy.exact_carrier_free_roots, 0);
+    assert_eq!(legacy.exact_carrier_free_ifs, 0);
 
     let checked = crate::check(GATE, "gate.spx").unwrap();
     let resolved = crate::hir::resolve(&checked).unwrap();
@@ -194,7 +206,12 @@ fn raw_ast_resolved_and_cost_censuses_agree_on_every_carrier_free_root() {
     // Exactly the three authored statements (two with bindings) exist, all
     // paid by delegated bundles that this change leaves complete.
     assert_eq!(built, 3 + 3);
-    assert!(built <= cost.exact_expressions - cost.exact_carrier_free_roots);
+    assert!(
+        built
+            <= cost.exact_expressions
+                - cost.exact_carrier_free_roots
+                - cost.exact_carrier_free_ifs
+    );
 }
 
 #[test]
@@ -207,6 +224,7 @@ fn delegated_parents_keep_complete_bundles_and_guards_are_charged() {
         let cost = cost_census(&program);
         assert_eq!(cost.exact_absent_roots, oracle.kinds, "{body}");
         assert_eq!(cost.exact_carrier_free_roots, oracle.free, "{body}");
+        assert_eq!(cost.exact_carrier_free_ifs, oracle.ifs, "{body}");
         (oracle, cost)
     };
     // Arm values and guards embed or box under a `ResolvedMatchArm`; the
@@ -235,23 +253,34 @@ fn delegated_parents_keep_complete_bundles_and_guards_are_charged() {
 }
 
 /// Same node multiset, strings, identities and calls; only the position of
-/// the `n` literals differs (let values versus call arguments).
-fn pair(n: usize, free: bool) -> Vec<Program> {
-    vec![crate::parse(&pair_source(n, free), std::path::Path::new("pair.spx")).unwrap()]
+/// the `n` moved roots differs (let values versus call arguments).
+fn pair(n: usize, free: bool, moved: fn(usize) -> String) -> Vec<Program> {
+    vec![crate::parse(&pair_source(n, free, moved), std::path::Path::new("pair.spx")).unwrap()]
 }
 
-fn pair_source(n: usize, free: bool) -> String {
+/// A moved literal root: carrier- and storage-free as an argument.
+fn literal(index: usize) -> String {
+    index.to_string()
+}
+
+/// A moved `if` root: carrier-free as an argument, never storage-free. Its
+/// condition and branch-tail literals are free in both positions.
+fn branch(index: usize) -> String {
+    format!("if true {{ {index} }} else {{ 0 }}")
+}
+
+fn pair_source(n: usize, free: bool, moved: fn(usize) -> String) -> String {
     let params = (0..n)
         .map(|index| format!("a{index}: i64"))
         .collect::<Vec<_>>()
         .join(", ");
     let mut body = String::new();
     for index in 0..n {
-        let value = if free { "f()".to_owned() } else { index.to_string() };
+        let value = if free { "f()".to_owned() } else { moved(index) };
         body.push_str(&format!("let v{index} = {value}; "));
     }
     let args = (0..n)
-        .map(|index| if free { index.to_string() } else { "f()".to_owned() })
+        .map(|index| if free { moved(index) } else { "f()".to_owned() })
         .collect::<Vec<_>>()
         .join(", ");
     format!(
@@ -277,11 +306,25 @@ impl Drop for LimitRestore {
 
 #[test]
 fn complete_forecast_differs_from_position_blind_formula_by_exact_carriers() {
+    for moved in [literal as fn(usize) -> String, branch] {
+        moved_roots_differ_by_exact_carriers(moved);
+    }
+}
+
+fn moved_roots_differ_by_exact_carriers(moved: fn(usize) -> String) {
     const N: usize = 12;
-    let (free, delegated) = (pair(N, true), pair(N, false));
-    let mut census = Census::default();
+    let (free, delegated) = (pair(N, true, moved), pair(N, false, moved));
+    let (mut census, mut twin) = (Census::default(), Census::default());
     ast_census(&free[0].functions[2].body, false, &mut census);
-    assert_eq!(census.free, N);
+    ast_census(&delegated[0].functions[2].body, false, &mut twin);
+    // Exactly N roots change position: N literals, or N `if` roots whose
+    // own literals are free in both twins.
+    assert_eq!(census.kinds, twin.kinds);
+    assert_eq!(
+        (census.free + census.ifs) - (twin.free + twin.ifs),
+        N,
+        "{census:?} {twin:?}"
+    );
     // The old formula is position-blind: every earlier mode is identical.
     for mode in 0..5 {
         assert_eq!(retained(&free, mode), retained(&delegated, mode), "mode {mode}");
@@ -331,7 +374,8 @@ fn complete_forecast_differs_from_position_blind_formula_by_exact_carriers() {
 fn resolver_and_replay_highwater_stays_within_the_reduced_forecast() {
     for (source, path) in [
         (GATE.to_owned(), "gate.spx"),
-        (pair_source(12, true), "pair.spx"),
+        (pair_source(12, true, literal), "pair.spx"),
+        (pair_source(12, true, branch), "branch.spx"),
     ] {
         let parsed = vec![crate::parse(&source, std::path::Path::new(path)).unwrap()];
         let census = cost_census(&parsed[0]);

@@ -110,7 +110,8 @@ pub(super) fn ast_type_cost(ty: &Type, cost: &mut StructuralCost) -> Result<(), 
 /// for a `Box` slot of a unary, binary, `if` or block-tail node, or an element
 /// of a free-function call's argument list (every intrinsic route only moves
 /// or boxes its arguments): no binding, statement, field initializer, arm or
-/// pattern field is constructed for it there. Every other child, and every
+/// pattern field is constructed for it there. Only literal/unary/binary and
+/// `if` roots in such a slot are censused. Every other child, and every
 /// root reached through `ast_expr_cost`, is `Delegated` and keeps its complete
 /// bundle.
 #[derive(Clone, Copy, Eq, PartialEq)]
