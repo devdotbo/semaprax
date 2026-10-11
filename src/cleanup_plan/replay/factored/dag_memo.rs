@@ -35,6 +35,10 @@ pub(super) fn new(
         Ok(BTreeMap::new())
     }
 }
+#[cfg(test)]
+pub(super) fn test_borrowed() -> Memo {
+    Memo::Borrowed(ordinal::Ordinals::new())
+}
 pub(super) struct Key {
     pointer: usize,
     continuation: usize,
