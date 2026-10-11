@@ -191,11 +191,7 @@ fn grow<T>(values: &mut Vec<T>) -> Result<(), Vec<Diagnostic>> {
     if values.len() < values.capacity() {
         return Ok(());
     }
-    let capacity = values
-        .capacity()
-        .checked_mul(2)
-        .unwrap_or(usize::MAX)
-        .max(4);
+    let capacity = values.capacity().saturating_mul(2).max(4);
     let bytes = capacity
         .checked_mul(std::mem::size_of::<T>())
         .ok_or_else(fail)?;

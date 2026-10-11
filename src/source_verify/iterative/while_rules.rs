@@ -2,8 +2,8 @@
 //! rejection of expression forms that are not yet admitted inside a loop.
 
 use crate::ast::{Expr, ExprKind, ParamMode, Statement, Type};
-use crate::source_verify::diagnostics::error;
 use crate::source_verify::IterativeVerifier;
+use crate::source_verify::diagnostics::error;
 
 impl<'a, 'p> IterativeVerifier<'a, 'p> {
     pub(super) fn reject_for_body_disallowed(
@@ -355,9 +355,16 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     }
                     if let Some(operation) = vec_operation {
                         if !operation.admitted_in_while()
-                            || type_arguments.len() != 1
+                            || (if operation == crate::vec_ops::VecOp::StrAt {
+                                !crate::source_verify::string_slot::while_shape(
+                                    type_arguments,
+                                    args,
+                                )
+                            } else {
+                                type_arguments.len() != 1
                             || !(crate::vec_ops::ast_element_is_admitted(&type_arguments[0])
                                 || crate::source_verify::declared_type::copy_record_collection::source_admitted(self.program, &type_arguments[0]) || crate::source_verify::declared_type::owned_leaf_collection::source_admitted(self.program, &type_arguments[0]))
+                            })
                             || args.len() != operation.arity()
                         {
                             self.diagnostics.push(error(

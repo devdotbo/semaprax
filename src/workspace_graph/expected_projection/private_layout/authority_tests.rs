@@ -1,4 +1,4 @@
-use super::*;
+use super::{Diagnostic, PrivateTypes, Program};
 use crate::workspace_graph::{
     expected_projection::synthetic_program,
     index_authored, reconstruct_workspace_declaration_facts,

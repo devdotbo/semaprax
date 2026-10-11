@@ -1,5 +1,7 @@
 # Changelog
 
+- Repair independent terminal-expression cleanup classification, exact borrowed String-slot result replay and matched loop admission. Preserve nested type refusals, cached-HIR hostile controls and existing lifetime boundaries. Replace audited projection wildcards, compact CLI prose within its unchanged budget and use saturating growth arithmetic. Grouped executable qualification remains pending.
+
 - Advance ASCII once in ordinary UTF-8 scans and reuse checked quoted lengths in generated UTF-8 sizing. Preserve fallback, earliest faults, invalid short circuits and all limits; frozen original/backend differential definitions await grouped qualification.
 
 - Keep generated UTF-8 validator identities while sharing bounded scalar byte

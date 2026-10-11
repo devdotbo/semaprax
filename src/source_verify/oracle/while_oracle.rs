@@ -199,7 +199,15 @@ pub(in crate::source_verify) fn reject_with_scratch(
         // Owned String Loops v1: a literal allocates one owned String in the
         // per-iteration body region.
         ExprKind::String(_) => Ok(()),
-        ExprKind::BorrowedUtf8Literal(text) => match crate::source_verify::static_text::checked(program, expression.span, text) { Ok(_) => Ok(()), Err(error) => { diagnostics.push(error); Err(()) } },
+        ExprKind::BorrowedUtf8Literal(text) => {
+            match crate::source_verify::static_text::checked(program, expression.span, text) {
+                Ok(_) => Ok(()),
+                Err(error) => {
+                    diagnostics.push(error);
+                    Err(())
+                }
+            }
+        }
         ExprKind::Unary { value, .. } => {
             reject_with_scratch(program, value, functions, types, diagnostics, scratch)
         }
@@ -265,9 +273,13 @@ pub(in crate::source_verify) fn reject_with_scratch(
             }
             if let Some(operation) = vec_operation {
                 if !operation.admitted_in_while()
-                    || type_arguments.len() != 1
+                    || (if operation == crate::vec_ops::VecOp::StrAt {
+                        !crate::source_verify::string_slot::while_shape(type_arguments, args)
+                    } else {
+                        type_arguments.len() != 1
                     || !(crate::vec_ops::ast_element_is_admitted(&type_arguments[0])
                                 || crate::source_verify::declared_type::copy_record_collection::source_admitted(program, &type_arguments[0]) || crate::source_verify::declared_type::owned_leaf_collection::source_admitted(program, &type_arguments[0]))
+                    })
                     || args.len() != operation.arity()
                 {
                     diagnostics.push(error(

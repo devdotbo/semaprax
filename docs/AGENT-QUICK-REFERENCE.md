@@ -737,26 +737,24 @@ temporaries before either Boolean outcome; consuming the enclosing owner is
 
 ## Command-line programs
 
-CLI permits: `fs.read`, `process.args.read`, or `process.stderr.write`;
-optional `process.stdout.write`. `semaprax run lines.spx -- data.txt` supplies
-`arg_utf8`; add `--native` for native. `main`: `0..=255`, then output.
-`file_read_text` stays below cwd; checked failure: one stderr line, exit 1.
+Permits: `fs.read`, `process.args.read`, `process.stderr.write`; optional
+`process.stdout.write`. `run lines.spx -- data.txt` supplies `arg_utf8`;
+`--native`: native. `main`: `0..=255`, then output. `file_read_text`
+stays below cwd; failure: one stderr line, exit 1.
 [Text Toolkit][toolkit].
 
 `SPX-T269`: direct writes stay outside loops and within profile capacity:
-65,536 combined stdout/stderr bytes by default; 1 MiB staged appends in v28.
+Default stdout/stderr: 65,536 combined bytes; v28: 1 MiB staged appends.
 [Transcript rules][transcript],
 [Project v7][v7].
 
-Source-library CLI tables: `source-command.v1`, empty web exports, exact
+Source-library CLI: `source-command.v1`, empty web exports, exact
 `[command]` main ID, `argv-utf8+file-text.v1`, sorted capabilities, `native64`.
-Web/Wasm/npm refuse; Project interpretation lacks argv/files. Authenticated
-tests: `semaprax test --target native`. [V26][v26],
+Web/Wasm/npm refuse; Project interpretation lacks argv/files. Tests: `semaprax test --target native`. [V26][v26],
 [Tests][native-tests]. V28 `source-command.resource-output.v1`
-keeps file quotas; Strings, authenticated text borrows and combined staged
-output admit 1 MiB. [V28][v28].
+keeps file quotas; Strings/authenticated text borrows/combined staged output: 1 MiB. [V28][v28].
 
-Dependency starter and library card:
+Starter and library card:
 
 ```sh
 semaprax new decimal-command --template source-command-file-text
@@ -767,37 +765,37 @@ semaprax build --manifest-path semaprax.toml --target native --output app
 ./app digits
 ```
 
-It pins `std.int.decimal = "=0.1.0"`; import `canonicalize`, `add`, and `divide`
-by IDs from `semaprax help library std.int.decimal`.
+Pins `std.int.decimal = "=0.1.0"`; import `canonicalize`, `add`, `divide`
+by IDs from its library card.
 
 ASCII patterns: `[dependencies]` `std.pattern = "^0.1.0"`, `owned-data-api.v1`;
 import `std.pattern.matcher`/functions by ID. `semaprax help library std.pattern`
-gives imports/escapes/renewal. Allocate one `Matcher`; `compile` before
-observers; pass returned owner to `full-match` on independent named inputs.
-Check `result-valid` before packets; captures are input byte offsets. Bounded
-patterns/inputs may refuse ambiguous searches at the work limit; no general
-regex/Unicode. Sorted optional `std/packages.json` `api` selects catalogue and
-direct-import conformance only, preserving source visibility/verification.
+gives imports/escapes/renewal. One `Matcher`: `compile` before observers;
+pass its returned owner to `full-match` on independent named inputs.
+Check `result-valid` before packets; captures are input byte offsets.
+Bounded ambiguous searches may refuse at the work limit; no general regex/Unicode.
+Sorted optional `std/packages.json` `api`: catalogue/direct-import
+conformance only; source visibility/verification still required.
 
-Build `lines.spx` to fresh native `--output` without `--profile`:
+Build `lines.spx`: fresh native `--output`, no `--profile`:
 `text-toolkit-v1`/`internal-strings-v1` are Wasm/web exports. `SPX-I307` needs
-a fresh output or removal of a confirmed own artifact; builds never overwrite.
+fresh output or removing a confirmed own artifact; no overwrites.
 
 V23: `argv-utf8+stdin-stream.v1`, `language-command-io.stream.v1`; native reuses
 4096 bytes; `stdin_read()` stays snapshot. Open prefills; zero=EOF, short reads=chunks.
-Open/Next need `process.stdin.read`; Eof/Chunk purely inspect named readers.
-Open once/path, outside loops. Readers: no constructor/generic/aggregate/public
+Open/Next: `process.stdin.read`; Eof/Chunk: pure named-reader inspection.
+Open once/path outside loops. Readers: no constructor/generic/aggregate/public
 ABI escape. End chunk borrows before Next (`SPX-T265`); exact acyclic
 `own StdinReader -> StdinReader` helpers renew. [Stream][stream].
 
 Native v27 starter: `semaprax new <dir> --template stdin-stream-data`.
 
-Exit codes: `semaprax help language specifications`.
+Exit codes: `help language specifications`.
 
-Pure single-file `run`: `semaprax.interpret.v1`, then internal Strings for owned
-`string` parameters/results (`SPX-F102`). Both refuse: ordinary diagnostic.
-Retry JSON `schema`: `semaprax.interpret.internal-strings.v1`. Permit-selected
-command/stdout skip fallback. [Strings][internal-strings].
+Single-file `run`: `semaprax.interpret.v1`, then internal Strings for owned
+`string` parameters/results (`SPX-F102`); if both refuse, ordinary diagnostic.
+JSON `schema`: `semaprax.interpret.internal-strings.v1`. Permit-selected
+command/stdout: no fallback. [Strings][internal-strings].
 
 ```semaprax
 module app.lines;
@@ -852,10 +850,9 @@ fn main() -> i64
 ```
 
 `nums.txt` lines `4`, ` 5 `, `x`, `10`: `lines: 4`, `sum: 19`, exit 0;
-no args: stderr usage, exit 2. Bind `arg_utf8(i)` before forwarding; copy via
-`string_from_str` for flags. Direct `string_to_i64` match: loop cases
-`Option::Some { value }`/`Option::None {}`. Multiple `if`s, `&&`/`||`, `match`es
-work. Byte offsets: `string_byte_at(s, i) == 32` checks space allocation-free.
+no args: stderr usage, exit 2. Bind `arg_utf8(i)` before forwarding; copy with
+`string_from_str` for flags. Loop `string_to_i64` cases:
+`Option::Some { value }`/`Option::None {}`. Loops admit multiple `if`s, `&&`/`||`, `match`es. Bytes: `string_byte_at(s, i) == 32` checks space allocation-free.
 
 ## String-keyed maps
 
@@ -1349,8 +1346,9 @@ borrowed text/staged output: [limits](PROJECT-MANIFEST-V28.md).
 language-command-io.stream-data.v1; private immutable borrow Vec<T> for all eight
 Copy scalars; main/command fn() -> i64.
 Web/Wasm/npm refuse the native command runtime; pure main/test closures may
-interpret without authority/stdin provider/command adapter. stdin-stream-text
-stays v25 for owned-String helpers; v24/v25 helper boundaries stay closed.
+interpret without authority/stdin provider/command adapter.
+`stdin-stream-text` stays v25
+for private owned-String helpers. V24/v25 helper boundaries stay closed.
 [V27](STREAM-DATA-COMMAND-V1.md).
 
 V29: private Copy records/Vec<R>; v30 language-command-io.owned-data.v1:

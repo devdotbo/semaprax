@@ -1,4 +1,4 @@
-use super::*;
+use super::{Absence, LayoutClosure, Program, Type, TypeDeclarationKind, WORK, shape};
 use crate::workspace_graph::{build_owned, index_authored, WorkspaceSource};
 const PROVIDER: &str = r#"module closure.provider;
 @id("config") record Config { @id("config.label") label:string, }

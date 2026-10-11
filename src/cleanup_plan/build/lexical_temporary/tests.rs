@@ -190,6 +190,13 @@ fn terminal_owned_record_arm_has_no_second_normal_scope_terminator() {
     crate::hir::validate(&program).unwrap();
     let function = inspect(&program);
     assert!(function.cleanup_plan.lexical_control.is_some());
+    assert!(
+        function
+            .cleanup_plan
+            .slots
+            .iter()
+            .all(|slot| slot.ty != ResolvedType::Never)
+    );
     let returns: Vec<_> = function
         .cleanup_plan
         .exits

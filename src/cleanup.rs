@@ -389,6 +389,10 @@ pub(crate) fn type_needs_resource_cleanup(
     program: &dyn crate::cleanup::ReplayContext,
     ty: &ResolvedType,
 ) -> Result<bool, String> {
+    // A terminal expression has no storage. Nested types still require facts.
+    if *ty == ResolvedType::Never {
+        return Ok(false);
+    }
     let mut pending = vec![ty.clone()];
     let mut visited = BTreeSet::new();
     while let Some(ty) = pending.pop() {

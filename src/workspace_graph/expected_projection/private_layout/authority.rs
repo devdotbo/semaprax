@@ -1,5 +1,9 @@
 //! Current-source private type authority, independent of synthetic aliases.
-use super::*;
+use super::{
+    Absence, AuthoredDeclaration, BTreeMap, DEPTH, Diagnostic, Frame, ModuleUseKind, Program, WORK,
+    debit, explicit_only, graph_error, private_without_work, refusal, reserve_builder_structure,
+    visit,
+};
 use std::cell::Cell;
 
 pub(in crate::workspace_graph) struct PrivateTypes<'a> {

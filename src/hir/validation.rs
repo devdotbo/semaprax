@@ -3368,8 +3368,15 @@ impl<'a> HirValidator<'a> {
                             } else {
                                 intrinsic_parameters.unwrap_or(CallParameters::Owned(params))
                             };
-                            let return_ownership =
-                                self.expected_ownership(&return_type, OwnershipMode::Own)?;
+                            let return_ownership = if matches!(
+                                callee.as_str(),
+                                crate::vec_ops::string_slot::ID
+                                    | crate::vec_ops::string_slot::BYTES_ID
+                            ) {
+                                OwnershipMode::Borrow
+                            } else {
+                                self.expected_ownership(&return_type, OwnershipMode::Own)?
+                            };
                             frames.push(Frame::CallNext {
                                 expression,
                                 args,
@@ -6678,7 +6685,9 @@ impl<'a> HirValidator<'a> {
                         self.mark_value_sources_moved(argument, scope)?;
                     }
                 }
-                let ownership = self.expected_ownership(&return_type, OwnershipMode::Own)?;
+                let ownership = if matches!(callee.as_str(), crate::vec_ops::string_slot::ID | crate::vec_ops::string_slot::BYTES_ID) {
+                    OwnershipMode::Borrow
+                } else { self.expected_ownership(&return_type, OwnershipMode::Own)? };
                 (return_type, ownership)
             }
             ResolvedExprKind::HostCommandCall(call) => {

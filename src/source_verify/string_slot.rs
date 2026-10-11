@@ -2,6 +2,10 @@
 use super::binding::{Availability, Binding};
 use crate::ast::{Expr, ExprKind, ParamMode, Type};
 use std::collections::HashMap;
+// Shape-only loop admission; ordinary typing still authenticates the live owner.
+pub(super) fn while_shape(types: &[Type], args: &[Expr]) -> bool {
+    types.is_empty() && matches!(args, [source, _] if matches!(source.kind, ExprKind::Var(_)))
+}
 pub(super) fn root<'a>(
     types: &[Type],
     args: &[Expr],
