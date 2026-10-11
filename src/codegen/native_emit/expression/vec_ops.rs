@@ -12,7 +12,7 @@ use crate::codegen::native_bytes::NativeBytesProducer as _;
 use crate::diagnostic::Diagnostic;
 use crate::hir::{ResolvedExpr, ResolvedType};
 
-use super::super::{CEmitter, COutput, CValue, backend_error};
+use super::super::{backend_error, CEmitter, COutput, CValue};
 
 // `format!` resolves to the bounded codegen macro declared before
 // `mod native_emit`; it must never fall back to `std::format!` here.

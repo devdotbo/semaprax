@@ -499,3 +499,65 @@ fn owned_holders_keep_receipts_current_across_context_moves_and_exact_precharge(
     assert!(account.borrow().failed);
     drop(returned);
 }
+
+#[test]
+fn paired_reads_validate_both_loans_and_keep_foreign_refusal_sticky() {
+    let module = ModuleIdentity::new();
+    let mut issuer = Issuer::new();
+    let p = probe(2);
+    let (mut core, mut children) = Core::partition(
+        vec![1, 2, 3, 4].into_boxed_slice(),
+        2,
+        2,
+        &mut issuer,
+        &module,
+        p.clone(),
+    )
+    .ok()
+    .unwrap();
+    let mut left = core.borrow(&children[0], 0..2).unwrap();
+    let mut right = core.borrow(&children[1], 0..2).unwrap();
+    assert_eq!(
+        core.read_pair(&left, &right, |a, b| [a[0], a[1], b[0], b[1]])
+            .unwrap(),
+        [1, 2, 3, 4]
+    );
+    assert_eq!(
+        core.read_pair(&right, &left, |a, b| a.cmp(b)).unwrap(),
+        std::cmp::Ordering::Greater
+    );
+    let mut foreign_issuer = Issuer::new();
+    let (mut foreign, foreign_children) = Core::partition(
+        vec![9, 9].into_boxed_slice(),
+        1,
+        2,
+        &mut foreign_issuer,
+        &module,
+        probe(1),
+    )
+    .ok()
+    .unwrap();
+    let foreign_loan = foreign.borrow(&foreign_children[0], 0..2).unwrap();
+    let calls = std::cell::Cell::new(0);
+    assert_eq!(
+        core.read_pair(&left, &foreign_loan, |_, _| calls.set(calls.get() + 1)),
+        Err(Refusal::Identity)
+    );
+    assert_eq!(calls.get(), 0);
+    assert_eq!(core.failure(), Some(Refusal::Identity));
+    assert_eq!(
+        core.read_pair(&left, &right, |_, _| calls.set(calls.get() + 1)),
+        Err(Refusal::Identity)
+    );
+    assert_eq!(calls.get(), 0);
+    // Successful cleanup reports its own completion and retains selected failure.
+    core.end_borrow(&mut left).unwrap();
+    assert_eq!(core.failure(), Some(Refusal::Identity));
+    core.end_borrow(&mut right).unwrap();
+    assert_eq!(core.failure(), Some(Refusal::Identity));
+    for child in &mut children {
+        core.drop_owner(child).unwrap();
+        assert_eq!(core.failure(), Some(Refusal::Identity));
+    }
+    assert_eq!(p.0.borrow().releases, 1);
+}

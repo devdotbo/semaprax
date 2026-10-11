@@ -105,6 +105,29 @@ class Archives(unittest.TestCase):
         with self.assertRaises(ChannelError):
             release_archives(TAG, material()[0], "{")
 
+    def test_unknown_inventory_and_invalid_sizes_fail_closed(self):
+        for size in (None, True, 0, -1, "1"):
+            def bad(sums, manifest):
+                manifest["artifacts"][0]["size"] = size
+                return sums, manifest
+            with self.subTest(size=size), self.assertRaises(ChannelError):
+                release_archives(TAG, *material(mutate=bad))
+        for entry in (None, {"platform": []}, {"platform": "unknown-host"}):
+            def bad(sums, manifest):
+                manifest["artifacts"].append(entry)
+                return sums, manifest
+            with self.subTest(entry=entry), self.assertRaises(ChannelError):
+                release_archives(TAG, *material(mutate=bad))
+        sums, manifest = material()
+        with self.assertRaises(ChannelError):
+            release_archives(TAG, sums, manifest.replace('"schema":', '"schema":"other", "schema":'))
+        with self.assertRaises(ChannelError):
+            release_archives(TAG, sums + f"{'a'*64}  semaprax-{TAG}-unknown-host.tar.gz\n", manifest)
+
+    def test_target_inventory_is_the_release_owner(self):
+        reconcile = runpy.run_path(str(ROOT / "scripts/release-reconcile.py"))
+        self.assertEqual(MODULE["TARGETS"], dict(reconcile["ARCHIVE_TARGETS"]))
+
 
 class Homebrew(unittest.TestCase):
     def formula(self, targets=(MAC, WIN, LIN), **kwargs):

@@ -1,6 +1,6 @@
 # WinGet channel
 
-Status: tooling only. The channel is **pending** until
+Status: submitted and locally qualified; Microsoft moderation is pending. The channel is **pending** until
 [`../channels.json`](../channels.json) says `"winget": {"status": "published"}`;
 no document may advertise `winget install` before then
 (`scripts/release-reconcile.py` fails if one does). A local manifest or an open
@@ -23,10 +23,10 @@ native ARM64 support. It omits `Scope` because `winget validate` warns that scop
 ## Generate manifests for a release
 
 ```sh
-gh release download v0.8.0 -R wavect/semaprax -p SHA256SUMS -p release-manifest.json
-python3 scripts/channel-manifests.py winget --tag v0.8.0 \
+gh release download v0.9.0 -R wavect/semaprax -p SHA256SUMS -p release-manifest.json
+python3 scripts/channel-manifests.py winget --tag v0.9.0 \
   --sums SHA256SUMS --manifest release-manifest.json --out out
-# out/winget/manifests/w/Wavect/Semaprax/0.8.0/Wavect.Semaprax{,.installer,.locale.en-US}.yaml
+# out/winget/manifests/w/Wavect/Semaprax/0.9.0/Wavect.Semaprax{,.installer,.locale.en-US}.yaml
 ```
 
 The generator fails closed (writes nothing) when the Windows archive is missing
@@ -42,11 +42,11 @@ or any tag, version, name or digest disagrees between `SHA256SUMS` and
    directory into a `winget-pkgs` fork, and validate on Windows:
 
    ```powershell
-   winget validate --manifest .\manifests\w\Wavect\Semaprax\0.8.0
+   winget validate --manifest .\manifests\w\Wavect\Semaprax\0.9.0
    winget settings --enable LocalManifestFiles
-   winget install --manifest .\manifests\w\Wavect\Semaprax\0.8.0
+   winget install --manifest .\manifests\w\Wavect\Semaprax\0.9.0
    semaprax --version; semapraxd --help
-   winget uninstall --id Wavect.Semaprax --exact
+   winget uninstall --manifest .\manifests\w\Wavect\Semaprax\0.9.0
    ```
 
    Run the beginner journey (`new`, `check`, `test`, `run` printing `42`) from a
@@ -62,6 +62,16 @@ or any tag, version, name or digest disagrees between `SHA256SUMS` and
    to the install guide. A rejected or delayed submission leaves the guide on
    the manual/PowerShell route.
 
-Not yet verified: `winget validate`, local installation, aliases, upgrade and
-uninstall. They need a Windows host or Windows Sandbox; none was available while
-this tooling was written.
+The v0.8.0 local-manifest journey passed on Windows 2025 in
+[run 37454638162](https://github.com/wavect/semaprax/actions/runs/37454638162):
+validation, both aliases, starter result 42, daemon handshake, paths with spaces
+and uninstall. The [submission](https://github.com/microsoft/winget-pkgs/pull/447495)
+passed Microsoft manifest, URL and installer checks; moderator approval remains
+pending. The submission was updated to v0.9.0 at `7cce7c45fdb03ad5543458df3bc0808df4994d68`.
+Its local v0.8.0 to v0.9.0 upgrade, both version-matched aliases, starter result
+`42`, bounded daemon protocol/shutdown and local-manifest removal passed in
+[run 38156173827](https://github.com/wavect/semaprax/actions/runs/38156173827).
+The v0.9.0 manifests are retained under
+[`../releases/v0.9.0/winget`](../releases/v0.9.0/winget). The Package channels
+workflow validates and installs new proposals on Windows before retention.
+Public availability and public upgrade/removal are still unverified.

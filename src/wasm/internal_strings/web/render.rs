@@ -43,8 +43,15 @@ pub(super) fn artifacts(
             .replace("value.runtime_schema!=='semaprax.wasm-internal-strings.runtime.v1'", "value.runtime_schema!=='semaprax.wasm-literal-format.runtime.v1'");
     }
     if toolkit && literal_format {
-        app = app.replace("['profile','capabilities','schema'", "['profile','capabilities','literal_format_v1','schema'")
-            .replace("value.profile!=='text-toolkit-v1'", "value.literal_format_v1!==true||value.profile!=='text-toolkit-v1'");
+        app = app
+            .replace(
+                "['profile','capabilities','schema'",
+                "['profile','capabilities','literal_format_v1','schema'",
+            )
+            .replace(
+                "value.profile!=='text-toolkit-v1'",
+                "value.literal_format_v1!==true||value.profile!=='text-toolkit-v1'",
+            );
     }
     let mut files = vec![
         ("app.wasm", module.wasm_bytes().to_vec()),
@@ -83,7 +90,10 @@ pub(super) fn artifacts(
                 &format!("\"capabilities\":{}", facts["capabilities"]),
             )
     } else if literal_format {
-        manifest.replace("\"schema\":\"semaprax.web-internal-strings.v1\"", "\"schema\":\"semaprax.web-literal-format.v1\"")
+        manifest.replace(
+            "\"schema\":\"semaprax.web-internal-strings.v1\"",
+            "\"schema\":\"semaprax.web-literal-format.v1\"",
+        )
     } else {
         manifest
     };
@@ -135,10 +145,19 @@ fn declarations(descriptor: &str) -> Result<String, Diagnostic> {
             "export type LiteralFormatFailure = Readonly<{kind: 'failure'; domain: 'semaprax.string-format.v1'; code: 1}>;\nexport interface StringFacade",
         );
         text = if value["profile"] == "text-toolkit-v1" {
-            text.replace("| ToolkitFailure;", "| ToolkitFailure | LiteralFormatFailure;")
+            text.replace(
+                "| ToolkitFailure;",
+                "| ToolkitFailure | LiteralFormatFailure;",
+            )
         } else {
-            text.replace("StringOutcome<bigint>;", "StringOutcome<bigint> | LiteralFormatFailure;")
-                .replace("StringOutcome<boolean>;", "StringOutcome<boolean> | LiteralFormatFailure;")
+            text.replace(
+                "StringOutcome<bigint>;",
+                "StringOutcome<bigint> | LiteralFormatFailure;",
+            )
+            .replace(
+                "StringOutcome<boolean>;",
+                "StringOutcome<boolean> | LiteralFormatFailure;",
+            )
         };
     }
     Ok(text)

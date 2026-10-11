@@ -20,6 +20,7 @@ Usage:
 """
 
 import argparse
+import importlib.util
 import json
 import re
 import sys
@@ -32,13 +33,10 @@ DIGEST_RE = re.compile(r"[0-9a-f]{64}")
 SUMS_LINE_RE = re.compile(r"([0-9a-f]{64})  ([^\s/\\]+)")
 
 # target -> archive extension, as published by the release workflow.
-TARGETS = {
-    "x86_64-unknown-linux-gnu": "tar.gz",
-    "aarch64-unknown-linux-gnu": "tar.gz",
-    "aarch64-apple-darwin": "tar.gz",
-    "x86_64-apple-darwin": "tar.gz",
-    "x86_64-pc-windows-msvc": "zip",
-}
+_spec = importlib.util.spec_from_file_location("channel_release_inventory", ROOT / "scripts/release-reconcile.py")
+_inventory = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_inventory)
+TARGETS = dict(_inventory.ARCHIVE_TARGETS)
 
 # (target) -> (Homebrew OS block, Homebrew arch block, depends_on arch symbol)
 BREW_TARGETS = {
@@ -56,6 +54,15 @@ WINGET_TARGET = "x86_64-pc-windows-msvc"
 
 class ChannelError(Exception):
     """The release material cannot back a channel manifest."""
+
+
+def unique_object(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ChannelError(f"release-manifest.json repeats key {key!r}")
+        result[key] = value
+    return result
 
 
 def parse_sums(text):
@@ -84,7 +91,7 @@ def release_archives(tag, sums_text, manifest_text):
         raise ChannelError(f"tag {tag!r} is not vX.Y.Z")
     sums = parse_sums(sums_text)
     try:
-        manifest = json.loads(manifest_text)
+        manifest = json.loads(manifest_text, object_pairs_hook=unique_object)
     except json.JSONDecodeError as error:
         raise ChannelError(f"release-manifest.json is not JSON: {error}") from error
     if not isinstance(manifest, dict) or manifest.get("tag") != tag:
@@ -93,6 +100,8 @@ def release_archives(tag, sums_text, manifest_text):
             if isinstance(manifest, dict)
             else "release-manifest.json is not an object"
         )
+    if manifest.get("schema") != "semaprax.release-manifest.v1":
+        raise ChannelError("release-manifest.json has an unexpected schema")
     version = tag[1:]
     if manifest.get("version") != version:
         raise ChannelError(
@@ -104,10 +113,18 @@ def release_archives(tag, sums_text, manifest_text):
     by_platform = {}
     for entry in artifacts:
         platform = entry.get("platform") if isinstance(entry, dict) else None
+        if not isinstance(platform, str) or platform not in TARGETS:
+            raise ChannelError("release-manifest.json lists an unknown platform")
+        if type(entry.get("size")) is not int or entry["size"] <= 0:
+            raise ChannelError("release-manifest.json archive size must be a positive integer")
         if platform in by_platform:
             raise ChannelError(f"release-manifest.json lists {platform} twice")
         by_platform[platform] = entry
     found = {}
+    expected_names = {archive_name(tag, target) for target in TARGETS}
+    for name in sums:
+        if name.startswith("semaprax-") and name not in expected_names:
+            raise ChannelError(f"SHA256SUMS lists an unknown archive {name}")
     for target in sorted(TARGETS):
         name = archive_name(tag, target)
         in_sums = name in sums

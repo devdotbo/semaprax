@@ -1,7 +1,9 @@
 //! Closed typed construction prefix: declarations, count, induction, fresh row,
 //! producer, publication and latch. Every fact is read from current HIR nodes.
 use super::*;
-use crate::hir::{DeclarationKind, FunctionExecutionId, IdentityOrigin, ResolvedTypeDeclarationKind};
+use crate::hir::{
+    DeclarationKind, FunctionExecutionId, IdentityOrigin, ResolvedTypeDeclarationKind,
+};
 
 const fn shape(reason: &'static str) -> Refusal {
     Refusal::Shape(reason)
@@ -37,7 +39,9 @@ fn closed_program(program: &ResolvedProgram) -> Result<&ResolvedFunction, Refusa
         || !program.interfaces.is_empty()
         || !program.agents.is_empty()
     {
-        return Err(shape("module carries generic, permit, interface or agent declarations"));
+        return Err(shape(
+            "module carries generic, permit, interface or agent declarations",
+        ));
     }
     if !function.params.is_empty()
         || function.return_type != T::I64
@@ -70,7 +74,14 @@ fn closed_program(program: &ResolvedProgram) -> Result<&ResolvedFunction, Refusa
 fn record<'a>(
     program: &'a ResolvedProgram,
     element: &T,
-) -> Result<(&'a ResolvedTypeDeclaration, &'a [ResolvedFieldDeclaration], u64), Refusal> {
+) -> Result<
+    (
+        &'a ResolvedTypeDeclaration,
+        &'a [ResolvedFieldDeclaration],
+        u64,
+    ),
+    Refusal,
+> {
     let T::Nominal {
         declaration: id,
         arguments,
@@ -82,7 +93,9 @@ fn record<'a>(
         return Err(shape("Vec element is generic"));
     }
     let mut found = program.types.iter().filter(|d| d.id == *id);
-    let declaration = found.next().ok_or(forged("record declaration is missing"))?;
+    let declaration = found
+        .next()
+        .ok_or(forged("record declaration is missing"))?;
     if found.next().is_some() {
         return Err(forged("duplicate record declaration"));
     }
@@ -111,7 +124,9 @@ fn record<'a>(
         || fields.iter().filter(|f| f.ty == T::String).count() != 1
         || fields.iter().filter(|f| f.ty == T::Bytes).count() != 1
     {
-        return Err(shape("record is not one i64, one String and one Bytes field"));
+        return Err(shape(
+            "record is not one i64, one String and one Bytes field",
+        ));
     }
     for (index, field) in fields.iter().enumerate() {
         let fact = program
@@ -157,7 +172,9 @@ pub(super) fn derive(program: &ResolvedProgram) -> Result<Selection<'_>, Refusal
         condition, body, ..
     }, suffix @ ..] = statements.as_slice()
     else {
-        return Err(shape("body does not begin with destination, induction and while"));
+        return Err(shape(
+            "body does not begin with destination, induction and while",
+        ));
     };
     if let Some(refusal) = vec_constructor(allocation) {
         return Err(refusal);
@@ -293,7 +310,9 @@ pub(super) fn derive(program: &ResolvedProgram) -> Result<Selection<'_>, Refusal
             || value.value.span.start < previous_end
             || value.value.span.end > constructor.span.end
         {
-            return Err(shape("row operands are not in declaration and source order"));
+            return Err(shape(
+                "row operands are not in declaration and source order",
+            ));
         }
         previous_end = value.value.span.end;
         order[index] = match field.ty {
@@ -324,9 +343,7 @@ pub(super) fn derive(program: &ResolvedProgram) -> Result<Selection<'_>, Refusal
     if width == 0 || width > crate::byte_ops::MAX_BUFFER_CAPACITY_BYTES {
         return Err(Refusal::Extent);
     }
-    let extent = width
-        .checked_mul(u64::from(rows))
-        .ok_or(Refusal::Extent)?;
+    let extent = width.checked_mul(u64::from(rows)).ok_or(Refusal::Extent)?;
     if extent > MAX_EXTENT || extent > crate::byte_data_capacity::MAX_OWNED_BYTE_PAYLOAD_BYTES {
         return Err(Refusal::Extent);
     }
@@ -386,7 +403,9 @@ pub(super) fn derive(program: &ResolvedProgram) -> Result<Selection<'_>, Refusal
             .iter()
             .any(|(binding, path)| !binding.id.matches_local(&execution, path))
     {
-        return Err(forged("construction identity is not its canonical position"));
+        return Err(forged(
+            "construction identity is not its canonical position",
+        ));
     }
     // Static paths: the derivation allocates nothing before its census scratch.
     const FIELDS: [(&str, &str); 3] = [
@@ -412,7 +431,9 @@ pub(super) fn derive(program: &ResolvedProgram) -> Result<Selection<'_>, Refusal
                 return Err(forged("producer identity disagrees"));
             };
             if !args[0].id.matches(&execution, width_path) {
-                return Err(forged("producer width identity is not its canonical position"));
+                return Err(forged(
+                    "producer width identity is not its canonical position",
+                ));
             }
         }
     }

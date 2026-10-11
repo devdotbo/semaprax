@@ -10,7 +10,10 @@ fn manifest(profile: &str) -> String {
 fn nested_outcome_profile_has_its_own_v32_route() {
     let token = PROJECT_PROFILE_STDIN_STREAM_NESTED_OUTCOME_COMMAND_IO_V1;
     let selected = profile_by_name(token).unwrap();
-    assert_eq!(selected, ProjectProfile::StdinStreamNestedOutcomeCommandIoV1);
+    assert_eq!(
+        selected,
+        ProjectProfile::StdinStreamNestedOutcomeCommandIoV1
+    );
     assert_eq!(selected.name(), Some(token));
     assert!(selected.is_stdin_stream());
 

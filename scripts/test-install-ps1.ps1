@@ -166,7 +166,7 @@ Test-Case 'SHA256SUMS parsing' {
     Assert-Throws { Get-SemapraxChecksumFromText -Text $text -Name 'semaprax-v1.0.0' } 'no entry' 'prefix of a name is not a match'
     Assert-Throws { Get-SemapraxChecksumFromText -Text '' -Name 'x.zip' } 'no entry' 'empty file'
     Assert-Throws { Get-SemapraxChecksumFromText -Text "$a  x.zip`n$b  x.zip`n" -Name 'x.zip' } 'conflicting' 'conflicting duplicates'
-    Assert-Equal (Get-SemapraxChecksumFromText -Text "$a  x.zip`n$a  x.zip`n" -Name 'x.zip') $a 'identical duplicates tolerated'
+    Assert-Throws { Get-SemapraxChecksumFromText -Text "$a  x.zip`n$a  x.zip`n" -Name 'x.zip' } 'exactly once' 'identical duplicate refusal'
     Assert-Throws { Get-SemapraxChecksumFromText -Text "short  x.zip`n" -Name 'x.zip' } 'no entry' 'malformed digest'
     Assert-Equal (Get-SemapraxChecksumFromText -Text ("A" * 64 + "  x.zip") -Name 'x.zip') $a 'digest is lowercased'
 }
@@ -174,7 +174,7 @@ Test-Case 'SHA256SUMS parsing' {
 Test-Case 'manifest artifact matching' {
     $name = 'semaprax-v1.0.0-x86_64-pc-windows-msvc.zip'
     $sha = ('c' * 64)
-    $json = '{"schema":"semaprax.release-manifest.v1","tag":"v1.0.0","artifacts":[{"name":"other.tar.gz","platform":"x86_64-unknown-linux-gnu","size":1,"digest":"sha256:' + ('d' * 64) + '"},{"name":"' + $name + '","platform":"x86_64-pc-windows-msvc","size":123,"digest":"sha256:' + $sha + '"}]}'
+    $json = '{"schema":"semaprax.release-manifest.v1","tag":"v1.0.0","version":"1.0.0","artifacts":[{"name":"other.tar.gz","platform":"x86_64-unknown-linux-gnu","size":1,"digest":"sha256:' + ('d' * 64) + '"},{"name":"' + $name + '","platform":"x86_64-pc-windows-msvc","size":123,"digest":"sha256:' + $sha + '"}]}'
     $m = $json | ConvertFrom-Json
     Assert-SemapraxManifestArtifact -Manifest $m -Tag 'v1.0.0' -Name $name -Target 'x86_64-pc-windows-msvc' -Size 123 -Sha256 $sha
     Assert-Throws { Assert-SemapraxManifestArtifact -Manifest $m -Tag 'v1.0.1' -Name $name -Target 'x86_64-pc-windows-msvc' -Size 123 -Sha256 $sha } 'not v1.0.1' 'tag mismatch'
@@ -183,11 +183,11 @@ Test-Case 'manifest artifact matching' {
     Assert-Throws { Assert-SemapraxManifestArtifact -Manifest $m -Tag 'v1.0.0' -Name $name -Target 'aarch64-apple-darwin' -Size 123 -Sha256 $sha } 'platform' 'platform mismatch'
     Assert-Throws { Assert-SemapraxManifestArtifact -Manifest $m -Tag 'v1.0.0' -Name 'missing.zip' -Target 'x86_64-pc-windows-msvc' -Size 1 -Sha256 $sha } 'exactly once' 'missing artifact'
     Assert-Throws { Assert-SemapraxManifestArtifact -Manifest $null -Tag 'v1.0.0' -Name $name -Target 'x86_64-pc-windows-msvc' -Size 1 -Sha256 $sha } 'malformed' 'null manifest'
-    $bad = ('{"schema":"other","tag":"v1.0.0","artifacts":[]}' | ConvertFrom-Json)
+    $bad = ('{"schema":"other","tag":"v1.0.0","version":"1.0.0","artifacts":[]}' | ConvertFrom-Json)
     Assert-Throws { Assert-SemapraxManifestArtifact -Manifest $bad -Tag 'v1.0.0' -Name $name -Target 'x86_64-pc-windows-msvc' -Size 1 -Sha256 $sha } 'schema' 'wrong schema'
     $dup = ($json.Replace('"artifacts":[', '"artifacts":[{"name":"' + $name + '","platform":"x86_64-pc-windows-msvc","size":123,"digest":"sha256:' + $sha + '"},')) | ConvertFrom-Json
     Assert-Throws { Assert-SemapraxManifestArtifact -Manifest $dup -Tag 'v1.0.0' -Name $name -Target 'x86_64-pc-windows-msvc' -Size 123 -Sha256 $sha } 'exactly once' 'duplicate entry'
-    $old = ('{"schema":"semaprax.release-manifest.v1","tag":"v0.8.0","artifacts":[{"name":"' + $name + '","platform":"x86_64-pc-windows-msvc","size":123,"digest":"sha256:' + $sha + '"}],"installers":[{"name":"install.ps1","size":1,"digest":"sha256:' + $sha + '"}]}') | ConvertFrom-Json
+    $old = ('{"schema":"semaprax.release-manifest.v1","tag":"v0.8.0","version":"0.8.0","artifacts":[{"name":"' + $name + '","platform":"x86_64-pc-windows-msvc","size":123,"digest":"sha256:' + $sha + '"}],"installers":[{"name":"install.ps1","size":1,"digest":"sha256:' + $sha + '"}]}') | ConvertFrom-Json
     Assert-SemapraxManifestArtifact -Manifest $old -Tag 'v0.8.0' -Name $name -Target 'x86_64-pc-windows-msvc' -Size 123 -Sha256 $sha
 }
 
@@ -389,7 +389,7 @@ function New-MockRelease {
     $sumSha = $sha
     if ($BadChecksum) { $sumSha = ('0' * 64) }
     Write-SemapraxTextFile -Path ([System.IO.Path]::Combine($out, 'SHA256SUMS')) -Text "$sumSha  $zipName`n"
-    Write-SemapraxTextFile -Path ([System.IO.Path]::Combine($out, 'release-manifest.json')) -Text ('{"schema":"semaprax.release-manifest.v1","tag":"' + $Tag + '","artifacts":[{"name":"' + $zipName + '","platform":"' + $target + '","size":' + $size + ',"digest":"sha256:' + $sha + '"}]}')
+    Write-SemapraxTextFile -Path ([System.IO.Path]::Combine($out, 'release-manifest.json')) -Text ('{"schema":"semaprax.release-manifest.v1","tag":"' + $Tag + '","version":"' + $Tag.Substring(1) + '","artifacts":[{"name":"' + $zipName + '","platform":"' + $target + '","size":' + $size + ',"digest":"sha256:' + $sha + '"}]}')
     if (-not $NoAttestation) {
         Write-SemapraxTextFile -Path ([System.IO.Path]::Combine($out, "release-attestation-$target.json")) -Text '{"fixture":true}'
     }
@@ -455,6 +455,46 @@ Test-Case 'orchestration: install, reinstall, upgrade, receipt, prune, uninstall
         Remove-Item -LiteralPath ([System.IO.Path]::Combine($dir, 'mine.txt'))
         # empty dir + no receipt: uninstall is a no-op
         Assert-Equal ([string]@(Invoke-SemapraxUninstall -InstallDir $dir)[-1]) '0' 'uninstall of empty dir'
+    } finally { Remove-Item -LiteralPath $work -Recurse -Force -ErrorAction SilentlyContinue }
+}
+
+Test-Case 'receipt publication failure rolls back both executables and the old receipt' {
+    $work = New-TempDir ' receipt rollback'
+    try {
+        $rel = [System.IO.Path]::Combine($work, 'release')
+        $dir = [System.IO.Path]::Combine($work, 'installed')
+        New-MockRelease -Root $rel -Tag 'v1.0.0'
+        New-MockRelease -Root $rel -Tag 'v1.1.0'
+        $null = Invoke-MockedInstall -Root $rel -InstallDir $dir -Tag 'v1.0.0'
+        $receiptPath = [System.IO.Path]::Combine($dir, 'install-receipt.json')
+        $before = [System.IO.File]::ReadAllText($receiptPath)
+        # A directory at the temporary receipt pathname forces the physical
+        # receipt write to fail after the new bin directory was activated.
+        [void][System.IO.Directory]::CreateDirectory($receiptPath + '.tmp')
+        Assert-Throws { $null = Invoke-MockedInstall -Root $rel -InstallDir $dir -Tag 'v1.1.0' } 'could not write the install receipt' 'receipt failure'
+        Assert-Equal ([System.IO.File]::ReadAllText($receiptPath)) $before 'old receipt byte preserved'
+        foreach ($exe in @('semaprax.exe', 'semapraxd.exe')) {
+            $expected = 'VER:1.0.0'
+            if ($exe -eq 'semapraxd.exe') { $expected = 'DAEMON:1.0.0' }
+            Assert-Equal ([System.IO.File]::ReadAllText([System.IO.Path]::Combine($dir, 'bin', $exe))) $expected 'old executable restored'
+        }
+        Assert-True (-not [System.IO.Directory]::Exists([System.IO.Path]::Combine($dir, 'versions', 'v1.1.0'))) 'new version removed'
+    } finally { Remove-Item -LiteralPath $work -Recurse -Force -ErrorAction SilentlyContinue }
+}
+
+Test-Case 'upgrades preserve unowned files in old versions' {
+    $work = New-TempDir ' owned prune'
+    try {
+        $rel = [System.IO.Path]::Combine($work, 'release')
+        $dir = [System.IO.Path]::Combine($work, 'installed')
+        New-MockRelease -Root $rel -Tag 'v1.0.0'
+        New-MockRelease -Root $rel -Tag 'v1.1.0'
+        $null = Invoke-MockedInstall -Root $rel -InstallDir $dir -Tag 'v1.0.0'
+        $extra = [System.IO.Path]::Combine($dir, 'versions', 'v1.0.0', 'notes.txt')
+        [System.IO.File]::WriteAllText($extra, 'mine')
+        $null = Invoke-MockedInstall -Root $rel -InstallDir $dir -Tag 'v1.1.0'
+        Assert-Equal ([System.IO.File]::ReadAllText($extra)) 'mine' 'unowned old-version file survives'
+        Assert-True (-not [System.IO.File]::Exists([System.IO.Path]::Combine($dir, 'versions', 'v1.0.0', 'semaprax.exe'))) 'owned old executable pruned'
     } finally { Remove-Item -LiteralPath $work -Recurse -Force -ErrorAction SilentlyContinue }
 }
 

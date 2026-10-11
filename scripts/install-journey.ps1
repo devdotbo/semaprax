@@ -70,18 +70,20 @@ function ConvertTo-ArgString {
 }
 
 function Invoke-Native {
-    param([string]$FilePath, [string[]]$Arguments = @(), [string]$WorkingDirectory = '', [int]$TimeoutSeconds = 600)
+    param([string]$FilePath, [string[]]$Arguments = @(), [string]$WorkingDirectory = '', [int]$TimeoutSeconds = 600, [string]$InputText = '')
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = $FilePath
     $psi.Arguments = ConvertTo-ArgString $Arguments
     $psi.UseShellExecute = $false
     $psi.RedirectStandardOutput = $true
     $psi.RedirectStandardError = $true
+    $psi.RedirectStandardInput = ($InputText -ne '')
     $psi.CreateNoWindow = $true
     if ($WorkingDirectory -ne '') { $psi.WorkingDirectory = $WorkingDirectory }
     $p = [System.Diagnostics.Process]::Start($psi)
     $o = $p.StandardOutput.ReadToEndAsync()
     $e = $p.StandardError.ReadToEndAsync()
+    if ($InputText -ne '') { $p.StandardInput.Write($InputText); $p.StandardInput.Close() }
     if (-not $p.WaitForExit($TimeoutSeconds * 1000)) {
         try { $p.Kill() } catch { }
         Fail "timed out: $FilePath $($psi.Arguments)"
@@ -175,7 +177,7 @@ function Invoke-Installer {
 }
 
 $script:OriginalPath = $env:Path
-$assets = [System.IO.Path]::GetFullPath($AssetsDir)
+$assets = (Resolve-Path -LiteralPath $AssetsDir).ProviderPath
 $script:InstallScript = [System.IO.Path]::Combine($assets, 'install.ps1')
 $work = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), 'spx journey ' + [Guid]::NewGuid().ToString('N').Substring(0, 8))
 $installDir = [System.IO.Path]::Combine($work, 'install dir')
@@ -202,6 +204,23 @@ try {
     if ($publisherVerify) { $installArgs += '-RequirePublisherVerification' }
 
     Step "installing $Tag into '$installDir' (path contains a space; modify PATH: $modifyPath; publisher verification: $publisherVerify)"
+    if ($env:SEMAPRAX_JOURNEY_PREVIOUS_ASSETS) {
+        $oldTag = $env:SEMAPRAX_JOURNEY_PREVIOUS_TAG
+        Assert-Journey ($oldTag -match '^v\d+\.\d+\.\d+$') 'previous release tag is required'
+        $oldDir = [System.IO.Path]::Combine($base, $oldTag)
+        [void][System.IO.Directory]::CreateDirectory($oldDir)
+        foreach ($f in [System.IO.Directory]::GetFiles((Resolve-Path -LiteralPath $env:SEMAPRAX_JOURNEY_PREVIOUS_ASSETS).ProviderPath)) {
+            [System.IO.File]::Copy($f, [System.IO.Path]::Combine($oldDir, [System.IO.Path]::GetFileName($f)), $true)
+        }
+        $oldArgs = @('-Version', $oldTag, '-InstallDir', $installDir)
+        if (-not $modifyPath) { $oldArgs += '-NoModifyPath' }
+        if ($publisherVerify) { $oldArgs += '-RequirePublisherVerification' }
+        $oldInstall = Invoke-Installer -Base $base -Extra $oldArgs
+        Assert-Journey ($oldInstall.ExitCode -eq 0) 'previous release installed'
+        $oldIdentity = Invoke-Native -FilePath ([System.IO.Path]::Combine($binDir, 'semaprax.exe')) -Arguments @('version', '--json')
+        Assert-Journey (($oldIdentity.Output | ConvertFrom-Json).version -ceq $oldTag.Substring(1)) 'previous release active'
+        Step "upgrading from $oldTag to $Tag in the same managed prefix"
+    }
     $r = Invoke-Installer -Base $base -Extra $installArgs
     Assert-Journey ($r.ExitCode -eq 0) "install.ps1 exited $($r.ExitCode)"
     Assert-Journey ($r.Output -match 'installed to') 'success line printed'
@@ -229,27 +248,13 @@ try {
     Assert-Journey ([System.IO.File]::Exists($receiptPath)) 'receipt written'
     $receipt = [System.IO.File]::ReadAllText($receiptPath) | ConvertFrom-Json
     Assert-Journey ($receipt.tag -ceq $Tag -and $receipt.archive_sha256 -ceq (Get-Sha256OfFile $zipPath)) 'receipt tag and archive digest'
+    $releaseManifest = [System.IO.File]::ReadAllText([System.IO.Path]::Combine($assets, 'release-manifest.json')) | ConvertFrom-Json
 
-    # The literal beginner journey, from a fresh directory with no checkout.
+    # The same installed starter/daemon contract owns script and WinGet routes.
+    . "$PSScriptRoot/installed-starter-journey.ps1"
     $cwd = [System.IO.Path]::Combine($work, 'fresh project dir')
-    [void][System.IO.Directory]::CreateDirectory($cwd)
-    $journey = @(
-        @('--version'),
-        @('new', 'first-semaprax'),
-        @('check', 'first-semaprax/semaprax.toml'),
-        @('test', 'first-semaprax/semaprax.toml'),
-        @('run', 'first-semaprax/semaprax.toml')
-    )
-    $last = $null
-    foreach ($j in $journey) {
-        $res = Invoke-Native -FilePath $resolved -Arguments $j -WorkingDirectory $cwd
-        if ($res.ExitCode -ne 0) { Fail "semaprax $($j -join ' ') exited $($res.ExitCode):`n$($res.Output)`n$($res.Error)" }
-        $last = $res
-        Step "semaprax $($j -join ' ') ok"
-    }
-    Assert-Journey ($last.Output.Trim().Split("`n")[-1].Trim() -eq '42') "semaprax run printed 42 (got: $($last.Output.Trim()))"
-    $ver = Invoke-Native -FilePath $resolved -Arguments @('version', '--json') -WorkingDirectory $cwd
-    Assert-Journey (($ver.Output | ConvertFrom-Json).version -ceq $version) "semaprax version --json reports $version"
+    Invoke-SemapraxStarterJourney -Cli $resolved -Daemon ([System.IO.Path]::Combine($binDir, 'semapraxd.exe')) -Version $version -Commit $releaseManifest.commit -Directory $cwd
+    Step 'starter printed 42; paired daemon protocol/shutdown passed'
 
     # Same-version reinstall is idempotent.
     $before = Get-Sha256OfFile ([System.IO.Path]::Combine($binDir, 'semaprax.exe'))
@@ -315,4 +320,5 @@ if ($exitCode -eq 0) {
 } else {
     Write-Host "install-journey: FAIL ($Tag, $($steps.Count) steps completed)"
 }
+Write-Host "JOURNEY-RESULT tag=$Tag target=$target outcome=$exitCode"
 exit $exitCode

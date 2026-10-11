@@ -320,7 +320,9 @@ impl<'a> Translator<'a> {
             }
             ExprKind::Bool(value) => (value.to_string(), Ty::Bool),
             ExprKind::String(text) => (js_string(text), Ty::Str),
-            ExprKind::BorrowedUtf8Literal(_) => return Err(outside("frontend-only borrowed UTF-8 literal", expr)),
+            ExprKind::BorrowedUtf8Literal(_) => {
+                return Err(outside("frontend-only borrowed UTF-8 literal", expr))
+            }
             ExprKind::Char(code) => {
                 let ch = char::from_u32(*code).ok_or_else(|| outside("an invalid char", expr))?;
                 (js_string(&ch.to_string()), Ty::Char)

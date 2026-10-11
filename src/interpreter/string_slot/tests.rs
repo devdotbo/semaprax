@@ -63,12 +63,10 @@ fn slot_backing_is_same_allocation_and_alias_bytes_enforce_internal_extent() {
         capacity: 1,
         generation: 8,
     });
-    assert!(
-        validate_slice_extent(&Utf8Backing::VectorStringSlot {
-            vector: exact,
-            index: 0,
-            generation: 8
-        })
-        .is_ok()
-    );
+    assert!(validate_slice_extent(&Utf8Backing::VectorStringSlot {
+        vector: exact,
+        index: 0,
+        generation: 8
+    })
+    .is_ok());
 }

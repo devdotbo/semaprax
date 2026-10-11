@@ -1,7 +1,7 @@
-use super::super::{Inventory, capture, legacy};
-use super::{Directory, pure};
+use super::super::{capture, legacy, Inventory};
+use super::{pure, Directory};
 use crate::hir::{OwnershipMode, ResolvedType};
-use crate::workspace_graph::{WorkspaceSource, index_authored};
+use crate::workspace_graph::{index_authored, WorkspaceSource};
 
 fn source(count: usize) -> String {
     let mut text = String::from("module helpers;");

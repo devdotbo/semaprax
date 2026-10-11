@@ -23,13 +23,11 @@ fn owned_leaf_source_hir_graph_cache_and_interpreter_agree() {
     let graph = crate::graph::to_json(&ast).unwrap();
     crate::graph::verify_json(&ast, &graph).unwrap();
     assert!(graph.contains("semaprax.prelude.v14"));
-    assert!(
-        crate::graph::verify_json(
-            &ast,
-            &graph.replace("semaprax.prelude.v14", "semaprax.prelude.v13")
-        )
-        .is_err()
-    );
+    assert!(crate::graph::verify_json(
+        &ast,
+        &graph.replace("semaprax.prelude.v14", "semaprax.prelude.v13")
+    )
+    .is_err());
     let resolved = checked(SOURCE);
     let wire = crate::cache_codec::encode(&resolved).unwrap();
     let restored: ResolvedProgram = crate::cache_codec::decode(&wire).unwrap();

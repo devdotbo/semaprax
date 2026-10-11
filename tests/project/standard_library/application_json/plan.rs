@@ -34,15 +34,18 @@ fn entries() -> Vec<project::JsonCodecPlanEntry> {
 // (standard_dependencies.rs PACKAGES), before deriving any receipt.
 fn paired_originals(root: &std::path::Path) -> std::collections::BTreeMap<String, String> {
     let mut originals = std::collections::BTreeMap::new();
-    for path in ["src/schema.spx", "src/second.spx", "src/app.spx", "src/tests.spx"] {
-        assert!(
-            originals
-                .insert(
-                    path.to_owned(),
-                    std::fs::read_to_string(root.join(path)).unwrap()
-                )
-                .is_none()
-        );
+    for path in [
+        "src/schema.spx",
+        "src/second.spx",
+        "src/app.spx",
+        "src/tests.spx",
+    ] {
+        assert!(originals
+            .insert(
+                path.to_owned(),
+                std::fs::read_to_string(root.join(path)).unwrap()
+            )
+            .is_none());
     }
     let repository = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
     for (package, directory, file) in [
@@ -58,11 +61,9 @@ fn paired_originals(root: &std::path::Path) -> std::collections::BTreeMap<String
     ] {
         let path = format!("dependencies/{package}/0.1.0/{file}.spx");
         let physical = repository.join(format!("std/{directory}/src/{file}.spx"));
-        assert!(
-            originals
-                .insert(path, std::fs::read_to_string(physical).unwrap())
-                .is_none()
-        );
+        assert!(originals
+            .insert(path, std::fs::read_to_string(physical).unwrap())
+            .is_none());
     }
     originals
 }

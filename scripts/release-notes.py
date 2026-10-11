@@ -54,12 +54,12 @@ def bound_section(section, version, limit=BOUNDED_NOTES_LIMIT):
     lands on a line boundary and a fixed notice names the version and points
     at the untouched `CHANGELOG.md`, which this function never writes.
     """
-    if len(section) <= limit:
+    if len(section.encode("utf-8")) <= limit:
         return section
     return (
-        section[:limit].rsplit("\n", 1)[0]
+        section.encode("utf-8")[:limit].decode("utf-8", errors="ignore").rsplit("\n", 1)[0]
         + "\n\n… (truncated for GitHub's 125,000-byte release-note limit; "
-        f"see CHANGELOG.md for the complete v{version} notes)"
+        f"see [CHANGELOG.md]({REPOSITORY_URL}/blob/v{version}/CHANGELOG.md) for the complete v{version} notes)"
     )
 
 
@@ -156,6 +156,17 @@ def render_install_section(version, assets_dir):
     lines += [
         f"Full instructions, the first-project walkthrough and uninstall steps: [Install SEMAPRAX]({guide}).",
         "",
+        "After installation, open a new terminal and run:",
+        "",
+        "```sh",
+        "semaprax new first-semaprax",
+        "semaprax check first-semaprax/semaprax.toml",
+        "semaprax test first-semaprax/semaprax.toml",
+        "semaprax run first-semaprax/semaprax.toml",
+        "```",
+        "",
+        "The last command prints `42`. The same commands work in PowerShell.",
+        "",
         "Only the `semaprax-<tag>-<target>` archives are runnable programs. "
         "GitHub's \"Source code\" downloads are automatic repository snapshots, and "
         "`SHA256SUMS`, `release-*.json`, `*.bundle` and `trusted_root.jsonl` are verification metadata.",
@@ -189,10 +200,10 @@ def render_release_body(version, section, assets_dir=None):
     # The frame (install section, details wrapper, closing note) shares the
     # hard limit with the changelog, so the changelog bound shrinks by the
     # frame's size instead of assuming the frame is a few hundred bytes.
-    overhead = len(frame(""))
+    overhead = len(frame("").encode("utf-8"))
     limit = min(BOUNDED_NOTES_LIMIT, GITHUB_BODY_LIMIT - RESERVE - overhead)
     body = frame(bound_section(section, version, limit))
-    if len(body) >= GITHUB_BODY_LIMIT:
+    if len(body.encode("utf-8")) >= GITHUB_BODY_LIMIT:
         raise ValueError("release body still exceeds the GitHub release-body limit")
     return body
 

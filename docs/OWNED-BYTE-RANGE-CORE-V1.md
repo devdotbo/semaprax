@@ -84,3 +84,11 @@ No production Plan installer exists in this precursor. Full sealed selected
 validation and original interpreter row/Vec container allocation accounting
 remain required before activation; legacy public/effect adapters cannot receive
 an internal lease or recover its backing through ordinary Arc access.
+
+The interpreter's loan reads take mutable access to the held core so its existing
+sticky refusal selection can run. Comparisons resolve two authenticated loans
+in one core callback, validating left then right without nesting mutable core
+borrows or copying payloads. The owning paired-read regression retains exact
+foreign-loan refusal, suppresses the callback on failure, and permits canonical
+loan/owner cleanup without replacing that failure. This compile repair does not
+admit a new source profile or qualify the original4096 fusion fixture.

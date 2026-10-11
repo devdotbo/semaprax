@@ -47,7 +47,7 @@ case "$output_root" in
 esac
 # The caller owns this directory and keeps it quiescent during packaging.
 mkdir -p "$output_root"
-output_root=$(CDPATH= cd -P "$output_root" && pwd -P) || fail "output root cannot be resolved"
+output_root=$(CDPATH='' cd -P "$output_root" && pwd -P) || fail "output root cannot be resolved"
 package_name="semaprax-$tag-$target"
 build_root="$output_root/build-$target"
 package_root="$output_root/$package_name"

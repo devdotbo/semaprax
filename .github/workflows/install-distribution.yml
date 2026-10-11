@@ -12,6 +12,11 @@ name: Install distribution
 # tests, or this file changes, or on manual dispatch.
 on:
   workflow_dispatch:
+    inputs:
+      candidate:
+        description: Build and qualify unpublished packages as well as published assets
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths:
@@ -38,9 +43,15 @@ concurrency:
 env:
   # The newest published release whose assets the journey installs. It must
   # carry SHA256SUMS, release-manifest.json and per-target attestations.
-  JOURNEY_TAG: v0.8.0
+  JOURNEY_TAG: v0.9.0
 
 jobs:
+  package-channel-proposals:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    uses: ./.github/workflows/package-channels.yml
+    with:
+      tag: v0.9.0
+
   unix-installer-suite:
     name: Unix installer suite (${{ matrix.os }})
     strategy:
@@ -105,6 +116,14 @@ jobs:
             target: x86_64-unknown-linux-gnu
             extension: tar.gz
             shell: bash
+          - os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            extension: tar.gz
+            shell: bash
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
+            extension: tar.gz
+            shell: bash
           - os: macos-15
             target: aarch64-apple-darwin
             extension: tar.gz
@@ -138,6 +157,20 @@ jobs:
             -p "semaprax-$JOURNEY_TAG-${{ matrix.target }}.${{ matrix.extension }}" \
             -p SHA256SUMS -p release-manifest.json \
             -p "release-attestation-${{ matrix.target }}.json"
+          # Real upgrades on the three hosts v0.8.0 actually shipped.
+          case "${{ matrix.target }}" in
+            x86_64-unknown-linux-gnu|aarch64-apple-darwin|x86_64-pc-windows-msvc)
+              mkdir previous-assets
+              gh release download v0.8.0 -R wavect/semaprax -D previous-assets \
+                -p "semaprax-v0.8.0-${{ matrix.target }}.${{ matrix.extension }}" \
+                -p SHA256SUMS -p release-manifest.json \
+                -p "release-attestation-${{ matrix.target }}.json"
+              previous_assets="$PWD/previous-assets"
+                if [ "$RUNNER_OS" = Windows ]; then previous_assets="$(cygpath -w "$previous_assets")"; fi
+                echo "SEMAPRAX_JOURNEY_PREVIOUS_ASSETS=$previous_assets" >> "$GITHUB_ENV"
+              echo 'SEMAPRAX_JOURNEY_PREVIOUS_TAG=v0.8.0' >> "$GITHUB_ENV"
+              ;;
+          esac
           # The installer under test is this commit's, not a published one.
           cp scripts/install.sh scripts/install.ps1 journey-assets/
           ls -la journey-assets
@@ -152,6 +185,7 @@ jobs:
         shell: powershell
         env:
           SEMAPRAX_JOURNEY_PUBLISHER_VERIFY: "1"
+          SEMAPRAX_JOURNEY_MODIFY_PATH: "1"
         run: |
           & ./scripts/install-journey.ps1 -AssetsDir "$PWD\journey-assets" -Tag $env:JOURNEY_TAG
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -160,12 +194,13 @@ jobs:
         shell: pwsh
         env:
           SEMAPRAX_JOURNEY_PUBLISHER_VERIFY: "1"
+          SEMAPRAX_JOURNEY_MODIFY_PATH: "1"
         run: |
           & ./scripts/install-journey.ps1 -AssetsDir "$PWD\journey-assets" -Tag $env:JOURNEY_TAG
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
   incompatible-runtime-control:
-    # A release built against a newer glibc than the host provides must be
+    # A release built against the declared baseline must be
     # refused before activation, leaving no installation behind.
     name: Incompatible glibc is refused before activation
     runs-on: ubuntu-24.04
@@ -174,11 +209,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 1
-      - name: Install the published release in an ubuntu:22.04 container
+      - name: Install the published release in an ubuntu:20.04 container
         shell: bash
         run: |
           set -euo pipefail
-          docker run --rm -v "$PWD/scripts:/scripts:ro" -e JOURNEY_TAG ubuntu:22.04 sh -c '
+          docker run --rm -v "$PWD/scripts:/scripts:ro" -e JOURNEY_TAG ubuntu:20.04 sh -c '
             set -u
             apt-get update -qq >/dev/null && apt-get install -y -qq curl ca-certificates >/dev/null
             getconf GNU_LIBC_VERSION
@@ -197,7 +232,7 @@ jobs:
     # but are never published; their provenance attestations name this
     # branch, not a release tag.
     name: Candidate package (${{ matrix.target }})
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'push' }}
+    if: ${{ github.event_name == 'push' || inputs.candidate }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 240
     permissions:
