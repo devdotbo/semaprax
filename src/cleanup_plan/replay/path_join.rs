@@ -1,6 +1,7 @@
 //! Topological cleanup-CFG replay and ownership-only join normalization.
 
 use super::*;
+mod branch_join;
 pub(super) mod storage;
 
 #[allow(clippy::too_many_arguments)] // Keep the independently held phase index explicit.
@@ -153,6 +154,7 @@ pub(super) fn validate_path_states(
     queue.push_back(plan.entry);
     let mut terminal_paths = 0_usize;
     let mut successful_paths = 0_usize;
+    let mut branch_joins = branch_join::BranchJoins::default();
 
     while let Some(block_id) = queue.pop_front() {
         let states = std::mem::take(&mut incoming[block_id.0 as usize]);
@@ -196,16 +198,28 @@ pub(super) fn validate_path_states(
             // An owning break's fragment rejoins its wrapper's parent: every
             // incoming state must agree exactly, with no ownership or history
             // repair by the generic join below.
-            if lexical.is_some_and(|auth| auth.exact_joins.contains(&block_id)) && states.len() != 1
-            {
+            let exact_join = lexical.is_some_and(|auth| auth.exact_joins.contains(&block_id));
+            if exact_join && states.len() != 1 {
                 return Err(replay_error(
                     function,
                     "owning break fragment does not rejoin its parent with exact ownership state",
                 ));
             }
             validate_control_group_with_budget(function, &states, block_id, budget)?;
-            let (live_order, conditional_variants) =
+            let (live_order, mut conditional_variants) =
                 joined_ownership_state(program, function, &states, budget)?;
+            // Identical branch arms deduplicate to one state; the producer
+            // still joined them. An exact break rejoin is never re-keyed.
+            if states.len() == 1 {
+                conditional_variants = branch_joins.normalize(
+                    program,
+                    function,
+                    block_id,
+                    exact_join,
+                    conditional_variants,
+                    budget,
+                )?;
+            }
             let mut state = states
                 .into_iter()
                 .next()
