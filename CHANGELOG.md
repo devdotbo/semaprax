@@ -1,5 +1,7 @@
 # Changelog
 
+- Replace native lexical-anchor Block/Match prefix rescans with the existing fixed-depth borrowed child cursor. Authored order, exact anchor ambiguity, assignment identity, iterator tail behavior and the 256-frame/1,000,000-work bounds remain unchanged; both actual Block scans are paid before traversal. Independent indexed-order, wide linear-debit, exact/one-short and hostile depth/duplicate controls are authored; qualification and performance measurement remain pending.
+
 - Author private original-source native partition receiving (#746): a current sealed source projection selects shared carrier/helper bindings before canonical function emission, stages the actual operation failure before commit, and settles one invocation registry before publishing the result. Original 4096/count and four-status O0/O2 owning controls are authored. Ordinary/public admission, consuming iteration, Borrow-parameter receiving and complete native runtime funding remain closed or pending; no execution claim.
 
 - Retain the first source-selection refusal from the existing fused construction derivation, preferring the authored main. SPX-F130 now reports its held function location and bounded shape guidance; legacy constructions point to the ordinary route without reducing requirements. Admission, ambiguity, source diagnostic precedence and no-fallback behavior stay unchanged. Existing hostile and legacy controls are extended; executable qualification and agent savings remain pending.
