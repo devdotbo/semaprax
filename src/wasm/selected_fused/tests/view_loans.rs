@@ -369,7 +369,7 @@ fn lowering_ends_views_by_loan_identity_not_by_site() {
         ".partition(|view| !self.holds.contains(view));",
         "self.holds.contains(&view.local) || self.deferred.contains(&view.local)",
         "if !self.holds.is_empty() || !self.deferred.is_empty() {",
-        ".filter(|view| view.loan.site == e.id)",
+        ".rfind(|view| view.loan.site == e.id)",
         ".and_then(|binding| binding.view),",
         "if !open().any(|candidate| candidate.local == view) {",
     ] {
