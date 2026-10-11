@@ -1,6 +1,7 @@
 # Changelog
 
 - Add lazy ordinary JSON scalar paths for ASCII UTF-8 and selected escape kinds. Preserve the original checked arithmetic at near-limit offsets and retain independent original kernels in owning differential definitions; backend qualification and measured work remain pending.
+- Adopt explicit business sort keys over Catalog wire rows, removing the intermediate SortItem carrier and output Vec rebuild while retaining complete pre-selection validation, wire order, bounded metrics, and the independent original 23-case pipeline oracle. Owning qualification and measured benefits remain pending.
 
 - Generate direct ASCII scalar/advance checks for JSON identifier validation and owned UTF-8 prefixes, retaining original escape/non-ASCII validation and all grammar, size and fuel limits. Independent original-path differential and maximum-capacity backend gates await qualification.
 - Retain inactive iterator Done storage in its exact authored region and confine

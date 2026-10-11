@@ -76,3 +76,16 @@ sort allocation observers, and the same source runs through interpreter and
 private Core-Wasm. Until those gates execute successfully the batch is authored
 implementation, not verified support. No agent cost or runtime savings is
 claimed without later matched trials and physical receipts.
+
+## Catalog adoption
+
+The scoped Catalog successor sorts its existing response `Item` rows with
+`department:asc,priority:asc,id:asc,stock:asc,mark:asc`. The response declaration
+retains `id,department,priority,stock,mark` wire order. Selection constructs the
+final row once and accumulates bounded metrics, after validating all request
+rows including excluded rows. The former `SortItem` carrier and second Vec
+rebuild are retained verbatim only as an independent owning test reference.
+The returned output Vec retains the input-count selection capacity; the old
+second rebuild used selected-count capacity. The frozen 23-case raw-wire oracle
+owns this application comparison. Qualification and any physical or agent-cost
+benefit remain pending.

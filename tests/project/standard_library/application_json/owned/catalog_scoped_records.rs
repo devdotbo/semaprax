@@ -208,3 +208,6 @@ fn typed_catalog_derives_codecs_and_preserves_all_23_functional_cases() {
     }
     std::fs::remove_dir_all(root).unwrap();
 }
+
+#[path = "catalog_sort_adoption.rs"]
+mod catalog_sort_adoption;
