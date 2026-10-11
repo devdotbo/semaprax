@@ -1,7 +1,7 @@
 //! Exact cached construction forecast: sum every module, never peak/filter.
 use super::{
-    AuthoredDeclaration, StructuralCost, active_builder_limit, checked_usage, cost,
-    dependency_identity_max, limit_error,
+    active_builder_limit, checked_usage, cost, dependency_identity_max, limit_error,
+    AuthoredDeclaration, StructuralCost,
 };
 use crate::{ast::Program, diagnostic::Diagnostic};
 use std::collections::BTreeMap;
@@ -124,4 +124,5 @@ pub(in crate::workspace_graph) fn next(
 }
 
 #[cfg(test)]
+#[path = "cached_exact/tests.rs"]
 mod tests;

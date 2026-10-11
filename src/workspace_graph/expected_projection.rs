@@ -13,10 +13,10 @@ use crate::diagnostic::Diagnostic;
 use crate::{hir, prelude};
 
 use super::{
-    AuthoredDeclaration, HIR_IDENTITY_COPY_FACTOR, HIR_STRING_COPY_FACTOR,
-    HIR_STRUCTURE_EXPANSION_FACTOR, MAX_DEPENDENCY_DEPTH, WorkspaceEdge, active_builder_limit,
-    checked_usage, graph_error, limit_error, push_edge, reserve_builder_structure, resolve_type_id,
-    visit_ast_call_sites,
+    active_builder_limit, checked_usage, graph_error, limit_error, push_edge,
+    reserve_builder_structure, resolve_type_id, visit_ast_call_sites, AuthoredDeclaration,
+    WorkspaceEdge, HIR_IDENTITY_COPY_FACTOR, HIR_STRING_COPY_FACTOR,
+    HIR_STRUCTURE_EXPANSION_FACTOR, MAX_DEPENDENCY_DEPTH,
 };
 
 #[path = "expected_projection/cached_exact.rs"]
@@ -53,6 +53,8 @@ pub(super) mod type_rewrite;
 #[path = "expected_projection/uncached_peak.rs"]
 pub(super) mod uncached_peak;
 use cost::{ExpandedDefaultCost, GenericInstanceCost, StructuralCost};
+#[cfg(test)]
+use retention::retention_prebound;
 // A private source-call admission only; scalar/public export gates are separate.
 pub(super) fn byte_writer_import_authorized<'a>(
     function: &'a Function,

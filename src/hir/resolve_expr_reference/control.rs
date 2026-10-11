@@ -156,7 +156,7 @@ pub(super) fn if_expression(
 impl Resolver<'_> {
     #[cfg(test)]
     #[allow(dead_code)]
-    pub(super) fn resolve_expr_recursive_reference(
+    pub(in crate::hir) fn resolve_expr_recursive_reference(
         &self,
         function: &FunctionExecutionId,
         expr: &Expr,
