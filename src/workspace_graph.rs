@@ -4419,6 +4419,12 @@ fn build_resolved_core(
         reserve_workspace_module_carrier(programs.len())?;
         modules = Vec::with_capacity(programs.len());
     }
+    // Earlier/cached forecasts retain the old inline Program carrier. The
+    // new tagged input adds one reused enclosing header, not one per module.
+    // Sequential uncached retention prices that same carrier in its peak.
+    if !retained_output_only {
+        reserve_builder_structure(expected_projection::borrowed_leaf::input_carrier_delta()?)?;
+    }
     let mut synthetic_ast_peak = 0usize;
     let mut selected_static_modules = static_text::SelectedModules::default();
     for index in 0..programs.len() {

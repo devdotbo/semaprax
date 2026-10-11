@@ -85,6 +85,9 @@ fn borrowed_leaf_drop_has_no_allocation_and_constructor_limits_are_exact_and_sti
     }
     source.push_str(" @id(\"main\") fn main()->i64 {0}");
     let wide = crate::parse(&source, "wide-leaf.spx").unwrap();
+    let programs = std::slice::from_ref(&wide);
+    let authored = index_authored(programs).unwrap();
+    let registry = private_layout::registry::LayoutRegistry::new(programs, &authored);
     let directory = 96 * std::mem::size_of::<(&str, &TypeDeclaration)>();
     assert_eq!(
         super::ast_peak(&wide).unwrap(),
@@ -93,9 +96,9 @@ fn borrowed_leaf_drop_has_no_allocation_and_constructor_limits_are_exact_and_sti
     let ((result, allocation), overflowed, used) =
         crate::bounded_output::with_limit_usage(directory, || {
             crate::test_allocation_observer::measure(|| {
-                let view = construct(&wide)?;
-                assert_eq!(view.types().len(), 96);
-                for (actual, authored) in view.types().iter().zip(&wide.types) {
+                let view = Input::construct(&wide, &authored, programs, &registry, true)?;
+                assert_eq!(view.source().types().len(), 96);
+                for (actual, authored) in view.source().types().iter().zip(&wide.types) {
                     assert!(std::ptr::eq(actual, authored));
                 }
                 drop(view);
@@ -111,7 +114,10 @@ fn borrowed_leaf_drop_has_no_allocation_and_constructor_limits_are_exact_and_sti
     assert_eq!(allocation.live, 0);
     let ((first, retry), overflowed, _) =
         crate::bounded_output::with_limit_usage(directory - 1, || {
-            (construct(&wide).is_err(), construct(&wide).is_err())
+            (
+                Input::construct(&wide, &authored, programs, &registry, true).is_err(),
+                Input::construct(&wide, &authored, programs, &registry, true).is_err(),
+            )
         });
     assert!(overflowed);
     assert!(first && retry);
@@ -188,6 +194,12 @@ fn borrowed_leaf_full_pipeline_keeps_owned_fallback_and_original_diagnostics() {
     // Cache construction retains the independent ordinary owned key.
     let cached = Input::construct(&programs[0], &authored, &programs, &registry, false).unwrap();
     assert!(cached.owned().is_some());
+    let delta = super::input_carrier_delta().unwrap();
+    assert!(delta > 0);
+    assert_eq!(
+        delta,
+        std::mem::size_of::<Input<'_>>() - std::mem::size_of::<crate::ast::Program>()
+    );
     let uncached = Input::construct(&programs[0], &authored, &programs, &registry, true).unwrap();
     assert!(uncached.owned().is_none());
     let imported = crate::parse("module imported; use function @id(\"read\") from borrowed_leaf as read; @id(\"main\") fn main()->i64 {0}", "imported.spx").unwrap();

@@ -127,10 +127,15 @@ pub(in crate::workspace_graph) fn charge_uncached_synthetic_ast_with_registry(
     let bytes = if super::borrowed_leaf::eligible(program) {
         super::borrowed_leaf::ast_peak(program)?
     } else {
-        synthetic_builder_bytes_scoped_with_registry(
-            program, authored, programs, None, 4, true, registry,
+        checked_usage(
+            synthetic_builder_bytes_scoped_with_registry(
+                program, authored, programs, None, 4, true, registry,
+            )?
+            .synthetic_ast,
+            super::borrowed_leaf::input_carrier_delta()?,
+            "builder_bytes",
+            active_builder_limit(),
         )?
-        .synthetic_ast
     };
     // The uncached path drops this AST before constructing the next one.
     // Preserve a monotonic peak reservation; never refund earlier charges.
@@ -229,7 +234,12 @@ pub(in crate::workspace_graph) fn uncached_peak_prebound_with_registry(
         synthetic_ast_peak = synthetic_ast_peak.max(if super::borrowed_leaf::eligible(program) {
             super::borrowed_leaf::ast_peak(program)?
         } else {
-            costs.synthetic_ast
+            checked_usage(
+                costs.synthetic_ast,
+                super::borrowed_leaf::input_carrier_delta()?,
+                "builder_bytes",
+                active_builder_limit(),
+            )?
         });
     }
     let total = checked_usage(
