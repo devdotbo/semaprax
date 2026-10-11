@@ -1163,6 +1163,8 @@ mod hn13;
 
 #[path = "context_binding.rs"]
 mod mn05;
+#[path = "context_generation_reads.rs"]
+mod generation_reads;
 
 // ---- HN-10 index adoption and worktree-safe refresh (fixture prefix `hp-hnf`) ----------
 
@@ -1301,9 +1303,11 @@ mod index_adoption_tests {
                 );
                 std::thread::spawn(move || {
                     while !stop.load(Ordering::Relaxed) {
-                        match s.current().and_then(|(n, d)| {
-                            Some((n, std::fs::read_to_string(d.join("graph.json")).ok()?))
-                        }) {
+                        match s.read_current(Duration::from_secs(5), |n, d| {
+                            std::fs::read_to_string(d.join("graph.json"))
+                                .map(|body| (n, body))
+                                .map_err(|e| HarnessDiagnostic::new("SPX-HPF011", e.to_string()))
+                        }).ok().flatten() {
                             Some((n, body))
                                 if body.lines().all(|l| l == format!("generation-{n}"))
                                     && body.lines().count() == 20_000 =>
