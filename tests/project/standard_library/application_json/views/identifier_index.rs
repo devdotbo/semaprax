@@ -114,6 +114,7 @@ fn bucket_app() -> String {
     let mut out = r#"module consumer.app;
 use type @id("application.request.json.request-result") from consumer.schema as Outcome;
 use type @id("application.patient.json.view") from consumer.schema as PatientView;
+use type @id("application.request.json.identifier-span") from consumer.schema as ServerSpan;
 use function @id("application.request.json.request.decode") from consumer.schema as decode;
 @id("consumer.error") fn error(input:borrow Slice<u8>,expected:i64,at:usize,target:i64)->i64 {
 let outcome=decode(input);match own outcome{Outcome::Decoded{servers,patients}=>1,Outcome::Error{code,offset,field}=>if code==expected && offset==at && field==target{0}else{1},}
@@ -168,7 +169,27 @@ fn generated_identifier_buckets_preserve_max_shape_collisions_and_failure_order(
     })
     .unwrap();
     std::fs::write(root.join("src/schema.spx"), source).unwrap();
-    std::fs::write(root.join("src/app.spx"), canonical(&bucket_app())).unwrap();
+    let admitted = bucket_app();
+    // The generated Decoded case has two Vec payload fields. It is outside
+    // the private one-record-payload inference profile, so both element type
+    // imports must be explicit. Preserve that closed profile as an actual
+    // current-source hostile control, then use the ordinary explicit route.
+    let span_import = "use type @id(\"application.request.json.identifier-span\") from consumer.schema as ServerSpan;\n";
+    assert_eq!(admitted.matches(span_import).count(), 1);
+    let omitted = admitted.replacen(span_import, "", 1);
+    std::fs::write(root.join("src/app.spx"), canonical(&omitted)).unwrap();
+    let refused = project::with_authenticated_project(&root.join("semaprax.toml"), |_| Ok(()))
+        .err()
+        .expect("omitted element import must retain the private profile refusal");
+    assert!(
+        refused
+            .iter()
+            .any(|diagnostic| diagnostic.code == "SPX-G172"
+                && diagnostic.message
+                    == "private layout closure exceeds its independently bounded nominal profile"),
+        "{refused:?}"
+    );
+    std::fs::write(root.join("src/app.spx"), canonical(&admitted)).unwrap();
     project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
         semaprax::hir::validate(snapshot.entry_program()).map_err(|error| vec![error])?;
         // Max-shape inputs use the existing configurable fuel ceiling; the
