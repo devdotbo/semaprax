@@ -110,7 +110,14 @@ fn execute(fixture: &Fixture, expected: i64) {
 fn envelope_hostile(fixture: &Fixture, digest: &str) {
     // The real authenticated store must reject altered schema/header and payload
     // before either can become a restored checked module.
-    let path = fixture.store.join(format!("{digest}.bin"));
+    let hex = digest
+        .strip_prefix("sha256:")
+        .expect("store digest algorithm");
+    assert_eq!(hex.len(), 64);
+    assert!(hex
+        .bytes()
+        .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte)));
+    let path = fixture.store.join(format!("{hex}.bin"));
     let original = std::fs::read(&path).unwrap();
     assert!(original.len() > 16);
     for index in [0, original.len() - 1] {
