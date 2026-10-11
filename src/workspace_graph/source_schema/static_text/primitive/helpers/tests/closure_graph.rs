@@ -174,33 +174,46 @@ fn aliases() -> WorkspaceGraphBuild {
         .replace("step(41)", "first_step(30)+second_step(0)");
     build(&caller, PROVIDER, LEAF).unwrap()
 }
+/// Keep the ordered call census and left-to-right sum without a deep binary tree.
+/// Each initializer adds one call to the previous Copy scalar binding.
+fn flat_call_sum(prefix: &str, count: usize, argument: &str) -> String {
+    if count == 0 {
+        return "    0\n".to_owned();
+    }
+    let mut body = format!("    let sum0 = {prefix}0({argument});\n");
+    for j in 1..count {
+        body.push_str(&format!(
+            "    let sum{j} = sum{} + {prefix}{j}({argument});\n",
+            j - 1
+        ));
+    }
+    body.push_str(&format!("    sum{}\n", count - 1));
+    body
+}
 /// Definitions run high to low so sorted ID order differs from ordinal order.
 fn dense_source(count: usize) -> String {
     let mut source = String::from("module scalar.dense;\n");
     for i in (0..count).rev() {
         let body = if i == 0 {
-            "n".to_owned()
+            "    n\n".to_owned()
         } else {
-            (0..i)
-                .map(|j| format!("f{j}(n)"))
-                .collect::<Vec<_>>()
-                .join("+")
+            flat_call_sum("f", i, "n")
         };
         source.push_str(&format!(
-            "@id(\"dense.{i:03}\") fn f{i}(n:i64)->i64 {{{body}}}\n"
+            "\n@id(\"dense.{i:03}\")\nfn f{i}(n: i64) -> i64\n{{\n{body}}}\n"
         ));
     }
     source
 }
 fn wide_source(count: usize) -> String {
-    let calls = (0..count)
-        .map(|j| format!("g{j}(0)"))
-        .collect::<Vec<_>>()
-        .join("+");
-    let mut source =
-        format!("module scalar.wide;\n@id(\"wide.main\") fn main()->i64 {{{calls}}}\n");
+    let calls = flat_call_sum("g", count, "0");
+    let mut source = format!(
+        "module scalar.wide;\n\n@id(\"wide.main\")\nfn main() -> i64\n{{\n{calls}}}\n"
+    );
     for j in (0..count).rev() {
-        source.push_str(&format!("@id(\"wide.{j:03}\") fn g{j}(n:i64)->i64 {{n}}\n"));
+        source.push_str(&format!(
+            "\n@id(\"wide.{j:03}\")\nfn g{j}(n: i64) -> i64\n{{\n    n\n}}\n"
+        ));
     }
     source
 }
@@ -414,6 +427,13 @@ fn long_ids_and_wide_dense_graphs_match_the_saved_oracle_with_single_walks() {
     let shape = parity(&dense, "scalar.app").ok().unwrap();
     assert_eq!(shape.functions.len(), 40);
     assert_eq!(shape.edges.len(), 40 * 39 / 2);
+    assert_eq!(
+        shape.edges,
+        (0..40)
+            .flat_map(|from| (from + 1..40).rev().map(move |to| (from, to)))
+            .collect::<Vec<_>>(),
+        "every lower-numbered callee in authored call order"
+    );
     assert!(shape.acyclic);
     assert_eq!(shape.visits, shape.edges.len());
     assert_eq!(shape.walks, 40);

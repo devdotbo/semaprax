@@ -1,7 +1,9 @@
 //! Carrier-free root census: independent AST and resolved-HIR position oracles,
 //! a complete-forecast differential against the position-blind formula, exact
 //! and one-short limits, malformed-census refusal, and a resolver/replay
-//! allocation highwater gate. Nothing here mirrors `declaration_cost`.
+//! allocation highwater gate. Variable roots keep all storage and closure
+//! subtrees keep every variable auxiliary carrier. This source batch awaits
+//! executable qualification. Nothing here mirrors `declaration_cost`.
 use super::super::{cached_exact, dependency_identity_max, synthetic_builder_bytes_scoped};
 use super::StructuralCost;
 use crate::ast::{Expr, ExprKind, Program};
@@ -24,6 +26,8 @@ struct Census {
     free: usize,
     /// Free `if` roots: carrier-free, but never storage-free.
     ifs: usize,
+    /// Free variable roots outside authored closures: never storage-free.
+    vars: usize,
 }
 
 fn ast_kind(kind: &ExprKind) -> Option<usize> {
@@ -44,7 +48,7 @@ fn ast_kind(kind: &ExprKind) -> Option<usize> {
 
 /// Raw AST oracle: a root is free only as a unary/binary operand, an `if`
 /// condition/branch, a block tail, or a free-function call argument.
-fn ast_census(expression: &Expr, free: bool, census: &mut Census) {
+fn ast_census(expression: &Expr, free: bool, outside_closure: bool, census: &mut Census) {
     if let Some(kind) = ast_kind(&expression.kind) {
         census.kinds[kind] += 1;
         census.free += usize::from(free);
@@ -52,6 +56,10 @@ fn ast_census(expression: &Expr, free: bool, census: &mut Census) {
     if matches!(expression.kind, ExprKind::If { .. }) {
         census.ifs += usize::from(free);
     }
+    if outside_closure && matches!(expression.kind, ExprKind::Var(_)) {
+        census.vars += usize::from(free);
+    }
+    let outside_children = outside_closure && !matches!(expression.kind, ExprKind::Closure { .. });
     let free_children: Vec<&Expr> = match &expression.kind {
         ExprKind::Unary { value, .. } => vec![value],
         ExprKind::Binary { left, right, .. } => vec![left, right],
@@ -69,7 +77,7 @@ fn ast_census(expression: &Expr, free: bool, census: &mut Census) {
         let is_free = free_children
             .iter()
             .any(|candidate| std::ptr::eq(*candidate, child));
-        ast_census(child, is_free, census);
+        ast_census(child, is_free, outside_children, census);
         index += 1;
     }
 }
@@ -94,7 +102,12 @@ fn hir_kind(kind: &ResolvedExprKind) -> Option<usize> {
 /// it is held by a `Box` of a unary/binary/`if`/block-tail node or by a call's
 /// argument vector. Statement children are carried by `ResolvedStatement`.
 /// Returns the number of auxiliary carriers actually constructed.
-fn hir_census(expression: &ResolvedExpr, free: bool, census: &mut Census) -> usize {
+fn hir_census(
+    expression: &ResolvedExpr,
+    free: bool,
+    outside_closure: bool,
+    census: &mut Census,
+) -> usize {
     if let Some(kind) = hir_kind(&expression.kind) {
         census.kinds[kind] += 1;
         census.free += usize::from(free);
@@ -102,23 +115,32 @@ fn hir_census(expression: &ResolvedExpr, free: bool, census: &mut Census) -> usi
     if matches!(expression.kind, ResolvedExprKind::If { .. }) {
         census.ifs += usize::from(free);
     }
+    if outside_closure
+        && matches!(
+            expression.kind,
+            ResolvedExprKind::Place(_) | ResolvedExprKind::FunctionReference { .. }
+        )
+    {
+        census.vars += usize::from(free);
+    }
     match &expression.kind {
-        ResolvedExprKind::Unary { value, .. } => hir_census(value, true, census),
+        ResolvedExprKind::Unary { value, .. } => hir_census(value, true, outside_closure, census),
         ResolvedExprKind::Binary { left, right, .. } => {
-            hir_census(left, true, census) + hir_census(right, true, census)
+            hir_census(left, true, outside_closure, census)
+                + hir_census(right, true, outside_closure, census)
         }
         ResolvedExprKind::If {
             condition,
             then_branch,
             else_branch,
         } => {
-            hir_census(condition, true, census)
-                + hir_census(then_branch, true, census)
-                + hir_census(else_branch, true, census)
+            hir_census(condition, true, outside_closure, census)
+                + hir_census(then_branch, true, outside_closure, census)
+                + hir_census(else_branch, true, outside_closure, census)
         }
         ResolvedExprKind::Call { args, .. } => args
             .iter()
-            .map(|argument| hir_census(argument, true, census))
+            .map(|argument| hir_census(argument, true, outside_closure, census))
             .sum(),
         ResolvedExprKind::Block { statements, tail } => {
             let mut built = 0;
@@ -128,12 +150,59 @@ fn hir_census(expression: &ResolvedExpr, free: bool, census: &mut Census) -> usi
                     ResolvedStatement::Let { .. } | ResolvedStatement::Assign { .. }
                 ));
                 for index in 0..statement.child_count() {
-                    built += hir_census(statement.child(index).unwrap(), false, census);
+                    built += hir_census(
+                        statement.child(index).unwrap(),
+                        false,
+                        outside_closure,
+                        census,
+                    );
                 }
             }
-            built + hir_census(tail, true, census)
+            built + hir_census(tail, true, outside_closure, census)
         }
-        ResolvedExprKind::Place(_) => 0,
+        ResolvedExprKind::Closure {
+            parameters,
+            captures,
+            body,
+        } => {
+            // Captures are synthetic place reads and bindings, never authored
+            // variable roots. The private body inherits the closure exclusion.
+            parameters.len() + captures.len() + hir_census(body, false, false, census)
+        }
+        ResolvedExprKind::Invoke { callable, args } => {
+            // The callable place comes from the source call name, not a Var.
+            hir_census(callable, false, outside_closure, census)
+                + args
+                    .iter()
+                    .map(|arg| hir_census(arg, true, outside_closure, census))
+                    .sum::<usize>()
+        }
+        ResolvedExprKind::ConstructRecord { fields, .. }
+        | ResolvedExprKind::ConstructVariant { fields, .. } => fields
+            .iter()
+            .map(|field| 1 + hir_census(&field.value, false, outside_closure, census))
+            .sum(),
+        ResolvedExprKind::Match {
+            scrutinee, arms, ..
+        } => {
+            hir_census(scrutinee, false, outside_closure, census)
+                + arms
+                    .iter()
+                    .map(|arm| {
+                        1 + usize::from(matches!(
+                            arm.pattern,
+                            crate::hir::ResolvedMatchPattern::Binding(_)
+                        )) + arm
+                            .guard
+                            .as_ref()
+                            .map_or(0, |guard| hir_census(guard, false, outside_closure, census))
+                            + hir_census(&arm.value, false, outside_closure, census)
+                    })
+                    .sum::<usize>()
+        }
+        ResolvedExprKind::Place(_)
+        | ResolvedExprKind::FunctionReference { .. }
+        | ResolvedExprKind::String(_) => 0,
         _ if hir_kind(&expression.kind) == Some(0) => 0,
         other => panic!("fixture admits no other resolved kind: {other:?}"),
     }
@@ -159,28 +228,223 @@ const GATE: &str = r#"module carrier.gate;
 }
 "#;
 
+// Every named type is authored; ownership-bearing roots retain their storage.
+const VALUES: &str = r#"module carrier.values;
+
+@id("carrier.values.packet")
+record Packet {
+    @id("carrier.values.packet.text")
+    text: string,
+    @id("carrier.values.packet.bytes")
+    bytes: Bytes,
+}
+
+@id("carrier.values.add")
+fn add(value: i64) -> i64
+{
+    value + 1
+}
+
+@id("carrier.values.text")
+fn text(value: own string) -> string
+{
+    value
+}
+
+@id("carrier.values.bytes")
+fn bytes(value: own Bytes) -> Bytes
+{
+    value
+}
+
+@id("carrier.values.record")
+fn move_packet(value: own Packet) -> Packet
+{
+    value
+}
+
+@id("carrier.values.reference")
+fn reference(flag: bool) -> fn(i64) -> i64
+{
+    if flag { add } else { add }
+}
+
+@id("carrier.values.main")
+fn main() -> i64
+{
+    let text_value = text("x");
+    let bytes_value = bytes(bytes_zeroed(0usize));
+    let copied_text = text(text_value);
+    let copied_bytes = bytes(bytes_value);
+    let record_value = move_packet(Packet { text: copied_text, bytes: copied_bytes });
+    let moved_record = move_packet(record_value);
+    let callback = reference(true);
+    let direct = add;
+    let mut x = 1;
+    let y = x;
+    x = y;
+    let z = match x { n => n, };
+    if true { 0 } else { z }
+}
+"#;
+
+const CLOSURE: &str = r#"module carrier.closure;
+
+@id("carrier.closure.helper")
+fn helper(value: i64) -> i64
+{
+    value
+}
+
+@id("carrier.closure.main")
+fn main() -> i64
+{
+    let offset = 1;
+    let callback = fn(value: i64) -> i64 { let saved = value; let mut copied = saved; copied = value; if copied > offset { helper(copied) } else { offset } };
+    callback(0)
+}
+"#;
+
+#[test]
+fn variables_keep_storage_for_owned_values_references_and_closure_captures() {
+    for (source, expected_vars) in [(VALUES, 11), (CLOSURE, 1)] {
+        let parsed = crate::parse(source, "values.spx").unwrap();
+        let mut ast = Census::default();
+        for function in &parsed.functions {
+            ast_census(&function.body, false, true, &mut ast);
+        }
+        assert_eq!(ast.vars, expected_vars);
+        let cost = cost_census(&parsed);
+        assert_eq!(cost.exact_absent_roots, ast.kinds);
+        assert_eq!(cost.exact_carrier_free_roots, ast.free);
+        assert_eq!(cost.exact_carrier_free_ifs, ast.ifs);
+        assert_eq!(cost.exact_carrier_free_vars, ast.vars);
+        let checked = crate::check(source, "values.spx").unwrap();
+        let resolved = crate::hir::resolve(&checked).unwrap();
+        crate::hir::validate(&resolved).unwrap();
+        let mut hir = Census::default();
+        for function in &resolved.functions {
+            hir_census(&function.body, false, true, &mut hir);
+        }
+        assert_eq!(hir, ast, "authored roots and actual resolved containers");
+        let storage = std::mem::size_of::<crate::cleanup::CleanupStorageSlot>()
+            + std::mem::size_of::<crate::cleanup::CleanupFlag>()
+            + std::mem::size_of::<crate::cleanup::CleanupPlace>()
+            + std::mem::size_of::<crate::cleanup_plan::CleanupSlot>();
+        assert_eq!(
+            super::exact_absent_storage(&cost).unwrap(),
+            ast.kinds.iter().sum::<usize>() * storage
+                + (ast.free + ast.ifs + ast.vars) * carriers(),
+            "variables omit only the six auxiliary carriers"
+        );
+    }
+}
+
+#[test]
+fn delegated_children_and_nested_closures_cannot_reset_variable_exclusion() {
+    // Parse-only adversarial cost input: includes closed runtime shapes so the
+    // forecast must be conservative before later admission refuses them.
+    for body in [
+        "let x = value; x = value; value",
+        "let x = { value }; { value }",
+        "Packet { text: { value }, bytes: { value } }",
+        "match value { n if { value } => { value }, _ => { value }, }",
+        "let nested = fn(inner: i64) -> i64 { inner + value }; nested(value)",
+        "let x = make(value); value.method(value)",
+        "let x = value with { field: { value } }; value.field",
+        "let x = vec_of<i64>({ value }); value",
+        "while value > 0 { let x = { value }; value } value",
+    ] {
+        let source = format!("module carrier.exclusion; @id(\"carrier.exclusion.main\") fn main() -> i64 {{ let callback = fn(value: i64) -> i64 {{ {body} }}; 0 }}");
+        let parsed = crate::parse(&source, "exclusion.spx").unwrap();
+        let mut ast = Census::default();
+        ast_census(&parsed.functions[0].body, false, true, &mut ast);
+        assert_eq!(ast.vars, 0, "{body}");
+        assert_eq!(cost_census(&parsed).exact_carrier_free_vars, 0, "{body}");
+    }
+}
+
+#[test]
+fn malformed_variable_censuses_fail_closed_and_runtime_censuses_are_ignored() {
+    let parsed = crate::parse(VALUES, "values.spx").unwrap();
+    let raw = cost_census(&parsed);
+    let mut runtime = StructuralCost::new();
+    runtime.exact_carrier_free_vars = usize::MAX;
+    let ordinary = StructuralCost::new();
+    for mode in [5, 6] {
+        assert_eq!(
+            super::fixed_hir_discount(mode, &raw, &runtime).unwrap(),
+            super::fixed_hir_discount(mode, &raw, &ordinary).unwrap()
+        );
+    }
+    for vars in [raw.exact_expressions, usize::MAX] {
+        let mut malformed = cost_census(&parsed);
+        malformed.exact_carrier_free_vars = vars;
+        for mode in [5, 6] {
+            assert!(super::fixed_hir_discount(mode, &malformed, &ordinary)
+                .unwrap_err()
+                .iter()
+                .all(|error| error.code == "SPX-G171"));
+        }
+        for retention in [
+            cached_exact::Retention::Parsed,
+            cached_exact::Retention::Semantic,
+        ] {
+            assert!(
+                cached_exact::fixed_upper(1 << 24, &malformed, &ordinary, retention)
+                    .unwrap_err()
+                    .iter()
+                    .all(|error| error.code == "SPX-G171")
+            );
+        }
+    }
+    // Even a valid disjoint count refuses if conversion to carrier bytes overflows.
+    let mut huge = StructuralCost::new();
+    huge.exact_expressions = usize::MAX;
+    huge.exact_carrier_free_vars = usize::MAX / carriers() + 1;
+    assert!(super::exact_absent_storage(&huge)
+        .unwrap_err()
+        .iter()
+        .all(|error| error.code == "SPX-G171"));
+    for mode in [0, 4, 7, 8] {
+        assert!(super::fixed_hir_discount(mode, &huge, &ordinary).is_ok());
+    }
+    for retention in [
+        cached_exact::Retention::Parsed,
+        cached_exact::Retention::Semantic,
+    ] {
+        assert_eq!(
+            cached_exact::fixed_upper(1 << 24, &raw, &runtime, retention).unwrap(),
+            cached_exact::fixed_upper(1 << 24, &raw, &ordinary, retention).unwrap()
+        );
+    }
+}
+
 #[test]
 fn raw_ast_resolved_and_cost_censuses_agree_on_every_carrier_free_root() {
     let parsed = crate::parse(GATE, std::path::Path::new("gate.spx")).unwrap();
     let mut ast = Census::default();
     for function in &parsed.functions {
-        ast_census(&function.body, false, &mut ast);
+        ast_census(&function.body, false, true, &mut ast);
     }
     // Hand count: 14 literals, 2 unary, 13 binary; `1 + 2`, `total * 3` and
     // the `let flag` conjunction are the only delegated censused roots. The
-    // tail `if` is the one free `if` root.
+    // tail `if` is the one free `if` root. Its scalar operands and those of
+    // `add` contribute eight free variables, each retaining all storage.
     assert_eq!(
         ast,
         Census {
             kinds: [14, 2, 13],
             free: 26,
             ifs: 1,
+            vars: 8,
         }
     );
     let cost = cost_census(&parsed);
     assert_eq!(cost.exact_absent_roots, ast.kinds);
     assert_eq!(cost.exact_carrier_free_roots, ast.free);
     assert_eq!(cost.exact_carrier_free_ifs, ast.ifs);
+    assert_eq!(cost.exact_carrier_free_vars, ast.vars);
     // Legacy and runtime accumulators never count.
     let mut legacy = StructuralCost::new();
     for function in &parsed.functions {
@@ -188,6 +452,7 @@ fn raw_ast_resolved_and_cost_censuses_agree_on_every_carrier_free_root() {
     }
     assert_eq!(legacy.exact_carrier_free_roots, 0);
     assert_eq!(legacy.exact_carrier_free_ifs, 0);
+    assert_eq!(legacy.exact_carrier_free_vars, 0);
 
     let checked = crate::check(GATE, "gate.spx").unwrap();
     let resolved = crate::hir::resolve(&checked).unwrap();
@@ -201,7 +466,7 @@ fn raw_ast_resolved_and_cost_censuses_agree_on_every_carrier_free_root() {
             .find(|function| function.name == name)
             .unwrap();
         assert!(function.requires.is_empty() && function.ensures.is_empty());
-        built += hir_census(&function.body, false, &mut hir);
+        built += hir_census(&function.body, false, true, &mut hir);
     }
     // No literal/unary/binary root is folded, elided, or moved into a carrier.
     assert_eq!(hir, ast);
@@ -210,7 +475,10 @@ fn raw_ast_resolved_and_cost_censuses_agree_on_every_carrier_free_root() {
     assert_eq!(built, 3 + 3);
     assert!(
         built
-            <= cost.exact_expressions - cost.exact_carrier_free_roots - cost.exact_carrier_free_ifs
+            <= cost.exact_expressions
+                - cost.exact_carrier_free_roots
+                - cost.exact_carrier_free_ifs
+                - cost.exact_carrier_free_vars
     );
 }
 
@@ -220,11 +488,12 @@ fn delegated_parents_keep_complete_bundles_and_guards_are_charged() {
         let source = format!("module m; @id(\"m.main\") fn main(left: i64) -> i64 {{ {body} }}");
         let program = crate::parse(&source, std::path::Path::new("m.spx")).unwrap();
         let mut oracle = Census::default();
-        ast_census(&program.functions[0].body, false, &mut oracle);
+        ast_census(&program.functions[0].body, false, true, &mut oracle);
         let cost = cost_census(&program);
         assert_eq!(cost.exact_absent_roots, oracle.kinds, "{body}");
         assert_eq!(cost.exact_carrier_free_roots, oracle.free, "{body}");
         assert_eq!(cost.exact_carrier_free_ifs, oracle.ifs, "{body}");
+        assert_eq!(cost.exact_carrier_free_vars, oracle.vars, "{body}");
         (oracle, cost)
     };
     // Arm values and guards embed or box under a `ResolvedMatchArm`; the
@@ -272,6 +541,11 @@ fn literal(index: usize) -> String {
     index.to_string()
 }
 
+/// A moved variable root: carrier-free as an argument, never storage-free.
+fn variable(_: usize) -> String {
+    "seed".to_owned()
+}
+
 /// A moved `if` root: carrier-free as an argument, never storage-free. Its
 /// condition and branch-tail literals are free in both positions.
 fn branch(index: usize) -> String {
@@ -283,7 +557,7 @@ fn pair_source(n: usize, free: bool, moved: fn(usize) -> String) -> String {
         .map(|index| format!("a{index}: i64"))
         .collect::<Vec<_>>()
         .join(", ");
-    let mut body = String::new();
+    let mut body = String::from("let seed = 1; ");
     for index in 0..n {
         let value = if free { "f()".to_owned() } else { moved(index) };
         body.push_str(&format!("let v{index} = {value}; "));
@@ -315,7 +589,7 @@ impl Drop for LimitRestore {
 
 #[test]
 fn complete_forecast_differs_from_position_blind_formula_by_exact_carriers() {
-    for moved in [literal as fn(usize) -> String, branch] {
+    for moved in [literal as fn(usize) -> String, branch, variable] {
         moved_roots_differ_by_exact_carriers(moved);
     }
 }
@@ -324,13 +598,13 @@ fn moved_roots_differ_by_exact_carriers(moved: fn(usize) -> String) {
     const N: usize = 12;
     let (free, delegated) = (pair(N, true, moved), pair(N, false, moved));
     let (mut census, mut twin) = (Census::default(), Census::default());
-    ast_census(&free[0].functions[2].body, false, &mut census);
-    ast_census(&delegated[0].functions[2].body, false, &mut twin);
-    // Exactly N roots change position: N literals, or N `if` roots whose
-    // own literals are free in both twins.
+    ast_census(&free[0].functions[2].body, false, true, &mut census);
+    ast_census(&delegated[0].functions[2].body, false, true, &mut twin);
+    // Exactly N roots change position: literals, variables, or `if` roots
+    // whose own literals are free in both twins.
     assert_eq!(census.kinds, twin.kinds);
     assert_eq!(
-        (census.free + census.ifs) - (twin.free + twin.ifs),
+        (census.free + census.ifs + census.vars) - (twin.free + twin.ifs + twin.vars),
         N,
         "{census:?} {twin:?}"
     );
@@ -342,10 +616,12 @@ fn moved_roots_differ_by_exact_carriers(moved: fn(usize) -> String) {
             "mode {mode}"
         );
     }
-    let (free_hir, free_total) = retained(&free, 5);
-    let (delegated_hir, delegated_total) = retained(&delegated, 5);
-    assert_eq!(delegated_hir - free_hir, N * carriers());
-    assert_eq!(delegated_total - free_total, N * carriers());
+    for mode in [5, 6] {
+        let (free_hir, free_total) = retained(&free, mode);
+        let (delegated_hir, delegated_total) = retained(&delegated, mode);
+        assert_eq!(delegated_hir - free_hir, N * carriers());
+        assert_eq!(delegated_total - free_total, N * carriers());
+    }
     for (retention, copies) in [
         (cached_exact::Retention::Parsed, 1),
         (cached_exact::Retention::Semantic, 2),
@@ -389,13 +665,23 @@ fn resolver_and_replay_highwater_stays_within_the_reduced_forecast() {
         (GATE.to_owned(), "gate.spx"),
         (pair_source(12, true, literal), "pair.spx"),
         (pair_source(12, true, branch), "branch.spx"),
+        (pair_source(12, true, variable), "variable.spx"),
+        (VALUES.to_owned(), "values.spx"),
+        (CLOSURE.to_owned(), "closure.spx"),
     ] {
         let parsed = vec![crate::parse(&source, std::path::Path::new(path)).unwrap()];
         let census = cost_census(&parsed[0]);
-        assert!(
-            census.exact_carrier_free_roots >= 12,
-            "gate exercises the discount"
-        );
+        if matches!(path, "values.spx" | "closure.spx") {
+            assert!(
+                census.exact_carrier_free_vars > 0,
+                "gate exercises variables"
+            );
+        } else {
+            assert!(
+                census.exact_carrier_free_roots >= 12,
+                "gate exercises the discount"
+            );
+        }
         let (_, forecast) = retained(&parsed, 5);
         let checked = crate::check(&source, path).unwrap();
         let (resolved, allocation) = crate::test_allocation_observer::measure(|| {
