@@ -842,6 +842,12 @@ format: `Unreleased` then release buckets, grouped by impact.
 
 ## Unreleased
 
+- Add phase-owned borrowed function and exact expression-ID directories to byte
+  helper ModuleIndex queries (#738), retaining independent unseen-target proof,
+  original census order and pointer authority. Sparse-module parity, logarithmic
+  zero-backing queries, duplicate-ID and exact/one-short controls are authored;
+  execution qualification remains pending.
+
 - Retain one callee inventory and cumulative replay work ledger across captured primitive lexical module members; reconstruct each function lease independently. Executable qualification pending.
 
 - Factor ShiftSim Copy-state scans and metric decisions into checked helpers, retaining the original semantic path-budget refusal and all 15 wire cases; qualification pending.

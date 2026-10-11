@@ -1117,7 +1117,13 @@ response selectors. They write literals, decimal integers and escaped UTF-8 into
 one exactly sized bounded Bytes owner, then perform the ordinary final UTF-8
 String copy. The compiler admits helper renewal from a bounded transitive
 source/HIR closure proof in `src/loop_calls/byte_writer`, independently of codec
-names. `graph/byte_helper_renewal` projects distinct Graph v76 authority;
+names. Its immutable phase-owned ModuleIndex retains original census and proof
+order, with separately precharged borrowed numeric directories for functions,
+positive targets and exact expression-ID fields. Numeric keys only discover a
+candidate; receiving checks still require current pointer identity and original
+binding equality. Unseen/negative targets retain independent proof fallback.
+Directory heapsort charges actual comparisons and swaps before work; query
+lookup allocates nothing and never clones IDs or grants equal-text authority. `graph/byte_helper_renewal` projects distinct Graph v76 authority;
 `workspace_graph/source_schema/byte_helper` replays retained declaration and
 callee bodies without cloning an entire program. Cleanup v19 composes helper
 renewal with optional lexical certificates; `cache_codec/lexical_cleanup`

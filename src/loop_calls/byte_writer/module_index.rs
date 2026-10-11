@@ -3,15 +3,22 @@
 use super::*;
 use crate::diagnostic::Diagnostic;
 use crate::hir::ResolvedProgram;
+mod directory;
+use directory::Site;
 type Sites<'a> = (&'a ResolvedFunction, HelperBindings<'a>);
 #[derive(Debug, Default)]
 pub(crate) struct ModuleIndex<'a> {
     program: Option<&'a ResolvedProgram>,
     sites: Vec<Sites<'a>>,
+    // Discovery directories never replace exact borrowed identity checks.
+    functions: Vec<usize>,
+    expressions: Vec<Site<'a>>,
     // Only completed positive proofs become reusable target authority.
     targets: Vec<&'a ResolvedFunction>,
     #[cfg(test)]
     proof_count: usize,
+    #[cfg(test)]
+    query_probes: std::cell::Cell<usize>,
 }
 impl<'a> ModuleIndex<'a> {
     pub(crate) fn new(program: &'a ResolvedProgram) -> Result<Self, Diagnostic> {
@@ -121,12 +128,45 @@ impl<'a> ModuleIndex<'a> {
                 .zip(&proofs)
                 .filter_map(|(function, proof)| (*proof == Some(true)).then_some(function)),
         );
+        let expression_count = sites.iter().try_fold(0usize, |count, (_, bindings)| {
+            directory::charge(&mut lookup_work)?;
+            count.checked_add(bindings.len()).ok_or_else(error)
+        })?;
+        let mut functions = directory::reserve::<usize>(sites.len())?;
+        let mut expressions = directory::reserve::<Site<'a>>(expression_count)?;
+        for (index, (_, bindings)) in sites.iter().enumerate() {
+            directory::charge(&mut lookup_work)?;
+            functions.push(index);
+            for (at, binding) in bindings.borrowed_entries() {
+                directory::charge(&mut lookup_work)?;
+                expressions.push(Site { at, binding });
+            }
+        }
+        directory::sort(
+            &mut functions,
+            |index| sites[*index].0 as *const _ as usize,
+            &mut lookup_work,
+        )?;
+        directory::sort(
+            &mut expressions,
+            |site| site.at as *const _ as usize,
+            &mut lookup_work,
+        )?;
+        directory::sort(
+            &mut targets,
+            |function| *function as *const _ as usize,
+            &mut lookup_work,
+        )?;
         Ok(Self {
             program: Some(program),
             sites,
+            functions,
+            expressions,
             targets,
             #[cfg(test)]
             proof_count: proofs.iter().filter(|proof| proof.is_some()).count(),
+            #[cfg(test)]
+            query_probes: std::cell::Cell::new(0),
         })
     }
     pub(crate) fn matches_program(&self, program: &ResolvedProgram) -> bool {
@@ -136,12 +176,27 @@ impl<'a> ModuleIndex<'a> {
     pub(crate) fn is_empty(&self) -> bool {
         self.sites.is_empty()
     }
+    fn probe(&self) {
+        #[cfg(test)]
+        self.query_probes.set(
+            self.query_probes
+                .get()
+                .checked_add(1)
+                .expect("bounded test query probes"),
+        );
+    }
     pub(crate) fn admits(&self, binding: &ResolvedBinding, value: &ResolvedExpr) -> bool {
-        self.sites.iter().any(|(_, sites)| {
-            sites
-                .get_exact(&value.id)
-                .is_some_and(|actual| actual == binding)
-        })
+        let key = &value.id as *const _ as usize;
+        let start = directory::lower(
+            &self.expressions,
+            key,
+            |site| site.at as *const _ as usize,
+            || self.probe(),
+        );
+        self.expressions[start..]
+            .iter()
+            .take_while(|site| site.at as *const _ as usize == key)
+            .any(|site| std::ptr::eq(site.at, &value.id) && site.binding == binding)
     }
     /// Reuse only a positive proof of this exact held callee. Targets absent
     /// from the assignment census keep the independent proof fallback.
@@ -149,44 +204,62 @@ impl<'a> ModuleIndex<'a> {
         let Some(program) = self.program else {
             return false;
         };
-        if !program
-            .functions
-            .iter()
-            .chain(
-                program
-                    .function_instances
-                    .iter()
-                    .map(|instance| &instance.function),
-            )
-            .any(|function| std::ptr::eq(function, target))
-        {
+        // An irrelevant module keeps its allocation-free old membership/proof
+        // fallback, rather than deriving authority from an absent directory.
+        if self.functions.is_empty() {
+            return program
+                .functions
+                .iter()
+                .chain(
+                    program
+                        .function_instances
+                        .iter()
+                        .map(|instance| &instance.function),
+                )
+                .any(|function| std::ptr::eq(function, target))
+                && resolved_target(program, target);
+        }
+        if self.function_sites(target).is_none() {
             return false;
         }
+        let key = target as *const _ as usize;
+        let index = directory::lower(
+            &self.targets,
+            key,
+            |function| *function as *const _ as usize,
+            || self.probe(),
+        );
         self.targets
-            .iter()
-            .any(|function| std::ptr::eq(*function, target))
+            .get(index)
+            .is_some_and(|function| std::ptr::eq(*function, target))
             || resolved_target(program, target)
     }
     pub(crate) fn function_sites(
         &self,
         function: &ResolvedFunction,
     ) -> Option<&HelperBindings<'a>> {
-        self.sites
-            .iter()
-            .find(|(f, _)| std::ptr::eq(*f, function))
-            .map(|(_, sites)| sites)
+        let key = function as *const _ as usize;
+        let position = directory::lower(
+            &self.functions,
+            key,
+            |index| self.sites[*index].0 as *const _ as usize,
+            || self.probe(),
+        );
+        let index = *self.functions.get(position)?;
+        let (actual, sites) = &self.sites[index];
+        std::ptr::eq(*actual, function).then_some(sites)
     }
     pub(crate) fn has_sites(&self, function: &ResolvedFunction) -> bool {
-        self.sites
-            .iter()
-            .find(|(f, _)| std::ptr::eq(*f, function))
-            .is_some_and(|(_, sites)| !sites.is_empty())
+        self.function_sites(function)
+            .is_some_and(|sites| !sites.is_empty())
     }
     /// All borrowed identity backing belongs to the immutable program. Include
     /// every retained Vec capacity, including empty function-site carriers.
     #[cfg(test)]
     pub(crate) fn owned_capacity_bytes(&self) -> usize {
-        self.targets.capacity() * std::mem::size_of::<&ResolvedFunction>()
+        self.functions.capacity() * std::mem::size_of::<usize>()
+            + self.expressions.capacity() * std::mem::size_of::<Site<'_>>()
+            + self.targets.capacity() * std::mem::size_of::<&ResolvedFunction>()
             + self.sites.capacity() * std::mem::size_of::<Sites<'a>>()
             + self
                 .sites
