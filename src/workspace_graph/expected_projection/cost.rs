@@ -740,7 +740,7 @@ fn identity_prebound_carriers_include_transient_super_receivers_in_wide_calls() 
 
 #[cfg(test)]
 mod exact_bundle_tests {
-    use super::{StructuralCost, fixed_hir_discount, identity_carriers};
+    use super::{fixed_hir_discount, identity_carriers, StructuralCost};
 
     #[test]
     fn final_profile_retains_complete_fixed_bundle_and_single_root_carrier() {

@@ -1,4 +1,4 @@
-use super::{Retention, summed};
+use super::{summed, Retention};
 use crate::ast::Program;
 fn programs() -> Vec<Program> {
     ["one", "two"]
@@ -38,25 +38,21 @@ fn semantic_cache_charges_two_exact_hir_bundles_without_duplicating_arc_carriers
     assert_eq!(id.as_str().as_ptr(), cloned.as_str().as_ptr());
     let mut malformed = super::super::StructuralCost::new();
     malformed.exact_expressions = 1;
-    assert!(
-        super::fixed_upper(
-            0,
-            &malformed,
-            &super::super::StructuralCost::new(),
-            Retention::Semantic
-        )
-        .is_err()
-    );
+    assert!(super::fixed_upper(
+        0,
+        &malformed,
+        &super::super::StructuralCost::new(),
+        Retention::Semantic
+    )
+    .is_err());
     malformed.exact_expressions = usize::MAX;
-    assert!(
-        super::fixed_upper(
-            usize::MAX,
-            &malformed,
-            &super::super::StructuralCost::new(),
-            Retention::Semantic
-        )
-        .is_err()
-    );
+    assert!(super::fixed_upper(
+        usize::MAX,
+        &malformed,
+        &super::super::StructuralCost::new(),
+        Retention::Semantic
+    )
+    .is_err());
 }
 #[test]
 fn cached_exact_forecast_uses_all_module_sums_and_exact_one_short_limit() {
@@ -76,12 +72,10 @@ fn cached_exact_forecast_uses_all_module_sums_and_exact_one_short_limit() {
         }
         {
             let _restore = limit(full.1 - 1);
-            assert!(
-                summed(&programs, &authored, retention)
-                    .unwrap_err()
-                    .iter()
-                    .any(|error| error.code == "SPX-G171")
-            );
+            assert!(summed(&programs, &authored, retention)
+                .unwrap_err()
+                .iter()
+                .any(|error| error.code == "SPX-G171"));
         }
         {
             let _restore = limit(parts.iter().map(|part| part.1).max().unwrap());

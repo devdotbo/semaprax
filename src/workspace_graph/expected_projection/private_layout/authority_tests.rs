@@ -2,7 +2,7 @@ use super::{Diagnostic, PrivateTypes, Program};
 use crate::workspace_graph::{
     expected_projection::synthetic_program,
     index_authored, reconstruct_workspace_declaration_facts,
-    validation::{WorkspaceValidationIndex, validate_stub_signatures},
+    validation::{validate_stub_signatures, WorkspaceValidationIndex},
 };
 const PROVIDER: &str = r#"module private.provider;
 @id("payload") record Payload { @id("payload.text") text:string, }
