@@ -1190,6 +1190,7 @@ Use `u8_from_i64(value)` then `char_from_u8(byte)` for byte conversion; use
 | vec_of missing type/reserved name/oversized expansion|SPX-P220|Use vec_of<T>(items), one admitted type and existing bounds; vec_of is reserved|
 | forged constructor/generated owner capture|SPX-T318|Reparse canonical vec_of source; use an explicit Vec chain to read intermediate owners|
 | native cleanup refusal postcheck|SPX-B104|Check cleanup; String-condition scalar match “parent is not canonical”: backend bug|
+| explicit fused source account or selection refused|SPX-F130|Use the exact source-only fused-construction-v1 shape with main() -> i64 and explicit managed bytes 1..=1073741824; refusal has no ordinary fallback|
 | for range|SPX-P106|while; mut counter; discard tail|
 | assignment loop|SPX-P203|Scalar tail, e.g. 0|
 | local named result|`SPX-S109`, `SPX-T201`|Rename binding/uses to outcome; result denotes return only in ensures|

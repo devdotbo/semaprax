@@ -19,6 +19,15 @@
       ]
     },
     {
+      "code": "SPX-F130",
+      "rows": [
+        {
+          "fix": "Use the exact source-only fused-construction-v1 shape with main() -> i64 and explicit managed bytes 1..=1073741824; refusal has no ordinary fallback",
+          "wrote": "explicit fused source account or selection refused"
+        }
+      ]
+    },
+    {
       "code": "SPX-G170",
       "rows": [
         {
