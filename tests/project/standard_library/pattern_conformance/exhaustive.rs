@@ -149,7 +149,9 @@ fn long_source(grammar: Grammar, matches: bool) -> (String, i64) {
         .replace('\r', "\\r")
         .replace('\t', "\\t");
     let packet = packet(if matches { "true" } else { "false" }, &capture_check);
-    (format!("{}\nlet input = \"{literal}\"; let text = string_as_str(input); let view = str_as_bytes(text);\nmatcher = full_match(matcher, view, 262144usize);\nif ready && {packet} {{ if status(matcher) == 1usize {{ {} }} else {{ 0 }} }} else {{ -1 }}\n}}\n", prefix(grammar), observed()), expected)
+    // Whole-owner renewal is admitted only inside a loop body; one iteration
+    // performs the single 8192-byte match, as the while-loop witness does.
+    (format!("{}\nlet input = \"{literal}\"; let text = string_as_str(input); let view = str_as_bytes(text);\nlet mut renewal = 0usize;\nwhile renewal < 1usize {{\nmatcher = full_match(matcher, view, 262144usize);\nrenewal = renewal + 1usize;\n0\n}}\nif ready && {packet} {{ if status(matcher) == 1usize {{ {} }} else {{ 0 }} }} else {{ -1 }}\n}}\n", prefix(grammar), observed()), expected)
 }
 
 fn run(scratch: &Path, label: &str, source: &str, expected: i64, live_bound: usize) {

@@ -283,7 +283,7 @@ Report{stats:Metrics{selected:count,total:0,live:true},entries:rows}
 }
 @id("consumer.required") fn required(value:borrow Report)->usize{encoded_len(value)}
 @id("consumer.run") fn run(value:borrow Report,limit:usize,expected:borrow Slice<u8>)->i64{
-let result=encode(value,limit);match own result {
+let outcome=encode(value,limit);match own outcome {
 Encoded::Refused{required:n}=>if n==byte_len(expected){1}else{0},
 Encoded::Encoded{text}=>{
 let actual=str_as_bytes(string_as_str(text));let mut at=0usize;
@@ -293,7 +293,7 @@ if same{2}else{0}
 },}}
 @id("consumer.consume") fn consume(value:own Report)->i64{0}
 @id("consumer.main") fn main()->i64{
-let value=prepare(0usize);let n=required(value);let empty=[0u8];let result=run(value,n,array_as_slice(empty));let dropped=consume(value);result+dropped
+let value=prepare(0usize);let n=required(value);let empty=[0u8];let outcome=run(value,n,array_as_slice(empty));let dropped=consume(value);outcome+dropped
 }
 "#
 }

@@ -17,6 +17,12 @@ record Decoded {
     @id(\"copy.n\")
     n: i64,
 }
+
+@id(\"zero\")
+fn zero() -> i64
+{
+    0
+}
 ";
 
 // `_spx_layout_0` is an authored declaration below the bound copies; it keeps
