@@ -109,8 +109,10 @@ can reuse the previous successful cache.
 ## Work report and limits
 
 Semantic mode emits `semaprax.project-semantic-cache-work.v1`, with compatibility
-`semaprax.project-checked-module-hir.v6`. The v6 binding invalidates stored
-full-capacity metadata before it can be interpreted as mutable clone capacity.
+`semaprax.project-checked-module-hir.v7`. The v7 binding invalidates earlier
+checked HIR before interpreting the scoped vector-field-read expression layout.
+The preceding v6 binding invalidated stored full-capacity metadata before it
+could be interpreted as mutable clone capacity.
 Earlier compatibility bumps included `.v3` when a function
 gained the endpoint typestate `follows` clause, issue #297 follow-on, and
 before that from `.v1` when the sealed source carrier gained declared session

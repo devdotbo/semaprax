@@ -28,7 +28,13 @@ fn sources(core: &str) -> Vec<ProjectFrontendSource> {
         ("src/tests.spx", TESTS),
     ]
     .into_iter()
-    .map(|(path, source)| ProjectFrontendSource::new(path, source).unwrap())
+    .map(|(path, source)| {
+        let ast = crate::parse(source, path).unwrap();
+        let canonical = crate::format::canonical(&ast);
+        let round = crate::parse(&canonical, path).unwrap();
+        assert_eq!(crate::format::canonical(&round), canonical);
+        ProjectFrontendSource::new(path, &canonical).unwrap()
+    })
     .collect()
 }
 fn same(actual: &ProjectRevision, expected: &ProjectRevision) {
@@ -57,6 +63,24 @@ fn settled(label: &str, metrics: Metrics) {
 fn actual_cold_warm_cache_core_and_publication_match_owned_receiver_through_drop() {
     let manifest = ProjectManifest::parse(MANIFEST).unwrap();
     let sources = sources(CORE);
+    // This fixture uses the actual formatter to acquire canonical source. The
+    // public builder must still reject the original noncanonical proposal.
+    let invalid = [
+        ("src/app.spx", APP),
+        ("src/core.spx", CORE),
+        ("src/tests.spx", TESTS),
+    ]
+    .into_iter()
+    .map(|(path, source)| ProjectFrontendSource::new(path, source).unwrap())
+    .collect::<Vec<_>>();
+    let mut rejected = ProjectFrontendCache::new_with_semantic_cache();
+    let errors = rejected.build(&manifest, &invalid).err().unwrap();
+    assert!(errors.iter().any(|error| error.code == "SPX-G170"
+        && error.message == "workspace semantic source `src/app.spx` is not canonical"));
+    assert!(
+        rejected.checked.is_empty(),
+        "failed source acquisition cannot publish a checked owner"
+    );
     // The saved owned receiver is the unchanged AST-only cache path; it has
     // no checked HIR lease and resolves/retains owned modules independently.
     let mut ordinary = ProjectFrontendCache::new();
