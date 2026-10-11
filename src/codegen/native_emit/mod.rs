@@ -1770,7 +1770,8 @@ fn emit_function(
         "{} spx_result = {{0}};",
         c_value_type(program, resource_abi, &function.return_type)?
     ));
-    if function.cleanup_plan.lexical_control.is_some() {
+    let exact_routes = emitter.exact_terminal_routes();
+    if exact_routes {
         emitter.line("bool spx_canonical_cleanup_done = false;");
     }
     emitter.line("if (spx_ctx->call_depth >= SPX_MAX_CALL_DEPTH) {");
@@ -1879,7 +1880,7 @@ fn emit_function(
         output.push_str(&body.into_string());
     }
     output.push_str("spx_epilogue:\n");
-    if function.cleanup_plan.lexical_control.is_some() {
+    if exact_routes {
         // Common lexical terminal writes remain valid with or without byte-plan guards.
         output.push_str("    (void)spx_canonical_cleanup_done;\n");
     }
@@ -1910,11 +1911,11 @@ fn emit_function(
         }
     }
     if let Some(plan) = &bytes_plan {
-        if function.cleanup_plan.lexical_control.is_some() {
+        if exact_routes {
             output.push_str("    if (!spx_canonical_cleanup_done) {\n");
         }
         output.push_str(&plan.epilogue());
-        if function.cleanup_plan.lexical_control.is_some() {
+        if exact_routes {
             output.push_str("    }\n");
         }
     }

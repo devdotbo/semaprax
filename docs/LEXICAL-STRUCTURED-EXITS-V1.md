@@ -249,11 +249,31 @@ site, so distinct exits may legitimately finalize common owners in different
 canonical orders. Native never sorts or merges those vectors: when no single
 order honors every terminal exit, it requires every such exit to be uniquely
 selected by status source or root commit, and the unreachable common epilogue
-fails closed. A function without lexical selection still refuses with SPX-B104
-naming the function, both exits and the conflicting slots. Ordinary source
-reaches such opposing orders: sealed conditional variant owners finalize in
-reverse push order until a branch join rebuilds them by storage identity, so
-exits before and after the join legitimately disagree.
+fails closed. Ordinary source reaches such opposing orders: sealed conditional
+variant owners finalize in reverse push order until a branch join rebuilds them
+by storage identity, so exits before and after the join legitimately disagree.
+
+A function without lexical control has a narrow exact nonlexical route mode in
+`codegen/native_bytes/terminal_exits/nonlexical`. Native admits it only when
+every ordinary terminal exit is authenticated by its own plan link: each
+failure by exactly one declared status source, exactly one failure exit for that
+source, and the exiting block's sole `SelectFailure`; success by the root
+region's normal scope end, which must leave exactly the root region and be the
+plan's only ordinary commit. Each exit then runs its canonical vector verbatim at
+its site. Vectors are never sorted, merged or reinterpreted, and no certificate
+is inferred. Owned parameters live at entry refuse, because a nonlexical plan
+has no function-entry boundary certificate. Any plain `while` in the contracts
+or body refuses, because the plan has no iteration certificate. The plan
+linearizes one iteration without a back-edge, so the HIR is scanned for the
+loop, and metered iteration emission refuses again as a backstop. The common
+epilogue performs no finalizer. It traps if any terminal slot is live, so it
+completes only the empty uncertified entry refusal. Any other unauthenticated,
+ambiguous or forged link still refuses with SPX-B104 naming the function, both
+exits, the conflicting slots and the nonlexical reason. This mode grants no
+general nonlexical cleanup authority. It adds no source, graph, cleanup-plan or
+canonical change, and claims no runtime or token advantage. Its witness is the
+local metered O0/O2 parity of one loop-free checked source against the
+interpreter; that is source-authored evidence, not a qualification.
 Core Wasm branches use validated lexical-depth bindings and staged result locals,
 then the same postcondition/cleanup epilogue. Neither emitter manufactures target
 or cleanup authority from source spans, C labels or Wasm stack layout. Cache and

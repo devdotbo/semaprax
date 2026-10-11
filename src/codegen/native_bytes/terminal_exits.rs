@@ -4,9 +4,26 @@
 //! only when every exit vector is a subsequence of it. Otherwise each exit must
 //! be selected at its trusted source site by lexical control, which already
 //! runs that exit's exact vector, and the shared epilogue fails closed.
+//! Without lexical control, `nonlexical` admits the same exact per-site
+//! routing only when every exit is authenticated by its plan link.
 use super::*;
 use crate::cleanup::LivenessFlagId;
 use crate::cleanup_plan::{CleanupPlan, ExitTarget};
+
+mod nonlexical;
+pub(in crate::codegen) use nonlexical::{nonlexical_failure_exit, nonlexical_success_exit};
+
+/// How each ordinary terminal exit's exact vector reaches the ABI epilogue.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum TerminalMode {
+    /// One shared epilogue order honors every exit vector.
+    Shared,
+    /// Lexical control selects every exit at its source site.
+    Lexical,
+    /// No lexical control: every exit is selected by its unique declared
+    /// status source or by the root normal scope end.
+    Nonlexical,
+}
 
 #[derive(Clone, Debug)]
 pub(super) struct TerminalOrder {
@@ -15,12 +32,35 @@ pub(super) struct TerminalOrder {
     /// Every slot finalized by at least one ordinary terminal exit.
     pub(super) slots: BTreeSet<ByteSlot>,
     pub(super) exit_selected: bool,
+    pub(super) mode: TerminalMode,
 }
 
+/// Production admission. A nonlexical plan linearizes a loop without a
+/// back-edge, so only the HIR can show the plain loop that refuses.
+pub(super) fn function_terminal_order(
+    function: &ResolvedFunction,
+    by_flag: &BTreeMap<LivenessFlagId, ByteSlot>,
+) -> Result<TerminalOrder, Diagnostic> {
+    terminal_order_with(&function.id, &function.cleanup_plan, by_flag, || {
+        nonlexical::plain_loop(function)
+    })
+}
+
+/// Synthetic plans carry no HIR body and therefore no plain loop.
+#[cfg(test)]
 pub(super) fn terminal_order(
     function: &DeclarationId,
     plan: &CleanupPlan,
     by_flag: &BTreeMap<LivenessFlagId, ByteSlot>,
+) -> Result<TerminalOrder, Diagnostic> {
+    terminal_order_with(function, plan, by_flag, || false)
+}
+
+fn terminal_order_with(
+    function: &DeclarationId,
+    plan: &CleanupPlan,
+    by_flag: &BTreeMap<LivenessFlagId, ByteSlot>,
+    plain_loop: impl FnOnce() -> bool,
 ) -> Result<TerminalOrder, Diagnostic> {
     let exits = plan
         .exits
@@ -42,18 +82,60 @@ pub(super) fn terminal_order(
             shared,
             slots,
             exit_selected: false,
+            mode: TerminalMode::Shared,
         });
     }
-    match unselected_exit(plan, &exits) {
+    let (mode, refusal) = if plan.lexical_control.is_none() {
+        let refusal = nonlexical::refusal(plan, &exits, by_flag, plain_loop).map(|reason| {
+            format!(
+                "this function has no lexical exit selection, so one shared native terminal epilogue cannot honor both exits, and exact nonlexical routing refuses: {reason}"
+            )
+        });
+        (TerminalMode::Nonlexical, refusal)
+    } else {
+        (TerminalMode::Lexical, unselected_exit(plan, &exits))
+    };
+    match refusal {
         None => Ok(TerminalOrder {
             shared: Vec::new(),
             slots,
             exit_selected: true,
+            mode,
         }),
         Some(reason) => Err(error(format!(
             "Bytes cleanup exits contain contradictory finalizer precedence in function `{function}`: {}; {reason}",
             describe_conflict(&exits, &sequences)
         ))),
+    }
+}
+
+impl NativeBytesPlan {
+    /// Every terminal exit is routed by authenticated nonlexical plan links.
+    pub(in crate::codegen) fn nonlexical_terminal_routes(&self) -> bool {
+        self.nonlexical_terminal.is_some()
+    }
+
+    /// The unselected common epilogue of an exit-selected function. Every
+    /// lexical route completes its exact vector first, so reaching it traps.
+    /// A nonlexical function reaches it only from an uncertified entry refusal,
+    /// admitted solely without entry owners: any live terminal slot traps, and
+    /// the empty state performs nothing. No order is ever guessed here.
+    pub(super) fn selected_epilogue(&self) -> String {
+        let Some(slots) = &self.nonlexical_terminal else {
+            return "    spx_runtime_invariant_failure(\"native terminal cleanup lacks its exact selected exit\");\n"
+                .to_owned();
+        };
+        if slots.is_empty() {
+            return String::new();
+        }
+        let live = slots
+            .iter()
+            .map(|slot| slot.flag.as_str())
+            .collect::<Vec<_>>()
+            .join(" || ");
+        format!(
+            "    if ({live}) spx_runtime_invariant_failure(\"native nonlexical terminal cleanup reached the common epilogue with a live owner\");\n"
+        )
     }
 }
 

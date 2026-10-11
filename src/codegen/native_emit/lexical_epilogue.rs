@@ -1,6 +1,20 @@
 //! Exact context-selected terminal cleanup before the common ABI publication.
+//! Lexical control selects by context; an admitted nonlexical byte plan
+//! selects by its authenticated status-source and root-success links.
 use super::*;
 use crate::cleanup_plan::{ExitContinuation, ExitTarget, StatusLane, StatusSourceId};
+impl<O: COutput> CEmitter<'_, O> {
+    /// Every terminal route performs its exact vector before the epilogue.
+    pub(super) fn exact_terminal_routes(&self) -> bool {
+        self.function.cleanup_plan.lexical_control.is_some() || self.nonlexical_routes()
+    }
+    fn nonlexical_routes(&self) -> bool {
+        self.function.cleanup_plan.lexical_control.is_none()
+            && self
+                .bytes_plan
+                .is_some_and(|plan| plan.nonlexical_terminal_routes())
+    }
+}
 impl<'a, O: COutput> CEmitter<'a, O> {
     fn canonical_terminal_code(&self, exit: &ExitTarget) -> Result<String, Diagnostic> {
         let mut cleanup = match self.bytes_plan {
@@ -36,6 +50,17 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         site: &ExpressionId,
         lane: StatusLane,
     ) -> Result<String, Diagnostic> {
+        if self.nonlexical_routes() {
+            let source = StatusSourceId {
+                expression: site.clone(),
+                lane,
+            };
+            let exit = native_bytes::nonlexical_failure_exit(&self.function.cleanup_plan, &source)
+                .map_err(|reason| {
+                    backend_error(format!("native nonlexical failure route refuses: {reason}"))
+                })?;
+            return self.canonical_terminal_code(exit);
+        }
         if self.function.cleanup_plan.lexical_control.is_none() {
             return Ok("goto spx_epilogue;".to_owned());
         }
@@ -60,7 +85,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         self.canonical_terminal_code(exit)
     }
     pub(super) fn emit_operation_failure_check(&mut self) -> Result<(), Diagnostic> {
-        if self.function.cleanup_plan.lexical_control.is_none() {
+        if !self.exact_terminal_routes() {
             self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
             return Ok(());
         }
@@ -74,7 +99,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         &mut self,
         site: &ExpressionId,
     ) -> Result<(), Diagnostic> {
-        if self.function.cleanup_plan.lexical_control.is_none() {
+        if !self.exact_terminal_routes() {
             self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
             return Ok(());
         }
@@ -88,6 +113,12 @@ impl<'a, O: COutput> CEmitter<'a, O> {
     pub(super) fn emit_success_terminal(&mut self) -> Result<(), Diagnostic> {
         let function = self.function;
         let plan = &function.cleanup_plan;
+        if self.nonlexical_routes() {
+            let exit = native_bytes::nonlexical_success_exit(plan).map_err(|reason| {
+                backend_error(format!("native nonlexical success route refuses: {reason}"))
+            })?;
+            return self.emit_canonical_terminal(exit);
+        }
         let Some(control) = plan.lexical_control.as_deref() else {
             self.line("goto spx_epilogue;");
             return Ok(());
@@ -138,7 +169,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
 
 impl<O: COutput> CEmitter<'_, O> {
     pub(super) fn operation_failure_jump(&self) -> Result<String, Diagnostic> {
-        if self.function.cleanup_plan.lexical_control.is_none() {
+        if !self.exact_terminal_routes() {
             return Ok("goto spx_epilogue;".to_owned());
         }
         let site = self
@@ -155,6 +186,19 @@ impl<O: COutput> CEmitter<'_, O> {
         kind: crate::cleanup_plan::ExecutionBoundaryKind,
         site: &ExpressionId,
     ) -> Result<(), Diagnostic> {
+        if self.nonlexical_routes() {
+            // No boundary certificate exists without lexical control. Entry
+            // refusal is admitted only without entry owners, so the guarded
+            // common epilogue performs nothing and traps on any live slot.
+            if kind != crate::cleanup_plan::ExecutionBoundaryKind::FunctionEntry {
+                return Err(Diagnostic::io(
+                    "SPX-B104",
+                    "native nonlexical terminal routing refuses a metered loop iteration without an iteration certificate",
+                ));
+            }
+            self.line("goto spx_epilogue;");
+            return Ok(());
+        }
         if self.function.cleanup_plan.lexical_control.is_none() {
             self.line("goto spx_epilogue;");
             return Ok(());

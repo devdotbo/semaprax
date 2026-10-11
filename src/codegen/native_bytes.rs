@@ -32,6 +32,7 @@ use owned_leaf::{emit_transfer, ByteSlot, OwnedLeafKind};
 use scalar_match_scope::ScopeExit;
 mod lexical_exit;
 mod terminal_exits;
+pub(super) use terminal_exits::{nonlexical_failure_exit, nonlexical_success_exit};
 
 #[derive(Clone, Debug)]
 pub(super) struct NativeBytesPlan {
@@ -42,6 +43,8 @@ pub(super) struct NativeBytesPlan {
     finalizers: Vec<ByteSlot>,
     /// Every terminal exit runs its exact vector at its source site.
     exit_selected_terminal: bool,
+    /// Nonlexical exact routing: the terminal slots its common epilogue guards.
+    nonlexical_terminal: Option<Vec<ByteSlot>>,
     scope_exits: Vec<ScopeExit>,
     referenced_places: BTreeSet<CleanupPlace>,
     inactive_places: BTreeSet<CleanupPlace>,
@@ -176,9 +179,9 @@ impl NativeBytesPlan {
         // choose one deterministic topological order. Dead guards make absent
         // actions inert, while every actual exit retains its complete
         // canonical relative order. Contradictory exit orders are accepted
-        // only when lexical control selects every exit at its source site.
-        let terminal =
-            terminal_exits::terminal_order(&function.id, &function.cleanup_plan, &by_flag)?;
+        // only when every exit is selected at its source site, lexically or
+        // by authenticated nonlexical plan links.
+        let terminal = terminal_exits::function_terminal_order(function, &by_flag)?;
         let finalizers = terminal.shared;
         let scope_exits =
             scalar_match_scope::build_scope_exits(function, &storage_leaves, &by_flag)?;
@@ -321,6 +324,8 @@ impl NativeBytesPlan {
             variant_case_transitions,
             finalizers,
             exit_selected_terminal: terminal.exit_selected,
+            nonlexical_terminal: (terminal.mode == terminal_exits::TerminalMode::Nonlexical)
+                .then(|| terminal.slots.iter().cloned().collect()),
             scope_exits,
             referenced_places,
             inactive_places,
@@ -643,8 +648,7 @@ impl NativeBytesPlan {
         if self.exit_selected_terminal {
             // Reached only under `!spx_canonical_cleanup_done`: every exact
             // terminal exit already ran, so no contradictory order is guessed.
-            return "    spx_runtime_invariant_failure(\"native terminal cleanup lacks its exact selected exit\");\n"
-                .to_owned();
+            return self.selected_epilogue();
         }
         self.emit_finalizers(&self.finalizers, true)
     }
@@ -991,6 +995,7 @@ mod tests {
                 variant_case_transitions: origin::Index::default(),
                 finalizers: Vec::new(),
                 exit_selected_terminal: false,
+                nonlexical_terminal: None,
                 scope_exits: Vec::new(),
                 referenced_places: BTreeSet::new(),
                 inactive_places: BTreeSet::new(),
