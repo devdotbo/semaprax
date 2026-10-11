@@ -3,9 +3,9 @@ mod selected;
 #[cfg(test)]
 use crate::hir::ResolvedProgram;
 use crate::hir::{ExpressionId, ResolvedBinding, ResolvedFunction};
-pub(crate) use selected::{
-    bindings_with_reservation, bindings_with_reservation_and_work, selected_string_append,
-};
+#[cfg(test)]
+pub(crate) use selected::bindings_with_reservation;
+pub(crate) use selected::{bindings_with_reservation_and_work, selected_string_append};
 use std::collections::BTreeMap;
 
 /// A held phase index authenticates exact program and function membership.

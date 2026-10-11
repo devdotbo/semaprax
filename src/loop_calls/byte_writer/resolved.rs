@@ -1,10 +1,10 @@
 use super::*;
+#[cfg(test)]
+pub(crate) use selected::checked_bindings_with_reservation;
 mod selected;
 #[cfg(test)]
 pub(crate) use selected::checked_absent_with_work_reservation;
-pub(crate) use selected::{
-    checked_bindings_with_reservation, checked_bindings_with_reservation_and_work,
-};
+pub(crate) use selected::checked_bindings_with_reservation_and_work;
 #[derive(Clone, Copy)]
 enum Frame<'a> {
     Function(&'a ResolvedFunction, usize),

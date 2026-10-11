@@ -92,6 +92,7 @@ pub(crate) fn build_inventory_with_reservation<'a>(
 
 // Selected source-bound replay uses this independently classified direct
 // record constructor; it never accepts a supplied shape or layout verdict.
+#[cfg(test)]
 pub(crate) fn build_flat_record_inventory_with_reservation<'a>(
     program: &'a dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,

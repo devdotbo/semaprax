@@ -27,6 +27,13 @@ pub(in crate::codegen) mod closure;
 #[path = "native_shared_bytes/tests.rs"]
 mod tests;
 
+#[cfg_attr(
+    not(test),
+    allow(
+        unused_imports,
+        reason = "production profile remains closed pending the cross-backend join"
+    )
+)]
 pub(in crate::codegen) use bridge::{emit_selected_runtime, extend_context};
 
 /// The complete selected runtime. Its hooks default to the ordinary

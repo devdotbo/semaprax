@@ -3,6 +3,7 @@
 use super::*;
 use crate::cleanup_plan::ReplayPhysicalReservation;
 
+#[cfg(test)]
 pub(crate) fn checked_bindings_with_reservation<'a>(
     program: &'a dyn crate::cleanup::ReplayContext,
     function: &'a ResolvedFunction,

@@ -323,7 +323,7 @@ fn collect_supplemental(
                 }
             }
             Frame::Argument(expression, index) => {
-                let ResolvedExprKind::Call { callee, args, .. } = &expression.kind else {
+                let ResolvedExprKind::Call { args, .. } = &expression.kind else {
                     return Err(replay_error(
                         function,
                         "supplemental continuation lacks a call",

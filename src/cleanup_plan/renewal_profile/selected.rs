@@ -13,6 +13,7 @@ type Frame<'a> = Option<(crate::hir::lexical_exit::ChildCursor<'a>, bool, bool)>
 fn error() -> crate::diagnostic::Diagnostic {
     crate::diagnostic::Diagnostic::io("SPX-H006", "selected primitive renewal census refused")
 }
+#[cfg(test)]
 pub(crate) fn bindings_with_reservation<'a>(
     program: &'a dyn crate::cleanup::ReplayContext,
     function: &'a ResolvedFunction,
@@ -192,10 +193,10 @@ fn walk<'a>(
                         condition, body, ..
                     } = item
                     {
-                        if std::ptr::eq(condition, child) {
+                        if std::ptr::eq(condition.as_ref(), child) {
                             child_loop = false;
                         }
-                        if std::ptr::eq(body, child) {
+                        if std::ptr::eq(body.as_ref(), child) {
                             child_loop =
                                 crate::hir::iterator_loop::recognize(condition, body).is_none();
                         }

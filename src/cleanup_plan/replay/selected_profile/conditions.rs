@@ -112,7 +112,7 @@ fn condition_reads(
                     statements.len(),
                     "selected String nested condition boundary",
                 )?;
-                skip=statements.iter().any(|s|matches!(s,crate::hir::ResolvedStatement::While{body,..} if std::ptr::eq(body,child)));
+                skip=statements.iter().any(|s|matches!(s,crate::hir::ResolvedStatement::While{body,..} if std::ptr::eq(body.as_ref(),child)));
             }
             frames[depth - 1] = Some((cursor, true));
             if skip {

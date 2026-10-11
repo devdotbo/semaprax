@@ -1,5 +1,6 @@
 //! Exact same-owner String append receiving facts without Debug formatting.
 use super::*;
+use crate::hir::{OwnershipMode, ResolvedType};
 pub(crate) fn admitted(
     binding: &ResolvedBinding,
     value: &crate::hir::ResolvedExpr,
