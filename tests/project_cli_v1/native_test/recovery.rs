@@ -57,12 +57,16 @@ fn timeout_settles_before_next_case_and_authenticated_reentry() {
 "#;
     let fixture = NativeFixture::new("timeout-recovery", source);
     let original = std::fs::read(fixture.root.join("tests.spx")).unwrap();
+    // Preserve the exact deadline and acceptance controls. Opt-in observations
+    // distinguish per-case setup, deadline and settlement on an actual refusal;
+    // these timestamps never decide whether a case passes.
     let arguments = [
         "test",
         "--target",
         "native",
         "--native-timeout-ms",
         "100",
+        "--native-timing",
         "--json",
     ];
     let failed = fixture.cli(&arguments);
