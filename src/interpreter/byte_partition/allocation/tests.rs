@@ -165,7 +165,7 @@ fn evaluator_account_reads_ignore_legacy_fields_and_whole_handoff_keeps_pointer(
         let (mut foreign_events, mut foreign_payload) = (0, 0);
         let foreign =
             Account::funded(&mut foreign_events, &mut foreign_payload, headers() + 1).unwrap();
-        let foreign_value = whole(
+        let foreign_value = super::whole(
             foreign.borrowed(),
             foreign.borrowed().allocate_zeroed(1).unwrap(),
         );
