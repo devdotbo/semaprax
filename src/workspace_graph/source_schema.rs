@@ -409,7 +409,7 @@ mod tests {
     fn string_slot_schema_preserves_scalar_renewal_and_authored_lexical_precedence() {
         for lexical in [false, true] {
             let exit = if lexical {
-                "if n==0 {return str_len_bytes(vec_str_at(values,0usize));}else{0};"
+                "if n==0 {return str_len_bytes(vec_str_at(values,0usize));}else{0}"
             } else {
                 ""
             };
@@ -418,7 +418,8 @@ mod tests {
 @id("inspect") fn inspect(n:i64)->i64 {{
  let values=vec_push<string>(vec_with_capacity<string>(1usize),"ok");
  let mut ranks=vec_with_capacity<i64>(1usize); let mut i=0;
- while i<1 {{ ranks=vec_push<i64>(ranks,i); i=i+1; {exit} 0 }}
+ while i<1 {{ ranks=vec_push<i64>(ranks,i); i=i+1; 0 }}
+ {exit}
  str_len_bytes(vec_str_at(values,0usize))
 }}
 @id("main") fn main()->i64 {{inspect(1)}}

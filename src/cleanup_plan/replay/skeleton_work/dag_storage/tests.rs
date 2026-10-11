@@ -247,7 +247,7 @@ fn shared_prefix_probe(
     physical: usize,
     work_limit: usize,
 ) -> (
-    Result<(usize, usize), Diagnostic>,
+    Result<(usize, usize), ()>,
     crate::test_allocation_observer::Metrics,
 ) {
     let function = &program.functions()[0];
@@ -285,12 +285,20 @@ fn shared_prefix_probe(
         })();
         // Release the session scratch inside observation even on refusal.
         drop(work.dag_scratch.take());
-        result.map(|()| {
-            (
+        match result {
+            Ok(()) => Ok((
                 work.budget.physical.as_ref().unwrap().charged() - before,
                 work_limit - work.budget.skeleton_remaining,
-            )
-        })
+            )),
+            Err(diagnostic) => {
+                assert_eq!(diagnostic.code, "SPX-H006");
+                // Diagnostics own text. Release it within the observed scope,
+                // just like the DAG scratch, rather than retaining it in the
+                // allocation observer's allocation-free refusal result.
+                drop(diagnostic);
+                Err(())
+            }
+        }
     })
 }
 #[test]

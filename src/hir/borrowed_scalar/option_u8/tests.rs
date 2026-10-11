@@ -16,7 +16,7 @@ fn index() -> DeclarationIndex {
     index
 }
 fn read() -> ResolvedFunction {
-    let source = r#"module option.helper; @id("option.read") fn read(view:borrow Slice<u8>,at:usize)->i64 {match byte_get(view,at) {Option::Some {value}=>i64_from_u8(value),Option::None {}=>0,}}"#;
+    let source = r#"module option.helper; @id("option.read") fn read(view:borrow Slice<u8>,at:usize)->i64 {match byte_get(view,at) {Option::Some {value}=>i64_from_u8(value),Option::None {}=>0,}} @id("main") fn main()->i64 {0}"#;
     crate::hir::resolve(&crate::check(source, "option-helper.spx").unwrap())
         .unwrap()
         .functions

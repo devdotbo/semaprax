@@ -17,12 +17,16 @@ fn decisions(count: usize) -> String {
         .collect()
 }
 fn source(count: usize, extra_path: bool) -> String {
-    let choices = decisions(count);
-    let body = if extra_path {
-        format!("if n==1 {{{choices} return 0;}}else{{return 0;}}")
+    // A non-tail return authenticates lexical control and contributes two
+    // success routes. The preceding Copy choices contribute 2^(count-1).
+    // The optional earlier return contributes one additional success route.
+    let choices = decisions(count.checked_sub(1).unwrap());
+    let early = if extra_path {
+        "if n==2 {return 0;}else{0}"
     } else {
-        format!("{choices} return 0;")
+        ""
     };
+    let body = format!("{early} {choices} if n==1 {{return 0;}}else{{0}} return 0;");
     format!(
         "module lexical.activation; @id(\"probe\") fn probe(n:i64)->i64 {{{body}}} @id(\"main\") fn main()->i64 {{0}}"
     )

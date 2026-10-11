@@ -5,12 +5,12 @@ const SOURCE: &str = r#"module lexical.session;
 @id("leaf") fn leaf(n:i64)->i64 { if n==0 {0}else{n} }
 @id("first") fn first(n:i64)->i64 {
     let mut i:i64=0;
-    while i<n { i=leaf(i)+1; if i==2 {continue;}else{0}; 0 };
+    while i<n { i=leaf(i)+1; if i==2 {continue;}else{0} 0 };
     return i;
 }
 @id("second") fn second(n:i64)->i64 {
     let mut i:i64=0;
-    while i<n { i=leaf(i)+1; if i==3 {continue;}else{0}; 0 };
+    while i<n { i=leaf(i)+1; if i==3 {continue;}else{0} 0 };
     return i;
 }
 @id("main") fn main()->i64 {0}

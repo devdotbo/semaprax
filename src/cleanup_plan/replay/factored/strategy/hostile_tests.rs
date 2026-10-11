@@ -2,6 +2,9 @@
 use super::*;
 
 fn large_generated() -> (ResolvedProgram, ResolvedFunction) {
+    large_generated_with_storage(false)
+}
+fn large_generated_with_storage(cleanup: bool) -> (ResolvedProgram, ResolvedFunction) {
     let choices = (0..17)
         .map(|index| format!("let choice_{index}=if n==0 {{0}}else{{1}};\n"))
         .collect::<String>();
@@ -9,6 +12,14 @@ fn large_generated() -> (ResolvedProgram, ResolvedFunction) {
         "        if item==1 {continue;};",
         &format!("{choices}        if item==1 {{continue;}};"),
     );
+    let source = if cleanup {
+        source.replace(
+            "    let mut building=",
+            "    let first=\"first\"; let second=\"second\";\n    let mut building=",
+        )
+    } else {
+        source
+    };
     let fixture = lexical_plan_tests::fixture(&source);
     let mut budget = ReplayBudget::new();
     let candidate = Candidate::reconstruct(&fixture.0, &fixture.1, &mut budget).unwrap();
@@ -134,7 +145,7 @@ fn above_cap_generated_advancement_resumes_and_latch_ownership_remain_exact() {
 
 #[test]
 fn above_cap_sticky_failure_atomic_commit_result_and_cleanup_order_remain_exact() {
-    let (program, function) = large_generated();
+    let (program, function) = large_generated_with_storage(true);
     for attack in 0..4 {
         let mut forged = function.clone();
         match attack {
