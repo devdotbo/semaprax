@@ -16,8 +16,8 @@ pub(super) fn assignment<'a>(
             .ok_or_else(|| error("latch lookup work exhausted"))?;
         let (expression, position) = frames[used - 1];
         if position == 0 {
-            if let (ResolvedExprKind::Block { statements, .. }
-            | ResolvedExprKind::VecConstructor { statements, .. }) = &expression.kind
+            if let ResolvedExprKind::Block { statements, .. }
+            | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
             {
                 for statement in statements {
                     work = work

@@ -24,12 +24,12 @@ mod filesystem_ops;
 mod filesystem_v2;
 mod filesystem_v3;
 mod function_value;
+#[cfg(test)]
+mod fused_row_host;
 #[cfg(any(test, feature = "unstable-wit-component-harness"))]
 mod generic_function_component_v9;
 #[cfg(any(test, feature = "unstable-wit-component-harness"))]
 mod generic_record_component_v7;
-#[cfg(test)]
-mod fused_row_host;
 mod host_output;
 mod http_io;
 pub mod internal_strings;
@@ -240,7 +240,10 @@ fn functions_use_strings<'a>(
                 pending.push(left);
                 pending.push(right);
             }
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 for statement in statements {
                     for index in 0..statement.child_count() {
                         if let Some(child) = statement.child(index) {
@@ -368,7 +371,10 @@ fn program_uses_byte_data(program: &ResolvedProgram) -> bool {
                 pending.push(left);
                 pending.push(right);
             }
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 for statement in statements {
                     for index in 0..statement.child_count() {
                         if let Some(child) = statement.child(index) {
@@ -469,7 +475,10 @@ fn program_uses_string_ops(program: &ResolvedProgram) -> bool {
                 pending.push(left);
                 pending.push(right);
             }
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 for statement in statements {
                     for index in 0..statement.child_count() {
                         if let Some(child) = statement.child(index) {
@@ -588,7 +597,10 @@ fn collect_string_data(program: &ResolvedProgram) -> StringData {
                 pending.push(right);
                 pending.push(left);
             }
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 pending.push(tail);
                 for statement in statements.iter().rev() {
                     for index in (0..statement.child_count()).rev() {

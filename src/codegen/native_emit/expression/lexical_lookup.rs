@@ -78,8 +78,8 @@ pub(super) fn assignment<'a>(
 ) -> Result<(&'a hir::ResolvedBinding, &'a ResolvedExpr), Diagnostic> {
     let mut found = None;
     walk(root, |expression| {
-        if let (ResolvedExprKind::Block { statements, .. }
-        | ResolvedExprKind::VecConstructor { statements, .. }) = &expression.kind
+        if let ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
         {
             for statement in statements {
                 if let ResolvedStatement::Assign {
@@ -155,8 +155,8 @@ pub(super) fn owning_wrapper<'a>(
 ) -> Result<&'a ResolvedExpr, Diagnostic> {
     let mut found = None;
     walk(root, |expression| {
-        if let (ResolvedExprKind::Block { statements, .. }
-        | ResolvedExprKind::VecConstructor { statements, .. }) = &expression.kind
+        if let ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
         {
             if matches!(statements.last(), Some(ResolvedStatement::LexicalWhile { condition: candidate, .. }) if &candidate.id == condition)
                 && (found.replace(expression).is_some()
