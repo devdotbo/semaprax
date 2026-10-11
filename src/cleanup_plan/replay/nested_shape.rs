@@ -1,3 +1,4 @@
+use super::ReplayBudget;
 use crate::cleanup::{FieldLiveness, FieldLivenessShape, LivenessFlagId};
 use crate::diagnostic::Diagnostic;
 use crate::hir::{DeclarationId, ResolvedFunction, ResolvedType, ResolvedTypeDeclarationKind};
