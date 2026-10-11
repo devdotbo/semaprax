@@ -1794,6 +1794,7 @@ fn push_bound_operation_occurrence(
             ))
         || family == ModuleUseKind::Function
             && (crate::map_ops::by_id(target_id).is_some()
+                || crate::vec_ops::by_id(target_id).is_some()
                 || crate::byte_ops::by_id(target_id).is_some()
                 || crate::string_ops::by_id(target_id).is_some()
                 || crate::str_ops::by_id(target_id).is_some()
@@ -1804,8 +1805,7 @@ fn push_bound_operation_occurrence(
     Ok(())
 }
 
-// A resolved place contains no evaluated subtree. Only a lexical root and
-// field projections can correspond to it; never discard a constructor/call.
+// Lexical roots/fields have no evaluated subtree; retain constructor/call proofs.
 fn operation_source_place(source: &Expr, place: &hir::Place) -> bool {
     let mut source = source;
     let mut fields = 0usize;

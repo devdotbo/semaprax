@@ -260,8 +260,24 @@ fn duplicate_provider_names_and_aliases_remain_identity_distinct_and_layout_drif
         })
         .collect::<Vec<_>>();
     crate::workspace_graph::validation::validate_stub_signatures(&baseline, &old_modules).unwrap();
+    let fresh = changed
+        .iter()
+        .map(|p| {
+            let synthetic = crate::workspace_graph::expected_projection::synthetic_program(
+                p, &current, &changed,
+            )
+            .unwrap();
+            (p.module.clone(), crate::hir::resolve(&synthetic).unwrap())
+        })
+        .collect::<Vec<_>>();
+    // Compare the retained caller's stub with the freshly resolved provider.
+    // Two equally stale HIR copies cannot expose a signature disagreement.
+    let mut mixed_modules = old_modules.clone();
+    let provider_module = &changed[1].module;
+    let replacement = fresh.iter().find(|(module, _)| module == provider_module).unwrap();
+    *mixed_modules.iter_mut().find(|(module, _)| module == provider_module).unwrap() = replacement.clone();
     assert_eq!(
-        crate::workspace_graph::validation::validate_stub_signatures(&changed, &old_modules)
+        crate::workspace_graph::validation::validate_stub_signatures(&changed, &mixed_modules)
             .unwrap_err()[0]
             .code,
         "SPX-G173"
@@ -273,19 +289,10 @@ fn duplicate_provider_names_and_aliases_remain_identity_distinct_and_layout_drif
         .try_for_each(|(module, program)| retained.record_module(module, program, &changed));
     let rejected = match staged {
         Err(error) => error,
-        Ok(()) => retained.validate_stub_signatures(&changed).unwrap_err(),
+        Ok(()) => retained.finish(&changed).unwrap_err(),
     };
     assert_eq!(rejected[0].code, "SPX-G173");
-    let fresh = changed
-        .iter()
-        .map(|p| {
-            let synthetic = crate::workspace_graph::expected_projection::synthetic_program(
-                p, &current, &changed,
-            )
-            .unwrap();
-            (p.module.clone(), crate::hir::resolve(&synthetic).unwrap())
-        })
-        .collect::<Vec<_>>();
+
     crate::workspace_graph::validation::validate_stub_signatures(&changed, &fresh).unwrap();
     assert_eq!(
         current_layout
