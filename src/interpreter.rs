@@ -3162,6 +3162,8 @@ enum Value {
     ArrayU8(Arc<[u8]>),
     Bytes(OwnedBytesValue),
     Vec(Arc<owned_vec::OwnedVecValue>),
+    PartitionVec(byte_partition::flat::PartitionVec),
+    PartitionIter(byte_partition::flat::PartitionIterator),
     Iter(Arc<iterator::IteratorValue>),
     List(crate::immutable_list::ImmutableList),
     Box(Arc<owned_box::OwnedBoxValue>),

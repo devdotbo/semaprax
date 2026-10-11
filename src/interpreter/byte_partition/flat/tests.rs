@@ -34,13 +34,29 @@ fn paid_array_moves_into_iterator_and_returned_child_survives_container_cleanup(
     assert_eq!(short.charged(), loan_charge);
     assert!(PartitionVec::partition(&mut short_receiver, original, 1, 1).is_err());
     assert_eq!(short.charged(), loan_charge); // sticky retry does not allocate or spend
-    let mut vector = PartitionVec::partition(&mut receiver, vec![1, 2, 3].into_boxed_slice(), 3, 1)
-        .ok()
-        .unwrap();
+    let value = crate::interpreter::byte_partition::values::partition(
+        &mut receiver,
+        vec![1, 2, 3].into_boxed_slice(),
+        3,
+        1,
+    )
+    .ok()
+    .unwrap();
+    let crate::interpreter::Value::PartitionVec(mut vector) = value else {
+        panic!("checked partition changed its flat Value carrier");
+    };
     assert_eq!((vector.len(), vector.capacity()), (3, 3));
     let mut returned = vector.take_last(&mut receiver).unwrap().unwrap();
     let before = probe.charged();
-    let mut iterator = vector.into_iter(&mut receiver).ok().unwrap();
+    let value = crate::interpreter::byte_partition::values::into_iterator(
+        crate::interpreter::Value::PartitionVec(vector),
+        &mut receiver,
+    )
+    .ok()
+    .unwrap();
+    let crate::interpreter::Value::PartitionIter(mut iterator) = value else {
+        panic!("checked consuming conversion changed its iterator Value carrier");
+    };
     assert_eq!(
         probe.charged() - before,
         Layout::new::<PartitionIterator>().size()

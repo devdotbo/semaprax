@@ -494,6 +494,11 @@ impl Registry<'_> {
 
 impl Registry<'_> {
     pub(super) fn preflight_value(&self, value: &Value) -> Result<(), Flow> {
+        if matches!(value, Value::PartitionVec(_) | Value::PartitionIter(_)) {
+            return Err(Flow::Guard(
+                "partition container requires its canonical receiving registry",
+            ));
+        }
         if matches!(value, Value::Bytes(bytes) if matches!(bytes.bytes, Backing::Partition(_) | Backing::PartitionView(_)))
         {
             return Err(Flow::Guard(
@@ -529,6 +534,11 @@ impl Registry<'_> {
         Ok(())
     }
     pub(super) fn settle_value(&mut self, value: &mut Value) -> Result<(), Flow> {
+        if matches!(value, Value::PartitionVec(_) | Value::PartitionIter(_)) {
+            return Err(Flow::Guard(
+                "partition container requires its canonical receiving registry",
+            ));
+        }
         if matches!(value, Value::Bytes(bytes) if matches!(bytes.bytes, Backing::Partition(_) | Backing::PartitionView(_)))
         {
             return Err(Flow::Guard(

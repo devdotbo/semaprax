@@ -7,10 +7,12 @@ use crate::construction_fusion::{
 };
 use std::{alloc::Layout, vec::IntoIter};
 
+#[derive(Debug, PartialEq)]
 pub(crate) struct PartitionVec {
     owners: Vec<Owner>,
     capacity: usize,
 }
+#[derive(Debug)]
 pub(crate) struct PartitionIterator {
     owners: IntoIter<Owner>,
 }
@@ -132,3 +134,9 @@ impl PartitionIterator {
 }
 #[cfg(test)]
 mod tests;
+
+impl PartialEq for PartitionIterator {
+    fn eq(&self, other: &Self) -> bool {
+        self.owners.as_slice() == other.owners.as_slice()
+    }
+}

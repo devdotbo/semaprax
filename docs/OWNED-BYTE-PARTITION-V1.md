@@ -402,3 +402,11 @@ fresh receiver allowance. This work receipt does not claim full compiler or
 runtime physical accounting. Runtime funding and whole-owner provenance remain
 separate mandatory receiver checks. Native and Wasm ordinary lowering retain
 explicit refusal until their sealed receivers join this factory.
+
+The interpreter now has distinct affine flat Vec and iterator Value carriers.
+Central semantic copy refuses both; default legacy/fused finalizers reject them
+before any physical action. Private exact consumer adapters retain the paid
+array through Value construction and consuming conversion and route canonical
+leaf/container settlement through its actual Loans receiver. This still does
+not install a registry in the ordinary evaluator or authorize a raw Value as a
+source proof; the sealed entry and language IterStep publication remain pending.

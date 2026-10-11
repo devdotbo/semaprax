@@ -17,6 +17,11 @@ impl Evaluator<'_> {
             Value::Bool(value) => Value::Bool(*value),
             Value::ArrayU8(value) => Value::ArrayU8(Arc::clone(value)),
             Value::Bytes(value) => Value::Bytes(value.borrow_alias()?),
+            Value::PartitionVec(_) | Value::PartitionIter(_) => {
+                return Err(Flow::Guard(
+                    "affine partition container requires a checked borrow receiver",
+                ))
+            }
             Value::Vec(value) => Value::Vec(Arc::clone(value)),
             Value::Iter(value) => Value::Iter(Arc::clone(value)),
             Value::List(value) => Value::List(value.clone()),
