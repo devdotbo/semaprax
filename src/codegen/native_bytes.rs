@@ -31,6 +31,7 @@ mod string_slots;
 use owned_leaf::{emit_transfer, ByteSlot, OwnedLeafKind};
 use scalar_match_scope::ScopeExit;
 mod lexical_exit;
+mod terminal_exits;
 
 #[derive(Clone, Debug)]
 pub(super) struct NativeBytesPlan {
@@ -39,6 +40,8 @@ pub(super) struct NativeBytesPlan {
     transitions: origin::Index<ExpressionId>,
     variant_case_transitions: origin::Index<(ExpressionId, DeclarationId)>,
     finalizers: Vec<ByteSlot>,
+    /// Every terminal exit runs its exact vector at its source site.
+    exit_selected_terminal: bool,
     scope_exits: Vec<ScopeExit>,
     referenced_places: BTreeSet<CleanupPlace>,
     inactive_places: BTreeSet<CleanupPlace>,
@@ -172,31 +175,11 @@ impl NativeBytesPlan {
         // Construct the union of every exit's exact pairwise precedence and
         // choose one deterministic topological order. Dead guards make absent
         // actions inert, while every actual exit retains its complete
-        // canonical relative order. Reject only contradictory exit orders.
-        let terminal_sequences = function
-            .cleanup_plan
-            .exits
-            .iter()
-            .filter(|exit| {
-                function
-                    .cleanup_plan
-                    .lexical_block_in_context(None, exit.from)
-                    && !matches!(
-                        exit.continuation,
-                        crate::cleanup_plan::ExitContinuation::Continue(_)
-                            | crate::cleanup_plan::ExitContinuation::LoopLatch { .. }
-                            | crate::cleanup_plan::ExitContinuation::LoopBreak { .. }
-                            | crate::cleanup_plan::ExitContinuation::FunctionReturn { .. }
-                    )
-            })
-            .map(|exit| {
-                exit.finalize_in_order
-                    .iter()
-                    .filter_map(|action| by_flag.get(&action.guard_flag).cloned())
-                    .collect::<Vec<_>>()
-            })
-            .collect::<Vec<_>>();
-        let finalizers = canonical_finalizer_order(&terminal_sequences)?;
+        // canonical relative order. Contradictory exit orders are accepted
+        // only when lexical control selects every exit at its source site.
+        let terminal =
+            terminal_exits::terminal_order(&function.id, &function.cleanup_plan, &by_flag)?;
+        let finalizers = terminal.shared;
         let scope_exits =
             scalar_match_scope::build_scope_exits(function, &storage_leaves, &by_flag)?;
         let reachable_cases = reachable_variant_cases(function, &variant_domains, &transitions);
@@ -312,7 +295,7 @@ impl NativeBytesPlan {
                 }
             }
         }
-        referenced_places.extend(finalizers.iter().map(|slot| slot.place.clone()));
+        referenced_places.extend(terminal.slots.iter().map(|slot| slot.place.clone()));
         referenced_places.extend(
             scope_exits
                 .iter()
@@ -337,6 +320,7 @@ impl NativeBytesPlan {
             transitions,
             variant_case_transitions,
             finalizers,
+            exit_selected_terminal: terminal.exit_selected,
             scope_exits,
             referenced_places,
             inactive_places,
@@ -656,6 +640,12 @@ impl NativeBytesPlan {
     }
 
     pub(super) fn epilogue(&self) -> String {
+        if self.exit_selected_terminal {
+            // Reached only under `!spx_canonical_cleanup_done`: every exact
+            // terminal exit already ran, so no contradictory order is guessed.
+            return "    spx_runtime_invariant_failure(\"native terminal cleanup lacks its exact selected exit\");\n"
+                .to_owned();
+        }
         self.emit_finalizers(&self.finalizers, true)
     }
 
@@ -929,52 +919,6 @@ fn flatten_byte_leaves(
     }
 }
 
-fn canonical_finalizer_order(sequences: &[Vec<ByteSlot>]) -> Result<Vec<ByteSlot>, Diagnostic> {
-    let mut nodes = BTreeSet::<ByteSlot>::new();
-    let mut successors = BTreeMap::<ByteSlot, BTreeSet<ByteSlot>>::new();
-    let mut indegree = BTreeMap::<ByteSlot, usize>::new();
-    for sequence in sequences {
-        for slot in sequence {
-            nodes.insert(slot.clone());
-            indegree.entry(slot.clone()).or_insert(0);
-        }
-        for pair in sequence.windows(2) {
-            if successors
-                .entry(pair[0].clone())
-                .or_default()
-                .insert(pair[1].clone())
-            {
-                *indegree.entry(pair[1].clone()).or_insert(0) += 1;
-            }
-        }
-    }
-    let mut ready = indegree
-        .iter()
-        .filter_map(|(slot, degree)| (*degree == 0).then_some(slot.clone()))
-        .collect::<BTreeSet<_>>();
-    let mut order = Vec::with_capacity(nodes.len());
-    while let Some(slot) = ready.pop_first() {
-        order.push(slot.clone());
-        for successor in successors.get(&slot).into_iter().flatten() {
-            let degree = indegree
-                .get_mut(successor)
-                .ok_or_else(|| error("Bytes finalizer precedence node is missing"))?;
-            *degree = degree
-                .checked_sub(1)
-                .ok_or_else(|| error("Bytes finalizer precedence underflow"))?;
-            if *degree == 0 {
-                ready.insert(successor.clone());
-            }
-        }
-    }
-    if order.len() != nodes.len() {
-        return Err(error(
-            "Bytes cleanup exits contain contradictory finalizer precedence",
-        ));
-    }
-    Ok(order)
-}
-
 fn error(message: impl Into<String>) -> Diagnostic {
     Diagnostic::io("SPX-B104", message)
 }
@@ -983,33 +927,18 @@ fn error(message: impl Into<String>) -> Diagnostic {
 mod tests {
     use super::*;
 
-    fn slot(name: &str) -> ByteSlot {
-        ByteSlot {
-            place: CleanupPlace {
-                storage: StorageId::ProvisionalResult,
-                projections: Vec::new(),
-            },
-            value: format!("value_{name}"),
-            flag: format!("flag_{name}"),
-            kind: OwnedLeafKind::Bytes,
-        }
-    }
-
     #[test]
-    fn finalizer_order_accepts_reordered_subset_before_superset() {
-        let a = slot("a");
-        let b = slot("b");
+    fn exit_selected_terminal_epilogue_fails_closed_without_guessing_order() {
+        let (mut plan, _, _) = projected_plan(&["field.a"], &["field.a"]);
+        plan.finalizers = plan.slots.values().cloned().collect();
+        let shared = plan.epilogue();
+        assert!(shared.contains("spx_bytes_drop(&source_0)"));
+        plan.finalizers.clear();
+        plan.exit_selected_terminal = true;
         assert_eq!(
-            canonical_finalizer_order(&[vec![a.clone()], vec![b.clone(), a.clone()]]).unwrap(),
-            vec![b, a]
+            plan.epilogue(),
+            "    spx_runtime_invariant_failure(\"native terminal cleanup lacks its exact selected exit\");\n"
         );
-    }
-
-    #[test]
-    fn finalizer_order_rejects_contradictory_exit_precedence() {
-        let a = slot("a");
-        let b = slot("b");
-        assert!(canonical_finalizer_order(&[vec![a.clone(), b.clone()], vec![b, a],]).is_err());
     }
 
     fn projected_plan(
@@ -1061,6 +990,7 @@ mod tests {
                 transitions: origin::Index::default(),
                 variant_case_transitions: origin::Index::default(),
                 finalizers: Vec::new(),
+                exit_selected_terminal: false,
                 scope_exits: Vec::new(),
                 referenced_places: BTreeSet::new(),
                 inactive_places: BTreeSet::new(),

@@ -244,6 +244,13 @@ recovery or production measurement claim.
 
 Interpreter flow carries exact Break/Continue/Return targets separately from
 failure. Native emits only validated plan routes and canonical guarded finalizers.
+Each ordinary terminal exit runs its own exact vector at its source-selected
+site, so distinct exits may legitimately finalize common owners in different
+canonical orders. Native never sorts or merges those vectors: when no single
+order honors every terminal exit, it requires every such exit to be uniquely
+selected by status source or root commit, and the unreachable common epilogue
+fails closed. A function without lexical selection still refuses with SPX-B104
+naming the function, both exits and the conflicting slots.
 Core Wasm branches use validated lexical-depth bindings and staged result locals,
 then the same postcondition/cleanup epilogue. Neither emitter manufactures target
 or cleanup authority from source spans, C labels or Wasm stack layout. Cache and

@@ -3962,6 +3962,8 @@ are specified by [Owned String Variants v1](OWNED-STRING-VARIANTS-V1.md).
 Inventory and cleanup replay own the lifecycle; native and Wasm finalizers
 consume its canonical actions. String clone initialization helpers live in
 `cleanup_plan/build/strings` and independent replay in `cleanup_plan/replay/strings`.
+Native ordinary terminal-exit order selection lives in
+`codegen/native_bytes/terminal_exits`.
 Native scalar-match scope lookup lives in `codegen/native_bytes/scalar_match_scope`;
 Wasm lookup and action emission live in `wasm/aggregate/cleanup`.
 `wasm/aggregate/string_runtime` owns optional aggregate String intrinsic imports;
