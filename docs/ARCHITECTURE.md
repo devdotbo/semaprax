@@ -882,6 +882,18 @@ HIR carries resolved identities and typed operations. A backend or report may
 apply a stricter admission profile, but it may not reinterpret unresolved AST
 or silently widen the verified program.
 
+`hir/resolve_expr/path_arena.rs` owns the iterative resolver's private
+expression-path coordinates: four-byte frame handles, parent/edge nodes with one
+closed segment table, frame-height release and the borrowed `ExprPath` view that
+shared lowering helpers accept from either resolver. `hir/ids/streamed.rs` owns
+exact streamed scoped-identity emission beside the unchanged `scoped_identity`
+encoder, which stays the independent oracle and the reference resolver's route.
+`hir/resolve_expr/super_method.rs` holds the relocated `super.method` continuation
+with its original evaluation order. Coordinates confer no authority; identity
+bytes, validation and caches are unchanged. The
+[workspace graph contract](WORKSPACE-SEMANTIC-GRAPH-V1.md#resolver-path-arena-opt778-representation-tranche)
+owns the accounting.
+
 `src/hir/owned_text_record.rs` owns the additive internal monomorphic
 String/Bytes-record classifier. It is independent of the frozen public Bytes
 classifiers; source admission has its own bounded walk. Native borrowed record

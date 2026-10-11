@@ -1,7 +1,9 @@
 //! Continuation frames for the iterative expression resolver.
 //!
-//! Hoisted out of `resolve_expr_iterative` unchanged: the frame shape,
-//! its result splice helper, and the test-only capacity probe.
+//! Hoisted out of `resolve_expr_iterative`: the frame shape, its result splice
+//! helper, and the test-only capacity probe. Expression paths are four-byte
+//! `PathId` coordinates into the call's private path arena; the census counts
+//! that arena's backing once, beside the frame stack.
 
 use std::collections::BTreeMap;
 use std::rc::Rc;
@@ -22,6 +24,7 @@ use super::ids::{DeclarationId, FunctionInstanceId};
 use super::nodes::{
     DeclarationKind, ResolvedBinding, ResolvedHostCommandOperation, ResolvedMatchMode, ResolvedType,
 };
+use super::resolve_expr::path_arena::{PathId, Seg, Step};
 use super::Binding;
 
 pub(super) enum Frame<'expr> {
@@ -33,7 +36,7 @@ pub(super) enum Frame<'expr> {
     LeaveLoop,
     FinishLexicalExit {
         span: Span,
-        path: String,
+        path: PathId,
         kind: crate::ast::LexicalExitKind,
         target: super::ControlTarget,
         has_value: bool,
@@ -42,23 +45,23 @@ pub(super) enum Frame<'expr> {
     Enter {
         expr: &'expr Expr,
         bindings: Rc<BTreeMap<String, Binding>>,
-        path: String,
+        path: PathId,
     },
     FinishInvoke {
         span: Span,
-        path: String,
+        path: PathId,
         callable: ResolvedExpr,
         argument_count: usize,
     },
     FinishNativeCall {
         span: Span,
-        path: String,
+        path: PathId,
         import: DeclarationId,
         argument_count: usize,
     },
     FinishCall {
         span: Span,
-        path: String,
+        path: PathId,
         callee: DeclarationId,
         type_arguments: Vec<ResolvedType>,
         instance: Option<FunctionInstanceId>,
@@ -68,25 +71,25 @@ pub(super) enum Frame<'expr> {
     },
     FinishStringOp {
         span: Span,
-        path: String,
+        path: PathId,
         op: crate::string_ops::StringOp,
         argument_count: usize,
     },
     FinishSortBy {
         span: Span,
-        path: String,
+        path: PathId,
         element: ResolvedType,
         callee: DeclarationId,
     },
     FinishVecField {
         span: Span,
-        path: String,
+        path: PathId,
         element: ResolvedType,
         field: DeclarationId,
     },
     FinishLiteralFormat {
         span: Span,
-        path: String,
+        path: PathId,
         template: String,
         argument_count: usize,
     },
@@ -94,36 +97,36 @@ pub(super) enum Frame<'expr> {
         args: &'expr [Expr],
         index: usize,
         bindings: Rc<BTreeMap<String, Binding>>,
-        path: String,
+        path: PathId,
     },
     FinishStrOp {
         span: Span,
-        path: String,
+        path: PathId,
         op: crate::str_ops::StrOp,
         argument_count: usize,
     },
     FinishByteOp {
         span: Span,
-        path: String,
+        path: PathId,
         op: crate::byte_ops::ByteOp,
         argument_count: usize,
     },
     FinishOwnedGenericOp {
         span: Span,
-        path: String,
+        path: PathId,
         op: super::resolve_box_call::OwnedGenericCallSite,
         element: ResolvedType,
         argument_count: usize,
     },
     FinishHostIoOp {
         span: Span,
-        path: String,
+        path: PathId,
         op: crate::host_io_ops::HostIoOp,
         argument_count: usize,
     },
     FinishHostCommandOp {
         span: Span,
-        path: String,
+        path: PathId,
         op: ResolvedHostCommandOperation,
         argument_count: usize,
     },
@@ -131,35 +134,35 @@ pub(super) enum Frame<'expr> {
         children: &'expr [Expr],
         index: usize,
         bindings: Rc<BTreeMap<String, Binding>>,
-        path: String,
-        segment: &'static str,
+        path: PathId,
+        segment: Seg,
     },
     MethodArgNext {
         args: &'expr [Expr],
         index: usize,
         bindings: Rc<BTreeMap<String, Binding>>,
-        path: String,
+        path: PathId,
     },
     FinishUnary {
         span: Span,
-        path: String,
+        path: PathId,
         op: UnaryOp,
     },
     FinishBinary {
         span: Span,
-        path: String,
+        path: PathId,
         op: BinaryOp,
     },
     AfterBinaryLeft {
         span: Span,
-        path: String,
+        path: PathId,
         op: BinaryOp,
         right: &'expr Expr,
         bindings: Rc<BTreeMap<String, Binding>>,
     },
     BlockNext {
         span: Span,
-        path: String,
+        path: PathId,
         statements: &'expr [Statement],
         tail: &'expr Expr,
         index: usize,
@@ -168,7 +171,7 @@ pub(super) enum Frame<'expr> {
     },
     BlockAfterLet {
         span: Span,
-        path: String,
+        path: PathId,
         statements: &'expr [Statement],
         tail: &'expr Expr,
         index: usize,
@@ -177,7 +180,7 @@ pub(super) enum Frame<'expr> {
     },
     BlockAfterAssign {
         span: Span,
-        path: String,
+        path: PathId,
         statements: &'expr [Statement],
         tail: &'expr Expr,
         index: usize,
@@ -190,7 +193,7 @@ pub(super) enum Frame<'expr> {
     },
     BlockAfterUnsafe {
         span: Span,
-        path: String,
+        path: PathId,
         statements: &'expr [Statement],
         tail: &'expr Expr,
         index: usize,
@@ -199,7 +202,7 @@ pub(super) enum Frame<'expr> {
     },
     BlockWhileCondition {
         span: Span,
-        path: String,
+        path: PathId,
         condition: &'expr Expr,
         body: &'expr Expr,
         statements: &'expr [Statement],
@@ -210,7 +213,7 @@ pub(super) enum Frame<'expr> {
     },
     BlockWhileBody {
         span: Span,
-        path: String,
+        path: PathId,
         statements: &'expr [Statement],
         tail: &'expr Expr,
         index: usize,
@@ -221,7 +224,7 @@ pub(super) enum Frame<'expr> {
     },
     BlockForBody {
         span: Span,
-        path: String,
+        path: PathId,
         statements: &'expr [Statement],
         tail: &'expr Expr,
         index: usize,
@@ -232,29 +235,29 @@ pub(super) enum Frame<'expr> {
     },
     FinishBlock {
         span: Span,
-        path: String,
+        path: PathId,
         statements: Vec<ResolvedStatement>,
     },
     FinishIf {
         span: Span,
-        path: String,
+        path: PathId,
     },
     AfterIfCondition {
         span: Span,
-        path: String,
+        path: PathId,
         then_branch: &'expr Expr,
         else_branch: &'expr Expr,
         bindings: Rc<BTreeMap<String, Binding>>,
     },
     AfterIfThen {
         span: Span,
-        path: String,
+        path: PathId,
         else_branch: &'expr Expr,
         bindings: Rc<BTreeMap<String, Binding>>,
     },
     RecordNext {
         span: Span,
-        path: String,
+        path: PathId,
         type_name: &'expr str,
         record: DeclarationId,
         arguments: Vec<ResolvedType>,
@@ -265,7 +268,7 @@ pub(super) enum Frame<'expr> {
     },
     RecordAfterField {
         span: Span,
-        path: String,
+        path: PathId,
         type_name: &'expr str,
         record: DeclarationId,
         arguments: Vec<ResolvedType>,
@@ -277,7 +280,7 @@ pub(super) enum Frame<'expr> {
     },
     VariantNext {
         span: Span,
-        path: String,
+        path: PathId,
         type_name: &'expr str,
         case_name: &'expr str,
         variant: DeclarationId,
@@ -290,7 +293,7 @@ pub(super) enum Frame<'expr> {
     },
     VariantAfterField {
         span: Span,
-        path: String,
+        path: PathId,
         type_name: &'expr str,
         case_name: &'expr str,
         variant: DeclarationId,
@@ -304,14 +307,14 @@ pub(super) enum Frame<'expr> {
     },
     AfterMatchScrutinee {
         span: Span,
-        path: String,
+        path: PathId,
         mode: ResolvedMatchMode,
         arms: &'expr [crate::ast::MatchArm],
         bindings: Rc<BTreeMap<String, Binding>>,
     },
     MatchNext {
         span: Span,
-        path: String,
+        path: PathId,
         mode: ResolvedMatchMode,
         arms: &'expr [crate::ast::MatchArm],
         index: usize,
@@ -324,7 +327,7 @@ pub(super) enum Frame<'expr> {
     },
     MatchAfterArm {
         span: Span,
-        path: String,
+        path: PathId,
         mode: ResolvedMatchMode,
         arms: &'expr [crate::ast::MatchArm],
         index: usize,
@@ -341,7 +344,7 @@ pub(super) enum Frame<'expr> {
     /// binding arms extend them for their own arm only.
     ScalarMatchNext {
         span: Span,
-        path: String,
+        path: PathId,
         mode: ResolvedMatchMode,
         arms: &'expr [crate::ast::MatchArm],
         index: usize,
@@ -351,7 +354,7 @@ pub(super) enum Frame<'expr> {
     },
     ScalarMatchAfterArm {
         span: Span,
-        path: String,
+        path: PathId,
         mode: ResolvedMatchMode,
         arms: &'expr [crate::ast::MatchArm],
         index: usize,
@@ -362,22 +365,22 @@ pub(super) enum Frame<'expr> {
     },
     FinishTry {
         span: Span,
-        path: String,
+        path: PathId,
     },
     /// Resumable Effects v1 (issue #204). See `hir::resolve_yield`.
     FinishYield {
         span: Span,
-        path: String,
+        path: PathId,
     },
     AfterUpdateBase {
         span: Span,
-        path: String,
+        path: PathId,
         fields: &'expr [crate::ast::FieldInitializer],
         bindings: Rc<BTreeMap<String, Binding>>,
     },
     UpdateNext {
         span: Span,
-        path: String,
+        path: PathId,
         base: ResolvedExpr,
         record: DeclarationId,
         fields: &'expr [crate::ast::FieldInitializer],
@@ -387,7 +390,7 @@ pub(super) enum Frame<'expr> {
     },
     UpdateAfterField {
         span: Span,
-        path: String,
+        path: PathId,
         base: ResolvedExpr,
         record: DeclarationId,
         fields: &'expr [crate::ast::FieldInitializer],
@@ -398,12 +401,12 @@ pub(super) enum Frame<'expr> {
     },
     FinishProject {
         span: Span,
-        path: String,
+        path: PathId,
         field: &'expr str,
     },
     FinishMethodCall {
         span: Span,
-        path: String,
+        path: PathId,
         method: &'expr str,
         receiver: &'expr Expr,
         bindings: Rc<BTreeMap<String, Binding>>,
@@ -413,22 +416,25 @@ pub(super) enum Frame<'expr> {
     FinishSuperMethod {
         span: Span,
         method_span: Span,
-        path: String,
+        path: PathId,
         method: &'expr str,
         holder: DeclarationId,
         callee: DeclarationId,
         args_len: usize,
     },
+    /// The slot edge is created only when this frame resumes, after the
+    /// interrupted continuation is re-pushed, preserving the slot bound.
     StartUpcast {
         source: &'expr Expr,
         bindings: Rc<BTreeMap<String, Binding>>,
-        slot_path: String,
+        slot_parent: PathId,
+        slot_edge: Step,
         holder: DeclarationId,
         span: Span,
         resume: Box<Frame<'expr>>,
     },
     FinishUpcast {
-        slot_path: String,
+        slot_path: PathId,
         holder: DeclarationId,
         span: Span,
     },
@@ -453,64 +459,8 @@ pub(super) fn frame_owned_capacity(
     if let Frame::ForOwn(frame) = frame {
         return super::resolve_for_own::capacity(frame, seen_scopes);
     }
-    let path = match frame {
-        Frame::ForOwn(_) => unreachable!("handled above"),
-        Frame::EnterLoop(_) | Frame::LeaveLoop | Frame::FinishVecConstructor { .. } => 0,
-        Frame::FinishLexicalExit { path, .. } => path.capacity(),
-        Frame::FinishInvoke { path, .. }
-        | Frame::Enter { path, .. }
-        | Frame::FinishNativeCall { path, .. }
-        | Frame::FinishCall { path, .. }
-        | Frame::FinishStringOp { path, .. }
-        | Frame::FinishLiteralFormat { path, .. }
-        | Frame::FinishVecField { path, .. }
-        | Frame::FinishSortBy { path, .. }
-        | Frame::LiteralFormatArgNext { path, .. }
-        | Frame::FinishStrOp { path, .. }
-        | Frame::FinishByteOp { path, .. }
-        | Frame::FinishOwnedGenericOp { path, .. }
-        | Frame::FinishHostIoOp { path, .. }
-        | Frame::FinishHostCommandOp { path, .. }
-        | Frame::ChildNext { path, .. }
-        | Frame::MethodArgNext { path, .. }
-        | Frame::FinishUnary { path, .. }
-        | Frame::FinishBinary { path, .. }
-        | Frame::AfterBinaryLeft { path, .. }
-        | Frame::BlockNext { path, .. }
-        | Frame::BlockAfterLet { path, .. }
-        | Frame::BlockAfterAssign { path, .. }
-        | Frame::BlockAfterUnsafe { path, .. }
-        | Frame::BlockWhileCondition { path, .. }
-        | Frame::BlockWhileBody { path, .. }
-        | Frame::BlockForBody { path, .. }
-        | Frame::FinishBlock { path, .. }
-        | Frame::FinishIf { path, .. }
-        | Frame::AfterIfCondition { path, .. }
-        | Frame::AfterIfThen { path, .. }
-        | Frame::RecordNext { path, .. }
-        | Frame::RecordAfterField { path, .. }
-        | Frame::VariantNext { path, .. }
-        | Frame::VariantAfterField { path, .. }
-        | Frame::AfterMatchScrutinee { path, .. }
-        | Frame::MatchNext { path, .. }
-        | Frame::MatchAfterArm { path, .. }
-        | Frame::ScalarMatchNext { path, .. }
-        | Frame::ScalarMatchAfterArm { path, .. }
-        | Frame::FinishTry { path, .. }
-        | Frame::FinishYield { path, .. }
-        | Frame::AfterUpdateBase { path, .. }
-        | Frame::UpdateNext { path, .. }
-        | Frame::UpdateAfterField { path, .. }
-        | Frame::FinishProject { path, .. }
-        | Frame::FinishMethodCall { path, .. }
-        | Frame::FinishSuperMethod { path, .. }
-        | Frame::StartUpcast {
-            slot_path: path, ..
-        }
-        | Frame::FinishUpcast {
-            slot_path: path, ..
-        } => path.capacity(),
-    };
+    // Path fields are inline `PathId` coordinates. Their arena backing is
+    // shared by every frame and counted once by `resolve_expr::capacity`.
     // Continuations share immutable binding maps through `Rc`. Count
     // the owned map allocation once, not once per retaining frame.
     let mut unique_scope_capacity = |scope: &Rc<BTreeMap<String, Binding>>| {
@@ -702,7 +652,13 @@ pub(super) fn frame_owned_capacity(
         }
         _ => 0,
     };
-    path.saturating_add(scope).saturating_add(retained)
+    // An interrupted continuation boxed beneath an upcast is retained too.
+    let resumed = match frame {
+        Frame::StartUpcast { resume, .. } => std::mem::size_of::<Frame<'_>>()
+            .saturating_add(frame_owned_capacity(resume, seen_scopes)),
+        _ => 0,
+    };
+    scope.saturating_add(retained).saturating_add(resumed)
 }
 
 #[cfg(test)]
@@ -710,31 +666,80 @@ mod literal_format_capacity_tests {
     use super::*;
     #[test]
     fn literal_format_frames_count_template_paths_and_shared_scope_once() {
+        use super::super::resolve_expr::path_arena::PathArena;
         let bindings = Rc::new(BTreeMap::new());
-        let path = "body.arg.0".to_owned();
         let template = "prefix {}".to_owned();
+        let mut paths = PathArena::new("body");
+        let path = paths.child_at(1, 1, PathId::ROOT, Seg::Arg.at(0));
+        assert_eq!(paths.at(path).materialize_with(&[]), "body.arg.0");
+        // The coordinate owns no backing; the arena's is counted once.
+        let arena = paths.owned_capacity();
+        assert_eq!(
+            arena,
+            super::super::resolve_expr::path_arena::PATH_NODE_BYTES
+        );
         let frame = Frame::FinishLiteralFormat {
             span: Span::default(),
-            path: path.clone(),
+            path,
             template: template.clone(),
             argument_count: 1,
         };
         let mut seen = std::collections::HashSet::new();
-        assert_eq!(
-            frame_owned_capacity(&frame, &mut seen),
-            path.capacity() + template.capacity()
-        );
+        assert_eq!(frame_owned_capacity(&frame, &mut seen), template.capacity());
         let next = Frame::LiteralFormatArgNext {
             args: &[],
             index: 1,
             bindings: Rc::clone(&bindings),
-            path: path.clone(),
+            path,
         };
         assert_eq!(
             frame_owned_capacity(&next, &mut seen),
-            path.capacity() + resolver_scope_owned_capacity(&bindings)
+            resolver_scope_owned_capacity(&bindings)
         );
         assert_eq!(seen.len(), 1);
-        assert_eq!(frame_owned_capacity(&next, &mut seen), path.capacity());
+        assert_eq!(frame_owned_capacity(&next, &mut seen), 0);
+        assert_eq!(paths.owned_capacity(), arena);
+    }
+
+    #[test]
+    fn boxed_upcast_resume_frames_are_retained_capacity() {
+        let resume = Frame::FinishLiteralFormat {
+            span: Span::default(),
+            path: PathId::ROOT,
+            template: "resume {}".to_owned(),
+            argument_count: 1,
+        };
+        let template = match &resume {
+            Frame::FinishLiteralFormat { template, .. } => template.capacity(),
+            _ => unreachable!(),
+        };
+        let expr = crate::ast::Expr {
+            kind: crate::ast::ExprKind::Int(0),
+            span: Span::default(),
+        };
+        let frame = Frame::FinishUpcast {
+            slot_path: PathId::ROOT,
+            holder: DeclarationId::new("holder"),
+            span: Span::default(),
+        };
+        let mut seen = std::collections::HashSet::new();
+        assert_eq!(frame_owned_capacity(&frame, &mut seen), 0);
+        let start = Frame::StartUpcast {
+            source: &expr,
+            bindings: Rc::new(BTreeMap::new()),
+            slot_parent: PathId::ROOT,
+            slot_edge: Seg::ArgZero.into(),
+            holder: DeclarationId::new("holder"),
+            span: Span::default(),
+            resume: Box::new(resume),
+        };
+        let scope = match &start {
+            Frame::StartUpcast { bindings, .. } => resolver_scope_owned_capacity(bindings),
+            _ => unreachable!(),
+        };
+        assert_eq!(
+            frame_owned_capacity(&start, &mut seen),
+            scope + std::mem::size_of::<Frame<'_>>() + template
+        );
     }
 }

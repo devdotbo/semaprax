@@ -9,7 +9,7 @@ pub(super) fn schedule<'expr>(
     type_arguments: &[Type],
     args: &'expr [Expr],
     bindings: Rc<BTreeMap<String, Binding>>,
-    path: String,
+    path: PathId,
     span: Span,
     op: MapOp,
 ) -> Result<(), Diagnostic> {
@@ -28,7 +28,7 @@ pub(super) fn schedule<'expr>(
     }
     frames.push(Frame::FinishOwnedGenericOp {
         span,
-        path: path.clone(),
+        path,
         op: OwnedGenericCallSite::Map(op),
         element: collection,
         argument_count: args.len(),
@@ -38,13 +38,13 @@ pub(super) fn schedule<'expr>(
         index: 0,
         bindings,
         path,
-        segment: "arg",
+        segment: Seg::Arg,
     });
     Ok(())
 }
-pub(super) fn finish(
+pub(super) fn finish<'p>(
     function: &FunctionExecutionId,
-    path: &str,
+    path: impl Into<ExprPath<'p>>,
     span: Span,
     op: MapOp,
     collection: ResolvedType,
@@ -73,7 +73,7 @@ pub(super) fn finish(
         OwnershipMode::Value
     };
     Ok(ResolvedExpr {
-        id: ExpressionId::new(function, path),
+        id: path.into().expression_id(function),
         ownership,
         ty,
         span,

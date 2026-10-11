@@ -8,19 +8,20 @@ use crate::ast::{Expr, Span, Type};
 use crate::diagnostic::Diagnostic;
 
 use super::expr_nodes::{ResolvedExpr, ResolvedExprKind};
-use super::ids::{DeclarationId, ExpressionId, FunctionExecutionId};
+use super::ids::{DeclarationId, FunctionExecutionId};
 use super::nodes::{is_scalar_resolved_type, OwnershipMode, ResolvedBinding, ResolvedType};
+use super::resolve_expr::path_arena::{PathId, Seg};
 use super::resolve_expr_frame::Frame;
-use super::{Binding, Resolver};
+use super::{Binding, ExprPath, Resolver};
 
 pub(super) struct VecCallSite {
-    pub(super) path: String,
+    pub(super) path: PathId,
     pub(super) span: Span,
     pub(super) op: crate::vec_ops::VecOp,
 }
 
 impl VecCallSite {
-    pub(super) fn new(path: String, span: Span, op: crate::vec_ops::VecOp) -> Self {
+    pub(super) fn new(path: PathId, span: Span, op: crate::vec_ops::VecOp) -> Self {
         Self { path, span, op }
     }
 }
@@ -211,7 +212,7 @@ pub(super) fn schedule<'expr>(
     }
     frames.push(Frame::FinishOwnedGenericOp {
         span,
-        path: path.clone(),
+        path,
         op: super::resolve_box_call::OwnedGenericCallSite::Vec(op),
         element,
         argument_count: args.len(),
@@ -221,15 +222,15 @@ pub(super) fn schedule<'expr>(
         index: 0,
         bindings,
         path,
-        segment: "arg",
+        segment: Seg::Arg,
     });
     Ok(())
 }
 
-pub(super) fn finish(
+pub(super) fn finish<'p>(
     resolver: &Resolver<'_>,
     function: &FunctionExecutionId,
-    path: &str,
+    path: impl Into<ExprPath<'p>>,
     span: Span,
     op: crate::vec_ops::VecOp,
     element: ResolvedType,
@@ -259,7 +260,7 @@ pub(super) fn finish(
         OwnershipMode::Value
     };
     Ok(ResolvedExpr {
-        id: ExpressionId::new(function, path),
+        id: path.into().expression_id(function),
         ty,
         ownership,
         kind: ResolvedExprKind::Call {

@@ -478,6 +478,8 @@ pub(super) fn checked_scoped_path<'a>(
     matches_scoped_identity(value, owner, kind, parsed, path).then_some(path)
 }
 
+pub(super) mod streamed;
+
 #[cfg(test)]
 mod metered_owner;
 #[cfg(test)]

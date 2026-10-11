@@ -200,7 +200,11 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
             "\n",
             include_str!("../../../../../src/hir/resolve_expr/sort_keys.rs"),
             "\n",
-            include_str!("../../../../../src/hir/resolve_expr/vec_field.rs")
+            include_str!("../../../../../src/hir/resolve_expr/vec_field.rs"),
+            "\n",
+            include_str!("../../../../../src/hir/resolve_expr/path_arena.rs"),
+            "\n",
+            include_str!("../../../../../src/hir/resolve_expr/super_method.rs")
         ),
         include_str!("../../../../../src/hir/resolve_expr/variable.rs"),
         include_str!("../../../../../src/hir/resolve_stdin_stream.rs"),
@@ -270,7 +274,13 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         ),
         include_str!("../../../../../src/hir/capacity_probe.rs"),
         include_str!("../../../../../src/hir/expr_nodes.rs"),
-        include_str!("../../../../../src/hir/ids.rs"),
+        concat!(
+            include_str!("../../../../../src/hir/ids.rs"),
+            "\n",
+            include_str!("../../../../../src/hir/ids/streamed.rs"),
+            "\n",
+            include_str!("../../../../../src/hir/ids/metered_owner.rs")
+        ),
         include_str!("../../../../../src/hir/inspection.rs"),
         include_str!("../../../../../src/hir/monomorphize.rs"),
         include_str!("../../../../../src/hir/record_evolution.rs"),

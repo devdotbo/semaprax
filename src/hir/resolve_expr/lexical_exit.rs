@@ -1,16 +1,19 @@
 //! Target capture belongs to the resolver contour, never an authored name.
+use super::path_arena::{ExprPath, PathArena};
 use super::*;
 use crate::ast::{LexicalExitKind, Span};
 use crate::hir::{ControlTarget, LoopLatchKind};
+#[allow(clippy::too_many_arguments)]
 pub(super) fn schedule<'a>(
     function: &FunctionExecutionId,
     expr: &'a Expr,
     kind: LexicalExitKind,
     value: Option<&'a Expr>,
     bindings: &Rc<BTreeMap<String, Binding>>,
-    path: &str,
+    path: PathId,
     nearest: Option<&ControlTarget>,
     frames: &mut Vec<Frame<'a>>,
+    paths: &mut PathArena<'_>,
 ) -> Result<(), Diagnostic> {
     let target = match kind {
         LexicalExitKind::Return => ControlTarget::Function(function.clone()),
@@ -26,7 +29,7 @@ pub(super) fn schedule<'a>(
     }
     frames.push(Frame::FinishLexicalExit {
         span: expr.span,
-        path: path.into(),
+        path,
         kind,
         target,
         has_value: value.is_some(),
@@ -35,7 +38,7 @@ pub(super) fn schedule<'a>(
         frames.push(Frame::Enter {
             expr: value,
             bindings: bindings.clone(),
-            path: format!("{path}.value"),
+            path: paths.child(frames, path, Seg::Value),
         });
     }
     Ok(())
@@ -43,13 +46,13 @@ pub(super) fn schedule<'a>(
 pub(super) fn finish(
     function: &FunctionExecutionId,
     span: Span,
-    path: &str,
+    path: ExprPath<'_>,
     kind: LexicalExitKind,
     target: ControlTarget,
     value: Option<Box<ResolvedExpr>>,
 ) -> ResolvedExpr {
     ResolvedExpr {
-        id: ExpressionId::new(function, path),
+        id: path.expression_id(function),
         ty: ResolvedType::Never,
         ownership: OwnershipMode::Value,
         kind: ResolvedExprKind::LexicalExit {
@@ -98,7 +101,7 @@ pub(super) fn enter_loop(
 pub(super) fn finish_results(
     function: &FunctionExecutionId,
     span: Span,
-    path: &str,
+    path: ExprPath<'_>,
     kind: LexicalExitKind,
     target: ControlTarget,
     has_value: bool,

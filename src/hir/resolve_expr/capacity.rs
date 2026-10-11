@@ -7,6 +7,7 @@ pub(super) fn note(
     results: &Vec<ResolvedExpr>,
     frame: &Frame<'_>,
     loops: &[Option<crate::hir::ControlTarget>],
+    paths: &super::path_arena::PathArena<'_>,
 ) {
     let mut seen_scopes = std::collections::HashSet::new();
     let frame_owned = frames.iter().fold(0_usize, |total, candidate| {
@@ -23,6 +24,7 @@ pub(super) fn note(
                 .sum::<usize>()
             + frame_owned
             + current_owned
+            + paths.owned_capacity()
             + std::mem::size_of_val(loops)
             + loops
                 .iter()

@@ -13,8 +13,9 @@ pub(in crate::hir) fn schedule<'expr>(
     resolver: &Resolver<'_>,
     function: &FunctionExecutionId,
     frames: &mut Vec<Frame<'expr>>,
+    paths: &mut PathArena<'_>,
     block_span: Span,
-    block_path: &str,
+    block_path: PathId,
     statements: &'expr [crate::ast::Statement],
     tail: &'expr crate::ast::Expr,
     position: usize,
@@ -32,6 +33,7 @@ pub(in crate::hir) fn schedule<'expr>(
     else {
         unreachable!()
     };
+    let statement = Seg::Statement.at(position);
     let (source, element, body_scope) = prepare(
         resolver,
         function,
@@ -41,11 +43,12 @@ pub(in crate::hir) fn schedule<'expr>(
         index.as_ref(),
         values,
         body,
-        &format!("{block_path}.s{position}"),
+        paths.at(block_path),
+        statement.then(Seg::ForItem),
     )?;
     frames.push(Frame::BlockForBody {
         span: block_span,
-        path: block_path.to_owned(),
+        path: block_path,
         statements,
         tail,
         index: position,
@@ -58,24 +61,24 @@ pub(in crate::hir) fn schedule<'expr>(
     frames.push(Frame::Enter {
         expr: body,
         bindings: body_scope,
-        path: format!("{block_path}.s{position}.value.s2.body.s1.value"),
+        path: paths.child(frames, block_path, statement.then(Seg::ForBody)),
     });
+    let condition = [statement.then(Seg::ForCondition)];
     frames.push(Frame::EnterLoop(super::super::ControlTarget::Loop {
         owner: function.clone(),
-        site: ExpressionId::new(
-            function,
-            &format!("{block_path}.s{position}.value.s2.condition"),
-        ),
+        site: paths
+            .at(block_path)
+            .expression_id_with(function, &condition),
     }));
     Ok(())
 }
 
-pub(in crate::hir) fn project(
+pub(in crate::hir) fn project<'p>(
     resolver: &Resolver<'_>,
     function: &FunctionExecutionId,
     expression: &crate::ast::Expr,
     bindings: &BTreeMap<String, Binding>,
-    path: &str,
+    path: impl Into<ExprPath<'p>>,
 ) -> Result<Option<ResolvedExpr>, crate::diagnostic::Diagnostic> {
     let crate::ast::ExprKind::Project { base, field, .. } = &expression.kind else {
         return Ok(None);
@@ -103,15 +106,14 @@ pub(in crate::hir) fn project(
                 expression.span,
             )
         })?;
-    let source = place(
-        function,
-        &format!("{path}.arg.0"),
+    let path = path.into();
+    let source = place_at(
+        path.expression_id_with(function, &[Seg::ArgZero.into()]),
         &row.source,
         expression.span,
     );
-    let index = place(
-        function,
-        &format!("{path}.arg.1"),
+    let index = place_at(
+        path.expression_id_with(function, &[Seg::ArgOne.into()]),
         &row.index,
         expression.span,
     );
@@ -151,20 +153,18 @@ pub(in crate::hir) fn project(
         })?
         .ty
         .clone();
-    let source = place(
-        function,
-        &format!("{path}.base.arg.0"),
+    let source = place_at(
+        path.expression_id_with(function, &[Seg::BaseArgZero.into()]),
         &row.source,
         expression.span,
     );
-    let index = place(
-        function,
-        &format!("{path}.base.arg.1"),
+    let index = place_at(
+        path.expression_id_with(function, &[Seg::BaseArgOne.into()]),
         &row.index,
         expression.span,
     );
     let base = ResolvedExpr {
-        id: ExpressionId::new(function, &format!("{path}.base")),
+        id: path.expression_id_with(function, &[Seg::Base.into()]),
         ty: row.element.clone(),
         ownership: OwnershipMode::Value,
         kind: ResolvedExprKind::Call {
@@ -176,7 +176,7 @@ pub(in crate::hir) fn project(
         span: expression.span,
     };
     Ok(Some(ResolvedExpr {
-        id: ExpressionId::new(function, path),
+        id: path.expression_id(function),
         ty,
         ownership: OwnershipMode::Value,
         kind: ResolvedExprKind::Project {
@@ -272,7 +272,8 @@ fn prepare(
     index: Option<&crate::ast::TraversalIndex>,
     values: &crate::ast::Expr,
     body: &crate::ast::Expr,
-    statement_path: &str,
+    statement: ExprPath<'_>,
+    item_edge: Step,
 ) -> Result<PreparedTraversal, crate::diagnostic::Diagnostic> {
     let fail = || {
         resolver.error("SPX-H006", "borrowed record traversal requires an immutable named Vec of an admitted explicit record", values.span)
@@ -323,9 +324,8 @@ fn prepare(
         ty: source_binding.ty.clone(),
         span: values.span,
     };
-    let path = format!("{statement_path}.value.s2.body.s0");
     let index_binding = ResolvedBinding {
-        id: ValueId::local(function, &path),
+        id: statement.value_local_with(function, &[item_edge]),
         name: index
             .as_ref()
             .map_or("#for-row-index", |index| index.name.as_str())
@@ -393,7 +393,8 @@ pub(in crate::hir) fn resolve_reference(
         index.as_ref(),
         values,
         body,
-        path,
+        path.into(),
+        Seg::ForItem.into(),
     )?;
     let body = resolver.resolve_expr_recursive_reference_inner(
         function,

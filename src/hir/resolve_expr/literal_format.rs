@@ -1,26 +1,28 @@
 //! Compiler-owned literal-format source admission for the iterative resolver.
+use super::path_arena::{ExprPath, PathArena};
 use super::*;
 use crate::ast::{Span, Type};
 
 impl Resolver<'_> {
     pub(super) fn queue_literal_format_argument<'e>(
         frames: &mut Vec<Frame<'e>>,
+        paths: &mut PathArena<'_>,
         args: &'e [Expr],
         index: usize,
         bindings: Rc<BTreeMap<String, Binding>>,
-        path: String,
+        path: PathId,
     ) {
         if let Some(argument) = args.get(index) {
             frames.push(Frame::LiteralFormatArgNext {
                 args,
                 index: index + 1,
                 bindings: Rc::clone(&bindings),
-                path: path.clone(),
+                path,
             });
             frames.push(Frame::Enter {
                 expr: argument,
                 bindings,
-                path: format!("{path}.arg.{index}"),
+                path: paths.child(frames, path, Seg::Arg.at(index)),
             });
         }
     }
@@ -32,13 +34,13 @@ impl Resolver<'_> {
         type_arguments: &[Type],
         args: &'e [Expr],
         bindings: Rc<BTreeMap<String, Binding>>,
-        path: String,
+        path: PathId,
     ) -> Result<[Frame<'e>; 2], Diagnostic> {
         let template = self.prepare_literal_format(function, expression, type_arguments, args)?;
         Ok([
             Frame::FinishLiteralFormat {
                 span: expression.span,
-                path: path.clone(),
+                path,
                 template,
                 argument_count: args.len() - 1,
             },
@@ -104,7 +106,7 @@ impl Resolver<'_> {
         &self,
         function: &FunctionExecutionId,
         span: Span,
-        path: &str,
+        path: ExprPath<'_>,
         template: String,
         args: Vec<ResolvedExpr>,
     ) -> Result<ResolvedExpr, Diagnostic> {
@@ -121,7 +123,7 @@ impl Resolver<'_> {
         let ty = ResolvedType::String;
         let ownership = self.expression_ownership(&ty, OwnershipMode::Own, span)?;
         Ok(ResolvedExpr {
-            id: ExpressionId::new(function, path),
+            id: path.expression_id(function),
             ty,
             ownership,
             kind: ResolvedExprKind::LiteralFormat { template, args },

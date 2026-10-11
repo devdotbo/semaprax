@@ -1,4 +1,5 @@
 //! Named expression resolution, including source-only row refusal.
+use super::path_arena::ExprPath;
 use super::*;
 impl Resolver<'_> {
     pub(super) fn named_value(
@@ -6,7 +7,7 @@ impl Resolver<'_> {
         function: &FunctionExecutionId,
         expr: &Expr,
         bindings: &BTreeMap<String, Binding>,
-        path: &str,
+        path: ExprPath<'_>,
         name: &str,
     ) -> Result<ResolvedExpr, Diagnostic> {
         if bindings
@@ -22,7 +23,7 @@ impl Resolver<'_> {
             self.error("SPX-H002", format!("unresolved value `{name}`"), expr.span)
         })?;
         Ok(ResolvedExpr {
-            id: ExpressionId::new(function, path),
+            id: path.expression_id(function),
             ty: binding.ty.clone(),
             ownership: binding.ownership,
             kind: ResolvedExprKind::Place(Place {

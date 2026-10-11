@@ -1,9 +1,13 @@
 //! Exact compiler-owned `Box<T>` call lowering.
 
 use super::expr_nodes::{ResolvedExpr, ResolvedExprKind};
-use super::ids::{DeclarationId, ExpressionId, FunctionExecutionId};
+#[cfg(test)]
+use super::ids::ExpressionId;
+use super::ids::{DeclarationId, FunctionExecutionId};
 use super::nodes::{OwnershipMode, ResolvedType};
+use super::resolve_expr::path_arena::{PathId, Seg};
 use super::resolve_expr_frame::Frame;
+use super::ExprPath;
 mod iterator;
 mod list;
 mod map;
@@ -66,7 +70,7 @@ impl OwnedGenericCallSite {
         type_arguments: &[Type],
         args: &'expr [Expr],
         bindings: Rc<BTreeMap<String, Binding>>,
-        path: String,
+        path: PathId,
         span: Span,
     ) -> Result<(), Diagnostic> {
         match self {
@@ -148,7 +152,7 @@ impl OwnedGenericCallSite {
 pub(super) fn finish_owned(
     resolver: &Resolver<'_>,
     function: &FunctionExecutionId,
-    path: &str,
+    path: ExprPath<'_>,
     span: Span,
     site: OwnedGenericCallSite,
     element: ResolvedType,
@@ -204,7 +208,7 @@ pub(super) fn schedule<'expr>(
     type_arguments: &[Type],
     args: &'expr [Expr],
     bindings: Rc<BTreeMap<String, Binding>>,
-    path: String,
+    path: PathId,
     span: Span,
     op: crate::box_ops::BoxOp,
 ) -> Result<(), Diagnostic> {
@@ -231,7 +235,7 @@ pub(super) fn schedule<'expr>(
     }
     frames.push(Frame::FinishOwnedGenericOp {
         span,
-        path: path.clone(),
+        path,
         op: OwnedGenericCallSite::Box(op),
         element,
         argument_count: 1,
@@ -241,14 +245,14 @@ pub(super) fn schedule<'expr>(
         index: 0,
         bindings,
         path,
-        segment: "arg",
+        segment: Seg::Arg,
     });
     Ok(())
 }
 
-pub(super) fn finish(
+pub(super) fn finish<'p>(
     function: &FunctionExecutionId,
-    path: &str,
+    path: impl Into<ExprPath<'p>>,
     span: Span,
     op: crate::box_ops::BoxOp,
     element: ResolvedType,
@@ -268,7 +272,7 @@ pub(super) fn finish(
     }
     let ty = op.resolved_return_type(&element);
     Ok(ResolvedExpr {
-        id: ExpressionId::new(function, path),
+        id: path.into().expression_id(function),
         ownership: if op == crate::box_ops::BoxOp::New || element == ResolvedType::Bytes {
             OwnershipMode::Own
         } else {

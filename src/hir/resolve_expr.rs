@@ -20,13 +20,17 @@ use super::resolve_expr_frame::{take_pair, take_results, take_triple, Frame};
 use super::type_reachability::record_args_ok;
 use super::{Binding, Place, PlaceProjection, Resolver};
 
+use path_arena::{PathArena, PathId, Seg, Step};
+
 mod byte_view;
 #[cfg(test)]
 mod capacity;
 mod finish;
 pub(super) mod lexical_exit;
 mod literal_format;
+pub(super) mod path_arena;
 mod sort_keys;
+mod super_method;
 mod variable;
 pub(super) mod vec_constructor;
 mod vec_field;
@@ -40,10 +44,11 @@ impl Resolver<'_> {
         path: &str,
     ) -> Result<ResolvedExpr, Diagnostic> {
         const { assert!(std::mem::size_of::<Frame<'static>>() <= 592) };
+        let mut paths = PathArena::new(path);
         let mut frames = vec![Frame::Enter {
             expr,
             bindings: Rc::new(bindings.clone()),
-            path: path.to_owned(),
+            path: PathId::ROOT,
         }];
         let mut results = Vec::new();
         let mut loop_targets: [Option<super::ControlTarget>; crate::cache_codec::MAX_DEPTH + 1] =
@@ -51,8 +56,9 @@ impl Resolver<'_> {
         let mut loop_depth = 0usize;
 
         while let Some(frame) = frames.pop() {
+            paths.release_above(frames.len());
             #[cfg(test)]
-            capacity::note(&frames, &results, &frame, &loop_targets);
+            capacity::note(&frames, &results, &frame, &loop_targets, &paths);
             match frame {
                 Frame::FinishVecConstructor { element, count } => {
                     vec_constructor::finish(&mut results, element, count)?
@@ -74,7 +80,7 @@ impl Resolver<'_> {
                     lexical_exit::finish_results(
                         function,
                         span,
-                        &path,
+                        paths.at(path),
                         kind,
                         target,
                         has_value,
@@ -101,33 +107,37 @@ impl Resolver<'_> {
                             *kind,
                             value.as_deref(),
                             &bindings,
-                            &path,
+                            path,
                             loop_targets
                                 .get(loop_depth.wrapping_sub(1))
                                 .and_then(Option::as_ref),
                             &mut frames,
+                            &mut paths,
                         )?;
                     }
                     ExprKind::Call { name, .. }
                         if crate::stdin_stream_ops::pure_by_name(name).is_some() =>
                     {
+                        let path = paths.at(path);
                         results.push(
-                            self.resolve_stdin_inspection(function, expr, &bindings, &path)?
+                            self.resolve_stdin_inspection(function, expr, &bindings, path)?
                                 .expect("matched intrinsic"),
                         );
                     }
                     ExprKind::Closure { .. } => {
+                        // Closure lowering derives and owns nested path text.
+                        let path = paths.at(path).materialize();
                         results.push(self.resolve_closure(function, expr, &bindings, &path, false)?)
                     }
                     ExprKind::Int(value) => results.push(ResolvedExpr {
-                        id: ExpressionId::new(function, &path),
+                        id: paths.at(path).expression_id(function),
                         ty: ResolvedType::I64,
                         ownership: OwnershipMode::Value,
                         kind: ResolvedExprKind::Int(*value),
                         span: expr.span,
                     }),
                     ExprKind::BorrowedUtf8Literal(value) => results.push(ResolvedExpr {
-                        id: ExpressionId::new(function, &path),
+                        id: paths.at(path).expression_id(function),
                         ty: ResolvedType::Str,
                         ownership: OwnershipMode::Borrow,
                         kind: ResolvedExprKind::BorrowedUtf8Literal(super::StaticUtf8::from_text(
@@ -138,7 +148,7 @@ impl Resolver<'_> {
                     ExprKind::String(value) => {
                         let ty = ResolvedType::String;
                         results.push(ResolvedExpr {
-                            id: ExpressionId::new(function, &path),
+                            id: paths.at(path).expression_id(function),
                             ownership: self.expression_ownership(
                                 &ty,
                                 OwnershipMode::Own,
@@ -150,42 +160,42 @@ impl Resolver<'_> {
                         });
                     }
                     ExprKind::Int32(value) => results.push(ResolvedExpr {
-                        id: ExpressionId::new(function, &path),
+                        id: paths.at(path).expression_id(function),
                         ty: ResolvedType::I32,
                         ownership: OwnershipMode::Value,
                         kind: ResolvedExprKind::Int32(*value),
                         span: expr.span,
                     }),
                     ExprKind::Char(value) => results.push(ResolvedExpr {
-                        id: ExpressionId::new(function, &path),
+                        id: paths.at(path).expression_id(function),
                         ty: ResolvedType::Char,
                         ownership: OwnershipMode::Value,
                         kind: ResolvedExprKind::Char(*value),
                         span: expr.span,
                     }),
                     ExprKind::Uint8(value) => results.push(ResolvedExpr {
-                        id: ExpressionId::new(function, &path),
+                        id: paths.at(path).expression_id(function),
                         ty: ResolvedType::U8,
                         ownership: OwnershipMode::Value,
                         kind: ResolvedExprKind::Uint8(*value),
                         span: expr.span,
                     }),
                     ExprKind::Usize(value) => results.push(ResolvedExpr {
-                        id: ExpressionId::new(function, &path),
+                        id: paths.at(path).expression_id(function),
                         ty: ResolvedType::Usize,
                         ownership: OwnershipMode::Value,
                         kind: ResolvedExprKind::Usize(*value),
                         span: expr.span,
                     }),
                     ExprKind::ArrayU8(values) => results.push(ResolvedExpr {
-                        id: ExpressionId::new(function, &path),
+                        id: paths.at(path).expression_id(function),
                         ty: ResolvedType::ArrayU8(values.len() as u32),
                         ownership: OwnershipMode::Value,
                         kind: ResolvedExprKind::ArrayU8(values.clone()),
                         span: expr.span,
                     }),
                     ExprKind::RepeatArrayU8 { value, count } => results.push(ResolvedExpr {
-                        id: ExpressionId::new(function, &path),
+                        id: paths.at(path).expression_id(function),
                         ty: ResolvedType::ArrayU8(*count),
                         ownership: OwnershipMode::Value,
                         kind: ResolvedExprKind::RepeatArrayU8 {
@@ -195,36 +205,38 @@ impl Resolver<'_> {
                         span: expr.span,
                     }),
                     ExprKind::Float32(bits) => results.push(ResolvedExpr {
-                        id: ExpressionId::new(function, &path),
+                        id: paths.at(path).expression_id(function),
                         ty: ResolvedType::F32,
                         ownership: OwnershipMode::Value,
                         kind: ResolvedExprKind::Float32(*bits),
                         span: expr.span,
                     }),
                     ExprKind::Float64(bits) => results.push(ResolvedExpr {
-                        id: ExpressionId::new(function, &path),
+                        id: paths.at(path).expression_id(function),
                         ty: ResolvedType::F64,
                         ownership: OwnershipMode::Value,
                         kind: ResolvedExprKind::Float64(*bits),
                         span: expr.span,
                     }),
                     ExprKind::Bool(value) => results.push(ResolvedExpr {
-                        id: ExpressionId::new(function, &path),
+                        id: paths.at(path).expression_id(function),
                         ty: ResolvedType::Bool,
                         ownership: OwnershipMode::Value,
                         kind: ResolvedExprKind::Bool(*value),
                         span: expr.span,
                     }),
                     ExprKind::Var(name) => {
-                        results.push(self.named_value(function, expr, &bindings, &path, name)?)
+                        let path = paths.at(path);
+                        results.push(self.named_value(function, expr, &bindings, path, name)?)
                     }
                     ExprKind::Call {
                         name,
                         type_arguments,
                         args,
                     } => {
+                        let call_path = paths.at(path);
                         if let Some(callable) =
-                            self.invocation_target(function, name, &bindings, &path, expr.span)?
+                            self.invocation_target(function, name, &bindings, call_path, expr.span)?
                         {
                             if !type_arguments.is_empty() {
                                 return Err(super::function_value::error(
@@ -233,7 +245,7 @@ impl Resolver<'_> {
                             }
                             frames.push(Frame::FinishInvoke {
                                 span: expr.span,
-                                path: path.clone(),
+                                path,
                                 callable,
                                 argument_count: args.len(),
                             });
@@ -242,7 +254,7 @@ impl Resolver<'_> {
                                 index: 0,
                                 bindings,
                                 path,
-                                segment: "arg",
+                                segment: Seg::Arg,
                             });
                             continue;
                         }
@@ -265,7 +277,7 @@ impl Resolver<'_> {
                             }
                             frames.push(Frame::FinishNativeCall {
                                 span: expr.span,
-                                path: path.clone(),
+                                path,
                                 import: import_id,
                                 argument_count: args.len(),
                             });
@@ -274,7 +286,7 @@ impl Resolver<'_> {
                                 index: 0,
                                 bindings,
                                 path,
-                                segment: "native-rust-arg",
+                                segment: Seg::NativeRustArg,
                             });
                         } else if name == crate::vec_ops::sort_keys::NAME {
                             frames.extend(self.sort_by_frames(
@@ -326,7 +338,7 @@ impl Resolver<'_> {
                             }
                             frames.push(Frame::FinishStringOp {
                                 span: expr.span,
-                                path: path.clone(),
+                                path,
                                 op,
                                 argument_count: args.len(),
                             });
@@ -335,7 +347,7 @@ impl Resolver<'_> {
                                 index: 0,
                                 bindings,
                                 path,
-                                segment: "arg",
+                                segment: Seg::Arg,
                             });
                         } else if let Some(op) = crate::str_ops::by_name(name) {
                             if !type_arguments.is_empty() {
@@ -360,7 +372,7 @@ impl Resolver<'_> {
                             }
                             frames.push(Frame::FinishStrOp {
                                 span: expr.span,
-                                path: path.clone(),
+                                path,
                                 op,
                                 argument_count: args.len(),
                             });
@@ -369,7 +381,7 @@ impl Resolver<'_> {
                                 index: 0,
                                 bindings,
                                 path,
-                                segment: "arg",
+                                segment: Seg::Arg,
                             });
                         } else if let Some(site) =
                             super::resolve_box_call::OwnedGenericCallSite::by_name(name)
@@ -394,7 +406,7 @@ impl Resolver<'_> {
                             }
                             frames.push(Frame::FinishByteOp {
                                 span: expr.span,
-                                path: path.clone(),
+                                path,
                                 op,
                                 argument_count: args.len(),
                             });
@@ -403,7 +415,7 @@ impl Resolver<'_> {
                                 index: 0,
                                 bindings,
                                 path,
-                                segment: "arg",
+                                segment: Seg::Arg,
                             });
                         } else if let Some(op) = crate::host_io_ops::by_name(name) {
                             if !type_arguments.is_empty() || args.len() != op.arity() {
@@ -415,7 +427,7 @@ impl Resolver<'_> {
                             }
                             frames.push(Frame::FinishHostIoOp {
                                 span: expr.span,
-                                path: path.clone(),
+                                path,
                                 op,
                                 argument_count: args.len(),
                             });
@@ -424,7 +436,7 @@ impl Resolver<'_> {
                                 index: 0,
                                 bindings,
                                 path,
-                                segment: "arg",
+                                segment: Seg::Arg,
                             });
                         } else if let Some(op) = crate::command_io_ops::by_name(name) {
                             if !type_arguments.is_empty()
@@ -438,7 +450,7 @@ impl Resolver<'_> {
                             }
                             frames.push(Frame::FinishHostCommandOp {
                                 span: expr.span,
-                                path: path.clone(),
+                                path,
                                 op,
                                 argument_count: args.len(),
                             });
@@ -447,7 +459,7 @@ impl Resolver<'_> {
                                 index: 0,
                                 bindings,
                                 path,
-                                segment: "arg",
+                                segment: Seg::Arg,
                             });
                         } else {
                             let template = self
@@ -486,7 +498,7 @@ impl Resolver<'_> {
                                 )?;
                             frames.push(Frame::FinishCall {
                                 span: expr.span,
-                                path: path.clone(),
+                                path,
                                 callee: template,
                                 type_arguments: resolved_arguments,
                                 instance,
@@ -499,26 +511,26 @@ impl Resolver<'_> {
                                 index: 0,
                                 bindings,
                                 path,
-                                segment: "arg",
+                                segment: Seg::Arg,
                             });
                         }
                     }
                     ExprKind::Unary { op, value } => {
                         frames.push(Frame::FinishUnary {
                             span: expr.span,
-                            path: path.clone(),
+                            path,
                             op: *op,
                         });
                         frames.push(Frame::Enter {
                             expr: value,
                             bindings,
-                            path: format!("{path}.value"),
+                            path: paths.child(&frames, path, Seg::Value),
                         });
                     }
                     ExprKind::Binary { op, left, right } => {
                         frames.push(Frame::AfterBinaryLeft {
                             span: expr.span,
-                            path: path.clone(),
+                            path,
                             op: *op,
                             right,
                             bindings: bindings.clone(),
@@ -526,7 +538,7 @@ impl Resolver<'_> {
                         frames.push(Frame::Enter {
                             expr: left,
                             bindings,
-                            path: format!("{path}.left"),
+                            path: paths.child(&frames, path, Seg::Left),
                         });
                     }
                     ExprKind::Block { statements, tail } => {
@@ -547,7 +559,7 @@ impl Resolver<'_> {
                     } => {
                         frames.push(Frame::AfterIfCondition {
                             span: expr.span,
-                            path: path.clone(),
+                            path,
                             then_branch,
                             else_branch,
                             bindings: bindings.clone(),
@@ -555,7 +567,7 @@ impl Resolver<'_> {
                         frames.push(Frame::Enter {
                             expr: condition,
                             bindings,
-                            path: format!("{path}.condition"),
+                            path: paths.child(&frames, path, Seg::Condition),
                         });
                     }
                     ExprKind::ConstructRecord {
@@ -692,7 +704,7 @@ impl Resolver<'_> {
                     } => {
                         frames.push(Frame::AfterMatchScrutinee {
                             span: expr.span,
-                            path: path.clone(),
+                            path,
                             mode: (*mode).into(),
                             arms,
                             bindings: bindings.clone(),
@@ -700,18 +712,18 @@ impl Resolver<'_> {
                         frames.push(Frame::Enter {
                             expr: scrutinee,
                             bindings,
-                            path: format!("{path}.scrutinee"),
+                            path: paths.child(&frames, path, Seg::Scrutinee),
                         });
                     }
                     ExprKind::Try { operand } => {
                         frames.push(Frame::FinishTry {
                             span: expr.span,
-                            path: path.clone(),
+                            path,
                         });
                         frames.push(Frame::Enter {
                             expr: operand,
                             bindings,
-                            path: format!("{path}.operand"),
+                            path: paths.child(&frames, path, Seg::Operand),
                         });
                     }
                     // Resumable Effects v1 (issue #204): the request
@@ -723,43 +735,44 @@ impl Resolver<'_> {
                     ExprKind::Yield { request } => {
                         frames.push(Frame::FinishYield {
                             span: expr.span,
-                            path: path.clone(),
+                            path,
                         });
                         frames.push(Frame::Enter {
                             expr: request,
                             bindings,
-                            path: format!("{path}.request"),
+                            path: paths.child(&frames, path, Seg::Request),
                         });
                     }
                     ExprKind::UpdateRecord { base, fields } => {
                         frames.push(Frame::AfterUpdateBase {
                             span: expr.span,
-                            path: path.clone(),
+                            path,
                             fields,
                             bindings: bindings.clone(),
                         });
                         frames.push(Frame::Enter {
                             expr: base,
                             bindings,
-                            path: format!("{path}.base"),
+                            path: paths.child(&frames, path, Seg::Base),
                         });
                     }
                     ExprKind::Project { base, field, .. } => {
+                        let site = paths.at(path);
                         if let Some(value) = super::resolve_for::record::project(
-                            self, function, expr, &bindings, &path,
+                            self, function, expr, &bindings, site,
                         )? {
                             results.push(value);
                             continue;
                         }
                         frames.push(Frame::FinishProject {
                             span: expr.span,
-                            path: path.clone(),
+                            path,
                             field,
                         });
                         frames.push(Frame::Enter {
                             expr: base,
                             bindings,
-                            path: format!("{path}.base"),
+                            path: paths.child(&frames, path, Seg::Base),
                         });
                     }
                     ExprKind::MethodCall {
@@ -782,7 +795,7 @@ impl Resolver<'_> {
                             .collect::<Result<Vec<_>, _>>()?;
                         frames.push(Frame::FinishMethodCall {
                             span: expr.span,
-                            path: path.clone(),
+                            path,
                             method,
                             receiver,
                             bindings: bindings.clone(),
@@ -794,13 +807,13 @@ impl Resolver<'_> {
                                 args,
                                 index: 0,
                                 bindings: bindings.clone(),
-                                path: path.clone(),
+                                path,
                             });
                         }
                         frames.push(Frame::Enter {
                             expr: receiver,
                             bindings,
-                            path: format!("{path}.arg.0"),
+                            path: paths.child(&frames, path, Seg::ArgZero),
                         });
                     }
                     ExprKind::SuperMethod {
@@ -851,7 +864,7 @@ impl Resolver<'_> {
                         frames.push(Frame::FinishSuperMethod {
                             span: expr.span,
                             method_span: *method_span,
-                            path: path.clone(),
+                            path,
                             method,
                             holder: holder.clone(),
                             callee,
@@ -862,7 +875,7 @@ impl Resolver<'_> {
                                 args,
                                 index: 0,
                                 bindings: bindings.clone(),
-                                path: path.clone(),
+                                path,
                             });
                         }
                         // The inherited receiver is the enclosing method's own `self`
@@ -872,8 +885,9 @@ impl Resolver<'_> {
                             declaration: owner.clone(),
                             arguments: Vec::new(),
                         };
+                        let source = Step::from(Seg::ArgZeroSource);
                         results.push(ResolvedExpr {
-                            id: ExpressionId::new(function, &format!("{path}.arg.0.source")),
+                            id: paths.at(path).expression_id_with(function, &[source]),
                             ty: owner_ty.clone(),
                             ownership: self.expression_ownership(
                                 &owner_ty,
@@ -914,12 +928,12 @@ impl Resolver<'_> {
                     let (result, ty) =
                         self.resolve_native_rust_result(&source_import.result, span)?;
                     results.push(ResolvedExpr {
-                        id: ExpressionId::new(function, &path),
+                        id: paths.at(path).expression_id(function),
                         ty,
                         ownership: result.ownership(),
                         kind: ResolvedExprKind::NativeRustImportCall(
                             ResolvedNativeRustImportCall {
-                                expression: ExpressionId::new(function, &path),
+                                expression: paths.at(path).expression_id(function),
                                 import,
                                 args,
                                 result,
@@ -935,7 +949,8 @@ impl Resolver<'_> {
                     argument_count,
                 } => {
                     let args = take_results(&mut results, argument_count);
-                    results.push(self.finish_invocation(function, &path, span, callable, args)?);
+                    let path = paths.at(path);
+                    results.push(self.finish_invocation(function, path, span, callable, args)?);
                 }
                 Frame::FinishCall {
                     span,
@@ -951,7 +966,7 @@ impl Resolver<'_> {
                     let (ty, ownership) =
                         self.resolve_call_result(function, &return_source_type, target_span)?;
                     results.push(ResolvedExpr {
-                        id: ExpressionId::new(function, &path),
+                        id: paths.at(path).expression_id(function),
                         ty,
                         ownership,
                         kind: ResolvedExprKind::Call {
@@ -989,7 +1004,7 @@ impl Resolver<'_> {
                     let ty = op.return_type();
                     let ownership = self.expression_ownership(&ty, OwnershipMode::Own, span)?;
                     results.push(ResolvedExpr {
-                        id: ExpressionId::new(function, &path),
+                        id: paths.at(path).expression_id(function),
                         ty,
                         ownership,
                         kind: ResolvedExprKind::Call {
@@ -1002,7 +1017,7 @@ impl Resolver<'_> {
                     });
                 }
                 frame @ (Frame::FinishSortBy { .. } | Frame::FinishVecField { .. }) => {
-                    self.finish_vec_literal_frame(function, frame, &mut results)?;
+                    self.finish_vec_literal_frame(function, frame, &paths, &mut results)?;
                 }
                 Frame::FinishLiteralFormat {
                     span,
@@ -1011,8 +1026,8 @@ impl Resolver<'_> {
                     argument_count,
                 } => {
                     let args = take_results(&mut results, argument_count);
-                    results
-                        .push(self.finish_literal_format(function, span, &path, template, args)?);
+                    let path = paths.at(path);
+                    results.push(self.finish_literal_format(function, span, path, template, args)?);
                 }
                 Frame::LiteralFormatArgNext {
                     args,
@@ -1020,7 +1035,14 @@ impl Resolver<'_> {
                     bindings,
                     path,
                 } => {
-                    Self::queue_literal_format_argument(&mut frames, args, index, bindings, path);
+                    Self::queue_literal_format_argument(
+                        &mut frames,
+                        &mut paths,
+                        args,
+                        index,
+                        bindings,
+                        path,
+                    );
                 }
                 Frame::FinishStrOp {
                     span,
@@ -1048,7 +1070,7 @@ impl Resolver<'_> {
                     let ty = op.return_type();
                     let ownership = self.expression_ownership(&ty, OwnershipMode::Own, span)?;
                     results.push(ResolvedExpr {
-                        id: ExpressionId::new(function, &path),
+                        id: paths.at(path).expression_id(function),
                         ty,
                         ownership,
                         kind: ResolvedExprKind::Call {
@@ -1096,7 +1118,7 @@ impl Resolver<'_> {
                         let end = args.next().expect("range has an end");
                         debug_assert!(args.next().is_none());
                         results.push(ResolvedExpr {
-                            id: ExpressionId::new(function, &path),
+                            id: paths.at(path).expression_id(function),
                             ty,
                             ownership: OwnershipMode::Borrow,
                             kind: ResolvedExprKind::ByteRange {
@@ -1109,13 +1131,14 @@ impl Resolver<'_> {
                         });
                         continue;
                     }
+                    let site = paths.at(path);
                     if let Some(fused) =
-                        crate::vec_ops::string_slot::fuse(function, &path, span, op, &mut args)
+                        crate::vec_ops::string_slot::fuse(function, site, span, op, &mut args)
                     {
                         results.push(fused);
                         continue;
                     }
-                    if let Some(fused) = self.fuse_vec_field_bytes(function, span, &path, op, &args)
+                    if let Some(fused) = self.fuse_vec_field_bytes(function, span, site, op, &args)
                     {
                         results.push(fused);
                         continue;
@@ -1123,7 +1146,7 @@ impl Resolver<'_> {
                     if op.is_view() {
                         let place = self.resolved_view_place(op, &args[0])?;
                         results.push(ResolvedExpr {
-                            id: ExpressionId::new(function, &path),
+                            id: paths.at(path).expression_id(function),
                             ty,
                             ownership: OwnershipMode::Borrow,
                             kind: ResolvedExprKind::BorrowPlace {
@@ -1135,7 +1158,7 @@ impl Resolver<'_> {
                         continue;
                     }
                     results.push(ResolvedExpr {
-                        id: ExpressionId::new(function, &path),
+                        id: paths.at(path).expression_id(function),
                         ty,
                         ownership,
                         kind: ResolvedExprKind::Call {
@@ -1156,7 +1179,13 @@ impl Resolver<'_> {
                 } => {
                     let args = take_results(&mut results, argument_count);
                     results.push(super::resolve_box_call::finish_owned(
-                        self, function, &path, span, op, element, args,
+                        self,
+                        function,
+                        paths.at(path),
+                        span,
+                        op,
+                        element,
+                        args,
                     )?);
                 }
                 Frame::FinishHostIoOp {
@@ -1180,7 +1209,7 @@ impl Resolver<'_> {
                         }
                     }
                     results.push(ResolvedExpr {
-                        id: ExpressionId::new(function, &path),
+                        id: paths.at(path).expression_id(function),
                         ty: op.return_type(),
                         ownership: OwnershipMode::Value,
                         kind: ResolvedExprKind::Call {
@@ -1199,7 +1228,8 @@ impl Resolver<'_> {
                     argument_count,
                 } => {
                     let args = take_results(&mut results, argument_count);
-                    results.push(self.finish_host_command(function, &path, span, op, args)?);
+                    let path = paths.at(path);
+                    results.push(self.finish_host_command(function, path, span, op, args)?);
                 }
                 Frame::ChildNext {
                     children,
@@ -1213,13 +1243,13 @@ impl Resolver<'_> {
                             children,
                             index: index + 1,
                             bindings: bindings.clone(),
-                            path: path.clone(),
+                            path,
                             segment,
                         });
                         frames.push(Frame::Enter {
                             expr: &children[index],
                             bindings,
-                            path: format!("{path}.{segment}.{index}"),
+                            path: paths.child(&frames, path, segment.at(index)),
                         });
                     }
                 }
@@ -1234,18 +1264,24 @@ impl Resolver<'_> {
                             args,
                             index: index + 1,
                             bindings: bindings.clone(),
-                            path: path.clone(),
+                            path,
                         });
                         frames.push(Frame::Enter {
                             expr: &args[index],
                             bindings,
-                            path: format!("{path}.arg.{}", index + 1),
+                            path: paths.child(&frames, path, Seg::Arg.at(index + 1)),
                         });
                     }
                 }
                 Frame::FinishUnary { span, path, op } => {
                     let value = results.pop().expect("unary child result retained");
-                    results.push(finish::finish_unary(function, span, path, op, value));
+                    results.push(finish::finish_unary(
+                        function,
+                        span,
+                        paths.at(path),
+                        op,
+                        value,
+                    ));
                 }
                 Frame::FinishBinary { span, path, op } => {
                     let (left, right) = take_pair(&mut results);
@@ -1287,7 +1323,7 @@ impl Resolver<'_> {
                         ) => ResolvedType::Bool,
                     };
                     results.push(ResolvedExpr {
-                        id: ExpressionId::new(function, &path),
+                        id: paths.at(path).expression_id(function),
                         ty,
                         ownership: OwnershipMode::Value,
                         kind: ResolvedExprKind::Binary {
@@ -1305,15 +1341,11 @@ impl Resolver<'_> {
                     right,
                     bindings,
                 } => {
-                    frames.push(Frame::FinishBinary {
-                        span,
-                        path: path.clone(),
-                        op,
-                    });
+                    frames.push(Frame::FinishBinary { span, path, op });
                     frames.push(Frame::Enter {
                         expr: right,
                         bindings,
-                        path: format!("{path}.right"),
+                        path: paths.child(&frames, path, Seg::Right),
                     });
                 }
                 Frame::BlockNext {
@@ -1328,20 +1360,21 @@ impl Resolver<'_> {
                     if index == statements.len() {
                         frames.push(Frame::FinishBlock {
                             span,
-                            path: path.clone(),
+                            path,
                             statements: resolved,
                         });
                         frames.push(Frame::Enter {
                             expr: tail,
                             bindings: scope,
-                            path: format!("{path}.tail"),
+                            path: paths.child(&frames, path, Seg::Tail),
                         });
                     } else {
+                        let stmt = Seg::Statement.at(index);
                         match &statements[index] {
                             Statement::Let { value, .. } => {
                                 frames.push(Frame::BlockAfterLet {
                                     span,
-                                    path: path.clone(),
+                                    path,
                                     statements,
                                     tail,
                                     index,
@@ -1351,7 +1384,7 @@ impl Resolver<'_> {
                                 frames.push(Frame::Enter {
                                     expr: value,
                                     bindings: scope,
-                                    path: format!("{path}.s{index}.value"),
+                                    path: paths.child(&frames, path, stmt.then(Seg::Value)),
                                 });
                             }
                             Statement::Assign {
@@ -1380,7 +1413,7 @@ impl Resolver<'_> {
                                 };
                                 frames.push(Frame::BlockAfterAssign {
                                     span,
-                                    path: path.clone(),
+                                    path,
                                     statements,
                                     tail,
                                     index,
@@ -1392,13 +1425,13 @@ impl Resolver<'_> {
                                 frames.push(Frame::Enter {
                                     expr: value,
                                     bindings: scope,
-                                    path: format!("{path}.s{index}.value"),
+                                    path: paths.child(&frames, path, stmt.then(Seg::Value)),
                                 });
                             }
                             Statement::Unsafe { body, .. } => {
                                 frames.push(Frame::BlockAfterUnsafe {
                                     span,
-                                    path: path.clone(),
+                                    path,
                                     statements,
                                     tail,
                                     index,
@@ -1408,7 +1441,7 @@ impl Resolver<'_> {
                                 frames.push(Frame::Enter {
                                     expr: body,
                                     bindings: scope,
-                                    path: format!("{path}.s{index}.body"),
+                                    path: paths.child(&frames, path, stmt.then(Seg::Body)),
                                 });
                             }
                             Statement::While {
@@ -1418,7 +1451,7 @@ impl Resolver<'_> {
                                 self.reject_while_disallowed_scoped(body, Some(function))?;
                                 frames.push(Frame::BlockWhileCondition {
                                     span,
-                                    path: path.clone(),
+                                    path,
                                     condition,
                                     body,
                                     statements,
@@ -1430,13 +1463,14 @@ impl Resolver<'_> {
                                 frames.push(Frame::Enter {
                                     expr: condition,
                                     bindings: scope,
-                                    path: format!("{path}.s{index}.condition"),
+                                    path: paths.child(&frames, path, stmt.then(Seg::Condition)),
                                 });
                             }
                             Statement::ForOwn { .. } => super::resolve_for_own::schedule(
                                 &mut frames,
+                                &mut paths,
                                 span,
-                                path.clone(),
+                                path,
                                 statements,
                                 tail,
                                 index,
@@ -1449,8 +1483,9 @@ impl Resolver<'_> {
                                 self,
                                 function,
                                 &mut frames,
+                                &mut paths,
                                 span,
-                                &path,
+                                path,
                                 statements,
                                 tail,
                                 index,
@@ -1464,8 +1499,9 @@ impl Resolver<'_> {
                                 self,
                                 function,
                                 &mut frames,
+                                &mut paths,
                                 span,
-                                &path,
+                                path,
                                 statements,
                                 tail,
                                 index,
@@ -1496,7 +1532,7 @@ impl Resolver<'_> {
                     else {
                         unreachable!("let frame resumes at a let statement")
                     };
-                    let statement_path = format!("{path}.s{index}");
+                    let statement = Seg::Statement.at(index);
                     if let Some(declared_ast) = declared {
                         let declared_ty = self.resolve_binding_annotation(
                             function,
@@ -1536,14 +1572,14 @@ impl Resolver<'_> {
                                 ));
                             };
                             self.check_upcast_admissible(child_id, parent_id, *name_span)?;
-                            let slot_path = format!("{statement_path}.value");
                             frames.push(Frame::StartUpcast {
                                 source: match &statements[index] {
                                     Statement::Let { value, .. } => value,
                                     _ => unreachable!("let frame resumes at a let statement"),
                                 },
                                 bindings: scope.clone(),
-                                slot_path,
+                                slot_parent: path,
+                                slot_edge: statement.then(Seg::Value),
                                 holder: parent_id.clone(),
                                 span: value.span,
                                 resume: Box::new(Frame::BlockAfterLet {
@@ -1560,7 +1596,7 @@ impl Resolver<'_> {
                         }
                     }
                     let binding = ResolvedBinding {
-                        id: ValueId::local(function, &statement_path),
+                        id: paths.at(path).value_local_with(function, &[statement]),
                         name: name.clone(),
                         ownership: value.ownership,
                         ty: value.ty.clone(),
@@ -1722,7 +1758,7 @@ impl Resolver<'_> {
                     };
                     frames.push(Frame::BlockWhileBody {
                         span,
-                        path: path.clone(),
+                        path,
                         statements,
                         tail,
                         index,
@@ -1735,7 +1771,7 @@ impl Resolver<'_> {
                     frames.push(Frame::Enter {
                         expr: body,
                         bindings: scope.clone(),
-                        path: format!("{path}.s{index}.body"),
+                        path: paths.child(&frames, path, Seg::Statement.at(index).then(Seg::Body)),
                     });
                     frames.push(Frame::EnterLoop(target));
                 }
@@ -1779,22 +1815,28 @@ impl Resolver<'_> {
                     function,
                     *frame,
                     &mut frames,
+                    &mut paths,
                     &mut results,
                 )?,
-                frame @ Frame::BlockForBody { .. } => {
-                    super::resolve_for_own::resume_vec(function, frame, &mut frames, &mut results)
-                }
+                frame @ Frame::BlockForBody { .. } => super::resolve_for_own::resume_vec(
+                    function,
+                    frame,
+                    &mut frames,
+                    &mut paths,
+                    &mut results,
+                ),
                 Frame::FinishBlock {
                     span,
                     path,
                     statements,
                 } => {
                     let tail = results.pop().expect("block tail result retained");
+                    let path = paths.at(path);
                     results.push(finish::finish_block(function, span, path, statements, tail));
                 }
                 Frame::FinishIf { span, path } => {
                     let children = take_triple(&mut results);
-                    results.push(finish::finish_if(function, span, path, children));
+                    results.push(finish::finish_if(function, span, paths.at(path), children));
                 }
                 Frame::AfterIfCondition {
                     span,
@@ -1805,14 +1847,14 @@ impl Resolver<'_> {
                 } => {
                     frames.push(Frame::AfterIfThen {
                         span,
-                        path: path.clone(),
+                        path,
                         else_branch,
                         bindings: bindings.clone(),
                     });
                     frames.push(Frame::Enter {
                         expr: then_branch,
                         bindings,
-                        path: format!("{path}.then"),
+                        path: paths.child(&frames, path, Seg::Then),
                     });
                 }
                 Frame::AfterIfThen {
@@ -1821,14 +1863,11 @@ impl Resolver<'_> {
                     else_branch,
                     bindings,
                 } => {
-                    frames.push(Frame::FinishIf {
-                        span,
-                        path: path.clone(),
-                    });
+                    frames.push(Frame::FinishIf { span, path });
                     frames.push(Frame::Enter {
                         expr: else_branch,
                         bindings,
-                        path: format!("{path}.else"),
+                        path: paths.child(&frames, path, Seg::Else),
                     });
                 }
                 Frame::RecordNext {
@@ -1854,7 +1893,7 @@ impl Resolver<'_> {
                             span,
                         )?;
                         results.push(ResolvedExpr {
-                            id: ExpressionId::new(function, &path),
+                            id: paths.at(path).expression_id(function),
                             ty,
                             ownership,
                             kind: ResolvedExprKind::ConstructRecord {
@@ -1881,7 +1920,7 @@ impl Resolver<'_> {
                             })?;
                         frames.push(Frame::RecordAfterField {
                             span,
-                            path: path.clone(),
+                            path,
                             type_name,
                             record,
                             arguments,
@@ -1894,7 +1933,7 @@ impl Resolver<'_> {
                         frames.push(Frame::Enter {
                             expr: &initializer.value,
                             bindings,
-                            path: format!("{path}.field.{index}.value"),
+                            path: paths.child(&frames, path, Seg::Field.at(index).then(Seg::Value)),
                         });
                     }
                 }
@@ -1955,7 +1994,7 @@ impl Resolver<'_> {
                             span,
                         )?;
                         results.push(ResolvedExpr {
-                            id: ExpressionId::new(function, &path),
+                            id: paths.at(path).expression_id(function),
                             ty,
                             ownership,
                             kind: ResolvedExprKind::ConstructVariant {
@@ -1983,7 +2022,7 @@ impl Resolver<'_> {
                             })?;
                         frames.push(Frame::VariantAfterField {
                             span,
-                            path: path.clone(),
+                            path,
                             type_name,
                             case_name,
                             variant,
@@ -1998,7 +2037,7 @@ impl Resolver<'_> {
                         frames.push(Frame::Enter {
                             expr: &initializer.value,
                             bindings,
-                            path: format!("{path}.field.{index}.value"),
+                            path: paths.child(&frames, path, Seg::Field.at(index).then(Seg::Value)),
                         });
                     }
                 }
@@ -2148,6 +2187,7 @@ impl Resolver<'_> {
                     resolved,
                 } => {
                     if index == arms.len() {
+                        let path = paths.at(path);
                         results.push(self.finish_lexical_match(
                             function, span, path, mode, scrutinee, resolved,
                         )?);
@@ -2234,11 +2274,12 @@ impl Resolver<'_> {
                                         },
                                         field.span,
                                     )?;
+                                    let suffix = [
+                                        Seg::Arm.at(index).then(Seg::BindingField),
+                                        Step::index(field_index),
+                                    ];
                                     let binding = ResolvedBinding {
-                                        id: ValueId::local(
-                                            function,
-                                            &format!("{path}.arm.{index}.binding.{field_index}"),
-                                        ),
+                                        id: paths.at(path).value_local_with(function, &suffix),
                                         name: field.binding.clone(),
                                         ownership,
                                         ty: field_ty.clone(),
@@ -2278,13 +2319,16 @@ impl Resolver<'_> {
                                         arm.span,
                                     ));
                                 }
+                                // Record patterns keep their own owned-path traversal.
+                                let record = Seg::Arm.at(index).then(Seg::Record);
+                                let record = paths.at(path).materialize_with(&[record]);
                                 self.resolve_record_match_pattern(
                                     function,
                                     &scrutinee.ty,
                                     type_name,
                                     fields,
                                     Rc::make_mut(&mut arm_bindings),
-                                    &format!("{path}.arm.{index}.record"),
+                                    &record,
                                     *pattern_span,
                                     mode,
                                 )?
@@ -2316,7 +2360,7 @@ impl Resolver<'_> {
                         };
                         frames.push(Frame::MatchAfterArm {
                             span,
-                            path: path.clone(),
+                            path,
                             mode,
                             arms,
                             index,
@@ -2328,16 +2372,17 @@ impl Resolver<'_> {
                             resolved,
                             pattern,
                         });
+                        let edge = Seg::Arm.at(index);
                         frames.push(Frame::Enter {
                             expr: &arm.value,
                             bindings: arm_bindings.clone(),
-                            path: format!("{path}.arm.{index}.value"),
+                            path: paths.child(&frames, path, edge.then(Seg::Value)),
                         });
                         if let Some(guard) = &arm.guard {
                             frames.push(Frame::Enter {
                                 expr: guard,
                                 bindings: arm_bindings,
-                                path: format!("{path}.arm.{index}.guard"),
+                                path: paths.child(&frames, path, edge.then(Seg::Guard)),
                             });
                         }
                     }
@@ -2392,6 +2437,7 @@ impl Resolver<'_> {
                     resolved,
                 } => {
                     if index == arms.len() {
+                        let path = paths.at(path);
                         results.push(self.finish_lexical_match(
                             function, span, path, mode, scrutinee, resolved,
                         )?);
@@ -2403,11 +2449,9 @@ impl Resolver<'_> {
                                 ResolvedMatchPattern::Wildcard
                             }
                             crate::ast::MatchPattern::Binding { name, .. } => {
+                                let edge = Seg::Arm.at(index).then(Seg::Binding);
                                 let binding = ResolvedBinding {
-                                    id: ValueId::local(
-                                        function,
-                                        &format!("{path}.arm.{index}.binding"),
-                                    ),
+                                    id: paths.at(path).value_local_with(function, &[edge]),
                                     name: name.clone(),
                                     ownership: OwnershipMode::Value,
                                     ty: scrutinee.ty.clone(),
@@ -2460,7 +2504,7 @@ impl Resolver<'_> {
                         };
                         frames.push(Frame::ScalarMatchAfterArm {
                             span,
-                            path: path.clone(),
+                            path,
                             mode,
                             arms,
                             index,
@@ -2469,17 +2513,18 @@ impl Resolver<'_> {
                             resolved,
                             pattern,
                         });
+                        let edge = Seg::Arm.at(index);
                         if let Some(guard) = &arm.guard {
                             frames.push(Frame::Enter {
                                 expr: guard.as_ref(),
                                 bindings: arm_bindings.clone(),
-                                path: format!("{path}.arm.{index}.guard"),
+                                path: paths.child(&frames, path, edge.then(Seg::Guard)),
                             });
                         }
                         frames.push(Frame::Enter {
                             expr: &arm.value,
                             bindings: arm_bindings,
-                            path: format!("{path}.arm.{index}.value"),
+                            path: paths.child(&frames, path, edge.then(Seg::Value)),
                         });
                     }
                 }
@@ -2587,7 +2632,7 @@ impl Resolver<'_> {
                         }
                     };
                     results.push(ResolvedExpr {
-                        id: ExpressionId::new(function, &path),
+                        id: paths.at(path).expression_id(function),
                         ty,
                         ownership,
                         kind,
@@ -2606,7 +2651,7 @@ impl Resolver<'_> {
                     let request = results.pop().expect("yield request retained");
                     let ty = self.yield_answer_type(function, &request.ty);
                     results.push(ResolvedExpr {
-                        id: ExpressionId::new(function, &path),
+                        id: paths.at(path).expression_id(function),
                         ty,
                         ownership: OwnershipMode::Value,
                         kind: ResolvedExprKind::Yield {
@@ -2675,7 +2720,7 @@ impl Resolver<'_> {
                             span,
                         )?;
                         results.push(ResolvedExpr {
-                            id: ExpressionId::new(function, &path),
+                            id: paths.at(path).expression_id(function),
                             ty,
                             ownership,
                             kind: ResolvedExprKind::UpdateRecord {
@@ -2703,7 +2748,7 @@ impl Resolver<'_> {
                             })?;
                         frames.push(Frame::UpdateAfterField {
                             span,
-                            path: path.clone(),
+                            path,
                             base,
                             record,
                             fields,
@@ -2715,7 +2760,7 @@ impl Resolver<'_> {
                         frames.push(Frame::Enter {
                             expr: &initializer.value,
                             bindings,
-                            path: format!("{path}.field.{index}.value"),
+                            path: paths.child(&frames, path, Seg::Field.at(index).then(Seg::Value)),
                         });
                     }
                 }
@@ -2809,7 +2854,7 @@ impl Resolver<'_> {
                         },
                     };
                     results.push(ResolvedExpr {
-                        id: ExpressionId::new(function, &path),
+                        id: paths.at(path).expression_id(function),
                         ty: field_ty,
                         ownership,
                         kind,
@@ -2876,7 +2921,8 @@ impl Resolver<'_> {
                         frames.push(Frame::StartUpcast {
                             source: receiver_ast,
                             bindings: bindings.clone(),
-                            slot_path: format!("{path}.arg.0"),
+                            slot_parent: path,
+                            slot_edge: Seg::ArgZero.into(),
                             holder: holder.clone(),
                             span: receiver.span,
                             resume: Box::new(Frame::FinishMethodCall {
@@ -2971,7 +3017,7 @@ impl Resolver<'_> {
                     call_args.push(receiver);
                     call_args.extend(args);
                     results.push(ResolvedExpr {
-                        id: ExpressionId::new(function, &path),
+                        id: paths.at(path).expression_id(function),
                         ty: return_ty,
                         ownership,
                         kind: ResolvedExprKind::Call {
@@ -2992,136 +3038,29 @@ impl Resolver<'_> {
                     callee,
                     args_len,
                 } => {
-                    let mut all = take_results(&mut results, args_len + 1);
-                    let receiver = all.remove(0);
-                    let args = all;
-                    // The inherited receiver is the enclosing override's own `self`, upcast to the declaring ancestor exactly like a declared-type binding.
-                    // The source place is synthesized here, so both identities are canonical by construction.
-                    let ResolvedType::Nominal {
-                        declaration: self_class,
-                        ..
-                    } = &receiver.ty
-                    else {
-                        return Err(self.error(
-                            "SPX-H006",
-                            "super receiver is not a class value",
-                            method_span,
-                        ));
-                    };
-                    let receiver = if *self_class == holder {
-                        receiver
-                    } else {
-                        self.check_upcast_admissible(self_class, &holder, method_span)?;
-                        let source = ResolvedExpr {
-                            id: ExpressionId::new(function, &format!("{path}.arg.0.source")),
-                            ty: receiver.ty.clone(),
-                            ownership: receiver.ownership,
-                            kind: receiver.kind,
-                            span: receiver.span,
-                        };
-                        ResolvedExpr {
-                            id: ExpressionId::new(function, &format!("{path}.arg.0")),
-                            ty: ResolvedType::Nominal {
-                                declaration: holder.clone(),
-                                arguments: Vec::new(),
-                            },
-                            ownership: self.expression_ownership(
-                                &ResolvedType::Nominal {
-                                    declaration: holder.clone(),
-                                    arguments: Vec::new(),
-                                },
-                                OwnershipMode::Own,
-                                span,
-                            )?,
-                            kind: ResolvedExprKind::Upcast {
-                                source: Box::new(source),
-                            },
-                            span: receiver.span,
-                        }
-                    };
-                    let holder_ast = self
-                        .program
-                        .types()
-                        .iter()
-                        .find(|t| t.stable_id == holder.as_str())
-                        .ok_or_else(|| {
-                            self.error("SPX-H006", format!("class `{holder}` has no AST"), span)
-                        })?;
-                    let TypeDeclarationKind::Class { methods, .. } = &holder_ast.kind else {
-                        return Err(self.error(
-                            "SPX-H006",
-                            format!("`{holder}` is not a class"),
-                            span,
-                        ));
-                    };
-                    let method_ast =
-                        methods.iter().find(|m| m.name == *method).ok_or_else(|| {
-                            self.error(
-                                "SPX-H001",
-                                format!("unresolved super method `{method}` on `{holder}`"),
-                                method_span,
-                            )
-                        })?;
-                    if method_ast.params.is_empty() {
-                        return Err(self.error(
-                            "SPX-H001",
-                            format!("super method `{method}` has no self parameter"),
-                            method_ast.span,
-                        ));
-                    }
-                    if method_ast.params.len() - 1 != args.len() {
-                        return Err(self.error(
-                            "SPX-T231",
-                            format!(
-                                "`super.{method}` expects {} arguments, found {}",
-                                method_ast.params.len() - 1,
-                                args.len()
-                            ),
-                            span,
-                        ));
-                    }
-                    for (arg, param) in args.iter().zip(method_ast.params.iter().skip(1)) {
-                        let param_ty = self.resolve_type(&param.ty, param.span)?;
-                        if arg.ty != param_ty {
-                            return Err(self.error(
-                                "SPX-T231",
-                                format!(
-                                    "`super.{method}` argument `{}` expects type `{}`, found `{}`",
-                                    param.name,
-                                    param_ty.identity_key(),
-                                    arg.ty.identity_key()
-                                ),
-                                arg.span,
-                            ));
-                        }
-                    }
-                    let return_ty = self.resolve_type(&method_ast.return_type, method_ast.span)?;
-                    let ownership =
-                        self.expression_ownership(&return_ty, OwnershipMode::Own, span)?;
-                    let mut call_args = Vec::with_capacity(1 + args.len());
-                    call_args.push(receiver);
-                    call_args.extend(args);
-                    results.push(ResolvedExpr {
-                        id: ExpressionId::new(function, &path),
-                        ty: return_ty,
-                        ownership,
-                        kind: ResolvedExprKind::Call {
-                            callee,
-                            type_arguments: Vec::new(),
-                            instance: None,
-                            args: call_args,
-                        },
+                    let all = take_results(&mut results, args_len + 1);
+                    results.push(self.finish_super_method(
+                        function,
                         span,
-                    });
+                        method_span,
+                        paths.at(path),
+                        method,
+                        holder,
+                        callee,
+                        all,
+                    )?);
                 }
-                frame @ Frame::StartUpcast { .. } => finish::start_upcast(frame, &mut frames),
+                frame @ Frame::StartUpcast { .. } => {
+                    finish::start_upcast(frame, &mut frames, &mut paths)
+                }
                 Frame::FinishUpcast {
                     slot_path,
                     holder,
                     span,
                 } => {
                     let source = results.pop().expect("upcast source result retained");
-                    results.push(self.finish_upcast(function, slot_path, holder, span, source)?);
+                    let id = paths.at(slot_path).expression_id(function);
+                    results.push(self.finish_upcast(id, holder, span, source)?);
                 }
             }
         }

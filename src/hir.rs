@@ -137,6 +137,7 @@ mod resolve_yield;
 pub(crate) mod selected_fused_candidate;
 mod type_reachability;
 pub(crate) mod vec_constructor;
+pub(crate) use resolve_expr::path_arena::ExprPath;
 pub(crate) use type_reachability::is_admitted_copy_aggregate_variant_field;
 pub(crate) use type_reachability::{
     is_admitted_concrete_owned_byte_variant, is_admitted_owned_string_variant,
@@ -784,9 +785,12 @@ pub(crate) mod generic_mapping;
 
 pub(crate) mod generic_variant;
 
-/// Physical shared resolver frame layout, authenticated by this compiled crate.
+/// Physical shared resolver frame-slot layout, authenticated by this compiled
+/// crate: one frame plus the at most one private path-arena node a frame-stack
+/// slot can keep live (the arena never holds more nodes than frame capacity).
 #[doc(hidden)]
-pub const RESOLVER_FRAME_BYTES: usize = std::mem::size_of::<resolve_expr_frame::Frame<'static>>();
+pub const RESOLVER_FRAME_BYTES: usize = std::mem::size_of::<resolve_expr_frame::Frame<'static>>()
+    + resolve_expr::path_arena::PATH_NODE_BYTES;
 /// The iterative validator independently asserts this exact physical layout.
 #[doc(hidden)]
 pub const VALIDATOR_FRAME_BYTES: usize = 288;

@@ -1,10 +1,12 @@
 //! The literal descriptor is checked metadata, never a String expression.
+use super::path_arena::{ExprPath, PathArena};
 use super::*;
 impl Resolver<'_> {
     pub(super) fn finish_vec_literal_frame(
         &self,
         function: &FunctionExecutionId,
         frame: Frame<'_>,
+        paths: &PathArena<'_>,
         results: &mut Vec<ResolvedExpr>,
     ) -> Result<(), Diagnostic> {
         match frame {
@@ -15,7 +17,8 @@ impl Resolver<'_> {
                 callee,
             } => {
                 let args = take_results(results, 1);
-                results.push(self.finish_sort_by(function, span, &path, element, callee, args)?);
+                let path = paths.at(path);
+                results.push(self.finish_sort_by(function, span, path, element, callee, args)?);
             }
             Frame::FinishVecField {
                 span,
@@ -24,7 +27,8 @@ impl Resolver<'_> {
                 field,
             } => {
                 let args = take_results(results, 2);
-                results.push(self.finish_vec_field(function, span, &path, element, field, args)?);
+                let path = paths.at(path);
+                results.push(self.finish_vec_field(function, span, path, element, field, args)?);
             }
             _ => unreachable!("literal vector frame"),
         }
@@ -58,11 +62,11 @@ impl Resolver<'_> {
             .ok_or_else(fail)?;
         Ok((element, DeclarationId::new(descriptor)))
     }
-    pub(in crate::hir) fn finish_sort_by(
+    pub(in crate::hir) fn finish_sort_by<'p>(
         &self,
         function: &FunctionExecutionId,
         span: crate::ast::Span,
-        path: &str,
+        path: impl Into<ExprPath<'p>>,
         element: ResolvedType,
         callee: DeclarationId,
         args: Vec<ResolvedExpr>,
@@ -89,13 +93,13 @@ impl Resolver<'_> {
         types: &[crate::ast::Type],
         args: &'e [Expr],
         bindings: Rc<BTreeMap<String, Binding>>,
-        path: String,
+        path: PathId,
     ) -> Result<[Frame<'e>; 2], Diagnostic> {
         let (element, callee) = self.prepare_sort_by(function, expression, types, args)?;
         Ok([
             Frame::FinishSortBy {
                 span: expression.span,
-                path: path.clone(),
+                path,
                 element,
                 callee,
             },
@@ -104,7 +108,7 @@ impl Resolver<'_> {
                 index: 0,
                 bindings,
                 path,
-                segment: "arg",
+                segment: Seg::Arg,
             },
         ])
     }

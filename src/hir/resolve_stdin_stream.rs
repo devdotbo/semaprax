@@ -1,14 +1,15 @@
 //! Resolution of the sealed streaming reader inspections and owned host calls.
+use super::resolve_expr::path_arena::Seg;
 use super::*;
 use crate::ast::{Expr, ExprKind, Span};
 
 impl Resolver<'_> {
-    pub(super) fn resolve_stdin_inspection(
+    pub(super) fn resolve_stdin_inspection<'p>(
         &self,
         execution: &FunctionExecutionId,
         expression: &Expr,
         bindings: &BTreeMap<String, Binding>,
-        path: &str,
+        path: impl Into<ExprPath<'p>>,
     ) -> Result<Option<ResolvedExpr>, Diagnostic> {
         let ExprKind::Call {
             name,
@@ -55,6 +56,7 @@ impl Resolver<'_> {
                 argument.span,
             ));
         }
+        let path = path.into();
         let place = Place {
             root: binding.id.clone(),
             projections: Vec::new(),
@@ -73,7 +75,7 @@ impl Resolver<'_> {
                     type_arguments: Vec::new(),
                     instance: None,
                     args: vec![ResolvedExpr {
-                        id: ExpressionId::new(execution, &format!("{path}.arg.0")),
+                        id: path.expression_id_with(execution, &[Seg::ArgZero.into()]),
                         ty: binding.ty.clone(),
                         ownership: binding.ownership,
                         kind: ResolvedExprKind::Place(place),
@@ -84,17 +86,17 @@ impl Resolver<'_> {
             ),
         };
         Ok(Some(ResolvedExpr {
-            id: ExpressionId::new(execution, path),
+            id: path.expression_id(execution),
             ty: op.result(),
             ownership,
             kind,
             span: expression.span,
         }))
     }
-    pub(super) fn finish_host_command(
+    pub(super) fn finish_host_command<'p>(
         &self,
         execution: &FunctionExecutionId,
-        path: &str,
+        path: impl Into<ExprPath<'p>>,
         span: Span,
         op: ResolvedHostCommandOperation,
         args: Vec<ResolvedExpr>,
@@ -111,7 +113,7 @@ impl Resolver<'_> {
                 ));
             }
         }
-        let expression = ExpressionId::new(execution, path);
+        let expression = path.into().expression_id(execution);
         Ok(ResolvedExpr {
             id: expression.clone(),
             ty: crate::command_io_ops::return_type(op),

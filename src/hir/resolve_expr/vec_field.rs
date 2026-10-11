@@ -1,4 +1,5 @@
 //! Resolve a checked literal selector; only vector and index become children.
+use super::path_arena::ExprPath;
 use super::*;
 impl Resolver<'_> {
     pub(in crate::hir) fn prepare_vec_field(
@@ -35,11 +36,11 @@ impl Resolver<'_> {
         super::super::vec_field::field(&self.declarations, &element, &field).ok_or_else(fail)?;
         Ok((element, field))
     }
-    pub(in crate::hir) fn finish_vec_field(
+    pub(in crate::hir) fn finish_vec_field<'p>(
         &self,
         function: &FunctionExecutionId,
         span: crate::ast::Span,
-        path: &str,
+        path: impl Into<ExprPath<'p>>,
         element: ResolvedType,
         field: DeclarationId,
         args: Vec<ResolvedExpr>,
@@ -71,7 +72,7 @@ impl Resolver<'_> {
             OwnershipMode::Value
         };
         Ok(ResolvedExpr {
-            id: ExpressionId::new(function, path),
+            id: path.into().expression_id(function),
             ty,
             ownership,
             kind: ResolvedExprKind::VecFieldRead {
@@ -86,11 +87,11 @@ impl Resolver<'_> {
 }
 
 impl Resolver<'_> {
-    pub(in crate::hir) fn fuse_vec_field_bytes(
+    pub(in crate::hir) fn fuse_vec_field_bytes<'p>(
         &self,
         function: &FunctionExecutionId,
         span: crate::ast::Span,
-        path: &str,
+        path: impl Into<ExprPath<'p>>,
         operation: crate::byte_ops::ByteOp,
         args: &[ResolvedExpr],
     ) -> Option<ResolvedExpr> {
@@ -113,7 +114,7 @@ impl Resolver<'_> {
             return None;
         }
         Some(ResolvedExpr {
-            id: ExpressionId::new(function, path),
+            id: path.into().expression_id(function),
             ty: ResolvedType::SliceU8,
             ownership: OwnershipMode::Borrow,
             kind: ResolvedExprKind::VecFieldRead {
@@ -135,13 +136,13 @@ impl Resolver<'_> {
         types: &[crate::ast::Type],
         args: &'e [Expr],
         bindings: Rc<BTreeMap<String, Binding>>,
-        path: String,
+        path: PathId,
     ) -> Result<[Frame<'e>; 2], Diagnostic> {
         let (element, field) = self.prepare_vec_field(function, expression, types, args)?;
         Ok([
             Frame::FinishVecField {
                 span: expression.span,
-                path: path.clone(),
+                path,
                 element,
                 field,
             },
@@ -150,7 +151,7 @@ impl Resolver<'_> {
                 index: 0,
                 bindings,
                 path,
-                segment: "arg",
+                segment: Seg::Arg,
             },
         ])
     }

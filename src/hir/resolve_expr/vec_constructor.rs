@@ -12,7 +12,7 @@ pub(super) fn schedule<'a>(
     function: &FunctionExecutionId,
     expression: &'a Expr,
     bindings: Rc<BTreeMap<String, Binding>>,
-    path: String,
+    path: super::path_arena::PathId,
     frames: &mut Vec<Frame<'a>>,
 ) -> Result<(), Diagnostic> {
     let expansion =

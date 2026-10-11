@@ -6,8 +6,9 @@ use crate::ast::{BinaryOp, Span};
 use std::collections::BTreeMap;
 use std::rc::Rc;
 
+use super::resolve_expr::path_arena::{PathArena, PathId, Seg, Step};
 use super::resolve_expr_frame::Frame;
-use super::{Binding, Resolver};
+use super::{Binding, ExprPath, Resolver};
 use super::{
     DeclarationId, ExpressionId, FunctionExecutionId, OwnershipMode, Place, ResolvedBinding,
     ResolvedExpr, ResolvedExprKind, ResolvedStatement, ResolvedType, ValueId,
@@ -18,8 +19,9 @@ pub(super) fn schedule<'expr>(
     resolver: &Resolver<'_>,
     function: &FunctionExecutionId,
     frames: &mut Vec<Frame<'expr>>,
+    paths: &mut PathArena<'_>,
     block_span: Span,
-    block_path: &str,
+    block_path: PathId,
     statements: &'expr [crate::ast::Statement],
     tail: &'expr crate::ast::Expr,
     index: usize,
@@ -86,13 +88,14 @@ pub(super) fn schedule<'expr>(
         span: values.span,
     };
     let element = arguments[0].clone();
-    let statement_path = format!("{block_path}.s{index}");
+    let statement = Seg::Statement.at(index);
+    let item_edge = [statement.then(Seg::ForItem)];
     let mut body_scope = scope.clone();
     Rc::make_mut(&mut body_scope).insert(
         item.to_owned(),
         Binding {
             traversal_row: None,
-            id: ValueId::local(function, &format!("{statement_path}.value.s2.body.s0")),
+            id: paths.at(block_path).value_local_with(function, &item_edge),
             ty: element.clone(),
             ownership: OwnershipMode::Value,
             mutable: false,
@@ -100,7 +103,7 @@ pub(super) fn schedule<'expr>(
     );
     frames.push(Frame::BlockForBody {
         span: block_span,
-        path: block_path.to_owned(),
+        path: block_path,
         statements,
         tail,
         index,
@@ -113,11 +116,14 @@ pub(super) fn schedule<'expr>(
     frames.push(Frame::Enter {
         expr: body,
         bindings: body_scope,
-        path: format!("{statement_path}.value.s2.body.s1.value"),
+        path: paths.child(frames, block_path, statement.then(Seg::ForBody)),
     });
+    let condition = [statement.then(Seg::ForCondition)];
     frames.push(Frame::EnterLoop(super::ControlTarget::Loop {
         owner: function.clone(),
-        site: ExpressionId::new(function, &format!("{statement_path}.value.s2.condition")),
+        site: paths
+            .at(block_path)
+            .expression_id_with(function, &condition),
     }));
     Ok(())
 }
@@ -126,9 +132,10 @@ pub(super) fn schedule<'expr>(
 pub(super) fn resume<'expr>(
     function: &FunctionExecutionId,
     frames: &mut Vec<Frame<'expr>>,
+    paths: &PathArena<'_>,
     results: &mut Vec<ResolvedExpr>,
     block_span: Span,
-    block_path: String,
+    block_path: PathId,
     statements: &'expr [crate::ast::Statement],
     tail: &'expr crate::ast::Expr,
     index: usize,
@@ -138,7 +145,9 @@ pub(super) fn resume<'expr>(
     element: ResolvedType,
 ) {
     let authored_body = results.pop().expect("for body result retained");
-    let path = format!("{block_path}.s{index}");
+    // The synthesized lowering spells its whole canonical subtree from text.
+    let statement = [Seg::Statement.at(index)];
+    let path = paths.at(block_path).materialize_with(&statement);
     resolved.push(match &statements[index] {
         crate::ast::Statement::For {
             item,
@@ -294,8 +303,12 @@ fn place(
     binding: &ResolvedBinding,
     span: Span,
 ) -> ResolvedExpr {
+    place_at(ExpressionId::new(function, path), binding, span)
+}
+
+fn place_at(id: ExpressionId, binding: &ResolvedBinding, span: Span) -> ResolvedExpr {
     ResolvedExpr {
-        id: ExpressionId::new(function, path),
+        id,
         ty: binding.ty.clone(),
         ownership: binding.ownership,
         kind: ResolvedExprKind::Place(Place {

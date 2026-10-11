@@ -1,10 +1,11 @@
 //! Finish resolver result stacks and already-resolved class-prefix projections.
+use super::path_arena::{ExprPath, PathArena};
 use super::*;
 impl Resolver<'_> {
+    /// `id` is the slot identity, emitted first exactly as before.
     pub(super) fn finish_upcast(
         &self,
-        function: &FunctionExecutionId,
-        path: String,
+        id: ExpressionId,
         holder: DeclarationId,
         span: crate::ast::Span,
         source: ResolvedExpr,
@@ -14,7 +15,7 @@ impl Resolver<'_> {
             arguments: Vec::new(),
         };
         Ok(ResolvedExpr {
-            id: ExpressionId::new(function, &path),
+            id,
             ty: declared.clone(),
             ownership: self.expression_ownership(&declared, OwnershipMode::Own, span)?,
             kind: ResolvedExprKind::Upcast {
@@ -51,7 +52,7 @@ impl Resolver<'_> {
 pub(super) fn finish_if(
     function: &FunctionExecutionId,
     span: crate::ast::Span,
-    path: String,
+    path: ExprPath<'_>,
     children: (ResolvedExpr, ResolvedExpr, ResolvedExpr),
 ) -> ResolvedExpr {
     let (condition, then_branch, else_branch) = children;
@@ -61,7 +62,7 @@ pub(super) fn finish_if(
         &then_branch
     };
     ResolvedExpr {
-        id: ExpressionId::new(function, &path),
+        id: path.expression_id(function),
         ty: normal.ty.clone(),
         ownership: normal.ownership,
         kind: ResolvedExprKind::If {
@@ -76,12 +77,12 @@ pub(super) fn finish_if(
 pub(super) fn finish_block(
     function: &FunctionExecutionId,
     span: crate::ast::Span,
-    path: String,
+    path: ExprPath<'_>,
     statements: Vec<ResolvedStatement>,
     tail: ResolvedExpr,
 ) -> ResolvedExpr {
     ResolvedExpr {
-        id: ExpressionId::new(function, &path),
+        id: path.expression_id(function),
         ty: tail.ty.clone(),
         ownership: tail.ownership,
         kind: ResolvedExprKind::Block {
@@ -95,7 +96,7 @@ pub(super) fn finish_block(
 pub(super) fn finish_unary(
     function: &FunctionExecutionId,
     span: crate::ast::Span,
-    path: String,
+    path: ExprPath<'_>,
     op: UnaryOp,
     value: ResolvedExpr,
 ) -> ResolvedExpr {
@@ -107,7 +108,7 @@ pub(super) fn finish_unary(
         (UnaryOp::Not, _) => ResolvedType::Bool,
     };
     ResolvedExpr {
-        id: ExpressionId::new(function, &path),
+        id: path.expression_id(function),
         ty,
         ownership: OwnershipMode::Value,
         kind: ResolvedExprKind::Unary {
@@ -123,7 +124,7 @@ impl Resolver<'_> {
         &self,
         function: &FunctionExecutionId,
         span: crate::ast::Span,
-        path: String,
+        path: ExprPath<'_>,
         mode: ResolvedMatchMode,
         scrutinee: ResolvedExpr,
         arms: Vec<ResolvedMatchArm>,
@@ -131,7 +132,7 @@ impl Resolver<'_> {
         let first = super::super::lexical_exit::normal_arm(&arms)
             .ok_or_else(|| self.error("SPX-H006", "resolved match has no arms", span))?;
         Ok(ResolvedExpr {
-            id: ExpressionId::new(function, &path),
+            id: path.expression_id(function),
             ty: first.value.ty.clone(),
             ownership: first.value.ownership,
             kind: ResolvedExprKind::Match {
@@ -144,11 +145,16 @@ impl Resolver<'_> {
     }
 }
 
-pub(super) fn start_upcast<'a>(frame: Frame<'a>, frames: &mut Vec<Frame<'a>>) {
+pub(super) fn start_upcast<'a>(
+    frame: Frame<'a>,
+    frames: &mut Vec<Frame<'a>>,
+    paths: &mut PathArena<'_>,
+) {
     let Frame::StartUpcast {
         source,
         bindings,
-        slot_path,
+        slot_parent,
+        slot_edge,
         holder,
         span,
         resume,
@@ -159,14 +165,15 @@ pub(super) fn start_upcast<'a>(frame: Frame<'a>, frames: &mut Vec<Frame<'a>>) {
     // Re-resolve the consumed expression at the canonical `.source` identity below its occupied slot, then wrap and resume the interrupted
     // continuation.
     frames.push(*resume);
+    let slot_path = paths.child(frames, slot_parent, slot_edge);
     frames.push(Frame::FinishUpcast {
-        slot_path: slot_path.clone(),
+        slot_path,
         holder,
         span,
     });
     frames.push(Frame::Enter {
         expr: source,
         bindings,
-        path: format!("{slot_path}.source"),
+        path: paths.child(frames, slot_path, Seg::Source),
     });
 }

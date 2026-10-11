@@ -95,9 +95,9 @@ pub(crate) fn argument_path(expression: &ResolvedExpr, path: &str, index: usize)
         ))
     }
 }
-pub(crate) fn fuse(
+pub(crate) fn fuse<'p>(
     function: &crate::hir::FunctionExecutionId,
-    path: &str,
+    path: impl Into<crate::hir::ExprPath<'p>>,
     span: crate::ast::Span,
     op: crate::byte_ops::ByteOp,
     args: &mut Vec<ResolvedExpr>,
@@ -115,7 +115,7 @@ pub(crate) fn fuse(
         return None;
     };
     Some(ResolvedExpr {
-        id: crate::hir::ExpressionId::new(function, path),
+        id: path.into().expression_id(function),
         ty: ResolvedType::SliceU8,
         ownership: OwnershipMode::Borrow,
         kind: ResolvedExprKind::Call {

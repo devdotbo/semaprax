@@ -638,3 +638,44 @@ Existing conservative forecasts remain unchanged. The saved split-off test oracl
 compares full HIR/wire, canonical plans and reference outcomes, while a separate
 requested-layout control isolates the eliminated two/three-element buffer. This
 does not attribute any existing application reservation refusal to that buffer.
+
+### Resolver path arena (OPT778 representation tranche)
+
+Iterative expression lowering no longer owns or copies a complete path string per
+continuation. Each frame retains a four-byte private coordinate into a per-call
+arena. A node retains only its parent, its own edge (a static segment from one
+closed spelling table and/or one checked decimal index), its checked accumulated
+UTF-8 length and its creation height; no node repeats an ancestor prefix. Root,
+contract, generic and synthesized spellings are borrowed unchanged. Coordinates
+are construction state only: they are never source-membership evidence, never
+intern or hash a public identity and never skip source, HIR, loan or cleanup
+validation.
+
+Final `ExpressionId` and local `ValueId` text is streamed back to front into one
+buffer of the exact `scoped_identity` length: the same owner (including the
+generic execution spelling), domain, decimal length and path bytes. The identity
+bytes are charged with the formatting route's non-required reservation before
+allocation, the shared carrier keeps its existing required charge, and the exact
+buffer needs no capacity normalization. A refusal leaves the empty text the
+formatting route left. The parent walk uses no scratch and visits at most one
+node per path byte. `scoped_identity` remains the construction route elsewhere
+and the independent oracle; the test-only recursive reference keeps text paths
+through that encoder. Closure lowering, record-pattern traversal and synthesized
+`for`/`for own` lowering are the receivers that require owned text; each
+materializes once with an exact pre-allocation charge.
+
+Node backing is required work: every allocation is debited before it is made, so
+the cumulative debit covers the old/new overlap of growth; a refusal is sticky
+and later coordinates spell empty text. Nodes above the frame-stack height are
+released at each pop. Every edge is created after its event's first push and is
+pushed at once, so at most one node is live per frame-stack slot and the backing
+never exceeds the frame vector capacity. `RESOLVER_FRAME_BYTES` is therefore the
+physical frame size plus one 20-byte node: a per-slot bound for frame and arena
+storage together. Forecast formulas, budgets, floors, ceilings, the 64 MiB cap
+and failure selection are unchanged; this constant is the only forecast input
+that moves, by the node size minus the removed inline `String` slot. Its exact
+numeric value, and every pinned builder phase peak derived from it, must be
+re-derived from a compiled build before they are re-pinned; this source-only
+tranche asserts neither. No retained HIR identity storage is removed and no
+application recovery, token, runtime, memory or RSS gain is claimed; Catalog23
+and Shift15/MAX evidence requires actual owning execution.
