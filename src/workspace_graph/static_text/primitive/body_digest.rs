@@ -495,10 +495,20 @@ impl Encoder<'_> {
                 latch,
                 ..
             } => {
-                if *latch != LoopLatchKind::Condition {
-                    return None;
+                match latch {
+                    LoopLatchKind::Condition => self.text("lexical-while-condition")?,
+                    // A borrowed record traversal binds its generated step by
+                    // identity; selected replay independently validates the
+                    // latch. Copy and owning-iterator latches stay refused.
+                    LoopLatchKind::SourceForStep {
+                        kind: SourceForKind::BorrowRecord,
+                        step,
+                    } => {
+                        self.text("lexical-while-source-for-borrow-record")?;
+                        self.text(step.as_str())?;
+                    }
+                    _ => return None,
                 }
-                self.text("lexical-while-condition")?;
                 self.expression(condition, depth)?;
                 self.expression(body, depth)
             }

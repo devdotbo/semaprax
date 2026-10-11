@@ -12,6 +12,10 @@ use crate::hir::{
 pub(super) struct Context<'a> {
     index: hir::DeclarationIndex,
     module: &'a WorkspaceResolvedModule,
+    /// Retained modules hold only authored types. The canonical compiler-owned
+    /// Vec, rebuilt with its index metadata on the same preparation, follows
+    /// them in the receiving current directory; `types()` stays module-local.
+    vector: Option<ResolvedTypeDeclaration>,
 }
 impl ReplayContext for Context<'_> {
     fn declarations(&self) -> &hir::DeclarationIndex {
@@ -19,6 +23,16 @@ impl ReplayContext for Context<'_> {
     }
     fn types(&self) -> &[ResolvedTypeDeclaration] {
         &self.module.types
+    }
+    fn type_count(&self) -> usize {
+        self.module.types.len() + usize::from(self.vector.is_some())
+    }
+    fn type_at(&self, index: usize) -> Option<&ResolvedTypeDeclaration> {
+        self.module.types.get(index).or_else(|| {
+            self.vector
+                .as_ref()
+                .filter(|_| index == self.module.types.len())
+        })
     }
     fn interfaces(&self) -> &[ResolvedInterface] {
         &[]
@@ -121,7 +135,13 @@ pub(super) fn authenticate<'a>(
         &mut index,
         physical,
     )?;
-    Ok(Context { index, module })
+    // This legacy test owner reconstructs no Vec index metadata, so its
+    // current directory lends none either.
+    Ok(Context {
+        index,
+        module,
+        vector: None,
+    })
 }
 
 /// Static literal sites have already been independently authenticated by the

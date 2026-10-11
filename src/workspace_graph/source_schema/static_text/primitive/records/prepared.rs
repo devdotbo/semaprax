@@ -39,6 +39,8 @@ fn origin(explicit: bool) -> hir::IdentityOrigin {
         hir::IdentityOrigin::Automatic
     }
 }
+/// Returns the canonical Vec current type the receiving directory lends beside
+/// the module's own declarations; the index holds its matching metadata.
 pub(in crate::workspace_graph::source_schema::static_text::primitive) fn authenticate(
     module: &WorkspaceResolvedModule,
     source: Option<&Records>,
@@ -46,8 +48,9 @@ pub(in crate::workspace_graph::source_schema::static_text::primitive) fn authent
     index: &mut hir::DeclarationIndex,
     resources: &mut SelectedReplayPreparation,
     anchor: &ResolvedFunction,
-) -> Result<(), Vec<Diagnostic>> {
-    let answer = authenticate_inner(module, source, facts, index, resources, anchor, true, None);
+) -> Result<hir::ResolvedTypeDeclaration, Vec<Diagnostic>> {
+    let answer = authenticate_inner(module, source, facts, index, resources, anchor, true, None)
+        .and_then(|vector| vector.ok_or_else(fail));
     if answer.is_err() {
         resources.fail();
     }
@@ -71,7 +74,11 @@ pub(in crate::workspace_graph::source_schema::static_text::primitive) fn authent
         anchor,
         false,
         Some(demanded),
-    );
+    )
+    .and_then(|vector| match vector {
+        None => Ok(()),
+        Some(_) => Err(fail()),
+    });
     if result.is_err() {
         resources.fail();
     }
@@ -90,7 +97,7 @@ fn authenticate_inner(
     anchor: &ResolvedFunction,
     append_vec: bool,
     demanded: Option<&hir::DeclarationId>,
-) -> Result<(), Vec<Diagnostic>> {
+) -> Result<Option<hir::ResolvedTypeDeclaration>, Vec<Diagnostic>> {
     let expected = source.map_or(&[][..], |source| source.records.as_slice());
     debit(resources, anchor, 1)?;
     if module.types.len() != expected.len() {
@@ -209,14 +216,56 @@ fn authenticate_inner(
     }
     // Canonical builtin metadata is reconstructed once. It does not select an
     // element shape or turn generic instantiation into imported authority.
-    if append_vec {
-        resources
-            .construct(anchor, |physical, debit| {
-                index.append_vec_replay_metered(physical, debit)
-            })
-            .map_err(|_| fail())?;
+    if !append_vec {
+        return Ok(None);
     }
-    Ok(())
+    resources
+        .construct(anchor, |physical, debit| {
+            index.append_vec_replay_metered(physical, debit)
+        })
+        .map_err(|_| fail())?;
+    vector(resources, anchor).map(Some)
+}
+/// The receiving Vec classifier compares a current type declaration against
+/// the index metadata above. Rebuild it from the same fixed compiler-owned
+/// constants, never by copying the index it is compared with. The identity,
+/// name, one exact parameter slot and its name are reserved before construction.
+fn vector(
+    resources: &mut SelectedReplayPreparation,
+    anchor: &ResolvedFunction,
+) -> Result<hir::ResolvedTypeDeclaration, Vec<Diagnostic>> {
+    resources
+        .construct(anchor, |physical, debit| {
+            let refused = || Diagnostic::io("SPX-H006", "selected Vec type rebuild refused");
+            let id = crate::prelude::VEC_ID;
+            let names = id
+                .len()
+                .checked_add("Vec".len())
+                .and_then(|n| n.checked_add("T".len()))
+                .ok_or_else(refused)?;
+            debit(names.checked_add(1).ok_or_else(refused)?)?;
+            let bytes = names
+                .checked_add(std::mem::size_of::<hir::ResolvedTypeParameterDeclaration>())
+                .ok_or_else(refused)?;
+            physical.reserve(bytes).map_err(|_| refused())?;
+            let mut type_parameters = Vec::with_capacity(1);
+            if type_parameters.capacity() != 1 {
+                return Err(refused());
+            }
+            type_parameters.push(hir::ResolvedTypeParameterDeclaration {
+                name: "T".into(),
+                index: 0,
+                span: crate::ast::Span::default(),
+            });
+            Ok(hir::ResolvedTypeDeclaration {
+                id: hir::DeclarationId::new(id),
+                name: "Vec".into(),
+                type_parameters,
+                kind: hir::ResolvedTypeDeclarationKind::Record { fields: Vec::new() },
+                span: crate::ast::Span::default(),
+            })
+        })
+        .map_err(|_| fail())
 }
 fn namespace(
     fact: &WorkspaceDeclarationFact,
