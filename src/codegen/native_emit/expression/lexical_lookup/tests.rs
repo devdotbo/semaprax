@@ -70,8 +70,8 @@ fn wide_blocks_have_independent_linear_debits_and_retain_duplicate_refusal() {
             statements: vec![statements[0].clone(); width],
             tail: tail.clone(),
         };
-        // Two N-statement scans + N+2 inspections + 2N+3 child probes.
-        let exact = 5 * width + 5;
+        // 256 initialized slots + two N-statement scans + N+2 inspections + 2N+3 child probes.
+        let exact = MAX_DEPTH + 5 * width + 5;
         assert_eq!(walk_with_limit(&root, exact, |_| Ok(())).unwrap(), exact);
         assert!(walk_with_limit(&root, exact - 1, |_| Ok(())).is_err());
         if width <= 1024 {
@@ -96,8 +96,8 @@ fn wide_blocks_have_independent_linear_debits_and_retain_duplicate_refusal() {
             mode: hir::ResolvedMatchMode::Value,
         };
         let guards = width.div_ceil(2);
-        // N arm visits, N+G+2 inspections and 2N+2G+3 child probes.
-        let exact = 4 * width + 3 * guards + 5;
+        // 256 initialized slots + N arm visits, N+G+2 inspections and 2N+2G+3 child probes.
+        let exact = MAX_DEPTH + 4 * width + 3 * guards + 5;
         assert_eq!(walk_with_limit(&root, exact, |_| Ok(())).unwrap(), exact);
         assert!(walk_with_limit(&root, exact - 1, |_| Ok(())).is_err());
         assert_order(&root);

@@ -16,10 +16,13 @@ fn walk_with_limit<'a>(
     limit: usize,
     mut inspect: impl FnMut(&'a ResolvedExpr) -> Result<(), Diagnostic>,
 ) -> Result<usize, Diagnostic> {
+    let mut work = 0usize;
+    // This is fixed stack scratch, not a heap reservation. Pay each initialized
+    // cursor slot before constructing it under the existing work ceiling.
+    charge_lookup(&mut work, MAX_DEPTH, limit)?;
     let mut stack: [Option<hir::lexical_exit::ChildCursor<'a>>; MAX_DEPTH] = [None; MAX_DEPTH];
     stack[0] = Some(hir::lexical_exit::ChildCursor::new(root));
     let mut depth = 1;
-    let mut work = 0usize;
     charge_inspection_with_limit(root, &mut work, limit)?;
     inspect(root)?;
     while depth != 0 {
