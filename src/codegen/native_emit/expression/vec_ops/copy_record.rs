@@ -157,7 +157,12 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             self.emit_vec_operation_status(expr, op)?;
             self.line(&format!("{flag} = false;"));
         }
-        self.emit_vec_operation_status(expr, op)?;
+        // Every owner branch already checked its token before clearing the
+        // source flag; that assignment cannot change status. Creation has no
+        // inner check and still needs the canonical fallible check here.
+        if op == VecOp::WithCapacity {
+            self.emit_vec_operation_status(expr, op)?;
+        }
         for line in plan.apply_at(&expr.id)?.lines() {
             self.line(line);
         }

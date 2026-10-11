@@ -168,9 +168,21 @@ fn lexical_total_vec_carriers_execute_and_settle_on_all_engines() {
             );
         }
         let generated = semaprax::codegen::emit_hir_c(&program).unwrap();
-        assert!(
-            generated.contains("plan-infallible Vec operation returned failure"),
-            "{label}"
+        // Literal source census, independent of the emitter's classification:
+        // Copy/owned-leaf records have three status-returning total calls,
+        // String has two, and Bytes/legacy owned records each have one Clear.
+        let guards = match label {
+            "copy-record" | "owned-leaf-record" => 3,
+            "string" => 2,
+            "bytes" | "legacy-owned-record" => 1,
+            _ => unreachable!(),
+        };
+        assert_eq!(
+            generated
+                .matches("plan-infallible Vec operation returned failure")
+                .count(),
+            guards,
+            "{label}: exactly one guard before each total owner transfer"
         );
         if label == "copy-record" {
             super::runtime::run("lexical-infallible-copy", &text, 0, 42, false);

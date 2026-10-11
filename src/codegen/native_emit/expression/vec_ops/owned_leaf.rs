@@ -185,7 +185,15 @@ impl<O: COutput> CEmitter<'_, O> {
             }
             _ => return Err(backend_error("unsupported owned leaf Vec operation")),
         }
-        self.emit_vec_operation_status(expr, op)?;
+        // These owner operations checked immediately before clearing their
+        // source flag. No status write or callback intervenes. Other branches
+        // retain the outer check after their distinct packing/unpacking work.
+        if !matches!(
+            op,
+            VecOp::Clear | VecOp::ReserveOwned | VecOp::SortOwned | VecOp::SortBy
+        ) {
+            self.emit_vec_operation_status(expr, op)?;
+        }
         if op == VecOp::CloneAt && fields.is_some() {
             for line in plan.initialize_record_result_at(&expr.id, &out)?.lines() {
                 self.line(line);
