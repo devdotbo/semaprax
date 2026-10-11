@@ -386,6 +386,32 @@ That later distribution evidence does not replace the original exact-tag gate
 or claim that the v0.10 source branch passed its full compiler quality profile.
 
 
+### v0.10 integration verification
+
+The Install integration branch is based on `wavect/v0-10-0`, rather than
+the released `main`. After repairing mutable interpreter leased-byte reads
+and stale test walkers, the complete workspace passed
+`cargo check --locked --workspace --all-targets --all-features`, formatting
+and patch checks. All 26 construction-fusion/registry regressions passed,
+including authenticated paired reads and cleanup retaining selected failure.
+
+The full profile is **not green**: its documentation advisory binary reported
+78 passed, five failed and one ignored. The five failures are unchanged from
+the v0.10 base: typed JSON authoring guidance lacks the pinned bootstrap
+instruction; the quick reference's constructor block is not canonical; the
+agent authoring guide lacks its required audience header; editor grammar lacks
+`at`; and the primitive String/Vec views specification links to absent
+`RFC-0003.md`. Later full-profile stages did not execute. A separately selected
+Rust interoperability depth regression also failed at its existing unary
+fixture with `SPX-H006` (`lexical control scan exceeds admitted expression
+depth`). No cap, diagnostic, fixture expectation or test was relaxed.
+
+These v0.10 source qualification failures do not alter the exact released
+v0.9.0 native installation evidence above. Install tickets #552, #553, #554,
+#555, #556, #557 and #560 are closed against that evidence. WinGet #558 remains
+open until Microsoft accepts/indexes the submitted v0.9.0 manifests and the
+public exact-ID lifecycle is verified.
+
 ## 0.4.0 hosted release evidence
 
 The annotated `v0.4.0` tag resolves to exact commit
