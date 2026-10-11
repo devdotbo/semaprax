@@ -68,7 +68,8 @@
 #define SPX_SHB_CHILD_SLOTS UINT64_C(8192)
 
 /* Private outcomes. The bridge maps the first five onto the existing
-   byte-buffer and vec domains; partition codes are UNASSIGNED by the spec. */
+   byte-buffer and vec domains; the four partition outcomes are mapped by
+   the bridge from the shared operation owner's assigned domain and codes. */
 enum {
     SPX_SHB_OK = 0,
     SPX_SHB_BUFFER_INDEX,

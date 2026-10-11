@@ -84,9 +84,10 @@ pub(crate) enum Support {
     Refused(&'static str),
 }
 
-/// Spec status symbols with UNASSIGNED numeric codes. Partition cannot be
-/// selected until the owning registry assigns all four on every backend.
-pub(crate) const PARTITION_STATUS_CODES: Option<[u32; 4]> = None;
+/// Assigned codes come from the shared operation owner. A status mapping
+/// does not grant source admission or a reachable consumer closure.
+pub(crate) const PARTITION_STATUS_CODES: Option<[u32; 4]> =
+    Some(crate::construction_fusion::partition::operation::STATUS_CODES);
 
 impl Consumer {
     pub(crate) const fn support(self) -> Support {

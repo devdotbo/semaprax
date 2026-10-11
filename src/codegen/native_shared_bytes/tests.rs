@@ -133,8 +133,14 @@ fn bridge_assigns_only_existing_statuses() {
         let assigned = outcome == Outcome::Ok || outcome.status().is_some();
         assert_eq!(bridge.contains(&case), assigned, "{outcome:?}");
     }
-    assert!(PARTITION_STATUS_CODES.is_none());
-    assert!(!bridge.contains("byte-partition"));
+    assert_eq!(PARTITION_STATUS_CODES, Some(
+        crate::construction_fusion::partition::operation::STATUS_CODES
+    ));
+    for code in crate::construction_fusion::partition::operation::STATUS_CODES {
+        assert!(bridge.contains(&format!(
+            "\"semaprax.byte-partition.v1\"; code = UINT32_C({code})"
+        )));
+    }
     assert!(bridge.contains("\"semaprax.byte-buffer.v1\"; code = UINT32_C(1)"));
     assert!(bridge.contains("\"semaprax.byte-buffer.v1\"; code = UINT32_C(2)"));
     assert!(bridge.contains("\"semaprax.vec.v1\"; code = UINT32_C(3)"));
@@ -163,7 +169,7 @@ fn context_extension_is_exact_and_rejects_drift() {
 
 #[test]
 fn admission_stays_closed_even_for_a_complete_closure() {
-    let complete = [Consumer::Zeroed, Consumer::Drop, Consumer::VecPop, Consumer::IterNext];
+    let complete = [Consumer::Zeroed, Consumer::Partition, Consumer::Drop, Consumer::VecPop, Consumer::IterNext];
     assert!(closed_over_for_tests(complete).is_ok());
     let refusal = select(complete, Admission::ClosedUntilCrossBackendJoin).unwrap_err();
     assert!(format!("{refusal:?}").contains("admission stays closed"));
@@ -174,7 +180,6 @@ fn admission_stays_closed_even_for_a_complete_closure() {
 #[test]
 fn unsupported_consumers_name_the_exact_blocker_before_admission() {
     for (consumer, fragment) in [
-        (Consumer::Partition, "UNASSIGNED"),
         (Consumer::PublicCopyOut, "public bridge"),
         (Consumer::ProviderDrop, "public bridge"),
         (Consumer::OwnedLeafVec, "16-byte"),

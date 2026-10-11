@@ -5,7 +5,8 @@
 //! first Bytes producer and detaches it after final cleanup, where
 //! `spx_shb_registry_finish` proves every backing was released exactly once.
 //! Outcomes map onto existing status domains through the owning Rust
-//! constants; partition and provider outcomes have no assigned status.
+//! constants, including the shared partition operation owner. Provider
+//! allocation remains a physical fail-stop without a fabricated status.
 use std::fmt::Write as _;
 
 use super::closure::{Consumer, Selection, Support};
@@ -83,7 +84,7 @@ impl Outcome {
     }
 }
 
-const PARTITION_DOMAIN: &str = "semaprax.byte-partition.v1";
+const PARTITION_DOMAIN: &str = crate::construction_fusion::partition::operation::STATUS_DOMAIN;
 
 /// Add the explicit registry reference to the emitted invocation context.
 /// Mirrors the Vec authority extension and asserts each anchor applied once.
