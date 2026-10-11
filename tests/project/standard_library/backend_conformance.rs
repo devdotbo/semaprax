@@ -167,11 +167,15 @@ pub(super) fn run_examples_and_conformance(selected: Vec<PackageMetadata>) {
                             // Individual typed-Path observation cases allocate via copy
                             // without importing the buffer-writing operations.
                             if package.module != "std.path.value" && !cursor_case {
-                                assert_eq!(
-                                    present, arena,
-                                    "{}: `{name}` import",
-                                    package.directory
-                                );
+                                // NDJSON's boundary fixtures construct two zeroed
+                                // buffers but never write bytes. Keep each import
+                                // expectation exact rather than conflating the two.
+                                let expected = if package.module == "std.data.ndjson" {
+                                    name == "spx_bytes_zeroed"
+                                } else {
+                                    arena
+                                };
+                                assert_eq!(present, expected, "{}: `{name}` import", package.directory);
                             }
                         }
                     }
@@ -194,7 +198,7 @@ pub(super) fn run_examples_and_conformance(selected: Vec<PackageMetadata>) {
                     } else if package.module == "std.path.normalize" {
                         path_normalize::live_byte_bound(&manifest)
                     } else if cursor_case
-                        || matches!(package.module.as_str(), "std.format" | "std.data.csv")
+                        || matches!(package.module.as_str(), "std.format" | "std.data.csv" | "std.data.ndjson")
                     {
                         2
                     } else if package.module == "std.path.value"
