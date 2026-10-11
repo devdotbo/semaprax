@@ -13,8 +13,6 @@ pub(super) fn equal(
     for (expected, actual) in expected.iter().zip(actual) {
         budget.charge(function, 1, "borrowed status actual entry")?;
         if expected.id.lane != actual.id.lane
-            || expected.id.expression.shared_allocation_key().is_some()
-                != actual.id.expression.shared_allocation_key().is_some()
             || !schema::borrowed::same_schema(
                 function,
                 expected.id.expression.as_str(),

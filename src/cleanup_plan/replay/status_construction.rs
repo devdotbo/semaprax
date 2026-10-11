@@ -355,6 +355,16 @@ mod tests {
     #[test]
     fn primitive_status_sources_match_legacy_exact_and_one_short() {
         let program = program();
+        // Expression identity equality is its text, including empty identities
+        // with different Arc representation. The receiver preserves that rule.
+        let function = &program.functions[0];
+        let mut expected = function.cleanup_plan.status_sources[0].clone();
+        expected.id.expression = ExpressionId::default();
+        let mut actual = expected.clone();
+        actual.id.expression = ExpressionId::from_owned(String::new());
+        assert_eq!(expected, actual);
+        let mut budget = ReplayBudget::new();
+        assert!(borrowed::equal(function, &[expected], &[actual], &mut budget).unwrap());
         for function in program
             .functions
             .iter()
