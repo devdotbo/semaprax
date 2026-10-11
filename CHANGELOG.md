@@ -1,5 +1,7 @@
 # Changelog
 
+- Generate direct ASCII scalar/advance checks for JSON identifier validation and owned UTF-8 prefixes, retaining original escape/non-ASCII validation and all grammar, size and fuel limits. Independent original-path differential and maximum-capacity backend gates await qualification.
+
 - Authored scalar expression statements: intermediate Copy scalar `expr;` keeps canonical spelling and lowers to hygienic immutable ordinary lets. Final-tail, underscore, owning discard and lexical initializer boundaries remain checked; qualification pending.
 
 - Retain actual lexical String temporaries until canonical settlement and authenticate iterator condition feasibility across construction, replay, native and Wasm routes. Make isolated help links self-contained, preserve compact diagnostic advice and restore Projects help within its existing budget. Grouped owning qualification remains pending.

@@ -1,0 +1,103 @@
+//! Compare optimized ordinary source with the original independent scalar path.
+use super::*;
+
+#[test]
+fn ascii_fast_path_matches_original_scalar_validation_and_keeps_utf8_boundaries() {
+    let mut app = imports().to_owned();
+    app.push_str(
+        r#"
+use function @id("unicode.row.json.utf8.valid") from consumer.schema as optimized;
+use function @id("unicode.row.json.utf8.owned-valid") from consumer.schema as optimized_owned;
+use function @id("std.data.json.query.scan_string") from std.data.json.query as jv_scan_string;
+use function @id("std.data.json.query.decoded_len") from std.data.json.query as jv_decoded_len;
+use function @id("std.data.json.query.token_end") from std.data.json.query as jv_token_end;
+use function @id("std.data.json.query.scalar_at") from std.data.json.query as ju_escape_scalar;
+use function @id("std.data.json.utf8.scalar_at") from std.data.json.utf8 as ju_raw_scalar;
+use function @id("std.data.json.utf8.sequence_end") from std.data.json.utf8 as ju_raw_end;
+use function @id("std.data.json.utf8.utf8_end") from std.data.json.utf8 as ju_raw_utf8_end;
+"#,
+    );
+    app.push_str(include_str!("ascii_legacy_validator.txt"));
+    app.push_str(
+        r#"
+@id("consumer.compare") fn compare(input:borrow Slice<u8>,start:usize,end:usize,wanted:bool)->i64 {
+ let old=json_Legacy_identifier_valid(input,start,end);
+ let current=optimized(input,start,end);
+ if current==old && current==wanted {0} else {1}
+}
+@id("consumer.compare_owned") fn compare_owned(text:borrow str,wanted:bool)->i64 {
+ let bytes=str_as_bytes(text);
+ let old=byte_len(bytes)<=64usize && ju_raw_utf8_end(bytes,0usize)==byte_len(bytes);
+ let current=optimized_owned(text);
+ if current==old && current==wanted {0} else {1}
+}
+@id("consumer.main") fn main()->i64 {
+ let mut bad=0;
+"#,
+    );
+    // Every ASCII byte, including raw forbidden controls, quote and backslash.
+    // The immutable Rust input and truth table are independent of both decoders.
+    let all_ascii: Vec<u8> = (0..128).flat_map(|byte| [b'"', byte, b'"']).collect();
+    app.push_str(&format!("let ascii={};let input=array_as_slice(ascii);let mut index=0usize;while index<128usize{{let start=index*3usize;let wanted=index>=32usize && index!=34usize && index!=92usize;bad=bad+compare(input,start,start+3usize,wanted);index=index+1usize;index<128usize}}\n", array(&all_ascii)));
+    app.push_str("bad=bad+compare(input,0usize,0usize,false);bad=bad+compare(input,384usize,385usize,false);bad=bad+compare(input,0usize,385usize,false);\n");
+    let cases: &[(&[u8], bool)] = &[
+        (br#""\u0000""#, true),
+        (br#""\n\t\"\\""#, true),
+        ("\"é😀\"".as_bytes(), true),
+        (br#""\u00e9\ud83d\ude00""#, true),
+        (b"\"\xc0\xaf\"", false),
+        (b"\"\xed\xa0\x80\"", false),
+        (b"\"\xf4\x90\x80\x80\"", false),
+        (b"\"A\xe2\x82\"", false),
+        (br#""\ud800""#, false),
+        (br#""\udc00""#, false),
+        (br#""\x41""#, false),
+    ];
+    for (i, (bytes, wanted)) in cases.iter().enumerate() {
+        app.push_str(&format!(
+            "let raw_{i}={};bad=bad+compare(array_as_slice(raw_{i}),0usize,{}usize,{wanted});\n",
+            array(bytes),
+            bytes.len()
+        ));
+    }
+    for (i, (text, wanted)) in [
+        (String::new(), true),
+        ("\0\n\t\u{7f}".to_owned(), true),
+        ("é😀".to_owned(), true),
+        ("A".repeat(64), true),
+        ("A".repeat(65), false),
+        (format!("{}é", "A".repeat(62)), true),
+        (format!("{}é", "A".repeat(63)), false),
+    ]
+    .iter()
+    .enumerate()
+    {
+        // SEMAPRAX source uses braced scalar escapes, independently of JSON.
+        let mut literal = String::from("\"");
+        for ch in text.chars() {
+            match ch {
+                '\\' => literal.push_str("\\\\"),
+                '"' => literal.push_str("\\\""),
+                ch if ch.is_control() => literal.push_str(&format!("\\u{{{:x}}}", u32::from(ch))),
+                ch => literal.push(ch),
+            }
+        }
+        literal.push('"');
+        app.push_str(&format!(
+            "let owned_{i}={literal};bad=bad+compare_owned(string_as_str(owned_{i}),{wanted});\n"
+        ));
+    }
+    // Include actual decoder ownership/canonical call paths in every backend.
+    let request = br#"{"labels":[],"rows":[]}"#;
+    app.push_str(&format!("let request={};let decoded=decode(array_as_slice(request));match own decoded{{Outcome::Error{{code,offset,field}}=>0,Outcome::Decoded{{labels,rows}}=>if bad==0 && vec_len<string>(labels)==0usize && vec_len<Row>(rows)==0usize{{727}}else{{0}},}}}}\n", array(request)));
+    let root = install("utf8-ascii-differential", &app, 64);
+    project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
+        let graph = snapshot.semantic_graph();
+        assert!(graph.contains("unicode.row.json.utf8.valid"));
+        assert!(graph.contains("consumer.legacy.json.utf8.valid"));
+        Ok(())
+    })
+    .unwrap();
+    qualify(&root);
+    std::fs::remove_dir_all(root).unwrap();
+}
