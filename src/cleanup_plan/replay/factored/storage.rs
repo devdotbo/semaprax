@@ -93,5 +93,19 @@ pub(super) fn reserve_transition_observation(
     Ok(())
 }
 
+pub(super) fn clone_weighted(
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+    state: &Weighted,
+) -> Result<Weighted, Diagnostic> {
+    let work = state
+        .len()
+        .checked_add(1)
+        .ok_or_else(|| replay_error(function, "factored weighted state work overflowed"))?;
+    budget.charge(function, work, "factored weighted state copy")?;
+    budget.reserve_clone(function, state, "factored weighted state backing")?;
+    Ok(state.clone())
+}
+
 #[cfg(test)]
 mod tests;

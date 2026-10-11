@@ -151,9 +151,11 @@ fn compare_with_index(
     }
     let plan_root = automaton.add_plan(function, success, failure, latch, budget)?;
     let mut canonical = Canonicalizer::new(&automaton, sink);
+    budget.reserve_array::<(usize, u64)>(function, 1, "factored HIR weighted root")?;
     let Some(hir) = canonical.id(function, vec![(hir_root, 1)], budget)? else {
         return Ok(None);
     };
+    budget.reserve_array::<(usize, u64)>(function, 1, "factored plan weighted root")?;
     let Some(plan) = canonical.id(function, vec![(plan_root, 1)], budget)? else {
         return Ok(None);
     };
@@ -663,16 +665,20 @@ impl<'a> Canonicalizer<'a> {
         root: usize,
         budget: &mut ReplayBudget,
     ) -> Result<Option<Rc<BTreeMap<usize, u64>>>, Diagnostic> {
+        budget.reserve_array::<(usize, bool)>(function, 1, "factored closure initial cursor")?;
         let mut stack = vec![(root, false)];
         while let Some((node, expanded)) = stack.pop() {
+            budget.charge(function, 1, "factored closure cursor")?;
             if self.closures.contains_key(&node) {
                 continue;
             }
             let state = &self.automaton.nodes[node];
             if !expanded {
+                budget.reserve_vec(function, &mut stack, 1, "factored closure cursors")?;
                 stack.push((node, true));
                 for target in &state.epsilon {
                     if !self.closures.contains_key(target) {
+                        budget.reserve_vec(function, &mut stack, 1, "factored closure cursors")?;
                         stack.push((*target, false));
                     }
                 }
@@ -680,6 +686,7 @@ impl<'a> Canonicalizer<'a> {
             }
             let mut closure = BTreeMap::new();
             if !state.moves.is_empty() || node == self.sink {
+                budget.reserve_btree_node::<usize, u64>(function, "factored closure node")?;
                 closure.insert(node, 1_u64);
             }
             for target in &state.epsilon {
@@ -687,6 +694,11 @@ impl<'a> Canonicalizer<'a> {
                     return Err(replay_error(function, "cleanup CFG contains a cycle"));
                 };
                 for (inner_node, routes) in inner.iter() {
+                    budget.charge(function, 1, "factored closure route addition")?;
+                    if !closure.contains_key(inner_node) {
+                        budget
+                            .reserve_btree_node::<usize, u64>(function, "factored closure node")?;
+                    }
                     let slot = closure.entry(*inner_node).or_insert(0_u64);
                     let Some(sum) = slot.checked_add(*routes) else {
                         return Ok(None);
@@ -698,6 +710,15 @@ impl<'a> Canonicalizer<'a> {
                 function,
                 closure.len().saturating_add(1),
                 "factored skeleton closure",
+            )?;
+            budget.reserve_bytes(
+                function,
+                physical_clone::rc_backing_bytes::<BTreeMap<usize, u64>>(),
+                "factored closure shared header",
+            )?;
+            budget.reserve_btree_node::<usize, Rc<BTreeMap<usize, u64>>>(
+                function,
+                "factored closure memo node",
             )?;
             self.closures.insert(node, Rc::new(closure));
         }
@@ -723,6 +744,13 @@ impl<'a> Canonicalizer<'a> {
                 }) else {
                     return Ok(None);
                 };
+                budget.charge(function, 1, "factored weighted route addition")?;
+                if !closed.contains_key(inner) {
+                    budget.reserve_btree_node::<usize, u64>(
+                        function,
+                        "factored weighted closure node",
+                    )?;
+                }
                 closed.insert(*inner, sum);
             }
         }
@@ -736,24 +764,41 @@ impl<'a> Canonicalizer<'a> {
                 "factored skeleton subset construction",
             )?;
             for (label, child) in moves {
-                let slot = successors
-                    .entry(label.clone())
-                    .or_default()
-                    .entry(*child)
-                    .or_insert(0);
+                if !successors.contains_key(label) {
+                    budget.reserve_btree_node::<Label, BTreeMap<usize, u64>>(
+                        function,
+                        "factored successor label node",
+                    )?;
+                }
+                let targets = successors.entry(label.clone()).or_default();
+                if !targets.contains_key(child) {
+                    budget.reserve_btree_node::<usize, u64>(
+                        function,
+                        "factored successor target node",
+                    )?;
+                }
+                let slot = targets.entry(*child).or_insert(0);
                 let Some(sum) = slot.checked_add(*weight) else {
                     return Ok(None);
                 };
                 *slot = sum;
             }
         }
-        Ok(Some((
-            accepted,
-            successors
-                .into_iter()
-                .map(|(label, targets)| (label, targets.into_iter().collect()))
-                .collect(),
-        )))
+        budget.reserve_array::<(Label, Weighted)>(
+            function,
+            successors.len(),
+            "factored successor vector",
+        )?;
+        let mut result = Vec::with_capacity(successors.len());
+        for (label, targets) in successors {
+            budget.reserve_array::<(usize, u64)>(
+                function,
+                targets.len(),
+                "factored weighted successor vector",
+            )?;
+            result.push((label, targets.into_iter().collect()));
+        }
+        Ok(Some((accepted, result)))
     }
 
     fn id(
@@ -762,30 +807,65 @@ impl<'a> Canonicalizer<'a> {
         root: Weighted,
         budget: &mut ReplayBudget,
     ) -> Result<Option<usize>, Diagnostic> {
-        let mut frames = vec![CanonicalFrame::Enter(root.clone())];
+        budget.reserve_array::<CanonicalFrame>(function, 1, "factored canonical initial frame")?;
+        let root_copy = storage::clone_weighted(function, budget, &root)?;
+        let mut frames = vec![CanonicalFrame::Enter(root_copy)];
         let mut open = BTreeSet::new();
         while let Some(frame) = frames.pop() {
+            budget.charge(function, 1, "factored canonical frame")?;
             match frame {
                 CanonicalFrame::Enter(state) => {
                     if self.states.contains_key(&state) {
                         continue;
                     }
-                    if !open.insert(state.clone()) {
+                    if open.contains(&state) {
                         return Err(replay_error(function, "cleanup CFG contains a cycle"));
                     }
+                    budget.reserve_btree_node::<Weighted, ()>(
+                        function,
+                        "factored open-state identity node",
+                    )?;
+                    open.insert(storage::clone_weighted(function, budget, &state)?);
                     let Some((accepted, successors)) = self.successors(function, &state, budget)?
                     else {
                         return Ok(None);
                     };
-                    let children = successors
-                        .iter()
-                        .map(|(_, child)| CanonicalFrame::Enter(child.clone()))
-                        .collect::<Vec<_>>();
+                    let child_count = successors.len();
+                    budget.reserve_vec(
+                        function,
+                        &mut frames,
+                        1,
+                        "factored canonical exit frame",
+                    )?;
+                    let exit_index = frames.len();
                     frames.push(CanonicalFrame::Exit(state, accepted, successors));
-                    frames.extend(children);
+                    for index in 0..child_count {
+                        let CanonicalFrame::Exit(_, _, successors) = &frames[exit_index] else {
+                            unreachable!("canonical exit retained below child frames");
+                        };
+                        let child =
+                            storage::clone_weighted(function, budget, &successors[index].1)?;
+                        budget.reserve_vec(
+                            function,
+                            &mut frames,
+                            1,
+                            "factored canonical child frames",
+                        )?;
+                        frames.push(CanonicalFrame::Enter(child));
+                    }
                 }
                 CanonicalFrame::Exit(state, accepted, successors) => {
                     open.remove(&state);
+                    budget.charge(
+                        function,
+                        successors.len(),
+                        "factored canonical signature construction",
+                    )?;
+                    budget.reserve_array::<(Label, usize)>(
+                        function,
+                        successors.len(),
+                        "factored canonical signature vector",
+                    )?;
                     let mut key = Vec::with_capacity(successors.len());
                     for (label, child) in successors {
                         let Some(id) = self.states.get(&child) else {
@@ -793,8 +873,25 @@ impl<'a> Canonicalizer<'a> {
                         };
                         key.push((label, *id));
                     }
-                    let next = self.ids.len();
-                    let id = *self.ids.entry((accepted, key)).or_insert(next);
+                    let key = (accepted, key);
+                    let id = match self.ids.get(&key) {
+                        Some(id) => *id,
+                        None => {
+                            budget.reserve_btree_node::<(u64, Vec<(Label, usize)>), usize>(
+                                function,
+                                "factored canonical signature node",
+                            )?;
+                            let id = self.ids.len();
+                            self.ids.insert(key, id);
+                            id
+                        }
+                    };
+                    if !self.states.contains_key(&state) {
+                        budget.reserve_btree_node::<Weighted, usize>(
+                            function,
+                            "factored canonical state memo node",
+                        )?;
+                    }
                     self.states.insert(state, id);
                 }
             }

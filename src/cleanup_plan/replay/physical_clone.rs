@@ -28,6 +28,7 @@ shared_or_copy!(
     StorageId,
     StatusSourceId,
     u32,
+    u64,
     usize,
     bool,
     LivenessFlagId,

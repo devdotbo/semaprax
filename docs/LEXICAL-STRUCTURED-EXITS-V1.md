@@ -80,14 +80,17 @@ alternative/concatenation members, merge indexes and vectors. Every child edge
 registers against one held destruction frontier before node allocation, including
 old/new backing overlap. That shared frontier releases the DAG iteratively with
 no destructor allocation; cross-reservation children fail closed. Duplicate
-alternatives retain multiplicity. Weighted canonicalizer storage,
-Copy-inert region eligibility and pre-census strategy admission remain barriers
+alternatives retain multiplicity. Copy-inert region eligibility and pre-census strategy admission remain barriers
 to selecting lexical factoring. Inactive automaton construction now precharges
 nodes, moves, epsilon vectors, observation identity/projection payloads, DAG
 frames/ends/memo and block-entry backing. Attempted factored comparisons retain
 spent work and physical debits when falling back. An authored allocator witness
 covers complete lexical plan automaton creation/release and exact/one-short
-limits, independently of the still-unmetered weighted canonicalizer. The inactive plan converter emits exact certified
+limits, independently of weighted canonicalization. Its inactive storage owner now
+precharges closure/shared-map headers, weighted subset maps, successor vectors,
+open/state/signature indexes, weighted key clones and every canonical frame
+replacement. Authored allocator and exact/one-short probes include complete
+canonicalizer creation/release and duplicate-route/checked-overflow regressions. The inactive plan converter emits exact certified
 return/break marker edges to their existing continuation and exact continue/latch
 marker edges to authenticated advancement resumes or the third latch terminal.
 Lexical exits create no epsilon edge. An independent small automaton enumerator
