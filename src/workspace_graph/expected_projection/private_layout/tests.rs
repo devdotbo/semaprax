@@ -90,7 +90,9 @@ fn explicit_root_retains_private_descendants_and_only_authored_edges() {
         "use type @id(\"decoded\") from closure.provider as Decoded;",
         "",
     );
-    let missing_diagnostics = build_owned(sources(&missing, PROVIDER)).unwrap_err();
+    let missing_diagnostics = build_owned(sources(&missing, PROVIDER))
+        .err()
+        .expect("missing explicit root is rejected");
     assert!(
         missing_diagnostics.iter().any(|d| d.code == "SPX-G172"),
         "missing explicit root diagnostics: {missing_diagnostics:?}"

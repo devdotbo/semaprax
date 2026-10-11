@@ -121,7 +121,13 @@ if !({validity}){{\"\"}}else{{let output_0=\"{{\";"
     out
 }
 
-fn legacy_root(root: &TypeDeclaration, row: &str, metrics: &str, items: &str, stats: &str) -> String {
+fn legacy_root(
+    root: &TypeDeclaration,
+    row: &str,
+    metrics: &str,
+    items: &str,
+    stats: &str,
+) -> String {
     use std::fmt::Write as _;
     let name = &root.name;
     let id = &root.stable_id;
@@ -176,7 +182,11 @@ text=string_concat(text,\"]\");"
             )
             .unwrap();
         } else {
-            writeln!(out, "text=string_concat(text,json_{metrics}_response_object_render(value.{stats}));").unwrap();
+            writeln!(
+                out,
+                "text=string_concat(text,json_{metrics}_response_object_render(value.{stats}));"
+            )
+            .unwrap();
         }
     }
     writeln!(
@@ -294,7 +304,8 @@ fn oracle(rows: usize) -> (String, String, usize) {
         "{{\"number\":0,\"label\":\"{}\",\"byte\":0,\"count\":0,\"active\":true}}",
         "\\u0000".repeat(64)
     );
-    let head = format!("{{\"stats\":{{\"selected\":{rows},\"total\":0,\"live\":true}},\"entries\":[");
+    let head =
+        format!("{{\"stats\":{{\"selected\":{rows},\"total\":0,\"live\":true}},\"entries\":[");
     let length = head.len() + rows * row.len() + rows.saturating_sub(1) + 2;
     let whole = format!("{head}{}]}}", vec![row.as_str(); rows].join(","));
     assert_eq!(whole.len(), length);
@@ -348,7 +359,11 @@ fn probe(label: &str, root: &std::path::Path) -> Vec<Vec<Value>> {
             .arg(&binary)
             .output()
             .unwrap();
-        assert!(build.status.success(), "{}", String::from_utf8_lossy(&build.stderr));
+        assert!(
+            build.status.success(),
+            "{}",
+            String::from_utf8_lossy(&build.stderr)
+        );
         let run = Command::new(&binary).output().unwrap();
         assert!(
             run.status.success() && run.stderr.is_empty(),
@@ -399,7 +414,11 @@ fn phases<'a>(label: &str, rows: &'a [Value]) -> Vec<[&'a Value; 4]> {
             }
             // Preflight and one-short refusal request nothing physical.
             for row in &group[..2] {
-                for key in ["allocation_events", "peak_live_above_input", "final_buffer_copy_bytes"] {
+                for key in [
+                    "allocation_events",
+                    "peak_live_above_input",
+                    "final_buffer_copy_bytes",
+                ] {
                     assert_eq!(n(row, key), 0, "{row}");
                 }
             }
@@ -420,11 +439,18 @@ fn generated_writer_reserves_once_and_copies_once_across_full_row_counts_unlike_
     assert!(maximum > 100_000 && maximum <= 131_072);
     let writer_root = install("response-physical-writer", &app(), 64);
     let current = std::fs::read_to_string(writer_root.join("src/schema.spx")).unwrap();
-    assert_eq!(current.matches("bytes_zeroed_bounded(required, 131072usize)").count(), 1);
+    assert_eq!(
+        current
+            .matches("bytes_zeroed_bounded(required, 131072usize)")
+            .count(),
+        1
+    );
     let legacy_root = fixture("response-physical-legacy", &legacy_schema());
     std::fs::write(legacy_root.join("src/app.spx"), canonical(&app())).unwrap();
     let legacy_source = std::fs::read_to_string(legacy_root.join("src/schema.spx")).unwrap();
-    assert!(legacy_source.contains("text = string_concat(text, json_Item_response_object_render_at("));
+    assert!(
+        legacy_source.contains("text = string_concat(text, json_Item_response_object_render_at(")
+    );
     assert_ne!(legacy_source, current);
 
     let writer = probe("writer", &writer_root).remove(0);
@@ -459,9 +485,19 @@ fn generated_writer_reserves_once_and_copies_once_across_full_row_counts_unlike_
         }
         assert!(n(old, "final_size_string_allocations") >= 1, "{old}");
         assert!(n(old, "explicit_memcpy_bytes") >= length, "{old}");
-        assert!(n(old, "allocation_events") > n(now, "allocation_events"), "{old}");
-        assert!(n(old, "explicit_memcpy_bytes") > n(now, "explicit_memcpy_bytes"), "{old}");
-        assert!(n(old, "string_request_bytes") > n(now, "reserved_payload_bytes") + n(now, "string_request_bytes"), "{old}");
+        assert!(
+            n(old, "allocation_events") > n(now, "allocation_events"),
+            "{old}"
+        );
+        assert!(
+            n(old, "explicit_memcpy_bytes") > n(now, "explicit_memcpy_bytes"),
+            "{old}"
+        );
+        assert!(
+            n(old, "string_request_bytes")
+                > n(now, "reserved_payload_bytes") + n(now, "string_request_bytes"),
+            "{old}"
+        );
         let observed = (
             n(old, "allocation_events"),
             n(old, "string_request_bytes"),

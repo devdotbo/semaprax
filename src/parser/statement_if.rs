@@ -29,8 +29,8 @@ use crate::ast::{BranchTail, Expr, ExprKind, LetSyntax, Span, Statement, Stateme
 use crate::diagnostic::Diagnostic;
 use crate::lexer::TokenKind;
 
-use super::Parser;
 use super::expression_statement::BlockContents;
+use super::Parser;
 
 /// The `_if<n>` discard names handed out while parsing one file.
 #[derive(Default)]
@@ -154,7 +154,9 @@ impl Parser {
         };
         let Some(condition) = chain.condition.take() else {
             let arms = std::mem::take(&mut chain.arms);
-            return self.statement_if_finish(chain.start, arms, Some(body)).map(Some);
+            return self
+                .statement_if_finish(chain.start, arms, Some(body))
+                .map(Some);
         };
         chain.arms.push(Arm {
             start: chain.arm_start,
@@ -268,7 +270,9 @@ impl Parser {
     }
 
     fn open_branch(&mut self, description: &str) -> Result<Span, Diagnostic> {
-        Ok(self.expect(&TokenKind::LBrace, &format!("`{{` before {description}"))?.span)
+        Ok(self
+            .expect(&TokenKind::LBrace, &format!("`{{` before {description}"))?
+            .span)
     }
 
     /// A statement `if` is the last item of a block that needs a value. The

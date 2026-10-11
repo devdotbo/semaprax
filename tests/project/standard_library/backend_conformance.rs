@@ -175,7 +175,11 @@ pub(super) fn run_examples_and_conformance(selected: Vec<PackageMetadata>) {
                                 } else {
                                     arena
                                 };
-                                assert_eq!(present, expected, "{}: `{name}` import", package.directory);
+                                assert_eq!(
+                                    present, expected,
+                                    "{}: `{name}` import",
+                                    package.directory
+                                );
                             }
                         }
                     }
@@ -198,7 +202,10 @@ pub(super) fn run_examples_and_conformance(selected: Vec<PackageMetadata>) {
                     } else if package.module == "std.path.normalize" {
                         path_normalize::live_byte_bound(&manifest)
                     } else if cursor_case
-                        || matches!(package.module.as_str(), "std.format" | "std.data.csv" | "std.data.ndjson")
+                        || matches!(
+                            package.module.as_str(),
+                            "std.format" | "std.data.csv" | "std.data.ndjson"
+                        )
                     {
                         2
                     } else if package.module == "std.path.value"

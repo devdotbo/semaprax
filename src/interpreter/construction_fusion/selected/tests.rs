@@ -200,7 +200,8 @@ fn current_context_scope_generation_and_live_payload_loans_guard_receiving_views
 /// never execute, so their failure is not selected.
 #[test]
 fn lazy_boolean_truth_table_and_skipped_right_operand_failure() {
-    const TAIL: &str = "if good && count == 33 && vec_len<Row>(renewed) == 33usize { total } else { 0 }";
+    const TAIL: &str =
+        "if good && count == 33 && vec_len<Row>(renewed) == 33usize { total } else { 0 }";
     const FAILING: &str = "i64_from_usize(18446744073709551615usize) == 0";
     let rows = SOURCE.replace("4096", "33");
     assert!(rows.contains(TAIL));

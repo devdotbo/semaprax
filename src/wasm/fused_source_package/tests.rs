@@ -13,7 +13,8 @@ fn source_sha256() -> String {
 }
 fn with_owner<R>(receive: impl FnOnce(&ValidatedFusedSelection<'_>) -> R) -> R {
     let source = crate::parse(ORIGINAL, "fused-source-package.spx").unwrap();
-    let owner = validate_selected(&source).expect("original source passes full selected validation");
+    let owner =
+        validate_selected(&source).expect("original source passes full selected validation");
     receive(&owner)
 }
 /// One invocation's arena debit, as the paired grant states it.
@@ -25,7 +26,10 @@ fn registry_buffer(owner: &ValidatedFusedSelection<'_>) -> usize {
     usize::try_from(accept(owner).unwrap().grant.registry_entries * REGISTRY_ENTRY_BYTES).unwrap()
 }
 fn borrowed(files: &[(&'static str, Vec<u8>)]) -> Vec<(&'static str, &[u8])> {
-    files.iter().map(|(name, bytes)| (*name, bytes.as_slice())).collect()
+    files
+        .iter()
+        .map(|(name, bytes)| (*name, bytes.as_slice()))
+        .collect()
 }
 fn scratch(label: &str) -> std::path::PathBuf {
     let parent = std::env::temp_dir().join(format!(
@@ -70,7 +74,10 @@ fn package_is_deterministic_and_binds_source_strategy_module_and_grant() {
     with_owner(|owner| {
         let funding = registry_buffer(owner) + 3 * per_invocation(owner);
         let first = package_files(owner, funding, &source_sha256()).unwrap();
-        assert_eq!(first, package_files(owner, funding, &source_sha256()).unwrap());
+        assert_eq!(
+            first,
+            package_files(owner, funding, &source_sha256()).unwrap()
+        );
         let names: Vec<&str> = first.iter().map(|(name, _)| *name).collect();
         assert_eq!(names, FILES);
         let manifest = std::str::from_utf8(&first[0].1).unwrap();
@@ -152,9 +159,11 @@ fn spliced_foreign_or_tampered_contents_refuse_before_publication() {
         host[3].1.push(b'\n');
         splices.push(host);
         let mut grant = files.clone();
-        let edited = String::from_utf8(grant[0].1.clone())
-            .unwrap()
-            .replacen("\"rows\":4096", "\"rows\":4095", 1);
+        let edited = String::from_utf8(grant[0].1.clone()).unwrap().replacen(
+            "\"rows\":4096",
+            "\"rows\":4095",
+            1,
+        );
         grant[0].1 = edited.into_bytes();
         splices.push(grant);
         let mut entry = files.clone();
@@ -168,7 +177,10 @@ fn spliced_foreign_or_tampered_contents_refuse_before_publication() {
         splices.push(missing);
         for (index, spliced) in splices.iter().enumerate() {
             let output = parent.join(format!("spliced-{index}"));
-            assert!(publish(spliced, &output).is_err(), "splice {index} published");
+            assert!(
+                publish(spliced, &output).is_err(),
+                "splice {index} published"
+            );
             assert!(!output.exists(), "splice {index} left a destination");
         }
         std::fs::remove_dir_all(parent).unwrap();

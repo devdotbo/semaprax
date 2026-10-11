@@ -274,8 +274,14 @@ fn duplicate_provider_names_and_aliases_remain_identity_distinct_and_layout_drif
     // Two equally stale HIR copies cannot expose a signature disagreement.
     let mut mixed_modules = old_modules.clone();
     let provider_module = &changed[1].module;
-    let replacement = fresh.iter().find(|(module, _)| module == provider_module).unwrap();
-    *mixed_modules.iter_mut().find(|(module, _)| module == provider_module).unwrap() = replacement.clone();
+    let replacement = fresh
+        .iter()
+        .find(|(module, _)| module == provider_module)
+        .unwrap();
+    *mixed_modules
+        .iter_mut()
+        .find(|(module, _)| module == provider_module)
+        .unwrap() = replacement.clone();
     assert_eq!(
         crate::workspace_graph::validation::validate_stub_signatures(&changed, &mixed_modules)
             .unwrap_err()[0]

@@ -127,16 +127,12 @@ impl<'s, 'a> Walk<'s, 'a> {
     fn bind(&mut self, slot: Slot<'s, 'a>) -> Result<(), Refusal> {
         self.debit()?;
         // Dead names stay reserved, as in the source census.
-        if self.slots[..self.len]
-            .iter()
-            .flatten()
-            .any(|other| {
-                other.name == slot.name
-                    || (other.binding.id == slot.binding.id
-                        && slot.kind != Kind::Row
-                        && other.kind != Kind::Row)
-            })
-        {
+        if self.slots[..self.len].iter().flatten().any(|other| {
+            other.name == slot.name
+                || (other.binding.id == slot.binding.id
+                    && slot.kind != Kind::Row
+                    && other.kind != Kind::Row)
+        }) {
             return Err(refuse("suffix binding reuses a name or value identity"));
         }
         *self
@@ -281,7 +277,8 @@ impl<'s, 'a> Walk<'s, 'a> {
                         && typed(hir_value, &self.selection.vector().ty, O::Own),
                     "owner sort differs",
                 )?;
-                let slot = self.owner_operand(owner, hir_owner, &format!("{value_path}.arg.0"), true)?;
+                let slot =
+                    self.owner_operand(owner, hir_owner, &format!("{value_path}.arg.0"), true)?;
                 check(
                     binding.name == *name
                         && binding.span == *name_span
@@ -348,8 +345,14 @@ impl<'s, 'a> Walk<'s, 'a> {
                 let K::Block { statements, .. } = &region.kind else {
                     return Err(refuse("traversal region differs"));
                 };
-                let Some(S::While { body: iteration, .. } | S::LexicalWhile { body: iteration, .. }) =
-                    statements.get(2)
+                let Some(
+                    S::While {
+                        body: iteration, ..
+                    }
+                    | S::LexicalWhile {
+                        body: iteration, ..
+                    },
+                ) = statements.get(2)
                 else {
                     return Err(refuse("traversal region differs"));
                 };
@@ -400,7 +403,10 @@ impl<'s, 'a> Walk<'s, 'a> {
                     })?;
                 }
                 self.expression(body, authored, &format!("{value_path}.s2.body.s1.value"), 1)?;
-                check(typed(authored, &T::I64, O::Value), "traversal body result differs")?;
+                check(
+                    typed(authored, &T::I64, O::Value),
+                    "traversal body result differs",
+                )?;
                 self.len = saved;
                 self.transfer(Transfer::Borrow, source)
             }
@@ -454,7 +460,10 @@ impl<'s, 'a> Walk<'s, 'a> {
             }
             _ => return Err(refused()),
         };
-        let K::Call { args: length_args, .. } = &length_call.kind else {
+        let K::Call {
+            args: length_args, ..
+        } = &length_call.kind
+        else {
             return Err(refused());
         };
         let [length_source] = length_args.as_slice() else {
@@ -478,8 +487,7 @@ impl<'s, 'a> Walk<'s, 'a> {
         let [S::Let {
             value: snapshot, ..
         }, S::Let {
-            binding: discarded,
-            ..
+            binding: discarded, ..
         }, S::Assign {
             binding: incremented,
             value: increment,
@@ -629,18 +637,22 @@ impl<'s, 'a> Walk<'s, 'a> {
             "suffix expression identity differs",
         )?;
         match (&source.kind, &hir.kind) {
-            (A::Int(left), K::Int(right)) => {
-                check(left == right && typed(hir, &T::I64, O::Value), "literal differs")
-            }
-            (A::Usize(left), K::Usize(right)) => {
-                check(left == right && typed(hir, &T::Usize, O::Value), "literal differs")
-            }
-            (A::Uint8(left), K::Uint8(right)) => {
-                check(left == right && typed(hir, &T::U8, O::Value), "literal differs")
-            }
-            (A::Bool(left), K::Bool(right)) => {
-                check(left == right && typed(hir, &T::Bool, O::Value), "literal differs")
-            }
+            (A::Int(left), K::Int(right)) => check(
+                left == right && typed(hir, &T::I64, O::Value),
+                "literal differs",
+            ),
+            (A::Usize(left), K::Usize(right)) => check(
+                left == right && typed(hir, &T::Usize, O::Value),
+                "literal differs",
+            ),
+            (A::Uint8(left), K::Uint8(right)) => check(
+                left == right && typed(hir, &T::U8, O::Value),
+                "literal differs",
+            ),
+            (A::Bool(left), K::Bool(right)) => check(
+                left == right && typed(hir, &T::Bool, O::Value),
+                "literal differs",
+            ),
             (A::Var(name), K::Place(place)) => {
                 let slot = self.lookup(name)?;
                 check(
@@ -661,7 +673,13 @@ impl<'s, 'a> Walk<'s, 'a> {
                     args,
                 },
             ) => self.field_read(base, field, hir, element, field_id, args, path),
-            (A::Unary { op, value }, K::Unary { op: hir_op, value: hir_value }) => {
+            (
+                A::Unary { op, value },
+                K::Unary {
+                    op: hir_op,
+                    value: hir_value,
+                },
+            ) => {
                 self.expression(value, hir_value, &format!("{path}.value"), depth + 1)?;
                 let result = match op {
                     UnaryOp::Not => T::Bool,
@@ -719,7 +737,12 @@ impl<'s, 'a> Walk<'s, 'a> {
                     else_branch: hir_else,
                 },
             ) => {
-                self.expression(condition, hir_condition, &format!("{path}.condition"), depth + 1)?;
+                self.expression(
+                    condition,
+                    hir_condition,
+                    &format!("{path}.condition"),
+                    depth + 1,
+                )?;
                 self.expression(then_branch, hir_then, &format!("{path}.then"), depth + 1)?;
                 self.expression(else_branch, hir_else, &format!("{path}.else"), depth + 1)?;
                 check(
@@ -742,7 +765,12 @@ impl<'s, 'a> Walk<'s, 'a> {
                 for (index, (statement, hir_statement)) in
                     statements.iter().zip(hir_statements).enumerate()
                 {
-                    self.nested(&format!("{path}.s{index}"), statement, hir_statement, depth + 1)?;
+                    self.nested(
+                        &format!("{path}.s{index}"),
+                        statement,
+                        hir_statement,
+                        depth + 1,
+                    )?;
                 }
                 self.expression(tail, hir_tail, &format!("{path}.tail"), depth + 1)?;
                 self.len = saved;
@@ -814,7 +842,13 @@ impl<'s, 'a> Walk<'s, 'a> {
         )
     }
 
-    fn call(&mut self, source: &'s ast::Expr, hir: &'a E, path: &str, depth: usize) -> Result<(), Refusal> {
+    fn call(
+        &mut self,
+        source: &'s ast::Expr,
+        hir: &'a E,
+        path: &str,
+        depth: usize,
+    ) -> Result<(), Refusal> {
         let Some((name, types, args)) = call(source) else {
             return Err(refuse("call differs"));
         };
@@ -864,7 +898,9 @@ impl<'s, 'a> Walk<'s, 'a> {
             );
         }
         let (target, result) = match name {
-            crate::string_ops::I64_FROM_USIZE_NAME => (crate::string_ops::I64_FROM_USIZE_ID, T::I64),
+            crate::string_ops::I64_FROM_USIZE_NAME => {
+                (crate::string_ops::I64_FROM_USIZE_ID, T::I64)
+            }
             crate::str_ops::LEN_BYTES_NAME => (crate::str_ops::LEN_BYTES_ID, T::I64),
             crate::byte_ops::LEN_NAME => (crate::byte_ops::LEN_ID, T::Usize),
             crate::byte_ops::GET_NAME => (
@@ -901,7 +937,12 @@ impl<'s, 'a> Walk<'s, 'a> {
         path: &str,
         depth: usize,
     ) -> Result<(), Refusal> {
-        self.expression(scrutinee, hir_scrutinee, &format!("{path}.scrutinee"), depth + 1)?;
+        self.expression(
+            scrutinee,
+            hir_scrutinee,
+            &format!("{path}.scrutinee"),
+            depth + 1,
+        )?;
         check(
             option_u8(&hir_scrutinee.ty)
                 && hir_scrutinee.ownership == O::Value
@@ -1030,7 +1071,10 @@ pub(super) fn suffix<'s, 'a>(
         walk.top(&format!("body.s{}", offset + 3), statement, hir_statement)?;
     }
     walk.expression(source_tail, selection.tail(), "body.tail", 1)?;
-    check(typed(selection.tail(), &T::I64, O::Value), "function result differs")?;
+    check(
+        typed(selection.tail(), &T::I64, O::Value),
+        "function result differs",
+    )?;
     // The source census must have recorded exactly the transfers proved here.
     let mut events = proof.owner_events();
     for recorded in walk.transfers.iter().map_while(|transfer| *transfer) {

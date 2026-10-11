@@ -84,7 +84,10 @@ fn rename_counter(program: &mut ResolvedProgram, id: ValueId) {
     let K::Block { statements, .. } = &mut body.kind else {
         panic!("iteration body")
     };
-    let S::Let { value: snapshot, .. } = &mut statements[0] else {
+    let S::Let {
+        value: snapshot, ..
+    } = &mut statements[0]
+    else {
         panic!("snapshot")
     };
     rename(snapshot, &from, &id);
@@ -208,7 +211,10 @@ fn changed_source_prefix_and_suffix_operands_refuse_against_unchanged_hir() {
         ("module app.leaf;", "module app.leap;"),
         ("items", "itemz"),
         ("let item = Row", "let iten = Row"),
-        ("total = total + row.priority", "total = total - row.priority"),
+        (
+            "total = total + row.priority",
+            "total = total - row.priority",
+        ),
         ("count = count + 1", "count = count + 2"),
         ("count ==   64", "count ==   65"),
         ("{ total } else { 0 }", "{ total } else { 1 }"),
@@ -276,7 +282,10 @@ fn same_span_hir_suffix_and_owner_forgeries_cannot_join_unchanged_source() {
             set_root(sort_operand(p), moved);
         }),
         ("foreign owner sort", |p| {
-            set_root(sort_operand(p), ValueId::local(&main_execution(), "body.s99"));
+            set_root(
+                sort_operand(p),
+                ValueId::local(&main_execution(), "body.s99"),
+            );
         }),
         ("sort target", |p| {
             let S::Let { value, .. } = block(p)

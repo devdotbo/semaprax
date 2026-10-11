@@ -1957,7 +1957,8 @@ fn collect_expression_statuses(
             } => {
                 if instance.is_none()
                     && (super::deferred_commit::is_total_str_len_bytes(callee)
-                        || crate::byte_ops::by_id(callee.as_str()).is_some_and(|op| !op.is_fallible())
+                        || crate::byte_ops::by_id(callee.as_str())
+                            .is_some_and(|op| !op.is_fallible())
                         || crate::host_io_ops::by_id(callee.as_str()).is_some()
                         || callee.as_str() == crate::stdin_stream_ops::EOF_ID)
                 {

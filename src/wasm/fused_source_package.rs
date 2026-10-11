@@ -217,7 +217,9 @@ fn verify_files(files: &[(&str, &[u8])]) -> Result<(), Diagnostic> {
         return Err(refusal("fused-construction-v1 package inventory differs"));
     };
     if *host != HOST.as_bytes() {
-        return Err(refusal("fused-construction-v1 host differs from the private host"));
+        return Err(refusal(
+            "fused-construction-v1 host differs from the private host",
+        ));
     }
     let manifest = std::str::from_utf8(manifest)
         .map_err(|_| refusal("fused-construction-v1 manifest is not UTF-8"))?;

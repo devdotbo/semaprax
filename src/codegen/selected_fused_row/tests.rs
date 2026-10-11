@@ -284,8 +284,10 @@ fn canonical_cleanup_proof_refuses_unprovable_plan_shapes() {
         .blocks
         .iter()
         .flat_map(|block| &block.transitions)
-        .find(|transition| matches!(transition,
-            crate::cleanup_plan::CleanupTransition::Initialize { at, .. } if *at == allocation.id))
+        .find(|transition| {
+            matches!(transition,
+            crate::cleanup_plan::CleanupTransition::Initialize { at, .. } if *at == allocation.id)
+        })
         .cloned()
         .expect("allocation result initialize");
     crossed

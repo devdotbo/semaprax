@@ -150,10 +150,18 @@ fn borrowed_and_owned_slot_views_share_nul_utf8_storage_and_expire_before_owned_
     // and the Slice ceiling. This is a Str view, with no Slice publication.
     // Preserve the original duplicate owning argument as a compile-time refusal.
     // The positive path copies the full payload before either String transfer.
-    let duplicate_owner = long_str.replace("string_concat(text,second_text)", "string_concat(text,text)");
-    let diagnostics = semaprax::check(&duplicate_owner, std::path::Path::new("duplicate-owner.spx"))
-        .expect_err("one String owner cannot be transferred twice");
-    assert!(diagnostics.iter().any(|diagnostic| diagnostic.code == "SPX-O101"));
+    let duplicate_owner = long_str.replace(
+        "string_concat(text,second_text)",
+        "string_concat(text,text)",
+    );
+    let diagnostics = semaprax::check(
+        &duplicate_owner,
+        std::path::Path::new("duplicate-owner.spx"),
+    )
+    .expect_err("one String owner cannot be transferred twice");
+    assert!(diagnostics
+        .iter()
+        .any(|diagnostic| diagnostic.code == "SPX-O101"));
     run(long_str, false, "none", None);
     let maximum = r#"module app.slots;
 @id("app.main") fn main()->i64 {

@@ -11,11 +11,11 @@
 use super::cleanup::{Failure, Owned, Replay};
 use super::facts::Selected;
 use super::{import, Refusal, ENTRY, IMPORTS, NAMESPACE};
-use crate::loan_plan::LoanPointPhase;
 use crate::hir::{
     ExpressionId, ResolvedBinding, ResolvedExpr as E, ResolvedExprKind as K,
     ResolvedStatement as S, ResolvedType as T, ValueId,
 };
+use crate::loan_plan::LoanPointPhase;
 use wasm_encoder::{
     BlockType, CodeSection, ConstExpr, DataSection, EntityType, ExportKind, ExportSection,
     Function, FunctionSection, ImportSection, Instruction as I, MemorySection, MemoryType, Module,
@@ -135,7 +135,11 @@ pub(super) fn module(selected: &Selected<'_>) -> Result<Vec<u8>, Refusal> {
     code.function(&function);
     let mut data = DataSection::new();
     let base = i32::try_from(LITERAL_BASE).map_err(|_| unsupported("literal base"))?;
-    data.active(0, &ConstExpr::i32_const(base), lower.literals.iter().copied());
+    data.active(
+        0,
+        &ConstExpr::i32_const(base),
+        lower.literals.iter().copied(),
+    );
     let mut module = Module::new();
     module
         .section(&types)
@@ -184,7 +188,10 @@ impl<'a> Lower<'a> {
         let offset = u32::try_from(self.literals.len()).map_err(|_| unsupported("literal"))?;
         let length = u32::try_from(text.len()).map_err(|_| unsupported("literal"))?;
         let start = LITERAL_BASE + offset;
-        if start.checked_add(length).is_none_or(|end| end > LITERAL_LIMIT) {
+        if start
+            .checked_add(length)
+            .is_none_or(|end| end > LITERAL_LIMIT)
+        {
             return Err(unsupported("literal table"));
         }
         self.literals.extend_from_slice(text.as_bytes());

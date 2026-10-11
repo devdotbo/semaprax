@@ -69,7 +69,6 @@ pub mod architecture_claims;
 pub mod assurance_manifest;
 pub mod assurance_policy;
 pub mod ast;
-pub(crate) mod literal_format;
 pub mod audit_capsule;
 #[allow(
     dead_code,
@@ -82,11 +81,6 @@ pub mod authentication;
 pub(crate) mod bounded_output;
 pub(crate) mod box_ops;
 pub(crate) mod byte_data_capacity;
-mod finite_byte_scratch;
-mod finite_row_construction;
-#[allow(dead_code, reason = "private fusion prerequisite; ordinary admission and target selection remain closed")]
-mod construction_fusion;
-pub mod fused_source;
 pub(crate) mod byte_ops;
 pub mod c_header;
 pub(crate) mod cache_codec;
@@ -122,6 +116,11 @@ pub mod compact_semantic_projection;
 )]
 pub mod compute_profile;
 pub mod conformance;
+#[allow(
+    dead_code,
+    reason = "private fusion prerequisite; ordinary admission and target selection remain closed"
+)]
+mod construction_fusion;
 pub mod cxx_shim;
 pub mod diagnostic;
 #[doc(hidden)]
@@ -139,8 +138,11 @@ pub mod environment_snapshot;
 )]
 pub mod execution_revision;
 pub(crate) mod filesystem_ops;
+mod finite_byte_scratch;
+mod finite_row_construction;
 pub mod format;
 pub mod freestanding_object;
+pub mod fused_source;
 #[allow(
     dead_code,
     reason = "REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend"
@@ -189,6 +191,7 @@ pub(crate) mod iterator_ops;
 pub(crate) mod kernel_zero;
 pub mod lexer;
 mod list_ops;
+pub(crate) mod literal_format;
 #[allow(
     dead_code,
     unused_imports,

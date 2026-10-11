@@ -55,8 +55,7 @@ fn actual_lines_reader_body_preserves_ordinary_while_and_exact_option_eliminatio
 @id("app.main") fn main()->i64 {let text=str"a\né";let end=line_end(str_as_bytes(text),0usize);let mut tick=0usize;while tick<1usize {tick=tick+1usize;return if end==1usize {42}else{0};} 0}"#;
     // Independent shape support grants no production Option receiving lease:
     // the reader retains no provider fact, so the selected entry refuses.
-    let build =
-        build_sources(&[("caller.spx", caller_source), ("lines.spx", &selected)]).unwrap();
+    let build = build_sources(&[("caller.spx", caller_source), ("lines.spx", &selected)]).unwrap();
     assert_selected_borrowed_inventory(&build);
     assert!(build
         .hir
@@ -66,13 +65,11 @@ fn actual_lines_reader_body_preserves_ordinary_while_and_exact_option_eliminatio
         .unwrap()
         .scalar_helpers
         .is_none());
-    assert!(
-        schema(&build)
-            .err()
-            .expect("Option receiving route remains closed")
-            .iter()
-            .any(|d| d.code == "SPX-G410")
-    );
+    assert!(schema(&build)
+        .err()
+        .expect("Option receiving route remains closed")
+        .iter()
+        .any(|d| d.code == "SPX-G410"));
 }
 #[test]
 fn actual_json_byte_reader_and_u8_conversion_have_exact_nonowning_shapes() {
