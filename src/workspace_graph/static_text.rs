@@ -4,6 +4,7 @@ use super::*;
 use std::fmt::Write;
 
 pub(super) mod primitive;
+pub(super) mod record_closure;
 pub(super) mod scalar_helpers;
 
 const DEPTH: usize = 514;

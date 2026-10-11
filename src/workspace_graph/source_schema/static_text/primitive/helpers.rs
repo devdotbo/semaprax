@@ -7,6 +7,7 @@ type Frame<'a> = Option<(hir::lexical_exit::ChildCursor<'a>, bool)>;
 const DEPTH: usize = 514;
 mod graph;
 pub(super) mod local;
+mod types;
 struct Member<'a> {
     module: &'a WorkspaceResolvedModule,
     function: &'a ResolvedFunction,
@@ -16,6 +17,7 @@ pub(super) struct Closure<'a> {
     helpers: Vec<Member<'a>>,
     lexical: Vec<&'a ResolvedFunction>,
     count: usize,
+    types: Vec<&'a ResolvedTypeDeclaration>,
     #[cfg(test)]
     walks: usize,
     #[cfg(test)]
@@ -27,6 +29,16 @@ impl ReplayContext for Closure<'_> {
     }
     fn types(&self) -> &[ResolvedTypeDeclaration] {
         &self.local.module.types
+    }
+    fn type_count(&self) -> usize {
+        self.local.module.types.len() + self.types.len()
+    }
+    fn type_at(&self, index: usize) -> Option<&ResolvedTypeDeclaration> {
+        self.local.module.types.get(index).or_else(|| {
+            index
+                .checked_sub(self.local.module.types.len())
+                .and_then(|i| self.types.get(i).copied())
+        })
     }
     fn interfaces(&self) -> &[ResolvedInterface] {
         &[]
@@ -125,7 +137,14 @@ fn calls(
                     ..
                 } = &cursor.expression().kind
                 {
-                    if instance.is_some() || !type_arguments.is_empty() {
+                    if instance.is_some()
+                        || (!type_arguments.is_empty()
+                            && !(crate::vec_ops::by_id(callee.as_str()).is_some()
+                                && matches!(type_arguments.as_slice(), [element]
+                                    if hir::is_scalar_resolved_type(element)
+                                    || matches!(element, hir::ResolvedType::String | hir::ResolvedType::Bytes)
+                                    || matches!(element, hir::ResolvedType::Nominal { arguments, .. } if arguments.is_empty()))))
+                    {
                         return Err(fail());
                     }
                     call(callee, resources)?;
@@ -149,6 +168,7 @@ fn builtin(id: &hir::DeclarationId) -> bool {
     crate::byte_ops::by_id(id.as_str()).is_some()
         || crate::string_ops::by_id(id.as_str()).is_some()
         || crate::str_ops::by_id(id.as_str()).is_some()
+        || crate::vec_ops::by_id(id.as_str()).is_some()
 }
 fn authenticate_target<'a>(
     id: &hir::DeclarationId,
@@ -322,7 +342,8 @@ fn authenticate_inner<'a>(
     resources
         .reserve_array::<Closure<'_>>(anchor, 1, "imported scalar closure owner")
         .map_err(|_| fail())?;
-    let local = local::authenticate(module, facts, resources, anchor)?;
+    let mut local = local::authenticate(module, facts, resources, anchor)?;
+    let types = types::discover(module, modules, facts, &mut local.index, resources, anchor)?;
     let graph = graph::discover(module, modules, facts, resources, anchor)?;
     #[cfg(test)]
     let edges = graph::order(&graph, resources, anchor, |_| {})?;
@@ -336,7 +357,6 @@ fn authenticate_inner<'a>(
         .len()
         .checked_add(helpers.len())
         .ok_or_else(fail)?;
-    let mut local = local;
     for member in &helpers {
         resources
             .construct(anchor, |physical, debit| {
@@ -368,6 +388,7 @@ fn authenticate_inner<'a>(
         helpers,
         lexical,
         count,
+        types,
         #[cfg(test)]
         walks,
         #[cfg(test)]

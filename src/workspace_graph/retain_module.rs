@@ -20,7 +20,21 @@ pub(super) fn retain_workspace_module(
     } else {
         None
     };
-    let scalar_helpers=static_text::scalar_helpers::capture(program,&resolved,programs,authored,authenticated_sources)?;
+    let scalar_helpers = static_text::scalar_helpers::capture(
+        program,
+        &resolved,
+        programs,
+        authored,
+        authenticated_sources,
+    )?;
+    let record_closure = static_text::record_closure::capture(
+        program,
+        &resolved,
+        programs,
+        authored,
+        authenticated_sources,
+    )?;
+    let record_source_revision = record_closure.as_ref().map(|facts| facts.revision());
     let retained_output_only = loan_scratch.is_some();
     hir::replay_agent_source_associations(program, &resolved.agents)
         .map_err(|error| vec![error])?;
@@ -90,6 +104,8 @@ pub(super) fn retain_workspace_module(
             native_law: false,
             static_text,
             scalar_helpers,
+            record_closure,
+            record_source_revision,
         },
         imported_instances,
     ))

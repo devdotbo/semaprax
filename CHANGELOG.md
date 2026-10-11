@@ -1,5 +1,7 @@
 # Changelog
 
+- Author source-bound defining-record sidecars and borrowed retained type closure for explicit monomorphic type imports (#745). Current module/type pointers, revision, layout and field namespace facts authenticate only the demanded declaration on the same preparation transferred into replay; exact Vec field-read digests and cumulative full-chain controls are authored. Generic instances, unsupported provider bodies and broader typed closure remain closed; execution qualification is pending.
+
 - Author the explicit source-only `fused-construction-v1` run/build facade (#768): read and parse once, hold the sealed full-validation owner through receiving, require a finite caller managed account, preserve ordinary route refusal and expose only settled results. Native/Wasm fuel is not advertised as interpreter fuel; paired package publication and target-specific account contracts remain mandatory. Original 4096, hostile option, failure and actual allocation/Drop gates are authored; qualification and broader #747 completion are pending.
 
 - Authored private native fused-row receiving now requires the concrete full

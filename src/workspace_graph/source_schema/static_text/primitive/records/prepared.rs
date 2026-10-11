@@ -47,12 +47,40 @@ pub(in crate::workspace_graph::source_schema::static_text::primitive) fn authent
     resources: &mut SelectedReplayPreparation,
     anchor: &ResolvedFunction,
 ) -> Result<(), Vec<Diagnostic>> {
-    let answer = authenticate_inner(module, source, facts, index, resources, anchor);
+    let answer = authenticate_inner(module, source, facts, index, resources, anchor, true, None);
     if answer.is_err() {
         resources.fail();
     }
     answer
 }
+pub(in crate::workspace_graph::source_schema::static_text::primitive) fn authenticate_provider(
+    module: &WorkspaceResolvedModule,
+    source: &Records,
+    demanded: &hir::DeclarationId,
+    facts: &BTreeMap<String, WorkspaceDeclarationFact>,
+    index: &mut hir::DeclarationIndex,
+    resources: &mut SelectedReplayPreparation,
+    anchor: &ResolvedFunction,
+) -> Result<(), Vec<Diagnostic>> {
+    let result = authenticate_inner(
+        module,
+        Some(source),
+        facts,
+        index,
+        resources,
+        anchor,
+        false,
+        Some(demanded),
+    );
+    if result.is_err() {
+        resources.fail();
+    }
+    result
+}
+#[allow(
+    clippy::too_many_arguments,
+    reason = "the provider preserves the independently authenticated local Vec index"
+)]
 fn authenticate_inner(
     module: &WorkspaceResolvedModule,
     source: Option<&Records>,
@@ -60,13 +88,31 @@ fn authenticate_inner(
     index: &mut hir::DeclarationIndex,
     resources: &mut SelectedReplayPreparation,
     anchor: &ResolvedFunction,
+    append_vec: bool,
+    demanded: Option<&hir::DeclarationId>,
 ) -> Result<(), Vec<Diagnostic>> {
     let expected = source.map_or(&[][..], |source| source.records.as_slice());
     debit(resources, anchor, 1)?;
     if module.types.len() != expected.len() {
         return Err(fail());
     }
+    let mut selected = 0usize;
     for (source, current) in expected.iter().zip(&module.types) {
+        if let Some(id) = demanded {
+            debit(
+                resources,
+                anchor,
+                id.as_str()
+                    .len()
+                    .checked_add(current.id.as_str().len())
+                    .and_then(|n| n.checked_add(1))
+                    .ok_or_else(fail)?,
+            )?;
+            if current.id != *id {
+                continue;
+            }
+        }
+        selected = selected.checked_add(1).ok_or_else(fail)?;
         let hir::ResolvedTypeDeclarationKind::Record { fields } = &current.kind else {
             return Err(fail());
         };
@@ -158,13 +204,18 @@ fn authenticate_inner(
             })
             .map_err(|_| fail())?;
     }
+    if demanded.is_some() && selected != 1 {
+        return Err(fail());
+    }
     // Canonical builtin metadata is reconstructed once. It does not select an
     // element shape or turn generic instantiation into imported authority.
-    resources
-        .construct(anchor, |physical, debit| {
-            index.append_vec_replay_metered(physical, debit)
-        })
-        .map_err(|_| fail())?;
+    if append_vec {
+        resources
+            .construct(anchor, |physical, debit| {
+                index.append_vec_replay_metered(physical, debit)
+            })
+            .map_err(|_| fail())?;
+    }
     Ok(())
 }
 fn namespace(

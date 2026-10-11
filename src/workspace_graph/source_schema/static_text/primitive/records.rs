@@ -62,7 +62,7 @@ pub(super) fn authenticate(
     Ok(())
 }
 
-mod prepared;
+pub(super) mod prepared;
 pub(super) use prepared::authenticate as authenticate_prepared;
 
 #[cfg(test)]

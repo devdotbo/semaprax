@@ -24,6 +24,48 @@ fn prepare<'a>(
 #[test]
 fn prepared_string_vec_and_borrowed_record_signatures_keep_current_type_pointers_and_canonical_vec()
 {
+    let imported = imported_build();
+    let consumer = imported
+        .hir
+        .modules
+        .iter()
+        .find(|m| m.module == "static.consumer")
+        .unwrap();
+    let provider = imported
+        .hir
+        .modules
+        .iter()
+        .find(|m| m.module == "static.rows")
+        .unwrap();
+    assert!(provider.static_text.is_none());
+    assert!(provider.record_closure.is_some());
+    let anchor = consumer.functions.first().unwrap();
+    let mut resources =
+        SelectedReplayPreparation::with_limits(anchor, 32_000_000, usize::MAX).unwrap();
+    let context = super::super::super::helpers::authenticate(
+        consumer,
+        &imported.hir.modules,
+        &imported.hir.declarations,
+        &mut resources,
+    )
+    .unwrap();
+    assert_eq!(context.type_count(), 1);
+    assert!(std::ptr::eq(
+        context.type_at(0).unwrap(),
+        &provider.types[0]
+    ));
+    assert!(!std::ptr::eq(
+        context.type_at(0).unwrap(),
+        &provider.types[0].clone()
+    ));
+    assert_eq!(
+        context
+            .declarations()
+            .record_fields(&provider.types[0].id)
+            .unwrap()
+            .len(),
+        2
+    );
     let source = format!("{}\n@id(\"flat.count\") fn count(values:borrow Vec<i64>)->i64 {{i64_from_usize(vec_len<i64>(values))}}\n@id(\"flat.texts\") fn texts(values:borrow Vec<string>)->i64 {{0}}\n@id(\"flat.rows\") fn rows(values:borrow Vec<Packet>)->i64 {{0}}", lexical_source());
     let build = build_source(&source);
     let module = module(&build);
@@ -53,6 +95,63 @@ fn prepared_string_vec_and_borrowed_record_signatures_keep_current_type_pointers
 }
 #[test]
 fn prepared_current_layout_namespace_and_signature_drift_are_independent_and_sticky() {
+    for attack in 0..6 {
+        let mut imported = imported_build();
+        let provider = imported
+            .hir
+            .modules
+            .iter_mut()
+            .find(|m| m.module == "static.rows")
+            .unwrap();
+        match attack {
+            0 => provider.record_source_revision = Some([0; 32]),
+            1 => provider.record_closure = None,
+            2 => {
+                provider.record_closure.as_mut().unwrap().records.records[0]
+                    .declaration
+                    .name = "Forged".into()
+            }
+            3 => {
+                provider.record_closure.as_mut().unwrap().records.records[0].field_explicit[0] =
+                    false
+            }
+            4 => {
+                imported.hir.declarations.get_mut("rows.row").unwrap().path =
+                    Some("stale.spx".into())
+            }
+            5 => {
+                imported
+                    .hir
+                    .declarations
+                    .get_mut("rows.row.n")
+                    .unwrap()
+                    .owner = Some("other.row".into())
+            }
+            _ => unreachable!(),
+        }
+        let consumer = imported
+            .hir
+            .modules
+            .iter()
+            .find(|m| m.module == "static.consumer")
+            .unwrap();
+        let anchor = consumer.functions.first().unwrap();
+        let mut resources =
+            SelectedReplayPreparation::with_limits(anchor, 32_000_000, usize::MAX).unwrap();
+        assert!(
+            super::super::super::helpers::authenticate(
+                consumer,
+                &imported.hir.modules,
+                &imported.hir.declarations,
+                &mut resources
+            )
+            .is_err(),
+            "imported record attack {attack}"
+        );
+        assert!(resources
+            .charge(anchor, 0, "sticky imported record denial")
+            .is_err());
+    }
     let build = build_lexical();
     let source = module(&build);
     let anchor = source.functions.first().unwrap();
@@ -286,4 +385,31 @@ fn full_chain(
     drop(session);
     drop(context);
     Ok((spent, charged))
+}
+
+fn imported_build() -> WorkspaceGraphBuild {
+    let provider = r#"module static.rows;
+@id("rows.row") record Row {@id("rows.row.n") n:i64,@id("rows.row.text") text:string,}
+@id("rows.weight") fn weight(n:i64)->i64 {n+1}
+"#;
+    let consumer = r#"module static.consumer;
+use type @id("rows.row") from static.rows as Row;
+use function @id("rows.weight") from static.rows as weight;
+@id("consumer.read") fn read(row:borrow Row)->i64 {row.n}
+@id("consumer.main") fn main()->i64 {
+ let key=str"x";let row=Row{n:41,text:"x"};let mut next=0;
+ while next<1 {next=next+1;if str_len_bytes(key)==1 {return weight(read(row));} else {0} 0}
+ read(row)
+}
+"#;
+    let sources = [("rows.spx", provider), ("consumer.spx", consumer)]
+        .into_iter()
+        .map(|(path, source)| WorkspaceSource {
+            path: path.into(),
+            source: format::canonical(&crate::parse(source, path).unwrap()),
+        })
+        .collect();
+    build_owned_retaining_sources_for_change(sources, MAX_CHANGE_BUILDER_BYTES)
+        .unwrap()
+        .0
 }

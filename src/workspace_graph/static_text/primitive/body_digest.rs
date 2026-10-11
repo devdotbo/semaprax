@@ -407,6 +407,25 @@ impl Encoder<'_> {
                 }
                 Some(())
             }
+            E::VecFieldRead {
+                element,
+                field,
+                bytes,
+                args,
+            } => {
+                if !admitted_vec_element(element) || args.len() != 2 {
+                    return None;
+                }
+                self.text("vec-field-read")?;
+                self.ty(element)?;
+                self.text(field.as_str())?;
+                self.bytes(&[u8::from(*bytes)])?;
+                self.number(args.len() as u64)?;
+                for argument in args {
+                    self.expression(argument, depth + 1)?;
+                }
+                Some(())
+            }
             E::Project { base, field } => {
                 self.text("project")?;
                 self.text(field.as_str())?;
@@ -416,7 +435,6 @@ impl Encoder<'_> {
             | E::FunctionReference { .. }
             | E::Invoke { .. }
             | E::LiteralFormat { .. }
-            | E::VecFieldRead { .. }
             | E::NativeRustImportCall(_)
             | E::HostCommandCall(_)
             | E::ConstructVariant { .. }

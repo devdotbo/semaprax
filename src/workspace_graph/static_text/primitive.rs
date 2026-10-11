@@ -101,11 +101,12 @@ fn capture_with_matching<const LEGACY: bool>(
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
     authenticated_sources: Option<&[WorkspaceSource]>,
 ) -> Result<Option<Box<Inventory>>, Vec<Diagnostic>> {
-    if program
-        .module_uses
-        .iter()
-        .any(|u| u.kind != crate::ast::ModuleUseKind::Function)
-        || !program.agents.is_empty()
+    if program.module_uses.iter().any(|u| {
+        !matches!(
+            u.kind,
+            crate::ast::ModuleUseKind::Function | crate::ast::ModuleUseKind::Type
+        )
+    }) || !program.agents.is_empty()
         || !program.interfaces.is_empty()
         || !program.protocols.is_empty()
         || !program.implementations.is_empty()

@@ -229,6 +229,34 @@ pub(in crate::workspace_graph) fn with_test_context<T>(
     Ok(apply(&context))
 }
 
+/// Tests hand in the sole owned preparation, and receive it back only with
+/// the current source-authenticated context held for the callback's duration.
+#[cfg(test)]
+pub(in crate::workspace_graph) fn with_prepared_test_context<T>(
+    module: &WorkspaceResolvedModule,
+    modules: &[WorkspaceResolvedModule],
+    facts: &BTreeMap<String, WorkspaceDeclarationFact>,
+    mut preparation: crate::cleanup_plan::SelectedReplayPreparation,
+    apply: impl FnOnce(&dyn ReplayContext, crate::cleanup_plan::SelectedReplayPreparation) -> T,
+) -> Result<T, Vec<Diagnostic>> {
+    let anchor = module.functions.first().ok_or_else(fail)?;
+    current_module(module, modules, &mut preparation, anchor)?;
+    let imported = module
+        .static_text
+        .as_ref()
+        .and_then(|i| i.lexical.as_ref())
+        .is_some_and(|i| i.imported);
+    if imported {
+        let context = helpers::authenticate(module, modules, facts, &mut preparation)?;
+        return Ok(apply(&context, preparation));
+    }
+    preparation
+        .reserve_array::<Context<'_>>(anchor, 1, "held test source context")
+        .map_err(|_| fail())?;
+    let context = helpers::local::authenticate(module, facts, &mut preparation, anchor)?;
+    Ok(apply(&context, preparation))
+}
+
 fn current_module(
     module: &WorkspaceResolvedModule,
     modules: &[WorkspaceResolvedModule],

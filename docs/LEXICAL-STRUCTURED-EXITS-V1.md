@@ -458,3 +458,13 @@ construction also verifies that its defining module is the actual held member
 of the current module universe. These source-only changes have not been
 executed or qualified; #745 remains partial, including the imported nominal
 declaration/type closure and complete String/Vec receiving qualification.
+
+Defining modules demanded by an explicit monomorphic type import retain a separate
+source-bound flat-record sidecar before owned HIR filtering, including providers
+without static literals. A borrowed context authenticates the exact retained type
+pointer, defining path/module, record and field identities, source revision, and
+layout before constructing only the demanded declaration in its minimal index.
+Capture work, held evidence backing, lookup scratch and index construction consume
+the same preparation that is moved into replay. Unsupported layouts and generic
+instances remain closed; this source checkpoint is not an executable completion
+claim for imported record or Vec composition.

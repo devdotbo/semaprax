@@ -180,7 +180,11 @@ fn assert_lexical(function: &hir::ResolvedFunction, kinds: &[LexicalExitKind]) {
 }
 
 fn function<'a>(module: &'a WorkspaceResolvedModule, id: &str) -> &'a hir::ResolvedFunction {
-    module.functions.iter().find(|f| f.id.as_str() == id).unwrap()
+    module
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == id)
+        .unwrap()
 }
 fn function_mut<'a>(
     module: &'a mut WorkspaceResolvedModule,
@@ -202,7 +206,11 @@ fn plan_parity(module: &WorkspaceResolvedModule, direct: &hir::ResolvedProgram) 
             .find(|f| f.id == retained.id)
             .unwrap();
         assert_eq!(retained.body, control.body, "{}", retained.id);
-        assert_eq!(retained.cleanup_plan, control.cleanup_plan, "{}", retained.id);
+        assert_eq!(
+            retained.cleanup_plan, control.cleanup_plan,
+            "{}",
+            retained.id
+        );
     }
 }
 
@@ -226,7 +234,11 @@ fn evaluate(program: &hir::ResolvedProgram) -> ResolvedEvaluationOutcome {
 
 /// The linked retained program and the direct program execute identically
 /// on repeated entry; `None` expects the sticky arithmetic failure.
-fn runtime_parity(build: &WorkspaceGraphBuild, direct: &hir::ResolvedProgram, expected: Option<i64>) {
+fn runtime_parity(
+    build: &WorkspaceGraphBuild,
+    direct: &hir::ResolvedProgram,
+    expected: Option<i64>,
+) {
     let linked = build
         .linked_owned_data_api_program_with_roots("static.writer", &[])
         .unwrap();
@@ -237,7 +249,8 @@ fn runtime_parity(build: &WorkspaceGraphBuild, direct: &hir::ResolvedProgram, ex
             Some(value) => assert_eq!(actual, ResolvedEvaluationOutcome::ReturnedI64(value)),
             None => assert!(
                 matches!(&actual, ResolvedEvaluationOutcome::LanguageFailure(status)
-                    if status.domain_id() == "semaprax.arithmetic.v1"),
+                    if status.domain_id() == "semaprax.arithmetic.v1"
+                        && status.code() == crate::cleanup_plan::StatusCase::DivisionByZero.code()),
                 "{actual:?}"
             ),
         }
@@ -249,28 +262,43 @@ type Replayed = (Vec<Result<(), Diagnostic>>, (usize, usize), bool);
 /// One held selected session validates every member against one cumulative
 /// work and backing ledger, then finishes (or refuses) and drops it.
 fn replay(
-    context: &dyn crate::cleanup::ReplayContext,
+    build: &WorkspaceGraphBuild,
     members: &[&hir::ResolvedFunction],
     work: usize,
     bytes: usize,
-) -> Result<Replayed, Diagnostic> {
+) -> Result<Replayed, Vec<Diagnostic>> {
     let anchor = members[0];
-    let preparation = SelectedReplayPreparation::with_limits(anchor, work, bytes)?;
-    let mut session = SelectedReplaySession::from_preparation(context, anchor, preparation)?;
-    let mut results = Vec::new();
-    for member in members {
-        results.push(session.validate(member));
-    }
-    let metrics = session.metrics();
-    if results.iter().any(Result::is_err) {
-        // The refusal is sticky: no later member restarts the spent ledger.
-        let again = session.validate(anchor).unwrap_err();
-        assert_eq!(again.code, "SPX-H006");
-        assert!(again.message.contains("already failed"), "{again:?}");
-        assert_eq!(session.metrics(), metrics, "a refused retry charges nothing");
-    }
-    let finished = session.finish().is_ok();
-    Ok((results, metrics, finished))
+    let preparation =
+        SelectedReplayPreparation::with_limits(anchor, work, bytes).map_err(|e| vec![e])?;
+    super::super::primitive::with_prepared_test_context(
+        writer(build),
+        &build.hir.modules,
+        &build.hir.declarations,
+        preparation,
+        |context, preparation| -> Result<Replayed, Diagnostic> {
+            let mut session =
+                SelectedReplaySession::from_preparation(context, anchor, preparation)?;
+            let mut results = Vec::new();
+            for member in members {
+                results.push(session.validate(member));
+            }
+            let metrics = session.metrics();
+            if results.iter().any(Result::is_err) {
+                // The refusal is sticky: no later member restarts the spent ledger.
+                let again = session.validate(anchor).unwrap_err();
+                assert_eq!(again.code, "SPX-H006");
+                assert!(again.message.contains("already failed"), "{again:?}");
+                assert_eq!(
+                    session.metrics(),
+                    metrics,
+                    "a refused retry charges nothing"
+                );
+            }
+            let finished = session.finish().is_ok();
+            Ok((results, metrics, finished))
+        },
+    )?
+    .map_err(|e| vec![e])
 }
 
 fn lexical_members(module: &WorkspaceResolvedModule) -> Vec<&hir::ResolvedFunction> {
@@ -350,7 +378,11 @@ fn record_fields_mut<'a>(
 fn retained_static_string_append_and_replacement_compose_with_direct_parity() {
     let control = direct(STRING_SOURCE);
     for id in ["static.compose", "static.replace"] {
-        let function = control.functions.iter().find(|f| f.id.as_str() == id).unwrap();
+        let function = control
+            .functions
+            .iter()
+            .find(|f| f.id.as_str() == id)
+            .unwrap();
         let kinds: &[LexicalExitKind] = if id == "static.compose" {
             &[LexicalExitKind::Continue, LexicalExitKind::Return]
         } else {
@@ -361,12 +393,10 @@ fn retained_static_string_append_and_replacement_compose_with_direct_parity() {
     let retained = build(STRING_SOURCE);
     admitted(&retained);
     let module = writer(&retained);
-    assert!(module
-        .static_text
-        .as_ref()
-        .unwrap()
-        .lexical
-        .is_some(), "authenticated primitive source inventory is captured");
+    assert!(
+        module.static_text.as_ref().unwrap().lexical.is_some(),
+        "authenticated primitive source inventory is captured"
+    );
     plan_parity(module, &control);
     for id in ["static.compose", "static.replace"] {
         assert_lexical(function(module, id), &[LexicalExitKind::Continue]);
@@ -440,7 +470,9 @@ fn retained_string_composition_rejects_certificate_schema_renewal_and_signature_
                     .expect("authored status producers");
             }
             5 => forge_instance(function_mut(module, "app.main")),
-            6 => function_mut(module, "static.compose").params[0].name.push('x'),
+            6 => function_mut(module, "static.compose").params[0]
+                .name
+                .push('x'),
             _ => module
                 .static_text
                 .as_mut()
@@ -480,22 +512,22 @@ fn two_function_selected_session_is_cumulative_exact_and_one_short_through_drop(
             .unwrap();
         }
         let (results, (remaining, charged), finished) =
-            replay(context, &members, WIDE_WORK, WIDE_BYTES).unwrap();
+            replay(&retained, &members, WIDE_WORK, WIDE_BYTES).unwrap();
         assert!(results.iter().all(Result::is_ok) && finished);
         let spent = WIDE_WORK - remaining;
         let (first, (first_remaining, first_charged), _) =
-            replay(context, &members[..1], WIDE_WORK, WIDE_BYTES).unwrap();
+            replay(&retained, &members[..1], WIDE_WORK, WIDE_BYTES).unwrap();
         assert!(first.iter().all(Result::is_ok));
         // The second member continues the first member's ledger.
         assert!(WIDE_WORK - first_remaining < spent);
         assert!(first_charged < charged);
-        let (exact, metrics, finished) = replay(context, &members, spent, charged).unwrap();
+        let (exact, metrics, finished) = replay(&retained, &members, spent, charged).unwrap();
         assert!(exact.iter().all(Result::is_ok) && finished);
         assert_eq!(metrics, (0, charged));
         // One unit short: the first member still fits, the final debit belongs
         // to the second member, and the refusal survives into finish/Drop.
         for (work, bytes) in [(spent - 1, charged), (spent, charged - 1)] {
-            let (results, _, finished) = replay(context, &members, work, bytes).unwrap();
+            let (results, _, finished) = replay(&retained, &members, work, bytes).unwrap();
             assert!(results[0].is_ok(), "{work}/{bytes}");
             assert_eq!(results[1].as_ref().unwrap_err().code, "SPX-H006");
             assert!(!finished);
@@ -512,7 +544,10 @@ fn retained_builtin_string_vec_and_flat_record_renewal_compose_with_direct_parit
         .iter()
         .find(|f| f.id.as_str() == "static.collect")
         .unwrap();
-    assert_lexical(collect, &[LexicalExitKind::Continue, LexicalExitKind::Return]);
+    assert_lexical(
+        collect,
+        &[LexicalExitKind::Continue, LexicalExitKind::Return],
+    );
     let retained = build(VEC_SOURCE);
     admitted(&retained);
     let module = writer(&retained);
@@ -603,7 +638,11 @@ fn retained_vec_composition_rejects_element_layout_finalizer_and_renewal_drift()
                 plan.schema = crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V15
             }
             _ => {
-                let field = retained.hir.declarations.get_mut("static.row.text").unwrap();
+                let field = retained
+                    .hir
+                    .declarations
+                    .get_mut("static.row.text")
+                    .unwrap();
                 assert_eq!(field.owner.as_deref(), Some("static.row"));
                 field.owner = None
             }
@@ -689,7 +728,11 @@ fn retained_source_for_rejects_latch_target_and_field_namespace_drift() {
             }
             3 => forge_instance(function_mut(module, "app.main")),
             _ => {
-                let field = retained.hir.declarations.get_mut("static.row.text").unwrap();
+                let field = retained
+                    .hir
+                    .declarations
+                    .get_mut("static.row.text")
+                    .unwrap();
                 assert_eq!(field.owner.as_deref(), Some("static.row"));
                 field.owner = None
             }
@@ -796,8 +839,12 @@ fn retained_imported_provider_identity_layout_path_and_body_drift_fail_closed() 
             }
             // The consumer cannot claim the provider's defining source.
             6 => {
-                retained.hir.declarations.get_mut("rows.row").unwrap().module =
-                    Some("static.writer".into())
+                retained
+                    .hir
+                    .declarations
+                    .get_mut("rows.row")
+                    .unwrap()
+                    .module = Some("static.writer".into())
             }
             _ => forge_instance(function_mut(writer_mut(&mut retained), "app.main")),
         }

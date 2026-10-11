@@ -528,6 +528,8 @@ struct WorkspaceResolvedModule {
     native_law: bool,
     static_text: Option<Box<static_text::Inventory>>,
     scalar_helpers: Option<Box<static_text::scalar_helpers::Inventory>>,
+    record_closure: Option<Box<static_text::record_closure::Inventory>>,
+    record_source_revision: Option<[u8; 32]>,
 }
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub(crate) struct WorkspaceEdge {

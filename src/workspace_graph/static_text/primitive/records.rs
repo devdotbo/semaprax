@@ -21,7 +21,7 @@ fn field_type(ty: &Type) -> Option<hir::ResolvedType> {
         ))
     .then_some(current)
 }
-pub(super) fn preflight(
+pub(in crate::workspace_graph) fn preflight(
     program: &Program,
     resolved: &hir::ResolvedProgram,
     work: &mut usize,
@@ -112,11 +112,20 @@ pub(super) fn source_type_matches(
         }
         arguments.is_empty()
             && actual.is_empty()
-            && program
+            && (program
                 .types
                 .iter()
                 .filter(|record| record.name == *name && record.stable_id == declaration.as_str())
                 .count()
+                + program
+                    .module_uses
+                    .iter()
+                    .filter(|import| {
+                        import.kind == crate::ast::ModuleUseKind::Type
+                            && import.alias == *name
+                            && import.persistent_id == declaration.as_str()
+                    })
+                    .count())
                 == 1
     } else {
         super::ty(source).as_ref() == Some(current)
@@ -128,11 +137,18 @@ pub(super) fn source_type_admitted(program: &Program, source: &Type) -> bool {
             return matches!(arguments.as_slice(), [element] if vec_element_admitted(program, element));
         }
         arguments.is_empty()
-            && program
+            && (program
                 .types
                 .iter()
                 .filter(|record| record.name == *name)
                 .count()
+                + program
+                    .module_uses
+                    .iter()
+                    .filter(|import| {
+                        import.kind == crate::ast::ModuleUseKind::Type && import.alias == *name
+                    })
+                    .count())
                 == 1
     } else {
         super::ty(source).is_some()
@@ -195,7 +211,7 @@ pub(super) fn type_capacity_bytes(current: &hir::ResolvedType) -> Option<usize> 
         Some(0)
     }
 }
-pub(super) fn capture(
+pub(in crate::workspace_graph) fn capture(
     program: &Program,
     resolved: &hir::ResolvedProgram,
     work: &mut usize,
@@ -271,7 +287,7 @@ pub(super) fn capture(
     Ok(Some(Box::new(Records { records })))
 }
 impl Records {
-    pub(super) fn owned_capacity_bytes(&self) -> Option<usize> {
+    pub(in crate::workspace_graph) fn owned_capacity_bytes(&self) -> Option<usize> {
         self.records.iter().try_fold(
             std::mem::size_of::<Records>().checked_add(
                 self.records
