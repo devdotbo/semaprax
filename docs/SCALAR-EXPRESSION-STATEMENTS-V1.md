@@ -20,6 +20,10 @@ or graph authority. Both source verifiers independently check its shape,
 actual scalar type and Value mode. HIR resolves the ordinary let and all
 backends execute its ordinary left-to-right operand, staged calls and cleanup.
 Lazy boolean operands stay lazy. No owning-result discard is introduced.
+The semantic lowering equals the explicit fresh-let form, while the graph
+revision remains bound to each distinct canonical source spelling. Cross-source
+graph replay remains refused. Unknown operands retain `SPX-T202` before discard
+typing.
 
 Canonical formatting preserves `expr;` only for structurally consistent
 markers whose binding has no readers or competing declarations in the enclosing
@@ -34,7 +38,7 @@ exit privilege. See [lexical exits](LEXICAL-STRUCTURED-EXITS-V1.md),
 [statement if](STATEMENT-IF-CANONICAL-V1.md), and
 [language ergonomics](LANGUAGE-ERGONOMICS-V1.md).
 
-Owning gates: `language::statement_if::scalar_expression::` (six authored
+Owning gates: `language::statement_if::scalar_expression::` (seven authored
 bodies), the existing statement-if/foreign-syntax controls, and AST carrier
 cache round-trip. These cover all eight scalars, hygiene, canonical/graph
 replay, forged markers, owning/borrowed refusals, prior diagnostics, consumed

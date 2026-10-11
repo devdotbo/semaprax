@@ -2,11 +2,8 @@
 mod call_closure;
 mod scoped_vec_field;
 use call_closure::{call_graph, has_call_cycle};
-
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
-
-use sha2::{Digest, Sha256};
 
 use crate::ast::{Expr, ExprKind, ParamMode, Program, Type};
 use crate::diagnostic::{quote_json, Diagnostic};
@@ -15,6 +12,7 @@ use crate::hir::{
     ResolvedExprKind, ResolvedFunction, ResolvedStatement, ValueId,
 };
 use crate::{format, graph, parse, patch};
+use sha2::{Digest, Sha256};
 
 const REPORT_SCHEMA: &str = "semaprax.diagnostic-repair.v1";
 const PREVIEW_SCHEMA: &str = "semaprax.diagnostic-repair-preview.v1";
@@ -468,7 +466,7 @@ pub(crate) fn precheck_program(program: &Program) -> Result<(), Vec<Diagnostic>>
             | ExprKind::Float64(_)
             | ExprKind::Bool(_)
             | ExprKind::String(_)
-| ExprKind::BorrowedUtf8Literal(_)
+            | ExprKind::BorrowedUtf8Literal(_)
             | ExprKind::ArrayU8(_)
             | ExprKind::RepeatArrayU8 { .. }
             | ExprKind::Var(_) => {}
@@ -619,7 +617,7 @@ fn scalar_expr(expression: &Expr) -> bool {
         | ExprKind::Float64(_)
         | ExprKind::Bool(_)
         | ExprKind::String(_)
-| ExprKind::BorrowedUtf8Literal(_)
+        | ExprKind::BorrowedUtf8Literal(_)
         | ExprKind::Var(_) => true,
         ExprKind::ArrayU8(_) | ExprKind::RepeatArrayU8 { .. } => false,
         ExprKind::Call {

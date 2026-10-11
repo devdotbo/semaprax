@@ -180,7 +180,7 @@ fn keyword_and_unknown_identifier_statements_point_at_the_offending_token() {
         let diagnostics = semaprax::check(&source, "habit.spx").unwrap_err();
         let diagnostic = diagnostics
             .iter()
-            .find(|d| d.code == "SPX-T208")
+            .find(|d| d.code == "SPX-T202")
             .expect("unknown operand remains rejected before discard typing");
         assert_eq!(
             diagnostic.span.map(|span| (span.line, span.column)),

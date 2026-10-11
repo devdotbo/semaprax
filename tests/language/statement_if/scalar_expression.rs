@@ -65,18 +65,18 @@ fn owned_aggregate_function_and_borrowed_results_require_explicit_binding() {
 #[test]
 fn final_tail_underscore_and_initializer_exit_priorities_stay_closed() {
     assert_eq!(parse(&source("1;"), PATH).unwrap_err().code, "SPX-P106");
-    assert!(
-        errors("let _=1; let _=2; 0")
-            .iter()
-            .any(|d| d.code == "SPX-T209")
-    );
+    assert!(errors("let _=1; let _=2; 0")
+        .iter()
+        .any(|d| d.code == "SPX-T209"));
     let diagnostics = errors("let mut i=0; while i<1 { {continue;}; i=i+1; 0 } i");
     assert!(
         diagnostics.iter().any(|d| d.code == "SPX-T312"),
         "{diagnostics:?}"
     );
     // Operand diagnostics precede discard typing; no marker can hide an unknown input.
-    assert!(errors("missing; 0").iter().any(|d| d.code == "SPX-T208"));
+    let diagnostics = errors("missing; 0");
+    assert!(diagnostics.iter().any(|d| d.code == "SPX-T202"));
+    assert!(!diagnostics.iter().any(|d| d.code == "SPX-T315"));
 }
 #[test]
 fn forged_marker_never_hides_a_reader_mutability_annotation_or_duplicate() {
@@ -103,11 +103,9 @@ fn forged_marker_never_hides_a_reader_mutability_annotation_or_duplicate() {
     if let ast::Statement::Let { mutable, .. } = &mut statements[0] {
         *mutable = true;
     }
-    assert!(
-        verify::verify(&program)
-            .iter()
-            .any(|d| d.code == "SPX-T315")
-    );
+    assert!(verify::verify(&program)
+        .iter()
+        .any(|d| d.code == "SPX-T315"));
     assert!(format::canonical(&program).contains("let mut"));
     if let ast::ExprKind::Block { statements, .. } = &mut program.functions[0].body.kind {
         if let ast::Statement::Let {
@@ -118,11 +116,9 @@ fn forged_marker_never_hides_a_reader_mutability_annotation_or_duplicate() {
             *declared = Some(ast::Type::I64);
         }
     }
-    assert!(
-        verify::verify(&program)
-            .iter()
-            .any(|d| d.code == "SPX-T315")
-    );
+    assert!(verify::verify(&program)
+        .iter()
+        .any(|d| d.code == "SPX-T315"));
     assert!(format::canonical(&program).contains(": i64"));
     if let ast::ExprKind::Block { statements, .. } = &mut program.functions[0].body.kind {
         if let ast::Statement::Let {
@@ -137,12 +133,26 @@ fn forged_marker_never_hides_a_reader_mutability_annotation_or_duplicate() {
         let duplicate = statements[0].clone();
         statements.push(duplicate);
     }
-    assert!(
-        verify::verify(&program)
-            .iter()
-            .any(|d| d.code == "SPX-T209")
-    );
+    assert!(verify::verify(&program)
+        .iter()
+        .any(|d| d.code == "SPX-T209"));
     assert!(format::canonical(&program).contains(&format!("let {name}")));
+}
+fn same_lowering_with_source_bound_revisions(authored: &ast::Program, ordinary: &ast::Program) {
+    let authored_json = graph::to_json(authored).unwrap();
+    let ordinary_json = graph::to_json(ordinary).unwrap();
+    graph::verify_json(authored, &authored_json).unwrap();
+    graph::verify_json(ordinary, &ordinary_json).unwrap();
+    assert!(graph::verify_json(authored, &ordinary_json).is_err());
+    assert!(graph::verify_json(ordinary, &authored_json).is_err());
+    let mut authored_graph: serde_json::Value = serde_json::from_str(&authored_json).unwrap();
+    let mut ordinary_graph: serde_json::Value = serde_json::from_str(&ordinary_json).unwrap();
+    assert_eq!(authored_graph["revision"], graph::revision(authored));
+    assert_eq!(ordinary_graph["revision"], graph::revision(ordinary));
+    assert_ne!(authored_graph["revision"], ordinary_graph["revision"]);
+    authored_graph.as_object_mut().unwrap().remove("revision");
+    ordinary_graph.as_object_mut().unwrap().remove("revision");
+    assert_eq!(authored_graph, ordinary_graph);
 }
 #[test]
 fn normalizer_preserves_lazy_failure_and_consumed_arguments_across_backends() {
@@ -150,10 +160,7 @@ fn normalizer_preserves_lazy_failure_and_consumed_arguments_across_backends() {
     let program = check(text, PATH).unwrap();
     let lowered = "module scalar.calls; @id(\"consume\") fn consume(text:string)->i64 { string_len(text) } @id(\"main\") fn main()->i64 { let _if1=consume(\"abc\"); let _if2=false && (1/0==0); 19 }";
     let ordinary = check(lowered, PATH).unwrap();
-    assert_eq!(
-        graph::to_json(&program).unwrap(),
-        graph::to_json(&ordinary).unwrap()
-    );
+    same_lowering_with_source_bound_revisions(&program, &ordinary);
     assert_eq!(super::run(text, false), "19");
     if super::command_available("clang") {
         assert_eq!(super::run(text, true), "19");
@@ -163,10 +170,7 @@ fn normalizer_preserves_lazy_failure_and_consumed_arguments_across_backends() {
     let ordinary_failure = "module scalar.failure; @id(\"fail\") fn fail(text:string)->i64 { let n=string_len(text); n/(n-3) } @id(\"main\") fn main()->i64 { let _if1=fail(\"abc\"); 19 }";
     let failure_program = check(failing, PATH).unwrap();
     let ordinary_program = check(ordinary_failure, PATH).unwrap();
-    assert_eq!(
-        graph::to_json(&failure_program).unwrap(),
-        graph::to_json(&ordinary_program).unwrap()
-    );
+    same_lowering_with_source_bound_revisions(&failure_program, &ordinary_program);
     for native in [false, true] {
         if native && !super::command_available("clang") {
             continue;

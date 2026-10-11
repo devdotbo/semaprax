@@ -1,43 +1,40 @@
 # SEMAPRAX authoring guide
 
-Status: authored bounded contract; executable qualification remains separately gated.
-Audience: coding agents, compiler contributors and reviewers.
+Status: executable qualification pending.
 
-## One source file
+## Source
 
 Use `semaprax fmt <file>`, then `semaprax check <file>`.
-Single-file native builds use `semaprax build <file> --target native -o <path>`;
-there is no native `--profile` option. A single-file web build may select
+Native builds use `semaprax build <file> --target native -o <path>`;
+there is no native `--profile` option. Web source builds may select
 `internal-strings-v1` or `text-toolkit-v1` with `--profile`; these are source
 build profiles, not Project profiles.
 
-## A Project
+## Project
 
-Use `semaprax help new` to choose a starter and `semaprax new <directory>
---template <template>` to create it. The generated `semaprax.toml` declares modules,
-tests, dependencies, capabilities, targets, and its Project profile. Follow the
-generated `README.md`, then run `semaprax check <directory>` and the listed
-test or run command. Project profiles are distinct from single-file web
+Choose a starter with `semaprax help new`; create it with `semaprax new <directory>
+--template <template>`. `semaprax.toml` declares modules, tests, dependencies,
+capabilities, targets, and its Project profile. Follow `README.md`: run
+`semaprax check <directory>` and its test or run command. Project profiles are distinct from single-file web
 profiles.
 
 For a native UTF-8 file command, `source-command-file-text` declares `source-command.v1`,
-`argv-utf8+file-text.v1`, and `native64`. Its generated README documents
-build and invocation. This route refuses Web, Wasm, and npm targets.
+`argv-utf8+file-text.v1`, and `native64`. Its README documents invocation.
+This route refuses Web, Wasm, and npm targets.
 
-## Find an admitted shape
+## Discovery
 
-Use `semaprax help library <module|name|stable-id>` for a standard-library
-signature and its profile or dependency requirements. Use
-`semaprax help shapes <kind|stable-id|path#stable-id>` for a checked source
-example. For exact syntax, ask `semaprax help language <topic>`; use
-`semaprax help language topics` to list topics. The complete quick reference
-is `semaprax help language all`.
+Use `semaprax help library <module|name|stable-id>` for library signatures
+and profile or dependency requirements. Use
+`semaprax help shapes <kind|stable-id|path#stable-id>` for checked examples.
+For syntax, ask `semaprax help language <topic>`; use
+`semaprax help language topics` to list topics. The quick reference is `semaprax help language all`.
 
 Choose an application route with `semaprax help language author:routes`.
 Find library declarations with `semaprax help language find:<word>:0`;
-each bounded page prints its exact continuation.
+Each page prints its continuation.
 
-For statement-tail break/continue/return and their closed contexts, use
+For statement-tail break/continue/return contexts, use
 `semaprax help language author:lexical-exits`; executable qualification is pending.
 
 Help grants no capability or profile.
