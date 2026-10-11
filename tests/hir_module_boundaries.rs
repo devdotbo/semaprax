@@ -83,7 +83,11 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
             "\n",
             include_str!("../src/loop_calls/byte_writer/source_index.rs")
         ),
-        include_str!("../src/loop_calls/byte_writer/resolved.rs"),
+        concat!(
+            include_str!("../src/loop_calls/byte_writer/resolved.rs"),
+            "\n",
+            include_str!("../src/loop_calls/byte_writer/resolved/selected.rs")
+        ),
         include_str!("../src/loop_calls/byte_writer/bindings.rs"),
         include_str!("../src/loop_calls/byte_writer/module_index.rs"),
         include_str!("../src/hir/validation/proof_return.rs"),
@@ -121,8 +125,10 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
     let format_macro = root.find("macro_rules! format {").unwrap();
     let validation_module = root.find("mod validation;").unwrap();
     assert!(format_macro < validation_module);
-    assert!(root[format_macro..validation_module]
-        .contains("crate::bounded_output::budgeted_format(format_args!"));
+    assert!(
+        root[format_macro..validation_module]
+            .contains("crate::bounded_output::budgeted_format(format_args!")
+    );
     assert!(validation.contains("format!("));
     for forbidden in ["std::format", "::format!", "use std::format"] {
         assert!(

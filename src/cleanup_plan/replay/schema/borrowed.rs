@@ -9,6 +9,7 @@ pub(super) struct Profile<'a> {
     program: &'a dyn crate::cleanup::ReplayContext,
     function: &'a ResolvedFunction,
     inventory: crate::cleanup::CleanupInventory,
+    renewals: crate::cleanup_plan::ReplayRenewalBindings<'a>,
 }
 impl<'a> Profile<'a> {
     pub(super) fn matches(
@@ -20,6 +21,13 @@ impl<'a> Profile<'a> {
     }
     pub(super) fn inventory(&self) -> &crate::cleanup::CleanupInventory {
         &self.inventory
+    }
+    pub(super) fn renewals(
+        &self,
+        program: &dyn crate::cleanup::ReplayContext,
+        function: &ResolvedFunction,
+    ) -> Option<&crate::cleanup_plan::ReplayRenewalBindings<'a>> {
+        self.matches(program, function).then_some(&self.renewals)
     }
 }
 fn fail(function: &ResolvedFunction) -> Diagnostic {
@@ -236,19 +244,34 @@ pub(super) fn build<'a>(
     // Temporarily move the sole backing owner so constructor work can debit the
     // active replay ledger. Restore it on every Result path; no credits return.
     let mut physical = budget.physical.take().ok_or_else(|| fail(function))?;
-    let inventory = crate::cleanup::build_borrowed_helper_inventory_with_budget(
-        program,
-        function,
-        &mut physical,
-        &mut |units| budget.charge(function, units, "borrowed helper independent inventory"),
-    );
+    let result = (|| {
+        let sites = crate::loop_calls::byte_writer::checked_absent_with_work_reservation(
+            program,
+            function,
+            &mut physical,
+            &mut |units| budget.charge(function, units, "borrowed helper exact writer census"),
+        )?;
+        if !sites.is_empty() {
+            return Err(fail(function));
+        }
+        crate::cleanup::build_borrowed_helper_inventory_with_budget(
+            program,
+            function,
+            &mut physical,
+            &mut |units| budget.charge(function, units, "borrowed helper independent inventory"),
+        )
+    })();
     budget.physical = Some(physical);
-    let inventory = inventory?;
+    let inventory = result?;
     budget.reserve_array::<Profile<'_>>(function, 1, "borrowed helper held profile")?;
     Ok(Profile {
         program,
         function,
         inventory,
+        // Every other renewal family requires an owning Bytes/String/Vec/Step
+        // binding or lexical owning loop, all excluded by the complete walk.
+        // Writer absence additionally retains its original census limits above.
+        renewals: crate::cleanup_plan::ReplayRenewalBindings::empty(),
     })
 }
 #[cfg(test)]

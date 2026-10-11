@@ -72,8 +72,63 @@ pub(crate) fn checked_bindings_with_reservation<'a>(
             ))
         },
         |bytes, physical| physical.reserve(bytes).is_ok(),
+        |_, _| Ok(()),
     )
 }
+/// Guarded receiving proof for a complete nonowning helper profile. The
+/// original potential short circuit, body census, local work and depth limits
+/// still run. This receiver cannot mint a writer site or accept an owning Bytes
+/// assignment; a caller must independently authenticate its entire shape.
+#[cfg(test)]
+pub(crate) fn checked_absent_with_work_reservation<'a>(
+    program: &'a dyn crate::cleanup::ReplayContext,
+    function: &'a ResolvedFunction,
+    physical: &mut ReplayPhysicalReservation,
+    debit: &mut dyn FnMut(usize) -> Result<(), crate::diagnostic::Diagnostic>,
+) -> Result<HelperBindings<'a>, crate::diagnostic::Diagnostic> {
+    // Mirror potential()'s evaluated return-type and parameter probes exactly.
+    // No declaration names, cloned type keys or alternate lookup universe.
+    let mut possible = false;
+    for member in program.functions() {
+        debit(1)?;
+        if member.return_type == ResolvedType::Bytes {
+            for parameter in &member.params {
+                debit(1)?;
+                if parameter.ownership == OwnershipMode::Own && parameter.ty == ResolvedType::Bytes
+                {
+                    possible = true;
+                    break;
+                }
+            }
+        }
+        if possible {
+            break;
+        }
+    }
+    if !possible {
+        return Ok(HelperBindings::default());
+    }
+    physical
+        .reserve(std::mem::size_of::<CensusCursor<'_>>())
+        .map_err(|_| census_error())?;
+    let mut cursor = CensusCursor {
+        frames: [(&function.body, 0, 0); CENSUS_DEPTH],
+    };
+    checked_bindings_with_storage(
+        function,
+        &mut cursor,
+        physical,
+        |binding, _, _| {
+            if binding.ty == ResolvedType::Bytes && binding.ownership == OwnershipMode::Own {
+                return Err(census_error());
+            }
+            Ok(false)
+        },
+        |bytes, physical| physical.reserve(bytes).is_ok(),
+        |units, _| debit(units),
+    )
+}
+
 fn primitive_param(mode: OwnershipMode, ty: &ResolvedType) -> bool {
     match mode {
         OwnershipMode::Own => *ty == ResolvedType::Bytes,
@@ -194,5 +249,101 @@ mod tests {
         assert!(sites.is_empty());
         assert_eq!(physical.charged(), 0);
         assert!(physical.reserve(0).is_ok());
+    }
+    fn copy_census_program(width: usize) -> crate::hir::ResolvedProgram {
+        let statements = (0..width)
+            .map(|index| format!("let n{index}=0;"))
+            .collect::<String>();
+        let source = format!(
+            "module census; @id(\"probe\") fn probe()->i64 {{{statements}0}} \
+             @id(\"writer\") fn writer(value:own Bytes)->Bytes {{value}} \
+             @id(\"main\") fn main()->i64 {{0}}"
+        );
+        crate::hir::resolve(&crate::check(&source, "copy-writer-census.spx").unwrap()).unwrap()
+    }
+    fn prepared_census(
+        program: &crate::hir::ResolvedProgram,
+        calls: usize,
+        work: usize,
+        bytes: usize,
+    ) -> (
+        Result<(usize, usize), &'static str>,
+        crate::test_allocation_observer::Metrics,
+    ) {
+        crate::test_allocation_observer::measure(|| {
+            let answer = (|| {
+                let function = &program.functions[0];
+                let mut preparation = crate::cleanup_plan::SelectedReplayPreparation::with_limits(
+                    function, work, bytes,
+                )?;
+                for _ in 0..calls {
+                    let result = preparation.construct(function, |physical, debit| {
+                        checked_absent_with_work_reservation(program, function, physical, debit)
+                    });
+                    match result {
+                        Ok(sites) => assert!(sites.is_empty()),
+                        Err(diagnostic) => {
+                            let remaining = preparation.remaining();
+                            let sticky = preparation.charge(function, 1, "late census retry");
+                            assert_eq!(sticky.unwrap_err().code, "SPX-H006");
+                            assert_eq!(preparation.remaining(), remaining);
+                            return Err(diagnostic);
+                        }
+                    }
+                }
+                let charged =
+                    preparation.construct(function, |physical, _| Ok(physical.charged()))?;
+                Ok::<_, crate::diagnostic::Diagnostic>((work - preparation.remaining(), charged))
+            })();
+            match answer {
+                Ok(receipt) => Ok(receipt),
+                Err(diagnostic) => {
+                    assert_eq!(diagnostic.code, "SPX-H006");
+                    drop(diagnostic);
+                    Err("SPX-H006")
+                }
+            }
+        })
+    }
+    #[test]
+    fn nonowning_writer_absence_preserves_exact_census_probes_and_old_verdict() {
+        for width in [0, 1, 32, 512] {
+            let program = copy_census_program(width);
+            let legacy = checked_bindings(&program, &program.functions[0]).unwrap();
+            assert!(legacy.is_empty());
+            // Three potential probes (probe, writer, its Own Bytes parameter),
+            // 2N+3 cursor frames, and N structural statement probes. This is
+            // independent of the callback's measured successful debit count.
+            let expected = 3 * width + 6;
+            let (wide, allocation) = prepared_census(&program, 1, expected, 1 << 20);
+            let (spent, bytes) = wide.unwrap();
+            assert_eq!(spent, expected);
+            assert!(!allocation.invalid && allocation.live == 0 && allocation.allocated <= bytes);
+            let (exact, allocation) = prepared_census(&program, 1, expected, bytes);
+            assert_eq!(exact.unwrap(), (spent, bytes));
+            assert!(!allocation.invalid && allocation.live == 0 && allocation.allocated <= bytes);
+            for (work, backing) in [(expected - 1, bytes), (expected, bytes - 1)] {
+                let (short, allocation) = prepared_census(&program, 1, work, backing);
+                assert_eq!(short, Err("SPX-H006"));
+                assert!(!allocation.invalid && allocation.live == 0);
+            }
+        }
+    }
+    #[test]
+    fn later_writer_absence_census_spends_one_preparation_and_failure_stays_sticky() {
+        let program = copy_census_program(64);
+        let expected = 2 * (3 * 64 + 6);
+        let (wide, allocation) = prepared_census(&program, 2, expected, 1 << 20);
+        let (spent, bytes) = wide.unwrap();
+        assert_eq!(spent, expected);
+        assert!(!allocation.invalid && allocation.live == 0 && allocation.allocated <= bytes);
+        let (exact, allocation) = prepared_census(&program, 2, expected, bytes);
+        assert_eq!(exact.unwrap(), (spent, bytes));
+        assert!(!allocation.invalid && allocation.live == 0 && allocation.allocated <= bytes);
+        for (work, backing) in [(expected - 1, bytes), (expected, bytes - 1)] {
+            let (short, allocation) = prepared_census(&program, 2, work, backing);
+            assert_eq!(short, Err("SPX-H006"));
+            assert!(!allocation.invalid && allocation.live == 0);
+        }
     }
 }

@@ -24,6 +24,9 @@ fn actual_provider_profile_is_current_and_keeps_the_original_value_match_schema_
     assert!(profile.matches(&program, function));
     assert!(!profile.matches(&program, &function.clone()));
     assert!(!profile.matches(&program.clone(), function));
+    assert!(!profile.renewals(&program, function).unwrap().has_helpers());
+    assert!(profile.renewals(&program, &function.clone()).is_none());
+    assert!(profile.renewals(&program.clone(), function).is_none());
     assert_eq!(
         profile.inventory(),
         &crate::cleanup::build_inventory(&program, function).unwrap()

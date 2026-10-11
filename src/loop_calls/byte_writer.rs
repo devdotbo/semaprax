@@ -11,10 +11,12 @@ mod resolved;
 pub(crate) use module_index::ModuleIndex;
 mod source;
 mod source_index;
+#[cfg(test)]
+pub(crate) use resolved::checked_absent_with_work_reservation;
 pub(crate) use resolved::{
-    bindings, checked_bindings, checked_bindings_with_reservation,
+    ProofCursor, bindings, checked_bindings, checked_bindings_with_reservation,
     nonallocating as resolved_nonallocating,
-    nonallocating_with_cursor as resolved_nonallocating_with_cursor, ProofCursor,
+    nonallocating_with_cursor as resolved_nonallocating_with_cursor,
 };
 pub(crate) use source::nonallocating as source_nonallocating;
 pub(crate) use source_index::{SourceHelpers, SourceIndex, SourceProofs};

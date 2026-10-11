@@ -1,5 +1,7 @@
 use super::*;
 mod selected;
+#[cfg(test)]
+pub(crate) use selected::checked_absent_with_work_reservation;
 pub(crate) use selected::checked_bindings_with_reservation;
 #[derive(Clone, Copy)]
 enum Frame<'a> {
@@ -395,6 +397,7 @@ pub(super) fn checked_bindings_with<'a>(
         &mut (),
         |binding, value, _| admitted(binding, value),
         |bytes, _| crate::bounded_output::reserve_active_required(bytes),
+        |_, _| Ok(()),
     )
 }
 fn checked_bindings_with_storage<'a, S>(
@@ -407,6 +410,7 @@ fn checked_bindings_with_storage<'a, S>(
         &mut S,
     ) -> Result<bool, crate::diagnostic::Diagnostic>,
     mut reserve: impl FnMut(usize, &mut S) -> bool,
+    mut debit: impl FnMut(usize, &mut S) -> Result<(), crate::diagnostic::Diagnostic>,
 ) -> Result<HelperBindings<'a>, crate::diagnostic::Diagnostic> {
     let error = census_error;
     let mut found = HelperBindings::default();
@@ -415,12 +419,14 @@ fn checked_bindings_with_storage<'a, S>(
     let mut depth = 1usize;
     let mut work = WORK;
     while depth != 0 {
+        debit(1, storage)?;
         work = work.checked_sub(1).ok_or_else(error)?;
         let (expression, next, sub) = frames[depth - 1];
         if next == 0 && sub == 0 {
             if let ResolvedExprKind::Block { statements, .. }
             | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
             {
+                debit(statements.len(), storage)?;
                 work = work.checked_sub(statements.len()).ok_or_else(error)?;
                 for statement in statements {
                     if let crate::hir::ResolvedStatement::Assign {
@@ -433,15 +439,13 @@ fn checked_bindings_with_storage<'a, S>(
                         if admitted(binding, value, storage)? {
                             // Binary search, insertion shift and replacement copy have
                             // this bounded linear upper in the current site count.
-                            work = work
-                                .checked_sub(
-                                    found
-                                        .len()
-                                        .checked_mul(3)
-                                        .and_then(|n| n.checked_add(1))
-                                        .ok_or_else(error)?,
-                                )
+                            let insertion = found
+                                .len()
+                                .checked_mul(3)
+                                .and_then(|n| n.checked_add(1))
                                 .ok_or_else(error)?;
+                            debit(insertion, storage)?;
+                            work = work.checked_sub(insertion).ok_or_else(error)?;
                             found
                                 .insert_with(&value.id, binding, |bytes| reserve(bytes, storage))
                                 .ok_or_else(error)?;
