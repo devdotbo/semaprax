@@ -3,6 +3,7 @@
 use super::*;
 use crate::ast::{ParamMode, Type};
 mod body_digest;
+mod function_matching;
 pub(in crate::workspace_graph) mod records;
 
 pub(in crate::workspace_graph) struct Inventory {
@@ -90,6 +91,14 @@ pub(super) fn capture(
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
     authenticated_sources: Option<&[WorkspaceSource]>,
 ) -> Result<Option<Box<Inventory>>, Vec<Diagnostic>> {
+    capture_with_matching::<false>(program, resolved, authored, authenticated_sources)
+}
+fn capture_with_matching<const LEGACY: bool>(
+    program: &Program,
+    resolved: &hir::ResolvedProgram,
+    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+    authenticated_sources: Option<&[WorkspaceSource]>,
+) -> Result<Option<Box<Inventory>>, Vec<Diagnostic>> {
     if !program.module_uses.is_empty()
         || !program.agents.is_empty()
         || !program.interfaces.is_empty()
@@ -152,10 +161,17 @@ pub(super) fn capture(
     reserve_builder_structure(body_digest::scratch_bytes())?;
     let source_revision = body_digest::source(&program.path, &program.module, &source.source);
     let mut body_work = WORK;
+    // One held borrowed index serves both full source/signature checks and
+    // final fact construction. It is lookup scratch, never namespace authority.
+    let matching = if LEGACY {
+        None
+    } else {
+        Some(function_matching::Index::new(
+            &resolved.functions,
+            &mut body_work,
+        )?)
+    };
     for source in &program.functions {
-        body_work = body_work
-            .checked_sub(resolved.functions.len())
-            .ok_or_else(fail)?;
         let origin = authored.get(source.stable_id.as_str()).ok_or_else(fail)?;
         if origin.path != program.path
             || origin.module != program.module
@@ -163,14 +179,12 @@ pub(super) fn capture(
         {
             return Err(fail());
         }
-        let mut matches = resolved
-            .functions
-            .iter()
-            .filter(|function| function.id.as_str() == source.stable_id);
-        let function = matches.next().ok_or_else(fail)?;
-        if matches.next().is_some() {
-            return Err(fail());
-        }
+        let function = function_matching::lookup(
+            matching.as_ref(),
+            &resolved.functions,
+            &source.stable_id,
+            &mut body_work,
+        )?;
         work = work
             .checked_sub(
                 source
@@ -231,14 +245,12 @@ pub(super) fn capture(
                 .ok_or_else(capacity)?,
         )?;
         let mut params = Vec::with_capacity(function.params.len());
-        body_work = body_work
-            .checked_sub(resolved.functions.len())
-            .ok_or_else(fail)?;
-        let current = resolved
-            .functions
-            .iter()
-            .find(|current| current.id.as_str() == function.stable_id)
-            .ok_or_else(fail)?;
+        let current = function_matching::lookup(
+            matching.as_ref(),
+            &resolved.functions,
+            &function.stable_id,
+            &mut body_work,
+        )?;
         for (param, current) in function.params.iter().zip(&current.params) {
             let resolved = records::clone_type(&current.ty)?;
             params.push(ParameterFact {

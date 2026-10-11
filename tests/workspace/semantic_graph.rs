@@ -352,6 +352,7 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
                 include_str!("../../src/workspace_graph/retain_module.rs"),
                 include_str!("../../src/workspace_graph/static_text.rs"),
                 include_str!("../../src/workspace_graph/static_text/primitive.rs"),
+                include_str!("../../src/workspace_graph/static_text/primitive/function_matching.rs"),
                 include_str!("../../src/workspace_graph/static_text/primitive/body_digest.rs"),
                 include_str!("../../src/workspace_graph/static_text/primitive/records.rs"),
                 "\n",

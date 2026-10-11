@@ -334,6 +334,17 @@ therefore does not admit nested/Vec storage or qualify an application. Owning
 executable qualification and the exact authenticated activation boundary remain
 pending for OPT #745.
 
+### Primitive source function matching scratch
+
+Primitive source fact capture retains one invocation-local borrowed function-ID
+index across signature/body comparison and final fact construction. Its fixed
+reference backing is reserved before allocation; in-place ordering and binary
+lookup debit the same cumulative matching-work allowance. Every existing source
+origin, path/module, signature, parameter mode and typed-body digest comparison
+still runs. The index supplies pointers, never namespace or replay authority.
+Owning wide-fixture differential, exact/one-short work and overlapping-backing
+regressions are authored; executable qualification remains pending.
+
 ## Iterator composition qualification
 
 The constructor declares lexical status producers in complete typed authored
