@@ -4,6 +4,9 @@ use super::*;
 pub(crate) struct SourceRecordReplayFixture(WorkspaceGraphBuild);
 impl SourceRecordReplayFixture {
     pub(crate) fn new(source: &str) -> Self {
+        Self::try_new(source).unwrap()
+    }
+    pub(crate) fn try_new(source: &str) -> Result<Self, Vec<Diagnostic>> {
         let sources = [
             ("flat.spx", source),
             (
@@ -17,11 +20,8 @@ impl SourceRecordReplayFixture {
             source: crate::format::canonical(&crate::parse(source, path).unwrap()),
         })
         .collect();
-        Self(
-            build_owned_retaining_sources_for_change(sources, MAX_CHANGE_BUILDER_BYTES)
-                .unwrap()
-                .0,
-        )
+        build_owned_retaining_sources_for_change(sources, MAX_CHANGE_BUILDER_BYTES)
+            .map(|(build, _)| Self(build))
     }
     fn module(&self) -> &WorkspaceResolvedModule {
         self.0

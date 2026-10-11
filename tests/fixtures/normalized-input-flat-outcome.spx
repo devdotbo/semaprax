@@ -2,59 +2,77 @@ module normalized.flat;
 
 @id("input")
 variant Input {
-    @id("input.ready") Ready { @id("input.bytes") bytes: Bytes, @id("input.length") length: usize },
-    @id("input.error") Error { @id("input.code") code: i64, @id("input.offset") offset: usize, @id("input.field") field: i64 },
+    @id("input.ready")
+    Ready {
+        @id("input.bytes")
+        bytes: Bytes,
+        @id("input.length")
+        length: usize,
+    },
+    @id("input.error")
+    Error {
+        @id("input.code")
+        code: i64,
+        @id("input.offset")
+        offset: usize,
+        @id("input.field")
+        field: i64,
+    },
 }
 
 @id("row")
 record Row {
-    @id("row.n") n: i64,
-    @id("row.label") label: string,
+    @id("row.n")
+    n: i64,
+    @id("row.label")
+    label: string,
 }
 
 @id("out")
 variant Output {
-    @id("out.ready") Ready { @id("out.rows") rows: Vec<Row> },
-    @id("out.error") Error { @id("out.code") code: i64, @id("out.offset") offset: usize, @id("out.field") field: i64 },
+    @id("out.ready")
+    Ready {
+        @id("out.rows")
+        rows: Vec<Row>,
+    },
+    @id("out.error")
+    Error {
+        @id("out.code")
+        code: i64,
+        @id("out.offset")
+        offset: usize,
+        @id("out.field")
+        field: i64,
+    },
 }
 
 @id("decode")
-fn decode(input: borrow Slice<u8>) -> Output {
+fn decode(input: borrow Slice<u8>) -> Output
+{
     let length = byte_len(input);
-    if length > 2usize {
-        Output::Error { code: 42, offset: length, field: 3 }
-    } else {
-        let rows = vec_push<Row>(vec_with_capacity<Row>(1usize), Row { n: i64_from_usize(length), label: "ok" });
-        Output::Ready { rows: rows }
-    }
+    if length > 2usize { Output::Error { code: 42, offset: length, field: 3 } } else { let rows = vec_push<Row>(vec_with_capacity<Row>(1usize), Row { n: i64_from_usize(length), label: "ok" }); Output::Ready { rows: rows } }
 }
 
 @id("join")
-fn join(input: own Input) -> Output {
-    match own input {
-        Input::Error { code, offset, field } => Output::Error { code: code, offset: offset, field: field },
-        Input::Ready { bytes, length } => decode(byte_range(bytes_as_slice(bytes), 0usize, length)),
-    }
+fn join(input: own Input) -> Output
+{
+    match own input { Input::Error { code, offset, field } => Output::Error { code: code, offset: offset, field: field }, Input::Ready { bytes, length } => decode(byte_range(bytes_as_slice(bytes), 0usize, length)), }
 }
 
 @id("receive")
-fn receive(bytes: own Bytes, length: usize) -> Output {
+fn receive(bytes: own Bytes, length: usize) -> Output
+{
     decode(byte_range(bytes_as_slice(bytes), 0usize, length))
 }
 
 @id("decide")
-fn decide(value: own Output) -> i64 {
-    match own value {
-        Output::Error { code, offset, field } => code,
-        Output::Ready { rows } => {
-            let first = vec_clone_at<Row>(rows, 0usize);
-            let good = match own first { Row { n, label } => n >= 0 && n <= 2 && label == "ok" };
-            if good { 42 } else { 0 }
-        },
-    }
+fn decide(value: own Output) -> i64
+{
+    match own value { Output::Error { code, offset, field } => code, Output::Ready { rows } => { let first = vec_clone_at<Row>(rows, 0usize); let good = match own first { Row { n, label } => n >= 0 && n <= 2 && label == "ok", }; if good { 42 } else { 0 } }, }
 }
 
 @id("app.main")
-fn main() -> i64 {
+fn main() -> i64
+{
     decide(join(Input::Ready { bytes: bytes_zeroed(2usize), length: 2usize }))
 }

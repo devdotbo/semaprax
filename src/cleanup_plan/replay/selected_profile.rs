@@ -324,7 +324,10 @@ mod cursor_work_tests {
         // The measured main is unchanged. This separate ordinary source helper
         // supplies the real static literal and lexical profile required by the
         // retained source-bound context; no declaration facts are discarded.
-        SourceRecordReplayFixture::new(&format!(
+        SourceRecordReplayFixture::new(&authenticated_source(source))
+    }
+    fn authenticated_source(source: &str) -> String {
+        format!(
             r#"{source}
 @id("app.cursor_witness") fn cursor_witness()->i64 {{
     let key=str"x";
@@ -336,7 +339,7 @@ mod cursor_work_tests {
     }}
     0
 }}"#
-        ))
+        )
     }
     fn main(fixture: &SourceRecordReplayFixture) -> &ResolvedFunction {
         fixture
@@ -456,8 +459,11 @@ mod cursor_work_tests {
             .collect::<String>();
         let branch_source =
             format!("module app; @id(\"app.main\") fn main()->i64 {{match 0 {{{branch_arms}}}}}");
-        let branch_error =
-            crate::check(&branch_source, "linear-profile-branch-limit.spx").unwrap_err();
+        let Err(branch_error) =
+            SourceRecordReplayFixture::try_new(&authenticated_source(&branch_source))
+        else {
+            panic!("guarded histories must exhaust the authenticated plan budget");
+        };
         assert!(branch_error.iter().any(|error| error.code == "SPX-H006"
             && error
                 .message
@@ -478,7 +484,11 @@ mod cursor_work_tests {
         let oversized_source = format!(
             "module app; @id(\"app.main\") fn main()->i64 {{match 0 {{{oversized_arms}}}}}"
         );
-        let error = crate::check(&oversized_source, "linear-profile-path-limit.spx").unwrap_err();
+        let Err(error) =
+            SourceRecordReplayFixture::try_new(&authenticated_source(&oversized_source))
+        else {
+            panic!("oversized histories must exhaust the authenticated terminal-path budget");
+        };
         assert!(error.iter().any(|error| error.code == "SPX-H006"
             && error.message.contains("65537 terminal control-flow paths")));
         // Separate roots share the same global ReplayBudget; no fresh permit

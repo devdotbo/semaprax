@@ -1,0 +1,22 @@
+@id("std.data.json.query.scan_string")
+fn scan_string(input: borrow Slice<u8>, start: usize, measure: bool) -> usize
+{
+    let mut index = start + 1usize;
+    let mut total = 0usize;
+    let mut fault = start;
+    let mut bad = !at_is(input, start, 34u8);
+    let mut running = !bad;
+    while running {
+        let closed = at_is(input, index, 34u8);
+        let step = if closed { index } else { token_end(input, index) };
+        let broken = !closed && is_failure(input, step);
+        total = if closed || broken || !measure { total } else { total + emit_len(input, index) };
+        fault = if broken { index } else { fault };
+        bad = broken;
+        index = if closed || broken { index } else { step };
+        running = !closed && !broken;
+        running
+    }
+    if bad { failure(input, fault) } else { if measure { total } else { index + 1usize } }
+}
+

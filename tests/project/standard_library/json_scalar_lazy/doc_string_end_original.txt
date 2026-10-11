@@ -1,0 +1,21 @@
+@id("std.data.json.doc.string_end")
+fn string_end(input: borrow Slice<u8>, start: usize) -> usize
+{
+    let mut index = start + 1usize;
+    let mut fault = start;
+    let mut bad = !at_in(input, start, 34u8, 34u8);
+    let mut running = !bad;
+    while running {
+        let closed = at_in(input, index, 34u8, 34u8);
+        let escape = at_in(input, index, 92u8, 92u8);
+        let plain = at_in(input, index, 32u8, 255u8);
+        let step = if closed { index } else { if escape { index + 2usize } else { if plain { index + 1usize } else { byte_len(input) + 1usize + index } } };
+        bad = step > byte_len(input);
+        fault = if bad { index } else { fault };
+        index = if closed || bad { index } else { step };
+        running = !closed && !bad;
+        running
+    }
+    if bad { byte_len(input) + 1usize + fault } else { index + 1usize }
+}
+
