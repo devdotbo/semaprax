@@ -29,7 +29,7 @@ fn function_only_forwarding_and_borrowed_projection_reconstruct_only_signature_l
         .map(|e| e.declaration.stable_id.as_str())
         .collect::<Vec<_>>();
     assert_eq!(ids, ["config", "report", "row"]);
-    let private = PrivateTypes::derive(&parsed[0], &parsed).unwrap();
+    let private = PrivateTypes::derive(&parsed[0], &parsed, &authored).unwrap();
     for id in &ids {
         assert!(private
             .contains(id, Some("function_layout.provider"))
@@ -117,10 +117,10 @@ fn function_private_types_do_not_grant_names_siblings_ancestors_or_foreign_roots
     build_owned(sources(&explicit, PROVIDER)).unwrap();
     let mut foreign = parsed[0].clone();
     foreign.module_uses[0].target_module = "foreign.provider".into();
-    assert!(PrivateTypes::derive(&foreign, &parsed).is_err());
+    assert!(PrivateTypes::derive(&foreign, &parsed, &authored).is_err());
     let mut absent = parsed[0].clone();
     absent.module_uses[0].persistent_id = "sibling".into();
-    assert!(PrivateTypes::derive(&absent, &parsed).is_err());
+    assert!(PrivateTypes::derive(&absent, &parsed, &authored).is_err());
 }
 #[test]
 fn function_signature_closure_and_authority_reservations_are_exact_and_stale_fields_refuse() {
@@ -129,7 +129,7 @@ fn function_signature_closure_and_authority_reservations_are_exact_and_stale_fie
     for authority in 0..3 {
         let run = || {
             if authority == 1 {
-                PrivateTypes::derive(&parsed[0], &parsed).map(|_| ())
+                PrivateTypes::derive(&parsed[0], &parsed, &authored).map(|_| ())
             } else if authority == 2 {
                 super::signature_owner(
                     &parsed[0],

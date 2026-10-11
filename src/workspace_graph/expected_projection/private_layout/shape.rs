@@ -2,8 +2,7 @@
 use super::{identity, private_without_work, refusal};
 use crate::ast::{ModuleUseKind, Program, Type, TypeDeclaration, TypeDeclarationKind};
 use crate::diagnostic::Diagnostic;
-use crate::workspace_graph::AuthoredDeclaration;
-use std::collections::BTreeMap;
+use super::authority::view::Lookup;
 
 pub(super) fn debit(work: &mut usize, count: usize) -> Result<(), Vec<Diagnostic>> {
     *work = work.checked_sub(count).ok_or_else(refusal)?;
@@ -26,9 +25,9 @@ fn observe(work: &mut usize, count: usize) -> bool {
         false
     }
 }
-pub(super) fn explicit_only(
+pub(super) fn explicit_only<'x, A: Lookup<'x>>(
     caller: &Program,
-    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+    authored: &A,
     programs: &[Program],
     work: &mut usize,
 ) -> Result<Absence, Vec<Diagnostic>> {
@@ -107,10 +106,10 @@ fn header(declaration: &TypeDeclaration) -> bool {
         && declaration.invariants().is_empty()
         && declaration.extends.is_none()
 }
-pub(super) fn validate_root(
+pub(super) fn validate_root<'x, A: Lookup<'x>>(
     declaration: &TypeDeclaration,
     module: &str,
-    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+    authored: &A,
     programs: &[Program],
     work: &mut usize,
 ) -> Result<(), Vec<Diagnostic>> {

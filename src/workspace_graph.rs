@@ -73,7 +73,9 @@ use std::cell::Cell;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 use type_names::type_contains_name_from;
-use validation::{expected_declaration_facts, validate_stub_signatures, WorkspaceValidationIndex};
+use validation::{
+    expected_declaration_facts, validate_stub_signatures_authored, WorkspaceValidationIndex,
+};
 pub(crate) const MAX_FILES: usize = 32;
 const MAX_TOTAL_SOURCE_BYTES: usize = 16 * 1024 * 1024;
 const MAX_DECLARATIONS: usize = 4096;
@@ -4512,7 +4514,7 @@ fn build_resolved_core(
             verify_resolved_call_edges(program, &resolved, authored)
         )?;
         if let Some(validation) = validation.as_mut() {
-            validation.record_module(&program.module, &resolved, programs)?;
+            validation.record_module_authored(&program.module, &resolved, programs, authored)?;
             let (module, imported_instances) = staged!(
                 RetainedModule,
                 retain_workspace_module(
@@ -4545,17 +4547,17 @@ fn build_resolved_core(
     let declarations = if let Some(validation) = validation {
         staged!(
             StubSignatures,
-            validation.validate_stub_signatures(programs)
+            validation.validate_stub_signatures_authored(programs, authored)
         )?;
         staged!(DeclarationFacts, validation.finish(programs))?
     } else {
         staged!(
             StubSignatures,
-            validate_stub_signatures(programs, &synthetic_modules)
+            validate_stub_signatures_authored(programs, &synthetic_modules, authored)
         )?;
         let declarations = staged!(
             DeclarationFacts,
-            reconstruct_workspace_declaration_facts(&synthetic_modules, programs)
+            reconstruct_workspace_declaration_facts(&synthetic_modules, programs, authored)
         )?;
         let programs_by_module = programs
             .iter()
@@ -5557,7 +5559,8 @@ fn workspace_declaration_facts(
     retained_modules: &[WorkspaceResolvedModule],
     programs: &[Program],
 ) -> Result<BTreeMap<String, WorkspaceDeclarationFact>, Vec<Diagnostic>> {
-    let facts = reconstruct_workspace_declaration_facts(modules, programs)?;
+    let authored = index_authored(programs)?;
+    let facts = reconstruct_workspace_declaration_facts(modules, programs, &authored)?;
     validate_retained_declaration_shapes(retained_modules, &facts)?;
     Ok(facts)
 }
@@ -5565,6 +5568,7 @@ fn workspace_declaration_facts(
 fn reconstruct_workspace_declaration_facts(
     modules: &[(String, hir::ResolvedProgram)],
     programs: &[Program],
+    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
 ) -> Result<BTreeMap<String, WorkspaceDeclarationFact>, Vec<Diagnostic>> {
     let expected = expected_declaration_facts(programs)?;
     let resolved_record_iterator = modules
@@ -5587,8 +5591,9 @@ fn reconstruct_workspace_declaration_facts(
             programs,
             module_uses_record_iterator,
         )?;
-        let private =
-            expected_projection::private_layout::authority::PrivateTypes::derive(source, programs)?;
+        let private = expected_projection::private_layout::authority::PrivateTypes::derive(
+            source, programs, authored,
+        )?;
         let synthetic_main = crate::bounded_output::budgeted_format(format_args!(
             "workspace.synthetic.main.{module}"
         ));

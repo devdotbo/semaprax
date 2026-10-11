@@ -1,12 +1,11 @@
 //! Borrowed import-signature roots, never a source-visible type namespace.
-use super::{debit, identity, refusal, AuthoredDeclaration};
+use super::{authority::view::Lookup, debit, identity, refusal};
 use crate::ast::{ModuleUseKind, Program, Type, TypeDeclaration};
 use crate::diagnostic::Diagnostic;
-use std::collections::BTreeMap;
 
-pub(super) fn visit<'a>(
+pub(super) fn visit<'a, A: Lookup<'a>>(
     caller: &Program,
-    authored: &BTreeMap<&str, AuthoredDeclaration<'a>>,
+    authored: &A,
     programs: &'a [Program],
     work: &mut usize,
     mut found: impl FnMut(&'a str, &'a TypeDeclaration, bool, &mut usize) -> Result<(), Vec<Diagnostic>>,

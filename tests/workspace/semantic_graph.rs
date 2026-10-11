@@ -533,6 +533,15 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
         include_str!(
             "../../src/workspace_graph/expected_projection/private_layout/authority_tests.rs"
         ),
+        include_str!(
+            "../../src/workspace_graph/expected_projection/private_layout/authority_view.rs"
+        ),
+        include_str!(
+            "../../src/workspace_graph/expected_projection/private_layout/authority_oracle.rs"
+        ),
+        include_str!(
+            "../../src/workspace_graph/expected_projection/private_layout/authority_view_tests.rs"
+        ),
         include_str!("../../src/workspace_graph/expected_projection/private_layout/tests.rs"),
         include_str!(
             "../../src/workspace_graph/expected_projection/private_layout/function_tests.rs"

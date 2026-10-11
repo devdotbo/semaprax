@@ -18,6 +18,7 @@ mod roots;
 mod shape;
 #[path = "private_layout/sorting.rs"]
 mod sorting;
+use authority::view::Lookup;
 use shape::{debit, explicit_only, scalar, validate_declaration, validate_root, Absence};
 
 #[path = "private_layout/owner_index.rs"]
@@ -283,9 +284,9 @@ fn refusal() -> Vec<Diagnostic> {
     )]
 }
 
-fn visit<'a>(
+fn visit<'a, A: Lookup<'a>>(
     caller: &Program,
-    authored: &BTreeMap<&str, AuthoredDeclaration<'a>>,
+    authored: &A,
     programs: &'a [Program],
     frames: &mut Vec<Frame<'a>>,
     remaining: &mut usize,
@@ -432,11 +433,11 @@ fn visit<'a>(
 }
 // Selection only: traverse borrowed declaration references to determine whether
 // this particular root needs inference. Full shape validation follows separately.
-fn needs_private<'a>(
+fn needs_private<'a, A: Lookup<'a>>(
     caller: &Program,
     module: &'a str,
     root: &'a TypeDeclaration,
-    authored: &BTreeMap<&str, AuthoredDeclaration<'a>>,
+    authored: &A,
     programs: &'a [Program],
     frames: &mut Vec<Frame<'a>>,
     work: &mut usize,

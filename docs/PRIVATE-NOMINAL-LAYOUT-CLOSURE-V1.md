@@ -142,6 +142,48 @@ preparation and overlap, independent ordering, and interleaved callers sharing
 one sticky ledger. Direct forecast controls cover cached and retry modes;
 existing owning cache/retry gates remain required for actual phase qualification.
 
+Current private type authority (#765) no longer rebuilds an owned top-level
+function/type map per validation caller. Each ordinary, compact and declaration
+fact caller passes the invocation's own `index_authored` map for the same
+source slice. The `authority` child's borrowed view first proves that the caller
+is a current member of that slice by address. One exact lookup per old top-level
+member, charged by the old per-member debit, then requires the entry's key,
+function or type pointer, path, module, kind and explicit-identity bit to match
+that member. The held index size must equal the slice's complete authored
+census. The census also counts fields, cases, case fields, lifecycles, class
+methods, interfaces, interface imports, protocols and protocol methods. A
+separately charged pass over the whole index then requires its function/type
+entry count to equal the old member count, so a same-size replacement of a
+child entry by a foreign function or type refuses. Each lookup admits only a
+function or type entry keyed by its own identity, so the wider index answers
+exactly the old map. A slice holding class methods
+keeps the old owned map, because a method shares the function kind in the held
+index.
+The class scan, variant cases, lifecycles, interfaces, protocols and the
+whole-index kind census are newly charged work on the unchanged per-invocation
+work limit. The legacy path's
+authority-index request report is unchanged. A borrowed derivation reports the
+old byte formula only through a separate test-only label, never as a request.
+Root/cursor reservations, sticky `contains` and signature work, duplicate and
+foreign refusal are unchanged. No digest, layout witness, cache, refund or new
+quota is involved.
+
+The `private_layout::authority::view_tests::` child adds five owning
+definitions. The first runs a differential against the saved pre-#765 owned-map
+oracle, comparing verdicts, root pointers and the exact extra proof work. Its
+cases include explicit aliases and held field, case, lifecycle, interface and
+interface-import identities that the old map omitted. The second keeps the class
+method fallback differential-equal. The third refuses stale, wider, narrower,
+detached-caller, relabelled and duplicate bindings. The fourth drives the proof
+directly with a current member caller. It covers inner-lookup parity, same-size
+foreign function/type replacement of child entries, and current-slice module,
+path, explicit-bit, kind, declaration-pointer, key-pointer and missing-member
+forgeries. The fifth checks exact and
+one-short builder bytes on both paths. Its allocator observations cover borrowed
+frame/root backing only, allocation-free queries, complete release through Drop
+and the saved map's larger backing. Storage elimination is a source property;
+any CPU, application fit or agent cost effect needs actual observation.
+
 These definitions have not been executed for this tranche. No current-head
 interpreter/native/Wasm, cache, benchmark, source-size saving, or matrix promotion
 is established by this document. The owning grouped qualification must run the

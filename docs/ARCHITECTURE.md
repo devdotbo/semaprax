@@ -3722,7 +3722,9 @@ preparation receipt across forecasts, synthetic construction and core retries;
 Its `names` child reserves
 fresh synthetic names against every identifier in the bounded plain-module
 caller. Its `authority` child reconstructs borrowed private type/provider roots
-and both signature validators compare exact current provider layouts. Copied declarations and prototypes use those names without adding source
+and both signature validators compare exact current provider layouts. Its `view`
+child reuses the caller-held authored index only after proving exact old
+top-level membership. Slices holding class methods keep the old owned map. Copied declarations and prototypes use those names without adding source
 imports or graph edges. `expected_projection/type_rewrite.rs` rewrites exact
 compiler-owned Vec elements through the current imported/private alias closure,
 with matching clone, identity and default-cost replay. See

@@ -5,15 +5,22 @@ use super::{
     DEPTH, WORK,
 };
 use std::cell::Cell;
+#[path = "authority_view.rs"]
+pub(super) mod view;
+use view::{Lookup, TopLevel};
 
 pub(in crate::workspace_graph) struct PrivateTypes<'a> {
     roots: Vec<(&'a str, &'a str)>,
     remaining: Cell<usize>,
 }
 impl<'a> PrivateTypes<'a> {
+    /// `authored` is the caller-held `index_authored(programs)`. It is reused
+    /// only through the proven borrowed view; otherwise the old owned map is
+    /// rebuilt exactly as before.
     pub(in crate::workspace_graph) fn derive(
         caller: &Program,
         programs: &'a [Program],
+        authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,
     ) -> Result<Self, Vec<Diagnostic>> {
         let mut remaining = WORK;
         debit(&mut remaining, caller.module_uses.len())?;
@@ -44,6 +51,24 @@ impl<'a> PrivateTypes<'a> {
             .ok_or_else(refusal)?;
         let indexed = count.checked_add(function_count).ok_or_else(refusal)?;
         debit(&mut remaining, indexed)?;
+        match TopLevel::prove(caller, programs, authored, count, indexed, &mut remaining)? {
+            Some(borrowed) => {
+                #[cfg(test)]
+                view::record_legacy_calculated(indexed);
+                Self::finish(caller, programs, &borrowed, count, remaining)
+            }
+            None => Self::legacy(caller, programs, count, indexed, remaining),
+        }
+    }
+    // The old owned top-level map, retained only where a class method shares
+    // the function kind in the held index.
+    fn legacy(
+        caller: &Program,
+        programs: &'a [Program],
+        count: usize,
+        indexed: usize,
+        remaining: usize,
+    ) -> Result<Self, Vec<Diagnostic>> {
         let node = crate::cleanup_plan::replay_btree_node_upper::<&str, AuthoredDeclaration<'_>>()
             .ok_or_else(refusal)?;
         let index_bytes = indexed.checked_mul(node).ok_or_else(refusal)?;
@@ -95,7 +120,16 @@ impl<'a> PrivateTypes<'a> {
                 }
             }
         }
-        if explicit_only(caller, &authored, programs, &mut remaining)? != Absence::Possible {
+        Self::finish(caller, programs, &authored, count, remaining)
+    }
+    fn finish<A: Lookup<'a>>(
+        caller: &Program,
+        programs: &'a [Program],
+        authored: &A,
+        count: usize,
+        mut remaining: usize,
+    ) -> Result<Self, Vec<Diagnostic>> {
+        if explicit_only(caller, authored, programs, &mut remaining)? != Absence::Possible {
             return Ok(Self {
                 roots: Vec::new(),
                 remaining: Cell::new(remaining),
@@ -125,7 +159,7 @@ impl<'a> PrivateTypes<'a> {
         }
         visit(
             caller,
-            &authored,
+            authored,
             programs,
             &mut frames,
             &mut remaining,
@@ -291,3 +325,11 @@ fn possible(
 #[cfg(test)]
 #[path = "authority_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "authority_oracle.rs"]
+mod oracle;
+
+#[cfg(test)]
+#[path = "authority_view_tests.rs"]
+mod view_tests;

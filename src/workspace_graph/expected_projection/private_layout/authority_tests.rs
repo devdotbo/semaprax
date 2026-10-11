@@ -36,8 +36,9 @@ fn resolved(programs: &[Program]) -> Vec<(String, crate::hir::ResolvedProgram)> 
 #[test]
 fn current_private_type_authority_has_exact_and_one_short_preallocation_bounds() {
     let programs = programs();
+    let authored = index_authored(&programs).unwrap();
     let (result, overflow, used) = crate::bounded_output::with_limit_usage(usize::MAX, || {
-        let private = PrivateTypes::derive(&programs[0], &programs)?;
+        let private = PrivateTypes::derive(&programs[0], &programs, &authored)?;
         assert!(private.contains("payload", Some("private.provider"))?);
         assert!(!private.contains("payload", Some("foreign.provider"))?);
         assert!(!private.contains("read", Some("private.provider"))?);
@@ -48,26 +49,28 @@ fn current_private_type_authority_has_exact_and_one_short_preallocation_bounds()
     assert!(!overflow);
     assert!(used > 0);
     let (exact, overflow, consumed) = crate::bounded_output::with_limit_usage(used, || {
-        PrivateTypes::derive(&programs[0], &programs)
+        PrivateTypes::derive(&programs[0], &programs, &authored)
     });
     assert!(exact.is_ok());
     assert!(!overflow);
     assert_eq!(consumed, used);
     let (short, overflow, _) = crate::bounded_output::with_limit_usage(used - 1, || {
-        PrivateTypes::derive(&programs[0], &programs)
+        PrivateTypes::derive(&programs[0], &programs, &authored)
     });
     assert!(short.is_err());
     assert!(overflow);
     let mut foreign = programs[0].clone();
     foreign.module_uses[0].target_module = "foreign.provider".into();
-    assert!(PrivateTypes::derive(&foreign, &programs).is_err());
+    assert!(PrivateTypes::derive(&foreign, &programs, &authored).is_err());
 }
 #[test]
 fn fresh_and_retained_private_signatures_reject_missing_stale_and_forged_layouts() {
     let programs = programs();
     let original = resolved(&programs);
     validate_stub_signatures(&programs, &original).unwrap();
-    let expected = reconstruct_workspace_declaration_facts(&original, &programs).unwrap();
+    let authored = index_authored(&programs).unwrap();
+    let expected =
+        reconstruct_workspace_declaration_facts(&original, &programs, &authored).unwrap();
     let mut compact = WorkspaceValidationIndex::new(&programs).unwrap();
     for (module, program) in &original {
         compact.record_module(module, program, &programs).unwrap();
