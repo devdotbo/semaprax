@@ -4,9 +4,10 @@
 //! producer-bound carrier fact; a type alone never selects one. After each
 //! lowered expression the plan's transitions at that expression replay, so
 //! owner liveness follows the canonical cleanup plan exactly. Leased views end
-//! at the close of the lexical scope that produced them, after their loans
-//! are checked to end inside it. Vec moves and the consuming sort happen only
-//! as top-level statements. Anything outside this domain refuses the module.
+//! at every end point of their exact `SliceView` loan, and every such end must
+//! lie inside the lexical scope that produced them. Vec moves and the
+//! consuming sort happen only as top-level statements. Anything outside this
+//! domain refuses the module.
 use super::cleanup::{Failure, Owned};
 use super::lower::{unsupported, Binding, Lower, Repr, Scope};
 use super::{import, Refusal};
@@ -377,11 +378,7 @@ impl<'a> Lower<'a> {
                 let view = self.local(ValType::I64);
                 self.host(import::PAYLOAD_BORROW, &[vector, position]);
                 self.owned(view);
-                self.scopes
-                    .last_mut()
-                    .ok_or(unsupported("view scope"))?
-                    .views
-                    .push((view, &e.id));
+                self.open_view(view, &e.id)?;
                 self.op(I::LocalGet(view));
                 Ok(Repr::Leased)
             }

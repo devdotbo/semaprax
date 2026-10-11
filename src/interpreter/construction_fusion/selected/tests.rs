@@ -114,6 +114,81 @@ fn actual_flat_allocations_match_target_layout_without_per_child_payload_or_map_
     assert_eq!(metrics.freed, metrics.allocated);
     assert_eq!(metrics.highwater, metrics.allocated);
 }
+/// Successful checked arithmetic must not build (allocate and free) the status
+/// it would select on overflow; four such operations per row surfaced as 132
+/// extra allocations at 33 rows. Overflow still selects the exact status.
+#[test]
+fn successful_checked_arithmetic_allocates_nothing_and_overflow_keeps_exact_status() {
+    use crate::ast::BinaryOp;
+    use crate::cleanup_plan::StatusCase;
+    let combine = crate::interpreter::combine;
+    let (sums, metrics) = crate::test_allocation_observer::measure(|| {
+        [
+            combine(BinaryOp::Add, Value::Int(1), Value::Int(2)),
+            combine(BinaryOp::Sub, Value::Int(1), Value::Int(2)),
+            combine(BinaryOp::Add, Value::Usize(1), Value::Usize(2)),
+        ]
+    });
+    assert!(!metrics.invalid);
+    assert_eq!(metrics.allocations, 0);
+    assert!(matches!(sums[0], Some(Ok(Value::Int(3)))));
+    assert!(matches!(sums[1], Some(Ok(Value::Int(-1)))));
+    assert!(matches!(sums[2], Some(Ok(Value::Usize(3)))));
+    for (op, case) in [
+        (BinaryOp::Add, StatusCase::AddOverflow),
+        (BinaryOp::Sub, StatusCase::SubOverflow),
+    ] {
+        let lhs = if op == BinaryOp::Add { i64::MAX } else { i64::MIN };
+        let Some(Err(status)) = combine(op, Value::Int(lhs), Value::Int(1)) else {
+            panic!("{op:?} overflow lost its status")
+        };
+        assert_eq!(status, crate::runtime_status::normalize_arithmetic(case));
+    }
+}
+/// Fuel exhaustion is out of band: no plan exit, status or result. Only a
+/// certified empty ownership state (before the Vec allocation) settles. Once an
+/// owner exists, no finalizer is invented and cleanup stays incomplete; the
+/// frame's physical Drop still returns every allocation.
+#[test]
+fn fuel_exhaustion_settles_only_certified_empty_ownership_without_status_or_result() {
+    let source = parsed(&SOURCE.replace("4096", "33"));
+    let owner = validate_selected(&source).unwrap();
+    let (baseline, _) = run(&owner);
+    for (fuel, settled) in [
+        (1, true),
+        (baseline.steps / 4, false),
+        (baseline.steps / 2, false),
+        (baseline.steps * 3 / 4, false),
+        (baseline.steps - 1, false),
+    ] {
+        let ((outcome, metrics), refused, _) =
+            crate::bounded_output::with_limit_usage(PHYSICAL, || {
+                crate::test_allocation_observer::measure(|| execute(&owner, fuel))
+            });
+        assert!(!refused);
+        let Err(Failure::FuelExhausted {
+            steps,
+            cleanup_complete,
+        }) = outcome
+        else {
+            panic!("fuel {fuel}: {outcome:?}")
+        };
+        assert_eq!((steps, cleanup_complete), (fuel, settled), "fuel {fuel}");
+        assert!(!metrics.invalid);
+        assert_eq!(metrics.live, 0);
+        assert_eq!(metrics.freed, metrics.allocated);
+    }
+    // The same owner still executes completely afterwards.
+    assert_eq!(run(&owner).0.result, baseline.result);
+    let selected = include_str!("../selected.rs");
+    for guard in [
+        "Err(Flow::Exhausted | Flow::DepthExceeded) => engine.settle_empty(),",
+        "&& source.lane == StatusLane::OperationFailure",
+        "|| self.registry.state.is_some()",
+    ] {
+        assert!(selected.contains(guard), "{guard}");
+    }
+}
 #[test]
 fn full_execution_exact_one_short_refuses_without_publication_or_drop_refund() {
     let source = parsed(&SOURCE.replace("4096", "33"));

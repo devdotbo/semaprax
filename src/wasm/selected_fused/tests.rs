@@ -10,6 +10,8 @@ use crate::byte_data_capacity::{
 use crate::hir::{ResolvedExpr as E, ResolvedExprKind as K, ResolvedProgram, ResolvedStatement as S};
 use wasm_encoder::ValType;
 
+mod view_loans;
+
 const ORIGINAL: &str = include_str!("../../../tests/fixtures/record-traversal-maximum.spx");
 
 fn text(count: u32) -> String {

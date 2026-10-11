@@ -31,11 +31,10 @@ pub(in crate::codegen) fn emit_selected_fused_row_prelude(
 pub(in crate::codegen) fn emit_validated_fused_row_prelude(
     owner: &hir::selected_fused_candidate::ValidatedFusedSelection<'_>,
 ) -> Result<String, Diagnostic> {
-    owner
-        .revalidate_current()
-        .map_err(|_| backend_error("current validated fused owner refused"))?;
+    // The owner-accepting constructor runs the complete current selected
+    // revalidation; ordinary validation would refuse the joined loop.
+    let resource_abi = native_resource::build_selected_resource_abi(owner)?;
     let program = owner.program();
-    let resource_abi = native_resource::build_resource_abi(program)?;
     if !resource_abi.resources.is_empty() {
         return Err(resource_lowering_gate());
     }

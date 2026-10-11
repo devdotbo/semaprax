@@ -5035,10 +5035,12 @@ impl Evaluator<'_> {
 /// on verified programs); `Some(Err(..))` is the exact compiler-owned failure
 /// status selected by the checked operation.
 fn combine(op: BinaryOp, lhs: Value, rhs: Value) -> Option<Result<Value, NormalizedStatus>> {
+    // The status owns its domain text; build it only for an actual failure.
     let arithmetic = |outcome: Option<Value>, case: StatusCase| {
-        outcome.map_or(Some(Err(normalize_arithmetic(case))), |value| {
-            Some(Ok(value))
-        })
+        outcome.map_or_else(
+            || Some(Err(normalize_arithmetic(case))),
+            |value| Some(Ok(value)),
+        )
     };
     let ordered = |less: bool, equal: bool| -> Option<Result<Value, NormalizedStatus>> {
         let value = match op {

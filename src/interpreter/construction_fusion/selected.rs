@@ -10,7 +10,7 @@
 //! held by this invocation; a numeric row/view token cannot escape its frame.
 use super::{Backing, Flow, OwnedBytesValue, Plan, Registry, Value, View};
 use crate::ast::{BinaryOp, UnaryOp};
-use crate::cleanup_plan::{ExitContinuation, StorageId};
+use crate::cleanup_plan::{ExitContinuation, StatusLane, StorageId};
 use crate::hir::fused_construction::{Role, Selection};
 use crate::hir::{
     OwnershipMode, ResolvedExpr as E, ResolvedExprKind as K, ResolvedMatchPattern as Pattern,
@@ -139,7 +139,11 @@ fn execute_selection(selection: &Selection<'_>, fuel: usize) -> Result<Outcome, 
         Box::new(Engine::new(selection, fuel).map_err(|flow| Failure::execution(&flow, 0))?);
     let body = &selection.function().body;
     let result = engine.expression(body, 0);
-    let settled = engine.settle_exit(result.is_ok());
+    let settled = match &result {
+        // Fuel and depth exhaustion are out of band: no plan exit, no status.
+        Err(Flow::Exhausted | Flow::DepthExceeded) => engine.settle_empty(),
+        _ => engine.settle_exit(result.is_ok()),
+    };
     match result {
         Ok(Flat::Scalar(Value::Int(result))) if settled.is_ok() => {
             let (string_materializations, string_bytes) =
@@ -486,8 +490,11 @@ impl<'s, 'a> Engine<'s, 'a> {
             ExitContinuation::CommitResult {
                 source: crate::cleanup_plan::CleanupResultSource::Scalar { expression },
             } => success && *expression == self.selection.function().body.id,
+            // Every selected failure is an operation failure; the exact
+            // lane, not the expression alone, names its exit.
             ExitContinuation::ReturnFailure { source } => {
                 !success
+                    && source.lane == StatusLane::OperationFailure
                     && self
                         .failed_site
                         .is_some_and(|site| source.expression == site.id)
@@ -540,6 +547,30 @@ impl<'s, 'a> Engine<'s, 'a> {
                 .pending
                 .as_ref()
                 .is_some_and(|row| row.text.is_some() || row.payload.is_some())
+        {
+            return Err(refuse());
+        }
+        Ok(())
+    }
+    /// Fuel or depth exhaustion selects no language status and has no
+    /// canonical plan exit, so no finalizer may run for it. Settlement succeeds
+    /// only for an independently certified empty ownership state: no Vec
+    /// allocation, row, staged row or staged Vec operand, no range context
+    /// (hence no owner or loan) and no owner or view in any binding slot.
+    /// Anything live leaves cleanup incomplete; the frame's physical Drop is
+    /// not canonical cleanup.
+    fn settle_empty(&self) -> Result<(), Flow> {
+        let held = self
+            .slots
+            .iter()
+            .flatten()
+            .any(|slot| !matches!(slot.value, Flat::Scalar(_) | Flat::Moved));
+        if self.allocated
+            || !self.rows.is_empty()
+            || self.pending.is_some()
+            || self.staged_vector
+            || self.registry.state.is_some()
+            || held
         {
             return Err(refuse());
         }
