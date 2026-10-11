@@ -334,6 +334,11 @@ PROBE_FN void loans_preflight_all_container_finalizers(void) {
     spx_shb_zeroed(&reg, 6u, &a); partition(&a, 3u, 2u, &v);
     b = spx_shb_row_owner(&v, 1u); loan = spx_shb_loan_begin(&reg, &b);
     saved_vec = v; memcpy(saved_rows, v.rows, sizeof(saved_rows));
+    assert(reg.loans == 1u);
+    EXPECT_STOP("outstanding borrow", (void)spx_shb_vec_move(&reg, &v));
+    EXPECT_STOP("outstanding borrow", (void)spx_shb_iter_from_vec(&reg, &v));
+    EXPECT_STOP("outstanding borrow", spx_shb_vec_pop(&reg, &v, &tag, &c, &w));
+    EXPECT_STOP("outstanding borrow", (void)spx_shb_vec_reserve_exact(&reg, &v, 1u, &w));
     EXPECT_STOP("outstanding borrow", spx_shb_vec_clear(&reg, &v, &w));
     assert(memcmp(&v, &saved_vec, sizeof(v)) == 0);
     assert(memcmp(v.rows, saved_rows, sizeof(saved_rows)) == 0);
@@ -342,6 +347,10 @@ PROBE_FN void loans_preflight_all_container_finalizers(void) {
     assert(memcmp(v.rows, saved_rows, sizeof(saved_rows)) == 0);
     assert(payload_pool.frees == 0u && metadata_pool.frees == 0u);
     spx_shb_loan_end(&reg, &loan);
+    assert(reg.loans == 0u);
+    EXPECT_STOP("pop output", spx_shb_vec_pop(&reg, &v, &tag, &c, NULL));
+    assert(memcmp(&v, &saved_vec, sizeof(v)) == 0);
+    assert(memcmp(v.rows, saved_rows, sizeof(saved_rows)) == 0);
     spx_shb_vec_clear(&reg, &v, &w); spx_shb_vec_drop(&reg, &w);
     assert(payload_pool.frees == 1u); spx_shb_registry_finish(&reg);
 
@@ -350,6 +359,7 @@ PROBE_FN void loans_preflight_all_container_finalizers(void) {
     it = spx_shb_iter_from_vec(&reg, &v);
     b = spx_shb_row_owner(&it.vec, 1u); loan = spx_shb_loan_begin(&reg, &b);
     saved_iter = it; memcpy(saved_rows, it.vec.rows, sizeof(saved_rows));
+    EXPECT_STOP("outstanding borrow", spx_shb_iter_next(&reg, &it, &tag, &c, &rest));
     EXPECT_STOP("outstanding borrow", spx_shb_iter_drop(&reg, &it));
     assert(memcmp(&it, &saved_iter, sizeof(it)) == 0);
     assert(memcmp(it.vec.rows, saved_rows, sizeof(saved_rows)) == 0);
