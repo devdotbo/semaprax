@@ -1058,7 +1058,7 @@ fn assert_batch_backend_matrix(root: &Path) {
     // A candidate that counts the terminal LF as a record must fail the
     // frozen CNORM-001 case; success above cannot come from an inert harness.
     assert_batch_mutant_rejected(
-        &root,
+        root,
         scratch.path(),
         "terminal-lf-mutant",
         "if only_line { 0usize } else { count }",
@@ -1068,7 +1068,7 @@ fn assert_batch_backend_matrix(root: &Path) {
     // CNORM-005 is not covered by the terminal-LF control. Deliberately
     // accepting every line must make the raw malformed-sequence case fail.
     assert_batch_mutant_rejected(
-        &root,
+        root,
         scratch.path(),
         "utf8-mutant",
         "line_utf8_end_range(body, start, end) == end - start",
@@ -1078,7 +1078,7 @@ fn assert_batch_backend_matrix(root: &Path) {
     // CNORM-015's boundary is likewise independent of record splitting: a
     // checked-total predicate that never reports overflow must be caught.
     assert_batch_mutant_rejected(
-        &root,
+        root,
         scratch.path(),
         "total-mutant",
         "total > 9223372036854775807 - quantity",
