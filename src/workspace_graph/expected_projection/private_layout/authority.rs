@@ -8,6 +8,8 @@ use std::cell::Cell;
 #[path = "authority_view.rs"]
 pub(super) mod view;
 use view::{Lookup, TopLevel};
+#[path = "authority_invocation.rs"]
+pub(in crate::workspace_graph) mod invocation;
 
 pub(in crate::workspace_graph) struct PrivateTypes<'a> {
     roots: Vec<(&'a str, &'a str)>,
@@ -145,6 +147,16 @@ impl<'a> PrivateTypes<'a> {
         if frames.capacity() != DEPTH {
             return Err(refusal());
         }
+        Self::finish_ready(caller, programs, authored, count, remaining, &mut frames)
+    }
+    fn finish_ready<A: Lookup<'a>>(
+        caller: &Program,
+        programs: &'a [Program],
+        authored: &A,
+        count: usize,
+        mut remaining: usize,
+        frames: &mut Vec<Frame<'a>>,
+    ) -> Result<Self, Vec<Diagnostic>> {
         // A type may be reached by several authenticated roots. Retain each
         // borrowed identity once; no copied name, declaration, or layout fact.
         reserve_builder_structure(
@@ -161,7 +173,7 @@ impl<'a> PrivateTypes<'a> {
             caller,
             authored,
             programs,
-            &mut frames,
+            frames,
             &mut remaining,
             |module, declaration, work| {
                 for (m, id) in &roots {

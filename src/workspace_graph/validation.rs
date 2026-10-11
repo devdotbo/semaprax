@@ -6,6 +6,7 @@
 //! is live, then performs the same exact comparisons after those programs
 //! have been filtered into their workspace carriers.
 
+use super::expected_projection::private_layout::authority::invocation::Invocation;
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::ast::{ModuleUseKind, Program, TypeDeclarationKind};
@@ -75,7 +76,7 @@ impl WorkspaceValidationIndex {
         programs: &[Program],
     ) -> Result<(), Vec<Diagnostic>> {
         let authored = super::index_authored(programs)?;
-        self.record_module_authored(module, resolved, programs, &authored)
+        self.record_module_authored(module, resolved, programs, &authored, None)
     }
 
     /// Extract all HIR-dependent proof while `resolved` is still live.  The
@@ -89,12 +90,13 @@ impl WorkspaceValidationIndex {
         resolved: &hir::ResolvedProgram,
         programs: &[Program],
         authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+        authority: Option<&Invocation<'_>>,
     ) -> Result<(), Vec<Diagnostic>> {
         let source = programs
             .iter()
             .find(|program| program.module == module)
             .expect("resolved workspace module belongs to authenticated source");
-        self.record_declarations(module, resolved, source, programs, authored)?;
+        self.record_declarations(module, resolved, source, programs, authored, authority)?;
 
         let mut facts = ModuleSignatureFacts::default();
         for function in &resolved.functions {
@@ -172,6 +174,7 @@ impl WorkspaceValidationIndex {
         source: &Program,
         programs: &[Program],
         authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+        authority: Option<&Invocation<'_>>,
     ) -> Result<(), Vec<Diagnostic>> {
         let resolved_record_iterator =
             crate::iterator_ops::resolved_program_uses_record_iterator(resolved);
@@ -180,9 +183,12 @@ impl WorkspaceValidationIndex {
                 prelude_binding::expected_declaration_facts_for_programs(programs, true)?;
             self.resolved_record_iterator = true;
         }
-        let private = super::expected_projection::private_layout::authority::PrivateTypes::derive(
-            source, programs, authored,
-        )?;
+        let private = match authority {
+            Some(owner) => owner.derive_bound(source, programs, authored)?,
+            None => super::expected_projection::private_layout::authority::PrivateTypes::derive(
+                source, programs, authored,
+            )?,
+        };
         let expected_module_compiler = prelude_binding::expected_module_declaration_facts(
             source,
             programs,
@@ -307,13 +313,14 @@ impl WorkspaceValidationIndex {
         programs: &[Program],
     ) -> Result<(), Vec<Diagnostic>> {
         let authored = super::index_authored(programs)?;
-        self.validate_stub_signatures_authored(programs, &authored)
+        self.validate_stub_signatures_authored(programs, &authored, None)
     }
 
     pub(super) fn validate_stub_signatures_authored(
         &self,
         programs: &[Program],
         authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+        authority: Option<&Invocation<'_>>,
     ) -> Result<(), Vec<Diagnostic>> {
         for caller in programs {
             let caller_facts = self.modules.get(caller.module.as_str()).ok_or_else(|| {
@@ -394,10 +401,14 @@ impl WorkspaceValidationIndex {
                     ModuleUseKind::Protocol => unreachable!(),
                 }
             }
-            let private =
-                super::expected_projection::private_layout::authority::PrivateTypes::derive(
-                    caller, programs, authored,
-                )?;
+            let private = match authority {
+                Some(owner) => owner.derive_bound(caller, programs, authored)?,
+                None => {
+                    super::expected_projection::private_layout::authority::PrivateTypes::derive(
+                        caller, programs, authored,
+                    )?
+                }
+            };
             private.validate_signatures(|module, id| {
                 caller_facts
                     .types
@@ -672,13 +683,14 @@ pub(super) fn validate_stub_signatures(
     modules: &[(String, hir::ResolvedProgram)],
 ) -> Result<(), Vec<Diagnostic>> {
     let authored = super::index_authored(programs)?;
-    validate_stub_signatures_authored(programs, modules, &authored)
+    validate_stub_signatures_authored(programs, modules, &authored, None)
 }
 
 pub(super) fn validate_stub_signatures_authored(
     programs: &[Program],
     modules: &[(String, hir::ResolvedProgram)],
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+    authority: Option<&Invocation<'_>>,
 ) -> Result<(), Vec<Diagnostic>> {
     for caller in programs {
         let caller_hir = modules
@@ -789,9 +801,12 @@ pub(super) fn validate_stub_signatures_authored(
                 ModuleUseKind::Protocol => unreachable!(),
             }
         }
-        let private = super::expected_projection::private_layout::authority::PrivateTypes::derive(
-            caller, programs, authored,
-        )?;
+        let private = match authority {
+            Some(owner) => owner.derive_bound(caller, programs, authored)?,
+            None => super::expected_projection::private_layout::authority::PrivateTypes::derive(
+                caller, programs, authored,
+            )?,
+        };
         private.validate_signatures(|module, id| {
             caller_hir
                 .types

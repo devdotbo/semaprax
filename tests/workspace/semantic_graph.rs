@@ -551,6 +551,8 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
             "../../src/workspace_graph/expected_projection/private_layout/owner_index/tests.rs"
         ),
         include_str!("../../src/workspace_graph/expected_projection/private_layout/authority.rs"),
+        include_str!("../../src/workspace_graph/expected_projection/private_layout/authority_invocation.rs"),
+        include_str!("../../src/workspace_graph/expected_projection/private_layout/authority_invocation/tests.rs"),
         include_str!(
             "../../src/workspace_graph/expected_projection/private_layout/authority_tests.rs"
         ),

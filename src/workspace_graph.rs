@@ -4404,6 +4404,9 @@ fn build_resolved_core(
     let mut validation = retained_output_only
         .then(|| WorkspaceValidationIndex::new(programs))
         .transpose()?;
+    let authority = expected_projection::private_layout::authority::invocation::Invocation::new(
+        programs, authored,
+    );
     let mut synthetic_modules = if retained_output_only {
         Vec::new()
     } else {
@@ -4530,7 +4533,13 @@ fn build_resolved_core(
             verify_resolved_call_edges(program, &resolved, authored)
         )?;
         if let Some(validation) = validation.as_mut() {
-            validation.record_module_authored(&program.module, &resolved, programs, authored)?;
+            validation.record_module_authored(
+                &program.module,
+                &resolved,
+                programs,
+                authored,
+                Some(&authority),
+            )?;
             let (module, imported_instances) = staged!(
                 RetainedModule,
                 retain_workspace_module(
@@ -4563,17 +4572,27 @@ fn build_resolved_core(
     let declarations = if let Some(validation) = validation {
         staged!(
             StubSignatures,
-            validation.validate_stub_signatures_authored(programs, authored)
+            validation.validate_stub_signatures_authored(programs, authored, Some(&authority))
         )?;
         staged!(DeclarationFacts, validation.finish(programs))?
     } else {
         staged!(
             StubSignatures,
-            validate_stub_signatures_authored(programs, &synthetic_modules, authored)
+            validate_stub_signatures_authored(
+                programs,
+                &synthetic_modules,
+                authored,
+                Some(&authority)
+            )
         )?;
         let declarations = staged!(
             DeclarationFacts,
-            reconstruct_workspace_declaration_facts(&synthetic_modules, programs, authored)
+            reconstruct_workspace_declaration_facts_with_authority(
+                &synthetic_modules,
+                programs,
+                authored,
+                Some(&authority)
+            )
         )?;
         let programs_by_module = programs
             .iter()
@@ -5586,6 +5605,23 @@ fn reconstruct_workspace_declaration_facts(
     programs: &[Program],
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
 ) -> Result<BTreeMap<String, WorkspaceDeclarationFact>, Vec<Diagnostic>> {
+    let authority = expected_projection::private_layout::authority::invocation::Invocation::new(
+        programs, authored,
+    );
+    reconstruct_workspace_declaration_facts_with_authority(
+        modules,
+        programs,
+        authored,
+        Some(&authority),
+    )
+}
+
+fn reconstruct_workspace_declaration_facts_with_authority(
+    modules: &[(String, hir::ResolvedProgram)],
+    programs: &[Program],
+    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+    authority: Option<&expected_projection::private_layout::authority::invocation::Invocation<'_>>,
+) -> Result<BTreeMap<String, WorkspaceDeclarationFact>, Vec<Diagnostic>> {
     let expected = expected_declaration_facts(programs)?;
     let resolved_record_iterator = modules
         .iter()
@@ -5607,9 +5643,12 @@ fn reconstruct_workspace_declaration_facts(
             programs,
             module_uses_record_iterator,
         )?;
-        let private = expected_projection::private_layout::authority::PrivateTypes::derive(
-            source, programs, authored,
-        )?;
+        let private = match authority {
+            Some(owner) => owner.derive_bound(source, programs, authored)?,
+            None => expected_projection::private_layout::authority::PrivateTypes::derive(
+                source, programs, authored,
+            )?,
+        };
         let synthetic_main = crate::bounded_output::budgeted_format(format_args!(
             "workspace.synthetic.main.{module}"
         ));

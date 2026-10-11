@@ -308,6 +308,20 @@ modules by descending full-minus-retained HIR overhead, with a path tie-break;
 the forecast and resolver use the same order. Completed outputs are restored
 to canonical path order before validation and publication.
 
+Within one resolved-core validation attempt, private type authority retains one
+borrowed owner bound to the exact immutable Program slice and authored map.
+Its lazy complete top-level proof is charged to the first caller's existing
+work allowance; callers retain their original independent work/depth ceilings
+for import, root, contains and current-HIR signature checks. The owner reuses
+one precharged DFS frame allocation and, where class methods require the old
+lookup universe, one precharged legacy function/type map. Roots remain fresh
+per caller and charged to the same cumulative builder account. Every caller
+and map binding is checked again, failed acquisition/traversal is sticky, and
+scratch frames are cleared on failure. No source or HIR verdict, allocation
+credit or mutable cache survives the attempt. Source-only controls require
+saved-old roots/verdicts, exact and one-short repeated backing through Drop;
+application recovery and performance remain subject to execution.
+
 At the production default builder limit, an unnested core phase that exceeds
 its budget after accepting an earlier estimate may retry with the raw-AST
 estimate, then with the final transient-peak estimate, only when each is
