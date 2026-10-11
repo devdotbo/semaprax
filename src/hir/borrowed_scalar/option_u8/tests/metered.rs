@@ -207,3 +207,46 @@ fn borrowed_option_inventory_matches_independent_ordinary_inventory_and_whole_dr
             .is_err()
     );
 }
+
+#[test]
+fn wide_copy_block_work_includes_each_independently_counted_prefix_probe() {
+    for bindings in [0usize, 1, 2, 32, 128] {
+        let mut source = String::from("module inventory.wide; @id(\"wide.main\") fn main()->i64 {");
+        for index in 0..bindings {
+            source.push_str(&format!("let value_{index}={index};"));
+        }
+        source.push_str("42}");
+        let program =
+            crate::hir::resolve(&crate::check(&source, "wide-inventory.spx").unwrap()).unwrap();
+        let function = &program.functions[0];
+        let expected = crate::cleanup::build_inventory(&program, function).unwrap();
+        // Each let has two traversal ordinals. Both scan 1..N preceding
+        // statements; tail and completed child census each scan all N again.
+        // There are 6N+7 Enter/Children/Finish/AddBinding frames, N+2
+        // entered type probes and one independently evaluated return probe.
+        let expected_prefix = bindings * (bindings + 1) + 2 * bindings;
+        let exact = expected_prefix + (6 * bindings + 7) + (bindings + 3);
+        for allowance in [exact, exact - 1] {
+            let mut remaining = allowance;
+            let mut physical = crate::cleanup_plan::ReplayPhysicalReservation::new(1 << 20);
+            let result = crate::cleanup::build_borrowed_helper_inventory_with_budget(
+                &program,
+                function,
+                &mut physical,
+                &mut |units| {
+                    assert_eq!(units, 1);
+                    remaining = remaining.checked_sub(units).ok_or_else(|| {
+                        crate::diagnostic::Diagnostic::io("SPX-H006", "wide callback exhausted")
+                    })?;
+                    Ok(())
+                },
+            );
+            if allowance == exact {
+                assert_eq!(result.unwrap(), expected);
+            } else {
+                assert_eq!(result.unwrap_err().code, "SPX-H006");
+            }
+            assert_eq!(remaining, 0);
+        }
+    }
+}

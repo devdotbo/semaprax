@@ -722,6 +722,7 @@ impl InventoryBuilder<'_> {
                             let mut offset = 0usize;
                             let mut matched = None;
                             for statement in statements.iter() {
+                                self.charge(1)?;
                                 let steps = per_statement(statement);
                                 if index < offset + steps {
                                     let within = index - offset;
@@ -770,6 +771,7 @@ impl InventoryBuilder<'_> {
                                 let mut cursor = index - 1;
                                 let mut found = None;
                                 for arm in arms {
+                                    self.charge(1)?;
                                     if cursor == 0 {
                                         action = Some(Frame::AddPatternBindings(&arm.pattern));
                                         break;
