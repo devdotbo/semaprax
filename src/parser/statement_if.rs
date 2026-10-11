@@ -18,8 +18,10 @@
 //! A chain in which every branch ends with a value and a final `else` exists
 //! is an ordinary value `if`: it stays the block's final expression when `}`,
 //! `;`, or an operator follows it, and is discarded as a statement only when
-//! another statement follows. The `if` is parsed once; no input that parsed
-//! before changes meaning.
+//! another statement follows. One exception: a chain containing a parsed
+//! lexical exit, followed directly by `;` and another item, is that same
+//! statement discard; canonical text drops the `;`. The `if` is parsed once;
+//! no input that parsed before changes meaning.
 
 use std::collections::BTreeSet;
 
@@ -158,6 +160,12 @@ impl Parser {
             let before = self.cursor;
             let expression = self.postfix(expression, true)?;
             let expression = self.binary_continuation(expression, 0, true)?;
+            if self.cursor == before && self.at_exit_guard_terminator(&expression) {
+                let end = self.bump().span;
+                return Ok(IfItem::Statement(
+                    self.discard(start, expression, Some(end), syntax),
+                ));
+            }
             if self.cursor != before
                 || self.at(&TokenKind::RBrace)
                 || self.at(&TokenKind::Semicolon)
@@ -174,6 +182,31 @@ impl Parser {
         Ok(IfItem::Statement(
             self.discard(start, expression, end, syntax),
         ))
+    }
+
+    /// A bare valued exit guard may close with `;` when another block item
+    /// follows. Only a parsed exit selects this; ordinary valued `if`s keep the
+    /// scalar expression statement, and a final `;` keeps `SPX-P106`. Canonical
+    /// text omits the `;`, so an item that could continue this value `if`
+    /// (`-x;`, `(x);`) keeps the generic discard rather than change meaning.
+    fn at_exit_guard_terminator(&mut self, expression: &Expr) -> bool {
+        if !self.at(&TokenKind::Semicolon) {
+            return false;
+        }
+        let terminator = self.cursor;
+        self.cursor += 1;
+        let separate = !matches!(
+            self.current().kind,
+            TokenKind::RBrace
+                | TokenKind::Eof
+                | TokenKind::LParen
+                | TokenKind::Dot
+                | TokenKind::Question
+                | TokenKind::ColonColon
+        ) && self.binary_op().is_none()
+            && !self.at_keyword("with");
+        self.cursor = terminator;
+        separate && expression.contains_lexical_exit()
     }
 
     fn branch(&mut self, description: &str) -> Result<Branch, Diagnostic> {
@@ -366,5 +399,83 @@ impl DiscardNames {
         if !self.recording {
             self.provisional = Vec::new();
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::ast::{ExprKind, LetSyntax, Program, Statement};
+    use crate::cache_codec::{decode, encode};
+
+    fn source(terminator: &str) -> String {
+        format!(
+            "module exit.guard; @id(\"main\") fn main()->i64 {{ let mut i=0; while i<3 {{ i=i+1; if i==2 {{continue;}} else {{0}}{terminator} i=i+0; 0 }} i }}"
+        )
+    }
+
+    fn guard(program: &Program) -> &Statement {
+        let ExprKind::Block { statements, .. } = &program.functions[0].body.kind else {
+            panic!("function block")
+        };
+        let Statement::While { body, .. } = &statements[1] else {
+            panic!("authored loop")
+        };
+        let ExprKind::Block { statements, .. } = &body.kind else {
+            panic!("loop block")
+        };
+        &statements[1]
+    }
+
+    #[test]
+    fn terminated_exit_guard_reuses_the_statement_if_and_roundtrips_the_cache() {
+        let old = crate::parse(&source(""), "exit-guard.spx").unwrap();
+        let new = crate::parse(&source(";"), "exit-guard.spx").unwrap();
+        let (
+            Statement::Let {
+                syntax: old_syntax,
+                name: old_name,
+                value: old_value,
+                span: old_span,
+                ..
+            },
+            Statement::Let {
+                syntax,
+                name,
+                mutable: false,
+                declared: None,
+                value,
+                span,
+                ..
+            },
+        ) = (guard(&old), guard(&new))
+        else {
+            panic!("normalized discards")
+        };
+        assert!(matches!(syntax, LetSyntax::StatementIf(_)));
+        assert_eq!(syntax, old_syntax);
+        assert_eq!(name, old_name);
+        // The value tree, its spans and its hidden name are those of the old
+        // spelling; only the statement span additionally covers the `;`.
+        assert_eq!(value, old_value);
+        assert_eq!((span.start, span.end), (old_span.start, old_span.end + 1));
+        let canonical = crate::format::canonical(&old);
+        assert_eq!(crate::format::canonical(&new), canonical);
+        assert!(!canonical.contains("let _if"), "{canonical}");
+        let bytes = encode(&new).unwrap();
+        let restored: Program = decode(&bytes).unwrap();
+        assert_eq!(restored.functions, new.functions);
+        assert_eq!(encode(&restored).unwrap(), bytes);
+        assert!(decode::<Program>(&bytes[..bytes.len() - 1]).is_err());
+        assert_eq!(crate::format::canonical(&restored), canonical);
+        let reparsed = crate::parse(&canonical, "exit-guard.spx").unwrap();
+        let Statement::Let {
+            syntax: reparsed_syntax,
+            name: reparsed_name,
+            ..
+        } = guard(&reparsed)
+        else {
+            panic!("canonical discard")
+        };
+        assert_eq!((reparsed_syntax, reparsed_name), (old_syntax, old_name));
     }
 }

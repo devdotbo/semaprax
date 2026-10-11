@@ -1,7 +1,7 @@
 //! A scalar statement is an ordinary immutable let with independently checked syntax.
 use semaprax::{ast, check, format, graph, hir, parse, verify};
 #[path = "scalar_expression/backends.rs"]
-mod backends;
+pub(super) mod backends;
 
 const PATH: &str = "scalar-expression.spx";
 fn source(body: &str) -> String {

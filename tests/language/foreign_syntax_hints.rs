@@ -158,16 +158,31 @@ fn main() -> i64
     let diagnostic = rejection(&main_body("1;"));
     assert_eq!(diagnostic.code, "SPX-P106");
     assert_eq!(diagnostic.message, "expected `}` after block");
-    let malformed = main_body("let mut i=0;while i<2 {i=i+1;if i==1 {continue;} else {0};0} i");
-    let diagnostics = semaprax::check(&malformed, "habit.spx").unwrap_err();
-    assert!(
-        diagnostics.iter().any(|d| d.code == "SPX-T312"),
-        "{diagnostics:?}"
-    );
-    admitted_lexical(
-        &malformed.replace("else {0};0", "else {0} 0"),
-        "2",
-        "valued-exit-guard",
+    // The habitual `;` after a bare exit guard is now admitted as the same
+    // statement `if` as the unterminated spelling, with identical canonical text.
+    let terminated = main_body("let mut i=0;while i<2 {i=i+1;if i==1 {continue;} else {0};0} i");
+    admitted_lexical(&terminated, "2", "terminated-exit-guard");
+    let unterminated = terminated.replace("else {0};0", "else {0} 0");
+    admitted_lexical(&unterminated, "2", "valued-exit-guard");
+    let canonical = |source: &str| {
+        semaprax::format::canonical(&semaprax::check(source, "habit.spx").unwrap())
+    };
+    assert_eq!(canonical(&terminated), canonical(&unterminated));
+    // Value boundaries keep their refusals: an initializer and an operator
+    // suffix are generic discarded initializers, and a final `;` has no item.
+    for closed in [
+        terminated.replace("if i==1 {continue;} else {0};", "let _=if i==1 {continue;} else {0};"),
+        terminated.replace("else {0};0", "else {0} + 0;0"),
+    ] {
+        let diagnostics = semaprax::check(&closed, "habit.spx").unwrap_err();
+        assert!(
+            diagnostics.iter().any(|d| d.code == "SPX-T312"),
+            "{closed}: {diagnostics:?}"
+        );
+    }
+    assert_eq!(
+        rejection(&terminated.replace("else {0};0}", "else {0};}")).code,
+        "SPX-P106"
     );
 }
 

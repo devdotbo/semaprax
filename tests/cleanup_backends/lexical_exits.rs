@@ -38,10 +38,45 @@ fn main() -> i64 { run(false) + take("kept") }
 
 #[test]
 fn native_lexical_loops_return_cleanup_and_failed_ensures_preserve_reentry_o0_o2() {
+    native_contract_probe(SOURCE);
+}
+
+/// A valued guard terminated by `;` is the unterminated control program:
+/// the same C, contract failure selection, cleanup counts and reentry.
+#[test]
+fn terminated_valued_guards_keep_native_ensures_cleanup_and_reentry_o0_o2() {
+    let (mut control, mut terminated) = (SOURCE.to_owned(), SOURCE.to_owned());
+    for guard in [
+        "if index == 2 { continue; }",
+        "if index == 4 { break; }",
+        "if fail { return 8; }",
+    ] {
+        let authored = format!("{guard};");
+        assert_eq!(SOURCE.matches(&authored).count(), 1, "{guard}");
+        control = control.replace(&authored, &format!("{guard} else {{ 0 }}"));
+        terminated = terminated.replace(&authored, &format!("{guard} else {{ 0 }};"));
+    }
+    let parsed = |source: &str| {
+        semaprax::parse(source, Path::new("native-lexical-guards.spx")).unwrap()
+    };
+    let (new, old) = (parsed(&terminated), parsed(&control));
+    assert_eq!(
+        semaprax::format::canonical(&new),
+        semaprax::format::canonical(&old)
+    );
+    assert_eq!(
+        semaprax::codegen::emit_c(&new).unwrap(),
+        semaprax::codegen::emit_c(&old).unwrap()
+    );
+    native_contract_probe(&control);
+    native_contract_probe(&terminated);
+}
+
+fn native_contract_probe(source: &str) {
     if Command::new("clang").arg("--version").output().is_err() {
         return;
     }
-    let parsed = semaprax::parse(SOURCE, Path::new("native-lexical-exits.spx")).unwrap();
+    let parsed = semaprax::parse(source, Path::new("native-lexical-exits.spx")).unwrap();
     let generated = semaprax::codegen::emit_c(&parsed).unwrap();
     assert_eq!(generated, semaprax::codegen::emit_c(&parsed).unwrap());
     assert!(generated.contains("spx_lexical_latch_"));
@@ -293,6 +328,40 @@ fn native_owning_loop_normal_then_continue_then_break_settles_every_owner_o0_o2(
         9,
         super::owned_leaf_collections::native::Failure::None,
     );
+}
+
+#[test]
+fn terminated_valued_owning_guards_settle_every_owner_like_controls_o0_o2() {
+    if Command::new("clang").arg("--version").output().is_err() {
+        return;
+    }
+    let source = OWNED_BREAK.replace(r#"@id("app.main")"#, r#"@id("owned.leaf.main")"#);
+    let (mut control, mut terminated) = (source.clone(), source.clone());
+    for guard in ["if seen == 2 { continue; }", "if seen == 3 { break; }"] {
+        let authored = format!("{guard};");
+        assert_eq!(source.matches(&authored).count(), 1, "{guard}");
+        control = control.replace(&authored, &format!("{guard} else {{ 0 }}"));
+        terminated = terminated.replace(&authored, &format!("{guard} else {{ 0 }};"));
+    }
+    let checked = |source: &str| semaprax::check(source, "owning-guards.spx").unwrap();
+    let (new, old) = (checked(&terminated), checked(&control));
+    assert_eq!(
+        semaprax::format::canonical(&new),
+        semaprax::format::canonical(&old)
+    );
+    assert_eq!(
+        semaprax::codegen::emit_c(&new).unwrap(),
+        semaprax::codegen::emit_c(&old).unwrap()
+    );
+    // Item, remainder and nested owners settle once on every route at O0/O2.
+    for source in [&control, &terminated] {
+        super::owned_leaf_collections::native::run(
+            source,
+            0,
+            9,
+            super::owned_leaf_collections::native::Failure::None,
+        );
+    }
 }
 
 #[test]

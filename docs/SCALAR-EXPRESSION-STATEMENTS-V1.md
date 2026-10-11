@@ -34,7 +34,12 @@ The hidden structural AST helper is presentation support, never typed authority.
 
 A generic discarded initializer cannot contain a lexical exit (`SPX-T312`).
 The existing separately authenticated StatementIf marker keeps its statement
-exit privilege. See [lexical exits](LEXICAL-STRUCTURED-EXITS-V1.md),
+exit privilege. A bare valued `if` whose parsed tree contains an exit, followed
+directly by `;` and another block item, is therefore not an expression
+statement: the parser mints that existing StatementIf marker for it, exactly as
+for the unterminated spelling. Every other `expr;`, including a postfix or
+operator continuation of such an `if` and one followed by an item that could
+continue it (`-x;`, `(x);`), keeps this generic marker and its `SPX-T312`. See [lexical exits](LEXICAL-STRUCTURED-EXITS-V1.md),
 [statement if](STATEMENT-IF-CANONICAL-V1.md), and
 [language ergonomics](LANGUAGE-ERGONOMICS-V1.md).
 

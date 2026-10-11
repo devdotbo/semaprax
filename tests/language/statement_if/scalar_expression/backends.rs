@@ -4,7 +4,7 @@ use semaprax::{ast::Program, check, codegen, wasm};
 use std::path::Path;
 use std::process::Command;
 
-pub(super) fn assert_execution_pair(
+pub(in super::super) fn assert_execution_pair(
     authored: &str,
     ordinary: &str,
     expected: Option<i64>,
@@ -28,7 +28,7 @@ pub(super) fn assert_execution_pair(
     }
 }
 
-fn native(program: &Program, root: &Path, expected: Option<i64>) {
+pub(in super::super) fn native(program: &Program, root: &Path, expected: Option<i64>) {
     let generated = codegen::emit_c(program).unwrap();
     let expected_check = match expected {
         Some(value) => format!("if(status!=SPX_STATUS_SUCCESS || value!=INT64_C({value})) return 2;"),
@@ -97,6 +97,12 @@ fn core_wasm(program: &Program, root: &Path, expected: Option<i64>, internal_str
     }
     let web = root.join("web");
     wasm::build_web(program, &web).unwrap();
+    // The package carries exactly the ordinary Core Wasm emitter's module; its
+    // generated runtime is the host whose checked statuses are asserted below.
+    assert_eq!(
+        std::fs::read(web.join("app.wasm")).unwrap(),
+        wasm::emit_module(program).unwrap()
+    );
     std::fs::write(web.join("package.json"), "{\"type\":\"module\"}\n").unwrap();
     let expected_check=match expected {
         Some(value)=>format!("if(instance.exports.semaprax_main()!=={value}n) throw Error('scalar statement value');"),

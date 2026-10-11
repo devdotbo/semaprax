@@ -23,6 +23,9 @@ mod scalar_expression;
 #[path = "statement_if/guard_return.rs"]
 mod guard_return;
 
+#[path = "statement_if/exit_guard_semicolon.rs"]
+mod exit_guard_semicolon;
+
 static NEXT_ID: AtomicU64 = AtomicU64::new(0);
 
 /// Copy-scalar statement `if`s in straight-line code and `while` bodies; the

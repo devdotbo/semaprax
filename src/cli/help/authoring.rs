@@ -32,7 +32,7 @@ pub(super) fn lookup(query: &str) -> Result<String, String> {
         "author:lexical-exits" => Ok(concat!(
             "Lexical structured exits v1: source implementation; executable qualification pending.\n",
             "Inside an admitted loop: if skip { continue; }; if done { break; }; followed by the ordinary body tail. An unconditional exit ends its block: do not append dummy 0 or unreachable effects.\n",
-            "An intermediate Copy-valued if/else can discard its result with a semicolon. A guard containing an exit keeps no semicolon after its else block: if skip { continue; } else { 0 } then the next item. Do not wrap that exit guard in let _ (SPX-T312).\n",
+            "An intermediate Copy-valued if/else can discard its result with a semicolon. A bare guard containing an exit may end with or without one before the next item: if skip { continue; } else { 0 }; canonical text drops it. let _ = guard or an operator suffix stays SPX-T312; a final ; } stays SPX-P106.\n",
             "break; and continue; target the nearest loop. while continue checks its condition; for/for borrow/for own continue advances the authenticated iterator exactly once without running the body suffix. for own break settles remaining items. No labels or valued break.\n",
             "return value; targets this function with its exact result type. A loop may hand off a whole named owner; its operand still follows ordinary loop operation/loan rules. Accepted acyclic guard/terminal returns keep their value projection.\n",
             "Exits are direct function/loop/control-block statement tails, never inside initializers, call arguments, aggregates, return operands, closures, unsafe or yields functions. SPX-T312: move the exit to a statement guard. SPX-T313: break/continue need an enclosing loop. SPX-T103/O104: preserve exact result type and owner transfer.\n",
@@ -392,7 +392,9 @@ mod tests {
         let traversal = lookup("author:record-traversal").unwrap();
         let exits = lookup("author:lexical-exits").unwrap();
         assert!(exits.contains("Copy-valued if/else can discard"));
-        assert!(exits.contains("A guard containing an exit keeps no semicolon"));
+        assert!(exits.contains("A bare guard containing an exit may end with or without one"));
+        assert!(exits.contains("let _ = guard or an operator suffix stays SPX-T312"));
+        assert!(exits.contains("a final ; } stays SPX-P106"));
         let utf8 = lookup("author:string-from-utf8").unwrap();
         for card in [&traversal, &exits, &utf8] {
             assert!(card.len() <= MAX_BYTES);

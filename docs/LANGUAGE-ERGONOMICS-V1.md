@@ -95,6 +95,19 @@ value `if`:
   a final `expr; }` still refuses (`SPX-P106`);
 - followed by another statement, it is discarded like any statement `if`.
 
+One exception keeps an exit guard's habitual spelling. A bare chain whose
+parsed tree contains a [lexical exit](LEXICAL-STRUCTURED-EXITS-V1.md), followed
+directly by `;` and another block item, is that same discarded statement `if`:
+`if skip { continue; } else { 0 };` has the parser-minted statement marker,
+normalized tree, discard name, canonical text and graph of the unterminated
+spelling. The `;` widens only the statement span; canonical text drops it.
+Such input was previously refused (`SPX-T312`), so no accepted program changes
+meaning. A chain without an exit, a postfix or operator continuation, a final
+`;`, and a next item that could itself continue the value `if` (such as `-x;`
+or `(x);`, which the `;`-free canonical text would fuse) keep the rules above.
+The exit-guard discard stays the scalar `i64` zero, and no owned or aggregate
+discard is introduced.
+
 ### Diagnostics
 
 A statement `if` yields no value, so a block that needs a value still needs a
@@ -187,7 +200,10 @@ trailing `;`, a discarded value `if`, and a source that already names
 JSON, and Core Wasm bytes, and runs it on the reference interpreter, native C
 through `semaprax run --native`, and Core Wasm in Node. A `for` body corpus
 runs on the interpreter and native C. Diagnostic regressions pin the refusals
-above.
+above. The terminated exit-guard regressions in
+`tests/language/statement_if/exit_guard_semicolon.rs` and the owning
+cleanup/owned-data lexical-exit harnesses are authored; their execution is
+pending qualification.
 
 ## Additive byte widening
 

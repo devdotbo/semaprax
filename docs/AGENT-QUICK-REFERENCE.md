@@ -74,16 +74,21 @@ fn main() -> i64
   profile admits `break;`, `continue;` and ordinary `return value;` as direct
   function/loop/control-block tails; executable qualification is pending.
   Use `if skip { continue; };` or `if done { break; };` inside a loop.
-  With a valued `else`, omit the intermediate semicolon: `if skip { continue; }
-  else { 0 }` followed by the next statement or tail. Wrapping an exit guard in
-  `let _ =` crosses an initializer and remains `SPX-T312`.
+  With a valued `else`, `if skip { continue; } else { 0 }` may end with or
+  without `;` when another statement or the tail follows; `fmt` drops the `;`.
+  A final `;` before `}` remains `SPX-P106`; a next item starting with an
+  operator or `(` keeps `SPX-T312`, so bind that item with `let`. Wrapping an
+  exit guard in `let _ =`, or extending it with an operator, crosses a value
+  boundary and remains `SPX-T312`.
   An unconditional exit ends its block: do not add a dummy tail or unreachable
   effects. Continue advances an admitted source `for` exactly once; break/continue
   target only the nearest loop (`SPX-T313` otherwise). Exit crossings through
   initializers, arguments, aggregate fields, return operands, closures, unsafe or
   yields functions refuse (`SPX-T312`). Return must keep the declared result type
-  and owning transfer (`SPX-T103`/`SPX-O104`). Expression statements, tuples and
-  public unit/bottom values remain closed. See `help language author:lexical-exits`.
+  and owning transfer (`SPX-T103`/`SPX-O104`). Only Copy scalar `expr;`
+  statements are admitted; owning, aggregate and borrowed discards
+  (`SPX-T315`), tuples and public unit/bottom values remain closed. See
+  `help language author:lexical-exits`.
 - Source blocks, delimiters, unary chains, and expression trees may nest at
   most 128 levels; `SPX-P207` asks you to extract a named helper.
 - Canonical layout puts the function body's `{` on its own line and each

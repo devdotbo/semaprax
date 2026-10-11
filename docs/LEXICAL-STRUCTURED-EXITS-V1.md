@@ -140,6 +140,38 @@ A guard may end its selected arm with `if skip { continue; };` or
 following an unconditional exit. Keep the loop's ordinary tail on paths that
 complete normally. No labeled exit or valued break is admitted.
 
+A guard with a valued alternative, `if skip { continue; } else { 0 }`, may also
+end with `;` when another block item follows. The parser admits that `;` only
+for a bare chain whose parsed tree actually contains an exit, with no postfix or
+operator continuation, and only when `}` or end of input does not follow.
+Canonical text omits the `;`, so the next item must also be unable to continue
+the value `if`: one beginning with a binary operator, `(`, `.`, `?`, `::` or
+`with` (for example `-x;` or `(x);`) keeps the generic discard and `SPX-T312`. It
+reuses the existing statement `if`: the same parser-minted StatementIf marker,
+normalized value tree, hygienic discard name, nearest targets, latches, cleanup
+plans, graph and canonical text as the unterminated spelling; the `;` only widens
+the statement span. No AST, HIR, cache, graph or backend variant is added. The
+source contour admits a statement route only through that marker on its own
+normalized shape (an immutable, unannotated discard of a value `if`); a marker
+on a mutable, annotated or non-`if` binding is refused with `SPX-T312`. The
+source contour also independently requires every reachable normal completion of
+the guard to be the scalar discard zero `0`: an owned, aggregate, borrowed,
+non-`i64` or nonzero normal arm would be stored, so its exits cross a value
+boundary (`SPX-T312`) in either spelling before HIR replay. Names and
+punctuation grant nothing. Independent HIR replay still authenticates the
+guard itself: an unread immutable `i64` Value binding whose reachable
+completions are exactly the scalar discard zero, with exact nearest targets
+(`SPX-H006` otherwise). The `;` gives no lexical authority to any generic
+discarded initializer, condition, `let`, argument, aggregate, return operand,
+closure, unsafe or yields boundary (`SPX-T312`). Outside a loop the guard keeps
+`SPX-T313`, an all-exit chain keeps `SPX-P209` and a final `;` keeps `SPX-P106`.
+Owning differential, hostile-marker/target/completion, nesting-bound,
+cache/graph and interpreter/native O0/O2/Core Wasm regressions are authored in
+`language::statement_if::exit_guard_semicolon`, the parser cache unit test,
+`cleanup_backends::lexical_exits` and `owned_data::lexical_exits`. Their
+execution is pending qualification, and no token, turn or runtime gain is
+claimed.
+
 `SPX-T312` rejects a lexical exit crossing an initializer, argument, aggregate,
 return operand, closure, unsafe or yields boundary. `SPX-T313` requires an
 actual enclosing loop for break/continue. `SPX-T103` and `SPX-O104` preserve the

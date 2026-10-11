@@ -42,6 +42,28 @@ fn check_function(program: &Program, function: &Function, diagnostics: &mut Vec<
         diagnostics,
     );
 }
+/// Independently of HIR replay, a statement guard completes normally only with
+/// the scalar discard zero. Any other normal value (owned, aggregate, borrowed,
+/// non-`i64` or nonzero) would be stored, so its exits cross a value boundary.
+fn guard_completion(expr: &Expr, depth: usize) -> bool {
+    if depth > crate::cache_codec::MAX_DEPTH {
+        return false;
+    }
+    match &expr.kind {
+        ExprKind::LexicalExit { .. } | ExprKind::Int(0) => true,
+        ExprKind::Block { tail, .. } => guard_completion(tail, depth + 1),
+        ExprKind::If {
+            then_branch,
+            else_branch,
+            ..
+        } => guard_completion(then_branch, depth + 1) && guard_completion(else_branch, depth + 1),
+        ExprKind::Match { arms, .. } => {
+            !arms.is_empty() && arms.iter().all(|arm| guard_completion(&arm.value, depth + 1))
+        }
+        _ => false,
+    }
+}
+
 fn walk(
     program: &Program,
     expr: &Expr,
@@ -92,14 +114,29 @@ fn walk(
         ExprKind::Block { statements, tail } => {
             for statement in statements {
                 match statement {
-                    Statement::Let { syntax, value, .. } => walk(
-                        program,
+                    // The parser marker selects the route only on its own
+                    // normalized shape; names and `;` spelling never do.
+                    Statement::Let {
+                        syntax: LetSyntax::StatementIf(marker),
+                        mutable: false,
+                        declared: None,
                         value,
-                        statement_route && matches!(syntax, LetSyntax::StatementIf(_)),
-                        loops,
-                        depth + 1,
-                        diagnostics,
-                    ),
+                        ..
+                    } if !marker.branches().is_empty()
+                        && matches!(value.kind, ExprKind::If { .. }) =>
+                    {
+                        walk(
+                            program,
+                            value,
+                            statement_route && guard_completion(value, depth + 1),
+                            loops,
+                            depth + 1,
+                            diagnostics,
+                        )
+                    }
+                    Statement::Let { value, .. } => {
+                        walk(program, value, false, loops, depth + 1, diagnostics)
+                    }
                     Statement::Assign { value, .. } => {
                         walk(program, value, false, loops, depth + 1, diagnostics)
                     }
