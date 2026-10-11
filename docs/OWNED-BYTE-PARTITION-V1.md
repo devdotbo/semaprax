@@ -597,3 +597,30 @@ sums, one-short refusal before allocation, empty whole views and child-to-whole
 refusal. These are unexecuted private receiver controls. Evaluator root binding,
 call/return transitions and all canonical finalizers still must be joined
 before ordinary source installation.
+
+### Private direct source entry checkpoint
+
+The interpreter now has a source-held direct receiver for an immutable main
+body containing exactly a literal bytes_zeroed allocation, bytes_partition,
+and i64_from_usize(vec_len(children)). It receives the original sealed program,
+rechecks the current graph, and consumes the invocation view bound once.
+Actual binding IDs and operation operands are matched before any allocation.
+Receiving comparisons consume the same work counter. Caller-supplied finite
+Account storage remains held through finalization; no default funding amount
+or ordinary admission is introduced.
+
+On the completed path, the affine Vec is finalized by its exact whole-value
+action in the canonical scalar exit before publication. Three repeated calls
+share one account and its cumulative event/payload counters. Source controls
+retain the original 4096 children and 12288-byte backing, one child, and an
+empty partition with maximal semantic width. Unsupported helper provenance,
+additional statements, and work or physical shortage refuse before payload
+effects.
+
+This is a private partial executable contour, not complete ordinary partition
+support. Copy, bounded zeroing, views, iteration, helpers, contracts and public
+owned results are still refused by this receiver. Operation-fault and
+administrative paths publish no scalar, and report cleanup_complete=false:
+physical abandonment is not canonical failure settlement. The actual
+language-failure contour and broader loan/frame/finalizer installation remain
+required before activation. Authored controls are unexecuted.
