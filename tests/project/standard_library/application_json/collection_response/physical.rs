@@ -282,18 +282,24 @@ while at<count{let row=vec_clone_at<Item>(seeds,0usize);rows=vec_push<Item>(rows
 Report{stats:Metrics{selected:count,total:0,live:true},entries:rows}
 }
 @id("consumer.required") fn required(value:borrow Report)->usize{encoded_len(value)}
-@id("consumer.run") fn run(value:borrow Report,limit:usize,expected:borrow Slice<u8>)->i64{
+@id("consumer.run") fn run(value:borrow Report,limit:usize,length:usize)->i64{
 let outcome=encode(value,limit);match own outcome {
-Encoded::Refused{required:n}=>if n==byte_len(expected){1}else{0},
+Encoded::Refused{required:n}=>if n==length{1}else{0},
+Encoded::Encoded{text}=>0,}}
+@id("consumer.render") fn render(value:borrow Report,limit:usize)->Encoded{encode(value,limit)}
+@id("consumer.compare") fn compare_chunk(outcome:borrow Encoded,offset:usize,total:usize,expected:borrow Slice<u8>)->bool{
+match borrow outcome {
+Encoded::Refused{required:n}=>false,
 Encoded::Encoded{text}=>{
-let actual=str_as_bytes(string_as_str(text));let mut at=0usize;
-let mut same=byte_len(actual)==byte_len(expected);
-while same && at<byte_len(actual){same=match byte_get(actual,at){Option::Some{value:a}=>match byte_get(expected,at){Option::Some{value:b}=>a==b,Option::None{}=>false,},Option::None{}=>false,};at=at+1usize;same && at<byte_len(actual)}
-if same{2}else{0}
+let actual=str_as_bytes(string_as_str(text));let width=byte_len(expected);let mut at=0usize;
+let mut same=byte_len(actual)==total && offset<=total && width<=total-offset;
+while same && at<width{same=match byte_get(actual,offset+at){Option::Some{value:a}=>match byte_get(expected,at){Option::Some{value:b}=>a==b,Option::None{}=>false,},Option::None{}=>false,};at=at+1usize;same && at<width}
+same
 },}}
+@id("consumer.release") fn release(outcome:own Encoded)->i64{0}
 @id("consumer.consume") fn consume(value:own Report)->i64{0}
 @id("consumer.main") fn main()->i64{
-let value=prepare(0usize);let n=required(value);let empty=[0u8];let outcome=run(value,n,array_as_slice(empty));let dropped=consume(value);outcome+dropped
+let value=prepare(0usize);let n=required(value);let refused=run(value,n-1usize,n);let outcome=render(value,n);let open=[123u8];let same=compare_chunk(outcome,0usize,n,array_as_slice(open));let released=release(outcome);let dropped=consume(value);let checked=if same{0}else{1};refused+checked+released+dropped
 }
 "#
 }
@@ -346,17 +352,27 @@ fn probe(label: &str, root: &std::path::Path) -> Vec<Vec<Value>> {
     let copies = include_str!("../../../../native/string_settlement/bulk_utf8/copies.c");
     let hooks = include_str!("physical_hooks.c");
     let probe = include_str!("physical_probe.c");
-    // The emitted Borrow Report ABI separately passes its exact Vec field.
-    // Both codecs use the same live prepared field, without copying its carrier.
+    // The emitted Borrow Report ABI separately passes its exact Vec field, and
+    // Borrow Encoded the exact owned String leaf of its Encoded case. Both
+    // codecs use the same live prepared field, without copying its carrier.
+    // Only the expected chunk is an external Slice root; the encoded owner is
+    // never relabelled as one.
     let source = format!(
-        "#define FIXTURE_TRACK_CALLOC\n{observer}\n{copies}\n{hooks}\n#define main fixture_generated_main\n{generated}\n#undef main\n#undef malloc\n#undef calloc\n#undef realloc\n#undef free\n#undef memcpy\n#define IMPLEMENTATION \"{label}\"\n#define PREPARE spx_decl_{}\n#define REQUIRED(context,input,result) spx_decl_{}((context),(input),&((input)->spx_field_{}),(result))\n#define RUN(context,input,limit,expected,result) spx_decl_{}((context),(input),&((input)->spx_field_{}),(limit),(expected),(result))\n#define CONSUME spx_decl_{}\n#define REPORT spx_record_{}\n{probe}\nint main(void){{struct spx_status_entry entries[16];struct spx_context context={{0}};REQUIRE(spx_context_init(&context,737,entries,16,NULL,NULL,NULL));{cases}(void)puts(\"724\");return 0;}}",
+        "#define FIXTURE_TRACK_CALLOC\n{observer}\n{copies}\n{hooks}\n#define main fixture_generated_main\n{generated}\n#undef main\n#undef malloc\n#undef calloc\n#undef realloc\n#undef free\n#undef memcpy\n#define IMPLEMENTATION \"{label}\"\n#define PREPARE spx_decl_{}\n#define REQUIRED(context,input,result) spx_decl_{}((context),(input),&((input)->spx_field_{}),(result))\n#define RUN(context,input,limit,length,result) spx_decl_{}((context),(input),&((input)->spx_field_{}),(limit),(length),(result))\n#define RENDER(context,input,limit,result) spx_decl_{}((context),(input),&((input)->spx_field_{}),(limit),(result))\n#define COMPARE(context,held,offset,total,chunk,result) spx_decl_{}((context),(held),&((held)->spx_payload.spx_case_{}.spx_field_{}),(offset),(total),(chunk),(result))\n#define RELEASE spx_decl_{}\n#define CONSUME spx_decl_{}\n#define REPORT spx_record_{}\n#define ENCODED spx_variant_{}\n{probe}\nint main(void){{struct spx_status_entry entries[16];struct spx_context context={{0}};REQUIRE(spx_context_init(&context,737,entries,16,NULL,NULL,NULL));{cases}(void)puts(\"724\");return 0;}}",
         hex("consumer.prepare"),
         hex("consumer.required"),
         hex("response.report.items"),
         hex("consumer.run"),
         hex("response.report.items"),
+        hex("consumer.render"),
+        hex("response.report.items"),
+        hex("consumer.compare"),
+        hex("response.report.json.collection-response.encoded"),
+        hex("response.report.json.collection-response.text"),
+        hex("consumer.release"),
         hex("consumer.consume"),
-        hex("response.report")
+        hex("response.report"),
+        hex("response.report.json.collection-response.encode-result")
     );
     let mut runs = Vec::new();
     for optimization in ["-O0", "-O2"] {

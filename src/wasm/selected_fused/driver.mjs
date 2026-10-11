@@ -343,9 +343,14 @@ if (mode === 'original') {
     c.vec_drop(domain, vector);
     return 0n;
   }, 'borrowed');
+  // View capacity is a slot-table bound, not a row bound: 64 simultaneous
+  // borrows of valid row 0 fit even when the Vec holds fewer than 64 rows, and
+  // the 65th refuses on capacity rather than on range.
   const views = settledControl(instance, c => {
     const [domain, vector] = build(c), open = [];
-    for (let slot = 0; slot < 64; slot++) open.push(c.payload_borrow(domain, vector, BigInt(slot)));
+    for (let slot = 0; slot < 64; slot++) open.push(c.payload_borrow(domain, vector, 0n));
+    assert.equal(new Set(open).size, 64);
+    for (const view of open) assert.equal(c.view_len(domain, view), W);
     refusal(() => c.payload_borrow(domain, vector, 0n), 'view-capacity');
     for (const view of open) c.end_borrow(domain, view);
     c.vec_drop(domain, vector);
@@ -369,6 +374,7 @@ if (mode === 'original') {
       return v;
     }, 'stale'],
     [(c, d, v) => { refusal(() => c.field_scalar(d, v, R), 'range'); return v; }, 'range'],
+    [(c, d, v) => { refusal(() => c.payload_borrow(d, v, R), 'range'); return v; }, 'range'],
   ]) {
     settledControl(instance, c => {
       const [domain, vector] = build(c);
