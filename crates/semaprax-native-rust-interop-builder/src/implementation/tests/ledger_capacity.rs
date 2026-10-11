@@ -187,7 +187,10 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         include_str!("../../../../../src/hir/owned_result_try.rs"),
         include_str!("../../../../../src/hir/resolve_class.rs"),
         concat!(
-            include_str!("../../../../../src/hir/resolve_expr.rs"),
+            concat!(
+                include_str!("../../../../../src/hir/resolve_expr.rs"),
+                include_str!("../../../../../src/hir/resolve_expr/vec_constructor.rs")
+            ),
             "\n",
             include_str!("../../../../../src/hir/resolve_expr/byte_view.rs"),
             "\n",
@@ -299,7 +302,14 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         include_str!("../../../../../src/loop_calls/byte_writer/bindings.rs"),
         include_str!("../../../../../src/loop_calls/byte_writer/module_index.rs"),
         concat!(
-            include_str!("../../../../../src/hir/validation.rs"),
+            concat!(
+                include_str!("../../../../../src/hir/validation.rs"),
+                include_str!("../../../../../src/hir/validation/type_requirement.rs"),
+                concat!(
+                    include_str!("../../../../../src/hir/vec_constructor.rs"),
+                    include_str!("../../../../../src/hir/vec_constructor/capture.rs")
+                )
+            ),
             include_str!("../../../../../src/hir/validation/assign_field.rs"),
             include_str!("../../../../../src/hir/validation/contract_owners.rs"),
             "\n",

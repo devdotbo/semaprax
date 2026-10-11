@@ -362,7 +362,8 @@ fn push_children<'a>(expression: &'a ResolvedExpr, pending: &mut Vec<&'a Resolve
         | ResolvedExprKind::Float32(_)
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
+        | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. } => {}
         ResolvedExprKind::ByteRange {
@@ -386,7 +387,10 @@ fn push_children<'a>(expression: &'a ResolvedExpr, pending: &mut Vec<&'a Resolve
         | ResolvedExprKind::Upcast { source: value }
         | ResolvedExprKind::Yield { request: value } => pending.push(value),
         ResolvedExprKind::Binary { left, right, .. } => pending.extend([right.as_ref(), left]),
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             pending.push(tail);
             for statement in statements.iter().rev() {
                 for index in (0..statement.child_count()).rev() {
@@ -537,7 +541,8 @@ fn collect_expression_uses(
             );
         }
         ResolvedExprKind::Project { field, .. } => matches_id(field, target, "project_field", uses),
-        ResolvedExprKind::Block { statements, .. } => {
+        ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. } => {
             for statement in statements {
                 if let ResolvedStatement::Assign {
                     field: Some(field), ..
@@ -736,7 +741,7 @@ fn expression_kind(kind: &ResolvedExprKind) -> &'static str {
         ResolvedExprKind::LexicalExit { .. } => "lexical_exit",
         ResolvedExprKind::Unary { .. } => "unary",
         ResolvedExprKind::Binary { .. } => "binary",
-        ResolvedExprKind::Block { .. } => "block",
+        ResolvedExprKind::Block { .. } | ResolvedExprKind::VecConstructor { .. } => "block",
         ResolvedExprKind::If { .. } => "if",
         ResolvedExprKind::ConstructRecord { .. } => "record",
         ResolvedExprKind::ConstructVariant { .. } => "variant",

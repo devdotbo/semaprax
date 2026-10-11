@@ -30,7 +30,7 @@ pub(super) fn schedule<'a>(
     });
     Ok(())
 }
-pub(super) fn finish(
+pub(in crate::hir) fn finish(
     results: &mut Vec<ResolvedExpr>,
     element: ResolvedType,
     count: u32,
@@ -50,4 +50,30 @@ pub(super) fn finish(
     crate::hir::vec_constructor::authenticate(&expression)?;
     results.push(expression);
     Ok(())
+}
+
+#[cfg(test)]
+impl Resolver<'_> {
+    pub(in crate::hir) fn resolve_constructor_reference(
+        &self,
+        function: &FunctionExecutionId,
+        expr: &Expr,
+        bindings: &BTreeMap<String, Binding>,
+        path: &str,
+        nearest: Option<&crate::hir::ControlTarget>,
+    ) -> Result<ResolvedExpr, Diagnostic> {
+        let expansion =
+            crate::ast::vec_constructor::inspect(expr).map_err(crate::hir::hir_error)?;
+        let element = self.resolve_call_type_argument(function, expansion.element, expr.span)?;
+        let resolved = self.resolve_expr_recursive_reference_inner(
+            function,
+            expansion.value,
+            bindings,
+            path,
+            nearest,
+        )?;
+        let mut results = vec![resolved];
+        finish(&mut results, element, expansion.count)?;
+        Ok(results.pop().expect("reference constructor result"))
+    }
 }

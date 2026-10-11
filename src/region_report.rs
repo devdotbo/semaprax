@@ -509,7 +509,10 @@ fn collect_expr(
             collect_expr(left, scope_end, resolved, facts);
             collect_expr(right, scope_end, resolved, facts);
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             for statement in statements {
                 match statement {
                     ResolvedStatement::Let {
@@ -606,7 +609,8 @@ fn collect_expr(
         | ResolvedExprKind::Float32(_)
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
+        | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::ArrayU8(_)
         | ResolvedExprKind::RepeatArrayU8 { .. } => {}
     }

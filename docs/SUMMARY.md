@@ -745,3 +745,5 @@ Audience: all documentation readers.
 - [Selected-file LogLens adoption](../experiments/selected-file-input/loglens/README.md)
 
 - [Scalar Expression Statements v1](SCALAR-EXPRESSION-STATEMENTS-V1.md)
+
+- [Typed Vec Constructors v1](TYPED-VEC-CONSTRUCTORS-V1.md)

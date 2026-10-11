@@ -89,14 +89,18 @@ pub(crate) fn renewal_bindings<'a>(
 fn has_record_renewal_candidate(body: &ResolvedExpr) -> bool {
     let mut pending = vec![body];
     while let Some(expression) = pending.pop() {
-        if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+        if let ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+        {
             for statement in statements {
                 if let ResolvedStatement::While { body, .. }
                 | ResolvedStatement::LexicalWhile { body, .. } = statement
                 {
                     let mut loop_nodes = vec![body.as_ref()];
                     while let Some(node) = loop_nodes.pop() {
-                        if let ResolvedExprKind::Block { statements, .. } = &node.kind {
+                        if let ResolvedExprKind::Block { statements, .. }
+                        | ResolvedExprKind::VecConstructor { statements, .. } = &node.kind
+                        {
                             if statements.iter().any(|statement| matches!(statement,
                                 ResolvedStatement::Assign { binding, field: None, value, .. }
                                     if binding.ownership == OwnershipMode::Own
@@ -128,7 +132,9 @@ fn record_bindings<'a>(
     let mut found = BTreeMap::new();
     let mut pending = vec![body];
     while let Some(expression) = pending.pop() {
-        if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+        if let ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+        {
             for statement in statements {
                 if let ResolvedStatement::While { body, .. }
                 | ResolvedStatement::LexicalWhile { body, .. } = statement
@@ -149,7 +155,9 @@ fn collect_record_bindings<'a>(
 ) {
     let mut pending = vec![body];
     while let Some(expression) = pending.pop() {
-        if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+        if let ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+        {
             for statement in statements {
                 if let ResolvedStatement::Assign {
                     binding,
@@ -263,7 +271,9 @@ fn bindings<'a>(
     let mut found = BTreeMap::new();
     let mut pending = vec![body];
     while let Some(expression) = pending.pop() {
-        if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+        if let ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+        {
             for statement in statements {
                 if let ResolvedStatement::While {
                     condition, body, ..
@@ -301,7 +311,9 @@ fn conditional_bindings<'a>(
             continue;
         }
         if conditional {
-            if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+            if let ResolvedExprKind::Block { statements, .. }
+            | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+            {
                 for statement in statements {
                     if let ResolvedStatement::Assign {
                         binding,

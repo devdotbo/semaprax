@@ -247,7 +247,9 @@ pub(crate) fn true_body_match<'a>(
 pub(crate) fn function_contains(function: &ResolvedFunction) -> bool {
     let mut pending = vec![&function.body];
     while let Some(expression) = pending.pop() {
-        if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+        if let ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+        {
             if statements.iter().any(|statement| matches!(statement, ResolvedStatement::While { condition, body, .. } | ResolvedStatement::LexicalWhile { condition, body, .. } if recognize(condition, body).is_some())) { return true; }
         }
         push_resolved_expression_children_in_authored_order(expression, &mut pending);

@@ -21,6 +21,7 @@ impl Parser {
             path,
             discards: Default::default(),
             explicit_lexical_exits: false,
+            constructor_bytes: 0,
         })
     }
 
@@ -40,6 +41,7 @@ impl Parser {
             path,
             discards: Default::default(),
             explicit_lexical_exits: false,
+            constructor_bytes: 0,
         }
         .parse()?;
         Ok((program, comments))

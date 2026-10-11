@@ -199,7 +199,10 @@ fn count(
                 }
             }
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             local = checked_skeleton_add(
                 function,
                 checked_skeleton_mul(function, statements.len(), 5)?,

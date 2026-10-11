@@ -403,7 +403,7 @@ impl ScanState<'_> {
             | ExprKind::Usize(_)
             | ExprKind::Bool(_)
             | ExprKind::String(_)
-| ExprKind::BorrowedUtf8Literal(_)
+            | ExprKind::BorrowedUtf8Literal(_)
             | ExprKind::Var(_) => None,
             ExprKind::Float32(_) | ExprKind::Float64(_) => Some(REASON_FLOAT_LITERAL),
             ExprKind::Char(_) => Some(REASON_CHAR_LITERAL),
@@ -426,7 +426,9 @@ impl ScanState<'_> {
                 }
                 args.iter().find_map(|argument| self.scan(argument))
             }
-            ExprKind::Unary { value, .. } => self.scan(value),
+            ExprKind::VecConstructor { value, .. } | ExprKind::Unary { value, .. } => {
+                self.scan(value)
+            }
             ExprKind::Binary { left, right, .. } => self.scan(left).or_else(|| self.scan(right)),
             ExprKind::Block { statements, tail } => statements
                 .iter()

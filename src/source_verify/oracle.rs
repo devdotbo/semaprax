@@ -25,7 +25,7 @@ use super::place::{
     check_source_place_availability, join_definitely_partial, join_moved_places,
     overlapping_place_state, source_place,
 };
-use super::type_table::{TypeTable, effective_record_fields};
+use super::type_table::{effective_record_fields, TypeTable};
 use crate::ast::{
     BinaryOp, Expr, ExprKind, Function, ParamMode, Program, Statement, Type, TypeDeclarationKind,
     UnaryOp,
@@ -56,8 +56,11 @@ pub(super) fn check_expr(
 ) -> Option<CheckedValue> {
     match &expr.kind {
         ExprKind::VecConstructor { .. } => match crate::ast::vec_constructor::inspect(expr) {
-            Ok(expansion) => check_expr(program, current, expansion.value, variables,
+            Ok(expansion) if crate::ast::expression_statement::projection_roots(
+                current.requires.iter().chain(std::iter::once(&current.body)).chain(&current.ensures), current.params.iter().map(|param| param.name.as_str()).chain(current.type_parameters.iter().map(|param| param.name.as_str())),
+                crate::bounded_output::reserve_active_required) => check_expr(program, current, expansion.value, variables,
                 functions, types, result_type, allow_moves, diagnostics),
+            Ok(_) => { diagnostics.push(error(program, "SPX-T318", "Vec constructor generated owner names are not hygienic", expr.span)); None }
             Err(message) => { diagnostics.push(error(program, "SPX-T318", message, expr.span)); None }
         },
         ExprKind::LexicalExit{..}=>lexical_exit::check(program,current,expr,variables,functions,types,result_type,allow_moves,diagnostics),

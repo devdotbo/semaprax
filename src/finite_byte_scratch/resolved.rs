@@ -141,7 +141,7 @@ fn prove<'a>(
                     return None
                 }
                 K::Closure { .. } | K::Yield { .. } => return None,
-                K::Block { statements, .. } => {
+                K::Block { statements, .. } | K::VecConstructor { statements, .. } => {
                     work = work.checked_sub(statements.len())?;
                     if statements
                         .iter()

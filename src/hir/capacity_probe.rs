@@ -298,7 +298,13 @@ pub(super) fn resolved_expr_owned_capacity(expression: &ResolvedExpr) -> usize {
                 + none_case.as_str().len()
                 + resolved_type_owned_capacity(residual_type);
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
+            if let ResolvedExprKind::VecConstructor { element, .. } = &expression.kind {
+                bytes += resolved_type_owned_capacity(element);
+            }
             bytes += statements.capacity() * std::mem::size_of::<ResolvedStatement>();
             for statement in statements {
                 if let ResolvedStatement::Let { binding, value, .. } = statement {

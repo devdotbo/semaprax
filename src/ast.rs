@@ -1161,7 +1161,7 @@ pub struct FieldTarget {
 
 mod lexical_exit;
 pub(crate) use lexical_exit::returns_only;
-pub use lexical_exit::{LexicalExitKind, has_no_normal_completion};
+pub use lexical_exit::{has_no_normal_completion, LexicalExitKind};
 mod statement;
 pub use statement::{Statement, TraversalIndex};
 
@@ -1279,7 +1279,8 @@ impl Expr {
                 .then_some(receiver.as_ref())
                 .or_else(|| args.get(index - 1)),
             ExprKind::SuperMethod { args, .. } => args.get(index),
-            ExprKind::Unary { value, .. }
+            ExprKind::VecConstructor { value, .. }
+            | ExprKind::Unary { value, .. }
             | ExprKind::Try { operand: value }
             | ExprKind::Project { base: value, .. }
             | ExprKind::Yield { request: value } => (index == 0).then_some(value),

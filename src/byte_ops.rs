@@ -601,7 +601,9 @@ pub(crate) fn same_owner_set_bindings(
         if matches!(expression.kind, ResolvedExprKind::Closure { .. }) {
             continue;
         }
-        if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+        if let ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+        {
             for statement in statements {
                 match statement {
                     ResolvedStatement::Let {

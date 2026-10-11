@@ -117,7 +117,9 @@ pub(crate) fn validate_uses(program: &ResolvedProgram) -> Result<(), Diagnostic>
             if is_borrowed(expression) {
                 sites.insert(expression.id.clone());
             }
-            if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+            if let ResolvedExprKind::Block { statements, .. }
+            | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+            {
                 for statement in statements {
                     if let ResolvedStatement::Let {
                         binding,

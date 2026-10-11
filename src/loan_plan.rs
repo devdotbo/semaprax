@@ -211,7 +211,9 @@ fn has_own_root_candidate(
                 inventory_pattern_ownership(&arm.pattern, &mut ownership);
             }
         }
-        if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+        if let ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+        {
             for statement in statements {
                 if let ResolvedStatement::Let { binding, value, .. } = statement {
                     ownership.insert(binding.id.clone(), binding.ownership);
@@ -415,7 +417,9 @@ fn build_cfg_plan_counted(
                 inventory_pattern_ownership(&arm.pattern, &mut ownership);
             }
         }
-        if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+        if let ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+        {
             for statement in statements {
                 if let ResolvedStatement::Let { binding, value, .. } = statement {
                     ownership.insert(binding.id.clone(), binding.ownership);
@@ -812,7 +816,10 @@ fn build_cfg<'a>(
                 };
                 edge_set.insert((after, destination));
             }
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 let entry = statements
                     .first()
                     .map(statement_entry)
@@ -1024,6 +1031,7 @@ fn evaluation_children(expression: &ResolvedExpr) -> Vec<&ResolvedExpr> {
             .chain(fields.iter().map(|field| &field.value))
             .collect(),
         ResolvedExprKind::Block { .. }
+        | ResolvedExprKind::VecConstructor { .. }
         | ResolvedExprKind::If { .. }
         | ResolvedExprKind::Match { .. }
         | ResolvedExprKind::Int(_)
@@ -1085,7 +1093,9 @@ fn reject_cfg_overlaps(
                 )?;
             }
         }
-        if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+        if let ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+        {
             for statement in statements {
                 if let ResolvedStatement::Assign {
                     binding,
@@ -1355,7 +1365,10 @@ fn push_children<'a>(expression: &'a ResolvedExpr, pending: &mut Vec<&'a Resolve
             pending.extend(args.iter().rev());
             pending.push(callable);
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             pending.push(tail);
             for statement in statements.iter().rev() {
                 for index in (0..statement.child_count()).rev() {

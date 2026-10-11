@@ -87,7 +87,9 @@ fn walk<'a>(
         let (cursor, entered) = frames[depth - 1].ok_or_else(error)?;
         let expression = cursor.expression();
         if !entered {
-            if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+            if let ResolvedExprKind::Block { statements, .. }
+            | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+            {
                 *work = work.checked_sub(statements.len()).ok_or_else(error)?;
                 for item in statements {
                     statement(item)?;
@@ -211,7 +213,9 @@ mod tests {
         while let Some((expression, next)) = pending.pop() {
             expected_work -= 1;
             if next == usize::MAX {
-                if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+                if let ResolvedExprKind::Block { statements, .. }
+                | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+                {
                     expected_work -= statements.len();
                     reference.extend(statements.iter().map(|statement| statement as *const _));
                 }

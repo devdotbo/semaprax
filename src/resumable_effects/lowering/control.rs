@@ -325,7 +325,10 @@ fn collect_sites<'a>(
             collect_sites(then_branch, false, false, sites);
             collect_sites(else_branch, false, false, sites);
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             for statement in statements {
                 match statement {
                     ResolvedStatement::Let { value, .. }

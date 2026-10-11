@@ -274,7 +274,10 @@ impl PersistentCallIndex {
                 ResolvedExprKind::Binary { left, right, .. } => {
                     [left.as_ref(), right.as_ref()].get(index).copied()
                 }
-                ResolvedExprKind::Block { statements, tail } => {
+                ResolvedExprKind::Block { statements, tail }
+                | ResolvedExprKind::VecConstructor {
+                    statements, tail, ..
+                } => {
                     let mut offset = 0;
                     for statement in statements {
                         let count = statement.child_count();
@@ -339,7 +342,8 @@ impl PersistentCallIndex {
                 | ResolvedExprKind::Float32(_)
                 | ResolvedExprKind::Float64(_)
                 | ResolvedExprKind::Bool(_)
-                | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
+                | ResolvedExprKind::String(_)
+                | ResolvedExprKind::BorrowedUtf8Literal(_)
                 | ResolvedExprKind::ArrayU8(_)
                 | ResolvedExprKind::RepeatArrayU8 { .. }
                 | ResolvedExprKind::BorrowPlace { .. }

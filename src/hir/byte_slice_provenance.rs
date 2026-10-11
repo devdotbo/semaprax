@@ -391,7 +391,10 @@ pub(super) fn derive_byte_slice_provenance(
                         pending.push(left);
                         pending.push(right);
                     }
-                    ResolvedExprKind::Block { statements, tail } => {
+                    ResolvedExprKind::Block { statements, tail }
+                    | ResolvedExprKind::VecConstructor {
+                        statements, tail, ..
+                    } => {
                         pending.push(tail);
                         for statement in statements {
                             if let ResolvedStatement::Let {

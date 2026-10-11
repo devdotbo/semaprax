@@ -640,7 +640,7 @@ fn precheck_program(program: &Program) -> Result<AstUsage, Vec<Diagnostic>> {
             | ExprKind::Float64(_)
             | ExprKind::Bool(_)
             | ExprKind::String(_)
-| ExprKind::BorrowedUtf8Literal(_)
+            | ExprKind::BorrowedUtf8Literal(_)
             | ExprKind::ArrayU8(_)
             | ExprKind::RepeatArrayU8 { .. }
             | ExprKind::Var(_) => {}
@@ -654,7 +654,8 @@ fn precheck_program(program: &Program) -> Result<AstUsage, Vec<Diagnostic>> {
                 stack.extend(args);
             }
             ExprKind::LexicalExit { value, .. } => stack.extend(value.as_deref()),
-            ExprKind::Unary { value, .. }
+            ExprKind::VecConstructor { value, .. }
+            | ExprKind::Unary { value, .. }
             | ExprKind::Try { operand: value }
             | ExprKind::Yield { request: value }
             | ExprKind::Project { base: value, .. } => stack.push(value),

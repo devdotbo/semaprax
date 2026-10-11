@@ -702,7 +702,10 @@ impl Walker<'_> {
                 self.scan_expr(left);
                 self.scan_expr(right);
             }
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 for statement in statements {
                     self.scan_statement(statement);
                 }

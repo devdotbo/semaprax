@@ -978,7 +978,9 @@ pub(crate) fn same_owner_concat_appends(
     let mut appends = std::collections::BTreeMap::new();
     let mut pending = vec![&function.body];
     while let Some(expression) = pending.pop() {
-        if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+        if let ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+        {
             for statement in statements {
                 if let ResolvedStatement::Assign {
                     binding,

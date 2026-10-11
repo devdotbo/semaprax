@@ -16,13 +16,13 @@ use crate::hir::{
 use crate::prelude;
 
 use super::{
-    BlockId, CLEANUP_PLAN_SCHEMA_V2, CLEANUP_PLAN_SCHEMA_V3, CLEANUP_PLAN_SCHEMA_V4,
-    CallArgumentTransfer, CheckedOperation, CleanupBlock, CleanupEdge, CleanupEntryState,
+    BlockId, CallArgumentTransfer, CheckedOperation, CleanupBlock, CleanupEdge, CleanupEntryState,
     CleanupPlace, CleanupPlan, CleanupRegion, CleanupRegionId, CleanupResultSource, CleanupSlot,
     CleanupSlotId, CleanupTerminator, CleanupTransition, ConditionalVariantCase,
     ConditionalVariantEntry, ContractPhase, EdgeCondition, EdgeId, ExitContinuation, ExitTarget,
     ExitTargetId, FinalizeAction, StagedCopyResultSource, StatusCase, StatusLane, StatusProducer,
-    StatusSource, StatusSourceId, StorageId,
+    StatusSource, StatusSourceId, StorageId, CLEANUP_PLAN_SCHEMA_V2, CLEANUP_PLAN_SCHEMA_V3,
+    CLEANUP_PLAN_SCHEMA_V4,
 };
 
 mod lexical_temporary;
@@ -2645,7 +2645,10 @@ impl<'a> PlanBuilder<'a> {
                             commits: Vec::with_capacity(args.len()),
                         });
                     }
-                    ResolvedExprKind::Block { statements, tail } => {
+                    ResolvedExprKind::Block { statements, tail }
+                    | ResolvedExprKind::VecConstructor {
+                        statements, tail, ..
+                    } => {
                         let destination = self.expression_slot(expression, active_region)?;
                         let child_region = self.new_region(active_region)?;
                         let entry = self.new_block(child_region)?;
@@ -4769,9 +4772,10 @@ impl<'a> PlanBuilder<'a> {
                     owned_source: None,
                 })
             }
-            ResolvedExprKind::Block { statements, tail } => {
-                self.lower_block(expression, statements, tail, block, state, region)
-            }
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => self.lower_block(expression, statements, tail, block, state, region),
             ResolvedExprKind::If {
                 condition,
                 then_branch,
@@ -6559,12 +6563,10 @@ interface HostEcho permits { host.echo } {
                 )
             })
         }));
-        assert!(
-            resolved
-                .functions
-                .iter()
-                .any(|function| function.params.len() == 8)
-        );
+        assert!(resolved
+            .functions
+            .iter()
+            .any(|function| function.params.len() == 8));
         for identity in [
             "choice.nested",
             "scalar.nested-wide",
@@ -6631,12 +6633,10 @@ interface HostEcho permits { host.echo } {
                 source: crate::cleanup_plan::StagedCopyResultSource::TryOptionNone { .. },
             }
         )));
-        assert!(
-            resolved
-                .functions
-                .iter()
-                .any(|function| !function.cleanup_plan.status_sources.is_empty())
-        );
+        assert!(resolved
+            .functions
+            .iter()
+            .any(|function| !function.cleanup_plan.status_sources.is_empty()));
         assert!(resolved.functions.iter().any(|function| {
             !function.cleanup_plan.regions.is_empty()
                 && !function.cleanup_plan.edges.is_empty()

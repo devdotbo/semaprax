@@ -250,6 +250,7 @@ fn collect_expression_statuses(
                 ))
             }
             ResolvedExprKind::Block { .. }
+            | ResolvedExprKind::VecConstructor { .. }
             | ResolvedExprKind::LexicalExit { .. }
             | ResolvedExprKind::If { .. }
             | ResolvedExprKind::ConstructRecord { .. }

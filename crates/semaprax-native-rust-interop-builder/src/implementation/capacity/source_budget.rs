@@ -168,7 +168,10 @@ pub(in crate::implementation) fn validate_native_rust_expression_budget_for_clos
                 pending.push((left, child_depth));
                 pending.push((right, child_depth));
             }
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 for statement in statements {
                     pending.extend(
                         (0..statement.child_count())
@@ -216,7 +219,8 @@ pub(in crate::implementation) fn validate_native_rust_expression_budget_for_clos
             | ResolvedExprKind::Float32(_)
             | ResolvedExprKind::Float64(_)
             | ResolvedExprKind::Bool(_)
-            | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
+            | ResolvedExprKind::String(_)
+            | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::Place(_)
             | ResolvedExprKind::BorrowPlace { .. } => {}
         }

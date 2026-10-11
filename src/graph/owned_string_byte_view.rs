@@ -61,7 +61,9 @@ fn requires_function(function: &ResolvedFunction) -> bool {
         .map(|parameter| parameter.id.clone())
         .collect::<BTreeSet<_>>();
     hir::function_value::walk(function, |expression| {
-        if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+        if let ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+        {
             for statement in statements {
                 if let ResolvedStatement::Let { binding, .. } = statement {
                     if binding.ty == ResolvedType::String && binding.ownership == OwnershipMode::Own

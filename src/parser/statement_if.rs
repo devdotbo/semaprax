@@ -40,6 +40,32 @@ pub(super) struct DiscardNames {
     recording: bool,
 }
 
+impl DiscardNames {
+    pub(super) fn needs_inventory(&self) -> bool {
+        self.taken.is_none()
+    }
+    pub(super) fn constructor_provisional_target(&self, additional: usize) -> Option<usize> {
+        if !self.recording
+            || self
+                .provisional
+                .capacity()
+                .saturating_sub(self.provisional.len())
+                >= additional
+        {
+            return Some(0);
+        }
+        self.provisional.len().checked_add(additional)
+    }
+    pub(super) fn prepare_constructor_provisional(&mut self, target: usize) -> bool {
+        target == 0
+            || (self
+                .provisional
+                .try_reserve_exact(target - self.provisional.len())
+                .is_ok()
+                && self.provisional.capacity() <= target)
+    }
+}
+
 /// What an `if` at the start of a block item turned out to be.
 pub(super) enum IfItem {
     /// A statement `if`, already lowered to `let _if<n> = if …;`.

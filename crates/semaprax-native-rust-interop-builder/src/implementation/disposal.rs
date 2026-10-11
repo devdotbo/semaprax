@@ -300,7 +300,10 @@ fn drain_disposal_frames(
                     disposal_push(frames, ResolvedDisposeFrame::ExprBox(right));
                     pending_expression = Some(*left);
                 }
-                ResolvedExprKind::Block { statements, tail } => {
+                ResolvedExprKind::Block { statements, tail }
+                | ResolvedExprKind::VecConstructor {
+                    statements, tail, ..
+                } => {
                     disposal_push(frames, ResolvedDisposeFrame::ExprBox(tail));
                     disposal_push(frames, ResolvedDisposeFrame::Statements(statements));
                 }

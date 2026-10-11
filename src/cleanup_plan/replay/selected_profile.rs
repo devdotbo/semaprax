@@ -86,7 +86,8 @@ pub(super) fn validate(
                         }
                         crate::hir::static_text::validate_literal(value)?;
                     }
-                    ResolvedExprKind::Block { statements, .. } => {
+                    ResolvedExprKind::Block { statements, .. }
+                    | ResolvedExprKind::VecConstructor { statements, .. } => {
                         budget.charge(
                             function,
                             statements.len(),

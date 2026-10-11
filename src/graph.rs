@@ -2,6 +2,8 @@
 //!
 //! Human source supplies the revision. Resolved HIR supplies every semantic
 //! identity and fact in graph v10-v14; spans and display names are metadata only.
+mod agent_block;
+mod call_inventory;
 use crate::ast::{BinaryOp, Program, UnaryOp};
 use crate::bounded_output::BudgetedJoin as _;
 use crate::call_index::PersistentCallIndex;
@@ -13,6 +15,7 @@ use crate::hir::{
     ResolvedResourceDropKind, ResolvedStatement, ResolvedType, ResolvedTypeDeclarationKind,
     TypeFacts, ValueId,
 };
+use call_inventory::{agent_call_instances_json, function_calls, template_calls};
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::fmt::Write;
 macro_rules! format {
@@ -60,14 +63,15 @@ pub use generic_instances::{legacy_context_json, to_legacy_json, verify_json};
 pub(crate) use generic_mapping::requires_v35;
 mod byte_helper_renewal;
 mod consuming_vec_renewal;
-mod string_slots;
 mod facts_object;
+mod string_slots;
+mod vec_constructor;
 use facts_object::facts_object;
 mod finite_byte_scratch;
 mod static_text;
 mod view_render;
-use string_slots::graph_json;
-pub(crate) use string_slots::{graph_schema, legacy_graph_schema};
+use vec_constructor::graph_json;
+pub(crate) use vec_constructor::{graph_schema, legacy_graph_schema};
 use view_render::view_json;
 #[path = "graph/native_import.rs"]
 mod native_import;
@@ -915,61 +919,8 @@ fn find_context_root(program: &ResolvedProgram, symbol: &str) -> Option<Declarat
         .or_else(|| program.declarations.function_id(symbol).cloned())
 }
 
-fn function_calls(function: &ResolvedFunction) -> BTreeSet<DeclarationId> {
-    work_counter::record(work_counter::Work::CallSetComputation, 1);
-    let mut calls = BTreeSet::new();
-    visit_function_calls(function, &mut |callee| {
-        calls.insert(callee.clone());
-    });
-    calls
-}
-
-fn template_calls(template: &crate::hir::ResolvedFunctionTemplate) -> BTreeSet<DeclarationId> {
-    work_counter::record(work_counter::Work::CallSetComputation, 1);
-    let mut calls = BTreeSet::new();
-    for expression in template
-        .requires
-        .iter()
-        .chain(std::iter::once(&template.body))
-        .chain(&template.ensures)
-    {
-        visit_expr_calls(expression, &mut |callee| {
-            calls.insert(callee.clone());
-        });
-    }
-    calls
-}
-
 #[cfg(test)]
 use function_facts::agent_function_json;
-
-fn agent_call_instances_json(function: &ResolvedFunction) -> String {
-    let mut calls = Vec::new();
-    for expression in function
-        .requires
-        .iter()
-        .chain(std::iter::once(&function.body))
-        .chain(&function.ensures)
-    {
-        visit_expr_call_instances(
-            expression,
-            &mut |expression, callee, type_arguments, instance| {
-                calls.push(format!(
-                    "{{\"expression\":{},\"template\":{},\"instance\":{},\"type_arguments\":[{}]}}",
-                    quote_json(expression.id.as_str()),
-                    quote_json(callee.as_str()),
-                    quote_json(instance.as_str()),
-                    type_arguments
-                        .iter()
-                        .map(type_json)
-                        .collect::<Vec<_>>()
-                        .budgeted_join(",")
-                ));
-            },
-        );
-    }
-    calls.budgeted_join(",")
-}
 
 fn agent_template_json(
     program: &ResolvedProgram,
@@ -1111,7 +1062,10 @@ fn collect_result_propagations<'a>(
             collect_result_propagations(left, propagations);
             collect_result_propagations(right, propagations);
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             for statement in statements {
                 for index in 0..statement.child_count() {
                     if let Some(child) = statement.child(index) {
@@ -1260,7 +1214,10 @@ fn expression_has_byte_range(expression: &ResolvedExpr) -> bool {
                 pending.push(left);
                 pending.push(right);
             }
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 pending.push(tail);
                 for statement in statements {
                     for index in 0..statement.child_count() {
@@ -1377,7 +1334,10 @@ fn expression_has_explicit_match_mode(expression: &ResolvedExpr) -> bool {
         ResolvedExprKind::Binary { left, right, .. } => {
             expression_has_explicit_match_mode(left) || expression_has_explicit_match_mode(right)
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             statements.iter().any(|statement| {
                 (0..statement.child_count()).any(|index| {
                     statement
@@ -1659,7 +1619,10 @@ fn expression_has_usize(expression: &ResolvedExpr) -> bool {
             expression_has_usize(callable) || args.iter().any(expression_has_usize)
         }
         ResolvedExprKind::Usize(_) => true,
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             statements.iter().any(|statement| {
                 (0..statement.child_count())
                     .any(|index| statement.child(index).is_some_and(expression_has_usize))
@@ -1750,7 +1713,10 @@ fn expression_has_while(expression: &ResolvedExpr) -> bool {
         } => {
             expression_has_while(source) || expression_has_while(start) || expression_has_while(end)
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             statements.iter().any(|statement| match statement {
                 ResolvedStatement::While { .. } | ResolvedStatement::LexicalWhile { .. } => true,
                 _ => (0..statement.child_count())
@@ -1844,7 +1810,10 @@ fn expression_has_stdout_write(expression: &ResolvedExpr) -> bool {
         ResolvedExprKind::Binary { left, right, .. } => {
             expression_has_stdout_write(left) || expression_has_stdout_write(right)
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             statements.iter().any(|statement| {
                 (0..statement.child_count()).any(|index| {
                     statement
@@ -1925,7 +1894,10 @@ fn expression_has_command_io(expression: &ResolvedExpr) -> bool {
         ResolvedExprKind::Binary { left, right, .. } => {
             expression_has_command_io(left) || expression_has_command_io(right)
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             statements.iter().any(|statement| {
                 (0..statement.child_count()).any(|index| {
                     statement
@@ -2041,7 +2013,10 @@ fn expression_has_record_pattern(expression: &ResolvedExpr) -> bool {
         ResolvedExprKind::Binary { left, right, .. } => {
             expression_has_record_pattern(left) || expression_has_record_pattern(right)
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             statements.iter().any(|statement| {
                 (0..statement.child_count()).any(|index| {
                     statement
@@ -2122,7 +2097,10 @@ fn expression_has_refutable_match(expression: &ResolvedExpr) -> bool {
                 || expression_has_refutable_match(start)
                 || expression_has_refutable_match(end)
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             statements.iter().any(|statement| {
                 (0..statement.child_count()).any(|index| {
                     statement
@@ -2325,7 +2303,10 @@ fn collect_agent_contract_values(expression: &ResolvedExpr, values: &mut BTreeSe
             collect_agent_contract_values(left, values);
             collect_agent_contract_values(right, values);
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             for statement in statements {
                 if let ResolvedStatement::Let { binding, .. } = statement {
                     values.insert(binding.id.clone());
@@ -2518,50 +2499,7 @@ pub(crate) fn agent_contract_expr_json(expression: &ResolvedExpr) -> Result<Stri
             agent_contract_expr_json(left)?,
             agent_contract_expr_json(right)?
         ),
-        ResolvedExprKind::Block { statements, tail } => format!(
-            "{{\"kind\":\"block\",\"statements\":[{}],\"tail\":{}}}",
-            statements
-                .iter()
-                .map(|statement| {
-                    Ok(match statement {
-                        ResolvedStatement::Let { binding, value, .. } => format!(
-                            "{{\"kind\":\"let\",\"binding\":{},\"value\":{}}}",
-                            quote_json(binding.id.as_str()),
-                            agent_contract_expr_json(value)?
-                        ),
-                        ResolvedStatement::Assign {
-                            binding,
-                            field,
-                            value,
-                            ..
-                        } => format!(
-                            "{{\"kind\":\"assign\",\"target\":{},\"value\":{}{}}}",
-                            quote_json(binding.id.as_str()),
-                            agent_contract_expr_json(value)?,
-                            field
-                                .as_ref()
-                                .map(|field| format!(",\"field\":{}", quote_json(field.as_str())))
-                                .unwrap_or_default()
-                        ),
-                        ResolvedStatement::Unsafe { audit, body, .. } => format!(
-                            "{{\"kind\":\"unsafe\",\"audit\":{},\"body\":{}}}",
-                            quote_json(audit),
-                            agent_contract_expr_json(body)?
-                        ),
-                        ResolvedStatement::LexicalWhile { .. } => return Err(Diagnostic::io("SPX-H006", "lexical loops are not contract expressions")),
-                        ResolvedStatement::While {
-                            condition, body, ..
-                        } => format!(
-                            "{{\"kind\":\"while\",\"condition\":{},\"body\":{}}}",
-                            agent_contract_expr_json(condition)?,
-                            agent_contract_expr_json(body)?
-                        ),
-                    })
-                })
-                .collect::<Result<Vec<_>, Diagnostic>>()?
-                .budgeted_join(","),
-            agent_contract_expr_json(tail)?
-        ),
+        ResolvedExprKind::Block { .. } | ResolvedExprKind::VecConstructor { .. } => agent_block::json(expression)?,
         ResolvedExprKind::If {
             condition,
             then_branch,
@@ -4814,7 +4752,10 @@ fn visit_expr_call_instances(
             visit_expr_call_instances(left, visit);
             visit_expr_call_instances(right, visit);
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             for statement in statements {
                 for index in 0..statement.child_count() {
                     if let Some(child) = statement.child(index) {
@@ -4929,7 +4870,10 @@ fn visit_expr_calls(expression: &ResolvedExpr, visit: &mut impl FnMut(&Declarati
             visit_expr_calls(left, visit);
             visit_expr_calls(right, visit);
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             for statement in statements {
                 for index in 0..statement.child_count() {
                     if let Some(child) = statement.child(index) {
@@ -5068,7 +5012,10 @@ fn collect_expr_type_declarations(
             collect_expr_type_declarations(left, declarations);
             collect_expr_type_declarations(right, declarations);
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             for statement in statements {
                 if let ResolvedStatement::Let { binding, .. } = statement {
                     collect_nominal_declarations(&binding.ty, declarations);
@@ -5357,7 +5304,10 @@ fn collect_expr_types(expression: &ResolvedExpr, types: &mut BTreeMap<String, Re
             collect_expr_types(left, types);
             collect_expr_types(right, types);
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             for statement in statements {
                 if let ResolvedStatement::Let { binding, .. } = statement {
                     collect_type(&binding.ty, types);

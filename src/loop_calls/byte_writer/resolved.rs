@@ -230,7 +230,8 @@ fn prove_with_frames<'a>(
                                 return None;
                             }
                         }
-                        ResolvedExprKind::Block { statements, .. } => {
+                        ResolvedExprKind::Block { statements, .. }
+                        | ResolvedExprKind::VecConstructor { statements, .. } => {
                             work = work.checked_sub(statements.len())?;
                             if statements
                                 .iter()
@@ -417,7 +418,9 @@ fn checked_bindings_with_storage<'a, S>(
         work = work.checked_sub(1).ok_or_else(error)?;
         let (expression, next, sub) = frames[depth - 1];
         if next == 0 && sub == 0 {
-            if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+            if let ResolvedExprKind::Block { statements, .. }
+            | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+            {
                 work = work.checked_sub(statements.len()).ok_or_else(error)?;
                 for statement in statements {
                     if let crate::hir::ResolvedStatement::Assign {
@@ -449,7 +452,10 @@ fn checked_bindings_with_storage<'a, S>(
         }
         // Block and Match cursors never repeatedly rescan a growing prefix.
         let child = match &expression.kind {
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 if let Some(statement) = statements.get(next) {
                     let child = statement.child(sub);
                     if sub + 1 >= statement.child_count() {

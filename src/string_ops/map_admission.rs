@@ -60,7 +60,10 @@ pub(crate) fn check_function(function: &ResolvedFunction) -> Result<(), MapPosit
             check_value(expression, context)?;
         }
         match &expression.kind {
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 pending.push((tail, Context::Other));
                 for statement in statements.iter().rev() {
                     match statement {

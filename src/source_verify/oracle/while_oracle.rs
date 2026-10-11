@@ -208,8 +208,7 @@ pub(in crate::source_verify) fn reject_with_scratch(
                 }
             }
         }
-        ExprKind::Unary { value, .. } => {
-            reject_with_scratch(program, value, functions, types, diagnostics, scratch)
+        ExprKind::VecConstructor { value, .. } | ExprKind::Unary { value, .. } => {            reject_with_scratch(program, value, functions, types, diagnostics, scratch)
         }
         ExprKind::Binary { left, right, .. } => {
             let left = reject_with_scratch(program, left, functions, types, diagnostics, scratch);

@@ -750,6 +750,7 @@ fn check_omitted_generic_mappings(
         ExprKind::LexicalExit {
             value: Some(value), ..
         }
+        | ExprKind::VecConstructor { value, .. }
         | ExprKind::Unary { value, .. }
         | ExprKind::Try { operand: value }
         | ExprKind::Yield { request: value }

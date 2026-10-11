@@ -94,3 +94,16 @@ pub(super) fn enter_loop(
     *depth += 1;
     Ok(())
 }
+
+pub(super) fn finish_results(
+    function: &FunctionExecutionId,
+    span: Span,
+    path: &str,
+    kind: LexicalExitKind,
+    target: ControlTarget,
+    has_value: bool,
+    results: &mut Vec<ResolvedExpr>,
+) {
+    let value = has_value.then(|| Box::new(results.pop().expect("lexical operand retained")));
+    results.push(finish(function, span, path, kind, target, value));
+}

@@ -186,6 +186,7 @@ fn expression<'a>(
             op: UnaryOp::Not, ..
         }
         | ResolvedExprKind::Block { .. }
+        | ResolvedExprKind::VecConstructor { .. }
         | ResolvedExprKind::LexicalExit { .. }
         | ResolvedExprKind::If { .. }
         | ResolvedExprKind::ConstructRecord { .. }
@@ -224,7 +225,9 @@ fn walk<'a>(
     work: &Cell<usize>,
     emit: &mut impl FnMut(&ExpressionId, StatusLane, Producer<'_>) -> Result<(), Diagnostic>,
 ) -> Result<(), Diagnostic> {
-    if let ResolvedExprKind::Block { statements, .. } = &root.kind {
+    if let ResolvedExprKind::Block { statements, .. }
+    | ResolvedExprKind::VecConstructor { statements, .. } = &root.kind
+    {
         debit(work, statements.len())?;
     }
     frames[0] = Some(Frame {
@@ -240,7 +243,9 @@ fn walk<'a>(
             if depth == DEPTH {
                 return Err(plan_error("lexical status expression depth exceeds 512"));
             }
-            if let ResolvedExprKind::Block { statements, .. } = &child.kind {
+            if let ResolvedExprKind::Block { statements, .. }
+            | ResolvedExprKind::VecConstructor { statements, .. } = &child.kind
+            {
                 debit(work, statements.len())?;
             }
             frames[depth] = Some(Frame {

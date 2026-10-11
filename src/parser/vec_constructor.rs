@@ -4,6 +4,20 @@ use crate::ast::{Expr, ExprKind, LetSyntax, Span, Statement, Type};
 use crate::diagnostic::Diagnostic;
 
 impl Parser {
+    fn reserve_constructor_bytes(&mut self, bytes: usize) -> bool {
+        let Some(total) = self
+            .constructor_bytes
+            .checked_add(bytes)
+            .filter(|total| *total <= crate::workspace_graph::MAX_BUILDER_BYTES)
+        else {
+            return false;
+        };
+        if !crate::bounded_output::reserve_active_required(bytes) {
+            return false;
+        }
+        self.constructor_bytes = total;
+        true
+    }
     pub(super) fn vec_constructor(
         &mut self,
         mut types: Vec<Type>,
@@ -17,6 +31,20 @@ impl Parser {
             ));
         }
         let count = items.len();
+        if !self.reserve_constructor_bytes(std::mem::size_of::<
+            [Option<crate::ast::vec_constructor::NodeCursor<'_>>; 128],
+        >()) {
+            return Err(self.error_here(
+                "SPX-P220",
+                "vec_of expansion census exceeds the source budget",
+            ));
+        }
+        if !crate::ast::vec_constructor::items_fit_depth(&items) {
+            return Err(self.error_here(
+                "SPX-P220",
+                "vec_of expanded items exceed the existing source depth or work bound",
+            ));
+        }
         if count as u64 > crate::vec_ops::MAX_CAPACITY {
             return Err(
                 self.error_here("SPX-P220", "vec_of exceeds the existing Vec capacity bound")
@@ -26,9 +54,7 @@ impl Parser {
         // Charge all replacement backing before constructing any generated node.
         // Each step retains its own Type clone, call argument carrier, binding
         // name and expression nodes. Original items move, never clone.
-        if !crate::bounded_output::reserve_active_required(
-            129 * std::mem::size_of::<Option<(&Type, usize)>>(),
-        ) {
+        if !self.reserve_constructor_bytes(129 * std::mem::size_of::<Option<(&Type, usize)>>()) {
             return Err(self.error_here(
                 "SPX-P220",
                 "vec_of type forecast exceeds the active source budget",
@@ -38,7 +64,31 @@ impl Parser {
             crate::ast::vec_constructor::type_backing_bytes(&element).ok_or_else(|| {
                 self.error_here("SPX-P220", "vec_of type expansion exceeds bounded depth")
             })?;
-        let per_step = std::mem::size_of::<Statement>()
+        let node = crate::cleanup_plan::compiler_btree_node_upper::<String, ()>()
+            .ok_or_else(|| self.error_here("SPX-P220", "vec_of name inventory layout overflows"))?;
+        let steps = count + 1;
+        let provisional = self
+            .discards
+            .constructor_provisional_target(steps)
+            .ok_or_else(|| self.error_here("SPX-P220", "vec_of name inventory overflows"))?;
+        let inventory = if self.discards.needs_inventory() {
+            self.tokens.iter().try_fold(0usize, |bytes, token| {
+                if let crate::lexer::TokenKind::Ident(name) = &token.kind {
+                    // Failed minted-name attempts allocate two bounded labels;
+                    // every possible collision is an authored token identifier.
+                    bytes
+                        .checked_add(node)?
+                        .checked_add(name.len())?
+                        .checked_add(2 * (3 + usize::BITS as usize))
+                } else {
+                    Some(bytes)
+                }
+            })
+        } else {
+            Some(0)
+        };
+        let per_step = node
+            + std::mem::size_of::<Statement>()
             + 2 * std::mem::size_of::<Expr>()
             + std::mem::size_of::<Type>()
             + 3 * (3 + usize::BITS as usize)
@@ -47,14 +97,27 @@ impl Parser {
         let bytes = count
             .checked_add(1)
             .and_then(|steps| steps.checked_mul(per_step))
-            .and_then(|bytes| bytes.checked_add(2 * std::mem::size_of::<Expr>()));
-        if !bytes.is_some_and(crate::bounded_output::reserve_active_required) {
+            .and_then(|bytes| bytes.checked_add(2 * std::mem::size_of::<Expr>()))
+            .and_then(|bytes| bytes.checked_add(inventory?))
+            .and_then(|bytes| {
+                bytes.checked_add(provisional.checked_mul(std::mem::size_of::<usize>())?)
+            });
+        if !bytes.is_some_and(|bytes| self.reserve_constructor_bytes(bytes)) {
             return Err(self.error_here(
                 "SPX-P220",
                 "vec_of expansion exceeds the active source budget",
             ));
         }
-        let mut statements = Vec::with_capacity(count + 1);
+        if !self.discards.prepare_constructor_provisional(provisional) {
+            return Err(self.error_here("SPX-P220", "vec_of name backing exceeds its reservation"));
+        }
+        let mut statements = Vec::new();
+        if statements.try_reserve_exact(steps).is_err() || statements.capacity() > steps {
+            return Err(self.error_here(
+                "SPX-P220",
+                "vec_of statement backing exceeds its reservation",
+            ));
+        }
         let mut previous = self.discard_name(); // Complete token inventory, not parser-local freshness.
         let call = Expr {
             kind: ExprKind::Call {

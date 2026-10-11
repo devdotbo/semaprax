@@ -64,6 +64,13 @@ pub fn projection_is_hygienic(root: &Expr, reserve: impl FnMut(usize) -> bool) -
 pub fn projection_with_bindings<'a>(
     root: &'a Expr,
     bindings: impl Iterator<Item = &'a str>,
+    reserve: impl FnMut(usize) -> bool,
+) -> bool {
+    projection_roots(std::iter::once(root), bindings, reserve)
+}
+pub fn projection_roots<'a>(
+    roots: impl Iterator<Item = &'a Expr>,
+    bindings: impl Iterator<Item = &'a str>,
     mut reserve: impl FnMut(usize) -> bool,
 ) -> bool {
     // Block children use statement/child positions rather than repeated prefix lookup.
@@ -76,8 +83,7 @@ pub fn projection_with_bindings<'a>(
     }
     let mut patterns = [None; 129];
     let mut stack = [None; 513];
-    stack[0] = Some((root, 0usize, 0usize));
-    let mut len = 1;
+
     let mut markers = Vec::new();
     let mut uses = Vec::new();
     for name in bindings {
@@ -85,95 +91,137 @@ pub fn projection_with_bindings<'a>(
             return false;
         }
     }
-    while len != 0 {
-        let (node, outer, inner) = stack[len - 1].expect("retained projection frame");
-        if outer == 0 && inner == 0 {
-            match &node.kind {
-                ExprKind::Closure { params, .. } => {
-                    for param in params {
-                        if !retain(&mut uses, &param.name, &mut reserve) {
+    for root in roots {
+        stack[0] = Some((root, 0usize, 0usize));
+        let mut len = 1;
+        while len != 0 {
+            let (node, outer, inner) = stack[len - 1].expect("retained projection frame");
+            if outer == 0 && inner == 0 {
+                match &node.kind {
+                    ExprKind::VecConstructor { .. } => {
+                        let Ok(expansion) = super::vec_constructor::inspect(node) else {
+                            return false;
+                        };
+                        for statement in expansion.statements {
+                            let Statement::Let { name, .. } = statement else {
+                                unreachable!("authenticated constructor");
+                            };
+                            if !retain(&mut markers, name, &mut reserve) {
+                                return false;
+                            }
+                        }
+                    }
+                    ExprKind::Call { name, .. } => {
+                        if !retain(&mut uses, name, &mut reserve) {
                             return false;
                         }
                     }
-                }
-                ExprKind::Match { arms, .. } => {
-                    for arm in arms {
-                        if !pattern_names(&arm.pattern, &mut uses, &mut reserve, &mut patterns) {
-                            return false;
+                    ExprKind::Closure { params, .. } => {
+                        for param in params {
+                            if !retain(&mut uses, &param.name, &mut reserve) {
+                                return false;
+                            }
                         }
                     }
+                    ExprKind::Match { arms, .. } => {
+                        for arm in arms {
+                            if !pattern_names(&arm.pattern, &mut uses, &mut reserve, &mut patterns)
+                            {
+                                return false;
+                            }
+                        }
+                    }
+                    _ => {}
                 }
-                _ => {}
-            }
-            if let ExprKind::Var(name) = &node.kind {
-                if !retain(&mut uses, name, &mut reserve) {
-                    return false;
+                if let ExprKind::Var(name) = &node.kind {
+                    if !retain(&mut uses, name, &mut reserve) {
+                        return false;
+                    }
                 }
-            }
-            if let ExprKind::Block { statements, .. } = &node.kind {
-                for statement in statements {
-                    match statement {
-                        Statement::Let { name, .. } => {
-                            let target =
-                                if crate::ast::expression_statement::value(statement).is_some() {
+                if let ExprKind::Block { statements, .. } = &node.kind {
+                    for statement in statements {
+                        match statement {
+                            Statement::Let { name, .. } => {
+                                let target = if crate::ast::expression_statement::value(statement)
+                                    .is_some()
+                                {
                                     &mut markers
                                 } else {
                                     &mut uses
                                 };
-                            if !retain(target, name, &mut reserve) {
-                                return false;
-                            }
-                        }
-                        Statement::Assign { name, .. } => {
-                            if !retain(&mut uses, name, &mut reserve) {
-                                return false;
-                            }
-                        }
-                        Statement::For { item, .. } | Statement::ForOwn { item, .. } => {
-                            if !retain(&mut uses, item, &mut reserve) {
-                                return false;
-                            }
-                        }
-                        Statement::ForBorrow { item, index, .. } => {
-                            if !retain(&mut uses, item, &mut reserve) {
-                                return false;
-                            }
-                            if let Some(index) = index {
-                                if !retain(&mut uses, &index.name, &mut reserve) {
+                                if !retain(target, name, &mut reserve) {
                                     return false;
                                 }
                             }
+                            Statement::Assign { name, .. } => {
+                                if !retain(&mut uses, name, &mut reserve) {
+                                    return false;
+                                }
+                            }
+                            Statement::For { item, .. } | Statement::ForOwn { item, .. } => {
+                                if !retain(&mut uses, item, &mut reserve) {
+                                    return false;
+                                }
+                            }
+                            Statement::ForBorrow { item, index, .. } => {
+                                if !retain(&mut uses, item, &mut reserve) {
+                                    return false;
+                                }
+                                if let Some(index) = index {
+                                    if !retain(&mut uses, &index.name, &mut reserve) {
+                                        return false;
+                                    }
+                                }
+                            }
+                            _ => {}
                         }
-                        _ => {}
                     }
                 }
             }
-        }
-        let (child, next) = if let ExprKind::Block { statements, tail } = &node.kind {
-            if let Some(statement) = statements.get(outer) {
-                if let Some(child) = statement.child(inner) {
-                    (Some(child), (outer, inner + 1))
+            let (child, next) = if matches!(node.kind, ExprKind::VecConstructor { .. }) {
+                // Entry validated the whole chain once. Child advance must remain constant-time.
+                let ExprKind::VecConstructor { value, .. } = &node.kind else {
+                    unreachable!()
+                };
+                let ExprKind::Block { statements, .. } = &value.kind else {
+                    unreachable!("validated constructor block")
+                };
+                let child = statements.get(outer + 1).map(|statement| {
+                    let Statement::Let { value, .. } = statement else {
+                        unreachable!("validated constructor binding")
+                    };
+                    let ExprKind::Call { args, .. } = &value.kind else {
+                        unreachable!("validated constructor call")
+                    };
+                    &args[1]
+                });
+                (child, (outer + 1, 0))
+            } else if let ExprKind::Block { statements, tail } = &node.kind {
+                if let Some(statement) = statements.get(outer) {
+                    if let Some(child) = statement.child(inner) {
+                        (Some(child), (outer, inner + 1))
+                    } else {
+                        stack[len - 1] = Some((node, outer + 1, 0));
+                        continue;
+                    }
+                } else if outer == statements.len() {
+                    (Some(tail.as_ref()), (outer + 1, 0))
                 } else {
-                    stack[len - 1] = Some((node, outer + 1, 0));
-                    continue;
+                    (None, (outer, inner))
                 }
-            } else if outer == statements.len() {
-                (Some(tail.as_ref()), (outer + 1, 0))
             } else {
-                (None, (outer, inner))
+                (node.child(outer), (outer + 1, 0))
+            };
+            if let Some(child) = child {
+                stack[len - 1] = Some((node, next.0, next.1));
+                if len == stack.len() {
+                    return false;
+                }
+                stack[len] = Some((child, 0, 0));
+                len += 1;
+            } else {
+                len -= 1;
             }
-        } else {
-            (node.child(outer), (outer + 1, 0))
-        };
-        if let Some(child) = child {
-            stack[len - 1] = Some((node, next.0, next.1));
-            if len == stack.len() {
-                return false;
-            }
-            stack[len] = Some((child, 0, 0));
-            len += 1;
-        } else {
-            len -= 1;
         }
     }
     markers.sort_unstable();

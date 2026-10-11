@@ -1,10 +1,6 @@
 //! Read-only, targeted diagnostic repair discovery and instantiation.
 mod call_closure;
 mod scoped_vec_field;
-use call_closure::{call_graph, has_call_cycle};
-use std::collections::{BTreeMap, BTreeSet};
-use std::path::Path;
-
 use crate::ast::{Expr, ExprKind, ParamMode, Program, Type};
 use crate::diagnostic::{quote_json, Diagnostic};
 use crate::hir::{
@@ -12,8 +8,10 @@ use crate::hir::{
     ResolvedExprKind, ResolvedFunction, ResolvedStatement, ValueId,
 };
 use crate::{format, graph, parse, patch};
+use call_closure::{call_graph, has_call_cycle};
 use sha2::{Digest, Sha256};
-
+use std::collections::{BTreeMap, BTreeSet};
+use std::path::Path;
 const REPORT_SCHEMA: &str = "semaprax.diagnostic-repair.v1";
 const PREVIEW_SCHEMA: &str = "semaprax.diagnostic-repair-preview.v1";
 const PATCH_SCHEMA: &str = "semaprax.semantic-patch.v3";
@@ -37,12 +35,10 @@ const RESERVED_ID_PREFIXES: [&str; 7] = [
     "nominal:",
 ];
 const RESERVED_ID_VALUES: [&str; 2] = ["bool", "i64"];
-
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DiagnosticRepairQuery {
     automatic_function_id: String,
 }
-
 impl DiagnosticRepairQuery {
     pub fn assign_function_id(
         automatic_function_id: impl Into<String>,
@@ -480,7 +476,9 @@ pub(crate) fn precheck_program(program: &Program) -> Result<(), Vec<Diagnostic>>
                 expressions.extend(args);
             }
             ExprKind::LexicalExit { value, .. } => expressions.extend(value.as_deref()),
-            ExprKind::Unary { value, .. } => expressions.push(value),
+            ExprKind::VecConstructor { value, .. } | ExprKind::Unary { value, .. } => {
+                expressions.push(value)
+            }
             ExprKind::Binary { left, right, .. } => {
                 expressions.push(right);
                 expressions.push(left);
@@ -625,7 +623,9 @@ fn scalar_expr(expression: &Expr) -> bool {
             args,
             ..
         } => type_arguments.is_empty() && args.iter().all(scalar_expr),
-        ExprKind::Unary { value, .. } => scalar_expr(value),
+        ExprKind::VecConstructor { value, .. } | ExprKind::Unary { value, .. } => {
+            scalar_expr(value)
+        }
         ExprKind::Binary { left, right, .. } => scalar_expr(left) && scalar_expr(right),
         ExprKind::Block { statements, tail } => {
             statements.iter().all(|statement| {

@@ -941,7 +941,10 @@ fn collect_expr_record_types(
                 pending.push(Work::Expression(right));
                 pending.push(Work::Expression(left));
             }
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 pending.push(Work::Expression(tail));
                 for statement in statements.iter().rev() {
                     for index in (0..statement.child_count()).rev() {
@@ -1002,7 +1005,8 @@ fn collect_expr_record_types(
             | ResolvedExprKind::Float32(_)
             | ResolvedExprKind::Float64(_)
             | ResolvedExprKind::Bool(_)
-            | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
+            | ResolvedExprKind::String(_)
+            | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::Place(_)
             | ResolvedExprKind::BorrowPlace { .. }
             | ResolvedExprKind::FunctionReference { .. } => {}

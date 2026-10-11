@@ -258,7 +258,8 @@ fn capture_plan(
     let mut pattern_nodes = 0;
     for node in &nodes {
         match &node.kind {
-            ResolvedExprKind::Block { statements, .. } => {
+            ResolvedExprKind::Block { statements, .. }
+            | ResolvedExprKind::VecConstructor { statements, .. } => {
                 for statement in statements {
                     if matches!(statement, ResolvedStatement::Unsafe { .. }) {
                         return Err(invalid(
@@ -297,7 +298,9 @@ fn capture_plan(
     let mut captures = Vec::new();
     let mut owner_capture = None;
     for node in nodes {
-        if let ResolvedExprKind::Block { statements, .. } = &node.kind {
+        if let ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. } = &node.kind
+        {
             for statement in statements {
                 if let ResolvedStatement::Assign { binding, field, .. } = statement {
                     if field.is_some()
@@ -395,7 +398,10 @@ fn capture_plan(
     }
     if extended
         && (selection.path.is_empty()
-            || !matches!(selection.expression.kind, ResolvedExprKind::Block { .. }))
+            || !matches!(
+                selection.expression.kind,
+                ResolvedExprKind::Block { .. } | ResolvedExprKind::VecConstructor { .. }
+            ))
     {
         return Err(invalid(
             "extraction internal owners require a non-root authored block",

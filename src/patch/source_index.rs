@@ -302,7 +302,7 @@ impl SemanticSourceIndex {
                 self.expr_pairs(args, resolved_args, tokens)?;
             }
             (
-                ExprKind::Unary { value, .. },
+                ExprKind::VecConstructor { value, .. } | ExprKind::Unary { value, .. },
                 ResolvedExprKind::Unary {
                     value: resolved_value,
                     ..

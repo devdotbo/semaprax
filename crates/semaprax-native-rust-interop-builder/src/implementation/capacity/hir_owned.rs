@@ -383,7 +383,18 @@ pub(in crate::implementation) fn hir_expr_owned_capacity(
                 pending.push(left);
                 pending.push(right);
             }
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
+                if let ResolvedExprKind::VecConstructor { element, .. } = &expression.kind {
+                    total = total
+                        .checked_add(
+                            hir_type_owned_capacity(element)
+                                .ok_or_else(|| b109("max_builder_bytes", MAX_BUILDER_BYTES))?,
+                        )
+                        .ok_or_else(|| b109("max_builder_bytes", MAX_BUILDER_BYTES))?;
+                }
                 add_capacity(
                     &mut total,
                     statements.capacity(),
@@ -561,7 +572,13 @@ pub(in crate::implementation) fn hir_expr_owned_capacity(
             | ResolvedExprKind::Float64(_)
             | ResolvedExprKind::Bool(_) => {}
             ResolvedExprKind::BorrowedUtf8Literal(contents) => {
-                total = total.checked_add(contents.owned_allocation_bytes().ok_or_else(|| b109("max_builder_bytes", MAX_BUILDER_BYTES))?).ok_or_else(|| b109("max_builder_bytes", MAX_BUILDER_BYTES))?;
+                total = total
+                    .checked_add(
+                        contents
+                            .owned_allocation_bytes()
+                            .ok_or_else(|| b109("max_builder_bytes", MAX_BUILDER_BYTES))?,
+                    )
+                    .ok_or_else(|| b109("max_builder_bytes", MAX_BUILDER_BYTES))?;
             }
             ResolvedExprKind::String(contents) => {
                 total = total

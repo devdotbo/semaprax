@@ -67,7 +67,8 @@ pub(super) fn push_children<'a>(
         | ResolvedExprKind::Float32(_)
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
+        | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. }
         | ResolvedExprKind::ByteRange { .. }
@@ -80,6 +81,7 @@ pub(super) fn push_children<'a>(
         | ResolvedExprKind::Unary { .. }
         | ResolvedExprKind::Binary { .. }
         | ResolvedExprKind::Block { .. }
+        | ResolvedExprKind::VecConstructor { .. }
         | ResolvedExprKind::If { .. }
         | ResolvedExprKind::ConstructRecord { .. }
         | ResolvedExprKind::ConstructVariant { .. }

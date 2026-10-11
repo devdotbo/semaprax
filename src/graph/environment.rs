@@ -129,7 +129,7 @@ pub(super) fn graph_json(
 #[cfg(test)]
 mod tests {
     use crate::{
-        command_io_ops::{CommandOperationProfile, validate_operation_profile},
+        command_io_ops::{validate_operation_profile, CommandOperationProfile},
         hir,
     };
     const SOURCE: &str = r#"module environment.graph;
@@ -169,7 +169,9 @@ permit { process.environment.read, process.stdout.write }
             .unwrap();
         let mut checked_root = false;
         hir::function_value::walk(function, |expression| {
-            if let hir::ResolvedExprKind::Block { statements, .. } = &expression.kind {
+            if let hir::ResolvedExprKind::Block { statements, .. }
+            | hir::ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+            {
                 for statement in statements {
                     if let hir::ResolvedStatement::Let { binding, .. } = statement {
                         if binding.name == "bytes" {
@@ -226,13 +228,11 @@ permit { process.environment.read, process.stdout.write }
             value["bounded_environment_io"]["arena"],
             crate::environment_ops::ARENA_ID
         );
-        assert!(
-            crate::graph::verify_json(
-                &source,
-                &graph.replacen("semaprax.graph.v43", "semaprax.graph.v42", 1)
-            )
-            .is_err()
-        );
+        assert!(crate::graph::verify_json(
+            &source,
+            &graph.replacen("semaprax.graph.v43", "semaprax.graph.v42", 1)
+        )
+        .is_err());
     }
 }
 
@@ -261,10 +261,8 @@ permit {process.environment.read}
         .unwrap();
         let resolved = crate::hir::resolve(&source).unwrap();
         crate::hir::validate(&resolved).unwrap();
-        assert!(
-            crate::graph::to_json(&source)
-                .unwrap()
-                .contains("semaprax.graph.v43")
-        );
+        assert!(crate::graph::to_json(&source)
+            .unwrap()
+            .contains("semaprax.graph.v43"));
     }
 }

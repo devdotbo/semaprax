@@ -11,7 +11,10 @@ pub(super) fn contains_unsafe_boundary(expression: &ResolvedExpr) -> bool {
             ResolvedExprKind::Closure { captures, .. } => {
                 pending.extend(captures.iter().map(|capture| &capture.value))
             }
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 pending.push(tail);
                 for statement in statements.iter().rev() {
                     if matches!(statement, ResolvedStatement::Unsafe { .. }) {
@@ -91,7 +94,8 @@ pub(super) fn contains_unsafe_boundary(expression: &ResolvedExpr) -> bool {
             | ResolvedExprKind::Float32(_)
             | ResolvedExprKind::Float64(_)
             | ResolvedExprKind::Bool(_)
-            | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
+            | ResolvedExprKind::String(_)
+            | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::Place(_)
             | ResolvedExprKind::BorrowPlace { .. } => {}
         }

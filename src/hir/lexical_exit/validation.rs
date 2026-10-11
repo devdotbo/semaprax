@@ -8,7 +8,9 @@ fn error(message: &str) -> Diagnostic {
 fn bottom(expression: &ResolvedExpr) -> bool {
     match &expression.kind {
         ResolvedExprKind::LexicalExit { .. } => true,
-        ResolvedExprKind::Block { tail, .. } => tail.ty == ResolvedType::Never,
+        ResolvedExprKind::Block { tail, .. } | ResolvedExprKind::VecConstructor { tail, .. } => {
+            tail.ty == ResolvedType::Never
+        }
         ResolvedExprKind::If {
             then_branch,
             else_branch,
@@ -30,7 +32,9 @@ fn guard_completion(expression: &ResolvedExpr, depth: usize) -> bool {
         ResolvedExprKind::Int(0) => {
             expression.ty == ResolvedType::I64 && expression.ownership == OwnershipMode::Value
         }
-        ResolvedExprKind::Block { tail, .. } => guard_completion(tail, depth + 1),
+        ResolvedExprKind::Block { tail, .. } | ResolvedExprKind::VecConstructor { tail, .. } => {
+            guard_completion(tail, depth + 1)
+        }
         ResolvedExprKind::If {
             then_branch,
             else_branch,
@@ -172,7 +176,10 @@ fn walk<'a>(
                 }
             }
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             for (index, statement) in statements.iter().enumerate() {
                 match statement {
                     ResolvedStatement::While {

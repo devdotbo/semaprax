@@ -319,6 +319,7 @@ pub(super) fn source_identifier(value: &str) -> bool {
         && !matches!(
             value,
             "module"
+                | "vec_of"
                 | "permit"
                 | "resource"
                 | "fn"

@@ -432,7 +432,10 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
     let root = root.as_str();
     let projection_root = concat!(
         concat!(
-            include_str!("../../src/workspace_graph/expected_projection.rs"),
+            concat!(
+                include_str!("../../src/workspace_graph/expected_projection.rs"),
+                include_str!("../../src/workspace_graph/expected_projection/vec_constructor.rs")
+            ),
             "\n",
             include_str!("../../src/workspace_graph/expected_projection/record_traversal.rs")
         ),

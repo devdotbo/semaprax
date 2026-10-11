@@ -320,7 +320,10 @@ fn walk(
             walk(program, left, inventory, depth + 1)?;
             walk(program, right, inventory, depth + 1)?;
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             for statement in statements {
                 match statement {
                     crate::hir::ResolvedStatement::Let { binding, .. } => {
@@ -398,7 +401,8 @@ fn walk(
         | ResolvedExprKind::Float32(_)
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_) => {}
+        | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_) => {}
     }
     Ok(())
 }
@@ -411,7 +415,8 @@ fn edge_entries(expression: &ResolvedExpr) -> Result<usize> {
     let children = match &expression.kind {
         ResolvedExprKind::LexicalExit { value, .. } => return Ok(usize::from(value.is_some()) + 2),
 
-        ResolvedExprKind::Block { statements, .. } => {
+        ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. } => {
             let mut edges = 2usize;
             for statement in statements {
                 add(
@@ -471,7 +476,8 @@ fn edge_entries(expression: &ResolvedExpr) -> Result<usize> {
         | ResolvedExprKind::Float32(_)
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
+        | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. } => 0,
     };

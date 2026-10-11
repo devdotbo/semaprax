@@ -22,7 +22,7 @@ pub(crate) fn loops(
 ) -> impl Iterator<Item = (&crate::hir::ResolvedExpr, &crate::hir::ResolvedExpr)> {
     use crate::hir::{ResolvedExprKind as K, ResolvedStatement as S};
     let statements = match &function.body.kind {
-        K::Block { statements, .. } => statements.as_slice(),
+        K::Block { statements, .. } | K::VecConstructor { statements, .. } => statements.as_slice(),
         _ => &[],
     };
     statements.iter().filter_map(|statement| {

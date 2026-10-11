@@ -197,7 +197,10 @@ pub(in crate::implementation) fn resolved_expression_child<'a>(
             let child = [left.as_ref(), right.as_ref()].get(index).copied()?;
             advance(index.checked_add(1)?, index, child)
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             let has_while = complex
                 || (index == 0
                     && statements.iter().any(|statement| {

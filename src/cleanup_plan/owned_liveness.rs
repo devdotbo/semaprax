@@ -300,7 +300,9 @@ fn find_in_value(
             }
             find_in_block(else_branch, false, site, executed)
         }
-        ResolvedExprKind::Block { .. } => find_in_block(expr, false, site, executed),
+        ResolvedExprKind::Block { .. } | ResolvedExprKind::VecConstructor { .. } => {
+            find_in_block(expr, false, site, executed)
+        }
         _ => Ok(false),
     }
 }
@@ -737,14 +739,20 @@ fn scalar_branch_join(flag: bool) -> i64 {
     /// only to locate a fixture's marker unambiguously.
     fn marker_site(expr: &ResolvedExpr, marker: &str) -> Option<ExpressionId> {
         match &expr.kind {
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 for statement in statements {
                     let (binding, value, nested) = match statement {
                         ResolvedStatement::Let { binding, value, .. }
                         | ResolvedStatement::Assign { binding, value, .. } => {
                             (Some(binding), Some(value), None)
                         }
-                        ResolvedStatement::While { body, .. } | ResolvedStatement::LexicalWhile { body, .. } => (None, None, Some(body.as_ref())),
+                        ResolvedStatement::While { body, .. }
+                        | ResolvedStatement::LexicalWhile { body, .. } => {
+                            (None, None, Some(body.as_ref()))
+                        }
                         ResolvedStatement::Unsafe { body, .. } => (None, None, Some(body.as_ref())),
                     };
                     if let Some(binding) = binding {
@@ -793,7 +801,10 @@ fn scalar_branch_join(flag: bool) -> i64 {
     fn binding_storage(function: &ResolvedFunction, name: &str) -> StorageId {
         fn find(expr: &ResolvedExpr, name: &str) -> Option<crate::hir::ValueId> {
             match &expr.kind {
-                ResolvedExprKind::Block { statements, tail } => {
+                ResolvedExprKind::Block { statements, tail }
+                | ResolvedExprKind::VecConstructor {
+                    statements, tail, ..
+                } => {
                     for statement in statements {
                         if let ResolvedStatement::Let { binding, .. }
                         | ResolvedStatement::Assign { binding, .. } = statement

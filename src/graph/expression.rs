@@ -159,6 +159,11 @@ pub(super) fn expr_json(
             expr_json(program, left)?,
             expr_json(program, right)?
         ),
+        ResolvedExprKind::VecConstructor { element, count, statements, tail } => {
+            crate::hir::vec_constructor::authenticate(expression)?;
+            format!("{{{header},\"kind\":\"vec_constructor\",\"element\":{},\"count\":{count},\"statements\":[{}],\"tail\":{}}}",
+                type_json(element), statements.iter().map(|statement| statement_json(program, statement)).collect::<Result<Vec<_>, _>>()?.budgeted_join(","), expr_json(program, tail)?)
+        }
         ResolvedExprKind::Block { statements, tail } => format!(
             "{{{header},\"kind\":\"block\",\"statements\":[{}],\"tail\":{}}}",
             statements

@@ -42,6 +42,7 @@ pub struct Parser {
     /// Names already given to statement-`if` discards in this file.
     discards: statement_if::DiscardNames,
     explicit_lexical_exits: bool,
+    constructor_bytes: usize,
 }
 
 impl Parser {
@@ -1689,6 +1690,12 @@ impl Parser {
     fn ident(&mut self, description: &str) -> Result<(String, Span), Diagnostic> {
         let token = self.bump().clone();
         match token.kind {
+            TokenKind::Ident(value) if value == "vec_of" => Err(Diagnostic::error(
+                "SPX-P220",
+                "vec_of is reserved for typed Vec construction",
+                token.span,
+            )
+            .at_path(&self.path)),
             TokenKind::Ident(value) => Ok((value, token.span)),
             _ => Err(
                 Diagnostic::error("SPX-P105", format!("expected {description}"), token.span)

@@ -52,6 +52,7 @@ mod string_slots;
 pub(super) mod type_rewrite;
 #[path = "expected_projection/uncached_peak.rs"]
 pub(super) mod uncached_peak;
+mod vec_constructor;
 use cost::{ExpandedDefaultCost, GenericInstanceCost, StructuralCost};
 #[cfg(test)]
 use retention::retention_prebound;
@@ -1444,6 +1445,7 @@ fn collect_expression_type_edges(
         ExprKind::LexicalExit {
             value: Some(value), ..
         }
+        | ExprKind::VecConstructor { value, .. }
         | ExprKind::Unary { value, .. } => collect_expression_type_edges(
             program,
             owner,
@@ -1789,6 +1791,7 @@ pub(super) fn verify_resolved_call_edges(
 ) -> Result<(), Vec<Diagnostic>> {
     sort_keys::verify(program, resolved, authored)?;
     string_slots::verify(program, resolved)?;
+    vec_constructor::verify(program, resolved)?;
     let aliases = program
         .module_uses
         .iter()

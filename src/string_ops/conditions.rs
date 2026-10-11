@@ -85,7 +85,9 @@ pub(crate) fn function_reads(function: &ResolvedFunction) -> BTreeSet<Expression
     let mut reads = BTreeSet::new();
     let mut pending = vec![&function.body];
     while let Some(expression) = pending.pop() {
-        if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+        if let ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+        {
             for statement in statements {
                 if let ResolvedStatement::While { condition, .. } = statement {
                     reads.extend(condition_reads(condition));

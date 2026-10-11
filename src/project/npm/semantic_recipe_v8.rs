@@ -622,9 +622,10 @@ fn render_expr(
             op.text(),
             render_expr(right, names, values, local_index)?,
         )),
-        ResolvedExprKind::Block { statements, tail } => {
-            render_block(statements, tail, names, values, local_index, false)
-        }
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => render_block(statements, tail, names, values, local_index, false),
         ResolvedExprKind::If {
             condition,
             then_branch,

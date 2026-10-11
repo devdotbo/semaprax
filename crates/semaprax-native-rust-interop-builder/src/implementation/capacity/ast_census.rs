@@ -66,7 +66,8 @@ pub(in crate::implementation) fn scan_ast_capacity<'a>(
                     crate::ast::ExprKind::UpdateRecord { fields, .. } => fields.len() + 1,
                     crate::ast::ExprKind::If { .. } => 3,
                     crate::ast::ExprKind::Binary { .. } => 2,
-                    crate::ast::ExprKind::Unary { .. }
+                    crate::ast::ExprKind::VecConstructor { .. }
+                    | crate::ast::ExprKind::Unary { .. }
                     | crate::ast::ExprKind::Try { .. }
                     | crate::ast::ExprKind::Yield { .. }
                     | crate::ast::ExprKind::Project { .. } => 1,
@@ -81,7 +82,7 @@ pub(in crate::implementation) fn scan_ast_capacity<'a>(
                     | crate::ast::ExprKind::Float64(_)
                     | crate::ast::ExprKind::Bool(_)
                     | crate::ast::ExprKind::String(_)
-| crate::ast::ExprKind::BorrowedUtf8Literal(_)
+                    | crate::ast::ExprKind::BorrowedUtf8Literal(_)
                     | crate::ast::ExprKind::Var(_) => 0,
                 };
                 stats.max_indexed_children = stats.max_indexed_children.max(indexed_children);

@@ -298,6 +298,17 @@ pub(super) fn schema_with_proofs<'a>(
             }
         }
     }
+    if module
+        .functions
+        .iter()
+        .chain(module.function_instances.iter().map(|i| &i.function))
+        .try_fold(false, |found, f| {
+            crate::hir::vec_constructor::function_uses(f).map(|uses| found || uses)
+        })
+        .map_err(|e| vec![e])?
+    {
+        return Ok("semaprax.graph.v81");
+    }
     if string_slots {
         return Ok("semaprax.graph.v80");
     }

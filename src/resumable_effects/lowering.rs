@@ -656,7 +656,8 @@ fn relocate_expression(
         | ResolvedExprKind::Float32(_)
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_) => {}
+        | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_) => {}
         ResolvedExprKind::Invoke { callable, args } => {
             relocate_expression(callable, execution, &format!("{path}.callable"), values)?;
             relocate_arguments(args, execution, path, "arg", values)?;
@@ -697,7 +698,10 @@ fn relocate_expression(
             relocate_expression(left, execution, &format!("{path}.left"), values)?;
             relocate_expression(right, execution, &format!("{path}.right"), values)?;
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             let mut block_values = values.clone();
             for (index, statement) in statements.iter_mut().enumerate() {
                 let statement_path = format!("{path}.s{index}");

@@ -465,7 +465,9 @@ pub(super) fn materialize_template_expr(
         ResolvedExprKind::Float64(bits) => ResolvedExprKind::Float64(*bits),
         ResolvedExprKind::Bool(value) => ResolvedExprKind::Bool(*value),
         ResolvedExprKind::String(value) => ResolvedExprKind::String(value.clone()),
-        ResolvedExprKind::BorrowedUtf8Literal(value) => ResolvedExprKind::BorrowedUtf8Literal(value.clone()),
+        ResolvedExprKind::BorrowedUtf8Literal(value) => {
+            ResolvedExprKind::BorrowedUtf8Literal(value.clone())
+        }
         ResolvedExprKind::LiteralFormat { .. } | ResolvedExprKind::VecFieldRead { .. } => {
             return Err(hir_error(
                 "generic templates cannot construct literal formats",
@@ -589,7 +591,10 @@ pub(super) fn materialize_template_expr(
                 &format!("{path}.right"),
             )?),
         },
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             let mut block_values = values.clone();
             let mut materialized = Vec::with_capacity(statements.len());
             for (index, statement) in statements.iter().enumerate() {
@@ -726,16 +731,26 @@ pub(super) fn materialize_template_expr(
                     }
                 }
             }
-            ResolvedExprKind::Block {
-                statements: materialized,
-                tail: Box::new(materialize_template_expr(
-                    template,
-                    arguments,
-                    execution,
+            let tail = Box::new(materialize_template_expr(
+                template,
+                arguments,
+                execution,
+                tail,
+                &block_values,
+                &format!("{path}.tail"),
+            )?);
+            if let ResolvedExprKind::VecConstructor { element, count, .. } = &expression.kind {
+                ResolvedExprKind::VecConstructor {
+                    element: substitute_type(element, &template.id, arguments)?,
+                    count: *count,
+                    statements: materialized,
                     tail,
-                    &block_values,
-                    &format!("{path}.tail"),
-                )?),
+                }
+            } else {
+                ResolvedExprKind::Block {
+                    statements: materialized,
+                    tail,
+                }
             }
         }
         ResolvedExprKind::If {

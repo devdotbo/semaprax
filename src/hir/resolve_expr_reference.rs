@@ -6,9 +6,9 @@ use super::expr_nodes::{
 use super::ids::{DeclarationId, ExpressionId, FunctionExecutionId, ValueId};
 use super::monomorphize::substitute_type;
 use super::nodes::{
-    DeclarationKind, OwnershipMode, ResolvedBinding, ResolvedImportResultKind, ResolvedMatchMode,
-    ResolvedNativeRustImportCall, ResolvedType, is_scalar_resolved_type,
-    resolver_admits_owned_variant,
+    is_scalar_resolved_type, resolver_admits_owned_variant, DeclarationKind, OwnershipMode,
+    ResolvedBinding, ResolvedImportResultKind, ResolvedMatchMode, ResolvedNativeRustImportCall,
+    ResolvedType,
 };
 use super::type_reachability::record_args_ok;
 use super::{Binding, Place, PlaceProjection, Resolver};
@@ -30,6 +30,9 @@ impl Resolver<'_> {
         path: &str,
         nearest: Option<&super::ControlTarget>,
     ) -> Result<ResolvedExpr, Diagnostic> {
+        if let ExprKind::VecConstructor { .. } = &expr.kind {
+            return self.resolve_constructor_reference(function, expr, bindings, path, nearest);
+        }
         if let Some(inspect) = self.resolve_stdin_inspection(function, expr, bindings, path)? {
             return Ok(inspect);
         }

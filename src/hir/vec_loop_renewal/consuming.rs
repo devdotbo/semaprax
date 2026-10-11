@@ -48,7 +48,9 @@ fn visit<'a>(root: &'a ResolvedExpr, mut visitor: impl FnMut(&'a ResolvedExpr)) 
 fn declares(root: &ResolvedExpr, target: &ResolvedBinding, mutable: bool) -> bool {
     let mut found = false;
     visit(root, |expr| {
-        if let ResolvedExprKind::Block { statements, .. } = &expr.kind {
+        if let ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. } = &expr.kind
+        {
             found |= statements.iter().any(|statement| {
                 matches!(statement,
                 ResolvedStatement::Let { binding, mutable: actual, .. }

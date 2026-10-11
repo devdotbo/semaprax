@@ -799,7 +799,10 @@ fn visit_hir<'a>(
             ))
         }
 
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             let mut local = scope.clone();
             for statement in statements {
                 match statement {
@@ -980,7 +983,8 @@ fn ast_children(expression: &Expr) -> Vec<&Expr> {
             std::iter::once(receiver.as_ref()).chain(args).collect()
         }
         ExprKind::LexicalExit { value, .. } => value.iter().map(|v| v.as_ref()).collect(),
-        ExprKind::Unary { value, .. }
+        ExprKind::VecConstructor { value, .. }
+        | ExprKind::Unary { value, .. }
         | ExprKind::Try { operand: value }
         | ExprKind::Yield { request: value }
         | ExprKind::Project { base: value, .. } => vec![value],
@@ -1029,7 +1033,7 @@ fn ast_children(expression: &Expr) -> Vec<&Expr> {
         | ExprKind::Float64(_)
         | ExprKind::Bool(_)
         | ExprKind::String(_)
-| ExprKind::BorrowedUtf8Literal(_)
+        | ExprKind::BorrowedUtf8Literal(_)
         | ExprKind::Var(_) => Vec::new(),
     }
 }
@@ -1044,7 +1048,8 @@ fn ast_children_mut(expression: &mut Expr) -> Vec<&mut Expr> {
             std::iter::once(receiver.as_mut()).chain(args).collect()
         }
         ExprKind::LexicalExit { value, .. } => value.iter_mut().map(|v| v.as_mut()).collect(),
-        ExprKind::Unary { value, .. }
+        ExprKind::VecConstructor { value, .. }
+        | ExprKind::Unary { value, .. }
         | ExprKind::Try { operand: value }
         | ExprKind::Yield { request: value }
         | ExprKind::Project { base: value, .. } => vec![value],
@@ -1108,7 +1113,7 @@ fn ast_children_mut(expression: &mut Expr) -> Vec<&mut Expr> {
         | ExprKind::Float64(_)
         | ExprKind::Bool(_)
         | ExprKind::String(_)
-| ExprKind::BorrowedUtf8Literal(_)
+        | ExprKind::BorrowedUtf8Literal(_)
         | ExprKind::Var(_) => Vec::new(),
     }
 }
@@ -1175,7 +1180,7 @@ fn hir_kind(kind: &ResolvedExprKind) -> &'static str {
         ResolvedExprKind::LexicalExit { .. } => "lexical_exit",
         ResolvedExprKind::Unary { .. } => "unary",
         ResolvedExprKind::Binary { .. } => "binary",
-        ResolvedExprKind::Block { .. } => "block",
+        ResolvedExprKind::Block { .. } | ResolvedExprKind::VecConstructor { .. } => "block",
         ResolvedExprKind::If { .. } => "if",
         ResolvedExprKind::ConstructRecord { .. } => "record",
         ResolvedExprKind::ConstructVariant { .. } => "variant",

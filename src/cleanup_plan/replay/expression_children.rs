@@ -13,7 +13,9 @@ impl<'a> ReplayChildCursor<'a> {
     pub(super) fn new(expression: &'a ResolvedExpr) -> Self {
         if matches!(
             expression.kind,
-            ResolvedExprKind::Block { .. } | ResolvedExprKind::Match { .. }
+            ResolvedExprKind::Block { .. }
+                | ResolvedExprKind::VecConstructor { .. }
+                | ResolvedExprKind::Match { .. }
         ) {
             Self::Open(crate::hir::lexical_exit::ChildCursor::new(expression))
         } else {
@@ -75,7 +77,10 @@ pub(super) fn replay_expression_child(
         ResolvedExprKind::Binary { left, right, .. } => {
             [left.as_ref(), right.as_ref()].get(index).copied()
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             let mut offset = 0;
             for statement in statements {
                 let count = statement.child_count();

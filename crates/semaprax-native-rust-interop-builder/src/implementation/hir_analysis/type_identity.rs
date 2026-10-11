@@ -576,7 +576,10 @@ pub(in crate::implementation) fn fingerprint_expression_types_scratch(
                         push(&mut stack, &mut stack_len, Frame::Expr(right, child_depth))?;
                         push(&mut stack, &mut stack_len, Frame::Expr(left, child_depth))?;
                     }
-                    ResolvedExprKind::Block { statements, tail } => {
+                    ResolvedExprKind::Block { statements, tail }
+                    | ResolvedExprKind::VecConstructor {
+                        statements, tail, ..
+                    } => {
                         push(&mut stack, &mut stack_len, Frame::Expr(tail, child_depth))?;
                         push(
                             &mut stack,

@@ -13,7 +13,8 @@ pub(super) fn contains_record_construction(value: &Expr) -> bool {
                     None
                 }
             }
-            ExprKind::Unary { value, .. }
+            ExprKind::VecConstructor { value, .. }
+            | ExprKind::Unary { value, .. }
             | ExprKind::Try { operand: value }
             | ExprKind::Yield { request: value }
             | ExprKind::Project { base: value, .. } => (index == 0).then_some(value),
@@ -92,7 +93,7 @@ pub(super) fn contains_record_construction(value: &Expr) -> bool {
             | ExprKind::Float64(_)
             | ExprKind::Bool(_)
             | ExprKind::String(_)
-| ExprKind::BorrowedUtf8Literal(_)
+            | ExprKind::BorrowedUtf8Literal(_)
             | ExprKind::Var(_) => None,
         }
     }

@@ -718,11 +718,13 @@ fn generic_function_expression_is_admitted(
             | ExprKind::Float64(_)
             | ExprKind::Bool(_)
             | ExprKind::String(_)
-| ExprKind::BorrowedUtf8Literal(_)
+            | ExprKind::BorrowedUtf8Literal(_)
             | ExprKind::Var(_) => {}
             ExprKind::ArrayU8(_) | ExprKind::RepeatArrayU8 { .. } => return false,
             ExprKind::Call { args, .. } => pending.extend(args.iter().rev()),
-            ExprKind::Unary { value, .. } => pending.push(value),
+            ExprKind::VecConstructor { value, .. } | ExprKind::Unary { value, .. } => {
+                pending.push(value)
+            }
             ExprKind::Binary { left, right, .. } => {
                 pending.push(right);
                 pending.push(left);
@@ -894,7 +896,8 @@ fn substitute_forwarded_call_arguments(
                 substitute_forwarded_call_arguments(function, arguments, argument)?;
             }
         }
-        ExprKind::Unary { value, .. }
+        ExprKind::VecConstructor { value, .. }
+        | ExprKind::Unary { value, .. }
         | ExprKind::Try { operand: value }
         | ExprKind::Yield { request: value }
         | ExprKind::Project { base: value, .. } => {
@@ -991,7 +994,7 @@ fn substitute_forwarded_call_arguments(
         | ExprKind::Float64(_)
         | ExprKind::Bool(_)
         | ExprKind::String(_)
-| ExprKind::BorrowedUtf8Literal(_)
+        | ExprKind::BorrowedUtf8Literal(_)
         | ExprKind::Var(_) => {}
     }
     Some(())

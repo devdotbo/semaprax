@@ -160,6 +160,7 @@ fn ast_expr_identity_slots(expression: &Expr) -> Result<usize, Vec<Diagnostic>> 
         ExprKind::LexicalExit {
             value: Some(value), ..
         }
+        | ExprKind::VecConstructor { value, .. }
         | ExprKind::Unary { value, .. } => {
             slots = checked_builder_sum(slots, ast_expr_identity_slots(value)?)?;
         }
@@ -241,7 +242,7 @@ fn ast_expr_identity_slots(expression: &Expr) -> Result<usize, Vec<Diagnostic>> 
         | ExprKind::Float64(_)
         | ExprKind::Bool(_)
         | ExprKind::String(_)
-| ExprKind::BorrowedUtf8Literal(_)
+        | ExprKind::BorrowedUtf8Literal(_)
         | ExprKind::ArrayU8(_)
         | ExprKind::RepeatArrayU8 { .. }
         | ExprKind::Var(_) => {}

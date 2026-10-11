@@ -963,7 +963,10 @@ fn collect_operation_expr_occurrences(
                 imports,
             )?;
         }
-        (ExprKind::Unary { value, .. }, R::Unary { value: right, .. })
+        (
+            ExprKind::VecConstructor { value, .. } | ExprKind::Unary { value, .. },
+            R::Unary { value: right, .. },
+        )
         | (ExprKind::Try { operand: value }, R::Try { operand: right, .. })
         | (ExprKind::Try { operand: value }, R::TryOption { operand: right, .. }) => {
             collect_operation_expr_occurrences(

@@ -45,7 +45,10 @@ pub(super) fn find_expression_by<'a>(
         hir::ResolvedExprKind::Binary { left, right, .. } => {
             find_expression_by(left, predicate).or_else(|| find_expression_by(right, predicate))
         }
-        hir::ResolvedExprKind::Block { statements, tail } => statements
+        hir::ResolvedExprKind::Block { statements, tail }
+        | hir::ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => statements
             .iter()
             .find_map(|statement| {
                 (0..statement.child_count()).find_map(|index| {
@@ -89,7 +92,8 @@ pub(super) fn find_expression_by<'a>(
         | hir::ResolvedExprKind::Float32(_)
         | hir::ResolvedExprKind::Float64(_)
         | hir::ResolvedExprKind::Bool(_)
-        | hir::ResolvedExprKind::String(_) | hir::ResolvedExprKind::BorrowedUtf8Literal(_)
+        | hir::ResolvedExprKind::String(_)
+        | hir::ResolvedExprKind::BorrowedUtf8Literal(_)
         | hir::ResolvedExprKind::Place(_)
         | hir::ResolvedExprKind::BorrowPlace { .. } => None,
     }

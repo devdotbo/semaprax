@@ -828,7 +828,10 @@ fn expression_path_counts_with_while(
             | ResolvedExprKind::ConstructVariant { fields, .. } => {
                 fields.get(index).map(|field| &field.value)
             }
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 for statement in statements {
                     let child_count = statement.child_count();
                     if index < child_count {
@@ -1066,7 +1069,8 @@ fn expression_path_counts_with_while(
                     ResolvedExprKind::UpdateRecord { .. }
                     | ResolvedExprKind::ConstructRecord { .. }
                     | ResolvedExprKind::ConstructVariant { .. } => sequence(children),
-                    ResolvedExprKind::Block { statements, .. } => {
+                    ResolvedExprKind::Block { statements, .. }
+                    | ResolvedExprKind::VecConstructor { statements, .. } => {
                         let mut accumulator = HirPathCounts::ONE;
                         let mut index = 0usize;
                         for statement in statements {
@@ -1244,7 +1248,8 @@ fn expression_skeleton_work_upper(
                 }
                 ResolvedExprKind::HostCommandCall(call) => call.args.len().saturating_mul(6) + 14,
                 ResolvedExprKind::ByteRange { .. } => 32,
-                ResolvedExprKind::Block { statements, .. } => {
+                ResolvedExprKind::Block { statements, .. }
+                | ResolvedExprKind::VecConstructor { statements, .. } => {
                     // Child censuses include their Eval push. Each statement
                     // additionally needs its continuation and four sequencing
                     // operations; root setup and tail sequencing need seven.
@@ -2017,6 +2022,7 @@ fn collect_expression_statuses(
                 }
             }
             ResolvedExprKind::Block { .. }
+            | ResolvedExprKind::VecConstructor { .. }
             | ResolvedExprKind::LexicalExit { .. }
             | ResolvedExprKind::If { .. }
             | ResolvedExprKind::ConstructRecord { .. }
@@ -4171,7 +4177,10 @@ fn expression_skeleton(
                             )?);
                         }
                     }
-                    ResolvedExprKind::Block { statements, tail } => {
+                    ResolvedExprKind::Block { statements, tail }
+                    | ResolvedExprKind::VecConstructor {
+                        statements, tail, ..
+                    } => {
                         let paths = work.singleton_path(empty_expr_path(), "block root path")?;
                         if let Some(first_statement) = statements.first() {
                             match first_statement {

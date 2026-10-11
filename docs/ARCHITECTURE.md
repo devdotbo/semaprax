@@ -754,6 +754,16 @@ statement spelling through the shared iterative formatter, including exact
 measurement of omitted normalization nodes. No alternate semantic tree is kept;
 [Statement If Canonical Source v1](STATEMENT-IF-CANONICAL-V1.md) owns the projection.
 
+`src/parser/vec_constructor.rs` forecasts and expands typed `vec_of<T>` source
+into separate ordinary capacity/push commits. `src/ast/vec_constructor.rs` and
+whole-function projection hygiene retain its syntax provenance;
+`src/hir/vec_constructor.rs` independently authenticates the single Block-like
+execution node and original-item capture boundary.
+`src/graph/vec_constructor.rs` owns selective Graph v81, while
+`src/workspace_graph/expected_projection/vec_constructor.rs` replays exact
+current source sites. [Typed Vec Constructors v1](TYPED-VEC-CONSTRUCTORS-V1.md)
+owns the authored profile and its pending executable qualification.
+
 `src/parser/return_flow.rs` owns additive acyclic function guard-return
 normalization. Returning arms become ordinary value blocks and a missing-else
 suffix moves once into the alternative. Conditions are parsed once through

@@ -452,7 +452,9 @@ fn walk<'a>(
                 )?;
             }
         }
-        ExprKind::Unary { value, .. } => child!(value, "value", bindings, row)?,
+        ExprKind::VecConstructor { value, .. } | ExprKind::Unary { value, .. } => {
+            child!(value, "value", bindings, row)?
+        }
         ExprKind::Binary { left, right, .. } => {
             child!(left, "left", bindings, row)?;
             child!(right, "right", bindings, row)?;

@@ -313,7 +313,10 @@ fn audit_resolved_expression(root: &ResolvedExpr) -> Result<(), Diagnostic> {
                 pending.push(right);
                 pending.push(left);
             }
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 pending.push(tail);
                 for statement in statements.iter().rev() {
                     if let ResolvedStatement::Let { binding, .. }
@@ -962,7 +965,10 @@ pub(crate) fn visit_resolved_calls(
             visit_resolved_calls(left, visit);
             visit_resolved_calls(right, visit);
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             for statement in statements {
                 for index in 0..statement.child_count() {
                     if let Some(child) = statement.child(index) {
@@ -1142,7 +1148,10 @@ pub(crate) fn visit_workspace_call_sites<'a, E>(
                 walk(owner, left, visit)?;
                 walk(owner, right, visit)?;
             }
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 for statement in statements {
                     for index in 0..statement.child_count() {
                         if let Some(child) = statement.child(index) {

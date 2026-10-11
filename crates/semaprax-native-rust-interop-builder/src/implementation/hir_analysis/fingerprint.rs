@@ -451,7 +451,10 @@ pub(in crate::implementation) fn hash_expr(
                         frame(hasher, b"borrowed-utf8-literal");
                         frame(hasher, value.as_str().as_bytes());
                     }
-                    ResolvedExprKind::LexicalExit { .. } => {
+                    ResolvedExprKind::VecConstructor { .. } => {
+                    return Err(b107("Vec constructors are outside the native Rust scalar profile"));
+                }
+                ResolvedExprKind::LexicalExit { .. } => {
                         return Err(b107("lexical control is outside the native Rust scalar profile"));
                     }
                     ResolvedExprKind::Closure { .. }

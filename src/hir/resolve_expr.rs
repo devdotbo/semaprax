@@ -13,10 +13,10 @@ use super::expr_nodes::{
 use super::ids::{DeclarationId, ExpressionId, FunctionExecutionId, ValueId};
 use super::monomorphize::substitute_type;
 use super::nodes::{
-    DeclarationKind, OwnershipMode, ResolvedBinding, ResolvedImportResultKind, ResolvedMatchMode,
-    ResolvedNativeRustImportCall, ResolvedType, is_scalar_resolved_type,
+    is_scalar_resolved_type, DeclarationKind, OwnershipMode, ResolvedBinding,
+    ResolvedImportResultKind, ResolvedMatchMode, ResolvedNativeRustImportCall, ResolvedType,
 };
-use super::resolve_expr_frame::{Frame, take_results};
+use super::resolve_expr_frame::{take_results, Frame};
 use super::type_reachability::record_args_ok;
 use super::{Binding, Place, PlaceProjection, Resolver};
 
@@ -28,7 +28,7 @@ pub(super) mod lexical_exit;
 mod literal_format;
 mod sort_keys;
 mod variable;
-mod vec_constructor;
+pub(super) mod vec_constructor;
 mod vec_field;
 
 impl Resolver<'_> {
@@ -71,11 +71,15 @@ impl Resolver<'_> {
                     target,
                     has_value,
                 } => {
-                    let value = has_value
-                        .then(|| Box::new(results.pop().expect("lexical operand retained")));
-                    results.push(lexical_exit::finish(
-                        function, span, &path, kind, target, value,
-                    ));
+                    lexical_exit::finish_results(
+                        function,
+                        span,
+                        &path,
+                        kind,
+                        target,
+                        has_value,
+                        &mut results,
+                    );
                 }
                 Frame::Enter {
                     expr,
@@ -3112,28 +3116,7 @@ impl Resolver<'_> {
                         span,
                     });
                 }
-                Frame::StartUpcast {
-                    source,
-                    bindings,
-                    slot_path,
-                    holder,
-                    span,
-                    resume,
-                } => {
-                    // Re-resolve the consumed expression at the canonical `.source` identity below its occupied slot, then wrap and resume the interrupted
-                    // continuation.
-                    frames.push(*resume);
-                    frames.push(Frame::FinishUpcast {
-                        slot_path: slot_path.clone(),
-                        holder,
-                        span,
-                    });
-                    frames.push(Frame::Enter {
-                        expr: source,
-                        bindings,
-                        path: format!("{slot_path}.source"),
-                    });
-                }
+                frame @ Frame::StartUpcast { .. } => finish::start_upcast(frame, &mut frames),
                 Frame::FinishUpcast {
                     slot_path,
                     holder,

@@ -265,7 +265,8 @@ pub(super) fn byte_slice_transcript_source(
                     frames.push(Frame::Visit(else_branch));
                     frames.push(Frame::Visit(then_branch));
                 }
-                ResolvedExprKind::Block { tail, .. } => frames.push(Frame::Visit(tail)),
+                ResolvedExprKind::Block { tail, .. }
+                | ResolvedExprKind::VecConstructor { tail, .. } => frames.push(Frame::Visit(tail)),
                 _ => results.push(TranscriptSource::Unknown),
             },
             Frame::If => {
@@ -290,7 +291,10 @@ pub(crate) fn push_resolved_expression_children_in_authored_order<'a>(
         ResolvedExprKind::Closure { captures, .. } => {
             pending.extend(captures.iter().rev().map(|capture| &capture.value))
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             pending.push(tail);
             for statement in statements.iter().rev() {
                 for index in (0..statement.child_count()).rev() {
@@ -385,7 +389,9 @@ pub(super) fn resolved_value_is_stdin(program: &ResolvedProgram, value: &ValueId
     let in_expression = |root: &ResolvedExpr| {
         let mut pending = vec![root];
         while let Some(expression) = pending.pop() {
-            if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+            if let ResolvedExprKind::Block { statements, .. }
+            | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+            {
                 for statement in statements {
                     if let ResolvedStatement::Let {
                         binding,
@@ -428,7 +434,9 @@ pub(super) fn resolved_value_type(
     let in_expression = |root: &ResolvedExpr| {
         let mut pending = vec![root];
         while let Some(expression) = pending.pop() {
-            if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+            if let ResolvedExprKind::Block { statements, .. }
+            | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+            {
                 for statement in statements {
                     if let ResolvedStatement::Let { binding, .. }
                     | ResolvedStatement::Assign { binding, .. } = statement
@@ -547,7 +555,9 @@ impl<'a> ValueFacts<'a> {
             while let Some(expression) = pending.pop() {
                 #[cfg(test)]
                 value_index_counters::VISITS.with(|count| count.set(count.get() + 1));
-                if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+                if let ResolvedExprKind::Block { statements, .. }
+                | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+                {
                     for statement in statements {
                         match statement {
                             ResolvedStatement::Let {
@@ -658,6 +668,7 @@ fn byte_capacity_expression_in(
                         ResolvedExprKind::Place(_) | ResolvedExprKind::BorrowPlace { .. } => None,
                         ResolvedExprKind::ByteRange { .. } => None,
                         ResolvedExprKind::Block { .. }
+                        | ResolvedExprKind::VecConstructor { .. }
                         | ResolvedExprKind::If { .. }
                         | ResolvedExprKind::Match { .. } => None,
                         _ => Some(ArrayStorageKind::Temporary),
@@ -903,7 +914,10 @@ fn byte_capacity_expression_in(
                         frames.push(Frame::Visit(right, false));
                         frames.push(Frame::Visit(left, false));
                     }
-                    ResolvedExprKind::Block { statements, tail } => {
+                    ResolvedExprKind::Block { statements, tail }
+                    | ResolvedExprKind::VecConstructor {
+                        statements, tail, ..
+                    } => {
                         frames.push(Frame::Sequence(statements.len() + 1));
                         frames.push(Frame::Visit(tail, direct_destination));
                         for statement in statements.iter().rev() {

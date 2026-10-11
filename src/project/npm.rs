@@ -3,7 +3,6 @@
 //! Rendering is authority-neutral: callers provide authenticated Wasm bytes
 //! and the already-admitted public ABI. This module neither reads nor writes a
 //! path and never launches npm, Node, or another process.
-
 mod carrier;
 mod command;
 mod command_v2;
@@ -806,7 +805,10 @@ fn render_recipe_expr(
                 recipe_type(&expression.ty)?
             ))
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             let mut rendered = String::from("{ ");
             for statement in statements {
                 match statement {

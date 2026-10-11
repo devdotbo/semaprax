@@ -593,7 +593,7 @@ impl<'a> Analyzer<'a> {
             | ExprKind::Float64(_)
             | ExprKind::Bool(_)
             | ExprKind::String(_)
-| ExprKind::BorrowedUtf8Literal(_)
+            | ExprKind::BorrowedUtf8Literal(_)
             | ExprKind::Var(_) => None,
             ExprKind::ArrayU8(_) | ExprKind::RepeatArrayU8 { .. } => {
                 Some(REASON_BYTE_DATA_EXPRESSION)
@@ -614,7 +614,9 @@ impl<'a> Analyzer<'a> {
                 }
                 args.iter().find_map(|argument| self.scan(argument))
             }
-            ExprKind::Unary { value, .. } => self.scan(value),
+            ExprKind::VecConstructor { value, .. } | ExprKind::Unary { value, .. } => {
+                self.scan(value)
+            }
             ExprKind::Binary { left, right, .. } => self.scan(left).or_else(|| self.scan(right)),
             ExprKind::Block { statements, tail } => statements
                 .iter()
@@ -679,7 +681,9 @@ impl<'a> Analyzer<'a> {
             ExprKind::MethodCall { .. } | ExprKind::SuperMethod { .. } => {
                 Outcome::Unsupported(REASON_METHOD_CALL)
             }
-            ExprKind::String(_) | ExprKind::BorrowedUtf8Literal(_) => Outcome::Unsupported(REASON_ILL_TYPED_EXPRESSION),
+            ExprKind::String(_) | ExprKind::BorrowedUtf8Literal(_) => {
+                Outcome::Unsupported(REASON_ILL_TYPED_EXPRESSION)
+            }
             ExprKind::ArrayU8(_) | ExprKind::RepeatArrayU8 { .. } => {
                 Outcome::Unsupported(REASON_BYTE_DATA_EXPRESSION)
             }

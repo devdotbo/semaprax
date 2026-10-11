@@ -140,7 +140,8 @@ pub(crate) fn inspect<'a>(
                 ResolvedExprKind::BorrowPlace { place, .. } if place.root == proof.owner.root => {
                     return None
                 }
-                ResolvedExprKind::Block { statements, .. } => {
+                ResolvedExprKind::Block { statements, .. }
+                | ResolvedExprKind::VecConstructor { statements, .. } => {
                     for statement in statements {
                         *work = work.checked_sub(1)?;
                         if matches!(statement,ResolvedStatement::Assign{binding,..} if binding.id==proof.owner.root || binding.id==proof.counter.id || binding.id==proof.row_index.id || binding.id==proof.length.id)

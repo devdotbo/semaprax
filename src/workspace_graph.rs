@@ -70,7 +70,7 @@ use std::cell::Cell;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 use type_names::type_contains_name_from;
-use validation::{WorkspaceValidationIndex, expected_declaration_facts, validate_stub_signatures};
+use validation::{expected_declaration_facts, validate_stub_signatures, WorkspaceValidationIndex};
 pub(crate) const MAX_FILES: usize = 32;
 const MAX_TOTAL_SOURCE_BYTES: usize = 16 * 1024 * 1024;
 const MAX_DECLARATIONS: usize = 4096;
@@ -1020,7 +1020,7 @@ pub(crate) fn build_owned(
 }
 
 pub(crate) use package::{
-    PackageWorkspaceImport, PackageWorkspaceModule, build_package_scalar_sources,
+    build_package_scalar_sources, PackageWorkspaceImport, PackageWorkspaceModule,
 };
 impl WorkspaceGraphBuild {
     pub(crate) fn contains_module(&self, module: &str) -> bool {
@@ -1337,17 +1337,15 @@ impl WorkspaceGraphBuild {
                     && function.name == "main"
                     && !dependency_anchor
                 {
-                    return Err(vec![
-                        project_function_error(
-                            module,
-                            format!(
-                                "workspace scalar provider module `{}` may not declare `main`",
-                                module.module
-                            ),
-                            Some(function.span),
-                        )
-                        .with_help(diagnostics::PROVIDER_MAIN_HELP),
-                    ]);
+                    return Err(vec![project_function_error(
+                        module,
+                        format!(
+                            "workspace scalar provider module `{}` may not declare `main`",
+                            module.module
+                        ),
+                        Some(function.span),
+                    )
+                    .with_help(diagnostics::PROVIDER_MAIN_HELP)]);
                 }
                 if dependency_anchor {
                     continue;
@@ -2073,17 +2071,15 @@ impl WorkspaceGraphBuild {
                     .iter()
                     .find(|function| function.name == "main")
                     .expect("predicate found provider main");
-                return Err(vec![
-                    project_function_error(
-                        module,
-                        format!(
-                            "workspace scalar provider module `{}` may not declare `main`",
-                            module.module
-                        ),
-                        Some(function.span),
-                    )
-                    .with_help(diagnostics::PROVIDER_MAIN_HELP),
-                ]);
+                return Err(vec![project_function_error(
+                    module,
+                    format!(
+                        "workspace scalar provider module `{}` may not declare `main`",
+                        module.module
+                    ),
+                    Some(function.span),
+                )
+                .with_help(diagnostics::PROVIDER_MAIN_HELP)]);
             }
             // Owned-data and v25 text admission are reachability-gated. Irrelevant
             // verified functions receive no runtime or target authority and
@@ -2458,7 +2454,10 @@ fn resolved_function_imports(function: &hir::ResolvedFunction) -> BTreeSet<hir::
                 visit(left, imports);
                 visit(right, imports);
             }
-            hir::ResolvedExprKind::Block { statements, tail } => {
+            hir::ResolvedExprKind::Block { statements, tail }
+            | hir::ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 for statement in statements {
                     for index in 0..statement.child_count() {
                         if let Some(child) = statement.child(index) {
@@ -5444,15 +5443,15 @@ fn validate_imported_type(
     if !ty.invariants().is_empty() {
         // Record Invariants v1 checks a record's productions inside the module
         // that declares it; an importer would construct it unchecked.
-        return Err(vec![
-            use_error(
-                caller,
-                module_use,
-                "a record that declares invariants cannot be imported by another module in \
+        return Err(vec![use_error(
+            caller,
+            module_use,
+            "a record that declares invariants cannot be imported by another module in \
              Record Invariants v1",
-            )
-            .with_help("construct and update the record through functions of its own module"),
-        ]);
+        )
+        .with_help(
+            "construct and update the record through functions of its own module",
+        )]);
     }
     if owned_function_import::text_record_import(caller, target, authored, programs) {
         return Ok(());

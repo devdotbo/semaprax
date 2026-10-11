@@ -67,3 +67,31 @@ pub(super) fn write_let_prefix(output: &mut impl std::fmt::Write, statement: &St
     }
     write!(output, " = ").unwrap();
 }
+
+pub(super) fn hygienic() -> bool {
+    SAFE.with(Cell::get).unwrap_or(false)
+}
+
+pub(super) fn whole_function_scope(function: &crate::ast::Function) -> Scope {
+    let old = SAFE.with(Cell::get);
+    if old.is_none() {
+        let roots = function
+            .requires
+            .iter()
+            .chain(std::iter::once(&function.body))
+            .chain(&function.ensures);
+        let names = function
+            .params
+            .iter()
+            .map(|p| p.name.as_str())
+            .chain(function.type_parameters.iter().map(|p| p.name.as_str()));
+        SAFE.with(|slot| {
+            slot.set(Some(crate::ast::expression_statement::projection_roots(
+                roots,
+                names,
+                crate::bounded_output::reserve_active_required,
+            )))
+        });
+    }
+    Scope(old)
+}

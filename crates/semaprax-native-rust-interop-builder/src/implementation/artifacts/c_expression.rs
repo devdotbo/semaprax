@@ -272,6 +272,11 @@ fn c_expression_linear(
                         "static borrowed UTF-8 is outside the native Rust scalar profile",
                     ));
                 }
+                ResolvedExprKind::VecConstructor { .. } => {
+                    return Err(b107(
+                        "Vec constructors are outside the native Rust scalar profile",
+                    ));
+                }
                 ResolvedExprKind::LexicalExit { .. } => {
                     return Err(b107(
                         "lexical control is outside the native Rust scalar profile",

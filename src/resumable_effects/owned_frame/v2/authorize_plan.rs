@@ -245,7 +245,10 @@ fn scalar(e: &ResolvedExpr, f: &ResolvedFunction) -> bool {
 }
 fn copy_block(e: &ResolvedExpr, f: &ResolvedFunction) -> bool {
     match &e.kind {
-        ResolvedExprKind::Block { statements, tail } => statements.is_empty() && scalar(tail, f),
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => statements.is_empty() && scalar(tail, f),
         _ => scalar(e, f),
     }
 }

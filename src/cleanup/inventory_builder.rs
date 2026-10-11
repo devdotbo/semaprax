@@ -659,7 +659,10 @@ impl InventoryBuilder<'_> {
                                 _ => None,
                             };
                         }
-                        ResolvedExprKind::Block { statements, tail } => {
+                        ResolvedExprKind::Block { statements, tail }
+                        | ResolvedExprKind::VecConstructor {
+                            statements, tail, ..
+                        } => {
                             // Only lets add a trailing binding step; other statements keep walking.
                             let per_statement = |statement: &ResolvedStatement| {
                                 statement.child_count().saturating_add(usize::from(matches!(

@@ -3,7 +3,6 @@
 
 use crate::ast::{Expr, ExprKind, ImportResult, ParamMode, Statement, Type, TypeDeclarationKind};
 use crate::diagnostic::Diagnostic;
-use crate::source_verify::IterativeVerifier;
 use crate::source_verify::arguments::{
     activate_borrowed_bytes_call_loans, source_byte_view_place_is_admitted,
 };
@@ -21,6 +20,7 @@ use crate::source_verify::scope::{
     VerifierCallTarget, VerifierFrame, VerifierFunctionSignature, VerifierScope,
 };
 use crate::source_verify::type_table::effective_record_fields;
+use crate::source_verify::IterativeVerifier;
 use std::collections::HashSet;
 
 impl<'a, 'p> IterativeVerifier<'a, 'p> {
@@ -31,6 +31,34 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
     ) -> Result<(), Diagnostic> {
         match &expression.kind {
             ExprKind::VecConstructor { .. } => {
+                let hygienic = *self.constructor_hygiene.get_or_insert_with(|| {
+                    crate::ast::expression_statement::projection_roots(
+                        self.current
+                            .requires
+                            .iter()
+                            .chain(std::iter::once(&self.current.body))
+                            .chain(&self.current.ensures),
+                        self.current
+                            .params
+                            .iter()
+                            .map(|param| param.name.as_str())
+                            .chain(
+                                self.current
+                                    .type_parameters
+                                    .iter()
+                                    .map(|param| param.name.as_str()),
+                            ),
+                        crate::bounded_output::reserve_active_required,
+                    )
+                });
+                if !hygienic {
+                    return Err(error(
+                        self.program,
+                        "SPX-T318",
+                        "Vec constructor generated owner names are not hygienic",
+                        expression.span,
+                    ));
+                }
                 let expansion = crate::ast::vec_constructor::inspect(expression)
                     .map_err(|message| error(self.program, "SPX-T318", message, expression.span))?;
                 self.frames.push(VerifierFrame::Enter {

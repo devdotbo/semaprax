@@ -873,3 +873,6 @@ pub(crate) use owned_liveness::{owned_step_transfer_plan, OwnedStepTransferPlan}
 
 #[cfg(test)]
 mod phase_measurement;
+
+// Shared pinned compiler container layout, not cleanup authority.
+pub(crate) use replay::replay_btree_node_upper as compiler_btree_node_upper;

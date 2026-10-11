@@ -1,5 +1,7 @@
 //! Exact syntax expansion; this marker grants no ordinary Call authority.
+mod cursor;
 use super::{Expr, ExprKind, LetSyntax, Statement, Type};
+pub(crate) use cursor::{items_fit_depth, NodeCursor};
 
 pub struct Expansion<'a> {
     pub element: &'a Type,
@@ -56,6 +58,7 @@ pub fn inspect(expression: &Expr) -> Result<Expansion<'_>, &'static str> {
         };
         if !name.starts_with("_if")
             || name[3..].is_empty()
+            || name[3..].starts_with('0')
             || !name[3..].bytes().all(|byte| byte.is_ascii_digit())
         {
             return Err("Vec constructor binding is not hygienically minted");
@@ -146,4 +149,13 @@ pub(crate) fn type_backing_bytes(root: &Type) -> Option<usize> {
         }
     }
     Some(total)
+}
+
+/// Capacity inference only; normal source and HIR authentication still apply.
+pub(crate) fn return_type(expression: &Expr) -> Option<Type> {
+    let constructor = inspect(expression).ok()?;
+    Some(Type::Named {
+        name: "Vec".to_owned(),
+        arguments: vec![constructor.element.clone()],
+    })
 }

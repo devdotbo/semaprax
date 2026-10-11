@@ -35,9 +35,10 @@ pub(super) fn validate_closure_shape(function: &ResolvedFunction) -> Result<(), 
 fn is_direct_string_carrier(expression: &ResolvedExpr) -> bool {
     match &expression.kind {
         ResolvedExprKind::String(_) | ResolvedExprKind::Call { .. } => true,
-        ResolvedExprKind::Block { statements, tail } => {
-            statements.is_empty() && is_direct_string_carrier(tail)
-        }
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => statements.is_empty() && is_direct_string_carrier(tail),
         _ => false,
     }
 }

@@ -23,7 +23,10 @@ fn child<'e>(
     limit: usize,
 ) -> Result<Option<&'e ResolvedExpr>, Diagnostic> {
     Ok(match &expression.kind {
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             let mut offset = 0usize;
             for statement in statements {
                 debit(work, limit)?;

@@ -116,7 +116,8 @@ pub(crate) fn visit_roots_with_work<'a>(
             // The open child accessor scans statement/arm prefixes. Charge
             // their full width on every lookup before performing that work.
             let lookup = match &expression.kind {
-                ResolvedExprKind::Block { statements, .. } => statements.len(),
+                ResolvedExprKind::Block { statements, .. }
+                | ResolvedExprKind::VecConstructor { statements, .. } => statements.len(),
                 ResolvedExprKind::Match { arms, .. } => arms.len(),
                 _ => 0,
             };

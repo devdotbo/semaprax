@@ -686,6 +686,7 @@ fn cleanup_binding_flow<'a>(
                 // admitted Copy scalar, transparent in exactly the same way
                 // an upcast is -- it does not consume the binding.
                 crate::ast::ExprKind::Project { .. }
+                | crate::ast::ExprKind::VecConstructor { .. }
                 | crate::ast::ExprKind::Unary { .. }
                 | crate::ast::ExprKind::Yield { .. }
                 | crate::ast::ExprKind::Binary { .. } => false,
@@ -701,7 +702,7 @@ fn cleanup_binding_flow<'a>(
                 | crate::ast::ExprKind::Float64(_)
                 | crate::ast::ExprKind::Bool(_)
                 | crate::ast::ExprKind::String(_)
-| crate::ast::ExprKind::BorrowedUtf8Literal(_)
+                | crate::ast::ExprKind::BorrowedUtf8Literal(_)
                 | crate::ast::ExprKind::Var(_) => false,
             };
             traversal[frame_index] = Some((expression, child_cursor, 0));

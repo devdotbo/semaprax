@@ -88,9 +88,9 @@ fn expr_has_owning_closure(expr: &Expr) -> bool {
         ExprKind::LexicalExit { value, .. } => value
             .as_ref()
             .is_some_and(|value| expr_has_owning_closure(value)),
-        ExprKind::Unary { value, .. } | ExprKind::Try { operand: value } => {
-            expr_has_owning_closure(value)
-        }
+        ExprKind::VecConstructor { value, .. }
+        | ExprKind::Unary { value, .. }
+        | ExprKind::Try { operand: value } => expr_has_owning_closure(value),
         ExprKind::Binary { left, right, .. } => {
             expr_has_owning_closure(left) || expr_has_owning_closure(right)
         }
@@ -242,7 +242,9 @@ fn lower_expr(expr: &mut Expr, substitutions: &mut HashMap<String, Expr>) {
             value: Some(value), ..
         } => lower_expr(value, substitutions),
         ExprKind::LexicalExit { value: None, .. } => {}
-        ExprKind::Unary { value, .. } => lower_expr(value, substitutions),
+        ExprKind::VecConstructor { value, .. } | ExprKind::Unary { value, .. } => {
+            lower_expr(value, substitutions)
+        }
         ExprKind::Try { operand } => lower_expr(operand, substitutions),
         ExprKind::Binary { left, right, .. } => {
             lower_expr(left, substitutions);

@@ -218,7 +218,10 @@ impl HirValidator<'_> {
                     pending.push(then_branch);
                     pending.push(condition);
                 }
-                ResolvedExprKind::Block { statements, tail } => {
+                ResolvedExprKind::Block { statements, tail }
+                | ResolvedExprKind::VecConstructor {
+                    statements, tail, ..
+                } => {
                     pending.push(tail);
                     for statement in statements.iter().rev() {
                         let renewal = if let ResolvedStatement::Assign {

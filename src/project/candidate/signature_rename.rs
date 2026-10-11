@@ -238,7 +238,8 @@ impl Rename<'_> {
                     self.expression(value, scope, next)?;
                 }
             }
-            ExprKind::Unary { value, .. }
+            ExprKind::VecConstructor { value, .. }
+            | ExprKind::Unary { value, .. }
             | ExprKind::Try { operand: value }
             | ExprKind::Yield { request: value }
             | ExprKind::Project { base: value, .. } => self.expression(value, scope, next)?,
@@ -278,7 +279,7 @@ impl Rename<'_> {
             | ExprKind::Float64(_)
             | ExprKind::Bool(_)
             | ExprKind::String(_)
-| ExprKind::BorrowedUtf8Literal(_) => {}
+            | ExprKind::BorrowedUtf8Literal(_) => {}
         }
         Ok(())
     }

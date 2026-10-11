@@ -1,10 +1,10 @@
 pub(crate) use super::byte_helper_renewal::graph_schema;
 use crate::cleanup::FieldLivenessShape;
 use crate::cleanup_plan::{
-    CLEANUP_PLAN_SCHEMA_V7, CLEANUP_PLAN_SCHEMA_V8, CLEANUP_PLAN_SCHEMA_V9,
-    CLEANUP_PLAN_SCHEMA_V10, CLEANUP_PLAN_SCHEMA_V11, CLEANUP_PLAN_SCHEMA_V12,
+    StorageId, CLEANUP_PLAN_SCHEMA_V10, CLEANUP_PLAN_SCHEMA_V11, CLEANUP_PLAN_SCHEMA_V12,
     CLEANUP_PLAN_SCHEMA_V13, CLEANUP_PLAN_SCHEMA_V14, CLEANUP_PLAN_SCHEMA_V15,
-    CLEANUP_PLAN_SCHEMA_V16, CLEANUP_PLAN_SCHEMA_V17, CLEANUP_PLAN_SCHEMA_V18, StorageId,
+    CLEANUP_PLAN_SCHEMA_V16, CLEANUP_PLAN_SCHEMA_V17, CLEANUP_PLAN_SCHEMA_V18,
+    CLEANUP_PLAN_SCHEMA_V7, CLEANUP_PLAN_SCHEMA_V8, CLEANUP_PLAN_SCHEMA_V9,
 };
 use crate::diagnostic::Diagnostic;
 use crate::hir::{PlaceProjection, ResolvedFunction, ResolvedProgram};
@@ -454,7 +454,8 @@ pub(super) fn pre_filesystem_graph_schema(
                 || super::projected_string_view::requires(program)
                 || super::owned_nested_outcome::requires(program)
                 || super::scoped_vec_field::requires(program)
-                || crate::vec_ops::string_slot::resolved_uses(program),
+                || crate::vec_ops::string_slot::resolved_uses(program)
+                || crate::hir::vec_constructor::program_uses(program)?,
         )?;
         return Ok(iterator_schema);
     }
@@ -475,6 +476,7 @@ pub(super) fn pre_filesystem_graph_schema(
         && !super::byte_helper_renewal::requires(program)
         && !super::finite_byte_scratch::requires(program)
         && !super::consuming_vec_renewal::requires(program)
+        && !crate::hir::vec_constructor::program_uses(program)?
         && !crate::vec_ops::string_slot::resolved_uses(program)
     {
         return legacy_graph_schema(program);
@@ -527,6 +529,12 @@ pub(super) fn generic_payload_schema(
 }
 
 pub(crate) fn legacy_graph_schema(program: &ResolvedProgram) -> Result<&'static str, Diagnostic> {
+    if crate::hir::vec_constructor::program_uses(program)? {
+        return Err(Diagnostic::io(
+            "SPX-G410",
+            "Vec constructors require Graph v81",
+        ));
+    }
     if crate::vec_ops::string_slot::resolved_uses(program) {
         return Err(Diagnostic::io(
             "SPX-G410",

@@ -903,7 +903,10 @@ impl HirValidator<'_> {
                 condition, body, ..
             } => {
                 if condition.ty != ResolvedType::Bool
-                    || !matches!(body.kind, ResolvedExprKind::Block { .. })
+                    || !matches!(
+                        body.kind,
+                        ResolvedExprKind::Block { .. } | ResolvedExprKind::VecConstructor { .. }
+                    )
                 {
                     return Err(hir_error(
                         "generic collection loop requires bool condition and block body",
@@ -936,7 +939,9 @@ fn template_mutable_binding(
     let mut pending = vec![&template.body];
     let mut matched = false;
     while let Some(expression) = pending.pop() {
-        if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+        if let ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+        {
             for statement in statements {
                 if let ResolvedStatement::Let {
                     binding: declared,

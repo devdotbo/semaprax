@@ -114,7 +114,9 @@ pub(crate) fn capture_names_scoped(
                         ));
                     }
                 }
-                ExprKind::Unary { value, .. } => pending.push(Item::Expr(value, locals)),
+                ExprKind::VecConstructor { value, .. } | ExprKind::Unary { value, .. } => {
+                    pending.push(Item::Expr(value, locals))
+                }
                 ExprKind::Binary { left, right, .. } => {
                     pending.push(Item::Expr(right, locals.clone()));
                     pending.push(Item::Expr(left, locals));

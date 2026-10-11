@@ -228,7 +228,10 @@ fn collect_expression(expression: &ResolvedExpr, declarations: &mut BTreeSet<Dec
             collect_expression(left, declarations);
             collect_expression(right, declarations);
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             for statement in statements {
                 if let ResolvedStatement::Let { binding, .. }
                 | ResolvedStatement::Assign { binding, .. } = statement
@@ -313,7 +316,8 @@ fn collect_expression(expression: &ResolvedExpr, declarations: &mut BTreeSet<Dec
         | ResolvedExprKind::Float32(_)
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_)
+        | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. } => {}
     }

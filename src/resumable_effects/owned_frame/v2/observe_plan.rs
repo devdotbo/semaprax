@@ -157,7 +157,10 @@ fn readonly(e: &ResolvedExpr, f: &ResolvedFunction, d: &hir::DeclarationIndex) -
         } => {
             readonly(condition, f, d) && readonly(then_branch, f, d) && readonly(else_branch, f, d)
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             statements.iter().all(|s| match s {
                 ResolvedStatement::Let {
                     binding,
@@ -281,7 +284,10 @@ fn borrowed_alias_field(
             }
             None
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             for s in statements {
                 if let ResolvedStatement::Let { value, .. } = s {
                     if let Some(field) = borrowed_alias_field(value, f, id) {

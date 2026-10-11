@@ -2,6 +2,7 @@
 //!
 //! Validates HIR meaning; source resolution remains in
 //! the parent module.
+mod type_requirement;
 use super::workspace_link::native_owner::admitted_ri06_regex_result as regex_result;
 use super::*;
 mod assign_field;
@@ -8613,7 +8614,8 @@ impl<'a> HirValidator<'a> {
                             }
                         }
                     }
-                    ResolvedExprKind::Block { tail, .. } => {
+                    ResolvedExprKind::Block { tail, .. }
+                    | ResolvedExprKind::VecConstructor { tail, .. } => {
                         frames.push(Frame::Enter(tail, scope_index));
                     }
                     ResolvedExprKind::If {
@@ -8771,21 +8773,6 @@ impl<'a> HirValidator<'a> {
                     ty.identity_key()
                 ))
             })
-    }
-
-    fn require_type(
-        &self,
-        actual: &ResolvedType,
-        expected: &ResolvedType,
-        context: &str,
-    ) -> Result<(), Diagnostic> {
-        if actual == expected {
-            Ok(())
-        } else {
-            Err(hir_error(format!(
-                "{context} has inconsistent resolved types"
-            )))
-        }
     }
 
     fn insert_value(&mut self, id: &ValueId) -> Result<(), Diagnostic> {

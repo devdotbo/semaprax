@@ -309,7 +309,9 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     ));
                     results.push(Err(()));
                 }
-                ExprKind::Unary { value, .. } => frames.push(Frame::Expression(value)),
+                ExprKind::VecConstructor { value, .. } | ExprKind::Unary { value, .. } => {
+                    frames.push(Frame::Expression(value))
+                }
                 ExprKind::Binary { left, right, .. } => {
                     frames.push(Frame::JoinAll(2));
                     frames.push(Frame::Expression(right));

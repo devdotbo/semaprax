@@ -29,8 +29,8 @@ pub(super) use dependency_closure::{
 };
 
 use super::{
-    CallOccurrenceKey, MAX_CALLS, WorkspaceDeclarationFact, WorkspaceEdge, WorkspaceResolvedModule,
     graph_error, limit_error, push_edge, reserve_builder_structure, visit_ast_call_sites,
+    CallOccurrenceKey, WorkspaceDeclarationFact, WorkspaceEdge, WorkspaceResolvedModule, MAX_CALLS,
 };
 use edge_projection::push_edge_reference;
 
@@ -460,7 +460,10 @@ fn visit_resolved_calls<'a>(
         hir::ResolvedExprKind::ArrayU8(_)
         | hir::ResolvedExprKind::RepeatArrayU8 { .. }
         | hir::ResolvedExprKind::BorrowPlace { .. } => {}
-        hir::ResolvedExprKind::Block { statements, tail } => {
+        hir::ResolvedExprKind::Block { statements, tail }
+        | hir::ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             for statement in statements {
                 for index in 0..statement.child_count() {
                     visit_resolved_calls(
@@ -1038,7 +1041,10 @@ fn collect_resolved_expression_type_sites<'a>(
                 out,
             )?;
         }
-        hir::ResolvedExprKind::Block { statements, tail } => {
+        hir::ResolvedExprKind::Block { statements, tail }
+        | hir::ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             for (index, statement) in statements.iter().enumerate() {
                 let statement_path =
                     crate::bounded_output::budgeted_format(format_args!("{path}.s{index}"));

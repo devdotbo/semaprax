@@ -34,7 +34,9 @@ pub(super) fn scalar_guard_shape(guard: &Expr, bindings: &HashMap<String, Bindin
                 if bindings.get(name).is_some_and(|binding| {
                     binding.mode == ParamMode::Value && is_scalar_source_type(&binding.ty)
                 }) => {}
-            ExprKind::Unary { value, .. } => pending.push(value),
+            ExprKind::VecConstructor { value, .. } | ExprKind::Unary { value, .. } => {
+                pending.push(value)
+            }
             ExprKind::Binary { left, right, .. } => {
                 pending.push(right);
                 pending.push(left);

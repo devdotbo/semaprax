@@ -280,6 +280,7 @@ pub(super) fn source_capacity_expr_type(
                     .get(name.as_str())
                     .map(|item| item.return_type.clone())
             }),
+        ExprKind::VecConstructor { .. } => crate::ast::vec_constructor::return_type(expression),
         ExprKind::LexicalExit { .. } => Some(Type::Never),
         ExprKind::MethodCall { .. }
         | ExprKind::Unary { .. }
@@ -324,7 +325,8 @@ pub(super) fn source_capacity_expr_type(
             ExprKind::LexicalExit { .. } => {
                 result = Some(Type::Never);
             }
-            ExprKind::Unary { value, .. }
+            ExprKind::VecConstructor { value, .. }
+            | ExprKind::Unary { value, .. }
             | ExprKind::Try { operand: value }
             | ExprKind::Yield { request: value } => {
                 current = value;
@@ -1148,7 +1150,8 @@ fn source_capacity_expr(
                             results.push(crate::byte_data_capacity::CapacityFlow::Empty);
                         }
                     }
-                    ExprKind::Unary { value, .. }
+                    ExprKind::VecConstructor { value, .. }
+                    | ExprKind::Unary { value, .. }
                     | ExprKind::Try { operand: value }
                     | ExprKind::Yield { request: value } => {
                         frames.push(Frame::Visit {

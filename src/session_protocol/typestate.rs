@@ -195,7 +195,8 @@ fn collect_bindings(expr: &Expr, names: &mut HashSet<String>) {
                 collect_bindings(value, names);
             }
         }
-        ExprKind::Unary { value, .. }
+        ExprKind::VecConstructor { value, .. }
+        | ExprKind::Unary { value, .. }
         | ExprKind::Project { base: value, .. }
         | ExprKind::Try { operand: value }
         | ExprKind::Yield { request: value } => collect_bindings(value, names),
@@ -252,7 +253,7 @@ fn collect_bindings(expr: &Expr, names: &mut HashSet<String>) {
         | ExprKind::Float64(_)
         | ExprKind::Bool(_)
         | ExprKind::String(_)
-| ExprKind::BorrowedUtf8Literal(_)
+        | ExprKind::BorrowedUtf8Literal(_)
         | ExprKind::Var(_) => {}
     }
 }
@@ -349,7 +350,8 @@ fn contains_via_call(expr: &Expr, via_names: &BTreeSet<&str>) -> bool {
         ExprKind::LexicalExit { value, .. } => value
             .as_ref()
             .is_some_and(|value| contains_via_call(value, via_names)),
-        ExprKind::Unary { value, .. }
+        ExprKind::VecConstructor { value, .. }
+        | ExprKind::Unary { value, .. }
         | ExprKind::Project { base: value, .. }
         | ExprKind::Try { operand: value }
         | ExprKind::Yield { request: value } => contains_via_call(value, via_names),
@@ -405,7 +407,7 @@ fn contains_via_call(expr: &Expr, via_names: &BTreeSet<&str>) -> bool {
         | ExprKind::Float64(_)
         | ExprKind::Bool(_)
         | ExprKind::String(_)
-| ExprKind::BorrowedUtf8Literal(_)
+        | ExprKind::BorrowedUtf8Literal(_)
         | ExprKind::Var(_) => false,
     }
 }
@@ -621,7 +623,9 @@ fn walk_expr(
             "session protocol typestate does not admit lexical exits".to_owned(),
             expr.span,
         )),
-        ExprKind::Unary { value, .. } => walk_expr(context, value, states),
+        ExprKind::VecConstructor { value, .. } | ExprKind::Unary { value, .. } => {
+            walk_expr(context, value, states)
+        }
         ExprKind::Binary { left, right, op } => {
             let states = walk_expr(context, left, states)?;
             if matches!(op, BinaryOp::And | BinaryOp::Or) {

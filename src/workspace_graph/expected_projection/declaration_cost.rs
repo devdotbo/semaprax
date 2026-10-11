@@ -125,7 +125,7 @@ pub(super) fn ast_expr_cost(
         expression.kind,
         ExprKind::Int(_)
             | ExprKind::String(_)
-| ExprKind::BorrowedUtf8Literal(_)
+            | ExprKind::BorrowedUtf8Literal(_)
             | ExprKind::Float32(_)
             | ExprKind::Float64(_)
             | ExprKind::Bool(_)
@@ -184,6 +184,10 @@ pub(super) fn ast_expr_cost(
             value: Some(value), ..
         }
         | ExprKind::Unary { value, .. } => ast_expr_cost(value, cost)?,
+        ExprKind::VecConstructor { element, value, .. } => {
+            ast_type_cost(element, cost)?;
+            ast_expr_cost(value, cost)?;
+        }
         ExprKind::Binary { left, right, .. } => {
             ast_expr_cost(left, cost)?;
             ast_expr_cost(right, cost)?;

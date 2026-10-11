@@ -7,6 +7,7 @@ pub(in super::super) fn write_function(
     placement: &comments::Placement,
     depth: usize,
 ) {
+    let _function_scope = expression_statement::whole_function_scope(function);
     placement.leading(output, function.span.start, depth);
     write_indent(output, depth);
     if function.explicit_id {

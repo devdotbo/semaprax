@@ -1,7 +1,11 @@
+#[path = "format/parameters.rs"]
+mod parameters;
 use crate::ast::{
     BinaryOp, Expr, ExprKind, ImportFailure, MatchPattern, ModuleUseKind, Program,
     ResourceLifecycleKind, Statement, TypeDeclarationKind,
 };
+use parameters::write_type_arguments;
+pub(crate) use parameters::{write_record_literal_delimited_expr, write_type_parameters};
 use std::collections::HashMap;
 use std::fmt::Write as _;
 // Explicit paths: other crates include this file by `#[path]`, where a bare
@@ -438,8 +442,7 @@ pub(crate) fn write_canonical_commented(
                         write_joined(output, &method.effects, ", ");
                         writeln!(output, " }}").unwrap();
                     }
-                    let _expression_scope =
-                        expression_statement::function_scope(&method.body, &method.params);
+                    let _expression_scope = expression_statement::whole_function_scope(method);
                     write_indented_function_body(output, &method.body, 2, placement);
                     placement.trailing(output, method.span.start, 1);
                 }
@@ -747,7 +750,10 @@ fn write_format_frames(
                         value: normalized,
                         ..
                     } => {
-                        if let Ok(expansion) = crate::ast::vec_constructor::inspect(value) {
+                        if let (Ok(expansion), true) = (
+                            crate::ast::vec_constructor::inspect(value),
+                            expression_statement::hygienic(),
+                        ) {
                             output.write_str("vec_of<").unwrap();
                             write_type(&mut output, element);
                             output.write_str(">(").unwrap();
@@ -1220,48 +1226,6 @@ fn write_format_frames(
             Frame::Close(character) => output.write_char(character).unwrap(),
         }
     }
-}
-
-pub(crate) fn write_record_literal_delimited_expr(output: &mut impl std::fmt::Write, value: &Expr) {
-    let delimited = contains_record_construction(value);
-    if delimited {
-        output.write_char('(').unwrap();
-    }
-    write_expr(output, value, 0);
-    if delimited {
-        output.write_char(')').unwrap();
-    }
-}
-
-pub(crate) fn write_type_parameters(
-    output: &mut impl std::fmt::Write,
-    parameters: &[crate::ast::TypeParameterDeclaration],
-) {
-    if parameters.is_empty() {
-        return;
-    }
-    output.write_char('<').unwrap();
-    for (index, parameter) in parameters.iter().enumerate() {
-        if index != 0 {
-            output.write_str(", ").unwrap();
-        }
-        output.write_str(&parameter.name).unwrap();
-    }
-    output.write_char('>').unwrap();
-}
-
-fn write_type_arguments(output: &mut impl std::fmt::Write, arguments: &[crate::ast::Type]) {
-    if arguments.is_empty() {
-        return;
-    }
-    output.write_char('<').unwrap();
-    for (index, argument) in arguments.iter().enumerate() {
-        if index != 0 {
-            output.write_str(", ").unwrap();
-        }
-        write_type(output, argument);
-    }
-    output.write_char('>').unwrap();
 }
 
 pub(crate) fn write_type(output: &mut impl std::fmt::Write, ty: &crate::ast::Type) {

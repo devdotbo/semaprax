@@ -18,7 +18,7 @@ fn test_empty_tags_select_all() -> i64
 {
     let first = InputItem { id: "B", department: 2, priority: 1, stock: 10, topup: 5, mark: 7u8 };
     let second = InputItem { id: "A", department: 1, priority: 9, stock: 3, topup: 2, mark: 255u8 };
-    let items = vec_push<InputItem>(vec_push<InputItem>(vec_with_capacity<InputItem>(2usize), first), second);
+    let items = vec_of<InputItem>(first, second);
     let outcome = run(Request { tags: vec_with_capacity<string>(0usize), items: items });
     if !outcome.valid { 1 } else { let first_id = vec_field<Item>(outcome.report.items, 0usize, "id"); let expected = "A"; if vec_len<Item>(outcome.report.items) == 2usize && str_len_bytes(first_id) == 1 && str_starts_with(first_id, string_as_str(expected)) && vec_field<Item>(outcome.report.items, 0usize, "stock") == 5 && outcome.report.metrics.selected == 2 && outcome.report.metrics.stock == 20 && outcome.report.metrics.checksum == 262 { 0 } else { 1 } }
 }

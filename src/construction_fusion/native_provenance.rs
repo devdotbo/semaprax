@@ -393,7 +393,10 @@ fn walk<'a>(
                     work,
                 )?;
             }
-            if matches!(done.expression.kind, K::Block { .. }) {
+            if matches!(
+                done.expression.kind,
+                K::Block { .. } | K::VecConstructor { .. }
+            ) {
                 scratch.len = done.base;
             }
             if depth != 0 {

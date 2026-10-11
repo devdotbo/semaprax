@@ -173,7 +173,10 @@ pub(super) fn render_expr(
                 output.push(')');
             }
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             output.push_str("{ ");
             for statement in statements {
                 match statement {

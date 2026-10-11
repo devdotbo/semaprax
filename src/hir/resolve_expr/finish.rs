@@ -146,3 +146,30 @@ impl Resolver<'_> {
         })
     }
 }
+
+pub(super) fn start_upcast<'a>(frame: Frame<'a>, frames: &mut Vec<Frame<'a>>) {
+    let Frame::StartUpcast {
+        source,
+        bindings,
+        slot_path,
+        holder,
+        span,
+        resume,
+    } = frame
+    else {
+        unreachable!("upcast continuation")
+    };
+    // Re-resolve the consumed expression at the canonical `.source` identity below its occupied slot, then wrap and resume the interrupted
+    // continuation.
+    frames.push(*resume);
+    frames.push(Frame::FinishUpcast {
+        slot_path: slot_path.clone(),
+        holder,
+        span,
+    });
+    frames.push(Frame::Enter {
+        expr: source,
+        bindings,
+        path: format!("{slot_path}.source"),
+    });
+}

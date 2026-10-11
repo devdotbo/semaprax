@@ -123,7 +123,8 @@ pub(in crate::implementation) fn ast_child<'a>(
         crate::ast::ExprKind::SuperMethod { args, .. } => {
             advance(index.checked_add(1)?, index, args.get(index)?)
         }
-        crate::ast::ExprKind::Unary { value, .. }
+        crate::ast::ExprKind::VecConstructor { value, .. }
+        | crate::ast::ExprKind::Unary { value, .. }
         | crate::ast::ExprKind::Try { operand: value }
         | crate::ast::ExprKind::Yield { request: value }
         | crate::ast::ExprKind::Project { base: value, .. } => {
@@ -242,7 +243,7 @@ pub(in crate::implementation) fn ast_child<'a>(
         | crate::ast::ExprKind::Float64(_)
         | crate::ast::ExprKind::Bool(_)
         | crate::ast::ExprKind::String(_)
-| crate::ast::ExprKind::BorrowedUtf8Literal(_)
+        | crate::ast::ExprKind::BorrowedUtf8Literal(_)
         | crate::ast::ExprKind::Var(_) => None,
     }
 }
@@ -352,7 +353,7 @@ pub(super) fn ast_child_identity_path_increment(
         | crate::ast::ExprKind::Float64(_)
         | crate::ast::ExprKind::Bool(_)
         | crate::ast::ExprKind::String(_)
-| crate::ast::ExprKind::BorrowedUtf8Literal(_)
+        | crate::ast::ExprKind::BorrowedUtf8Literal(_)
         | crate::ast::ExprKind::Var(_) => 0,
     }
 }

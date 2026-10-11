@@ -4,7 +4,7 @@
 use super::arguments::source_byte_view_place_is_admitted;
 use super::binding::{Availability, Binding, BorrowOrigin, SourceLoan, SourceLoanId};
 use super::diagnostics::error;
-use super::place::{SourcePlace, join_definitely_partial, join_moved_places, source_place};
+use super::place::{join_definitely_partial, join_moved_places, source_place, SourcePlace};
 use super::type_table::TypeTable;
 use crate::ast::{Expr, ExprKind, MatchArm, ParamMode, Program, Span, Statement, Type};
 use crate::diagnostic::Diagnostic;
@@ -246,7 +246,8 @@ pub(super) fn expression_uses_name(expression: &Expr, name: &str) -> bool {
                 pending.extend(args);
             }
             ExprKind::LexicalExit { value, .. } => pending.extend(value.as_deref()),
-            ExprKind::Unary { value, .. }
+            ExprKind::VecConstructor { value, .. }
+            | ExprKind::Unary { value, .. }
             | ExprKind::Try { operand: value }
             | ExprKind::Yield { request: value }
             | ExprKind::Project { base: value, .. } => pending.push(value),

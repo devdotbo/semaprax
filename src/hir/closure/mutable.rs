@@ -321,7 +321,9 @@ fn validate_local_binding(
             .map(|instance| &instance.function),
     ) {
         super::super::function_value::walk(function, |expression| {
-            if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+            if let ResolvedExprKind::Block { statements, .. }
+            | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+            {
                 for statement in statements {
                     if let ResolvedStatement::Let {
                         binding,

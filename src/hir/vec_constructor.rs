@@ -1,5 +1,6 @@
 //! Independent typed constructor authentication. No new runtime operation.
 use super::{ResolvedExpr, ResolvedExprKind, ResolvedStatement, ResolvedType};
+mod capture;
 
 pub(crate) struct Expansion<'a> {
     pub(crate) element: &'a ResolvedType,
@@ -57,6 +58,7 @@ pub(crate) fn authenticate(expression: &ResolvedExpr) -> Result<(), crate::diagn
         let Some(number) = binding
             .name
             .strip_prefix("_if")
+            .filter(|name| !name.starts_with('0') && name.bytes().all(|byte| byte.is_ascii_digit()))
             .and_then(|name| name.parse::<usize>().ok())
         else {
             return Err(reject());
@@ -107,6 +109,7 @@ pub(crate) fn authenticate(expression: &ResolvedExpr) -> Result<(), crate::diagn
     {
         return Err(reject());
     }
+    capture::reject_item_capture(&expansion)?;
     Ok(())
 }
 
@@ -121,43 +124,44 @@ pub(crate) fn function_uses(
             .chain(&function.ensures),
     )
 }
+/// Presence follows the existing ordinary semantic-expression depth contract
+/// (512), not the cache codec's distinct 256-node serialization contract.
+/// It allocates no heap, path, identity, or proof inventory. Full constructor
+/// authentication and charged retained inventories remain independent.
 fn roots_use<'a>(
     roots: impl Iterator<Item = &'a ResolvedExpr>,
 ) -> Result<bool, crate::diagnostic::Diagnostic> {
-    use super::lexical_exit::ChildCursor;
-    let mut stack = [None; crate::cache_codec::MAX_DEPTH + 1];
-    if !crate::bounded_output::reserve_active_required(std::mem::size_of_val(&stack)) {
-        return Err(super::hir_error(
-            "Vec constructor scan exceeds active backing budget",
-        ));
-    }
-    for root in roots {
-        stack[0] = Some(ChildCursor::new(root));
-        let mut depth = 1;
-        while depth != 0 {
-            let cursor = stack[depth - 1]
-                .as_mut()
-                .expect("occupied constructor cursor");
-            if !cursor.is_started()
-                && matches!(
-                    cursor.expression().kind,
-                    ResolvedExprKind::VecConstructor { .. }
-                )
-            {
+    fn present(
+        expression: &ResolvedExpr,
+        depth: usize,
+        visits: &mut usize,
+    ) -> Result<bool, crate::diagnostic::Diagnostic> {
+        *visits = visits
+            .checked_add(1)
+            .filter(|count| *count <= 16 * 1024 * 1024)
+            .ok_or_else(|| {
+                super::hir_error("Vec constructor presence exceeds ordinary source-work upper")
+            })?;
+        if depth > 512 {
+            return Err(super::hir_error(
+                "Vec constructor presence exceeds ordinary semantic depth",
+            ));
+        }
+        if matches!(expression.kind, ResolvedExprKind::VecConstructor { .. }) {
+            return Ok(true);
+        }
+        let mut children = super::lexical_exit::ChildCursor::new(expression);
+        while let Some(child) = children.next() {
+            if present(child, depth + 1, visits)? {
                 return Ok(true);
             }
-            if let Some(child) = cursor.next() {
-                if depth == stack.len() {
-                    return Err(super::hir_error(
-                        "Vec constructor scan exceeds admitted depth",
-                    ));
-                }
-                stack[depth] = Some(ChildCursor::new(child));
-                depth += 1;
-            } else {
-                stack[depth - 1] = None;
-                depth -= 1;
-            }
+        }
+        Ok(false)
+    }
+    let mut visits = 0usize;
+    for root in roots {
+        if present(root, 1, &mut visits)? {
+            return Ok(true);
         }
     }
     Ok(false)
@@ -165,26 +169,25 @@ fn roots_use<'a>(
 pub(crate) fn program_uses(
     program: &super::ResolvedProgram,
 ) -> Result<bool, crate::diagnostic::Diagnostic> {
-    for function in program.functions.iter().chain(
+    roots_use(
         program
-            .function_instances
+            .functions
             .iter()
-            .map(|instance| &instance.function),
-    ) {
-        if function_uses(function)? {
-            return Ok(true);
-        }
-    }
-    for template in &program.function_templates {
-        if roots_use(
-            template
-                .requires
-                .iter()
-                .chain(std::iter::once(&template.body))
-                .chain(&template.ensures),
-        )? {
-            return Ok(true);
-        }
-    }
-    Ok(false)
+            .chain(program.function_instances.iter().map(|i| &i.function))
+            .flat_map(|f| {
+                f.requires
+                    .iter()
+                    .chain(std::iter::once(&f.body))
+                    .chain(&f.ensures)
+            })
+            .chain(program.function_templates.iter().flat_map(|f| {
+                f.requires
+                    .iter()
+                    .chain(std::iter::once(&f.body))
+                    .chain(&f.ensures)
+            })),
+    )
 }
+
+#[cfg(test)]
+mod tests;

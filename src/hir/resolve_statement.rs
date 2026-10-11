@@ -243,7 +243,9 @@ impl Resolver<'_> {
                         expression.span,
                     ));
                 }
-                ExprKind::Unary { value, .. } => pending.push(Item::Expression(value)),
+                ExprKind::VecConstructor { value, .. } | ExprKind::Unary { value, .. } => {
+                    pending.push(Item::Expression(value))
+                }
                 ExprKind::Binary { left, right, .. } => {
                     pending.push(Item::Expression(right));
                     pending.push(Item::Expression(left));

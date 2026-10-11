@@ -249,7 +249,8 @@ fn collect_variant_domains(
             | hir::ResolvedExprKind::Float32(_)
             | hir::ResolvedExprKind::Float64(_)
             | hir::ResolvedExprKind::Bool(_)
-            | hir::ResolvedExprKind::String(_) | hir::ResolvedExprKind::BorrowedUtf8Literal(_)
+            | hir::ResolvedExprKind::String(_)
+            | hir::ResolvedExprKind::BorrowedUtf8Literal(_)
             | hir::ResolvedExprKind::Place(_)
             | hir::ResolvedExprKind::BorrowPlace { .. } => {}
             hir::ResolvedExprKind::Closure { captures, .. } => {
@@ -298,7 +299,10 @@ fn collect_variant_domains(
                 visit(program, left, domains)?;
                 visit(program, right, domains)?;
             }
-            hir::ResolvedExprKind::Block { statements, tail } => {
+            hir::ResolvedExprKind::Block { statements, tail }
+            | hir::ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 for statement in statements {
                     for index in 0..statement.child_count() {
                         if let Some(child) = statement.child(index) {

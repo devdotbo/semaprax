@@ -207,7 +207,8 @@ impl Sites {
                         sites.productions.insert(key, name);
                     }
                 }
-                ResolvedExprKind::Block { statements, .. } => {
+                ResolvedExprKind::Block { statements, .. }
+                | ResolvedExprKind::VecConstructor { statements, .. } => {
                     for statement in statements {
                         let ResolvedStatement::Assign {
                             binding,
@@ -385,7 +386,8 @@ fn push_children<'e>(expression: &'e mut Expr, pending: &mut Vec<&'e mut Expr>) 
             pending.extend(args.iter_mut());
         }
         ExprKind::LexicalExit { value, .. } => pending.extend(value.as_deref_mut()),
-        ExprKind::Unary { value, .. }
+        ExprKind::VecConstructor { value, .. }
+        | ExprKind::Unary { value, .. }
         | ExprKind::Try { operand: value }
         | ExprKind::Project { base: value, .. }
         | ExprKind::Yield { request: value } => pending.push(value),
@@ -454,7 +456,7 @@ fn push_children<'e>(expression: &'e mut Expr, pending: &mut Vec<&'e mut Expr>) 
         | ExprKind::Float64(_)
         | ExprKind::Bool(_)
         | ExprKind::String(_)
-| ExprKind::BorrowedUtf8Literal(_)
+        | ExprKind::BorrowedUtf8Literal(_)
         | ExprKind::Var(_) => {}
     }
 }

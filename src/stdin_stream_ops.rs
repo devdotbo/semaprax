@@ -244,7 +244,9 @@ pub(crate) fn reader_reopens(
     let mut pending = vec![&function.body];
     let mut reopens = std::collections::BTreeMap::new();
     while let Some(expression) = pending.pop() {
-        if let crate::hir::ResolvedExprKind::Block { statements, .. } = &expression.kind {
+        if let crate::hir::ResolvedExprKind::Block { statements, .. }
+        | crate::hir::ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+        {
             for statement in statements {
                 if let crate::hir::ResolvedStatement::Assign {
                     binding,

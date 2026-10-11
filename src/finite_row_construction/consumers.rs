@@ -51,7 +51,7 @@ impl<'a> Census<'a> {
                         if (matches!(e.ty, T::Str | T::SliceU8) && e.ownership == O::Borrow)
                             || (crate::hir::is_scalar_resolved_type(&e.ty)
                                 && e.ownership == O::Value) => {}
-                    K::Block { statements, .. } => {
+                    K::Block { statements, .. } | K::VecConstructor { statements, .. } => {
                         // A lowered traversal is accepted only after its complete independent freeze replay.
                         let traversal = crate::loan_plan::traversal::inspect_borrowed(
                             program,

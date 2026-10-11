@@ -67,7 +67,9 @@ fn census<'a>(roots: impl IntoIterator<Item = &'a hir::ResolvedExpr>) -> Option<
             let (expression, next) = stack[index]?;
             if next == 0 {
                 static_text |= matches!(expression.kind, ResolvedExprKind::BorrowedUtf8Literal(_));
-                if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+                if let ResolvedExprKind::Block { statements, .. }
+                | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+                {
                     work = work.checked_sub(statements.len())?;
                     found |= statements.iter().any(candidate);
                 }
@@ -153,7 +155,9 @@ pub(super) fn schema_with_proofs<'a>(
             let index = depth - 1;
             let (expression, next) = stack[index].ok_or_else(fail)?;
             if next == 0 {
-                if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+                if let ResolvedExprKind::Block { statements, .. }
+                | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+                {
                     work = work.checked_sub(statements.len()).ok_or_else(fail)?;
                     for statement in statements {
                         if !candidate(statement) {

@@ -303,7 +303,8 @@ fn expression_bound(
                         functions.get(callee).map_or(0, |facts| facts.open_bound),
                         u8::saturating_add,
                     ),
-                    ResolvedExprKind::Block { statements, .. } => {
+                    ResolvedExprKind::Block { statements, .. }
+                    | ResolvedExprKind::VecConstructor { statements, .. } => {
                         let mut child = 0;
                         for statement in statements {
                             let count = statement.child_count();

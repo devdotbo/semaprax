@@ -213,7 +213,8 @@ fn owning_wrapper<'a>(
         // child() scans prefixes; charge the full possible scan before each
         // lookup, including unsuccessful calls, rather than only found nodes.
         let width = match &expression.kind {
-            ResolvedExprKind::Block { statements, .. } => statements.len(),
+            ResolvedExprKind::Block { statements, .. }
+            | ResolvedExprKind::VecConstructor { statements, .. } => statements.len(),
             ResolvedExprKind::Match { arms, .. } => arms.len(),
             _ => 0,
         };
@@ -222,7 +223,9 @@ fn owning_wrapper<'a>(
             .filter(|value| *value <= 1_000_000)
             .ok_or_else(|| plan_error("owning Break wrapper lookup exceeds bounded work"))?;
         if index == 0 {
-            if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+            if let ResolvedExprKind::Block { statements, .. }
+            | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+            {
                 if matches!(statements.last(), Some(ResolvedStatement::LexicalWhile { condition, .. }) if &condition.id == site)
                 {
                     if found.is_some()

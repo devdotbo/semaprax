@@ -124,7 +124,8 @@ fn inspect_counted<'a>(
                     }
                 }
             }
-            ResolvedExprKind::Block { statements, .. } => {
+            ResolvedExprKind::Block { statements, .. }
+            | ResolvedExprKind::VecConstructor { statements, .. } => {
                 if matches!(statements.first(), Some(ResolvedStatement::Let { binding, .. }) if binding.name == "#for-borrow-length")
                 {
                     return Err(fail());

@@ -1221,6 +1221,9 @@ pub(super) fn validate_selected_scalar_closure(
             ResolvedExprKind::BorrowedUtf8Literal(_) => {
                     return Err(b107("static borrowed UTF-8 is outside the native Rust scalar profile"));
                 }
+                ResolvedExprKind::VecConstructor { .. } => {
+                    return Err(b107("Vec constructors are outside the native Rust scalar profile"));
+                }
                 ResolvedExprKind::LexicalExit { .. } => {
                 return Err(b107("lexical control is outside the native Rust scalar profile"));
             }
