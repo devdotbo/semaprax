@@ -85,6 +85,7 @@ impl Resolver<'_> {
                 control::exit(self, function, expr, bindings, path, nearest)?
             }
 
+            ExprKind::VecConstructor { .. } => unreachable!("handled above"),
             ExprKind::Closure { .. } => unreachable!("handled above"),
             ExprKind::Int(value) => (
                 ResolvedExprKind::Int(*value),
