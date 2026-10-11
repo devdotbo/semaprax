@@ -1371,7 +1371,7 @@ mod tests {
             concat!(
                 "SPX-T269\n",
                 "wrote: direct output repeats per path / is loop-reachable\n",
-                "fix: Direct writes outside loops; profile limits. Default stdout+stderr ≤65536 bytes; Project v28 staged appends ≤1 MiB\n",
+                "fix: Writes outside loops; profile caps: stdout+stderr ≤65536 bytes default; v28 appends ≤1 MiB\n",
             )
         );
         for (code, expected) in [
@@ -1380,7 +1380,7 @@ mod tests {
                 concat!(
                 "SPX-J100\n",
                 "wrote: bad [modules]\n",
-                "fix: 2–16 sorted sources; one bounded nonentry test module. entry=\"app\", sources=[\"a.spx\",\"b.spx\"], tests=[\"app.tests\"] [Manifest](PACKAGE-MANIFEST-V1.md)\n",
+                "fix: 2–16 sorted sources; one bounded nonentry test module: entry=\"app\", sources=[\"a.spx\",\"b.spx\"], tests=[\"app.tests\"] [Manifest][manifest]\n",
             ),
             ),
             (
@@ -1388,16 +1388,16 @@ mod tests {
                 concat!(
                 "SPX-T252\n",
                 "wrote: generic while call\n",
-                "fix: vec_len<T>; imported generic aliases closed [While](WHILE-LOOPS-V1.md)\n",
+                "fix: vec_len<T>; imported generic aliases closed [While][while]\n",
                 "\n",
                 "wrote: rejected while helper\n",
-                "fix: Borrow compiler Copy scalar Vec<T>; return scalar/flat Copy variant/string\n",
+                "fix: Borrow compiler Copy-scalar Vec<T>; return scalar/flat Copy variant/string\n",
                 "\n",
                 "wrote: outer owner changes in while\n",
-                "fix: Preserve outer ownership\n",
+                "fix: Keep outer ownership\n",
                 "\n",
                 "wrote: Bytes+usize renewal/input views\n",
-                "fix: Pure nongeneric call; return only one whole same type owner; whole named independent Slice/str borrows only [renewal hook](IO-LINES-V1.md#cursor-transitions), executable gate pending\n",
+                "fix: Pure nongeneric call; whole same-type owner return; whole named independent Slice/str borrows [renewal hook][renewal], executable gate pending\n",
             ),
             ),
             (
@@ -1405,7 +1405,7 @@ mod tests {
                 concat!(
                 "SPX-T282\n",
                 "wrote: Vec capacity >8192\n",
-                "fix: Reduce vec_with_capacity<T>; Vec-only bound [Vec](OWNED-BOUNDED-VEC-V1.md)\n",
+                "fix: Reduce vec_with_capacity<T>; Vec cap [Vec][vec]\n",
             ),
             ),
             (
@@ -1413,7 +1413,7 @@ mod tests {
                 concat!(
                 "SPX-T283\n",
                 "wrote: lookalike Vec wrapper\n",
-                "fix: Exact std.collections.vec.* ID; no substitute [Vec](OWNED-BOUNDED-VEC-V1.md)\n",
+                "fix: Exact std.collections.vec.* ID only [Vec][vec]\n",
             ),
             ),
             (
@@ -1421,16 +1421,16 @@ mod tests {
                 concat!(
                 "SPX-H006\n",
                 "wrote: function: >256 shared loans\n",
-                "fix: Fewer loans; fixed limit [Loans](SHARED-LOAN-PLAN-V1.md)\n",
+                "fix: Fewer loans; fixed cap [Loans][loans]\n",
                 "\n",
                 "wrote: function: >4096 loan points\n",
-                "fix: Simpler flow; admitted helpers\n",
+                "fix: Simplify; admitted helpers\n",
                 "\n",
                 "wrote: function: >4096 CFG edges\n",
-                "fix: Simpler flow; admitted helpers\n",
+                "fix: Simplify; admitted helpers\n",
                 "\n",
                 "wrote: loan work >1000000\n",
-                "fix: Less work; fixed bound\n",
+                "fix: Less work; fixed cap\n",
             ),
             ),
         ] {
