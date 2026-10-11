@@ -181,6 +181,6 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'WinGet local package installation failed' }
           & ./scripts/channel-winget-journey.ps1 -Version $version
           if ($LASTEXITCODE -ne 0) { throw 'WinGet installed journey failed' }
-          winget uninstall --id Wavect.Semaprax --exact --accept-source-agreements --disable-interactivity
+          winget uninstall --manifest $manifest --accept-source-agreements --disable-interactivity
           if ($LASTEXITCODE -ne 0) { throw 'WinGet uninstall failed' }
           'Validated local proposal; Microsoft index acceptance remains pending.' >> $env:GITHUB_STEP_SUMMARY

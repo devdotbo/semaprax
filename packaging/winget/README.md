@@ -23,10 +23,10 @@ native ARM64 support. It omits `Scope` because `winget validate` warns that scop
 ## Generate manifests for a release
 
 ```sh
-gh release download v0.8.0 -R wavect/semaprax -p SHA256SUMS -p release-manifest.json
-python3 scripts/channel-manifests.py winget --tag v0.8.0 \
+gh release download v0.9.0 -R wavect/semaprax -p SHA256SUMS -p release-manifest.json
+python3 scripts/channel-manifests.py winget --tag v0.9.0 \
   --sums SHA256SUMS --manifest release-manifest.json --out out
-# out/winget/manifests/w/Wavect/Semaprax/0.8.0/Wavect.Semaprax{,.installer,.locale.en-US}.yaml
+# out/winget/manifests/w/Wavect/Semaprax/0.9.0/Wavect.Semaprax{,.installer,.locale.en-US}.yaml
 ```
 
 The generator fails closed (writes nothing) when the Windows archive is missing
@@ -42,11 +42,11 @@ or any tag, version, name or digest disagrees between `SHA256SUMS` and
    directory into a `winget-pkgs` fork, and validate on Windows:
 
    ```powershell
-   winget validate --manifest .\manifests\w\Wavect\Semaprax\0.8.0
+   winget validate --manifest .\manifests\w\Wavect\Semaprax\0.9.0
    winget settings --enable LocalManifestFiles
-   winget install --manifest .\manifests\w\Wavect\Semaprax\0.8.0
+   winget install --manifest .\manifests\w\Wavect\Semaprax\0.9.0
    semaprax --version; semapraxd --help
-   winget uninstall --id Wavect.Semaprax --exact
+   winget uninstall --manifest .\manifests\w\Wavect\Semaprax\0.9.0
    ```
 
    Run the beginner journey (`new`, `check`, `test`, `run` printing `42`) from a
