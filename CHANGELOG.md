@@ -1,5 +1,12 @@
 # Changelog
 
+- Authored private native fused-row receiving now requires the concrete full
+  selected owner and freshly revalidates its immutable source/HIR. Exact row
+  backing is funded on the same held physical ledger at the original Vec
+  boundary; address-bound receipts preserve pointer geometry and one allocation
+  attempt through cleanup. Original 4096-row O0/O2 and cumulative account gates
+  are authored, with execution qualification pending and default routing closed.
+
 - Admit an optional `;` after a bare valued lexical-exit guard (`if skip { continue; } else { 0 };`) when another block item follows (#766). The parser reuses the existing StatementIf marker, tree, discard name and canonical text of the unterminated spelling, and admits it only when a parsed exit is present and the next item cannot continue the value `if`, since canonical text drops the `;`. Generic discarded initializers, conditions, postfix/operator continuations and other value boundaries keep `SPX-T312`; `SPX-T313`, `SPX-P209`, `SPX-P106` and scalar-only discard are unchanged. The source contour now also requires the marker's normalized shape and, mirroring HIR, a guard whose every normal completion is the scalar discard zero; owned, aggregate, borrowed, non-`i64` and nonzero normal arms get a source `SPX-T312` in both spellings instead of a later HIR `SPX-H006`. Differential, hostile, nesting-bound, cache/graph and three-backend regressions plus updated compiler-checked help are authored; qualification is pending and no efficiency gain is claimed.
 
 - Restore proved-absent root cleanup storage in the summed constructor-exact cached forecast (#764): literal, unary and binary roots, which every resolver path builds as `Value` primitives, omit only their four storage footprints from each retained parsed/semantic HIR copy. Children, checked/lazy failure blocks, bookkeeping, identities, strings, carriers, unproved fallback kinds, caps and live reservations are unchanged. Independent census, resolved inventory/plan, malformed-census and exact/one-short controls are authored but unexecuted; owning application qualification and any recovery remain pending.

@@ -14,8 +14,23 @@ static uint64_t text_len(const char *value) {
 }
 static void text_drop(char *value) { free(value - offsetof(probe_text, data)); }
 static const uint32_t declared[3] = {SPX_FUSED_SCALAR, SPX_FUSED_STRING, SPX_FUSED_PAYLOAD};
+static const uint32_t standalone[3] = {SPX_FUSED_PAYLOAD, SPX_FUSED_STRING, SPX_FUSED_SCALAR};
+/* Standalone record cleanup must release payload before its String; this
+   callback observes actual epoch order independently from the order array. */
+static const spx_fused_staged *standalone_observed;
+static void standalone_text_drop(char *value) {
+    assert(standalone_observed && !standalone_observed->bytes.nonce);
+    text_drop(value);
+}
+static int standalone_drop(spx_fused_domain *d, spx_fused_staged *row) {
+    standalone_observed = row;
+    int settled = spx_fused_staged_drop(d, row, standalone, standalone_text_drop);
+    standalone_observed = NULL;
+    return settled;
+}
 static const size_t header = sizeof(spx_fused_domain);
-static const size_t original_metadata = 160u + 4096u * 24u + 64u * 24u;
+static const size_t original_metadata = 240u + 4096u * 24u + 64u * 24u;
+static const size_t original_funding = 240u + 4096u * 24u + 64u * 24u + 4096u * 32u;
 
 typedef struct {
     spx_fused_domain *d; spx_fused_ledger ledger; spx_fused_payload payload; spx_fused_rows rows;
@@ -39,7 +54,7 @@ static int close_domain(fixture *f) {
 /* Builds `count` complete rows; scalar = base + sign * i. */
 static void build(fixture *f, spx_fused_issuer *issuer, size_t count, size_t width,
                   int64_t base, int64_t sign) {
-    assert(open_domain(f, issuer, count, width, header, spx_fused_metadata_bytes(count, header)));
+    assert(open_domain(f, issuer, count, width, header, spx_fused_invocation_bytes(count, header)));
     assert(spx_fused_rows_allocate(f->d, count, &f->rows));
     for (size_t i = 0; i < count; i++) {
         spx_fused_staged row = {base + sign * (int64_t)i, text("\xc3\xa9\0", 3), {0}};
@@ -66,12 +81,13 @@ static void maximum(void) {
         census_reset();
         assert(spx_fused_metadata_bytes(4096, header) == original_metadata);
         fixture f;
-        assert(open_domain(&f, &issuer, 4096, 3, header, original_metadata));
+        assert(open_domain(&f, &issuer, 4096, 3, header, original_funding));
         assert(f.ledger.debited == original_metadata && f.payload.held_events == 1 &&
                f.payload.held_bytes == 12288 && !f.payload.events && issuer.active == f.d);
         assert(census.calls == 1 && census.bytes[0] == header);
         assert(spx_fused_rows_allocate(f.d, 4096, &f.rows));
         assert(census.calls == 2 && census.bytes[1] == 4096u * 32u);
+        assert(f.ledger.debited == original_funding && !f.ledger.held_rows);
         int64_t sum = 0;
         for (size_t i = 0; i < 4096; i++) {
             spx_fused_staged row = {(int64_t)i, text("\xc3\xa9\0", 3), {0}};
@@ -113,7 +129,7 @@ static void maximum(void) {
         assert(spx_fused_rows_drop(f.d, &f.rows, declared, text_drop));
         assert(census.frees == before + 4096 + 2 && f.d->state == SPX_FUSED_SETTLED && !issuer.active);
         assert(close_domain(&f) && !census.live && census.calls == 5);
-        assert(f.payload.events == 1 && f.payload.cumulative == 12288 && f.ledger.debited == original_metadata);
+        assert(f.payload.events == 1 && f.payload.cumulative == 12288 && f.ledger.debited == original_funding);
     }
 }
 
@@ -123,13 +139,13 @@ static void admission(void) {
     census_reset();
     fixture f;
     uint64_t next = issuer.next;
-    assert(!open_domain(&f, &issuer, 4096, 3, header, original_metadata - 1));
+    assert(!open_domain(&f, &issuer, 4096, 3, header, original_funding - 1));
     assert(!census.calls && f.ledger.failed && !f.ledger.debited && !f.payload.held_events);
     assert(issuer.next == next && !issuer.active);
     assert(!spx_fused_ledger_debit(&f.ledger, 0)); /* sticky; no refund path exists */
     /* The one payload account: no room for another backing event refuses. */
     spx_fused_payload full = {0}; spx_fused_ledger ledger = {0};
-    assert(spx_fused_payload_init(&full) && spx_fused_ledger_init(&ledger, original_metadata));
+    assert(spx_fused_payload_init(&full) && spx_fused_ledger_init(&ledger, original_funding));
     assert(spx_fused_payload_debit(&full, 32, 0));
     assert(!spx_fused_admit(&issuer, &ledger, &full, 1, 3, header));
     assert(full.failed && !ledger.debited && full.events == 32 && !census.calls);
@@ -137,27 +153,28 @@ static void admission(void) {
     /* Overlap: the held issuer already grants an active domain. */
     fixture a, b;
     build(&a, &issuer, 2, 3, 0, 1);
-    assert(!open_domain(&b, &issuer, 1, 3, header, spx_fused_metadata_bytes(1, header)));
+    assert(!open_domain(&b, &issuer, 1, 3, header, spx_fused_invocation_bytes(1, header)));
     assert(!b.ledger.debited && !b.payload.held_events && issuer.active == a.d);
     settle(&a);
     /* Frame placement is part of the same debit; an abandoned live child is
        released at exit without publication. */
     size_t frame = header + 96;
-    assert(open_domain(&b, &issuer, 1, 3, frame, spx_fused_metadata_bytes(1, frame)));
-    assert(b.ledger.debited == 160u + 96u + 24u + 1536u && census.bytes[census.calls - 1] == frame);
+    assert(open_domain(&b, &issuer, 1, 3, frame, spx_fused_invocation_bytes(1, frame)));
+    assert(b.ledger.debited == 240u + 96u + 24u + 1536u && census.bytes[census.calls - 1] == frame);
+    assert(spx_fused_rows_allocate(b.d, 1, &b.rows));
     spx_fused_bytes child = {0};
     assert(spx_fused_issue(b.d, 0, &child));
     assert(!close_domain(&b) && !issuer.active && !census.live);
     /* A hold that no Bytes operand consumed is released, never debited. */
-    assert(open_domain(&b, &issuer, 2, 3, header, spx_fused_metadata_bytes(2, header)));
+    assert(open_domain(&b, &issuer, 2, 3, header, spx_fused_invocation_bytes(2, header)));
     assert(spx_fused_rows_allocate(b.d, 2, &b.rows));
     spx_fused_abort(b.d);
     assert(spx_fused_settle_abort(b.d) && spx_fused_rows_drop(b.d, &b.rows, declared, text_drop));
     assert(close_domain(&b) && !b.payload.held_events && !b.payload.events && !b.payload.cumulative);
-    assert(b.ledger.debited == spx_fused_metadata_bytes(2, header) && !census.live);
+    assert(b.ledger.debited == spx_fused_invocation_bytes(2, header) && !census.live);
     /* Issuer exhaustion refuses before any debit and never wraps. */
     issuer.next = UINT64_MAX - 3;
-    assert(!open_domain(&b, &issuer, 2, 3, header, spx_fused_metadata_bytes(2, header)));
+    assert(!open_domain(&b, &issuer, 2, 3, header, spx_fused_invocation_bytes(2, header)));
     assert(!b.ledger.debited && issuer.next == UINT64_MAX - 3 && !issuer.active);
 }
 
@@ -172,7 +189,7 @@ static void physical_fail_stop_order(void) {
         static spx_fused_bytes out;
         memset(&f, 0, sizeof(f));
         out = (spx_fused_bytes){0, 7, 7, 7};
-        assert(spx_fused_ledger_init(&f.ledger, spx_fused_metadata_bytes(8, header)));
+        assert(spx_fused_ledger_init(&f.ledger, spx_fused_invocation_bytes(8, header)));
         assert(spx_fused_payload_init(&f.payload));
         jmp_buf target; stop_target = &target;
         if (!setjmp(target)) {
@@ -184,14 +201,13 @@ static void physical_fail_stop_order(void) {
             assert(0);
         }
         stop_target = NULL;
-        assert(out.nonce == 7 && f.ledger.debited == spx_fused_metadata_bytes(8, header));
+        assert(out.nonce == 7 && f.ledger.debited == (cut == 1 ? spx_fused_metadata_bytes(8, header) : spx_fused_invocation_bytes(8, header)));
         assert(!strcmp(stop_message, cut == 1 ? "fused frame allocation failed"
                        : cut == 5 ? "owned byte buffer allocation failed"
                        : cut == 4 ? "fused view table allocation failed" : "fused lease table allocation failed"));
         assert(cut == 5 ? f.payload.events == 1 && f.payload.cumulative == 24 && !f.payload.held_events
                         : !f.payload.events && f.payload.held_events == 1);
         if (cut != 1) {
-            free(f.rows.rows);
             (void)close_domain(&f);
         }
         assert(!census.live && !issuer.active);
@@ -203,10 +219,46 @@ static void vec_allocation_failure(void) {
     spx_fused_issuer issuer = {0}; assert(spx_fused_issuer_init(&issuer));
     census_reset(); census.fail_at = 2;
     fixture f;
-    assert(open_domain(&f, &issuer, 8, 3, header, spx_fused_metadata_bytes(8, header)));
+    assert(open_domain(&f, &issuer, 8, 3, header, spx_fused_invocation_bytes(8, header)));
     assert(!spx_fused_rows_allocate(f.d, 8, &f.rows) && !f.rows.rows && !f.d->vec_live);
+    assert(f.ledger.debited == spx_fused_invocation_bytes(8, header) && !f.ledger.held_rows);
     spx_fused_abort(f.d);
     assert(spx_fused_settle_abort(f.d) && close_domain(&f) && !f.payload.held_events && !census.live);
+}
+
+/* Funding is address-bound and consumed once before the real destination
+   allocation. Copies, altered geometry and foreign accounts are never leases. */
+static void row_funding_receipt(void) {
+    spx_fused_issuer issuer = {0}; assert(spx_fused_issuer_init(&issuer));
+    census_reset();
+    fixture f;
+    assert(open_domain(&f, &issuer, 8, 3, header, spx_fused_invocation_bytes(8, header)));
+    assert(f.ledger.debited == spx_fused_metadata_bytes(8, header) && f.ledger.held_rows == 8 * sizeof(spx_fused_row));
+    spx_fused_row_receipt *receipt = NULL;
+    spx_fused_rows_reserve(f.d, 8, &receipt);
+    assert(receipt == &f.d->rows_receipt && !receipt->pointer && !receipt->allocated);
+    assert(f.ledger.debited == spx_fused_invocation_bytes(8, header) && !f.ledger.held_rows && census.calls == 1);
+    spx_fused_row_receipt copy = *receipt;
+    assert(!spx_fused_rows_receipt_current(f.d, &copy));
+    copy.capacity++; assert(!spx_fused_rows_receipt_current(f.d, &copy));
+    copy = *receipt; copy.invocation++; assert(!spx_fused_rows_receipt_current(f.d, &copy));
+    copy = *receipt; copy.ledger = NULL; assert(!spx_fused_rows_receipt_current(f.d, &copy));
+    jmp_buf target; stop_target = &target;
+    if (!setjmp(target)) {
+        (void)spx_fused_rows_allocate_funded(f.d, &copy, 8, &f.rows);
+        assert(0);
+    }
+    stop_target = NULL;
+    assert(!strcmp(stop_message, "fused row allocation without current funding receipt"));
+    assert(census.calls == 1 && !receipt->allocated && !f.rows.rows);
+    assert(spx_fused_rows_allocate_funded(f.d, receipt, 8, &f.rows));
+    assert(receipt->pointer == f.rows.rows && receipt->allocated && !receipt->settled);
+    spx_fused_rows wrong = f.rows; wrong.rows++;
+    assert(!spx_fused_rows_valid(f.d, &wrong));
+    spx_fused_abort(f.d);
+    assert(spx_fused_settle_abort(f.d) && spx_fused_rows_drop(f.d, &f.rows, declared, text_drop));
+    assert(receipt->settled && !receipt->pointer && !spx_fused_rows_receipt_settle(f.d, receipt));
+    assert(close_domain(&f) && !census.live && f.ledger.debited == spx_fused_invocation_bytes(8, header));
 }
 
 /* Partial source/push failure: earlier rows and the staged row settle in
@@ -216,7 +268,7 @@ static void partial_rows(void) {
     for (size_t cut = 1; cut <= 8; cut++) {
         census_reset();
         fixture f;
-        assert(open_domain(&f, &issuer, 8, 3, header, spx_fused_metadata_bytes(8, header)));
+        assert(open_domain(&f, &issuer, 8, 3, header, spx_fused_invocation_bytes(8, header)));
         assert(spx_fused_rows_allocate(f.d, 8, &f.rows));
         spx_fused_staged staged = {0};
         for (size_t i = 0; i < cut; i++) {
@@ -229,7 +281,7 @@ static void partial_rows(void) {
         assert(!spx_fused_complete(f.d) && !spx_fused_drop(f.d, &staged.bytes));
         spx_fused_abort(f.d);
         assert(!spx_fused_settle_abort(f.d));
-        assert(spx_fused_staged_drop(f.d, &staged, declared, text_drop));
+        assert(standalone_drop(f.d, &staged));
         assert(f.d->backing && f.d->pin);
         assert(spx_fused_rows_drop(f.d, &f.rows, declared, text_drop));
         assert(f.d->backing && !f.d->live);
@@ -318,7 +370,7 @@ static void pop_store_clone(void) {
     assert(spx_fused_borrow_begin(f.d, second.bytes, &held));
     assert(!spx_fused_drop(f.d, &second.bytes) && second.bytes.nonce); /* sticky from here */
     assert(spx_fused_borrow_end(f.d, &held));
-    assert(spx_fused_staged_drop(f.d, &second, declared, text_drop) && !f.d->backing);
+    assert(standalone_drop(f.d, &second) && !f.d->backing);
     assert(copy.ptr[0] == 7); spx_fused_copy_drop(&copy);
     text_drop(popped.string);
     assert(close_domain(&f) && !census.live);
@@ -336,7 +388,7 @@ static void clone_cap(void) {
     size_t calls = census.calls;
     assert(!spx_fused_clone(f.d, last.bytes, &refused) && census.calls == calls && refused.len == 9);
     assert(f.payload.failed && f.payload.events == 32 && f.d->failure);
-    assert(spx_fused_staged_drop(f.d, &last, declared, text_drop));
+    assert(standalone_drop(f.d, &last));
     settle(&f);
     assert(!census.live);
 }
@@ -351,7 +403,7 @@ static void generation_exhaustion(void) {
     f.d->slots[0].generation = UINT32_MAX; last.bytes.generation = UINT32_MAX;
     spx_fused_bytes moved = {0};
     assert(!spx_fused_move(f.d, &last.bytes, &moved) && last.bytes.nonce && f.d->slots[0].generation == UINT32_MAX);
-    assert(spx_fused_staged_drop(f.d, &last, declared, text_drop));
+    assert(standalone_drop(f.d, &last));
     settle(&f);
     assert(!census.live && !issuer.active);
 }
@@ -361,6 +413,7 @@ int main(void) {
     admission();
     physical_fail_stop_order();
     vec_allocation_failure();
+    row_funding_receipt();
     partial_rows();
     identity();
     sort_blocked();

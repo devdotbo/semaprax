@@ -1,6 +1,6 @@
 # Native fused-row lease precursor v1
 
-Status: private runtime and selected native receiver authored. The production-shaped accepting API has no implementor yet; the only caller is a test-only UNVALIDATED precursor with no artifact authority. Owning executable qualification pending. No default compiler profile, source admission or public provider route is enabled.
+Status: private runtime and selected native receiver authored. The accepting API takes only the concrete immutable full selected owner; its original-source O0/O2 gates are authored and unexecuted in this source batch. A separate test-only UNVALIDATED precursor carries no artifact authority. Owning executable qualification pending. No default compiler profile, source admission or public provider route is enabled.
 
 Audience: compiler, runtime, ownership and backend contributors and reviewers.
 
@@ -12,10 +12,10 @@ executor prerequisite for
 [owned byte partition](OWNED-BYTE-PARTITION-V1.md). They supply real bounded range
 ownership, lifetime and cleanup operations and emit one selected function plus an
 internal-linkage receiving entry. They do not implement partition, admit a source
-program or prove the unchanged 4,096-row application passes: that source is still
-refused by ordinary verification, so no typed program reaches the receiver, and
-nothing here supports it. Interpreter and Wasm executors, the validated selected
-owner and selected capacity/HIR admission remain pending.
+program on the default route or prove the unchanged 4,096-row application passes.
+Ordinary verification still refuses that source. The explicit concrete owner
+factory performs selected source, HIR and capacity validation before native
+receiving; actual backend qualification remains pending.
 
 ## Held authority and representation
 
@@ -32,7 +32,8 @@ generation and nonce. A row stores the 16-byte slot/generation/exact-nonce form;
 its domain authenticator is the row Vec header, which binds the held domain,
 issuer and invocation nonce and is checked before any stored owner resolves. The
 32-byte row equals the ordinary leaf stride, which the receiver checks against
-the ordinary layout, so the ordinary Vec allocation boundary funds it unchanged.
+the ordinary layout, so its physical geometry matches the ordinary Vec allocation. Its funding is
+consumed at that same original boundary.
 Logical range is ordinal times width and is never stored or trusted from a
 carrier. The 48-byte leased view carries issuer, slot, generation, view nonce,
 owner nonce, pointer and length. None of these converts to the frozen 16-byte
@@ -45,14 +46,23 @@ Invocation admission runs before any program effect. It checks the issuer, check
 room in the one ordinary backing-event/payload account (unchanged 32 events and
 cumulative 2 MiB), debits the separately held metadata ledger by the actual
 `sizeof` heap frame plus the exact `count` lease table and 64-entry view table,
-and holds one event and `rows * width` bytes. Only then is the frame allocated.
-The frame holds the 160-byte domain header and every private carrier of the
+holds future `count * sizeof(row)` bytes on that same physical ledger, and
+holds one event and `rows * width` bytes on the payload account. Admission
+preflights all physical funding, but only metadata is debited before the frame
+allocation. The frame holds the 240-byte domain header and every private carrier of the
 selected function (staged rows, row Vec headers, leased views); none is on the C
 stack, and no stack placement is described as a reservation. Every admission
 refusal leaves allocator, String, issuer and debits untouched except the sticky
 refusal mark of the refusing account.
 
-The tables are allocated, and the hold is consumed into a debit, at the first
+At the original Vec operation, the row hold converts into a monotonic debit
+before the real row allocation. An 80-byte receipt embedded in the domain binds
+the exact ledger, issuer, invocation, destination pointer, capacity and stride;
+its address prevents copied receipts from authenticating. It funds one attempt,
+including ordinary Vec allocation failure, and settles without refund. A row
+hold never consumed before an earlier language failure is released.
+
+The tables are allocated, and the payload hold is consumed into a debit, at the first
 original Bytes operand after every earlier row operand; the backing follows.
 Nothing there can refuse; physical allocation failure is fail-stop. Debits are
 never refunded. A hold that no Bytes operand consumed, for example after an
@@ -99,15 +109,13 @@ backing allocation failure keeps the ordinary fatal boundary.
 ## Selected receiver
 
 `codegen::selected_fused_row::emit_validated` is the explicit accepting API for
-the full validated selected owner: an implementation of `ValidatedOwner` wrapping
-the independent `SourceProof` joined by `hir::fused_construction::join` under
-complete selected validation, with carrier facts rederived for that selection. No
-type in this tree implements it. The receiver requires the owner to still hold
-exactly the supplied programs. The old `construction_fusion` descriptor and
-provenance reach the same receiver only as `UnvalidatedPrecursor`, which is
-compiled for tests only and yields text with no artifact authority. Ordinary HIR
-validation still runs as a necessary check, never as selection authority. The
-default emitter never reaches either route.
+the concrete `ValidatedFusedSelection` produced by complete selected validation.
+The receiver freshly revalidates the immutable owner, joins its exact held source
+and HIR, and rederives carrier provenance. A trait implementation or independent
+join cannot substitute for that authority. The old descriptor reaches the same
+lowering only as test-only `UnvalidatedPrecursor` with no artifact authority.
+The ordinary prelude receiver retains ordinary validation; the concrete owner
+receiver retains full selected validation. The default emitter selects neither.
 
 Before lowering, the receiver refuses frozen public ABI crossings: parameters,
 effects, contracts, a non-`i64` result, any Bytes value other than the single
@@ -148,7 +156,7 @@ finalizing exit without a position refuses the shape. Domain authority failures
 inside the function are invariant fail-stops; it has no refusal edge.
 
 The entry publishes only after the domain settles and the postconditions hold:
-the exact metadata debit, exactly one ordinary event and extent consumed from the
+the exact total physical debit, no outstanding row hold, exactly one ordinary event and extent consumed from the
 hold, and no sticky failure. Its private outcomes are published, language
 failure, admission refusal and abandonment.
 
@@ -169,12 +177,16 @@ probe resets a sticky failure or rewrites a ledger counter.
 `codegen::selected_fused_row::tests::` add receiver definitions for counts 1, 8
 and 32 through the unvalidated precursor: plan-bound lowering with verbatim
 failure exits and frame-held carriers, unchanged default emission, stale, foreign,
-decoded and drifted precursor refusal, census refusals, accepting-API refusal of a
-stale or foreign owner, cleanup-proof refusals, the layout mirror, and
+decoded and drifted precursor refusal, census refusals, concrete current-owner receiving and independent source-mutation refusal, cleanup-proof refusals, the layout mirror, and
 executable units at O0/O2 for the oracle with allocation order and reentry,
 admission refusals, ordinary Vec failure, call depth, suffix failure with a live
-loan and fail-stop. The original 4,096-row definition is ignored until the
-validated owner and selected admission exist. None of these has executed.
+loan and fail-stop. The original 4,096-row gate now parses the immutable
+original, obtains the full selected owner, and drives the emitted unit at O0/O2.
+Its driver retains one ledger and payload account through three invocations and
+checks a sticky one-short second admission with no result or new effects. The
+receipt probe rejects copied carriers and wrong row pointers before use, and
+standalone cleanup independently observes payload-before-String order. These
+new definitions have not executed.
 
 Emitter binding must independently match the actual immutable typed descriptor,
 constructor site, row field identities and complete suffix use-domain. The original
@@ -209,7 +221,7 @@ nonserialized proof data with no source admission or emission hook.
 The native64 target mirror reports actual Bytes 24, View 48 and Row 40 byte
 layouts, context 165,504 bytes and separately held issuer 32 bytes. These describe
 the retired single-object precursor context. The selected receiver does not use
-this mirror; it binds its own in `codegen::selected_fused_row::layout` (160-byte
+this mirror; it binds its own in `codegen::selected_fused_row::layout` (240-byte
 header, heap tables, 32-byte stored row, 56-byte row Vec header). The
 4,096-row arithmetic reaches the unchanged 131,072 owned-leaf byte envelope;
 full row storage includes its independently counted scalar bytes. Every view
@@ -223,6 +235,6 @@ Three authored `construction_fusion::native_provenance::tests::` bodies cover
 mixed origins and exact aliases, current producer/source drift, and complete
 proof scratch/fact backing exact and adjacent one-short budgets. Checked ordinary
 counts 1, 8 and 32 supply the HIR; the original 4,096 source remains T267-refused.
-These definitions and the updated C probe remain unexecuted. Complete lifetime
-release integration, producer-bound lowering, allocator-backed Vec authority,
-interpreter/Wasm equivalence and owning executable qualification remain pending.
+These definitions and the updated C probe remain unexecuted. The concrete owner and actual destination receipt are now wired into the
+private native receiver. Same-source interpreter/Wasm equivalence and owning
+executable qualification remain pending.

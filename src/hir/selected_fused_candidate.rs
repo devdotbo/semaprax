@@ -149,6 +149,15 @@ impl<'s> ValidatedFusedSelection<'s> {
     pub(crate) fn capacity(&self) -> SelectedCapacity {
         self.capacity
     }
+    /// Re-run every selected gate over the immutable held source/program.
+    /// Receivers cannot substitute a mutable or merely joined typed program.
+    pub(crate) fn revalidate_current(&self) -> Result<SelectedCapacity, SelectedRefusal> {
+        let current = revalidate(self.source, self.producer, &self.program)?;
+        if current != self.capacity {
+            return Err(SelectedRefusal::Validation(super::hir_error("selected owner capacity no longer agrees")));
+        }
+        Ok(current)
+    }
     /// Freshly derive and join over the held source and program, then lend
     /// the `Joined` to `receive` for the duration of the call.
     pub(crate) fn with_joined<R>(

@@ -6,16 +6,10 @@
 //! validation stand behind it. It therefore yields a [`PrecursorUnit`] with no
 //! artifact authority, exercises only counts that ordinary admission already
 //! accepts, and supports no claim about the original 4,096-row program.
-use super::{error, selection::CarrierFacts, selection::Sites};
+use super::{error, selection::Sites};
 use crate::construction_fusion::{self, native_provenance};
 use crate::diagnostic::Diagnostic;
 use crate::{ast, hir};
-
-impl CarrierFacts for native_provenance::Mapping<'_> {
-    fn carrier(&self, expression: &hir::ResolvedExpr) -> Option<native_provenance::Carrier> {
-        self.fact(expression).map(|fact| fact.carrier())
-    }
-}
 
 pub(crate) struct UnvalidatedPrecursor<'a> {
     source: &'a ast::Program,

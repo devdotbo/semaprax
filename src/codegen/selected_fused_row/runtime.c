@@ -5,9 +5,12 @@
 
    Funding: invocation admission, before any program effect, debits the held
    metadata ledger for the complete heap frame (domain header plus private
-   carriers) and the exact lease/view tables, and holds one ordinary backing
+   carriers) and the exact lease/view tables, holds future row allocation bytes
+   on that same ledger, and holds one ordinary backing
    event and its extent in the held payload ledger. Only then is the frame
-   allocated. The tables are allocated, and the payload hold is consumed, at
+   allocated. The row hold is debited before calloc at the original Vec boundary.
+   Its embedded receipt binds the actual pointer and exact funding account.
+   The tables are allocated, and the payload hold is consumed, at
    the first original Bytes operand. Nothing is refunded; an unconsumed hold
    (no Bytes operand ever ran) is released because it was never debited. */
 #include <stdbool.h>
@@ -38,7 +41,7 @@ typedef struct spx_fused_issuer {
 } spx_fused_issuer;
 /* Separately held real metadata account. Debits are monotonic; there is no
    refund operation and the first refusal is sticky for the account. */
-typedef struct { size_t limit, debited; uint32_t sealed, failed; } spx_fused_ledger;
+typedef struct { size_t limit, debited, held_rows; uint32_t sealed, failed; } spx_fused_ledger;
 /* The one ordinary backing-event/payload account (32 events, 2 MiB). Holds
    become debits only by consumption; debits are never refunded or reset. */
 typedef struct { size_t events, cumulative, held_events, held_bytes; uint32_t sealed, failed; } spx_fused_payload;
@@ -63,12 +66,21 @@ typedef struct {
 typedef struct { unsigned char *ptr; uint64_t len; } spx_fused_copy;
 typedef void (*spx_fused_string_drop)(char *);
 typedef uint64_t (*spx_fused_string_len)(const char *);
+/* Address-bound private destination funding receipt, embedded in its domain.
+   A copied carrier is never a receipt. Geometry and ledger/issuer/nonce are
+   received again at allocation and activation; debit has no refund path. */
+typedef struct {
+    struct spx_fused_domain *domain; const spx_fused_issuer *issuer; spx_fused_ledger *ledger;
+    uint64_t invocation; spx_fused_row *pointer; size_t capacity, stride, bytes;
+    uint32_t funded, allocated, settled;
+} spx_fused_row_receipt;
 typedef struct spx_fused_domain {
     const void *module; spx_fused_issuer *issuer; spx_fused_ledger *ledger; spx_fused_payload *payload;
     uint64_t invocation, vec_generation;
     uint32_t sealed, state, failure, pin, vec_live, activated, held, consumed;
     size_t count, width, extent, metadata, issued, live, loans;
     spx_fused_slot *slots; spx_fused_borrow *views; unsigned char *backing;
+    spx_fused_row_receipt rows_receipt;
 } spx_fused_domain;
 #if UINTPTR_MAX == UINT64_MAX
 _Static_assert(sizeof(spx_fused_bytes)==24,"native64 private owner carrier");
@@ -80,9 +92,10 @@ _Static_assert(sizeof(spx_fused_row)==32,"native64 row equals the ordinary leaf 
 _Static_assert(sizeof(spx_fused_staged)==40,"native64 staged row");
 _Static_assert(sizeof(spx_fused_rows)==56,"native64 row Vec header");
 _Static_assert(sizeof(spx_fused_issuer)==32,"native64 issuer");
-_Static_assert(sizeof(spx_fused_ledger)==24,"native64 metadata ledger");
+_Static_assert(sizeof(spx_fused_ledger)==32,"native64 metadata ledger");
 _Static_assert(sizeof(spx_fused_payload)==40,"native64 payload ledger");
-_Static_assert(sizeof(spx_fused_domain)==160,"native64 domain header");
+_Static_assert(sizeof(spx_fused_domain)==240,"native64 domain header");
+_Static_assert(sizeof(spx_fused_row_receipt)==80,"native64 held destination receipt");
 #endif
 SPX_FUSED_FN int spx_fused_issuer_init(spx_fused_issuer *issuer) {
     if (!issuer || issuer->sealed) return 0;
@@ -91,15 +104,29 @@ SPX_FUSED_FN int spx_fused_issuer_init(spx_fused_issuer *issuer) {
 }
 SPX_FUSED_FN int spx_fused_ledger_init(spx_fused_ledger *ledger,size_t limit) {
     if (!ledger || ledger->sealed) return 0;
-    ledger->limit=limit;ledger->debited=0;ledger->failed=0;ledger->sealed=1;return 1;
+    ledger->limit=limit;ledger->debited=0;ledger->held_rows=0;ledger->failed=0;ledger->sealed=1;return 1;
 }
 /* All-or-nothing debit before any physical allocation it covers. */
 SPX_FUSED_FN int spx_fused_ledger_debit(spx_fused_ledger *ledger,size_t bytes) {
     if (!ledger || !ledger->sealed || ledger->failed) return 0;
-    if (ledger->debited>ledger->limit || bytes>ledger->limit-ledger->debited) {
+    if (ledger->debited>ledger->limit || ledger->held_rows>ledger->limit-ledger->debited ||
+        bytes>ledger->limit-ledger->debited-ledger->held_rows) {
         ledger->failed=1;return 0;
     }
     ledger->debited+=bytes;return 1;
+}
+SPX_FUSED_FN int spx_fused_rows_hold(spx_fused_ledger *ledger,size_t bytes) {
+    if (!ledger || !ledger->sealed || ledger->failed || ledger->debited>ledger->limit ||
+        ledger->held_rows>ledger->limit-ledger->debited || bytes>ledger->limit-ledger->debited-ledger->held_rows) {
+        if (ledger && ledger->sealed) { ledger->failed=1; }
+        return 0;
+    }
+    ledger->held_rows+=bytes;return 1;
+}
+SPX_FUSED_FN int spx_fused_rows_consume(spx_fused_ledger *ledger,size_t bytes) {
+    if (!ledger || !ledger->sealed || ledger->failed || ledger->held_rows<bytes ||
+        ledger->debited>ledger->limit || bytes>ledger->limit-ledger->debited) return 0;
+    ledger->held_rows-=bytes;ledger->debited+=bytes;return 1;
 }
 SPX_FUSED_FN int spx_fused_payload_init(spx_fused_payload *payload) {
     if (!payload || payload->sealed) return 0;
@@ -150,6 +177,11 @@ SPX_FUSED_FN size_t spx_fused_metadata_bytes(size_t count,size_t frame) {
 /* Invocation admission, before any program effect. Every refusal leaves the
    issuer, both ledgers' debits and the allocator untouched except the sticky
    refusal mark of the account that refused. Returns the zeroed frame. */
+SPX_FUSED_FN size_t spx_fused_invocation_bytes(size_t count,size_t frame) {
+    size_t metadata=spx_fused_metadata_bytes(count,frame);
+    if (!metadata || count>SIZE_MAX/sizeof(spx_fused_row) || count*sizeof(spx_fused_row)>SIZE_MAX-metadata) return 0;
+    return metadata+count*sizeof(spx_fused_row);
+}
 SPX_FUSED_FN void *spx_fused_admit(spx_fused_issuer *issuer,spx_fused_ledger *ledger,
  spx_fused_payload *payload,size_t count,size_t width,size_t frame) {
     size_t metadata=spx_fused_metadata_bytes(count,frame);
@@ -157,7 +189,14 @@ SPX_FUSED_FN void *spx_fused_admit(spx_fused_issuer *issuer,spx_fused_ledger *le
         !issuer->sealed || issuer->module!=&spx_fused_module_identity || issuer->active ||
         !issuer->next || issuer->next>=UINT64_MAX-(uint64_t)count-2u) return NULL;
     if (!spx_fused_payload_room(payload,1,count*width)) { if (payload->sealed) payload->failed=1; return NULL; }
-    if (!spx_fused_ledger_debit(ledger,metadata)) return NULL;
+    size_t row_bytes=count*sizeof(spx_fused_row),total=spx_fused_invocation_bytes(count,frame);
+    if (!total || !ledger->sealed || ledger->failed || ledger->debited>ledger->limit ||
+        ledger->held_rows>ledger->limit-ledger->debited || total>ledger->limit-ledger->debited-ledger->held_rows) {
+        if (ledger->sealed) { ledger->failed=1; }
+        return NULL;
+    }
+    if (!spx_fused_ledger_debit(ledger,metadata)) SPX_FUSED_FAIL_STOP("fused metadata debit drift");
+    if (!spx_fused_rows_hold(ledger,row_bytes)) SPX_FUSED_FAIL_STOP("fused row hold drift");
     if (!spx_fused_payload_hold(payload,1,count*width)) SPX_FUSED_FAIL_STOP("fused payload hold drift");
     void *storage=calloc(1,frame);
     if (!storage) SPX_FUSED_FAIL_STOP("fused frame allocation failed");
@@ -183,12 +222,20 @@ SPX_FUSED_FN int spx_fused_valid(const spx_fused_domain *d) {
         d->width<=SPX_FUSED_EXTENT/d->count && d->extent==d->count*d->width &&
         d->issued<=d->count && d->live<=d->issued && d->loans<=SPX_FUSED_VIEWS;
 }
+SPX_FUSED_FN int spx_fused_rows_receipt_current(const spx_fused_domain *d,const spx_fused_row_receipt *receipt) {
+    return d && receipt==&d->rows_receipt && receipt->funded && receipt->domain==d &&
+        receipt->issuer==d->issuer && receipt->ledger==d->ledger && receipt->invocation==d->invocation &&
+        receipt->capacity==d->count && receipt->stride==sizeof(spx_fused_row) &&
+        receipt->bytes==d->count*sizeof(spx_fused_row);
+}
 /* First original Bytes operand: exact tables, consumption of the admitted
    ordinary hold, then the single zeroed backing. No accounting can refuse
    here; physical allocation failure is fail-stop. */
-SPX_FUSED_FN void spx_fused_activate(spx_fused_domain *d) {
+SPX_FUSED_FN void spx_fused_activate_with_rows(spx_fused_domain *d,const spx_fused_row_receipt *receipt) {
     if (d->state!=SPX_FUSED_PREPARED || d->activated || !d->held || d->issuer->active!=d)
         SPX_FUSED_FAIL_STOP("fused activation without admission");
+    if (!spx_fused_rows_receipt_current(d,receipt) || !receipt->allocated || receipt->settled ||
+        !receipt->pointer || !d->vec_live) SPX_FUSED_FAIL_STOP("fused activation without funded destination");
     d->slots=calloc(d->count,sizeof(spx_fused_slot));
     if (!d->slots) SPX_FUSED_FAIL_STOP("fused lease table allocation failed");
     d->views=calloc(SPX_FUSED_VIEWS,sizeof(spx_fused_borrow));
@@ -197,6 +244,9 @@ SPX_FUSED_FN void spx_fused_activate(spx_fused_domain *d) {
     d->held=0;d->consumed=1;d->activated=1;d->state=SPX_FUSED_BUILDING;
     d->backing=calloc(d->extent,1);
     if (!d->backing) SPX_FUSED_FAIL_STOP("owned byte buffer allocation failed");
+}
+SPX_FUSED_FN void spx_fused_activate(spx_fused_domain *d) {
+    spx_fused_activate_with_rows(d,&d->rows_receipt);
 }
 SPX_FUSED_FN spx_fused_slot *spx_fused_find(spx_fused_domain *d,const spx_fused_issuer *issuer,
  uint32_t index,uint32_t generation,uint64_t nonce) {
@@ -213,7 +263,9 @@ SPX_FUSED_FN spx_fused_slot *spx_fused_owner(spx_fused_domain *d,spx_fused_bytes
 SPX_FUSED_FN int spx_fused_rows_valid(const spx_fused_domain *d,const spx_fused_rows *rows) {
     return d && rows && d->vec_live && rows->domain==d && rows->rows && rows->issuer==d->issuer &&
         rows->invocation==d->invocation && rows->generation==d->vec_generation &&
-        rows->capacity==d->count && rows->len<=rows->capacity;
+        rows->capacity==d->count && rows->len<=rows->capacity &&
+        spx_fused_rows_receipt_current(d,&d->rows_receipt) && d->rows_receipt.allocated &&
+        !d->rows_receipt.settled && rows->rows==d->rows_receipt.pointer;
 }
 SPX_FUSED_FN spx_fused_slot *spx_fused_stored_owner(spx_fused_domain *d,const spx_fused_rows *rows,
  spx_fused_stored value) {
@@ -344,15 +396,38 @@ SPX_FUSED_FN void spx_fused_copy_drop(spx_fused_copy *copy) {
     if (copy && copy->ptr) free(copy->ptr);
     if (copy) *copy=(spx_fused_copy){NULL,0};
 }
-/* The ordinary Vec allocation boundary; failure is the caller's ordinary status. */
-SPX_FUSED_FN int spx_fused_rows_allocate(spx_fused_domain *d,uint64_t capacity,spx_fused_rows *out) {
-    if (!d || !d->sealed || !out || d->vec_live || capacity!=d->count || d->vec_generation==UINT64_MAX ||
-        !d->invocation) SPX_FUSED_FAIL_STOP("fused row Vec allocation without held domain");
+/* Same-ledger physical row debit occurs at the original Vec boundary. */
+SPX_FUSED_FN void spx_fused_rows_reserve(spx_fused_domain *d,uint64_t capacity,spx_fused_row_receipt **out) {
+    if (!d || !d->sealed || !out || d->state!=SPX_FUSED_PREPARED || d->vec_live ||
+        d->rows_receipt.funded || !d->issuer || d->issuer->active!=d || d->module!=&spx_fused_module_identity ||
+        capacity!=d->count || d->vec_generation==UINT64_MAX || !d->invocation)
+        SPX_FUSED_FAIL_STOP("fused row reservation without held destination");
+    size_t bytes=d->count*sizeof(spx_fused_row);
+    if (!spx_fused_rows_consume(d->ledger,bytes)) SPX_FUSED_FAIL_STOP("fused row funding hold drift");
+    d->rows_receipt=(spx_fused_row_receipt){d,d->issuer,d->ledger,d->invocation,NULL,d->count,sizeof(spx_fused_row),bytes,1,0,0};
+    *out=&d->rows_receipt;
+}
+/* Physical calloc failure keeps the ordinary Vec failure status. No refund. */
+SPX_FUSED_FN int spx_fused_rows_allocate_funded(spx_fused_domain *d,spx_fused_row_receipt *receipt,uint64_t capacity,spx_fused_rows *out) {
+    if (!out || !spx_fused_rows_receipt_current(d,receipt) || receipt->allocated || receipt->settled ||
+        d->state!=SPX_FUSED_PREPARED || d->vec_live || capacity!=d->count)
+        SPX_FUSED_FAIL_STOP("fused row allocation without current funding receipt");
     *out=(spx_fused_rows){NULL,0,0,0,NULL,NULL,0};
+    /* This receipt funds one attempt, including an ordinary calloc failure. */
+    receipt->allocated=1;
     spx_fused_row *rows=calloc((size_t)capacity,sizeof(spx_fused_row));
     if (!rows) return 0;
+    receipt->pointer=rows;
     *out=(spx_fused_rows){rows,0,capacity,++d->vec_generation,d,d->issuer,d->invocation};
     d->vec_live=1;return 1;
+}
+SPX_FUSED_FN int spx_fused_rows_allocate(spx_fused_domain *d,uint64_t capacity,spx_fused_rows *out) {
+    spx_fused_row_receipt *receipt=NULL;spx_fused_rows_reserve(d,capacity,&receipt);
+    return spx_fused_rows_allocate_funded(d,receipt,capacity,out);
+}
+SPX_FUSED_FN int spx_fused_rows_receipt_settle(spx_fused_domain *d,spx_fused_row_receipt *receipt) {
+    if (!spx_fused_rows_receipt_current(d,receipt) || receipt->settled || d->vec_live) return 0;
+    receipt->settled=1;receipt->pointer=NULL;return 1;
 }
 /* Immutable Vec transfer: the prior header is retired by generation. */
 SPX_FUSED_FN int spx_fused_rows_move(spx_fused_domain *d,spx_fused_rows *source,spx_fused_rows *out) {
@@ -479,11 +554,14 @@ SPX_FUSED_FN int spx_fused_rows_drop(spx_fused_domain *d,spx_fused_rows *rows,co
         }
     }
     free(rows->rows);d->vec_live=0;*rows=(spx_fused_rows){NULL,0,0,0,NULL,NULL,0};
+    if (!spx_fused_rows_receipt_settle(d,&d->rows_receipt)) settled=0;
     return settled;
 }
-/* A popped row settles its own fields in declaration order. */
+/* A standalone row follows the caller's authenticated epoch cleanup order,
+   which is reverse declaration order. Vec internals use rows_drop instead. */
 SPX_FUSED_FN int spx_fused_staged_drop(spx_fused_domain *d,spx_fused_staged *row,const uint32_t order[3],
  spx_fused_string_drop drop) {
+    if (!row || !order || !drop) return spx_fused_fail(d);
     int settled=1;
     for (unsigned k=0;k<3;k++) {
         if (order[k]==SPX_FUSED_STRING && row->string) {drop(row->string);row->string=NULL;}
@@ -501,6 +579,19 @@ SPX_FUSED_FN int spx_fused_finish(spx_fused_domain *d) {
     if (d->held) {
         if (!spx_fused_payload_release(d->payload,1,d->extent)) SPX_FUSED_FAIL_STOP("fused payload hold drift");
         d->held=0;
+    }
+    if (!d->rows_receipt.funded) {
+        size_t bytes=d->count*sizeof(spx_fused_row);
+        if (!d->ledger || d->ledger->held_rows<bytes) SPX_FUSED_FAIL_STOP("fused unused row hold drift");
+        d->ledger->held_rows-=bytes;
+    } else if (!d->vec_live && !d->rows_receipt.settled) {
+        if (!spx_fused_rows_receipt_settle(d,&d->rows_receipt)) SPX_FUSED_FAIL_STOP("fused row receipt settlement drift");
+    }
+    if (!settled && d->vec_live) {
+        /* Administrative abandonment releases actual row backing; it does
+           not synthesize a language field finalizer or publish a result. */
+        free(d->rows_receipt.pointer);d->vec_live=0;
+        if (!spx_fused_rows_receipt_settle(d,&d->rows_receipt)) SPX_FUSED_FAIL_STOP("abandoned row receipt drift");
     }
     if (!settled && d->backing) {free(d->backing);d->backing=NULL;}
     if (d->slots) free(d->slots);

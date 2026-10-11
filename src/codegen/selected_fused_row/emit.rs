@@ -7,11 +7,11 @@
 use super::{
     cleanup::PlanProof,
     crossing, error, layout, lower,
-    selection::{Sites, ValidatedOwner},
+    selection::Sites,
     RUNTIME,
 };
 use crate::diagnostic::Diagnostic;
-use crate::{ast, hir};
+use crate::hir;
 use std::fmt::Write as _;
 
 pub(crate) const ENTRY: &str = "spx_fused_selected_entry_v1";
@@ -47,27 +47,26 @@ pub(super) struct Unit {
 /// Accepting API for the full validated selected owner. The owner must still
 /// hold exactly the supplied programs; the receiver then proves crossings,
 /// layout and canonical cleanup order itself before emitting anything.
-pub(crate) fn emit_validated<'a, O: ValidatedOwner<'a>>(
-    source: &ast::Program,
-    program: &hir::ResolvedProgram,
-    owner: &'a O,
-) -> Result<Artifact, Diagnostic> {
-    if !owner.still_current(source, program) || !std::ptr::eq(owner.program(), program) {
-        return Err(error("validated owner does not hold the supplied programs"));
-    }
-    let sites = Sites::from_validated(owner);
-    let unit = unit(&sites)?;
-    Ok(Artifact {
-        source: unit.source,
-        count: sites.rows as usize,
-        width: sites.width as usize,
-        placement: unit.placement,
-    })
+pub(crate) fn emit_validated(owner: &hir::selected_fused_candidate::ValidatedFusedSelection<'_>) -> Result<Artifact, Diagnostic> {
+    owner.with_joined(|joined| {
+        if !joined.still_current(owner.source(), owner.program()) {
+            return Err(error("validated owner does not hold the joined programs"));
+        }
+        let mapping = crate::construction_fusion::native_provenance::derive(owner.source(),owner.program())
+            .filter(|mapping| mapping.still_held(owner.source(),owner.program()))
+            .ok_or_else(|| error("current selected suffix provenance does not derive"))?;
+        let sites = Sites::from_joined(joined.selection(), &mapping);
+        let unit = unit_with_prelude(&sites, || super::super::native_emit::emit_validated_fused_row_prelude(owner))?;
+        Ok(Artifact { source:unit.source,count:sites.rows as usize,width:sites.width as usize,placement:unit.placement })
+    }).map_err(|_| error("current validated source/HIR join refused"))?
 }
 
 /// Shared receiver core. Ordinary HIR validation still runs inside the
 /// prelude hook as a necessary check; it is not selection authority.
 pub(super) fn unit(sites: &Sites<'_>) -> Result<Unit, Diagnostic> {
+    unit_with_prelude(sites, || super::super::native_emit::emit_selected_fused_row_prelude(sites.program))
+}
+fn unit_with_prelude(sites: &Sites<'_>, prelude: impl FnOnce()->Result<String,Diagnostic>) -> Result<Unit,Diagnostic> {
     if !layout::native64() {
         return Err(error("the selected carriers are defined for native64 only"));
     }
@@ -100,7 +99,8 @@ pub(super) fn unit(sites: &Sites<'_>) -> Result<Unit, Diagnostic> {
         .ok_or_else(|| error("the selected frame exceeds its bound"))?;
     let metadata =
         layout::metadata(count, frame).ok_or_else(|| error("selected metadata overflow"))?;
-    let mut output = super::super::native_emit::emit_selected_fused_row_prelude(sites.program)?;
+    let funding=layout::funding(count,frame).ok_or_else(||error("selected total physical funding overflow"))?;
+    let mut output = prelude()?;
     output.push_str(
         "#ifndef SPX_FUSED_FAIL_STOP\n#define SPX_FUSED_FAIL_STOP(message) spx_runtime_invariant_failure(message)\n#endif\n",
     );
@@ -131,6 +131,7 @@ pub(super) fn unit(sites: &Sites<'_>) -> Result<Unit, Diagnostic> {
          #define SPX_FUSED_SELECTED_WIDTH ((size_t){width}u)\n\
          #define SPX_FUSED_SELECTED_EXTENT ((size_t){extent}u)\n\
          #define SPX_FUSED_SELECTED_METADATA ((size_t){metadata}u)\n\
+         #define SPX_FUSED_SELECTED_FUNDING ((size_t){funding}u)\n\
          _Static_assert(SPX_FUSED_SELECTED_EXTENT <= SPX_FUSED_EXTENT, \"selected extent fits one Bytes value\");\n",
     )
     .expect("writing to a string cannot fail");
@@ -149,7 +150,8 @@ fn entry() -> String {
     format!(
         r#"enum {{ SPX_FUSED_PUBLISHED = 0, SPX_FUSED_LANGUAGE_FAILURE = 1, SPX_FUSED_REFUSED = 2, SPX_FUSED_ABANDONED = 3 }};
 /* Admission funds the heap frame (header and private carriers) and the
-   tables in the held metadata ledger, and holds one ordinary backing event,
+   tables in the held physical ledger, holds future row bytes on that same
+   ledger, and holds one ordinary backing event,
    before any program effect. The frame outlives the selected function, its
    row Vec and every popped child until settlement. */
 static __attribute__((unused)) int {ENTRY}(
@@ -160,10 +162,12 @@ static __attribute__((unused)) int {ENTRY}(
         spx_result_out == NULL || spx_status_out == NULL || !spx_ledger->sealed ||
         !spx_payload->sealed || !spx_issuer->sealed)
         spx_runtime_invariant_failure("selected fused-row entry without held authority");
-    if (spx_fused_metadata_bytes(SPX_FUSED_SELECTED_COUNT, sizeof(spx_fused_frame)) != SPX_FUSED_SELECTED_METADATA)
+    if (spx_fused_metadata_bytes(SPX_FUSED_SELECTED_COUNT, sizeof(spx_fused_frame)) != SPX_FUSED_SELECTED_METADATA ||
+        spx_fused_invocation_bytes(SPX_FUSED_SELECTED_COUNT,sizeof(spx_fused_frame)) != SPX_FUSED_SELECTED_FUNDING)
         spx_runtime_invariant_failure("selected fused-row metadata mirror");
     size_t spx_debited = spx_ledger->debited, spx_events = spx_payload->events;
     size_t spx_cumulative = spx_payload->cumulative, spx_held = spx_payload->held_events;
+    size_t spx_rows_held = spx_ledger->held_rows;
     void *spx_storage = spx_fused_admit(spx_issuer, spx_ledger, spx_payload, SPX_FUSED_SELECTED_COUNT,
         SPX_FUSED_SELECTED_WIDTH, sizeof(spx_fused_frame));
     if (spx_storage == NULL) return SPX_FUSED_REFUSED;
@@ -181,10 +185,11 @@ static __attribute__((unused)) int {ENTRY}(
         *spx_status_out = spx_status;
         return SPX_FUSED_LANGUAGE_FAILURE;
     }}
-    /* Result postconditions: the exact metadata debit, exactly one ordinary
+    /* Result postconditions: the exact physical debit, no row hold, one ordinary
        event and extent consumed from the admitted hold, no sticky failure. */
     if (!spx_activated || spx_failed || spx_metadata != SPX_FUSED_SELECTED_METADATA ||
-        spx_ledger->debited - spx_debited != spx_metadata ||
+        spx_ledger->debited - spx_debited != SPX_FUSED_SELECTED_FUNDING ||
+        spx_ledger->held_rows != spx_rows_held ||
         spx_payload->events - spx_events != 1u ||
         spx_payload->cumulative - spx_cumulative != SPX_FUSED_SELECTED_EXTENT ||
         spx_payload->held_events != spx_held)

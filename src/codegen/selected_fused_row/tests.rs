@@ -1,7 +1,8 @@
 //! Owning selected fused-row receiver definitions. Authored; the root
 //! executes them only after the integration batch. Every emitted unit here
-//! comes from the UNVALIDATED precursor at counts ordinary admission already
-//! accepts; none is an artifact or evidence about the original 4096 rows.
+//! uses either the ordinary-count UNVALIDATED precursor or the concrete full
+//! selected owner for the immutable original 4096-row source. All new owning
+//! execution assertions remain unqualified until the root runs this batch.
 use super::{
     cleanup::PlanProof,
     layout,
@@ -90,7 +91,7 @@ fn precursor_lowers_plan_bound_rows_and_leaves_default_emission_unchanged() {
         // Original preparation order: Vec, scalar, ordinary String, then the issue.
         let string = body.find("spx_string_from_literal(").unwrap();
         let issue = body.find("spx_fused_issue(").unwrap();
-        assert!(body.find("spx_fused_rows_allocate(").unwrap() < string && string < issue);
+        assert!(body.find("spx_fused_rows_allocate_funded(").unwrap() < string && string < issue);
         assert!(issue < body.find("spx_fused_rows_has_room(").unwrap());
         assert_eq!(body.matches("spx_fused_issue(").count(), 1);
         assert_eq!(body.matches("spx_fused_rows_borrow(").count(), 1);
@@ -179,8 +180,8 @@ fn closed_suffix_census_refuses_escape_clone_and_unknown_consumers() {
     }
 }
 
-/// The original 4096-row source is still refused by ordinary verification, so
-/// no typed program and therefore no owner can reach the receiver.
+/// The ordinary route retains its original 4096-row refusal. The separate
+/// concrete selected factory does not change this default verifier.
 #[test]
 fn original_maximum_remains_refused_until_independent_capacity_admission() {
     assert!(crate::check(ORIGINAL, "original.spx")
@@ -189,89 +190,22 @@ fn original_maximum_remains_refused_until_independent_capacity_admission() {
         .any(|d| d.code == "SPX-T267"));
 }
 
-/// Test-only owner over precursor sites, used solely to observe refusals of
-/// the accepting API. It is never allowed to produce an artifact here.
-struct ProbeOwner<'a> {
-    sites: Sites<'a>,
-    current: bool,
-}
-impl<'a> super::ValidatedOwner<'a> for ProbeOwner<'a> {
-    fn still_current(&self, _: &ast::Program, _: &hir::ResolvedProgram) -> bool {
-        self.current
-    }
-    fn program(&self) -> &'a hir::ResolvedProgram {
-        self.sites.program
-    }
-    fn function(&self) -> &'a hir::ResolvedFunction {
-        self.sites.function
-    }
-    fn record(&self) -> &'a hir::ResolvedTypeDeclaration {
-        self.sites.record
-    }
-    fn vector(&self) -> &'a hir::ResolvedBinding {
-        self.sites.vector
-    }
-    fn counter(&self) -> &'a hir::ResolvedBinding {
-        self.sites.counter
-    }
-    fn item(&self) -> &'a hir::ResolvedBinding {
-        self.sites.item
-    }
-    fn allocation(&self) -> &'a hir::ResolvedExpr {
-        self.sites.allocation
-    }
-    fn condition(&self) -> &'a hir::ResolvedExpr {
-        self.sites.condition
-    }
-    fn body(&self) -> &'a hir::ResolvedExpr {
-        self.sites.body
-    }
-    fn constructor(&self) -> &'a hir::ResolvedExpr {
-        self.sites.constructor
-    }
-    fn producer(&self) -> &'a hir::ResolvedExpr {
-        self.sites.producer
-    }
-    fn push(&self) -> &'a hir::ResolvedExpr {
-        self.sites.push
-    }
-    fn step(&self) -> &'a hir::ResolvedExpr {
-        self.sites.step
-    }
-    fn suffix(&self) -> &'a [hir::ResolvedStatement] {
-        self.sites.suffix
-    }
-    fn tail(&self) -> &'a hir::ResolvedExpr {
-        self.sites.tail
-    }
-    fn rows(&self) -> u32 {
-        self.sites.rows
-    }
-    fn width(&self) -> u64 {
-        self.sites.width
-    }
-    fn carriers(&self) -> &dyn super::CarrierFacts {
-        self.sites.carriers
-    }
-}
-
 #[test]
-fn accepting_api_refuses_stale_or_foreign_owner_before_lowering() {
-    let text = fixture(8);
-    let (source, typed) = inputs(&text);
-    let precursor = UnvalidatedPrecursor::derive(&source, &typed).unwrap();
-    let stale = ProbeOwner {
-        sites: precursor.sites().unwrap(),
-        current: false,
-    };
-    let refused: Result<super::Artifact, _> = super::emit_validated(&source, &typed, &stale);
-    assert!(refused.is_err());
-    let foreign = ProbeOwner {
-        sites: precursor.sites().unwrap(),
-        current: true,
-    };
-    let other = typed.clone();
-    assert!(super::emit_validated(&source, &other, &foreign).is_err());
+fn accepting_api_binds_concrete_current_owner_and_refuses_actual_source_mutations() {
+    let source=crate::parse(ORIGINAL,"original-selected-native.spx").unwrap();
+    let owner=hir::selected_fused_candidate::validate_selected(&source).unwrap_or_else(|e|panic!("selected factory refused: {e:?}"));
+    let artifact=super::emit_validated(&owner).unwrap();
+    assert_eq!(artifact.count(),4096);assert_eq!(artifact.width(),3);
+    assert!(std::ptr::eq(owner.source(),&source));
+    // A cloned AST/HIR cannot be supplied to the concrete receiving API.
+    let cloned_source=source.clone();let cloned_program=owner.program().clone();
+    assert!(!std::ptr::eq(owner.source(),&cloned_source));assert!(!std::ptr::eq(owner.program(),&cloned_program));
+    assert_eq!(super::emit_validated(&owner).unwrap().source(),artifact.source());
+    for (from,to) in [("next < 4096","next <= 4096"),("bytes_zeroed(3usize)","bytes_zeroed(next)"),("next = next + 1","next = next + 2")] {
+        let changed=ORIGINAL.replace(from,to);assert_ne!(changed,ORIGINAL);
+        let mutated=crate::parse(&changed,"mutated-selected-native.spx").unwrap();
+        assert!(hir::selected_fused_candidate::validate_selected(&mutated).is_err(),"{from}");
+    }
 }
 
 #[test]
@@ -323,11 +257,12 @@ fn canonical_cleanup_proof_refuses_unprovable_plan_shapes() {
 fn receiver_layout_mirror_matches_runtime_and_ordinary_stride() {
     assert!(layout::native64());
     let sizes: Vec<usize> = layout::mirror().iter().map(|(_, size)| *size).collect();
-    assert_eq!(sizes, [24, 16, 48, 24, 24, 32, 40, 56, 32, 24, 40, 160]);
+    assert_eq!(sizes, [24, 16, 48, 24, 24, 32, 40, 56, 32, 32, 40, 240, 80]);
     assert_eq!(layout::row(), 32);
     let frame = layout::frame(1, 3, 1).unwrap();
-    assert_eq!(frame, 160 + 40 + 3 * 56 + 48);
+    assert_eq!(frame, 240 + 40 + 3 * 56 + 48);
     assert_eq!(layout::metadata(4096, frame), Some(frame + 4096 * 24 + 64 * 24));
+    assert_eq!(layout::funding(4096, frame), Some(frame + 4096 * 24 + 64 * 24 + 4096 * 32));
     assert!(layout::frame(0, 0, 2048).is_none());
     let emitted = precursor_unit(&fixture(8));
     assert!(emitted.contains(&format!(
@@ -407,7 +342,7 @@ fn precursor_unit_admission_order_plan_exits_and_reentry_at_o0_o2() {
         let expected = (0..i64::from(count)).sum::<i64>();
         let emitted = precursor_unit(&fixture(count));
         for binary in compile(&emitted, expected, &format!("oracle{count}")) {
-            for mode in ["oracle", "one-short", "claim", "vec-failure", "call-depth"] {
+            for mode in ["oracle", "one-short", "cumulative-short", "claim", "vec-failure", "call-depth"] {
                 passes(&run(&binary, mode), mode);
             }
             fail_stops(&run(&binary, "oom-frame"), "fused frame allocation failed");
@@ -430,17 +365,21 @@ fn precursor_suffix_failure_ends_live_loan_through_plan_exit_at_o0_o2() {
     }
 }
 
-/// Requires the validated selected owner (`SourceProof` joined by
-/// `hir::fused_construction::join` under selected validation) and selected
-/// capacity admission so the unchanged original resolves. The precursor may
-/// never stand in for it.
+/// Actual immutable ORIGINAL AST -> complete selected factory -> concrete
+/// native receiving -> O0/O2 runtime oracle. No rescaled/precursor authority.
 #[test]
-#[ignore = "requires the validated selected owner and FusedConstructionV1 capacity admission"]
 fn original_4096_rows_publish_8386560_with_one_12288_byte_backing_at_o0_o2() {
-    let source = crate::check(ORIGINAL, "original.spx").expect("selected capacity admission");
-    let _typed = hir::resolve(&source).expect("selected HIR admission");
-    unimplemented!(
-        "construct the ValidatedOwner from hir::fused_construction::join, call emit_validated, \
-         and run the oracle expecting 8386560 with one 12288-byte backing"
-    );
+    let source=crate::parse(ORIGINAL,"original.spx").unwrap();
+    let owner=hir::selected_fused_candidate::validate_selected(&source).unwrap_or_else(|e|panic!("original selected factory refused: {e:?}"));
+    assert_eq!(owner.capacity().rows,4096);assert_eq!(owner.capacity().extent,12288);
+    let artifact=super::emit_validated(&owner).unwrap();
+    assert_eq!(artifact.count(),4096);assert_eq!(artifact.width(),3);
+    assert_exits_verbatim(function_body(artifact.source()),&owner.program().functions[0]);
+    for binary in compile(artifact.source(),8386560,"original4096") {
+        for mode in ["oracle","one-short","cumulative-short","claim","vec-failure","call-depth"] {passes(&run(&binary,mode),mode);}
+        fail_stops(&run(&binary,"oom-frame"),"fused frame allocation failed");
+        fail_stops(&run(&binary,"oom-table"),"fused lease table allocation failed");
+        fail_stops(&run(&binary,"oom-views"),"fused view table allocation failed");
+        fail_stops(&run(&binary,"oom-backing"),"owned byte buffer allocation failed");
+    }
 }

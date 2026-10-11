@@ -1,12 +1,10 @@
 //! Receiver inputs. The lowering consumes only [`Sites`]: borrowed nodes of
 //! one held typed program plus producer-bound view carrier facts.
 //!
-//! [`ValidatedOwner`] is the explicit accepting API for the full validated
-//! selected owner: the independent `source_verify::fused_construction`
-//! `SourceProof` joined by `hir::fused_construction::join` with the current
-//! HIR, under complete selected validation. Its accessor names follow that
-//! join's `Selection`. Nothing in this tree implements it yet; until the
-//! validated type lands the receiver has no production caller. The old
+//! The concrete immutable `ValidatedFusedSelection` is the accepting owner;
+//! no caller-implemented trait grants emission authority. The receiver borrows
+//! a fresh source/HIR join over that full owner and rederives carrier facts.
+//! The default compiler does not select this private entry. The old
 //! `construction_fusion` descriptor reaches the lowering only through the
 //! test-only unvalidated precursor and confers no artifact authority.
 use crate::construction_fusion::native_provenance::Carrier;
@@ -19,34 +17,6 @@ use crate::hir::{
 /// exact borrowed expression node. Never answered from `ResolvedType` alone.
 pub(crate) trait CarrierFacts {
     fn carrier(&self, expression: &E) -> Option<Carrier>;
-}
-
-/// Accepting API for the validated selected owner. Implementations must only
-/// wrap a value produced by the full validated join; equal clones, decoded
-/// programs, rescaled counts or cached facts are never implementations.
-pub(crate) trait ValidatedOwner<'a> {
-    /// Both joined halves are still exactly the supplied objects.
-    fn still_current(&self, source: &crate::ast::Program, program: &ResolvedProgram) -> bool;
-    fn program(&self) -> &'a ResolvedProgram;
-    fn function(&self) -> &'a ResolvedFunction;
-    fn record(&self) -> &'a ResolvedTypeDeclaration;
-    fn vector(&self) -> &'a ResolvedBinding;
-    fn counter(&self) -> &'a ResolvedBinding;
-    fn item(&self) -> &'a ResolvedBinding;
-    fn allocation(&self) -> &'a E;
-    fn condition(&self) -> &'a E;
-    fn body(&self) -> &'a E;
-    fn constructor(&self) -> &'a E;
-    /// The single `core.bytes.zeroed` site whose executions the backing replaces.
-    fn producer(&self) -> &'a E;
-    fn push(&self) -> &'a E;
-    fn step(&self) -> &'a E;
-    fn suffix(&self) -> &'a [S];
-    fn tail(&self) -> &'a E;
-    fn rows(&self) -> u32;
-    fn width(&self) -> u64;
-    /// Carrier facts rederived for this joined selection's suffix.
-    fn carriers(&self) -> &dyn CarrierFacts;
 }
 
 /// Borrowed sites of one selection. The count and width are the selection's
@@ -73,26 +43,14 @@ pub(super) struct Sites<'a> {
 }
 
 impl<'a> Sites<'a> {
-    pub(super) fn from_validated<O: ValidatedOwner<'a>>(owner: &'a O) -> Self {
+    pub(super) fn from_joined(selection: &'a crate::hir::fused_construction::Selection<'a>, carriers: &'a dyn CarrierFacts) -> Self {
         Self {
-            program: owner.program(),
-            function: owner.function(),
-            record: owner.record(),
-            vector: owner.vector(),
-            counter: owner.counter(),
-            item: owner.item(),
-            allocation: owner.allocation(),
-            condition: owner.condition(),
-            body: owner.body(),
-            constructor: owner.constructor(),
-            producer: owner.producer(),
-            push: owner.push(),
-            step: owner.step(),
-            suffix: owner.suffix(),
-            tail: owner.tail(),
-            rows: owner.rows(),
-            width: owner.width(),
-            carriers: owner.carriers(),
+            program: selection.program(), function: selection.function(), record: selection.record(),
+            vector: selection.vector(), counter: selection.counter(), item: selection.item(),
+            allocation: selection.allocation(), condition: selection.condition(), body: selection.body(),
+            constructor: selection.constructor(), producer: selection.producer(), push: selection.push(),
+            step: selection.step(), suffix: selection.suffix(), tail: selection.tail(),
+            rows: selection.rows(), width: selection.width(), carriers,
         }
     }
     /// The selected function must be a member of the held program.
@@ -104,5 +62,11 @@ impl<'a> Sites<'a> {
     }
     pub(super) fn carrier(&self, expression: &E) -> Option<Carrier> {
         self.carriers.carrier(expression)
+    }
+}
+
+impl CarrierFacts for crate::construction_fusion::native_provenance::Mapping<'_> {
+    fn carrier(&self, expression: &E) -> Option<Carrier> {
+        self.fact(expression).map(|fact| fact.carrier())
     }
 }

@@ -1,13 +1,14 @@
 //! Private selected FusedConstructionV1 native lowering and runtime.
 //!
 //! The production-shaped route is [`emit_validated`], the explicit accepting
-//! API for the full validated selected owner ([`ValidatedOwner`]). No type in
-//! this tree implements it yet, so the receiver has no production caller.
+//! API accepts only the full immutable `ValidatedFusedSelection` owner.
+//! The default compiler does not select it; native qualification is pending.
 //! The old `construction_fusion` descriptor reaches the same lowering only
 //! through the test-only UNVALIDATED precursor, which carries no artifact
 //! authority. No default emitter, manifest, name, cached flag or graph fact
 //! selects either route, and the original 4096-row program still refuses in
-//! ordinary source verification; nothing here supports it.
+//! ordinary source verification. The explicit owner route has authored gates for
+//! that immutable original; execution qualification remains pending.
 use crate::diagnostic::Diagnostic;
 mod cleanup;
 mod crossing;
@@ -29,7 +30,7 @@ pub(crate) use emit::{emit_validated, Artifact, ENTRY};
     not(test),
     allow(unused_imports, reason = "receiving entry has no production caller")
 )]
-pub(crate) use selection::{CarrierFacts, ValidatedOwner};
+pub(crate) use selection::CarrierFacts;
 pub(super) const RUNTIME: &str = include_str!("selected_fused_row/runtime.c");
 
 fn error(message: &str) -> Diagnostic {

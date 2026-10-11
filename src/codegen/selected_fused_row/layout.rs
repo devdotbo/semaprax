@@ -21,6 +21,7 @@ struct Issuer {
 struct Ledger {
     limit: usize,
     debited: usize,
+    held_rows: usize,
     sealed: u32,
     failed: u32,
 }
@@ -94,6 +95,12 @@ struct Rows {
     invocation: u64,
 }
 #[repr(C)]
+struct RowReceipt {
+    domain: *mut (), issuer: *const (), ledger: *mut (), invocation: u64,
+    pointer: *mut Row, capacity: usize, stride: usize, bytes: usize,
+    funded: u32, allocated: u32, settled: u32,
+}
+#[repr(C)]
 struct Domain {
     module: *const (),
     issuer: *mut (),
@@ -106,6 +113,7 @@ struct Domain {
     slots: *mut Slot,
     views: *mut Borrow,
     backing: *mut u8,
+    rows_receipt: RowReceipt,
 }
 
 /// Fixed independent view table length.
@@ -118,7 +126,7 @@ pub(super) fn native64() -> bool {
 }
 
 /// `(C type, native64 size)` for every runtime carrier, in emission order.
-pub(super) fn mirror() -> [(&'static str, usize); 12] {
+pub(super) fn mirror() -> [(&'static str, usize); 13] {
     [
         ("spx_fused_bytes", size_of::<Bytes>()),
         ("spx_fused_stored", size_of::<Stored>()),
@@ -132,6 +140,7 @@ pub(super) fn mirror() -> [(&'static str, usize); 12] {
         ("spx_fused_ledger", size_of::<Ledger>()),
         ("spx_fused_payload", size_of::<Payload>()),
         ("spx_fused_domain", size_of::<Domain>()),
+        ("spx_fused_row_receipt",size_of::<RowReceipt>()),
     ]
 }
 
@@ -155,4 +164,10 @@ pub(super) fn metadata(count: usize, frame: usize) -> Option<usize> {
     frame
         .checked_add(count.checked_mul(size_of::<Slot>())?)?
         .checked_add(VIEWS.checked_mul(size_of::<Borrow>())?)
+}
+
+/// Complete same-ledger invocation physical funding, including the exact
+/// row allocation debited at its original Vec boundary.
+pub(super) fn funding(count:usize,frame:usize)->Option<usize> {
+    metadata(count,frame)?.checked_add(count.checked_mul(size_of::<Row>())?)
 }

@@ -38,18 +38,18 @@ static void expect_allocation_order(void) {
     if (count > 1) assert(census.order[6] == 'm');
 }
 static int oracle(spx_fused_issuer *issuer) {
+    accounts held;
+    open_accounts(&held, SPX_FUSED_SELECTED_FUNDING * 3);
     for (unsigned round = 0; round < 3; round++) {
         census_reset();
         invocation call;
-        accounts held;
-        open_accounts(&held, SPX_FUSED_SELECTED_METADATA);
         uint64_t before = issuer->next;
         int64_t result = -1;
         spx_status_token status = SPX_STATUS_SUCCESS;
         assert(invoke(&call, issuer, &held, &result, &status) == SPX_FUSED_PUBLISHED);
         assert(result == SPX_EXPECTED_RESULT && status == SPX_STATUS_SUCCESS);
-        assert(held.ledger.debited == SPX_FUSED_SELECTED_METADATA && !held.ledger.failed);
-        assert(held.payload.events == 1 && held.payload.cumulative == SPX_FUSED_SELECTED_EXTENT);
+        assert(held.ledger.debited == (round + 1) * SPX_FUSED_SELECTED_FUNDING && !held.ledger.failed && !held.ledger.held_rows);
+        assert(held.payload.events == round + 1 && held.payload.cumulative == (round + 1) * SPX_FUSED_SELECTED_EXTENT);
         assert(!held.payload.held_events && !held.payload.held_bytes && !held.payload.failed);
         expect_allocation_order();
         /* Every String, child, table, backing and the frame settled first. */
@@ -61,7 +61,7 @@ static int one_short(spx_fused_issuer *issuer) {
     census_reset();
     invocation call;
     accounts held;
-    open_accounts(&held, SPX_FUSED_SELECTED_METADATA - 1);
+    open_accounts(&held, SPX_FUSED_SELECTED_FUNDING - 1);
     uint64_t before = issuer->next;
     int64_t result = -1;
     spx_status_token status = SPX_STATUS_SUCCESS;
@@ -74,9 +74,33 @@ static int one_short(spx_fused_issuer *issuer) {
     /* The refusal is sticky for the held account; a fresh exact account succeeds. */
     assert(invoke(&call, issuer, &held, &result, &status) == SPX_FUSED_REFUSED && !census.calls);
     census_reset();
-    open_accounts(&held, SPX_FUSED_SELECTED_METADATA);
+    open_accounts(&held, SPX_FUSED_SELECTED_FUNDING);
     assert(invoke(&call, issuer, &held, &result, &status) == SPX_FUSED_PUBLISHED);
     assert(result == SPX_EXPECTED_RESULT && !census.live);
+    return 0;
+}
+/* Later admission uses the same held accounts and cannot mint new room. */
+static int cumulative_short(spx_fused_issuer *issuer) {
+    census_reset();
+    invocation call;
+    accounts held;
+    open_accounts(&held, SPX_FUSED_SELECTED_FUNDING * 2 - 1);
+    int64_t result = -1;
+    spx_status_token status = SPX_STATUS_SUCCESS;
+    assert(invoke(&call, issuer, &held, &result, &status) == SPX_FUSED_PUBLISHED);
+    assert(result == SPX_EXPECTED_RESULT && !census.live);
+    assert(held.ledger.debited == SPX_FUSED_SELECTED_FUNDING && !held.ledger.held_rows);
+    assert(held.payload.events == 1 && held.payload.cumulative == SPX_FUSED_SELECTED_EXTENT);
+    census_reset();
+    uint64_t before = issuer->next;
+    result = -1;
+    assert(invoke(&call, issuer, &held, &result, &status) == SPX_FUSED_REFUSED);
+    assert(result == -1 && status == SPX_STATUS_SUCCESS && !call.context.status_arena.length);
+    assert(held.ledger.failed && held.ledger.debited == SPX_FUSED_SELECTED_FUNDING && !held.ledger.held_rows);
+    assert(held.payload.events == 1 && held.payload.cumulative == SPX_FUSED_SELECTED_EXTENT && !held.payload.held_events);
+    assert(issuer->next == before && !issuer->active && !census.calls && !census.mallocs && !census.live);
+    assert(invoke(&call, issuer, &held, &result, &status) == SPX_FUSED_REFUSED);
+    assert(issuer->next == before && !census.calls && result == -1);
     return 0;
 }
 static int claim_refusals(spx_fused_issuer *issuer) {
@@ -84,7 +108,7 @@ static int claim_refusals(spx_fused_issuer *issuer) {
     int64_t result = -1;
     spx_status_token status = SPX_STATUS_SUCCESS;
     accounts held;
-    open_accounts(&held, SPX_FUSED_SELECTED_METADATA * 4);
+    open_accounts(&held, SPX_FUSED_SELECTED_FUNDING * 4);
     /* Overlap: the held issuer already grants another active domain. */
     static const spx_fused_domain other;
     census_reset();
@@ -100,7 +124,7 @@ static int claim_refusals(spx_fused_issuer *issuer) {
     spx_fused_issuer fresh = {0};
     assert(spx_fused_issuer_init(&fresh));
     accounts full;
-    open_accounts(&full, SPX_FUSED_SELECTED_METADATA);
+    open_accounts(&full, SPX_FUSED_SELECTED_FUNDING);
     assert(spx_fused_payload_debit(&full.payload, SPX_FUSED_EVENTS, 0));
     assert(invoke(&call, &fresh, &full, &result, &status) == SPX_FUSED_REFUSED);
     assert(full.payload.failed && full.payload.events == SPX_FUSED_EVENTS && !full.ledger.debited);
@@ -114,13 +138,13 @@ static int vec_failure(spx_fused_issuer *issuer) {
     census.fail_at = 2;
     invocation call;
     accounts held;
-    open_accounts(&held, SPX_FUSED_SELECTED_METADATA);
+    open_accounts(&held, SPX_FUSED_SELECTED_FUNDING);
     int64_t result = -1;
     spx_status_token status = SPX_STATUS_SUCCESS;
     assert(invoke(&call, issuer, &held, &result, &status) == SPX_FUSED_LANGUAGE_FAILURE);
     assert(status != SPX_STATUS_SUCCESS && result == -1);
     expect_status(&call, "semaprax.vec.v1", 3);
-    assert(held.ledger.debited == SPX_FUSED_SELECTED_METADATA);
+    assert(held.ledger.debited == SPX_FUSED_SELECTED_FUNDING);
     assert(!held.payload.events && !held.payload.held_events);
     assert(!census.mallocs && !census.live && !issuer->active);
     return 0;
@@ -132,13 +156,13 @@ static int suffix_failure(spx_fused_issuer *issuer) {
     census_reset();
     invocation call;
     accounts held;
-    open_accounts(&held, SPX_FUSED_SELECTED_METADATA);
+    open_accounts(&held, SPX_FUSED_SELECTED_FUNDING);
     int64_t result = -1;
     spx_status_token status = SPX_STATUS_SUCCESS;
     assert(invoke(&call, issuer, &held, &result, &status) == SPX_FUSED_LANGUAGE_FAILURE);
     assert(result == -1 && status != SPX_STATUS_SUCCESS);
     expect_status(&call, "semaprax.arithmetic.v1", 1);
-    assert(held.ledger.debited == SPX_FUSED_SELECTED_METADATA && held.payload.events == 1);
+    assert(held.ledger.debited == SPX_FUSED_SELECTED_FUNDING && held.payload.events == 1);
     assert(!census.live && !issuer->active);
     return 0;
 }
@@ -147,7 +171,7 @@ static int call_depth(spx_fused_issuer *issuer) {
     census_reset();
     invocation call;
     accounts held;
-    open_accounts(&held, SPX_FUSED_SELECTED_METADATA);
+    open_accounts(&held, SPX_FUSED_SELECTED_FUNDING);
     memset(&call, 0, sizeof(call));
     assert(spx_context_init(&call.context, UINT64_C(1), call.entries, UINT32_C(1), NULL, NULL, NULL));
     call.context.call_depth = SPX_MAX_CALL_DEPTH;
@@ -158,6 +182,7 @@ static int call_depth(spx_fused_issuer *issuer) {
     expect_status(&call, "semaprax.runtime.v1", 1);
     assert(result == -1 && !held.payload.events && !held.payload.held_events);
     assert(census.calls == 1 && !census.live && !issuer->active);
+    assert(held.ledger.debited == SPX_FUSED_SELECTED_METADATA && !held.ledger.held_rows);
     return 0;
 }
 /* Physical allocation failure is fail-stop after its funding (process aborts). */
@@ -166,7 +191,7 @@ static int fail_stop(spx_fused_issuer *issuer, size_t cut) {
     census.fail_at = cut;
     invocation call;
     accounts held;
-    open_accounts(&held, SPX_FUSED_SELECTED_METADATA);
+    open_accounts(&held, SPX_FUSED_SELECTED_FUNDING);
     int64_t result = -1;
     spx_status_token status = SPX_STATUS_SUCCESS;
     (void)invoke(&call, issuer, &held, &result, &status);
@@ -178,6 +203,7 @@ int main(int argc, char **argv) {
     assert(spx_fused_issuer_init(&issuer));
     if (!strcmp(mode, "oracle")) return oracle(&issuer);
     if (!strcmp(mode, "one-short")) return one_short(&issuer);
+    if (!strcmp(mode, "cumulative-short")) return cumulative_short(&issuer);
     if (!strcmp(mode, "claim")) return claim_refusals(&issuer);
     if (!strcmp(mode, "vec-failure")) return vec_failure(&issuer);
     if (!strcmp(mode, "suffix-failure")) return suffix_failure(&issuer);

@@ -68,9 +68,9 @@ impl Lower<'_, '_> {
             &allocation.id,
             "spx_status = spx_vec_failure(spx_ctx, UINT32_C(3));",
         )?;
-        self.line(&format!(
-            "if (!spx_fused_rows_allocate(spx_domain, UINT64_C({count}), &{rows})) {failure}"
-        ));
+        self.line("spx_fused_row_receipt *spx_row_funding = NULL;");
+        self.line(&format!("spx_fused_rows_reserve(spx_domain, UINT64_C({count}), &spx_row_funding);"));
+        self.line(&format!("if (!spx_fused_rows_allocate_funded(spx_domain, spx_row_funding, UINT64_C({count}), &{rows})) {failure}"));
         self.apply(&allocation.id)?;
         let start = self.scalar(start, Kind::I64)?;
         let induction = self.bind(counter, Kind::I64)?;
