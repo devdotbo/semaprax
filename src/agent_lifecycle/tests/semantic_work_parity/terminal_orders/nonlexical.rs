@@ -20,9 +20,10 @@ const ENTER: &str = "test.native_terminal_variant_order.enter";
 const ENTER_SOURCE: &str = "@id(\"test.native_terminal_variant_order.enter\")\nfn enter(depth: i64, first: i64, second: i64, rounds: i64, gate: i64, cap: i64) -> Summary {\n    run(depth, first, second, rounds, gate, cap)\n}\n\n@id(\"app.main\")";
 
 fn source() -> String {
-    assert_eq!(ORDER_SOURCE.matches(LEXICAL_LOOP).count(), 1);
-    assert_eq!(ORDER_SOURCE.matches("@id(\"app.main\")").count(), 1);
-    ORDER_SOURCE
+    let source = order_source();
+    assert_eq!(source.matches(LEXICAL_LOOP).count(), 1);
+    assert_eq!(source.matches("@id(\"app.main\")").count(), 1);
+    source
         .replace(LEXICAL_LOOP, "    let index = rounds;\n")
         .replace("@id(\"app.main\")", ENTER_SOURCE)
 }
@@ -195,6 +196,7 @@ const ROUTES: &[NonlexicalRoute] = &[
 fn nonlexical_traces(
     function: &hir::ResolvedFunction,
 ) -> impl Fn(&NonlexicalRoute) -> Vec<u32> + '_ {
+    fixtures::assert_opposing_ids(function);
     let plan = &function.cleanup_plan;
     assert!(plan.lexical_control.is_none(), "run is nonlexical");
     let root = &plan.regions[0];
@@ -222,8 +224,16 @@ fn nonlexical_traces(
         .next()
         .map_or_else(Vec::new, |exit| flags(&exit.finalize_in_order));
     assert!(scopes.next().is_none(), "at most one owning scope end");
-    let before = failure_exit(plan, body_call(function, 11), StatusLane::OperationFailure);
-    let after = failure_exit(plan, body_call(function, 13), StatusLane::OperationFailure);
+    let before = failure_exit(
+        plan,
+        body_call(function, "before"),
+        StatusLane::OperationFailure,
+    );
+    let after = failure_exit(
+        plan,
+        body_call(function, "after"),
+        StatusLane::OperationFailure,
+    );
     let (before, after) = (
         flags(&before.finalize_in_order),
         flags(&after.finalize_in_order),
@@ -236,7 +246,11 @@ fn nonlexical_traces(
     );
     let requires = failure_exit(plan, &function.requires[0].id, StatusLane::ContractFalse);
     let ensures = failure_exit(plan, &function.ensures[0].id, StatusLane::ContractFalse);
-    let descend = failure_exit(plan, body_call(function, 1), StatusLane::OperationFailure);
+    let descend = failure_exit(
+        plan,
+        body_call(function, "reached"),
+        StatusLane::OperationFailure,
+    );
     move |item| {
         if let Entry::RunEntryRefused = item.entry {
             return Vec::new();
@@ -290,6 +304,7 @@ fn nonlexical_opposing_terminal_orders_settle_exactly_on_every_native_route() {
         std::path::Path::new("variant-order-nonlexical.spx"),
     )
     .expect("nonlexical variant owner order source checks");
+    fixtures::assert_projection(&checked);
     let program = hir::resolve(&checked).expect("nonlexical variant owner order source resolves");
     hir::validate(&program).expect("nonlexical variant owner order source validates");
     let run = program
