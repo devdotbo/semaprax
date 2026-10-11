@@ -464,3 +464,31 @@ unexecuted). They include cloned 4096-row HIR with tampered cleanup
 inventory, cleanup plan, status sources and loan plan. Each tampered clone
 still joins over the whole body and is then refused by full selected
 validation.
+
+
+## Private selected interpreter conformance receiver
+
+`interpreter::construction_fusion::selected::execute` accepts only the immutable
+`ValidatedFusedSelection` owner and reconstructs its current join within that
+owner. It executes the retained HIR, including scalar conditions, checked
+operations, field views, publication and stable sorting. Flat row storage is
+reserved at the original Vec boundary; the actual String backing and the
+invocation-held range context are reserved in field evaluation order. A bounded
+borrowed HIR census reserves the slot backing for lowered bindings before use.
+No per-row payload owner allocation or ordinary record map is introduced.
+
+The private conformance route mirrors ordinary `UnlimitedLegacy` String
+materialization semantics, with separately checked observation counters and
+actual backing reservations. It does not grant retained Project authority or
+change that route's fixed UTF8 budget. Vec settlement preserves ascending row
+order and declaration-order leaves; partial-row failure uses the actual
+canonical leaf actions. Only a matched canonical exit can report complete
+settlement, and failed publication preserves the original normalized status.
+
+Five authored bodies in
+`interpreter::construction_fusion::selected::tests::` cover original4096,
+ordinary32, seventeen-byte String materialization, observed allocations,
+exact/one-short reservations, scoped stale/live views, checked failure and
+reentry. They are unexecuted implementation controls. Ordinary entry selection
+remains unchanged; this receiver does not establish all-backend qualification
+or public admission.

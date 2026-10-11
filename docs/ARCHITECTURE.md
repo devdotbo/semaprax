@@ -4185,3 +4185,11 @@ loan, cleanup and graph validation remain separate obligations. Graph v75 is
 selected only for this operation. Old public adapters and command profiles keep
 their closed admission. [Scoped Vec Field Reads v1](SCOPED-VEC-FIELD-READS-V1.md)
 owns the exact contract and pending executable gates.
+
+
+The private fused interpreter receiver lives in
+`interpreter/construction_fusion/selected.rs` and its execution child. It takes
+only the sealed full-validation owner, funds flat invocation-local storage from
+the active physical account, and publishes after canonical settlement. This
+conformance receiver is separate from ordinary and retained Project selection;
+its authored controls await consolidated qualification.

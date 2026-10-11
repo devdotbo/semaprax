@@ -61,7 +61,7 @@ mod api_admission;
 mod call_frame;
 mod closures;
 mod command_state;
-mod construction_fusion;
+pub(crate) mod construction_fusion;
 mod copy_projection;
 use construction_fusion::{BorrowedSliceValue, OwnedBytesValue};
 mod static_text;

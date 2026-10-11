@@ -1,0 +1,260 @@
+//! Same source, current sealed owner, actual execution and receiving controls.
+use super::{execute, reserve, Engine, Failure, Flat, Outcome, Row, Span, TextView};
+use crate::hir::selected_fused_candidate::{validate_selected, ValidatedFusedSelection};
+use crate::interpreter::{Utf8MaterializationBudget, Value};
+use std::alloc::Layout;
+
+const SOURCE: &str = include_str!("../../../../tests/fixtures/record-traversal-maximum.spx");
+const PHYSICAL: usize = 64 * 1024 * 1024;
+const FUEL: usize = 1_000_000;
+fn parsed(source: &str) -> crate::ast::Program {
+    crate::parse(source, "selected-flat-interpreter.spx").unwrap()
+}
+fn run(owner: &ValidatedFusedSelection<'_>) -> (Outcome, usize) {
+    let (outcome, refused, used) =
+        crate::bounded_output::with_limit_usage(PHYSICAL, || execute(owner, FUEL));
+    assert!(!refused);
+    (outcome.unwrap(), used)
+}
+#[test]
+fn original_4096_executes_current_hir_with_one_backing_and_ordinary_string_charges() {
+    let source = parsed(SOURCE);
+    assert!(crate::check(SOURCE, "selected-flat-interpreter.spx").is_err());
+    assert!(crate::hir::resolve(&source).is_err());
+    let owner = validate_selected(&source).unwrap();
+    let (outcome, used) = run(&owner);
+    assert_eq!(outcome.result, 4096 * 4095 / 2);
+    assert_eq!((outcome.byte_events, outcome.byte_payload), (1, 12_288));
+    assert_eq!(
+        (outcome.string_materializations, outcome.string_bytes),
+        (4096, 12_288)
+    );
+    assert!(outcome.steps > 4096 && outcome.steps < FUEL);
+    assert!(used >= Layout::array::<Row>(4096).unwrap().size());
+    // Reentry has a fresh context and the same source/counters, not reused children.
+    let (again, again_used) = run(&owner);
+    assert_eq!(
+        (again.result, again.byte_events, again.string_bytes),
+        (outcome.result, outcome.byte_events, outcome.string_bytes)
+    );
+    assert_eq!(again_used, used);
+
+    // Private conformance mirrors ordinary UnlimitedLegacy, not the retained
+    // Project-only fixed UTF8 envelope. Keep the same count and first three bytes.
+    let longer = SOURCE
+        .replace("é\\u{0}", "é\\u{0}abcdefghijklmn")
+        .replace("str_len_bytes(text) == 3", "str_len_bytes(text) == 17");
+    assert_ne!(longer, SOURCE);
+    let longer_source = parsed(&longer);
+    let longer_owner = validate_selected(&longer_source).unwrap();
+    let (longer_outcome, longer_used) = run(&longer_owner);
+    assert_eq!(longer_outcome.result, outcome.result);
+    assert_eq!(
+        (
+            longer_outcome.string_materializations,
+            longer_outcome.string_bytes
+        ),
+        (4096, 4096 * 17)
+    );
+    assert_eq!(longer_used - used, 4096 * 14);
+
+    // The unchanged <=32 ordinary control uses the existing evaluator and budget.
+    let control_text = SOURCE.replace("4096", "32");
+    let control =
+        crate::hir::resolve(&crate::check(&control_text, "ordinary32.spx").unwrap()).unwrap();
+    let entry = &control.functions[0];
+    let admitted = std::collections::BTreeMap::from([(entry.id.as_str(), entry)]);
+    let (result, _, _, utf8) = crate::interpreter::evaluate_resolved_entry_with_utf8_budget(
+        entry,
+        &[],
+        &admitted,
+        &control,
+        FUEL,
+        false,
+        Utf8MaterializationBudget::fixed(),
+    );
+    assert!(matches!(result, Ok(Value::Int(496))), "{result:?}");
+    assert_eq!(utf8, (32, 96));
+    assert!(validate_selected(&parsed(&control_text)).is_err());
+}
+#[test]
+fn actual_flat_allocations_match_target_layout_without_per_child_payload_or_map_nodes() {
+    // 33 keeps the observer's fixed4096-entry inventory independent of original4096.
+    let source = parsed(&SOURCE.replace("4096", "33"));
+    let owner = validate_selected(&source).unwrap();
+    let ((result, metrics), refused, _) = crate::bounded_output::with_limit_usage(PHYSICAL, || {
+        owner
+            .with_joined(|joined| {
+                crate::test_allocation_observer::measure(|| {
+                    reserve(Layout::new::<Engine<'_, '_>>()).unwrap();
+                    let mut engine = Box::new(Engine::new(joined.selection(), FUEL).unwrap());
+                    let result = engine
+                        .expression(&joined.selection().function().body, 0)
+                        .unwrap();
+                    assert!(matches!(result, Flat::Scalar(Value::Int(528))));
+                    engine.settle_exit(true).unwrap();
+                    assert!(engine.rows.is_empty() && engine.pending.is_none());
+                    assert_eq!((engine.events, engine.payload), (1, 99));
+                    // All funded allocations are still invocation-local, then physically
+                    // freed here. The observer sees real System allocation/deallocation.
+                    drop(engine);
+                    528
+                })
+            })
+            .unwrap()
+    });
+    assert!(!refused);
+    assert_eq!(result, 528);
+    assert!(!metrics.invalid);
+    assert_eq!(metrics.reallocations, 0);
+    // 33 String backings + Engine + flat slots + Row backing + State + payload + three
+    // simultaneous core tables + two address-stable identity boxes.
+    assert_eq!(metrics.allocations, 33 + 10);
+    assert_eq!(metrics.live, 0);
+    assert_eq!(metrics.freed, metrics.allocated);
+    assert_eq!(metrics.highwater, metrics.allocated);
+}
+#[test]
+fn full_execution_exact_one_short_refuses_without_publication_or_drop_refund() {
+    let source = parsed(&SOURCE.replace("4096", "33"));
+    let owner = validate_selected(&source).unwrap();
+    let (baseline, exact) = run(&owner);
+    let (outcome, refused, used) =
+        crate::bounded_output::with_limit_usage(exact, || execute(&owner, FUEL));
+    assert!(!refused);
+    assert_eq!(used, exact);
+    assert_eq!(outcome.unwrap().result, baseline.result);
+    let ((first, retry), refused, used) =
+        crate::bounded_output::with_limit_usage(exact - 1, || {
+            let first = execute(&owner, FUEL);
+            // Failure poisons this actual physical invocation; cleanup never refunds.
+            let retry = execute(&owner, FUEL);
+            (first, retry)
+        });
+    assert!(refused);
+    assert!(first.is_err() && retry.is_err());
+    assert!(used < exact);
+}
+#[test]
+fn current_context_scope_generation_and_live_payload_loans_guard_receiving_views() {
+    let source = parsed(&SOURCE.replace("4096", "33"));
+    let owner = validate_selected(&source).unwrap();
+    let ((), refused, _) = crate::bounded_output::with_limit_usage(PHYSICAL, || {
+        owner
+            .with_joined(|joined| {
+                let mut engine = Engine::new(joined.selection(), FUEL).unwrap();
+                engine
+                    .expression(&joined.selection().function().body, 0)
+                    .unwrap();
+                let scope = engine.registry.enter().unwrap();
+                let state = engine.registry.state.as_deref().unwrap();
+                let text = TextView {
+                    row: 0,
+                    context: std::ptr::from_ref(state) as usize,
+                    scope: scope.unwrap(),
+                    generation: engine.generation,
+                };
+                assert_eq!(
+                    engine
+                        .bytes(Span::Text(text), |bytes| <[u8; 3]>::try_from(bytes)
+                            .unwrap())
+                        .unwrap(),
+                    [195, 169, 0]
+                );
+                for mutant in [
+                    TextView {
+                        context: text.context ^ 1,
+                        ..text
+                    },
+                    TextView { row: 33, ..text },
+                    TextView {
+                        generation: text.generation - 1,
+                        ..text
+                    },
+                    TextView {
+                        scope: u64::MAX,
+                        ..text
+                    },
+                ] {
+                    assert!(engine.bytes(Span::Text(mutant), <[u8]>::len).is_err());
+                }
+                let super::super::Backing::Leased(lease) =
+                    &engine.rows[0].payload.as_ref().unwrap().bytes
+                else {
+                    panic!()
+                };
+                let view = engine.registry.borrow(lease).unwrap();
+                assert!(engine.sort().is_err());
+                engine.registry.leave(scope).unwrap();
+                assert!(engine.bytes(Span::Text(text), <[u8]>::len).is_err());
+                assert!(engine.bytes(Span::Payload(view, 3), <[u8]>::len).is_err());
+                engine.sort().unwrap();
+                assert!(engine.bytes(Span::Text(text), <[u8]>::len).is_err());
+                engine.settle_exit(true).unwrap();
+            })
+            .unwrap()
+    });
+    assert!(!refused);
+}
+#[test]
+fn checked_suffix_failure_keeps_exact_status_and_settles_before_reentry() {
+    let changed = SOURCE.replace(
+        "{ total } else { 0 }",
+        "{ total + 9223372036854775807 } else { 0 }",
+    );
+    assert_ne!(changed, SOURCE);
+    let source = parsed(&changed);
+    let owner = validate_selected(&source).unwrap();
+    for _ in 0..3 {
+        let (outcome, refused, _) =
+            crate::bounded_output::with_limit_usage(PHYSICAL, || execute(&owner, FUEL));
+        assert!(!refused);
+        let Failure::Execution {
+            status: Some(status),
+            steps,
+            cleanup_complete,
+        } = outcome.unwrap_err()
+        else {
+            panic!("wrong failure")
+        };
+        let expected = crate::runtime_status::normalize_arithmetic(
+            crate::cleanup_plan::StatusCase::AddOverflow,
+        );
+        assert_eq!(status, expected);
+        assert!(cleanup_complete);
+        assert!(steps > 4096 && steps < FUEL);
+    }
+    let converted = SOURCE.replace(
+        "{ total } else { 0 }",
+        "{ i64_from_usize(18446744073709551615usize) } else { 0 }",
+    );
+    assert_ne!(converted, SOURCE);
+    let converted_source = parsed(&converted);
+    let converted_owner = validate_selected(&converted_source).unwrap();
+    let (outcome, refused, _) =
+        crate::bounded_output::with_limit_usage(PHYSICAL, || execute(&converted_owner, FUEL));
+    assert!(!refused);
+    let Failure::Execution {
+        status: Some(status),
+        cleanup_complete: true,
+        ..
+    } = outcome.unwrap_err()
+    else {
+        panic!("conversion status or settlement was lost")
+    };
+    assert_eq!(
+        status,
+        crate::conformance::NormalizedStatus::try_new(
+            crate::string_ops::CONVERT_STATUS_DOMAIN,
+            crate::string_ops::CONVERT_OUT_OF_RANGE_CODE,
+            crate::conformance::StatusClass::Adapter,
+            crate::conformance::Retryability::Known(false),
+        )
+        .unwrap()
+    );
+    let normal_source = parsed(SOURCE);
+    assert_eq!(
+        run(&validate_selected(&normal_source).unwrap()).0.result,
+        4096 * 4095 / 2
+    );
+}

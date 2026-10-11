@@ -3,6 +3,7 @@
 //! installing a Plan; ordinary evaluators have no plan and allocate no state.
 use super::{Flow, Value};
 mod carriers;
+pub(crate) mod selected;
 use crate::construction_fusion::domain::owner_core::{Child, Core, Loan, Receipt, Runtime};
 use crate::construction_fusion::domain::{Issuer, ModuleIdentity, Refusal, MAX_VIEWS};
 use crate::hir::ResolvedExpr;
@@ -230,16 +231,6 @@ impl Registry<'_> {
         {
             return Ok(());
         }
-        let state = self
-            .state
-            .as_deref_mut()
-            .ok_or_else(|| guard(Refusal::Phase))?;
-        if state.issued != state.published + 1 {
-            return Err(guard(Refusal::Unpublished));
-        }
-        if self.failed {
-            return Err(guard(Refusal::Phase));
-        }
         let mut found = None;
         if let Value::Record(record) = value {
             for value in record.fields.values() {
@@ -252,7 +243,23 @@ impl Registry<'_> {
                 }
             }
         }
-        let lease = found.ok_or_else(|| guard(Refusal::Identity))?;
+        self.publish_lease(expression, found.ok_or_else(|| guard(Refusal::Identity))?)
+    }
+    fn publish_lease(&mut self, expression: &ResolvedExpr, lease: &Lease) -> Result<(), Flow> {
+        if !self
+            .plan
+            .as_ref()
+            .is_some_and(|plan| std::ptr::eq(plan.push, expression))
+        {
+            return Err(guard(Refusal::Identity));
+        }
+        let state = self
+            .state
+            .as_deref_mut()
+            .ok_or_else(|| guard(Refusal::Phase))?;
+        if self.failed || state.issued != state.published + 1 {
+            return Err(guard(Refusal::Unpublished));
+        }
         if !lease.owner
             || lease.index != state.published
             || lease.context != std::ptr::from_ref(&*state) as usize
