@@ -52,6 +52,13 @@ pub(in crate::source_verify) fn verify_selected<'p>(
 
 /// Private factory only: all source passes, with the explicit partition
 /// availability guard removed. This does not grant HIR or runtime authority.
+#[cfg_attr(
+    not(test),
+    allow(
+        dead_code,
+        reason = "private partition source factory has no ordinary route"
+    )
+)]
 pub(crate) fn verify_partition(program: &Program) -> Vec<Diagnostic> {
     verify_profile(program, None, None, true)
 }

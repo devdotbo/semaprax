@@ -22,10 +22,9 @@ impl<'owner, 'source> Projection<'owner, 'source> {
                     function.id.as_str(),
                     owner.program().entrypoint.as_str(),
                     work,
-                )? {
-                    if entry.replace(function).is_some() {
-                        return Err(error("partition native entry is duplicated"));
-                    }
+                )? && entry.replace(function).is_some()
+                {
+                    return Err(error("partition native entry is duplicated"));
                 }
             }
             let entry = entry.ok_or_else(|| error("partition native entry is absent"))?;

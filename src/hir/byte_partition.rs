@@ -14,6 +14,13 @@ pub(crate) struct ValidatedPartitionProgram<'source> {
     source: &'source crate::ast::Program,
     program: ResolvedProgram,
 }
+#[cfg_attr(
+    not(test),
+    allow(
+        dead_code,
+        reason = "private partition source factory has no ordinary route"
+    )
+)]
 impl<'source> ValidatedPartitionProgram<'source> {
     pub(crate) fn compile_source(
         source: &'source crate::ast::Program,

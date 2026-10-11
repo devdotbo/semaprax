@@ -396,8 +396,7 @@ impl<'a> Lower<'a> {
         let open = || self.scopes.iter().flat_map(|scope| scope.views.iter());
         let view = match &e.kind {
             K::VecFieldRead { .. } => open()
-                .filter(|view| view.loan.site == e.id)
-                .last()
+                .rfind(|view| view.loan.site == e.id)
                 .map(|view| view.local),
             K::Place(place) if place.projections.is_empty() => self
                 .bindings
