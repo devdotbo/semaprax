@@ -7,8 +7,15 @@ pub(super) fn run(program: &ResolvedProgram, failure: bool) {
     run_expected(program, failure, 42);
 }
 pub(super) fn run_expected(program: &ResolvedProgram, failure: bool, expected: i64) {
-    let interpreted =
-        crate::interpreter::evaluate_resolved_zero_arg_i64(program, "app.main", 100_000).unwrap();
+    run_profile(program, failure, expected, crate::interpreter::ResolvedFunctionProfile::Legacy);
+}
+pub(super) fn run_owned_expected(program: &ResolvedProgram, failure: bool, expected: i64) {
+    run_profile(program, failure, expected, crate::interpreter::ResolvedFunctionProfile::OwnedData);
+}
+fn run_profile(program: &ResolvedProgram, failure: bool, expected: i64,
+    profile: crate::interpreter::ResolvedFunctionProfile) {
+    let interpreted = crate::interpreter::evaluate_resolved_profile_i64_entry(
+        program, "app.main", 100_000, profile).unwrap();
     if failure {
         assert!(matches!(
             interpreted.outcome,

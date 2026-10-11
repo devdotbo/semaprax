@@ -234,7 +234,7 @@ fn decoded_ready_wire_and_cleanup_match_complete_imports_with_private_descendant
             for id in ["decoded", "report", "config", "row"] {
                 assert!(linked.types.iter().any(|ty| ty.id.as_str() == id));
             }
-            super::function_runtime::run_expected(&linked, false, if ready { 42 } else { 7 });
+            super::function_runtime::run_owned_expected(&linked, false, if ready { 42 } else { 7 });
         }
         let failed = provider.replace(
             "fn encode(value: borrow Report) -> string\n{",
@@ -246,7 +246,7 @@ fn decoded_ready_wire_and_cleanup_match_complete_imports_with_private_descendant
             .linked_owned_data_api_program_with_roots("function_layout.app", &[])
             .unwrap();
         crate::hir::validate(&linked).unwrap();
-        super::function_runtime::run_expected(&linked, true, 42);
+        super::function_runtime::run_owned_expected(&linked, true, 42);
     }
     let parsed = programs(&inferred, &provider);
     let authored = index_authored(&parsed).unwrap();
@@ -282,7 +282,7 @@ fn decoded_ready_wire_and_cleanup_match_complete_imports_with_private_descendant
         .linked_owned_data_api_program_with_roots("function_layout.app", &[])
         .unwrap();
     crate::hir::validate(&changed).unwrap();
-    super::function_runtime::run_expected(&changed, false, 0);
+    super::function_runtime::run_owned_expected(&changed, false, 0);
     // Retained private layouts must match the current complete provider layout.
     let mut modules = parsed
         .iter()

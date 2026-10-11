@@ -54,6 +54,8 @@ class Counter {
         self.value
     }
 }
+@id("classes.helper")
+fn helper() -> i64 { 0 }
 "#;
 
 // Foreign declarations whose own identities equal current child entries.
