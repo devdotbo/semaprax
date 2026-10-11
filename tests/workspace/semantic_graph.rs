@@ -349,6 +349,7 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
         concat!(
             concat!(
                 include_str!("../../src/workspace_graph.rs"),
+                include_str!("../../src/workspace_graph/import_validation.rs"),
                 include_str!("../../src/workspace_graph/retain_module.rs"),
                 include_str!("../../src/workspace_graph/static_text.rs"),
                 include_str!("../../src/workspace_graph/static_text/primitive.rs"),
@@ -448,7 +449,8 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
         concat!(
             concat!(
                 include_str!("../../src/workspace_graph/expected_projection.rs"),
-                include_str!("../../src/workspace_graph/expected_projection/vec_constructor.rs")
+                include_str!("../../src/workspace_graph/expected_projection/vec_constructor.rs"),
+                include_str!("../../src/workspace_graph/expected_projection/held_projection.rs")
             ),
             "\n",
             include_str!("../../src/workspace_graph/expected_projection/record_traversal.rs")
@@ -484,6 +486,12 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
         include_str!("../../src/workspace_graph/expected_projection/type_rewrite.rs");
     let projection_private_layout = concat!(
         include_str!("../../src/workspace_graph/expected_projection/private_layout.rs"),
+        include_str!("../../src/workspace_graph/expected_projection/private_layout/registry.rs"),
+        include_str!("../../src/workspace_graph/expected_projection/private_layout/sorting.rs"),
+        include_str!("../../src/workspace_graph/expected_projection/private_layout/ledger.rs"),
+        include_str!(
+            "../../src/workspace_graph/expected_projection/private_layout/registry/tests.rs"
+        ),
         include_str!("../../src/workspace_graph/expected_projection/private_layout/names.rs"),
         include_str!("../../src/workspace_graph/expected_projection/private_layout/shape.rs"),
         include_str!("../../src/workspace_graph/expected_projection/private_layout/roots.rs"),

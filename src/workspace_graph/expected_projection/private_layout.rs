@@ -6,12 +6,18 @@ use std::collections::BTreeMap;
 use std::fmt::Write;
 #[path = "private_layout/authority.rs"]
 pub(in crate::workspace_graph) mod authority;
+#[path = "private_layout/ledger.rs"]
+mod ledger;
 #[path = "private_layout/names.rs"]
 mod names;
+#[path = "private_layout/registry.rs"]
+pub(in crate::workspace_graph) mod registry;
 #[path = "private_layout/roots.rs"]
 mod roots;
 #[path = "private_layout/shape.rs"]
 mod shape;
+#[path = "private_layout/sorting.rs"]
+mod sorting;
 use shape::{debit, explicit_only, scalar, validate_declaration, validate_root, Absence};
 
 #[path = "private_layout/owner_index.rs"]
@@ -57,8 +63,16 @@ impl<'a> LayoutClosure<'a> {
         authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,
         programs: &'a [Program],
     ) -> Result<Self, Vec<Diagnostic>> {
-        let mut remaining = WORK;
-        if explicit_only(caller, authored, programs, &mut remaining)? != Absence::Possible {
+        Self::derive_with_work(caller, authored, programs, &mut WORK, None)
+    }
+    pub(in crate::workspace_graph) fn derive_with_work(
+        caller: &Program,
+        authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,
+        programs: &'a [Program],
+        remaining: &mut usize,
+        ledger: Option<&std::rc::Rc<ledger::Ledger>>,
+    ) -> Result<Self, Vec<Diagnostic>> {
+        if explicit_only(caller, authored, programs, remaining)? != Absence::Possible {
             return Ok(Self {
                 entries: Vec::new(),
                 owners: None,
@@ -77,7 +91,7 @@ impl<'a> LayoutClosure<'a> {
             authored,
             programs,
             &mut frames,
-            &mut remaining,
+            remaining,
             |_, _, _| {
                 count = count.checked_add(1usize).ok_or_else(refusal)?;
                 Ok(())
@@ -90,7 +104,7 @@ impl<'a> LayoutClosure<'a> {
             });
         }
         let mut ordinal = names::first(caller)?;
-        debit(&mut remaining, programs.len())?;
+        debit(remaining, programs.len())?;
         let capacity = programs
             .iter()
             .try_fold(0usize, |n, p| n.checked_add(p.types.len()))
@@ -109,7 +123,7 @@ impl<'a> LayoutClosure<'a> {
             authored,
             programs,
             &mut frames,
-            &mut remaining,
+            remaining,
             |module, declaration, remaining| {
                 let scan = entries
                     .iter()
@@ -142,28 +156,11 @@ impl<'a> LayoutClosure<'a> {
                 Ok(())
             },
         )?;
-        remaining = remaining
-            .checked_sub(
-                entries
-                    .len()
-                    .checked_mul(entries.len())
-                    .and_then(|n| {
-                        n.checked_mul(
-                            entries
-                                .iter()
-                                .map(|e| e.declaration.stable_id.len())
-                                .max()
-                                .unwrap_or(0)
-                                .checked_add(1)?,
-                        )
-                    })
-                    .ok_or_else(refusal)?,
-            )
-            .ok_or_else(refusal)?;
-
-        entries.sort_unstable_by(|a, b| a.declaration.stable_id.cmp(&b.declaration.stable_id));
+        sorting::sort(&mut entries, remaining, |a, b, work| {
+            sorting::identity(&a.declaration.stable_id, &b.declaration.stable_id, work)
+        })?;
         let owners =
-            owner_index::Owners::build(caller, authored, programs, &entries, &mut remaining)?;
+            owner_index::Owners::build(caller, authored, programs, &entries, remaining, ledger)?;
         Ok(Self {
             entries,
             owners: Some(owners),

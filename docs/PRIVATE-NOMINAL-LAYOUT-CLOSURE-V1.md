@@ -113,13 +113,24 @@ allocation-free repeated queries;
 exact/one-short complete construction, shared lookup work, and observed absence
 of legacy fallback after refusal; and duplicate
 provider names/aliases plus cold/reconstructed layout and retained-HIR drift.
-Import validation holds one caller directory across its import loop. Forecasting
-and synthetic stub construction each reuse their already-held closure for all
-signature queries and naming/rewrite operations. Those separate phase boundaries
-still independently reconstruct the closure; no global cache or cross-phase
-validation lease is introduced. Directory construction currently prepays a
-conservative quadratic in-place sort allowance; this tranche claims logarithmic
-site queries, not optimal wide-directory construction.
+One lazy invocation-local registry now holds each selected caller directory across
+import validation, retention and cached/uncached forecasts, synthetic stub
+construction, and core retries. Exact caller, provider-slice and authored-index
+pointers bind every lookup. All caller directories share one work ledger and
+sticky refusal; a failed query poisons subsequent derivation and queries.
+Preparation reserves actual directory, frame, name and shared-ledger backing
+before allocation. Its monotonic receipt is carried into every core attempt and
+retention forecast, including retained overlap. The no-inference route creates
+no registry backing. There is no global cache or serialized validation lease.
+
+Entry, nominal-fact and signature-site ordering uses allocation-free fallible
+heapsort. Identity-byte comparisons and swaps debit the same remaining work
+before execution; refusal never publishes an incomplete directory. The four
+`private_layout::registry::tests::` definitions compare held and independent
+projections, exercise a real invocation with 64 signature sites, exact/one-short
+preparation and overlap, independent ordering, and interleaved callers sharing
+one sticky ledger. Direct forecast controls cover cached and retry modes;
+existing owning cache/retry gates remain required for actual phase qualification.
 
 These definitions have not been executed for this tranche. No current-head
 interpreter/native/Wasm, cache, benchmark, source-size saving, or matrix promotion

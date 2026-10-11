@@ -3702,7 +3702,12 @@ a supported language, CLI, ABI, or runtime surface.
 record signatures over Bytes and Copy scalars. Its `text_collections` helper
 replays finite String/vector result variants and explicit root imports.
 `expected_projection/private_layout.rs` independently reconstructs their private
-record descendants from held provider declarations; its `names` child reserves
+record descendants from held provider declarations. Its `registry` and `ledger`
+children hold lazy caller directories, one sticky work remainder and a monotonic
+preparation receipt across forecasts, synthetic construction and core retries;
+`sorting` owns fallible allocation-free ordering. `held_projection` and
+`workspace_graph/import_validation` retain the ordinary projection/import checks.
+Its `names` child reserves
 fresh synthetic names against every identifier in the bounded plain-module
 caller. Its `authority` child reconstructs borrowed private type/provider roots
 and both signature validators compare exact current provider layouts. Copied declarations and prototypes use those names without adding source

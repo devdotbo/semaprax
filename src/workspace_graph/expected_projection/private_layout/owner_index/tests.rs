@@ -72,13 +72,13 @@ fn held_signature_sites_match_independent_walk_without_per_query_backing() {
         .max()
         .unwrap();
     for parameter in &function.params {
-        let before = owners.remaining.get();
+        let before = owners.ledger.remaining.get();
         assert_eq!(
             held.signature_owner(&wide[0], target, &parameter.ty, &wide_authored, &wide)
                 .unwrap(),
             Some(true)
         );
-        let charged = before - owners.remaining.get();
+        let charged = before - owners.ledger.remaining.get();
         assert!(charged <= 1 + probes * (function.stable_id.len() + max_id + 1));
         assert_eq!(
             signature_owner(
@@ -132,29 +132,29 @@ fn held_signature_directory_has_exact_one_short_storage_and_shared_lookup_work()
     let owners = layout.owners.as_ref().unwrap();
     let target = authored.get("make").unwrap();
     let ty = &target.function.unwrap().return_type;
-    let start = owners.remaining.get();
+    let start = owners.ledger.remaining.get();
     layout
         .signature_owner(&parsed[0], target, ty, &authored, &parsed)
         .unwrap();
-    let exact = start - owners.remaining.get();
+    let exact = start - owners.ledger.remaining.get();
     assert!(exact > 0);
-    owners.remaining.set(exact);
+    owners.ledger.remaining.set(exact);
     assert_eq!(
         layout
             .signature_owner(&parsed[0], target, ty, &authored, &parsed)
             .unwrap(),
         Some(true)
     );
-    assert_eq!(owners.remaining.get(), 0);
-    owners.remaining.set(exact - 1);
+    assert_eq!(owners.ledger.remaining.get(), 0);
+    owners.ledger.remaining.set(exact - 1);
     assert!(layout
         .signature_owner(&parsed[0], target, ty, &authored, &parsed)
         .is_err());
     assert!(layout
         .signature_owner(&parsed[0], target, ty, &authored, &parsed)
         .is_err());
-    assert!(owners.failed.get());
-    assert_eq!(owners.remaining.get(), 0);
+    assert!(owners.ledger.failed.get());
+    assert_eq!(owners.ledger.remaining.get(), 0);
     let ((admitted, overflow, backing), legacy_scans) =
         crate::workspace_graph::owned_function_import::with_legacy_record_scans(|| {
             crate::bounded_output::with_limit_usage(0, || {
@@ -173,7 +173,7 @@ fn held_signature_directory_has_exact_one_short_storage_and_shared_lookup_work()
         "private refusal must not enter the legacy allocating scanner"
     );
     assert_eq!(backing, 0);
-    assert_eq!(owners.remaining.get(), 0);
+    assert_eq!(owners.ledger.remaining.get(), 0);
 }
 #[test]
 fn duplicate_provider_names_and_aliases_remain_identity_distinct_and_layout_drift_rederives() {

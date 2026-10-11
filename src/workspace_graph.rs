@@ -11,6 +11,8 @@
 mod builder_bytes_report;
 mod callee_inventory;
 mod checked_value_retention;
+#[path = "workspace_graph/import_validation.rs"]
+mod import_validation;
 use checked_value_retention::retained_signature_type_facts;
 mod dependency_pruning;
 pub(crate) mod diagnostics;
@@ -19,7 +21,6 @@ mod generic_type_import;
 mod operation_sidecar;
 mod owned_function_import;
 use callee_inventory::resolved_function_callees;
-use owned_function_import::validate_imported_function;
 mod agent_execution;
 mod indexed_rust;
 mod loan_retention;
@@ -4113,7 +4114,14 @@ fn build_owned_inner(
     let module_paths = index_modules(&programs)?;
     let authored = index_authored(&programs)?;
     validate_synthetic_main_id_collisions(&programs, &authored)?;
-    validate_uses(&programs, &module_paths, &authored)?;
+    let layouts =
+        expected_projection::private_layout::registry::LayoutRegistry::new(&programs, &authored);
+    import_validation::validate_uses_with_registry(
+        &programs,
+        &module_paths,
+        &authored,
+        Some(&layouts),
+    )?;
     let dependency_depths = validate_dependency_dag(&programs)?;
     let retention = if frontend
         .as_deref()
@@ -4124,14 +4132,20 @@ fn build_owned_inner(
         expected_projection::cached_exact::Retention::Parsed
     };
     let (mut resolve_builder_bytes, checked_retention_prebound, allow_uncached_peak, initial_mode) =
-        expected_projection::cached_exact::initial(
+        expected_projection::cached_exact::initial_with_registry(
             &programs,
             &authored,
             frontend.is_none(),
             retention,
+            Some(&layouts),
         )?;
     if let Some(cache) = frontend.as_deref() {
-        cache.checked_retention_prebound(checked_retention_prebound)?;
+        cache.checked_retention_prebound(checked_usage(
+            checked_retention_prebound,
+            layouts.receipt(),
+            "builder_bytes",
+            active_builder_limit(),
+        )?)?;
     }
     // Each isolated attempt keeps the parent's monotonic debit.
     let mut retry_allowed = active_builder_limit() == MAX_BUILDER_BYTES
@@ -4151,11 +4165,16 @@ fn build_owned_inner(
         CORE_BUILD_ATTEMPTS.with(|attempts| attempts.set(attempts.get() + 1));
         let compact_layout = (fallback_mode == 6)
             .then(|| {
-                expected_projection::uncached_peak::uncached_output_layout(&programs, &authored)
+                expected_projection::uncached_peak::uncached_output_layout_with_registry(
+                    &programs,
+                    &authored,
+                    Some(&layouts),
+                )
             })
             .transpose()?;
         let (core, overflowed, consumed, refusal) =
             crate::bounded_output::with_limit_usage_refusal(active_builder_limit(), || {
+                reserve_builder_structure(layouts.receipt())?;
                 staged!(CorePrebound, charge_builder_prebound(resolve_builder_bytes))?;
                 build_resolved_core(
                     &programs,
@@ -4164,6 +4183,7 @@ fn build_owned_inner(
                     &authored,
                     Some(&sources),
                     frontend.as_deref_mut(),
+                    &layouts,
                     compact_layout
                         .as_ref()
                         .map(|layout| &layout.order[..programs.len()]),
@@ -4191,8 +4211,11 @@ fn build_owned_inner(
         // Mode six replaces an overflowing all-HIR carrier with the bounded
         // sequential filtered-output/index plus one-full-HIR peak.
         if fallback_mode == 5 {
-            let (tighter, _) =
-                expected_projection::uncached_output_peak_prebound(&programs, &authored)?;
+            let (tighter, _) = expected_projection::uncached_output_peak_prebound_with_registry(
+                &programs,
+                &authored,
+                Some(&layouts),
+            )?;
             resolve_builder_bytes = tighter;
             fallback_mode = 6;
             continue;
@@ -4202,27 +4225,35 @@ fn build_owned_inner(
             checkpoint = cache.checkpoint_core_attempt();
         }
         let (tighter, total) = if allow_uncached_peak {
-            expected_projection::next_retention_prebound_with_uncached_peak(
+            expected_projection::next_retention_prebound_with_uncached_peak_with_registry(
                 &programs,
                 &authored,
                 resolve_builder_bytes,
                 &mut fallback_mode,
                 true,
+                Some(&layouts),
             )?
         } else {
-            expected_projection::cached_exact::next(
+            expected_projection::cached_exact::next_with_registry(
                 &programs,
                 &authored,
                 resolve_builder_bytes,
                 &mut fallback_mode,
                 retention,
+                Some(&layouts),
             )?
         };
         if let Some(cache) = frontend.as_deref() {
-            cache.checked_retention_prebound(total)?;
+            cache.checked_retention_prebound(checked_usage(
+                total,
+                layouts.receipt(),
+                "builder_bytes",
+                active_builder_limit(),
+            )?)?;
         }
         resolve_builder_bytes = tighter;
     };
+    drop(layouts);
     let (mut modules, module_paths, dependency_depths, declaration_facts, expected_edges) = core?;
     for module in &mut modules {
         module.native_law = native_law_paths.contains(&module.path);
@@ -4336,15 +4367,23 @@ fn build_resolved_core(
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
     authenticated_sources: Option<&[WorkspaceSource]>,
     mut frontend: Option<&mut crate::project::incremental::FrontendPass>,
+    layouts: &expected_projection::private_layout::registry::LayoutRegistry<'_>,
     compact_order: Option<&[usize]>,
 ) -> Result<ResolvedCore, Vec<Diagnostic>> {
     let retained_output_only = compact_order.is_some();
     let mut loan_scratch = loan_retention::RetentionScratch::default();
     let mut expected_edges = Vec::new();
     for program in programs {
-        staged!(ExpectedEdges, collect_expected_edges(
-            program, programs, module_paths, authored, &mut expected_edges,
-        ))?;
+        staged!(
+            ExpectedEdges,
+            collect_expected_edges(
+                program,
+                programs,
+                module_paths,
+                authored,
+                &mut expected_edges,
+            )
+        )?;
     }
     reserve_builder_structure(
         programs
@@ -4373,16 +4412,22 @@ fn build_resolved_core(
     for index in 0..programs.len() {
         let program = &programs[compact_order.map_or(index, |order| order[index])];
         if retained_output_only {
-            expected_projection::uncached_peak::charge_uncached_synthetic_ast(
+            expected_projection::uncached_peak::charge_uncached_synthetic_ast_with_registry(
                 program,
                 authored,
                 programs,
                 &mut synthetic_ast_peak,
+                Some(layouts),
             )?;
         }
         let synthetic = staged!(
             SyntheticModule,
-            synthetic_program(program, authored, programs)
+            expected_projection::synthetic_program_with_registry(
+                program,
+                authored,
+                programs,
+                Some(layouts)
+            )
         )?;
         // Exact stubs/spans and the unconditional prebound govern hits.
         let cached = frontend
@@ -4460,7 +4505,10 @@ fn build_resolved_core(
             }
             (resolved, static_text)
         };
-        staged!(ResolvedCallEdges, verify_resolved_call_edges(program, &resolved, authored))?;
+        staged!(
+            ResolvedCallEdges,
+            verify_resolved_call_edges(program, &resolved, authored)
+        )?;
         if let Some(validation) = validation.as_mut() {
             validation.record_module(&program.module, &resolved, programs)?;
             let (module, imported_instances) = staged!(
@@ -4493,11 +4541,20 @@ fn build_resolved_core(
         modules.sort_unstable_by(|left, right| left.path.cmp(&right.path));
     }
     let declarations = if let Some(validation) = validation {
-        staged!(StubSignatures, validation.validate_stub_signatures(programs))?;
+        staged!(
+            StubSignatures,
+            validation.validate_stub_signatures(programs)
+        )?;
         staged!(DeclarationFacts, validation.finish(programs))?
     } else {
-        staged!(StubSignatures, validate_stub_signatures(programs, &synthetic_modules))?;
-        let declarations = staged!(DeclarationFacts, reconstruct_workspace_declaration_facts(&synthetic_modules, programs))?;
+        staged!(
+            StubSignatures,
+            validate_stub_signatures(programs, &synthetic_modules)
+        )?;
+        let declarations = staged!(
+            DeclarationFacts,
+            reconstruct_workspace_declaration_facts(&synthetic_modules, programs)
+        )?;
         let programs_by_module = programs
             .iter()
             .map(|program| (program.module.as_str(), program))
@@ -4530,19 +4587,31 @@ fn build_resolved_core(
         declarations
     };
     owned_generics::attach_imported_vec_instances(&mut modules, imported_vec_instances)?;
-    staged!(RetainedFacts, retained_validation::validate_core_facts(
-        programs, &modules, &expected_edges, compact_order.is_some(),
-    ))?;
-    staged!(RetainedFacts, validate_retained_declaration_shapes(&modules, &declarations))?;
-    let owned_module_paths = staged!(CoreDirectories, module_paths
-        .iter()
-        .map(|(module, path)| {
-            (
-                crate::bounded_output::budgeted_clone(module),
-                crate::bounded_output::budgeted_clone(path),
-            )
-        })
-        .collect());
+    staged!(
+        RetainedFacts,
+        retained_validation::validate_core_facts(
+            programs,
+            &modules,
+            &expected_edges,
+            compact_order.is_some(),
+        )
+    )?;
+    staged!(
+        RetainedFacts,
+        validate_retained_declaration_shapes(&modules, &declarations)
+    )?;
+    let owned_module_paths = staged!(
+        CoreDirectories,
+        module_paths
+            .iter()
+            .map(|(module, path)| {
+                (
+                    crate::bounded_output::budgeted_clone(module),
+                    crate::bounded_output::budgeted_clone(path),
+                )
+            })
+            .collect()
+    );
     if dependency_depths.len() != module_paths.len()
         || dependency_depths
             .keys()
@@ -4553,10 +4622,13 @@ fn build_resolved_core(
             "workspace dependency-depth keys disagree with authenticated modules",
         )]);
     }
-    let owned_dependency_depths = staged!(CoreDirectories, dependency_depths
-        .iter()
-        .map(|(module, depth)| (crate::bounded_output::budgeted_clone(module), *depth))
-        .collect());
+    let owned_dependency_depths = staged!(
+        CoreDirectories,
+        dependency_depths
+            .iter()
+            .map(|(module, depth)| (crate::bounded_output::budgeted_clone(module), *depth))
+            .collect()
+    );
     Ok((
         modules,
         owned_module_paths,
@@ -4697,7 +4769,9 @@ impl<'a> CheckedValueNode<'a> {
                     .copied()
                     .map(Self::Expression),
                 E::Block { statements, tail }
-                | E::VecConstructor { statements, tail, .. } => {
+                | E::VecConstructor {
+                    statements, tail, ..
+                } => {
                     if index < statements.len() {
                         statements.get(index).map(Self::Statement)
                     } else {
@@ -5206,145 +5280,7 @@ fn validate_uses(
     modules: &BTreeMap<&str, &str>,
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
 ) -> Result<(), Vec<Diagnostic>> {
-    for program in programs {
-        let mut function_aliases = BTreeSet::new();
-        let mut type_aliases = BTreeSet::new();
-        let mut protocol_aliases = BTreeSet::new();
-        let mut imported_targets = BTreeSet::new();
-        let local_functions = program
-            .functions
-            .iter()
-            .map(|item| item.name.as_str())
-            .chain(
-                program
-                    .interfaces
-                    .iter()
-                    .flat_map(|interface| &interface.imports)
-                    .map(|import| import.name.as_str()),
-            )
-            .collect::<BTreeSet<_>>();
-        let local_types = program
-            .types
-            .iter()
-            .map(|item| item.name.as_str())
-            .chain(
-                prelude::declarations()
-                    .iter()
-                    .map(|item| item.name.as_str()),
-            )
-            .collect::<BTreeSet<_>>();
-        let local_protocols = program
-            .protocols
-            .iter()
-            .map(|item| item.name.as_str())
-            .collect::<BTreeSet<_>>();
-        let workspace_type_aliases = program
-            .module_uses
-            .iter()
-            .filter(|item| item.kind == ModuleUseKind::Type)
-            .map(|item| item.alias.as_str())
-            .collect::<BTreeSet<_>>();
-        for interface in &program.interfaces {
-            for import in &interface.imports {
-                for param in &import.params {
-                    if type_contains_name_from(&param.ty, &workspace_type_aliases) {
-                        return Err(vec![Diagnostic::error(
-                            "SPX-G172",
-                            "workspace type aliases are not admitted in interface/import parameter carriers",
-                            param.span,
-                        )
-                        .at_path(&program.path)]);
-                    }
-                }
-            }
-        }
-        let mut private_layout = None;
-        for module_use in &program.module_uses {
-            if module_use
-                .persistent_id
-                .starts_with(crate::vec_ops::sort_keys::PREFIX)
-            {
-                return Err(vec![use_error(
-                    program,
-                    module_use,
-                    "compiler-owned explicit sort descriptors cannot be imported",
-                )]);
-            }
-            if !imported_targets.insert((module_use.kind, module_use.persistent_id.as_str())) {
-                return Err(vec![use_error(
-                    program,
-                    module_use,
-                    "the same workspace target is imported more than once",
-                )]);
-            }
-            if module_use.target_module == program.module
-                || !modules.contains_key(module_use.target_module.as_str())
-            {
-                return Err(vec![use_error(
-                    program,
-                    module_use,
-                    "target module is missing or equals the caller module",
-                )]);
-            }
-            let alias_conflicts = match module_use.kind {
-                ModuleUseKind::Function => {
-                    !function_aliases.insert(module_use.alias.as_str())
-                        || local_functions.contains(module_use.alias.as_str())
-                        || module_use.alias == "main"
-                        || crate::vec_ops::by_name(&module_use.alias).is_some()
-                }
-                ModuleUseKind::Type => {
-                    !type_aliases.insert(module_use.alias.as_str())
-                        || local_types.contains(module_use.alias.as_str())
-                }
-                ModuleUseKind::Protocol => {
-                    !protocol_aliases.insert(module_use.alias.as_str())
-                        || local_protocols.contains(module_use.alias.as_str())
-                }
-            };
-            if alias_conflicts {
-                return Err(vec![use_error(
-                    program,
-                    module_use,
-                    "alias is duplicated or shadows a local/prelude declaration",
-                )]);
-            }
-            let target = authored
-                .get(module_use.persistent_id.as_str())
-                .ok_or_else(|| {
-                    vec![diagnostics::unknown_import_error(
-                        program, module_use, modules,
-                    )]
-                })?;
-            let expected = match module_use.kind {
-                ModuleUseKind::Function => AuthoredKind::Function,
-                ModuleUseKind::Type => AuthoredKind::Type,
-                ModuleUseKind::Protocol => AuthoredKind::Protocol,
-            };
-            if !target.explicit
-                || target.module != module_use.target_module
-                || target.kind != expected
-            {
-                return Err(vec![use_error(
-                    program,
-                    module_use,
-                    "target module, declaration kind, or explicit identity disagrees",
-                )]);
-            }
-            match module_use.kind {
-                ModuleUseKind::Function => {
-                    validate_imported_function(
-                        program, module_use, target, authored, programs, &mut private_layout,
-                    )?
-                }
-                ModuleUseKind::Type => {
-                    validate_imported_type(program, module_use, target, authored, programs)?;
-                }
-                ModuleUseKind::Protocol => {}
-            }
-        }
-    }
-    Ok(())
+    import_validation::validate_uses_with_registry(programs, modules, authored, None)
 }
 fn signature_type_is_admitted(
     module: &str,

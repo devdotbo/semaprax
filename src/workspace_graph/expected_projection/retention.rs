@@ -1,8 +1,10 @@
 //! Summed legacy retention receipts; no execution-phase peak permission.
+use super::private_layout::registry::LayoutRegistry;
 use super::{
-    AuthoredDeclaration, active_builder_limit, checked_usage, cost, dependency_identity_max,
-    next_retention_prebound_with_uncached_peak, synthetic_builder_bytes,
-    synthetic_builder_bytes_scoped, uncached_peak_prebound,
+    active_builder_limit, checked_usage, cost, dependency_identity_max,
+    next_retention_prebound_with_uncached_peak_with_registry,
+    synthetic_builder_bytes_scoped_with_registry, synthetic_builder_bytes_with_registry,
+    uncached_peak_prebound_with_registry, AuthoredDeclaration,
 };
 use crate::{ast::Program, diagnostic::Diagnostic};
 use std::collections::BTreeMap;
@@ -13,7 +15,14 @@ pub(in crate::workspace_graph) fn checked_retention_prebound(
     programs: &[Program],
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
 ) -> Result<(usize, usize), Vec<Diagnostic>> {
-    checked_retention_prebound_with_uncached_peak(programs, authored, false)
+    checked_retention_prebound_with_registry(programs, authored, None)
+}
+pub(in crate::workspace_graph) fn checked_retention_prebound_with_registry(
+    programs: &[Program],
+    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+    registry: Option<&LayoutRegistry<'_>>,
+) -> Result<(usize, usize), Vec<Diagnostic>> {
+    checked_retention_prebound_with_uncached_peak_with_registry(programs, authored, false, registry)
 }
 
 /// Modes zero through four preserve existing receipts. The uncached core
@@ -25,23 +34,44 @@ pub(in crate::workspace_graph) fn checked_retention_prebound_with_uncached_peak(
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
     allow_uncached_peak: bool,
 ) -> Result<(usize, usize), Vec<Diagnostic>> {
-    match retention_prebound(programs, authored, false) {
+    checked_retention_prebound_with_uncached_peak_with_registry(
+        programs,
+        authored,
+        allow_uncached_peak,
+        None,
+    )
+}
+pub(in crate::workspace_graph) fn checked_retention_prebound_with_uncached_peak_with_registry(
+    programs: &[Program],
+    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+    allow_uncached_peak: bool,
+    registry: Option<&LayoutRegistry<'_>>,
+) -> Result<(usize, usize), Vec<Diagnostic>> {
+    match retention_prebound_with_registry(programs, authored, false, registry) {
         Ok(costs) => Ok(costs),
         Err(errors) if cost::is_builder_refusal(&errors) => {
-            match retention_prebound(programs, authored, true) {
+            match retention_prebound_with_registry(programs, authored, true, registry) {
                 Ok(costs) => Ok(costs),
                 Err(errors) if cost::is_builder_refusal(&errors) => {
-                    match retention_prebound_mode(programs, authored, true, 2) {
+                    match retention_prebound_mode_with_registry(
+                        programs, authored, true, 2, registry,
+                    ) {
                         Ok(costs) => Ok(costs),
                         Err(errors) if cost::is_builder_refusal(&errors) => {
-                            match retention_prebound_mode(programs, authored, true, 3) {
+                            match retention_prebound_mode_with_registry(
+                                programs, authored, true, 3, registry,
+                            ) {
                                 Err(errors) if cost::is_builder_refusal(&errors) => {
-                                    match retention_prebound_mode(programs, authored, true, 4) {
+                                    match retention_prebound_mode_with_registry(
+                                        programs, authored, true, 4, registry,
+                                    ) {
                                         Err(errors)
                                             if cost::is_builder_refusal(&errors)
                                                 && allow_uncached_peak =>
                                         {
-                                            uncached_peak_prebound(programs, authored)
+                                            uncached_peak_prebound_with_registry(
+                                                programs, authored, registry,
+                                            )
                                         }
                                         result => result,
                                     }
@@ -64,13 +94,30 @@ pub(in crate::workspace_graph) fn retention_prebound(
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
     dependency_scoped: bool,
 ) -> Result<(usize, usize), Vec<Diagnostic>> {
-    retention_prebound_mode(programs, authored, dependency_scoped, 0)
+    retention_prebound_with_registry(programs, authored, dependency_scoped, None)
+}
+pub(in crate::workspace_graph) fn retention_prebound_with_registry(
+    programs: &[Program],
+    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+    dependency_scoped: bool,
+    registry: Option<&LayoutRegistry<'_>>,
+) -> Result<(usize, usize), Vec<Diagnostic>> {
+    retention_prebound_mode_with_registry(programs, authored, dependency_scoped, 0, registry)
 }
 pub(in crate::workspace_graph) fn retention_prebound_mode(
     programs: &[Program],
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
     dependency_scoped: bool,
     layout_mode: u8,
+) -> Result<(usize, usize), Vec<Diagnostic>> {
+    retention_prebound_mode_with_registry(programs, authored, dependency_scoped, layout_mode, None)
+}
+pub(in crate::workspace_graph) fn retention_prebound_mode_with_registry(
+    programs: &[Program],
+    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+    dependency_scoped: bool,
+    layout_mode: u8,
+    registry: Option<&LayoutRegistry<'_>>,
 ) -> Result<(usize, usize), Vec<Diagnostic>> {
     let _precharge = super::super::diagnostics::precharge_scope();
     super::super::diagnostics::begin_precharge_pass();
@@ -90,9 +137,17 @@ pub(in crate::workspace_graph) fn retention_prebound_mode(
             None
         };
         let costs = if maximum.is_some() {
-            synthetic_builder_bytes_scoped(program, authored, programs, maximum, layout_mode, true)?
+            synthetic_builder_bytes_scoped_with_registry(
+                program,
+                authored,
+                programs,
+                maximum,
+                layout_mode,
+                true,
+                registry,
+            )?
         } else {
-            synthetic_builder_bytes(program, authored, programs)?
+            synthetic_builder_bytes_with_registry(program, authored, programs, registry)?
         };
         let charged = if layout_mode >= 3 {
             costs.retained_clone_and_hir
@@ -132,5 +187,21 @@ pub(in crate::workspace_graph) fn next_retention_prebound(
     current: usize,
     layout_mode: &mut u8,
 ) -> Result<(usize, usize), Vec<Diagnostic>> {
-    next_retention_prebound_with_uncached_peak(programs, authored, current, layout_mode, false)
+    next_retention_prebound_with_registry(programs, authored, current, layout_mode, None)
+}
+pub(in crate::workspace_graph) fn next_retention_prebound_with_registry(
+    programs: &[Program],
+    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+    current: usize,
+    layout_mode: &mut u8,
+    registry: Option<&LayoutRegistry<'_>>,
+) -> Result<(usize, usize), Vec<Diagnostic>> {
+    next_retention_prebound_with_uncached_peak_with_registry(
+        programs,
+        authored,
+        current,
+        layout_mode,
+        false,
+        registry,
+    )
 }

@@ -356,12 +356,31 @@ pub(super) fn validate_imported_function<'a>(
     programs: &'a [Program],
     layouts: &mut Option<expected_projection::private_layout::LayoutClosure<'a>>,
 ) -> Result<(), Vec<Diagnostic>> {
-    if layouts.is_none() {
+    validate_imported_function_with_registry(
+        caller, module_use, target, authored, programs, layouts, None,
+    )
+}
+pub(super) fn validate_imported_function_with_registry<'a>(
+    caller: &Program,
+    module_use: &ModuleUse,
+    target: &AuthoredDeclaration<'_>,
+    authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,
+    programs: &'a [Program],
+    layouts: &mut Option<expected_projection::private_layout::LayoutClosure<'a>>,
+    registry: Option<&expected_projection::private_layout::registry::LayoutRegistry<'_>>,
+) -> Result<(), Vec<Diagnostic>> {
+    let held;
+    if registry.is_none() && layouts.is_none() {
         *layouts = Some(expected_projection::private_layout::LayoutClosure::derive(
             caller, authored, programs,
         )?);
     }
-    let layout = layouts.as_ref().expect("initialized caller layout");
+    let layout = if let Some(registry) = registry {
+        held = registry.get(caller, authored, programs)?;
+        &*held
+    } else {
+        layouts.as_ref().expect("initialized caller layout")
+    };
     let function = target.function.expect("function target carries a function");
     let transparent_vec_wrapper = programs
         .iter()

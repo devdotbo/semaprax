@@ -5,8 +5,8 @@ use super::{
 };
 use crate::ast::{Function, ModuleUseKind, Program, Type, TypeDeclaration, TypeDeclarationKind};
 use crate::diagnostic::Diagnostic;
-use std::cell::Cell;
 use std::collections::BTreeMap;
+use std::rc::Rc;
 struct Fact<'a> {
     module: &'a str,
     declaration: &'a TypeDeclaration,
@@ -30,8 +30,7 @@ pub(super) struct Owners<'a> {
     programs: &'a [Program],
     authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,
     sites: Vec<Site<'a>>,
-    remaining: Cell<usize>,
-    failed: Cell<bool>,
+    pub(super) ledger: Rc<super::ledger::Ledger>,
 }
 impl<'a> Owners<'a> {
     pub(super) fn build(
@@ -40,6 +39,7 @@ impl<'a> Owners<'a> {
         programs: &'a [Program],
         entries: &[Entry<'a>],
         work: &mut usize,
+        ledger: Option<&Rc<super::ledger::Ledger>>,
     ) -> Result<Self, Vec<Diagnostic>> {
         debit(work, programs.len())?;
         let caller = programs
@@ -152,15 +152,9 @@ impl<'a> Owners<'a> {
             .map(|f| f.declaration.stable_id.len())
             .max()
             .unwrap_or(0);
-        debit(
-            work,
-            facts
-                .len()
-                .checked_mul(facts.len())
-                .and_then(|n| n.checked_mul(max.checked_add(1)?))
-                .ok_or_else(refusal)?,
-        )?;
-        facts.sort_unstable_by(|a, b| a.declaration.stable_id.cmp(&b.declaration.stable_id));
+        super::sorting::sort(&mut facts, work, |a, b, work| {
+            super::sorting::identity(&a.declaration.stable_id, &b.declaration.stable_id, work)
+        })?;
         debit(
             work,
             facts
@@ -259,30 +253,25 @@ impl<'a> Owners<'a> {
                 });
             }
         }
-        debit(work, sites.len())?;
-        let max_id = sites
-            .iter()
-            .map(|s| s.function.stable_id.len())
-            .max()
-            .unwrap_or(0);
-        debit(
-            work,
-            sites
-                .len()
-                .checked_mul(sites.len())
-                .and_then(|n| n.checked_mul(max_id.checked_add(1)?))
-                .ok_or_else(refusal)?,
-        )?;
-        // Stable function identity and signature ordinal define deterministic order;
-        // exact held object pointers are checked again before granting a fact.
-        sites.sort_unstable_by(|a, b| site_key(a).cmp(&site_key(b)));
+        // Sorting is fallible at each comparison; no partial directory escapes.
+        super::sorting::sort(&mut sites, work, |a, b, work| {
+            let order =
+                super::sorting::identity(&a.function.stable_id, &b.function.stable_id, work)?;
+            if order != std::cmp::Ordering::Equal {
+                return Ok(order);
+            }
+            debit(work, 1)?;
+            Ok(a.ordinal.cmp(&b.ordinal))
+        })?;
         Ok(Self {
             caller,
             programs,
             authored,
             sites,
-            remaining: Cell::new(*work),
-            failed: Cell::new(false),
+            ledger: match ledger {
+                Some(ledger) => Rc::clone(ledger),
+                None => super::ledger::Ledger::new(*work)?,
+            },
         })
     }
     pub(super) fn owner(
@@ -293,10 +282,10 @@ impl<'a> Owners<'a> {
         authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
         programs: &[Program],
     ) -> Result<Option<bool>, Vec<Diagnostic>> {
-        if self.failed.get() {
+        if self.ledger.failed.get() {
             return Err(refusal());
         }
-        let mut work = self.remaining.get();
+        let mut work = self.ledger.remaining.get();
         let result = (|| {
             if !std::ptr::eq(caller, self.caller)
                 || !std::ptr::eq(programs, self.programs)
@@ -342,10 +331,10 @@ impl<'a> Owners<'a> {
             Err(refusal())
         })();
         if result.is_err() {
-            self.failed.set(true);
+            self.ledger.failed.set(true);
             work = 0;
         }
-        self.remaining.set(work);
+        self.ledger.remaining.set(work);
         result
     }
 }

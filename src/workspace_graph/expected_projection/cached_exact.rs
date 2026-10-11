@@ -1,4 +1,5 @@
 //! Exact cached construction forecast: sum every module, never peak/filter.
+use super::private_layout::registry::LayoutRegistry;
 use super::{
     active_builder_limit, checked_usage, cost, dependency_identity_max, limit_error,
     AuthoredDeclaration, StructuralCost,
@@ -53,19 +54,28 @@ pub(super) fn summed(
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
     retention: Retention,
 ) -> Result<(usize, usize), Vec<Diagnostic>> {
+    summed_with_registry(programs, authored, retention, None)
+}
+pub(in crate::workspace_graph) fn summed_with_registry(
+    programs: &[Program],
+    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+    retention: Retention,
+    registry: Option<&LayoutRegistry<'_>>,
+) -> Result<(usize, usize), Vec<Diagnostic>> {
     let _precharge = super::super::diagnostics::precharge_scope();
     super::super::diagnostics::begin_precharge_pass();
     let (mut resolve, mut runtime) = (0, 0);
     for program in programs {
         super::super::diagnostics::begin_precharge_module(&program.path);
         let maximum = Some(dependency_identity_max(program, authored, programs)?);
-        let costs = super::synthetic_builder_bytes_scoped_with_retention(
+        let costs = super::synthetic_builder_bytes_scoped_with_retention_with_registry(
             program,
             authored,
             programs,
             maximum,
             true,
             (MODE, retention),
+            registry,
         )?;
         let charged = costs.retained_clone_and_hir;
         super::super::diagnostics::record_precharge_module(&program.path, charged);
@@ -88,9 +98,18 @@ pub(in crate::workspace_graph) fn initial(
     absent: bool,
     retention: Retention,
 ) -> Result<(usize, usize, bool, u8), Vec<Diagnostic>> {
-    match super::initial_core_prebound(programs, authored, absent) {
+    initial_with_registry(programs, authored, absent, retention, None)
+}
+pub(in crate::workspace_graph) fn initial_with_registry(
+    programs: &[Program],
+    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+    absent: bool,
+    retention: Retention,
+    registry: Option<&LayoutRegistry<'_>>,
+) -> Result<(usize, usize, bool, u8), Vec<Diagnostic>> {
+    match super::initial_core_prebound_with_registry(programs, authored, absent, registry) {
         Err(errors) if !absent && cost::is_builder_refusal(&errors) => {
-            let (resolve, total) = summed(programs, authored, retention)?;
+            let (resolve, total) = summed_with_registry(programs, authored, retention, registry)?;
             Ok((resolve, total, false, MODE))
         }
         result => result,
@@ -103,9 +122,19 @@ pub(in crate::workspace_graph) fn next(
     mode: &mut u8,
     retention: Retention,
 ) -> Result<(usize, usize), Vec<Diagnostic>> {
+    next_with_registry(programs, authored, current, mode, retention, None)
+}
+pub(in crate::workspace_graph) fn next_with_registry(
+    programs: &[Program],
+    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+    current: usize,
+    mode: &mut u8,
+    retention: Retention,
+    registry: Option<&LayoutRegistry<'_>>,
+) -> Result<(usize, usize), Vec<Diagnostic>> {
     if *mode < 4 {
-        match super::next_retention_prebound_with_uncached_peak(
-            programs, authored, current, mode, false,
+        match super::next_retention_prebound_with_uncached_peak_with_registry(
+            programs, authored, current, mode, false, registry,
         ) {
             Err(errors) if cost::is_builder_refusal(&errors) => {}
             result => return result,
@@ -116,7 +145,7 @@ pub(in crate::workspace_graph) fn next(
     }
     // Deliberately skip modes five and six: a present frontend retains ASTs.
     *mode = MODE;
-    let result = summed(programs, authored, retention)?;
+    let result = summed_with_registry(programs, authored, retention, registry)?;
     if result.0 >= current {
         return Err(overflow());
     }
