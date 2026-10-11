@@ -58,16 +58,14 @@ fn utf8_stream_owned_request_preserves_empty_first_array_unicode_and_unbounded_w
             &source,
             profile,
         )?;
-        assert!(
-            project::verify_json_codec_source_with_profile(
-                &revision,
-                "src/schema.spx",
-                "unicode.input",
-                &source,
-                project::JsonCodecProfile::StreamOwnedRequest,
-            )
-            .is_err()
-        );
+        assert!(project::verify_json_codec_source_with_profile(
+            &revision,
+            "src/schema.spx",
+            "unicode.input",
+            &source,
+            project::JsonCodecProfile::StreamOwnedRequest,
+        )
+        .is_err());
         Ok(source)
     })
     .unwrap();
@@ -95,14 +93,12 @@ if written==byte_len(bytes){0}else{1}
 @id("consumer.main") fn main()->i64{0}
 "#;
     std::fs::write(root.join("src/app.spx"), canonical(&application)).unwrap();
-    let errors =
-        project::with_authenticated_project(&root.join("semaprax.toml"), |_| Ok(())).unwrap_err();
-    for code in ["SPX-T258", "SPX-T216"] {
-        assert!(
-            errors.iter().any(|error| error.code == code),
-            "{code}: {errors:?}"
-        );
-    }
+    project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
+        super::super::builtin_calls::assert_normal_stream_join(snapshot.public_api_program());
+        assert!(snapshot.semantic_graph().contains("consumer.receive"));
+        Ok(())
+    })
+    .unwrap();
     // Decode settles the input in its callee epilogue before Outcome publication.
     // Only the later scalar decision call can encode or publish stdout.
     let application = application

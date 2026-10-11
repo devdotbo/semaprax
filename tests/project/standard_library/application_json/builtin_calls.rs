@@ -239,3 +239,37 @@ pub(super) fn operation_counts(program: &ResolvedProgram, wanted: &str) -> (usiz
     );
     (found, owned_clone_loans, borrowed_clone_roots)
 }
+
+// Acyclic terminal returns normalize to ordinary value arms. The new Input
+// composition must not manufacture a lexical certificate or borrowed result.
+pub(super) fn assert_normal_stream_join(program: &ResolvedProgram) {
+    hir::validate(program).unwrap();
+    let receive = program
+        .functions
+        .iter()
+        .find(|function| function.id.as_str().ends_with(".receive"))
+        .unwrap();
+    assert!(receive.cleanup_plan.lexical_control.is_none());
+    let E::Block { tail, .. } = &receive.body.kind else {
+        panic!("ordinary receive body")
+    };
+    let E::Match { arms, .. } = &tail.kind else {
+        panic!("ordinary normalized Input match")
+    };
+    assert_eq!(arms.len(), 2);
+    assert_eq!(tail.ownership, O::Own);
+    let mut forged = program.clone();
+    let receive = forged
+        .functions
+        .iter_mut()
+        .find(|function| function.id == receive.id)
+        .unwrap();
+    let E::Block { tail, .. } = &mut receive.body.kind else {
+        unreachable!()
+    };
+    let E::Match { arms, .. } = &mut tail.kind else {
+        unreachable!()
+    };
+    arms[0].value.ownership = O::Borrow;
+    assert_eq!(hir::validate(&forged).unwrap_err().code, "SPX-H006");
+}
