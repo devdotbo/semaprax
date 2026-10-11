@@ -30,6 +30,7 @@ use crate::diagnostic::Diagnostic;
 use crate::lexer::TokenKind;
 
 use super::Parser;
+use super::expression_statement::BlockContents;
 
 /// The `_if<n>` discard names handed out while parsing one file.
 #[derive(Default)]
@@ -89,11 +90,26 @@ struct Arm {
     body: Branch,
 }
 
+/// A statement `if` chain suspended while the block of one of its branches is
+/// parsed. Branch blocks are explicit frames (`Parser::block_contents`), not
+/// native recursion, so nested statement `if`s hold their pending arms on the
+/// heap until the source nesting bound refuses them.
+pub(super) struct OpenChain {
+    start: Span,
+    arms: Vec<Arm>,
+    arm_start: Span,
+    /// The condition of the open branch's arm; `None` while `else` is open.
+    condition: Option<Expr>,
+    branch_start: Span,
+}
+
 impl Parser {
-    pub(super) fn statement_if(&mut self) -> Result<IfItem, Diagnostic> {
+    /// The `if` keyword and condition of a block item, through the `{` of its
+    /// first branch.
+    pub(super) fn statement_if_open(&mut self) -> Result<OpenChain, Diagnostic> {
         let start = self.keyword("if")?.span;
         let condition = self.expression_with_record_literals(0, false)?;
-        self.statement_if_after_condition(start, condition)
+        self.open_chain(start, condition)
     }
 
     pub(super) fn statement_if_after_condition(
@@ -101,32 +117,71 @@ impl Parser {
         start: Span,
         condition: Expr,
     ) -> Result<IfItem, Diagnostic> {
-        let mut next_condition = Some(condition);
-        let mut arms = Vec::new();
-        let mut otherwise = None;
-        let mut arm_start = start;
-        loop {
-            let condition = match next_condition.take() {
-                Some(condition) => condition,
-                None => self.expression_with_record_literals(0, false)?,
-            };
-            let body = self.branch("`if` condition")?;
-            arms.push(Arm {
-                start: arm_start,
-                condition,
-                body,
-            });
-            if !self.at_keyword("else") {
-                break;
-            }
-            self.bump();
-            if self.at_keyword("if") {
-                arm_start = self.bump().span;
-                continue;
-            }
-            otherwise = Some(self.branch("`else`")?);
-            break;
+        let chain = self.open_chain(start, condition)?;
+        self.settle_statement_if(chain)
+    }
+
+    fn open_chain(&mut self, start: Span, condition: Expr) -> Result<OpenChain, Diagnostic> {
+        let branch_start = self.open_branch("`if` condition")?;
+        Ok(OpenChain {
+            start,
+            arms: Vec::new(),
+            arm_start: start,
+            condition: Some(condition),
+            branch_start,
+        })
+    }
+
+    /// Resume a chain with the contents of the branch block it opened. `None`
+    /// means the `{` of the next `else if` or `else` branch was consumed and
+    /// its block contents come next; otherwise the whole chain is finished.
+    pub(super) fn statement_if_resume(
+        &mut self,
+        chain: &mut OpenChain,
+        contents: Result<BlockContents, Diagnostic>,
+    ) -> Result<Option<IfItem>, Diagnostic> {
+        let description = if chain.condition.is_some() {
+            "`if` condition"
+        } else {
+            "`else`"
+        };
+        let (statements, tail, end) =
+            contents.map_err(|diagnostic| Self::attach_block_help(diagnostic, description))?;
+        let body = Branch {
+            statements,
+            tail,
+            span: chain.branch_start.merge(end),
+        };
+        let Some(condition) = chain.condition.take() else {
+            let arms = std::mem::take(&mut chain.arms);
+            return self.statement_if_finish(chain.start, arms, Some(body)).map(Some);
+        };
+        chain.arms.push(Arm {
+            start: chain.arm_start,
+            condition,
+            body,
+        });
+        if !self.at_keyword("else") {
+            let arms = std::mem::take(&mut chain.arms);
+            return self.statement_if_finish(chain.start, arms, None).map(Some);
         }
+        self.bump();
+        if self.at_keyword("if") {
+            chain.arm_start = self.bump().span;
+            chain.condition = Some(self.expression_with_record_literals(0, false)?);
+            chain.branch_start = self.open_branch("`if` condition")?;
+        } else {
+            chain.branch_start = self.open_branch("`else`")?;
+        }
+        Ok(None)
+    }
+
+    fn statement_if_finish(
+        &mut self,
+        start: Span,
+        arms: Vec<Arm>,
+        otherwise: Option<Branch>,
+    ) -> Result<IfItem, Diagnostic> {
         let valued = otherwise
             .as_ref()
             .is_some_and(|branch| branch.tail.is_some())
@@ -212,18 +267,8 @@ impl Parser {
         separate && expression.contains_lexical_exit()
     }
 
-    fn branch(&mut self, description: &str) -> Result<Branch, Diagnostic> {
-        let start = self
-            .expect(&TokenKind::LBrace, &format!("`{{` before {description}"))?
-            .span;
-        let (statements, tail, end) = self
-            .block_contents(true)
-            .map_err(|diagnostic| Self::attach_block_help(diagnostic, description))?;
-        Ok(Branch {
-            statements,
-            tail,
-            span: start.merge(end),
-        })
+    fn open_branch(&mut self, description: &str) -> Result<Span, Diagnostic> {
+        Ok(self.expect(&TokenKind::LBrace, &format!("`{{` before {description}"))?.span)
     }
 
     /// A statement `if` is the last item of a block that needs a value. The

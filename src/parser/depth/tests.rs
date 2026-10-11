@@ -116,6 +116,31 @@ fn token_level_precheck_still_refuses_genuinely_nested_generic_brackets() {
     assert_eq!(code(&source), "SPX-P207");
 }
 
+/// Statement `if` branches nest through explicit parser frames, so a chain at
+/// the token delimiter bound is parsed completely on half the default test
+/// stack and refused by the normalized-tree walk rather than aborting.
+#[test]
+fn nested_statement_if_branches_reach_the_tree_bound_without_native_recursion() {
+    let nested = |depth: usize| {
+        let mut body = String::from("0");
+        for _ in 0..depth {
+            body = format!("if true {{ {body} }}");
+        }
+        format!("module test.deep_statement_if; @id(\"app.main\") fn main() -> i64 {{ {body} 0 }}")
+    };
+    std::thread::Builder::new()
+        .stack_size(1024 * 1024)
+        .spawn(move || {
+            // The function `{` plus one `{` per branch stays within the token
+            // precheck, so only `validate_program` can refuse the tree.
+            assert_eq!(code(&nested(MAX_SOURCE_NESTING - 2)), "SPX-P207");
+            assert!(parse(&nested(MAX_SOURCE_NESTING / 4), "deep.spx").is_ok());
+        })
+        .unwrap()
+        .join()
+        .unwrap();
+}
+
 #[test]
 fn class_method_bodies_are_walked_as_nesting_roots() {
     // Methods hang off a type declaration rather than `program.functions`, so
