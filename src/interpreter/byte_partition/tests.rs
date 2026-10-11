@@ -282,6 +282,32 @@ fn foreign_stale_live_loan_and_clone_exhaustion_refuse_without_publication() {
         registry.settle(owner).unwrap();
     }
     let probe = account(usize::MAX);
+    let mut registry = Registry::new(probe.clone()).unwrap();
+    let oversized = vec![0; 131073].into_boxed_slice();
+    let pointer = oversized.as_ptr();
+    let (result, observed) =
+        crate::test_allocation_observer::measure(|| registry.partition(oversized, 1, 131073));
+    let (error, returned) = result.err().unwrap();
+    assert_eq!(error, Preparation::Authority(Refusal::Range));
+    assert_eq!(returned.as_ptr(), pointer);
+    assert_eq!(
+        observed,
+        crate::test_allocation_observer::Metrics::default()
+    );
+    assert_eq!(probe.0.borrow().charged, 0);
+    let otherwise_valid = vec![0; 6].into_boxed_slice();
+    let (result, observed) =
+        crate::test_allocation_observer::measure(|| registry.partition(otherwise_valid, 3, 2));
+    assert_eq!(
+        result.err().unwrap().0,
+        Preparation::Authority(Refusal::Range)
+    );
+    assert_eq!(
+        observed,
+        crate::test_allocation_observer::Metrics::default()
+    );
+    assert_eq!(probe.0.borrow().charged, 0);
+    let probe = account(usize::MAX);
     probe.0.borrow_mut().payload = 0;
     let mut registry = Registry::new(probe.clone()).unwrap();
     assert!(registry

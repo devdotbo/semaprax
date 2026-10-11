@@ -64,6 +64,12 @@ impl<R: InvocationRuntime> Registry<R> {
     fn active(&self) -> Result<(), Refusal> {
         self.failed.map_or(Ok(()), Err)
     }
+    fn preparation_failure(&mut self, error: Preparation) -> Preparation {
+        if let Preparation::Authority(refusal) = error {
+            let _ = self.select::<()>(Err(refusal));
+        }
+        error
+    }
     fn state(&mut self, invocation: u64, context: usize) -> Result<&mut State<R>, Refusal> {
         if invocation != self.invocation {
             return Err(Refusal::Identity);
@@ -88,12 +94,17 @@ impl<R: InvocationRuntime> Registry<R> {
         }
         let geometry = match operation::prepare(R::bytes(&owner).len() as u64, count, width) {
             Ok(g) => g,
-            Err(error) => return Err((error, owner)),
+            Err(error) => return Err((self.preparation_failure(error), owner)),
         };
         let next_capacity = if self.contexts.len() == self.contexts.capacity() {
             match self.contexts.capacity().checked_mul(2).map(|n| n.max(1)) {
                 Some(n) => Some(n),
-                None => return Err((Preparation::Authority(Refusal::Metadata), owner)),
+                None => {
+                    return Err((
+                        self.preparation_failure(Preparation::Authority(Refusal::Metadata)),
+                        owner,
+                    ))
+                }
             }
         } else {
             None
@@ -126,7 +137,12 @@ impl<R: InvocationRuntime> Registry<R> {
         } else {
             match usize::try_from(width) {
                 Ok(n) => n,
-                Err(_) => return Err((Preparation::Authority(Refusal::Range), owner)),
+                Err(_) => {
+                    return Err((
+                        self.preparation_failure(Preparation::Authority(Refusal::Range)),
+                        owner,
+                    ))
+                }
             }
         };
         let (core, children) = match Core::partition_owned(
@@ -213,7 +229,10 @@ impl<R: InvocationRuntime> Registry<R> {
         self.apply(owner, false, |core, child| core.deep_clone(child))
     }
     pub(crate) fn borrow(&mut self, owner: &Owner) -> Result<View, Refusal> {
-        let loan = self.apply(owner, false, |core, child| core.borrow(child))?;
+        let loan = self.apply(owner, false, |core, child| {
+            let extent = core.authenticate_receipt(child, owner.receipt)?;
+            core.borrow(child, 0..extent)
+        })?;
         Ok(View {
             invocation: self.invocation,
             context: owner.context,
