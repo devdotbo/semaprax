@@ -53,13 +53,47 @@ fn explicit_source_factory_keeps_original_4096_and_ordinary_refusal_with_current
     assert!(report.returned());
     assert_eq!(value["result"], "9223372036854775807");
     let non_entry = SOURCE.replace("fn main()", "fn selected_helper()");
-    assert!(run_interpreter(
-        &non_entry,
-        Path::new("non-entry.spx"),
-        RuntimeAccount::new(CALLER_ACCOUNT).unwrap(),
-        crate::interpreter::DEFAULT_MAX_STEPS,
-    )
-    .is_err());
+    assert!(
+        run_interpreter(
+            &non_entry,
+            Path::new("non-entry.spx"),
+            RuntimeAccount::new(CALLER_ACCOUNT).unwrap(),
+            crate::interpreter::DEFAULT_MAX_STEPS,
+        )
+        .is_err()
+    );
+    for (source, message, help) in [
+        (
+            SOURCE.replace("4096", "32"),
+            "32 construction rows",
+            "Remove --profile fused-construction-v1",
+        ),
+        (
+            SOURCE.replace(
+                "payload: bytes_zeroed(3usize)",
+                "payload: bytes_copy(bytes_zeroed(3usize))",
+            ),
+            "Producer",
+            "bytes_zeroed with a literal fixed width",
+        ),
+    ] {
+        let parsed = crate::parse(&source, "guidance.spx").unwrap();
+        let errors = run_interpreter(
+            &source,
+            Path::new("guidance.spx"),
+            RuntimeAccount::new(CALLER_ACCOUNT).unwrap(),
+            crate::interpreter::DEFAULT_MAX_STEPS,
+        )
+        .unwrap_err();
+        assert_eq!(errors.len(), 1);
+        let error = &errors[0];
+        assert_eq!(error.code, "SPX-F130");
+        assert_eq!(error.path.as_deref(), Some("guidance.spx"));
+        assert_eq!(error.span, Some(parsed.functions[0].span));
+        assert!(error.message.contains(message), "{}", error.message);
+        assert!(error.help.as_deref().unwrap().contains(help));
+        assert!(error.message.len() < 256 && error.help.as_deref().unwrap().len() < 256);
+    }
     let scalar = "module scalar; @id(\"scalar.main\") fn main() -> i64 { 1 }";
     assert!(crate::check(scalar, "scalar.spx").is_ok());
     assert_eq!(

@@ -4,7 +4,7 @@
 //! joined grant or replacement artifact. Ordinary routes do not call this API.
 use crate::diagnostic::Diagnostic;
 use crate::hir::selected_fused_candidate::{
-    validate_selected, SelectedRefusal, ValidatedFusedSelection,
+    SelectedRefusal, ValidatedFusedSelection, validate_selected,
 };
 use sha2::{Digest, Sha256};
 use std::path::Path;
@@ -55,7 +55,7 @@ fn with_selected<R>(
     receive: impl FnOnce(&ValidatedFusedSelection<'_>, &str) -> Result<R, Vec<Diagnostic>>,
 ) -> Result<R, Vec<Diagnostic>> {
     let parsed = crate::parse(source, path).map_err(|error| vec![error])?;
-    let owner = validate_selected(&parsed).map_err(selection_errors)?;
+    let owner = validate_selected(&parsed).map_err(|error| selection_errors(error, path))?;
     let [entry] = owner.program().functions.as_slice() else {
         return Err(vec![refusal("source profile requires exactly one entry")]);
     };
@@ -72,16 +72,81 @@ fn with_selected<R>(
     );
     receive(&owner, &digest)
 }
-fn selection_errors(error: SelectedRefusal) -> Vec<Diagnostic> {
+fn selection_errors(error: SelectedRefusal, path: &Path) -> Vec<Diagnostic> {
     use crate::source_verify::fused_construction::candidate::CandidateRefusal;
     match error {
         SelectedRefusal::Source(CandidateRefusal::Source(errors)) => errors,
+        SelectedRefusal::Source(CandidateRefusal::NoSelection { miss: Some(miss) }) => {
+            use crate::source_verify::fused_construction::candidate::SelectionMissReason;
+            let (message, help) = match miss.reason {
+                SelectionMissReason::Legacy32 { rows } => (
+                    format!(
+                        "selected source refused: {rows} construction rows use the ordinary route"
+                    ),
+                    "Remove --profile fused-construction-v1 and --managed-bytes; keep the application requirements and row count unchanged.",
+                ),
+                SelectionMissReason::Shape(reason) => (
+                    format!("selected source refused: {reason:?}"),
+                    shape_help(reason),
+                ),
+            };
+            vec![
+                Diagnostic::error("SPX-F130", message, miss.span)
+                    .at_path(path.display().to_string())
+                    .with_help(help),
+            ]
+        }
+
         SelectedRefusal::Resolve(error)
         | SelectedRefusal::Validation(error)
         | SelectedRefusal::Capacity(error) => vec![error],
         other => vec![refusal(format!("selected source refused: {other:?}"))],
     }
 }
+fn shape_help(reason: crate::source_verify::fused_construction::Refusal) -> &'static str {
+    use crate::source_verify::fused_construction::Refusal;
+    match reason {
+        Refusal::OpenModule => {
+            "This profile requires a closed module without imports, permits, interfaces, protocols, implementations, sessions or agents."
+        }
+        Refusal::ShadowedBuiltin => {
+            "Rename the declaration that shadows a builtin used by the selected construction."
+        }
+        Refusal::FunctionShape => {
+            "Use an explicitly identified, nongeneric, parameterless function without effects, yields, protocols or contracts for this profile."
+        }
+        Refusal::BodyShape => {
+            "The construction block must start with the destination Vec, zero-valued mutable induction binding and construction loop."
+        }
+        Refusal::Destination => {
+            "The destination must be a fresh empty vec_with_capacity<Row>(N) with a literal capacity."
+        }
+        Refusal::Induction => "Initialize the fresh mutable induction binding to zero.",
+        Refusal::Condition => "Use induction < N with the literal construction row count.",
+        Refusal::Rows => {
+            "Match the literal destination capacity and loop row count within the admitted row and storage bounds; do not reduce application requirements to fit this profile."
+        }
+        Refusal::Record => {
+            "Use one explicitly identified, nongeneric record with exactly one Bytes field and at most two owned fields in the admitted field domain."
+        }
+        Refusal::LoopBody => {
+            "The loop must construct one row, push it into the destination, advance induction by one and have a unit tail."
+        }
+        Refusal::RowConstructor => {
+            "Keep the row constructor and its non-Bytes field initializers within the closed construction domain."
+        }
+        Refusal::Producer => {
+            "The Bytes field must use bytes_zeroed with a literal fixed width; nested or different producers are unsupported by this profile."
+        }
+        Refusal::Extent => {
+            "The row count times fixed width must fit the selected extent bound without overflow."
+        }
+        Refusal::Suffix => {
+            "Keep remaining destination, induction and view uses within the closed suffix domain; views must not escape."
+        }
+    }
+}
+
 fn refusal(message: impl Into<String>) -> Diagnostic {
     Diagnostic::io("SPX-F130", message)
 }
@@ -102,7 +167,7 @@ pub fn run_interpreter(
     )
     .map_err(|error| vec![error])?;
     with_selected(source, path, |owner, digest| {
-        use crate::interpreter::construction_fusion::selected::{execute_accounted, Failure};
+        use crate::interpreter::construction_fusion::selected::{Failure, execute_accounted};
         let (answer, refused, used) = execute_accounted(owner, fuel, account.bytes);
         let mut value = serde_json::json!({"schema":ENVELOPE_SCHEMA,"profile":PROFILE,"source_sha256":digest,"target":"interpreter","account_limit":account.bytes,"managed_reserved":used,"account_policy":"interpreter.requested-layout.v1","max_steps":fuel,"account_refused":refused});
         let returned = match answer {

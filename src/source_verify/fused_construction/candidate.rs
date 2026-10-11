@@ -17,8 +17,8 @@
 //! proof, and full selected HIR validation. Then each of the three executors
 //! must close the lease domain. The default `check` path never reaches this
 //! module.
-use super::{derive, Derivation, SourceProof};
-use crate::ast::Program;
+use super::{Derivation, Refusal, SourceProof, derive};
+use crate::ast::{Program, Span};
 use crate::diagnostic::Diagnostic;
 
 /// The only status a source candidate can have.
@@ -43,13 +43,25 @@ impl CandidateStatus {
 pub(crate) enum CandidateRefusal {
     /// No function derives a selected proof. Legacy counts (32 or fewer)
     /// belong to the default route.
-    NoSelection,
+    NoSelection { miss: Option<SelectionMiss> },
     /// More than one function derives a selected proof.
     Ambiguous,
     /// The derived proof failed to re-authenticate against the program.
     NotHeld,
     /// An ordinary source pass refused under the held selection.
     Source(Vec<Diagnostic>),
+}
+
+/// Diagnostic data from the existing derivation; carries no proof authority.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) struct SelectionMiss {
+    pub(crate) span: Span,
+    pub(crate) reason: SelectionMissReason,
+}
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum SelectionMissReason {
+    Shape(Refusal),
+    Legacy32 { rows: u32 },
 }
 
 /// A source-checked selection that is still unvalidated. It holds the proof
@@ -73,14 +85,30 @@ pub(crate) fn check_candidate(
     program: &Program,
 ) -> Result<ProvisionalFusedSource<'_>, CandidateRefusal> {
     let mut selected = None;
+    let mut miss = None;
+    let mut main_miss = false;
     for function in &program.functions {
-        if let Ok(Derivation::Selected(proof)) = derive(program, function) {
-            if selected.replace(proof).is_some() {
-                return Err(CandidateRefusal::Ambiguous);
+        let reason = match derive(program, function) {
+            Ok(Derivation::Selected(proof)) => {
+                if selected.replace(proof).is_some() {
+                    return Err(CandidateRefusal::Ambiguous);
+                }
+                continue;
             }
+            Ok(Derivation::Legacy32 { rows }) => SelectionMissReason::Legacy32 { rows },
+            Err(reason) => SelectionMissReason::Shape(reason),
+        };
+        // Keep the first authored miss, preferring the first main. Diagnostic
+        // data is captured during the same pass, without deriving again.
+        if miss.is_none() || (function.name == "main" && !main_miss) {
+            miss = Some(SelectionMiss {
+                span: function.span,
+                reason,
+            });
+            main_miss = function.name == "main";
         }
     }
-    let proof = selected.ok_or(CandidateRefusal::NoSelection)?;
+    let proof = selected.ok_or(CandidateRefusal::NoSelection { miss })?;
     if !proof.authenticate(program) {
         return Err(CandidateRefusal::NotHeld);
     }

@@ -64,7 +64,7 @@ fn ordinary_32_row_control_keeps_the_unchanged_legacy_routes() {
     assert_eq!((main.bytes_copy_sites, main.fused_backing_events), (32, 0));
     assert!(matches!(
         validate_selected(&program),
-        Err(SelectedRefusal::Source(CandidateRefusal::NoSelection))
+        Err(SelectedRefusal::Source(CandidateRefusal::NoSelection { .. }))
     ));
 }
 
