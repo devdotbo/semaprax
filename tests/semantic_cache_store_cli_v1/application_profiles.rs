@@ -239,3 +239,6 @@ fn omitted_private_layout_source_persisted_cache_reconstructs_provider_layout_an
     unchanged(&fixture, digest);
     execute(&fixture, 42);
 }
+
+#[path = "application_profiles/statement_markers.rs"]
+mod statement_markers;
