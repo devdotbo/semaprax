@@ -131,28 +131,17 @@ fn expected_wire(value: &serde_json::Value) -> String {
 }
 
 #[test]
-fn unfactored_schedule_retains_exact_semantic_path_budget_refusal() {
+fn unfactored_schedule_retains_original_source_and_factored_admission() {
     let original = include_str!("shiftsim_schedule_unfactored.txt");
-    let root = crate::standard_library::temporary("shiftsim-unfactored-path-refusal");
+    let root = crate::standard_library::temporary("shiftsim-original-factored-admission");
     write_example(&root);
     super::string_slot_adoption::shiftsim(&root);
     std::fs::write(root.join("src/schedule.spx"), original).unwrap();
-    let entered = std::cell::Cell::new(false);
-    let errors = project::with_authenticated_project(&root.join("semaprax.toml"), |_| {
-        entered.set(true);
-        Ok(())
+    project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
+        assert!(snapshot.semantic_graph().contains("shiftsim.schedule.run"));
+        semaprax::hir::validate(snapshot.public_api_program()).map_err(|error| vec![error])
     })
-    .expect_err("original independent branch combinations exceed the frozen path bound");
-    assert!(!entered.get());
-    assert!(
-        errors.iter().any(|error| {
-            error.code == "SPX-H006"
-                && error.message.contains("shiftsim.schedule.run")
-                && error.message.contains("65537 semantic terminal paths")
-                && error.message.contains("65536 path budget")
-        }),
-        "{errors:?}"
-    );
+    .expect("factored replay must admit the unchanged original schedule");
     assert_eq!(
         std::fs::read_to_string(root.join("src/schedule.spx")).unwrap(),
         original
@@ -271,7 +260,23 @@ fn typed_record_shiftsim_derives_both_codecs_and_runs_retained_corpus() {
         .map_err(|error| vec![error])
     })
     .unwrap();
-    for source in [&c_source, &wrapper_c] {
+    // The original independent branch expressions remain an executable
+    // differential, in addition to the separately retained wrapper adoption.
+    let original = include_str!("shiftsim_schedule_unfactored.txt");
+    std::fs::write(root.join("src/schedule.spx"), original).unwrap();
+    let original_c = project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
+        codegen::emit_hir_c_with_stdin_stream_collection_records(
+            snapshot.public_api_program(),
+            "shiftsim.command",
+        )
+        .map_err(|error| vec![error])
+    })
+    .unwrap();
+    assert_eq!(
+        std::fs::read_to_string(root.join("src/schedule.spx")).unwrap(),
+        original
+    );
+    for source in [&c_source, &wrapper_c, &original_c] {
         for optimization in ["-O0", "-O2"] {
             let binary = compile_native(source, &root, optimization);
             for case in corpus["valid"].as_array().unwrap() {
