@@ -1,5 +1,5 @@
 //! Conservative canonical projection: a deserialized marker cannot hide a reader.
-use super::{Expr, ExprKind, Statement};
+use super::{Expr, Statement};
 use std::cell::Cell;
 thread_local! { static SAFE: Cell<Option<bool>> = const { Cell::new(None) }; }
 pub(super) struct Scope(Option<bool>);

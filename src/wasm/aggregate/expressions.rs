@@ -373,7 +373,7 @@ impl Emitter<'_> {
                 crate::hir::iterator_loop::true_body_match(
                     condition,
                     body,
-                    &label.certificate.latch,
+                    label.latch(),
                 )
             })
             .map(|value| value.id.clone());

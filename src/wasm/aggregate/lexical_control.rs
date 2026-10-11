@@ -44,6 +44,12 @@ pub(super) struct LoopLabel<'a> {
     continue_depth: u32,
 }
 
+impl LoopLabel<'_> {
+    pub(super) fn latch(&self) -> &crate::hir::LoopLatchKind {
+        &self.certificate.latch
+    }
+}
+
 impl<'a> Emitter<'a> {
     pub(super) fn bind_lexical_loop(&mut self, condition: &ResolvedExpr) -> Result<(), Diagnostic> {
         let certificate = self

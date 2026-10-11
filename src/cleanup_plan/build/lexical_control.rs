@@ -22,6 +22,12 @@ pub(super) struct LexicalBuildState {
 }
 
 impl LexicalBuildState {
+    pub(super) fn is_true_iterator_match(&self, expression: &ExpressionId) -> bool {
+        self.active_loops
+            .last()
+            .is_some_and(|context| context.true_match.as_ref() == Some(expression))
+    }
+
     pub(super) fn owned_iterator_context(
         &self,
         call: &ExpressionId,

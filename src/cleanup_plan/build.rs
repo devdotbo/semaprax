@@ -3790,9 +3790,7 @@ impl<'a> PlanBuilder<'a> {
                         // Full structural HIR and inventory still contain Done.
                         // This CFG is entered only after its exact condition=true.
                         let first = usize::from(self.lexical.as_ref().is_some_and(|control| {
-                            control.active_loops.last().is_some_and(|context| {
-                                context.true_match.as_ref() == Some(&expression.id)
-                            })
+                            control.is_true_iterator_match(&expression.id)
                         }));
                         frames.push(Frame::MatchNext {
                             expression,
