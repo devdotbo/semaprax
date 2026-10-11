@@ -1,6 +1,67 @@
 //! Exact operation and child facts used by independent cleanup replay.
 use super::*;
+#[cfg(test)]
+mod borrowed;
 mod capacity;
+#[cfg(test)]
+pub(super) use borrowed::BorrowedFacts;
+
+/// Selected receivers retain the legacy tree or consume an independently built
+/// metered borrowed table. Ordinary tree lookup keeps its original behavior.
+pub(super) enum Entries<'a> {
+    Tree(std::collections::btree_map::Iter<'a, ExpressionId, Option<CallFact>>),
+    #[cfg(test)]
+    Borrowed(std::slice::Iter<'a, (ExpressionId, Option<CallFact>)>),
+}
+impl<'a> Iterator for Entries<'a> {
+    type Item = (&'a ExpressionId, &'a Option<CallFact>);
+    fn next(&mut self) -> Option<Self::Item> {
+        match self {
+            Self::Tree(entries) => entries.next(),
+            #[cfg(test)]
+            Self::Borrowed(entries) => entries.next().map(|(key, value)| (key, value)),
+        }
+    }
+}
+pub(super) trait Lookup {
+    fn entries(&self) -> Entries<'_>;
+    fn fact<'a>(
+        &'a self,
+        function: &ResolvedFunction,
+        key: &ExpressionId,
+        budget: &mut ReplayBudget,
+    ) -> Result<Option<&'a Option<CallFact>>, Diagnostic>;
+    fn require(
+        &self,
+        function: &ResolvedFunction,
+        key: &ExpressionId,
+        budget: &mut ReplayBudget,
+    ) -> Result<(), Diagnostic> {
+        if self.fact(function, key, budget)?.is_some() {
+            Ok(())
+        } else {
+            Err(replay_error(
+                function,
+                format!("cleanup plan references unknown expression `{key}`"),
+            ))
+        }
+    }
+}
+impl Lookup for BTreeMap<ExpressionId, Option<CallFact>> {
+    fn entries(&self) -> Entries<'_> {
+        Entries::Tree(self.iter())
+    }
+    fn fact<'a>(
+        &'a self,
+        _: &ResolvedFunction,
+        key: &ExpressionId,
+        _: &mut ReplayBudget,
+    ) -> Result<Option<&'a Option<CallFact>>, Diagnostic> {
+        Ok(self.get(key))
+    }
+}
+
+type FactFrame<'a> = Option<(expression_children::ReplayChildCursor<'a>, bool)>;
 
 pub(super) fn expression_facts(
     function: &ResolvedFunction,
@@ -42,15 +103,19 @@ fn collect_expression_facts<'a>(
     facts: &mut BTreeMap<ExpressionId, Option<CallFact>>,
     mut capacity: Option<&mut capacity::FactCapacity<'a, '_>>,
 ) -> Result<(), Diagnostic> {
-    // The private replay entry admits at most 512 semantic expression levels. Keep one indexed continuation per ancestor so wide calls, records, blocks,
-    // and matches never create a width-sized frontier and callback order stays identical to the former recursive pre-order walk.
+    // One borrowed continuation per ancestor keeps the original pre-order walk
+    // and avoids rescanning wide Block/Match prefixes for each child.
     let mut stack = [None; 514];
-    stack[0] = Some((expression, 0usize));
+    stack[0] = Some((
+        expression_children::ReplayChildCursor::new(expression),
+        false,
+    ));
     let mut len = 1usize;
     while len != 0 {
         len -= 1;
-        let (current, next_child) = stack[len].take().expect("expression-fact frame retained");
-        if next_child == 0 {
+        let (mut cursor, started) = stack[len].take().expect("expression-fact frame retained");
+        let current = cursor.expression();
+        if !started {
             if let Some(capacity) = capacity.as_deref_mut() {
                 capacity.expression(current)?;
             }
@@ -145,15 +210,15 @@ fn collect_expression_facts<'a>(
                 ));
             }
         }
-        if let Some(child) = replay_expression_child(current, next_child) {
+        if let Some(child) = cursor.next() {
             if len + 2 > stack.len() {
                 return Err(replay_error(
                     function,
                     "HIR expression fact traversal exceeds the admitted depth",
                 ));
             }
-            stack[len] = Some((current, next_child + 1));
-            stack[len + 1] = Some((child, 0));
+            stack[len] = Some((cursor, true));
+            stack[len + 1] = Some((expression_children::ReplayChildCursor::new(child), false));
             len += 2;
         }
     }

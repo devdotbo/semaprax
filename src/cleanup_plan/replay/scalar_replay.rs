@@ -54,23 +54,43 @@ pub(super) fn validate(
         plan_structure_units(plan),
         "selected scalar helper structure",
     )?;
-    let physical = budget
-        .physical
-        .as_deref_mut()
-        .ok_or_else(|| replay_error(function, "selected scalar helper lacks backing"))?;
-    let facts = expression_facts::expression_facts_with_reservation(function, physical)?;
+    let ordinary_facts;
+    #[cfg(test)]
+    let borrowed_facts;
+    let facts: &dyn expression_facts::Lookup;
+    #[cfg(test)]
+    if has_borrowed {
+        borrowed_facts = expression_facts::BorrowedFacts::build(function, budget)?;
+        facts = &borrowed_facts;
+    } else {
+        let physical = budget
+            .physical
+            .as_deref_mut()
+            .ok_or_else(|| replay_error(function, "selected scalar helper lacks backing"))?;
+        ordinary_facts = expression_facts::expression_facts_with_reservation(function, physical)?;
+        facts = &ordinary_facts;
+    }
+    #[cfg(not(test))]
+    {
+        let physical = budget
+            .physical
+            .as_deref_mut()
+            .ok_or_else(|| replay_error(function, "selected scalar helper lacks backing"))?;
+        ordinary_facts = expression_facts::expression_facts_with_reservation(function, physical)?;
+        facts = &ordinary_facts;
+    }
     inventory_coverage::validate_inventory_coverage(program, function, budget)?;
     status_construction::validate_required_status_sources(program, function, budget)?;
     let storage = structural_maps::validate_slots(function, budget)?;
     let leaves = structural_maps::collect_leaves(function, budget)?;
-    status_validation::validate_status_sources(function, &facts, budget)?;
+    status_validation::validate_status_sources(function, facts, budget)?;
     structural_maps::validate_regions(function, &storage, budget)?;
     structural_control::validate_entry(function, &storage, &leaves, budget)?;
     let renewals = program
         .primitive_renewals(function)
         .ok_or_else(|| replay_error(function, "selected scalar helper lacks its function lease"))?;
     structural_control::validate_blocks_and_edges(
-        program, function, &facts, &storage, &leaves, renewals, budget,
+        program, function, facts, &storage, &leaves, renewals, budget,
     )?;
     structural_control::validate_exits(
         program,

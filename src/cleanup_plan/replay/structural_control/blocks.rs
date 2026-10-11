@@ -5,7 +5,7 @@ use super::*;
 pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(
     program: &dyn ReplayContext,
     function: &ResolvedFunction,
-    expressions: &BTreeMap<ExpressionId, Option<CallFact>>,
+    expressions: &dyn expression_facts::Lookup,
     storage: &BTreeSet<StorageId>,
     leaves: &Leaves,
     renewals: &crate::cleanup_plan::ReplayRenewalBindings<'_>,
@@ -35,7 +35,21 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(
                 "cleanup edge has a non-contiguous ID or unknown endpoint",
             ));
         }
-        validate_edge_condition(function, &edge.condition, expressions, &statuses)?;
+        match &edge.condition {
+            EdgeCondition::Always => {}
+            EdgeCondition::BooleanResult(expression, _)
+            | EdgeCondition::VariantCase {
+                scrutinee: expression,
+                ..
+            }
+            | EdgeCondition::ArmSelected {
+                scrutinee: expression,
+                ..
+            } => expressions.require(function, expression, budget)?,
+            EdgeCondition::StatusZero(source) | EdgeCondition::StatusNonzero(source) => {
+                require_status(function, &statuses, source)?
+            }
+        }
     }
     let mut referenced_edges = BTreeSet::new();
     let mut referenced_exits = BTreeSet::new();
@@ -64,7 +78,7 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(
             budget.charge(function, 1, "structural transitions")?;
             match transition {
                 CleanupTransition::Initialize { at, destination } => {
-                    require_expression(function, expressions, at)?;
+                    expressions.require(function, at, budget)?;
                     path_join::storage::validate_place(
                         function,
                         destination,
@@ -75,7 +89,7 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(
                 }
                 CleanupTransition::ReserveRenewal { at, binding } => {
                     renewal::validate_binding_selected(function, at, binding, renewals)?;
-                    require_expression(function, expressions, at)?;
+                    expressions.require(function, at, budget)?;
                     path_join::storage::validate_place(function, binding, storage, leaves, budget)?;
                 }
                 CleanupTransition::Renew {
@@ -84,7 +98,7 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(
                     destination,
                 } => {
                     renewal::validate_binding_selected(function, at, destination, renewals)?;
-                    require_expression(function, expressions, at)?;
+                    expressions.require(function, at, budget)?;
                     path_join::storage::validate_place(function, source, storage, leaves, budget)?;
                     path_join::storage::validate_place(
                         function,
@@ -99,7 +113,7 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(
                     source,
                     destination,
                 } => {
-                    require_expression(function, expressions, at)?;
+                    expressions.require(function, at, budget)?;
                     let source_flags = path_join::storage::validate_place(
                         function, source, storage, leaves, budget,
                     )?;
@@ -141,7 +155,7 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(
                     ));
                 }
                 CleanupTransition::CallCommit { call, arguments } => {
-                    let Some(Some(fact)) = expressions.get(call) else {
+                    let Some(Some(fact)) = expressions.fact(function, call, budget)? else {
                         return Err(replay_error(
                             function,
                             "call commit does not name a call expression",
@@ -265,7 +279,7 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(
     }
     if plan.lexical_control.is_none() {
         let mut expected_count = 0usize;
-        for (expression, fact) in expressions {
+        for (expression, fact) in expressions.entries() {
             budget.charge(function, 1, "structural call coverage")?;
             if fact.is_some() {
                 expected_count = expected_count

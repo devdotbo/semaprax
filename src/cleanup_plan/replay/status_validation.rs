@@ -3,7 +3,7 @@
 use super::*;
 pub(super) fn validate_status_sources(
     function: &ResolvedFunction,
-    expressions: &BTreeMap<ExpressionId, Option<CallFact>>,
+    expressions: &dyn expression_facts::Lookup,
     budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
     let mut ids = BTreeSet::new();
@@ -18,7 +18,10 @@ pub(super) fn validate_status_sources(
                 format!("status source for `{}` is repeated", source.id.expression),
             ));
         }
-        if !expressions.contains_key(&source.id.expression) {
+        if expressions
+            .fact(function, &source.id.expression, budget)?
+            .is_none()
+        {
             return Err(replay_error(
                 function,
                 format!(
@@ -32,7 +35,8 @@ pub(super) fn validate_status_sources(
                 StatusLane::OperationFailure | StatusLane::OwnerAdmission,
                 StatusProducer::PropagatedCall { callee },
             ) => {
-                let Some(Some(call)) = expressions.get(&source.id.expression) else {
+                let Some(Some(call)) = expressions.fact(function, &source.id.expression, budget)?
+                else {
                     return Err(replay_error(
                         function,
                         "propagated-call status source does not name a call expression",

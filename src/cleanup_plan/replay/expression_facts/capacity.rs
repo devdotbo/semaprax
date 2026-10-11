@@ -17,7 +17,7 @@ impl<'a, 'p> FactCapacity<'a, 'p> {
     ) -> Result<Self, Diagnostic> {
         // One reused type cursor and the collector's one active expression cursor.
         physical
-            .reserve(size_of::<Self>() + size_of::<[Option<(&ResolvedExpr, usize)>; 514]>())
+            .reserve(size_of::<Self>() + size_of::<[FactFrame<'_>; 514]>())
             .map_err(|_| {
                 replay_error(
                     function,
