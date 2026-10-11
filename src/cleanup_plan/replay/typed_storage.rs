@@ -63,14 +63,27 @@ fn parameter_id(
     operation: &str,
     index: usize,
     work: &mut SkeletonWork<'_, '_>,
+    metered: bool,
 ) -> Result<crate::hir::ValueId, Diagnostic> {
     if work.budget.physical.is_none() {
+        if metered {
+            return Err(replay_error(
+                work.function,
+                "borrowed parameter constructor requires backing reservation",
+            ));
+        }
         return Ok(crate::hir::ValueId::intrinsic_parameter(operation, index));
     }
+    let decimal_len = if metered {
+        work.charge(1, "borrowed intrinsic identity length arithmetic")?;
+        index.checked_ilog10().map_or(1, |n| n as usize + 1)
+    } else {
+        digits(index)
+    };
     let len = operation
         .len()
         .checked_add(7)
-        .and_then(|n| n.checked_add(digits(index)))
+        .and_then(|n| n.checked_add(decimal_len))
         .ok_or_else(|| replay_error(work.function, "intrinsic parameter identity overflow"))?;
     // A temporary exact String overlaps the new Arc<str> allocation. Round its
     // two-counter header + trailing text to usize alignment before allocation.
@@ -82,6 +95,21 @@ fn parameter_id(
     let bytes = arc.and_then(|n| n.checked_add(len)).unwrap_or(usize::MAX);
     work.budget
         .reserve_bytes(work.function, bytes, "intrinsic parameter identity")?;
+    #[cfg(test)]
+    if metered {
+        return crate::hir::ValueId::intrinsic_parameter_with_work(
+            operation,
+            index,
+            &mut |units| {
+                work.charge(
+                    units,
+                    "borrowed intrinsic identity actual constructor visit",
+                )
+            },
+        );
+    }
+    #[cfg(not(test))]
+    let _ = metered;
     Ok(crate::hir::ValueId::intrinsic_parameter_exact(
         operation, index,
     ))
@@ -93,6 +121,26 @@ pub(super) fn static_params(
     ownership: impl Fn(usize, &ResolvedType) -> OwnershipMode,
     work: &mut SkeletonWork<'_, '_>,
 ) -> Result<Vec<crate::hir::ResolvedParam>, Diagnostic> {
+    static_params_impl(operation, types, names, ownership, work, false)
+}
+#[cfg(test)]
+pub(super) fn borrowed_static_params(
+    operation: &str,
+    types: &[ResolvedType],
+    names: &[&str],
+    ownership: impl Fn(usize, &ResolvedType) -> OwnershipMode,
+    work: &mut SkeletonWork<'_, '_>,
+) -> Result<Vec<crate::hir::ResolvedParam>, Diagnostic> {
+    static_params_impl(operation, types, names, ownership, work, true)
+}
+fn static_params_impl(
+    operation: &str,
+    types: &[ResolvedType],
+    names: &[&str],
+    ownership: impl Fn(usize, &ResolvedType) -> OwnershipMode,
+    work: &mut SkeletonWork<'_, '_>,
+    metered: bool,
+) -> Result<Vec<crate::hir::ResolvedParam>, Diagnostic> {
     work.budget.reserve_array::<crate::hir::ResolvedParam>(
         work.function,
         types.len().min(names.len()),
@@ -100,7 +148,14 @@ pub(super) fn static_params(
     )?;
     let mut params = Vec::with_capacity(types.len().min(names.len()));
     for (index, (ty, name)) in types.iter().zip(names).enumerate() {
-        let id = parameter_id(operation, index, work)?;
+        if metered {
+            work.charge(1, "borrowed intrinsic actual parameter header")?;
+            for _ in name.bytes() {
+                work.charge(1, "borrowed intrinsic parameter name byte")?;
+            }
+            work.charge(1, "borrowed intrinsic scalar or view type clone")?;
+        }
+        let id = parameter_id(operation, index, work, metered)?;
         work.budget
             .reserve_bytes(work.function, name.len(), "intrinsic parameter name")?;
         let ty = work.clone_payload(ty, "intrinsic parameter type")?;
@@ -139,6 +194,31 @@ mod tests {
                     crate::hir::ValueId::intrinsic_parameter(operation, index),
                     crate::hir::ValueId::intrinsic_parameter_exact(operation, index)
                 );
+                // Decimal emission and UTF8 check, each of the three actual byte passes
+                // (String write, fingerprint, Arc transfer). This count is
+                // independent of the receiving constructor's callback.
+                let decimal = index.to_string();
+                let units = 2 * decimal.len() + 3 * (operation.len() + 7 + decimal.len());
+                for allowance in [units, units - 1] {
+                    let mut remaining = allowance;
+                    let result = crate::hir::ValueId::intrinsic_parameter_with_work(
+                        operation,
+                        index,
+                        &mut |count| {
+                            remaining = remaining.checked_sub(count).ok_or(())?;
+                            Ok(())
+                        },
+                    );
+                    assert_eq!(remaining, 0);
+                    if allowance == units {
+                        assert_eq!(
+                            result.unwrap(),
+                            crate::hir::ValueId::intrinsic_parameter(operation, index)
+                        );
+                    } else {
+                        assert!(result.is_err());
+                    }
+                }
             }
         }
     }

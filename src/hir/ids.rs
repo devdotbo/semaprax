@@ -136,6 +136,47 @@ impl ValueId {
         Self::new(value)
     }
 
+    /// Exact guarded constructor: each decimal, copy, hash and Arc transfer
+    /// visit is debited by the caller's existing preparation/replay ledger.
+    #[cfg(test)]
+    pub(crate) fn intrinsic_parameter_with_work<E>(
+        operation: &str,
+        mut index: usize,
+        charge: &mut impl FnMut(usize) -> Result<(), E>,
+    ) -> Result<Self, E> {
+        let mut decimal = [0u8; 3 * std::mem::size_of::<usize>()];
+        let mut start = decimal.len();
+        loop {
+            charge(1)?;
+            start -= 1;
+            decimal[start] = b'0' + (index % 10) as u8;
+            index /= 10;
+            if index == 0 {
+                break;
+            }
+        }
+        for _ in &decimal[start..] {
+            charge(1)?;
+        }
+        let digits = std::str::from_utf8(&decimal[start..]).expect("decimal bytes");
+        let mut value = String::with_capacity(operation.len() + 7 + digits.len());
+        for part in [operation, ".param.", digits] {
+            for _ in part.bytes() {
+                charge(1)?;
+            }
+            value.push_str(part);
+        }
+        let mut fingerprint = 0xcbf29ce484222325u64;
+        for byte in value.bytes() {
+            charge(1)?;
+            fingerprint = (fingerprint ^ u64::from(byte)).wrapping_mul(0x100000001b3);
+        }
+        for _ in value.bytes() {
+            charge(1)?;
+        }
+        Ok(Self(Arc::from(value), fingerprint))
+    }
+
     pub(crate) fn parameter(function: &FunctionExecutionId, index: usize) -> Self {
         Self::new(scoped_identity(function, "value:param", &index.to_string()))
     }

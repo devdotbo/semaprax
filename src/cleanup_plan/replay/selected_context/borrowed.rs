@@ -155,11 +155,23 @@ impl Lease<'_> {
             .call(self.source, function, expression, work.budget)?
         {
             schema::borrowed::Call::User(target) => {
-                work.clone_payload(&target.params, "borrowed actual callee parameter clone")
+                work.budget.reserve_clone(
+                    function,
+                    &target.params,
+                    "borrowed actual callee parameter clone",
+                )?;
+                for parameter in &target.params {
+                    work.charge(1, "borrowed actual parameter clone header")?;
+                    for _ in parameter.name.bytes() {
+                        work.charge(1, "borrowed actual parameter name clone byte")?;
+                    }
+                    work.charge(1, "borrowed scalar or view parameter type clone")?;
+                }
+                Ok(target.params.clone())
             }
             schema::borrowed::Call::Builtin(Builtin::FromU8) => {
                 let op = crate::string_ops::StringOp::I64FromU8;
-                typed_storage::static_params(
+                typed_storage::borrowed_static_params(
                     op.id(),
                     op.param_types(),
                     op.param_names(),
@@ -172,7 +184,7 @@ impl Lease<'_> {
                     Builtin::Get => crate::byte_ops::ByteOp::Get,
                     _ => crate::byte_ops::ByteOp::Len,
                 };
-                typed_storage::static_params(
+                typed_storage::borrowed_static_params(
                     op.id(),
                     op.param_types(),
                     op.param_names(),
@@ -180,13 +192,15 @@ impl Lease<'_> {
                     work,
                 )
             }
-            schema::borrowed::Call::Builtin(Builtin::Str(op)) => typed_storage::static_params(
-                op.id(),
-                op.param_types(),
-                op.param_names(),
-                |_, _| OwnershipMode::Borrow,
-                work,
-            ),
+            schema::borrowed::Call::Builtin(Builtin::Str(op)) => {
+                typed_storage::borrowed_static_params(
+                    op.id(),
+                    op.param_types(),
+                    op.param_names(),
+                    |_, _| OwnershipMode::Borrow,
+                    work,
+                )
+            }
         }
     }
     pub(in crate::cleanup_plan::replay) fn no_drop(
