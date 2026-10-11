@@ -431,6 +431,7 @@ mod tests {
             declarations: DeclarationIndex::from_verified(program).expect("declaration index"),
             reuse: None,
             function_work: super::super::FunctionResolutionWork::default(),
+            fused_producer: None,
         }
     }
 

@@ -710,6 +710,10 @@ impl HirValidator<'_> {
         condition: &ResolvedExpr,
         body: &ResolvedExpr,
     ) -> Result<(), Diagnostic> {
+        if self.selected_loop(condition, body) {
+            // The joined source/HIR selection replaces only this loop-shape check.
+            return Ok(());
+        }
         if crate::finite_row_construction::resolved(self.program, condition, body).is_some() {
             // The independent exact constructor proof replaces only this loop-shape check.
             // Every node still passes ordinary type/ownership/loan/cleanup validation.

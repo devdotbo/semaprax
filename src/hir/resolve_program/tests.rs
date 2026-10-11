@@ -23,6 +23,7 @@ fn resolver(program: &crate::ast::Program) -> Resolver<'_> {
         declarations: DeclarationIndex::from_verified(program).expect("declarations index"),
         reuse: None,
         function_work: super::super::FunctionResolutionWork::default(),
+        fused_producer: None,
     }
 }
 

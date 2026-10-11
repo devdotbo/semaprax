@@ -22,6 +22,8 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
             include_str!("../src/hir/validation/string_intrinsic.rs")
         ),
         include_str!("../src/hir/validation/vec_field.rs"),
+        include_str!("../src/hir/validation/fused_selection.rs"),
+        include_str!("../src/hir/validation/place_resolution.rs"),
         include_str!("../src/hir/validation/upcast.rs"),
         include_str!("../src/hir/validation/literal_format_result_tests.rs"),
         include_str!("../src/hir/validation/call_parameters.rs"),

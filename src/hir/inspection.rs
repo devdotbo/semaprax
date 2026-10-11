@@ -2,8 +2,12 @@
 
 use super::*;
 
-pub(super) fn validate_with_static_text(program: &ResolvedProgram) -> Result<bool, Diagnostic> {
-    let selected = super::validation::owner_renewal::validate_with_static_text(program)?;
+pub(super) fn validate_with_static_text(
+    program: &ResolvedProgram,
+    fused: Option<super::selected_fused_candidate::Selected<'_>>,
+) -> Result<bool, Diagnostic> {
+    let selected =
+        super::validation::owner_renewal::validate_selected_with_static_text(program, fused)?;
     super::function_value::validate_program(program)?;
     validate_attached_identity_references(program)?;
     crate::cleanup::validate_program(program)?;

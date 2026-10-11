@@ -327,3 +327,39 @@ resolver's own 32-event while gate in `hir::resolve_statement` is unchanged
 and still refuses the selected producer. The three executors must also
 implement the lease domain before production enablement. Owning definitions
 are `fused_construction::candidate::tests::` (three, unexecuted).
+
+### Private validated selection factory
+
+The HIR resolver's while gate is still closed on the ordinary path. Only the
+experimental `hir::selected_fused_candidate::validate_selected(&Program)`
+opens it, for the held producer node alone. It runs five steps in order:
+
+1. `check_candidate` derives the source proof and runs every source pass.
+2. The original source resolves with its real row count. A resolver
+   `fused_producer` field admits only that exact producer pointer. Record
+   invariants refuse, because their desugared program would not be the held
+   source.
+3. The sibling `hir::fused_construction::join::join` derives the typed
+   selection independently. It authenticates a freshly derived current source
+   proof whose producer must be the held node, and joins the full prefix and
+   suffix.
+4. Full validation runs with a `Selected` built only from that `Joined`:
+   agent, HIR validator, function value, identity, cleanup, cleanup-plan and
+   loan-plan validation. The validator replaces only the joined loop's
+   while-shape re-check. Capacity, both in the validator and at the
+   resolver's capacity boundary, projects only that loop as
+   `FusedConstruction` at the joined producer's expression identity. It
+   refuses unless the walk matched exactly one loop and the selected function
+   charged exactly one fused backing. Every other loop stays Legacy, under
+   the unchanged 32-event and 2 MiB limits.
+5. Only then is a `ValidatedFusedSelection` published.
+
+The owner privately holds the `ResolvedProgram` and borrows the source. It
+exposes the program read-only, the observed capacity facts, and
+`with_joined`, which re-derives and re-joins on every call and lends the
+result only to a callback. No constructor accepts HIR. Decoded, foreign and
+stale programs fail the pointer checks. Ordinary `check`, `resolve` and
+`validate` pass no selection and are unchanged. Nothing is written to a
+graph, cache or artifact, and no route calls the factory by default.
+Owning definitions are `hir::selected_fused_candidate::tests::` (four,
+unexecuted).

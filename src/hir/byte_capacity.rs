@@ -493,6 +493,10 @@ pub(super) struct ValueFactIndex<'a> {
     facts: std::cell::OnceCell<ValueFacts<'a>>,
     #[cfg(test)]
     baseline: bool,
+    /// The joined `FusedConstructionV1` loop, `None` on every ordinary path.
+    selected: Option<crate::hir::fused_construction::join::SelectedFlow<'a>>,
+    /// How many loops this walk projected as the selected construction.
+    matched: std::cell::Cell<usize>,
 }
 
 struct ValueFacts<'a> {
@@ -507,6 +511,8 @@ impl<'a> ValueFactIndex<'a> {
             facts: std::cell::OnceCell::new(),
             #[cfg(test)]
             baseline: value_index_counters::USE_BASELINE.with(std::cell::Cell::get),
+            selected: None,
+            matched: std::cell::Cell::new(0),
         }
     }
 
@@ -640,6 +646,7 @@ fn byte_capacity_expression_in(
         Sequence(usize),
         Alternative(usize),
         Loop(Option<u32>),
+        FusedConstruction,
         Match(usize),
         Emit(CapacityFlow),
     }
@@ -954,7 +961,11 @@ fn byte_capacity_expression_in(
                                             program, condition, body,
                                         )
                                     });
-                                    frames.push(Frame::Loop(finite));
+                                    frames.push(if fused_selection::selects(facts, condition, body) {
+                                        Frame::FusedConstruction
+                                    } else {
+                                        Frame::Loop(finite)
+                                    });
                                     frames.push(Frame::Visit(body, false));
                                     frames.push(Frame::Visit(condition, false));
                                 }
@@ -1075,6 +1086,15 @@ fn byte_capacity_expression_in(
                     },
                 });
             }
+            Frame::FusedConstruction => {
+                let body = results
+                    .pop()
+                    .ok_or_else(|| hir_error("byte-capacity traversal stack underflowed"))?;
+                let condition = results
+                    .pop()
+                    .ok_or_else(|| hir_error("byte-capacity traversal stack underflowed"))?;
+                results.push(fused_selection::flow(facts, condition, body)?);
+            }
             Frame::Match(arm_count) => {
                 let scrutinee = results
                     .pop()
@@ -1106,10 +1126,15 @@ fn byte_capacity_expression_in(
 pub(crate) fn byte_data_capacity_inputs(
     program: &ResolvedProgram,
 ) -> Result<Vec<crate::byte_data_capacity::FunctionCapacityInput>, Diagnostic> {
-    use crate::byte_data_capacity::{ArrayStorageKind, CapacityFlow, FunctionCapacityInput};
-
     // One value-fact index per analysis, built on the first transcript lookup.
-    let facts = ValueFactIndex::new(program);
+    byte_data_capacity_inputs_with(program, &ValueFactIndex::new(program))
+}
+
+fn byte_data_capacity_inputs_with(
+    program: &ResolvedProgram,
+    facts: &ValueFactIndex<'_>,
+) -> Result<Vec<crate::byte_data_capacity::FunctionCapacityInput>, Diagnostic> {
+    use crate::byte_data_capacity::{ArrayStorageKind, CapacityFlow, FunctionCapacityInput};
 
     let closure_functions = super::closure::inventory(program)
         .into_iter()
@@ -1196,6 +1221,11 @@ pub(crate) fn analyze_byte_data_capacity(
     crate::byte_data_capacity::analyze(&inputs)
         .map_err(|error| Diagnostic::io(error.diagnostic.code(), error.to_string()))
 }
+
+mod fused_selection;
+pub(crate) use fused_selection::analyze_selected_byte_data_capacity;
+#[cfg(test)]
+pub(crate) use fused_selection::selected_inputs_for_test;
 
 #[cfg(test)]
 mod tests;

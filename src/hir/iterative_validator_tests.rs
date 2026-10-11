@@ -117,6 +117,7 @@ interface HostEcho permits { host.echo } {
         declarations: DeclarationIndex::from_verified(&parsed).unwrap(),
         reuse: None,
         function_work: FunctionResolutionWork::default(),
+        fused_producer: None,
     };
     for source_function in &parsed.functions {
         let Some(resolved_function) = resolved

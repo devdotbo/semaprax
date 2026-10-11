@@ -132,6 +132,7 @@ mod resolve_stdin_stream;
 mod resolve_variant_or;
 mod resolve_vec_call;
 mod resolve_yield;
+pub(crate) mod selected_fused_candidate;
 mod type_reachability;
 pub(crate) mod vec_constructor;
 pub(crate) use type_reachability::is_admitted_copy_aggregate_variant_field;
@@ -164,8 +165,18 @@ pub fn validate(program: &ResolvedProgram) -> Result<(), Diagnostic> {
 }
 
 pub(crate) fn validate_with_static_text(program: &ResolvedProgram) -> Result<bool, Diagnostic> {
+    validate_selected_with_static_text(program, None)
+}
+
+/// The complete validation sequence. Only the private selected factory passes
+/// a joined `FusedConstructionV1` selection; it changes that one loop's shape
+/// check and capacity strategy, and nothing else.
+fn validate_selected_with_static_text(
+    program: &ResolvedProgram,
+    fused: Option<selected_fused_candidate::Selected<'_>>,
+) -> Result<bool, Diagnostic> {
     agent_validation::validate(program)?;
-    let selected = inspection::validate_with_static_text(program)?;
+    let selected = inspection::validate_with_static_text(program, fused)?;
     crate::loan_plan::validate_program(program)?;
     Ok(selected)
 }
@@ -542,6 +553,7 @@ fn resolve_verified(
             reuse
         },
         function_work: FunctionResolutionWork::default(),
+        fused_producer: None,
     })
     .resolve()?;
     let Some(desugared) = record_invariants::desugar(program, &resolved.0) else {
@@ -553,6 +565,7 @@ fn resolve_verified(
         declarations: DeclarationIndex::from_verified(&desugared)?,
         reuse: None,
         function_work: FunctionResolutionWork::default(),
+        fused_producer: None,
     })
     .resolve()
 }
@@ -630,6 +643,9 @@ struct Resolver<'a> {
     declarations: DeclarationIndex,
     reuse: Option<FunctionReuse<'a>>,
     function_work: FunctionResolutionWork,
+    /// The held source selection's exact producer call, set only by the
+    /// private selected factory. `None` on every ordinary resolution.
+    fused_producer: Option<&'a crate::ast::Expr>,
 }
 
 fn function_reuse_environment_is_exact(current: &Program, previous: &Program) -> bool {

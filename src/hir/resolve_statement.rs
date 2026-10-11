@@ -304,7 +304,10 @@ impl Resolver<'_> {
                             && !crate::source_verify::finite_row_allocation(
                                 self.program,
                                 expression,
-                            ))
+                            )
+                            && !self
+                                .fused_producer
+                                .is_some_and(|producer| std::ptr::eq(producer, expression)))
                             || args.len() != operation.arity()
                         {
                             return Err(self.error(

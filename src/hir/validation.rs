@@ -66,6 +66,8 @@ pub(super) struct HirValidator<'a> {
     proof_return: Option<(FunctionInstanceId, ResolvedType)>,
     canonical_loan_ids: BTreeMap<(ExpressionId, LoanCause), LoanId>,
     canonical_loan_liveness: BTreeMap<(ExpressionId, LoanPointPhase, LoanId), Place>,
+    /// Joined `FusedConstructionV1` selection; `None` on every ordinary path.
+    selected: Option<crate::hir::selected_fused_candidate::Selected<'a>>,
 }
 impl<'a> HirValidator<'a> {
     fn exact_loan_id(
@@ -206,6 +208,7 @@ impl<'a> HirValidator<'a> {
             proof_return: None,
             canonical_loan_ids,
             canonical_loan_liveness,
+            selected: None,
         })
     }
     fn validate(mut self) -> Result<bool, Diagnostic> {
@@ -1338,7 +1341,7 @@ impl<'a> HirValidator<'a> {
         }
         // Rebuild the target-neutral storage/call-flow projection from the
         // hostile HIR rather than trusting Graph or backend-attached totals.
-        analyze_byte_data_capacity(self.program)?;
+        self.analyze_capacity()?;
         self.finish_static_pool()
     }
 
@@ -8434,29 +8437,6 @@ impl<'a> HirValidator<'a> {
         Ok(())
     }
 
-    fn resolve_place(
-        &self,
-        place: &Place,
-        binding: &ValidationBinding,
-    ) -> Result<(ResolvedType, OwnershipMode), Diagnostic> {
-        let mut ty = binding.ty.clone();
-        let mut ownership = binding.ownership;
-        for projection in &place.projections {
-            match projection {
-                PlaceProjection::Field(field) => {
-                    ty = self.field_type_for_type(&ty, field)?;
-                    ownership = self.expected_ownership(&ty, ownership)?;
-                }
-                PlaceProjection::VariantField { .. } => {
-                    return Err(hir_error(
-                        "variant-field projections are not valid before variant HIR lands",
-                    ));
-                }
-            }
-        }
-        Ok((ty, ownership))
-    }
-
     fn field_type_for_type(
         &self,
         ty: &ResolvedType,
@@ -8804,8 +8784,10 @@ mod iterative_while_admission_tests;
 #[cfg(test)]
 mod literal_format_result_tests;
 
+mod fused_selection;
 mod generic_variant;
 mod iterator_loops;
+mod place_resolution;
 mod string_replacement;
 mod variant_guard_state;
 mod variant_or;

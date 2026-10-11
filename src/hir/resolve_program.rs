@@ -13,7 +13,6 @@ use crate::cleanup_plan::CleanupPlan;
 use crate::diagnostic::Diagnostic;
 use crate::loan_plan::LoanPlan;
 
-use super::byte_capacity::analyze_byte_data_capacity;
 use super::byte_slice_provenance::derive_byte_slice_provenance;
 use super::hir_error;
 use super::ids::{DeclarationId, FunctionExecutionId, FunctionInstanceId, ValueId};
@@ -496,7 +495,11 @@ impl Resolver<'_> {
         if let Some(error) = self.byte_helpers.failure() {
             return Err(error);
         }
-        analyze_byte_data_capacity(&resolved)?;
+        super::selected_fused_candidate::resolution::capacity(
+            self.program,
+            self.fused_producer,
+            &resolved,
+        )?;
         let loan_plans = resolved
             .functions
             .iter()
@@ -564,7 +567,11 @@ impl Resolver<'_> {
                 }
             }
         }
-        self.function_work.static_text = super::validate_with_static_text(&resolved)?;
+        self.function_work.static_text = super::selected_fused_candidate::resolution::validation(
+            self.program,
+            self.fused_producer,
+            &resolved,
+        )?;
         Ok((resolved, self.function_work))
     }
 

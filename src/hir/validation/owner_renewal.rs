@@ -51,8 +51,18 @@ pub(crate) fn validate_core(program: &ResolvedProgram) -> Result<(), Diagnostic>
 }
 
 pub(crate) fn validate_with_static_text(program: &ResolvedProgram) -> Result<bool, Diagnostic> {
+    validate_selected_with_static_text(program, None)
+}
+
+/// The same validator, with an explicit joined selection only on the private
+/// selected factory path.
+pub(crate) fn validate_selected_with_static_text(
+    program: &ResolvedProgram,
+    fused: Option<crate::hir::selected_fused_candidate::Selected<'_>>,
+) -> Result<bool, Diagnostic> {
     let helpers = crate::loop_calls::byte_writer::ModuleIndex::new(program)?;
     HirValidator::new(program)?
         .with_helpers(&helpers)
+        .with_selected(fused)
         .validate()
 }

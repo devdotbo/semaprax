@@ -237,6 +237,12 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         concat!(
             include_str!("../../../../../src/hir/byte_capacity.rs"),
             "\n",
+            include_str!("../../../../../src/hir/byte_capacity/fused_selection.rs"),
+            "\n",
+            include_str!("../../../../../src/hir/selected_fused_candidate.rs"),
+            "\n",
+            include_str!("../../../../../src/hir/selected_fused_candidate/resolution.rs"),
+            "\n",
             include_str!("../../../../../src/hir/vec_loop_renewal/consuming/empty_clone.rs"),
             "\n",
             include_str!("../../../../../src/finite_byte_scratch.rs"),
@@ -324,6 +330,8 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
             include_str!("../../../../../src/hir/validation/vec_field.rs")
         ),
         include_str!("../../../../../src/hir/validation/lexical_exit.rs"),
+        include_str!("../../../../../src/hir/validation/fused_selection.rs"),
+        include_str!("../../../../../src/hir/validation/place_resolution.rs"),
         include_str!("../../../../../src/hir/validation/call_parameters.rs"),
         include_str!("../../../../../src/hir/validation/nominal_facts.rs"),
         include_str!("../../../../../src/hir/validation/variant_guard_state.rs"),
