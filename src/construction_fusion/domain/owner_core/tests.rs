@@ -503,10 +503,14 @@ fn paired_reads_validate_both_loans_and_keep_foreign_refusal_sticky() {
         Err(Refusal::Identity)
     );
     assert_eq!(calls.get(), 0);
-    assert_eq!(core.end_borrow(&mut left), Err(Refusal::Identity));
-    assert_eq!(core.end_borrow(&mut right), Err(Refusal::Identity));
+    // Successful cleanup reports its own completion and retains selected failure.
+    core.end_borrow(&mut left).unwrap();
+    assert_eq!(core.failure(), Some(Refusal::Identity));
+    core.end_borrow(&mut right).unwrap();
+    assert_eq!(core.failure(), Some(Refusal::Identity));
     for child in &mut children {
-        assert_eq!(core.drop_owner(child), Err(Refusal::Identity));
+        core.drop_owner(child).unwrap();
+        assert_eq!(core.failure(), Some(Refusal::Identity));
     }
     assert_eq!(p.0.borrow().releases, 1);
 }
