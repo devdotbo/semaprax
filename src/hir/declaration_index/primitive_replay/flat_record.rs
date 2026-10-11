@@ -1,5 +1,6 @@
 //! Minimal record lookup reconstructed only after private source-layout replay.
-//! No type-key, generic, inheritance or import caches are materialized.
+//! Like the ordinary index, a monomorphic record retains one empty parameter
+//! list; no type-key, generic, inheritance or import caches are materialized.
 use super::*;
 impl DeclarationIndex {
     #[cfg(test)]
@@ -51,10 +52,24 @@ impl DeclarationIndex {
                     .ok_or_else(fail)?,
             )?;
         }
+        // The parameter and field tables are inserted under the same ID; scan
+        // both before their lookup and insertion comparisons.
+        for key in self.type_parameters.keys().chain(self.record_fields.keys()) {
+            debit(
+                key.as_str()
+                    .len()
+                    .checked_add(record.id.as_str().len())
+                    .and_then(|n| n.checked_mul(3))
+                    .ok_or_else(fail)?,
+            )?;
+        }
         if !record.type_parameters.is_empty()
+            || origin == IdentityOrigin::CompilerOwned
             || !(1..=8).contains(&fields.len())
             || self.declarations.contains_key(&record.id)
             || self.types_by_name.contains_key(&record.name)
+            || self.type_parameters.contains_key(&record.id)
+            || self.record_fields.contains_key(&record.id)
         {
             return Err(fail());
         }
@@ -81,7 +96,7 @@ impl DeclarationIndex {
                 )?;
             }
             if field.index as usize != ordinal
-                || field_origin(ordinal).is_none()
+                || field_origin(ordinal).is_none_or(|o| o == IdentityOrigin::CompilerOwned)
                 || self.declarations.contains_key(&field.id)
                 || field.id == record.id
                 || fields[..ordinal]
@@ -97,16 +112,23 @@ impl DeclarationIndex {
             .ok_or_else(fail)?;
         let names = crate::cleanup_plan::replay_btree_node_upper::<String, DeclarationId>()
             .ok_or_else(fail)?;
+        let parameters = crate::cleanup_plan::replay_btree_node_upper::<
+            DeclarationId,
+            Vec<ResolvedTypeParameterDeclaration>,
+        >()
+        .ok_or_else(fail)?;
         let record_fields = crate::cleanup_plan::replay_btree_node_upper::<
             DeclarationId,
             Vec<ResolvedFieldDeclaration>,
         >()
         .ok_or_else(fail)?;
+        // Record ID copies: declaration key and ID, name value, parameter key
+        // and field key. The empty parameter list owns no heap allocation.
         let roots = record
             .id
             .as_str()
             .len()
-            .checked_mul(4)
+            .checked_mul(5)
             .and_then(|n| {
                 record
                     .name
@@ -116,6 +138,7 @@ impl DeclarationIndex {
             })
             .and_then(|n| n.checked_add(node))
             .and_then(|n| n.checked_add(names))
+            .and_then(|n| n.checked_add(parameters))
             .and_then(|n| n.checked_add(record_fields))
             .and_then(|n| {
                 fields
@@ -149,6 +172,7 @@ impl DeclarationIndex {
         );
         self.types_by_name
             .insert(record.name.clone(), record.id.clone());
+        self.type_parameters.insert(record.id.clone(), Vec::new());
         self.record_fields.insert(record.id.clone(), fields.clone());
         for (ordinal, field) in fields.iter().enumerate() {
             self.declarations.insert(
@@ -165,3 +189,5 @@ impl DeclarationIndex {
         Ok(())
     }
 }
+#[cfg(test)]
+pub(super) mod tests;

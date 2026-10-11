@@ -211,28 +211,59 @@ pub(in crate::cleanup_plan::replay) fn append(
     value: &ResolvedExpr,
     budget: &mut ReplayBudget,
 ) -> Result<bool, Diagnostic> {
+    if budget.refusal_spent {
+        return Err(budget.budget_refusal(function, "selected replay budget already failed", ""));
+    }
+    // Debit the allowance `ReplayBudget::charge` would use. A factored
+    // comparison lends the whole free allowance to its skeleton constructors,
+    // so `remaining` is then zero and only the lent allowance may pay.
     let ReplayBudget {
         remaining,
+        skeleton_remaining,
+        skeleton_spent,
+        lent_skeleton,
         physical,
         ..
     } = budget;
+    let lent = *lent_skeleton;
     let physical = physical
         .as_deref_mut()
         .ok_or_else(|| replay_error(function, "selected append lost reservation"))?;
-    crate::cleanup_plan::renewal_profile::selected_string_append(
+    let mut exhausted = false;
+    let answer = crate::cleanup_plan::renewal_profile::selected_string_append(
         binding,
         value,
         physical,
         &mut |units| {
-            if let Some(next) = remaining.checked_sub(units) {
-                *remaining = next;
-                Ok(())
+            let debited = if lent {
+                skeleton_remaining
+                    .checked_sub(units)
+                    .zip(skeleton_spent.checked_add(units))
+                    .map(|(next, spent)| {
+                        *skeleton_remaining = next;
+                        *skeleton_spent = spent;
+                    })
             } else {
-                *remaining = 0;
-                Err(replay_error(function, "selected append work exhausted"))
-            }
+                remaining.checked_sub(units).map(|next| *remaining = next)
+            };
+            debited.ok_or_else(|| {
+                exhausted = true;
+                replay_error(function, "selected append work exhausted")
+            })
         },
-    )
+    );
+    if exhausted {
+        // Same sticky refusal as every other selected debit: no later member
+        // or retry can spend what this exhausted allowance did not have.
+        let error = budget.budget_refusal(
+            function,
+            "cleanup replay work budget exhausted during ",
+            "selected String append",
+        );
+        exhaust(budget);
+        return Err(error);
+    }
+    answer
 }
 
 pub(in crate::cleanup_plan::replay) fn prepay(
@@ -241,9 +272,25 @@ pub(in crate::cleanup_plan::replay) fn prepay(
     query_bytes: usize,
     budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
-    crate::cleanup::prepay_selected_collection_probes(program, query_bytes, &mut |units| {
-        budget.charge(function, units, "selected collection key/probe work")
-    })
+    let answer =
+        crate::cleanup::prepay_selected_collection_probes(program, query_bytes, &mut |units| {
+            budget.charge(function, units, "selected collection key/probe work")
+        });
+    if answer.is_err() {
+        // A refused prepayment is sticky; a one-short receiver cannot retry
+        // the census with the unspent remainder of its exact allowance.
+        exhaust(budget);
+    }
+    answer
+}
+
+/// Zero the active work allowance after a selected refusal.
+fn exhaust(budget: &mut ReplayBudget) {
+    if budget.lent_skeleton {
+        budget.skeleton_remaining = 0;
+    } else {
+        budget.remaining = 0;
+    }
 }
 fn element_bytes(element: &ResolvedType) -> Result<usize, Diagnostic> {
     match element {

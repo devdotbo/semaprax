@@ -12,6 +12,74 @@ impl DeclarationIndex {
                 "selected Option metadata reconstruction refused",
             )
         };
+        // These maps start empty on the primitive route. No unbounded tree
+        // comparison or candidate metadata is copied into compiler authority.
+        if !self.variant_cases.is_empty() || !self.case_fields.is_empty() {
+            return Err(fail());
+        }
+        // The only admitted parameter entries are the empty lists of replayed
+        // flat source records: a declared non-compiler record with 1..=8
+        // retained fields, each declared under it. Generic, compiler-owned,
+        // orphaned or unfielded entries keep Option authority closed. The
+        // first debit also covers the later Option parameter insertion.
+        for (owner, parameters) in &self.type_parameters {
+            debit(
+                owner
+                    .as_str()
+                    .len()
+                    .checked_add(crate::prelude::OPTION_ID.len())
+                    .and_then(|n| n.checked_mul(3))
+                    .ok_or_else(fail)?,
+            )?;
+            let mut declared = false;
+            for (key, declaration) in &self.declarations {
+                debit(
+                    key.as_str()
+                        .len()
+                        .checked_add(owner.as_str().len())
+                        .ok_or_else(fail)?,
+                )?;
+                declared |= key == owner
+                    && declaration.id == *owner
+                    && declaration.kind == DeclarationKind::Record
+                    && declaration.identity_origin != IdentityOrigin::CompilerOwned
+                    && declaration.owner.is_none();
+            }
+            let mut retained = None;
+            for (key, fields) in &self.record_fields {
+                debit(
+                    key.as_str()
+                        .len()
+                        .checked_add(owner.as_str().len())
+                        .ok_or_else(fail)?,
+                )?;
+                if key == owner {
+                    retained = Some(fields);
+                }
+            }
+            let fields = retained.ok_or_else(fail)?;
+            if !parameters.is_empty() || !declared || !(1..=8).contains(&fields.len()) {
+                return Err(fail());
+            }
+            for field in fields {
+                let mut owned = false;
+                for (key, declaration) in &self.declarations {
+                    debit(
+                        key.as_str()
+                            .len()
+                            .checked_add(field.id.as_str().len())
+                            .ok_or_else(fail)?,
+                    )?;
+                    owned |= key == &field.id
+                        && declaration.kind == DeclarationKind::Field
+                        && declaration.identity_origin != IdentityOrigin::CompilerOwned
+                        && declaration.owner.as_ref() == Some(owner);
+                }
+                if !owned {
+                    return Err(fail());
+                }
+            }
+        }
         let specs = [
             (
                 crate::prelude::OPTION_ID,
@@ -69,14 +137,6 @@ impl DeclarationIndex {
                     owner: owner.map(DeclarationId::new),
                 },
             );
-        }
-        // These maps start empty on the primitive route. No unbounded tree
-        // comparison or candidate metadata is copied into compiler authority.
-        if !self.variant_cases.is_empty()
-            || !self.case_fields.is_empty()
-            || !self.type_parameters.is_empty()
-        {
-            return Err(fail());
         }
         let parameter = crate::cleanup_plan::replay_btree_node_upper::<
             DeclarationId,
@@ -160,3 +220,4 @@ impl DeclarationIndex {
         Ok(())
     }
 }
+mod tests;

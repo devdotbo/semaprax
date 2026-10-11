@@ -108,75 +108,109 @@ fn nodes(root: &ResolvedExpr) -> Vec<&ResolvedExpr> {
     }
     result
 }
-#[test]
-fn exact_vec_call_and_field_modes_types_ids_and_elements_remain_closed() {
-    let helper = direct(
-        r#"module receiving;
+// The scalar helper is unchanged; the lexical witness only supplies the real
+// static literal and lexical profile the held source-bound context requires.
+const HELPER: &str = r#"module receiving;
 @id("app.Row") record Row {@id("app.Row.n") n:i64,@id("app.Row.text") text:string,}
 @id("app.weight") fn weight(row:borrow Row)->i64 {row.n}
 @id("app.main") fn main()->i64 {let row=Row{n:42,text:"x"};weight(row)}
-"#,
-    );
-    let current_helper = helper
+@id("app.witness") fn witness()->i64 {
+ let key=str"x";let mut next=0;
+ while next<1 {next=next+1;if str_len_bytes(key)==1 {return 1;} else {0} 0}
+ 0
+}
+"#;
+#[test]
+fn exact_vec_call_and_field_modes_types_ids_and_elements_remain_closed() {
+    let helper = direct(HELPER);
+    let ordinary_helper = helper
         .functions
         .iter()
         .find(|f| f.id.as_str() == "app.weight")
         .unwrap();
-    super::super::scalar_replay::validate(&helper, current_helper, &mut budget()).unwrap();
-    let projection = nodes(&current_helper.body)
-        .into_iter()
-        .find(|node| matches!(&node.kind, ResolvedExprKind::Place(place) if !place.projections.is_empty()))
-        .expect("actual resolved row.n Field place");
-    assert_eq!(
-        super::super::scalar_replay::records::expression_for_test(
-            &helper,
-            current_helper,
-            projection,
-            &mut budget()
-        )
-        .unwrap(),
-        Some(true)
+    // Standalone HIR, with every compiler-owned declaration intact, is not an
+    // authenticated module projection and still refuses full scalar replay.
+    let standalone =
+        super::super::scalar_replay::validate(&helper, ordinary_helper, &mut budget()).unwrap_err();
+    assert_eq!(standalone.code, "SPX-H006");
+    assert!(
+        standalone
+            .message
+            .contains("unauthenticated or unsupported fields"),
+        "{standalone:?}"
     );
-    for mutation in 0..6 {
-        let mut forged = projection.clone();
-        let ResolvedExprKind::Place(place) = &mut forged.kind else {
-            unreachable!()
-        };
-        match mutation {
-            0 => {
-                place.projections[0] =
-                    crate::hir::PlaceProjection::Field(DeclarationId::new("foreign.field"))
-            }
-            1 => forged.ownership = OwnershipMode::Own,
-            2 => place.root = crate::hir::ValueId::intrinsic_parameter("foreign.parameter", 0),
-            3 => forged.ty = ResolvedType::Bool,
-            4 => forged.ownership = OwnershipMode::Borrow,
-            _ => place.projections.push(place.projections[0].clone()),
-        }
+    let fixture = SourceRecordReplayFixture::new(HELPER);
+    let current_helper = fixture
+        .functions()
+        .iter()
+        .find(|f| f.id == ordinary_helper.id)
+        .unwrap();
+    assert_eq!(current_helper.cleanup, ordinary_helper.cleanup);
+    assert_eq!(current_helper.cleanup_plan, ordinary_helper.cleanup_plan);
+    fixture.with_context(|context| {
+        let mut session = super::super::selected_entry::Session::new(
+            context,
+            current_helper,
+            PhysicalReservation::new(usize::MAX),
+        )
+        .unwrap();
+        session.validate_scalar(current_helper).unwrap();
+        session.finish().unwrap();
+        let projection = nodes(&current_helper.body)
+            .into_iter()
+            .find(|node| matches!(&node.kind, ResolvedExprKind::Place(place) if !place.projections.is_empty()))
+            .expect("actual resolved row.n Field place");
         assert_eq!(
             super::super::scalar_replay::records::expression_for_test(
-                &helper,
+                context,
                 current_helper,
-                &forged,
+                projection,
                 &mut budget()
             )
             .unwrap(),
-            Some(false),
-            "record projection mutation {mutation}"
+            Some(true)
         );
-    }
-    let mut wrong_parameter = current_helper.clone();
-    wrong_parameter.params[0].ownership = OwnershipMode::Own;
-    assert_eq!(
-        super::super::scalar_replay::records::expression_for_test(
-            &helper,
-            &wrong_parameter,
-            projection,
-            &mut budget()
-        )
-        .unwrap(),
-        Some(false)
-    );
+        for mutation in 0..6 {
+            let mut forged = projection.clone();
+            let ResolvedExprKind::Place(place) = &mut forged.kind else {
+                unreachable!()
+            };
+            match mutation {
+                0 => {
+                    place.projections[0] =
+                        crate::hir::PlaceProjection::Field(DeclarationId::new("foreign.field"))
+                }
+                1 => forged.ownership = OwnershipMode::Own,
+                2 => place.root = crate::hir::ValueId::intrinsic_parameter("foreign.parameter", 0),
+                3 => forged.ty = ResolvedType::Bool,
+                4 => forged.ownership = OwnershipMode::Borrow,
+                _ => place.projections.push(place.projections[0].clone()),
+            }
+            assert_eq!(
+                super::super::scalar_replay::records::expression_for_test(
+                    context,
+                    current_helper,
+                    &forged,
+                    &mut budget()
+                )
+                .unwrap(),
+                Some(false),
+                "record projection mutation {mutation}"
+            );
+        }
+        let mut wrong_parameter = current_helper.clone();
+        wrong_parameter.params[0].ownership = OwnershipMode::Own;
+        assert_eq!(
+            super::super::scalar_replay::records::expression_for_test(
+                context,
+                &wrong_parameter,
+                projection,
+                &mut budget()
+            )
+            .unwrap(),
+            Some(false)
+        );
+    });
     for source in [VECTOR, RECORD] {
         let ordinary = direct(source);
         let current = function(&ordinary);
@@ -312,4 +346,51 @@ fn string_read_move_and_renewal_censuses_keep_exact_work_backing_and_sticky_refu
     );
     assert_eq!(remaining, 0);
     assert!(physical.charged() >= before);
+}
+#[test]
+fn string_append_debits_the_lent_skeleton_allowance_exactly_and_stickily() {
+    // A factored comparison lends the whole free allowance to the skeleton
+    // constructors; the selected append census must pay from that loan.
+    let ordinary = direct(STRING);
+    let probe = function(&ordinary);
+    let (binding, value) = nodes(&probe.body)
+        .into_iter()
+        .find_map(|node| match &node.kind {
+            ResolvedExprKind::Block { statements, .. } => {
+                statements.iter().find_map(|statement| match statement {
+                    crate::hir::ResolvedStatement::Assign {
+                        binding,
+                        value,
+                        field: None,
+                        ..
+                    } if binding.ty == ResolvedType::String => Some((binding, value)),
+                    _ => None,
+                })
+            }
+            _ => None,
+        })
+        .expect("actual same-owner String append");
+    let mut free = budget();
+    assert!(collections::append(probe, binding, value, &mut free).unwrap());
+    let work = MAX_REPLAY_WORK_UNITS - free.remaining;
+    let bytes = free.physical.as_deref().unwrap().charged();
+    assert!(work > 0);
+    for (limit, success) in [(work, true), (work - 1, false)] {
+        let mut lent = budget();
+        lent.remaining = 0;
+        lent.skeleton_remaining = limit;
+        lent.lent_skeleton = true;
+        let outcome = collections::append(probe, binding, value, &mut lent);
+        assert_eq!(outcome.is_ok(), success, "lent limit {limit}");
+        assert_eq!(lent.remaining, 0, "the lent free allowance is never spent");
+        assert_eq!(lent.skeleton_remaining, 0);
+        if success {
+            assert!(outcome.unwrap());
+            assert_eq!(lent.skeleton_spent, work);
+            assert_eq!(lent.physical.as_deref().unwrap().charged(), bytes);
+        } else {
+            assert_eq!(outcome.unwrap_err().code, "SPX-H006");
+            assert!(collections::append(probe, binding, value, &mut lent).is_err());
+        }
+    }
 }
