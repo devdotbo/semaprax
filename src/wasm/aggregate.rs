@@ -1246,6 +1246,9 @@ fn emit_byte_exports_profile(
         ));
     }
     let has_owned_utf8 = static_utf8
+        // Runtime selection follows the exact bodies emitted below, including
+        // materialized instances and closure bodies, not only their signatures.
+        || super::functions_use_strings(executable_functions.iter().map(|(function, _)| *function))
         || (command_io.is_some_and(super::command_io::CommandPlan::is_environment_command)
             && super::program_uses_strings(program))
         || owned_plans
