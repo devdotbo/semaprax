@@ -33,6 +33,11 @@ type identity, target and exact optional policy bounds. Each evaluated row
 repeats its applicable bounds; omitted bounds remain null. No caller HIR or
 report supplies authority.
 
+Each page is an independent read-only query. Consumers combining pages must
+compare the revisions, source path and digest, type, target and policy bounds
+and require those fields to match. Changing a bound or target starts a different
+query; `--revision` rejects source/manifest drift, not changed query parameters.
+
 The `semaprax.json-codec-suitability.v1` envelope contains `profile_count: 12`,
 `offset`, `coverage`, `next_offset`, and whole `profiles` rows. Order is the
 compiler's existing codec inventory. `coverage` is `complete` only at its end;
