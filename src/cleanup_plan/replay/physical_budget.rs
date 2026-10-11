@@ -115,11 +115,20 @@ impl ReplayBudget {
         if required <= values.capacity() {
             return Ok(());
         }
-        self.reserve_array::<T>(function, required, phase)?;
-        values.try_reserve_exact(additional).map_err(|_| {
-            replay_error(function, "cleanup replay physical queue allocation failed")
-        })?;
-        if values.capacity() != required {
+        let target = physical_storage::replay_growth_capacity(values.capacity(), required)
+            .ok_or_else(|| {
+                replay_error(
+                    function,
+                    "cleanup replay physical queue capacity overflowed",
+                )
+            })?;
+        self.reserve_array::<T>(function, target, phase)?;
+        values
+            .try_reserve_exact(target - values.len())
+            .map_err(|_| {
+                replay_error(function, "cleanup replay physical queue allocation failed")
+            })?;
+        if values.capacity() != target {
             return Err(replay_error(
                 function,
                 "cleanup replay physical queue capacity disagrees with its reservation",
@@ -170,3 +179,6 @@ impl ReplayBudget {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod queue_tests;

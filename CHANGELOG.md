@@ -811,6 +811,7 @@ format: `Unreleased` then release buckets, grouped by impact.
 ## Unreleased
 
 - Factor ShiftSim Copy-state scans and metric decisions into checked helpers, retaining the original semantic path-budget refusal and all 15 wire cases; qualification pending.
+- Precharge geometric selected-replay FIFO frontier growth in full before allocation, preserving wrapped order, sticky refusal and the ordinary route; actual-layout regression definitions await qualification.
 
 - Correct Catalog sorted-owner names, preserve canonical prefixed codec-plan digests, and reuse the canonical command manifest for the full 264-value UTF-8 oracle. Source-only Bytes writer imports independently authenticate their current nonallocating provider before forwarding an owner; public export profiles are unchanged.
 

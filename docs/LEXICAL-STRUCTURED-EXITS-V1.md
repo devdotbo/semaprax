@@ -255,7 +255,7 @@ closed. This restriction is a replay boundary, not broader application support.
 Structural exit validation compares borrowed parent links and exact leave order
 without constructing an expected-region vector or ancestor tree. CFG traversal
 reads authenticated successors directly and reserves its colors and stack before
-construction. Selected vector growth requests `max(required, 2 * capacity)`
+construction. Selected vector and FIFO frontier growth request `max(required, 2 * capacity)`
 through checked arithmetic, charging the complete replacement backing while the
 old backing remains charged. Spare capacity cannot refund or reset a refusal.
 Ordinary replay retains its existing allocation route.
