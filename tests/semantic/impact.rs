@@ -76,6 +76,7 @@ fn first_call<'a>(expression: &'a ResolvedExpr, template: &str) -> Option<&'a Re
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
         | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. } => None,
         ResolvedExprKind::ByteRange {
@@ -83,7 +84,9 @@ fn first_call<'a>(expression: &'a ResolvedExpr, template: &str) -> Option<&'a Re
         } => first_call(source, template)
             .or_else(|| first_call(start, template))
             .or_else(|| first_call(end, template)),
-        ResolvedExprKind::Call { args, .. } => args
+        ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. } => args
             .iter()
             .find_map(|argument| first_call(argument, template)),
         ResolvedExprKind::NativeRustImportCall(call) => call
@@ -94,6 +97,9 @@ fn first_call<'a>(expression: &'a ResolvedExpr, template: &str) -> Option<&'a Re
             .args
             .iter()
             .find_map(|argument| first_call(argument, template)),
+        ResolvedExprKind::LexicalExit { value, .. } => value
+            .as_deref()
+            .and_then(|value| first_call(value, template)),
         ResolvedExprKind::Unary { value, .. }
         | ResolvedExprKind::Project { base: value, .. }
         | ResolvedExprKind::Upcast { source: value }
@@ -103,7 +109,10 @@ fn first_call<'a>(expression: &'a ResolvedExpr, template: &str) -> Option<&'a Re
         ResolvedExprKind::Binary { left, right, .. } => {
             first_call(left, template).or_else(|| first_call(right, template))
         }
-        ResolvedExprKind::Block { statements, tail } => statements
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => statements
             .iter()
             .find_map(|statement| first_call(statement.value(), template))
             .or_else(|| first_call(tail, template)),
