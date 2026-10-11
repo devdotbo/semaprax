@@ -248,7 +248,9 @@ pub(in crate::workspace_graph) fn clone_type(
     }
     Ok(current.clone())
 }
-pub(super) fn type_capacity_bytes(current: &hir::ResolvedType) -> Option<usize> {
+pub(in crate::workspace_graph) fn type_capacity_bytes(
+    current: &hir::ResolvedType,
+) -> Option<usize> {
     if let hir::ResolvedType::Nominal {
         declaration,
         arguments,
@@ -319,6 +321,28 @@ pub(in crate::workspace_graph) fn capture(
                     .ok_or_else(capacity)
             },
         )?;
+        debit(
+            work,
+            current
+                .id
+                .as_str()
+                .len()
+                .checked_add(current.name.len())
+                .and_then(|n| n.checked_add(fields.len()))
+                .ok_or_else(fail)?,
+        )?;
+        for field in fields {
+            debit(
+                work,
+                field
+                    .id
+                    .as_str()
+                    .len()
+                    .checked_add(field.name.len())
+                    .and_then(|n| n.checked_add(1))
+                    .ok_or_else(fail)?,
+            )?;
+        }
         reserve_builder_structure(
             current
                 .id

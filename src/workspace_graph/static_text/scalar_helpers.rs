@@ -391,6 +391,12 @@ pub(in crate::workspace_graph) fn capture(
                     .checked_add(param.name.len())
                     .ok_or_else(capacity)?,
             )?;
+            debit(
+                &mut work,
+                primitive::records::type_capacity_bytes(&param.ty)
+                    .and_then(|n| n.checked_add(1))
+                    .ok_or_else(fail)?,
+            )?;
             params.push(Parameter {
                 id: param.id.clone(),
                 name: param.name.clone(),

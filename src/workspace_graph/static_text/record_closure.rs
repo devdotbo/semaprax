@@ -104,32 +104,6 @@ pub(in crate::workspace_graph) fn capture(
             .ok_or_else(fail)?,
     )?;
     let revision = body_digest::source(&program.path, &program.module, &held_source.source);
-    // Account each actual cloned ID/name byte before the record constructor.
-    for source in &program.types {
-        debit(
-            &mut work,
-            source
-                .stable_id
-                .len()
-                .checked_add(source.name.len())
-                .and_then(|n| n.checked_add(1))
-                .ok_or_else(fail)?,
-        )?;
-        let crate::ast::TypeDeclarationKind::Record { fields } = &source.kind else {
-            return Err(fail());
-        };
-        for field in fields {
-            debit(
-                &mut work,
-                field
-                    .stable_id
-                    .len()
-                    .checked_add(field.name.len())
-                    .and_then(|n| n.checked_add(1))
-                    .ok_or_else(fail)?,
-            )?;
-        }
-    }
     let records = primitive::records::capture(program, resolved, &mut work)?.ok_or_else(fail)?;
     reserve_builder_structure(std::mem::size_of::<Inventory>())?;
     Ok(Some(Box::new(Inventory {
