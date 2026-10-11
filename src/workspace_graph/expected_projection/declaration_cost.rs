@@ -111,8 +111,9 @@ pub(super) fn ast_type_cost(ty: &Type, cost: &mut StructuralCost) -> Result<(), 
 /// of a free-function call's argument list (every intrinsic route only moves
 /// or boxes its arguments): no binding, statement, field initializer, arm or
 /// pattern field is constructed for it there. Only literal/unary/binary and
-/// `if` roots in such a slot are censused. Every other child, and every
-/// root reached through `ast_expr_cost`, is `Delegated` and keeps its complete
+/// `if` roots in such a slot are censused; variable roots are also censused
+/// outside every authored closure subtree, retaining all their storage. Every
+/// other child, and every root reached through `ast_expr_cost`, is `Delegated` and keeps its complete
 /// bundle.
 #[derive(Clone, Copy, Eq, PartialEq)]
 enum RootPosition {
@@ -124,13 +125,14 @@ pub(super) fn ast_expr_cost(
     expression: &Expr,
     cost: &mut StructuralCost,
 ) -> Result<(), Vec<Diagnostic>> {
-    ast_expr_cost_at(expression, cost, RootPosition::Delegated)
+    ast_expr_cost_at(expression, cost, RootPosition::Delegated, true)
 }
 
 fn ast_expr_cost_at(
     expression: &Expr,
     cost: &mut StructuralCost,
     position: RootPosition,
+    outside_closure: bool,
 ) -> Result<(), Vec<Diagnostic>> {
     use RootPosition::CarrierFree;
     cost.value(expression)?;
@@ -163,7 +165,7 @@ fn ast_expr_cost_at(
     cost.note_exact_expr_fixed_bundle()?;
     cost.account_scalar_identity(&expression.kind)?;
     cost.account_exact_absent_storage(&expression.kind)?;
-    cost.account_carrier_free_root(&expression.kind, position == CarrierFree)?;
+    cost.account_carrier_free_root(&expression.kind, position == CarrierFree, outside_closure)?;
     match &expression.kind {
         ExprKind::Closure {
             params,
@@ -177,7 +179,7 @@ fn ast_expr_cost_at(
                 ast_type_cost(&parameter.ty, cost)?;
             }
             ast_type_cost(return_type, cost)?;
-            ast_expr_cost(body, cost)?;
+            ast_expr_cost_at(body, cost, RootPosition::Delegated, false)?;
         }
         ExprKind::Var(name) => cost.embedded_string(name)?,
         ExprKind::ArrayU8(values) => cost.add(values.len())?,
@@ -201,21 +203,23 @@ fn ast_expr_cost_at(
                 ast_type_cost(ty, cost)?;
             }
             for argument in args {
-                ast_expr_cost_at(argument, cost, CarrierFree)?;
+                ast_expr_cost_at(argument, cost, CarrierFree, outside_closure)?;
             }
         }
         ExprKind::LexicalExit { value: None, .. } => {}
         ExprKind::LexicalExit {
             value: Some(value), ..
-        } => ast_expr_cost(value, cost)?,
-        ExprKind::Unary { value, .. } => ast_expr_cost_at(value, cost, CarrierFree)?,
+        } => ast_expr_cost_at(value, cost, RootPosition::Delegated, outside_closure)?,
+        ExprKind::Unary { value, .. } => {
+            ast_expr_cost_at(value, cost, CarrierFree, outside_closure)?
+        }
         ExprKind::VecConstructor { element, value, .. } => {
             ast_type_cost(element, cost)?;
-            ast_expr_cost(value, cost)?;
+            ast_expr_cost_at(value, cost, RootPosition::Delegated, outside_closure)?;
         }
         ExprKind::Binary { left, right, .. } => {
-            ast_expr_cost_at(left, cost, CarrierFree)?;
-            ast_expr_cost_at(right, cost, CarrierFree)?;
+            ast_expr_cost_at(left, cost, CarrierFree, outside_closure)?;
+            ast_expr_cost_at(right, cost, CarrierFree, outside_closure)?;
         }
         ExprKind::Block { statements, tail } => {
             for statement in statements {
@@ -270,20 +274,20 @@ fn ast_expr_cost_at(
                 }
                 for index in 0..statement.child_count() {
                     if let Some(child) = statement.child(index) {
-                        ast_expr_cost(child, cost)?;
+                        ast_expr_cost_at(child, cost, RootPosition::Delegated, outside_closure)?;
                     }
                 }
             }
-            ast_expr_cost_at(tail, cost, CarrierFree)?;
+            ast_expr_cost_at(tail, cost, CarrierFree, outside_closure)?;
         }
         ExprKind::If {
             condition,
             then_branch,
             else_branch,
         } => {
-            ast_expr_cost_at(condition, cost, CarrierFree)?;
-            ast_expr_cost_at(then_branch, cost, CarrierFree)?;
-            ast_expr_cost_at(else_branch, cost, CarrierFree)?;
+            ast_expr_cost_at(condition, cost, CarrierFree, outside_closure)?;
+            ast_expr_cost_at(then_branch, cost, CarrierFree, outside_closure)?;
+            ast_expr_cost_at(else_branch, cost, CarrierFree, outside_closure)?;
         }
         ExprKind::ConstructRecord {
             type_name,
@@ -307,37 +311,37 @@ fn ast_expr_cost_at(
             for field in fields {
                 cost.inline_expr_parent(field)?;
                 cost.embedded_string(&field.name)?;
-                ast_expr_cost(&field.value, cost)?;
+                ast_expr_cost_at(&field.value, cost, RootPosition::Delegated, outside_closure)?;
             }
         }
         ExprKind::Match {
             scrutinee, arms, ..
         } => {
-            ast_expr_cost(scrutinee, cost)?;
+            ast_expr_cost_at(scrutinee, cost, RootPosition::Delegated, outside_closure)?;
             for arm in arms {
                 cost.match_arm(arm)?;
                 ast_pattern_cost(&arm.pattern, cost)?;
                 // The boxed guard is a complete resolved expression tree too;
                 // `match_arm` charges only its pointer.
                 if let Some(guard) = &arm.guard {
-                    ast_expr_cost(guard, cost)?;
+                    ast_expr_cost_at(guard, cost, RootPosition::Delegated, outside_closure)?;
                 }
-                ast_expr_cost(&arm.value, cost)?;
+                ast_expr_cost_at(&arm.value, cost, RootPosition::Delegated, outside_closure)?;
             }
         }
         ExprKind::Try { operand } | ExprKind::Yield { request: operand } => {
-            ast_expr_cost(operand, cost)?
+            ast_expr_cost_at(operand, cost, RootPosition::Delegated, outside_closure)?
         }
         ExprKind::UpdateRecord { base, fields } => {
-            ast_expr_cost(base, cost)?;
+            ast_expr_cost_at(base, cost, RootPosition::Delegated, outside_closure)?;
             for field in fields {
                 cost.inline_expr_parent(field)?;
                 cost.embedded_string(&field.name)?;
-                ast_expr_cost(&field.value, cost)?;
+                ast_expr_cost_at(&field.value, cost, RootPosition::Delegated, outside_closure)?;
             }
         }
         ExprKind::Project { base, field, .. } => {
-            ast_expr_cost(base, cost)?;
+            ast_expr_cost_at(base, cost, RootPosition::Delegated, outside_closure)?;
             cost.embedded_string(field)?;
         }
         ExprKind::MethodCall {
@@ -347,19 +351,19 @@ fn ast_expr_cost_at(
             args,
             ..
         } => {
-            ast_expr_cost(receiver, cost)?;
+            ast_expr_cost_at(receiver, cost, RootPosition::Delegated, outside_closure)?;
             cost.embedded_string(method)?;
             for ty in type_arguments {
                 ast_type_cost(ty, cost)?;
             }
             for argument in args {
-                ast_expr_cost(argument, cost)?;
+                ast_expr_cost_at(argument, cost, RootPosition::Delegated, outside_closure)?;
             }
         }
         ExprKind::SuperMethod { method, args, .. } => {
             cost.embedded_string(method)?;
             for argument in args {
-                ast_expr_cost(argument, cost)?;
+                ast_expr_cost_at(argument, cost, RootPosition::Delegated, outside_closure)?;
             }
         }
         ExprKind::Int(_)
