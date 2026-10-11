@@ -152,3 +152,46 @@ fn loan_table_and_core_backing_are_prepaid_through_drop_and_one_short() {
         }
     }
 }
+
+#[test]
+fn finite_adapter_borrows_the_actual_logical_counters_without_reset_or_refund() {
+    use crate::interpreter::byte_partition::funding::{upper, Account};
+    let program = fixture(1);
+    let function = &program.functions[0];
+    let authority = LoanCapacity::checked(&program, function).unwrap();
+    let required = upper(&authority).unwrap();
+    let mut events = 1;
+    let mut payload = 1;
+    let owner = vec![7].into_boxed_slice();
+    {
+        // The caller explicitly funds the forecast. `upper` does not allocate
+        // or grant a source/root/whole-backing receipt.
+        let account = Account::funded(&mut events, &mut payload, required).unwrap();
+        let mut receiver = Loans::new(authority, account.handle()).unwrap();
+        let mut owners = receiver.partition(owner, 1, 1).unwrap();
+        let public = receiver.copy_out_and_settle(&mut owners[0]).unwrap();
+        drop(receiver);
+        assert_eq!(public.as_ref(), &[7]);
+        drop(public);
+    }
+    assert_eq!(events, 2);
+    assert_eq!(payload, 2);
+    let before = (events, payload);
+    assert!(Account::funded(&mut events, &mut payload, 0).is_err());
+    assert_eq!((events, payload), before);
+    {
+        use crate::construction_fusion::domain::owner_core::Runtime;
+        let account = Account::funded(&mut events, &mut payload, required).unwrap();
+        let mut first = account.handle();
+        let mut second = first.held_account();
+        for _ in 2..crate::byte_data_capacity::MAX_BYTES_COPY_SITES {
+            first.charge_clone(1).unwrap();
+        }
+        assert!(second.charge_clone(1).is_err());
+        assert!(first
+            .reserve_metadata(std::alloc::Layout::new::<u8>())
+            .is_err());
+    }
+    assert_eq!(events, crate::byte_data_capacity::MAX_BYTES_COPY_SITES);
+    assert_eq!(payload, u64::from(events));
+}

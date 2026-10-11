@@ -267,6 +267,12 @@ impl<'a, R: Runtime> Core<'a, R> {
     pub(crate) fn metadata_layouts(count: usize) -> Result<[Layout; 7], Refusal> {
         Self::metadata_layouts_for_views(count, MAX_VIEWS)
     }
+    pub(crate) fn ordinary_metadata_layouts(
+        count: usize,
+        capacity: &crate::interpreter::byte_partition::authority::LoanCapacity<'_>,
+    ) -> Result<[Layout; 7], Refusal> {
+        Self::metadata_layouts_for_views(count, capacity.slots())
+    }
     fn metadata_layouts_for_views(
         count: usize,
         view_capacity: usize,

@@ -11,6 +11,7 @@ use std::{
     sync::atomic::{AtomicU64, Ordering},
 };
 pub(crate) mod authority;
+pub(crate) mod funding;
 pub(crate) mod loans;
 static NEXT_INVOCATION: AtomicU64 = AtomicU64::new(1);
 /// Implemented only by the actual evaluator account adapter. The handle must

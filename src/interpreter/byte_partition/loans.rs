@@ -29,15 +29,20 @@ impl<'p, R: InvocationRuntime> Loans<'p, R> {
     /// Header and complete fixed loan inventory are paid before allocation.
     /// Construction is inaccessible to source because LoanCapacity has no
     /// production constructor until the full ordinary factory is joined.
+    pub(super) fn metadata_layouts(capacity: &LoanCapacity<'p>) -> Result<[Layout; 3], Refusal> {
+        Ok([
+            Layout::new::<Self>(),
+            Layout::new::<Vec<Slot>>(),
+            Layout::array::<Slot>(capacity.slots()).map_err(|_| Refusal::Metadata)?,
+        ])
+    }
     pub(crate) fn new(capacity: LoanCapacity<'p>, mut runtime: R) -> Result<Self, Refusal> {
         if capacity.function().loan_plan.endpoints.is_empty() {
             return Err(Refusal::Identity);
         }
-        runtime.reserve_metadata(Layout::new::<Self>())?;
-        runtime.reserve_metadata(Layout::new::<Vec<Slot>>())?;
-        runtime.reserve_metadata(
-            Layout::array::<Slot>(capacity.slots()).map_err(|_| Refusal::Metadata)?,
-        )?;
+        for layout in Self::metadata_layouts(&capacity)? {
+            runtime.reserve_metadata(layout)?;
+        }
         let registry = Registry::new(runtime)?;
         let mut slots = Vec::new();
         slots

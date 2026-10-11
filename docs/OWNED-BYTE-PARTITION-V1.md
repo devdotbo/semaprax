@@ -309,3 +309,27 @@ installer yet. The eventual installer must bind each runtime child to the
 current checked owner root and drive transitions from actual execution. Public
 copy-out must precede registry teardown. Its authored controls are not evidence
 of source admission or complete native/Wasm/public partition support.
+
+### Pending ordinary funding adapter
+
+The private interpreter adapter borrows the actual current invocation's mutable
+backing-event and cumulative-payload counters. Copyable account handles borrow
+that same ledger; they neither snapshot nor reset it. Ordinary deep clone keeps
+32 backing events, 2 MiB cumulative payload and the 128 KiB individual-owner
+bound, and reserves its actual byte allocation before creating the new Box.
+
+Its administrative forecast uses actual requested layouts and the existing
+logical dimensions: at most one consuming partition per whole-backing event,
+8192 children per result, 256 checked loans, and complete registry replacement
+overlap. It includes the original Core tables, identities, context/carrier/loan
+headers and potential ordinary clone payload. This is a conservative requested
+layout forecast, not a new semantic byte ceiling or an RSS measurement. A joined
+factory must prove whole-owner identity and one-time consumption before relying
+on the event-derived context bound.
+
+`Account::funded` is a private receiving adapter, not evidence that the host has
+funded its argument. The actual entry must acquire that finite funding from its
+host policy before installing the receiver. Computing the forecast never grants
+source authority or automatically creates that funding. The ordinary producer,
+Value installer, retained-frame/public SDK route and all-target activation remain
+closed until their complete receiving obligations are joined.
