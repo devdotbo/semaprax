@@ -290,7 +290,7 @@ fn authenticate_target<'a>(
         .reserve_array::<Frame<'_>>(anchor, DEPTH, "imported scalar helper profile cursor")
         .map_err(|_| fail())?;
     let mut work = 1_048_576;
-    if !scalar_helpers::pure_metered(function, &mut work, &mut |units| {
+    if !scalar_helpers::pure_records_metered(function, &module.types, &mut work, &mut |units| {
         charge(resources, anchor, units)
     })? {
         return Err(fail());

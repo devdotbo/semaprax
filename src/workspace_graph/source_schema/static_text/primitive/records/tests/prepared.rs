@@ -102,6 +102,22 @@ fn prepared_string_vec_and_borrowed_record_signatures_keep_current_type_pointers
             .len(),
         2
     );
+    let borrowed = provider
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "rows.read")
+        .unwrap();
+    assert!(provider
+        .scalar_helpers
+        .as_ref()
+        .unwrap()
+        .functions
+        .iter()
+        .any(|f| f.id.as_str() == "rows.read"));
+    assert!(context
+        .resolve_call_target(&borrowed.id, None)
+        .is_some_and(|actual| std::ptr::eq(actual, borrowed)));
+    assert!(context.declarations().declaration(&borrowed.id).is_some());
     let source = format!("{}\n@id(\"flat.count\") fn count(values:borrow Vec<i64>)->i64 {{i64_from_usize(vec_len<i64>(values))}}\n@id(\"flat.texts\") fn texts(values:borrow Vec<string>)->i64 {{0}}\n@id(\"flat.rows\") fn rows(values:borrow Vec<Packet>)->i64 {{0}}", lexical_source());
     let build = build_source(&source);
     let module = module(&build);
@@ -131,7 +147,7 @@ fn prepared_string_vec_and_borrowed_record_signatures_keep_current_type_pointers
 }
 #[test]
 fn prepared_current_layout_namespace_and_signature_drift_are_independent_and_sticky() {
-    for attack in 0..6 {
+    for attack in 0..7 {
         let mut imported = imported_build();
         let provider = imported
             .hir
@@ -162,6 +178,18 @@ fn prepared_current_layout_namespace_and_signature_drift_are_independent_and_sti
                     .get_mut("rows.row.n")
                     .unwrap()
                     .owner = Some("other.row".into())
+            }
+            6 => {
+                provider
+                    .scalar_helpers
+                    .as_mut()
+                    .unwrap()
+                    .functions
+                    .iter_mut()
+                    .find(|f| f.id.as_str() == "rows.read")
+                    .unwrap()
+                    .params[0]
+                    .ownership = hir::OwnershipMode::Own
             }
             _ => unreachable!(),
         }
@@ -427,14 +455,16 @@ fn imported_build() -> WorkspaceGraphBuild {
     let provider = r#"module static.rows;
 @id("rows.row") record Row {@id("rows.row.n") n:i64,@id("rows.row.text") text:string,}
 @id("rows.weight") fn weight(n:i64)->i64 {n+1}
+@id("rows.read") fn read(row:borrow Row)->i64 {row.n}
 "#;
     let consumer = r#"module static.consumer;
 use type @id("rows.row") from static.rows as Row;
 use function @id("rows.weight") from static.rows as weight;
+use function @id("rows.read") from static.rows as reader;
 @id("consumer.read") fn read(row:borrow Row)->i64 {row.n}
 @id("consumer.main") fn main()->i64 {
  let key=str"x";let row=Row{n:41,text:"x"};let mut next=0;
- while next<1 {next=next+1;if str_len_bytes(key)==1 {return weight(read(row));} else {0} 0}
+ while next<1 {next=next+1;if str_len_bytes(key)==1 {return weight(reader(row));} else {0} 0}
  read(row)
 }
 "#;

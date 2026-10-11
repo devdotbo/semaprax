@@ -468,3 +468,12 @@ Capture work, held evidence backing, lookup scratch and index construction consu
 the same preparation that is moved into replay. Unsupported layouts and generic
 instances remain closed; this source checkpoint is not an executable completion
 claim for imported record or Vec composition.
+
+The defining-source helper producer also captures monomorphic scalar-returning
+helpers whose argument-free flat-record parameters are exclusively borrowed.
+Only an exact current parameter root and scalar declared-field projection extend
+the existing pure helper walk; owned roots, nominal results, local record
+construction, generic instances and allocating Vec helper bodies remain closed.
+The minimal imported function declaration checks that same borrowed signature
+against independently reconstructed record metadata. This producer shape does
+not substitute for the complete cleanup/loan/status replay required downstream.

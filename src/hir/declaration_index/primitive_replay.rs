@@ -2,6 +2,7 @@
 //! primitive functions. No generic/layout/provenance cache is carried forward.
 use super::*;
 mod flat_record;
+mod helper_signature;
 #[cfg(test)]
 mod option_u8;
 mod vector;
@@ -180,7 +181,7 @@ impl DeclarationIndex {
             }
         }
         debit(function.params.len().checked_add(1).ok_or_else(fail)?)?;
-        if !crate::hir::borrowed_scalar::signature(function) {
+        if !helper_signature::admitted(self, function, debit)? {
             return Err(fail());
         }
         let node = crate::cleanup_plan::replay_btree_node_upper::<DeclarationId, Declaration>()

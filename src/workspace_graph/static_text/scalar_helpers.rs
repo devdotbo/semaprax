@@ -5,6 +5,7 @@ use crate::hir::{
     OwnershipMode, ResolvedExprKind, ResolvedFunction, ResolvedStatement, ResolvedType,
 };
 use primitive::body_digest;
+mod borrowed_records;
 mod capture_directory;
 #[cfg(test)]
 mod legacy;
@@ -51,6 +52,7 @@ pub(in crate::workspace_graph) fn pure_metered(
         work,
         charge,
         hir::borrowed_scalar::option_u8::selected_profile_ready(),
+        &[],
     )
 }
 #[cfg(test)]
@@ -59,13 +61,28 @@ pub(in crate::workspace_graph) fn pure_shape_metered(
     work: &mut usize,
     charge: &mut dyn FnMut(usize) -> Result<(), Vec<Diagnostic>>,
 ) -> Result<bool, Vec<Diagnostic>> {
-    pure_profile_metered(function, work, charge, true)
+    pure_profile_metered(function, work, charge, true, &[])
+}
+pub(in crate::workspace_graph) fn pure_records_metered(
+    function: &ResolvedFunction,
+    records: &[hir::ResolvedTypeDeclaration],
+    work: &mut usize,
+    charge: &mut dyn FnMut(usize) -> Result<(), Vec<Diagnostic>>,
+) -> Result<bool, Vec<Diagnostic>> {
+    pure_profile_metered(
+        function,
+        work,
+        charge,
+        hir::borrowed_scalar::option_u8::selected_profile_ready(),
+        records,
+    )
 }
 fn pure_profile_metered(
     function: &ResolvedFunction,
     work: &mut usize,
     charge: &mut dyn FnMut(usize) -> Result<(), Vec<Diagnostic>>,
     option_shape: bool,
+    records: &[hir::ResolvedTypeDeclaration],
 ) -> Result<bool, Vec<Diagnostic>> {
     let mut take = |units| -> Result<(), Vec<Diagnostic>> {
         let remaining = work.checked_sub(units).ok_or_else(fail)?;
@@ -76,7 +93,8 @@ fn pure_profile_metered(
     take(function.params.len().checked_add(1).ok_or_else(fail)?)?;
     if !function.effects.is_empty()
         || function.yields.is_some()
-        || !hir::borrowed_scalar::signature(function)
+        || !(hir::borrowed_scalar::signature(function)
+            || borrowed_records::signature(function, records, &mut take)?)
     {
         return Ok(false);
     }
@@ -99,7 +117,10 @@ fn pure_profile_metered(
                 if (!option_shape
                     && (hir::borrowed_scalar::option_u8::is_type(&expr.ty)
                         || matches!(expr.kind, ResolvedExprKind::Match { .. })))
-                    || !hir::borrowed_scalar::expression(function, expr, &mut take)?
+                    || !match borrowed_records::expression(function, expr, records, &mut take)? {
+                        Some(admitted) => admitted,
+                        None => hir::borrowed_scalar::expression(function, expr, &mut take)?,
+                    }
                 {
                     return Ok(false);
                 }
@@ -116,6 +137,8 @@ fn pure_profile_metered(
                     | ResolvedExprKind::Binary { .. }
                     | ResolvedExprKind::If { .. } => {}
                     ResolvedExprKind::Place(place) if place.projections.is_empty() => {}
+                    ResolvedExprKind::Project { base, .. }
+                        if matches!(base.ty, ResolvedType::Nominal { .. }) => {}
                     ResolvedExprKind::BorrowPlace { .. } => {}
                     ResolvedExprKind::Match { scrutinee, .. }
                         if option_shape
@@ -304,26 +327,31 @@ pub(in crate::workspace_graph) fn capture(
             || !origin.function.is_some_and(|f| std::ptr::eq(f, source))
             || function.name != source.name
             || source.params.len() != function.params.len()
-            || primitive::ty(&source.return_type).as_ref() != Some(&function.return_type)
-            || source
-                .params
-                .iter()
-                .zip(&function.params)
-                .any(|(source, current)| {
-                    source.name != current.name
-                        || match source.mode {
-                            crate::ast::ParamMode::Value => {
-                                current.ownership != OwnershipMode::Value
-                            }
-                            crate::ast::ParamMode::Borrow => {
-                                current.ownership != OwnershipMode::Borrow
-                            }
-                            _ => true,
-                        }
-                        || primitive::ty(&source.ty).as_ref() != Some(&current.ty)
-                })
+            || !primitive::records::source_type_matches(
+                program,
+                &source.return_type,
+                &function.return_type,
+                &mut work,
+            )?
         {
             return Err(fail());
+        }
+        for (source, current) in source.params.iter().zip(&function.params) {
+            if source.name != current.name
+                || match source.mode {
+                    crate::ast::ParamMode::Value => current.ownership != OwnershipMode::Value,
+                    crate::ast::ParamMode::Borrow => current.ownership != OwnershipMode::Borrow,
+                    _ => true,
+                }
+                || !primitive::records::source_type_matches(
+                    program,
+                    &source.ty,
+                    &current.ty,
+                    &mut work,
+                )?
+            {
+                return Err(fail());
+            }
         }
         reserve_builder_structure(
             source
@@ -366,7 +394,7 @@ pub(in crate::workspace_graph) fn capture(
             params.push(Parameter {
                 id: param.id.clone(),
                 name: param.name.clone(),
-                ty: param.ty.clone(),
+                ty: primitive::records::clone_type(&param.ty)?,
                 ownership: param.ownership,
             });
         }

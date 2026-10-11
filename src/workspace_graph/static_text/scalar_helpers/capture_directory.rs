@@ -135,7 +135,15 @@ impl<'a> Directory<'a> {
         resolved: &'a hir::ResolvedProgram,
         work: &mut usize,
     ) -> Result<Self, Vec<Diagnostic>> {
-        Self::classify(program, resolved, work, &mut pure)
+        Self::classify(program, resolved, work, &mut |function, work| {
+            if hir::borrowed_scalar::signature(function) {
+                return pure(function, work);
+            }
+            if !super::primitive::records::preflight(program, resolved, work)? {
+                return Ok(false);
+            }
+            super::pure_records_metered(function, &resolved.types, work, &mut |_| Ok(()))
+        })
     }
     fn classify(
         program: &Program,

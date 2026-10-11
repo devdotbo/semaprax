@@ -214,7 +214,7 @@ fn vec_element_admitted(
         Ok(false)
     }
 }
-pub(super) fn clone_type(
+pub(in crate::workspace_graph) fn clone_type(
     current: &hir::ResolvedType,
 ) -> Result<hir::ResolvedType, Vec<Diagnostic>> {
     if let hir::ResolvedType::Nominal {
