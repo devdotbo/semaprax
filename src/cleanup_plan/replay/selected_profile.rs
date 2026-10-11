@@ -1,20 +1,9 @@
 //! The first physically reserved retained lexical profile is deliberately
-//! primitive and module-local. Refusal happens before delegated nominal,
+//! primitive/direct-flat-record and module-local. Refusal happens before delegated nested nominal,
 //! dynamic provider, replacement, format or iterator constructors allocate.
 use super::*;
 const DEPTH: usize = 514;
 type Frame<'a> = Option<(crate::hir::lexical_exit::ChildCursor<'a>, bool)>;
-fn primitive(ty: &ResolvedType) -> bool {
-    crate::hir::is_scalar_resolved_type(ty)
-        || matches!(
-            ty,
-            ResolvedType::Bytes
-                | ResolvedType::String
-                | ResolvedType::Str
-                | ResolvedType::SliceU8
-                | ResolvedType::ArrayU8(_)
-        )
-}
 pub(super) fn validate(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
@@ -23,19 +12,26 @@ pub(super) fn validate(
     if budget.physical.is_none() {
         return Ok(());
     }
-    if !program.types().is_empty()
-        || !program.interfaces().is_empty()
+    flat_records::module(program, function, budget)?;
+    if !program.interfaces().is_empty()
         || !program.function_templates().is_empty()
         || !program.function_instances().is_empty()
         || !function.effects.is_empty()
         || function.yields.is_some()
-        || !primitive(&function.return_type)
-        || function.params.iter().any(|p| !primitive(&p.ty))
+        || !flat_records::admitted(program, &function.return_type)?
     {
         return Err(replay_error(
             function,
             "selected lexical replay requires a module-local primitive context",
         ));
+    }
+    for parameter in &function.params {
+        if !flat_records::admitted(program, &parameter.ty)? {
+            return Err(replay_error(
+                function,
+                "selected parameter type is outside direct records",
+            ));
+        }
     }
     budget.reserve_array::<Frame<'_>>(function, DEPTH, "selected primitive profile cursor")?;
     let mut frames = [None; DEPTH];
@@ -53,16 +49,17 @@ pub(super) fn validate(
                 .ok_or_else(|| replay_error(function, "selected profile cursor is empty"))?;
             let expression = cursor.expression();
             if !entered {
-                if !primitive(&expression.ty) && expression.ty != ResolvedType::Never {
+                if expression.ty != ResolvedType::Never
+                    && !flat_records::admitted(program, &expression.ty)?
+                {
                     return Err(replay_error(function, "selected lexical replay does not admit nominal or callable expression storage"));
                 }
+                flat_records::expression(program, function, expression)?;
                 match &expression.kind {
                     ResolvedExprKind::Place(_) if expression.ty == ResolvedType::String => {
                         return Err(replay_error(function, "selected lexical replay String-place condition indexes are not reserved"));
                     }
-                    ResolvedExprKind::ConstructRecord { .. }
-                    | ResolvedExprKind::ConstructVariant { .. }
-                    | ResolvedExprKind::Project { .. }
+                    ResolvedExprKind::ConstructVariant { .. }
                     | ResolvedExprKind::UpdateRecord { .. }
                     | ResolvedExprKind::Upcast { .. }
                     | ResolvedExprKind::LiteralFormat { .. }
@@ -99,7 +96,7 @@ pub(super) fn validate(
                             match statement {
                                 crate::hir::ResolvedStatement::Let { binding, .. }
                                 | crate::hir::ResolvedStatement::Assign { binding, .. }
-                                    if !primitive(&binding.ty) =>
+                                    if !flat_records::admitted(program, &binding.ty)? =>
                                 {
                                     return Err(replay_error(
                                         function,
@@ -117,7 +114,8 @@ pub(super) fn validate(
                                     return Err(replay_error(function, "selected lexical replay source-for latch is outside the reserved primitive profile"));
                                 }
                                 crate::hir::ResolvedStatement::Assign { binding, .. }
-                                    if binding.ty == ResolvedType::String =>
+                                    if binding.ty == ResolvedType::String
+                                        || matches!(binding.ty, ResolvedType::Nominal { .. }) =>
                                 {
                                     return Err(replay_error(function, "selected lexical replay String replacement is outside the reserved primitive profile"));
                                 }
@@ -131,7 +129,12 @@ pub(super) fn validate(
                             }
                         }
                     }
-                    ResolvedExprKind::Match { arms, .. } => {
+                    ResolvedExprKind::Match {
+                        scrutinee, arms, ..
+                    } => {
+                        if matches!(scrutinee.ty, ResolvedType::Nominal { .. }) {
+                            return Err(replay_error(function, "selected direct records do not admit owning or destructuring matches"));
+                        }
                         for arm in arms {
                             validate_pattern(function, &arm.pattern, budget, 0)?;
                         }
@@ -193,6 +196,20 @@ pub(super) fn validate(
         }
     }
     Ok(())
+}
+
+// Match bindings remain on the frozen primitive pattern boundary. Direct
+// records are admitted as ordinary construction/calls/projection, not patterns.
+fn primitive(ty: &ResolvedType) -> bool {
+    crate::hir::is_scalar_resolved_type(ty)
+        || matches!(
+            ty,
+            ResolvedType::Bytes
+                | ResolvedType::String
+                | ResolvedType::Str
+                | ResolvedType::SliceU8
+                | ResolvedType::ArrayU8(_)
+        )
 }
 
 fn validate_pattern(
@@ -286,7 +303,7 @@ mod tests {
         assert_eq!(error.code, "SPX-H006");
         assert!(error
             .message
-            .contains("nominal or callable expression storage"));
+            .contains("unauthenticated or unsupported fields"));
     }
 }
 

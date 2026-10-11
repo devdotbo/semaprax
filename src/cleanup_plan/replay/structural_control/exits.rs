@@ -1,6 +1,6 @@
 use super::*;
 pub(in crate::cleanup_plan::replay) fn validate_exits(
-    _program: &dyn crate::cleanup::ReplayContext,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     storage: &BTreeSet<StorageId>,
     leaves: &Leaves,
@@ -78,9 +78,15 @@ pub(in crate::cleanup_plan::replay) fn validate_exits(
                     ));
                 }
             }
-            ExitContinuation::CommitResult { source } => {
-                result_source(function, source, storage, leaves, return_operands, budget)?
-            }
+            ExitContinuation::CommitResult { source } => result_source(
+                program,
+                function,
+                source,
+                storage,
+                leaves,
+                return_operands,
+                budget,
+            )?,
             ExitContinuation::FunctionReturn { edge, source, .. } => {
                 owned_edge(function, exit.from, *edge, &mut continuation_edges, budget)?;
                 if !matches!(plan.edges[edge.0 as usize].condition, EdgeCondition::Always) {
@@ -89,7 +95,15 @@ pub(in crate::cleanup_plan::replay) fn validate_exits(
                         "function-return continuation edge is conditional",
                     ));
                 }
-                result_source(function, source, storage, leaves, return_operands, budget)?
+                result_source(
+                    program,
+                    function,
+                    source,
+                    storage,
+                    leaves,
+                    return_operands,
+                    budget,
+                )?
             }
             ExitContinuation::LoopBreak { edge, .. } => {
                 owned_edge(function, exit.from, *edge, &mut continuation_edges, budget)?;
@@ -316,6 +330,7 @@ pub(super) fn regions_match(
 }
 
 fn result_source(
+    program: &dyn ReplayContext,
     function: &ResolvedFunction,
     source: &CleanupResultSource,
     storage: &BTreeSet<StorageId>,
@@ -323,22 +338,7 @@ fn result_source(
     return_operands: &BTreeSet<ExpressionId>,
     budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
-    let owned = matches!(
-        function.return_type,
-        ResolvedType::Bytes | ResolvedType::String
-    );
-    if !owned
-        && !crate::hir::is_scalar_resolved_type(&function.return_type)
-        && !matches!(
-            function.return_type,
-            ResolvedType::Str | ResolvedType::SliceU8 | ResolvedType::ArrayU8(_)
-        )
-    {
-        return Err(replay_error(
-            function,
-            "selected result has an unsupported type",
-        ));
-    }
+    let owned = crate::cleanup::selected_inventory_needs_drop_in(program, &function.return_type)?;
     match source {
         CleanupResultSource::Scalar { expression } => {
             if owned {

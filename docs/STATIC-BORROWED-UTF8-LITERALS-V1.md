@@ -143,10 +143,26 @@ constructor/projection skeleton accounting must still be complete before
 retained record replay can be admitted. Record census, field comparisons and
 named signature lookups use bounded cumulative work; retained carriers and
 index backing are reserved before allocation. No imported or generic record
-authority is captured. Existing
-primitive selected admission and its constructor entry continue to reject
-nominal record contexts before backing allocation. The supporting flat-record
-constructor profile is not selected by the retained entry.
+authority is captured. The selected retained entry now also admits authenticated module-local,
+nongeneric, invariant-free direct records with 1..8 Copy/String/Bytes fields.
+One bounded borrowed current-declaration classifier is shared by inventory,
+whole-record call epochs, typed drop/call/result replay and structural field
+leaves. It checks exact nominal identity, namespace ownership, field IDs,
+indices, order and types without materializing generic type facts. All field
+shape, flag, lifecycle, projection, map and clone backing is reserved before
+construction. Ordinary partial-constructor failure, staged argument commit,
+branch/loop exit and owned provisional-result publication retain their complete
+canonical cleanup order; submitted plans are never sorted or repaired.
+Source-layout and full current-body replay remain prerequisites, not evidence
+capsules or cached verdicts. Nominal updates/destructuring, variants, imports,
+generics, nested records and collection carriers stay closed. A direct record
+result is admitted only through the same owned provisional-result route.
+
+Authored definitions include genuine nominal make/identity/read lexical
+functions, exact/one-short physical closure and independent stale layout/body,
+field, call epoch, flag, projection and finalizer-order attacks. Ordinary String
+allocation failure remains its existing fail-stop contract; this route does not
+claim production recoverable String OOM or completion of OPT #724.
 
 All new definitions are unexecuted in this implementation tranche.
 

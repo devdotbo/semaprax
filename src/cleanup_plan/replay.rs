@@ -2,6 +2,7 @@
 mod constructed_variant;
 use constructed_variant::materialize_constructed_variant;
 mod expression_children;
+mod flat_records;
 mod expression_facts;
 mod inventory_coverage;
 mod physical_budget;

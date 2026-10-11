@@ -2,7 +2,7 @@
 //! cleanup leaves and Copy/borrowed traversal. A separate borrowed flat-record
 //! constructor closes its own backing; retained replay admission stays primitive.
 use super::*;
-mod flat_record;
+pub(super) mod flat_record;
 
 type Physical<'a> = Option<RefCell<&'a mut ReplayPhysicalReservation>>;
 pub(super) fn reserve<T>(

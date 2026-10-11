@@ -6,7 +6,7 @@ use crate::hir::{DeclarationKind, ResolvedFieldDeclaration};
 // A fixed constructor tranche; no recursive type substitution or identity keys.
 const MAX_DECLARATIONS: usize = 32;
 const MAX_FIELDS: usize = 8;
-pub(super) fn fields<'a>(
+pub(in crate::cleanup::inventory_builder) fn fields<'a>(
     program: &'a dyn crate::cleanup::ReplayContext,
     ty: &'a ResolvedType,
 ) -> Result<Option<(&'a DeclarationId, &'a [ResolvedFieldDeclaration])>, Diagnostic> {
@@ -17,10 +17,21 @@ pub(super) fn fields<'a>(
     else {
         return Ok(None);
     };
+    if !arguments.is_empty() {
+        return Err(cleanup_error(
+            "selected flat-record arguments are unsupported",
+        ));
+    }
+    declaration_fields(program, declaration)
+}
+pub(in crate::cleanup::inventory_builder) fn declaration_fields<'a>(
+    program: &'a dyn crate::cleanup::ReplayContext,
+    declaration: &'a DeclarationId,
+) -> Result<Option<(&'a DeclarationId, &'a [ResolvedFieldDeclaration])>, Diagnostic> {
     let fail = || {
         cleanup_error("selected flat-record inventory has unauthenticated or unsupported fields")
     };
-    if !arguments.is_empty() || program.types().len() > MAX_DECLARATIONS {
+    if program.types().len() > MAX_DECLARATIONS {
         return Err(fail());
     }
     let mut matching = program

@@ -121,36 +121,14 @@ impl<'a> Signature<'a> {
         }
     }
 }
-fn needs_drop(function: &ResolvedFunction, ty: &ResolvedType) -> Result<bool, Diagnostic> {
-    match ty {
-        ResolvedType::Bytes
-        | ResolvedType::String
-        | ResolvedType::StringMap
-        | ResolvedType::OnceFunction
-        | ResolvedType::OnceFunctionI64
-        | ResolvedType::OnceFunctionI64Pair => Ok(true),
-        ResolvedType::Unit
-        | ResolvedType::I64
-        | ResolvedType::I32
-        | ResolvedType::Char
-        | ResolvedType::U8
-        | ResolvedType::Usize
-        | ResolvedType::ArrayU8(_)
-        | ResolvedType::F32
-        | ResolvedType::F64
-        | ResolvedType::Bool
-        | ResolvedType::Str
-        | ResolvedType::SliceU8
-        | ResolvedType::MutFunctionI64 => Ok(false),
-        ResolvedType::Never
-        | ResolvedType::Function { .. }
-        | ResolvedType::TypeParameter { .. }
-        | ResolvedType::Nominal { .. } => Err(replay_error(
-            function,
-            "selected call commit has an unsupported parameter type",
-        )),
-    }
+fn needs_drop(
+    program: &dyn ReplayContext,
+    _function: &ResolvedFunction,
+    ty: &ResolvedType,
+) -> Result<bool, Diagnostic> {
+    crate::cleanup::selected_inventory_needs_drop_in(program, ty)
 }
+
 fn signature<'a>(
     program: &'a dyn ReplayContext,
     function: &ResolvedFunction,
@@ -249,7 +227,7 @@ pub(super) fn validate<'a>(
     for index in 0..signature.len() {
         budget.charge(function, 1, "structural call parameters")?;
         let (mode, ty) = signature.parameter(index).expect("exact signature bound");
-        let drop = needs_drop(function, ty)?;
+        let drop = needs_drop(program, function, ty)?;
         let arg = &args[index];
         if !signature.accepts_type(index, &arg.ty)
             || !match mode {

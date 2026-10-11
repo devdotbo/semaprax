@@ -397,6 +397,9 @@ pub(super) fn type_needs_drop(
     function: &ResolvedFunction,
     ty: &ResolvedType,
 ) -> Result<bool, Diagnostic> {
+    if program.selected_flat_records() {
+        return crate::cleanup::selected_inventory_needs_drop_in(program, ty);
+    }
     crate::cleanup::type_needs_resource_cleanup(program, ty)
         .map_err(|message| replay_error(function, message))
 }

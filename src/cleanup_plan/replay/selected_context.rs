@@ -66,6 +66,9 @@ impl ReplayContext for Context<'_> {
     ) -> Option<&ResolvedFunction> {
         self.source.resolve_call_target(callee, instance)
     }
+    fn selected_flat_records(&self) -> bool {
+        true
+    }
     fn primitive_renewals<'a>(
         &'a self,
         function: &ResolvedFunction,

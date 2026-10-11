@@ -12,8 +12,11 @@ const SOURCE: &str = r#"module static.flat_records;
 @id("flat.main") fn main()->i64 {let key=str"x";return str_len_bytes(key);}
 "#;
 fn build() -> WorkspaceGraphBuild {
+    build_source(SOURCE)
+}
+fn build_source(source: &str) -> WorkspaceGraphBuild {
     let sources = [
-        ("flat.spx", SOURCE),
+        ("flat.spx", source),
         (
             "support.spx",
             "module support.flat;@id(\"support.ready\") fn ready()->i64{0}",
@@ -90,7 +93,7 @@ fn captured_flat_layout_reconstructs_minimal_index_at_exact_and_one_short_withou
             .unwrap_err()
             .iter()
             .any(|error| error.code == "SPX-G410"),
-        "constructor/index support cannot select a record replay route before its physical closure"
+        "a normalized nonlexical fixture cannot select the retained lexical route"
     );
 }
 #[test]
@@ -147,5 +150,115 @@ fn captured_record_layout_namespace_and_constructor_body_drift_are_independently
             Err(errors) => errors,
         };
         assert!(errors.iter().any(|error| error.code == "SPX-G410"));
+    }
+}
+
+#[test]
+fn source_bound_nominal_make_identity_read_with_real_lexical_results_selects() {
+    let source=SOURCE
+        .replace("fn identity(value:own Packet)->Packet {value}",
+            "fn identity(value:own Packet,flag:bool)->Packet {let mut next=0;while next<1 {next=next+1;if flag {return value;};0} value}")
+        .replace("Packet{n:7,text:\"label\",data:bytes_copy(input)}",
+            "let packet=Packet{n:7,text:\"label\",data:bytes_copy(input)};let mut next=0;while next<1 {next=next+1;if byte_len(input)>0usize {return packet;};0} packet")
+        .replace("{let key=str\"x\";return str_len_bytes(key);}",
+            "{let key=str\"x\";let input=[65u8];let packet=identity(make(array_as_slice(input)),false);let mut next=0;while next<1 {next=next+1;if str_len_bytes(key)==1 {return read(packet);};0} read(packet)}");
+    let build = build_source(&source);
+    let module = module(&build);
+    for id in ["flat.make", "flat.identity"] {
+        let function = module
+            .functions
+            .iter()
+            .find(|function| function.id.as_str() == id)
+            .unwrap();
+        assert!(matches!(
+            function.return_type,
+            hir::ResolvedType::Nominal { .. }
+        ));
+        assert!(hir::lexical_exit::requires(function).unwrap());
+    }
+    assert_eq!(
+        build.source_graph_schemas().unwrap()["flat.spx"],
+        "semaprax.graph.v77"
+    );
+}
+#[test]
+fn direct_record_replay_rejects_retained_field_epoch_and_finalizer_mutations() {
+    let source=SOURCE.replace("{let key=str\"x\";return str_len_bytes(key);}",
+        "{let key=str\"x\";let input=[65u8];let packet=identity(make(array_as_slice(input)));let mut next=0;while next<1 {next=next+1;if str_len_bytes(key)==1 {return read(packet);};0} read(packet)}");
+    for attack in 0..3 {
+        let mut build = build_source(&source);
+        assert_eq!(
+            build.source_graph_schemas().unwrap()["flat.spx"],
+            "semaprax.graph.v77"
+        );
+        let module = build
+            .hir
+            .modules
+            .iter_mut()
+            .find(|module| module.module == "static.flat_records")
+            .unwrap();
+        let function = module
+            .functions
+            .iter_mut()
+            .find(|function| function.id.as_str() == "flat.main")
+            .unwrap();
+        match attack {
+            0 => {
+                let slot = function
+                    .cleanup_plan
+                    .slots
+                    .iter_mut()
+                    .find(|slot| {
+                        matches!(
+                            slot.field_liveness_shape,
+                            crate::cleanup::FieldLivenessShape::Record { .. }
+                        )
+                    })
+                    .unwrap();
+                let crate::cleanup::FieldLivenessShape::Record { fields, .. } =
+                    &mut slot.field_liveness_shape
+                else {
+                    unreachable!()
+                };
+                fields[1].field_index = 0;
+            }
+            1 => {
+                let slot = function
+                    .cleanup_plan
+                    .slots
+                    .iter_mut()
+                    .find(|slot| {
+                        matches!(
+                            slot.storage,
+                            crate::cleanup_plan::StorageId::CallArgument { .. }
+                        ) && matches!(slot.ty, hir::ResolvedType::Nominal { .. })
+                    })
+                    .unwrap();
+                let crate::cleanup_plan::StorageId::CallArgument {
+                    parameter_index, ..
+                } = &mut slot.storage
+                else {
+                    unreachable!()
+                };
+                *parameter_index += 1;
+            }
+            _ => {
+                let exit = function
+                    .cleanup_plan
+                    .exits
+                    .iter_mut()
+                    .find(|exit| exit.finalize_in_order.len() >= 2)
+                    .unwrap();
+                exit.finalize_in_order.swap(0, 1);
+            }
+        }
+        assert!(
+            build
+                .source_graph_schemas()
+                .unwrap_err()
+                .iter()
+                .any(|error| error.code == "SPX-G410"),
+            "attack {attack}"
+        );
     }
 }

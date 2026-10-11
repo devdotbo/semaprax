@@ -1,6 +1,6 @@
 //! Selected constructor accounting for primitive structural replay indexes.
 //! Independently rebuilt inventory remains the authority; attached shapes are
-//! validated here and owned aggregate shapes explicitly stay unsupported.
+//! validated here; selected direct records retain exact field projections.
 use super::*;
 
 pub(super) fn validate_slots(
@@ -111,40 +111,7 @@ pub(super) fn collect_leaves(
     let mut leaves = BTreeMap::new();
     let mut places = BTreeSet::new();
     for slot in &function.cleanup_plan.slots {
-        match &slot.field_liveness_shape {
-            FieldLivenessShape::NoDrop => {}
-            FieldLivenessShape::Leaf { flag, lifecycle } => {
-                if leaves.contains_key(flag) {
-                    return Err(replay_error(
-                        function,
-                        format!("liveness flag {} is repeated", flag.0),
-                    ));
-                }
-                budget.reserve_btree_node::<LivenessFlagId, Leaf>(function, "leaf index")?;
-                budget.reserve_clone(function, &slot.storage, "leaf storage identity")?;
-                budget.reserve_clone(function, lifecycle, "leaf lifecycle identity")?;
-                let place = CleanupPlace {
-                    storage: slot.storage.clone(),
-                    projections: Vec::new(),
-                };
-                let leaf = Leaf {
-                    place: place.clone(),
-                    lifecycle: lifecycle.clone(),
-                };
-                leaves.insert(*flag, leaf);
-                if places.contains(&place) {
-                    return Err(replay_error(function, "cleanup leaf place is repeated"));
-                }
-                budget.reserve_btree_node::<CleanupPlace, ()>(function, "leaf place index")?;
-                places.insert(place);
-            }
-            FieldLivenessShape::Record { .. } | FieldLivenessShape::Variant { .. } => {
-                return Err(replay_error(
-                    function,
-                    "selected physical leaf inventory does not support owned aggregate shapes",
-                ));
-            }
-        }
+        flat_records::collect_slot_leaves(function, slot, &mut leaves, &mut places, budget)?;
     }
     for (expected, flag) in leaves.keys().enumerate() {
         if flag.0 != u32_index(function, expected, "liveness flag")? {

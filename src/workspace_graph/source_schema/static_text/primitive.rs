@@ -141,11 +141,6 @@ pub(in crate::workspace_graph::source_schema) fn replay(
         .reserve_array::<Context<'_>>(1)
         .map_err(|_| fail())?;
     let context = authenticate(module, facts, &mut physical)?;
-    // Capturing and authenticating exact record facts does not open the
-    // retained route before all structural/typed constructors are reserved.
-    if !module.types.is_empty() {
-        return Err(fail());
-    }
     let mut found = false;
     for function in &module.functions {
         if crate::hir::lexical_exit::requires(function).map_err(|error| vec![error])? {

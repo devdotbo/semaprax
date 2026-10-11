@@ -13,7 +13,8 @@ pub(super) fn validate_inventory_coverage(
             "selected inventory coverage requires a physical ledger",
         )
     })?;
-    let inventory = crate::cleanup::build_inventory_with_reservation(program, function, physical)?;
+    let inventory =
+        crate::cleanup::build_flat_record_inventory_with_reservation(program, function, physical)?;
     if inventory != function.cleanup {
         return Err(replay_error(
             function,
@@ -276,7 +277,7 @@ fn collect_supplemental(
                     })?;
                 let argument = &args[index];
                 if ownership == OwnershipMode::Own
-                    && crate::cleanup::selected_inventory_needs_drop(ty)?
+                    && crate::cleanup::selected_inventory_needs_drop_in(program, ty)?
                 {
                     if ty != &argument.ty {
                         return Err(replay_error(
@@ -284,22 +285,7 @@ fn collect_supplemental(
                             "supplemental owned argument type disagrees with its parameter",
                         ));
                     }
-                    let lifecycle =
-                        crate::cleanup::primitive_leaf_lifecycle(ty).ok_or_else(|| {
-                            replay_error(
-                                function,
-                                "selected supplemental owner has no primitive lifecycle",
-                            )
-                        })?;
-                    let flag = LivenessFlagId(*next_flag);
-                    *next_flag = next_flag.checked_add(1).ok_or_else(|| {
-                        replay_error(function, "too many supplemental liveness flags")
-                    })?;
-                    budget.reserve_bytes(
-                        function,
-                        lifecycle.len(),
-                        "supplemental lifecycle identity",
-                    )?;
+                    let shape = flat_records::shape(program, function, ty, next_flag, budget)?;
                     budget.reserve_clone(function, ty, "supplemental type backing")?;
                     budget.reserve_vec(function, slots, 1, "supplemental slot vector")?;
                     slots.push(ExpectedSupplementalSlot {
@@ -310,10 +296,7 @@ fn collect_supplemental(
                             value_expression: argument.id.clone(),
                         },
                         ty: ty.clone(),
-                        shape: FieldLivenessShape::Leaf {
-                            flag,
-                            lifecycle: DeclarationId::new(lifecycle),
-                        },
+                        shape,
                     });
                 }
             }

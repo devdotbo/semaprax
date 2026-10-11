@@ -21,7 +21,9 @@ mod generic_record;
 mod inventory_builder;
 use inventory_builder::InventoryBuilder;
 pub(crate) use inventory_builder::{
-    build_inventory, build_inventory_with_reservation, selected_inventory_needs_drop,
+    build_flat_record_inventory_with_reservation, build_inventory,
+    build_inventory_with_reservation, selected_flat_record_declaration,
+    selected_flat_record_fields, selected_inventory_needs_drop, selected_inventory_needs_drop_in,
 };
 mod iterator;
 #[cfg(test)]

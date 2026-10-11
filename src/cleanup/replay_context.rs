@@ -18,6 +18,11 @@ pub(crate) trait ReplayContext {
     ) -> Option<&'a crate::cleanup_plan::ReplayRenewalBindings<'a>> {
         None
     }
+    /// Routing marker only: every nominal use independently checks its current
+    /// direct fields; no attached plan or declaration digest grants a verdict.
+    fn selected_flat_records(&self) -> bool {
+        false
+    }
     fn full_program(&self) -> Option<&ResolvedProgram> {
         None
     }

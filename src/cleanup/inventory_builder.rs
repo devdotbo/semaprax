@@ -9,6 +9,39 @@ pub(crate) fn selected_inventory_needs_drop(ty: &ResolvedType) -> Result<bool, D
     selected::needs_drop(ty)
 }
 
+pub(crate) fn selected_flat_record_fields<'a>(
+    program: &'a dyn crate::cleanup::ReplayContext,
+    ty: &'a ResolvedType,
+) -> Result<
+    Option<(
+        &'a DeclarationId,
+        &'a [crate::hir::ResolvedFieldDeclaration],
+    )>,
+    Diagnostic,
+> {
+    selected::flat_record::fields(program, ty)
+}
+
+pub(crate) fn selected_flat_record_declaration<'a>(
+    program: &'a dyn crate::cleanup::ReplayContext,
+    declaration: &'a DeclarationId,
+) -> Result<
+    Option<(
+        &'a DeclarationId,
+        &'a [crate::hir::ResolvedFieldDeclaration],
+    )>,
+    Diagnostic,
+> {
+    selected::flat_record::declaration_fields(program, declaration)
+}
+
+pub(crate) fn selected_inventory_needs_drop_in(
+    program: &dyn crate::cleanup::ReplayContext,
+    ty: &ResolvedType,
+) -> Result<bool, Diagnostic> {
+    selected::needs_drop_in(program, ty)
+}
+
 pub(crate) fn build_inventory(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
@@ -17,8 +50,7 @@ pub(crate) fn build_inventory(
 }
 
 /// Selected physical constructor only: direct primitive owned resources and
-/// Copy/borrowed traversal, plus independently checked direct flat records with
-/// Copy/String/Bytes fields. Other nominal carriers, variants, Vec/Box/generic
+/// Copy/borrowed traversal. Nominal carriers, variants, Vec/Box/generic
 /// carriers, function types and type parameters refuse before delegated type
 /// classification. Constructor support grants no retained replay admission.
 pub(crate) fn build_inventory_with_reservation<'a>(
@@ -29,10 +61,9 @@ pub(crate) fn build_inventory_with_reservation<'a>(
     build_inventory_inner(program, function, Some(RefCell::new(physical)), false)
 }
 
-// Kept private to the constructor module until source-bound record replay's
-// entire structural and typed-skeleton allocation closure is available.
-#[cfg(test)]
-fn build_flat_record_inventory_with_reservation<'a>(
+// Selected source-bound replay uses this independently classified direct
+// record constructor; it never accepts a supplied shape or layout verdict.
+pub(crate) fn build_flat_record_inventory_with_reservation<'a>(
     program: &'a dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     physical: &'a mut ReplayPhysicalReservation,
@@ -101,11 +132,13 @@ fn build_inventory_inner<'a>(
         note_capacity_high_water(inventory_builder_live_capacity(&builder));
     }
 
-    let schema = if builder
-        .slots
-        .iter()
-        .any(|slot| shape_contains_variant(&slot.shape))
-    {
+    let schema = if builder.slots.iter().any(|slot| {
+        if builder.physical.is_some() {
+            matches!(slot.shape, FieldLivenessShape::Variant { .. })
+        } else {
+            shape_contains_variant(&slot.shape)
+        }
+    }) {
         CLEANUP_INVENTORY_SCHEMA_V2
     } else {
         CLEANUP_INVENTORY_SCHEMA_V1
