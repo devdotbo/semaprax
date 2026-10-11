@@ -635,3 +635,6 @@ fn pattern_source_workspace_fits_unchanged_builder_budget() {
     assert!(built.usage.builder_bytes <= MAX_BUILDER_BYTES);
     assert!(built.hir.module_paths.contains_key("std.pattern"));
 }
+
+#[path = "edge_proof_storage.rs"]
+mod edge_proof_storage;
