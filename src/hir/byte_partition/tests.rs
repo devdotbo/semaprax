@@ -47,14 +47,15 @@ fn original_source_resolves_only_through_the_private_current_owner() {
     assert_eq!(inherited.simultaneous_view_bound(helper, &mut usize::MAX).unwrap(), 0);
 
     // Four live caller frames over four whole backings. Each caller retains
-    // its 64 independent SliceView sites until after the nested call returns.
-    for (leaf_views, expected) in [(63, Some(256)), (64, None)] {
-        let text = view_chain(leaf_views);
+    // its 32 independent SliceView sites until after the nested call returns.
+    // Each later byte_len read also has one canonical BorrowedCall site.
+    for (extra_read, expected) in [(false, Some(256)), (true, None)] {
+        let text = view_chain(extra_read);
         let ast = crate::parse(&text, "partition_view_bound.spx").unwrap();
         let owner = ValidatedPartitionProgram::compile_source(&ast, &mut usize::MAX).unwrap();
         let entry = &owner.program().functions[0];
         let counts: Vec<_> = owner.program().functions.iter().map(|f| f.loan_plan.loans.len()).collect();
-        assert_eq!(counts, vec![64, 64, 64, leaf_views + 1]);
+        assert_eq!(counts, vec![64, 64, 64, 64 + usize::from(extra_read)]);
         let mut work = usize::MAX;
         match expected {
             Some(bound) => {
@@ -129,18 +130,20 @@ fn private_owner_refuses_foreign_carriers_and_actual_call_or_plan_mutations() {
     }
 }
 
-fn view_chain(leaf_views: usize) -> String {
+fn view_chain(extra_read: bool) -> String {
     use std::fmt::Write;
     let mut source = String::from("module partition_view_bound;\n");
     for frame in 0..4 {
         let name = if frame == 0 { "main".to_owned() } else { format!("frame{frame}") };
         writeln!(source, "@id(\"partition_view_bound.{name}\") fn {name}()->i64 {{").unwrap();
         source.push_str("let buffer=bytes_zeroed(1usize);\n");
-        let views = if frame == 3 { leaf_views } else { 64 };
+        let views = if frame == 3 { 31 } else { 32 };
         for site in 0..views { writeln!(source, "let view{site}=bytes_as_slice(buffer);").unwrap(); }
         if frame < 3 { writeln!(source, "let value=frame{}();", frame + 1).unwrap(); }
         for site in 0..views { writeln!(source, "let observed{site}=byte_len(view{site});").unwrap(); }
         if frame == 3 {
+            source.push_str("let final_observed=byte_len(view0);\n");
+            if extra_read { source.push_str("let extra_observed=byte_len(view0);\n"); }
             source.push_str("let children=bytes_partition(buffer,1usize,1usize);if vec_len<Bytes>(children)==1usize {7}else{0}\n");
         } else { source.push_str("value\n"); }
         source.push_str("}\n");
