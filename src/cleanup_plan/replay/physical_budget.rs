@@ -236,7 +236,7 @@ mod queue_tests;
 const REFUSAL_PHASE_BYTES: usize = 256;
 const REFUSAL_FIXED_BYTES: usize = 512;
 impl ReplayBudget {
-    fn budget_refusal(
+    pub(super) fn budget_refusal(
         &mut self,
         function: &ResolvedFunction,
         reason: &str,
