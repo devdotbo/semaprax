@@ -1,6 +1,8 @@
 //! Finite nested response source, independent wire oracle and physical owner gates.
 #[path = "collection_response/multi_string.rs"]
 mod multi_string;
+#[path = "collection_response/physical.rs"]
+mod physical;
 #[path = "collection_response/scoped_reads.rs"]
 mod scoped_reads;
 

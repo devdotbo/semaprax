@@ -156,6 +156,20 @@ quote/backslash inputs in one context. It is not a full application, full-row
 physical measurement, accepted fresh trial, billed cost, or an executed gain.
 Executable qualification and matched application trials remain pending.
 
+The owning full-row native definition
+`collection_response::physical::generated_writer_reserves_once_and_copies_once_across_full_row_counts_unlike_legacy_concat`
+runs one ordinary app over 0, 1, 8, 64 and 256 rows of 64-NUL labels, ending at
+the full-cardinality wire oracle. For each count it checks a preflight and a
+one-short refusal with no allocator request, then an exact encode and a
+reentry: one Bytes reservation of exactly the output length, one final String
+request, one final buffer copy, and two events, frees and peak live owners at
+every count. Any generated `realloc` aborts the probe. The same app, inputs and
+oracle also run against the pre-writer concat codec reconstructed from commit
+`a8a39a0a0`; its counts are reported as observed and compared only with the
+writer at the same row count. Neither codec's counts are derived from a formula.
+O0 and O2 must report identical rows. Interpreter and Wasm physical work, wall
+time, RSS, payload stores and agent cost are outside this definition.
+
 An opt-in physical-work definition lives in the existing native harness at
 `string_settlement::bulk_utf8::collection_writer::generated_collection_response_exact_physical_work`.
 It derives and verifies the actual selected codec, independently validates its
