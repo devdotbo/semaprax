@@ -4,25 +4,60 @@ Install a published Semaprax release, then run a first project. You do not need
 to clone the repository, install Rust, or compile anything for this route, and
 you do not need a model account, API key, or editor extension.
 
+## One-command installation
+
+macOS and GNU/Linux (no administrator rights):
+
+```sh
+curl -fsSL https://github.com/wavect/semaprax/releases/latest/download/install.sh | sh
+```
+
+Windows PowerShell 5.1 or 7 (no administrator rights):
+
+```powershell
+irm https://github.com/wavect/semaprax/releases/latest/download/install.ps1 | iex
+```
+
+Open a new terminal afterward. To inspect before running, download the script,
+read it, and run `sh install.sh --version v0.9.0` or
+`.\install.ps1 -Version v0.9.0`. These install the compiler and daemon together.
+They check archive hashes and, when GitHub CLI is installed, the publisher
+attestation. Add `--require-publisher-verification` or
+`-RequirePublisherVerification` to require that check. A checksum alone does
+not authenticate the publisher.
+
+For a different location use `--prefix "$HOME/tools/semaprax"` or
+`-InstallDir "$env:LOCALAPPDATA\Programs\Semaprax"`. Use `--no-modify-path` or
+`-NoModifyPath` to leave shell startup files/user PATH unchanged. The scripts
+print the command needed to use the installation in the current terminal.
+Rerun with an exact version to upgrade or select an older release. Remove a
+script-managed installation with `sh install.sh --uninstall` or
+`.\install.ps1 -Uninstall`, using the same custom location if you chose one.
+Projects and credentials are retained. See the [installer reference](../../docs/INSTALLER-V1.md).
+
+WinGet registration is [pending moderator review](https://github.com/microsoft/winget-pkgs/pull/447495);
+use PowerShell or the manual ZIP route until the public index serves it.
+
 ## Pick your download
 
 The current published release is listed at
 [github.com/wavect/semaprax/releases/latest](https://github.com/wavect/semaprax/releases/latest).
 That address always moves to the newest release, so use it only to find out
 which version is current. The commands below name one exact tag,
-[v0.8.0](https://github.com/wavect/semaprax/releases/tag/v0.8.0), so every
+[v0.9.0](https://github.com/wavect/semaprax/releases/tag/v0.9.0), so every
 download in a session comes from the same release.
 
 | Your computer | Archive to download | Runtime requirement |
 | --- | --- | --- |
-| macOS on Apple Silicon (M1 or newer) | `semaprax-v0.8.0-aarch64-apple-darwin.tar.gz` | macOS 11.0 or newer (the binary's recorded minimum). |
-| Linux on x86-64 | `semaprax-v0.8.0-x86_64-unknown-linux-gnu.tar.gz` | GNU/Linux with glibc 2.39 or newer. The v0.8.0 binary needs `GLIBC_2.39`, so it does not start on older distributions or on musl systems such as Alpine. |
-| Windows on x86-64 | `semaprax-v0.8.0-x86_64-pc-windows-msvc.zip` | 64-bit Windows. |
+| macOS on Apple Silicon (M1 or newer) | `semaprax-v0.9.0-aarch64-apple-darwin.tar.gz` | macOS 11.0 or newer (the binary's recorded minimum). |
+| Linux on x86-64 | `semaprax-v0.9.0-x86_64-unknown-linux-gnu.tar.gz` | GNU/Linux with glibc 2.35 or newer. The distribution is built and tested on glibc 2.35; musl systems such as Alpine are unsupported. |
+| Windows on x86-64 | `semaprax-v0.9.0-x86_64-pc-windows-msvc.zip` | 64-bit Windows. |
 
-Other hosts (Intel macOS, Linux on ARM, older Linux) have no v0.8.0 archive.
-Use [Install from source](#install-from-source) there. Later releases are
-planned to target glibc 2.35, but v0.8.0 does not, so check the release notes of
-the version you pick.
+| macOS on Intel | `semaprax-v0.9.0-x86_64-apple-darwin.tar.gz` | The archive records its macOS deployment minimum. |
+| Linux on ARM64 | `semaprax-v0.9.0-aarch64-unknown-linux-gnu.tar.gz` | GNU/Linux with glibc 2.35 or newer. |
+
+All five native downloads passed the v0.9.0 [release installation gate](https://github.com/wavect/semaprax/actions/runs/38131350918).
+Alpine/musl and native Windows ARM64 are unsupported; use [Install from source](#install-from-source) there.
 
 GitHub also shows **Source code (zip)** and **Source code (tar.gz)** under every
 release. Those are automatically generated snapshots of the repository, not
@@ -69,7 +104,7 @@ with `x86_64-unknown-linux-gnu` and `shasum -a 256 -c -` with
    download the other platforms' archives.
 
    ```sh
-   TAG=v0.8.0
+   TAG=v0.9.0
    TARGET=aarch64-apple-darwin
    BASE=https://github.com/wavect/semaprax/releases/download/$TAG
    curl -fLO "$BASE/semaprax-$TAG-$TARGET.tar.gz"
@@ -84,7 +119,7 @@ with `x86_64-unknown-linux-gnu` and `shasum -a 256 -c -` with
    grep " semaprax-$TAG-$TARGET.tar.gz$" SHA256SUMS | shasum -a 256 -c -
    ```
 
-   It must print `semaprax-v0.8.0-aarch64-apple-darwin.tar.gz: OK`. If it
+   It must print `semaprax-v0.9.0-aarch64-apple-darwin.tar.gz: OK`. If it
    prints `FAILED` or nothing at all, delete the download and start again; do
    not unpack it.
 
@@ -124,9 +159,9 @@ with `x86_64-unknown-linux-gnu` and `shasum -a 256 -c -` with
 
    | Shell | Add this line | To this file |
    | --- | --- | --- |
-   | zsh (the macOS default) | `export PATH="$HOME/.local/opt/semaprax-v0.8.0-aarch64-apple-darwin:$PATH"` | `~/.zshrc` |
+   | zsh (the macOS default) | `export PATH="$HOME/.local/opt/semaprax-v0.9.0-aarch64-apple-darwin:$PATH"` | `~/.zshrc` |
    | bash | the same `export` line | `~/.bashrc` (and `~/.bash_profile` on macOS) |
-   | fish | `fish_add_path $HOME/.local/opt/semaprax-v0.8.0-aarch64-apple-darwin` | run once; fish remembers it |
+   | fish | `fish_add_path $HOME/.local/opt/semaprax-v0.9.0-aarch64-apple-darwin` | run once; fish remembers it |
 
    A new version unpacks to a new directory, so update this line when you
    upgrade.
@@ -137,7 +172,7 @@ with `x86_64-unknown-linux-gnu` and `shasum -a 256 -c -` with
    `SHA256SUMS` lists every platform, so select your archive's line.
 
    ```powershell
-   $Tag = "v0.8.0"
+   $Tag = "v0.9.0"
    $Target = "x86_64-pc-windows-msvc"
    $Name = "semaprax-$Tag-$Target.zip"
    $Base = "https://github.com/wavect/semaprax/releases/download/$Tag"
@@ -191,7 +226,7 @@ semaprax test first-semaprax/semaprax.toml
 semaprax run first-semaprax/semaprax.toml
 ```
 
-With the v0.8.0 macOS archive these print the version and commit,
+With the v0.9.0 macOS archive these print the version and commit,
 `created calculator project first-semaprax`, `verified project first-semaprax
 (sha256:...)`, `project tests passed`, and finally **`42`**. `new` needs a
 destination that does not exist yet. Continue with
@@ -208,8 +243,8 @@ this handbook; keep it beside `semaprax`.
 * Check which executable your shell finds: `command -v semaprax` on macOS and
   Linux, `Get-Command semaprax` in PowerShell. If it is not the one you
   unpacked, an earlier directory on `PATH` is shadowing it.
-* `version 'GLIBC_2.39' not found` on Linux means the host's C library is older
-  than the v0.8.0 build requires; use the source route below.
+* `version 'GLIBC_2.35' not found` on Linux means the host's C library is older
+  than the v0.9.0 build requires; use the source route below.
 
 ## Install from source
 
@@ -246,7 +281,7 @@ installs different programs:
 | `cargo install --locked --path .` | `semaprax` (the standalone build) **and** `semapraxd`. |
 | `cargo install --locked --path . --bin semaprax` | Only the standalone `semaprax`. |
 | `cargo install --locked --path crates/semaprax-toolchain` | Only `semaprax-full`, the full build, under that name. |
-| `cargo install --locked --git https://github.com/wavect/semaprax --tag v0.8.0 semaprax` | The v0.8.0 standalone `semaprax` and `semapraxd`, without a checkout. |
+| `cargo install --locked --git https://github.com/wavect/semaprax --tag v0.9.0 semaprax` | The v0.9.0 standalone `semaprax` and `semapraxd`, without a checkout. |
 
 A release archive's `semaprax` is the **full** build, the same code as
 `semaprax-full`, renamed when packaged. A source-installed `semaprax` is the

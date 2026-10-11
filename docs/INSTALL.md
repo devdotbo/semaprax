@@ -12,11 +12,30 @@ commands that `main` has gained; run `semaprax help all` on the build you
 installed. The newest published release is always at
 [github.com/wavect/semaprax/releases/latest](https://github.com/wavect/semaprax/releases/latest);
 this page names exact tags only where it gives release-bound commands, and
-[v0.8.0](https://github.com/wavect/semaprax/releases/tag/v0.8.0) is the tag its
+[v0.9.0](https://github.com/wavect/semaprax/releases/tag/v0.9.0) is the tag its
 examples use. Install from a release archive for a fixed published build, or
 from source for the newest local build. Then follow the [quickstart](QUICKSTART.md) to run a calculator project. For
 command syntax, use the [CLI guide](CLI-GUIDE.md). For feature status and
 evidence, use the [completion matrix](COMPLETION-MATRIX.md).
+
+## Install the published toolchain
+
+The v0.9.0 release publishes both per-user installers and native archives for
+Apple Silicon and Intel macOS, x86-64 and ARM64 GNU/Linux, and x86-64 Windows.
+
+```sh
+curl -fsSL https://github.com/wavect/semaprax/releases/latest/download/install.sh | sh
+```
+
+```powershell
+irm https://github.com/wavect/semaprax/releases/latest/download/install.ps1 | iex
+```
+
+Open a new terminal and follow the checkout-free [first project](../handbook/getting-started/install.md#run-your-first-project).
+For version pinning, inspectable downloads, custom locations, verification and
+removal, use [Installer v1](INSTALLER-V1.md). Homebrew currently serves v0.8.0
+on Apple Silicon through `brew install wavect/tap/semaprax`; its lifecycle is
+owned by Homebrew. WinGet remains pending external moderator review.
 
 ## Which binary do you need?
 
@@ -26,7 +45,7 @@ There are two builds. Release archives rename the full build:
 | --- | --- | --- |
 | `semaprax` | Standalone source install (`cargo install --locked --path .` also installs `semapraxd`) | Common commands: `new`, `fmt`, `check`, `run`, `test`, `graph`, `build`, and `doctor`. |
 | `semaprax-full` | Source checkout only | Common commands plus private host and publication operations. Its `new` uses staged publication. |
-| `semaprax` in a release archive | A published [release](https://github.com/wavect/semaprax/releases), for example [v0.8.0](https://github.com/wavect/semaprax/releases/tag/v0.8.0) | The full build, renamed when packaged. It ships beside `semapraxd`. |
+| `semaprax` in a release archive | A published [release](https://github.com/wavect/semaprax/releases), for example [v0.9.0](https://github.com/wavect/semaprax/releases/tag/v0.9.0) | The full build, renamed when packaged. It ships beside `semapraxd`. |
 
 The full toolchain is unpublished (`publish = false`), so build it from a
 checkout. Both binaries accept the common commands, including `doctor`. The
@@ -76,7 +95,7 @@ The first command installs the standalone `semaprax` and the `semapraxd` daemon
 (the root package declares both binaries; add `--bin semaprax` to install only
 the CLI). The second installs only `semaprax-full`, the full build under its own
 name. Without a checkout, `cargo install --locked --git
-https://github.com/wavect/semaprax --tag v0.8.0 semaprax` installs the v0.8.0
+https://github.com/wavect/semaprax --tag v0.9.0 semaprax` installs the v0.9.0
 standalone `semaprax` and `semapraxd`; the full build installs the same way with
 `semaprax-toolchain --bin semaprax-full`. `--locked` uses the recorded dependencies. Cargo may fetch them while
 installing; a later SEMAPRAX build does not fetch dependencies.
@@ -115,15 +134,17 @@ command -v semaprax
 
 Pick the tag from the [latest release](https://github.com/wavect/semaprax/releases/latest)
 page, then use that exact tag for every download. The newest release at the time
-of writing is [v0.8.0](https://github.com/wavect/semaprax/releases/tag/v0.8.0). It
+of writing is [v0.9.0](https://github.com/wavect/semaprax/releases/tag/v0.9.0). It
 provides one archive per admitted host, `SHA256SUMS`, a per-host
 `release-attestation-<target>.json`, and release provenance:
 
 | Host | Archive |
 | --- | --- |
-| Linux x86-64 (glibc 2.39 or newer for v0.8.0) | `semaprax-v0.8.0-x86_64-unknown-linux-gnu.tar.gz` |
-| Apple Silicon macOS (11.0 or newer) | `semaprax-v0.8.0-aarch64-apple-darwin.tar.gz` |
-| Windows x86-64 | `semaprax-v0.8.0-x86_64-pc-windows-msvc.zip` |
+| Linux x86-64 (glibc 2.35 or newer for v0.9.0) | `semaprax-v0.9.0-x86_64-unknown-linux-gnu.tar.gz` |
+| Apple Silicon macOS (11.0 or newer) | `semaprax-v0.9.0-aarch64-apple-darwin.tar.gz` |
+| Intel macOS | `semaprax-v0.9.0-x86_64-apple-darwin.tar.gz` |
+| Linux ARM64 (glibc 2.35 or newer) | `semaprax-v0.9.0-aarch64-unknown-linux-gnu.tar.gz` |
+| Windows x86-64 | `semaprax-v0.9.0-x86_64-pc-windows-msvc.zip` |
 
 GitHub's automatic "Source code" downloads are repository snapshots, not these
 archives. Each archive contains `semaprax`, the `semapraxd` daemon, `LICENSE`,
@@ -132,11 +153,11 @@ archives. Each archive contains `semaprax`, the `semapraxd` daemon, `LICENSE`,
 `SHA256SUMS`, then verify just that archive against its own line, and unpack it:
 
 ```sh
-BASE=https://github.com/wavect/semaprax/releases/download/v0.8.0
-curl -fLO "$BASE/semaprax-v0.8.0-aarch64-apple-darwin.tar.gz"
+BASE=https://github.com/wavect/semaprax/releases/download/v0.9.0
+curl -fLO "$BASE/semaprax-v0.9.0-aarch64-apple-darwin.tar.gz"
 curl -fLO "$BASE/SHA256SUMS"
-grep " semaprax-v0.8.0-aarch64-apple-darwin.tar.gz$" SHA256SUMS | shasum -a 256 -c -
-tar -xzf semaprax-v0.8.0-aarch64-apple-darwin.tar.gz
+grep " semaprax-v0.9.0-aarch64-apple-darwin.tar.gz$" SHA256SUMS | shasum -a 256 -c -
+tar -xzf semaprax-v0.9.0-aarch64-apple-darwin.tar.gz
 ```
 
 `SHA256SUMS` lists every host's archive. Handing the unfiltered file to the
@@ -340,7 +361,7 @@ Not verified here:
   `semaprax-full` binary was built or installed while writing this document.
 - `cargo install` itself and `PATH` configuration.
 - Archive download, selected-line checksum verification, unpacking and the
-  `new`/`check`/`test`/`run` sequence were replayed for the v0.8.0 Apple
+  `new`/`check`/`test`/`run` sequence were replayed for the v0.9.0 Apple
   Silicon archive on macOS arm64 on 2026-10-06; the Linux and Windows archive
   steps were not replayed here, and the Windows behavior stays unverified.
 - Anything about the `semapraxd` daemon beyond its presence in the archive

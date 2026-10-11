@@ -382,6 +382,16 @@ class InstallLifecycle(InstallerCase):
 
 
 class Profile(InstallerCase):
+    def test_no_path_upgrade_retains_previous_profile_ownership(self):
+        self.release("v1.0.0")
+        self.release("v2.0.0")
+        self.assertOk(self.install("v1.0.0"))
+        before = self.receipt()["path_modification"]
+        self.assertOk(self.install("v2.0.0", "--no-modify-path"))
+        self.assertEqual(self.receipt()["path_modification"], before)
+        self.assertOk(self.run_install("--uninstall"))
+        self.assertFalse((self.home / ".zshrc").exists())
+
     def test_block_is_idempotent_and_preserves_other_content(self):
         self.release("v1.0.0")
         self.release("v2.0.0")
@@ -435,6 +445,52 @@ class Profile(InstallerCase):
 
 
 class Uninstall(InstallerCase):
+    def test_upgrade_preserves_unowned_versions_and_old_extra_files(self):
+        self.release("v1.0.0")
+        self.release("v2.0.0")
+        self.assertOk(self.install("v1.0.0", "--no-modify-path"))
+        extra = self.prefix / "versions/v1.0.0/notes.txt"
+        extra.write_text("mine")
+        foreign = self.prefix / "versions/custom"
+        foreign.mkdir()
+        (foreign / "notes.txt").write_text("foreign")
+        self.assertOk(self.install("v2.0.0", "--no-modify-path"))
+        self.assertEqual(extra.read_text(), "mine")
+        self.assertEqual((foreign / "notes.txt").read_text(), "foreign")
+        self.assertFalse((extra.parent / "semaprax").exists())
+        self.assertOk(self.run_install("--uninstall"))
+        self.assertEqual(extra.read_text(), "mine")
+        self.assertEqual((foreign / "notes.txt").read_text(), "foreign")
+
+    def test_upgrade_refuses_an_unowned_destination(self):
+        self.release("v1.0.0")
+        self.release("v2.0.0")
+        self.assertOk(self.install("v1.0.0", "--no-modify-path"))
+        foreign = self.prefix / "versions/v2.0.0"
+        foreign.mkdir()
+        (foreign / "notes.txt").write_text("mine")
+        self.assertFailed(self.install("v2.0.0", "--no-modify-path"), "does not own")
+        self.assertEqual(self.installed_version(), "1.0.0")
+        self.assertEqual((foreign / "notes.txt").read_text(), "mine")
+
+    def test_same_version_refuses_changed_installed_daemon(self):
+        self.release("v1.0.0")
+        self.assertOk(self.install("v1.0.0", "--no-modify-path"))
+        daemon = self.prefix / "versions/v1.0.0/semapraxd"
+        daemon.write_text("changed")
+        self.assertFailed(self.install("v1.0.0", "--no-modify-path"), "differs from the verified archive")
+        self.assertEqual(daemon.read_text(), "changed")
+
+    def test_uninstall_refuses_linked_receipt_parent(self):
+        self.release("v1.0.0")
+        self.assertOk(self.install("v1.0.0", "--no-modify-path"))
+        owned = self.prefix / "versions/v1.0.0"
+        elsewhere = self.tmp / "elsewhere"
+        owned.rename(elsewhere)
+        owned.symlink_to(elsewhere, target_is_directory=True)
+        self.assertFailed(self.run_install("--uninstall"), "unsafe install receipt")
+        self.assertTrue((elsewhere / "semaprax").is_file())
+
     def test_uninstall_scope(self):
         self.release("v1.0.0")
         outside_bin = self.tmp / "usr-local-bin"

@@ -343,6 +343,25 @@ safe_relpath() {
   return 0
 }
 
+validate_receipt_paths() {
+  [ "$(receipt_field installer)" = install.sh ] || die "foreign installer receipt"
+  receipt_tag="$(receipt_field tag)"
+  printf '%s\n' "$receipt_tag" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$' ||
+    die "invalid version in install receipt"
+  receipt_files | while IFS= read -r rel; do
+    safe_relpath "$rel" || { echo "unsafe path in install receipt" >&2; exit 1; }
+    case "$rel" in
+      "versions/$receipt_tag/"* | bin/semaprax | bin/semapraxd | current) ;;
+      *) echo "unowned path in install receipt: $rel" >&2; exit 1 ;;
+    esac
+    parent="$(dirname "$rel")"
+    while [ "$parent" != . ]; do
+      [ ! -L "$PREFIX/$parent" ] || { echo "linked directory in install receipt" >&2; exit 1; }
+      parent="$(dirname "$parent")"
+    done
+  done || die "refusing unsafe install receipt"
+}
+
 # --------------------------------------------------------------- uninstall
 
 do_uninstall() {
@@ -350,6 +369,7 @@ do_uninstall() {
   receipt_has_schema ||
     die "refusing to uninstall: $PREFIX has no semaprax install receipt"
   for tool in sed grep awk rm rmdir cat dirname cmp; do need "$tool"; done
+  validate_receipt_paths
 
   files="$(receipt_files)"
   [ -n "$files" ] || die "install receipt lists no files; refusing to guess what to remove"
@@ -515,7 +535,7 @@ esac
 
 # ------------------------------------------------------- tool preflight
 
-for tool in tar awk sed grep tr mkdir mv ln rm rmdir cat wc dirname basename \
+for tool in tar awk sed grep tr mkdir mv ln rm rmdir cat cp wc dirname basename \
   readlink find sort head cmp uname; do
   need "$tool"
 done
@@ -623,6 +643,7 @@ PREV_SHA=""
 if [ -e "$PREFIX" ] || [ -L "$PREFIX" ]; then
   [ -d "$PREFIX" ] || die "$PREFIX exists and is not a directory"
   if receipt_has_schema; then
+    validate_receipt_paths
     PREV_TAG="$(receipt_field tag)"
     PREV_SHA="$(receipt_field archive_sha256)"
   else
@@ -686,6 +707,8 @@ printf '%s' "$MFLAT" | grep -q '"schema":"semaprax.release-manifest.v1"' ||
   die "release-manifest.json has an unexpected schema"
 M_TAG="$(printf '%s' "$MFLAT" | grep -o '"tag":"[^"]*"' | head -1 | sed 's/^"tag":"//; s/"$//')"
 [ "$M_TAG" = "$TAG" ] || die "release-manifest.json is for tag '$M_TAG', expected $TAG"
+M_VERSION="$(printf '%s' "$MFLAT" | grep -o '"version":"[^"]*"' | head -1 | sed 's/^"version":"//; s/"$//')"
+[ "$M_VERSION" = "$VERSION" ] || die "release-manifest.json version disagrees with its tag"
 M_ENTRY="$(printf '%s' "$MFLAT" | tr '}' '\n' | grep -F "\"name\":\"$NAME\"" || :)"
 case "$M_ENTRY" in
   "") die "release-manifest.json has no artifacts entry for $NAME" ;;
@@ -759,6 +782,9 @@ printf '%s\n' "$VLIST" | while IFS= read -r v; do
 done || exit 1
 
 mkdir "$STAGE/extract"
+if [ -n "$PREV_TAG" ]; then
+  cp "$RECEIPT" "$STAGE/previous-receipt.json" || die "cannot retain the previous ownership receipt"
+fi
 tar -xzf "$ARCHIVE" -C "$STAGE/extract" || die "extraction of $NAME failed"
 PKG="$STAGE/extract/$TOP"
 [ -d "$PKG" ] || die "archive does not contain the expected top-level directory $TOP/"
@@ -790,9 +816,14 @@ if [ -e "$DEST" ] || [ -L "$DEST" ]; then
   if [ "$PREV_TAG" = "$TAG" ]; then
     [ "$PREV_SHA" = "$ACTUAL_SHA" ] ||
       die "$TAG is already installed from a different archive (sha256:$PREV_SHA); uninstall first"
+    [ ! -L "$DEST" ] || die "refusing to reuse a linked version directory"
+    for exe in semaprax semapraxd; do
+      cmp -s "$PKG/$exe" "$DEST/$exe" ||
+        die "installed $exe differs from the verified archive; inspect the installation before retrying"
+    done
     REUSE=1
   else
-    rm -rf "$DEST"
+    die "refusing to replace $DEST: the active receipt does not own this version"
   fi
 fi
 if [ "$REUSE" = 0 ]; then
@@ -830,6 +861,12 @@ STATE="activated"
 
 PM_KIND="none"
 PM_LOCATION=""
+# A no-PATH upgrade must retain ownership of the block installed earlier.
+# Uninstall still needs to remove it even though this run did not edit it.
+if [ -n "$PREV_TAG" ] && [ "$MODIFY_PATH" = 0 ]; then
+  PM_LOCATION="$(sed -n 's/.*"location": *"\([^"]*\)".*/\1/p' "$RECEIPT")"
+  [ -z "$PM_LOCATION" ] || PM_KIND="profile"
+fi
 if [ "$MODIFY_PATH" = 1 ]; then
   if [ -z "${HOME:-}" ]; then
     warn "HOME is not set; not modifying any shell profile"
@@ -901,11 +938,23 @@ STATE="done"
 
 # ----------------------------------------------------------------- prune
 
-for d in "$PREFIX"/versions/*; do
-  [ -d "$d" ] || continue
-  [ "$(basename "$d")" = "$TAG" ] && continue
-  rm -rf "$d" || warn "could not remove old version $d"
-done
+# The old receipt is the authority for removal, not membership of versions/.
+# Preserve foreign versions and extra files a user placed in the old version.
+if [ -n "$PREV_TAG" ] && [ "$PREV_TAG" != "$TAG" ]; then
+  if [ -f "$STAGE/previous-receipt.json" ]; then
+    sed -n '/^  "files": \[/,/^  \],\{0,1\}$/p' "$STAGE/previous-receipt.json" |
+      sed -n 's/^    "\(.*\)",\{0,1\}$/\1/p' |
+      while IFS= read -r rel; do
+        case "$rel" in
+          "versions/$PREV_TAG/"*)
+            safe_relpath "$rel" || continue
+            rm -f "$PREFIX/$rel" || warn "could not remove old owned file $rel"
+            rmdir_chain "$(dirname "$PREFIX/$rel")" "$PREFIX/versions/$PREV_TAG"
+            ;;
+        esac
+      done
+  fi
+fi
 
 # ------------------------------------------------------------------ done
 

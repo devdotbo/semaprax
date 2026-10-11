@@ -18,10 +18,34 @@
         "semaprax-v0.8.0-x86_64-unknown-linux-gnu.tar.gz",
         "trusted_root.jsonl"
       ]
+    },
+    "v0.9.0": {
+      "commit": "933196b9ef3cb611343f1401e9eb0b08fa404d0a",
+      "published_at": "2026-10-11T15:07:29Z",
+      "assets": [
+        "SHA256SUMS",
+        "install.ps1",
+        "install.sh",
+        "release-attestation-aarch64-apple-darwin.json",
+        "release-attestation-aarch64-unknown-linux-gnu.json",
+        "release-attestation-x86_64-apple-darwin.json",
+        "release-attestation-x86_64-pc-windows-msvc.json",
+        "release-attestation-x86_64-unknown-linux-gnu.json",
+        "release-manifest.json",
+        "release-provenance.bundle",
+        "release-provenance.json",
+        "release-signature-claim.json",
+        "semaprax-v0.9.0-aarch64-apple-darwin.tar.gz",
+        "semaprax-v0.9.0-aarch64-unknown-linux-gnu.tar.gz",
+        "semaprax-v0.9.0-x86_64-apple-darwin.tar.gz",
+        "semaprax-v0.9.0-x86_64-pc-windows-msvc.zip",
+        "semaprax-v0.9.0-x86_64-unknown-linux-gnu.tar.gz",
+        "trusted_root.jsonl"
+      ]
     }
   },
   "installers": {
-    "first_release": null
+    "first_release": "v0.9.0"
   },
   "homebrew": {
     "status": "published",
@@ -36,6 +60,7 @@
     "id": "Wavect.Semaprax",
     "command": "winget install --id Wavect.Semaprax --exact",
     "version": null,
-    "verified_at": null
+    "verified_at": null,
+    "submission": "https://github.com/microsoft/winget-pkgs/pull/447495"
   }
 }
