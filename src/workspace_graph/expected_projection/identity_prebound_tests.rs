@@ -463,7 +463,10 @@ fn single_help(errors: &[crate::diagnostic::Diagnostic], limit: usize) -> String
         errors[0].message,
         format!("Workspace Semantic Graph `builder_bytes` exceeds {limit}")
     );
-    errors[0].help.clone().expect("builder refusal names its bound")
+    errors[0]
+        .help
+        .clone()
+        .expect("builder refusal names its bound")
 }
 
 /// The final uncached forecast must describe its own refused step. Before
@@ -503,7 +506,10 @@ fn uncached_sequential_forecast_attributes_its_own_cumulative_one_short_step() {
             best
         }
     });
-    let live = single_help(&[super::super::limit_error("builder_bytes", forecast)], forecast);
+    let live = single_help(
+        &[super::super::limit_error("builder_bytes", forecast)],
+        forecast,
+    );
     assert!(
         live.starts_with(&format!(
             "live graph construction, not the static admission pre-charge, exceeded the budget: the pre-charge forecast {forecast} bytes for 3 module(s) and fit within {forecast}, with `{}` the largest at {} bytes.",
@@ -528,7 +534,10 @@ fn uncached_sequential_forecast_attributes_its_own_cumulative_one_short_step() {
     )));
     assert!(expected.contains(&format!("resolving `{}`", programs[2].path)));
     // Hostile stale attribution: a refused summed pass runs first.
-    let summed = single_help(&uncached_peak_prebound(&programs, &authored).unwrap_err(), short);
+    let summed = single_help(
+        &uncached_peak_prebound(&programs, &authored).unwrap_err(),
+        short,
+    );
     assert!(summed.contains("alone forecasts"), "{summed}");
     let refusal = super::uncached_peak::uncached_output_layout(&programs, &authored)
         .err()
@@ -566,13 +575,16 @@ fn uncached_sequential_refusal_follows_the_independent_overhead_order() {
         assert!(oracle.full[consumer] > oracle.retained[consumer]);
     }
     assert_eq!(oracle.full[0], oracle.retained[0]);
-    assert_eq!(oracle.order.last(), Some(&0), "the provider has no import overhead");
+    assert_eq!(
+        oracle.order.last(),
+        Some(&0),
+        "the provider has no import overhead"
+    );
     let layout = super::uncached_peak::uncached_output_layout(&programs, &authored).unwrap();
     assert_eq!(layout.forecast, oracle.forecast);
     assert_eq!(&layout.order[..programs.len()], oracle.order.as_slice());
 
-    let previous =
-        super::super::ACTIVE_BUILDER_LIMIT.with(|limit| limit.replace(oracle.forecast));
+    let previous = super::super::ACTIVE_BUILDER_LIMIT.with(|limit| limit.replace(oracle.forecast));
     let _restore = LimitRestore(previous);
     assert_eq!(
         super::uncached_peak::uncached_output_layout(&programs, &authored)

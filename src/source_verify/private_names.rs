@@ -191,7 +191,10 @@ pub(super) fn missing_case(
     }
     // The provider name is an import alias only when the authored caller has
     // no import, type or function already spelling it.
-    let spelled = caller.module_uses.iter().any(|u| u.alias == declaration.name)
+    let spelled = caller
+        .module_uses
+        .iter()
+        .any(|u| u.alias == declaration.name)
         || caller.types.iter().any(|t| t.name == declaration.name)
         || caller.functions.iter().any(|f| f.name == declaration.name);
     if spelled {

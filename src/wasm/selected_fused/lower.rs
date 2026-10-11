@@ -332,9 +332,11 @@ impl<'a> Lower<'a> {
                 if !covered[index] && std::ptr::eq(*view_loan, loan) {
                     // An open view's loan must be live on every edge entering
                     // `at`, not merely in the union summary.
-                    if plan.edges.iter().any(|edge| {
-                        usize::from(edge.to) == point && !edge.live.contains(id)
-                    }) {
+                    if plan
+                        .edges
+                        .iter()
+                        .any(|edge| usize::from(edge.to) == point && !edge.live.contains(id))
+                    {
                         return Err(Refusal::Loans);
                     }
                     covered[index] = true;
@@ -370,11 +372,7 @@ impl<'a> Lower<'a> {
     pub(super) fn close_scope(&mut self, block: &E) -> Result<(), Refusal> {
         self.loan_points(&block.id, LoanPointPhase::After);
         let scope = self.scopes.pop().ok_or(unsupported("scope"))?;
-        if scope
-            .views
-            .iter()
-            .any(|view| view.lowered.contains(&false))
-        {
+        if scope.views.iter().any(|view| view.lowered.contains(&false)) {
             return Err(Refusal::Loans);
         }
         Ok(())

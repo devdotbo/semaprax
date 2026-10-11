@@ -146,7 +146,9 @@ impl Consumer {
             Self::ReservedArena => Refused("reserved arena is a distinct private profile"),
             Self::SelectedFusedRow => Refused("selected fused rows own a separate private domain"),
             Self::AggregateLayout => Refused("Native64 aggregate layout pins the 16-byte carrier"),
-            Self::AgentLifecycleExecutor => Refused("agent lifecycle executor drops two-word owners"),
+            Self::AgentLifecycleExecutor => {
+                Refused("agent lifecycle executor drops two-word owners")
+            }
             Self::ImportedCall => Refused("imported and foreign calls have no selected crossing"),
             Self::BorrowedNonOwner => Shared("spx_shb_view"),
         }
@@ -197,7 +199,10 @@ pub(crate) const CARRIER_SITES: &[(&str, &[Consumer])] = &[
         "src/agent_lifecycle/authorization/native_executor.rs",
         &[Consumer::AgentLifecycleExecutor],
     ),
-    ("src/codegen/native_box/owned_payload.rs", &[Consumer::BoxPayload]),
+    (
+        "src/codegen/native_box/owned_payload.rs",
+        &[Consumer::BoxPayload],
+    ),
     (
         "src/codegen/native_byte_data.rs",
         &[
@@ -213,12 +218,27 @@ pub(crate) const CARRIER_SITES: &[(&str, &[Consumer])] = &[
             Consumer::Set1Or6Or48,
         ],
     ),
-    ("src/codegen/native_byte_data/reserved_allocators.c", &[Consumer::ReservedArena]),
-    ("src/codegen/native_byte_data/reserved_drop.c", &[Consumer::ReservedArena]),
-    ("src/codegen/native_byte_data/stream_epoch.rs", &[Consumer::StreamEpoch]),
+    (
+        "src/codegen/native_byte_data/reserved_allocators.c",
+        &[Consumer::ReservedArena],
+    ),
+    (
+        "src/codegen/native_byte_data/reserved_drop.c",
+        &[Consumer::ReservedArena],
+    ),
+    (
+        "src/codegen/native_byte_data/stream_epoch.rs",
+        &[Consumer::StreamEpoch],
+    ),
     ("src/codegen/native_bytes.rs", &[Consumer::CleanupFinalizer]),
-    ("src/codegen/native_bytes/owned_leaf.rs", &[Consumer::Drop, Consumer::Move]),
-    ("src/codegen/native_cleanup_emit.rs", &[Consumer::CleanupFinalizer]),
+    (
+        "src/codegen/native_bytes/owned_leaf.rs",
+        &[Consumer::Drop, Consumer::Move],
+    ),
+    (
+        "src/codegen/native_cleanup_emit.rs",
+        &[Consumer::CleanupFinalizer],
+    ),
     ("src/codegen/native_command_io.rs", &[Consumer::HostIo]),
     (
         "src/codegen/native_emit/expression/nested_owned.rs",
@@ -228,14 +248,29 @@ pub(crate) const CARRIER_SITES: &[(&str, &[Consumer])] = &[
         "src/codegen/native_emit/expression/vec_ops/field_read.rs",
         &[Consumer::ProjectedLeafField],
     ),
-    ("src/codegen/native_emit/filesystem_io.rs", &[Consumer::HostIo]),
-    ("src/codegen/native_emit/filesystem_io_v2.rs", &[Consumer::HostIo]),
-    ("src/codegen/native_emit/filesystem_io_v3.rs", &[Consumer::HostIo]),
+    (
+        "src/codegen/native_emit/filesystem_io.rs",
+        &[Consumer::HostIo],
+    ),
+    (
+        "src/codegen/native_emit/filesystem_io_v2.rs",
+        &[Consumer::HostIo],
+    ),
+    (
+        "src/codegen/native_emit/filesystem_io_v3.rs",
+        &[Consumer::HostIo],
+    ),
     ("src/codegen/native_emit/http_io.rs", &[Consumer::HostIo]),
-    ("src/codegen/native_emit/nested_owned.rs", &[Consumer::NestedOwnedRecord]),
+    (
+        "src/codegen/native_emit/nested_owned.rs",
+        &[Consumer::NestedOwnedRecord],
+    ),
     ("src/codegen/native_emit/network_io.rs", &[Consumer::HostIo]),
     ("src/codegen/native_emit/once.rs", &[Consumer::OnceCapture]),
-    ("src/codegen/native_emit/process_runtime.c", &[Consumer::HostIo]),
+    (
+        "src/codegen/native_emit/process_runtime.c",
+        &[Consumer::HostIo],
+    ),
     (
         "src/codegen/native_emit/public_generic_bridge.rs",
         &[Consumer::PublicGenericBridge],
@@ -262,7 +297,10 @@ pub(crate) const CARRIER_SITES: &[(&str, &[Consumer])] = &[
         &[Consumer::OwnedDataProvider],
     ),
     ("src/codegen/native_resource.rs", &[Consumer::Resource]),
-    ("src/codegen/native_vec/owned_leaf.c", &[Consumer::OwnedLeafVec]),
+    (
+        "src/codegen/native_vec/owned_leaf.c",
+        &[Consumer::OwnedLeafVec],
+    ),
     (
         "src/codegen/native_vec/owned_payload.rs",
         &[

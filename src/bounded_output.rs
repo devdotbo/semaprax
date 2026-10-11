@@ -497,13 +497,12 @@ impl Deref for CappedVec {
 
 #[cfg(test)]
 mod tests {
-    use std::panic::{AssertUnwindSafe, catch_unwind};
+    use std::panic::{catch_unwind, AssertUnwindSafe};
 
     use super::{
-        BudgetedJoin as _, CappedString, CappedVec, active_limit, active_remaining, budgeted_clone,
-        budgeted_format, budgeted_join, clear_active_floor, reserve_active,
-        reserve_active_preserving, reserve_active_required, set_active_floor, with_limit,
-        with_limit_usage,
+        active_limit, active_remaining, budgeted_clone, budgeted_format, budgeted_join,
+        clear_active_floor, reserve_active, reserve_active_preserving, reserve_active_required,
+        set_active_floor, with_limit, with_limit_usage, BudgetedJoin as _, CappedString, CappedVec,
     };
 
     /// Emits `first` on its first invocation and `later` on every other one,

@@ -34,11 +34,18 @@ fn function_ids() -> (DeclarationId, ExpressionId, ExpressionId) {
         .iter()
         .find(|function| function.name == "main")
         .unwrap();
-    (probe.id.clone(), probe.body.id.clone(), main.body.id.clone())
+    (
+        probe.id.clone(),
+        probe.body.id.clone(),
+        main.body.id.clone(),
+    )
 }
 
 fn flags() -> BTreeMap<LivenessFlagId, ByteSlot> {
-    BTreeMap::from([(LivenessFlagId(0), slot("a")), (LivenessFlagId(1), slot("b"))])
+    BTreeMap::from([
+        (LivenessFlagId(0), slot("a")),
+        (LivenessFlagId(1), slot("b")),
+    ])
 }
 
 fn exit(id: u32, order: &[u32], continuation: ExitContinuation) -> ExitTarget {
@@ -140,7 +147,11 @@ fn nonterminal_exit_orders_never_join_the_terminal_union() {
     let plan = plan(
         vec![
             exit(0, &[0, 1], failure(&failed)),
-            exit(1, &[1, 0], ExitContinuation::Continue(crate::cleanup_plan::EdgeId(0))),
+            exit(
+                1,
+                &[1, 0],
+                ExitContinuation::Continue(crate::cleanup_plan::EdgeId(0)),
+            ),
             exit(2, &[0, 1], commit(&result)),
         ],
         None,
@@ -165,8 +176,14 @@ fn source_selected_lexical_exits_keep_each_exact_contradictory_order() {
     assert!(order.shared.is_empty());
     assert_eq!(order.slots, BTreeSet::from([slot("a"), slot("b")]));
     // The exact vectors themselves are untouched for the per-site router.
-    assert_eq!(plan.exits[0].finalize_in_order[0].guard_flag, LivenessFlagId(0));
-    assert_eq!(plan.exits[1].finalize_in_order[0].guard_flag, LivenessFlagId(1));
+    assert_eq!(
+        plan.exits[0].finalize_in_order[0].guard_flag,
+        LivenessFlagId(0)
+    );
+    assert_eq!(
+        plan.exits[1].finalize_in_order[0].guard_flag,
+        LivenessFlagId(1)
+    );
 }
 
 #[test]
@@ -275,7 +292,10 @@ fn checked_variant_owners_take_opposing_terminal_orders_and_lexical_sites_select
     let (checked, program) = variant_owner_program(VARIANT_OWNER_ORDER);
     let run = run_function(&program);
     let plan = &run.cleanup_plan;
-    assert!(plan.lexical_control.is_some(), "loop exits make run lexical");
+    assert!(
+        plan.lexical_control.is_some(),
+        "loop exits make run lexical"
+    );
     let (older, _) = body_let(run, 2);
     let (newer, _) = body_let(run, 10);
     let older = StorageId::Value(older.id.clone());
@@ -317,7 +337,10 @@ fn nonlexical_variant_source() -> String {
 }
 
 fn live_flag(exit: &ExitTarget, index: usize) -> String {
-    format!("spx_bytes_live_{}", exit.finalize_in_order[index].guard_flag.0)
+    format!(
+        "spx_bytes_live_{}",
+        exit.finalize_in_order[index].guard_flag.0
+    )
 }
 
 /// Some emitted finalizer line for `first` is immediately followed by `second`.
@@ -390,9 +413,14 @@ fn checked_nonlexical_variant_owners_admit_exact_routes_with_actual_plan_vectors
     );
     // The common epilogue performs nothing and guards every terminal slot.
     let epilogue = native.epilogue();
-    assert!(epilogue.starts_with("    if (spx_bytes_live_"), "{epilogue}");
     assert!(
-        epilogue.ends_with(&format!(") spx_runtime_invariant_failure(\"{NONLEXICAL_GUARD}\");\n")),
+        epilogue.starts_with("    if (spx_bytes_live_"),
+        "{epilogue}"
+    );
+    assert!(
+        epilogue.ends_with(&format!(
+            ") spx_runtime_invariant_failure(\"{NONLEXICAL_GUARD}\");\n"
+        )),
         "{epilogue}"
     );
     assert_eq!(epilogue.lines().count(), 1);
@@ -556,8 +584,14 @@ fn authenticated_nonlexical_exits_keep_each_exact_contradictory_order() {
         nonlexical_success_exit(&plan).unwrap(),
         &plan.exits[1]
     ));
-    assert_eq!(plan.exits[0].finalize_in_order[0].guard_flag, LivenessFlagId(0));
-    assert_eq!(plan.exits[1].finalize_in_order[0].guard_flag, LivenessFlagId(1));
+    assert_eq!(
+        plan.exits[0].finalize_in_order[0].guard_flag,
+        LivenessFlagId(0)
+    );
+    assert_eq!(
+        plan.exits[1].finalize_in_order[0].guard_flag,
+        LivenessFlagId(1)
+    );
 }
 
 #[test]
@@ -626,7 +660,10 @@ fn hostile_forged_synthetic_nonlexical_links_refuse() {
     // A plain loop has no iteration certificate, independent of its links.
     let plan = nonlexical_plan(&failed, &result);
     let error = terminal_order_with(&function, &plan, &flags(), || true).unwrap_err();
-    assert_nonlexical_refusal(&error, "a plain `while` loop has no iteration execution-boundary certificate");
+    assert_nonlexical_refusal(
+        &error,
+        "a plain `while` loop has no iteration execution-boundary certificate",
+    );
 }
 
 #[test]
@@ -639,10 +676,16 @@ fn nonlexical_common_epilogue_guards_live_terminal_slots_without_guessing() {
     plan.nonlexical_terminal = Some(vec![slot("a"), slot("b")]);
     assert_eq!(
         plan.selected_epilogue(),
-        format!("    if (flag_a || flag_b) spx_runtime_invariant_failure(\"{NONLEXICAL_GUARD}\");\n")
+        format!(
+            "    if (flag_a || flag_b) spx_runtime_invariant_failure(\"{NONLEXICAL_GUARD}\");\n"
+        )
     );
     plan.nonlexical_terminal = Some(Vec::new());
-    assert_eq!(plan.selected_epilogue(), "", "the empty state performs nothing");
+    assert_eq!(
+        plan.selected_epilogue(),
+        "",
+        "the empty state performs nothing"
+    );
     plan.nonlexical_terminal = None;
     assert_eq!(
         plan.selected_epilogue(),
@@ -656,7 +699,11 @@ const NONLEXICAL_LOOP: &str = include_str!("nonlexical_loop_order.spx");
 fn checked_nonlexical_run(
     source: &str,
     run: &str,
-) -> (crate::ast::Program, crate::hir::ResolvedProgram, DeclarationId) {
+) -> (
+    crate::ast::Program,
+    crate::hir::ResolvedProgram,
+    DeclarationId,
+) {
     let checked = crate::check(source, std::path::Path::new("nonlexical-refusal.spx"))
         .expect("nonlexical refusal source checks");
     let program = crate::hir::resolve(&checked).expect("nonlexical refusal source resolves");
@@ -688,7 +735,10 @@ fn checked_nonlexical_live_entry_owner_refuses() {
         &NativeBytesPlan::build(run).unwrap_err(),
         "owned parameters are live at entry without a function-entry boundary certificate",
     );
-    assert_eq!(crate::codegen::emit_c(&checked).unwrap_err().code, "SPX-B104");
+    assert_eq!(
+        crate::codegen::emit_c(&checked).unwrap_err().code,
+        "SPX-B104"
+    );
 }
 
 /// The plain loop has no iteration certificate: ordinary and metered native
@@ -702,7 +752,10 @@ fn checked_nonlexical_plain_loop_refuses_on_ordinary_and_metered_emission() {
         &NativeBytesPlan::build(run).unwrap_err(),
         "a plain `while` loop has no iteration execution-boundary certificate",
     );
-    assert_eq!(crate::codegen::emit_c(&checked).unwrap_err().code, "SPX-B104");
+    assert_eq!(
+        crate::codegen::emit_c(&checked).unwrap_err().code,
+        "SPX-B104"
+    );
     let metering = crate::codegen::NativeSemanticMetering {
         fuel_limit: 1_000,
         functions: BTreeMap::from([(id, 0)]),

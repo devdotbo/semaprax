@@ -1025,9 +1025,7 @@ fn selected_agent_instructions_allow_authenticated_projected_string_views() {
     )
     .unwrap();
     let instructions = payload["instructions"].as_str().unwrap();
-    assert!(instructions.contains(
-        "authenticated named-record path ending at a String field"
-    ));
+    assert!(instructions.contains("authenticated named-record path ending at a String field"));
     assert!(instructions.contains("fused str_as_bytes(string_as_str(...))"));
     assert!(instructions.contains("temporary, call-result and constructor roots remain refused"));
     assert!(!instructions.contains("exact unprojected owning String root"));

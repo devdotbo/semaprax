@@ -8,7 +8,6 @@ use std::rc::Rc;
 
 use crate::ast::{BinaryOp, Expr, Span, Statement, Type, UnaryOp};
 
-use super::Binding;
 #[cfg(test)]
 use super::capacity_probe::{
     resolved_expr_owned_capacity, resolved_field_initializer_owned_capacity,
@@ -23,6 +22,7 @@ use super::ids::{DeclarationId, FunctionInstanceId};
 use super::nodes::{
     DeclarationKind, ResolvedBinding, ResolvedHostCommandOperation, ResolvedMatchMode, ResolvedType,
 };
+use super::Binding;
 
 pub(super) enum Frame<'expr> {
     FinishVecConstructor {

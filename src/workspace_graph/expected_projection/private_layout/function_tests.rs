@@ -373,7 +373,10 @@ fn private_layout_diagnostics_present_provider_provenance_and_only_legal_imports
     // outcome layout; no authored source names it.
     let retained = aliases(&missing);
     assert_eq!(
-        retained.iter().map(|(id, _)| id.as_str()).collect::<Vec<_>>(),
+        retained
+            .iter()
+            .map(|(id, _)| id.as_str())
+            .collect::<Vec<_>>(),
         ["config", "decoded", "report", "row"]
     );
     let minted = retained.into_iter().map(|(_, a)| a).collect::<Vec<_>>();
@@ -418,7 +421,10 @@ fn private_layout_diagnostics_present_provider_provenance_and_only_legal_imports
     let taken = format!(
         "{missing}\n@id(\"local.decoded\") record Decoded {{ @id(\"local.decoded.n\") n: i64, }}\n"
     );
-    let minted = aliases(&taken).into_iter().map(|(_, a)| a).collect::<Vec<_>>();
+    let minted = aliases(&taken)
+        .into_iter()
+        .map(|(_, a)| a)
+        .collect::<Vec<_>>();
     let diagnostics = build_owned(sources(&taken, &provider)).err().unwrap();
     assert!(!exposes_alias(&diagnostics, &minted), "{diagnostics:?}");
     let help = diagnostics
@@ -471,7 +477,10 @@ fn private_layout_diagnostics_present_provider_provenance_and_only_legal_imports
     let caller = format!(
         "{CALLER}\n@id(\"bad\") fn bad()->i64 {{let value=make();let rows:bool=value.rows;0}}\n"
     );
-    let minted = aliases(&caller).into_iter().map(|(_, a)| a).collect::<Vec<_>>();
+    let minted = aliases(&caller)
+        .into_iter()
+        .map(|(_, a)| a)
+        .collect::<Vec<_>>();
     let diagnostics = build_owned(sources(&caller, PROVIDER)).err().unwrap();
     assert!(!exposes_alias(&diagnostics, &minted), "{diagnostics:?}");
     let binding = diagnostics

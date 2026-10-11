@@ -58,7 +58,10 @@
 //! persistence, no hot reload, no debugger mapping, executes no target, and
 //! changes no source.
 mod api_admission;
-#[allow(dead_code, reason = "ordinary partition receiving closure pending targets and public copy-out; no Value installer")]
+#[allow(
+    dead_code,
+    reason = "ordinary partition receiving closure pending targets and public copy-out; no Value installer"
+)]
 pub(crate) mod byte_partition;
 mod call_frame;
 mod closures;
@@ -4387,8 +4390,8 @@ impl Evaluator<'_> {
                         (crate::byte_ops::ByteOp::Copy, [Value::BorrowedSlice(value)]) => {
                             let length = u64::try_from(value.read(&mut self.fused, <[u8]>::len)?)
                                 .map_err(|_| {
-                                    Flow::Guard("owned byte payload length does not fit u64")
-                                })?;
+                                Flow::Guard("owned byte payload length does not fit u64")
+                            })?;
                             if length > crate::byte_ops::MAX_OWNED_BYTE_VALUE_BYTES {
                                 return Err(Flow::Guard(
                                     "owned byte payload exceeds the verified profile limit",

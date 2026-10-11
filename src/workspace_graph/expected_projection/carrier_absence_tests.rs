@@ -66,7 +66,9 @@ fn ast_census(expression: &Expr, free: bool, census: &mut Census) {
     };
     let mut index = 0;
     while let Some(child) = expression.child(index) {
-        let is_free = free_children.iter().any(|candidate| std::ptr::eq(*candidate, child));
+        let is_free = free_children
+            .iter()
+            .any(|candidate| std::ptr::eq(*candidate, child));
         ast_census(child, is_free, census);
         index += 1;
     }
@@ -208,9 +210,7 @@ fn raw_ast_resolved_and_cost_censuses_agree_on_every_carrier_free_root() {
     assert_eq!(built, 3 + 3);
     assert!(
         built
-            <= cost.exact_expressions
-                - cost.exact_carrier_free_roots
-                - cost.exact_carrier_free_ifs
+            <= cost.exact_expressions - cost.exact_carrier_free_roots - cost.exact_carrier_free_ifs
     );
 }
 
@@ -230,17 +230,22 @@ fn delegated_parents_keep_complete_bundles_and_guards_are_charged() {
     // Arm values and guards embed or box under a `ResolvedMatchArm`; the
     // `let` value is embedded in its statement. Only the tail-free match
     // root's literal operands inside are free (here: `left + 1` has `1`).
-    let (guarded, with_guard) =
-        census("let x = 3; match left { n if n >= 0 => n + 1, _ => 2, }");
+    let (guarded, with_guard) = census("let x = 3; match left { n if n >= 0 => n + 1, _ => 2, }");
     assert_eq!(guarded.kinds, [4, 0, 2]);
-    assert_eq!(guarded.free, 2, "`0` and `1` are operands; `3`, `2`, arms are not");
+    assert_eq!(
+        guarded.free, 2,
+        "`0` and `1` are operands; `3`, `2`, arms are not"
+    );
     let (_, without_guard) = census("let x = 3; match left { n => n + 1, _ => 2, }");
     // The guard subtree (`n >= 0`, `n`, `0`) is now a complete charged tree.
     assert!(
         with_guard.total - without_guard.total >= 3 * std::mem::size_of::<Expr>(),
         "guard bytes must be charged"
     );
-    assert_eq!(with_guard.exact_expressions - without_guard.exact_expressions, 3);
+    assert_eq!(
+        with_guard.exact_expressions - without_guard.exact_expressions,
+        3
+    );
     let slots = |body: &str| {
         let source = format!("module m; @id(\"m.main\") fn main(left: i64) -> i64 {{ {body} }}");
         let program = crate::parse(&source, std::path::Path::new("m.spx")).unwrap();
@@ -255,7 +260,11 @@ fn delegated_parents_keep_complete_bundles_and_guards_are_charged() {
 /// Same node multiset, strings, identities and calls; only the position of
 /// the `n` moved roots differs (let values versus call arguments).
 fn pair(n: usize, free: bool, moved: fn(usize) -> String) -> Vec<Program> {
-    vec![crate::parse(&pair_source(n, free, moved), std::path::Path::new("pair.spx")).unwrap()]
+    vec![crate::parse(
+        &pair_source(n, free, moved),
+        std::path::Path::new("pair.spx"),
+    )
+    .unwrap()]
 }
 
 /// A moved literal root: carrier- and storage-free as an argument.
@@ -327,7 +336,11 @@ fn moved_roots_differ_by_exact_carriers(moved: fn(usize) -> String) {
     );
     // The old formula is position-blind: every earlier mode is identical.
     for mode in 0..5 {
-        assert_eq!(retained(&free, mode), retained(&delegated, mode), "mode {mode}");
+        assert_eq!(
+            retained(&free, mode),
+            retained(&delegated, mode),
+            "mode {mode}"
+        );
     }
     let (free_hir, free_total) = retained(&free, 5);
     let (delegated_hir, delegated_total) = retained(&delegated, 5);
@@ -379,7 +392,10 @@ fn resolver_and_replay_highwater_stays_within_the_reduced_forecast() {
     ] {
         let parsed = vec![crate::parse(&source, std::path::Path::new(path)).unwrap()];
         let census = cost_census(&parsed[0]);
-        assert!(census.exact_carrier_free_roots >= 12, "gate exercises the discount");
+        assert!(
+            census.exact_carrier_free_roots >= 12,
+            "gate exercises the discount"
+        );
         let (_, forecast) = retained(&parsed, 5);
         let checked = crate::check(&source, path).unwrap();
         let (resolved, allocation) = crate::test_allocation_observer::measure(|| {

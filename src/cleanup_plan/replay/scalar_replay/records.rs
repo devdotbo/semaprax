@@ -74,7 +74,9 @@ fn root(
             budget.charge(
                 function,
                 selected_profile::collections::type_key_bytes(&parameter.ty)?
-                    .checked_add(selected_profile::collections::type_key_bytes(&expression.ty)?)
+                    .checked_add(selected_profile::collections::type_key_bytes(
+                        &expression.ty,
+                    )?)
                     .and_then(|n| n.checked_add(1))
                     .ok_or_else(|| replay_error(function, "scalar record type work overflow"))?,
                 "scalar borrowed record parameter type identity",

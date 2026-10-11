@@ -265,11 +265,8 @@ impl<'a> LayoutClosure<'a> {
             for (entry, copy) in self.entries.iter().zip(&synthetic.types[base..]) {
                 debit(&mut work, 1)?;
                 let name = sorting::identity(&copy.name, &entry.alias, &mut work)?;
-                let identity = sorting::identity(
-                    &copy.stable_id,
-                    &entry.declaration.stable_id,
-                    &mut work,
-                )?;
+                let identity =
+                    sorting::identity(&copy.stable_id, &entry.declaration.stable_id, &mut work)?;
                 if name != std::cmp::Ordering::Equal || identity != std::cmp::Ordering::Equal {
                     return Err(presentation_mismatch());
                 }
@@ -282,9 +279,9 @@ impl<'a> LayoutClosure<'a> {
             ledger.remaining.set(0);
         }
         let base = result?;
-        Ok(Some(crate::source_verify::private_names::PrivateNames::new(
-            synthetic, caller, base, self,
-        )))
+        Ok(Some(
+            crate::source_verify::private_names::PrivateNames::new(synthetic, caller, base, self),
+        ))
     }
     pub(super) fn alias<'b>(&'b self, caller: &'b Program, id: &str) -> Option<&'b str> {
         caller

@@ -101,7 +101,9 @@ fn forged_view_loans_at_the_payload_read_refuse_before_lowering() {
     let mut truncated = selected.program.clone();
     let view = index(&truncated);
     assert!(truncated.functions[0].loan_plan.loans[view].ends.len() >= 2);
-    truncated.functions[0].loan_plan.loans[view].ends.truncate(1);
+    truncated.functions[0].loan_plan.loans[view]
+        .ends
+        .truncate(1);
     truncated.functions[0].loan_plan.loans[view]
         .end_edges
         .truncate(1);

@@ -133,9 +133,10 @@ fn bridge_assigns_only_existing_statuses() {
         let assigned = outcome == Outcome::Ok || outcome.status().is_some();
         assert_eq!(bridge.contains(&case), assigned, "{outcome:?}");
     }
-    assert_eq!(PARTITION_STATUS_CODES, Some(
-        crate::construction_fusion::partition::operation::STATUS_CODES
-    ));
+    assert_eq!(
+        PARTITION_STATUS_CODES,
+        Some(crate::construction_fusion::partition::operation::STATUS_CODES)
+    );
     for code in crate::construction_fusion::partition::operation::STATUS_CODES {
         assert!(bridge.contains(&format!(
             "\"semaprax.byte-partition.v1\"; code = UINT32_C({code})"
@@ -169,7 +170,13 @@ fn context_extension_is_exact_and_rejects_drift() {
 
 #[test]
 fn admission_stays_closed_even_for_a_complete_closure() {
-    let complete = [Consumer::Zeroed, Consumer::Partition, Consumer::Drop, Consumer::VecPop, Consumer::IterNext];
+    let complete = [
+        Consumer::Zeroed,
+        Consumer::Partition,
+        Consumer::Drop,
+        Consumer::VecPop,
+        Consumer::IterNext,
+    ];
     assert!(closed_over_for_tests(complete).is_ok());
     let refusal = select(complete, Admission::ClosedUntilCrossBackendJoin).unwrap_err();
     assert!(format!("{refusal:?}").contains("admission stays closed"));
@@ -261,7 +268,10 @@ fn carrier_site_inventory_matches_the_source_tree() {
         }
     }
     let mut found = BTreeSet::new();
-    walk(&Path::new(env!("CARGO_MANIFEST_DIR")).join("src"), &mut found);
+    walk(
+        &Path::new(env!("CARGO_MANIFEST_DIR")).join("src"),
+        &mut found,
+    );
     let listed: BTreeSet<String> = CARRIER_SITES
         .iter()
         .map(|(path, _)| (*path).to_owned())
@@ -315,7 +325,10 @@ fn runtime_never_frees_interior_pointers_or_probes_headers() {
         32,
         "backing-event quota"
     );
-    assert_eq!(crate::byte_data_capacity::MAX_OWNED_BYTE_PAYLOAD_BYTES, 2_097_152);
+    assert_eq!(
+        crate::byte_data_capacity::MAX_OWNED_BYTE_PAYLOAD_BYTES,
+        2_097_152
+    );
     assert_eq!(crate::byte_ops::MAX_OWNED_BYTE_VALUE_BYTES, 131_072);
     assert_eq!(crate::byte_ops::MAX_EXTERNAL_ROOT_BYTES, 65_536);
     assert_eq!(crate::vec_ops::MAX_CAPACITY, 8_192);

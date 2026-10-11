@@ -28,13 +28,11 @@ impl<'a> HirValidator<'a> {
     pub(super) fn analyze_capacity(&self) -> Result<(), Diagnostic> {
         match self.selected {
             None => analyze_byte_data_capacity(self.program).map(|_| ()),
-            Some(selected) => {
-                crate::hir::byte_capacity::analyze_selected_byte_data_capacity(
-                    self.program,
-                    selected,
-                )
-                .map(|_| ())
-            }
+            Some(selected) => crate::hir::byte_capacity::analyze_selected_byte_data_capacity(
+                self.program,
+                selected,
+            )
+            .map(|_| ()),
         }
     }
 }

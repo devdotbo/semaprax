@@ -12,7 +12,10 @@ fn selected_owner_resource_abi_uses_complete_selected_revalidation_and_ordinary_
     // Ordinary validation of the very held program still refuses its loop.
     let ordinary = build_resource_abi(owner.program()).unwrap_err();
     assert_eq!(ordinary.code, "SPX-H006");
-    assert!(ordinary.message.contains("core.bytes.zeroed"), "{ordinary:?}");
+    assert!(
+        ordinary.message.contains("core.bytes.zeroed"),
+        "{ordinary:?}"
+    );
     // A clone is not an owner; only the ordinary entry can receive it.
     let cloned = owner.program().clone();
     assert_eq!(build_resource_abi(&cloned).unwrap_err().code, "SPX-H006");

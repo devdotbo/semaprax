@@ -76,9 +76,7 @@ impl Outcome {
             Self::PartitionWidthZero => partition.map(|codes| (PARTITION_DOMAIN, codes[0])),
             Self::PartitionExtentOverflow => partition.map(|codes| (PARTITION_DOMAIN, codes[1])),
             Self::PartitionExtentMismatch => partition.map(|codes| (PARTITION_DOMAIN, codes[2])),
-            Self::PartitionMetadataCapacity => {
-                partition.map(|codes| (PARTITION_DOMAIN, codes[3]))
-            }
+            Self::PartitionMetadataCapacity => partition.map(|codes| (PARTITION_DOMAIN, codes[3])),
             Self::ProviderAllocation => None,
         }
     }
@@ -143,9 +141,12 @@ fn bridge_c() -> String {
     );
     for outcome in Outcome::ALL {
         match (outcome, outcome.status()) {
-            (Outcome::Ok, _) => {
-                writeln!(c, "    case {}: return SPX_STATUS_SUCCESS;", outcome.c_name()).unwrap()
-            }
+            (Outcome::Ok, _) => writeln!(
+                c,
+                "    case {}: return SPX_STATUS_SUCCESS;",
+                outcome.c_name()
+            )
+            .unwrap(),
             (_, Some((domain, code))) => writeln!(
                 c,
                 "    case {}: domain = \"{domain}\"; code = UINT32_C({code}); break;",

@@ -66,8 +66,12 @@ fn presentation_binds_only_the_exact_program_and_leaves_no_ambient_scope() {
     let presented = crate::source_verify::verify_presenting(&program, Some(view));
     assert_eq!(join(&presented), PRESENTED);
     assert!(
-        presented.iter().all(|d| !d.message.contains("_spx_layout_1")
-            && d.help.as_deref().is_none_or(|h| !h.contains("_spx_layout_1"))),
+        presented
+            .iter()
+            .all(|d| !d.message.contains("_spx_layout_1")
+                && d.help
+                    .as_deref()
+                    .is_none_or(|h| !h.contains("_spx_layout_1"))),
         "{presented:?}"
     );
 
@@ -84,7 +88,10 @@ fn presentation_binds_only_the_exact_program_and_leaves_no_ambient_scope() {
     let drifted = program.clone();
     assert_eq!(drifted, program);
     assert_eq!(
-        join(&crate::source_verify::verify_presenting(&drifted, Some(view))),
+        join(&crate::source_verify::verify_presenting(
+            &drifted,
+            Some(view)
+        )),
         ORDINARY
     );
 
@@ -92,7 +99,10 @@ fn presentation_binds_only_the_exact_program_and_leaves_no_ambient_scope() {
     // follows bound addresses only, never the shared `_spx_layout_` prefix.
     let past = PrivateNames::new(&program, &program, program.types.len(), &held);
     assert_eq!(
-        join(&crate::source_verify::verify_presenting(&program, Some(past))),
+        join(&crate::source_verify::verify_presenting(
+            &program,
+            Some(past)
+        )),
         ORDINARY
     );
 }

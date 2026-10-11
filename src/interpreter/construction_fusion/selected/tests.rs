@@ -139,7 +139,11 @@ fn successful_checked_arithmetic_allocates_nothing_and_overflow_keeps_exact_stat
         (BinaryOp::Add, StatusCase::AddOverflow),
         (BinaryOp::Sub, StatusCase::SubOverflow),
     ] {
-        let lhs = if op == BinaryOp::Add { i64::MAX } else { i64::MIN };
+        let lhs = if op == BinaryOp::Add {
+            i64::MAX
+        } else {
+            i64::MIN
+        };
         let Some(Err(status)) = combine(op, Value::Int(lhs), Value::Int(1)) else {
             panic!("{op:?} overflow lost its status")
         };
@@ -216,15 +220,12 @@ fn out_of_band_flows_never_reuse_the_failure_exit_of_their_stopping_site() {
                 let result = engine.expression(&selection.function().body, 0);
                 assert!(matches!(result, Err(Flow::Failure(_))));
                 let site = engine.failed_site.expect("overflowing tail addition");
-                assert!(selection
-                    .function()
-                    .cleanup_plan
-                    .exits
-                    .iter()
-                    .any(|exit| matches!(&exit.continuation,
+                assert!(selection.function().cleanup_plan.exits.iter().any(
+                    |exit| matches!(&exit.continuation,
                         ExitContinuation::ReturnFailure { source }
                             if source.expression == site.id
-                                && source.lane == StatusLane::OperationFailure)));
+                                && source.lane == StatusLane::OperationFailure)
+                ));
                 assert!(!engine.rows.is_empty());
                 assert!(engine.settle(&Err(refuse())).is_err());
                 assert!(!engine.rows.is_empty(), "no finalizer ran for the refusal");

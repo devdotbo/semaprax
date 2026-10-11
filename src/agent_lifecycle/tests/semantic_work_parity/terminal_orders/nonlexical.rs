@@ -192,7 +192,9 @@ const ROUTES: &[NonlexicalRoute] = &[
 
 /// Exact performed vectors per route, read only from the checked plan. The
 /// root normal scope end is read structurally, independent of the router.
-fn nonlexical_traces(function: &hir::ResolvedFunction) -> impl Fn(&NonlexicalRoute) -> Vec<u32> + '_ {
+fn nonlexical_traces(
+    function: &hir::ResolvedFunction,
+) -> impl Fn(&NonlexicalRoute) -> Vec<u32> + '_ {
     let plan = &function.cleanup_plan;
     assert!(plan.lexical_control.is_none(), "run is nonlexical");
     let root = &plan.regions[0];
@@ -222,7 +224,10 @@ fn nonlexical_traces(function: &hir::ResolvedFunction) -> impl Fn(&NonlexicalRou
     assert!(scopes.next().is_none(), "at most one owning scope end");
     let before = failure_exit(plan, body_call(function, 11), StatusLane::OperationFailure);
     let after = failure_exit(plan, body_call(function, 13), StatusLane::OperationFailure);
-    let (before, after) = (flags(&before.finalize_in_order), flags(&after.finalize_in_order));
+    let (before, after) = (
+        flags(&before.finalize_in_order),
+        flags(&after.finalize_in_order),
+    );
     assert_eq!(before.len(), 2, "both conditional payload owners");
     assert_eq!(
         before,
@@ -280,8 +285,11 @@ fn assert_nonlexical_outcome(route: &Route, evaluation: &RetainedCallEvaluation)
 #[test]
 fn nonlexical_opposing_terminal_orders_settle_exactly_on_every_native_route() {
     let source = source();
-    let checked = crate::check(&source, std::path::Path::new("variant-order-nonlexical.spx"))
-        .expect("nonlexical variant owner order source checks");
+    let checked = crate::check(
+        &source,
+        std::path::Path::new("variant-order-nonlexical.spx"),
+    )
+    .expect("nonlexical variant owner order source checks");
     let program = hir::resolve(&checked).expect("nonlexical variant owner order source resolves");
     hir::validate(&program).expect("nonlexical variant owner order source validates");
     let run = program
@@ -293,7 +301,9 @@ fn nonlexical_opposing_terminal_orders_settle_exactly_on_every_native_route() {
     let generated = crate::codegen::emit_hir_c(&program).expect("native emits nonlexical run");
     assert_eq!(
         generated
-            .matches("native nonlexical terminal cleanup reached the common epilogue with a live owner")
+            .matches(
+                "native nonlexical terminal cleanup reached the common epilogue with a live owner"
+            )
             .count(),
         1,
         "run's common epilogue is the live-slot physical guard"
@@ -323,7 +333,12 @@ fn nonlexical_opposing_terminal_orders_settle_exactly_on_every_native_route() {
             route.limit,
         );
         assert_nonlexical_outcome(route, &expected);
-        assert_eq!(work(&expected).fuel_used, route.fuel, "{}: fuel", route.name);
+        assert_eq!(
+            work(&expected).fuel_used,
+            route.fuel,
+            "{}: fuel",
+            route.name
+        );
         assert_eq!(
             work(&expected).fuel_limit,
             Some(route.limit),
@@ -349,10 +364,18 @@ fn nonlexical_opposing_terminal_orders_settle_exactly_on_every_native_route() {
                 liveness_flag,
             })
             .collect::<Vec<_>>();
-        let mut settled = trace.iter().map(|event| event.liveness_flag).collect::<Vec<_>>();
+        let mut settled = trace
+            .iter()
+            .map(|event| event.liveness_flag)
+            .collect::<Vec<_>>();
         settled.sort_unstable();
         settled.dedup();
-        assert_eq!(settled.len(), trace.len(), "{}: each owner settles once", route.name);
+        assert_eq!(
+            settled.len(),
+            trace.len(),
+            "{}: each owner settles once",
+            route.name
+        );
         for (leg, backend) in native_legs_on(&host) {
             // A trapped common epilogue aborts the probe and `metered` panics.
             let actual = metered(backend, &program, prepared, &args, route.limit);

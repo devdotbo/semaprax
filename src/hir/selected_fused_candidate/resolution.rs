@@ -29,9 +29,7 @@ pub(in crate::hir) fn join_current<'a>(
 }
 
 fn refused(refusal: Refusal) -> Diagnostic {
-    crate::hir::hir_error(format!(
-        "selected fused construction refused: {refusal:?}"
-    ))
+    crate::hir::hir_error(format!("selected fused construction refused: {refusal:?}"))
 }
 
 /// Capacity hook at the resolver's ordinary capacity boundary.

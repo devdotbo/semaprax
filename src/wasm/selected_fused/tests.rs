@@ -7,7 +7,9 @@ use crate::byte_data_capacity::{
     analyze_with_strategy, AllocationStrategy, CapacityFlow as F, FunctionCapacityInput,
     ProgramCapacitySummary,
 };
-use crate::hir::{ResolvedExpr as E, ResolvedExprKind as K, ResolvedProgram, ResolvedStatement as S};
+use crate::hir::{
+    ResolvedExpr as E, ResolvedExprKind as K, ResolvedProgram, ResolvedStatement as S,
+};
 use wasm_encoder::ValType;
 
 mod view_loans;
@@ -308,7 +310,10 @@ fn selected_module_is_wasm1_private_exact_and_deterministic() {
     assert_eq!(mirrored, IMPORTS.map(|(name, _, _)| name));
     assert!(host.contains(&format!("NAMESPACE = '{NAMESPACE}'")));
     assert_eq!(lowered.grant.metadata_bytes, 91_456);
-    assert_eq!(lowered.grant.account_bytes, (layout::registry_entries(4096) * 33).next_multiple_of(8) + 4096 * 24 + 91_456);
+    assert_eq!(
+        lowered.grant.account_bytes,
+        (layout::registry_entries(4096) * 33).next_multiple_of(8) + 4096 * 24 + 91_456
+    );
     assert_eq!(lowered.grant.registry_entries, 2 + 3 * 4096 + 64 + 31 + 1);
     assert_eq!(lowered.grant.digest.len(), 64);
 }
@@ -335,7 +340,10 @@ fn layout_ledger_matches_actual_host_tables_registry_and_account() {
     assert_eq!(layout::MAX_VIEWS, 64);
     assert_eq!(layout::metadata_bytes(4096), 4096 * 22 + 64 * 21);
     assert_eq!(layout::metadata_bytes(33), 2_070);
-    assert_eq!(layout::account_bytes(33), (layout::registry_entries(33) * 33).next_multiple_of(8) + 33 * 24 + 2_072);
+    assert_eq!(
+        layout::account_bytes(33),
+        (layout::registry_entries(33) * 33).next_multiple_of(8) + 33 * 24 + 2_072
+    );
     assert_eq!(layout::registry_entries(33), 2 + 99 + 64 + 31 + 1);
     assert!(layout::fits_ordinary_vec(4096));
     assert!(!layout::fits_ordinary_vec(4097));

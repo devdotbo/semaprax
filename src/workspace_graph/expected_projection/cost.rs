@@ -1112,7 +1112,10 @@ mod uncached_absence_tests {
         let branch = self::raw("if flag { 1 } else { 2 }");
         assert_eq!(branch.exact_expressions, 7);
         assert_eq!(
-            (branch.exact_carrier_free_roots, branch.exact_carrier_free_ifs),
+            (
+                branch.exact_carrier_free_roots,
+                branch.exact_carrier_free_ifs
+            ),
             (2, 1)
         );
         let exact = old_discount(&branch, &runtime) + 3 * carriers();

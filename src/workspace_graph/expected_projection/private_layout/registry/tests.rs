@@ -339,26 +339,34 @@ fn held_presentation_borrows_without_allocation_and_pays_shared_work() {
     let (work, receipt) = (registry.work_remaining(), registry.receipt());
     // A zero-byte builder budget refuses any charge; the observer counts every
     // requested backing through the view's and the borrow's drop.
-    let ((bound, metrics), overflowed, charged) = crate::bounded_output::with_limit_usage(0, || {
-        crate::test_allocation_observer::measure(|| {
-            let held = registry.held(&parsed[0]).expect("held caller closure");
-            let view = held.presentation(&parsed[0], &synthetic).unwrap();
-            let bound = std::hint::black_box(view).is_some();
-            drop(held);
-            bound
-        })
-    });
+    let ((bound, metrics), overflowed, charged) =
+        crate::bounded_output::with_limit_usage(0, || {
+            crate::test_allocation_observer::measure(|| {
+                let held = registry.held(&parsed[0]).expect("held caller closure");
+                let view = held.presentation(&parsed[0], &synthetic).unwrap();
+                let bound = std::hint::black_box(view).is_some();
+                drop(held);
+                bound
+            })
+        });
     assert!(bound, "the caller's private copies are presented");
     assert!(!metrics.invalid);
     assert_eq!(
-        (metrics.allocations, metrics.reallocations, metrics.allocated),
+        (
+            metrics.allocations,
+            metrics.reallocations,
+            metrics.allocated
+        ),
         (0, 0, 0),
         "binding the presentation allocates no slot backing or string copy"
     );
     assert_eq!((metrics.freed, metrics.live, metrics.highwater), (0, 0, 0));
     assert!(!overflowed);
     assert_eq!(charged, 0);
-    assert!(registry.work_remaining() < work, "same invocation pays comparisons");
+    assert!(
+        registry.work_remaining() < work,
+        "same invocation pays comparisons"
+    );
     assert_eq!(registry.receipt(), receipt, "no preparation receipt");
     assert_eq!(registry.derivations.get(), 1, "no re-derivation");
     // A provider without imports is never held, so it has no presentation.
@@ -389,8 +397,12 @@ fn held_presentation_work_is_exact_one_short_and_sticky() {
     let authored = index_authored(&parsed).unwrap();
     let registry = LayoutRegistry::new(&parsed, &authored);
     let synthetic = expected_projection::synthetic_program_with_registry(
-        &parsed[0], &authored, &parsed, Some(&registry),
-    ).unwrap();
+        &parsed[0],
+        &authored,
+        &parsed,
+        Some(&registry),
+    )
+    .unwrap();
     let before = registry.work_remaining();
     {
         let held = registry.held(&parsed[0]).unwrap();
@@ -404,7 +416,10 @@ fn held_presentation_work_is_exact_one_short_and_sticky() {
         candidate.set_remaining(limit);
         {
             let held = candidate.held(&parsed[0]).unwrap();
-            assert_eq!(held.presentation(&parsed[0], &synthetic).is_ok(), limit == used);
+            assert_eq!(
+                held.presentation(&parsed[0], &synthetic).is_ok(),
+                limit == used
+            );
         }
         assert_eq!(candidate.work_remaining(), 0);
         assert_eq!(candidate.is_failed(), limit != used);

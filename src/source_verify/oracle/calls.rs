@@ -13,7 +13,7 @@ use crate::source_verify::declared_type::{
 use crate::source_verify::diagnostics::{error, reject_native_unit_value};
 use crate::source_verify::hints;
 use crate::source_verify::oracle::check_expr;
-use crate::source_verify::type_table::{TypeTable, resolve_class_method};
+use crate::source_verify::type_table::{resolve_class_method, TypeTable};
 use std::collections::HashMap;
 
 #[allow(clippy::too_many_arguments, clippy::ptr_arg)]

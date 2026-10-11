@@ -55,7 +55,10 @@ pub struct JsonCodecBundle {
 }
 
 fn digest(source: &str) -> String {
-    format!("sha256:{:x}", crate::digest_hex::LowerHex(Sha256::digest(source.as_bytes())))
+    format!(
+        "sha256:{:x}",
+        crate::digest_hex::LowerHex(Sha256::digest(source.as_bytes()))
+    )
 }
 
 fn source(path: &str, text: &str) -> JsonCodecBundleSource {

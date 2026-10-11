@@ -28,7 +28,10 @@ pub(in crate::codegen) fn nonlexical_failure_exit<'p>(
         .count()
         != 1
     {
-        return Err(format!("{} is not exactly one declared status source", label()));
+        return Err(format!(
+            "{} is not exactly one declared status source",
+            label()
+        ));
     }
     let mut matches = plan.exits.iter().filter(|exit| {
         matches!(&exit.continuation, ExitContinuation::ReturnFailure { source: selected } if selected == source)
@@ -68,7 +71,10 @@ pub(in crate::codegen) fn nonlexical_success_exit(
         .first()
         .filter(|region| region.id.0 == 0 && region.parent.is_none())
         .ok_or("the root cleanup region is absent")?;
-    if plan.regions[1..].iter().any(|region| region.parent.is_none()) {
+    if plan.regions[1..]
+        .iter()
+        .any(|region| region.parent.is_none())
+    {
         return Err("the root cleanup region is not unique".to_owned());
     }
     let exit = plan
@@ -172,11 +178,16 @@ fn exiting_block<'p>(plan: &'p CleanupPlan, exit: &ExitTarget) -> Result<&'p Cle
         .get(exit.id.0 as usize)
         .is_some_and(|indexed| std::ptr::eq(indexed, exit))
     {
-        return Err(format!("{} is not at its canonical index", exit_label(exit)));
+        return Err(format!(
+            "{} is not at its canonical index",
+            exit_label(exit)
+        ));
     }
     plan.blocks
         .get(exit.from.0 as usize)
-        .filter(|block| block.id == exit.from && block.terminator == CleanupTerminator::Exit(exit.id))
+        .filter(|block| {
+            block.id == exit.from && block.terminator == CleanupTerminator::Exit(exit.id)
+        })
         .ok_or_else(|| format!("{} does not terminate its source block", exit_label(exit)))
 }
 
@@ -192,9 +203,7 @@ pub(super) fn plain_loop(function: &ResolvedFunction) -> bool {
         stack[0] = Some(ChildCursor::new(root));
         let mut len = 1usize;
         while len != 0 {
-            let frame = stack[len - 1]
-                .as_mut()
-                .expect("occupied loop scan frame");
+            let frame = stack[len - 1].as_mut().expect("occupied loop scan frame");
             let expr = frame.expression();
             if !frame.is_started()
                 && matches!(

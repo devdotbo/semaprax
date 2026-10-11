@@ -12,8 +12,13 @@ struct Refusal {
 }
 impl std::fmt::Display for Refusal {
     fn fmt(&self, output: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(output, "{} function {}: {}", self.stage, self.function,
-            std::str::from_utf8(&self.message[..self.length]).expect("UTF-8 prefix"))
+        write!(
+            output,
+            "{} function {}: {}",
+            self.stage,
+            self.function,
+            std::str::from_utf8(&self.message[..self.length]).expect("UTF-8 prefix")
+        )
     }
 }
 
@@ -58,7 +63,12 @@ fn run(
             }
             let mut message = [0; 512];
             message[..length].copy_from_slice(&diagnostic.message.as_bytes()[..length]);
-            Refusal { stage, function: ordinal, message, length }
+            Refusal {
+                stage,
+                function: ordinal,
+                message,
+                length,
+            }
         })
     })
 }
@@ -100,7 +110,10 @@ fn actual_option_helpers_full_replay_matches_ordinary_and_metering_through_drop(
         let (work, bytes) = wide.unwrap_or_else(|refusal| panic!("wide replay refused: {refusal}"));
         assert!(!allocation.invalid && allocation.live == 0 && allocation.allocated <= bytes);
         let (exact, allocation) = run(&program, work, bytes);
-        assert_eq!(exact.unwrap_or_else(|refusal| panic!("exact replay refused: {refusal}")), (work, bytes));
+        assert_eq!(
+            exact.unwrap_or_else(|refusal| panic!("exact replay refused: {refusal}")),
+            (work, bytes)
+        );
         assert!(!allocation.invalid && allocation.live == 0 && allocation.allocated <= bytes);
         for (work, bytes) in [(work - 1, bytes), (work, bytes - 1)] {
             let (answer, allocation) = run(&program, work, bytes);

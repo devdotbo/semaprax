@@ -44,8 +44,11 @@ fn every_shipped_template_walks_the_documented_quickstart_journey() {
     for template in PROJECT_SCAFFOLD_TEMPLATES {
         let layout = if matches!(
             template,
-            "service" | "stdin-stream-text" | "stdin-stream-data"
-                | "stdin-stream-collection-record" | "source-command-file-text"
+            "service"
+                | "stdin-stream-text"
+                | "stdin-stream-data"
+                | "stdin-stream-collection-record"
+                | "source-command-file-text"
         ) {
             ScaffoldLayout::Tables
         } else {
@@ -132,8 +135,11 @@ fn every_shipped_template_fits_the_default_assurance_budget() {
     for template in PROJECT_SCAFFOLD_TEMPLATES {
         let layout = if matches!(
             template,
-            "service" | "stdin-stream-text" | "stdin-stream-data"
-                | "stdin-stream-collection-record" | "source-command-file-text"
+            "service"
+                | "stdin-stream-text"
+                | "stdin-stream-data"
+                | "stdin-stream-collection-record"
+                | "source-command-file-text"
         ) {
             ScaffoldLayout::Tables
         } else {

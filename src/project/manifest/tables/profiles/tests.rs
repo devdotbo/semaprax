@@ -10,7 +10,10 @@ fn manifest(profile: &str) -> String {
 fn collection_record_profile_has_its_own_schema_and_v30_authority() {
     let token = "language-command-io.collection-record.v1";
     let selected = profile_by_name(token).unwrap();
-    assert_eq!(selected, ProjectProfile::StdinStreamCollectionRecordCommandIoV1);
+    assert_eq!(
+        selected,
+        ProjectProfile::StdinStreamCollectionRecordCommandIoV1
+    );
     assert_eq!(selected.name(), Some(token));
     assert!(selected.is_stdin_stream());
 
@@ -20,10 +23,9 @@ fn collection_record_profile_has_its_own_schema_and_v30_authority() {
     assert_eq!(parsed.project_profile(), selected);
     assert_eq!(parsed.to_canonical_toml(), source);
 
-    let old = super::super::super::ProjectManifest::parse(&manifest(
-        "language-command-io.owned-data.v1",
-    ))
-    .unwrap();
+    let old =
+        super::super::super::ProjectManifest::parse(&manifest("language-command-io.owned-data.v1"))
+            .unwrap();
     assert_eq!(old.schema(), "semaprax.project.v30");
     assert_eq!(
         old.project_profile(),

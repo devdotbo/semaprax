@@ -12,8 +12,7 @@
 use super::facts::{self, Selected};
 use super::{Grant, Refusal};
 use crate::byte_data_capacity::{
-    AllocationStrategy, ProgramCapacitySummary, MAX_BYTES_COPY_SITES,
-    MAX_OWNED_BYTE_PAYLOAD_BYTES,
+    AllocationStrategy, ProgramCapacitySummary, MAX_BYTES_COPY_SITES, MAX_OWNED_BYTE_PAYLOAD_BYTES,
 };
 use crate::construction_fusion::{self, native_provenance::Mapping, Descriptor};
 use crate::{ast, hir};
@@ -47,9 +46,7 @@ pub(super) fn inspect<'a>(
     }
     let rows = u32::try_from(descriptor.count()).map_err(|_| Refusal::Layout)?;
     let width = u64::try_from(descriptor.width()).map_err(|_| Refusal::Layout)?;
-    let extent = u64::from(rows)
-        .checked_mul(width)
-        .ok_or(Refusal::Layout)?;
+    let extent = u64::from(rows).checked_mul(width).ok_or(Refusal::Layout)?;
     if extent != descriptor.payload_bytes() {
         return Err(Refusal::Layout);
     }

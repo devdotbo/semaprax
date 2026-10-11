@@ -132,13 +132,11 @@ permit {{fs.write, process.environment.read}}
                 crate::graph::verify_json(&source, &serde_json::to_string(&forged).unwrap())
                     .is_err()
             );
-            assert!(
-                crate::graph::verify_json(
-                    &source,
-                    &graph.replacen("semaprax.graph.v46", "semaprax.graph.v43", 1)
-                )
-                .is_err()
-            );
+            assert!(crate::graph::verify_json(
+                &source,
+                &graph.replacen("semaprax.graph.v46", "semaprax.graph.v43", 1)
+            )
+            .is_err());
         }
     }
 }

@@ -8,7 +8,7 @@ use crate::hir::{
     ResolvedType,
 };
 
-use super::{VecOp, resolved_vec};
+use super::{resolved_vec, VecOp};
 
 pub(crate) const MODULE: &str = "std.collections";
 

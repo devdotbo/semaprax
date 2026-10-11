@@ -192,7 +192,9 @@ fn failure_exit<'p>(
             && matches!(&exit.continuation, ExitContinuation::ReturnFailure { source }
                 if source.expression == *site && source.lane == lane)
     });
-    let exit = exits.next().expect("status source has its exact ordinary exit");
+    let exit = exits
+        .next()
+        .expect("status source has its exact ordinary exit");
     assert!(exits.next().is_none(), "status source selects one exit");
     exit
 }
@@ -226,11 +228,16 @@ fn traces(function: &hir::ResolvedFunction) -> impl Fn(Trace) -> Vec<u32> + '_ {
         .execution_boundaries
         .iter()
         .filter(|boundary| boundary.kind == ExecutionBoundaryKind::LoopIteration);
-    let iteration = iterations.next().expect("loop body charge has its boundary");
+    let iteration = iterations
+        .next()
+        .expect("loop body charge has its boundary");
     assert!(iterations.next().is_none());
     let before = failure_exit(plan, body_call(function, 11), StatusLane::OperationFailure);
     let after = failure_exit(plan, body_call(function, 13), StatusLane::OperationFailure);
-    let (before, after) = (flags(&before.finalize_in_order), flags(&after.finalize_in_order));
+    let (before, after) = (
+        flags(&before.finalize_in_order),
+        flags(&after.finalize_in_order),
+    );
     assert_eq!(before.len(), 2, "both conditional payload owners");
     assert_eq!(
         before,
@@ -332,8 +339,7 @@ fn opposing_terminal_orders_settle_exactly_on_every_native_route() {
         1,
         "run's common epilogue is the fail-closed physical guard"
     );
-    let prepared =
-        prepare_retained_call(&program, ORDER_ENTRY).expect("run stage prepares");
+    let prepared = prepare_retained_call(&program, ORDER_ENTRY).expect("run stage prepares");
     let host = native_stage_host().expect("terminal order evidence requires held clang");
     for route in ROUTES {
         let args = route.args.map(RetainedValue::I64).to_vec();
@@ -345,7 +351,12 @@ fn opposing_terminal_orders_settle_exactly_on_every_native_route() {
             route.limit,
         );
         assert_outcome(route, &expected);
-        assert_eq!(work(&expected).fuel_used, route.fuel, "{}: fuel", route.name);
+        assert_eq!(
+            work(&expected).fuel_used,
+            route.fuel,
+            "{}: fuel",
+            route.name
+        );
         assert_eq!(
             work(&expected).fuel_limit,
             Some(route.limit),
@@ -371,10 +382,18 @@ fn opposing_terminal_orders_settle_exactly_on_every_native_route() {
                 liveness_flag,
             })
             .collect::<Vec<_>>();
-        let mut settled = trace.iter().map(|event| event.liveness_flag).collect::<Vec<_>>();
+        let mut settled = trace
+            .iter()
+            .map(|event| event.liveness_flag)
+            .collect::<Vec<_>>();
         settled.sort_unstable();
         settled.dedup();
-        assert_eq!(settled.len(), trace.len(), "{}: each owner settles once", route.name);
+        assert_eq!(
+            settled.len(),
+            trace.len(),
+            "{}: each owner settles once",
+            route.name
+        );
         for (leg, backend) in native_legs_on(&host) {
             // A trapped common epilogue aborts the probe and `metered` panics.
             let actual = metered(backend, &program, &prepared, &args, route.limit);

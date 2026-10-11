@@ -17,11 +17,9 @@ fn direct_and_fused_static_selectors_have_exact_member_rename_spans() {
     for (field, name) in [("row.title", "title"), ("row.marker", "marker")] {
         let sites = &index.members[&("row".to_owned(), field.to_owned())];
         assert_eq!(sites.len(), 2);
-        assert!(
-            sites
-                .iter()
-                .all(|site| source.get(site.span.start..site.span.end) == Some(name))
-        );
+        assert!(sites
+            .iter()
+            .all(|site| source.get(site.span.start..site.span.end) == Some(name)));
         assert!(sites.iter().all(|site| site.shorthand_binding.is_none()));
     }
 }

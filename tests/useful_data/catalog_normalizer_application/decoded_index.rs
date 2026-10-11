@@ -319,4 +319,5 @@ fn frozen_pairwise_reference_preserves_the_complete_normalizer_oracle() {
     assert_batch_backend_matrix(scratch.path());
 }
 
+#[path = "decoded_index/backends.rs"]
 mod backends;
