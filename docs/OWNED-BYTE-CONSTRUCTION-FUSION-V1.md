@@ -236,6 +236,91 @@ physical reservation or allocator measurement. Full executor storage accounting,
 source lowering and immutable source/HIR provenance still have to join before
 activation; this host namespace grants no production or ordinary admission.
 
+### Selected Core-Wasm executor interface
+
+Status: authored for OPT #747; owning definitions unexecuted. Default
+admission stays closed and ordinary `check` still reports `SPX-T267`.
+
+The only entry that publishes an artifact is
+`wasm::selected_fused::accept(ValidatedSelection)`. That type holds an
+uninhabited field, so no caller can construct it until root supplies the
+authenticated `SourceProof`, the `hir::fused_construction::join` selection, the
+carrier mapping and complete selected validation. No production caller exists.
+The older descriptor, capacity summary and rescaled 32-row HIR form a
+test-only, unvalidated precursor (`precursor`, `cfg(test)`). It yields an
+unpublishable `PrecursorModule` and carries no count authority.
+
+Every producer of the executor input (`facts::Selected`) must pass
+`facts::check` against the exact current source and HIR. The check requires a
+single closed function with more than 32 and at most 4,096 rows and a checked
+extent within 131,072 bytes. The row Vec must fit the ordinary Vec envelopes,
+the field roles must match, and leased carriers must come only from the
+selected Bytes field. The check also runs the ordinary `cleanup_plan` and
+`loan_plan` validators, which rebuild, compare and replay every function. The
+selected function's attached plans must equal fresh builds, and a
+lexical-control plan refuses.
+
+Cleanup follows the canonical plan, not syntax. Each owned leaf of each plan
+slot gets a carrier local and the plan's own liveness flag local. Every
+transition replays in plan vector order at the expression the plan names. Every
+exit emits its `finalize_in_order` vector verbatim, guarded by that flag, with
+no sorting or repair. A failure first selects its status with the host, where
+the first selection is sticky. It then ends leased views, brackets an
+unfinished construction with abort and settle around the exit's finalizers, and
+returns the selected status. Success stages the scalar, runs no
+postconditions (this profile has none), emits the commit exit's non-result
+cleanup, and only then publishes. A census refuses unless every transition,
+failure exit, commit and nonempty scope end was reproduced. Each failure exit's
+status producer must match the lowered operation. Each leased view's loans must
+end inside the block where the view ends.
+
+The module imports 24 functions from `semaprax.private.selected-fused.v1`,
+exports only its literal memory and `semaprax_main`, and validates under
+Wasm 1.0 features. The host never serves an `env` module, so private handles
+cannot mix with a public profile. A realm has exactly one caller-held namespace
+(`createSharedNamespace`; a second call refuses), and every authorized host
+must be created with it. Its never-reset, nonwrapping sequence and preallocated
+typed registry give each token a sequence and an entry recording kind, host,
+instance, invocation and owner domain. A live token presented through another
+host, instance, invocation or domain refuses with no effect on its owner. Each
+domain precharges its maximum registry entries at `start`. Row backing and the
+lease and view tables are carved, after a whole-group check, from one
+caller-held, preallocated invocation account before the payload is allocated.
+JavaScript object and closure bookkeeping is not counted as a physical
+reservation.
+
+The ordinary 32-event and 2 MiB counters, the single fused event with its whole
+extent, and the String counters persist on every path, including deep clones,
+and are never refunded. A popped child survives its parent Vec, store renews
+only that child, and the last child releases the backing exactly once. An
+unsettled domain at invocation end is abandoned without a result.
+
+Ten authored definitions in `wasm::selected_fused::tests::` own this
+interface. Six are static or structural:
+- the uninhabited publishing entry;
+- the closed precursor;
+- refusal of noncanonical cleanup and loan plans;
+- the Wasm 1.0 private import inventory;
+- public runtimes never naming the namespace;
+- the actual table, registry and account layout.
+
+The other four drive the host:
+- the 4,096-row run (12,288 payload bytes, 12,288 String bytes, sum 8,386,560,
+  three reentrant invocations);
+- the host controls, run at 33 and at 4,096 rows;
+- namespace exhaustion.
+
+The host controls cover the account (exact, +1 and one short), 31 plus one and
+32 plus one events, partial faults at row cuts, payload fail-stop, foreign host
+and instance tokens with no effect, a third domain's refused precharge, a held
+account, foreign invocations, a sticky selected failure, escape, popped-child,
+store and clone isolation, 64 views and stale handles.
+
+These definitions drive only the precursor. Activation still requires root's
+validated selection behind `accept`, the capacity flow built from that joined
+selection with the producer bound, a selected check yielding current HIR above
+32 rows, and matching native and interpreter executors.
+
 ## Source half of the selected FusedConstructionV1 proof
 
 `source_verify::fused_construction` derives a borrowed, provisional source

@@ -52,6 +52,8 @@ mod result_component_v3;
 #[cfg(any(test, feature = "unstable-wit-component-harness"))]
 mod scalar_algebra_component_v5;
 mod scalar_exports;
+/// Selected `FusedConstructionV1` executor; default admission stays closed.
+mod selected_fused;
 mod string_ops_v2_use;
 use string_ops_v2_use::{program_uses_numeric_text, program_uses_string_ops_v2};
 /// Call-depth admission for the legacy scalar-core emitter (#293 P2-2).
