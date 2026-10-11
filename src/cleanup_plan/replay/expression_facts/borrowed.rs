@@ -172,6 +172,9 @@ impl BorrowedFacts {
     }
 }
 impl Lookup for BorrowedFacts {
+    fn is_metered(&self) -> bool {
+        true
+    }
     fn entries(&self) -> Entries<'_> {
         Entries::Borrowed(self.entries.iter())
     }

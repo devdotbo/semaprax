@@ -131,6 +131,16 @@ impl Lease<'_> {
             )
         ))
     }
+    pub(in crate::cleanup_plan::replay) fn call_by_id(
+        &self,
+        context: &dyn ReplayContext,
+        function: &ResolvedFunction,
+        id: &ExpressionId,
+        budget: &mut ReplayBudget,
+    ) -> Result<(&ResolvedExpr, schema::borrowed::Call<'_>), Diagnostic> {
+        self.validate(context, function, budget)?;
+        self.profile.call_by_id(self.source, function, id, budget)
+    }
     pub(in crate::cleanup_plan::replay) fn call_params(
         &self,
         context: &dyn ReplayContext,

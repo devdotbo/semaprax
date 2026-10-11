@@ -2,6 +2,8 @@
 //! every retained scratch constructor before allocation. Legacy routes stay exact.
 use super::*;
 mod blocks;
+#[cfg(test)]
+pub(in crate::cleanup_plan::replay) mod borrowed_ids;
 mod calls;
 mod cfg;
 pub(super) use blocks::validate_blocks_and_edges;

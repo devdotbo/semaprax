@@ -13,8 +13,19 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(
 ) -> Result<(), Diagnostic> {
     let plan = &function.cleanup_plan;
     let mut statuses = BTreeSet::new();
+    #[cfg(test)]
+    let mut borrowed_statuses = if expressions.is_metered() {
+        Some(borrowed_ids::Ids::new(function, budget)?)
+    } else {
+        None
+    };
     for source in &plan.status_sources {
         budget.charge(function, 1, "structural status references")?;
+        #[cfg(test)]
+        if let Some(ids) = &mut borrowed_statuses {
+            ids.insert(function, borrowed_ids::Key::Status(&source.id), budget)?;
+            continue;
+        }
         if !statuses.contains(&source.id) {
             budget.reserve_btree_node::<StatusSourceId, ()>(
                 function,
@@ -47,13 +58,26 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(
                 ..
             } => expressions.require(function, expression, budget)?,
             EdgeCondition::StatusZero(source) | EdgeCondition::StatusNonzero(source) => {
-                require_status(function, &statuses, source)?
+                require_status_received(
+                    function,
+                    &statuses,
+                    source,
+                    #[cfg(test)]
+                    borrowed_statuses.as_ref(),
+                    budget,
+                )?
             }
         }
     }
     let mut referenced_edges = BTreeSet::new();
     let mut referenced_exits = BTreeSet::new();
     let mut committed_calls = BTreeSet::new();
+    #[cfg(test)]
+    let mut borrowed_commits = if expressions.is_metered() {
+        Some(borrowed_ids::Ids::new(function, budget)?)
+    } else {
+        None
+    };
     // No call cursor backing is acquired for a plan with no commits.
     budget.reserve_array::<Option<calls::CallCursor<'_>>>(
         function,
@@ -161,19 +185,38 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(
                             "call commit does not name a call expression",
                         ));
                     };
-                    if committed_calls.contains(call) {
-                        if plan.lexical_control.is_none() {
-                            return Err(replay_error(
-                                function,
-                                "call has more than one atomic commit",
-                            ));
+                    #[cfg(test)]
+                    let inserted = match &mut borrowed_commits {
+                        Some(ids) => {
+                            ids.insert(function, borrowed_ids::Key::Expression(call), budget)?
                         }
+                        None => {
+                            if committed_calls.contains(call) {
+                                false
+                            } else {
+                                budget.reserve_btree_node::<&ExpressionId, ()>(
+                                    function,
+                                    "structural committed calls",
+                                )?;
+                                committed_calls.insert(call)
+                            }
+                        }
+                    };
+                    #[cfg(not(test))]
+                    let inserted = if committed_calls.contains(call) {
+                        false
                     } else {
                         budget.reserve_btree_node::<&ExpressionId, ()>(
                             function,
                             "structural committed calls",
                         )?;
-                        committed_calls.insert(call);
+                        committed_calls.insert(call)
+                    };
+                    if !inserted && plan.lexical_control.is_none() {
+                        return Err(replay_error(
+                            function,
+                            "call has more than one atomic commit",
+                        ));
                     }
                     if cursor.is_none() {
                         cursor = Some(calls::CallCursor::new(function, budget)?);
@@ -191,7 +234,14 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(
                     )?;
                 }
                 CleanupTransition::SelectFailure { source } => {
-                    require_status(function, &statuses, source)?;
+                    require_status_received(
+                        function,
+                        &statuses,
+                        source,
+                        #[cfg(test)]
+                        borrowed_statuses.as_ref(),
+                        budget,
+                    )?;
                     if selected.replace(source).is_some() {
                         return Err(replay_error(
                             function,
@@ -285,7 +335,16 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(
                 expected_count = expected_count
                     .checked_add(1)
                     .ok_or_else(|| replay_error(function, "too many call expressions"))?;
-                if !committed_calls.contains(expression) {
+                #[cfg(test)]
+                let present = match &borrowed_commits {
+                    Some(ids) => {
+                        ids.contains(function, borrowed_ids::Key::Expression(expression), budget)?
+                    }
+                    None => committed_calls.contains(expression),
+                };
+                #[cfg(not(test))]
+                let present = committed_calls.contains(expression);
+                if !present {
                     return Err(replay_error(
                         function,
                         "cleanup plan does not contain exactly one atomic commit for every call",
@@ -293,7 +352,14 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(
                 }
             }
         }
-        if committed_calls.len() != expected_count {
+        #[cfg(test)]
+        let actual_count = match &borrowed_commits {
+            Some(ids) => ids.len(),
+            None => committed_calls.len(),
+        };
+        #[cfg(not(test))]
+        let actual_count = committed_calls.len();
+        if actual_count != expected_count {
             return Err(replay_error(
                 function,
                 "cleanup plan does not contain exactly one atomic commit for every call",
@@ -326,6 +392,30 @@ fn owned_edge(
     budget.reserve_btree_node::<EdgeId, ()>(function, "structural referenced edges")?;
     referenced.insert(edge);
     Ok(())
+}
+
+fn require_status_received(
+    function: &ResolvedFunction,
+    ordinary: &BTreeSet<StatusSourceId>,
+    source: &StatusSourceId,
+    #[cfg(test)] borrowed: Option<&borrowed_ids::Ids<'_>>,
+    budget: &mut ReplayBudget,
+) -> Result<(), Diagnostic> {
+    #[cfg(test)]
+    if let Some(ids) = borrowed {
+        if ids.contains(function, borrowed_ids::Key::Status(source), budget)? {
+            return Ok(());
+        }
+        return Err(replay_error(
+            function,
+            format!(
+                "cleanup plan references unknown status source `{}`",
+                source.expression
+            ),
+        ));
+    }
+    let _ = budget;
+    require_status(function, ordinary, source)
 }
 
 #[cfg(test)]

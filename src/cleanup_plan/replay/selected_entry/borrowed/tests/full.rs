@@ -83,7 +83,7 @@ fn actual_option_helpers_full_replay_matches_ordinary_and_metering_through_drop(
 
 #[test]
 fn option_profile_cannot_bless_forged_case_or_result_trace_and_failure_is_sticky() {
-    for mutation in 0..5 {
+    for mutation in 0..7 {
         let mut program = program();
         let other_result = program.functions[0].body.id.clone();
         let function = &mut program.functions[1];
@@ -146,7 +146,7 @@ fn option_profile_cannot_bless_forged_case_or_result_trace_and_failure_is_sticky
                     .expect("actual scalar result commit");
                 exit.continuation = ExitContinuation::ReturnUnit;
             }
-            _ => {
+            4 => {
                 let ResolvedExprKind::Block { tail, .. } = &mut function.body.kind else {
                     panic!("actual option body");
                 };
@@ -160,6 +160,42 @@ fn option_profile_cannot_bless_forged_case_or_result_trace_and_failure_is_sticky
                     panic!("actual borrowed parameter root");
                 };
                 place.root.invalidate_fingerprint_for_test();
+            }
+            5 => {
+                let forged = function.body.id.clone();
+                let call = function
+                    .cleanup_plan
+                    .blocks
+                    .iter_mut()
+                    .flat_map(|block| &mut block.transitions)
+                    .find_map(|transition| {
+                        if let CleanupTransition::CallCommit { call, .. } = transition {
+                            Some(call)
+                        } else {
+                            None
+                        }
+                    })
+                    .expect("actual call commit");
+                *call = forged;
+            }
+            _ => {
+                let block = function
+                    .cleanup_plan
+                    .blocks
+                    .iter_mut()
+                    .find(|block| {
+                        block.transitions.iter().any(|transition| {
+                            matches!(transition, CleanupTransition::CallCommit { .. })
+                        })
+                    })
+                    .expect("actual call commit block");
+                let duplicate = block
+                    .transitions
+                    .iter()
+                    .find(|transition| matches!(transition, CleanupTransition::CallCommit { .. }))
+                    .unwrap()
+                    .clone();
+                block.transitions.push(duplicate);
             }
         }
         let anchor = &program.functions[0];

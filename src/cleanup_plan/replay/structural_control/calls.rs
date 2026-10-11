@@ -189,6 +189,19 @@ pub(super) fn validate<'a>(
     cursor: &mut CallCursor<'a>,
     budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
+    #[cfg(test)]
+    let borrowed = program.borrowed_helper_lease(function);
+    #[cfg(test)]
+    let held = match &borrowed {
+        Some(lease) => Some(lease.call_by_id(program, function, call, budget)?),
+        None => None,
+    };
+    #[cfg(test)]
+    let expression = match &held {
+        Some((expression, _)) => *expression,
+        None => cursor.find(function, call, budget)?,
+    };
+    #[cfg(not(test))]
     let expression = cursor.find(function, call, budget)?;
     let ResolvedExprKind::Call {
         callee,
@@ -202,20 +215,72 @@ pub(super) fn validate<'a>(
             "call commit does not name a selected ordinary call",
         ));
     };
-    if callee != &fact.callee
-        || type_arguments != &fact.type_arguments
-        || instance != &fact.instance
-        || args.len() != fact.arguments.len()
-        || args
+    #[cfg(test)]
+    let agrees = if held.is_some() {
+        budget.charge(function, 1, "borrowed commit actual fact headers")?;
+        let mut agrees = instance.is_none()
+            && fact.instance.is_none()
+            && type_arguments.is_empty()
+            && fact.type_arguments.is_empty()
+            && args.len() == fact.arguments.len()
+            && schema::borrowed::same_schema(
+                function,
+                callee.as_str(),
+                fact.callee.as_str(),
+                budget,
+            )?;
+        if agrees {
+            for (arg, id) in args.iter().zip(&fact.arguments) {
+                budget.charge(function, 1, "borrowed commit actual argument probe")?;
+                if !schema::borrowed::same_schema(function, arg.id.as_str(), id.as_str(), budget)? {
+                    agrees = false;
+                    break;
+                }
+            }
+        }
+        agrees
+    } else {
+        callee == &fact.callee
+            && type_arguments == &fact.type_arguments
+            && instance == &fact.instance
+            && args.len() == fact.arguments.len()
+            && args
+                .iter()
+                .zip(&fact.arguments)
+                .all(|(arg, id)| &arg.id == id)
+    };
+    #[cfg(not(test))]
+    let agrees = callee == &fact.callee
+        && type_arguments == &fact.type_arguments
+        && instance == &fact.instance
+        && args.len() == fact.arguments.len()
+        && args
             .iter()
             .zip(&fact.arguments)
-            .any(|(arg, id)| &arg.id != id)
-    {
+            .all(|(arg, id)| &arg.id == id);
+    if !agrees {
         return Err(replay_error(
             function,
             "call commit facts disagree with current typed call",
         ));
     }
+    #[cfg(test)]
+    let signature = match &held {
+        Some((_, call)) => {
+            use schema::borrowed::{operands::Builtin, Call};
+            match call {
+                Call::User(target) => Signature::Function(target),
+                Call::Builtin(Builtin::FromU8) => {
+                    Signature::String(crate::string_ops::StringOp::I64FromU8)
+                }
+                Call::Builtin(Builtin::Get) => Signature::Byte(crate::byte_ops::ByteOp::Get),
+                Call::Builtin(Builtin::Len) => Signature::Byte(crate::byte_ops::ByteOp::Len),
+                Call::Builtin(Builtin::Str(op)) => Signature::Str(*op),
+            }
+        }
+        None => signature(program, function, fact, budget)?,
+    };
+    #[cfg(not(test))]
     let signature = signature(program, function, fact, budget)?;
     if signature.len() != fact.arguments.len() {
         return Err(replay_error(
@@ -227,6 +292,13 @@ pub(super) fn validate<'a>(
     for (index, arg) in args.iter().enumerate().take(signature.len()) {
         budget.charge(function, 1, "structural call parameters")?;
         let (mode, ty) = signature.parameter(index).expect("exact signature bound");
+        #[cfg(test)]
+        let drop = if held.is_some() {
+            type_needs_drop_with_budget(program, function, ty, budget)?
+        } else {
+            needs_drop(program, function, ty)?
+        };
+        #[cfg(not(test))]
         let drop = needs_drop(program, function, ty)?;
         if !signature.accepts_type(index, &arg.ty)
             || !match mode {

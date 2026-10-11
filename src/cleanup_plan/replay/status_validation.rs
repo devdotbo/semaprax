@@ -7,12 +7,43 @@ pub(super) fn validate_status_sources(
     budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
     let mut ids = BTreeSet::new();
+    #[cfg(test)]
+    let mut borrowed_ids = if expressions.is_metered() {
+        Some(structural_control::borrowed_ids::Ids::new(
+            function, budget,
+        )?)
+    } else {
+        None
+    };
     for source in &function.cleanup_plan.status_sources {
-        if !ids.contains(&source.id) {
-            budget.reserve_btree_node::<StatusSourceId, ()>(function, "status identity index")?;
-            budget.reserve_clone(function, &source.id, "status source identity")?;
-        }
-        if !ids.insert(source.id.clone()) {
+        #[cfg(test)]
+        let inserted = match &mut borrowed_ids {
+            Some(ids) => ids.insert(
+                function,
+                structural_control::borrowed_ids::Key::Status(&source.id),
+                budget,
+            )?,
+            None => {
+                if !ids.contains(&source.id) {
+                    budget.reserve_btree_node::<StatusSourceId, ()>(
+                        function,
+                        "status identity index",
+                    )?;
+                    budget.reserve_clone(function, &source.id, "status source identity")?;
+                }
+                ids.insert(source.id.clone())
+            }
+        };
+        #[cfg(not(test))]
+        let inserted = {
+            if !ids.contains(&source.id) {
+                budget
+                    .reserve_btree_node::<StatusSourceId, ()>(function, "status identity index")?;
+                budget.reserve_clone(function, &source.id, "status source identity")?;
+            }
+            ids.insert(source.id.clone())
+        };
+        if !inserted {
             return Err(replay_error(
                 function,
                 format!("status source for `{}` is repeated", source.id.expression),
@@ -42,7 +73,20 @@ pub(super) fn validate_status_sources(
                         "propagated-call status source does not name a call expression",
                     ));
                 };
-                if &call.callee != callee {
+                #[cfg(test)]
+                let agrees = if expressions.is_metered() {
+                    schema::borrowed::same_schema(
+                        function,
+                        call.callee.as_str(),
+                        callee.as_str(),
+                        budget,
+                    )?
+                } else {
+                    &call.callee == callee
+                };
+                #[cfg(not(test))]
+                let agrees = &call.callee == callee;
+                if !agrees {
                     return Err(replay_error(
                         function,
                         "propagated-call status source names the wrong callee",

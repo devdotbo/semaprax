@@ -24,6 +24,10 @@ impl<'a> Iterator for Entries<'a> {
     }
 }
 pub(super) trait Lookup {
+    #[cfg(test)]
+    fn is_metered(&self) -> bool {
+        false
+    }
     fn entries(&self) -> Entries<'_>;
     fn fact<'a>(
         &'a self,

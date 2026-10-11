@@ -50,6 +50,24 @@ impl<'a> Profile<'a> {
         }
         Err(fail(function))
     }
+    pub(in crate::cleanup_plan::replay) fn call_by_id(
+        &self,
+        program: &dyn crate::cleanup::ReplayContext,
+        function: &ResolvedFunction,
+        id: &ExpressionId,
+        budget: &mut ReplayBudget,
+    ) -> Result<(&'a ResolvedExpr, Call<'a>), Diagnostic> {
+        if !self.matches(program, function) {
+            return Err(fail(function));
+        }
+        for (expression, call) in &self.calls {
+            budget.charge(function, 1, "borrowed actual call identity probe")?;
+            if id_equal(function, expression.id.as_str(), id.as_str(), budget)? {
+                return Ok((*expression, *call));
+            }
+        }
+        Err(replay_error(function, "call commit expression is absent"))
+    }
     pub(in crate::cleanup_plan::replay) fn no_drop(
         &self,
         program: &dyn crate::cleanup::ReplayContext,
@@ -57,7 +75,14 @@ impl<'a> Profile<'a> {
         ty: &ResolvedType,
         budget: &mut ReplayBudget,
     ) -> Result<bool, Diagnostic> {
-        if !self.matches(program, function) || !copy_type(program, function, ty, budget)? {
+        if !self.matches(program, function) {
+            return Err(fail(function));
+        }
+        budget.charge(function, 1, "borrowed view no-drop type header")?;
+        if matches!(ty, ResolvedType::Str | ResolvedType::SliceU8) {
+            return Ok(false);
+        }
+        if !copy_type(program, function, ty, budget)? {
             return Err(fail(function));
         }
         Ok(false)
