@@ -141,7 +141,7 @@ fn each_call(expression: &mut hir::ResolvedExpr, visit: &mut dyn FnMut(&mut hir:
 const DIAMOND_CALLER: &str = r#"module scalar.app;
 use function @id("a.step") from scalar.a as a_step;
 use function @id("b.step") from scalar.b as b_step;
-@id("app.main") fn main()->i64 {let label=str"é\u{0}";let result=a_step(1)+b_step(2);return result;}
+@id("app.main") fn main()->i64 {let label=str"é\u{0}";let outcome=a_step(1)+b_step(2);let mut tick=0usize;while tick<1usize {tick=tick+1usize;return outcome;} 0}
 "#;
 fn side(name: &str, body: &str) -> String {
     format!(
@@ -440,7 +440,7 @@ fn long_ids_and_wide_dense_graphs_match_the_saved_oracle_with_single_walks() {
         .collect::<Vec<_>>()
         .join("+");
     let caller = format!(
-        "module scalar.app;\n{imports}@id(\"app.main\") fn main()->i64 {{let label=str\"é\\u{{0}}\";let result={sum};return result;}}\n"
+        "module scalar.app;\n{imports}@id(\"app.main\") fn main()->i64 {{let label=str\"é\\u{{0}}\";let outcome={sum};let mut tick=0usize;while tick<1usize {{tick=tick+1usize;return outcome;}} 0}}\n"
     );
     let mut sources = vec![("caller.spx", caller.as_str())];
     sources.extend(names.iter().map(|(p, s)| (p.as_str(), s.as_str())));

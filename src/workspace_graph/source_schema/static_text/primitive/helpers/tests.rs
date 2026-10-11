@@ -1,13 +1,15 @@
 //! Source-owned transitive scalar providers and independent local controls.
 use super::*;
+// A loop-free return normalizes into an ordinary tail and retains no lexical
+// inventory; the one-iteration loop keeps the selected source route.
 const CALLER: &str = r#"module scalar.app;
 use function @id("helper.step") from scalar.helper as step;
-@id("app.main") fn main()->i64 {let label=str"é\u{0}";let outcome=step(41);return outcome;}
+@id("app.main") fn main()->i64 {let label=str"é\u{0}";let outcome=step(41);let mut tick=0usize;while tick<1usize {tick=tick+1usize;return outcome;} 0}
 "#;
 const PROVIDER: &str = r#"module scalar.helper;
 use function @id("leaf.step") from scalar.leaf as leaf_step;
 @id("helper.step") fn step(n:i64)->i64 {leaf_step(n)}
-@id("unrelated") fn unrelated()->Bytes {bytes_with_capacity(1usize)}
+@id("unrelated") fn unrelated()->Bytes {bytes_zeroed(1usize)}
 "#;
 const LEAF: &str = r#"module scalar.leaf; @id("leaf.step") fn step(n:i64)->i64 {n+1}"#;
 fn build(caller: &str, provider: &str, leaf: &str) -> Result<WorkspaceGraphBuild, Vec<Diagnostic>> {
@@ -643,8 +645,13 @@ fn generic_option_nominal_and_vec_provider_bodies_keep_the_route_closed() {
     let rejected = build(&generic_caller, generic_provider, LEAF)
         .err()
         .expect("generic provider remains closed");
+    // A generic target is refused at the caller's import, before any provider
+    // body can reach the selected closure.
     assert!(
-        rejected.iter().any(|e| e.code == "SPX-G410"),
+        rejected.iter().any(|e| e.code == "SPX-G172"
+            && e.path.as_deref() == Some("caller.spx")
+            && e.message
+                == "function target must be monomorphic with admitted value parameters, or borrowed byte-slice parameters and a scalar return"),
         "generic provider rejection: {rejected:?}"
     );
     for (label, leaf) in [

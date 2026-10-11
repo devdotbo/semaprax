@@ -49,11 +49,25 @@ fn actual_lines_reader_body_preserves_ordinary_while_and_exact_option_eliminatio
             .outcome,
         crate::interpreter::ResolvedEvaluationOutcome::ReturnedI64(42)
     );
+    // The one-iteration loop keeps the caller on the selected source route; a
+    // loop-free return would normalize into an ordinary tail import.
     let caller_source = r#"module scalar.app;use function @id("std.io.lines.line-end") from std.io.lines as line_end;
-@id("app.main") fn main()->i64 {let text=str"a\né";let end=line_end(str_as_bytes(text),0usize);return if end==1usize {42}else{0};}"#;
-    // Independent shape support grants no production Option receiving lease.
+@id("app.main") fn main()->i64 {let text=str"a\né";let end=line_end(str_as_bytes(text),0usize);let mut tick=0usize;while tick<1usize {tick=tick+1usize;return if end==1usize {42}else{0};} 0}"#;
+    // Independent shape support grants no production Option receiving lease:
+    // the reader retains no provider fact, so the selected entry refuses.
+    let build =
+        build_sources(&[("caller.spx", caller_source), ("lines.spx", &selected)]).unwrap();
+    assert_selected_borrowed_inventory(&build);
+    assert!(build
+        .hir
+        .modules
+        .iter()
+        .find(|m| m.module == "std.io.lines")
+        .unwrap()
+        .scalar_helpers
+        .is_none());
     assert!(
-        build_sources(&[("caller.spx", caller_source), ("lines.spx", &selected)])
+        schema(&build)
             .err()
             .expect("Option receiving route remains closed")
             .iter()

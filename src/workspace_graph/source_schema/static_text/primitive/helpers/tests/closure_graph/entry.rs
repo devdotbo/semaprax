@@ -146,7 +146,7 @@ fn long(tail: &str) -> String {
 fn tiny(noise: usize) -> WorkspaceGraphBuild {
     let leaf_id = long("leaf");
     let caller_source = format!(
-        "module scalar.app;\nuse function @id(\"{leaf_id}\") from scalar.leaf as step;\n@id(\"{}\") fn main()->i64 {{let label=str\"é\\u{{0}}\";let result=step(41);return result;}}\n",
+        "module scalar.app;\nuse function @id(\"{leaf_id}\") from scalar.leaf as step;\n@id(\"{}\") fn main()->i64 {{let label=str\"é\\u{{0}}\";let outcome=step(41);let mut tick=0usize;while tick<1usize {{tick=tick+1usize;return outcome;}} 0}}\n",
         long("main")
     );
     // Same-provider siblings are captured but never called.
@@ -256,7 +256,7 @@ fn authentic_chain_diamond_repeated_alias_and_wide_entries_match_the_saved_entry
         .collect::<Vec<_>>()
         .join("+");
     let wide_caller = format!(
-        "module scalar.app;\n{wide_imports}@id(\"app.main\") fn main()->i64 {{let label=str\"é\\u{{0}}\";let result={sum};return result;}}\n"
+        "module scalar.app;\n{wide_imports}@id(\"app.main\") fn main()->i64 {{let label=str\"é\\u{{0}}\";let outcome={sum};let mut tick=0usize;while tick<1usize {{tick=tick+1usize;return outcome;}} 0}}\n"
     );
     let wide_leaves = (0..12)
         .map(|k| {
