@@ -5,12 +5,12 @@
 
 use crate::ast::{BinaryOp, Span, UnaryOp};
 
-use super::Place;
 use super::ids::{DeclarationId, ExpressionId, FunctionInstanceId};
 use super::nodes::{
     OwnershipMode, ResolvedBinding, ResolvedHostCommandCall, ResolvedMatchMode,
     ResolvedNativeRustImportCall, ResolvedType,
 };
+use super::Place;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ResolvedExpr {
@@ -249,7 +249,52 @@ pub enum ResolvedMatchPattern {
     Binding(ResolvedBinding),
 }
 
+/// Borrowed authored case traversal. Duplicate alternatives remain distinct.
+pub(crate) struct VariantCaseIter<'a> {
+    single: Option<&'a DeclarationId>,
+    alternatives: std::slice::Iter<'a, ResolvedMatchPattern>,
+}
+impl<'a> Iterator for VariantCaseIter<'a> {
+    type Item = &'a DeclarationId;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.single.take().or_else(|| {
+            self.alternatives.next().map(|pattern| {
+                let ResolvedMatchPattern::Variant { case, .. } = pattern else {
+                    unreachable!("borrowed variant alternatives were validated");
+                };
+                case
+            })
+        })
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let count = self.alternatives.len() + usize::from(self.single.is_some());
+        (count, Some(count))
+    }
+}
+impl ExactSizeIterator for VariantCaseIter<'_> {}
+
 impl ResolvedMatchPattern {
+    /// Same case domain as variant_cases, without allocating a temporary Vec.
+    pub(crate) fn case_iter(&self) -> Option<VariantCaseIter<'_>> {
+        match self {
+            Self::Variant { case, .. } => Some(VariantCaseIter {
+                single: Some(case),
+                alternatives: [].iter(),
+            }),
+            Self::Or(alternatives)
+                if alternatives.iter().all(|pattern| {
+                    matches!(pattern,
+                    Self::Variant { fields, .. } if fields.is_empty())
+                }) =>
+            {
+                Some(VariantCaseIter {
+                    single: None,
+                    alternatives: alternatives.iter(),
+                })
+            }
+            _ => None,
+        }
+    }
     /// The cases a variant-match arm tests, in authored order: the one case
     /// of a case pattern, or every alternative of an or-pattern over
     /// payload-free cases. `None` for every other pattern.
@@ -446,6 +491,48 @@ impl ResolvedStatement {
             | Self::LexicalWhile {
                 condition, body, ..
             } => [condition.as_ref(), body.as_ref()].get(index).copied(),
+        }
+    }
+}
+
+#[cfg(test)]
+mod borrowed_variant_case_tests {
+    use super::*;
+    fn case(id: &str) -> ResolvedMatchPattern {
+        ResolvedMatchPattern::Variant {
+            variant: DeclarationId::new("variant"),
+            case: DeclarationId::new(id),
+            fields: Vec::new(),
+        }
+    }
+    #[test]
+    fn borrowed_case_domain_matches_allocating_oracle_order_duplicates_and_refusal() {
+        for pattern in [
+            case("some"),
+            ResolvedMatchPattern::Or(vec![case("none"), case("some"), case("none")]),
+            ResolvedMatchPattern::Or(Vec::new()),
+            ResolvedMatchPattern::Or(vec![case("none"), ResolvedMatchPattern::Wildcard]),
+            ResolvedMatchPattern::Wildcard,
+        ] {
+            let oracle = pattern.variant_cases();
+            let (answer, allocation) =
+                crate::test_allocation_observer::measure(|| match (pattern.case_iter(), &oracle) {
+                    (Some(mut actual), Some(expected)) => {
+                        let count = expected.len();
+                        assert_eq!(actual.len(), count);
+                        for (index, expected) in expected.iter().enumerate() {
+                            assert_eq!(actual.len(), count - index);
+                            assert!(std::ptr::eq(actual.next().unwrap(), *expected));
+                        }
+                        assert_eq!(actual.len(), 0);
+                        assert!(actual.next().is_none());
+                        true
+                    }
+                    (None, None) => true,
+                    _ => false,
+                });
+            assert!(answer);
+            assert!(!allocation.invalid && allocation.allocated == 0 && allocation.live == 0);
         }
     }
 }

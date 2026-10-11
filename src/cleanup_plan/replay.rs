@@ -6071,7 +6071,7 @@ fn finish_match_arm(
             append_expr_paths(results, selected, work, "match selected result")?;
             continue;
         }
-        let cases = arms[index].pattern.variant_cases().ok_or_else(|| {
+        let cases = arms[index].pattern.case_iter().ok_or_else(|| {
             replay_error(
                 function,
                 "wildcard match arm must be the final exhaustive arm",

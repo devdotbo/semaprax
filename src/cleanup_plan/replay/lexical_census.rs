@@ -352,7 +352,7 @@ fn count(
             for (index, arm) in arms.iter().enumerate() {
                 let alternatives = arm
                     .pattern
-                    .variant_cases()
+                    .case_iter()
                     .map_or(1, |cases| cases.len())
                     .max(1);
                 let (guard_total, guard_failed) = match &arm.guard {

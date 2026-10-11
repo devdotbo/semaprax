@@ -172,7 +172,7 @@ pub(super) fn or_arm_path_counts(
     let alternatives = child_index
         .checked_sub(1)
         .and_then(|arm| arms.get(arm))
-        .and_then(|arm| arm.pattern.variant_cases())
+        .and_then(|arm| arm.pattern.case_iter())
         .map_or(1, |cases| cases.len());
     HirPathCounts {
         normal: result.normal.saturating_mul(alternatives),
