@@ -434,6 +434,9 @@ pub(super) enum Frame<'expr> {
     },
 }
 
+mod fixed_results;
+pub(super) use fixed_results::{take_pair, take_triple};
+
 pub(super) fn take_results(results: &mut Vec<ResolvedExpr>, count: usize) -> Vec<ResolvedExpr> {
     let start = results
         .len()

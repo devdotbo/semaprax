@@ -610,3 +610,16 @@ layout, debits, floors, ceilings nor failure selection. It identifies the operat
 enclosing a refusal; it does not identify an allocator call or establish retained
 heap/RSS, application recovery or a path-arena saving. OPT778 path representation
 and accounting changes remain outside this diagnostic-only tranche.
+
+### Fixed-arity lowering result extraction
+
+Binary and conditional lowering retain their existing continuation scheduling.
+Their finishing receivers precheck that every child result exists, then move a
+pair or triple directly from the result stack into authored order. They allocate
+no temporary result Vec and clone no child. Short stacks refuse before mutation
+with the existing continuation invariant diagnostic. Variable-arity splicing and
+all final HIR/identity, loan, cleanup and status construction remain unchanged.
+Existing conservative forecasts remain unchanged. The saved split-off test oracle
+compares full HIR/wire, canonical plans and reference outcomes, while a separate
+requested-layout control isolates the eliminated two/three-element buffer. This
+does not attribute any existing application reservation refusal to that buffer.

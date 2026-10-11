@@ -16,7 +16,7 @@ use super::nodes::{
     is_scalar_resolved_type, DeclarationKind, OwnershipMode, ResolvedBinding,
     ResolvedImportResultKind, ResolvedMatchMode, ResolvedNativeRustImportCall, ResolvedType,
 };
-use super::resolve_expr_frame::{take_results, Frame};
+use super::resolve_expr_frame::{take_pair, take_results, take_triple, Frame};
 use super::type_reachability::record_args_ok;
 use super::{Binding, Place, PlaceProjection, Resolver};
 
@@ -1248,9 +1248,7 @@ impl Resolver<'_> {
                     results.push(finish::finish_unary(function, span, path, op, value));
                 }
                 Frame::FinishBinary { span, path, op } => {
-                    let mut children = take_results(&mut results, 2).into_iter();
-                    let left = children.next().expect("binary left result retained");
-                    let right = children.next().expect("binary right result retained");
+                    let (left, right) = take_pair(&mut results);
                     let ty = match (&op, &left.ty) {
                         (
                             BinaryOp::Add
@@ -1795,7 +1793,7 @@ impl Resolver<'_> {
                     results.push(finish::finish_block(function, span, path, statements, tail));
                 }
                 Frame::FinishIf { span, path } => {
-                    let children = take_results(&mut results, 3);
+                    let children = take_triple(&mut results);
                     results.push(finish::finish_if(function, span, path, children));
                 }
                 Frame::AfterIfCondition {

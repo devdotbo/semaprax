@@ -52,12 +52,9 @@ pub(super) fn finish_if(
     function: &FunctionExecutionId,
     span: crate::ast::Span,
     path: String,
-    children: Vec<ResolvedExpr>,
+    children: (ResolvedExpr, ResolvedExpr, ResolvedExpr),
 ) -> ResolvedExpr {
-    let mut children = children.into_iter();
-    let condition = children.next().expect("if condition retained");
-    let then_branch = children.next().expect("if then branch retained");
-    let else_branch = children.next().expect("if else branch retained");
+    let (condition, then_branch, else_branch) = children;
     let normal = if then_branch.ty == ResolvedType::Never {
         &else_branch
     } else {
