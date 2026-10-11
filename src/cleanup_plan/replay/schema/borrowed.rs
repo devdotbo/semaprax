@@ -6,7 +6,7 @@ mod decision;
 const DEPTH: usize = 514;
 type Frame<'a> = Option<(crate::hir::lexical_exit::ChildCursor<'a>, bool)>;
 
-pub(super) struct Profile<'a> {
+pub(in crate::cleanup_plan::replay) struct Profile<'a> {
     program: &'a dyn crate::cleanup::ReplayContext,
     function: &'a ResolvedFunction,
     inventory: crate::cleanup::CleanupInventory,
@@ -14,17 +14,53 @@ pub(super) struct Profile<'a> {
     schema_facts: decision::Facts,
 }
 impl<'a> Profile<'a> {
-    pub(super) fn matches(
+    pub(in crate::cleanup_plan::replay) fn matches(
         &self,
         program: &dyn crate::cleanup::ReplayContext,
         function: &ResolvedFunction,
     ) -> bool {
         std::ptr::eq(self.program, program) && std::ptr::eq(self.function, function)
     }
-    pub(super) fn inventory(&self) -> &crate::cleanup::CleanupInventory {
+    pub(in crate::cleanup_plan::replay) fn inventory(&self) -> &crate::cleanup::CleanupInventory {
         &self.inventory
     }
-    pub(super) fn renewals(
+    pub(in crate::cleanup_plan::replay) fn validate_inventory(
+        &self,
+        program: &dyn crate::cleanup::ReplayContext,
+        function: &ResolvedFunction,
+        budget: &mut ReplayBudget,
+    ) -> Result<(), Diagnostic> {
+        budget.charge(function, 1, "borrowed inventory actual member")?;
+        if !self.matches(program, function) {
+            return Err(fail(function));
+        }
+        // The actual constructor has proved no storage. Validate all receiving
+        // headers before any traversal; hostile nonempty tables grant no proof.
+        budget.charge(function, 1, "borrowed reconstructed inventory headers")?;
+        if !self.inventory.slots.is_empty()
+            || !self.inventory.flags.is_empty()
+            || !self.inventory.entry_state.live_owned_parameters.is_empty()
+            || !self
+                .inventory
+                .entry_state
+                .conditional_owned_parameters
+                .is_empty()
+        {
+            return Err(fail(function));
+        }
+        budget.charge(function, 1, "borrowed attached inventory headers")?;
+        let actual = &function.cleanup;
+        if !actual.slots.is_empty()
+            || !actual.flags.is_empty()
+            || !actual.entry_state.live_owned_parameters.is_empty()
+            || !actual.entry_state.conditional_owned_parameters.is_empty()
+            || !id_equal(function, self.inventory.schema, actual.schema, budget)?
+        {
+            return Err(fail(function));
+        }
+        Ok(())
+    }
+    pub(in crate::cleanup_plan::replay) fn renewals(
         &self,
         program: &dyn crate::cleanup::ReplayContext,
         function: &ResolvedFunction,
@@ -51,6 +87,14 @@ fn copy_type(
     } else {
         Ok(crate::hir::is_scalar_resolved_type(ty))
     }
+}
+pub(in crate::cleanup_plan::replay) fn same_schema(
+    function: &ResolvedFunction,
+    a: &str,
+    b: &str,
+    budget: &mut ReplayBudget,
+) -> Result<bool, Diagnostic> {
+    id_equal(function, a, b, budget)
 }
 fn id_equal(
     function: &ResolvedFunction,
@@ -110,7 +154,7 @@ fn call(
     }
     Ok(())
 }
-pub(super) fn build<'a>(
+pub(in crate::cleanup_plan::replay) fn build<'a>(
     program: &'a dyn crate::cleanup::ReplayContext,
     function: &'a ResolvedFunction,
     budget: &mut ReplayBudget,

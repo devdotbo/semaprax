@@ -75,7 +75,7 @@ impl Profile<'_> {
     /// owner arguments, iterator types, record constructions/updates and nested
     /// shapes; these are the exact prerequisites of v17 through v7. It does
     /// not infer their absence from the empty renewal lookup.
-    pub(super) fn schema(
+    pub(in crate::cleanup_plan::replay) fn schema(
         &self,
         program: &dyn crate::cleanup::ReplayContext,
         function: &ResolvedFunction,

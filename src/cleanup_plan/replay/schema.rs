@@ -3,7 +3,7 @@
 
 use super::*;
 #[cfg(test)]
-mod borrowed;
+pub(super) mod borrowed;
 use crate::cleanup_plan::{CLEANUP_PLAN_SCHEMA_V17, CLEANUP_PLAN_SCHEMA_V18};
 
 pub(crate) fn selected_schema(

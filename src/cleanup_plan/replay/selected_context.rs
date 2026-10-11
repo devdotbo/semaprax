@@ -82,3 +82,6 @@ impl ReplayContext for Context<'_> {
         std::ptr::eq(self.function, function).then_some(&self.renewals)
     }
 }
+
+#[cfg(test)]
+pub(super) mod borrowed;
