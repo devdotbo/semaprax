@@ -88,8 +88,8 @@ fn refusal(message: impl Into<String>) -> Diagnostic {
 
 /// Execute one selected invocation with a caller-owned finite requested-layout
 /// account. Runtime frame construction, execution and cleanup share this ledger.
-/// Compiler parsing/validation/joining and report serialization are outside this runtime
-/// account. It is not a bound on allocator overhead or process memory.
+/// Compiler parsing/validation/joining, diagnostic/status text and report
+/// serialization are outside this runtime accounting scope. It is not a bound on allocator overhead or process memory.
 pub fn run_interpreter(
     source: &str,
     path: &Path,

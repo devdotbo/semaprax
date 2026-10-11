@@ -46,7 +46,7 @@ status checks remain mandatory.
 
 | Target | Managed account | Exclusions |
 | --- | --- | --- |
-| Interpreter | Cumulative requested Rust layouts for runtime frame construction, execution and cleanup | Source parsing/compiler validation and fresh source/HIR joining, administrative account control, report serialization, allocator overhead and process memory |
+| Interpreter | Cumulative requested Rust layouts for runtime frame construction, execution and cleanup | Source parsing/compiler validation and fresh source/HIR joining, administrative account control, diagnostic/normalized-status text and report serialization, allocator overhead and process memory |
 | Native | Monotonic reservation of the complete closed requested heap footprint; structural allocations consume their held funding at original boundaries | Fixed caller/status/control stack, compiler, loader, libc/allocator overhead and output buffers |
 | Wasm | Exact host adapter account contract supplied with the compiler-produced module and fixed host package | Account scope and exclusions must be declared by that package; no total JS/process-memory claim |
 
