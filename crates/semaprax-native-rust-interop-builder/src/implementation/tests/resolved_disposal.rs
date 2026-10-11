@@ -538,7 +538,8 @@ fn every_expression_shape_resolves_at_exact_depth_512_and_rejects_513() {
             ExprKind::Call { args, .. } => args
                 .iter_mut()
                 .any(|child| replace_payload(child, replacement)),
-            ExprKind::Unary { value, .. }
+            ExprKind::VecConstructor { value, .. }
+            | ExprKind::Unary { value, .. }
             | ExprKind::Try { operand: value }
             | ExprKind::Yield { request: value }
             | ExprKind::Project { base: value, .. } => replace_payload(value, replacement),
@@ -627,7 +628,7 @@ fn every_expression_shape_resolves_at_exact_depth_512_and_rejects_513() {
             | ExprKind::Float64(_)
             | ExprKind::Bool(_)
             | ExprKind::String(_)
-| ExprKind::BorrowedUtf8Literal(_)
+            | ExprKind::BorrowedUtf8Literal(_)
             | ExprKind::Var(_) => false,
         }
     }
@@ -738,6 +739,45 @@ fn every_expression_shape_resolves_at_exact_depth_512_and_rejects_513() {
             },
         };
     }
+
+    // Frozen interop admission still refuses constructor syntax. Its source
+    // capacity and hostile mutation visitors must nevertheless inspect the
+    // real desugared arguments once, under the unchanged marker site path.
+    let mut constructor = crate::parse(
+        "module depth.constructor; @id(\"depth.constructor.deep\") fn deep(payload:i64)->i64 { let values=vec_of<i64>(payload); i64_from_usize(vec_len<i64>(values)) } @id(\"app.main\") fn main()->i64 {0}",
+        Path::new("constructor-traversal.spx"),
+    ).unwrap();
+    let mut pending = vec![&deep_function(&constructor).body];
+    let mut markers = 0;
+    let mut payloads = 0;
+    while let Some(expression) = pending.pop() {
+        if let crate::ast::ExprKind::VecConstructor { value, .. } = &expression.kind {
+            markers += 1;
+            let mut cursor = 0;
+            let (index, child) = ast_child(expression, &mut cursor).unwrap();
+            assert_eq!(index, 0);
+            assert!(std::ptr::eq(child, value.as_ref()));
+            assert!(ast_child(expression, &mut cursor).is_none());
+        }
+        payloads += usize::from(
+            matches!(&expression.kind, crate::ast::ExprKind::Var(name) if name == "payload"),
+        );
+        let mut cursor = 0;
+        while let Some((_, child)) = ast_child(expression, &mut cursor) {
+            pending.push(child);
+        }
+    }
+    assert_eq!((markers, payloads), (1, 1));
+    let span = deep_function(&constructor).body.span;
+    assert!(replace_payload(
+        &mut deep_function_mut(&mut constructor).body,
+        &mut Some(crate::ast::Expr {
+            kind: crate::ast::ExprKind::Int(17),
+            span
+        })
+    ));
+    let canonical = crate::format::canonical(&constructor);
+    assert!(canonical.contains("vec_of<i64>(17)"));
 
     let cases = [
         (
