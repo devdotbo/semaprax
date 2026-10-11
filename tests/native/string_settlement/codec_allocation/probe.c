@@ -71,7 +71,7 @@ int main(void) {
     int64_t *publication=mmap(NULL,sizeof(*publication),PROT_READ|PROT_WRITE,
                               MAP_SHARED|MAP_ANONYMOUS,-1,0);
     REQUIRE(publication!=MAP_FAILED);
-    size_t returned=0,fatal_decode=0,fatal_encode=0;
+    size_t returned=0,fatal_decode=0,fatal_encode=0,fatal_encode_bytes=0;
     for(unsigned repetition=0;repetition<2;++repetition){
         for(size_t selected=1;selected<=composed;++selected){
             int errors[2];REQUIRE(pipe(errors)==0);*publication=INT64_MIN;
@@ -101,15 +101,22 @@ int main(void) {
                 if(strcmp(message,"SEMAPRAX native runtime invariant failure: string allocation failed\n"))
                     fprintf(stderr,"fault census repetition=%u selected=%zu decoded=%zu composed=%zu: %s",
                             repetition,selected,decoded,composed,message);
-                REQUIRE(!strcmp(message,"SEMAPRAX native runtime invariant failure: string allocation failed\n"));
-                if(selected<=decoded)++fatal_decode;else ++fatal_encode;
+                /* The encoder's first allocation is its one owned Bytes buffer.
+                 * Every other fatal site retains the exact String-only policy. */
+                if(selected==decoded+1){
+                    REQUIRE(!strcmp(message,"SEMAPRAX native runtime invariant failure: owned byte buffer allocation failed\n"));
+                    ++fatal_encode_bytes;
+                }else{
+                    REQUIRE(!strcmp(message,"SEMAPRAX native runtime invariant failure: string allocation failed\n"));
+                    if(selected<=decoded)++fatal_decode;else ++fatal_encode;
+                }
                 /* No claim about live-owner cleanup at these fatal sites. */
             }
             REQUIRE(!memcmp(fault_borrowed_input,fault_input,sizeof fault_input));
         }
     }
-    REQUIRE(returned>0 && fatal_decode>0 && fatal_encode>0);
-    REQUIRE(returned+fatal_decode+fatal_encode==2*composed);
+    REQUIRE(returned>0 && fatal_decode>0 && fatal_encode>0 && fatal_encode_bytes==2);
+    REQUIRE(returned+fatal_decode+fatal_encode+fatal_encode_bytes==2*composed);
     REQUIRE(munmap(publication,sizeof(*publication))==0);
     /* Parent inventory is unchanged by subprocess fault observation. */
     REQUIRE(fixture_live==0 && fixture_allocations==fixture_frees);
