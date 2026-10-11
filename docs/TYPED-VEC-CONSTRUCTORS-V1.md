@@ -43,7 +43,7 @@ comparisons have separate bounded counters. Normal HIR/loan validation separatel
 checks child identities, types, staged calls and freezes.
 
 Selective Graph v81 wraps the existing v80→v79→v78→v77 composition and retains
-constructor metadata alongside ordinary children. Retained replay matches
+constructor metadata alongside ordinary children. Managed manifests admit the exact v81 spelling; frozen evidence routes explicitly refuse it with G410. Ordinary per-file replay still authenticates every source and constructor marker. Retained replay matches
 current source sites and type identity independently; a matching ordinary HIR
 Block grants no constructor provenance. Marker-free programs retain their
 existing profiles. Frozen native interop/public export profiles explicitly

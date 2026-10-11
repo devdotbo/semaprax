@@ -38,6 +38,9 @@ fn constructor_roundtrips_source_cache_and_selective_graph_without_a_second_resu
         "semaprax.graph.v81"
     );
     assert!(crate::graph::legacy_graph_schema(&typed).is_err());
+    let error = crate::graph::reject_evidence_schema(crate::graph::graph_schema(&typed).unwrap())
+        .unwrap_err();
+    assert_eq!(error.code, "SPX-G410");
     let graph = crate::graph::to_json(&source).unwrap();
     assert!(graph.contains("\"kind\":\"vec_constructor\""));
     assert!(graph.contains("\"count\":2"));

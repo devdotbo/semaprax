@@ -3,8 +3,8 @@ use crate::workspace_graph::expected_projection::private_layout::{signature_owne
 use crate::workspace_graph::{
     expected_projection, import_validation, index_authored, index_modules,
 };
-const PROVIDER: &str = include_str!("../../function_provider.spx");
-const CALLER: &str = include_str!("../../function_caller.spx");
+const PROVIDER: &str = include_str!("../function_provider.spx");
+const CALLER: &str = include_str!("../function_caller.spx");
 fn sources() -> [crate::ast::Program; 2] {
     [
         crate::parse(CALLER, "caller.spx").unwrap(),

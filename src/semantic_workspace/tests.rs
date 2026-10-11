@@ -46,6 +46,11 @@ fn current_source_graph_schemas_are_admitted_without_widening_unknown_schemas() 
         "semaprax.graph.v74",
         "semaprax.graph.v75",
         "semaprax.graph.v76",
+        "semaprax.graph.v77",
+        "semaprax.graph.v78",
+        "semaprax.graph.v79",
+        "semaprax.graph.v80",
+        "semaprax.graph.v81",
     ] {
         assert!(is_source_graph_schema(schema));
     }
@@ -73,7 +78,10 @@ fn current_source_graph_schemas_are_admitted_without_widening_unknown_schemas() 
         "semaprax.graph.v076",
         "semaprax.graph.v76 ",
         "semaprax.graph.v76+v75",
-        "semaprax.graph.v77",
+        "semaprax.graph.v82",
+        "semaprax.graph.v081",
+        "semaprax.graph.v81 ",
+        "semaprax.graph.v81+v80",
         "semaprax.graph.v999",
         "semaprax.graph.v067",
         "semaprax.graph.v67 ",
@@ -1064,5 +1072,27 @@ use function @id("replace.provider.replaced") from replace.provider as replaced;
     ] {
         let manifest = first.manifest().replace("semaprax.graph.v68", forged);
         assert_code(parse_manifest(&manifest), "SPX-G174");
+    }
+}
+
+#[test]
+fn constructor_schema_round_trips_without_admitting_forged_spellings() {
+    let digest = format!("sha256:{}", "a".repeat(64));
+    let manifest = render_manifest_facts(&[
+        ("a.spx", "semaprax.graph.v81", &digest, &digest, 1),
+        ("b.spx", "semaprax.graph.v80", &digest, &digest, 1),
+    ])
+    .unwrap();
+    let facts = parse_manifest(&manifest).unwrap();
+    assert_eq!(facts[0].source_graph_schema, "semaprax.graph.v81");
+    assert_eq!(render_manifest(&facts).unwrap(), manifest);
+    for forged in [
+        "semaprax.graph.v081",
+        "semaprax.graph.v81 ",
+        "semaprax.graph.v81+v80",
+        "semaprax.graph.v82",
+    ] {
+        let error = parse_manifest(&manifest.replace("semaprax.graph.v81", forged)).unwrap_err();
+        assert_eq!(error[0].code, "SPX-G174");
     }
 }

@@ -7,11 +7,12 @@ fn source(constructor: bool) -> String {
         "let rows=vec_of<Row>(e0(),e1(),e2(),e3());"
     } else {
         // Independently authored control: never derive this from the constructor expansion.
-        "let mut rows=vec_with_capacity<Row>(4usize);\n\
-         rows=vec_push<Row>(rows,e0());\n\
-         rows=vec_push<Row>(rows,e1());\n\
-         rows=vec_push<Row>(rows,e2());\n\
-         rows=vec_push<Row>(rows,e3());"
+        "let mut building=vec_with_capacity<Row>(4usize);\n\
+         building=vec_push<Row>(building,e0());\n\
+         building=vec_push<Row>(building,e1());\n\
+         building=vec_push<Row>(building,e2());\n\
+         building=vec_push<Row>(building,e3());\n\
+         let rows=building;"
     };
     format!(
         r#"{DECLARATION}

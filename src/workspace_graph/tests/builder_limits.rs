@@ -473,11 +473,12 @@ fn catalog_normalizer_compact_core_fits_production_builder_cap() {
             let authored = index_authored(&programs).unwrap();
             let module_paths = index_modules(&programs).unwrap();
             let depths = validate_dependency_dag(&programs).unwrap();
+            let layouts = expected_projection::private_layout::registry::LayoutRegistry::new(&programs, &authored);
             let forecast = expected_projection::uncached_output_peak_prebound(&programs, &authored);
             let layout = expected_projection::uncached_peak::uncached_output_layout(&programs, &authored).unwrap();
             let (core, overflow, debit) = crate::bounded_output::with_limit_usage(
                 MAX_BUILDER_BYTES,
-                || build_resolved_core(&programs, &module_paths, &depths, &authored, None, None, Some(&layout.order[..programs.len()])),
+                || build_resolved_core(&programs, &module_paths, &depths, &authored, None, None, &layouts, Some(&layout.order[..programs.len()])),
             );
             panic!("catalog compact core exceeds cap: {errors:?}; forecast={forecast:?}; live debit={debit}, overflow={overflow}, core_ok={}", core.is_ok());
         });

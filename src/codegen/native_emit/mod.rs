@@ -1876,8 +1876,8 @@ fn emit_function(
         output.push_str(&body.into_string());
     }
     output.push_str("spx_epilogue:\n");
-    if function.cleanup_plan.lexical_control.is_some() && bytes_plan.is_none() {
-        // Scalar/String routes have no byte-plan guard, but share canonical terminal writes.
+    if function.cleanup_plan.lexical_control.is_some() {
+        // Common lexical terminal writes remain valid with or without byte-plan guards.
         output.push_str("    (void)spx_canonical_cleanup_done;\n");
     }
     output.push_str("    if (spx_call_entered) {\n        if (spx_ctx->call_depth == UINT32_C(0)) spx_runtime_invariant_failure(\"call depth underflow\");\n        --spx_ctx->call_depth;\n    }\n");

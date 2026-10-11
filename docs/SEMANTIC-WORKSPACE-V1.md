@@ -78,9 +78,11 @@ The selected generation manifest has schema
 path,source_graph_schema,source_revision,source_digest,bytes
 ```
 
-Manifest files retain path order. `source_graph_schema` is exactly one of
-`semaprax.graph.v10` through `semaprax.graph.v14` selected by the authenticated
-per-file HIR. `source_revision` is the existing Graph revision of that file's
+Manifest files retain path order. The base v1 source graph schemas are
+`semaprax.graph.v10` through `semaprax.graph.v14`. Admitted additive language
+profiles register exact additional spellings, including `semaprax.graph.v81`
+for typed Vec constructors. Every tag is selected by authenticated per-file HIR;
+unknown, padded, suffixed and combined schema spellings remain refused. `source_revision` is the existing Graph revision of that file's
 canonical AST. `source_digest` is
 `sha256("semaprax.semantic-review.source-digest.v1\0" ||
 u64_le(source_byte_length) || exact_canonical_source_bytes)`. There is no
