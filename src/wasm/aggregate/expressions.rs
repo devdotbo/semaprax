@@ -92,7 +92,10 @@ impl Emitter<'_> {
     ) -> Result<Value, Diagnostic> {
         let saved = self.bindings.clone();
         for statement in statements {
-            self.emit_block_statement(statement)?;
+            if !self.emit_block_statement(statement)? {
+                self.bindings = saved;
+                return Ok(Value::Bottom);
+            }
         }
         let tail = self.emit_expr(tail)?;
         if matches!(tail, Value::Bottom) {
@@ -113,7 +116,7 @@ impl Emitter<'_> {
         Ok(result)
     }
 
-    fn emit_block_statement(&mut self, statement: &ResolvedStatement) -> Result<(), Diagnostic> {
+    fn emit_block_statement(&mut self, statement: &ResolvedStatement) -> Result<bool, Diagnostic> {
         if self.owned_utf8_literals.is_some()
             && matches!(statement, ResolvedStatement::Unsafe { body, .. } if body.ty == ResolvedType::String)
         {
@@ -139,6 +142,9 @@ impl Emitter<'_> {
         } = statement
         {
             let value = self.emit_expr(statement.value())?;
+            if matches!(value, Value::Bottom) {
+                return Ok(false);
+            }
             let offset = self
                 .plan
                 .aggregate_bindings
@@ -163,7 +169,7 @@ impl Emitter<'_> {
                 self.program,
             )?;
             self.copy_value(&destination, &value, "field assignment")?;
-            return Ok(());
+            return Ok(true);
         }
         // Lets declare and store; assignments re-store into the same slot.
         // Unsafe boundaries emit their body transparently and bind nothing.
@@ -183,14 +189,14 @@ impl Emitter<'_> {
                     matches!(statement, ResolvedStatement::LexicalWhile { .. }),
                 )?;
             } else {
-                self.emit_expr(statement.value())?;
+                return Ok(!matches!(self.emit_expr(statement.value())?, Value::Bottom));
             }
-            return Ok(());
+            return Ok(true);
         };
         let value = self.emit_expr(statement.value())?;
         if matches!(value, Value::Bottom) {
-            // The emitted certified exit has no result to store or publish.
-            return Ok(());
+            // The emitted certified exit has no normal continuation.
+            return Ok(false);
         }
         if binding.ty == ResolvedType::Never {
             return Err(error("bottom binding initializer produced a normal value"));
@@ -223,7 +229,7 @@ impl Emitter<'_> {
         };
         self.copy_value(&destination, &value, "local binding")?;
         self.bindings.insert(binding.id.clone(), destination);
-        Ok(())
+        Ok(true)
     }
 }
 
