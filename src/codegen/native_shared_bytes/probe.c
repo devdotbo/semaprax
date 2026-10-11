@@ -150,10 +150,23 @@ PROBE_FN void deep_clone_isolation_and_charges(void) {
 
 /* Foreign, vacant, forged, overlapping, stale and double-drop carriers. */
 PROBE_FN void hostile_carriers(void) {
-    census_reset(); fresh(&reg); fresh(&other);
+    census_reset(); fresh(&reg);
+    /* Distinct held issuers may initialize concurrently or after re-entry;
+       neither may reuse another registry's carrier namespace. Populate both
+       with the same slot/nonce to make a foreign-token collision observable. */
+    static spx_shb_issuer second_issuer;
+    spx_shb_issuer_init(&second_issuer);
+    memset(&other, 0, sizeof(other));
+    spx_shb_registry_init(&other, &second_issuer);
     assert(reg.issuer != other.issuer);
     spx_shb_zeroed(&reg, 4u, &a);
+    spx_shb_bytes other_owner;
+    spx_shb_zeroed(&other, 4u, &other_owner);
+    assert(a.slot == other_owner.slot && a.nonce == other_owner.nonce);
+    EXPECT_STOP("foreign", (void)spx_shb_view(&reg, &other_owner));
     EXPECT_STOP("foreign", (void)spx_shb_view(&other, &a));
+    spx_shb_drop(&other, &other_owner);
+    spx_shb_registry_finish(&other);
     EXPECT_STOP("foreign or vacant", (void)spx_shb_view(&reg, &zero_owner));
     stale = a; stale.slot = UINT64_C(5) << 32;
     EXPECT_STOP("unknown shared Bytes backing", (void)spx_shb_view(&reg, &stale));
@@ -181,7 +194,7 @@ PROBE_FN void hostile_carriers(void) {
     other.module = NULL;
     EXPECT_STOP("not the held live registry", (void)spx_shb_view(&other, &stale));
     spx_shb_vec_drop(&reg, &w);
-    assert(payload_pool.frees == 1u && payload_pool.live == 0u);
+    assert(payload_pool.frees == 2u && payload_pool.live == 0u);
     spx_shb_registry_finish(&reg);
 }
 

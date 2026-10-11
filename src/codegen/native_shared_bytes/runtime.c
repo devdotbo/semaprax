@@ -34,6 +34,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdatomic.h>
 #include <stdlib.h>
 #include <string.h>
 #ifndef SPX_SHB_FAIL_STOP
@@ -85,6 +86,9 @@ enum { SPX_SHB_VACANT, SPX_SHB_WHOLE, SPX_SHB_PARTITIONED, SPX_SHB_RELEASED };
 enum { SPX_SHB_VEC_FREE, SPX_SHB_VEC_LIVE, SPX_SHB_ITER_LIVE, SPX_SHB_VEC_RESERVED };
 
 static unsigned char spx_shb_module_identity;
+/* Every held issuer uses one module-local monotonic namespace. It is never
+   reset by issuer initialization and grants no current-registry authority. */
+static _Atomic(uint64_t) spx_shb_next_issuer = UINT64_C(1);
 typedef struct { uint64_t issuer, slot, nonce; } spx_shb_bytes;
 typedef struct { uint64_t slot, nonce; } spx_shb_stored;
 typedef struct { uint64_t issuer, slot, nonce; } spx_shb_loan;
@@ -141,7 +145,15 @@ SPX_SHB_FN void spx_shb_registry_init(spx_shb_registry *registry, spx_shb_issuer
     if (issuer == NULL || !issuer->sealed || issuer->module != &spx_shb_module_identity
         || issuer->next == UINT64_C(0) || issuer->next == UINT64_MAX)
         SPX_SHB_FAIL_STOP("shared Bytes issuer is not held by this module");
-    registry->module = &spx_shb_module_identity; registry->issuer = issuer->next++;
+    uint64_t next = atomic_load_explicit(&spx_shb_next_issuer, memory_order_relaxed);
+    for (;;) {
+        if (next == UINT64_C(0) || next == UINT64_MAX)
+            SPX_SHB_FAIL_STOP("shared Bytes issuer namespace exhausted");
+        if (atomic_compare_exchange_weak_explicit(
+                &spx_shb_next_issuer, &next, next + UINT64_C(1),
+                memory_order_relaxed, memory_order_relaxed)) break;
+    }
+    registry->module = &spx_shb_module_identity; registry->issuer = next;
     registry->next_nonce = UINT64_C(1); registry->next_generation = UINT64_C(1);
     registry->sealed = 1u;
 }
