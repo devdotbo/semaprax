@@ -148,3 +148,38 @@ pub(crate) fn prepay(
         .ok_or_else(fail)?;
     charge(bytes.checked_mul(probes).ok_or_else(fail)?)
 }
+
+pub(in crate::cleanup::inventory_builder) fn key_bytes(
+    ty: &ResolvedType,
+) -> Result<usize, Diagnostic> {
+    let ResolvedType::Nominal {
+        declaration,
+        arguments,
+    } = ty
+    else {
+        return Ok(1);
+    };
+    let nested = match arguments.as_slice() {
+        [] => 0,
+        [ResolvedType::Nominal {
+            declaration,
+            arguments,
+        }] if arguments.is_empty() => declaration.as_str().len(),
+        [element]
+            if crate::vec_ops::resolved_vec_element_is_admitted(element)
+                || *element == ResolvedType::String =>
+        {
+            1
+        }
+        _ => {
+            return Err(cleanup_error(
+                "selected inventory type has unsupported arguments",
+            ))
+        }
+    };
+    declaration
+        .as_str()
+        .len()
+        .checked_add(nested)
+        .ok_or_else(|| cleanup_error("selected inventory key length overflow"))
+}

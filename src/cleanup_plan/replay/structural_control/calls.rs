@@ -151,9 +151,18 @@ impl<'a> Signature<'a> {
 }
 fn needs_drop(
     program: &dyn ReplayContext,
-    _function: &ResolvedFunction,
+    function: &ResolvedFunction,
     ty: &ResolvedType,
+    budget: &mut ReplayBudget,
 ) -> Result<bool, Diagnostic> {
+    if matches!(ty, ResolvedType::Nominal { .. }) {
+        super::super::selected_profile::collections::prepay(
+            program,
+            function,
+            super::super::selected_profile::collections::type_key_bytes(ty)?,
+            budget,
+        )?;
+    }
     crate::cleanup::selected_inventory_needs_drop_in(program, ty)
 }
 
@@ -357,10 +366,10 @@ pub(super) fn validate<'a>(
         let drop = if held.is_some() {
             nested_shape::type_needs_drop_with_budget(program, function, ty, budget)?
         } else {
-            needs_drop(program, function, ty)?
+            needs_drop(program, function, ty, budget)?
         };
         #[cfg(not(test))]
-        let drop = needs_drop(program, function, ty)?;
+        let drop = needs_drop(program, function, ty, budget)?;
         if !signature.accepts_type(index, &arg.ty)
             || !match mode {
                 OwnershipMode::Own => arg.ownership == OwnershipMode::Own,

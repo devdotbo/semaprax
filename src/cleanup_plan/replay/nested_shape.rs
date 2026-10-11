@@ -417,6 +417,13 @@ pub(super) fn type_needs_drop_with_budget(
     if let Some(lease) = program.borrowed_helper_lease(function) {
         return lease.no_drop(program, function, ty, budget);
     }
-    let _ = budget;
+    if program.selected_flat_records() && matches!(ty, ResolvedType::Nominal { .. }) {
+        selected_profile::collections::prepay(
+            program,
+            function,
+            selected_profile::collections::type_key_bytes(ty)?,
+            budget,
+        )?;
+    }
     type_needs_drop(program, function, ty)
 }

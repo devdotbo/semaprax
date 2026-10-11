@@ -23,7 +23,8 @@ pub(crate) use inventory_builder::build_borrowed_helper_inventory_with_budget;
 mod inventory_builder;
 use inventory_builder::InventoryBuilder;
 pub(crate) use inventory_builder::{
-    authenticate_selected_vector, build_flat_record_inventory_with_reservation, build_inventory,
+    authenticate_selected_vector, build_flat_record_inventory_with_budget,
+    build_flat_record_inventory_with_reservation, build_inventory,
     prepay_selected_collection_probes, selected_flat_record_declaration,
     selected_flat_record_fields, selected_inventory_needs_drop, selected_inventory_needs_drop_in,
     selected_vector_element,

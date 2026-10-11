@@ -114,7 +114,8 @@ impl InventoryBuilder<'_> {
         storage: CleanupStorageId,
     ) -> Result<FieldLivenessShape, Diagnostic> {
         let program = self.program;
-        if self.work.is_some() {
+        self.prepay_collection(ty)?;
+        if self.work.is_some() && !self.collection_work {
             if !self.needs_drop(ty)? {
                 return Ok(FieldLivenessShape::NoDrop);
             }

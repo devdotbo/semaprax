@@ -159,6 +159,14 @@ pub(super) fn shape(
     next: &mut u32,
     budget: &mut ReplayBudget,
 ) -> Result<FieldLivenessShape, Diagnostic> {
+    if matches!(ty, ResolvedType::Nominal { .. }) {
+        super::selected_profile::collections::prepay(
+            program,
+            function,
+            super::selected_profile::collections::type_key_bytes(ty)?,
+            budget,
+        )?;
+    }
     if crate::cleanup::selected_vector_element(program, ty)?.is_some() {
         return lifecycle_leaf(
             function,

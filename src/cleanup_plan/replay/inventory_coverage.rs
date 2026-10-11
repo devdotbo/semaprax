@@ -11,14 +11,33 @@ pub(super) fn validate_inventory_coverage(
     if let Some(lease) = program.borrowed_helper_lease(function) {
         return lease.inventory(program, function, budget);
     }
-    let physical = budget.physical.as_deref_mut().ok_or_else(|| {
-        replay_error(
+    let inventory = {
+        let ReplayBudget {
+            remaining,
+            physical,
+            ..
+        } = budget;
+        let physical = physical.as_deref_mut().ok_or_else(|| {
+            replay_error(
+                function,
+                "selected inventory coverage requires a physical ledger",
+            )
+        })?;
+        crate::cleanup::build_flat_record_inventory_with_budget(
+            program,
             function,
-            "selected inventory coverage requires a physical ledger",
-        )
-    })?;
-    let inventory =
-        crate::cleanup::build_flat_record_inventory_with_reservation(program, function, physical)?;
+            physical,
+            &mut |units| {
+                if let Some(next) = remaining.checked_sub(units) {
+                    *remaining = next;
+                    Ok(())
+                } else {
+                    *remaining = 0;
+                    Err(replay_error(function, "selected inventory work exhausted"))
+                }
+            },
+        )?
+    };
     if inventory != function.cleanup {
         return Err(replay_error(
             function,
@@ -315,6 +334,14 @@ fn collect_supplemental(
                         replay_error(function, "supplemental call parameter is missing")
                     })?;
                 let argument = &args[index];
+                if ownership == OwnershipMode::Own && matches!(ty, ResolvedType::Nominal { .. }) {
+                    selected_profile::collections::prepay(
+                        program,
+                        function,
+                        selected_profile::collections::type_key_bytes(ty)?,
+                        budget,
+                    )?;
+                }
                 if ownership == OwnershipMode::Own
                     && crate::cleanup::selected_inventory_needs_drop_in(program, ty)?
                 {

@@ -67,7 +67,7 @@ pub(crate) fn build_inventory(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
 ) -> Result<CleanupInventory, Diagnostic> {
-    build_inventory_inner(program, function, None, false, None)
+    build_inventory_inner(program, function, None, false, None, false)
 }
 
 /// Selected physical constructor only: direct primitive owned resources and
@@ -80,7 +80,14 @@ pub(crate) fn build_inventory_with_reservation<'a>(
     function: &ResolvedFunction,
     physical: &'a mut ReplayPhysicalReservation,
 ) -> Result<CleanupInventory, Diagnostic> {
-    build_inventory_inner(program, function, Some(RefCell::new(physical)), false, None)
+    build_inventory_inner(
+        program,
+        function,
+        Some(RefCell::new(physical)),
+        false,
+        None,
+        false,
+    )
 }
 
 // Selected source-bound replay uses this independently classified direct
@@ -90,7 +97,30 @@ pub(crate) fn build_flat_record_inventory_with_reservation<'a>(
     function: &ResolvedFunction,
     physical: &'a mut ReplayPhysicalReservation,
 ) -> Result<CleanupInventory, Diagnostic> {
-    build_inventory_inner(program, function, Some(RefCell::new(physical)), true, None)
+    build_inventory_inner(
+        program,
+        function,
+        Some(RefCell::new(physical)),
+        true,
+        None,
+        false,
+    )
+}
+
+pub(crate) fn build_flat_record_inventory_with_budget<'a>(
+    program: &'a dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+    physical: &'a mut ReplayPhysicalReservation,
+    work: &'a mut dyn FnMut(usize) -> Result<(), Diagnostic>,
+) -> Result<CleanupInventory, Diagnostic> {
+    build_inventory_inner(
+        program,
+        function,
+        Some(RefCell::new(physical)),
+        true,
+        Some(RefCell::new(work)),
+        true,
+    )
 }
 
 // Inactive receiver until selected schema/profile and every receiving site have
@@ -109,6 +139,7 @@ pub(crate) fn build_borrowed_helper_inventory_with_budget<'a>(
         Some(RefCell::new(physical)),
         true,
         Some(RefCell::new(work)),
+        false,
     )
 }
 
@@ -121,8 +152,10 @@ fn build_inventory_inner<'a>(
     physical: Option<RefCell<&'a mut ReplayPhysicalReservation>>,
     flat_records: bool,
     work: InventoryWork<'a>,
+    collection_work: bool,
 ) -> Result<CleanupInventory, Diagnostic> {
     let mut builder = InventoryBuilder {
+        collection_work,
         work,
         physical,
         flat_records,
@@ -203,6 +236,7 @@ fn build_inventory_inner<'a>(
 
 pub(super) struct InventoryBuilder<'a> {
     pub(super) work: InventoryWork<'a>,
+    pub(super) collection_work: bool,
     pub(super) flat_records: bool,
     pub(super) physical: Option<RefCell<&'a mut ReplayPhysicalReservation>>,
     pub(super) program: &'a dyn crate::cleanup::ReplayContext,
@@ -219,6 +253,13 @@ impl InventoryBuilder<'_> {
         }
         Ok(())
     }
+    pub(super) fn prepay_collection(&self, ty: &ResolvedType) -> Result<(), Diagnostic> {
+        if !self.collection_work || !matches!(ty, ResolvedType::Nominal { .. }) {
+            return Ok(());
+        }
+        let query = selected::vector::key_bytes(ty)?;
+        selected::vector::prepay(self.program, query, &mut |units| self.charge(units))
+    }
     pub(super) fn needs_drop(&self, ty: &ResolvedType) -> Result<bool, Diagnostic> {
         if let Some(work) = &self.work {
             if crate::hir::borrowed_scalar::option_u8::is_type_metered(ty, &mut |units| {
@@ -233,6 +274,10 @@ impl InventoryBuilder<'_> {
                 } else {
                     Err(cleanup_error("selected Option metadata is unauthenticated"))
                 };
+            }
+            if self.collection_work {
+                self.prepay_collection(ty)?;
+                return selected::needs_drop_in(self.program, ty);
             }
             return selected::needs_drop(ty);
         }
