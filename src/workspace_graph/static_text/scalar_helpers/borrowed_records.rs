@@ -103,10 +103,29 @@ fn root(
     for parameter in &function.params {
         if equal(parameter.id.as_str(), place.root.as_str(), take)? {
             take(1)?;
-            if found
-                || parameter.ownership != OwnershipMode::Borrow
-                || parameter.ty != expression.ty
-            {
+            if found || parameter.ownership != OwnershipMode::Borrow {
+                return Ok(false);
+            }
+            let same = match (&parameter.ty, &expression.ty) {
+                (
+                    ResolvedType::Nominal {
+                        declaration: a,
+                        arguments: aa,
+                    },
+                    ResolvedType::Nominal {
+                        declaration: b,
+                        arguments: bb,
+                    },
+                ) => {
+                    take(1)?;
+                    aa.is_empty() && bb.is_empty() && equal(a.as_str(), b.as_str(), take)?
+                }
+                _ => {
+                    take(1)?;
+                    false
+                }
+            };
+            if !same {
                 return Ok(false);
             }
             found = true;
