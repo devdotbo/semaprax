@@ -137,7 +137,7 @@ fn ndjson_forged_frame_contract_is_sticky_and_failed_ranges_never_publish() {
         );
         // This closure has owned Bytes imports, so use the existing byte
         // host with exact one-live-Bytes bound rather than the Vec-only host.
-        for program in [snapshot.entry_program(), snapshot.test_program()] {
+        for (program, expected_peak) in [(snapshot.entry_program(), 0), (snapshot.test_program(), 1)] {
             let c = semaprax::codegen::emit_hir_c(program).map_err(|error| vec![error])?;
             assert!(!c.contains("memcpy(result, source"));
             for optimization in ["-O0", "-O2"] {
@@ -146,7 +146,7 @@ fn ndjson_forged_frame_contract_is_sticky_and_failed_ranges_never_publish() {
             let wasm = semaprax::wasm::emit_resolved_module(program).map_err(|error| vec![error])?;
             std::fs::write(scratch.join("exact-ndjson.wasm"), wasm).unwrap();
             std::fs::write(scratch.join("exact-ndjson.mjs"),
-                super::wasm_host::wasm_conformance_js("exact-ndjson.wasm", 1, 0, Some(1))).unwrap();
+                super::wasm_host::wasm_conformance_js("exact-ndjson.wasm", 1, 0, Some(expected_peak))).unwrap();
             let output = std::process::Command::new("node")
                 .arg("exact-ndjson.mjs").current_dir(&scratch).output().unwrap();
             assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
