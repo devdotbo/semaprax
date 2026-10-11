@@ -15,7 +15,9 @@ pub(crate) fn digest_text() -> String {
         crate::digest_hex::LowerHex(Sha256::digest(contract_bytes()))
     )
 }
-pub(crate) fn selection(program: &crate::ast::Program) -> (bool, bool, bool) {
+pub(crate) fn selection(
+    program: &dyn crate::ast::program_source::ProgramSource,
+) -> (bool, bool, bool) {
     let mut selected = (false, false, false);
     let mut uses = |function: &crate::ast::Function| {
         let mut pending = function
@@ -43,10 +45,10 @@ pub(crate) fn selection(program: &crate::ast::Program) -> (bool, bool, bool) {
             }
         }
     };
-    for function in &program.functions {
+    for function in program.functions() {
         uses(function);
     }
-    for ty in &program.types {
+    for ty in program.types() {
         if let crate::ast::TypeDeclarationKind::Class { methods, .. } = &ty.kind {
             for function in methods {
                 uses(function);

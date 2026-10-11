@@ -211,7 +211,7 @@ impl Resolver<'_> {
         let span = expression.span;
         let target = self
             .program
-            .functions
+            .functions()
             .iter()
             .find(|function| function.name == *name)?;
         if args.len() != target.params.len() {
@@ -287,7 +287,7 @@ impl Resolver<'_> {
                 }
                 let function = self
                     .program
-                    .functions
+                    .functions()
                     .iter()
                     .find(|function| function.stable_id == caller.as_str())?;
                 Some(Type::Named {
@@ -320,7 +320,7 @@ impl Resolver<'_> {
             crate::prelude::BOX_ID => Some("Box"),
             _ => self
                 .program
-                .types
+                .types()
                 .iter()
                 .find(|item| item.stable_id == declaration.as_str())
                 .map(|item| item.name.as_str()),

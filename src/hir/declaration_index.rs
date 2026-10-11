@@ -892,7 +892,7 @@ impl DeclarationIndex {
             index.type_parameters.insert(owner, parameters);
         }
         if program
-            .interfaces
+            .interfaces()
             .iter()
             .flat_map(|interface| &interface.imports)
             .filter(|import| import.native_rust)

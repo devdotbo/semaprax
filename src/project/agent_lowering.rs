@@ -187,7 +187,7 @@ pub fn compile_source_project_agents(programs: &[&Program]) -> Result<CompiledSo
     for program in programs {
         for declaration in &program.agents {
             declaration
-                .validate_execution_metadata(program)
+                .validate_execution_metadata(*program)
                 .map_err(invariant)?;
             if occupied_ids.contains(&declaration.stable_id) {
                 return Err(invariant(

@@ -67,7 +67,7 @@ impl Resolver<'_> {
         if bindings.contains_key(name) {
             return Ok(None);
         }
-        let Some(target) = self.program.functions.iter().find(|f| f.name == *name) else {
+        let Some(target) = self.program.functions().iter().find(|f| f.name == *name) else {
             return Ok(None);
         };
         if !target.type_parameters.is_empty()
@@ -144,7 +144,7 @@ impl Resolver<'_> {
     }
 }
 pub(in crate::hir) fn finish(
-    program: &crate::ast::Program,
+    program: &dyn crate::ast::program_source::ProgramSource,
     function: &FunctionExecutionId,
     path: &str,
     span: crate::ast::Span,

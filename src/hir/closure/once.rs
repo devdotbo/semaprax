@@ -61,7 +61,7 @@ impl Resolver<'_> {
         };
         let target = self
             .program
-            .functions
+            .functions()
             .iter()
             .find(|f| f.name == *name)
             .ok_or_else(|| hir_error("affine closure target is absent"))?;

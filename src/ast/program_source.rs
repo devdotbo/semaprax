@@ -34,6 +34,9 @@ impl<'a, T> DeclSlices<'a, T> {
     pub(crate) fn is_empty(&self) -> bool {
         self.length == 0
     }
+    pub(crate) fn first(&self) -> Option<&'a T> {
+        self.get(0)
+    }
     pub(crate) fn get(&self, index: usize) -> Option<&'a T> {
         if index < self.authored.len() {
             self.authored.get(index)

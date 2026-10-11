@@ -116,7 +116,7 @@ pub(crate) fn validate_source(program: &dyn ProgramSource) -> Result<(), Diagnos
             ));
         }
     }
-    crate::protocol_check::validate_program(program)?;
+    crate::protocol_check::validate_program_source(program)?;
     let mut ids = BTreeSet::new();
     for id in crate::prelude::all_reserved_ids() {
         ids.insert(id.to_owned());
@@ -700,7 +700,7 @@ fn visit_ids<'a>(
 /// Original-source table for a caller already holding the independently
 /// admitted workspace. The result deliberately does not claim body admission.
 pub(crate) fn declaration_facts(program: &dyn ProgramSource) -> Result<Value, Vec<Diagnostic>> {
-    validate(program).map_err(|error| vec![error])?;
+    validate_source(program).map_err(|error| vec![error])?;
     // Charge conservative escaping and entry overhead before cloning report
     // strings/arrays. This is a construction charge, not an allocator bound.
     let mut budget = 4096usize;

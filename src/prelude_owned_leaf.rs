@@ -15,11 +15,14 @@ pub(crate) fn digest_text() -> String {
         crate::digest_hex::LowerHex(Sha256::digest(contract_bytes()))
     )
 }
-fn ast_new_element(program: &crate::ast::Program, element: &crate::ast::Type) -> bool {
+fn ast_new_element(
+    program: &dyn crate::ast::program_source::ProgramSource,
+    element: &crate::ast::Type,
+) -> bool {
     crate::source_verify::owned_leaf_source_admitted(program, element)
         && !crate::source_verify::owned_leaf_legacy_source_element(program, element)
 }
-pub(crate) fn program_uses(program: &crate::ast::Program) -> bool {
+pub(crate) fn program_uses(program: &dyn crate::ast::program_source::ProgramSource) -> bool {
     let uses = |f: &crate::ast::Function| {
         let carrier = |ty: &crate::ast::Type| matches!(ty, crate::ast::Type::Named { name, arguments } if matches!(name.as_str(), "Vec" | "Iter" | "IterStep") && matches!(arguments.as_slice(), [element] if ast_new_element(program, element)));
         if carrier(&f.return_type) || f.params.iter().any(|p| carrier(&p.ty)) {
@@ -54,7 +57,7 @@ pub(crate) fn program_uses(program: &crate::ast::Program) -> bool {
         }
         false
     };
-    program.functions.iter().any(uses) || program.types.iter().any(|ty| matches!(&ty.kind, crate::ast::TypeDeclarationKind::Class { methods, .. } if methods.iter().any(uses)))
+    program.functions().iter().any(uses) || program.types().iter().any(|ty| matches!(&ty.kind, crate::ast::TypeDeclarationKind::Class { methods, .. } if methods.iter().any(uses)))
 }
 pub(crate) fn resolved_program_uses(program: &crate::hir::ResolvedProgram) -> bool {
     program

@@ -5,7 +5,7 @@ use super::*;
     clippy::too_many_arguments,
     reason = "keep current source authority explicit"
 )]
-pub(super) fn retain_checked_module(
+pub(in crate::workspace_graph) fn retain_checked_module(
     program: &Program,
     module: String,
     owner: CheckedModuleLease,

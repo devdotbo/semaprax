@@ -33,7 +33,7 @@ impl Resolver<'_> {
             .monomorphic_declaration()
             .and_then(|id| {
                 self.program
-                    .functions
+                    .functions()
                     .iter()
                     .find(|f| f.stable_id == id.as_str())
             })
@@ -85,7 +85,7 @@ impl Resolver<'_> {
         }
         let target = self
             .program
-            .functions
+            .functions()
             .iter()
             .find(|f| f.name == *name)
             .ok_or_else(|| hir_error("mutable closure update function is absent"))?;

@@ -3,27 +3,35 @@
 use super::*;
 
 pub(super) fn uses_vec(programs: &[Program]) -> bool {
-    programs.iter().any(prelude::program_uses_vec)
+    programs
+        .iter()
+        .any(|program| prelude::program_uses_vec(program))
 }
 pub(super) fn uses_box(programs: &[Program]) -> bool {
-    programs.iter().any(prelude::program_uses_box)
+    programs
+        .iter()
+        .any(|program| prelude::program_uses_box(program))
 }
 pub(super) fn uses_iterator(programs: &[Program]) -> bool {
     programs
         .iter()
-        .any(crate::iterator_ops::program_uses_iterator)
+        .any(|program| crate::iterator_ops::program_uses_iterator(program))
 }
 pub(super) fn uses_list(programs: &[Program]) -> bool {
-    programs.iter().any(crate::list_ops::program_uses_list)
+    programs
+        .iter()
+        .any(|program| crate::list_ops::program_uses_list(program))
 }
 pub(super) fn uses_record_iterator(programs: &[Program]) -> bool {
     programs
         .iter()
-        .any(crate::source_verify::program_uses_record_iterator)
+        .any(|program| crate::source_verify::program_uses_record_iterator(program))
 }
 
 pub(super) fn uses_stream(programs: &[Program]) -> bool {
-    programs.iter().any(crate::stdin_stream_ops::program_uses)
+    programs
+        .iter()
+        .any(|program| crate::stdin_stream_ops::program_uses(program))
 }
 
 /// Synthetic direct-import stubs select the provider's Reader signature too.
@@ -73,7 +81,10 @@ fn module_imports_vec_signature(source: &Program, programs: &[Program]) -> bool 
 }
 
 pub(super) fn ids(programs: &[Program], resolved_record_iterator: bool) -> BTreeSet<&'static str> {
-    if programs.iter().any(crate::map_ops::program_uses) {
+    if programs
+        .iter()
+        .any(|program| crate::map_ops::program_uses(program))
+    {
         let mut ids = prelude::all_type_ids_v9()
             .into_iter()
             .collect::<BTreeSet<_>>();
@@ -124,10 +135,16 @@ pub(super) fn expected_declaration_facts_for_programs(
         uses_iterator(programs),
         uses_list(programs),
         uses_stream(programs),
-        resolved_record_iterator || programs.iter().any(crate::map_ops::program_uses),
+        resolved_record_iterator
+            || programs
+                .iter()
+                .any(|program| crate::map_ops::program_uses(program)),
     )
     .and_then(|mut facts| {
-        if programs.iter().any(crate::map_ops::program_uses) {
+        if programs
+            .iter()
+            .any(|program| crate::map_ops::program_uses(program))
+        {
             insert_collection_facts(&mut facts)?;
         }
         Ok(facts)

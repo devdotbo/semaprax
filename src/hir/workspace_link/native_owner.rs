@@ -220,14 +220,14 @@ pub(crate) fn admitted_ri06_regex_result(
 }
 
 pub(in crate::hir) fn resolver_ri06_regex_result(
-    program: &crate::ast::Program,
+    program: &dyn crate::ast::program_source::ProgramSource,
     ty: &ResolvedType,
 ) -> bool {
     let Some(resource) = regex_result_resource(ty) else {
         return false;
     };
     let Some(declaration) = program
-        .types
+        .types()
         .iter()
         .find(|d| d.stable_id == resource.as_str())
     else {

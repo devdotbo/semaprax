@@ -1,8 +1,7 @@
 //! Exact selected Url signatures. These facts grant no tool or package authority.
 use super::*;
 use crate::ast::{
-    ImportDeclaration, ImportResult, Param, ParamMode, Program, Type, TypeDeclaration,
-    TypeDeclarationKind,
+    ImportDeclaration, ImportResult, Param, ParamMode, Type, TypeDeclaration, TypeDeclarationKind,
 };
 
 pub fn bind_selected_url_signature(
@@ -115,10 +114,13 @@ pub(crate) fn admitted_url_view(import: &ImportDeclaration) -> bool {
             && receiver.ty == (Type::Named { name: "Url".into(), arguments: Vec::new() }))
 }
 
-pub(crate) fn admitted_url_result(program: &Program, ty: &Type) -> bool {
+pub(crate) fn admitted_url_result(
+    program: &dyn crate::ast::program_source::ProgramSource,
+    ty: &Type,
+) -> bool {
     let imports = || {
         program
-            .interfaces
+            .interfaces()
             .iter()
             .flat_map(|interface| &interface.imports)
     };

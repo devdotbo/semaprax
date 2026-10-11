@@ -2,7 +2,7 @@
 use super::diagnostics::error;
 use crate::ast::program_source::ProgramSource;
 use crate::ast::{
-    Expr, ExprKind, Function, LetSyntax, LexicalExitKind, Program, Statement, TypeDeclarationKind,
+    Expr, ExprKind, Function, LetSyntax, LexicalExitKind, Statement, TypeDeclarationKind,
 };
 use crate::diagnostic::Diagnostic;
 

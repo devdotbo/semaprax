@@ -66,7 +66,7 @@ impl Resolver<'_> {
             .monomorphic_declaration()
             .and_then(|id| {
                 self.program
-                    .functions
+                    .functions()
                     .iter()
                     .find(|f| f.stable_id == id.as_str())
             })
@@ -234,7 +234,7 @@ impl Resolver<'_> {
                     let ResolvedType::TypeParameter { owner, .. } = &binding.ty else {
                         continue;
                     };
-                    if let Some(function) = self.program.functions.iter().find(|function| {
+                    if let Some(function) = self.program.functions().iter().find(|function| {
                         function.stable_id == owner.as_str()
                             && function
                                 .type_parameters

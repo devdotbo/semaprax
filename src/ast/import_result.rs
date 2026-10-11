@@ -92,7 +92,7 @@ impl ImportResult {
     ) -> bool {
         if let Some(kind) = Self::container_for_type(ty) {
             return program
-                .interfaces
+                .interfaces()
                 .iter()
                 .flat_map(|i| &i.imports)
                 .any(|i| i.native_rust && i.result == kind);
@@ -110,7 +110,7 @@ impl ImportResult {
         name == "Result"
             && resource_arguments.is_empty()
             && program
-                .interfaces
+                .interfaces()
                 .iter()
                 .flat_map(|interface| &interface.imports)
                 .any(|import| {
@@ -118,7 +118,7 @@ impl ImportResult {
                         && matches!(
                             &import.result,
                             Self::OwnedResultResourceI64 { name }
-                                if name == resource
+                                if name.as_str() == resource.as_str()
                         )
                 })
     }

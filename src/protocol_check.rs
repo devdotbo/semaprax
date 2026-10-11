@@ -283,17 +283,22 @@ pub fn generate(
 /// Deterministic and fail-closed; used by the CLI projection and by semantic
 /// Graph emission before protocol nodes may appear.
 pub fn validate_program(program: &Program) -> Result<(), Diagnostic> {
-    if program.protocols.is_empty() {
+    validate_program_source(program)
+}
+pub(crate) fn validate_program_source(
+    program: &dyn crate::ast::program_source::ProgramSource,
+) -> Result<(), Diagnostic> {
+    if program.protocols().is_empty() {
         return Ok(());
     }
     // Existing declaration identities are collected without duplicate
     // reporting (the verifier already owns those diagnostics); only
     // collisions introduced from the protocol side fail here.
     let mut ids = std::collections::BTreeSet::new();
-    for function in &program.functions {
+    for function in program.functions() {
         ids.insert(function.stable_id.as_str());
     }
-    for declaration in &program.types {
+    for declaration in program.types() {
         ids.insert(declaration.stable_id.as_str());
         match &declaration.kind {
             TypeDeclarationKind::Variant { cases } => {
@@ -312,18 +317,18 @@ pub fn validate_program(program: &Program) -> Result<(), Diagnostic> {
             TypeDeclarationKind::Resource { .. } => {}
         }
     }
-    for interface in &program.interfaces {
+    for interface in program.interfaces() {
         ids.insert(interface.stable_id.as_str());
         for import in &interface.imports {
             ids.insert(import.stable_id.as_str());
         }
     }
     let declared_types = program
-        .types
+        .types()
         .iter()
         .map(|declaration| declaration.name.as_str())
         .collect::<std::collections::BTreeSet<_>>();
-    for protocol in &program.protocols {
+    for protocol in program.protocols() {
         if !ids.insert(protocol.stable_id.as_str()) {
             return Err(collision_error(&protocol.stable_id));
         }
