@@ -317,15 +317,29 @@ fn decoded_fingerprint(input: borrow Slice<u8>, start: usize, limit: usize) -> u
     let mut hash = 0usize;
     let mut running = valid && !at_is(input, index, 34u8);
     while running {
-        let width = emit_len(input, index);
-        let value = decoded_byte_at(input, index, part);
-        let last = part + 1usize >= width;
-        let next = if last { token_end(input, index) } else { index };
-        valid = width > 0usize && value < 256usize && count < limit && !is_failure(input, next);
-        hash = if valid { (hash * 257usize + value) % 65521usize } else { hash };
-        count = if valid { count + 1usize } else { count };
-        index = if valid { next } else { index };
-        part = if valid && !last { part + 1usize } else { 0usize };
+        // Plain ASCII emits one byte. Classify it once rather than repeating
+        // emit-width, decoded-byte and token-end probes for the same cursor.
+        // Escaped/control/non-ASCII tokens retain the original path.
+        let raw = match byte_get(input, index) { Option::Some { value: byte } => usize_from_u8(byte), Option::None {} => 256usize, };
+        if part == 0usize && raw >= 32usize && raw <= 127usize && raw != 34usize && raw != 92usize {
+            valid = count < limit;
+            hash = if valid { (hash * 257usize + raw) % 65521usize } else { hash };
+            count = if valid { count + 1usize } else { count };
+            index = if valid { index + 1usize } else { index };
+            part = 0usize;
+            0
+        } else {
+            let width = emit_len(input, index);
+            let value = decoded_byte_at(input, index, part);
+            let last = part + 1usize >= width;
+            let next = if last { token_end(input, index) } else { index };
+            valid = width > 0usize && value < 256usize && count < limit && !is_failure(input, next);
+            hash = if valid { (hash * 257usize + value) % 65521usize } else { hash };
+            count = if valid { count + 1usize } else { count };
+            index = if valid { next } else { index };
+            part = if valid && !last { part + 1usize } else { 0usize };
+            0
+        }
         running = valid && !at_is(input, index, 34u8);
         running
     }
