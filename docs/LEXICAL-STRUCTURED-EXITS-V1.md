@@ -64,6 +64,13 @@ independent replay scans both and narrows only completion/path joins. Constructo
 and native/Wasm emission derive the same scoped relation from the actual
 condition, body and latch, so an all-abrupt Yield body has no ordinary latch.
 The entry ownership union and exact latch restoration checks are unchanged.
+The terminal-path census keeps a separate break class bound to the exact nearest
+typed loop. Only that loop consumes it into continuation; normal body completion
+and continue end at the latch, while return reaches the function postconditions.
+Generated for-loop advances contribute their actual checked paths and work. All
+authored children remain structurally scanned, including infeasible Done, and
+the 65,536-path, depth and replay-work limits remain unchanged. Independent small
+enumeration and exact/one-short reservation definitions await executable qualification.
 Unknown conditions, forged Done leaves, field modes and latch identities grant
 no feasibility selection. Owning executable qualification remains pending. SourceForStep carries its exact
 step ExpressionId; it is not identified by generated variable spelling.

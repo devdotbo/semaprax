@@ -2,7 +2,8 @@
 //!
 //! Lexical-free subtrees reuse the legacy census exactly. Only the four
 //! lexical-bearing node kinds (block, `if`, `match`, exit) are counted here,
-//! with a returning class: a `return` path leaves its contour, then runs every
+//! with target-qualified breaks and a returning class: a `return` path leaves
+//! its contour, then runs every
 //! postcondition, so it multiplies by the postcondition paths like a normal
 //! body path. Loops are counted once, never by iteration: the proof CFG
 //! linearizes one finite iteration and ends it at the latch.
@@ -14,6 +15,9 @@ struct Counts {
     normal: usize,
     failed: usize,
     returned: usize,
+    // Breaks name exactly the nearest borrowed loop context. That loop alone
+    // consumes them into ordinary continuation paths.
+    broken: usize,
 }
 
 impl Counts {
@@ -21,12 +25,14 @@ impl Counts {
         normal: 1,
         failed: 0,
         returned: 0,
+        broken: 0,
     };
 
     fn total(self) -> usize {
         self.normal
             .saturating_add(self.failed)
             .saturating_add(self.returned)
+            .saturating_add(self.broken)
     }
 
     fn capped(self) -> Self {
@@ -35,6 +41,7 @@ impl Counts {
                 normal: MAX_REPLAY_PATHS + 1,
                 failed: 0,
                 returned: 0,
+                broken: 0,
             }
         } else {
             self
@@ -51,16 +58,27 @@ fn sequence(left: Counts, right: Counts) -> Counts {
         returned: left
             .returned
             .saturating_add(left.normal.saturating_mul(right.returned)),
+        broken: left
+            .broken
+            .saturating_add(left.normal.saturating_mul(right.broken)),
     }
     .capped()
 }
 
-/// Work per `continue`: the exit marker plus its generated advancement.
+/// Marker/continuation headroom per exit; generated advancement work is
+/// independently counted from its actual HIR rather than a synthetic path count.
 const CONTINUE_WORK: usize = 160;
 /// Work per lexical loop statement beyond its condition and body: two
 /// sequencings, the Boolean split, the latch observation and the join, each
 /// charged once per path, with headroom for the four continuation pushes.
 const LOOP_STATEMENT_WORK: usize = 40;
+
+#[derive(Clone, Copy)]
+struct Nearest<'a> {
+    condition: &'a ResolvedExpr,
+    body: &'a ResolvedExpr,
+    latch: &'a crate::hir::LoopLatchKind,
+}
 
 fn count(
     program: &dyn crate::cleanup::ReplayContext,
@@ -68,6 +86,7 @@ fn count(
     expression: &ResolvedExpr,
     weight: &mut usize,
     depth: usize,
+    nearest: Option<Nearest<'_>>,
 ) -> Result<Counts, Diagnostic> {
     if depth > 512 {
         return Err(replay_error(
@@ -83,6 +102,7 @@ fn count(
             // A residual `?` path reaches the shared epilogue and runs every
             // postcondition, exactly like a returning path.
             returned: free.residual,
+            broken: 0,
         };
         if counts.total() > MAX_REPLAY_PATHS {
             path_budget_errors(function, 0, counts.total())?;
@@ -96,24 +116,87 @@ fn count(
     }
     let mut local: usize;
     let counts = match &expression.kind {
-        ResolvedExprKind::LexicalExit { kind, value, .. } => {
-            let operand = match value {
-                Some(operand) => count(program, function, operand, weight, depth + 1)?,
-                None => Counts::ONE,
-            };
+        ResolvedExprKind::LexicalExit {
+            kind,
+            target,
+            value,
+        } => {
             local = CONTINUE_WORK;
-            match kind {
-                crate::ast::LexicalExitKind::Return => Counts {
-                    normal: 0,
-                    failed: operand.failed,
-                    returned: operand.normal,
-                },
-                // Marker path, advancement success and advancement failure.
-                _ => Counts {
-                    normal: 0,
-                    failed: 3,
-                    returned: 0,
-                },
+            let owner = match target {
+                crate::hir::ControlTarget::Function(owner)
+                | crate::hir::ControlTarget::Loop { owner, .. } => owner,
+            };
+            crate::hir::lexical_exit::validate_owner(function, owner)?;
+            match (kind, target, value) {
+                (
+                    crate::ast::LexicalExitKind::Return,
+                    crate::hir::ControlTarget::Function(_),
+                    Some(operand),
+                ) => {
+                    let operand = count(program, function, operand, weight, depth + 1, nearest)?;
+                    Counts {
+                        normal: 0,
+                        failed: operand.failed,
+                        returned: operand.normal.saturating_add(operand.returned),
+                        broken: operand.broken,
+                    }
+                }
+                (
+                    crate::ast::LexicalExitKind::Break | crate::ast::LexicalExitKind::Continue,
+                    crate::hir::ControlTarget::Loop { site, .. },
+                    None,
+                ) => {
+                    let active = nearest
+                        .filter(|active| site == &active.condition.id)
+                        .ok_or_else(|| {
+                            replay_error(
+                                function,
+                                "lexical census exit differs from its exact nearest loop",
+                            )
+                        })?;
+                    if *kind == crate::ast::LexicalExitKind::Break {
+                        Counts {
+                            broken: 1,
+                            ..Counts::default()
+                        }
+                    } else {
+                        // A continue stops this iteration. Its real generated
+                        // advancement may fail, but never enters the suffix.
+                        let advance = match super::lexical_hir::generated_advance(
+                            active.body,
+                            active.latch,
+                        ) {
+                            Some(advance) => {
+                                count(program, function, advance, weight, depth + 1, nearest)?
+                            }
+                            None if *active.latch == crate::hir::LoopLatchKind::Condition => {
+                                Counts::ONE
+                            }
+                            None => {
+                                return Err(replay_error(
+                                    function,
+                                    "lexical census cannot reconstruct continue advancement",
+                                ))
+                            }
+                        };
+                        if advance.returned != 0 || advance.broken != 0 {
+                            return Err(replay_error(
+                                function,
+                                "lexical census advancement crosses its loop boundary",
+                            ));
+                        }
+                        Counts {
+                            failed: advance.failed.saturating_add(advance.normal),
+                            ..Counts::default()
+                        }
+                    }
+                }
+                _ => {
+                    return Err(replay_error(
+                        function,
+                        "lexical census exit kind, target or operand is inconsistent",
+                    ))
+                }
             }
         }
         ResolvedExprKind::Block { statements, tail } => {
@@ -132,19 +215,26 @@ fn count(
                         {
                             local = checked_skeleton_add(function, local, 6)?;
                         }
-                        let child = count(program, function, value, weight, depth + 1)?;
+                        let child = count(program, function, value, weight, depth + 1, nearest)?;
                         accumulator = sequence(accumulator, child);
                     }
                     ResolvedStatement::Unsafe { body, .. } => {
-                        let child = count(program, function, body, weight, depth + 1)?;
+                        let child = count(program, function, body, weight, depth + 1, nearest)?;
                         accumulator = sequence(accumulator, child);
                     }
                     ResolvedStatement::While {
                         condition, body, ..
                     } => {
+                        if crate::hir::lexical_exit::contains(body) {
+                            return Err(replay_error(
+                                function,
+                                "legacy while cannot contain lexical exit authority",
+                            ));
+                        }
                         local = checked_skeleton_add(function, local, 6)?;
-                        let condition = count(program, function, condition, weight, depth + 1)?;
-                        let body = count(program, function, body, weight, depth + 1)?;
+                        let condition =
+                            count(program, function, condition, weight, depth + 1, nearest)?;
+                        let body = count(program, function, body, weight, depth + 1, nearest)?;
                         accumulator = sequence(
                             accumulator,
                             Counts {
@@ -154,31 +244,46 @@ fn count(
                                 failed: condition
                                     .failed
                                     .saturating_add(condition.normal.saturating_mul(body.failed)),
-                                returned: 0,
+                                returned: condition
+                                    .returned
+                                    .saturating_add(condition.normal.saturating_mul(body.returned)),
+                                broken: condition
+                                    .broken
+                                    .saturating_add(condition.normal.saturating_mul(body.broken)),
                             },
                         );
                     }
                     ResolvedStatement::LexicalWhile {
-                        condition, body, ..
+                        condition,
+                        body,
+                        latch,
+                        ..
                     } => {
                         local = checked_skeleton_add(function, local, LOOP_STATEMENT_WORK)?;
-                        let condition = count(program, function, condition, weight, depth + 1)?;
-                        let body = count(program, function, body, weight, depth + 1)?;
-                        // Every body path is at once a possible `break` that
-                        // continues after the loop and a terminal path.
-                        let body_total = body.total();
+                        crate::hir::lexical_exit::validate_latch(condition, body, latch)?;
+                        let body_nearest = Some(Nearest {
+                            condition,
+                            body,
+                            latch,
+                        });
+                        let condition =
+                            count(program, function, condition, weight, depth + 1, nearest)?;
+                        let body = count(program, function, body, weight, depth + 1, body_nearest)?;
                         accumulator = sequence(
                             accumulator,
                             Counts {
                                 normal: condition
                                     .normal
-                                    .saturating_mul(body_total.saturating_add(1)),
-                                failed: condition
-                                    .failed
-                                    .saturating_add(condition.normal.saturating_mul(body_total)),
+                                    .saturating_mul(body.broken.saturating_add(1)),
+                                failed: condition.failed.saturating_add(
+                                    condition
+                                        .normal
+                                        .saturating_mul(body.failed.saturating_add(body.normal)),
+                                ),
                                 returned: condition
                                     .returned
                                     .saturating_add(condition.normal.saturating_mul(body.returned)),
+                                broken: condition.broken,
                             }
                             .capped(),
                         );
@@ -190,7 +295,7 @@ fn count(
             {
                 local = checked_skeleton_add(function, local, 6)?;
             }
-            let tail = count(program, function, tail, weight, depth + 1)?;
+            let tail = count(program, function, tail, weight, depth + 1, nearest)?;
             sequence(accumulator, tail)
         }
         ResolvedExprKind::If {
@@ -199,9 +304,9 @@ fn count(
             else_branch,
         } => {
             local = 10;
-            let condition = count(program, function, condition, weight, depth + 1)?;
-            let then_branch = count(program, function, then_branch, weight, depth + 1)?;
-            let else_branch = count(program, function, else_branch, weight, depth + 1)?;
+            let condition = count(program, function, condition, weight, depth + 1, nearest)?;
+            let then_branch = count(program, function, then_branch, weight, depth + 1, nearest)?;
+            let else_branch = count(program, function, else_branch, weight, depth + 1, nearest)?;
             Counts {
                 normal: condition
                     .normal
@@ -216,6 +321,11 @@ fn count(
                         .normal
                         .saturating_mul(then_branch.returned.saturating_add(else_branch.returned)),
                 ),
+                broken: condition.broken.saturating_add(
+                    condition
+                        .normal
+                        .saturating_mul(then_branch.broken.saturating_add(else_branch.broken)),
+                ),
             }
             .capped()
         }
@@ -223,11 +333,20 @@ fn count(
             scrutinee, arms, ..
         } => {
             local = arms.len().saturating_mul(32).saturating_add(8);
-            let scrutinee = count(program, function, scrutinee, weight, depth + 1)?;
+            let scrutinee = count(program, function, scrutinee, weight, depth + 1, nearest)?;
             let mut arm_normal = 0usize;
             let mut arm_failed = 0usize;
             let mut arm_returned = 0usize;
-            for arm in arms {
+            let mut arm_broken = 0usize;
+            let true_match = nearest.is_some_and(|active| {
+                crate::hir::iterator_loop::true_body_match(
+                    active.condition,
+                    active.body,
+                    active.latch,
+                )
+                .is_some_and(|current| std::ptr::eq(current, expression))
+            });
+            for (index, arm) in arms.iter().enumerate() {
                 let alternatives = arm
                     .pattern
                     .variant_cases()
@@ -235,12 +354,18 @@ fn count(
                     .max(1);
                 let (guard_total, guard_failed) = match &arm.guard {
                     Some(guard) => {
-                        let guard = count(program, function, guard, weight, depth + 1)?;
+                        let guard = count(program, function, guard, weight, depth + 1, nearest)?;
                         (guard.total(), guard.failed)
                     }
                     None => (0, 0),
                 };
-                let value = count(program, function, &arm.value, weight, depth + 1)?;
+                let value = count(program, function, &arm.value, weight, depth + 1, nearest)?;
+                // The recognizer authenticates the childless Done constructor
+                // and both predicate leaves; still scan its full authored HIR
+                // above. Only runtime paths under the true condition omit it.
+                if true_match && index == 0 {
+                    continue;
+                }
                 let multiplicity = alternatives.saturating_mul(guard_total.saturating_add(1));
                 arm_normal = arm_normal.saturating_add(value.normal.saturating_mul(multiplicity));
                 arm_failed = arm_failed
@@ -248,6 +373,7 @@ fn count(
                     .saturating_add(guard_failed.saturating_mul(alternatives));
                 arm_returned =
                     arm_returned.saturating_add(value.returned.saturating_mul(multiplicity));
+                arm_broken = arm_broken.saturating_add(value.broken.saturating_mul(multiplicity));
             }
             Counts {
                 normal: scrutinee.normal.saturating_mul(arm_normal),
@@ -257,6 +383,9 @@ fn count(
                 returned: scrutinee
                     .returned
                     .saturating_add(scrutinee.normal.saturating_mul(arm_returned)),
+                broken: scrutinee
+                    .broken
+                    .saturating_add(scrutinee.normal.saturating_mul(arm_broken)),
             }
             .capped()
         }
@@ -287,23 +416,36 @@ fn bounds(
     let mut weight = 0usize;
     let mut paths = Counts::ONE;
     for contract in &function.requires {
-        let child = count(program, function, contract, &mut weight, 0)?;
+        let child = count(program, function, contract, &mut weight, 0, None)?;
         paths = sequence(paths, child);
         paths.failed = paths.failed.saturating_add(paths.normal);
     }
-    let body = count(program, function, &function.body, &mut weight, 0)?;
+    let body = count(program, function, &function.body, &mut weight, 0, None)?;
     paths = sequence(paths, body);
+    if paths.broken != 0 {
+        return Err(replay_error(
+            function,
+            "lexical census break escaped its exact loop",
+        ));
+    }
     // A returning path runs every postcondition exactly like a normal one.
     paths = Counts {
         normal: paths.normal.saturating_add(paths.returned),
         failed: paths.failed,
         returned: 0,
+        broken: paths.broken,
     }
     .capped();
     for contract in &function.ensures {
-        let child = count(program, function, contract, &mut weight, 0)?;
+        let child = count(program, function, contract, &mut weight, 0, None)?;
         paths = sequence(paths, child);
         paths.failed = paths.failed.saturating_add(paths.normal);
+        if paths.broken != 0 {
+            return Err(replay_error(
+                function,
+                "lexical census break escaped its exact loop",
+            ));
+        }
     }
     Ok((paths.total(), weight))
 }
@@ -426,3 +568,7 @@ fn skeleton_from_bounds(
         checked_skeleton_add(function, plan_terminals, comparison)?,
     )
 }
+
+#[cfg(test)]
+#[path = "lexical_census/tests.rs"]
+mod tests;
