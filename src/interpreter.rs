@@ -82,6 +82,8 @@ pub mod source_entry;
 use command_state::CommandInputState;
 mod owned_box;
 mod owned_buffer;
+#[cfg(test)]
+mod fused_row_backing;
 mod owned_try;
 mod owned_vec;
 mod prepared;
