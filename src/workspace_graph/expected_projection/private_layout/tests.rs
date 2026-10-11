@@ -90,11 +90,11 @@ fn explicit_root_retains_private_descendants_and_only_authored_edges() {
         "use type @id(\"decoded\") from closure.provider as Decoded;",
         "",
     );
-    assert!(build_owned(sources(&missing, PROVIDER))
-        .err()
-        .unwrap()
-        .iter()
-        .any(|d| d.code == "SPX-G172"));
+    let missing_diagnostics = build_owned(sources(&missing, PROVIDER)).unwrap_err();
+    assert!(
+        missing_diagnostics.iter().any(|d| d.code == "SPX-G172"),
+        "missing explicit root diagnostics: {missing_diagnostics:?}"
+    );
 }
 #[test]
 fn private_names_avoid_all_authored_refs_without_exposing_child_names() {
