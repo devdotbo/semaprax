@@ -153,7 +153,7 @@ pub(in crate::workspace_graph::source_schema) fn replay(
                 // tests must distinguish its independently replayed cause from
                 // a literal-site/namespace mismatch before proposing a repair.
                 #[cfg(test)]
-                let errors = errors
+                let errors: Vec<_> = errors
                     .into_iter()
                     .map(|diagnostic| {
                         let prefix = error.message.get(..error.message.len().min(512));

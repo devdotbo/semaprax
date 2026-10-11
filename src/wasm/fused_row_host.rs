@@ -77,7 +77,10 @@ fn actual_core_wasm_host_rejects_foreign_stale_ranges_and_settles_one_backing() 
     let typed = crate::hir::resolve(&source).unwrap();
     let descriptor = crate::construction_fusion::derive(&source, &typed).unwrap();
     let bytes = probe_module(NAMESPACE);
-    let digest = format!("{:x}", Sha256::digest(&bytes));
+    let digest: String = Sha256::digest(&bytes)
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect();
     let stem = format!("semaprax-private-fused-host-{}", std::process::id());
     let directory = std::env::temp_dir().join(stem);
     std::fs::create_dir(&directory).unwrap();
