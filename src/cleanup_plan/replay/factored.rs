@@ -27,6 +27,8 @@
 use super::skeleton_work::{ObservationDag, ObservationDagKind};
 use super::*;
 use std::rc::Rc;
+#[cfg(test)]
+mod borrowed_canonical;
 pub(super) mod copy_regions;
 #[cfg(test)]
 mod instrumentation;
@@ -129,6 +131,22 @@ pub(super) fn compare_with_index(
         hir_root,
         plan_root,
     } = build_comparison(program, function, budget, helpers)?;
+
+    #[cfg(test)]
+    if let Some(lease) = program.borrowed_helper_lease(function) {
+        lease.validate(program, function, budget)?;
+        let mut canonical =
+            borrowed_canonical::BorrowedCanonicalizer::new(function, &automaton, sink, budget)?;
+        budget.reserve_array::<(usize, u64)>(function, 1, "borrowed HIR weighted root")?;
+        let Some(hir) = canonical.id(function, vec![(hir_root, 1)], budget)? else {
+            return Ok(None);
+        };
+        budget.reserve_array::<(usize, u64)>(function, 1, "borrowed plan weighted root")?;
+        let Some(plan) = canonical.id(function, vec![(plan_root, 1)], budget)? else {
+            return Ok(None);
+        };
+        return Ok(Some(hir == plan));
+    }
 
     let mut canonical = Canonicalizer::new(&automaton, sink);
     budget.reserve_array::<(usize, u64)>(function, 1, "factored HIR weighted root")?;
