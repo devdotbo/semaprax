@@ -1411,6 +1411,14 @@ target runtime. See [Internal String Interpreter v1](INTERPRETER-INTERNAL-STRING
 cancellation, prepared evaluation, and trace traversal. The root interpreter
 keeps the shared evaluator and only minimal Project-lane reexports.
 
+`interpreter/evaluate_control.rs` owns the borrowed Binary/If/Call/Block
+expression bodies; `evaluate_remaining.rs` retains the other original arms.
+The root evaluator charges expression entry once before dispatch, keeping
+unrelated arm temporaries out of recursively retained control-family frames.
+This is a mechanical frame separation, not another execution strategy or an
+increase to the fixed worker stack, call depth, step budget or semantic fuel.
+Owning terminal-order parity and exact depth qualification remain mandatory.
+
 `src/interpreter/retained_call/execution.rs` shares retained-call staging,
 evaluation and harvesting between the existing worker API and the sealed
 `retained_call/owned_handoff.rs` synchronous move-only profile.
