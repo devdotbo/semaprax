@@ -17,12 +17,11 @@ use function @id("catalog.publish") from catalog.publication as publish;
 
 permit { process.stdin.read, process.stderr.write, process.stdout.write }
 
+// The pure callee settles stdin Bytes before publishing Decode to decide.
 @id("catalog.receive")
-fn receive() -> Decode
-    uses { process.stdin.read }
+fn receive(bytes: own Bytes, length: usize) -> Decode
 {
-    let normalized = normalize();
-    match own normalized { StreamInput::Error { code, offset, field } => Decode::Error { code: code, offset: offset, field: field }, StreamInput::Ready { bytes, length } => decode(byte_range(bytes_as_slice(bytes), 0usize, length)), }
+    decode(byte_range(bytes_as_slice(bytes), 0usize, length))
 }
 
 @id("catalog.reject")
@@ -35,11 +34,19 @@ fn reject() -> i64
     if written == byte_len(diagnostic) { 2 } else { 1 }
 }
 
+@id("catalog.decide")
+fn decide(outcome: own Decode) -> i64
+    uses { process.stderr.write, process.stdout.write }
+{
+    match own outcome { Decode::Error { code: _code, offset: _offset, field: _field } => reject(), Decode::Decoded { tags, items } => { let result = run(Request { tags: tags, items: items }); match own result { CatalogResult { valid, report } => { if !valid { reject() } else { let encoded = encode(report, 65535usize); match own encoded { Encoded::Refused { required: _required } => 1, Encoded::Encoded { text } => publish(ReportParts { body: text, trailer: "\n" }), } } }, } }, }
+}
+
 @id("catalog.command")
 fn command() -> i64
     uses { process.stdin.read, process.stderr.write, process.stdout.write }
 {
-    match own receive() { Decode::Error { code: _code, offset: _offset, field: _field } => reject(), Decode::Decoded { tags, items } => { let outcome = run(Request { tags: tags, items: items }); if !outcome.valid { reject() } else { let encoded = encode(outcome.report, 65535usize); match own encoded { Encoded::Refused { required: _required } => 1, Encoded::Encoded { text } => publish(ReportParts { body: text, trailer: "\n" }), } } }, }
+    let normalized = normalize();
+    match own normalized { StreamInput::Error { code: _code, offset: _offset, field: _field } => reject(), StreamInput::Ready { bytes, length } => { let outcome = receive(bytes, length); decide(outcome) }, }
 }
 
 @id("catalog.app.main")

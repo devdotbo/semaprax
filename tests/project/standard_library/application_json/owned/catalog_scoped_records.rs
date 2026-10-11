@@ -113,6 +113,18 @@ fn stage(root: &Path) {
     for (path, generated) in candidates {
         std::fs::write(root.join(path), generated).unwrap();
     }
+    // Original aggregate match and projected owner remain independent negative
+    // controls against the same actual generated schemas and manifest.
+    let original = include_str!("catalog-scoped-record-command-original.txt");
+    std::fs::write(root.join("src/app.spx"), canonical(original)).unwrap();
+    let errors =
+        project::with_authenticated_project(&root.join("semaprax.toml"), |_| Ok(())).unwrap_err();
+    for code in ["SPX-T258", "SPX-T216", "SPX-O118"] {
+        assert!(
+            errors.iter().any(|error| error.code == code),
+            "{code}: {errors:?}"
+        );
+    }
     std::fs::copy(root.join("src/app.command.spx"), root.join("src/app.spx")).unwrap();
 }
 
