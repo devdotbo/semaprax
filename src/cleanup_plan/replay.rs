@@ -3361,11 +3361,15 @@ fn sequence_skeleton_paths(
 ) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
     let prefixes = work.merged_paths(prefixes)?;
     let suffixes = work.merged_suffixes(suffixes)?;
+    let share_prefix = work.shares_prefix_tail(&suffixes)?;
     let mut combined = Vec::new();
-    for prefix in prefixes {
+    for mut prefix in prefixes {
         if prefix.failed || prefix.residual {
             work.push_expr_path(&mut combined, prefix, "short-circuited skeleton path")?;
             continue;
+        }
+        if share_prefix {
+            work.share_prefix_tail(&mut prefix.observations)?;
         }
         for suffix in suffixes.iter() {
             let mut observations =
@@ -6604,8 +6608,9 @@ fn sequence_call_argument(
 ) -> Result<Vec<CallSkeletonState>, Diagnostic> {
     let states = work.merged_call_states(states)?;
     let suffixes = work.merged_suffixes(suffixes)?;
+    let share_prefix = work.shares_prefix_tail(&suffixes)?;
     let mut next = Vec::new();
-    for (prefix, commits) in states {
+    for (mut prefix, commits) in states {
         if prefix.failed || prefix.residual {
             work.charge(1, "short-circuited call state push")?;
             note_skeleton_materialization();
@@ -6613,6 +6618,9 @@ fn sequence_call_argument(
                 .reserve_vec(function, &mut next, 1, "short circuit call slots")?;
             next.push((prefix, commits));
             continue;
+        }
+        if share_prefix {
+            work.share_prefix_tail(&mut prefix.observations)?;
         }
         for suffix in suffixes.iter() {
             let mut observations =

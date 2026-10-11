@@ -190,3 +190,137 @@ fn lexical_failure_and_abrupt_duplicates_stay_separate() {
         "pending-own epochs stay separate even if they match"
     );
 }
+
+#[test]
+fn sibling_suffixes_share_one_authentic_prefix_without_path_state_merging() {
+    let program = fixture();
+    let function = &program.functions()[0];
+    let mut budget = ReplayBudget::with_physical(function, 1 << 20).unwrap();
+    budget.skeleton_remaining = MAX_REPLAY_WORK_UNITS;
+    budget.remaining = 0;
+    budget.lent_skeleton = true;
+    budget.merge_paths = true;
+    let mut work = SkeletonWork::new(&program, function, &mut budget);
+    let mut prefix = empty_expr_path();
+    let expression = work
+        .clone_owned(&function.body.id, "test prefix identity")
+        .unwrap();
+    work.push_observation(
+        &mut prefix,
+        SkeletonObservation::Boolean {
+            expression,
+            value: true,
+        },
+        "test prefix",
+    )
+    .unwrap();
+    let expected = prefix.observations.items.clone();
+    let union = work
+        .union_observations(vec![Observations::default(), Observations::default()])
+        .unwrap();
+    let mut normal = empty_expr_path();
+    normal.observations = union.clone();
+    let mut failed = empty_expr_path();
+    failed.observations = union;
+    failed.failed = true;
+    let result = sequence_skeleton_paths(vec![prefix], &[normal, failed], &mut work).unwrap();
+    assert_eq!(result.len(), 2);
+    assert!(!result[0].failed && result[1].failed);
+    let head = |path: &ExprSkeletonPath| {
+        let root = path.observations.prefix.as_ref().unwrap();
+        let ObservationDagKind::Cat(parts) = &root.kind else {
+            panic!("concatenation")
+        };
+        parts[0].clone()
+    };
+    assert!(Rc::ptr_eq(&head(&result[0]), &head(&result[1])));
+    for path in &result {
+        assert_eq!(
+            multiset(path.observations.prefix.as_ref().unwrap()),
+            vec![expected.clone(), expected.clone()]
+        );
+    }
+}
+
+fn shared_prefix_probe(
+    program: &ResolvedProgram,
+    physical: usize,
+    work_limit: usize,
+) -> (
+    Result<(usize, usize), Diagnostic>,
+    crate::test_allocation_observer::Metrics,
+) {
+    let function = &program.functions()[0];
+    let mut budget = ReplayBudget::with_physical(function, physical).unwrap();
+    budget.remaining = 0;
+    budget.skeleton_remaining = work_limit;
+    budget.lent_skeleton = true;
+    budget.merge_paths = true;
+    let mut work = SkeletonWork::new(program, function, &mut budget);
+    let before = work.budget.physical.as_ref().unwrap().charged();
+    crate::test_allocation_observer::measure(|| {
+        let result = (|| {
+            let mut prefix = empty_expr_path();
+            let expression = work.clone_owned(&function.body.id, "test prefix identity")?;
+            work.push_observation(
+                &mut prefix,
+                SkeletonObservation::Boolean {
+                    expression,
+                    value: true,
+                },
+                "test prefix",
+            )?;
+            work.share_prefix_tail(&mut prefix.observations)?;
+            // Repeated siblings reuse the same moved tail instead of rebuilding it.
+            for _ in 0..32 {
+                let sibling = work.clone_observations(&prefix.observations, "test sibling")?;
+                assert!(Rc::ptr_eq(
+                    prefix.observations.prefix.as_ref().unwrap(),
+                    sibling.prefix.as_ref().unwrap()
+                ));
+                drop(sibling);
+            }
+            drop(prefix);
+            Ok::<(), Diagnostic>(())
+        })();
+        // Release the session scratch inside observation even on refusal.
+        drop(work.dag_scratch.take());
+        result.map(|()| {
+            (
+                work.budget.physical.as_ref().unwrap().charged() - before,
+                work_limit - work.budget.skeleton_remaining,
+            )
+        })
+    })
+}
+#[test]
+fn shared_prefix_creation_through_drop_has_exact_work_and_backing_limits() {
+    let program = fixture();
+    let (result, observed) = shared_prefix_probe(&program, 1 << 20, MAX_REPLAY_WORK_UNITS);
+    let (charged, spent) = result.unwrap();
+    assert!(
+        !observed.invalid
+            && observed.live == 0
+            && observed.allocated <= charged
+            && observed.highwater <= charged
+    );
+    let baseline = ReplayBudget::with_physical(&program.functions()[0], 1 << 20).unwrap();
+    let admission = baseline.physical.as_ref().unwrap().charged();
+    let (result, observed) = shared_prefix_probe(&program, admission + charged, spent);
+    assert_eq!(result.unwrap(), (charged, spent));
+    assert!(
+        !observed.invalid
+            && observed.live == 0
+            && observed.allocated <= charged
+            && observed.highwater <= charged
+    );
+    for (physical, work) in [
+        (admission + charged - 1, spent),
+        (admission + charged, spent - 1),
+    ] {
+        let (result, observed) = shared_prefix_probe(&program, physical, work);
+        assert!(result.is_err());
+        assert!(!observed.invalid && observed.live == 0);
+        assert!(observed.allocated <= charged && observed.highwater <= charged);
+    }
+}

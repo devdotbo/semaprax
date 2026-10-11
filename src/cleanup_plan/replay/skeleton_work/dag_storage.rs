@@ -94,6 +94,37 @@ impl SkeletonWork<'_, '_> {
         }))
     }
 
+    /// Detect only a real factored suffix fanout; charge the inspected carriers.
+    pub(super) fn shares_prefix_tail(
+        &mut self,
+        suffixes: &[ExprSkeletonPath],
+    ) -> Result<bool, Diagnostic> {
+        if !self.budget.merge_paths || suffixes.len() < 2 {
+            return Ok(false);
+        }
+        self.charge(suffixes.len(), "factored suffix fanout inspection")?;
+        Ok(suffixes
+            .iter()
+            .any(|suffix| suffix.observations.prefix.is_some()))
+    }
+
+    /// Move one authentic prefix tail into one immutable node before fanout.
+    /// This changes representation only: path ownership, continuation, failure
+    /// and pending commits remain carried separately by every sibling.
+    pub(super) fn share_prefix_tail(
+        &mut self,
+        observations: &mut Observations,
+    ) -> Result<(), Diagnostic> {
+        if observations.items.is_empty() {
+            return Ok(());
+        }
+        let prefix = observations.prefix.take();
+        let items = std::mem::take(&mut observations.items);
+        // Existing Vec backing moves with the sequence; no clone allocation.
+        observations.prefix = Some(self.charged_dag(ObservationDagKind::Seq(prefix, items))?);
+        Ok(())
+    }
+
     pub(super) fn freeze_observations(
         &mut self,
         observations: &Observations,
