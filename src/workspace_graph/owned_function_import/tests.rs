@@ -836,6 +836,6 @@ use function @id("outcome.decode") from outcome.provider as decode;
         .iter()
         .any(|declaration| declaration.id == vector));
     let mut forged = linked.clone();
-    forged.declarations.type_parameters.remove(&vector);
+    assert!(forged.declarations.remove_type_parameters_for_test(&vector));
     assert_eq!(hir::validate(&forged).unwrap_err().code, "SPX-H006");
 }

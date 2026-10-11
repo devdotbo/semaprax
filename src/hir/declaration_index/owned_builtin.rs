@@ -62,3 +62,10 @@ pub(super) fn resource_result_shape(index: &DeclarationIndex, ty: &ResolvedType)
             .declaration(resource)
             .is_some_and(|d| d.kind == DeclarationKind::Resource)
 }
+
+#[cfg(test)]
+impl DeclarationIndex {
+    pub(crate) fn remove_type_parameters_for_test(&mut self, owner: &DeclarationId) -> bool {
+        self.type_parameters.remove(owner).is_some()
+    }
+}
