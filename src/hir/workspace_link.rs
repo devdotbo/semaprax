@@ -505,7 +505,7 @@ pub(crate) fn link_owned_data_api_workspace(
     let uses_stream = functions
         .iter()
         .any(crate::stdin_stream_ops::resolved_function_uses);
-    let uses_vec = functions.iter().any(resolved_function_uses_vec);
+    let uses_vec = compiler_prelude::owned_data_uses_vec(&functions, &parts);
     let (mut declarations, mut types) = if uses_private_collections && uses_vec {
         compiler_prelude::workspace_compiler_prelude_for_stream_data_collections()?
     } else if uses_private_collections {

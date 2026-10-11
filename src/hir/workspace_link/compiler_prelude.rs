@@ -74,6 +74,63 @@ pub(super) fn selected_for_scalar(
     }
 }
 
+// Intrinsic calls are not the only use of the compiler Vec declaration:
+// an otherwise inactive outcome arm can retain a Vec-valued record field.
+// These types have already passed the workspace's direct-import and bounded
+// shape admission. Select only the exact builtin identity and arity; this
+// reconstructs its type facts without granting any additional source shape.
+pub(super) fn owned_data_uses_vec(
+    functions: &[ResolvedFunction],
+    parts: &LinkedOwnedDataParts,
+) -> bool {
+    functions
+        .iter()
+        .chain(
+            parts
+                .function_instances
+                .iter()
+                .map(|instance| &instance.function),
+        )
+        .any(|function| {
+            super::resolved_function_uses_vec(function)
+                || retained_type_uses_vec(&function.return_type)
+                || function
+                    .params
+                    .iter()
+                    .any(|param| retained_type_uses_vec(&param.ty))
+        })
+        || retained_owned_data_uses_vec(parts)
+}
+fn retained_owned_data_uses_vec(parts: &LinkedOwnedDataParts) -> bool {
+    parts
+        .types
+        .iter()
+        .any(|declaration| match &declaration.kind {
+            ResolvedTypeDeclarationKind::Record { fields }
+            | ResolvedTypeDeclarationKind::Class { fields, .. } => {
+                fields.iter().any(|field| retained_type_uses_vec(&field.ty))
+            }
+            ResolvedTypeDeclarationKind::Variant { cases } => cases.iter().any(|case| {
+                case.fields
+                    .iter()
+                    .any(|field| retained_type_uses_vec(&field.ty))
+            }),
+            ResolvedTypeDeclarationKind::Resource { .. } => false,
+        })
+}
+fn retained_type_uses_vec(ty: &ResolvedType) -> bool {
+    match ty {
+        ResolvedType::Nominal {
+            declaration,
+            arguments,
+        } => {
+            (declaration.as_str() == crate::prelude::VEC_ID && arguments.len() == 1)
+                || arguments.iter().any(retained_type_uses_vec)
+        }
+        _ => false,
+    }
+}
+
 pub(super) fn selected_for_owned_data(
     functions: &[ResolvedFunction],
     parts: &LinkedOwnedDataParts,
@@ -84,10 +141,7 @@ pub(super) fn selected_for_owned_data(
             .iter()
             .map(|instance| &instance.function)
     };
-    let uses_vec = functions
-        .iter()
-        .chain(instances())
-        .any(super::resolved_function_uses_vec);
+    let uses_vec = owned_data_uses_vec(functions, parts);
     let uses_box = functions
         .iter()
         .chain(instances())
@@ -305,6 +359,28 @@ fn workspace_compiler_prelude_selected(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn retained_vector_prelude_selection_uses_exact_identity_and_arity() {
+        let vector = ResolvedType::Nominal {
+            declaration: DeclarationId::new(crate::prelude::VEC_ID),
+            arguments: vec![ResolvedType::String],
+        };
+        assert!(retained_type_uses_vec(&vector));
+        for declaration in ["Vec", "user.vec", "core.vec.forged"] {
+            assert!(!retained_type_uses_vec(&ResolvedType::Nominal {
+                declaration: DeclarationId::new(declaration),
+                arguments: vec![ResolvedType::String],
+            }));
+        }
+        for arguments in [Vec::new(), vec![ResolvedType::String, ResolvedType::I64]] {
+            assert!(!retained_type_uses_vec(&ResolvedType::Nominal {
+                declaration: DeclarationId::new(crate::prelude::VEC_ID),
+                arguments,
+            }));
+        }
+        assert!(!retained_type_uses_vec(&ResolvedType::String));
+    }
 
     #[test]
     fn frozen_stream_and_record_iterator_preludes_exclude_collection_roots() {

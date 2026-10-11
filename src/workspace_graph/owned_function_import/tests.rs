@@ -826,4 +826,16 @@ use function @id("outcome.decode") from outcome.provider as decode;
         .linked_owned_data_api_program_with_roots("outcome.app", &[])
         .unwrap();
     hir::validate(&linked).unwrap();
+    let vector = hir::DeclarationId::new(crate::prelude::VEC_ID);
+    assert_eq!(
+        linked.declarations.type_parameters(&vector).unwrap().len(),
+        1
+    );
+    assert!(linked
+        .types
+        .iter()
+        .any(|declaration| declaration.id == vector));
+    let mut forged = linked.clone();
+    forged.declarations.type_parameters.remove(&vector);
+    assert_eq!(hir::validate(&forged).unwrap_err().code, "SPX-H006");
 }
