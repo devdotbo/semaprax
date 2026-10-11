@@ -47,7 +47,7 @@ pub(super) fn fixture(source: &str) -> (ResolvedProgram, ResolvedFunction) {
     (program, function)
 }
 
-fn enumerate(automaton: &Automaton, root: usize) -> Vec<SkeletonPath> {
+pub(super) fn enumerate(automaton: &Automaton, root: usize) -> Vec<SkeletonPath> {
     fn visit(
         automaton: &Automaton,
         node: usize,

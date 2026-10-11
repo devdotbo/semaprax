@@ -120,6 +120,41 @@ fn compare_with_index(
     budget: &mut ReplayBudget,
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
 ) -> Result<Option<bool>, Diagnostic> {
+    let BuiltComparison {
+        automaton,
+        sink,
+        hir_root,
+        plan_root,
+    } = build_comparison(program, function, budget, helpers)?;
+
+    let mut canonical = Canonicalizer::new(&automaton, sink);
+    budget.reserve_array::<(usize, u64)>(function, 1, "factored HIR weighted root")?;
+    let Some(hir) = canonical.id(function, vec![(hir_root, 1)], budget)? else {
+        return Ok(None);
+    };
+    budget.reserve_array::<(usize, u64)>(function, 1, "factored plan weighted root")?;
+    let Some(plan) = canonical.id(function, vec![(plan_root, 1)], budget)? else {
+        return Ok(None);
+    };
+    Ok(Some(hir == plan))
+}
+
+struct BuiltComparison {
+    automaton: Automaton,
+    sink: usize,
+    hir_root: usize,
+    plan_root: usize,
+}
+
+/// Reconstruct both exact observation languages once, retaining every debit.
+/// The inactive strategy census borrows this same physical owner; it never
+/// retries construction after choosing a representation.
+fn build_comparison(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
+) -> Result<BuiltComparison, Diagnostic> {
     // Lend the remaining program-wide budget to the merged skeleton walk.
     let skeleton_reserve = budget.skeleton_remaining;
     budget.skeleton_remaining = std::mem::take(&mut budget.remaining);
@@ -152,17 +187,17 @@ fn compare_with_index(
         automaton.epsilon(function, budget, end, terminal)?;
     }
     let plan_root = automaton.add_plan(function, success, failure, latch, budget)?;
-    let mut canonical = Canonicalizer::new(&automaton, sink);
-    budget.reserve_array::<(usize, u64)>(function, 1, "factored HIR weighted root")?;
-    let Some(hir) = canonical.id(function, vec![(hir_root, 1)], budget)? else {
-        return Ok(None);
-    };
-    budget.reserve_array::<(usize, u64)>(function, 1, "factored plan weighted root")?;
-    let Some(plan) = canonical.id(function, vec![(plan_root, 1)], budget)? else {
-        return Ok(None);
-    };
-    Ok(Some(hir == plan))
+    Ok(BuiltComparison {
+        automaton,
+        sink,
+        hir_root,
+        plan_root,
+    })
 }
+
+#[cfg(test)]
+#[path = "factored/strategy.rs"]
+mod strategy;
 
 #[derive(Default)]
 struct Automaton {

@@ -107,6 +107,16 @@ scope remain separate. An independent small HIR-DAG expansion compares complete
 multisets against ordinary enumeration, including owning prefixes and borrowed Vec
 read status traces; these definitions still require executable qualification. The
 production walker has no Copy scope and discovery grants no strategy admission.
+The inactive representation candidate reconstructs each observation language once
+under the same cumulative work and physical ledger, then counts accepted routes
+per Success, Failure and LoopLatch terminal. Its census distinguishes exact Known
+and Exceeded totals from ArithmeticOverflow without capping or reclassifying any
+terminal class. Duplicate routes contribute separately; cycles, unknown targets
+and nonterminal sinks refuse. It chooses a distinct Enumerated or LexicalFactored
+candidate, or refuses arithmetic overflow, and supplies no equality, ownership or
+source admission authority. Exact/one-short allocator and hostile graph definitions
+remain pending executable qualification. Production census ceilings and errors
+remain unchanged.
 An independent small automaton enumerator
 compares the complete multiset with the existing plan walk, with authored marker
 site/owner and missing generated-resume attacks. Authored small multiset and physical storage
