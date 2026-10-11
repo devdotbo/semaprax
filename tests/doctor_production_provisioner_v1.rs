@@ -142,7 +142,11 @@ impl Sources {
             // ordinary doctor/CLI surfaces, not a repository-wide call-graph
             // proof that no future command module can activate the provisioner.
             known_ordinary_cli_surfaces: [
-                read(repository, "src/cli_driver.rs"),
+                [
+                    read(repository, "src/cli_driver.rs"),
+                    read(repository, "src/cli_driver/help_dispatch.rs"),
+                ]
+                .join("\n"),
                 [
                     read(repository, "src/cli/json_codec.rs"),
                     read(repository, "src/cli/json_codec/plan.rs"),
