@@ -340,6 +340,7 @@ fn nonlexical_opposing_terminal_orders_settle_exactly_on_every_native_route() {
             Entry::Enter | Entry::RunEntryRefused => &enter_prepared,
         };
         let args = route.args.map(RetainedValue::I64).to_vec();
+        eprintln!("terminal-order nonlexical route={} leg=interpreter", route.name);
         let expected = metered(
             authorization::StageBackend::Interpreter,
             &program,
@@ -392,6 +393,7 @@ fn nonlexical_opposing_terminal_orders_settle_exactly_on_every_native_route() {
             route.name
         );
         for (leg, backend) in native_legs_on(&host) {
+            eprintln!("terminal-order nonlexical route={} leg={leg}", route.name);
             // A trapped common epilogue aborts the probe and `metered` panics.
             let actual = metered(backend, &program, prepared, &args, route.limit);
             assert_eq!(
