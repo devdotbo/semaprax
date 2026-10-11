@@ -706,6 +706,44 @@ fn internal_byte_writer_import_authenticates_actual_body_and_preserves_public_re
     let wasm = crate::wasm::emit_resolved_module(&linked).unwrap();
     wasmparser::Validator::new().validate_all(&wasm).unwrap();
     assert!(built.linked_scalar_program("writer.app").is_err());
+    let target = linked
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "writer.write")
+        .unwrap();
+    assert!(crate::loop_calls::byte_writer::resolved_nonallocating(
+        &linked, target
+    ));
+    for mutation in 0..4 {
+        let mut forged = target.clone();
+        let hir::ResolvedExprKind::Block { statements, .. } = &mut forged.body.kind else {
+            panic!("writer body");
+        };
+        let hir::ResolvedStatement::Let { value, .. } = &mut statements[0] else {
+            panic!("byte binding");
+        };
+        let hir::ResolvedExprKind::Match { scrutinee, .. } = &mut value.kind else {
+            panic!("byte option");
+        };
+        let hir::ResolvedExprKind::Call {
+            args,
+            type_arguments,
+            ..
+        } = &mut scrutinee.kind
+        else {
+            panic!("byte read");
+        };
+        match mutation {
+            0 => type_arguments.push(hir::ResolvedType::I64),
+            1 => args[0].ownership = hir::OwnershipMode::Own,
+            2 => args[1].ty = hir::ResolvedType::I64,
+            _ => scrutinee.ty = hir::ResolvedType::U8,
+        }
+        assert!(
+            !crate::loop_calls::byte_writer::resolved_nonallocating(&linked, &forged),
+            "forged borrowed-Str signature {mutation}"
+        );
+    }
 }
 #[test]
 fn internal_byte_writer_import_refuses_allocating_generic_and_mismatched_owner_providers() {

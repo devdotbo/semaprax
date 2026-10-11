@@ -37,6 +37,16 @@ fn byte_operation(op: crate::byte_ops::ByteOp) -> bool {
             | crate::byte_ops::ByteOp::Set1Or6Or48
     )
 }
+fn borrowed_text_operation(op: crate::str_ops::StrOp) -> bool {
+    matches!(
+        op,
+        crate::str_ops::StrOp::LenBytes
+            | crate::str_ops::StrOp::IsEmpty
+            | crate::str_ops::StrOp::StartsWith
+            | crate::str_ops::StrOp::Contains
+            | crate::str_ops::StrOp::ByteAt
+    )
+}
 fn text_operation(op: crate::string_ops::StringOp) -> bool {
     use crate::string_ops::StringOp::*;
     matches!(

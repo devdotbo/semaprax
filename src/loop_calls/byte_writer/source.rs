@@ -194,6 +194,13 @@ pub(super) fn prove_with_cursor<'a>(
                                 {
                                     return None;
                                 }
+                            } else if let Some(op) = crate::str_ops::by_name(name) {
+                                if !borrowed_text_operation(op)
+                                    || !type_arguments.is_empty()
+                                    || args.len() != op.arity()
+                                {
+                                    return None;
+                                }
                             } else if let Some(op) = crate::string_ops::by_name(name) {
                                 if !text_operation(op) {
                                     return None;

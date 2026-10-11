@@ -252,6 +252,25 @@ fn prove_with_frames<'a>(
                                 {
                                     return None;
                                 }
+                            } else if let Some(op) = crate::str_ops::by_id(callee.as_str()) {
+                                if !borrowed_text_operation(op)
+                                    || instance.is_some()
+                                    || !type_arguments.is_empty()
+                                    || args.len() != op.arity()
+                                    || expression.ty != op.return_type()
+                                    || expression.ownership != OwnershipMode::Value
+                                    || args.iter().zip(op.param_types()).any(|(arg, ty)| {
+                                        arg.ty != *ty
+                                            || arg.ownership
+                                                != if *ty == ResolvedType::Str {
+                                                    OwnershipMode::Borrow
+                                                } else {
+                                                    OwnershipMode::Value
+                                                }
+                                    })
+                                {
+                                    return None;
+                                }
                             } else if let Some(op) = crate::string_ops::by_id(callee.as_str()) {
                                 if !text_operation(op) {
                                     return None;
