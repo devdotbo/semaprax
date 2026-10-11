@@ -9,6 +9,9 @@ pub(super) fn emit_hir_c_with_options(
     selected: Option<&super::super::selected_final_utf8::Selection>,
 ) -> Result<String, Diagnostic> {
     hir::validate(program)?;
+    // This remains the authoritative complete program. The selected view
+    // intentionally omits ordinary main and cannot pass public HIR validation.
+    let authoritative_program = program;
     if (output_profile == NativeOutputProfile::SelectedFinalUtf8) != selected.is_some() {
         return Err(backend_error(
             "selected native profile requires an independently derived certificate",
@@ -35,7 +38,7 @@ pub(super) fn emit_hir_c_with_options(
     }) {
         return Err(resource_lowering_gate());
     }
-    let resource_abi = native_resource::build_resource_abi(program)?;
+    let resource_abi = native_resource::build_resource_abi(authoritative_program)?;
     let record_layouts = AggregateLayoutCache::build(program, AggregateTarget::Native64)?;
     let variant_layouts = VariantLayoutCache::build(program, VariantTarget::Native64)?;
     let functions = function_index(program)?;

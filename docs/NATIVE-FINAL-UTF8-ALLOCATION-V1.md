@@ -46,7 +46,13 @@ and 4096 observations; the combined emission closure is at most 256 functions.
 Profile replay charges at most 131072 work units, uses the existing cache depth
 ceiling and a 32-level carrier walk, and bounds canonical sidecar bytes to 65536.
 The original ordinary program is independently validated before constructing a
-private emission view. That view is not exported as a new HIR or cached graph.
+private emission view. Resource ABI preflight retains the complete original
+program as validation authority; the view retains its exact types/interfaces
+but deliberately has no ordinary main. The unchanged resource-lowering gate
+still refuses resource-bearing contexts. All runtime discovery, layouts,
+functions and adapters use only the selected view; original main calls or
+literals grant no emission authority. The view is not exported as a new HIR or
+cached graph. Original absent/forged entrypoints still fail full HIR validation.
 Old graph/cache schemas and unselected generated C receive no new authority.
 
 ## Checked input provenance and public boundary
@@ -121,7 +127,11 @@ outside final-allocation attempts, compares immutable independent UTF-8/escaped
 JSON bytes, and covers exact/one-short limits, allocator refusal, malformed UTF-8,
 postcondition failure, zero new owners on failure, final release to zero owners,
 stale/cross/copied handles, borrow epochs, reentry, exhausted status backing,
-transport refusal and overflow-before-read. These are authored, not observed.
+transport refusal and overflow-before-read. Additional authored controls retain
+exact original types/interfaces and empty resource ABI, refuse resource-bearing
+contexts, exclude a distinctive original-main helper/literal from selected C,
+and reject absent or forged original main metadata before filtered emission.
+These are authored, not observed.
 
 Production generated collection/nested-response composition and full corpus
 qualification still require execution. Other direct String constructors, hidden

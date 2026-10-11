@@ -230,3 +230,79 @@ fn final_constructor_accepts_authenticated_bytes_projection_and_refuses_array_or
     assert_eq!(error.code, "SPX-B104");
     assert!(error.message.contains("exact bounded owned-Bytes view"));
 }
+
+#[test]
+fn resource_abi_uses_original_namespace_without_emitting_unselected_main_closure() {
+    const EXCLUDED: &str = "EXCLUDED_NATIVE_UTF8_AUTHORITY_SENTINEL";
+    let source = SOURCE.replace(
+        "@id(\"app.main\") fn main()->i64 {0}",
+        "@id(\"app.excluded\") fn excluded()->string {\"EXCLUDED_NATIVE_UTF8_AUTHORITY_SENTINEL\"} @id(\"app.main\") fn main()->i64 {let ignored=excluded();0}",
+    );
+    let p = program(&source);
+    let selection = certificate::derive(
+        &p,
+        &DeclarationId::new("app.encode"),
+        &DeclarationId::new("app.make"),
+        &DeclarationId::new("app.dispose"),
+    )
+    .unwrap();
+    let view = selection.emission_view(&p);
+    assert_eq!(view.types, p.types);
+    assert_eq!(view.interfaces, p.interfaces);
+    assert!(!view
+        .functions
+        .iter()
+        .any(|f| f.id == p.entrypoint || f.id.as_str() == "app.excluded"));
+    let abi = super::super::native_resource::build_resource_abi(&p).unwrap();
+    assert!(abi.resources.is_empty());
+    assert!(abi.lifecycles.is_empty());
+    assert!(abi.declarations.is_empty());
+    // Resource ABI construction authenticates original metadata; it must
+    // never expand the exact selected function/runtime/literal closure.
+    let artifact = emit(&p).unwrap();
+    assert!(!artifact.source().contains(EXCLUDED));
+    for id in ["app.main", "app.excluded"] {
+        let symbol = super::super::native_emit::c_function_symbol(&DeclarationId::new(id));
+        assert!(!artifact.source().contains(&symbol));
+        assert!(super::super::emit_hir_c(&p).unwrap().contains(&symbol));
+    }
+    assert!(super::super::emit_hir_c(&p).unwrap().contains(EXCLUDED));
+    let resource = program(&source.replace("module selected.final;",
+        "module selected.final; @id(\"unselected.resource\") resource Token {@id(\"unselected.resource.drop\") drop trivial;}"));
+    assert_eq!(emit(&resource).unwrap_err().code, "SPX-B104");
+}
+#[test]
+fn selected_emission_still_validates_absent_and_forged_original_main() {
+    let p = program(SOURCE);
+    let selection = certificate::derive(
+        &p,
+        &DeclarationId::new("app.encode"),
+        &DeclarationId::new("app.make"),
+        &DeclarationId::new("app.dispose"),
+    )
+    .unwrap();
+    for mutation in 0..3 {
+        let mut forged = p.clone();
+        if mutation == 0 {
+            forged.functions.retain(|f| f.id != p.entrypoint);
+        } else {
+            let main = forged
+                .functions
+                .iter_mut()
+                .find(|f| f.id == p.entrypoint)
+                .unwrap();
+            if mutation == 1 {
+                main.return_type = crate::hir::ResolvedType::Bool;
+            } else {
+                main.body.ty = crate::hir::ResolvedType::Bool;
+            }
+        }
+        let ordinary = crate::hir::validate(&forged).unwrap_err();
+        assert_eq!(ordinary.code, "SPX-H006");
+        let selected =
+            super::super::native_emit::emit_selected_final_utf8(&forged, &selection).unwrap_err();
+        assert_eq!(selected.code, ordinary.code);
+        assert_eq!(selected.message, ordinary.message);
+        assert_eq!(emit(&forged).unwrap_err().code, "SPX-H006");
+    }
+}

@@ -3,6 +3,9 @@
 - Author OPT #750 linear saved-cursor work debits for selected primitive replay,
   renewal reconstruction and resolved byte-helper proofs, preserving work/depth
   and physical bounds with exact/one-short gates; owning execution remains pending.
+- Keep complete original HIR authority for selected final-UTF8 resource ABI
+  preflight while retaining the exact filtered emission closure and resource
+  refusal gate; authored exclusion/forgery regressions await owning execution.
 
 - Authenticate the compiler-owned owned-Bytes borrow projection in the selected
   final-UTF8 profile, retaining exact intrinsic-call validation and refusing
