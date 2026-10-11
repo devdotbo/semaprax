@@ -90,7 +90,9 @@ value `if`:
 - followed by `}`, it is the block's final expression;
 - followed by an operator, it starts the final expression
   (`if c { 1 } else { 2 } * 3`);
-- followed by `;`, it is the expression statement it always was (`SPX-P106`);
+- followed by `;` and another item, it is an independently checked
+  [Copy scalar expression statement](SCALAR-EXPRESSION-STATEMENTS-V1.md);
+  a final `expr; }` still refuses (`SPX-P106`);
 - followed by another statement, it is discarded like any statement `if`.
 
 ### Diagnostics

@@ -137,7 +137,7 @@ fn a_binding_named_return_still_parses() {
 
 #[test]
 fn expression_statement_explains_the_block_shape() {
-    let diagnostic = rejection(
+    admitted_lexical(
         r#"
 module habit.stmt;
 @id("habit.side")
@@ -152,18 +152,18 @@ fn main() -> i64
     0
 }
 "#,
+        "0",
+        "scalar-expression-statement",
     );
+    let diagnostic = rejection(&main_body("1;"));
     assert_eq!(diagnostic.code, "SPX-P106");
     assert_eq!(diagnostic.message, "expected `}` after block");
-    assert!(help(&diagnostic).contains("let _ = …;"), "{diagnostic}");
     let malformed = main_body("let mut i=0;while i<2 {i=i+1;if i==1 {continue;} else {0};0} i");
-    let diagnostic = rejection(&malformed);
-    assert_eq!(diagnostic.code, "SPX-P106");
+    let diagnostics = semaprax::check(&malformed, "habit.spx").unwrap_err();
     assert!(
-        help(&diagnostic).contains("no trailing `;`"),
-        "{diagnostic}"
+        diagnostics.iter().any(|d| d.code == "SPX-T312"),
+        "{diagnostics:?}"
     );
-    assert!(help(&diagnostic).contains("never in a `let` initializer"));
     admitted_lexical(
         &malformed.replace("else {0};0", "else {0} 0"),
         "2",
@@ -177,14 +177,16 @@ fn keyword_and_unknown_identifier_statements_point_at_the_offending_token() {
         let source = format!(
             "module habit.bad_statement;\n@id(\"app.main\")\nfn main() -> i64\n{{\n    {word};\n    42\n}}\n"
         );
-        let diagnostic = rejection(&source);
-        assert_eq!(diagnostic.code, "SPX-P106", "{diagnostic}");
+        let diagnostics = semaprax::check(&source, "habit.spx").unwrap_err();
+        let diagnostic = diagnostics
+            .iter()
+            .find(|d| d.code == "SPX-T208")
+            .expect("unknown operand remains rejected before discard typing");
         assert_eq!(
             diagnostic.span.map(|span| (span.line, span.column)),
             Some((5, 5)),
             "{diagnostic}"
         );
-        assert!(help(&diagnostic).contains("let _ ="), "{diagnostic}");
     }
 }
 
@@ -572,7 +574,7 @@ fn operators_and_statements_from_other_languages_name_the_admitted_form() {
         ),
         (
             "    println(\"hi\");\n    0",
-            "SPX-P106",
+            "SPX-T203",
             "stdout_write(str_as_bytes(view))",
         ),
         (
@@ -582,7 +584,15 @@ fn operators_and_statements_from_other_languages_name_the_admitted_form() {
         ),
     ];
     for (body, code, expected_help) in cases {
-        let diagnostic = rejection(&main_body(body));
+        let diagnostic = if code == "SPX-T203" {
+            semaprax::check(&main_body(body), "habit.spx")
+                .unwrap_err()
+                .into_iter()
+                .find(|d| d.code == code)
+                .unwrap()
+        } else {
+            rejection(&main_body(body))
+        };
         assert_eq!(diagnostic.code, code, "{body}: {diagnostic}");
         assert!(
             help(&diagnostic).contains(expected_help),

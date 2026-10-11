@@ -1,5 +1,7 @@
 use std::{fmt, mem};
 
+#[doc(hidden)]
+pub mod expression_statement;
 #[path = "ast/session_protocol.rs"]
 mod session_protocol;
 #[path = "ast/statement_if.rs"]
@@ -330,7 +332,7 @@ impl Drop for Program {
                 | ExprKind::Float64(_)
                 | ExprKind::Bool(_)
                 | ExprKind::String(_)
-| ExprKind::BorrowedUtf8Literal(_)
+                | ExprKind::BorrowedUtf8Literal(_)
                 | ExprKind::Var(_) => {}
             }
         }
@@ -1146,7 +1148,7 @@ pub struct FieldTarget {
 
 mod lexical_exit;
 pub(crate) use lexical_exit::returns_only;
-pub use lexical_exit::{has_no_normal_completion, LexicalExitKind};
+pub use lexical_exit::{LexicalExitKind, has_no_normal_completion};
 mod statement;
 pub use statement::{Statement, TraversalIndex};
 
@@ -1323,7 +1325,7 @@ impl Expr {
             | ExprKind::Float64(_)
             | ExprKind::Bool(_)
             | ExprKind::String(_)
-| ExprKind::BorrowedUtf8Literal(_)
+            | ExprKind::BorrowedUtf8Literal(_)
             | ExprKind::Var(_) => None,
         }
     }

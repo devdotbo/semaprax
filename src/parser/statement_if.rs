@@ -268,7 +268,7 @@ impl Parser {
         }
     }
 
-    fn discard_name(&mut self) -> String {
+    pub(super) fn discard_name(&mut self) -> String {
         let tokens = &self.tokens;
         let taken = self.discards.taken.get_or_insert_with(|| {
             tokens

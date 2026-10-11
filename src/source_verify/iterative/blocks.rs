@@ -3,13 +3,13 @@
 
 use crate::ast::{Expr, ParamMode, Span, Statement, Type};
 use crate::diagnostic::Diagnostic;
+use crate::source_verify::IterativeVerifier;
 use crate::source_verify::binding::{Availability, Binding};
 use crate::source_verify::diagnostics::{error, is_scalar_source_type, reject_native_unit_value};
 use crate::source_verify::loans::{
     activate_local_loan, has_active_overlapping_loan, local_borrow_origin,
     mark_value_sources_moved, merge_moved, release_dead_local_loans,
 };
-use crate::source_verify::IterativeVerifier;
 use std::collections::{BTreeSet, HashMap, HashSet};
 
 impl<'a, 'p> IterativeVerifier<'a, 'p> {
@@ -65,6 +65,13 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         .with_help(crate::source_verify::hints::SHADOW_HELP),
                     );
                 } else if let Some(actual) = actual {
+                    if let Some(diagnostic) = crate::source_verify::expression_statement::check(
+                        self.program,
+                        &statements[index],
+                        &actual,
+                    ) {
+                        self.diagnostics.push(diagnostic);
+                    }
                     if matches!(actual.ty, Type::SliceU8 | Type::Str) && *mutable {
                         self.diagnostics.push(error(
                             self.program,

@@ -9,7 +9,7 @@ use crate::ast::{Expr, ExprKind, Span, Statement};
 use crate::diagnostic::Diagnostic;
 use crate::lexer::TokenKind;
 
-use super::{for_loop, statement_if, Parser};
+use super::{Parser, for_loop, statement_if};
 
 mod match_tail;
 mod preflight;
@@ -91,6 +91,13 @@ impl Parser {
                 match self.statement_if_after_condition(guard_start, condition)? {
                     statement_if::IfItem::Statement(statement) => statements.push(statement),
                     statement_if::IfItem::Value(value) => {
+                        let value = match self.scalar_statement(value)? {
+                            statement_if::IfItem::Statement(statement) => {
+                                statements.push(statement);
+                                continue;
+                            }
+                            statement_if::IfItem::Value(value) => value,
+                        };
                         if require_return {
                             return Err(self.required_guard_return());
                         }
@@ -111,13 +118,20 @@ impl Parser {
                     let end = self.return_end()?;
                     return Ok(block(start.merge(end), statements, value));
                 }
-                if require_return {
-                    return Err(self.required_guard_return());
-                }
                 // A suffix match with no explicit returns keeps the complete
                 // ordinary postfix/binary tail grammar; it is parsed once.
                 let value = self.postfix(value, true)?;
                 let value = self.binary_continuation(value, 0, true)?;
+                let value = match self.scalar_statement(value)? {
+                    statement_if::IfItem::Statement(statement) => {
+                        statements.push(statement);
+                        continue;
+                    }
+                    statement_if::IfItem::Value(value) => value,
+                };
+                if require_return {
+                    return Err(self.required_guard_return());
+                }
                 let (_, value, end) = self.block_tail_end(Vec::new(), value)?;
                 return Ok(block(
                     start.merge(end),
@@ -136,7 +150,30 @@ impl Parser {
             } else if self.at_keyword("for") {
                 for_loop::parse(self)?
             } else {
-                break;
+                if self.at(&TokenKind::RBrace) {
+                    break;
+                }
+                if let Some(diagnostic) = self
+                    .foreign_statement()
+                    .or_else(|| self.compound_assignment())
+                {
+                    return Err(diagnostic);
+                }
+                let value = self.expression(0)?;
+                match self.scalar_statement(value)? {
+                    statement_if::IfItem::Statement(statement) => statement,
+                    statement_if::IfItem::Value(value) => {
+                        if require_return {
+                            return Err(self.required_guard_return());
+                        }
+                        let (_, value, end) = self.block_tail_end(Vec::new(), value)?;
+                        return Ok(block(
+                            start.merge(end),
+                            statements,
+                            value.expect("value tail"),
+                        ));
+                    }
+                }
             };
             statements.push(statement);
         }

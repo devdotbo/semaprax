@@ -483,6 +483,7 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
             include_str!("../../../../../src/source_verify/high_water.rs"),
             "\n",
             include_str!("../../../../../src/source_verify/oracle.rs"),
+            include_str!("../../../../../src/source_verify/expression_statement.rs"),
             "\n",
             include_str!("../../../../../src/source_verify/oracle/intrinsic_calls.rs"),
             "\n",

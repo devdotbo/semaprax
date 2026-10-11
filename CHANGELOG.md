@@ -1,5 +1,7 @@
 # Changelog
 
+- Authored scalar expression statements: intermediate Copy scalar `expr;` keeps canonical spelling and lowers to hygienic immutable ordinary lets. Final-tail, underscore, owning discard and lexical initializer boundaries remain checked; qualification pending.
+
 - Retain actual lexical String temporaries until canonical settlement and authenticate iterator condition feasibility across construction, replay, native and Wasm routes. Make isolated help links self-contained, preserve compact diagnostic advice and restore Projects help within its existing budget. Grouped owning qualification remains pending.
 
 - Repair exact owned-record clone loans, independently authenticated cross-row Vec renewal, selected lexical skeleton reservation, and Wasm continuation after certified bottom statements. Preserve owned Str carriers and derive npm's exact fixed memory extent independently of public result authority. Reconstruct compiler Vec facts for retained nominal fields without widening imports. Grouped owning qualification remains pending; quotas and public ABI admission are unchanged.

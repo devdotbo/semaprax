@@ -18,24 +18,9 @@ pub(super) fn write_block_statement(
         return;
     }
     match statement {
-        Statement::Let {
-            name,
-            mutable,
-            declared,
-            value,
-            ..
-        } => {
+        Statement::Let { value, .. } => {
             write_indent(output, depth);
-            if *mutable {
-                write!(output, "let mut {name}").unwrap();
-            } else {
-                write!(output, "let {name}").unwrap();
-            }
-            if let Some(ty) = declared {
-                write!(output, ": ").unwrap();
-                write_type(output, ty);
-            }
-            write!(output, " = ").unwrap();
+            expression_statement::write_let_prefix(output, statement);
             write_expr(output, value, 0);
             writeln!(output, ";").unwrap();
         }

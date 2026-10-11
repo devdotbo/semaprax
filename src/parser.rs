@@ -18,6 +18,7 @@ mod agents;
 mod closures;
 mod depth;
 mod entry;
+mod expression_statement;
 #[path = "parser/for_loop.rs"]
 mod for_loop;
 mod hints;
@@ -879,7 +880,9 @@ impl Parser {
                 kind: ExprKind::String(value),
                 span: token.span,
             },
-            TokenKind::Ident(value) if value == "str" && self.adjacent_text_literal(token.span) => self.static_text_literal(token.span),
+            TokenKind::Ident(value) if value == "str" && self.adjacent_text_literal(token.span) => {
+                self.static_text_literal(token.span)
+            }
             TokenKind::Float(literal) => Expr {
                 kind: if literal.wide {
                     ExprKind::Float64(literal.value.to_bits())
@@ -1226,81 +1229,6 @@ impl Parser {
             },
             span: start.merge(end),
         })
-    }
-
-    /// The statements and final expression of a block whose `{` was consumed,
-    /// through its `}`. Only a statement `if` branch passes `optional_tail`.
-    fn block_contents(
-        &mut self,
-        optional_tail: bool,
-    ) -> Result<(Vec<Statement>, Option<Expr>, Span), Diagnostic> {
-        let mut statements = Vec::new();
-        let mut trailing_if = None;
-        loop {
-            if self.explicit_lexical_exits && self.at_lexical_exit() {
-                let tail = self.lexical_exit_tail()?;
-                let end = self.return_end()?;
-                return Ok((statements, Some(tail), end));
-            }
-            if self.at_keyword("if") {
-                let checkpoint = self.cursor;
-                match self.statement_if()? {
-                    statement_if::IfItem::Statement(statement) => {
-                        statements.push(statement);
-                        trailing_if = Some(checkpoint);
-                    }
-                    statement_if::IfItem::Value(tail) => {
-                        return self.block_tail_end(statements, tail);
-                    }
-                }
-                continue;
-            }
-            let statement = if self.at_keyword("let") {
-                self.let_statement()?
-            } else if self.at_assign_statement() {
-                self.assign_statement()?
-            } else if self.at_unsafe_statement() {
-                self.unsafe_statement()?
-            } else if self.at_keyword("while") {
-                self.while_statement()?
-            } else if self.at_keyword("for") {
-                for_loop::parse(self)?
-            } else {
-                break;
-            };
-            statements.push(statement);
-            trailing_if = None;
-        }
-        if self.at(&TokenKind::RBrace) {
-            if optional_tail {
-                let end = self.bump().span;
-                return Ok((statements, None, end));
-            }
-            if let Some(checkpoint) = trailing_if {
-                return Err(self.valueless_tail_if(checkpoint));
-            }
-            return Err(self.error_here("SPX-P203", "block requires a final value expression"));
-        }
-        if let Some(diagnostic) = self
-            .foreign_statement()
-            .or_else(|| self.compound_assignment())
-        {
-            return Err(diagnostic);
-        }
-        let tail = self.expression(0)?;
-        self.block_tail_end(statements, tail)
-    }
-
-    fn block_tail_end(
-        &mut self,
-        statements: Vec<Statement>,
-        tail: Expr,
-    ) -> Result<(Vec<Statement>, Option<Expr>, Span), Diagnostic> {
-        if self.take(&TokenKind::Semicolon) {
-            return Err(self.expression_statement(&tail));
-        }
-        let end = self.expect(&TokenKind::RBrace, "`}` after block")?.span;
-        Ok((statements, Some(tail), end))
     }
 
     fn let_statement(&mut self) -> Result<Statement, Diagnostic> {

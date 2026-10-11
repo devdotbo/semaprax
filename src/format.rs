@@ -16,6 +16,8 @@ mod capacity;
 mod closure;
 #[path = "format/comments.rs"]
 pub mod comments;
+#[path = "format/expression_statement.rs"]
+mod expression_statement;
 #[cfg(test)]
 #[path = "format/iterative_tests.rs"]
 mod iterative_tests;
@@ -29,10 +31,10 @@ mod session_protocol;
 #[path = "format/statement_if.rs"]
 mod statement_if;
 use block_statement::write_block_statement;
-use closure::contains_record_construction;
 use capacity::{
     legacy_canonical_temporary_bytes, legacy_expr_temporary_bytes, write_expr_measured,
 };
+use closure::contains_record_construction;
 use kernel_zero_tokens::{canonical_binary_op, canonical_unary_op};
 pub(crate) use kernel_zero_tokens::{
     canonical_bool, canonical_char, canonical_int, canonical_string, write_string_escaped,
@@ -435,6 +437,8 @@ pub(crate) fn write_canonical_commented(
                         write_joined(output, &method.effects, ", ");
                         writeln!(output, " }}").unwrap();
                     }
+                    let _expression_scope =
+                        expression_statement::function_scope(&method.body, &method.params);
                     write_indented_function_body(output, &method.body, 2, placement);
                     placement.trailing(output, method.span.start, 1);
                 }
@@ -642,6 +646,10 @@ fn write_format_frames(
         }
     }
 
+    let _scope = match &initial {
+        ExprFormatFrame::Expr(root, _) => Some(expression_statement::scope(root)),
+        _ => None,
+    };
     let mut output = Positioned {
         inner: output,
         bytes: 0,
@@ -707,8 +715,12 @@ fn write_format_frames(
                         output.write_str(&canonical_f64_bits(*bits)).unwrap()
                     }
                     ExprKind::Bool(value) => output.write_str(&canonical_bool(*value)).unwrap(),
-                    ExprKind::String(value) => literals::write_text_literal(&mut output, value, false),
-                    ExprKind::BorrowedUtf8Literal(value) => literals::write_text_literal(&mut output, value, true),
+                    ExprKind::String(value) => {
+                        literals::write_text_literal(&mut output, value, false)
+                    }
+                    ExprKind::BorrowedUtf8Literal(value) => {
+                        literals::write_text_literal(&mut output, value, true)
+                    }
                     ExprKind::Var(name) => output.write_str(name).unwrap(),
                     ExprKind::Closure {
                         params,
@@ -947,23 +959,8 @@ fn write_format_frames(
                         continue;
                     }
                     match statement {
-                        Statement::Let {
-                            name,
-                            mutable,
-                            declared,
-                            value,
-                            ..
-                        } => {
-                            if *mutable {
-                                write!(output, "let mut {name}").unwrap();
-                            } else {
-                                write!(output, "let {name}").unwrap();
-                            }
-                            if let Some(ty) = declared {
-                                write!(output, ": ").unwrap();
-                                write_type(&mut output, ty);
-                            }
-                            write!(output, " = ").unwrap();
+                        Statement::Let { value, .. } => {
+                            expression_statement::write_let_prefix(&mut output, statement);
                             frames.push(Frame::BlockNext(statements, tail, index + 1));
                             frames.push(Frame::Expr(value, 0));
                         }
@@ -1443,6 +1440,7 @@ fn write_indented_function_body(
     depth: usize,
     placement: &comments::Placement,
 ) {
+    let _scope = expression_statement::scope(body);
     let indent = "    ".repeat(depth);
     writeln!(output, "{{").unwrap();
     if let ExprKind::Block { statements, tail } = &body.kind {

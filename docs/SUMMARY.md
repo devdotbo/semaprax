@@ -741,3 +741,5 @@ Audience: all documentation readers.
 - [Unicode Scalar Conversion v1](UNICODE-SCALAR-CONVERSION-V1.md)
 
 - [Selected-file LogLens adoption](../experiments/selected-file-input/loglens/README.md)
+
+- [Scalar Expression Statements v1](SCALAR-EXPRESSION-STATEMENTS-V1.md)

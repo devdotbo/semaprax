@@ -22,11 +22,10 @@ const RETURN_MESSAGE: &str =
 const RETURN_HELP: &str =
     "delete `return` and the trailing `;` so the value is the block's last expression";
 const LOOP_MESSAGE: &str = "only `while` loops are admitted";
-const LOOP_HELP: &str =
-    "write `while <condition> { <statements>; <tail> }`; the condition controls repetition and \
+const LOOP_HELP: &str = "write `while <condition> { <statements>; <tail> }`; the condition controls repetition and \
                          the required body tail is discarded";
 const EXPRESSION_STATEMENT_HELP: &str = "a block is statements followed by exactly one final value \
-                                         expression; discard an intermediate call with `let _ = …;` \
+                                         expression; an intermediate Copy scalar may use `expr;`, but the final value has no `;`; use an explicit binding for other values \
                                          or move it to the end of the block; `_` is an ordinary binding, \
                                          so use fresh names for repeated discards";
 const IF_STATEMENT_HELP: &str = "an intermediate `if ... else ...` has no trailing `;`; omit it before the next statement or block tail. Keep break/continue/return in statement guards, never in a `let` initializer";
@@ -39,8 +38,7 @@ const WHILE_BODY_HELP: &str = "end the `while` body with a final expression; its
                                discarded because the condition controls repetition";
 const FOR_BODY_HELP: &str = "end the `for` body with a final expression, such as `0`; its value \
                              is discarded";
-const BRANCH_HELP: &str =
-    "a statement `if` yields no value, so the enclosing block still ends with \
+const BRANCH_HELP: &str = "a statement `if` yields no value, so the enclosing block still ends with \
                            a final expression after it; to make the `if` the value, end every \
                            branch with a value and add an `else` branch";
 const FUNCTION_BODY_HELP: &str = "end the function with a value expression or `return value;`; returning guards use `if condition { return value; }`; a terminal exhaustive `match` may use block arms that explicitly return on every path; loop and closure returns remain refused";
@@ -135,12 +133,6 @@ impl Parser {
                     .with_help(BREAK_HELP),
             );
         }
-        if matches!(next, TokenKind::Semicolon) {
-            return Some(
-                self.error_here("SPX-P106", "expected `}` after block")
-                    .with_help(EXPRESSION_STATEMENT_HELP),
-            );
-        }
         let (message, help) = match word.as_str() {
             "return" => (RETURN_MESSAGE, RETURN_HELP),
             "for" | "loop" => (LOOP_MESSAGE, LOOP_HELP),
@@ -165,8 +157,7 @@ impl Parser {
         begins_operand.then(|| self.error_here("SPX-P106", message).with_help(help))
     }
 
-    /// A tail expression was terminated with `;` and the block continues, which
-    /// is how every other language spells an expression statement.
+    /// A final value was terminated with `;`; a block still requires its tail.
     pub(super) fn expression_statement(&self, tail: &Expr) -> Diagnostic {
         let help = match &tail.kind {
             ExprKind::Call { name, .. } if PRINT_NAMES.contains(&name.as_str()) => PRINT_HELP,

@@ -64,7 +64,9 @@ fn main() -> i64
 - The entry point is exactly `fn main() -> i64`. There is no other signature.
 - A function body has zero or more statements (`let`, assignment, `if`,
   `while`, `for`, `unsafe`) and one final expression. That expression supplies the block's
-  value. A function may also end with `return value;`, or use a returning
+  value. Intermediate Copy scalars admit `expr;`; other discarded results
+  require a binding (`SPX-T315`). The final value has no `;`.
+  A function may also end with `return value;`, or use a returning
   guard `if condition { return value; }` before its remaining statements.
   A terminal `match` may use block arms that explicitly return on every path.
   These [acyclic returns](ACYCLIC-GUARD-RETURNS-V1.md) normalize to ordinary
@@ -1149,7 +1151,7 @@ Use `u8_from_i64(value)` then `char_from_u8(byte)` for byte conversion; use
 | for range|SPX-P106|while; mut counter; discard tail|
 | assignment loop|SPX-P203|Scalar tail, e.g. 0|
 | local named result|`SPX-S109`, `SPX-T201`|Rename binding/uses to outcome; result denotes return only in ensures|
-| statement call|SPX-P106|let discarded = f(x), fresh name each time; or tail result|
+| owned/aggregate/borrowed statement result|SPX-T315|Bind explicitly; intermediate Copy scalar expr; admitted|
 | tuple|SPX-P106|Declare a record|
 | Option::Some { value: 1 }|SPX-T221|Option<i64>::Some { value: 1 }|
 | index + 1 when index: usize|SPX-T208|Default i64; index + 1usize|

@@ -294,7 +294,7 @@ mod ast {
     });
     codec_struct!(FieldTarget { name, span });
     codec_enum!(LetSyntax {
-        0 => Authored, 1 => StatementIf(syntax), 2 => BranchTail
+        0 => Authored, 1 => StatementIf(syntax), 2 => BranchTail, 3 => ExpressionStatement
     });
     codec_struct!(StatementIfSyntax {
         branches,
@@ -527,7 +527,7 @@ mod loan {
 
 #[cfg(test)]
 mod tests {
-    use crate::cache_codec::{decode, encode, Codec};
+    use crate::cache_codec::{Codec, decode, encode};
     use std::fmt::Debug;
 
     fn roundtrip<T: Codec + Eq + Debug>(value: &T) {
@@ -543,6 +543,7 @@ mod tests {
         use crate::ast::{BranchTail, LetSyntax, StatementIfSyntax};
         roundtrip(&LetSyntax::Authored);
         roundtrip(&LetSyntax::BranchTail);
+        roundtrip(&LetSyntax::ExpressionStatement);
         roundtrip(&LetSyntax::StatementIf(StatementIfSyntax {
             branches: vec![
                 BranchTail::Absent,

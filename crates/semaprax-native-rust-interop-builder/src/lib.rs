@@ -273,6 +273,10 @@ pub(crate) mod bounded_output {
         (value, overflowed, consumed)
     }
 
+    pub(crate) fn reserve_active_required(length: usize) -> bool {
+        reserve_active(length)
+    }
+
     pub(crate) fn reserve_active(length: usize) -> bool {
         ACTIVE.with(|active| {
             let active = active.borrow();

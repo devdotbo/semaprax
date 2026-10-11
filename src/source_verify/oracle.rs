@@ -25,7 +25,7 @@ use super::place::{
     check_source_place_availability, join_definitely_partial, join_moved_places,
     overlapping_place_state, source_place,
 };
-use super::type_table::{effective_record_fields, TypeTable};
+use super::type_table::{TypeTable, effective_record_fields};
 use crate::ast::{
     BinaryOp, Expr, ExprKind, Function, ParamMode, Program, Statement, Type, TypeDeclarationKind,
     UnaryOp,
@@ -1124,6 +1124,7 @@ pub(super) fn check_expr(
                             continue;
                         }
                         if let Some(actual) = actual {
+                            if let Some(diagnostic) = super::expression_statement::check(program, statement, &actual) { diagnostics.push(diagnostic); }
                             if actual.ty == Type::Str && *mutable { diagnostics.push(error(program, "SPX-T264", format!("byte-slice alias `{name}` must be immutable and cannot be reassigned"), *name_span)); }
                             let contract_local = !allow_moves && actual.mode == ParamMode::Own
                                 && super::contract_owners::fresh(value, &actual.ty, &scope);

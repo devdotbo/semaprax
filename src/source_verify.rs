@@ -27,10 +27,10 @@ use crate::diagnostic::Diagnostic;
 
 mod arguments;
 mod binding;
-mod contract_owners;
 pub(crate) mod borrowed_closure;
 mod capacity;
 pub(crate) mod closure;
+mod contract_owners;
 mod declaration;
 mod declared_type;
 pub(crate) use declared_type::copy_record_collection::declaration_admitted as copy_record_declaration_admitted;
@@ -41,7 +41,7 @@ pub(crate) use declared_type::owned_leaf_collection::{
     source_admitted as owned_leaf_source_admitted,
 };
 mod diagnostics;
-pub(crate) mod static_text;
+mod expression_statement;
 pub(crate) mod function_value_inventory;
 mod generic_inference;
 mod hints;
@@ -56,6 +56,7 @@ mod record_invariants;
 mod record_traversal;
 mod scope;
 mod sort_keys;
+pub(crate) mod static_text;
 mod stdin_stream;
 mod type_table;
 mod variant_guards;
@@ -69,7 +70,7 @@ mod oracle;
 
 use binding::{Binding, CheckedValue};
 use scope::{VariantMatchState, VerifierFrame, VerifierScope};
-use type_table::{resolve_class_method, TypeTable};
+use type_table::{TypeTable, resolve_class_method};
 
 pub(crate) use declaration::verify;
 pub(crate) use declared_type::copy_record_collection::{
@@ -167,12 +168,12 @@ use oracle::check_expr;
 
 #[cfg(test)]
 use capacity::{
-    reset_source_capacity_scope_peak, reset_source_transcript_scope_peak,
+    SourceCapacityContext, reset_source_capacity_scope_peak, reset_source_transcript_scope_peak,
     source_capacity_expr_type, source_capacity_functions, source_capacity_match_next_scratch_peak,
     source_capacity_scope_live, source_capacity_scope_peak, source_transcript_frame_scratch_peak,
     source_transcript_owned_map_allocations, source_transcript_scope_live,
     source_transcript_scope_peak, source_transcript_source_from_roots,
-    source_type_scope_copy_totals, verify_byte_data_capacity, SourceCapacityContext,
+    source_type_scope_copy_totals, verify_byte_data_capacity,
 };
 
 struct IterativeVerifier<'a, 'p> {
