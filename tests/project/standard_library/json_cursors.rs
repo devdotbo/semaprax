@@ -205,3 +205,6 @@ fn json_cursor_contracts_reject_malformed_input_and_short_or_forged_output() {
 use super::{compile_and_run_c, temporary};
 #[path = "json_roundtrip.rs"]
 mod json_roundtrip;
+
+#[path = "json_scalar_lazy.rs"]
+mod json_scalar_lazy;
