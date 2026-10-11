@@ -183,7 +183,8 @@ impl<'a, 'b> Walk<'a, 'b> {
             | K::LexicalExit { .. } => Ok(None),
             // Pattern/callable/import and generic metadata need their own complete
             // borrowed authentication; no child-only fallback is permission.
-            K::Closure { .. }
+            K::VecConstructor { .. }
+            | K::Closure { .. }
             | K::FunctionReference { .. }
             | K::Invoke { .. }
             | K::BorrowPlace { .. }

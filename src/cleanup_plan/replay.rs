@@ -1,6 +1,6 @@
 //! Independent structural validation of attached cleanup plans without invoking the builder.
 // Private prerequisite only: no selected replay admission hook.
-#[allow(dead_code)]
+#[cfg(test)]
 mod context_closure;
 mod constructed_variant;
 use constructed_variant::materialize_constructed_variant;
