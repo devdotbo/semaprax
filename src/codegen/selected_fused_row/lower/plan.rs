@@ -44,16 +44,48 @@ impl Lower<'_, '_> {
             }
         }
     }
-    /// Apply every canonical transition keyed by `key`, exactly once.
+    /// Apply every canonical post-status transition keyed by `key`, exactly
+    /// once. A pre-status phase must already have been applied by `fail` at
+    /// this expression's own status test.
     pub(super) fn apply(&mut self, key: &ExpressionId) -> Result<(), Diagnostic> {
         let cleanup = self.cleanup;
-        let Some(transitions) = cleanup.transitions(key) else {
+        let Some(phases) = cleanup.phases(key) else {
             return Ok(());
         };
         if self.applied.contains(key) {
             return Err(error("a canonical transition key is reached twice"));
         }
+        if phases.iter().any(|phase| phase.pre_status) && !self.pre_applied.contains(key) {
+            return Err(error(
+                "a pre-status transition phase is not applied at its status test",
+            ));
+        }
         self.applied.push(key.clone());
+        for phase in phases.iter().filter(|phase| !phase.pre_status) {
+            self.replay(&phase.transitions)?;
+        }
+        Ok(())
+    }
+    /// The pre-status phase keyed by `key`, before its status test.
+    fn apply_pre_status(&mut self, key: &ExpressionId) -> Result<(), Diagnostic> {
+        let cleanup = self.cleanup;
+        let Some(phases) = cleanup.phases(key) else {
+            return Ok(());
+        };
+        let Some(phase) = phases.iter().find(|phase| phase.pre_status) else {
+            return Ok(());
+        };
+        if self.applied.contains(key) || self.pre_applied.contains(key) {
+            return Err(error("a canonical transition key is reached twice"));
+        }
+        self.pre_applied.push(key.clone());
+        self.replay(&phase.transitions)
+    }
+    /// One phase's transitions, in plan vector order.
+    fn replay(
+        &mut self,
+        transitions: &[&crate::cleanup_plan::CleanupTransition],
+    ) -> Result<(), Diagnostic> {
         for transition in transitions {
             match transition {
                 CleanupTransition::ReserveRenewal { .. } => {}
@@ -215,6 +247,9 @@ impl Lower<'_, '_> {
         expression: &ExpressionId,
         status: &str,
     ) -> Result<String, Diagnostic> {
+        // The canonical pre-status phase (non-deferred commit, renewal
+        // reservation) precedes the status test that this jump guards.
+        self.apply_pre_status(expression)?;
         let exit = self
             .cleanup
             .failure(expression)

@@ -343,8 +343,10 @@ impl<'a> Lower<'a> {
         self.close_scope(&function.body)?;
         self.post(&function.body.id, Owned::None)?;
         // No postconditions exist in this profile (checked); the commit exit's
-        // non-result cleanup runs, and only then is the result published.
-        self.commit(&tail.id)?;
+        // non-result cleanup runs, and only then is the result published. The
+        // canonical scalar result source names the function body block, whose
+        // value is the already staged tail.
+        self.commit(&function.body.id)?;
         self.op(I::LocalGet(result));
         Ok(())
     }

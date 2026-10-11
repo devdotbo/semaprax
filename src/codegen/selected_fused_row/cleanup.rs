@@ -8,6 +8,15 @@
 //! variant inventories, live parameters, lexical exits or resume bodies,
 //! non-operation status lanes, failure paths with transitions other than
 //! their own status selection, ambiguous edges, and owned results.
+//!
+//! One expression's transitions occupy one block, or two phases joined by
+//! that same expression's own operation-failure split: the block holding the
+//! pre-status phase (a non-deferred `CallCommit`, a `ReserveRenewal`) ends in
+//! exactly `[StatusZero(source), StatusNonzero(source)]` for the source at
+//! this expression, and the post-status phase (deferred commit, result
+//! `Initialize`, renewal or transfer) lies in that `StatusZero` target. Each
+//! phase keeps its own vector order; the receiver applies the pre-status phase
+//! before the status test and the post-status phase after it.
 use super::error;
 use crate::cleanup::{FieldLivenessShape, LivenessFlagId};
 use crate::cleanup_plan::{
@@ -24,10 +33,18 @@ pub(super) struct Leaf<'p> {
     pub(super) lifecycle: &'p DeclarationId,
 }
 
+/// The transitions one plan block places at one expression, in vector order.
+pub(super) struct Phase<'p> {
+    block: u32,
+    /// The block ends in this expression's own status split, so these
+    /// transitions precede the status test.
+    pub(super) pre_status: bool,
+    pub(super) transitions: Vec<&'p CleanupTransition>,
+}
+
 struct Keyed<'p> {
     key: &'p ExpressionId,
-    block: u32,
-    transitions: Vec<&'p CleanupTransition>,
+    phases: Vec<Phase<'p>>,
 }
 
 pub(super) struct PlanProof<'p> {
@@ -70,19 +87,60 @@ impl<'p> PlanProof<'p> {
                     CleanupTransition::SelectFailure { .. } => continue,
                     CleanupTransition::Initialize { at, .. }
                     | CleanupTransition::Transfer { at, .. }
-                    | CleanupTransition::Renew { at, .. } => at,
+                    | CleanupTransition::Renew { at, .. }
+                    | CleanupTransition::ReserveRenewal { at, .. } => at,
                     CleanupTransition::CallCommit { call, .. } => call,
                     _ => return Err(refuse("a transition kind outside the selected domain")),
                 };
+                let id = block.id.0;
                 match keyed.iter_mut().find(|entry| entry.key == key) {
-                    Some(entry) if entry.block == block.id.0 => entry.transitions.push(transition),
-                    Some(_) => return Err(refuse("one expression's transitions span blocks")),
+                    Some(entry) => {
+                        let single = entry.phases.len() == 1;
+                        let Some(last) = entry.phases.last_mut() else {
+                            return Err(refuse("a keyed expression has no phase"));
+                        };
+                        if last.block == id {
+                            last.transitions.push(transition);
+                        } else if single
+                            && last.pre_status
+                            && status_success(plan, last.block, key) == Some(id)
+                        {
+                            entry.phases.push(Phase {
+                                block: id,
+                                pre_status: false,
+                                transitions: vec![transition],
+                            });
+                        } else {
+                            return Err(refuse("one expression's transitions span blocks"));
+                        }
+                    }
                     None => keyed.push(Keyed {
                         key,
-                        block: block.id.0,
-                        transitions: vec![transition],
+                        phases: vec![Phase {
+                            block: id,
+                            pre_status: status_success(plan, id, key).is_some(),
+                            transitions: vec![transition],
+                        }],
                     }),
                 }
+            }
+        }
+        for entry in &keyed {
+            // A post-status phase exists only beyond its own split, and the
+            // pre-status phase of a split key carries no result or transfer.
+            if entry.phases.iter().any(|phase| {
+                phase.pre_status
+                    && phase.transitions.iter().any(|transition| {
+                        !matches!(
+                            transition,
+                            CleanupTransition::CallCommit { .. }
+                                | CleanupTransition::ReserveRenewal { .. }
+                        )
+                    })
+            }) {
+                return Err(refuse(
+                    "an owner is produced before its own status is known",
+                ));
             }
         }
         let mut failures = Vec::with_capacity(plan.status_sources.len());
@@ -146,11 +204,12 @@ impl<'p> PlanProof<'p> {
             })
             .collect()
     }
-    pub(super) fn transitions(&self, key: &ExpressionId) -> Option<&[&'p CleanupTransition]> {
+    /// The phases keyed by `key`, in plan block order.
+    pub(super) fn phases(&self, key: &ExpressionId) -> Option<&[Phase<'p>]> {
         self.keyed
             .iter()
             .find(|entry| entry.key == key)
-            .map(|entry| entry.transitions.as_slice())
+            .map(|entry| entry.phases.as_slice())
     }
     pub(super) fn keys(&self) -> impl Iterator<Item = &'p ExpressionId> + '_ {
         self.keyed.iter().map(|entry| entry.key)
@@ -193,6 +252,39 @@ impl<'p> PlanProof<'p> {
             .filter(|exit| exit.id == region.normal_scope_end)
             .ok_or_else(|| refuse("a region's normal scope end is not indexed"))?;
         Ok(Some(exit))
+    }
+}
+
+/// The `StatusZero` target of `block` when it ends in exactly the operation
+/// split of the status source at `key`: `[StatusZero, StatusNonzero]` edges
+/// indexed by their own ids, leaving `block`, naming one source.
+fn status_success(plan: &CleanupPlan, block: u32, key: &ExpressionId) -> Option<u32> {
+    let current = plan
+        .blocks
+        .get(block as usize)
+        .filter(|candidate| candidate.id.0 == block)?;
+    let CleanupTerminator::Branch(edges) = &current.terminator else {
+        return None;
+    };
+    let [success, failure] = edges.as_slice() else {
+        return None;
+    };
+    let edge = |id: &crate::cleanup_plan::EdgeId| {
+        plan.edges
+            .get(id.0 as usize)
+            .filter(|edge| edge.id == *id && edge.from == current.id)
+    };
+    let (success, failure) = (edge(success)?, edge(failure)?);
+    match (&success.condition, &failure.condition) {
+        (EdgeCondition::StatusZero(zero), EdgeCondition::StatusNonzero(nonzero))
+            if zero == nonzero
+                && &zero.expression == key
+                && zero.lane == StatusLane::OperationFailure
+                && plan.lexical_block_in_context(None, current.id) =>
+        {
+            Some(success.to.0)
+        }
+        _ => None,
     }
 }
 

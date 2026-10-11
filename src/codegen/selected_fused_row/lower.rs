@@ -135,6 +135,8 @@ struct Lower<'s, 'a> {
     depth: usize,
     registry: Vec<(crate::cleanup_plan::StorageId, Physical)>,
     applied: Vec<crate::hir::ExpressionId>,
+    /// Keys whose pre-status phase ran at their own status test.
+    pre_applied: Vec<crate::hir::ExpressionId>,
     failures_used: Vec<u32>,
     placed: Vec<u32>,
 }
@@ -154,6 +156,7 @@ pub(super) fn lower(sites: &Sites<'_>, cleanup: &PlanProof<'_>) -> Result<Lowere
         depth: 0,
         registry: Vec::new(),
         applied: Vec::new(),
+        pre_applied: Vec::new(),
         failures_used: Vec::new(),
         placed: Vec::new(),
     };

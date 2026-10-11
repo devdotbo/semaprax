@@ -250,6 +250,63 @@ fn canonical_cleanup_proof_refuses_unprovable_plan_shapes() {
     let function = &typed.functions[0];
     assert!(PlanProof::admit(function).is_ok());
     assert!(!function.cleanup_plan.status_sources.is_empty());
+    // The non-deferred allocation commits before its own status split and
+    // initializes its result only in that split's StatusZero successor.
+    let hir::ResolvedExprKind::Block { statements, .. } = &function.body.kind else {
+        panic!("body")
+    };
+    let hir::ResolvedStatement::Let {
+        value: allocation, ..
+    } = &statements[0]
+    else {
+        panic!("allocation")
+    };
+    {
+        let proof = PlanProof::admit(function).unwrap();
+        let phases = proof.phases(&allocation.id).expect("allocation phases");
+        assert_eq!(phases.len(), 2);
+        assert!(phases[0].pre_status && !phases[1].pre_status);
+        assert!(matches!(
+            phases[0].transitions.as_slice(),
+            [crate::cleanup_plan::CleanupTransition::CallCommit { arguments, .. }]
+                if arguments.is_empty()
+        ));
+        assert!(phases[1].transitions.iter().any(|transition| matches!(
+            transition,
+            crate::cleanup_plan::CleanupTransition::Initialize { .. }
+        )));
+    }
+    // The same expression's result in any block other than its own
+    // StatusZero successor is arbitrary cross-block authority and refuses.
+    let mut crossed = function.clone();
+    let initialize = crossed
+        .cleanup_plan
+        .blocks
+        .iter()
+        .flat_map(|block| &block.transitions)
+        .find(|transition| matches!(transition,
+            crate::cleanup_plan::CleanupTransition::Initialize { at, .. } if *at == allocation.id))
+        .cloned()
+        .expect("allocation result initialize");
+    crossed
+        .cleanup_plan
+        .blocks
+        .last_mut()
+        .unwrap()
+        .transitions
+        .push(initialize);
+    assert!(PlanProof::admit(&crossed).is_err());
+    // Without its own StatusZero edge the two phases are unlinked and refuse.
+    let mut foreign = function.clone();
+    let split = foreign
+        .cleanup_plan
+        .edges
+        .iter_mut()
+        .find(|edge| matches!(&edge.condition,
+            crate::cleanup_plan::EdgeCondition::StatusZero(source) if source.expression == allocation.id))
+        .expect("allocation status edge");
+    split.condition = crate::cleanup_plan::EdgeCondition::Always;
+    assert!(PlanProof::admit(&foreign).is_err());
     let mut live = function.clone();
     let place = live.cleanup_plan.slots[0].storage.clone();
     live.cleanup_plan

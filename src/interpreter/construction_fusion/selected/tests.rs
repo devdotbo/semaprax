@@ -196,6 +196,67 @@ fn current_context_scope_generation_and_live_payload_loans_guard_receiving_views
     });
     assert!(!refused);
 }
+/// Required right operands yield their exact Boolean; skipped right operands
+/// never execute, so their failure is not selected.
+#[test]
+fn lazy_boolean_truth_table_and_skipped_right_operand_failure() {
+    const TAIL: &str = "if good && count == 33 && vec_len<Row>(renewed) == 33usize { total } else { 0 }";
+    const FAILING: &str = "i64_from_usize(18446744073709551615usize) == 0";
+    let rows = SOURCE.replace("4096", "33");
+    assert!(rows.contains(TAIL));
+    let outcome = |condition: &str| {
+        let changed = rows.replace(TAIL, &format!("if {condition} {{ total }} else {{ 0 }}"));
+        assert_ne!(changed, rows);
+        let source = parsed(&changed);
+        let owner = validate_selected(&source).unwrap();
+        let (outcome, refused, _) =
+            crate::bounded_output::with_limit_usage(PHYSICAL, || execute(&owner, FUEL));
+        assert!(!refused);
+        outcome
+    };
+    let mut cases: Vec<(String, i64)> = [
+        ("count == 33 && count == 33", 528),
+        ("count == 33 && count == 32", 0),
+        ("count == 32 && count == 33", 0),
+        ("count == 32 && count == 32", 0),
+        ("count == 33 || count == 33", 528),
+        ("count == 33 || count == 32", 528),
+        ("count == 32 || count == 33", 528),
+        ("count == 32 || count == 32", 0),
+    ]
+    .into_iter()
+    .map(|(condition, expected)| (condition.to_owned(), expected))
+    .collect();
+    cases.push((format!("count == 32 && {FAILING}"), 0));
+    cases.push((format!("count == 33 || {FAILING}"), 528));
+    for (condition, expected) in &cases {
+        assert_eq!(outcome(condition).unwrap().result, *expected, "{condition}");
+    }
+    for condition in [
+        format!("count == 33 && {FAILING}"),
+        format!("count == 32 || {FAILING}"),
+    ] {
+        let Err(Failure::Execution {
+            status: Some(status),
+            cleanup_complete: true,
+            ..
+        }) = outcome(&condition)
+        else {
+            panic!("required right operand failure was lost: {condition}")
+        };
+        assert_eq!(
+            status,
+            crate::conformance::NormalizedStatus::try_new(
+                crate::string_ops::CONVERT_STATUS_DOMAIN,
+                crate::string_ops::CONVERT_OUT_OF_RANGE_CODE,
+                crate::conformance::StatusClass::Adapter,
+                crate::conformance::Retryability::Known(false),
+            )
+            .unwrap()
+        );
+    }
+}
+
 #[test]
 fn checked_suffix_failure_keeps_exact_status_and_settles_before_reentry() {
     let changed = SOURCE.replace(

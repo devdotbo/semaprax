@@ -51,6 +51,8 @@ pub(super) enum Owned {
 pub(super) enum Failure {
     VecAllocation,
     VecPush,
+    /// An authenticated row field read past the Vec length.
+    VecRead,
     Arithmetic(CheckedOperation),
     Conversion,
 }
@@ -434,8 +436,9 @@ impl<'a> Lower<'a> {
 
     /// Successful completion: the scalar result is already staged; there are
     /// no postconditions in this profile, so the commit exit's non-result
-    /// cleanup runs next and the result is published only after it.
-    pub(super) fn commit(&mut self, tail: &ExpressionId) -> Result<(), Refusal> {
+    /// cleanup runs next and the result is published only after it. `body`
+    /// is the function body block the canonical scalar result source names.
+    pub(super) fn commit(&mut self, body: &ExpressionId) -> Result<(), Refusal> {
         let plan = self.cleanup.plan;
         let mut commits = plan.exits.iter().enumerate().filter(|(_, exit)| {
             matches!(exit.continuation, ExitContinuation::CommitResult { .. })
@@ -444,7 +447,7 @@ impl<'a> Lower<'a> {
         if commits.next().is_some()
             || !matches!(&exit.continuation,
                 ExitContinuation::CommitResult { source: CleanupResultSource::Scalar { expression } }
-                    if expression == tail)
+                    if expression == body)
         {
             return Err(Refusal::Cleanup);
         }
@@ -474,6 +477,9 @@ impl<'a> Lower<'a> {
             }
             (Failure::VecPush, StatusProducer::PropagatedCall { callee }) => {
                 callee.as_str() == crate::vec_ops::PUSH_ID
+            }
+            (Failure::VecRead, StatusProducer::PropagatedCall { callee }) => {
+                callee.as_str() == crate::vec_field::ID
             }
             (Failure::Conversion, StatusProducer::PropagatedCall { callee }) => {
                 callee.as_str() == crate::string_ops::I64_FROM_USIZE_ID

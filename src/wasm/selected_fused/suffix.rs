@@ -19,7 +19,9 @@ use crate::hir::{
     ResolvedExprKind as K, ResolvedMatchArm, ResolvedMatchPattern as P, ResolvedStatement as S,
     ResolvedType as T,
 };
-use crate::wasm::aggregate::{STATUS_ADD_OVERFLOW, STATUS_SUB_OVERFLOW};
+use crate::wasm::aggregate::{
+    STATUS_ADD_OVERFLOW, STATUS_SUB_OVERFLOW, STATUS_VEC_GET_OUT_OF_BOUNDS,
+};
 use crate::wasm::numeric_conversions::OUT_OF_RANGE_STATUS;
 use wasm_encoder::{BlockType, Instruction as I, ValType};
 
@@ -348,6 +350,14 @@ impl<'a> Lower<'a> {
             return Err(unsupported("field read index"));
         };
         self.visit(index)?;
+        // The read's ordinary out-of-range status leaves through the plan's
+        // exact exit for this expression, before the host is asked for a row.
+        self.op(I::LocalGet(position));
+        self.host(import::VEC_LEN, &[vector]);
+        self.op(I::I64GeU);
+        self.op(I::If(BlockType::Empty));
+        self.fail(&e.id, Failure::VecRead, STATUS_VEC_GET_OUT_OF_BOUNDS)?;
+        self.op(I::End);
         let declaration = fields
             .iter()
             .find(|candidate| &candidate.id == field)

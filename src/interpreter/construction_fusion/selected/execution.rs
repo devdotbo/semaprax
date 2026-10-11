@@ -59,6 +59,17 @@ impl<'s, 'a> Engine<'s, 'a> {
                 let Flat::Scalar(right) = self.expression(rhs, depth + 1)? else {
                     return Err(refuse());
                 };
+                if matches!(op, BinaryOp::And | BinaryOp::Or) {
+                    // Only `true && rhs` and `false || rhs` reach here; the
+                    // required right operand is the exact Boolean result.
+                    return match (op, left, right) {
+                        (BinaryOp::And, Value::Bool(true), Value::Bool(right))
+                        | (BinaryOp::Or, Value::Bool(false), Value::Bool(right)) => {
+                            Ok(Flat::Scalar(Value::Bool(right)))
+                        }
+                        _ => Err(refuse()),
+                    };
+                }
                 super::super::super::combine(*op, left, right)
                     .ok_or_else(refuse)?
                     .map(Flat::Scalar)

@@ -1,7 +1,8 @@
 //! Exact source/HIR join definitions over the actual authenticated source
 //! `SourceProof`. Sources are parsed, not checked: SPX-T267 still refuses every
 //! selected count, and a joined value is received proof data, not admission.
-//! The HIR is the `rescaled` stand-in: mutated, not a checked program.
+//! Positive joins receive the selected factory's HIR for the exact source;
+//! hostile controls use the `rescaled` stand-in: mutated, not a checked program.
 use super::super::join::{current_source, join};
 use super::*;
 use crate::ast;
@@ -137,26 +138,36 @@ fn main_execution() -> FunctionExecutionId {
     FunctionExecutionId::Monomorphic(DeclarationId::new("app.main"))
 }
 
+/// Positive joins use the actual selected factory's HIR resolved from the
+/// exact parsed source, so every source span and identity is that source's
+/// own. The rescaled 32-row stand-in differs in literal offsets (`  32` vs
+/// `4096`) and stays a non-authority fixture for the hostile controls below.
 #[test]
 fn authenticated_source_proof_joins_the_independent_typed_selection() {
-    for count in [33, 4096] {
-        let source = parsed(&text(count));
-        let program = rescaled(count);
+    for count in [33u32, 4096] {
+        let text = ORIGINAL.replace("4096", &count.to_string());
+        let source = parsed(&text);
+        let owner = crate::hir::selected_fused_candidate::validate_selected(&source)
+            .unwrap_or_else(|e| panic!("selected factory refused {count}: {e:?}"));
+        assert!(std::ptr::eq(owner.source(), &source));
+        let program = owner.program();
         let proof = current_source(&source).unwrap();
         assert_eq!(proof.rows(), count);
         assert_eq!(proof.owner_events().count(), 3, "move, borrow and sort");
-        let joined = join(&source, proof, &program).unwrap();
+        let joined = join(&source, proof, program).unwrap();
         assert_eq!(joined.proof().rows(), count);
         let flow = joined.flow();
         assert_eq!((flow.rows, flow.width), (count, 3));
         assert_eq!(flow.producer, joined.selection().producer().id.as_str());
         assert!(joined.selects(flow.condition, flow.body).is_some());
         assert!(joined.selects(flow.body, flow.condition).is_none());
-        assert!(joined.still_current(&source, &program));
-        assert!(!joined.still_current(&source.clone(), &program));
+        assert!(joined.still_current(&source, program));
+        assert!(!joined.still_current(&source.clone(), program));
         assert!(!joined.still_current(&source, &program.clone()));
+        // The offset-shifted rescaled stand-in never joins this exact source.
+        assert!(joins(&source, &rescaled(count)).is_err(), "{count}");
         // Closed default: ordinary checking keeps the original refusal.
-        assert!(crate::check(&text(count), "fused-construction-join-refused.spx")
+        assert!(crate::check(&text, "fused-construction-join-refused.spx")
             .unwrap_err()
             .iter()
             .any(|d| d.code == "SPX-T267"));
