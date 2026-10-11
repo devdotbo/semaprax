@@ -674,7 +674,9 @@ use function @id("rows.first") from rows.provider as first;
 const BYTE_WRITER_PROVIDER: &str = r#"module writer.provider;
 @id("writer.write") fn write(text:borrow str,position:usize,output:own Bytes)->Bytes {
  let first=match str_byte_at(text,0usize){Option::Some{value}=>value,Option::None{}=>0u8,};
- bytes_set(output,position,first)
+ let mut next=output;
+ next=bytes_set(next,position,first);
+ next
 }
 "#;
 const BYTE_WRITER_APP: &str = r#"module writer.app;
@@ -686,6 +688,14 @@ use function @id("writer.write") from writer.provider as write;
 "#;
 #[test]
 fn internal_byte_writer_import_authenticates_actual_body_and_preserves_public_refusal() {
+    let direct_tail = BYTE_WRITER_PROVIDER.replace(
+        " let mut next=output;\n next=bytes_set(next,position,first);\n next",
+        " bytes_set(output,position,first)",
+    );
+    assert!(crate::check(&direct_tail, "provider.spx")
+        .unwrap_err()
+        .iter()
+        .any(|error| error.code == "SPX-T271"));
     let built = build_owned(sources(BYTE_WRITER_APP, BYTE_WRITER_PROVIDER)).unwrap();
     let linked = built
         .linked_owned_data_api_program_with_roots("writer.app", &[])
@@ -748,7 +758,7 @@ fn internal_byte_writer_import_authenticates_actual_body_and_preserves_public_re
 #[test]
 fn internal_byte_writer_import_refuses_allocating_generic_and_mismatched_owner_providers() {
     for provider in [
-        BYTE_WRITER_PROVIDER.replace("bytes_set(output,position,first)", "bytes_zeroed(1usize)"),
+        BYTE_WRITER_PROVIDER.replace("bytes_set(next,position,first)", "bytes_zeroed(1usize)"),
         BYTE_WRITER_PROVIDER.replace("fn write(", "fn write<T>("),
         BYTE_WRITER_PROVIDER.replace("output:own Bytes", "output:borrow Bytes"),
         BYTE_WRITER_PROVIDER.replace("@id(\"writer.write\") ", ""),
