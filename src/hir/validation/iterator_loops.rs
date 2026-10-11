@@ -316,7 +316,8 @@ impl HirValidator<'_> {
                             || args.iter().enumerate().any(|(index, argument)| {
                                 !operation.accepts_resolved(index, &argument.ty, &type_arguments[0])
                             })
-                            || expression.ty != operation.resolved_return_type(&type_arguments[0])
+                            || (expression.ty != operation.resolved_return_type(&type_arguments[0])
+                                && crate::vec_ops::string_slot::inspect(expression).is_none())
                         {
                             return Err(hir_error(
                                 "while loop vector operation is outside Owned Bounded Vec v1",

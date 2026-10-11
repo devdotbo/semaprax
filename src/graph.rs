@@ -60,13 +60,14 @@ pub use generic_instances::{legacy_context_json, to_legacy_json, verify_json};
 pub(crate) use generic_mapping::requires_v35;
 mod byte_helper_renewal;
 mod consuming_vec_renewal;
+mod string_slots;
 mod facts_object;
 use facts_object::facts_object;
 mod finite_byte_scratch;
 mod static_text;
 mod view_render;
-use consuming_vec_renewal::graph_json;
-pub(crate) use consuming_vec_renewal::{graph_schema, legacy_graph_schema};
+use string_slots::graph_json;
+pub(crate) use string_slots::{graph_schema, legacy_graph_schema};
 use view_render::view_json;
 #[path = "graph/native_import.rs"]
 mod native_import;
@@ -3679,18 +3680,7 @@ fn byte_slice_fact_json(
     value: &ValueId,
     provenance: &hir::ByteSliceProvenance,
 ) -> String {
-    let root_kind = match provenance.root_kind {
-        ByteSliceRootKind::FunctionParameter => "function_parameter",
-        ByteSliceRootKind::SourceExprStatic => "source_expr_static",
-        ByteSliceRootKind::OwnedBytes => "owned_bytes",
-        ByteSliceRootKind::OwnedString => "owned_string",
-        ByteSliceRootKind::OwnedVectorField => "owned_vector_field",
-        ByteSliceRootKind::OwnedVectorStringSlot => "owned_vector_string_slot",
-        ByteSliceRootKind::FixedArray => "fixed_array",
-        ByteSliceRootKind::BorrowedStr => "borrowed_str",
-        ByteSliceRootKind::CommandArguments => "command_arguments",
-        ByteSliceRootKind::StdinStreamReader => "stdin_stream_reader",
-    };
+    let root_kind = string_slots::root_kind_json(provenance.root_kind);
     let mut base = format!(
         "{{\"value\":{},\"root\":{},\"root_kind\":{},\"root_length\":{},\"offset\":{},\"length\":{},\"producer\":{}}}",
         quote_json(value.as_str()),

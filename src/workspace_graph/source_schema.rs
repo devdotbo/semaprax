@@ -200,6 +200,27 @@ pub(super) fn schema_with_proofs<'a>(
     let static_schema = static_text::schema(module, facts)?;
     let lexical_static = static_schema.is_some() && static_text::replay_lexical(module, facts)?;
     let helper_schema = byte_helper::schema_with_proofs(module, modules, facts, proofs)?;
+    let mut string_slots = false;
+    for function in module.functions.iter().chain(
+        module
+            .function_instances
+            .iter()
+            .map(|instance| &instance.function),
+    ) {
+        for root in function
+            .requires
+            .iter()
+            .chain(std::iter::once(&function.body))
+            .chain(&function.ensures)
+        {
+            hir::visit_resolved_calls(root, &mut |callee, _, _| {
+                string_slots |= matches!(
+                    callee.as_str(),
+                    crate::vec_ops::string_slot::ID | crate::vec_ops::string_slot::BYTES_ID
+                );
+            });
+        }
+    }
     let finite_scratch = module
         .functions
         .iter()
@@ -230,7 +251,7 @@ pub(super) fn schema_with_proofs<'a>(
             hir::vec_loop_renewal::consuming::requires_with_admission(function, admission)
         });
     // Static modules independently replay the other renewal obligations too.
-    if static_schema.is_none() && !consuming {
+    if static_schema.is_none() && !consuming && !string_slots {
         if finite_scratch {
             return Ok("semaprax.graph.v78");
         }
@@ -276,6 +297,9 @@ pub(super) fn schema_with_proofs<'a>(
                 return Err(vec![graph_error("SPX-G410", message)]);
             }
         }
+    }
+    if string_slots {
+        return Ok("semaprax.graph.v80");
     }
     if consuming {
         return Ok("semaprax.graph.v79");

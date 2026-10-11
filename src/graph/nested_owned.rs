@@ -1,10 +1,10 @@
 pub(crate) use super::byte_helper_renewal::graph_schema;
 use crate::cleanup::FieldLivenessShape;
 use crate::cleanup_plan::{
-    StorageId, CLEANUP_PLAN_SCHEMA_V10, CLEANUP_PLAN_SCHEMA_V11, CLEANUP_PLAN_SCHEMA_V12,
-    CLEANUP_PLAN_SCHEMA_V13, CLEANUP_PLAN_SCHEMA_V14, CLEANUP_PLAN_SCHEMA_V15,
-    CLEANUP_PLAN_SCHEMA_V16, CLEANUP_PLAN_SCHEMA_V17, CLEANUP_PLAN_SCHEMA_V18,
     CLEANUP_PLAN_SCHEMA_V7, CLEANUP_PLAN_SCHEMA_V8, CLEANUP_PLAN_SCHEMA_V9,
+    CLEANUP_PLAN_SCHEMA_V10, CLEANUP_PLAN_SCHEMA_V11, CLEANUP_PLAN_SCHEMA_V12,
+    CLEANUP_PLAN_SCHEMA_V13, CLEANUP_PLAN_SCHEMA_V14, CLEANUP_PLAN_SCHEMA_V15,
+    CLEANUP_PLAN_SCHEMA_V16, CLEANUP_PLAN_SCHEMA_V17, CLEANUP_PLAN_SCHEMA_V18, StorageId,
 };
 use crate::diagnostic::Diagnostic;
 use crate::hir::{PlaceProjection, ResolvedFunction, ResolvedProgram};
@@ -453,7 +453,8 @@ pub(super) fn pre_filesystem_graph_schema(
                 || super::owned_collection_records::requires(program)
                 || super::projected_string_view::requires(program)
                 || super::owned_nested_outcome::requires(program)
-                || super::scoped_vec_field::requires(program),
+                || super::scoped_vec_field::requires(program)
+                || crate::vec_ops::string_slot::resolved_uses(program),
         )?;
         return Ok(iterator_schema);
     }
@@ -474,6 +475,7 @@ pub(super) fn pre_filesystem_graph_schema(
         && !super::byte_helper_renewal::requires(program)
         && !super::finite_byte_scratch::requires(program)
         && !super::consuming_vec_renewal::requires(program)
+        && !crate::vec_ops::string_slot::resolved_uses(program)
     {
         return legacy_graph_schema(program);
     }
@@ -519,11 +521,18 @@ pub(super) fn generic_payload_schema(
             || super::owned_collection_records::requires(program)
             || super::projected_string_view::requires(program)
             || super::owned_nested_outcome::requires(program)
-            || super::scoped_vec_field::requires(program),
+            || super::scoped_vec_field::requires(program)
+            || crate::vec_ops::string_slot::resolved_uses(program),
     )
 }
 
 pub(crate) fn legacy_graph_schema(program: &ResolvedProgram) -> Result<&'static str, Diagnostic> {
+    if crate::vec_ops::string_slot::resolved_uses(program) {
+        return Err(Diagnostic::io(
+            "SPX-G410",
+            "String slot views require Graph v80",
+        ));
+    }
     if super::consuming_vec_renewal::requires(program) {
         return Err(Diagnostic::io(
             "SPX-G410",
@@ -678,6 +687,7 @@ pub(super) fn graph_schema_includes_modern_composite_facts(schema: &str) -> bool
             | "semaprax.graph.v76"
             | "semaprax.graph.v78"
             | "semaprax.graph.v79"
+            | "semaprax.graph.v80"
             | "semaprax.graph.v77"
             | "semaprax.graph.v75"
     )
@@ -721,6 +731,7 @@ pub(super) fn graph_schema_includes_loans(schema: &str) -> bool {
             | "semaprax.graph.v76"
             | "semaprax.graph.v78"
             | "semaprax.graph.v79"
+            | "semaprax.graph.v80"
             | "semaprax.graph.v77"
             | "semaprax.graph.v75"
     )
@@ -762,6 +773,7 @@ pub(super) fn graph_schema_includes_projected_provenance(schema: &str) -> bool {
             | "semaprax.graph.v76"
             | "semaprax.graph.v78"
             | "semaprax.graph.v79"
+            | "semaprax.graph.v80"
             | "semaprax.graph.v77"
             | "semaprax.graph.v75"
     )

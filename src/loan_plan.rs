@@ -29,7 +29,9 @@ pub enum LoanPointPhase {
 
 #[cfg(test)]
 mod boundary_tests;
+mod call_arguments;
 mod compact_ids;
+use call_arguments::borrowed_call_arguments;
 mod guidance;
 mod lexical_exit;
 mod native_view;
@@ -235,7 +237,9 @@ fn has_own_root_candidate(
             }
         }
         let view = match &expression.kind {
-            ResolvedExprKind::Call { .. } if crate::vec_ops::string_slot::inspect(expression).is_some() => crate::vec_ops::string_slot::inspect(expression).and_then(|slot| expression_place(slot.source)),
+            ResolvedExprKind::Call { .. } => {
+                crate::vec_ops::string_slot::place(expression).cloned()
+            }
             ResolvedExprKind::BorrowPlace { place, .. } => Some(place.clone()),
             ResolvedExprKind::VecFieldRead { args, .. }
                 if matches!(
@@ -433,7 +437,9 @@ fn build_cfg_plan_counted(
             drafts.push(draft);
         }
         let view = match &expression.kind {
-            ResolvedExprKind::Call { .. } if crate::vec_ops::string_slot::inspect(expression).is_some() => crate::vec_ops::string_slot::inspect(expression).and_then(|slot| expression_place(slot.source)),
+            ResolvedExprKind::Call { .. } => {
+                crate::vec_ops::string_slot::place(expression).cloned()
+            }
             ResolvedExprKind::BorrowPlace { place, .. } => Some(place.clone()),
             ResolvedExprKind::VecFieldRead { args, .. }
                 if matches!(
@@ -1300,7 +1306,7 @@ fn resolve_origin(
 
 fn expression_place(expression: &ResolvedExpr) -> Option<Place> {
     match &expression.kind {
-        ResolvedExprKind::Call { .. } if crate::vec_ops::string_slot::inspect(expression).is_some() => crate::vec_ops::string_slot::inspect(expression).and_then(|slot| expression_place(slot.source)),
+        ResolvedExprKind::Call { .. } => crate::vec_ops::string_slot::place(expression).cloned(),
         ResolvedExprKind::VecFieldRead { args, .. } => args.first().and_then(expression_place),
         ResolvedExprKind::Place(place) | ResolvedExprKind::BorrowPlace { place, .. } => {
             Some(place.clone())
@@ -1433,65 +1439,3 @@ fn error(message: impl Into<String>) -> Diagnostic {
 #[cfg(test)]
 #[path = "loan_plan/tests.rs"]
 mod tests;
-
-// Native loans use the same exact place origins and CFG interval as ordinary
-// borrowed calls. The declared parameter mode is authoritative; a named owned
-// argument remains an owned Place node while the invocation borrows it.
-fn borrowed_call_arguments<'a>(
-    program: &dyn crate::cleanup::ReplayContext,
-    expression: &'a ResolvedExpr,
-) -> Vec<(usize, &'a ResolvedExpr)> {
-    match &expression.kind {
-        ResolvedExprKind::VecFieldRead { args, .. } => args
-            .first()
-            .map(|source| vec![(0, source)])
-            .unwrap_or_default(),
-        ResolvedExprKind::Call {
-            callee,
-            instance,
-            args,
-            ..
-        } => {
-            let target = program.resolve_call_target(callee, instance.as_ref());
-            args.iter()
-                .enumerate()
-                .filter(|(index, argument)| {
-                    (crate::vec_ops::string_slot::inspect(expression).is_some() && *index == 0) || record_vec_borrow::argument(program, expression, *index, argument)
-                        || target.map_or_else(
-                            || {
-                                argument.ownership == OwnershipMode::Borrow
-                                    || crate::hir::owned_collection_record::borrowed_vec_argument(
-                                        program, expression, *index, argument,
-                                    )
-                            },
-                            |target| {
-                                target
-                                    .params
-                                    .get(*index)
-                                    .is_some_and(|p| p.ownership == OwnershipMode::Borrow)
-                            },
-                        )
-                })
-                .collect()
-        }
-        ResolvedExprKind::NativeRustImportCall(call) => {
-            let target = program
-                .interfaces()
-                .iter()
-                .flat_map(|i| &i.imports)
-                .find(|i| i.id == call.import);
-            call.args
-                .iter()
-                .enumerate()
-                .filter(|(index, _)| {
-                    target.is_some_and(|i| {
-                        i.parameters
-                            .get(*index)
-                            .is_some_and(|p| p.ownership == OwnershipMode::Borrow)
-                    })
-                })
-                .collect()
-        }
-        _ => Vec::new(),
-    }
-}

@@ -126,6 +126,10 @@ pub(super) fn signature(
     }
     Ok(Some((
         crate::vec_ops::resolved_params_in(declarations, op, &type_arguments[0]),
-        if callee.as_str() == crate::vec_ops::string_slot::BYTES_ID { ResolvedType::SliceU8 } else { op.resolved_return_type(&type_arguments[0]) },
+        if callee.as_str() == crate::vec_ops::string_slot::BYTES_ID {
+            ResolvedType::SliceU8
+        } else {
+            op.resolved_return_type(&type_arguments[0])
+        },
     )))
 }

@@ -4499,6 +4499,9 @@ impl<'a> HirValidator<'a> {
                                 (place, origin)
                             }
                             ResolvedExprKind::BorrowPlace { place, .. } => (place, place.clone()),
+                            ResolvedExprKind::Call { .. } if crate::vec_ops::string_slot::inspect(value).is_some() => {
+                                let place = crate::vec_ops::string_slot::place(value).expect("authenticated slot"); (place, place.clone())
+                            }
                             ResolvedExprKind::VecFieldRead { args, .. } => {
                                 let ResolvedExprKind::Place(place) = &args[0].kind else {
                                     return Err(hir_error("vector view has no carrier place"));
@@ -4514,7 +4517,7 @@ impl<'a> HirValidator<'a> {
                                 ));
                             }
                         };
-                        let is_authenticated_view = matches!(
+                        let is_authenticated_view = crate::vec_ops::string_slot::inspect(value).is_some() || matches!(
                             &value.kind,
                             ResolvedExprKind::BorrowPlace { .. }
                                 | ResolvedExprKind::VecFieldRead { .. }
@@ -4527,6 +4530,7 @@ impl<'a> HirValidator<'a> {
                         self.byte_slice_aliases
                             .insert(binding.id.clone(), origin.clone());
                         let borrowed_origin = match &value.kind {
+                            ResolvedExprKind::Call { .. } if crate::vec_ops::string_slot::inspect(value).is_some() => Some(origin),
                             ResolvedExprKind::BorrowPlace { .. }
                             | ResolvedExprKind::VecFieldRead { .. }
                             | ResolvedExprKind::ByteRange { .. } => Some(origin),
@@ -6904,6 +6908,9 @@ impl<'a> HirValidator<'a> {
                                     ResolvedExprKind::BorrowPlace { place, .. } => {
                                         (place, place.clone())
                                     }
+                                    ResolvedExprKind::Call { .. } if crate::vec_ops::string_slot::inspect(value).is_some() => {
+                                        let place = crate::vec_ops::string_slot::place(value).expect("authenticated slot"); (place, place.clone())
+                                    }
                                     ResolvedExprKind::VecFieldRead { args, .. } => {
                                         let ResolvedExprKind::Place(place) = &args[0].kind else {
                                             return Err(hir_error(
@@ -6921,7 +6928,7 @@ impl<'a> HirValidator<'a> {
                                         ));
                                     }
                                 };
-                                let is_authenticated_view = matches!(
+                                let is_authenticated_view = crate::vec_ops::string_slot::inspect(value).is_some() || matches!(
                                     &value.kind,
                                     ResolvedExprKind::BorrowPlace { .. }
                                         | ResolvedExprKind::VecFieldRead { .. }
@@ -6936,6 +6943,7 @@ impl<'a> HirValidator<'a> {
                                 self.byte_slice_aliases
                                     .insert(binding.id.clone(), origin.clone());
                                 let borrowed_origin = match &value.kind {
+                                    ResolvedExprKind::Call { .. } if crate::vec_ops::string_slot::inspect(value).is_some() => Some(origin),
                                     ResolvedExprKind::BorrowPlace { .. }
                                     | ResolvedExprKind::VecFieldRead { .. }
                                     | ResolvedExprKind::ByteRange { .. } => Some(origin),

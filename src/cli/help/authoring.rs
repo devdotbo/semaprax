@@ -141,6 +141,7 @@ pub(super) fn lookup(query: &str) -> Result<String, String> {
             "Authenticated borrowed record and Vec field views; current-head executable qualification pending.\n",
             "Use string_as_str(value.label) or string_as_str(value.inner.label) for an exact live borrowed record path. It returns borrow str without cloning the stored String; str_as_bytes may consume that view only while its owner path remains live.\n",
             "For an admitted Vec<Row>, vec_field<Row>(value.items, index, \"selected\") returns a Copy field by value; String and Bytes fields return borrow str and borrow Slice<u8> views. The type, named Vec root, usize index, literal field, owner generation, and complete field path are checked independently.\n",
+            "Primitive Vec<string> slot views use vec_str_at(words,index), with no source type argument, on a whole named live own/borrow Vec. Result is scoped borrow str; str_as_bytes composes without cloning. Prelude v17/Graph v80 and backend qualification are pending. Contract: docs/PRIMITIVE-STRING-VEC-VIEWS-V1.md.\n",
             "Use language-command-io.collection-record.v1 (v31) for nested Record{items: Vec<Row>} command data: help language author:collection-records. Keep the root Vec and every borrowed record path live: moving, replacing, sorting, pushing, reserving, clearing, consuming, or returning an escaping view before last use is refused.\n",
             "A scalar read loans only through its index/read. String/Bytes views pin the whole vector generation until last use; changing the index later does not retarget an existing view. Out-of-range access fails semaprax.vec.v1 code 2.\n",
             "Temporary/call roots, forged or stale paths, unsupported profiles, and nonliteral/unknown fields stay refused; SPX-T310 still requires one admitted record type. vec_clone_at creates an owned clone; use it only for detached owners. Contract: docs/SCOPED-VEC-FIELD-READS-V1.md.\n"
@@ -434,14 +435,18 @@ mod tests {
                 ..
             }
         )));
-        assert!(control
-            .exits
-            .iter()
-            .any(|exit| exit.kind == semaprax::hir::LexicalExitKind::Continue));
-        assert!(control
-            .exits
-            .iter()
-            .any(|exit| exit.kind == semaprax::hir::LexicalExitKind::Break));
+        assert!(
+            control
+                .exits
+                .iter()
+                .any(|exit| exit.kind == semaprax::hir::LexicalExitKind::Continue)
+        );
+        assert!(
+            control
+                .exits
+                .iter()
+                .any(|exit| exit.kind == semaprax::hir::LexicalExitKind::Break)
+        );
     }
 
     #[test]
@@ -466,9 +471,11 @@ mod tests {
         ] {
             assert!(card.contains(fact), "static UTF-8 guidance omits {fact}");
         }
-        assert!(lookup("author:routes")
-            .unwrap()
-            .contains("author:static-utf8"));
+        assert!(
+            lookup("author:routes")
+                .unwrap()
+                .contains("author:static-utf8")
+        );
         let source = r#"module help.static_text;
 @id("help.static_text.main") fn main()->i64 {
  let key=str"é\u{0}";
@@ -500,9 +507,11 @@ mod tests {
         ] {
             assert!(card.contains(text), "{text}");
         }
-        assert!(lookup("author:routes")
-            .unwrap()
-            .contains("author:record-sort-keys"));
+        assert!(
+            lookup("author:routes")
+                .unwrap()
+                .contains("author:record-sort-keys")
+        );
     }
 
     #[test]
@@ -568,15 +577,19 @@ mod tests {
         ] {
             assert!(exits.contains(text), "{text}");
         }
-        assert!(lookup("author:routes")
-            .unwrap()
-            .contains("author:lexical-exits"));
+        assert!(
+            lookup("author:routes")
+                .unwrap()
+                .contains("author:lexical-exits")
+        );
         let codec = lookup("author:json-codec").unwrap();
         assert!(codec.contains("--profile <selector>"));
         assert!(codec.contains("--max-string-bytes 1..64"));
         assert!(codec.contains("Omit --profile for the default flat scalar record"));
         assert!(codec.contains("author:json-identifier-views"));
-        assert!(codec.contains("Declared Vec<string> in a request-view schema is description only"));
+        assert!(
+            codec.contains("Declared Vec<string> in a request-view schema is description only")
+        );
         assert!(codec.contains("post-Ready request/schema errors use normalized-input offsets"));
         let identifier_views = lookup("author:json-identifier-views").unwrap();
         assert!(identifier_views.contains("exactly one string identifier"));
@@ -825,6 +838,14 @@ mod tests {
                 field_views.contains(fact),
                 "field-view guidance omits {fact}"
             );
+        }
+        for fact in [
+            "vec_str_at(words,index)",
+            "no source type argument",
+            "Prelude v17/Graph v80",
+            "PRIMITIVE-STRING-VEC-VIEWS-V1.md",
+        ] {
+            assert!(field_views.contains(fact), "slot guidance omits {fact}");
         }
         let routes = lookup("author:routes").unwrap();
         for selector in [

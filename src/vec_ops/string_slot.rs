@@ -53,41 +53,46 @@ pub(crate) fn inspect(expression: &ResolvedExpr) -> Option<Slot<'_>> {
         bytes,
     })
 }
-pub(crate) fn resolved_uses(program: &crate::hir::ResolvedProgram) -> bool {
+pub(crate) fn function_uses(function: &crate::hir::ResolvedFunction) -> bool {
     let mut found = false;
-    for function in program.functions.iter().chain(
-        program
-            .function_instances
-            .iter()
-            .map(|instance| &instance.function),
-    ) {
-        for root in function
-            .requires
-            .iter()
-            .chain(std::iter::once(&function.body))
-            .chain(&function.ensures)
-        {
-            crate::hir::visit_resolved_calls(root, &mut |callee, _, _| {
-                found |= matches!(callee.as_str(), ID | BYTES_ID);
-            });
-        }
+    for root in function
+        .requires
+        .iter()
+        .chain(std::iter::once(&function.body))
+        .chain(&function.ensures)
+    {
+        crate::hir::visit_resolved_calls(root, &mut |callee, _, _| {
+            found |= matches!(callee.as_str(), ID | BYTES_ID);
+        });
     }
     found
+}
+pub(crate) fn resolved_uses(program: &crate::hir::ResolvedProgram) -> bool {
+    program
+        .functions
+        .iter()
+        .chain(
+            program
+                .function_instances
+                .iter()
+                .map(|instance| &instance.function),
+        )
+        .any(function_uses)
 }
 
 pub(crate) fn argument_path(expression: &ResolvedExpr, path: &str, index: usize) -> String {
     if matches!(&expression.kind, ResolvedExprKind::Call {callee,..} if callee.as_str() == BYTES_ID)
     {
-        format!("{path}.arg.0.arg.{index}")
+        crate::bounded_output::budgeted_format(format_args!("{path}.arg.0.arg.{index}"))
     } else {
-        format!(
+        crate::bounded_output::budgeted_format(format_args!(
             "{path}.arg.{}",
             index
                 + usize::from(matches!(
                     expression.kind,
                     ResolvedExprKind::LiteralFormat { .. }
                 ))
-        )
+        ))
     }
 }
 pub(crate) fn fuse(
@@ -122,3 +127,14 @@ pub(crate) fn fuse(
         span,
     })
 }
+
+pub(crate) fn place(expression: &ResolvedExpr) -> Option<&crate::hir::Place> {
+    let slot = inspect(expression)?;
+    match &slot.source.kind {
+        ResolvedExprKind::Place(place) => Some(place),
+        _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests;

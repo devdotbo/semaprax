@@ -110,6 +110,11 @@ impl<'a> HirValidator<'a> {
         scope: &BTreeMap<ValueId, ValidationBinding>,
     ) -> Result<(), Diagnostic> {
         match &argument.kind {
+            ResolvedExprKind::Call { .. }
+                if crate::vec_ops::string_slot::inspect(argument).is_some() =>
+            {
+                Ok(())
+            }
             ResolvedExprKind::VecFieldRead { .. } => Ok(()),
             ResolvedExprKind::Place(place)
                 if place.projections.is_empty()

@@ -1,5 +1,10 @@
 # Changelog
 
+- Authored the bounded primitive `vec_str_at` frontend, fixed String signature,
+  scoped whole-owner provenance, fused byte-view identity, and selective Prelude
+  v17/Graph v80 replay. Owning regressions are unexecuted; backend/application
+  qualification and cost evidence remain pending.
+
 - Add lazy ordinary JSON scalar paths for ASCII UTF-8 and selected escape kinds. Preserve the original checked arithmetic at near-limit offsets and retain independent original kernels in owning differential definitions; backend qualification and measured work remain pending.
 
 - Generate direct ASCII scalar/advance checks for JSON identifier validation and owned UTF-8 prefixes, retaining original escape/non-ASCII validation and all grammar, size and fuel limits. Independent original-path differential and maximum-capacity backend gates await qualification.
