@@ -3,9 +3,14 @@
 use super::*;
 use crate::hir::{OwnershipMode, ResolvedStatement};
 mod decision;
-mod operands;
+pub(in crate::cleanup_plan::replay) mod operands;
 const DEPTH: usize = 514;
 type Frame<'a> = Option<(crate::hir::lexical_exit::ChildCursor<'a>, bool)>;
+#[derive(Clone, Copy)]
+pub(in crate::cleanup_plan::replay) enum Call<'a> {
+    Builtin(operands::Builtin),
+    User(&'a ResolvedFunction),
+}
 
 pub(in crate::cleanup_plan::replay) struct Profile<'a> {
     program: &'a dyn crate::cleanup::ReplayContext,
@@ -14,6 +19,7 @@ pub(in crate::cleanup_plan::replay) struct Profile<'a> {
     renewals: crate::cleanup_plan::ReplayRenewalBindings<'a>,
     schema_facts: decision::Facts,
     matches: Vec<&'a ResolvedExpr>,
+    calls: Vec<(&'a ResolvedExpr, Call<'a>)>,
 }
 impl<'a> Profile<'a> {
     pub(in crate::cleanup_plan::replay) fn matches(
@@ -25,6 +31,24 @@ impl<'a> Profile<'a> {
     }
     pub(in crate::cleanup_plan::replay) fn inventory(&self) -> &crate::cleanup::CleanupInventory {
         &self.inventory
+    }
+    pub(in crate::cleanup_plan::replay) fn call(
+        &self,
+        program: &dyn crate::cleanup::ReplayContext,
+        function: &ResolvedFunction,
+        expression: &ResolvedExpr,
+        budget: &mut ReplayBudget,
+    ) -> Result<Call<'a>, Diagnostic> {
+        if !self.matches(program, function) {
+            return Err(fail(function));
+        }
+        for (candidate, call) in &self.calls {
+            budget.charge(function, 1, "borrowed exact source call probe")?;
+            if std::ptr::eq(*candidate, expression) {
+                return Ok(*call);
+            }
+        }
+        Err(fail(function))
     }
     pub(in crate::cleanup_plan::replay) fn no_drop(
         &self,
@@ -146,15 +170,16 @@ fn id_equal(
     }
     Ok(true)
 }
-fn call(
-    program: &dyn crate::cleanup::ReplayContext,
+fn call<'a>(
+    program: &'a dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     callee: &crate::hir::DeclarationId,
     args: &[ResolvedExpr],
+    result: &ResolvedType,
     budget: &mut ReplayBudget,
-) -> Result<(), Diagnostic> {
-    if operands::builtin(function, callee.as_str(), budget)?.is_some() {
-        return Ok(());
+) -> Result<Call<'a>, Diagnostic> {
+    if let Some(operation) = operands::builtin(function, callee.as_str(), budget)? {
+        return Ok(Call::Builtin(operation));
     }
     let mut target = None;
     for index in 0..program.function_count() {
@@ -169,6 +194,7 @@ fn call(
     let target = target.ok_or_else(|| fail(function))?;
     budget.charge(function, 1, "borrowed helper current callee header")?;
     if !crate::hir::is_scalar_resolved_type(&target.return_type)
+        || &target.return_type != result
         || !target.effects.is_empty()
         || target.yields.is_some()
         || args.len() != target.params.len()
@@ -184,7 +210,7 @@ fn call(
             return Err(fail(function));
         }
     }
-    Ok(())
+    Ok(Call::User(target))
 }
 pub(in crate::cleanup_plan::replay) fn build<'a>(
     program: &'a dyn crate::cleanup::ReplayContext,
@@ -218,6 +244,7 @@ pub(in crate::cleanup_plan::replay) fn build<'a>(
     }
     let mut schema_facts = decision::Facts::default();
     let mut matches = Vec::new();
+    let mut calls = Vec::new();
     schema_facts.ty(true);
     for parameter in &function.params {
         budget.charge(function, 1, "borrowed helper parameter profile")?;
@@ -291,7 +318,14 @@ pub(in crate::cleanup_plan::replay) fn build<'a>(
                         type_arguments,
                         args,
                     } if type_arguments.is_empty() => {
-                        call(program, function, callee, args, budget)?
+                        let call = call(program, function, callee, args, &expression.ty, budget)?;
+                        budget.reserve_vec(
+                            function,
+                            &mut calls,
+                            1,
+                            "borrowed exact call references",
+                        )?;
+                        calls.push((expression, call));
                     }
                     ResolvedExprKind::Match {
                         mode,
@@ -437,6 +471,7 @@ pub(in crate::cleanup_plan::replay) fn build<'a>(
         renewals: crate::cleanup_plan::ReplayRenewalBindings::empty(),
         schema_facts,
         matches,
+        calls,
     })
 }
 #[cfg(test)]

@@ -1,5 +1,7 @@
 //! Selected plain primitive/user-call status reconstruction.
 use super::*;
+#[cfg(test)]
+mod borrowed;
 
 pub(super) fn validate_required_status_sources(
     program: &dyn crate::cleanup::ReplayContext,
@@ -44,7 +46,20 @@ pub(super) fn validate_required_status_sources(
             },
         });
     }
-    if function.cleanup_plan.status_sources != expected {
+    #[cfg(test)]
+    let equal = if program.borrowed_helper_lease(function).is_some() {
+        borrowed::equal(
+            function,
+            &expected,
+            &function.cleanup_plan.status_sources,
+            budget,
+        )?
+    } else {
+        function.cleanup_plan.status_sources == expected
+    };
+    #[cfg(not(test))]
+    let equal = function.cleanup_plan.status_sources == expected;
+    if !equal {
         return Err(replay_error(
             function,
             "cleanup status sources do not exactly cover typed HIR failure producers",
@@ -65,10 +80,16 @@ fn collect_expression_statuses(
         514,
         "status expression cursor",
     )?;
+    #[cfg(test)]
+    let borrowed = program.borrowed_helper_lease(function);
     let mut stack = [None; 514];
     stack[0] = Some(expression_children::ReplayChildCursor::new(expression));
     let mut len = 1usize;
     while len != 0 {
+        #[cfg(test)]
+        if borrowed.is_some() {
+            budget.charge(function, 1, "borrowed status actual cursor frame")?;
+        }
         len -= 1;
         let mut cursor = stack[len].take().expect("status frame retained");
         let expression = cursor.expression();
@@ -124,49 +145,65 @@ fn collect_expression_statuses(
             ResolvedExprKind::Call {
                 callee, instance, ..
             } => {
-                if instance.is_none()
-                    && (crate::byte_ops::by_id(callee.as_str()).is_some_and(|op| !op.is_fallible())
-                        || crate::host_io_ops::by_id(callee.as_str()).is_some()
-                        || callee.as_str() == crate::stdin_stream_ops::EOF_ID)
-                {
-                    // Byte-data operations are total after HIR admission, with
-                    // the bounded `bytes_set`, `bytes_set5`, and `bytes_set1_or5_from_slice` stores, whose computed
-                    // element index is checked at run time. Physical allocation
-                    // failure stays invariant fail-stop, not a recoverable
-                    // operation status.
-                    continue;
-                }
-                if instance.is_none()
-                    && super::super::deferred_commit::is_infallible_vec_operation(
-                        crate::vec_ops::by_id(callee.as_str()),
-                    )
-                {
-                    continue;
-                }
-                if instance.is_none()
-                    && super::super::deferred_commit::is_infallible_box_operation(callee)
-                {
-                    continue;
-                }
-                if instance.is_none()
-                    && (crate::map_ops::by_id(callee.as_str()).is_some()
-                        || crate::string_ops::by_id(callee.as_str()).is_some()
-                        || crate::str_ops::by_id(callee.as_str()).is_some()
-                        || crate::vec_ops::by_id(callee.as_str()).is_some()
-                        || crate::iterator_ops::by_id(callee.as_str()).is_some()
-                        || crate::list_ops::by_id(callee.as_str()).is_some()
-                        || crate::box_ops::by_id(callee.as_str()).is_some()
-                        || crate::byte_ops::by_id(callee.as_str()).is_some())
-                {
-                    // Closed String/collection/byte operations project like ordinary propagated calls.
-                } else if program
-                    .resolve_call_target(callee, instance.as_ref())
-                    .is_none()
-                {
-                    return Err(replay_error(
-                        function,
-                        format!("status source call has unknown callee `{callee}`"),
-                    ));
+                #[cfg(test)]
+                let held = match &borrowed {
+                    Some(lease) => {
+                        Some(lease.call_is_total(program, function, expression, budget)?)
+                    }
+                    None => None,
+                };
+                #[cfg(not(test))]
+                let held: Option<bool> = None;
+                if let Some(total) = held {
+                    if total {
+                        continue;
+                    }
+                } else {
+                    if instance.is_none()
+                        && (crate::byte_ops::by_id(callee.as_str())
+                            .is_some_and(|op| !op.is_fallible())
+                            || crate::host_io_ops::by_id(callee.as_str()).is_some()
+                            || callee.as_str() == crate::stdin_stream_ops::EOF_ID)
+                    {
+                        // Byte-data operations are total after HIR admission, with
+                        // the bounded `bytes_set`, `bytes_set5`, and `bytes_set1_or5_from_slice` stores, whose computed
+                        // element index is checked at run time. Physical allocation
+                        // failure stays invariant fail-stop, not a recoverable
+                        // operation status.
+                        continue;
+                    }
+                    if instance.is_none()
+                        && super::super::deferred_commit::is_infallible_vec_operation(
+                            crate::vec_ops::by_id(callee.as_str()),
+                        )
+                    {
+                        continue;
+                    }
+                    if instance.is_none()
+                        && super::super::deferred_commit::is_infallible_box_operation(callee)
+                    {
+                        continue;
+                    }
+                    if instance.is_none()
+                        && (crate::map_ops::by_id(callee.as_str()).is_some()
+                            || crate::string_ops::by_id(callee.as_str()).is_some()
+                            || crate::str_ops::by_id(callee.as_str()).is_some()
+                            || crate::vec_ops::by_id(callee.as_str()).is_some()
+                            || crate::iterator_ops::by_id(callee.as_str()).is_some()
+                            || crate::list_ops::by_id(callee.as_str()).is_some()
+                            || crate::box_ops::by_id(callee.as_str()).is_some()
+                            || crate::byte_ops::by_id(callee.as_str()).is_some())
+                    {
+                        // Closed String/collection/byte operations project like ordinary propagated calls.
+                    } else if program
+                        .resolve_call_target(callee, instance.as_ref())
+                        .is_none()
+                    {
+                        return Err(replay_error(
+                            function,
+                            format!("status source call has unknown callee `{callee}`"),
+                        ));
+                    }
                 }
                 budget.reserve_vec(function, statuses, 1, "operation status vector")?;
                 budget.reserve_clone(function, callee, "call status callee")?;
@@ -293,6 +330,8 @@ fn cases(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(test)]
+    mod borrowed;
     fn program() -> ResolvedProgram {
         let source = crate::check(
             r#"module replay.status_owner;

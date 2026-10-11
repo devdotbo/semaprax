@@ -70,6 +70,46 @@ pub(super) fn original(index: &DeclarationIndex, ty: &ResolvedType) -> bool {
 
 #[test]
 fn actual_metadata_probes_preserve_exact_one_short_cumulative_failure_without_allocating() {
+    // Independent byte census for the cheap filter; declaration metadata is
+    // deliberately outside this shape-only predicate.
+    for (value, accepted, expected_work) in [
+        (ResolvedType::U8, false, 1),
+        (ty(), true, crate::prelude::OPTION_ID.len() + 4),
+        (
+            ResolvedType::Nominal {
+                declaration: DeclarationId::new(crate::prelude::OPTION_ID),
+                arguments: vec![ResolvedType::Bytes],
+            },
+            false,
+            crate::prelude::OPTION_ID.len() + 4,
+        ),
+        (
+            ResolvedType::Nominal {
+                declaration: DeclarationId::new(crate::prelude::OPTION_ID),
+                arguments: vec![],
+            },
+            false,
+            crate::prelude::OPTION_ID.len() + 3,
+        ),
+    ] {
+        for allowance in [expected_work, expected_work - 1] {
+            let mut remaining = allowance;
+            let received = is_type_metered(&value, &mut |units| {
+                remaining = remaining.checked_sub(units).ok_or(())?;
+                Ok::<_, ()>(())
+            });
+            assert_eq!(
+                received,
+                if allowance == expected_work {
+                    Ok(accepted)
+                } else {
+                    Err(())
+                }
+            );
+            assert_eq!(remaining, 0);
+            assert_eq!(is_type(&value), accepted);
+        }
+    }
     let current = index();
     let value = ty();
     let mut spent = 0usize;

@@ -4035,117 +4035,136 @@ fn expression_skeleton(
                         args,
                         type_arguments,
                     } => {
-                        let string_intrinsic = instance
-                            .is_none()
-                            .then(|| crate::string_ops::by_id(callee.as_str()))
-                            .flatten();
-                        let str_intrinsic = instance
-                            .is_none()
-                            .then(|| crate::str_ops::by_id(callee.as_str()))
-                            .flatten();
-                        let byte_intrinsic = instance
-                            .is_none()
-                            .then(|| crate::byte_ops::by_id(callee.as_str()))
-                            .flatten();
-                        let host_io_intrinsic = instance
-                            .is_none()
-                            .then(|| crate::host_io_ops::by_id(callee.as_str()))
-                            .flatten();
-                        let vec_intrinsic = instance
-                            .is_none()
-                            .then(|| crate::vec_ops::by_id(callee.as_str()))
-                            .flatten();
-                        let box_intrinsic = instance
-                            .is_none()
-                            .then(|| crate::box_ops::by_id(callee.as_str()))
-                            .flatten();
-                        let params = if instance.is_none()
-                            && crate::map_ops::by_id(callee.as_str()).is_some()
-                        {
-                            typed_storage::unsupported_provider(work)?;
-                            resolved_call_params(
-                                program,
-                                function,
-                                expression,
-                                callee,
-                                None,
-                                type_arguments,
-                            )?
-                        } else if let Some(op) = string_intrinsic {
-                            typed_storage::static_params(
-                                op.id(),
-                                op.param_types(),
-                                op.param_names(),
-                                |i, _| op.param_ownership(i),
-                                work,
-                            )?
-                        } else if let Some(op) = str_intrinsic {
-                            typed_storage::static_params(
-                                op.id(),
-                                op.param_types(),
-                                op.param_names(),
-                                |_, ty| {
-                                    if *ty == ResolvedType::Str {
-                                        OwnershipMode::Borrow
-                                    } else {
-                                        OwnershipMode::Value
-                                    }
-                                },
-                                work,
-                            )?
-                        } else if let Some(op) = byte_intrinsic {
-                            typed_storage::static_params(
-                                op.id(),
-                                op.param_types(),
-                                op.param_names(),
-                                |i, _| op.param_ownership(i),
-                                work,
-                            )?
-                        } else if let Some(op) = host_io_intrinsic {
-                            typed_storage::unsupported_provider(work)?;
-                            crate::host_io_ops::resolved_params(op)
-                        } else if instance.is_none()
-                            && (crate::iterator_ops::by_id(callee.as_str()).is_some()
-                                || crate::list_ops::by_id(callee.as_str()).is_some()
-                                || callee.as_str() == crate::stdin_stream_ops::EOF_ID)
-                        {
-                            typed_storage::unsupported_provider(work)?;
-                            resolved_call_params(
-                                program,
-                                function,
-                                expression,
-                                callee,
-                                None,
-                                type_arguments,
-                            )?
-                        } else if let Some(op) = vec_intrinsic {
-                            typed_storage::unsupported_provider(work)?;
-                            let [element] = type_arguments.as_slice() else {
-                                return Err(replay_error(
-                                    function,
-                                    "bounded Vec skeleton call has incorrect type arity",
-                                ));
-                            };
-                            crate::vec_ops::resolved_params_in(program.declarations(), op, element)
-                        } else if let Some(op) = box_intrinsic {
-                            typed_storage::unsupported_provider(work)?;
-                            let [element] = type_arguments.as_slice() else {
-                                return Err(replay_error(
-                                    function,
-                                    "bounded Box skeleton call has incorrect type arity",
-                                ));
-                            };
-                            crate::box_ops::resolved_params(op, element)
+                        #[cfg(test)]
+                        let held_params = match program.borrowed_helper_lease(function) {
+                            Some(lease) => {
+                                Some(lease.call_params(program, function, expression, work)?)
+                            }
+                            None => None,
+                        };
+                        #[cfg(not(test))]
+                        let held_params: Option<
+                            Vec<crate::hir::ResolvedParam>,
+                        > = None;
+                        let params = if let Some(params) = held_params {
+                            params
                         } else {
-                            let target = program
-                                .resolve_call_target(callee, instance.as_ref())
-                                .ok_or_else(|| {
-                                    replay_error(
+                            let string_intrinsic = instance
+                                .is_none()
+                                .then(|| crate::string_ops::by_id(callee.as_str()))
+                                .flatten();
+                            let str_intrinsic = instance
+                                .is_none()
+                                .then(|| crate::str_ops::by_id(callee.as_str()))
+                                .flatten();
+                            let byte_intrinsic = instance
+                                .is_none()
+                                .then(|| crate::byte_ops::by_id(callee.as_str()))
+                                .flatten();
+                            let host_io_intrinsic = instance
+                                .is_none()
+                                .then(|| crate::host_io_ops::by_id(callee.as_str()))
+                                .flatten();
+                            let vec_intrinsic = instance
+                                .is_none()
+                                .then(|| crate::vec_ops::by_id(callee.as_str()))
+                                .flatten();
+                            let box_intrinsic = instance
+                                .is_none()
+                                .then(|| crate::box_ops::by_id(callee.as_str()))
+                                .flatten();
+                            if instance.is_none()
+                                && crate::map_ops::by_id(callee.as_str()).is_some()
+                            {
+                                typed_storage::unsupported_provider(work)?;
+                                resolved_call_params(
+                                    program,
+                                    function,
+                                    expression,
+                                    callee,
+                                    None,
+                                    type_arguments,
+                                )?
+                            } else if let Some(op) = string_intrinsic {
+                                typed_storage::static_params(
+                                    op.id(),
+                                    op.param_types(),
+                                    op.param_names(),
+                                    |i, _| op.param_ownership(i),
+                                    work,
+                                )?
+                            } else if let Some(op) = str_intrinsic {
+                                typed_storage::static_params(
+                                    op.id(),
+                                    op.param_types(),
+                                    op.param_names(),
+                                    |_, ty| {
+                                        if *ty == ResolvedType::Str {
+                                            OwnershipMode::Borrow
+                                        } else {
+                                            OwnershipMode::Value
+                                        }
+                                    },
+                                    work,
+                                )?
+                            } else if let Some(op) = byte_intrinsic {
+                                typed_storage::static_params(
+                                    op.id(),
+                                    op.param_types(),
+                                    op.param_names(),
+                                    |i, _| op.param_ownership(i),
+                                    work,
+                                )?
+                            } else if let Some(op) = host_io_intrinsic {
+                                typed_storage::unsupported_provider(work)?;
+                                crate::host_io_ops::resolved_params(op)
+                            } else if instance.is_none()
+                                && (crate::iterator_ops::by_id(callee.as_str()).is_some()
+                                    || crate::list_ops::by_id(callee.as_str()).is_some()
+                                    || callee.as_str() == crate::stdin_stream_ops::EOF_ID)
+                            {
+                                typed_storage::unsupported_provider(work)?;
+                                resolved_call_params(
+                                    program,
+                                    function,
+                                    expression,
+                                    callee,
+                                    None,
+                                    type_arguments,
+                                )?
+                            } else if let Some(op) = vec_intrinsic {
+                                typed_storage::unsupported_provider(work)?;
+                                let [element] = type_arguments.as_slice() else {
+                                    return Err(replay_error(
                                         function,
-                                        format!("unknown skeleton callee `{callee}`"),
-                                    )
-                                })?;
-                            work.clone_payload(&target.params, "callee parameter clone")?
+                                        "bounded Vec skeleton call has incorrect type arity",
+                                    ));
+                                };
+                                crate::vec_ops::resolved_params_in(
+                                    program.declarations(),
+                                    op,
+                                    element,
+                                )
+                            } else if let Some(op) = box_intrinsic {
+                                typed_storage::unsupported_provider(work)?;
+                                let [element] = type_arguments.as_slice() else {
+                                    return Err(replay_error(
+                                        function,
+                                        "bounded Box skeleton call has incorrect type arity",
+                                    ));
+                                };
+                                crate::box_ops::resolved_params(op, element)
+                            } else {
+                                let target = program
+                                    .resolve_call_target(callee, instance.as_ref())
+                                    .ok_or_else(|| {
+                                        replay_error(
+                                            function,
+                                            format!("unknown skeleton callee `{callee}`"),
+                                        )
+                                    })?;
+                                work.clone_payload(&target.params, "callee parameter clone")?
+                            }
                         };
                         work.charge(1, "call skeleton root state")?;
                         let states = typed_storage::call_root(work)?;
@@ -6722,11 +6741,20 @@ fn finish_call_states(
     states: Vec<CallSkeletonState>,
     work: &mut SkeletonWork<'_, '_>,
 ) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
-    let infallible_compiler_operation =
-        super::deferred_commit::expression_is_infallible_compiler_operation(expression);
+    #[cfg(test)]
+    let borrowed_total = match program.borrowed_helper_lease(function) {
+        Some(lease) => Some(lease.call_is_total(program, function, expression, work.budget)?),
+        None => None,
+    };
+    #[cfg(not(test))]
+    let borrowed_total: Option<bool> = None;
+    let infallible_compiler_operation = borrowed_total.unwrap_or_else(|| {
+        super::deferred_commit::expression_is_infallible_compiler_operation(expression)
+    });
     // `vec_push` and the one fallible byte operation both check their bound before the owner transfer commits, so their status observation precedes the
     // call-commit and a failed call leaves the owner in its call-argument slot for the ordinary region cleanup.
-    let defer_commit = resolved_call::defers_owner_commit(expression);
+    // The complete held profile excludes deferred owner-transfer opcodes.
+    let defer_commit = borrowed_total.is_none() && resolved_call::defers_owner_commit(expression);
     let infallible_compiler_operation = infallible_compiler_operation
         || matches!(
             &expression.kind,
@@ -6746,7 +6774,7 @@ fn finish_call_states(
             work.push_expr_path(&mut results, path, "short-circuited call path")?;
             continue;
         }
-        if super::owner_admission::required(program, expression) {
+        if borrowed_total.is_none() && super::owner_admission::required(program, expression) {
             let admission = StatusSourceId {
                 expression: work.clone_owned(&expression.id, "owner-admission identity clone")?,
                 lane: StatusLane::OwnerAdmission,

@@ -179,6 +179,18 @@ impl ValueId {
     pub fn as_str(&self) -> &str {
         &self.0
     }
+
+    /// Byte equality is checked independently by the guarded receiving probe.
+    /// Retain the second component of ordinary ValueId equality as well.
+    #[cfg(test)]
+    pub(crate) fn same_cached_fingerprint(&self, other: &Self) -> bool {
+        self.1 == other.1
+    }
+
+    #[cfg(test)]
+    pub(crate) fn invalidate_fingerprint_for_test(&mut self) {
+        self.1 ^= 1;
+    }
 }
 
 impl Hash for ValueId {

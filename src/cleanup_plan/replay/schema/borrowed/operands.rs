@@ -3,7 +3,7 @@
 //! calls still require the parent's independent current-member authentication.
 use super::*;
 #[derive(Clone, Copy)]
-pub(super) enum Builtin {
+pub(in crate::cleanup_plan::replay) enum Builtin {
     FromU8,
     Get,
     Len,
@@ -56,7 +56,11 @@ fn root(
         budget.charge(function, 1, "borrowed actual root parameter")?;
         if id_equal(function, parameter.id.as_str(), place.root.as_str(), budget)? {
             budget.charge(function, 1, "borrowed exact root mode and type")?;
-            if found || parameter.ownership != OwnershipMode::Borrow || &parameter.ty != ty {
+            if found
+                || !parameter.id.same_cached_fingerprint(&place.root)
+                || parameter.ownership != OwnershipMode::Borrow
+                || &parameter.ty != ty
+            {
                 return Ok(false);
             }
             found = true;

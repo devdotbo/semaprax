@@ -35,6 +35,7 @@ pub(crate) fn authenticated(index: &DeclarationIndex, ty: &ResolvedType) -> bool
 pub(crate) use metered::authenticated as authenticated_metered;
 #[cfg(test)]
 pub(crate) use metered::pattern as pattern_metered;
+pub(crate) use metered::type_shape as is_type_metered;
 mod metered;
 
 // Receiving schema/inventory lookup work is not yet closed over the selected

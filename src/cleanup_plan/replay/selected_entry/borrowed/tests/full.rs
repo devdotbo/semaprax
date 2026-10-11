@@ -83,7 +83,7 @@ fn actual_option_helpers_full_replay_matches_ordinary_and_metering_through_drop(
 
 #[test]
 fn option_profile_cannot_bless_forged_case_or_result_trace_and_failure_is_sticky() {
-    for mutation in 0..4 {
+    for mutation in 0..5 {
         let mut program = program();
         let other_result = program.functions[0].body.id.clone();
         let function = &mut program.functions[1];
@@ -135,7 +135,7 @@ fn option_profile_cannot_bless_forged_case_or_result_trace_and_failure_is_sticky
                     expression: other_result,
                 };
             }
-            _ => {
+            3 => {
                 let exit = function
                     .cleanup_plan
                     .exits
@@ -145,6 +145,21 @@ fn option_profile_cannot_bless_forged_case_or_result_trace_and_failure_is_sticky
                     })
                     .expect("actual scalar result commit");
                 exit.continuation = ExitContinuation::ReturnUnit;
+            }
+            _ => {
+                let ResolvedExprKind::Block { tail, .. } = &mut function.body.kind else {
+                    panic!("actual option body");
+                };
+                let ResolvedExprKind::Match { scrutinee, .. } = &mut tail.kind else {
+                    panic!("actual option match");
+                };
+                let ResolvedExprKind::Call { args, .. } = &mut scrutinee.kind else {
+                    panic!("actual byte read");
+                };
+                let ResolvedExprKind::Place(place) = &mut args[0].kind else {
+                    panic!("actual borrowed parameter root");
+                };
+                place.root.invalidate_fingerprint_for_test();
             }
         }
         let anchor = &program.functions[0];

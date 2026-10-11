@@ -196,9 +196,10 @@ impl InventoryBuilder<'_> {
         Ok(())
     }
     pub(super) fn needs_drop(&self, ty: &ResolvedType) -> Result<bool, Diagnostic> {
-        self.charge(1)?;
         if let Some(work) = &self.work {
-            if crate::hir::borrowed_scalar::option_u8::is_type(ty) {
+            if crate::hir::borrowed_scalar::option_u8::is_type_metered(ty, &mut |units| {
+                work.borrow_mut()(units)
+            })? {
                 return if crate::hir::borrowed_scalar::option_u8::authenticated_metered(
                     self.program.declarations(),
                     ty,

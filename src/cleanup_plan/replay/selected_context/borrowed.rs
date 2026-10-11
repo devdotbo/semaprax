@@ -115,6 +115,70 @@ impl Lease<'_> {
         self.validate(context, function, budget)?;
         self.profile.schema(self.source, function, budget)
     }
+    pub(in crate::cleanup_plan::replay) fn call_is_total(
+        &self,
+        context: &dyn ReplayContext,
+        function: &ResolvedFunction,
+        expression: &ResolvedExpr,
+        budget: &mut ReplayBudget,
+    ) -> Result<bool, Diagnostic> {
+        self.validate(context, function, budget)?;
+        Ok(matches!(
+            self.profile
+                .call(self.source, function, expression, budget)?,
+            schema::borrowed::Call::Builtin(
+                schema::borrowed::operands::Builtin::Get | schema::borrowed::operands::Builtin::Len
+            )
+        ))
+    }
+    pub(in crate::cleanup_plan::replay) fn call_params(
+        &self,
+        context: &dyn ReplayContext,
+        function: &ResolvedFunction,
+        expression: &ResolvedExpr,
+        work: &mut SkeletonWork<'_, '_>,
+    ) -> Result<Vec<crate::hir::ResolvedParam>, Diagnostic> {
+        self.validate(context, function, work.budget)?;
+        use schema::borrowed::operands::Builtin;
+        match self
+            .profile
+            .call(self.source, function, expression, work.budget)?
+        {
+            schema::borrowed::Call::User(target) => {
+                work.clone_payload(&target.params, "borrowed actual callee parameter clone")
+            }
+            schema::borrowed::Call::Builtin(Builtin::FromU8) => {
+                let op = crate::string_ops::StringOp::I64FromU8;
+                typed_storage::static_params(
+                    op.id(),
+                    op.param_types(),
+                    op.param_names(),
+                    |i, _| op.param_ownership(i),
+                    work,
+                )
+            }
+            schema::borrowed::Call::Builtin(operation @ (Builtin::Get | Builtin::Len)) => {
+                let op = match operation {
+                    Builtin::Get => crate::byte_ops::ByteOp::Get,
+                    _ => crate::byte_ops::ByteOp::Len,
+                };
+                typed_storage::static_params(
+                    op.id(),
+                    op.param_types(),
+                    op.param_names(),
+                    |i, _| op.param_ownership(i),
+                    work,
+                )
+            }
+            schema::borrowed::Call::Builtin(Builtin::Str(op)) => typed_storage::static_params(
+                op.id(),
+                op.param_types(),
+                op.param_names(),
+                |_, _| OwnershipMode::Borrow,
+                work,
+            ),
+        }
+    }
     pub(in crate::cleanup_plan::replay) fn no_drop(
         &self,
         context: &dyn ReplayContext,

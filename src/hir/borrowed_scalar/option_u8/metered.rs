@@ -69,6 +69,29 @@ fn field<E>(
     }
 }
 
+pub(crate) fn type_shape<E>(
+    ty: &ResolvedType,
+    charge: &mut impl FnMut(usize) -> Result<(), E>,
+) -> Result<bool, E> {
+    charge(1)?;
+    let ResolvedType::Nominal {
+        declaration,
+        arguments,
+    } = ty
+    else {
+        return Ok(false);
+    };
+    if !equal(declaration.as_str(), crate::prelude::OPTION_ID, charge)? {
+        return Ok(false);
+    }
+    charge(1)?;
+    let [argument] = arguments.as_slice() else {
+        return Ok(false);
+    };
+    charge(1)?;
+    Ok(*argument == ResolvedType::U8)
+}
+
 pub(crate) fn authenticated<E>(
     index: &DeclarationIndex,
     ty: &ResolvedType,
@@ -82,9 +105,15 @@ pub(crate) fn authenticated<E>(
     else {
         return Ok(false);
     };
-    if !equal(option.as_str(), crate::prelude::OPTION_ID, charge)?
-        || arguments.as_slice() != [ResolvedType::U8]
-    {
+    if !equal(option.as_str(), crate::prelude::OPTION_ID, charge)? {
+        return Ok(false);
+    }
+    charge(1)?;
+    let [argument] = arguments.as_slice() else {
+        return Ok(false);
+    };
+    charge(1)?;
+    if *argument != ResolvedType::U8 {
         return Ok(false);
     }
     let Some(declaration) = lookup(&index.declarations, option, charge)? else {
