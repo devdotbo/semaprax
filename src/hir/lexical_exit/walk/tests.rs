@@ -89,10 +89,14 @@ fn wide_block_cursor_advances_each_statement_and_retains_all_statement_children(
         unreachable!()
     };
     let mut cursor = ChildCursor::new(&block);
+    assert!(cursor.last_statement_child().is_none());
     for (statement_index, statement) in statements.iter().enumerate() {
         for index in 0..statement.child_count() {
             let actual = cursor.next().unwrap();
             assert!(std::ptr::eq(actual, statement.child(index).unwrap()));
+            let (owner, edge) = cursor.last_statement_child().unwrap();
+            assert!(std::ptr::eq(owner, statement));
+            assert_eq!(edge, index);
             let Position::Block { statement, child } = cursor.position else {
                 panic!("block position");
             };
@@ -104,7 +108,9 @@ fn wide_block_cursor_advances_each_statement_and_retains_all_statement_children(
         cursor.next().is_some(),
         "block tail follows every statement"
     );
+    assert!(cursor.last_statement_child().is_none());
     assert!(cursor.next().is_none());
+    assert!(cursor.last_statement_child().is_none());
 }
 
 #[test]

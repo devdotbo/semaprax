@@ -1,6 +1,4 @@
 use super::*;
-#[cfg(test)]
-pub(crate) use selected::checked_bindings_with_reservation;
 mod selected;
 #[cfg(test)]
 pub(crate) use selected::checked_absent_with_work_reservation;

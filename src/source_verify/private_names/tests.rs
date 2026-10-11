@@ -1,5 +1,5 @@
 use super::{PrivateNames, Providers};
-use crate::ast::{Program, TypeDeclaration};
+use crate::ast::TypeDeclaration;
 use crate::diagnostic::Diagnostic;
 
 /// A held closure whose single copy is the last declaration of the program.

@@ -39,6 +39,21 @@ impl<'a> ChildCursor<'a> {
     pub(crate) fn expression(&self) -> &'a ResolvedExpr {
         self.expression
     }
+    /// Statement edge most recently returned by `next`; tails have no statement.
+    /// This uses the saved position and never rescans a block prefix.
+    pub(crate) fn last_statement_child(
+        &self,
+    ) -> Option<(&'a crate::hir::ResolvedStatement, usize)> {
+        match (&self.expression.kind, self.position) {
+            (
+                K::Block { statements, .. } | K::VecConstructor { statements, .. },
+                Position::Block { statement, child },
+            ) if self.started && child != 0 => {
+                statements.get(statement).map(|item| (item, child - 1))
+            }
+            _ => None,
+        }
+    }
     pub(crate) fn is_started(&self) -> bool {
         self.started
     }

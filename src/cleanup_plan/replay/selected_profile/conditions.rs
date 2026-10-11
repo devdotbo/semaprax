@@ -105,15 +105,9 @@ fn condition_reads(
         if let Some(child) = cursor.next() {
             // Legacy condition_reads traverses a nested ordinary While's
             // condition, never its body. All other child shapes stay authored.
-            let mut skip = false;
-            if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
-                budget.charge(
-                    function,
-                    statements.len(),
-                    "selected String nested condition boundary",
-                )?;
-                skip=statements.iter().any(|s|matches!(s,crate::hir::ResolvedStatement::While{body,..} if std::ptr::eq(body.as_ref(),child)));
-            }
+            let skip = matches!(cursor.last_statement_child(),
+                Some((crate::hir::ResolvedStatement::While { body, .. }, _))
+                    if std::ptr::eq(body.as_ref(), child));
             frames[depth - 1] = Some((cursor, true));
             if skip {
                 continue;

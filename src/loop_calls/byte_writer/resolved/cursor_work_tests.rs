@@ -19,6 +19,7 @@ fn run(function: &ResolvedFunction, limit: usize) -> Option<()> {
         &|_, ty| crate::hir::is_scalar_resolved_type(ty),
         0,
         (&mut frames, limit),
+        &mut |_| Some(()),
     )
 }
 #[test]

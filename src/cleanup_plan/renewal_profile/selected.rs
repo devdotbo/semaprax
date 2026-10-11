@@ -181,25 +181,20 @@ fn walk<'a>(
             }
             frames[depth - 1] = Some((cursor, true, in_loop));
             let mut child_loop = in_loop;
-            if let ResolvedExprKind::Block { statements, .. }
-            | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
-            {
-                charge(statements.len())?;
-                for item in statements {
-                    if let ResolvedStatement::While {
-                        condition, body, ..
+            if let Some((item, _)) = cursor.last_statement_child() {
+                if let ResolvedStatement::While {
+                    condition, body, ..
+                }
+                | ResolvedStatement::LexicalWhile {
+                    condition, body, ..
+                } = item
+                {
+                    if std::ptr::eq(condition.as_ref(), child) {
+                        child_loop = false;
                     }
-                    | ResolvedStatement::LexicalWhile {
-                        condition, body, ..
-                    } = item
-                    {
-                        if std::ptr::eq(condition.as_ref(), child) {
-                            child_loop = false;
-                        }
-                        if std::ptr::eq(body.as_ref(), child) {
-                            child_loop =
-                                crate::hir::iterator_loop::recognize(condition, body).is_none();
-                        }
+                    if std::ptr::eq(body.as_ref(), child) {
+                        child_loop =
+                            crate::hir::iterator_loop::recognize(condition, body).is_none();
                     }
                 }
             }
@@ -214,6 +209,24 @@ fn walk<'a>(
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+fn walk_with_work_for_test<'a>(
+    function: &'a ResolvedFunction,
+    frames: &mut [Frame<'a>; DEPTH],
+    work: &mut usize,
+    mut visit: impl FnMut(&'a ResolvedStatement) -> Result<(), crate::diagnostic::Diagnostic>,
+) -> Result<(), crate::diagnostic::Diagnostic> {
+    walk(
+        function,
+        frames,
+        &mut |units| {
+            *work = work.checked_sub(units).ok_or_else(error)?;
+            Ok(())
+        },
+        |item, _, _| visit(item),
+    )
 }
 
 #[cfg(test)]
@@ -331,15 +344,11 @@ mod tests {
         }
         let mut frames = [None; DEPTH];
         let mut actual = Vec::new();
-        walk(
-            function,
-            &mut frames,
-            charge,
-            |statement, in_loop, charge| {
-                actual.push(statement as *const _);
-                Ok(())
-            },
-        )
+        let mut work = WORK;
+        walk_with_work_for_test(function, &mut frames, &mut work, |statement| {
+            actual.push(statement as *const _);
+            Ok(())
+        })
         .unwrap();
         assert_eq!(actual, reference);
         assert_eq!(work, expected_work);
@@ -348,7 +357,7 @@ mod tests {
         assert_eq!(WORK - work, 156);
         let mut short_work = WORK - expected_work - 1;
         assert_eq!(
-            walk(function, &mut frames, &mut short_work, |_| Ok(()))
+            walk_with_work_for_test(function, &mut frames, &mut short_work, |_| Ok(()))
                 .unwrap_err()
                 .code,
             "SPX-H006"
@@ -382,9 +391,10 @@ mod tests {
             nested = parent;
         }
         function.body = nested;
+        let mut work = WORK;
         {
             let mut frames = [None; DEPTH];
-            walk(&function, &mut frames, &mut work, |_| Ok(())).unwrap();
+            walk_with_work_for_test(&function, &mut frames, &mut work, |_| Ok(())).unwrap();
         }
         let mut parent = leaf;
         parent.kind = ResolvedExprKind::Block {
@@ -394,7 +404,7 @@ mod tests {
         function.body = parent;
         let mut frames = [None; DEPTH];
         assert_eq!(
-            walk(&function, &mut frames, &mut work, |_| Ok(()))
+            walk_with_work_for_test(&function, &mut frames, &mut work, |_| Ok(()))
                 .unwrap_err()
                 .code,
             "SPX-H006"
@@ -420,7 +430,7 @@ mod cursor_work_tests {
             let mut work = 2 * (4 * width + 5);
             let mut visits = 0;
             for _ in 0..2 {
-                walk(function, &mut frames, &mut work, |_| {
+                walk_with_work_for_test(function, &mut frames, &mut work, |_| {
                     visits += 1;
                     Ok(())
                 })
@@ -429,9 +439,9 @@ mod cursor_work_tests {
             assert_eq!(work, 0);
             assert_eq!(visits, 2 * width);
             let mut short = 2 * (4 * width + 5) - 1;
-            walk(function, &mut frames, &mut short, |_| Ok(())).unwrap();
+            walk_with_work_for_test(function, &mut frames, &mut short, |_| Ok(())).unwrap();
             assert_eq!(
-                walk(function, &mut frames, &mut short, |_| Ok(()))
+                walk_with_work_for_test(function, &mut frames, &mut short, |_| Ok(()))
                     .unwrap_err()
                     .code,
                 "SPX-H006"
