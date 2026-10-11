@@ -925,7 +925,7 @@ fn retained_traversal_row_cannot_be_lent_owned_or_stored_through_imported_helper
             .err()
             .expect("retained build refuses the escaping row");
         assert!(
-            errors.iter().any(|error| error.code == "SPX-H006"
+            errors.iter().any(|error| error.code == "SPX-T284"
                 && error.message
                     == "record traversal row cannot escape or materialize aggregate storage; select a field"),
             "{consumer_use}: {errors:#?}"
@@ -937,7 +937,8 @@ fn retained_traversal_row_cannot_be_lent_owned_or_stored_through_imported_helper
             .err()
             .expect("direct source verification refuses the escaping row");
         assert!(
-            errors.iter().any(|error| error.code == "SPX-T284"),
+            errors.iter().any(|error| error.code == "SPX-T284"
+                && error.message == "record traversal row cannot escape or materialize aggregate storage; select a field"),
             "{consumer_use}: {errors:#?}"
         );
     }

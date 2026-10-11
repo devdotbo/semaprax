@@ -982,11 +982,7 @@ module app.constructor;
 fn main() -> i64
 {
     let values = vec_of<i64>(19, 23);
-    if vec_len<i64>(values) == 2usize {
-        42
-    } else {
-        0
-    }
+    if vec_len<i64>(values) == 2usize { 42 } else { 0 }
 }
 ```
 
