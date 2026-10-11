@@ -415,7 +415,7 @@ if required==18446744073709551615usize && refused{728}else{0}
         app = app.replace(&format!("{field}:"), &format!("{long}:"));
     }
     // Independently, key text + the escaped String alone exceeds the cap.
-    const { assert!(256 * (5 * 64 + 64 * 6) > 131_072) };
+    const _: [(); 1] = [(); (256 * (5 * 64 + 64 * 6) > 131_072) as usize];
     let root = install_schema("response-output-capacity", &schema, &app, 64);
     qualify(&root);
     std::fs::remove_dir_all(root).unwrap();
