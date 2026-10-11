@@ -206,7 +206,7 @@ mod tests {
                         index,
                         &mut |count| {
                             remaining = remaining.checked_sub(count).ok_or(())?;
-                            Ok(())
+                            Ok::<(), ()>(())
                         },
                     );
                     assert_eq!(remaining, 0);
