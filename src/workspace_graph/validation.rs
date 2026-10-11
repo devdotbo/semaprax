@@ -15,7 +15,7 @@ use crate::hir;
 
 use super::{
     graph_error, prelude_binding, reserve_builder_structure, top_level_declaration,
-    AuthoredDeclaration, WorkspaceDeclarationFact,
+    AuthoredDeclaration, ResolvedModuleInput, WorkspaceDeclarationFact,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -680,7 +680,7 @@ mod clone_cost {
 #[cfg(test)]
 pub(super) fn validate_stub_signatures(
     programs: &[Program],
-    modules: &[(String, hir::ResolvedProgram)],
+    modules: &[(String, ResolvedModuleInput)],
 ) -> Result<(), Vec<Diagnostic>> {
     let authored = super::index_authored(programs)?;
     validate_stub_signatures_authored(programs, modules, &authored, None)
@@ -688,7 +688,7 @@ pub(super) fn validate_stub_signatures(
 
 pub(super) fn validate_stub_signatures_authored(
     programs: &[Program],
-    modules: &[(String, hir::ResolvedProgram)],
+    modules: &[(String, ResolvedModuleInput)],
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
     authority: Option<&Invocation<'_>>,
 ) -> Result<(), Vec<Diagnostic>> {

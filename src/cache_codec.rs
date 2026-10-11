@@ -124,12 +124,12 @@ impl Encoder {
         self.bytes.extend_from_slice(bytes);
         Ok(())
     }
-    fn length(&mut self, length: usize) -> Result<()> {
+    pub(crate) fn length(&mut self, length: usize) -> Result<()> {
         u32::try_from(length)
             .map_err(|_| capacity("cache codec sequence length exceeds u32"))?
             .encode(self)
     }
-    fn text(&mut self, text: &str) -> Result<()> {
+    pub(crate) fn text(&mut self, text: &str) -> Result<()> {
         self.nested(|encoder| {
             encoder.length(text.len())?;
             encoder.raw(text.as_bytes())

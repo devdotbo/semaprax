@@ -19,7 +19,9 @@ use super::{
     GRAPH_ACCOUNTED_RESOLVED_FUNCTION_INSTANCE_BYTES,
 };
 
+mod available;
 mod retention;
+use available::BorrowedFunction;
 
 /// Retain only authored nominal declarations reached by an already selected
 /// scalar function closure. This is needed when an otherwise scalar public
@@ -203,9 +205,9 @@ pub(super) fn attach_imported_vec_instances(
 }
 
 /// The authenticated generic inventory of one Phase-A workspace build.
-pub(super) struct OwnedGenericInventory {
-    templates: BTreeMap<hir::DeclarationId, hir::ResolvedFunctionTemplate>,
-    instances: BTreeMap<hir::FunctionInstanceId, hir::ResolvedFunctionInstance>,
+pub(super) struct OwnedGenericInventory<'a> {
+    templates: BTreeMap<hir::DeclarationId, &'a hir::ResolvedFunctionTemplate>,
+    instances: BTreeMap<hir::FunctionInstanceId, &'a hir::ResolvedFunctionInstance>,
 }
 
 /// The exact retained closure over ordinary functions, generic templates, and
@@ -216,12 +218,12 @@ pub(super) struct OwnedGenericClosure {
     instances: BTreeSet<hir::FunctionInstanceId>,
 }
 
-impl OwnedGenericInventory {
+impl<'a> OwnedGenericInventory<'a> {
     /// Collect every authenticated template and instance. Identities are
     /// rejected for duplication exactly like the ordinary function inventory,
     /// and each template must agree with its Phase-A declaration fact.
     pub(super) fn collect(
-        modules: &[WorkspaceResolvedModule],
+        modules: &'a [WorkspaceResolvedModule],
         declarations: &BTreeMap<String, WorkspaceDeclarationFact>,
     ) -> Result<Self, Vec<Diagnostic>> {
         let mut templates = BTreeMap::new();
@@ -243,10 +245,7 @@ impl OwnedGenericInventory {
                         "workspace owned-data generic template facts disagree with its retained body",
                     )]);
                 }
-                if templates
-                    .insert(template.id.clone(), template.clone())
-                    .is_some()
-                {
+                if templates.insert(template.id.clone(), template).is_some() {
                     return Err(vec![graph_error(
                         "SPX-G173",
                         "workspace owned-data generic template identity is duplicated",
@@ -262,10 +261,7 @@ impl OwnedGenericInventory {
                         "workspace owned-data generic instance identity is not canonical",
                     )]);
                 }
-                if instances
-                    .insert(instance.id.clone(), instance.clone())
-                    .is_some()
-                {
+                if instances.insert(instance.id.clone(), instance).is_some() {
                     return Err(vec![graph_error(
                         "SPX-G173",
                         "workspace owned-data generic instance identity is duplicated",
@@ -291,7 +287,7 @@ impl OwnedGenericInventory {
     }
 
     fn template(&self, id: &hir::DeclarationId) -> Option<&hir::ResolvedFunctionTemplate> {
-        self.templates.get(id)
+        self.templates.get(id).copied()
     }
 
     /// Retain the exact templates the closure selected, in canonical identity
@@ -303,14 +299,17 @@ impl OwnedGenericInventory {
         selected
             .iter()
             .map(|id| {
-                self.templates.get(id).cloned().ok_or_else(|| {
-                    vec![graph_error(
-                        "SPX-G173",
-                        format!(
+                self.templates
+                    .get(id)
+                    .map(|value| (**value).clone())
+                    .ok_or_else(|| {
+                        vec![graph_error(
+                            "SPX-G173",
+                            format!(
                             "owned-data closure names an unauthenticated generic template `{id}`"
                         ),
-                    )]
-                })
+                        )]
+                    })
             })
             .collect()
     }
@@ -367,15 +366,18 @@ impl OwnedGenericInventory {
         ordered
             .into_iter()
             .map(|id| {
-                self.instances.get(&id).cloned().ok_or_else(|| {
-                    vec![graph_error(
-                        "SPX-G173",
-                        format!(
-                            "owned-data closure names an unauthenticated generic instance `{}`",
-                            id.as_str()
-                        ),
-                    )]
-                })
+                self.instances
+                    .get(&id)
+                    .map(|value| (**value).clone())
+                    .ok_or_else(|| {
+                        vec![graph_error(
+                            "SPX-G173",
+                            format!(
+                                "owned-data closure names an unauthenticated generic instance `{}`",
+                                id.as_str()
+                            ),
+                        )]
+                    })
             })
             .collect()
     }
@@ -398,8 +400,8 @@ pub(super) fn retained_scalar_generics(
         .map(|linked| {
             (
                 linked.function.id.clone(),
-                hir::LinkedScalarFunction {
-                    function: linked.function.clone(),
+                BorrowedFunction {
+                    function: &linked.function,
                     origin: linked.origin,
                 },
             )
@@ -470,9 +472,9 @@ pub(super) fn retained_scalar_parts(
 /// sites. A call that names a generic template selects exactly the instance
 /// its authenticated type-argument vector derives; the walk then continues
 /// through that instance body's own callees.
-pub(super) fn close_owned_data_closure(
-    available: &BTreeMap<hir::DeclarationId, hir::LinkedScalarFunction>,
-    generics: &OwnedGenericInventory,
+pub(super) fn close_owned_data_closure<F: available::FunctionView>(
+    available: &BTreeMap<hir::DeclarationId, F>,
+    generics: &OwnedGenericInventory<'_>,
     roots: BTreeSet<hir::DeclarationId>,
 ) -> Result<OwnedGenericClosure, Vec<Diagnostic>> {
     let mut closure = OwnedGenericClosure {
@@ -504,7 +506,7 @@ pub(super) fn close_owned_data_closure(
                     ),
                 )]);
             }
-            &linked.function
+            linked.function()
         } else if let Some(instance_id) = pending_instances.pop_first() {
             let Some(instance) = generics.instances.get(&instance_id) else {
                 return Err(vec![graph_error(
@@ -942,7 +944,7 @@ impl super::WorkspaceGraphBuild {
     ) -> Result<hir::ResolvedProgram, Vec<Diagnostic>> {
         use super::*;
         validate_entry_module(entry_module)?;
-        let mut available = BTreeMap::<hir::DeclarationId, hir::LinkedScalarFunction>::new();
+        let mut available = BTreeMap::<hir::DeclarationId, BorrowedFunction<'_>>::new();
         let mut entrypoints = Vec::new();
         for module in &self.hir.modules {
             for function in &module.functions {
@@ -974,8 +976,8 @@ impl super::WorkspaceGraphBuild {
                 if available
                     .insert(
                         function.id.clone(),
-                        hir::LinkedScalarFunction {
-                            function: function.clone(),
+                        BorrowedFunction {
+                            function,
                             origin: fact.origin,
                         },
                     )

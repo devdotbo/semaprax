@@ -78,20 +78,17 @@ functions in that module. Persistent snapshots do not restore invocation-local
 function work costs, so the first changed-module build after restoration also
 resolves afresh. An exact whole-module persistent hit remains eligible.
 
-The freshly validated checked clone is charged the resolver's retained bounded
-output consumption so cache hits preserve graph-builder accounting and cold
-graph/image bytes. Cloning can shrink loan-plan vector/string capacities;
-the original mutable-capacity charge is retained and any clone-capacity
-difference is restored before existing graph filtering/accounting. Immutable
-expression-identity backing is shared across clones and cancels from this
-capacity difference. The allocation-free clone census does not repeat the
-full physical-storage census's scratch allocation inside the graph budget.
-The full census and its required scratch reservations remain unchanged for
-retained proof storage and authenticated snapshot reconstruction. The
-nonempty-loan regression now executes this path, including a range and sibling
-views of owned bytes in a module that also carries owned-variant cleanup. Its
-Graph v32 cold/warm bytes and accounting remain exact instead of relying only
-on empty scalar loan plans.
+The freshly validated checked owner is charged the resolver's retained bounded
+output consumption so hits preserve cold-equivalent construction accounting.
+Loan-proof capacity census and its original residual debit remain required;
+sharing does not authorize removing either charge. Contiguous retained selections
+keep the original vector/string capacities. Compatibility materialization can
+still shrink capacities, so the original cold allowance remains conservative.
+Immutable expression-identity backing remains shared. The allocation-free census
+does not repeat the full physical-storage census's scratch allocation inside the
+graph budget. Full census and required scratch reservations remain unchanged for
+retained proof storage and authenticated snapshot reconstruction. The existing
+nonempty-loan gate retains exact cold/warm graph/image and accounting comparisons.
 In-process expression-identity clones now share immutable backing. Authenticated
 snapshot restoration independently reconstructs nonempty loan plans and requires
 complete value equality before restoring that sharing; wire bytes, full validation
@@ -189,3 +186,28 @@ stronger completion or speed claims. The separate
 [Persistent Semantic Cache v1](PERSISTENT-SEMANTIC-CACHE-V1.md) implements its
 own authenticated cross-process checked-HIR reuse rather than widening this
 in-process profile.
+
+### Immutable checked HIR retention (OPT777 contiguous tranche)
+
+Cold semantic insertion moves the resolved program into the existing checked
+module owner. A warm exact-synthetic hit borrows that same immutable owner after
+current source-association replay. Full current HIR validation, source/environment
+checks, cold-equivalent resolver debit and loan-proof accounting remain mandatory.
+The owner is storage, never a validation lease.
+
+Contiguous local function, type, template and agent selections retain actual
+borrowed slices of that owner through core retention. Noncontiguous selections
+use an owned compatibility fallback; permits, interfaces and mutable imported
+instance overlays also remain owned. The full synthetic AST, declaration index
+and imported stubs stay alive with the checked owner. The existing full cached
+two-copy forecast remains conservative and unchanged. No uncached discount is
+granted by a filtered view. Final public owning projections and linker inputs
+materialize selected bodies at their existing owning boundary. Temporary generic
+closure discovery now borrows functions, templates and instances.
+
+Snapshot encoding walks the authenticated held state without building a second
+owned snapshot tree; the wire and full fresh decode/replay contract are unchanged.
+This tranche does not establish optimal noncontiguous retention, reduced forecasts,
+whole-compiler allocation fit, or completion of OPT777. New owner and wire controls
+are source-authored and require focused execution with the existing persisted
+application and semantic-cache controls.

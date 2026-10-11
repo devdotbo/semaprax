@@ -23,13 +23,21 @@ fn programs() -> [Program; 2] {
         crate::parse(PROVIDER, "provider.spx").unwrap(),
     ]
 }
-fn resolved(programs: &[Program]) -> Vec<(String, crate::hir::ResolvedProgram)> {
+fn resolved(
+    programs: &[Program],
+) -> Vec<(
+    String,
+    crate::project::incremental::checked_hir::ResolvedModuleInput,
+)> {
     let authored = index_authored(programs).unwrap();
     programs
         .iter()
         .map(|p| {
             let synthetic = synthetic_program(p, &authored, programs).unwrap();
-            (p.module.clone(), crate::hir::resolve(&synthetic).unwrap())
+            (
+                p.module.clone(),
+                crate::hir::resolve(&synthetic).unwrap().into(),
+            )
         })
         .collect()
 }

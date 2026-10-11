@@ -36,9 +36,11 @@ mod snapshot;
 ))]
 pub(crate) use snapshot::{decode_snapshot, encode_snapshot};
 
+pub(crate) mod checked_hir;
 /// Read-only replay measuring `FrontendPass::lookup`'s `Program::clone` cost
 /// (SPX-AI-031/#130, SPX-AI-032/#131). See that module's doc comment.
 mod clone_cost_report;
+use checked_hir::{CheckedModuleLease, ResolvedModuleInput};
 
 pub const PROJECT_FRONTEND_CACHE_SCHEMA: &str = "semaprax.project-frontend-cache-work.v1";
 pub const PROJECT_FRONTEND_CACHE_COMPATIBILITY: &str = "semaprax.project-frontend-canonical-ast.v3";
@@ -479,7 +481,7 @@ impl FrontendPass {
         &mut self,
         path: &str,
         synthetic: &Program,
-    ) -> Option<(crate::hir::ResolvedProgram, usize, usize)> {
+    ) -> Option<(CheckedModuleLease, usize, usize)> {
         if !self.semantic {
             return None;
         }
@@ -496,7 +498,7 @@ impl FrontendPass {
         self.functions_reused += entry.resolved.functions.len();
         self.next_checked.insert(path.to_owned(), Arc::clone(entry));
         Some((
-            entry.resolved.clone(),
+            CheckedModuleLease::new(Arc::clone(entry)),
             entry.resolver_bytes,
             entry.retained_loan_bytes,
         ))
@@ -539,26 +541,28 @@ impl FrontendPass {
         &mut self,
         path: &str,
         synthetic: Program,
-        resolved: &crate::hir::ResolvedProgram,
+        resolved: crate::hir::ResolvedProgram,
         resolver_bytes: usize,
         retained_loan_bytes: usize,
         function_costs: BTreeMap<String, usize>,
         reused_functions: usize,
-    ) {
+    ) -> ResolvedModuleInput {
         self.resolved += 1;
         self.functions_reused += reused_functions;
         self.functions_resolved += resolved.functions.len().saturating_sub(reused_functions);
         if self.semantic {
-            self.next_checked.insert(
-                path.to_owned(),
-                Arc::new(CheckedModule {
-                    synthetic,
-                    resolved: resolved.clone(),
-                    resolver_bytes,
-                    retained_loan_bytes,
-                    function_costs,
-                }),
-            );
+            let owner = Arc::new(CheckedModule {
+                synthetic,
+                resolved,
+                resolver_bytes,
+                retained_loan_bytes,
+                function_costs,
+            });
+            self.next_checked
+                .insert(path.to_owned(), Arc::clone(&owner));
+            ResolvedModuleInput::Checked(CheckedModuleLease::new(owner))
+        } else {
+            ResolvedModuleInput::Owned(resolved)
         }
     }
     pub(crate) fn lookup(&mut self, path: &str, source: &str) -> Option<Program> {

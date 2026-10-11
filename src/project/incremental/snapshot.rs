@@ -4,6 +4,7 @@ use super::*;
 use crate::cache_codec::{self, codec_struct};
 use std::collections::BTreeSet;
 
+mod borrowed_encoding;
 mod literal_format;
 mod loan_replay;
 mod vec_field;
@@ -135,27 +136,11 @@ pub(crate) fn encode_snapshot(cache: &ProjectFrontendCache) -> Result<Vec<u8>> {
     let mut replay = cache.fork();
     let built = replay.build(&manifest, &sources)?;
     require_warm(&built)?;
-    let entries = cache
-        .entries
-        .iter()
-        .map(|(path, entry)| {
-            let checked = &cache.checked[path];
-            Entry {
-                path: path.clone(),
-                source: entry.source.clone(),
-                synthetic: checked.synthetic.clone(),
-                resolved: checked.resolved.clone(),
-                resolver_bytes: checked.resolver_bytes,
-                retained_loan_bytes: checked.retained_loan_bytes,
-            }
-        })
-        .collect();
-    cache_codec::encode(&Snapshot {
-        context: cache.context.clone(),
-        project_revision: built.revision().project_revision().to_owned(),
-        workspace_revision: built.revision().workspace_revision().to_owned(),
-        graph_json: built.revision().semantic_graph().to_owned(),
-        entries,
+    // Borrow the exact current checked owner directly into the bounded encoder.
+    // The wire remains owned; no temporary AST/HIR snapshot tree is copied.
+    cache_codec::encode(&borrowed_encoding::SnapshotView {
+        cache,
+        built: &built,
     })
 }
 

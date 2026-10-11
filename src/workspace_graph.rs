@@ -42,6 +42,9 @@ pub(crate) mod source_callables;
 mod source_schema;
 mod static_text;
 use retain_module::retain_workspace_module;
+mod checked_retention;
+use crate::project::incremental::checked_hir::ResolvedModuleInput;
+use checked_retention::Retained;
 mod validation;
 use crate::ast::{
     Expr, ExprKind, Function, ModuleUse, ModuleUseKind, ParamMode, Program, Span, Type,
@@ -508,11 +511,11 @@ struct WorkspaceResolvedModule {
     path: String,
     module: String,
     permits: Vec<String>,
-    agents: Vec<hir::ResolvedAgentDeclaration>,
-    types: Vec<hir::ResolvedTypeDeclaration>,
+    agents: Retained<hir::ResolvedAgentDeclaration>,
+    types: Retained<hir::ResolvedTypeDeclaration>,
     interfaces: Vec<hir::ResolvedInterface>,
-    functions: Vec<hir::ResolvedFunction>,
-    function_templates: Vec<hir::ResolvedFunctionTemplate>,
+    functions: Retained<hir::ResolvedFunction>,
+    function_templates: Retained<hir::ResolvedFunctionTemplate>,
     function_instances: Vec<hir::ResolvedFunctionInstance>,
     signature_types: BTreeMap<String, (hir::DeclarationKind, hir::TypeFacts)>,
     /// Canonical facts of this module's own declared session protocols
@@ -1944,10 +1947,10 @@ impl WorkspaceGraphBuild {
                 source_digest: source.source_digest,
                 dependency_depth,
                 permits: module.permits,
-                types: module.types,
+                types: module.types.into_owned(),
                 interfaces: module.interfaces,
-                functions: module.functions,
-                function_templates: module.function_templates,
+                functions: module.functions.into_owned(),
+                function_templates: module.function_templates.into_owned(),
                 function_instances: module.function_instances,
                 signature_types: module.signature_types,
                 session_protocol_facts: module.session_protocol_facts,
@@ -3217,10 +3220,10 @@ impl AuthenticatedWorkspaceGraphBuild {
                 source_digest: source.source_digest,
                 dependency_depth,
                 permits: module.permits,
-                types: module.types,
+                types: module.types.into_owned(),
                 interfaces: module.interfaces,
-                functions: module.functions,
-                function_templates: module.function_templates,
+                functions: module.functions.into_owned(),
+                function_templates: module.function_templates.into_owned(),
                 function_instances: module.function_instances,
                 signature_types: module.signature_types,
                 session_protocol_facts: module.session_protocol_facts,
@@ -4474,7 +4477,7 @@ fn build_resolved_core(
                 })?;
             // Charge only the residual resolver cost after real revalidation.
             charge_builder_prebound(residual)?;
-            // Charge cloned proof capacity and retain any cold-capacity residual.
+            // Preserve proof-capacity charging and the cold-equivalent residual.
             let loan_residual = original_loan_bytes
                 .checked_sub(resolved_loan_bytes(&resolved)?)
                 .ok_or_else(|| {
@@ -4484,7 +4487,7 @@ fn build_resolved_core(
                     )]
                 })?;
             charge_builder_prebound(loan_residual)?;
-            (resolved, static_text)
+            (ResolvedModuleInput::Checked(resolved), static_text)
         } else {
             let before = crate::bounded_output::active_remaining()
                 .expect("resolved core has a builder budget");
@@ -4527,20 +4530,22 @@ fn build_resolved_core(
                 crate::bounded_output::active_remaining()
                     .expect("resolved core has a builder budget"),
             );
-            if let Some(cache) = frontend.as_deref_mut() {
+            let resolved = if let Some(cache) = frontend.as_deref_mut() {
                 staged!(FrontendRetention, {
-                    cache.resolved_module(
+                    let loan_bytes = resolved_loan_bytes(&resolved)?;
+                    Ok::<_, Vec<Diagnostic>>(cache.resolved_module(
                         &program.path,
                         synthetic,
-                        &resolved,
+                        resolved,
                         resolver_bytes,
-                        resolved_loan_bytes(&resolved)?,
+                        loan_bytes,
                         function_costs,
                         reused_functions,
-                    );
-                    Ok::<(), Vec<Diagnostic>>(())
-                })?;
-            }
+                    ))
+                })?
+            } else {
+                ResolvedModuleInput::Owned(resolved)
+            };
             (resolved, static_text)
         };
         staged!(
@@ -5617,7 +5622,7 @@ fn budgeted_edge_clone(edge: &WorkspaceEdge) -> WorkspaceEdge {
 use source_callables::visit_ast_call_sites;
 
 fn workspace_declaration_facts(
-    modules: &[(String, hir::ResolvedProgram)],
+    modules: &[(String, ResolvedModuleInput)],
     retained_modules: &[WorkspaceResolvedModule],
     programs: &[Program],
 ) -> Result<BTreeMap<String, WorkspaceDeclarationFact>, Vec<Diagnostic>> {
@@ -5628,7 +5633,7 @@ fn workspace_declaration_facts(
 }
 
 fn reconstruct_workspace_declaration_facts(
-    modules: &[(String, hir::ResolvedProgram)],
+    modules: &[(String, ResolvedModuleInput)],
     programs: &[Program],
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
 ) -> Result<BTreeMap<String, WorkspaceDeclarationFact>, Vec<Diagnostic>> {
@@ -5644,7 +5649,7 @@ fn reconstruct_workspace_declaration_facts(
 }
 
 fn reconstruct_workspace_declaration_facts_with_authority(
-    modules: &[(String, hir::ResolvedProgram)],
+    modules: &[(String, ResolvedModuleInput)],
     programs: &[Program],
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
     authority: Option<&expected_projection::private_layout::authority::invocation::Invocation<'_>>,

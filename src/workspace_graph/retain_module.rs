@@ -5,7 +5,7 @@ use super::*;
     clippy::too_many_arguments,
     reason = "keep independent held authority and canonical replay inputs explicit"
 )]
-pub(super) fn retain_workspace_module(
+fn retain_owned_workspace_module(
     program: &Program,
     module: String,
     resolved: hir::ResolvedProgram,
@@ -93,11 +93,11 @@ pub(super) fn retain_workspace_module(
             path: crate::bounded_output::budgeted_clone(&program.path),
             module,
             permits: resolved.permits,
-            agents,
-            types,
+            agents: agents.into(),
+            types: types.into(),
             interfaces: resolved.interfaces,
-            functions,
-            function_templates,
+            functions: functions.into(),
+            function_templates: function_templates.into(),
             function_instances,
             signature_types,
             session_protocol_facts,
@@ -109,4 +109,42 @@ pub(super) fn retain_workspace_module(
         },
         imported_instances,
     ))
+}
+
+#[allow(
+    clippy::too_many_arguments,
+    reason = "preserve explicit source and receiving authority"
+)]
+pub(super) fn retain_workspace_module(
+    program: &Program,
+    module: String,
+    resolved: ResolvedModuleInput,
+    programs: &[Program],
+    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+    loan_scratch: Option<&mut loan_retention::RetentionScratch>,
+    selected_static_text: bool,
+    authenticated_sources: Option<&[WorkspaceSource]>,
+) -> Result<(WorkspaceResolvedModule, Vec<hir::ResolvedFunctionInstance>), Vec<Diagnostic>> {
+    match resolved {
+        ResolvedModuleInput::Owned(resolved) => retain_owned_workspace_module(
+            program,
+            module,
+            resolved,
+            programs,
+            authored,
+            loan_scratch,
+            selected_static_text,
+            authenticated_sources,
+        ),
+        ResolvedModuleInput::Checked(owner) => checked_retention::retain_checked_module(
+            program,
+            module,
+            owner,
+            programs,
+            authored,
+            loan_scratch,
+            selected_static_text,
+            authenticated_sources,
+        ),
+    }
 }
