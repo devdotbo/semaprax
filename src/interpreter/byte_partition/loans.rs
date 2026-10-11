@@ -42,7 +42,7 @@ impl<'p, R: InvocationRuntime> Loans<'p, R> {
         let mut slots = Vec::new();
         slots
             .try_reserve_exact(capacity.slots())
-            .map_err(|_| Refusal::Metadata)?;
+            .expect("ordinary partition loan allocation invariant failure");
         assert_eq!(slots.capacity(), capacity.slots());
         slots.resize_with(capacity.slots(), || Slot {
             generation: 0,
