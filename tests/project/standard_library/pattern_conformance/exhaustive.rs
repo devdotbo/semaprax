@@ -121,13 +121,15 @@ fn ascii_source(grammar: Grammar, key: bool) -> (String, i64) {
         .filter_map(|input| grammar.captures(input))
         .map(checksum)
         .sum();
-    let input = if key {
-        format!("[candidate, {}u8, 120u8]", grammar.separator())
-    } else {
-        format!("[65u8, {}u8, candidate]", grammar.separator())
-    };
+    // Fixed arrays admit exact u8 literals. Keep all 128 three-byte inputs
+    // in one static table, then borrow the current case without allocating.
+    let cases: Vec<u8> = inputs
+        .iter()
+        .flat_map(|input| input.iter().copied())
+        .collect();
+    assert_eq!(cases.len(), 128 * 3);
     let packet = packet("expected", "capture_start(matcher, 0usize) == 0usize && capture_end(matcher, 0usize) == 1usize && capture_start(matcher, 1usize) == expected_start && capture_end(matcher, 1usize) == 3usize");
-    (format!("{}\nlet expected_bytes = {}; let expected_view = array_as_slice(expected_bytes);\nlet expected_starts = {}; let starts_view = array_as_slice(expected_starts);\nlet mut index = 0usize; let mut correct = true; let mut total = 0;\nwhile index < 128usize {{\nlet candidate = u8_from_i64(i64_from_usize(index)); let input = {input}; let view = array_as_slice(input);\nlet expected = match byte_get(expected_view, index) {{ Option::Some {{ value }} => value == 1u8, Option::None {{}} => false, }};\nlet expected_start = match byte_get(starts_view, index) {{ Option::Some {{ value }} => usize_from_u8(value), Option::None {{}} => 0usize, }};\nmatcher = full_match(matcher, view, 262144usize);\nif {packet} {{ 0 }} else {{ correct = false; 0 }}\nif status(matcher) == 1usize {{ total = total + {}; 0 }} else {{ 0 }}\nindex = index + 1usize; 0\n}}\nif ready && correct {{ total }} else {{ -1 }}\n}}\n", prefix(grammar), array(&expectations), array(&starts), observed()), expected)
+    (format!("{}\nlet expected_bytes = {}; let expected_view = array_as_slice(expected_bytes);\nlet expected_starts = {}; let starts_view = array_as_slice(expected_starts);\nlet inputs = {}; let inputs_view = array_as_slice(inputs);\nlet mut index = 0usize; let mut correct = true; let mut total = 0;\nwhile index < 128usize {{\nlet offset = index * 3usize; let view = byte_range(inputs_view, offset, offset + 3usize);\nlet expected = match byte_get(expected_view, index) {{ Option::Some {{ value }} => value == 1u8, Option::None {{}} => false, }};\nlet expected_start = match byte_get(starts_view, index) {{ Option::Some {{ value }} => usize_from_u8(value), Option::None {{}} => 0usize, }};\nmatcher = full_match(matcher, view, 262144usize);\nif {packet} {{ 0 }} else {{ correct = false; 0 }}\nif status(matcher) == 1usize {{ total = total + {}; 0 }} else {{ 0 }}\nindex = index + 1usize; 0\n}}\nif ready && correct {{ total }} else {{ -1 }}\n}}\n", prefix(grammar), array(&expectations), array(&starts), array(&cases), observed()), expected)
 }
 fn long_source(grammar: Grammar, matches: bool) -> (String, i64) {
     let mut input = match grammar {
@@ -160,6 +162,14 @@ fn run(scratch: &Path, label: &str, source: &str, expected: i64, live_bound: usi
         canonical
     );
     fs::write(directory.join("src/main.spx"), canonical).unwrap();
+    // Package Manifest v1 requires a declared test module and two sources.
+    // Reuse the ordinary package tests; no execution allowance is changed.
+    let tests = semaprax::parse(include_str!("../pattern_tests.spx"), "tests.spx").unwrap();
+    fs::write(
+        directory.join("src/tests.spx"),
+        semaprax::format::canonical(&tests),
+    )
+    .unwrap();
     fs::write(
         directory.join("semaprax.toml"),
         r#"schema = "semaprax.manifest.v1"
@@ -169,7 +179,8 @@ version = "0.1.0"
 profile = "owned-data-api.v1"
 [modules]
 entry = "fixture.pattern.examples"
-sources = ["src/main.spx"]
+sources = ["src/main.spx", "src/tests.spx"]
+tests = ["fixture.pattern.tests"]
 [exports]
 web = []
 [dependencies]
