@@ -82,6 +82,40 @@ pub(crate) enum CapacityFlow {
         condition: Box<CapacityFlow>,
         body: Box<CapacityFlow>,
     },
+    /// One fused construction loop under the explicit
+    /// [`AllocationStrategy::FusedConstructionV1`]. It charges exactly one
+    /// backing event and `rows * width` payload bytes; `producer` names the
+    /// body's single `BytesCopy` site. The flow records a selection. It does
+    /// not prove count, destination, fresh row or escape facts.
+    #[cfg_attr(
+        not(test),
+        allow(
+            dead_code,
+            reason = "constructed only by the pending source/HIR fused selectors"
+        )
+    )]
+    FusedConstruction {
+        producer: String,
+        rows: u32,
+        width: u64,
+        condition: Box<CapacityFlow>,
+        body: Box<CapacityFlow>,
+    },
+}
+
+/// Explicit, versioned allocation strategy selected by the analyzing entry.
+/// [`analyze`] always uses `Legacy`; no flow, cache or graph fact selects one.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum AllocationStrategy {
+    Legacy,
+    #[cfg_attr(
+        not(test),
+        allow(
+            dead_code,
+            reason = "selected only by the pending source/HIR fused entries"
+        )
+    )]
+    FusedConstructionV1,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
@@ -111,6 +145,15 @@ pub(crate) struct FunctionCapacitySummary {
     pub stdout_append_sites: u64,
     pub stderr_append_sites: u64,
     pub transcript_bytes: u64,
+    /// Fused backing events already included in `bytes_copy_sites`.
+    #[cfg_attr(
+        not(test),
+        allow(
+            dead_code,
+            reason = "read by the pending fused refusal and executor lanes"
+        )
+    )]
+    pub fused_backing_events: u32,
     transcript_paths: Vec<TranscriptPath>,
 }
 
@@ -120,6 +163,7 @@ impl Default for FunctionCapacitySummary {
             inline_array_frame_bytes: 0,
             active_array_call_path_bytes: 0,
             bytes_copy_sites: 0,
+            fused_backing_events: 0,
             owned_byte_payload_bytes: 0,
             stdin_read_sites: 0,
             stdout_write_sites: 0,
@@ -134,10 +178,22 @@ impl Default for FunctionCapacitySummary {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct ProgramCapacitySummary {
+    strategy: AllocationStrategy,
     functions: BTreeMap<String, FunctionCapacitySummary>,
 }
 
 impl ProgramCapacitySummary {
+    #[cfg_attr(
+        not(test),
+        allow(
+            dead_code,
+            reason = "read by the pending fused refusal and executor lanes"
+        )
+    )]
+    pub(crate) fn strategy(&self) -> AllocationStrategy {
+        self.strategy
+    }
+
     pub(crate) fn function(&self, identity: &str) -> Option<&FunctionCapacitySummary> {
         self.functions.get(identity)
     }
@@ -199,6 +255,7 @@ struct AllocationSummary {
     sites: u32,
     stdin_sites: u64,
     payload_bytes: u64,
+    fused: u32,
 }
 
 #[derive(Clone, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
@@ -240,8 +297,18 @@ struct ValidatedFunction<'a> {
     has_local_transcript_write: bool,
 }
 
+/// The unchanged default: `Legacy`, under which a fused flow is an invariant.
 pub(crate) fn analyze(
     functions: &[FunctionCapacityInput],
+) -> Result<ProgramCapacitySummary, CapacityError> {
+    analyze_with_strategy(functions, AllocationStrategy::Legacy)
+}
+
+/// Selected analysis entry. A non-`Legacy` strategy only admits its own flow
+/// node. Every existing per-path and per-value limit still applies.
+pub(crate) fn analyze_with_strategy(
+    functions: &[FunctionCapacityInput],
+    strategy: AllocationStrategy,
 ) -> Result<ProgramCapacitySummary, CapacityError> {
     if functions.len() > MAX_FUNCTIONS {
         return Err(invariant(
@@ -264,7 +331,7 @@ pub(crate) fn analyze(
     for (identity, function) in &by_id {
         let frame_bytes = validate_slots(function)?;
         let (callees, has_local_copy, has_local_stdin_read, has_local_transcript_write) =
-            validate_flow(function, &by_id)?;
+            validate_flow(function, &by_id, strategy)?;
         validated.insert(
             identity,
             ValidatedFunction {
@@ -374,6 +441,7 @@ pub(crate) fn analyze(
         summary.bytes_copy_sites = allocation.sites;
         summary.stdin_read_sites = allocation.stdin_sites;
         summary.owned_byte_payload_bytes = allocation.payload_bytes;
+        summary.fused_backing_events = allocation.fused;
     }
 
     for identity in transcript_order.into_iter().rev() {
@@ -426,6 +494,7 @@ pub(crate) fn analyze(
     }
 
     Ok(ProgramCapacitySummary {
+        strategy,
         functions: summaries,
     })
 }
@@ -482,6 +551,7 @@ fn validate_slots(function: &FunctionCapacityInput) -> Result<u64, CapacityError
 fn validate_flow<'a>(
     function: &'a FunctionCapacityInput,
     functions: &BTreeMap<&str, &FunctionCapacityInput>,
+    strategy: AllocationStrategy,
 ) -> Result<(BTreeSet<&'a str>, bool, bool, bool), CapacityError> {
     let mut pending = vec![&function.execution];
     let mut nodes = 0usize;
@@ -498,10 +568,7 @@ fn validate_flow<'a>(
             )
         })?;
         if nodes > MAX_FLOW_NODES {
-            return Err(invariant(
-                Some(&function.function),
-                "capacity flow exceeds the compiler node bound",
-            ));
+            return Err(flow_node_bound(&function.function));
         }
         match flow {
             CapacityFlow::Empty => {}
@@ -620,6 +687,25 @@ fn validate_flow<'a>(
                         "finite iterator bound exceeds the closed profile",
                     ));
                 }
+                pending.push(body);
+                pending.push(condition);
+            }
+            CapacityFlow::FusedConstruction {
+                producer,
+                rows,
+                width,
+                condition,
+                body,
+            } => {
+                fused::validate(
+                    &function.function,
+                    strategy,
+                    producer,
+                    *rows,
+                    *width,
+                    body,
+                    nodes,
+                )?;
                 pending.push(body);
                 pending.push(condition);
             }
@@ -762,6 +848,7 @@ fn fold_flow(
                             sites: summary.bytes_copy_sites,
                             stdin_sites: summary.stdin_read_sites,
                             payload_bytes: summary.owned_byte_payload_bytes,
+                            fused: summary.fused_backing_events,
                         },
                         TranscriptSummary {
                             paths: transcript_paths,
@@ -777,6 +864,7 @@ fn fold_flow(
                         sites: 1,
                         stdin_sites: 0,
                         payload_bytes: *conservative_payload_bytes,
+                        fused: 0,
                     },
                     TranscriptSummary::default(),
                 )),
@@ -789,6 +877,7 @@ fn fold_flow(
                         sites: 0,
                         stdin_sites: 1,
                         payload_bytes: *conservative_payload_bytes,
+                        fused: 0,
                     },
                     TranscriptSummary::default(),
                 )),
@@ -859,6 +948,9 @@ fn fold_flow(
                 CapacityFlow::Loop { condition, body }
                 | CapacityFlow::FiniteOwnedLoop {
                     condition, body, ..
+                }
+                | CapacityFlow::FusedConstruction {
+                    condition, body, ..
                 } => {
                     frames.push(Frame::Finish(node, 2));
                     frames.push(Frame::Enter(body));
@@ -886,6 +978,7 @@ fn fold_flow(
                             allocation.payload_bytes.max(child_allocation.payload_bytes);
                         allocation.stdin_sites =
                             allocation.stdin_sites.max(child_allocation.stdin_sites);
+                        allocation.fused = allocation.fused.max(child_allocation.fused);
                     } else {
                         array_bytes = array_bytes.checked_add(*child_array).ok_or_else(|| {
                             array_error(function, "active array call-path calculation overflowed")
@@ -908,11 +1001,30 @@ fn fold_flow(
                             .ok_or_else(|| {
                                 allocation_error(function, "stdin_read site count overflowed")
                             })?;
+                        allocation.fused = allocation
+                            .fused
+                            .checked_add(child_allocation.fused)
+                            .ok_or_else(|| {
+                                allocation_error(function, "fused backing event count overflowed")
+                            })?;
+                    }
+                }
+                if let CapacityFlow::FusedConstruction { rows, width, .. } = node {
+                    // Callee allocation summaries exist only during this fold.
+                    if matches!(mode, FoldMode::Allocation) {
+                        allocation =
+                            fused::charge(function, *rows, *width, &children[0].1, &children[1].1)?;
                     }
                 }
                 if let CapacityFlow::FiniteOwnedLoop { iterations, .. } = node {
                     let condition = children[0].1;
                     let body = children[1].1;
+                    if condition.fused != 0 || body.fused != 0 {
+                        return Err(invariant(
+                            Some(function),
+                            "fused construction cannot repeat inside a finite iterator",
+                        ));
+                    }
                     if condition.sites != 0 || condition.stdin_sites != 0 || body.stdin_sites != 0 {
                         return Err(allocation_error(function, "finite iterator allocation is outside the iteration-local scratch domain"));
                     }
@@ -939,7 +1051,9 @@ fn fold_flow(
                 if matches!(mode, FoldMode::Transcript)
                     && matches!(
                         node,
-                        CapacityFlow::Loop { .. } | CapacityFlow::FiniteOwnedLoop { .. }
+                        CapacityFlow::Loop { .. }
+                            | CapacityFlow::FiniteOwnedLoop { .. }
+                            | CapacityFlow::FusedConstruction { .. }
                     )
                 {
                     let condition = &children[0].2;
@@ -1184,6 +1298,20 @@ fn invariant(function: Option<&str>, detail: impl Into<String>) -> CapacityError
     }
 }
 
+fn flow_node_bound(function: &str) -> CapacityError {
+    invariant(
+        Some(function),
+        "capacity flow exceeds the compiler node bound",
+    )
+}
+
+#[path = "byte_data_capacity/fused.rs"]
+mod fused;
+
 #[cfg(test)]
 #[path = "byte_data_capacity/tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "byte_data_capacity/fused_tests.rs"]
+mod fused_tests;

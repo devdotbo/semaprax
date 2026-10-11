@@ -87,6 +87,57 @@ allocation failure boundaries, early exits, partial rows and argument staging
 retain left-to-right order, sticky status and canonical cleanup. Proving exact
 trip count alone is insufficient to grant that reordering.
 
+## Versioned allocation strategy capacity rule
+
+`byte_data_capacity::AllocationStrategy` has two values, `Legacy` and
+`FusedConstructionV1`. The strategy is an explicit argument to the selected
+entry `analyze_with_strategy`. The existing `analyze` entry always passes
+`Legacy`, so every current caller, report, diagnostic and graph projection is
+unchanged. No flow node, cache record, graph fact, filename or stable id selects
+a strategy. The returned summary records the strategy it was analyzed under.
+
+`CapacityFlow::FusedConstruction { producer, rows, width, condition, body }` is
+a distinct flow node. It does not reuse or relax the 32-capped
+`FiniteOwnedLoop`. Under `Legacy` the node is an `SPX-H006` invariant, because
+proof data alone grants no authority. Under `FusedConstructionV1` it requires:
+
+- positive rows and width;
+- rows at most 4,096, this versioned strategy's explicit row ceiling; source/HIR
+  and each executor independently require actual record and owner layouts to
+  fit their existing limits, without assuming a two-field or carrier size;
+- a checked `rows * width` extent within the unchanged 131,072-byte per-value
+  limit;
+- `producer` naming exactly one unconditional, sequential body `BytesCopy`
+  whose payload equals `width`.
+
+The producer scan continues the ordinary flow walk's node count under its
+existing node bound, refusing before the scan grows past it; it adds no
+separate cap. A missing, renamed, resized, conditional, duplicated or nested
+producer is an invariant. Row, extent and overflow refusals are `SPX-T267`. So is any other
+allocation the body reaches (another producer, a call that allocates, or a
+stdin read) and any allocation in the condition. Repeating a fused node inside
+a finite iterator is an invariant. An ordinary `while` that reaches one keeps
+its existing refusal.
+
+A fused construction charges exactly one backing-producing event and its whole
+extent. It never refunds a charge. That event and extent join the unchanged
+32-event and 2,097,152-byte cumulative per-path limits, together with every
+ordinary event on the same path: 31 ordinary events plus one fused event fit,
+and 32 plus one refuse. `fused_backing_events` reports how many of a path's
+`bytes_copy_sites` are fused backings. The rule leaves String quotas and costs,
+failure selection, evaluation order, cleanup and public/provider closure to
+their existing owners.
+
+The rule only checks the flow it is given. It does not derive count, capacity,
+extent, destination Vec, fresh row or no-escape facts. Those still require
+independent source and typed-HIR derivation from current source. The executor
+must authenticate and reserve its actual lease metadata before the backing is
+allocated; this rule charges no metadata and assumes no slot layout. No source
+or HIR selector constructs the node yet, and no backend executes it. Owning
+gates are `byte_data_capacity::fused_tests::` (nine definitions, unexecuted in
+this tranche). The original fixture is not admitted, and the default check
+still reports `SPX-T267`.
+
 ## Owning definitions and remaining gates
 
 Four authored source-only definitions in
