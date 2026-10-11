@@ -181,22 +181,37 @@ fn scope(program: &ResolvedProgram, work: &mut usize) -> Result<(), Diagnostic> 
         }
     }
     if !found { return Err(hir_error("private byte partition has no current operation")); }
-    let mut removed = [false; 512];
-    for _ in 0..program.functions.len() {
-        let mut candidate = None;
-        for (ordinal, done) in removed[..program.functions.len()].iter().enumerate() {
+    // Fixed backing and deterministic source-order Kahn traversal. Each edge
+    // bit is examined once for indegree and once when its source is removed.
+    let count = program.functions.len();
+    let mut indegree = [0usize; 512];
+    let mut queue = [0usize; 512];
+    for row in &edges[..count] {
+        debit(work, 1)?;
+        for (target, degree) in indegree[..count].iter_mut().enumerate() {
             debit(work, 1)?;
-            if *done { continue; }
-            let mut outgoing = false;
-            for (target, target_done) in removed[..program.functions.len()].iter().enumerate() {
-                debit(work, 1)?;
-                outgoing |= !target_done && edges[ordinal][target / 64] & (1 << (target % 64)) != 0;
-            }
-            if !outgoing { candidate = Some(ordinal); break; }
+            if row[target / 64] & (1 << (target % 64)) != 0 { *degree += 1; }
         }
-        let ordinal = candidate.ok_or_else(|| hir_error("private byte partition refuses recursive callgraphs"))?;
-        removed[ordinal] = true;
     }
+    let mut end = 0;
+    for (ordinal, degree) in indegree[..count].iter().enumerate() {
+        debit(work, 1)?;
+        if *degree == 0 { queue[end] = ordinal; end += 1; }
+    }
+    let mut head = 0;
+    while head < end {
+        debit(work, 1)?;
+        let ordinal = queue[head];
+        head += 1;
+        for (target, degree) in indegree[..count].iter_mut().enumerate() {
+            debit(work, 1)?;
+            if edges[ordinal][target / 64] & (1 << (target % 64)) != 0 {
+                *degree -= 1;
+                if *degree == 0 { queue[end] = target; end += 1; }
+            }
+        }
+    }
+    if head != count { return Err(hir_error("private byte partition refuses recursive callgraphs")); }
     Ok(())
 }
 fn walk<'a>(root: &'a ResolvedExpr, work: &mut usize, visit: &mut impl FnMut(&'a ResolvedExpr, &mut usize) -> Result<(), Diagnostic>) -> Result<(), Diagnostic> {
