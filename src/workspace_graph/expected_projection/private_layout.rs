@@ -52,7 +52,7 @@ impl<'a> LayoutClosure<'a> {
         self.entries.is_empty()
     }
 
-    pub(super) fn derive(
+    pub(in crate::workspace_graph) fn derive(
         caller: &Program,
         authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,
         programs: &'a [Program],
