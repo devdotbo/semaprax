@@ -252,3 +252,63 @@ fn forged_seed_identity_type_and_ownership_cannot_select_consuming_authority() {
         assert!(crate::hir::validate(&program).is_err(), "seed {mutation}");
     }
 }
+
+#[test]
+fn conditional_owned_row_transformation_reserves_the_destination_family_independently() {
+    let source = SOURCE
+        .replace("@id(\"main\")", "@id(\"output\") record Output {@id(\"output.n\") n:i64,@id(\"output.text\") text:string,@id(\"output.bytes\") bytes:Bytes,}\n@id(\"main\")")
+        .replace("let mut words=vec_with_capacity<Row>", "let mut words=vec_with_capacity<Output>")
+        .replace("words=vec_push<Row>(words,item);0", "let _=match own item {Row{n,text,bytes}=>{if n==7 {words=vec_push<Output>(words,Output{n:n+1,text:text,bytes:bytes});}0},};0")
+        .replace("vec_len<Row>(words)", "vec_len<Output>(words)");
+    let checked = crate::check(&source, "cross-row-renewal.spx").unwrap();
+    let program = crate::hir::resolve(&checked).unwrap();
+    crate::hir::validate(&program).unwrap();
+    let function = &program.functions[0];
+    let selected = sites(&program, function);
+    assert_eq!(selected.len(), 1);
+    let site = selected.values().next().unwrap();
+    let ResolvedType::Nominal { arguments, .. } = &site.binding.ty else {
+        panic!("destination vector")
+    };
+    let [destination] = arguments.as_slice() else {
+        panic!("destination element")
+    };
+    assert_ne!(destination, &site.item.ty);
+    assert_eq!(
+        function
+            .cleanup_plan
+            .blocks
+            .iter()
+            .flat_map(|block| &block.transitions)
+            .filter(|transition| matches!(transition, CleanupTransition::ReserveRenewal { .. }))
+            .count(),
+        1
+    );
+    // Either family being absent or borrowed must independently close the
+    // additive classifier, even when the other exact declaration is admitted.
+    for refused in [&site.item.ty, destination] {
+        for mode in [None, Some(OwnershipMode::Borrow)] {
+            assert!(!requires_with_admission(function, |op, element| {
+                if element == refused {
+                    mode
+                } else {
+                    super::super::element_mode(&program.declarations, op, element)
+                }
+            }));
+        }
+    }
+    let mut forged = program.clone();
+    for block in &mut forged.functions[0].cleanup_plan.blocks {
+        block
+            .transitions
+            .retain(|transition| !matches!(transition, CleanupTransition::ReserveRenewal { .. }));
+    }
+    assert!(crate::cleanup_plan::validate_program(&forged).is_err());
+    let mut forged = program.clone();
+    super::super::forge_record_field_for_test(
+        &mut forged.declarations,
+        &crate::hir::DeclarationId::new("output"),
+        ResolvedType::Bytes,
+    );
+    assert!(crate::hir::validate(&forged).is_err());
+}

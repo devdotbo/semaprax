@@ -13,7 +13,12 @@ The owning [record iterator](OWNED-RECORD-ITERATOR-V3.md) and
 
 An ordinary `for own item in vec_into_iter<Row>(inputs)` may assign
 `output = vec_push<Row>(output, item)` to an already live outer mutable Vec of
-that exact record type. The ordinary argument route may instead compute a
+that exact record type. A consuming record match may instead transform an
+admitted input row into a different independently admitted owned-leaf output
+row and conditionally push it. Both current nominal declarations must satisfy
+the owned-record family; equality of the input and output nominal IDs is not
+required. The receiver and pushed result retain exact destination types and
+ordinary grouped argument ownership. The ordinary argument route may compute a
 fallible owned row, such as `vec_clone_at<Row>(later, 0usize)`. This does not
 permit otherwise closed constructors or allocation in a source loop: every
 argument retains its existing source/HIR/effect/ownership checks.

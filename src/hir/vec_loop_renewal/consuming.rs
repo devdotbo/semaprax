@@ -152,7 +152,7 @@ fn scan<'a>(
                     // fallible row argument (e.g. clone_at). No argument exemption
                     // or allocation permission is supplied by this classifier.
                     if op != crate::vec_ops::VecOp::Push
-                        || element != &item.ty
+                        || admission(op, &item.ty) != Some(OwnershipMode::Own)
                         || admission(op, element) != Some(OwnershipMode::Own)
                         || !super::same_cell(binding, value, Some(admission))
                         || !declares(&function.body, binding, true)
