@@ -400,7 +400,11 @@ pub(super) fn oracle_match(
                 "SPX-M101",
                 format!(
                     "non-exhaustive match; missing record pattern for `{}`",
-                    scrutinee_value.ty
+                    crate::source_verify::private_names::type_name(
+                        program,
+                        types,
+                        &scrutinee_value.ty
+                    )
                 ),
                 expr.span,
             ));
@@ -549,7 +553,9 @@ pub(super) fn oracle_match(
                 "match scrutinee must be a Copy variant, received {}",
                 scrutinee_value.as_ref().map_or_else(
                     || "an invalid value".to_owned(),
-                    |value| value.ty.to_string()
+                    |value| crate::source_verify::private_names::type_name(
+                        program, types, &value.ty
+                    )
                 )
             ),
             scrutinee.span,
@@ -949,15 +955,12 @@ pub(super) fn oracle_match(
                 .iter()
                 .find(|case| !covered.contains(case.name.as_str()))
             {
-                let witness = if missing.fields.is_empty() {
-                    format!("{variant_name}::{} {{}}", missing.name)
-                } else {
-                    format!("{variant_name}::{} {{ .. }}", missing.name)
-                };
-                diagnostics.push(error(
+                diagnostics.push(crate::source_verify::private_names::missing_case(
                     program,
-                    "SPX-M101",
-                    format!("non-exhaustive match; missing case `{witness}`"),
+                    types,
+                    variant_name,
+                    &missing.name,
+                    !missing.fields.is_empty(),
                     expr.span,
                 ));
             }

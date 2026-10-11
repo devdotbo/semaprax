@@ -1213,7 +1213,15 @@ pub(super) fn check_function_bodies<'p>(
                         "SPX-T103",
                         format!(
                             "function `{}` returns {}, but its signature declares {}",
-                            function.name, actual.ty, function.return_type
+                            function.name,
+                            crate::source_verify::private_names::type_name(
+                                program, types, &actual.ty
+                            ),
+                            crate::source_verify::private_names::type_name(
+                                program,
+                                types,
+                                &function.return_type
+                            )
                         ),
                         function.body.span,
                     ));

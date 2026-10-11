@@ -9,7 +9,8 @@
 //!   drives the frame loop that checks expressions.
 //! - [`loans`], [`arguments`], and [`diagnostics`] own invocation-local loans,
 //!   call-boundary ownership, and diagnostic construction; [`hints`] holds the
-//!   fix hints both verifiers attach to the same diagnostics.
+//!   fix hints both verifiers attach to the same diagnostics; [`private_names`]
+//!   presents Workspace Graph private layout declarations by provenance.
 //! - [`capacity`] projects storage capacity; [`oracle`] is the test-only
 //!   recursive cross-check of the frame loop.
 
@@ -53,6 +54,7 @@ mod mutable_closure;
 mod owned_buffer;
 mod owning_closure;
 mod place;
+pub(crate) mod private_names;
 mod record_invariants;
 mod record_traversal;
 mod scope;

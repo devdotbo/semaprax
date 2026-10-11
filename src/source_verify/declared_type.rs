@@ -1252,7 +1252,8 @@ pub(super) fn check_record_pattern(
                         program,
                         "SPX-M103",
                         format!(
-                            "record pattern `{pattern_type}` is incompatible with `{expected}`"
+                            "record pattern `{pattern_type}` is incompatible with `{}`",
+                            super::private_names::type_name(program, types, &expected)
                         ),
                         span,
                     ));

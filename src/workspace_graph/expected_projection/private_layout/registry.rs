@@ -126,6 +126,35 @@ impl<'a> LayoutRegistry<'a> {
         }
         result
     }
+    /// Presentation-only provenance for the private copies already appended to
+    /// `synthetic` from this caller's held closure. It derives nothing, debits
+    /// no work and grants no lookup; an unheld or explicit-only caller has none.
+    pub(in crate::workspace_graph) fn provider_names(
+        &self,
+        caller: &Program,
+        synthetic: &Program,
+    ) -> Result<Vec<crate::source_verify::private_names::ProviderName>, Vec<Diagnostic>> {
+        let Some(index) = self.index(caller) else {
+            return Ok(Vec::new());
+        };
+        match self.slots.borrow().get(index) {
+            Some(Some(layout)) => layout.provider_names(caller, synthetic),
+            _ => Ok(Vec::new()),
+        }
+    }
+    fn index(&self, caller: &Program) -> Option<usize> {
+        let address = caller as *const Program as usize;
+        let base = self.programs.as_ptr() as usize;
+        let stride = std::mem::size_of::<Program>();
+        let index = address
+            .checked_sub(base)
+            .filter(|offset| offset % stride == 0)?
+            / stride;
+        self.programs
+            .get(index)
+            .is_some_and(|held| std::ptr::eq(held, caller))
+            .then_some(index)
+    }
     fn lookup(&self, caller: &Program) -> Result<Ref<'_, LayoutClosure<'a>>, Vec<Diagnostic>> {
         if self.is_failed() {
             return Err(refusal());
@@ -133,21 +162,7 @@ impl<'a> LayoutRegistry<'a> {
         let mut work = self.work_remaining();
         debit(&mut work, 1)?;
         self.set_remaining(work);
-        let address = caller as *const Program as usize;
-        let base = self.programs.as_ptr() as usize;
-        let stride = std::mem::size_of::<Program>();
-        let offset = address
-            .checked_sub(base)
-            .filter(|offset| offset % stride == 0)
-            .ok_or_else(refusal)?;
-        let index = offset / stride;
-        if !self
-            .programs
-            .get(index)
-            .is_some_and(|held| std::ptr::eq(held, caller))
-        {
-            return Err(refusal());
-        }
+        let index = self.index(caller).ok_or_else(refusal)?;
         if self.slots.borrow().get(index).is_some_and(Option::is_some) {
             return Ok(Ref::map(self.slots.borrow(), |slots| {
                 slots[index].as_ref().expect("checked held entry")

@@ -146,7 +146,11 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                                     diagnostic,
                                     format!(
                                         "declared binding type `{declared_ty}` does not accept value type `{}`",
-                                        actual.ty
+                                        crate::source_verify::private_names::type_name(
+                                            self.program,
+                                            self.types,
+                                            &actual.ty
+                                        )
                                     ),
                                     value.span,
                                 ),

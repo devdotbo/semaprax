@@ -12,6 +12,7 @@ use crate::source_verify::declared_type::{ordinary_option_argument, ordinary_res
 use crate::source_verify::diagnostics::{error, reject_native_unit_value};
 use crate::source_verify::hints;
 use crate::source_verify::loans::mark_value_sources_moved;
+use crate::source_verify::private_names::type_name;
 use crate::source_verify::scope::{VerifierCallTarget, VerifierFrame, VerifierFunctionSignature};
 use crate::source_verify::type_table::{effective_record_fields, resolve_class_method};
 
@@ -118,7 +119,9 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                                 "SPX-T205",
                                 format!(
                                     "argument `{}` to `{name}` expects {}, received {}",
-                                    param.name, param.ty, actual.ty
+                                    param.name,
+                                    type_name(self.program, self.types, &param.ty),
+                                    type_name(self.program, self.types, &actual.ty)
                                 ),
                                 argument.span,
                             ),
@@ -617,7 +620,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             "SPX-T218",
             format!(
                 "`?` operand must be an ordinary compiler-owned Result or Option, received {}",
-                operand_value.ty
+                type_name(self.program, self.types, &operand_value.ty)
             ),
             expression.span,
         ));

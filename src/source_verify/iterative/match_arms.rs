@@ -10,6 +10,7 @@ use crate::source_verify::diagnostics::{
 };
 use crate::source_verify::loans::merge_moved;
 use crate::source_verify::place::{join_definitely_partial, join_moved_places};
+use crate::source_verify::private_names::{missing_case, type_name};
 use crate::source_verify::scope::{
     ScalarMatchState, VariantMatchState, VerifierFrame, VerifierScope,
 };
@@ -91,15 +92,12 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         .iter()
                         .find(|case| !state.covered.contains(&case.name))
                     {
-                        let witness = if missing.fields.is_empty() {
-                            format!("{variant_name}::{} {{}}", missing.name)
-                        } else {
-                            format!("{variant_name}::{} {{ .. }}", missing.name)
-                        };
-                        self.diagnostics.push(error(
+                        self.diagnostics.push(missing_case(
                             self.program,
-                            "SPX-M101",
-                            format!("non-exhaustive match; missing case `{witness}`"),
+                            self.types,
+                            variant_name,
+                            &missing.name,
+                            !missing.fields.is_empty(),
                             state.expression.span,
                         ));
                     }
@@ -459,7 +457,8 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         "SPX-T216",
                         format!(
                             "match arms return incompatible values: {} and {}",
-                            expected.ty, arm_value.ty
+                            type_name(self.program, self.types, &expected.ty),
+                            type_name(self.program, self.types, &arm_value.ty)
                         ),
                         arm.value.span,
                     ));
@@ -649,7 +648,8 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         "SPX-T259",
                         format!(
                             "match arms return incompatible values: {} and {}",
-                            expected.ty, arm_value.ty
+                            type_name(self.program, self.types, &expected.ty),
+                            type_name(self.program, self.types, &arm_value.ty)
                         ),
                         arm.value.span,
                     ));

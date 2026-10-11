@@ -46,6 +46,25 @@ name cannot capture the provider's child. No lexer or `SPX-S106` exception
 recognizes a private prefix. Original graph import/reference edges remain
 source-derived and contain no invented child import.
 
+Minted names are never diagnostic text. Before fresh or selective resolution
+of a caller's synthetic program, the graph reads that caller's already held
+closure (no derivation, work debit or lookup grant) and binds each appended
+copy, by its exact address in that exact synthetic program, to its provider
+module, persistent identity and provider-declared name. The source verifier
+consults this scope only when rendering a type it already resolved: an
+`SPX-M101` missing case on a private variant names only the case plus the
+provider variant's context, and record-pattern, scrutinee, call-argument,
+return, binding and branch/arm-join type mismatches render a private type as
+`Name [unimported @id("id") from module]`. Codes and authored or explicitly
+imported names are unchanged, and there is no prefix filter or message
+rewriting, so an authored colliding spelling keeps its authored rendering. A
+missing-case help offers `use type @id(..) from module as Name;` only when the
+provider declaration has an explicit identity and the caller has no import,
+type or function already spelling `Name`; otherwise it asks for an unused
+alias, and without an explicit identity it offers no action. The binding is
+presentation-only diagnostic metadata, allocated outside builder accounting
+like verifier diagnostics, and only for callers with private entries.
+
 ## Storage and replay
 
 The borrowed provider references remain tied to the held immutable source set.
@@ -89,7 +108,7 @@ forged Vec-parameter refusal while checking descendant omission. The existing
 text-collection hostile shapes remain refused. The workspace source-boundary
 gate joins the new implementation and test children.
 
-The `private_layout::function_tests::` child adds four definitions covering
+The `private_layout::function_tests::` child adds five definitions covering
 function-only forwarding and borrowed nested String/Vec projections, exact root
 and descendant identities, absent sibling/ancestor/source-name authority, stale
 provider pointers, both signature parity paths, and exact/one-short storage.
@@ -103,7 +122,14 @@ Report; `Decoded.Error` has a distinct result. Interpreter, native O0/O2 and
 strict Wasm repeat success, provider-body drift, and exact failed encoder
 postconditions. Native retains the poisoned result cell; Wasm requires the exact
 failure with no returned value. Both keep their zero-owner observers. Current source and
-retained Ready-field type mutations remain independently refused. These are
+retained Ready-field type mutations remain independently refused. A fifth
+definition removes every type import from the same Ready caller: the exact
+private outcome layout is still retained, the unimported `Decoded` patterns
+stay rejected, no diagnostic contains any alias the caller's own closure
+minted, and applying the offered import is the succeeding explicit-root
+control. A caller already declaring `Decoded` receives no fabricated alias, and
+inferred record-pattern, call-argument and colliding authored-spelling callers
+keep provider context without exposing aliases. These are
 authored gates; current-head execution is still required for qualification.
 
 Function-root admission consumes an invocation-held, precharged ownership and

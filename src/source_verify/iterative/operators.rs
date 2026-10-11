@@ -10,6 +10,7 @@ use crate::source_verify::diagnostics::{
 use crate::source_verify::hints;
 use crate::source_verify::loans::join_conditional;
 use crate::source_verify::place::{join_definitely_partial, join_moved_places};
+use crate::source_verify::private_names::type_name;
 use crate::source_verify::scope::{VerifierFrame, VerifierScope};
 use crate::source_verify::IterativeVerifier;
 use std::collections::HashMap;
@@ -510,7 +511,8 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         "SPX-T211",
                         format!(
                             "`if` branches return different types: {} and {}",
-                            then_value.ty, else_value.ty
+                            type_name(self.program, self.types, &then_value.ty),
+                            type_name(self.program, self.types, &else_value.ty)
                         ),
                         expression.span,
                     ));

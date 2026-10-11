@@ -311,7 +311,11 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     "SPX-M101",
                     format!(
                         "non-exhaustive match; missing record pattern for `{}`",
-                        scrutinee_value.ty
+                        crate::source_verify::private_names::type_name(
+                            self.program,
+                            self.types,
+                            &scrutinee_value.ty
+                        )
                     ),
                     expression.span,
                 ));
@@ -451,7 +455,11 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     "match scrutinee must be a Copy variant, received {}",
                     scrutinee_value.as_ref().map_or_else(
                         || "an invalid value".to_owned(),
-                        |value| value.ty.to_string()
+                        |value| crate::source_verify::private_names::type_name(
+                            self.program,
+                            self.types,
+                            &value.ty
+                        )
                     )
                 ),
                 scrutinee.span,

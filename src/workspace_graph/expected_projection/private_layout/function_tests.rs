@@ -326,3 +326,143 @@ fn decoded_ready_wire_and_cleanup_match_complete_imports_with_private_descendant
         "SPX-G173"
     );
 }
+
+/// Whether a diagnostic message or help contains, as an exact identifier token,
+/// an alias that the caller's own closure minted. Authored spellings with the
+/// same prefix are not aliases and are not matched.
+fn exposes_alias(diagnostics: &[crate::diagnostic::Diagnostic], aliases: &[String]) -> bool {
+    let token = |text: &str, alias: &str| {
+        text.match_indices(alias).any(|(start, _)| {
+            let identifier = |c: char| c.is_ascii_alphanumeric() || c == '_';
+            !text[..start].ends_with(identifier)
+                && !text[start + alias.len()..].starts_with(identifier)
+        })
+    };
+    diagnostics.iter().any(|d| {
+        aliases.iter().any(|alias| {
+            token(&d.message, alias) || d.help.as_deref().is_some_and(|help| token(help, alias))
+        })
+    })
+}
+
+#[test]
+fn private_layout_diagnostics_present_provider_provenance_and_only_legal_imports() {
+    let provider = format!("{PROVIDER}{}", include_str!("ready_extension.spx"));
+    let mut missing = include_str!("ready_caller.spx").to_owned();
+    for (id, name) in [
+        ("decoded", "Decoded"),
+        ("report", "Report"),
+        ("config", "Config"),
+        ("row", "Row"),
+    ] {
+        let import = format!("use type @id(\"{id}\") from function_layout.provider as {name};\n");
+        assert_eq!(missing.matches(&import).count(), 1);
+        missing = missing.replace(&import, "");
+    }
+    let aliases = |caller: &str| {
+        let parsed = programs(caller, &provider);
+        let authored = index_authored(&parsed).unwrap();
+        let layout = LayoutClosure::derive(&parsed[0], &authored, &parsed).unwrap();
+        layout
+            .entries
+            .iter()
+            .map(|e| (e.declaration.stable_id.clone(), e.alias.clone()))
+            .collect::<Vec<_>>()
+    };
+    // The function-only `decode` signature still retains the exact private
+    // outcome layout; no authored source names it.
+    let retained = aliases(&missing);
+    assert_eq!(
+        retained.iter().map(|(id, _)| id.as_str()).collect::<Vec<_>>(),
+        ["config", "decoded", "report", "row"]
+    );
+    let minted = retained.into_iter().map(|(_, a)| a).collect::<Vec<_>>();
+    let diagnostics = build_owned(sources(&missing, &provider))
+        .err()
+        .expect("unimported variant patterns are rejected");
+    assert!(!exposes_alias(&diagnostics, &minted), "{diagnostics:?}");
+    for pattern in ["`Decoded::Error`", "`Decoded::Ready`"] {
+        assert!(
+            diagnostics
+                .iter()
+                .any(|d| d.code == "SPX-M103" && d.message.contains(pattern)),
+            "{pattern}: {diagnostics:?}"
+        );
+    }
+    let missing_case = diagnostics
+        .iter()
+        .find(|d| d.code == "SPX-M101")
+        .expect("the private variant match is still non-exhaustive");
+    assert!(
+        missing_case.message.contains("`Ready { .. }`")
+            && missing_case
+                .message
+                .contains("`Decoded` (@id(\"decoded\") from function_layout.provider)"),
+        "{missing_case:?}"
+    );
+    let help = missing_case.help.as_deref().expect("legal explicit import");
+    let import = help.split('`').nth(1).expect("quoted import");
+    assert_eq!(
+        import,
+        "use type @id(\"decoded\") from function_layout.provider as Decoded;"
+    );
+    // Applying the offered import is the explicit-root control: it succeeds.
+    let repaired = missing.replacen("use function", &format!("{import}\nuse function"), 1);
+    assert_ne!(repaired, missing);
+    let linked = build_owned(sources(&repaired, &provider))
+        .unwrap()
+        .linked_owned_data_api_program_with_roots("function_layout.app", &[])
+        .unwrap();
+    crate::hir::validate(&linked).unwrap();
+    // A caller already spelling the provider name gets no fabricated alias.
+    let taken = format!(
+        "{missing}\n@id(\"local.decoded\") record Decoded {{ @id(\"local.decoded.n\") n: i64, }}\n"
+    );
+    let minted = aliases(&taken).into_iter().map(|(_, a)| a).collect::<Vec<_>>();
+    let diagnostics = build_owned(sources(&taken, &provider)).err().unwrap();
+    assert!(!exposes_alias(&diagnostics, &minted), "{diagnostics:?}");
+    let help = diagnostics
+        .iter()
+        .find(|d| d.code == "SPX-M101")
+        .and_then(|d| d.help.as_deref())
+        .expect("provider-supported import action");
+    assert!(
+        help.contains("@id(\"decoded\") from function_layout.provider") && !help.contains(" as "),
+        "{help}"
+    );
+    // Inferred record values keep provider context in record-pattern and call
+    // diagnostics, and an authored colliding spelling stays authored.
+    for (declaration, code) in [
+        (
+            "@id(\"bad\") fn bad()->i64 {let value=make();match own value {Report {config,rows}=>0,}}",
+            None,
+        ),
+        (
+            "@id(\"bad\") fn bad()->i64 {read(5)}",
+            Some("SPX-T205"),
+        ),
+        ("@id(\"bad\") fn bad(value:own _spx_layout_0)->i64 {0}", None),
+    ] {
+        let caller = format!("{CALLER}\n{declaration}\n");
+        let minted = aliases(&caller).into_iter().map(|(_, a)| a).collect::<Vec<_>>();
+        if declaration.contains("_spx_layout_0") {
+            assert!(!minted.iter().any(|alias| alias == "_spx_layout_0"));
+        }
+        let diagnostics = build_owned(sources(&caller, PROVIDER))
+            .err()
+            .expect(declaration);
+        assert!(!exposes_alias(&diagnostics, &minted), "{diagnostics:?}");
+        for d in &diagnostics {
+            if d.message.contains("record pattern `Report`") || Some(d.code) == code {
+                assert!(
+                    d.message
+                        .contains("Report [unimported @id(\"report\") from function_layout.provider]"),
+                    "{d:?}"
+                );
+            }
+        }
+        if let Some(code) = code {
+            assert!(diagnostics.iter().any(|d| d.code == code), "{diagnostics:?}");
+        }
+    }
+}
