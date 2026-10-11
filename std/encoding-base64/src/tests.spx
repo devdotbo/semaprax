@@ -153,7 +153,9 @@ fn all_bytes_round_trip() -> bool
     let mut original = bytes_zeroed(256usize);
     let mut source_index = 0usize;
     let mut source_byte = 0u8;
+    let mut conversions = true;
     while source_index < 256usize {
+        conversions = conversions && code_byte(i64_from_usize(source_index)) == source_byte;
         original = bytes_set(original, source_index, source_byte);
         source_byte = if source_byte == 255u8 { source_byte } else { source_byte + 1u8 };
         source_index = source_index + 1usize;
@@ -166,7 +168,7 @@ fn all_bytes_round_trip() -> bool
     let decoded = writer_finish(written);
     let decoded_view = bytes_as_slice(decoded);
     let mut compare = 0usize;
-    let mut same = byte_len(decoded_view) == 256usize;
+    let mut same = conversions && byte_len(decoded_view) == 256usize;
     while same && compare < 256usize {
         let left = match byte_get(original_view, compare) { Option::Some { value } => value, Option::None {} => 0u8, };
         let right = match byte_get(decoded_view, compare) { Option::Some { value } => value, Option::None {} => 1u8, };

@@ -24,16 +24,7 @@ record Output {
 @id("std.process.byte-usize")
 fn byte_usize(value: u8) -> usize
 {
-    let mut converted = 0usize;
-    let mut step = 0u8;
-    let mut counting = step < value;
-    while counting {
-        converted = converted + 1usize;
-        step = step + 1u8;
-        counting = step < value;
-        counting
-    }
-    converted
+    usize_from_u8(value)
 }
 
 @id("std.process.u32-byte")
@@ -43,16 +34,7 @@ fn u32_byte(value: usize, index: usize) -> u8
 {
     let divisor = if index == 0usize { 1usize } else { if index == 1usize { 256usize } else { if index == 2usize { 65536usize } else { 16777216usize } } };
     let target = value / divisor % 256usize;
-    let mut converted = 0u8;
-    let mut step = 0usize;
-    let mut counting = step < target;
-    while counting {
-        converted = converted + 1u8;
-        step = step + 1usize;
-        counting = step < target;
-        counting
-    }
-    converted
+    u8_from_i64(i64_from_usize(target))
 }
 
 @id("std.process.reader-non-nul")

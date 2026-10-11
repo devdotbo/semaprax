@@ -135,14 +135,7 @@ fn base64_decoded_len(input: borrow Slice<u8>) -> usize
 fn base64_code_byte(value: i64) -> u8
     requires value >= 0 && value <= 255
 {
-    let mut byte = 0u8;
-    let mut step = 0;
-    while step < value {
-        byte = byte + 1u8;
-        step = step + 1;
-        step < value
-    }
-    byte
+    u8_from_i64(value)
 }
 
 @id("std.encoding.base64.decoded-byte")

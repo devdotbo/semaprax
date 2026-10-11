@@ -37,7 +37,16 @@ permit { process.execute }
 fn utilities() -> bool
 {
     let empty = Reader { data: bytes_zeroed(0usize), position: 0usize };
-    byte_usize(255u8) == 255usize && u32_byte(256usize, 1usize) == 1u8 && reader_non_nul(empty)
+    let mut expected = 0usize;
+    let mut value = 0u8;
+    let mut same = true;
+    while expected < 256usize {
+        same = same && byte_usize(value) == expected && u32_byte(expected, 0usize) == value && u32_byte(expected * 256usize, 1usize) == value;
+        value = if expected < 255usize { value + 1u8 } else { value };
+        expected = expected + 1usize;
+        0
+    }
+    same && u32_byte(65536usize, 0usize) == 0u8 && u32_byte(65536usize, 1usize) == 0u8 && u32_byte(65536usize, 2usize) == 1u8 && u32_byte(65536usize, 3usize) == 0u8 && byte_usize(255u8) == 255usize && u32_byte(256usize, 1usize) == 1u8 && reader_non_nul(empty)
 }
 
 @id("std.process.tests.header")

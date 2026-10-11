@@ -21,7 +21,16 @@ use function @id("std.data.json.write.width_at") from std.data.json.write as wid
 @id("std.data.json.write.tests.codes")
 fn codes() -> bool
 {
-    code_byte(0) == 0u8 && code_byte(255) == 255u8 && byte_code(0u8) == 0 && byte_code(65u8) == 65 && byte_code(255u8) == 255 && hex_digit(0) == 48 && hex_digit(9) == 57 && hex_digit(10) == 97 && hex_digit(15) == 102 && hex_digit(16) == 48
+    let mut expected_byte = 0u8;
+    let mut code = 0;
+    let mut same = true;
+    while code < 256 {
+        same = same && code_byte(code) == expected_byte && byte_code(expected_byte) == code;
+        expected_byte = if code < 255 { expected_byte + 1u8 } else { expected_byte };
+        code = code + 1;
+        0
+    }
+    same && code_byte(-1) == 0u8 && code_byte(-9223372036854775807 - 1) == 0u8 && code_byte(256) == 255u8 && code_byte(9223372036854775807) == 255u8 && code_byte(0) == 0u8 && code_byte(255) == 255u8 && byte_code(0u8) == 0 && byte_code(65u8) == 65 && byte_code(255u8) == 255 && hex_digit(0) == 48 && hex_digit(9) == 57 && hex_digit(10) == 97 && hex_digit(15) == 102 && hex_digit(16) == 48
 }
 
 @id("std.data.json.write.tests.widths")
