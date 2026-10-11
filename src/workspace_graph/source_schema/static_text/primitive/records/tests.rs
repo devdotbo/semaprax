@@ -60,17 +60,14 @@ fn captured_flat_layout_reconstructs_minimal_index_at_exact_and_one_short_withou
         "semaprax.graph.v77"
     );
     let mut reservation = crate::cleanup_plan::ReplayPhysicalReservation::new(usize::MAX);
-    assert_eq!(
-        super::super::authenticate(
-            module(&nonlexical),
-            &nonlexical.hir.declarations,
-            &mut reservation,
-        )
-        .err()
-        .expect("ordinary graph admission grants no retained lexical authority")
-        .code,
-        "SPX-G410"
-    );
+    let refused = super::super::authenticate(
+        module(&nonlexical),
+        &nonlexical.hir.declarations,
+        &mut reservation,
+    )
+    .err()
+    .expect("ordinary graph admission grants no retained lexical authority");
+    assert!(refused.iter().any(|error| error.code == "SPX-G410"));
     let build = build_lexical();
     assert_eq!(
         build.source_graph_schemas().unwrap()["flat.spx"],
