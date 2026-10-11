@@ -54,7 +54,8 @@ fn original_source_resolves_only_through_the_private_current_owner() {
 @id("partition_checked.main")"#,
     );
     let inherited = crate::parse(&inherited, "partition_checked.spx").unwrap();
-    let inherited = ValidatedPartitionProgram::compile_source(&inherited, &mut usize::MAX).unwrap();
+    let inherited =
+        ValidatedPartitionProgram::compile_source(&inherited, &mut { usize::MAX }).unwrap();
     let helper = inherited
         .program()
         .functions
@@ -67,7 +68,7 @@ fn original_source_resolves_only_through_the_private_current_owner() {
     );
     assert_eq!(
         inherited
-            .simultaneous_view_bound(helper, &mut usize::MAX)
+            .simultaneous_view_bound(helper, &mut { usize::MAX })
             .unwrap(),
         0
     );
@@ -78,7 +79,7 @@ fn original_source_resolves_only_through_the_private_current_owner() {
     for (extra_read, expected) in [(false, Some(256)), (true, None)] {
         let text = view_chain(extra_read);
         let ast = crate::parse(&text, "partition_view_bound.spx").unwrap();
-        let owner = ValidatedPartitionProgram::compile_source(&ast, &mut usize::MAX).unwrap();
+        let owner = ValidatedPartitionProgram::compile_source(&ast, &mut { usize::MAX }).unwrap();
         let entry = &owner.program().functions[0];
         let counts: Vec<_> = owner
             .program()
@@ -129,7 +130,7 @@ fn private_owner_refuses_foreign_carriers_and_actual_call_or_plan_mutations() {
         ),
     ] {
         let source = crate::parse(&source, "partition_checked.spx").unwrap();
-        assert!(ValidatedPartitionProgram::compile_source(&source, &mut usize::MAX).is_err());
+        assert!(ValidatedPartitionProgram::compile_source(&source, &mut { usize::MAX }).is_err());
     }
     let alias = SOURCE
         .replace("let buffer=bytes_zeroed", "let original=bytes_zeroed")
@@ -138,7 +139,7 @@ fn private_owner_refuses_foreign_carriers_and_actual_call_or_plan_mutations() {
             "let buffer=original; bytes_partition(buffer,3usize,2usize)",
         );
     let alias = crate::parse(&alias, "partition_checked.spx").unwrap();
-    ValidatedPartitionProgram::compile_source(&alias, &mut usize::MAX).unwrap();
+    ValidatedPartitionProgram::compile_source(&alias, &mut { usize::MAX }).unwrap();
     let child_helper = r#"module partition_checked;
 @id("partition_checked.again") fn again(buffer:own Bytes)->Vec<Bytes>{bytes_partition(buffer,1usize,2usize)}
 @id("partition_checked.main") fn main()->i64{
@@ -154,17 +155,17 @@ fn private_owner_refuses_foreign_carriers_and_actual_call_or_plan_mutations() {
     assert!(crate::source_verify::verify_partition(&child_helper)
         .iter()
         .all(|d| !d.severity.is_error()));
-    let error = ValidatedPartitionProgram::compile_source(&child_helper, &mut usize::MAX)
+    let error = ValidatedPartitionProgram::compile_source(&child_helper, &mut { usize::MAX })
         .err()
         .expect("child helper must refuse");
     assert!(error.message.contains("whole producer"), "{error:?}");
     let mut forbidden = crate::parse(SOURCE, "partition_checked.spx").unwrap();
     forbidden.permits.push("foreign".to_owned());
-    assert!(ValidatedPartitionProgram::compile_source(&forbidden, &mut usize::MAX).is_err());
+    assert!(ValidatedPartitionProgram::compile_source(&forbidden, &mut { usize::MAX }).is_err());
     let source = crate::parse(SOURCE, "partition_checked.spx").unwrap();
     for mutation in 0..4 {
         let mut owner =
-            ValidatedPartitionProgram::compile_source(&source, &mut usize::MAX).unwrap();
+            ValidatedPartitionProgram::compile_source(&source, &mut { usize::MAX }).unwrap();
         let ResolvedExprKind::Block { tail, .. } = &mut owner.program.functions[0].body.kind else {
             panic!("block")
         };

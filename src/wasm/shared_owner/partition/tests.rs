@@ -15,13 +15,12 @@ const SOURCE: &str = r#"module partition_wasm;
 
 fn emitted(source: &str) -> PartitionModule {
     let ast = crate::parse(source, "partition_wasm.spx").unwrap();
-    let owner = crate::hir::byte_partition::ValidatedPartitionProgram::compile_source(
-        &ast,
-        &mut usize::MAX,
-    )
+    let owner = crate::hir::byte_partition::ValidatedPartitionProgram::compile_source(&ast, &mut {
+        usize::MAX
+    })
     .unwrap();
     assert!(crate::check(source, "partition_wasm.spx").is_err());
-    let module = PartitionModule::emit(&owner, &mut usize::MAX).unwrap();
+    let module = PartitionModule::emit(&owner, &mut { usize::MAX }).unwrap();
     assert!(consumer_closure(module.bytes(), Host::PrivateOrdinary).is_err());
     assert!(module
         .closure

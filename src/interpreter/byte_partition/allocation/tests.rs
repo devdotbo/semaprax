@@ -96,11 +96,11 @@ fn evaluator_account_reads_ignore_legacy_fields_and_whole_handoff_keeps_pointer(
         "partition-account.spx",
     )
     .unwrap();
-    let owner = crate::hir::byte_partition::ValidatedPartitionProgram::compile_source(
-        &source,
-        &mut usize::MAX,
-    )
-    .unwrap();
+    let owner =
+        crate::hir::byte_partition::ValidatedPartitionProgram::compile_source(&source, &mut {
+            usize::MAX
+        })
+        .unwrap();
     let program = owner.program();
     let entry = &program.functions[0];
     let functions = program
@@ -121,8 +121,9 @@ fn evaluator_account_reads_ignore_legacy_fields_and_whole_handoff_keeps_pointer(
             crate::interpreter::PreparedCancellation::Never,
         );
         assert_eq!(evaluator.byte_allocation_count(), 0);
-        evaluator.partition =
-            Some(Invocation::prepare(&owner, entry, &mut usize::MAX, account.borrowed()).unwrap());
+        evaluator.partition = Some(
+            Invocation::prepare(&owner, entry, &mut { usize::MAX }, account.borrowed()).unwrap(),
+        );
         assert!(std::ptr::eq(
             evaluator.partition.as_ref().unwrap().entry(),
             entry

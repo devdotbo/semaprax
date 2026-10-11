@@ -15,10 +15,10 @@ fn source(text: &str) -> String {
     let ast = crate::parse(text, "partition_native.spx").unwrap();
     assert!(crate::check(text, "partition_native.spx").is_err());
     let owner =
-        hir::byte_partition::ValidatedPartitionProgram::compile_source(&ast, &mut usize::MAX)
+        hir::byte_partition::ValidatedPartitionProgram::compile_source(&ast, &mut { usize::MAX })
             .unwrap();
     assert!(crate::codegen::emit_hir_c(owner.program()).is_err());
-    Projection::receive(&owner, &mut usize::MAX)
+    Projection::receive(&owner, &mut { usize::MAX })
         .unwrap()
         .emit()
         .unwrap()
@@ -27,7 +27,7 @@ fn source(text: &str) -> String {
 fn original_4096_source_reaches_shared_native_carriers_and_canonical_settlement_at_o0_o2() {
     let ast = crate::parse(SOURCE, "partition_native.spx").unwrap();
     let owner =
-        hir::byte_partition::ValidatedPartitionProgram::compile_source(&ast, &mut usize::MAX)
+        hir::byte_partition::ValidatedPartitionProgram::compile_source(&ast, &mut { usize::MAX })
             .unwrap();
     let mut work = usize::MAX;
     let projection = Projection::receive(&owner, &mut work).unwrap();
@@ -69,7 +69,7 @@ int main(void) {
         "let mut seen=0; for own item in vec_into_iter<Bytes>(values) { let view=bytes_as_slice(item); if byte_len(view)==16usize {seen=seen+1;0}else{seen=0;0} } seen");
     let ast = crate::parse(&iterator, "partition_native.spx").unwrap();
     let owner =
-        hir::byte_partition::ValidatedPartitionProgram::compile_source(&ast, &mut usize::MAX)
+        hir::byte_partition::ValidatedPartitionProgram::compile_source(&ast, &mut { usize::MAX })
             .unwrap();
     let mut work = usize::MAX;
     assert!(Projection::receive(&owner, &mut work).is_err());

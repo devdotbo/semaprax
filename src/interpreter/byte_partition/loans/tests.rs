@@ -65,11 +65,11 @@ fn ordinary_capacity_keeps_256_and_private_capacity_stays_64() {
         "module partition.seal; @id(\"seal.main\") fn main()->i64 {let original=bytes_zeroed(1usize);let parts=bytes_partition(original,1usize,1usize);if vec_len<Bytes>(parts)==1usize {7}else{0}}",
         "partition-seal.spx",
     ).unwrap();
-    let sealed = crate::hir::byte_partition::ValidatedPartitionProgram::compile_source(
-        &source,
-        &mut usize::MAX,
-    )
-    .unwrap();
+    let sealed =
+        crate::hir::byte_partition::ValidatedPartitionProgram::compile_source(&source, &mut {
+            usize::MAX
+        })
+        .unwrap();
     let current = &sealed.program().functions[0];
     let mut remaining = usize::MAX;
     let capacity = LoanCapacity::from_source(&sealed, current, &mut remaining).unwrap();

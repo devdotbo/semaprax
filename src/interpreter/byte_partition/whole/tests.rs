@@ -5,6 +5,7 @@ use crate::interpreter::byte_partition::{
     loans::Loans,
     tests::{account, Probe},
 };
+use std::alloc::Layout;
 fn fixture() -> crate::hir::ResolvedProgram {
     let source = crate::check(
         r#"module partition.whole;
