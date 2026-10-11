@@ -1,7 +1,7 @@
-use super::{Index, legacy};
+use super::{legacy, Index};
 use crate::hir::{DeclarationId, ResolvedProgram, ResolvedType};
 use crate::workspace_graph::static_text::primitive::capture_with_matching;
-use crate::workspace_graph::{WorkspaceSource, index_authored};
+use crate::workspace_graph::{index_authored, WorkspaceSource};
 
 fn source(count: usize) -> String {
     let mut source = String::from("module matching;");
@@ -157,6 +157,28 @@ fn capture_keeps_every_current_source_origin_signature_and_body_comparison() {
             2 => candidate.functions[0].params[0].name = "foreign".into(),
             _ => candidate.functions[0].id = DeclarationId::new("absent"),
         }
+        if mutation == 2 {
+            // Both scans compare current signatures by type and ownership; a
+            // drifted current parameter name is bound by the typed body digest.
+            let drifted =
+                capture_with_matching::<false>(&programs[0], &candidate, &authored, Some(&sources))
+                    .unwrap()
+                    .unwrap();
+            let legacy =
+                capture_with_matching::<true>(&programs[0], &candidate, &authored, Some(&sources))
+                    .unwrap()
+                    .unwrap();
+            assert_eq!(drifted.functions[0].body, legacy.functions[0].body);
+            assert_ne!(drifted.functions[0].body, new.functions[0].body);
+            assert!(
+                !crate::workspace_graph::static_text::primitive::body_matches(
+                    &new,
+                    &new.functions[0],
+                    &candidate.functions[0]
+                )
+            );
+            continue;
+        }
         for legacy in [false, true] {
             let result = if legacy {
                 capture_with_matching::<true>(&programs[0], &candidate, &authored, Some(&sources))
@@ -205,12 +227,10 @@ fn duplicate_missing_unicode_and_reordered_members_keep_exact_pointer_lookup() {
     drop(index);
     program.functions[1].id = program.functions[0].id.clone();
     assert!(Index::new(&program.functions, &mut extra_work).is_err());
-    assert!(
-        legacy(
-            &program.functions,
-            program.functions[0].id.as_str(),
-            &mut extra_work
-        )
-        .is_err()
-    );
+    assert!(legacy(
+        &program.functions,
+        program.functions[0].id.as_str(),
+        &mut extra_work
+    )
+    .is_err());
 }

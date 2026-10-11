@@ -102,15 +102,42 @@ fn same_typed_field_substitution_cannot_rebind_authored_row_projection() {
 
 #[test]
 fn constructor_items_keep_the_ordinary_block_record_read_identity() {
-    let mut input = sources();
-    input[1] = canonical_source(
+    // A constructor inside a traversal body is a Vec allocation in a bounded
+    // loop body and keeps its source refusal.
+    let mut looped = sources();
+    looped[1] = canonical_source(
         "app.spx",
-        &input[1].source.replace(
+        &looped[1].source.replace(
             "let selected = row.left;",
             "let selected = vec_of<i64>(row.left);",
         ),
     );
-    assert!(input[1].source.contains("vec_of<i64>(row.left)"));
+    assert!(looped[1].source.contains("vec_of<i64>(row.left)"));
+    assert!(build_owned(looped)
+        .err()
+        .expect("loop-body constructor remains refused")
+        .iter()
+        .any(|diagnostic| diagnostic.code == "SPX-T283"));
+    // Admitted constructor items supply the traversed rows; reads through the
+    // constructor-built binding keep the ordinary row read identity.
+    let mut input = sources();
+    input[1] = canonical_source(
+        "app.spx",
+        r#"module app;
+use type @id("library.row") from library as Row;
+@id("app.walk") fn walk(rows:borrow Vec<Row>)->i64 {
+ for borrow row at index in rows { let selected=row.left; let numbered=index; 0 }
+ 0
+}
+@id("app.built") fn built()->i64 {
+ let rows=vec_of<Row>(Row { left:19, right:23 }, Row { left:1, right:2 });
+ for borrow row at index in rows { let selected=row.left; let numbered=index; 0 }
+ 0
+}
+@id("app.main") fn main()->i64 {0}
+"#,
+    );
+    assert!(input[1].source.contains("vec_of<Row>("));
     let programs = input
         .iter()
         .map(|source| crate::parse(&source.source, Path::new(&source.path)).unwrap())
@@ -121,16 +148,20 @@ fn constructor_items_keep_the_ordinary_block_record_read_identity() {
 
 #[test]
 fn operation_projection_authenticates_constructor_provenance_and_children() {
-    let input = vec![canonical_source(
-        "constructor.spx",
-        r#"module constructor;
+    // A Workspace Semantic Graph holds 2..32 files (`SPX-G170`).
+    let input = vec![
+        sources().remove(0),
+        canonical_source(
+            "constructor.spx",
+            r#"module constructor;
 @id("constructor.helper") fn helper(value:i64)->i64 { value + 1 }
 @id("constructor.main") fn main()->i64 {
  let rows=vec_of<i64>(helper(19),helper(23));
  if vec_len<i64>(rows)==2usize {42}else{0}
 }
 "#,
-    )];
+        ),
+    ];
     let programs = input
         .iter()
         .map(|source| crate::parse(&source.source, Path::new(&source.path)).unwrap())
@@ -151,7 +182,12 @@ fn operation_projection_authenticates_constructor_provenance_and_children() {
         .iter()
         .any(|declaration| declaration.id == "constructor.helper"
             && declaration.occurrences.len() >= 3));
-    let function = build.hir.modules[0]
+    let function = build
+        .hir
+        .modules
+        .iter_mut()
+        .find(|module| module.module == "constructor")
+        .unwrap()
         .functions
         .iter_mut()
         .find(|function| function.id.as_str() == "constructor.main")

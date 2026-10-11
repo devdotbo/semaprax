@@ -10,8 +10,15 @@ fn provider(source: &str, module: &str, id: &str) -> String {
     format!("module {module};\n{}", &rest[..end])
 }
 fn pure(source: &str) -> hir::ResolvedProgram {
-    let program = hir::resolve(&crate::check(source, "borrowed-reader.spx").unwrap()).unwrap();
-    for function in &program.functions {
+    // Single-file checking requires an entry (`SPX-T105`); the appended entry
+    // follows the provider in source order and is excluded from the shape scan.
+    let source = format!("{source}\n@id(\"pure.fixture.main\") fn main()->i64 {{0}}\n");
+    let program = hir::resolve(&crate::check(&source, "borrowed-reader.spx").unwrap()).unwrap();
+    for function in program
+        .functions
+        .iter()
+        .filter(|function| function.id.as_str() != "pure.fixture.main")
+    {
         let mut remaining = 1_048_576;
         let mut debits = 0;
         assert!(
@@ -125,7 +132,7 @@ fn supported_length_provider_does_not_retain_unrelated_option_or_scalar_match_fa
     let provider_source = r#"module scalar.leaf;
 @id("leaf.length") fn length(view:borrow Slice<u8>)->usize {byte_len(view)}
 @id("leaf.unused") fn unused(view:borrow Slice<u8>)->bool {match byte_get(view,0usize) {Option::Some {value}=>value==0u8,Option::None {}=>false,}}
-@id("leaf.unused.scalar") fn scalar(value:bool)->i64 {match value {true=>1,false=>0,}}
+@id("leaf.unused.scalar") fn scalar(value:bool)->i64 {match value {true=>1,_=>0,}}
 "#;
     let build =
         build_sources(&[("caller.spx", caller_source), ("leaf.spx", provider_source)]).unwrap();

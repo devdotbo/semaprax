@@ -2,7 +2,7 @@
 use super::*;
 const CALLER: &str = r#"module scalar.app;
 use function @id("helper.step") from scalar.helper as step;
-@id("app.main") fn main()->i64 {let label=str"é\u{0}";let result=step(41);return result;}
+@id("app.main") fn main()->i64 {let label=str"é\u{0}";let outcome=step(41);return outcome;}
 "#;
 const PROVIDER: &str = r#"module scalar.helper;
 use function @id("leaf.step") from scalar.leaf as leaf_step;
@@ -47,7 +47,7 @@ fn schema(build: &WorkspaceGraphBuild) -> Result<&'static str, Vec<Diagnostic>> 
 fn local(leaf: &str) -> hir::ResolvedProgram {
     let start = leaf.find("@id(").unwrap();
     let source = format!(
-        "module scalar.local;\n{}\n@id(\"helper.step\") fn helper(n:i64)->i64 {{step(n)}}\n@id(\"app.main\") fn main()->i64 {{let label=str\"é\\u{{0}}\";let result=helper(41);return result;}}",
+        "module scalar.local;\n{}\n@id(\"helper.step\") fn helper(n:i64)->i64 {{step(n)}}\n@id(\"app.main\") fn main()->i64 {{let label=str\"é\\u{{0}}\";let outcome=helper(41);return outcome;}}",
         &leaf[start..]
     );
     crate::hir::resolve(&crate::check(&source, "local.spx").unwrap()).unwrap()
@@ -337,8 +337,10 @@ fn measured(
     crate::test_allocation_observer::measure(|| {
         let module = caller(build);
         let anchor = &module.functions[0];
+        // Keep each replay refusal's own diagnostic so a wide-limit failure
+        // names its phase instead of the stable public G410 wrapper.
         let mut resources =
-            SelectedReplayPreparation::with_limits(anchor, work, bytes).map_err(|_| fail())?;
+            SelectedReplayPreparation::with_limits(anchor, work, bytes).map_err(|e| vec![e])?;
         let context = authenticate(
             module,
             &build.hir.modules,
@@ -346,14 +348,14 @@ fn measured(
             &mut resources,
         )?;
         let mut session = SelectedReplaySession::from_preparation(&context, anchor, resources)
-            .map_err(|_| fail())?;
+            .map_err(|e| vec![e])?;
         for helper in &context.helpers {
             session
                 .validate_scalar(helper.function)
-                .map_err(|_| fail())?;
+                .map_err(|e| vec![e])?;
         }
         for function in &context.lexical {
-            session.validate(function).map_err(|_| fail())?;
+            session.validate(function).map_err(|e| vec![e])?;
         }
         let (remaining, charged) = session.metrics();
         drop(session);
@@ -616,7 +618,7 @@ use function @id("leaf.step") from scalar.leaf as step;
 @id("app.main") fn main()->i64 {
  let label=str"é\u{0}";
  let mut i=0;
- while i<2 { i=step(i); if i==1 {continue;}else{0}; 0 }
+ while i<2 { i=step(i); if i==1 {continue;}else{0} 0 }
  return i;
 }"#;
     let build = build_sources(&[("caller.spx", caller_source), ("leaf.spx", LEAF)]).unwrap();

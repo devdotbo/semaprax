@@ -39,7 +39,16 @@ fn run(source: &str, failure: bool, mode: &str, allocations: Option<u64>) {
         );
     } else {
         let generated = codegen::emit_c(&ast).unwrap();
-        assert!(generated.contains("(void)spx_canonical_cleanup_done;"));
+        // Each lexical-control function references its terminal flag at the
+        // shared epilogue; functions without lexical control declare neither.
+        assert_eq!(
+            generated
+                .matches("(void)spx_canonical_cleanup_done;")
+                .count(),
+            generated
+                .matches("bool spx_canonical_cleanup_done = false;")
+                .count()
+        );
         super::super::owned_collection_outcome::run_native_generated_with_allocation_count(
             generated,
             &root,
@@ -105,6 +114,11 @@ fn borrowed_and_owned_slot_views_share_nul_utf8_storage_and_expire_before_owned_
     let site = &args[0].id;
     assert_eq!(inspect.cleanup_plan.blocks.iter().flat_map(|block| &block.transitions)
         .filter(|transition| matches!(transition, semaprax::cleanup_plan::CleanupTransition::CallCommit { call, .. } if call==site)).count(), 2);
+    // The lexical return route keeps its shared terminal flag referenced in
+    // native C.
+    assert!(codegen::emit_c(&checked)
+        .unwrap()
+        .contains("(void)spx_canonical_cleanup_done;"));
     // Ensures is authored once and emitted at both certified return contexts.
     run(&contracts, false, "slot-no-copy", Some(4));
     let skipped = SOURCE
