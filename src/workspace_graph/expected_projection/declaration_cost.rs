@@ -139,6 +139,7 @@ pub(super) fn ast_expr_cost(
     }
     cost.note_exact_expr_fixed_bundle()?;
     cost.account_scalar_identity(&expression.kind)?;
+    cost.account_exact_absent_storage(&expression.kind)?;
     match &expression.kind {
         ExprKind::Closure {
             params,

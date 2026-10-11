@@ -1,5 +1,7 @@
 # Changelog
 
+- Restore proved-absent root cleanup storage in the summed constructor-exact cached forecast (#764): literal, unary and binary roots, which every resolver path builds as `Value` primitives, omit only their four storage footprints from each retained parsed/semantic HIR copy. Children, checked/lazy failure blocks, bookkeeping, identities, strings, carriers, unproved fallback kinds, caps and live reservations are unchanged. Independent census, resolved inventory/plan, malformed-census and exact/one-short controls are authored but unexecuted; owning application qualification and any recovery remain pending.
+
 - Author a single-walk retained helper closure graph (#763): a sorted borrowed directory of caller functions plus only authenticated selected members, grown with charged moves and comparisons, original-order ordinals, contiguous outgoing-edge ranges and one Kahn visit per edge under the existing preparation. Unchanged target authentication and provider receipts precede every publication; the saved complete-entry oracle, irrelevant-provider/long-ID default-cap controls, walk/visit counters and exact/one-short entry definitions await grouped qualification; no measured saving is claimed.
 
 - Author an invocation-local borrowed helper directory (#762), preserving provider inventory, source authority and authored order while classifying each eligible body once. Independent old-capture, hostile identity, and exact/one-short work/backing controls await grouped qualification; no measured cost gain is claimed.

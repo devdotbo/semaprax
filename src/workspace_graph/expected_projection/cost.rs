@@ -48,6 +48,16 @@ pub(in crate::workspace_graph) struct StructuralCost {
     pub(super) single_identity_carriers: usize,
     pub(super) exact_fixed_discount: usize,
     pub(super) exact_expressions: usize,
+    pub(super) exact_absent_roots: [usize; 3],
+}
+
+/// Per-kind census of authored roots whose root storage is proved absent.
+/// Only the constructor-exact profile consults it; earlier modes are unchanged.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum AbsentStorageRoot {
+    Literal = 0,
+    Unary = 1,
+    Binary = 2,
 }
 
 // The final uncached profile uses the complete asserted expression bundle,
@@ -116,6 +126,7 @@ impl StructuralCost {
             single_identity_carriers: 0,
             exact_fixed_discount: 0,
             exact_expressions: 0,
+            exact_absent_roots: [0; 3],
         }
     }
 
@@ -196,6 +207,20 @@ impl StructuralCost {
                 "builder_bytes",
                 active_builder_limit(),
             )?;
+        }
+        Ok(())
+    }
+
+    /// Counted beside the root's complete exact bundle, on the same raw-AST
+    /// accumulator as the literal discount. Runtime/synthetic accumulators
+    /// never enable `inline_values` and so keep every storage footprint.
+    pub(super) fn account_exact_absent_storage(
+        &mut self,
+        kind: &crate::ast::ExprKind,
+    ) -> Result<(), Vec<Diagnostic>> {
+        if let (true, Some(root)) = (self.inline_values, absent_storage_root(kind)) {
+            let count = &mut self.exact_absent_roots[root as usize];
+            *count = checked_usage(*count, 1, "builder_bytes", active_builder_limit())?;
         }
         Ok(())
     }
@@ -287,6 +312,7 @@ impl StructuralCost {
             single_identity_carriers: 0,
             exact_fixed_discount: 0,
             exact_expressions: 0,
+            exact_absent_roots: [0; 3],
         }
     }
 
@@ -616,6 +642,53 @@ fn literal_fixed_discount(kind: &crate::ast::ExprKind) -> usize {
         _ => 0,
     }
 }
+
+// The same four storage footprints are absent for every authored unary and
+// binary root. Both resolvers (`finish_unary`, `FinishBinary` and the recursive
+// reference) build the root itself with `OwnershipMode::Value` and a primitive
+// type, including lazy `&&`/`||` and checked arithmetic. The inventory creates
+// a temporary only for `Own`, and flags/places only under a slot's shape; plan
+// lowering returns `owned_source: None`, so no call-argument epoch can key the
+// root. Each child keeps its own bundle and census. Checked status sources,
+// lazy/failure blocks, transitions, edges, regions, entry states, reachability
+// and all HIR carriers stay inside the charged remainder of the bundle.
+fn absent_storage_root(kind: &crate::ast::ExprKind) -> Option<AbsentStorageRoot> {
+    use crate::ast::ExprKind;
+    match kind {
+        ExprKind::Unary { .. } => Some(AbsentStorageRoot::Unary),
+        ExprKind::Binary { .. } => Some(AbsentStorageRoot::Binary),
+        _ if literal_fixed_discount(kind) == LITERAL_ABSENT_STORAGE => {
+            Some(AbsentStorageRoot::Literal)
+        }
+        _ => None,
+    }
+}
+
+/// Bytes of proved-absent root storage in one retained exact HIR copy. Fails
+/// closed unless the census is covered by the raw accumulator's own bundles.
+pub(super) fn exact_absent_storage(raw: &StructuralCost) -> Result<usize, Vec<Diagnostic>> {
+    let overflow = || {
+        vec![super::super::limit_error(
+            "builder_bytes",
+            active_builder_limit(),
+        )]
+    };
+    let roots = raw
+        .exact_absent_roots
+        .iter()
+        .try_fold(0usize, |sum, count| sum.checked_add(*count))
+        .ok_or_else(overflow)?;
+    if roots > raw.exact_expressions {
+        return Err(overflow());
+    }
+    roots
+        .checked_mul(LITERAL_ABSENT_STORAGE)
+        .ok_or_else(overflow)
+}
+
+// Everything except the four absent storage footprints stays charged per root.
+#[cfg(test)]
+pub(super) const EXACT_ABSENT_ROOT_STORAGE: usize = LITERAL_ABSENT_STORAGE;
 
 #[cfg(test)]
 #[test]

@@ -26,6 +26,9 @@ fn overflow() -> Vec<Diagnostic> {
 // Replace only the independently asserted per-expression bundle. Every other
 // declaration/container, string-copy, generic/default/import and identity bound
 // stays in the original conservative ceiling. ExpressionId clone shares Arc.
+// Proved-absent literal/unary/binary root storage is excluded from each copy:
+// the semantic cache retains a `clone()` of the same resolved module, whose
+// inventory and plan vectors hold exactly the original's slots.
 pub(super) fn fixed_upper(
     upper: usize,
     raw: &StructuralCost,
@@ -40,9 +43,11 @@ pub(super) fn fixed_upper(
         .checked_mul(super::super::HIR_FIXED_EXPANSION_FACTOR)
         .and_then(|n| n.checked_mul(std::mem::size_of::<crate::ast::Expr>()))
         .ok_or_else(overflow)?;
+    let absent = cost::exact_absent_storage(raw)?;
     let exact = count
-        .checked_mul(retention.copies())
-        .and_then(|n| n.checked_mul(super::super::HIR_EXPR_FIXED_BUNDLE))
+        .checked_mul(super::super::HIR_EXPR_FIXED_BUNDLE)
+        .and_then(|n| n.checked_sub(absent))
+        .and_then(|n| n.checked_mul(retention.copies()))
         .ok_or_else(overflow)?;
     upper
         .checked_sub(old)
