@@ -244,7 +244,9 @@ impl SkeletonWork<'_, '_> {
             .reserve_vec(self.function, &mut path.observations.items, 1, phase)?;
         self.budget
             .reserve_bytes(self.function, physical_clone::observation_rc_bytes(), phase)?;
-        path.observations.push(observation.into());
+        let observation = std::rc::Rc::new(observation);
+        path.continuation.record(&observation);
+        path.observations.push(observation);
         Ok(())
     }
     pub(super) fn insert_front_observation(
@@ -274,6 +276,7 @@ pub(super) fn empty_expr_path() -> ExprSkeletonPath {
         owned_source: None,
         failed: false,
         residual: false,
+        continuation: lexical_skeleton::Continuation::Normal,
     }
 }
 
@@ -453,10 +456,23 @@ impl SkeletonWork<'_, '_> {
             return Ok(paths);
         }
         self.charge(paths.len(), "factored path-state merge")?;
-        let mut order = BTreeMap::<(Option<CleanupPlace>, bool, bool), usize>::new();
+        let mut order = BTreeMap::<
+            (
+                Option<CleanupPlace>,
+                bool,
+                bool,
+                lexical_skeleton::Continuation,
+            ),
+            usize,
+        >::new();
         let mut groups = Vec::<(ExprSkeletonPath, Vec<Observations>)>::new();
         for path in paths {
-            let key = (path.owned_source.clone(), path.failed, path.residual);
+            let key = (
+                path.owned_source.clone(),
+                path.failed,
+                path.residual,
+                path.continuation.clone(),
+            );
             match order.get(&key) {
                 Some(index) => groups[*index].1.push(path.observations),
                 None => {
@@ -496,7 +512,13 @@ impl SkeletonWork<'_, '_> {
             return Ok(states);
         }
         self.charge(states.len(), "factored call-state merge")?;
-        type CallKey = (Option<CleanupPlace>, bool, bool, Vec<(u32, CleanupPlace)>);
+        type CallKey = (
+            Option<CleanupPlace>,
+            bool,
+            bool,
+            lexical_skeleton::Continuation,
+            Vec<(u32, CleanupPlace)>,
+        );
         let mut order = BTreeMap::<CallKey, usize>::new();
         let mut groups = Vec::<(CallSkeletonState, Vec<Observations>)>::new();
         for (path, commits) in states {
@@ -504,6 +526,7 @@ impl SkeletonWork<'_, '_> {
                 path.owned_source.clone(),
                 path.failed,
                 path.residual,
+                path.continuation.clone(),
                 commits.clone(),
             );
             match order.get(&key) {

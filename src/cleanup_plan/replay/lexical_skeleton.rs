@@ -1,9 +1,9 @@
 //! Typed-skeleton markers for lexical exits and loop latches.
 //!
 //! A lexical exit is a terminal flow inside its expression. The typed
-//! skeleton records it as one marker observation and then reuses the existing
-//! short-circuit state (`failed`), so no ordinary statement, call or arm
-//! continues after it. The plan-side walk emits the very same marker from the
+//! skeleton records it as one marker observation and explicit continuation
+//! state, then reuses the existing short-circuit state (`failed`), so no
+//! ordinary statement, call or arm continues after it. The plan-side walk emits the very same marker from the
 //! exit certificate, which is how the comparison authenticates exit order,
 //! target and kind without trusting either side:
 //!
@@ -45,6 +45,42 @@ pub(super) fn plan_exit_observation(
     }))
 }
 
+/// The exact lexical continuation is semantic path state, independent of the
+/// observation representation. In particular, an advancement can append any
+/// number of observations after its continue marker before reaching a latch.
+#[derive(Clone, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
+pub(super) enum Continuation {
+    #[default]
+    Normal,
+    Advancing(std::rc::Rc<SkeletonObservation>),
+    Exit(std::rc::Rc<SkeletonObservation>),
+    Latch(std::rc::Rc<SkeletonObservation>),
+}
+
+impl Continuation {
+    pub(super) fn sequenced(prefix: &Self, suffix: &Self) -> Self {
+        match (prefix, suffix) {
+            (Self::Advancing(_), Self::Normal) => prefix.clone(),
+            _ => suffix.clone(),
+        }
+    }
+
+    pub(super) fn record(&mut self, observation: &std::rc::Rc<SkeletonObservation>) {
+        match observation.as_ref() {
+            SkeletonObservation::LexicalExit { .. } => *self = Self::Exit(observation.clone()),
+            SkeletonObservation::LoopLatch { .. } => *self = Self::Latch(observation.clone()),
+            _ => {}
+        }
+    }
+}
+
+impl ClonePayload for Continuation {
+    fn clone_payload_bytes(&self) -> Option<usize> {
+        // All marker identities belong to the already charged observation Rc.
+        Some(0)
+    }
+}
+
 pub(super) enum Marker<'a> {
     Exit {
         kind: LexicalExitKind,
@@ -53,15 +89,19 @@ pub(super) enum Marker<'a> {
     Latch,
 }
 
-/// The lexical marker a terminal path ended with, if any.
+/// The semantic continuation of one terminal path. Never inspect the flat
+/// observation tail: a factored prefix may hold the marker instead.
 pub(super) fn marker(path: &ExprSkeletonPath) -> Option<Marker<'_>> {
-    match &**path.observations.last()? {
-        SkeletonObservation::LexicalExit { kind, target, .. } => Some(Marker::Exit {
-            kind: *kind,
-            target,
-        }),
-        SkeletonObservation::LoopLatch { .. } => Some(Marker::Latch),
-        _ => None,
+    match &path.continuation {
+        Continuation::Exit(observation) => match observation.as_ref() {
+            SkeletonObservation::LexicalExit { kind, target, .. } => Some(Marker::Exit {
+                kind: *kind,
+                target,
+            }),
+            _ => None,
+        },
+        Continuation::Latch(_) => Some(Marker::Latch),
+        Continuation::Normal | Continuation::Advancing(_) => None,
     }
 }
 
@@ -118,6 +158,9 @@ pub(super) fn continue_prefix(
     let mut path = empty_expr_path();
     let observation = exit_marker(expression, work)?;
     work.push_observation(&mut path, observation, "continue exit observation")?;
+    if let Continuation::Exit(marker) = &path.continuation {
+        path.continuation = Continuation::Advancing(marker.clone());
+    }
     work.singleton_path(path, "continue prefix path")
 }
 
@@ -192,6 +235,7 @@ pub(super) fn settle_loop_body(
             Some(Marker::Exit { kind: LexicalExitKind::Break, target: exit }) if exit == target
         ) {
             path.failed = false;
+            path.continuation = Continuation::Normal;
         }
         work.push_expr_path(&mut settled, path, "lexical loop body path")?;
     }
@@ -211,6 +255,11 @@ pub(super) fn release_returns(paths: &mut [ExprSkeletonPath]) {
             )
         {
             path.failed = false;
+            path.continuation = Continuation::Normal;
         }
     }
 }
+
+#[cfg(test)]
+#[path = "lexical_skeleton/tests.rs"]
+mod tests;

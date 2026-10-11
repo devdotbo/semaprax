@@ -67,7 +67,14 @@ The entry ownership union and exact latch restoration checks are unchanged.
 The terminal-path census keeps a separate break class bound to the exact nearest
 typed loop. Only that loop consumes it into continuation; normal body completion
 and continue end at the latch, while return reaches the function postconditions.
-Generated for-loop advances contribute their actual checked paths and work. All
+Generated for-loop advances contribute their actual checked paths and work. Typed
+skeleton paths retain an explicit continuation state independently of observation
+tails: normal execution, an exact continue marker awaiting generated advancement,
+an exact abrupt marker, or an exact target-qualified latch. Sequencing retains
+the advancement phase until its latch; releasing a return or consuming the exact
+loop break clears its abrupt continuation. Shared marker references retain site,
+kind and complete owner/target identity without cloning identity payloads. This
+is groundwork only: lexical factoring is not selected by this state change. All
 authored children remain structurally scanned, including infeasible Done, and
 the 65,536-path, depth and replay-work limits remain unchanged. Independent small
 enumeration and exact/one-short reservation definitions await executable qualification.

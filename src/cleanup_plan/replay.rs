@@ -379,6 +379,7 @@ struct ExprSkeletonPath {
     owned_source: Option<CleanupPlace>,
     failed: bool,
     residual: bool,
+    continuation: lexical_skeleton::Continuation,
 }
 
 type BooleanSkeletonSplit = (
@@ -3356,6 +3357,10 @@ fn sequence_skeleton_paths(
                     owned_source,
                     failed: suffix.failed,
                     residual: suffix.residual,
+                    continuation: lexical_skeleton::Continuation::sequenced(
+                        &prefix.continuation,
+                        &suffix.continuation,
+                    ),
                 },
                 "sequenced skeleton path",
             )?;
@@ -3795,6 +3800,7 @@ fn expression_skeleton(
                                 owned_source,
                                 failed: false,
                                 residual: false,
+                                continuation: lexical_skeleton::Continuation::Normal,
                             },
                             "place skeleton path",
                         )?);
@@ -6563,6 +6569,10 @@ fn sequence_call_argument(
                 owned_source,
                 failed: suffix.failed,
                 residual: suffix.residual,
+                continuation: lexical_skeleton::Continuation::sequenced(
+                    &prefix.continuation,
+                    &suffix.continuation,
+                ),
             };
             let mut path_commits = work.clone_owned(&commits, "call commit-state clone")?;
             if !path.failed
