@@ -312,106 +312,216 @@ mod tests {
 #[cfg(test)]
 mod cursor_work_tests {
     use super::*;
-    fn program(width: usize) -> crate::hir::ResolvedProgram {
+    use crate::workspace_graph::SourceRecordReplayFixture;
+
+    fn source(width: usize) -> String {
         let statements = (0..width)
             .map(|i| format!("let n{i}=0;"))
             .collect::<String>();
-        let source = format!("module app; @id(\"app.main\") fn main()->i64 {{{statements}0}}");
-        crate::hir::resolve(&crate::parse(&source, "linear-profile.spx").unwrap()).unwrap()
+        format!("module app; @id(\"app.main\") fn main()->i64 {{{statements}0}}")
     }
-    fn run(program: &crate::hir::ResolvedProgram, limit: usize) -> Result<usize, Diagnostic> {
+    fn authenticated_fixture(source: &str) -> SourceRecordReplayFixture {
+        // The measured main is unchanged. This separate ordinary source helper
+        // supplies the real static literal and lexical profile required by the
+        // retained source-bound context; no declaration facts are discarded.
+        SourceRecordReplayFixture::new(&format!(
+            r#"{source}
+@id("app.cursor_witness") fn cursor_witness()->i64 {{
+    let key=str"x";
+    let mut next=0;
+    while next<1 {{
+        next=next+1;
+        if str_len_bytes(key)==1 {{return 1;}} else {{0}}
+        0
+    }}
+    0
+}}"#
+        ))
+    }
+    fn main(fixture: &SourceRecordReplayFixture) -> &ResolvedFunction {
+        fixture
+            .functions()
+            .iter()
+            .find(|f| f.id.as_str() == "app.main")
+            .unwrap()
+    }
+    fn run(
+        context: &dyn crate::cleanup::ReplayContext,
+        function: &ResolvedFunction,
+        limit: usize,
+    ) -> Result<usize, Diagnostic> {
         let mut budget = ReplayBudget::new();
         budget.remaining = limit;
         budget.physical = Some(Box::new(
             super::super::physical_storage::PhysicalReservation::new(usize::MAX),
         ));
-        validate(program, &program.functions[0], &mut budget)?;
+        validate(context, function, &mut budget)?;
         Ok(budget.remaining)
+    }
+    fn standalone_stays_closed(source: &str) {
+        // Keep every compiler-owned declaration and its identity facts intact.
+        // Full standalone metadata is not an authenticated module projection.
+        let parsed = crate::check(source, "linear-profile-full.spx").unwrap();
+        let program = crate::hir::resolve(&parsed).unwrap();
+        assert!(program.types.iter().any(|ty| {
+            program
+                .declarations
+                .declaration(&ty.id)
+                .is_some_and(|fact| {
+                    fact.identity_origin == crate::hir::IdentityOrigin::CompilerOwned
+                })
+        }));
+        let function = program
+            .functions
+            .iter()
+            .find(|f| f.id.as_str() == "app.main")
+            .unwrap();
+        let error = run(&program, function, usize::MAX).unwrap_err();
+        assert_eq!(error.code, "SPX-H006");
+        assert!(
+            error
+                .message
+                .contains("unauthenticated or unsupported fields"),
+            "{error:?}"
+        );
     }
     #[test]
     fn wide_statement_census_and_terminal_advances_have_exact_linear_work() {
         for width in [0, 1, 64, 512] {
-            let program = program(width);
-            // Block+tail+initializers: entry and terminal probes, each edge,
-            // and exactly one statement census; no prefix re-scan term.
-            let exact = 4 * width + 5;
-            assert_eq!(run(&program, exact).unwrap(), 0);
-            assert_eq!(run(&program, exact - 1).unwrap_err().code, "SPX-H006");
+            let source = source(width);
+            standalone_stays_closed(&source);
+            let fixture = authenticated_fixture(&source);
+            fixture.with_context(|context| {
+                let function = main(&fixture);
+                // Block+tail+initializers: entry and terminal probes, each edge,
+                // and exactly one statement census; no prefix re-scan term.
+                let exact = 4 * width + 5;
+                assert_eq!(run(context, function, exact).unwrap(), 0);
+                assert_eq!(
+                    run(context, function, exact - 1).unwrap_err().code,
+                    "SPX-H006"
+                );
+            });
         }
     }
     #[test]
     fn guarded_match_patterns_and_all_contract_roots_keep_their_work_debits() {
-        let mut matched = program(0);
-        let ResolvedExprKind::Block { tail, .. } = &mut matched.functions[0].body.kind else {
-            panic!()
-        };
-        let seed = tail.clone();
+        // Real checked source gives every arm/guard its own source identity;
+        // the final wildcard makes the scalar match exhaustive.
         let arms = (0..64)
-            .map(|i| crate::hir::ResolvedMatchArm {
-                pattern: ResolvedMatchPattern::Wildcard,
-                guard: (i % 2 == 0).then(|| {
-                    let mut guard = seed.clone();
-                    guard.kind = ResolvedExprKind::Bool(true);
-                    guard.ty = ResolvedType::Bool;
-                    guard
-                }),
-                value: seed.as_ref().clone(),
-                span: seed.span,
+            .map(|i| {
+                let pattern = if i == 63 {
+                    "_".to_owned()
+                } else {
+                    i.to_string()
+                };
+                let guard = if i % 2 == 0 { " if true" } else { "" };
+                format!("{pattern}{guard}=>0,")
             })
-            .collect();
-        tail.kind = ResolvedExprKind::Match {
-            scrutinee: seed,
-            arms,
-            mode: crate::hir::ResolvedMatchMode::Value,
-        };
-        let exact = 8 + 4 * 64 + 3 * 32;
-        assert_eq!(run(&matched, exact).unwrap(), 0);
-        assert!(run(&matched, exact - 1).is_err());
+            .collect::<String>();
+        let matched_source =
+            format!("module app; @id(\"app.main\") fn main()->i64 {{match 0 {{{arms}}}}}");
+        standalone_stays_closed(&matched_source);
+        let matched = authenticated_fixture(&matched_source);
+        matched.with_context(|context| {
+            let function = main(&matched);
+            let ResolvedExprKind::Block { tail, .. } = &function.body.kind else {
+                panic!("body block")
+            };
+            let ResolvedExprKind::Match { arms, .. } = &tail.kind else {
+                panic!("match tail")
+            };
+            assert_eq!(arms.len(), 64);
+            assert_eq!(arms.iter().filter(|arm| arm.guard.is_some()).count(), 32);
+            let exact = 8 + 4 * 64 + 3 * 32;
+            assert_eq!(run(context, function, exact).unwrap(), 0);
+            assert_eq!(
+                run(context, function, exact - 1).unwrap_err().code,
+                "SPX-H006"
+            );
+        });
         // Separate roots share the same global ReplayBudget; no fresh permit
         // appears at requires/body/ensures transitions.
-        let source = "module app; @id(\"app.main\") fn main()->i64 requires true ensures true {0}";
-        let contracts =
-            crate::hir::resolve(&crate::parse(source, "contract-roots.spx").unwrap()).unwrap();
-        assert_eq!(run(&contracts, 9).unwrap(), 0);
-        assert!(run(&contracts, 8).is_err());
+        let contracts_source =
+            "module app; @id(\"app.main\") fn main()->i64 requires true ensures true {0}";
+        standalone_stays_closed(contracts_source);
+        let contracts = authenticated_fixture(contracts_source);
+        contracts.with_context(|context| {
+            let function = main(&contracts);
+            assert_eq!(function.requires.len(), 1);
+            assert_eq!(function.ensures.len(), 1);
+            assert_eq!(run(context, function, 9).unwrap(), 0);
+            assert_eq!(run(context, function, 8).unwrap_err().code, "SPX-H006");
+        });
     }
     #[test]
     fn deep_cursor_has_exact_work_and_retains_depth_and_late_type_refusal() {
-        let mut deep = program(0);
-        let ResolvedExprKind::Block { tail, .. } = &mut deep.functions[0].body.kind else {
-            panic!()
-        };
-        for _ in 0..32 {
-            let inner = tail.clone();
-            tail.kind = ResolvedExprKind::Unary {
-                op: crate::ast::UnaryOp::Neg,
-                value: inner,
-            };
-        }
-        assert_eq!(run(&deep, 5 + 3 * 32).unwrap(), 0);
-        assert!(run(&deep, 5 + 3 * 32 - 1).is_err());
-        let ResolvedExprKind::Block { tail, .. } = &mut deep.functions[0].body.kind else {
-            panic!()
-        };
-        for _ in 32..DEPTH {
-            let inner = tail.clone();
-            tail.kind = ResolvedExprKind::Unary {
-                op: crate::ast::UnaryOp::Neg,
-                value: inner,
-            };
-        }
-        assert!(run(&deep, usize::MAX).is_err(), "work cannot buy depth");
-        let mut late = program(64);
-        let ResolvedExprKind::Block { tail, .. } = &mut late.functions[0].body.kind else {
-            panic!()
-        };
-        tail.ty = ResolvedType::Nominal {
-            declaration: crate::hir::DeclarationId::new("forged"),
-            arguments: Vec::new(),
-        };
-        assert!(
-            run(&late, usize::MAX).is_err(),
-            "late unsupported storage remains checked"
+        let deep_source = format!(
+            "module app; @id(\"app.main\") fn main()->i64 {{{}0}}",
+            "-".repeat(32)
         );
+        standalone_stays_closed(&deep_source);
+        let fixture = authenticated_fixture(&deep_source);
+        fixture.with_context(|context| {
+            let function = main(&fixture);
+            let ResolvedExprKind::Block { tail, .. } = &function.body.kind else {
+                panic!("body block")
+            };
+            let mut expression = tail.as_ref();
+            let mut count = 0;
+            while let ResolvedExprKind::Unary { value, .. } = &expression.kind {
+                count += 1;
+                expression = value;
+            }
+            assert_eq!(
+                count, 32,
+                "the actual checked source retains every unary node"
+            );
+            assert_eq!(run(context, function, 5 + 3 * 32).unwrap(), 0);
+            assert_eq!(
+                run(context, function, 5 + 3 * 32 - 1).unwrap_err().code,
+                "SPX-H006"
+            );
+            // After authenticating the unmodified source, mutate only a cloned
+            // function for the hostile depth gate; held source facts stay intact.
+            let mut forged = function.clone();
+            let ResolvedExprKind::Block { tail, .. } = &mut forged.body.kind else {
+                panic!("body block")
+            };
+            for _ in 32..DEPTH {
+                let inner = tail.clone();
+                tail.kind = ResolvedExprKind::Unary {
+                    op: crate::ast::UnaryOp::Neg,
+                    value: inner,
+                };
+            }
+            let error = run(context, &forged, usize::MAX).unwrap_err();
+            assert_eq!(error.code, "SPX-H006");
+            assert!(
+                error.message.contains("ordinary HIR depth"),
+                "work cannot buy depth: {error:?}"
+            );
+        });
+        let late = authenticated_fixture(&source(64));
+        late.with_context(|context| {
+            let function = main(&late);
+            assert_eq!(run(context, function, 4 * 64 + 5).unwrap(), 0);
+            let mut forged = function.clone();
+            let ResolvedExprKind::Block { tail, .. } = &mut forged.body.kind else {
+                panic!("body block")
+            };
+            tail.ty = ResolvedType::Nominal {
+                declaration: crate::hir::DeclarationId::new("forged"),
+                arguments: Vec::new(),
+            };
+            let error = run(context, &forged, usize::MAX).unwrap_err();
+            assert_eq!(error.code, "SPX-H006");
+            assert!(
+                error
+                    .message
+                    .contains("unauthenticated or unsupported fields"),
+                "late unsupported storage remains checked: {error:?}"
+            );
+        });
     }
 }
