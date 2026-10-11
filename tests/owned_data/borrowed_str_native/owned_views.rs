@@ -119,6 +119,8 @@ int main(void) {{
         pair = symbol("text.pair")
     );
     let slice = r#"int main(void) {
+    struct spx_status_entry entries[16]; struct spx_context ctx = {0};
+    if (!spx_context_init(&ctx, UINT64_C(9), entries, UINT32_C(16), NULL, NULL, NULL)) return 10;
     spx_slice_u8_v1 view = {NULL, UINT64_C(131073)};
     spx_slice_u8_require_owned_view_valid(view); return 0;
 }"#;
