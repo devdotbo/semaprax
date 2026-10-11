@@ -1,25 +1,47 @@
 //! Full trace replay is independent of receiving-only profile acceptance.
 use super::*;
 
+// Keep refusal evidence on the stack so the diagnostic is dropped inside the
+// allocation observation and cannot falsify the through-Drop live-byte gate.
+#[derive(Debug)]
+struct Refusal {
+    stage: &'static str,
+    function: usize,
+    message: [u8; 512],
+    length: usize,
+}
+impl std::fmt::Display for Refusal {
+    fn fmt(&self, output: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(output, "{} function {}: {}", self.stage, self.function,
+            std::str::from_utf8(&self.message[..self.length]).expect("UTF-8 prefix"))
+    }
+}
+
 fn run(
     program: &crate::hir::ResolvedProgram,
     work: usize,
     bytes: usize,
 ) -> (
-    Result<(usize, usize), ()>,
+    Result<(usize, usize), Refusal>,
     crate::test_allocation_observer::Metrics,
 ) {
     crate::test_allocation_observer::measure(|| {
+        let mut stage = "preparation";
+        let mut ordinal = 0;
         (|| {
             let anchor = &program.functions[0];
             let mut preparation = Preparation::with_limits(anchor, work, bytes)?;
+            stage = "declarations";
             let index = declarations(program, &mut preparation)?;
             let provider = Provider {
                 program,
                 declarations: index,
             };
+            stage = "session";
             let mut session = Session::from_preparation(&provider, anchor, preparation)?;
-            for function in &program.functions[..2] {
+            stage = "replay";
+            for (index, function) in program.functions[..2].iter().enumerate() {
+                ordinal = index;
                 session.borrowed_replay(function)?;
             }
             let (remaining, charged) = session.metrics();
@@ -30,6 +52,13 @@ fn run(
         })()
         .map_err(|diagnostic| {
             assert_eq!(diagnostic.code, "SPX-H006");
+            let mut length = diagnostic.message.len().min(512);
+            while !diagnostic.message.is_char_boundary(length) {
+                length -= 1;
+            }
+            let mut message = [0; 512];
+            message[..length].copy_from_slice(&diagnostic.message.as_bytes()[..length]);
+            Refusal { stage, function: ordinal, message, length }
         })
     })
 }
@@ -68,10 +97,10 @@ fn actual_option_helpers_full_replay_matches_ordinary_and_metering_through_drop(
             validate_structure(&program, function).unwrap();
         }
         let (wide, allocation) = run(&program, MAX_REPLAY_WORK_UNITS, 1 << 24);
-        let (work, bytes) = wide.unwrap();
+        let (work, bytes) = wide.unwrap_or_else(|refusal| panic!("wide replay refused: {refusal}"));
         assert!(!allocation.invalid && allocation.live == 0 && allocation.allocated <= bytes);
         let (exact, allocation) = run(&program, work, bytes);
-        assert_eq!(exact.unwrap(), (work, bytes));
+        assert_eq!(exact.unwrap_or_else(|refusal| panic!("exact replay refused: {refusal}")), (work, bytes));
         assert!(!allocation.invalid && allocation.live == 0 && allocation.allocated <= bytes);
         for (work, bytes) in [(work - 1, bytes), (work, bytes - 1)] {
             let (answer, allocation) = run(&program, work, bytes);
