@@ -7,7 +7,7 @@ int main(void) {
   if(/* expected failure */){
    if(token==SPX_STATUS_SUCCESS||value!=INT64_C(123456789))return 2;
    const struct spx_normalized_status*status=spx_status_resolve(&context,token);
-   if(!status||strcmp(status->domain,"semaprax.contract.v1")||status->code!=UINT32_C(2))return 3;
+   if(!status||strcmp(status->domain_id,"semaprax.contract.v1")||status->code!=UINT32_C(2))return 3;
   }else if(token!=SPX_STATUS_SUCCESS||value!=INT64_C(42))return 4;
   if(layout_live||context.call_depth)return 5;
 #ifdef SPX_VEC_AUTHORITY_CAPACITY
