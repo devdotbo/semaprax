@@ -50,10 +50,7 @@ impl<'a> TopLevel<'a> {
         if !member.is_some_and(|held| std::ptr::eq(held, caller)) {
             return Err(refusal());
         }
-        debit(
-            work,
-            programs.len().checked_add(types).ok_or_else(refusal)?,
-        )?;
+        debit(work, programs.len().checked_add(types).ok_or_else(refusal)?)?;
         let classes = programs.iter().flat_map(|p| &p.types).any(|ty| {
             matches!(&ty.kind, TypeDeclarationKind::Class { methods, .. } if !methods.is_empty())
         });
@@ -68,7 +65,9 @@ impl<'a> TopLevel<'a> {
                     .ok_or_else(refusal)?;
                 if !std::ptr::eq(*key, function.stable_id.as_str())
                     || entry.kind != AuthoredKind::Function
-                    || !entry.function.is_some_and(|held| std::ptr::eq(held, function))
+                    || !entry
+                        .function
+                        .is_some_and(|held| std::ptr::eq(held, function))
                     || entry.ty.is_some()
                     || !exact(entry, program, function.explicit_id)
                 {
@@ -89,9 +88,10 @@ impl<'a> TopLevel<'a> {
                 }
                 let children = match &ty.kind {
                     TypeDeclarationKind::Record { fields } => fields.len(),
-                    TypeDeclarationKind::Class { fields, methods } => {
-                        fields.len().checked_add(methods.len()).ok_or_else(refusal)?
-                    }
+                    TypeDeclarationKind::Class { fields, methods } => fields
+                        .len()
+                        .checked_add(methods.len())
+                        .ok_or_else(refusal)?,
                     TypeDeclarationKind::Variant { cases } => {
                         debit(work, cases.len())?;
                         cases
@@ -117,7 +117,9 @@ impl<'a> TopLevel<'a> {
             census = program
                 .interfaces
                 .iter()
-                .try_fold(census, |n, i| n.checked_add(1)?.checked_add(i.imports.len()))
+                .try_fold(census, |n, i| {
+                    n.checked_add(1)?.checked_add(i.imports.len())
+                })
                 .and_then(|n| {
                     program
                         .protocols

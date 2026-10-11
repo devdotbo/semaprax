@@ -1,8 +1,8 @@
 //! Borrowed shape reconstruction for the deliberately narrow private closure.
+use super::authority::view::Lookup;
 use super::{identity, private_without_work, refusal};
 use crate::ast::{ModuleUseKind, Program, Type, TypeDeclaration, TypeDeclarationKind};
 use crate::diagnostic::Diagnostic;
-use super::authority::view::Lookup;
 
 pub(super) fn debit(work: &mut usize, count: usize) -> Result<(), Vec<Diagnostic>> {
     *work = work.checked_sub(count).ok_or_else(refusal)?;

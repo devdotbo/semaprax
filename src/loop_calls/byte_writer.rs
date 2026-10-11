@@ -14,9 +14,9 @@ mod source_index;
 #[cfg(test)]
 pub(crate) use resolved::checked_absent_with_work_reservation;
 pub(crate) use resolved::{
-    ProofCursor, bindings, checked_bindings, checked_bindings_with_reservation,
+    bindings, checked_bindings, checked_bindings_with_reservation,
     nonallocating as resolved_nonallocating,
-    nonallocating_with_cursor as resolved_nonallocating_with_cursor,
+    nonallocating_with_cursor as resolved_nonallocating_with_cursor, ProofCursor,
 };
 pub(crate) use source::nonallocating as source_nonallocating;
 pub(crate) use source_index::{SourceHelpers, SourceIndex, SourceProofs};

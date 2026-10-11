@@ -58,7 +58,10 @@ fn guard_completion(expr: &Expr, depth: usize) -> bool {
             ..
         } => guard_completion(then_branch, depth + 1) && guard_completion(else_branch, depth + 1),
         ExprKind::Match { arms, .. } => {
-            !arms.is_empty() && arms.iter().all(|arm| guard_completion(&arm.value, depth + 1))
+            !arms.is_empty()
+                && arms
+                    .iter()
+                    .all(|arm| guard_completion(&arm.value, depth + 1))
         }
         _ => false,
     }

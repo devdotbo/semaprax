@@ -198,7 +198,8 @@ pub(super) fn schema_with_proofs<'a>(
         return Ok("semaprax.native-law.v1");
     }
     let static_schema = static_text::schema(module, facts)?;
-    let lexical_static = static_schema.is_some() && static_text::replay_lexical(module, modules, facts)?;
+    let lexical_static =
+        static_schema.is_some() && static_text::replay_lexical(module, modules, facts)?;
     let helper_schema = byte_helper::schema_with_proofs(module, modules, facts, proofs)?;
     let mut string_slots = false;
     for function in module.functions.iter().chain(

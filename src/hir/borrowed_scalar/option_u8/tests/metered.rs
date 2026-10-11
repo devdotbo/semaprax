@@ -181,16 +181,12 @@ fn borrowed_option_inventory_matches_independent_ordinary_inventory_and_whole_dr
     let (exact, allocation) = measured(&program, function, &expected, work, bytes);
     assert_eq!(exact.unwrap(), (work, bytes));
     assert!(!allocation.invalid && allocation.allocated <= bytes && allocation.live == 0);
-    assert!(
-        measured(&program, function, &expected, work - 1, bytes)
-            .0
-            .is_err()
-    );
-    assert!(
-        measured(&program, function, &expected, work, bytes - 1)
-            .0
-            .is_err()
-    );
+    assert!(measured(&program, function, &expected, work - 1, bytes)
+        .0
+        .is_err());
+    assert!(measured(&program, function, &expected, work, bytes - 1)
+        .0
+        .is_err());
     let mut hostile = program.clone();
     let owner = DeclarationId::new(crate::prelude::OPTION_ID);
     hostile

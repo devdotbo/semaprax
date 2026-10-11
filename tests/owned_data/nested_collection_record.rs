@@ -100,11 +100,9 @@ fn nested_collection_owned_match_result_and_terminal_return_settle_on_three_back
             interpreter::interpret(&path, "app.main", &[], &InterpreterOptions::default()).unwrap();
         interpreter::verify_envelope(&result.envelope).unwrap();
         assert!(!result.returned, "{}", result.envelope);
-        assert!(
-            result
-                .envelope
-                .contains("\"domain_id\":\"semaprax.contract.v1\"")
-        );
+        assert!(result
+            .envelope
+            .contains("\"domain_id\":\"semaprax.contract.v1\""));
         assert!(result.envelope.contains("\"code\":2"));
     }
     failure::native_failure(&ast, &root, "semaprax.contract.v1", 2);

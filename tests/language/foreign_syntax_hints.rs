@@ -164,14 +164,16 @@ fn main() -> i64
     admitted_lexical(&terminated, "2", "terminated-exit-guard");
     let unterminated = terminated.replace("else {0};0", "else {0} 0");
     admitted_lexical(&unterminated, "2", "valued-exit-guard");
-    let canonical = |source: &str| {
-        semaprax::format::canonical(&semaprax::check(source, "habit.spx").unwrap())
-    };
+    let canonical =
+        |source: &str| semaprax::format::canonical(&semaprax::check(source, "habit.spx").unwrap());
     assert_eq!(canonical(&terminated), canonical(&unterminated));
     // Value boundaries keep their refusals: an initializer and an operator
     // suffix are generic discarded initializers, and a final `;` has no item.
     for closed in [
-        terminated.replace("if i==1 {continue;} else {0};", "let _=if i==1 {continue;} else {0};"),
+        terminated.replace(
+            "if i==1 {continue;} else {0};",
+            "let _=if i==1 {continue;} else {0};",
+        ),
         terminated.replace("else {0};0", "else {0} + 0;0"),
     ] {
         let diagnostics = semaprax::check(&closed, "habit.spx").unwrap_err();

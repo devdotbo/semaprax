@@ -165,7 +165,10 @@ fn borrowed_view_matches_saved_old_roots_and_verdicts_and_charges_only_its_proof
         .iter()
         .map(|p| p.functions.len() + p.types.len())
         .sum::<usize>();
-    assert!(authored.len() > indexed, "the held index is wider than the old map");
+    assert!(
+        authored.len() > indexed,
+        "the held index is wider than the old map"
+    );
     let (extra, views, legacy) =
         view::observe_legacy_calculated(|| differential(&programs[0], &programs, &authored));
     assert_eq!(extra, Some(proof_work(&programs, true, authored.len())));
@@ -174,7 +177,9 @@ fn borrowed_view_matches_saved_old_roots_and_verdicts_and_charges_only_its_proof
         crate::cleanup_plan::replay_btree_node_upper::<&str, AuthoredDeclaration<'_>>().unwrap();
     assert_eq!(legacy, indexed * node);
     let private = PrivateTypes::derive(&programs[0], &programs, &authored).unwrap();
-    assert!(private.contains("payload", Some("private.provider")).unwrap());
+    assert!(private
+        .contains("payload", Some("private.provider"))
+        .unwrap());
     assert!(!private.contains("root", Some("private.provider")).unwrap());
     // Callers without type or function imports never reach the proof.
     for caller in &programs[1..] {
@@ -211,7 +216,11 @@ fn borrowed_view_matches_saved_old_roots_and_verdicts_and_charges_only_its_proof
         ("root.payload", ModuleUseKind::Type, "private.provider"),
         ("extra.token.drop", ModuleUseKind::Function, "private.extra"),
         ("extra.host", ModuleUseKind::Type, "private.extra"),
-        ("extra.token.finalize", ModuleUseKind::Function, "private.extra"),
+        (
+            "extra.token.finalize",
+            ModuleUseKind::Function,
+            "private.extra",
+        ),
         ("extra.helper", ModuleUseKind::Type, "private.extra"),
     ] {
         let hostile = with_import(&programs, id, kind, module);
@@ -326,7 +335,14 @@ fn same_cardinality_child_replacements_and_current_slice_entry_forgeries_refuse_
     )
     .unwrap()
     .unwrap();
-    for id in ["payload", "root", "read", "main", "extra.helper", "extra.token"] {
+    for id in [
+        "payload",
+        "root",
+        "read",
+        "main",
+        "extra.helper",
+        "extra.token",
+    ] {
         assert!(proved.get(id).is_some(), "{id}");
     }
     for id in [

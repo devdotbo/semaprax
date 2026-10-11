@@ -56,9 +56,8 @@ fn terminated_valued_guards_keep_native_ensures_cleanup_and_reentry_o0_o2() {
         control = control.replace(&authored, &format!("{guard} else {{ 0 }}"));
         terminated = terminated.replace(&authored, &format!("{guard} else {{ 0 }};"));
     }
-    let parsed = |source: &str| {
-        semaprax::parse(source, Path::new("native-lexical-guards.spx")).unwrap()
-    };
+    let parsed =
+        |source: &str| semaprax::parse(source, Path::new("native-lexical-guards.spx")).unwrap();
     let (new, old) = (parsed(&terminated), parsed(&control));
     assert_eq!(
         semaprax::format::canonical(&new),

@@ -13,8 +13,8 @@ use crate::diagnostic::Diagnostic;
 use crate::hir;
 
 use super::{
-    AuthoredDeclaration, WorkspaceDeclarationFact, graph_error, prelude_binding,
-    reserve_builder_structure, top_level_declaration,
+    graph_error, prelude_binding, reserve_builder_structure, top_level_declaration,
+    AuthoredDeclaration, WorkspaceDeclarationFact,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]

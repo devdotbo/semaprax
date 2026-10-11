@@ -162,9 +162,12 @@ impl Parser {
             let expression = self.binary_continuation(expression, 0, true)?;
             if self.cursor == before && self.at_exit_guard_terminator(&expression) {
                 let end = self.bump().span;
-                return Ok(IfItem::Statement(
-                    self.discard(start, expression, Some(end), syntax),
-                ));
+                return Ok(IfItem::Statement(self.discard(
+                    start,
+                    expression,
+                    Some(end),
+                    syntax,
+                )));
             }
             if self.cursor != before
                 || self.at(&TokenKind::RBrace)

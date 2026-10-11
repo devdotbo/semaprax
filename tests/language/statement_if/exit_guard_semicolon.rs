@@ -69,7 +69,10 @@ fn main() -> i64
 const SIMPLE: &str = "module exit.guard.forged; @id(\"main\") fn main()->i64 { let mut i=0; while i<3 { i=i+1; if i==2 {continue;} else {0}~ i=i+0; 0 } i }";
 
 fn spellings(template: &str) -> (String, String) {
-    assert!(template.contains('~'), "template marks its guard terminators");
+    assert!(
+        template.contains('~'),
+        "template marks its guard terminators"
+    );
     (template.replace('~', ";"), template.replace('~', ""))
 }
 
@@ -111,14 +114,20 @@ fn same_program(terminated: &str, control: &str) {
     let canonical = format::canonical(&old);
     assert_eq!(format::canonical(&new), canonical);
     assert!(!canonical.contains("let _if"), "{canonical}");
-    assert_eq!(format::canonical(&check(&canonical, PATH).unwrap()), canonical);
+    assert_eq!(
+        format::canonical(&check(&canonical, PATH).unwrap()),
+        canonical
+    );
     assert_eq!(graph::revision(&new), graph::revision(&old));
     let json = graph::to_json(&old).unwrap();
     assert_eq!(graph::to_json(&new).unwrap(), json);
     graph::verify_json(&new, &json).unwrap();
     hir::validate(&hir::resolve(&new).unwrap()).unwrap();
     hir::validate(&hir::resolve(&old).unwrap()).unwrap();
-    assert_eq!(codegen::emit_c(&new).unwrap(), codegen::emit_c(&old).unwrap());
+    assert_eq!(
+        codegen::emit_c(&new).unwrap(),
+        codegen::emit_c(&old).unwrap()
+    );
     assert_eq!(
         wasm::emit_module(&new).unwrap(),
         wasm::emit_module(&old).unwrap()
@@ -462,9 +471,7 @@ fn forged_or_stripped_markers_never_select_the_exit_route() {
         PATH,
     )
     .unwrap();
-    assert!(verify::verify(&reader)
-        .iter()
-        .any(|d| d.code == "SPX-T312"));
+    assert!(verify::verify(&reader).iter().any(|d| d.code == "SPX-T312"));
     if let ast::Statement::Let { syntax, .. } = guard(&mut reader) {
         *syntax = marker;
     }
@@ -505,9 +512,7 @@ fn retarget(expression: &mut hir::ResolvedExpr, site: &hir::ExpressionId) -> usi
             condition,
             then_branch,
             else_branch,
-        } => {
-            retarget(condition, site) + retarget(then_branch, site) + retarget(else_branch, site)
-        }
+        } => retarget(condition, site) + retarget(then_branch, site) + retarget(else_branch, site),
         _ => 0,
     }
 }
