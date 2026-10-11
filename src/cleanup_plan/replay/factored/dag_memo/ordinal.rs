@@ -12,7 +12,7 @@ struct Node {
     height: usize,
 }
 #[derive(Default)]
-pub(super) struct Ordinals {
+pub(in crate::cleanup_plan::replay::factored) struct Ordinals {
     rows: Vec<Node>,
     root: Option<usize>,
 }
