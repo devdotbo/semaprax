@@ -158,6 +158,9 @@ fn public_owned_json_command_bootstraps_and_runs_valid_and_malformed_stdin() {
     for optimization in ["-O0", "-O2"] {
         let binary = compile_native(&c, &root, optimization);
         let output = execute(&binary, &valid);
+        if output.status.code() != Some(0) {
+            capture_native_failure(&root, optimization, &c, &output);
+        }
         assert_eq!(
             output.status.code(),
             Some(0),
@@ -173,4 +176,42 @@ fn public_owned_json_command_bootstraps_and_runs_valid_and_malformed_stdin() {
         assert!(output.stderr.is_empty());
     }
     std::fs::remove_dir_all(root).unwrap();
+}
+
+// Diagnostic artifacts have no compiler authority. Capture only a failed
+// original invocation, preserving its generated C and current input sources.
+fn capture_native_failure(
+    root: &std::path::Path,
+    optimization: &str,
+    c: &str,
+    output: &std::process::Output,
+) {
+    use sha2::Digest as _;
+    let digest = |bytes: &[u8]| {
+        sha2::Sha256::digest(bytes)
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>()
+    };
+    let sources = ["src/app.spx", "src/schema.spx", "fixtures/request.json"]
+        .into_iter()
+        .map(|name| {
+            let bytes = std::fs::read(root.join(name)).unwrap();
+            (name.to_owned(), digest(&bytes))
+        })
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let path = root.join("native-failure-capture.json");
+    let value = serde_json::json!({
+        "schema": "semaprax.test.native-failure-capture.v1",
+        "build_source_subject": std::env::var("SEMAPRAX_DIAGNOSTIC_BUILD_HEAD").ok(),
+        "generated_c": root.join(format!("owned-json-{}.c", optimization.trim_start_matches("-O"))),
+        "generated_c_sha256": digest(c.as_bytes()),
+        "optimization": optimization,
+        "exit_code": output.status.code(),
+        "stderr": String::from_utf8_lossy(&output.stderr),
+        "stdout_sha256": digest(&output.stdout),
+        "source_sha256": sources,
+    });
+    std::fs::write(&path, serde_json::to_vec_pretty(&value).unwrap()).unwrap();
+    eprintln!("native failure capture: {}", path.display());
 }

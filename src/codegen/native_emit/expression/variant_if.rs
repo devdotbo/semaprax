@@ -1,3 +1,4 @@
+use super::super::is_native_owned_vec_type;
 use super::*;
 
 impl<'a, O: COutput> CEmitter<'a, O> {
@@ -81,11 +82,12 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         Ok(value)
     }
 
-    /// Owned strings share the Bytes leaf carrier whenever the function has a
-    /// cleanup plan: the If's plan slot is its result, and each reached
-    /// branch transfers into it.
+    /// Direct Vec carriers use the same canonical branch handoff as Bytes.
+    /// Owned strings use it whenever the function has a cleanup plan; the
+    /// legacy standalone String runtime retains its existing fallback.
     fn plan_owned_leaf_result(&self, ty: &ResolvedType) -> bool {
         matches!(ty, ResolvedType::Bytes)
+            || is_native_owned_vec_type(self.program, ty)
             || (matches!(ty, ResolvedType::String) && self.bytes_plan.is_some())
     }
 

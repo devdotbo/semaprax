@@ -5,6 +5,8 @@ mod consuming_renewal;
 mod contract_owners;
 #[path = "owned_leaf_vec/field_reads.rs"]
 mod field_reads;
+#[path = "owned_leaf_vec/if_handoff.rs"]
+mod if_handoff;
 #[path = "owned_leaf_vec/loop_renewal.rs"]
 mod loop_renewal;
 #[path = "owned_leaf_vec/record_traversal.rs"]
