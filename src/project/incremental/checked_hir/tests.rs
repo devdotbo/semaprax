@@ -1,7 +1,7 @@
 use super::super::*;
 use super::*;
 
-const SOURCE: &str = "module local; @id(\"local.first\") fn first() -> i64 { 1 } @id(\"local.middle\") fn middle() -> i64 { 2 } @id(\"local.last\") fn last() -> i64 { 3 }";
+const SOURCE: &str = "module local; @id(\"local.first\") fn first() -> i64 { 1 } @id(\"local.middle\") fn middle() -> i64 { 2 } @id(\"local.last\") fn main() -> i64 { 3 }";
 
 // Actual cold insertion API; no decoded or forged lease constructor.
 pub(crate) fn cold() -> (FrontendPass, Program, CheckedModuleLease) {

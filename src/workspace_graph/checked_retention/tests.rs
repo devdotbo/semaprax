@@ -78,8 +78,13 @@ fn noncontiguous_output_carrier_reservation_is_exact_sticky_and_precedes_clone()
 #[test]
 fn noncontiguous_three_and_five_backings_have_no_growth_and_input_headers_pay_actual_delta() {
     let source = (0..9).fold(String::from("module local;"), |mut source, index| {
+        let name = if index == 8 {
+            "main".to_owned()
+        } else {
+            format!("f{index}")
+        };
         source.push_str(&format!(
-            " @id(\"local.f{index}\") fn f{index}() -> i64 {{ {index} }}"
+            " @id(\"local.f{index}\") fn {name}() -> i64 {{ {index} }}"
         ));
         source
     });
@@ -87,8 +92,9 @@ fn noncontiguous_three_and_five_backings_have_no_growth_and_input_headers_pay_ac
     for count in [3usize, 5] {
         let keep = |function: &hir::ResolvedFunction| {
             let index = function
-                .name
-                .strip_prefix('f')
+                .id
+                .as_str()
+                .strip_prefix("local.f")
                 .unwrap()
                 .parse::<usize>()
                 .unwrap();
