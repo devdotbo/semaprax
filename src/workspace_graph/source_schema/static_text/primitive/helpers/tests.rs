@@ -724,6 +724,7 @@ fn failed_later_body_authentication_keeps_actual_work_and_poisoned_preparation()
     assert!(short.remaining() < spent - 1);
 }
 
+mod borrowed;
 mod runtime;
 
 #[test]

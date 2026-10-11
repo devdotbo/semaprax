@@ -130,7 +130,11 @@ closure and exposes exact borrowed function members across modules; imported nam
 never enter the consumer's local declaration-name index. The private
 `cleanup_plan/replay/selected_entry.rs` preparation transfers its single work and
 backing ledger into the existing session, while `scalar_replay.rs` independently
-replays each nonlexical scalar helper. The unchanged lexical driver replays the
+replays each nonlexical scalar helper. `hir/borrowed_scalar.rs` checks exact Borrow
+Str/Slice parameter roots and supported scalar read/conversion call shapes;
+its Option-u8 child holds independent canonical metadata predicates, with
+production Option receiving admission kept closed pending cumulative lookup and
+schema metering. The unchanged lexical driver replays the
 consumer. Broader imported nominal/loan/intrinsic profiles remain closed and #745
 remains open; authored execution and allocator controls await qualification.
 

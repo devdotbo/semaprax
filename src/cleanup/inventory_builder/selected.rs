@@ -31,6 +31,9 @@ pub(super) fn reserve_legacy<T>(
     }
 }
 pub(super) fn needs_drop(ty: &ResolvedType) -> Result<bool, Diagnostic> {
+    if crate::hir::borrowed_scalar::option_u8::is_type(ty) {
+        return Ok(false);
+    }
     match ty {
         ResolvedType::Bytes
         | ResolvedType::String
@@ -63,6 +66,14 @@ pub(super) fn needs_drop_in(
     program: &dyn crate::cleanup::ReplayContext,
     ty: &ResolvedType,
 ) -> Result<bool, Diagnostic> {
+    if crate::hir::borrowed_scalar::option_u8::is_type(ty) {
+        return if crate::hir::borrowed_scalar::option_u8::authenticated(program.declarations(), ty)
+        {
+            Ok(false)
+        } else {
+            Err(cleanup_error("selected Option metadata is unauthenticated"))
+        };
+    }
     if let Some((_, fields)) = flat_record::fields(program, ty)? {
         return Ok(fields
             .iter()
@@ -98,6 +109,10 @@ impl InventoryBuilder<'_> {
         storage: CleanupStorageId,
     ) -> Result<FieldLivenessShape, Diagnostic> {
         let program = self.program;
+        if crate::hir::borrowed_scalar::option_u8::is_type(ty) {
+            needs_drop_in(program, ty)?;
+            return Ok(FieldLivenessShape::NoDrop);
+        }
         if let Some((declaration, fields)) = if self.flat_records {
             flat_record::fields(program, ty)?
         } else {

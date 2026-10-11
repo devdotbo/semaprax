@@ -42,12 +42,16 @@ impl Encoder<'_> {
             arguments,
         } = ty
         {
-            if !arguments.is_empty() {
+            if !arguments.is_empty() && !crate::hir::borrowed_scalar::option_u8::is_type(ty) {
                 return None;
             }
             self.text("nominal")?;
             self.text(declaration.as_str())?;
-            return self.number(0);
+            self.number(arguments.len() as u64)?;
+            for argument in arguments {
+                self.ty(argument)?;
+            }
+            return Some(());
         }
         self.text(match ty {
             ResolvedType::I64 => "i64",
@@ -156,6 +160,21 @@ impl Encoder<'_> {
                 self.number(alternatives.len() as u64)?;
                 for p in alternatives {
                     self.pattern(p, depth + 1)?;
+                }
+                Some(())
+            }
+            ResolvedMatchPattern::Variant {
+                variant,
+                case,
+                fields,
+            } if crate::hir::borrowed_scalar::option_u8::pattern(pattern) => {
+                self.text("option-u8-pattern")?;
+                self.text(variant.as_str())?;
+                self.text(case.as_str())?;
+                self.number(fields.len() as u64)?;
+                for field in fields {
+                    self.text(field.field.as_str())?;
+                    self.binding(&field.binding)?;
                 }
                 Some(())
             }

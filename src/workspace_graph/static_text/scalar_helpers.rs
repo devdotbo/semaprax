@@ -88,7 +88,7 @@ pub(in crate::workspace_graph) fn pure_metered(
                     | ResolvedExprKind::Binary { .. }
                     | ResolvedExprKind::If { .. } => {}
                     ResolvedExprKind::Place(place) if place.projections.is_empty() => {}
-                    ResolvedExprKind::BorrowPlace { .. } => {}
+                    ResolvedExprKind::BorrowPlace { .. } | ResolvedExprKind::Match { .. } => {}
                     ResolvedExprKind::Call {
                         instance,
                         type_arguments,
@@ -104,7 +104,10 @@ pub(in crate::workspace_graph) fn pure_metered(
                                     field: None,
                                     ..
                                 } if binding.ownership == OwnershipMode::Value
-                                    && hir::is_scalar_resolved_type(&binding.ty) => {}
+                                    && (hir::is_scalar_resolved_type(&binding.ty)
+                                        || hir::borrowed_scalar::option_u8::is_type(
+                                            &binding.ty,
+                                        )) => {}
                                 ResolvedStatement::While { .. } => {}
                                 _ => return Ok(false),
                             }

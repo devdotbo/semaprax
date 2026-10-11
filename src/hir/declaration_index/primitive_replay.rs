@@ -2,6 +2,8 @@
 //! primitive functions. No generic/layout/provenance cache is carried forward.
 use super::*;
 mod flat_record;
+#[cfg(test)]
+mod option_u8;
 use crate::cleanup_plan::ReplayPhysicalReservation;
 impl DeclarationIndex {
     pub(crate) fn primitive_replay<'a>(

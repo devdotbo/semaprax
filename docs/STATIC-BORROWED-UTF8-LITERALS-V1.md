@@ -157,7 +157,15 @@ The cumulative preparation ledger also pays every root-identity comparison.
 
 Helper-local lexical control, templates/instances, owning helper parameters,
 nominal/Vec/Option carriers, other intrinsics and dynamic callable providers
-remain closed. Full OPT #745 remains open for these provider,
+remain closed. Exact scalar `i64_from_u8` is also admitted by its compiler operation identity,
+argument mode/type and result type. Independent exact Copy Option<u8> predicates,
+canonical case/field/type-parameter reconstruction, source-digest pattern coverage
+and ordinary While reader controls are authored groundwork. Their receiving
+profile remains explicitly closed until cumulative schema and inventory lookup
+work is metered; neither these predicates nor their test-only index constructor
+grant production Option admission.
+
+Full OPT #745 remains open for these provider,
 loan/path, storage/instance and exact intrinsic metadata obligations. No wider
 production or executable qualification is claimed.
 A separate private inventory constructor profile supports exact current

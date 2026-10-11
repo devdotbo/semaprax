@@ -4,6 +4,15 @@ use super::*;
 use crate::cleanup::{FieldLiveness, FieldLivenessShape};
 
 pub(super) fn admitted(program: &dyn ReplayContext, ty: &ResolvedType) -> Result<bool, Diagnostic> {
+    if crate::hir::borrowed_scalar::option_u8::is_type(ty) {
+        return Ok(
+            crate::hir::borrowed_scalar::option_u8::selected_profile_ready()
+                && crate::hir::borrowed_scalar::option_u8::authenticated(
+                    program.declarations(),
+                    ty,
+                ),
+        );
+    }
     if matches!(ty, ResolvedType::Nominal { .. }) {
         return Ok(crate::cleanup::selected_flat_record_fields(program, ty)?.is_some());
     }
@@ -202,7 +211,7 @@ pub(super) fn collect_slot_leaves(
                         return Err(replay_error(
                             function,
                             "selected record has a nested or conditional leaf",
-                        ))
+                        ));
                     }
                 }
             }

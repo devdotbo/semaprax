@@ -318,8 +318,11 @@ The retained static-UTF-8 composition has an authored additive imported pure
 monomorphic Copy-scalar helper route (#745), with exact defining-source guards,
 borrowed cross-module function membership and one cumulative authentication/replay
 ledger. Owning helper-body/plan hostility, aliases, checked failures and saved local
-backend controls remain unexecuted. Broader imported carriers, borrowed/owned
-signatures, helper lexical control and intrinsic metadata remain open; this batch
+backend controls remain unexecuted. The authored borrowed Str/Slice-root and
+scalar-u8 conversion extension retains the same authority and ledger. Exact
+Option-u8/ordinary reader predicates remain guarded groundwork pending receiving
+and schema metering. Broader imported carriers, owning/escaping signatures,
+helper lexical control and intrinsic metadata remain open; this batch
 does not change a completion status or claim executable support.
 
 ### Language and safety

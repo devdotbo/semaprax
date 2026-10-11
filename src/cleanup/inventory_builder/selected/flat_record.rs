@@ -10,6 +10,9 @@ pub(in crate::cleanup::inventory_builder) fn fields<'a>(
     program: &'a dyn crate::cleanup::ReplayContext,
     ty: &'a ResolvedType,
 ) -> Result<Option<(&'a DeclarationId, &'a [ResolvedFieldDeclaration])>, Diagnostic> {
+    if crate::hir::borrowed_scalar::option_u8::is_type(ty) {
+        return Ok(None);
+    }
     let ResolvedType::Nominal {
         declaration,
         arguments,
