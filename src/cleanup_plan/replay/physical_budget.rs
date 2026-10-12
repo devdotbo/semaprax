@@ -65,6 +65,7 @@ impl ReplayBudget {
         if !self.pays_allocations() {
             return Ok(());
         }
+        self.prepare_clone_cursor(function)?;
         let bytes = value.clone_payload_bytes().ok_or_else(|| {
             self.budget_refusal(
                 function,

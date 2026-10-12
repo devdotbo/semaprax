@@ -86,6 +86,7 @@ impl ReplayBudget {
             physical: None,
             refusal_text: None,
             refusal_spent: false,
+            builder_clone_cursor_paid: false,
         }
     }
     #[cfg(test)]
@@ -105,6 +106,7 @@ impl ReplayBudget {
             physical: None,
             refusal_text: None,
             refusal_spent: false,
+            builder_clone_cursor_paid: false,
         }
     }
 
@@ -114,6 +116,23 @@ impl ReplayBudget {
     pub(super) fn pays_allocations(&self) -> bool {
         self.payer != AllocationPayer::LegacyUnobserved
     }
+    /// The fixed type-clone census cursor is shared across clone preflights;
+    /// pay its exact stack layout before any preflight can initialize it.
+    pub(super) fn prepare_clone_cursor(
+        &mut self,
+        function: &ResolvedFunction,
+    ) -> Result<(), Diagnostic> {
+        if self.payer == AllocationPayer::ActiveBuilder && !self.builder_clone_cursor_paid {
+            self.reserve_array::<Option<(&ResolvedType, usize)>>(
+                function,
+                514,
+                "ordinary clone census cursor",
+            )?;
+            self.builder_clone_cursor_paid = true;
+        }
+        Ok(())
+    }
+
     /// Reserve the first refusal's backing on the existing builder before any
     /// replay allocation. Initial refusal is inline, never an unfunded string.
     pub(super) fn prepare_builder(

@@ -168,6 +168,8 @@ struct ReplayBudget {
     /// Prepaid selected-budget refusal text; consumed without a fresh allocation.
     refusal_text: Option<String>,
     refusal_spent: bool,
+    /// One reusable fixed clone census cursor on the ordinary builder path.
+    builder_clone_cursor_paid: bool,
 }
 
 impl ReplayBudget {
@@ -177,6 +179,7 @@ impl ReplayBudget {
         units: usize,
         phase: &str,
     ) -> Result<(), Diagnostic> {
+        self.prepare_builder(function)?;
         if self.refusal_spent {
             return Err(self.budget_refusal(function, "selected replay budget already failed", ""));
         }
@@ -198,6 +201,7 @@ impl ReplayBudget {
         function: &ResolvedFunction,
         units: usize,
     ) -> Result<(), Diagnostic> {
+        self.prepare_builder(function)?;
         if self.refusal_spent {
             return Err(self.budget_refusal(function, "selected replay budget already failed", ""));
         }
@@ -218,6 +222,7 @@ impl ReplayBudget {
         units: usize,
         phase: &str,
     ) -> Result<(), Diagnostic> {
+        self.prepare_builder(function)?;
         if self.refusal_spent {
             return Err(self.budget_refusal(function, "selected replay budget already failed", ""));
         }

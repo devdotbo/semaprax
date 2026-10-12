@@ -83,8 +83,9 @@ impl ClonePayload for crate::hir::ControlTarget {
 }
 impl ClonePayload for ResolvedType {
     fn clone_payload_bytes(&self) -> Option<usize> {
-        // This one active fixed cursor is reserved by the selected entry before
-        // any clone preflight runs. Wide type lists retain one ancestor cursor.
+        // Selected setup and ordinary clone-census setup reserve this one
+        // reusable fixed cursor before preflight. Wide type lists retain one
+        // ancestor cursor.
         let mut frames = [None; 514];
         frames[0] = Some((self, 0usize));
         let mut len = 1;

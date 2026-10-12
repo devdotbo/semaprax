@@ -142,6 +142,82 @@ fn active_builder_zero_exact_short_refusal_is_sticky_and_moves_paid_text() {
             assert!(used <= limit);
         }
     }
+    // Work can refuse before facts or slots allocate. Its first message must
+    // retain the complete legacy wording on the one paid backing.
+    for mode in 0..3 {
+        let attempt = |budget: &mut ReplayBudget| {
+            budget.remaining = 2;
+            budget.skeleton_remaining = 2;
+            match mode {
+                0 => budget.charge(function, 3, "literal early work"),
+                1 => budget.reserve_skeleton(function, 3),
+                _ => budget.charge_skeleton(function, 3, "literal early skeleton"),
+            }
+        };
+        let expected = attempt(&mut ReplayBudget::unobserved()).unwrap_err();
+        let (((), metrics), refused, used, receipt) = with_limit_usage_refusal(text_bytes, || {
+            measure(|| {
+                let mut budget = ReplayBudget::new();
+                let error = attempt(&mut budget).unwrap_err();
+                assert_eq!(error, expected);
+                assert!(!budget.selected());
+                let before = current_metrics();
+                assert!(budget.charge(function, 0, "retry").is_err());
+                assert_eq!(current_metrics(), before);
+                drop((error, budget));
+            })
+        });
+        assert!(!metrics.invalid);
+        assert_eq!(metrics.live, 0);
+        assert_eq!(metrics.allocated, metrics.freed);
+        assert_eq!(metrics.allocated, text_bytes);
+        assert_eq!(used, text_bytes);
+        // Local work refusal is sticky in ReplayBudget; it does not fabricate
+        // a physical enclosing-ledger refusal while that ledger still fits.
+        assert!(!refused && receipt.is_none());
+    }
+    // Independent literal backing inventory for the first type clone census:
+    // one refusal String and one 514-entry fixed Option<(type-ref,ordinal)>.
+    let cursor_bytes = 514 * std::mem::size_of::<Option<(&ResolvedType, usize)>>();
+    for limit in [text_bytes + cursor_bytes - 1, text_bytes + cursor_bytes] {
+        let (((), metrics), refused, used, receipt) = with_limit_usage_refusal(limit, || {
+            measure(|| {
+                let mut budget = ReplayBudget::new();
+                let result = budget.reserve_clone(function, &ResolvedType::I64, "literal type");
+                if limit == text_bytes + cursor_bytes {
+                    result.unwrap();
+                    let before = current_metrics();
+                    budget
+                        .reserve_clone(function, &ResolvedType::I64, "reuse cursor")
+                        .unwrap();
+                    assert_eq!(current_metrics(), before);
+                    assert!(budget.builder_clone_cursor_paid);
+                } else {
+                    let error = result.unwrap_err();
+                    assert_eq!(error.code, "SPX-H006");
+                    assert!(!budget.builder_clone_cursor_paid);
+                    let before = current_metrics();
+                    assert!(budget
+                        .reserve_clone(function, &ResolvedType::I64, "retry")
+                        .is_err());
+                    assert_eq!(current_metrics(), before);
+                    drop(error);
+                }
+                drop(budget);
+            })
+        });
+        assert!(!metrics.invalid);
+        assert_eq!(metrics.live, 0);
+        assert_eq!(metrics.allocated, metrics.freed);
+        assert_eq!(refused, limit < text_bytes + cursor_bytes);
+        if refused {
+            assert_eq!(used, text_bytes);
+            assert!(receipt.is_some());
+        } else {
+            assert_eq!(used, text_bytes + cursor_bytes);
+            assert!(receipt.is_none());
+        }
+    }
     // Complete ordinary verdict comparison remains outside allocation evidence.
     let mut unobserved = ReplayBudget::unobserved();
     indexes(function, &mut unobserved).unwrap();
