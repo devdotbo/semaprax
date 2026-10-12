@@ -15,5 +15,5 @@ pub(in crate::cleanup_plan) fn validate_program_unindexed_reference(
             &expected,
         )?;
     }
-    super::replay::validate_program(program)
+    super::super::replay::validate_program(program)
 }

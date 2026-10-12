@@ -97,14 +97,13 @@ fn deferred_frontier_preserves_earlier_mismatch_and_global_lexical_owner_priorit
     let mut deep = program(LEXICAL);
     for _ in 0..600 {
         let mut wrapper = deep.functions[1].body.clone();
-        wrapper.kind = ResolvedExprKind::Block {
-            statements: vec![],
-            tail: None,
-        };
+        // A typed leaf is only the temporary replacement; the original
+        // complete body becomes the mandatory tail of every nested block.
+        wrapper.kind = ResolvedExprKind::Int(0);
         let child = std::mem::replace(&mut deep.functions[1].body, wrapper);
         deep.functions[1].body.kind = ResolvedExprKind::Block {
             statements: vec![],
-            tail: Some(Box::new(child)),
+            tail: Box::new(child),
         };
     }
     parity(&deep);
