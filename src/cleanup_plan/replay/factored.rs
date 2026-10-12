@@ -207,7 +207,13 @@ fn build_comparison<'hir>(
     budget.lent_skeleton = true;
     let result = (|| {
         budget.merge_paths = true;
-        let hir_paths = hir_skeleton_paths_with_index_storage(program, function, budget, helpers, continuations);
+        let hir_paths = hir_skeleton_paths_with_index_storage(
+            program,
+            function,
+            budget,
+            helpers,
+            continuations,
+        );
         budget.merge_paths = false;
         #[cfg(test)]
         instrumentation::phase(
@@ -1050,28 +1056,45 @@ fn cross_check(program: &dyn crate::cleanup::ReplayContext, function: &ResolvedF
 #[path = "factored/lexical_plan_tests.rs"]
 mod lexical_plan_tests;
 
-
 #[cfg(test)]
 mod continuation_tests {
+    use super::super::continuation_storage::{Frame, Storage};
     use super::*;
-    use super::super::continuation_storage::{Storage, Frame};
     use crate::bounded_output::with_limit_usage_refusal;
     use crate::test_allocation_observer::measure;
     #[test]
-    fn ordinary_factored_functions_and_contracts_reuse_exact_program_storage_with_old_automata_work_and_drop() {
-        let decisions = (0..13).map(|index| format!("let branch_{index}=if 0=={index} {{1}}else{{2}};"))
+    fn ordinary_factored_functions_and_contracts_reuse_exact_program_storage_with_old_automata_work_and_drop(
+    ) {
+        let decisions = (0..13)
+            .map(|index| format!("let branch_{index}=if 0=={index} {{1}}else{{2}};"))
             .collect::<String>();
         let source = format!("module scratch.factored; @id(\"first\") fn first()->i64 requires 0==0 ensures result==42 {{{decisions}42}} @id(\"second\") fn second()->i64 requires 0==0 ensures result==42 {{{decisions}42}} @id(\"main\") fn main()->i64 requires 0==0 ensures result==42 {{{decisions}42}}");
-        let program = crate::hir::resolve(&crate::check(&source, "factored-storage.spx").unwrap()).unwrap();
+        let program =
+            crate::hir::resolve(&crate::check(&source, "factored-storage.spx").unwrap()).unwrap();
         let mut storage = Storage::new(&program);
         let mut old_budget = ReplayBudget::unobserved();
         let mut current_budget = ReplayBudget::unobserved();
         for function in &program.functions {
-            assert!(selected(function, branch_sensitive_cfg_bounds(function).unwrap().terminal_paths,
-                hir_terminal_path_bound(function).unwrap()));
+            assert!(selected(
+                function,
+                branch_sensitive_cfg_bounds(function)
+                    .unwrap()
+                    .terminal_paths,
+                hir_terminal_path_bound(function).unwrap()
+            ));
             let old = build_comparison(&program, function, &mut old_budget, None, None).unwrap();
-            let current = build_comparison(&program, function, &mut current_budget, None, Some(&mut storage)).unwrap();
-            assert_eq!((old.sink, old.hir_root, old.plan_root), (current.sink, current.hir_root, current.plan_root));
+            let current = build_comparison(
+                &program,
+                function,
+                &mut current_budget,
+                None,
+                Some(&mut storage),
+            )
+            .unwrap();
+            assert_eq!(
+                (old.sink, old.hir_root, old.plan_root),
+                (current.sink, current.hir_root, current.plan_root)
+            );
             assert_eq!(old.automaton.nodes.len(), current.automaton.nodes.len());
             for (old, current) in old.automaton.nodes.iter().zip(&current.automaton.nodes) {
                 assert_eq!(old.moves, current.moves);
@@ -1084,46 +1107,63 @@ mod continuation_tests {
         assert_eq!(old_budget.skeleton_spent, current_budget.skeleton_spent);
         // Actual ordinary factored admission, rather than only a direct producer.
         for function in &program.functions {
-            assert!(validate_with_index_storage(&program, function, &mut current_budget,
-                None, Some(&mut storage)).unwrap());
+            assert!(validate_with_index_storage(
+                &program,
+                function,
+                &mut current_budget,
+                None,
+                Some(&mut storage)
+            )
+            .unwrap());
         }
         drop(storage);
-        let observe = |limit, pooled| with_limit_usage_refusal(limit, || measure(|| {
-            let mut budget = ReplayBudget::unobserved();
-            let mut storage = Storage::new(&program);
-            let mut success = true;
-            for function in &program.functions {
-                let result = build_comparison(&program, function, &mut budget, None,
-                    if pooled { Some(&mut storage) } else { None });
-                if result.is_err() {
-                    success = false;
-                    assert!(budget.reserve_bytes(function, 0, "retry").is_err());
-                }
-                drop(result);
-                if !success { break; }
-            }
-            assert!(!storage.leased);
-            drop(storage);
-            drop(budget);
-            success
-        }));
+        let observe = |limit, pooled| {
+            with_limit_usage_refusal(limit, || {
+                measure(|| {
+                    let mut budget = ReplayBudget::new();
+                    let mut storage = Storage::new(&program);
+                    let mut success = true;
+                    for function in &program.functions {
+                        let result = build_comparison(
+                            &program,
+                            function,
+                            &mut budget,
+                            None,
+                            if pooled { Some(&mut storage) } else { None },
+                        );
+                        if result.is_err() {
+                            success = false;
+                            assert!(budget.reserve_bytes(function, 0, "retry").is_err());
+                        }
+                        drop(result);
+                        if !success {
+                            break;
+                        }
+                    }
+                    assert!(!storage.leased);
+                    drop(storage);
+                    drop(budget);
+                    success
+                })
+            })
+        };
         let ((old_success, old), old_refused, old_charge, _) = observe(usize::MAX, false);
         let ((success, current), refused, required, _) = observe(usize::MAX, true);
         assert!(old_success && success && !old_refused && !refused);
         // Three functions each evaluate requires/body/ensures: nine original
         // independent 516-frame buffers, versus one retained invocation buffer.
         let removed = 8 * 516 * std::mem::size_of::<Frame<'_>>();
-        assert_eq!(old.allocated-current.allocated, removed);
-        assert_eq!(old.allocations-current.allocations, 8);
-        assert_eq!(old_charge-required, removed);
+        assert_eq!(old.allocated - current.allocated, removed);
+        assert_eq!(old.allocations - current.allocations, 8);
+        assert_eq!(old_charge - required, removed);
         assert!(!old.invalid && !current.invalid);
         assert_eq!((old.live, current.live), (0, 0));
         assert_eq!(old.allocated, old.freed);
         assert_eq!(current.allocated, current.freed);
         let ((success, exact), refused, charged, _) = observe(required, true);
-        assert!(success && !refused && charged==required && !exact.invalid && exact.live==0);
-        let ((success, short), refused, _, receipt) = observe(required-1, true);
-        assert!(!success && refused && receipt.is_some() && !short.invalid && short.live==0);
+        assert!(success && !refused && charged == required && !exact.invalid && exact.live == 0);
+        let ((success, short), refused, _, receipt) = observe(required - 1, true);
+        assert!(!success && refused && receipt.is_some() && !short.invalid && short.live == 0);
         assert_eq!(short.allocated, short.freed);
     }
 }

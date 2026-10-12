@@ -3044,7 +3044,13 @@ fn validate_typed_control_skeleton_with_index<'hir>(
     mut continuations: Option<&mut continuation_storage::Storage<'hir>>,
 ) -> Result<(), Diagnostic> {
     if function.cleanup_plan.lexical_control.is_none()
-        && factored::validate_with_index_storage(program, function, budget, helpers, continuations.as_deref_mut())?
+        && factored::validate_with_index_storage(
+            program,
+            function,
+            budget,
+            helpers,
+            continuations.as_deref_mut(),
+        )?
     {
         return Ok(());
     }
