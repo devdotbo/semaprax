@@ -59,7 +59,11 @@ pub(super) fn bounds(function: &ResolvedFunction, budget: &mut ReplayBudget) -> 
         if std::mem::replace(&mut reachable[index], true) { continue; }
         let successors = targets(function, index)?;
         budget.reserve_vec(function, &mut discover, successors.len(), "CFG preflight discovery successors")?;
-        for ordinal in 0..successors.len() { discover.push(successors.get(function, ordinal)?); }
+        // Preserve the original exact-size Vec::extend constructor when no
+        // payer is attached; individual pushes would change its growth layout.
+        discover.extend((0..successors.len()).map(|ordinal| {
+            successors.get(function, ordinal).expect("immutable prevalidated CFG target")
+        }));
     }
     budget.reserve_array::<usize>(function, plan.blocks.len(), "CFG preflight indegree")?;
     let mut indegree = vec![0usize; plan.blocks.len()];
