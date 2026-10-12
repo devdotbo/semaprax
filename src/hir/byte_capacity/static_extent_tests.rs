@@ -85,7 +85,7 @@ fn forged_retained_extent_cannot_reduce_current_demand_and_fails_independent_hir
 }
 #[test]
 fn mutable_duplicate_assigned_and_forged_alias_shapes_keep_maximum_fallback() {
-    for mutation in 0..4 {
+    for mutation in 0..5 {
         let mut program = resolve(SOURCE);
         let function = program.functions.iter_mut().find(|f| f.id.as_str() == "extent.copy").unwrap();
         let ResolvedExprKind::Block { statements, .. } = &mut function.body.kind else { panic!("block"); };
@@ -104,11 +104,17 @@ fn mutable_duplicate_assigned_and_forged_alias_shapes_keep_maximum_fallback() {
                 };
                 statements.push(assignment);
             }
-            _ => {
+            3 => {
                 // Retain the old proof but change the actual view operation.
                 let ResolvedStatement::Let { value, .. } = &mut statements[view_index] else { unreachable!() };
                 let ResolvedExprKind::BorrowPlace { operation, .. } = &mut value.kind else { panic!("array view lowers to exact place"); };
                 *operation = DeclarationId::new(crate::byte_ops::BYTES_AS_SLICE_ID);
+            }
+            _ => {
+                // A smaller retained type/proof cannot hide actual array bytes.
+                let ResolvedStatement::Let { value, .. } = &mut statements[0] else { unreachable!() };
+                let ResolvedExprKind::ArrayU8(values) = &mut value.kind else { panic!("literal array"); };
+                values.push(42);
             }
         }
         assert_eq!(summary(&program), (1, crate::byte_ops::MAX_OWNED_BYTE_VALUE_BYTES));
