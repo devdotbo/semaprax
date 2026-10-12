@@ -2,7 +2,7 @@
 use std::fmt::Write as _;
 
 const MAX_BYTES: usize = 2_048;
-const ROUTES: &str = "Authoring routes (complete):\n  author:vec-constructor typed Vec source; ordinary per-item commits\n  author:lexical-exits statement-tail break/continue/return\n  author:stdin-json v27 bounded native stream command\n  author:stream-data-v2           v29 private record/Vec stream command\n  author:owned-data v30 private owned-leaf collections\n  author:collection-records v31 nested records containing Vec\n  author:nested-outcomes v32 typed nested success/error carriers\n  author:file-text native UTF-8 file command\n  author:selected-file native file; :selected-file-resource for v34\n  author:source-web single-source web build\n  author:literal-format checked literal String rendering\n  author:static-utf8              borrowed UTF-8\n  author:string-from-utf8         strict owned String construction from bytes\n  author:copy-record-vec flat Copy-record vectors\n  author:record-sort-keys explicit stable field sort policies\n  author:record-field-views borrowed record and Vec field reads\n  author:record-traversal scoped borrowed rows and optional indices\n  author:json-codec checked source JSON codec derivation\n  author:json-identifier-views one identifier as a token view\n  author:json-request-views bounded identifier and record arrays\n  author:json-stream-request-views bounded native stream request view\n  author:json-owned-request bounded owning request collections\n  author:json-utf8-owned-request bounded UTF-8 string values\n  author:json-stream-utf8-owned-request bounded UTF-8 stdin requests\n  author:json-collection-response bounded nested collection encoder\n  author:json-nested-request bounded finite nested request decoder\n  author:json-stream-nested-request bounded finite nested stdin decoder\n  author:json-nested-response bounded finite nested borrowed encoder\n  author:json-request-response typed request/response composition boundaries\nLibrary-only search: help language find:<word>:0\nExact card sections: help language topics\n";
+const ROUTES: &str = "Authoring routes (complete):\n  author:vec-constructor typed Vec source; ordinary per-item commits\n  author:lexical-exits statement-tail break/continue/return\n  author:stdin-json v27 bounded native stream command\n  author:stream-data-v2           v29 private record/Vec stream command\n  author:owned-data v30 private owned-leaf collections\n  author:collection-records v31 nested records containing Vec\n  author:nested-outcomes v32 typed nested success/error carriers\n  author:file-text native UTF-8 file command\n  author:selected-file native file; :selected-file-resource for v34\n  author:source-web single-source web build\n  author:literal-format checked literal String rendering\n  author:static-utf8              borrowed UTF-8\n  author:string-from-utf8         strict owned String construction from bytes\n  author:copy-record-vec flat Copy-record vectors\n  author:record-sort-keys explicit stable field sort policies\n  author:record-field-views borrowed record and Vec field reads\n  author:record-traversal scoped borrowed rows and optional indices\n  author:byte-traversal named immutable byte-slice traversal\n  author:json-codec checked source JSON codec derivation\n  author:json-identifier-views one identifier as a token view\n  author:json-request-views bounded identifier and record arrays\n  author:json-stream-request-views bounded native stream request view\n  author:json-owned-request bounded owning request collections\n  author:json-utf8-owned-request bounded UTF-8 string values\n  author:json-stream-utf8-owned-request bounded UTF-8 stdin requests\n  author:json-collection-response bounded nested collection encoder\n  author:json-nested-request bounded finite nested request decoder\n  author:json-stream-nested-request bounded finite nested stdin decoder\n  author:json-nested-response bounded finite nested borrowed encoder\n  author:json-request-response typed request/response composition boundaries\nLibrary-only search: help language find:<word>:0\nExact card sections: help language topics\n";
 
 #[cfg(test)]
 pub(super) fn assert_guide_contract() {
@@ -141,6 +141,27 @@ pub(super) fn lookup(query: &str) -> Result<String, String> {
             "R is an explicit monomorphic record with 1..8 direct Copy-scalar fields. Vec<R> uses typed vec_*<R> operations; get copies R, mutations transfer the Vec owner.\n",
             "Capacity is bounded by 8192 scalar words divided by R's field count. Private pure helpers may borrow Vec<R> and pass R by value; generic wrappers and nested records remain closed; scoped record traversal uses author:record-traversal.\n",
             "Core interpreter/native/Wasm contracts and exact status: docs/COPY-RECORD-COLLECTIONS-V1.md. Native v29 private command transport: help language author:stream-data-v2.\n"
+        ).to_owned()),
+        "author:byte-traversal" => Ok(concat!(
+            "Borrowed byte-slice traversal v1; source implementation, executable qualification pending.\n",
+            "Use one named immutable Slice<u8>: a borrow parameter or local whole/subrange view. No manual counter or Option-get is needed. The item is fresh immutable Copy u8.\n",
+            "The loop snapshots length once and visits ascending indices. Continue advances exactly once; Break/Return do not advance. The authenticated underlying owner stays frozen through the traversal, including subrange aliases. Existing provenance, root bounds, loans and ABI authority remain unchanged.\n",
+            "Computed or mutable sources and nested traversal refuse SPX-T284; item shadowing refuses SPX-T209 and item reassignment stays closed. Name the view before the loop; do not move, replace or mutate its owner.\n",
+            "```spx\n",
+            "module help.bytes;\n",
+            "@id(\"help.sum\") fn sum(view: borrow Slice<u8>) -> i64 {\n",
+            " let mut total = 0;\n",
+            " for byte in view {\n",
+            "  if byte == 0u8 { continue; };\n",
+            "  if byte == 255u8 { break; };\n",
+            "  total = total + i64_from_u8(byte);\n",
+            "  0\n",
+            " }\n",
+            " total\n",
+            "}\n",
+            "@id(\"help.main\") fn main() -> i64 {let data = [1u8, 0u8, 2u8]; let view = array_as_slice(data); sum(view)}\n",
+            "```\n",
+            "Exact scope: docs/BORROWED-BYTE-SLICE-FOR-TRAVERSAL-V1.md. This card grants no additional profile or backend qualification.\n"
         ).to_owned()),
         "author:record-traversal" => Ok(concat!(
             "Scoped record traversal source implementation; executable qualification pending.\n",
@@ -395,6 +416,70 @@ mod tests {
     use super::*;
 
     #[test]
+    fn byte_traversal_card_checks_its_actual_example_and_keeps_named_view_authority() {
+        let card = lookup("author:byte-traversal").unwrap();
+        assert!(card.len() <= MAX_BYTES);
+        let routes = lookup("author:routes").unwrap();
+        assert!(routes.len() <= MAX_BYTES);
+        assert_eq!(routes.matches("author:byte-traversal").count(), 1);
+        for fact in [
+            "qualification pending",
+            "named immutable Slice<u8>",
+            "snapshots length once",
+            "Continue advances exactly once",
+            "Break/Return do not advance",
+            "owner stays frozen",
+            "subrange aliases",
+            "Computed or mutable sources",
+            "nested traversal refuse SPX-T284",
+            "shadowing refuses SPX-T209",
+            "provenance, root bounds, loans and ABI authority",
+        ] {
+            assert!(card.contains(fact), "missing scoped fact: {fact}");
+        }
+        let source = card
+            .split("```spx\n")
+            .nth(1)
+            .unwrap()
+            .split("```\n")
+            .next()
+            .unwrap();
+        assert!(!source.contains("byte_get") && !source.contains("Option::"));
+        let parsed = semaprax::check(source, "help-byte-traversal.spx").unwrap();
+        let canonical = semaprax::format::canonical(&parsed);
+        let reparsed = semaprax::check(&canonical, "help-byte-traversal.spx").unwrap();
+        assert_eq!(canonical, semaprax::format::canonical(&reparsed));
+        let resolved = semaprax::hir::resolve(&reparsed).unwrap();
+        semaprax::hir::validate(&resolved).unwrap();
+        let sum = resolved
+            .functions
+            .iter()
+            .find(|f| f.id.as_str() == "help.sum")
+            .unwrap();
+        let control = sum.cleanup_plan.lexical_control.as_ref().unwrap();
+        assert!(control.loops.iter().any(|loop_| matches!(
+            &loop_.latch,
+            semaprax::hir::LoopLatchKind::SourceForStep {
+                kind: semaprax::hir::SourceForKind::BorrowBytes,
+                ..
+            }
+        )));
+        for kind in [
+            semaprax::hir::LexicalExitKind::Continue,
+            semaprax::hir::LexicalExitKind::Break,
+        ] {
+            assert!(control.exits.iter().any(|exit| exit.kind == kind));
+        }
+        let computed = source.replacen(
+            "for byte in view",
+            "for byte in byte_range(view, 0usize, byte_len(view))",
+            1,
+        );
+        let errors = semaprax::check(&computed, "help-byte-computed-source.spx").unwrap_err();
+        assert!(errors.iter().any(|d| d.code == "SPX-T284"), "{errors:?}");
+    }
+
+    #[test]
     fn traversal_card_describes_only_the_checked_row_loan_shape() {
         let traversal = lookup("author:record-traversal").unwrap();
         assert!(traversal.len() <= MAX_BYTES);
@@ -587,6 +672,7 @@ mod tests {
             "author:record-sort-keys",
             "author:record-field-views",
             "author:record-traversal",
+            "author:byte-traversal",
             "author:json-codec",
             "author:json-identifier-views",
             "author:json-request-views",
