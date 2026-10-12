@@ -129,3 +129,32 @@ shape refusals migrate to success with frozen-profile refusal controls.
 
 The change removes the former guard/helper/result refusal-and-repair turns
 for the matched corpus. It claims no measured token percentage or speedup.
+
+## Private replay continuation backing
+
+Ordinary cleanup replay retains one lazily acquired continuation buffer per
+simultaneously reached guard depth for the exact invocation Program. A sibling
+guard can reuse its depth's empty buffer only after the earlier guard returns.
+Each traversal clears all owned frame payloads on either Result before returning
+its backing. Guard admission, child order, failure selection, work events and
+plan observations remain independently derived by the existing runner. Selected
+and standalone replay retain their local backing route. Panic propagation keeps
+the existing invocation-Drop scope; catching an unwind and resuming the same
+storage owner is not a promised recovery route.
+
+The inline storage layout retains the old size. Actual nested entry lazily pays
+and allocates a boxed depth/directory carrier, every complete replacement
+slot-directory layout (old/new coexist while moving slots), and each first-used
+516-frame buffer. Reuse performs the same sticky payer check with a zero-byte
+request. No quota, work discount, refund, guard admission or forecast changes.
+Retaining empty backing until invocation Drop reduces repeated requests but may
+increase a later receiver's highwater. A first guard also adds directory/carrier
+backing. No universal peak-memory improvement is claimed.
+
+The existing `continuation_storage::tests::nested_pool` owner compares complete
+ordered observations and diagnostics against saved local acquisition, checks
+nested distinct pointers and sibling reuse, records literal real directory and
+frame requests through Drop, and separately pins a later receiver's increased
+highwater. Exact and one-short requests include carrier, replacement directory,
+new depth and reused-slot sticky refusal. These owners are authored source;
+execution and broader ordinary receiver qualification remain pending.

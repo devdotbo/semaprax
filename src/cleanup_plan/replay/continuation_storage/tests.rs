@@ -116,7 +116,7 @@ fn same_program_roots_and_guard_reentry_keep_old_paths_work_and_first_errors() {
     }
     assert_eq!(old_budget.remaining, new_budget.remaining);
     assert_eq!(old_budget.skeleton_spent, new_budget.skeleton_spent);
-    assert!(!storage.leased);
+    assert!(storage.frames.is_some());
     assert!(storage.frames.as_ref().unwrap().is_empty());
     let foreign = program.clone();
     assert!(!storage.matches(&foreign));
@@ -307,3 +307,5 @@ fn lazy_first_and_nested_layouts_use_the_same_sticky_payer_through_drop() {
         assert_eq!(short.allocated, short.freed);
     }
 }
+
+mod nested_pool;

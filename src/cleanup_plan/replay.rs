@@ -3261,46 +3261,26 @@ fn expression_skeleton<'hir>(
     expression: &'hir ResolvedExpr,
     work: &mut SkeletonWork<'hir, '_>,
 ) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
-    let reuse = if let Some(storage) = work.continuations.as_ref() {
+    let (lease, mut frames) = if let Some(storage) = work.continuations.as_mut() {
         if !storage.matches(program) {
             return Err(replay_error(
                 function,
                 "typed-HIR continuation storage belongs to another program",
             ));
         }
-        !storage.leased
+        storage.acquire(function, work.budget)?
     } else {
-        false
+        (
+            continuation_storage::Lease::Local,
+            continuation_storage::fresh(function, work.budget)?,
+        )
     };
-    let mut frames = if reuse {
-        work.continuations
-            .as_mut()
-            .unwrap()
-            .frames
-            .take()
-            .unwrap_or_default()
-    } else {
-        Vec::new()
-    };
-    if frames.capacity() == 0 {
-        frames = continuation_storage::fresh(function, work.budget)?;
-    } else {
-        // Reuse requests no backing, but cannot bypass an enclosing sticky
-        // refusal at the original traversal-acquisition boundary.
-        work.budget
-            .reserve_bytes(function, 0, "typed HIR continuation stack")?;
-    }
-    // Nested guarded variants see this lease and use the original separate local
-    // receiver. They never install their backing into the outer slot.
-    if reuse {
-        work.continuations.as_mut().unwrap().leased = true;
-    }
+    // No directory borrow spans the runner: guards re-enter this same Storage.
+    // A panic still unwinds to invocation Drop, as in the original lease owner.
     let result = expression_skeleton_run(program, function, expression, work, &mut frames);
     frames.clear(); // Drop every owned continuation payload before reuse.
-    if reuse {
-        let storage = work.continuations.as_mut().unwrap();
-        storage.frames = Some(frames);
-        storage.leased = false;
+    if let Some(storage) = work.continuations.as_mut() {
+        storage.release(lease, frames);
     }
     result
 }
