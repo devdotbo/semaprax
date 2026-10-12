@@ -24,110 +24,151 @@ fn function(kind: ResolvedExprKind) -> ResolvedFunction {
 #[test]
 fn all_operation_payloads_preserve_saved_owned_facts_and_exact_current_references() {
     // These are fact-collector inputs, not admission of the hostile HIR below.
-    let args = || vec![scalar("payload.a"), scalar("payload.b")];
-    let nominal = ResolvedType::Nominal {
-        declaration: DeclarationId::new("payload.nominal"),
-        arguments: vec![ResolvedType::U8],
-    };
-    let instance =
-        FunctionInstanceId::derive(&DeclarationId::new("payload.generic"), &[nominal.clone()]);
-    let cases = [
-        ResolvedExprKind::Call {
-            callee: DeclarationId::new("payload.generic"),
-            instance: Some(instance),
-            args: args(),
-            type_arguments: vec![nominal],
-        },
-        ResolvedExprKind::Invoke {
-            callable: Box::new(scalar("payload.callable")),
-            args: args(),
-        },
-        ResolvedExprKind::ByteRange {
-            operation: DeclarationId::new("core.byte.range"),
-            source: Box::new(scalar("payload.source")),
-            start: Box::new(scalar("payload.start")),
-            end: Box::new(scalar("payload.end")),
-        },
-        ResolvedExprKind::VecFieldRead {
-            element: ResolvedType::I64,
-            field: DeclarationId::new("payload.field"),
-            bytes: false,
-            args: args(),
-        },
-        ResolvedExprKind::LiteralFormat {
-            template: "{} {}".into(),
-            args: args(),
-        },
-        ResolvedExprKind::NativeRustImportCall(crate::hir::ResolvedNativeRustImportCall {
-            expression: ExpressionId::from_owned("payload.body".into()),
-            import: DeclarationId::new("payload.import"),
-            args: args(),
-            result: crate::hir::ResolvedImportResultKind::OwnedString,
-        }),
-        ResolvedExprKind::HostCommandCall(crate::hir::ResolvedHostCommandCall {
-            expression: ExpressionId::from_owned("payload.body".into()),
-            operation: crate::hir::ResolvedHostCommandOperation::ArgsLen,
-            args: args(),
-        }),
-    ];
-    for kind in cases {
-        let mut function = function(kind);
-        if matches!(
-            function.body.kind,
-            ResolvedExprKind::NativeRustImportCall(_)
-        ) {
-            function.body.ownership = OwnershipMode::Own;
-        }
-        let saved = old::expression_facts(&function).unwrap();
-        let facts = expression_facts(&function).unwrap();
-        same_owned(&saved, &facts);
-        let fact = facts[&function.body.id].as_ref().unwrap();
-        match &function.body.kind {
+    for count in [0, 1, 2, 17] {
+        let args = || {
+            (0..count)
+                .map(|index| scalar(&format!("payload.argument.{index}")))
+                .collect()
+        };
+        let nominal = ResolvedType::Nominal {
+            declaration: DeclarationId::new("payload.nominal"),
+            arguments: vec![ResolvedType::Nominal {
+                declaration: DeclarationId::new("payload.inner"),
+                arguments: vec![ResolvedType::U8],
+            }],
+        };
+        let instance =
+            FunctionInstanceId::derive(&DeclarationId::new("payload.generic"), &[nominal.clone()]);
+        let cases = [
             ResolvedExprKind::Call {
-                callee,
-                instance,
-                args,
-                type_arguments,
-            } => {
-                assert!(std::ptr::eq(fact.callee.as_ref(), callee));
-                assert!(std::ptr::eq(
-                    fact.instance.unwrap(),
-                    instance.as_ref().unwrap()
-                ));
-                assert!(std::ptr::eq(
-                    fact.type_arguments.as_slice(),
-                    type_arguments.as_slice()
-                ));
-                assert!(std::ptr::eq(fact.arguments.get(1).unwrap(), &args[1].id));
-            }
-            ResolvedExprKind::Invoke { callable, .. } => {
-                assert_eq!(fact.type_arguments.len(), 1);
-                assert!(std::ptr::eq(&fact.type_arguments[0], &callable.ty));
-                assert!(fact.instance.is_none());
-            }
+                callee: DeclarationId::new("payload.generic"),
+                instance: Some(instance),
+                args: args(),
+                type_arguments: vec![nominal],
+            },
+            ResolvedExprKind::Invoke {
+                callable: Box::new(scalar("payload.callable")),
+                args: args(),
+            },
             ResolvedExprKind::ByteRange {
-                source, start, end, ..
-            } => {
-                for (index, expression) in [source, start, end].into_iter().enumerate() {
-                    assert!(std::ptr::eq(
-                        fact.arguments.get(index).unwrap(),
-                        &expression.id
-                    ));
-                }
-                assert!(fact.arguments.get(3).is_none());
+                operation: DeclarationId::new("core.byte.range"),
+                source: Box::new(scalar("payload.source")),
+                start: Box::new(scalar("payload.start")),
+                end: Box::new(scalar("payload.end")),
+            },
+            ResolvedExprKind::VecFieldRead {
+                element: ResolvedType::I64,
+                field: DeclarationId::new("payload.field"),
+                bytes: false,
+                args: args(),
+            },
+            ResolvedExprKind::LiteralFormat {
+                template: "{} {}".into(),
+                args: args(),
+            },
+            ResolvedExprKind::NativeRustImportCall(crate::hir::ResolvedNativeRustImportCall {
+                expression: ExpressionId::from_owned("payload.body".into()),
+                import: DeclarationId::new("payload.import"),
+                args: args(),
+                result: crate::hir::ResolvedImportResultKind::OwnedString,
+            }),
+            ResolvedExprKind::HostCommandCall(crate::hir::ResolvedHostCommandCall {
+                expression: ExpressionId::from_owned("payload.body".into()),
+                operation: crate::hir::ResolvedHostCommandOperation::ArgsLen,
+                args: args(),
+            }),
+        ];
+        for kind in cases {
+            let mut function = function(kind);
+            if matches!(
+                function.body.kind,
+                ResolvedExprKind::NativeRustImportCall(_)
+            ) {
+                function.body.ownership = OwnershipMode::Own;
             }
-            _ => assert!(fact.instance.is_none()),
+            let saved = old::expression_facts(&function).unwrap();
+            let ((), observed) = crate::test_allocation_observer::measure(|| {
+                let facts = expression_facts(&function).unwrap();
+                same_owned(&saved, &facts);
+                let fact = facts[&function.body.id].as_ref().unwrap();
+                match &function.body.kind {
+                    ResolvedExprKind::Call {
+                        callee,
+                        instance,
+                        args,
+                        type_arguments,
+                    } => {
+                        assert!(std::ptr::eq(fact.callee.as_ref(), callee));
+                        assert!(std::ptr::eq(
+                            fact.instance.unwrap(),
+                            instance.as_ref().unwrap()
+                        ));
+                        assert!(std::ptr::eq(
+                            fact.type_arguments.as_slice(),
+                            type_arguments.as_slice()
+                        ));
+                        assert_eq!(fact.arguments.len(), count);
+                        for (index, arg) in args.iter().enumerate() {
+                            assert!(std::ptr::eq(fact.arguments.get(index).unwrap(), &arg.id));
+                        }
+                        assert!(fact.arguments.get(count).is_none());
+                    }
+                    ResolvedExprKind::Invoke { callable, .. } => {
+                        assert_eq!(fact.type_arguments.len(), 1);
+                        assert!(std::ptr::eq(&fact.type_arguments[0], &callable.ty));
+                        assert!(fact.instance.is_none());
+                    }
+                    ResolvedExprKind::ByteRange {
+                        source, start, end, ..
+                    } => {
+                        for (index, expression) in [source, start, end].into_iter().enumerate() {
+                            assert!(std::ptr::eq(
+                                fact.arguments.get(index).unwrap(),
+                                &expression.id
+                            ));
+                        }
+                        assert!(fact.arguments.get(3).is_none());
+                    }
+                    _ => assert!(fact.instance.is_none()),
+                }
+                // Every variable-length kind exposes exactly its current argument IDs,
+                // including an empty slice, without borrowing a substitute directory.
+                let current_args = match &function.body.kind {
+                    ResolvedExprKind::Call { args, .. }
+                    | ResolvedExprKind::Invoke { args, .. }
+                    | ResolvedExprKind::VecFieldRead { args, .. }
+                    | ResolvedExprKind::LiteralFormat { args, .. } => Some(args),
+                    ResolvedExprKind::NativeRustImportCall(call) => Some(&call.args),
+                    ResolvedExprKind::HostCommandCall(call) => Some(&call.args),
+                    ResolvedExprKind::ByteRange { .. } => None,
+                    _ => panic!("complete operation matrix"),
+                };
+                if let Some(args) = current_args {
+                    assert_eq!(fact.arguments.len(), count);
+                    for (index, arg) in args.iter().enumerate() {
+                        assert!(std::ptr::eq(fact.arguments.get(index).unwrap(), &arg.id));
+                    }
+                    assert!(fact.arguments.get(count).is_none());
+                }
+                drop(facts);
+            });
+            assert!(!observed.invalid);
+            assert_eq!(observed.live, 0);
+            assert_eq!(observed.allocated, observed.freed);
+            // Duplicate IDs retain the saved producer's refusal before later child work.
+            let mut hostile = function.clone();
+            if let Some(child) = expression_children::ReplayChildCursor::new(&function.body).next()
+            {
+                hostile.body.id = child.id.clone();
+            } else {
+                // Zero-argument operations have no child to duplicate. Retain the
+                // complete body→ensures traversal and duplicate-first refusal.
+                hostile.ensures.push(hostile.body.clone());
+            }
+            let saved = old::expression_facts(&hostile).err().unwrap();
+            let current = expression_facts(&hostile).err().unwrap();
+            assert_eq!((saved.code, saved.message), (current.code, current.message));
         }
-        // Duplicate IDs retain the saved producer's refusal before later child work.
-        let mut hostile = function.clone();
-        hostile.body.id = expression_children::ReplayChildCursor::new(&function.body)
-            .next()
-            .expect("every fixture has at least one child")
-            .id
-            .clone();
-        let saved = old::expression_facts(&hostile).err().unwrap();
-        let current = expression_facts(&hostile).err().unwrap();
-        assert_eq!((saved.code, saved.message), (current.code, current.message));
     }
 }
 
