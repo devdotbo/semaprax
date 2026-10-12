@@ -50,11 +50,21 @@ fn borrowed_template_types_preserve_owned_map_diagnostics_and_current_binding_su
     assert_eq!(program.function_templates.len(), 2);
     for template in &program.function_templates {
         compare(&program, template).unwrap();
-        // Two simultaneous defects retain the original header-first diagnostic.
+        // The private symbolic walk permits non-Value drop-bearing headers;
+        // retain this original mutation as explicit saved-old success parity.
         let mut wrong = template.clone();
         wrong.body.ownership = OwnershipMode::Borrow;
         wrong.body.ty = ResolvedType::String;
-        assert_eq!(compare(&program, &wrong).unwrap_err().code, "SPX-H006");
+        compare(&program, &wrong).unwrap();
+        let mut full = program.clone();
+        *full.function_templates.iter_mut().find(|candidate| candidate.id == wrong.id).unwrap() = wrong;
+        assert_eq!(crate::hir::validate(&full).unwrap_err().code, "SPX-H006");
+        // Borrow Unit genuinely violates the same private header predicate,
+        // independently of the declared-result checks of the full receiver.
+        let mut invalid = template.clone();
+        invalid.body.ownership = OwnershipMode::Borrow;
+        invalid.body.ty = ResolvedType::Unit;
+        assert_eq!(compare(&program, &invalid).unwrap_err().code, "SPX-H006");
         let mut foreign = template.clone();
         foreign.params[0].ty = ResolvedType::I64;
         assert_eq!(compare(&program, &foreign).unwrap_err().code, "SPX-H006");
@@ -208,6 +218,13 @@ fn generic_closure_scopes_keep_duplicate_priority_and_full_owned_oracle_policy()
         compare(&program, template).unwrap();
         let mut hostile = template.clone();
         hostile.body.ty = ResolvedType::String;
-        assert_eq!(compare(&program, &hostile).unwrap_err().code, "SPX-H006");
+        compare(&program, &hostile).unwrap();
+        let mut full = program.clone();
+        *full.function_templates.iter_mut().find(|candidate| candidate.id == hostile.id).unwrap() = hostile;
+        assert_eq!(crate::hir::validate(&full).unwrap_err().code, "SPX-H006");
+        let mut invalid = template.clone();
+        invalid.body.ty = ResolvedType::Unit;
+        invalid.body.ownership = OwnershipMode::Borrow;
+        assert_eq!(compare(&program, &invalid).unwrap_err().code, "SPX-H006");
     }
 }
