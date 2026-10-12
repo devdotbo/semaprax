@@ -314,3 +314,12 @@ independent failure-contour replay, all three checked allocator receivers,
 Project/application preparation, and escaped SDK leases remain pending. The
 new source controls are authored and unexecuted; the original application and
 legacy fatal-boundary controls remain unchanged.
+
+
+The private status receiver now independently discovers v20 allocation rows
+from the current typed body and contracts. It preserves the ordinary complete
+walk and later source-diagnostic priority, checks exact operation and case
+order, and rederives consuming String operands and condition reads. This check
+is deliberately separate from failure-cleanup and skeleton replay: passing it
+does not lend an executor, allocator or output lease. Its current ordinary
+predicate storage is not a claim of complete compiler funding.

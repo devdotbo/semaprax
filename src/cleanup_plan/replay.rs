@@ -10,7 +10,7 @@ mod expression_children;
 mod expression_facts;
 mod flat_records;
 mod inventory_coverage;
-mod ordinary_status;
+pub(in crate::cleanup_plan) mod ordinary_status;
 mod physical_budget;
 mod physical_clone;
 mod physical_storage;

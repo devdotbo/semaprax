@@ -1159,6 +1159,7 @@ impl<'a> Executor<'a> {
             StatusProducer::CheckedAllocation { normalized_cases, .. } => {
                 let status = self.failure_outcome(&source)?;
                 if source.lane != StatusLane::AllocationFailure
+                    || normalized_cases != [super::AllocationCase::PayloadRefused, super::AllocationCase::SizeOverflow]
                     || status.domain_id() != super::ALLOCATION_DOMAIN_V1
                     || !normalized_cases.iter().any(|case| status.code() == case.code())
                     || status.class() != crate::conformance::StatusClass::Adapter

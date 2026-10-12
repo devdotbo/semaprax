@@ -76,3 +76,64 @@ fn candidate_allocation_branches_precede_initialization_and_preserve_commit_owne
         assert_eq!(current.function().cleanup_plan, old, "candidate does not replace authoritative ordinary plan");
     }).unwrap();
 }
+
+
+#[test]
+fn independent_allocation_status_replay_rejects_missing_swapped_and_invented_rows() {
+    use crate::cleanup_plan::{AllocationCase, AllocationOperation, StatusLane, StatusProducer};
+    let source = source();
+    let prepared = prepare(&source, &DeclarationId::new("checked.main")).unwrap();
+    prepared.with_function(&FunctionExecutionId::Monomorphic(DeclarationId::new("checked.text")), |current| {
+        let candidate = super::super::build::checked_allocation::candidate(current).unwrap();
+        let validate = |plan: &crate::cleanup_plan::CleanupPlan| {
+            super::super::replay::ordinary_status::validate_allocation_projection(current, plan)
+        };
+        assert!(validate(&candidate).is_ok(), "literal and concat producers independently discovered");
+        assert!(validate(&current.function().cleanup_plan).is_err(), "ordinary attachment is not v20 evidence");
+        let position = candidate.status_sources.iter().position(|row| row.id.lane == StatusLane::AllocationFailure).unwrap();
+        let mut missing = candidate.clone();
+        missing.status_sources.remove(position);
+        assert!(validate(&missing).is_err());
+        let mut duplicate = candidate.clone();
+        duplicate.status_sources.insert(position, candidate.status_sources[position].clone());
+        assert!(validate(&duplicate).is_err());
+        let mut wrong = candidate.clone();
+        wrong.status_sources[position].producer = StatusProducer::CheckedAllocation {
+            operation: AllocationOperation::BytesCopy,
+            normalized_cases: [AllocationCase::PayloadRefused, AllocationCase::SizeOverflow],
+        };
+        assert!(validate(&wrong).is_err());
+        let mut swapped = candidate.clone();
+        let StatusProducer::CheckedAllocation { normalized_cases, .. } = &mut swapped.status_sources[position].producer else { panic!("allocation row") };
+        normalized_cases.swap(0, 1);
+        assert!(validate(&swapped).is_err());
+        let mut wrong_lane = candidate.clone();
+        wrong_lane.status_sources[position].id.lane = StatusLane::OperationFailure;
+        assert!(validate(&wrong_lane).is_err());
+        assert_eq!(current.function().cleanup_plan, super::super::build::build_plan(current.program(), current.function()).unwrap());
+    }).unwrap();
+}
+
+#[test]
+fn independent_allocation_status_replay_keeps_take_total_and_implicit_reads_cloning() {
+    use crate::cleanup_plan::{AllocationOperation, StatusProducer};
+    let source = crate::parse(r#"module checked.read;
+@id("checked.read.main") fn main() -> i64 {
+    let text = "abc";
+    let copy = text;
+    let moved = string_take(text);
+    string_len(copy) + string_len(moved)
+}
+"#, "checked-read.spx").unwrap();
+    let prepared = prepare(&source, &DeclarationId::new("checked.read.main")).unwrap();
+    prepared.with_function(&FunctionExecutionId::Monomorphic(DeclarationId::new("checked.read.main")), |current| {
+        let candidate = super::super::build::checked_allocation::candidate(current).unwrap();
+        assert!(super::super::replay::ordinary_status::validate_allocation_projection(current, &candidate).is_ok());
+        let operations: Vec<_> = candidate.status_sources.iter().filter_map(|row| match row.producer {
+            StatusProducer::CheckedAllocation { operation, .. } => Some(operation),
+            _ => None,
+        }).collect();
+        assert_eq!(operations, vec![AllocationOperation::StringLiteral, AllocationOperation::StringClone],
+            "take forwards the original carrier; an ordinary owning read still clones");
+    }).unwrap();
+}

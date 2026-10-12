@@ -3,6 +3,7 @@
 //! retain their original priority over the final table mismatch. No plan row is
 //! authority for discovering a failure producer.
 use super::*;
+mod allocation;
 #[cfg(test)]
 mod old;
 #[cfg(test)]
@@ -17,6 +18,7 @@ struct BorrowedStatus<'a> {
     producer: BorrowedProducer<'a>,
 }
 enum BorrowedProducer<'a> {
+    CheckedAllocation { operation: super::super::AllocationOperation },
     PropagatedCall {
         callee: &'a str,
     },
@@ -47,6 +49,13 @@ impl<'a> Comparison<'a> {
             actual.id.expression == *expected.id.expression
                 && actual.id.lane == expected.id.lane
                 && match (&actual.producer, expected.producer) {
+                    (
+                        StatusProducer::CheckedAllocation { operation, normalized_cases },
+                        BorrowedProducer::CheckedAllocation { operation: expected },
+                    ) => *operation == expected && *normalized_cases == [
+                        super::super::AllocationCase::PayloadRefused,
+                        super::super::AllocationCase::SizeOverflow,
+                    ],
                     (
                         StatusProducer::PropagatedCall { callee },
                         BorrowedProducer::PropagatedCall { callee: expected },
@@ -104,9 +113,36 @@ pub(super) fn validate(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
 ) -> Result<(), Diagnostic> {
-    let mut expected = Comparison::new(&function.cleanup_plan.status_sources);
+    validate_rows(program, function, &function.cleanup_plan.status_sources, None)
+}
+
+/// Independent status discovery only. Passing this receiver does not validate
+/// allocation failure cleanup, skeleton paths or an allocator/lease receiver.
+/// The current-function token comes only from full original-source preparation.
+#[cfg_attr(not(test), allow(dead_code, reason = "private checked allocation skeleton and engine receivers are not activated"))]
+pub(in crate::cleanup_plan) fn validate_allocation_projection(
+    current: super::super::checked_allocation::Function<'_>,
+    plan: &CleanupPlan,
+) -> Result<(), Diagnostic> {
+    let function = current.function();
+    if !current.held_by(current.program(), function)
+        || plan.schema != super::super::CLEANUP_PLAN_SCHEMA_V20
+    {
+        return Err(replay_error(function, "allocation status projection changed its current subject or schema"));
+    }
+    let selection = allocation::Selection::new(function)?;
+    validate_rows(current.program(), function, &plan.status_sources, Some(&selection))
+}
+
+fn validate_rows(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+    actual: &[StatusSource],
+    allocation: Option<&allocation::Selection>,
+) -> Result<(), Diagnostic> {
+    let mut expected = Comparison::new(actual);
     for (ordinal, contract) in function.requires.iter().enumerate() {
-        collect_expression_statuses(program, function, contract, &mut expected)?;
+        collect_expression_statuses(program, function, contract, &mut expected, allocation)?;
         expected.push(BorrowedStatus {
             id: BorrowedId {
                 expression: &contract.id,
@@ -119,9 +155,9 @@ pub(super) fn validate(
             },
         });
     }
-    collect_expression_statuses(program, function, &function.body, &mut expected)?;
+    collect_expression_statuses(program, function, &function.body, &mut expected, allocation)?;
     for (ordinal, contract) in function.ensures.iter().enumerate() {
-        collect_expression_statuses(program, function, contract, &mut expected)?;
+        collect_expression_statuses(program, function, contract, &mut expected, allocation)?;
         expected.push(BorrowedStatus {
             id: BorrowedId {
                 expression: &contract.id,
@@ -148,6 +184,7 @@ fn collect_expression_statuses(
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
     statuses: &mut Comparison<'_>,
+    allocation: Option<&allocation::Selection>,
 ) -> Result<(), Diagnostic> {
     let mut stack = [None; 514];
     stack[0] = Some((expression, 0usize));
@@ -251,6 +288,7 @@ fn collect_expression_statuses(
                     // element index is checked at run time. Physical allocation
                     // failure stays invariant fail-stop, not a recoverable
                     // operation status.
+                    push_allocation(statuses, allocation, expression);
                     continue;
                 }
                 if instance.is_none()
@@ -258,11 +296,13 @@ fn collect_expression_statuses(
                         crate::vec_ops::by_id(callee.as_str()),
                     )
                 {
+                    push_allocation(statuses, allocation, expression);
                     continue;
                 }
                 if instance.is_none()
                     && super::super::deferred_commit::is_infallible_box_operation(callee)
                 {
+                    push_allocation(statuses, allocation, expression);
                     continue;
                 }
                 if instance.is_none()
@@ -397,6 +437,19 @@ fn collect_expression_statuses(
             | ResolvedExprKind::BorrowPlace { .. }
             | ResolvedExprKind::RowLoan { .. } => {}
         }
+        push_allocation(statuses, allocation, expression);
     }
     Ok(())
+}
+
+fn push_allocation(
+    statuses: &mut Comparison<'_>,
+    selection: Option<&allocation::Selection>,
+    expression: &ResolvedExpr,
+) {
+    let Some(operation) = selection.and_then(|selection| selection.operation(expression)) else { return; };
+    statuses.push(BorrowedStatus {
+        id: BorrowedId { expression: &expression.id, lane: StatusLane::AllocationFailure },
+        producer: BorrowedProducer::CheckedAllocation { operation },
+    });
 }
