@@ -9,6 +9,12 @@
   diagnostic, exact/short/sticky, actual payload Drop and unwind controls.
   Source-only; no measured allocation improvement or application-fit claim.
 
+- Keep all 17 exact language help topics within their existing bounds by moving
+  complete detailed profile rules verbatim to the full-reference appendix.
+  Preserve every canonical example, diagnostic marker, full-card rule and route;
+  concise topic guidance links to the full constraints. Static source review
+  only; compiler and CLI qualification remains pending.
+
 - Author persistent HIR contract baselines that inspect every current freshness
   flag, share unchanged roots and bindings, and pay complete true-flag payloads
   plus changed node constructors before returning a staged root. Retain the full

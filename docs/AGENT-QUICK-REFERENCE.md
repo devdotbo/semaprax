@@ -337,38 +337,15 @@ fn main() -> i64
   9223372036854775807 (`i64::MAX`) to round-trip; larger values fail conversion.
 - `record … with { field: value }` is immutable update. Record construction
   must name every field (`SPX-T213`).
-- Monomorphic acyclic records may own String/Bytes, Copy scalars and nested
-  records. Pass with `own` or `borrow`; results own their leaves. Generic,
-  resource/view/class and invariant-bearing String records are `SPX-T309`;
-  see [String records](OWNED-STRING-RECORDS-V1.md).
-- Whole-subtree binding (source implementation; qualification pending):
-  `match own packet { Envelope { left, right, sequence } => sequence, }`
-  moves each named record child without recursively unpacking it. Include every
-  field exactly once; `_` cannot hide an owned subtree. The scrutinee must be a
-  named unprojected owner with no live descendant loan. Complete hidden children
-  still count toward limits; `match borrow` keeps recursive patterns.
-  See [owned subtree patterns](NESTED-OWNED-RECORD-DESTRUCTURING-V2.md).
-- Finite record loops (source implementation; qualification pending): an
-  effect-free, parameter-free i64 function may use `let mut i = 0;` immediately
-  before `while i < N`, with literal `N` in 1–32. Each body constructs one fresh
-  immutable monomorphic record, then discards one owning record match and ends
-  in `0`. Its single guard-free arm first increments that exact counter by one;
-  branch tails may continue, break, return or complete normally. Extra arm
-  statements, counter shadowing and nested loops refuse. Actual allocations
-  still obey the existing 32-event/2 MiB limits. See
-  [the exact admitted shape](FINITE-OWNED-RECORD-DISCARD-LOOPS-V1.md).
-- Copy-record Vec admits identified flat records with 1–8 Copy fields. Project
-  v30 adds `Vec<string>` and flat records with up to two direct owned
-  String/Bytes fields. User records need `@id`; ask
-  `help language author:copy-record-vec` or `help language author:owned-data`.
-  See [Owned Leaf Collections v1](OWNED-LEAF-COLLECTIONS-V1.md).
-- Import every type you name from a function signature, including nested
-  types and factory results. A private inferred signature may retain hidden
-  layout facts; it does not let you name that type, its cases or siblings in
-  annotations, patterns or constructors. Use an explicit `use type` for those.
-  With `std.pattern.make`, add
-  `use type @id("std.pattern.matcher") from std.pattern as Matcher;`
-  `SPX-G172` names the missing type identity.
+- Owned String/Bytes records, whole-subtree binding, finite record loops and
+  Copy/owned-leaf record Vecs each have an exact admitting profile. Pending
+  features remain pending; see [complete record profile rules](#record-profile-details)
+  and `help language author:copy-record-vec` / `author:owned-data`.
+
+- Import every type you name with explicit `use type`, including nested types,
+  factory results, annotations, patterns and constructors (`SPX-G172`). See
+  [complete visibility rules and import example](#record-import-visibility-details).
+
 - Classes hold fields and `fn name(self: Class, …)` methods, called as
   `value.method(args)`. `class Dog : Animal` inherits; `super.method()`
   dispatches to the parent. Records have no methods.
@@ -680,16 +657,9 @@ fn main() -> i64
   `--max-steps` and `--max-bytes` bound reports/execution. Exact
   `process.stdout.write` selects transcripts (above: `banana!0`). Args/file/stderr
   effects select the CLI route; `stdin_read` needs native `useful-data-command.v1`.
-- TCP: `net_connect`, `net_send`, `net_recv`, `net_stream_stdout`, `net_wait`,
-  `net_close` need `permit`/`uses` of `network.connect`, `network.read`,
-  `network.write` and an injected provider. Owned `net_recv` is refused inside
-  `while` (`SPX-T270`). [Network I/O v1](BOUNDED-LANGUAGE-NETWORK-IO-V1.md).
-- `file_read` / `file_write_new` require explicit `fs.read` / `fs.write` and an
-  injected [Filesystem I/O v1](FILESYSTEM-IO-V1.md) provider. Paths are bounded
-  relative byte prefixes; writes create new files without overwriting.
-  [Filesystem I/O v2](FILESYSTEM-IO-V2.md) adds stat, sorted immediate-name listing,
-  mkdir, removal and atomic replacement. Only stat/list accept empty paths for
-  the injected root. `std.fs` composes typed Path, FileInfo and Reader/Writer.
+- Network and filesystem calls require exact capabilities and an injected
+  provider. See [complete I/O rules](#network-and-filesystem-details).
+
 - Interpreter/native recursion caps at 256 frames: overflow reports runtime
   capacity without language status/process signal. Raw Wasm traps at its engine stack limit.
 
@@ -746,8 +716,7 @@ Exact grammar/gates: `help language author:literal-format`.
 
 Reserved `string_len`: `SPX-S113`.
 
-Boxes allocate uniquely; authored `record Box<T>` stays inline. Owned payloads,
-public generic ABI and shared ownership remain outside [Box v1](OWNED-BOUNDED-BOX-V1.md).
+Box boundaries: [complete constraints](#box-profile-details).
 
 Render, borrow and write an integer:
 
@@ -860,10 +829,10 @@ Native v27 starter: `semaprax new <dir> --template stdin-stream-data`.
 
 Exit codes: `help language specifications`.
 
-Single-file `run`: `semaprax.interpret.v1`, then internal Strings for owned
-`string` parameters/results (`SPX-F102`); if both refuse, ordinary diagnostic.
-JSON `schema`: `semaprax.interpret.internal-strings.v1`. Permit-selected
-command/stdout: no fallback. [Strings][internal-strings].
+Pure single-file `run`: `semaprax.interpret.v1`, then internal Strings for owned
+`string` parameters/results (`SPX-F102`). Both refuse: ordinary diagnostic.
+Retry JSON `schema`: `semaprax.interpret.internal-strings.v1`. Permit-selected
+command/stdout skip fallback. [Strings][internal-strings].
 
 ```semaprax
 module app.lines;
@@ -1070,17 +1039,9 @@ Computed or mutable iterable views, item mutation/shadowing and nested traversal
 remain refused. Executable qualification is pending; see
 [Borrowed Byte Slice For Traversal v1](BORROWED-BYTE-SLICE-FOR-TRAVERSAL-V1.md).
 
-`for borrow row at index in rows { body }` adds a scoped field-only row view
-for an immutable named vector of an admitted Copy record or flat owned-leaf
-record. Omit `at index` when no index is needed. Scalars copy; `row.text` and
-`row.bytes` borrow their stored String/Bytes until the iteration ends. The whole
-vector stays frozen through the loop, including Copy-only reads. A flat
-owned-leaf row may also be lent whole, only as a direct argument to an ordinary
-`borrow` parameter of its exact record whose effect-free helper reads just
-Copy scalar fields and returns a Value Copy scalar; every other use of the row stays refused. Qualification
-is pending; see `help language author:record-traversal`,
-[Scoped Record Vec Traversal v2](SCOPED-RECORD-VEC-TRAVERSAL-V2.md) and
-[Scoped Record Row Loan v1](SCOPED-RECORD-ROW-LOAN-V1.md).
+`for borrow row at index in rows { body }` is a scoped row view; `at index`
+is optional. Qualification remains pending. See [complete row and loan rules](#scoped-record-traversal-details)
+and `help language author:record-traversal`.
 
 ### Consuming scalar iterators
 
@@ -1513,16 +1474,9 @@ rederived immutable-empty literal-index clone refusal skips unreachable copy
 charges; no loop allocation/refund.
 [Renewal](CONSUMING-OWNED-RECORD-VEC-RENEWAL-V1.md).
 
-V31 language-command-io.collection-record.v1: private typed records/admitted Vec;
-entry/command fn() -> i64. `vec_field<Row>(value.items,index,"field")`: live named
-Vec path; `index` is `usize`; literal field (SPX-T310).
-Copy returns by value; String/Bytes return nonescaping borrow str/Slice<u8>.
-End views before moving/replacing/sorting/pushing/reserving/clearing roots;
-temporary/call roots and escaped/stale views refuse.
-`str_as_bytes(vec_field<Row>(value.items,index,"text"))` fuses reads;
-`string_as_str(value.inner.label)` keeps the live record path. Avoid vec_clone_at
-for queries: it clones owners. These reads apply only in v30/v31/v32, not public ABIs;
-gate pending: [scoped reads](SCOPED-VEC-FIELD-READS-V1.md).
+V31 adds private records/admitted Vecs and scoped field reads. See
+[complete field-view boundaries](#project-field-view-details);
+`help language author:record-field-views`. Qualification remains pending.
 
 `vec_sort_by<Row>(rows,"priority:desc,arrival:asc")`: 1..8 unique literal keys,
 one admitted explicit flat monomorphic record (SPX-T311). Consumes Vec; stable
@@ -1627,6 +1581,95 @@ String borrows retain the named Vec through last use. Response encoding
 of `Report { assignments: Vec<Assignment>, metrics: Metrics }` supplies no
 request decoding/business mapping. Checked helpers; caller's admitted
 Project profile controls runtime. Qualification pending.
+
+## Detailed profile rules
+
+Exact topics link to the complete rules below. `help language all` retains this
+appendix and every compiler-checked example; links do not change admission or
+qualification status.
+
+### Record profile details
+
+- Monomorphic acyclic records may own String/Bytes, Copy scalars and nested
+  records. Pass with `own` or `borrow`; results own their leaves. Generic,
+  resource/view/class and invariant-bearing String records are `SPX-T309`;
+  see [String records](OWNED-STRING-RECORDS-V1.md).
+- Whole-subtree binding (source implementation; qualification pending):
+  `match own packet { Envelope { left, right, sequence } => sequence, }`
+  moves each named record child without recursively unpacking it. Include every
+  field exactly once; `_` cannot hide an owned subtree. The scrutinee must be a
+  named unprojected owner with no live descendant loan. Complete hidden children
+  still count toward limits; `match borrow` keeps recursive patterns.
+  See [owned subtree patterns](NESTED-OWNED-RECORD-DESTRUCTURING-V2.md).
+- Finite record loops (source implementation; qualification pending): an
+  effect-free, parameter-free i64 function may use `let mut i = 0;` immediately
+  before `while i < N`, with literal `N` in 1–32. Each body constructs one fresh
+  immutable monomorphic record, then discards one owning record match and ends
+  in `0`. Its single guard-free arm first increments that exact counter by one;
+  branch tails may continue, break, return or complete normally. Extra arm
+  statements, counter shadowing and nested loops refuse. Actual allocations
+  still obey the existing 32-event/2 MiB limits. See
+  [the exact admitted shape](FINITE-OWNED-RECORD-DISCARD-LOOPS-V1.md).
+- Copy-record Vec admits identified flat records with 1–8 Copy fields. Project
+  v30 adds `Vec<string>` and flat records with up to two direct owned
+  String/Bytes fields. User records need `@id`; ask
+  `help language author:copy-record-vec` or `help language author:owned-data`.
+  See [Owned Leaf Collections v1](OWNED-LEAF-COLLECTIONS-V1.md).
+
+### Network and filesystem details
+
+- TCP: `net_connect`, `net_send`, `net_recv`, `net_stream_stdout`, `net_wait`,
+  `net_close` need `permit`/`uses` of `network.connect`, `network.read`,
+  `network.write` and an injected provider. Owned `net_recv` is refused inside
+  `while` (`SPX-T270`). [Network I/O v1](BOUNDED-LANGUAGE-NETWORK-IO-V1.md).
+- `file_read` / `file_write_new` require explicit `fs.read` / `fs.write` and an
+  injected [Filesystem I/O v1](FILESYSTEM-IO-V1.md) provider. Paths are bounded
+  relative byte prefixes; writes create new files without overwriting.
+  [Filesystem I/O v2](FILESYSTEM-IO-V2.md) adds stat, sorted immediate-name listing,
+  mkdir, removal and atomic replacement. Only stat/list accept empty paths for
+  the injected root. `std.fs` composes typed Path, FileInfo and Reader/Writer.
+
+### Box profile details
+
+Boxes allocate uniquely; authored `record Box<T>` stays inline. Owned payloads,
+public generic ABI and shared ownership remain outside [Box v1](OWNED-BOUNDED-BOX-V1.md).
+
+### Scoped record traversal details
+
+`for borrow row at index in rows { body }` adds a scoped field-only row view
+for an immutable named vector of an admitted Copy record or flat owned-leaf
+record. Omit `at index` when no index is needed. Scalars copy; `row.text` and
+`row.bytes` borrow their stored String/Bytes until the iteration ends. The whole
+vector stays frozen through the loop, including Copy-only reads. A flat
+owned-leaf row may also be lent whole, only as a direct argument to an ordinary
+`borrow` parameter of its exact record whose effect-free helper reads just
+Copy scalar fields and returns a Value Copy scalar; every other use of the row stays refused. Qualification
+is pending; see `help language author:record-traversal`,
+[Scoped Record Vec Traversal v2](SCOPED-RECORD-VEC-TRAVERSAL-V2.md) and
+[Scoped Record Row Loan v1](SCOPED-RECORD-ROW-LOAN-V1.md).
+
+### Project field-view details
+
+V31 language-command-io.collection-record.v1: private typed records/admitted Vec;
+entry/command fn() -> i64. `vec_field<Row>(value.items,index,"field")`: live named
+Vec path; `index` is `usize`; literal field (SPX-T310).
+Copy returns by value; String/Bytes return nonescaping borrow str/Slice<u8>.
+End views before moving/replacing/sorting/pushing/reserving/clearing roots;
+temporary/call roots and escaped/stale views refuse.
+`str_as_bytes(vec_field<Row>(value.items,index,"text"))` fuses reads;
+`string_as_str(value.inner.label)` keeps the live record path. Avoid vec_clone_at
+for queries: it clones owners. These reads apply only in v30/v31/v32, not public ABIs;
+gate pending: [scoped reads](SCOPED-VEC-FIELD-READS-V1.md).
+
+### Record import visibility details
+
+- Import every type you name from a function signature, including nested
+  types and factory results. A private inferred signature may retain hidden
+  layout facts; it does not let you name that type, its cases or siblings in
+  annotations, patterns or constructors. Use an explicit `use type` for those.
+  With `std.pattern.make`, add
+  `use type @id("std.pattern.matcher") from std.pattern as Matcher;`
+  `SPX-G172` names the missing type identity.
 
 ## Where the rules live
 
