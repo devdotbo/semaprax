@@ -58,7 +58,7 @@ for(let run=0;run<4;run++){
     spx_bytes_drop:carrier=>{const d=decode(carrier);read(carrier);assert((d.root&0x80000000)!==0&&owners.delete(d.root&0x7fffffff),'drop');drops++},
     spx_bytes_as_slice:carrier=>{read(carrier);return carrier},
   };
-  ({instance}=await WebAssembly.instantiate(module,{env}));
+  instance=await WebAssembly.instantiate(module,{env});
   // Host authority checks themselves must not mint a replacement payload.
   assert.throws(()=>read(BigInt.asIntN(64,0x80000001n<<32n)),/owner/);
   assert.throws(()=>read((0x40010000n<<32n)|1n),/descriptor/);

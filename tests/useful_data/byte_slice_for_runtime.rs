@@ -233,6 +233,102 @@ fn byte_for_view_traversal_materializes_no_buffer_on_core_wasm() {
     std::fs::remove_dir_all(root).unwrap();
 }
 
+/// Compare literal-slot reuse with an independently authored block-result
+/// Copy boundary. Assignments and nested results retain their existing copy.
+#[test]
+fn literal_array_bindings_reuse_exact_slots_while_nonliteral_copy_boundaries_remain() {
+    let root = std::env::temp_dir().join(format!(
+        "semaprax-byte-literal-slots-{}",
+        std::process::id()
+    ));
+    std::fs::create_dir_all(&root).unwrap();
+    let header = &VIEW_ONLY[..VIEW_ONLY.find("@id(\"app.main\")").unwrap()];
+    let copies = |module: &[u8]| {
+        let mut copies = 0;
+        for payload in wasmparser::Parser::new(0).parse_all(module) {
+            if let wasmparser::Payload::CodeSectionEntry(body) = payload.unwrap() {
+                let mut operators = body.get_operators_reader().unwrap();
+                while !operators.eof() {
+                    match operators.read().unwrap() {
+                        wasmparser::Operator::MemoryCopy { .. } => copies += 1,
+                        wasmparser::Operator::MemoryGrow { .. } => {
+                            panic!("fixed array grew memory")
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        }
+        copies
+    };
+    for (ordinal, literal, expected) in [
+        (0, "[]", 0),
+        (1, "[7u8]", 7),
+        (2, "[1u8, 2u8, 3u8]", 6),
+        (3, "[1u8; 256]", 256),
+    ] {
+        for old in [false, true] {
+            let initializer = if old {
+                format!("{{let pad = 0; {literal}}}")
+            } else {
+                literal.to_owned()
+            };
+            let source = format!("{header}@id(\"app.main\") fn main()->i64 {{ let data = {initializer}; sum(array_as_slice(data)) }}");
+            let path = root.join(format!("literal-{ordinal}-{old}.spx"));
+            std::fs::write(&path, &source).unwrap();
+            let program = parse(&source, &path).unwrap();
+            let resolved = hir::resolve(&program).unwrap();
+            hir::validate(&resolved).unwrap();
+            let outcome = interpreter::interpret(
+                &path,
+                "app.main",
+                &[],
+                &interpreter::InterpreterOptions::default(),
+            )
+            .unwrap();
+            assert!(outcome.returned, "{}", outcome.envelope);
+            assert!(
+                outcome
+                    .envelope
+                    .contains(&format!("\"value\":\"{expected}\"")),
+                "{}",
+                outcome.envelope
+            );
+            let module = semaprax::wasm::emit_module(&program).unwrap();
+            assert_eq!(module, semaprax::wasm::emit_module(&program).unwrap());
+            if old && ordinal != 0 {
+                assert!(copies(&module) > 0);
+            } else {
+                assert_eq!(copies(&module), 0);
+            }
+            raw_wasm(&root, "view", &module, expected);
+        }
+    }
+    // A normally completing preceding call stays before initialization. A
+    // later failed precondition keeps the original full-engine failure owner.
+    let source = format!("{header}@id(\"app.touch\") fn touch()->i64 {{1}} @id(\"app.main\") fn main()->i64 {{ let mark = touch(); let mut data = [1u8]; data = [7u8]; mark + sum(array_as_slice(data)) }}");
+    let path = root.join("assignment.spx");
+    std::fs::write(&path, &source).unwrap();
+    let program = parse(&source, &path).unwrap();
+    let outcome = interpreter::interpret(
+        &path,
+        "app.main",
+        &[],
+        &interpreter::InterpreterOptions::default(),
+    )
+    .unwrap();
+    assert!(outcome.returned, "{}", outcome.envelope);
+    assert!(outcome.envelope.contains("\"value\":\"8\""));
+    let module = semaprax::wasm::emit_module(&program).unwrap();
+    assert_eq!(
+        copies(&module),
+        1,
+        "assignment keeps separate expression storage"
+    );
+    raw_wasm(&root, "view", &module, 8);
+    std::fs::remove_dir_all(root).unwrap();
+}
+
 fn raw_wasm(root: &Path, name: &str, module: &[u8], expected: i64) {
     let wasm = root.join(format!("{name}.wasm"));
     let script = root.join("raw-byte-for.mjs");

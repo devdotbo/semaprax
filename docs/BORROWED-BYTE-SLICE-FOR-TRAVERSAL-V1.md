@@ -213,6 +213,10 @@ They cover:
   256- and 16384-byte owned roots (no view or buffer copy). Every runtime
   allocation, including the owned root, is released by the end of evaluation.
   A static Core-Wasm check finds no copy or grow instruction.
+  Literal fixed-array let initializers reuse their exact planned expression
+  slot as the binding slot; ordinary expression emission and its canonical
+  transitions still run. Nonliteral Copy and assignment boundaries keep
+  separate storage. Empty arrays have no payload to copy.
 
 The native-Rust interop builder's own pre-resolve reservation
 (`FOR_GENERATED_EXPRESSION_COUNT`, sixteen at the Vec suffix) does not cover a

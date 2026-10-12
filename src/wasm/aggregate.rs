@@ -8133,6 +8133,15 @@ impl Emitter<'_> {
                         "{context} mixes scalar and aggregate values"
                     )));
                 };
+                // The planner aliases only a literal initializer's exact
+                // ArrayU8 slot with its binding. The literal has already run
+                // through emit_expr, including all canonical post transitions.
+                if matches!(ty, ResolvedType::ArrayU8(_))
+                    && destination.local == source.local
+                    && destination.offset == source.offset
+                {
+                    return Ok(());
+                }
                 if self.copy_iterator_value(*destination, *source, ty)? {
                     return Ok(());
                 }
