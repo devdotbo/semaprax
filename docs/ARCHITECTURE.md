@@ -124,7 +124,11 @@ frontier, so scalar leaves and empty nominal arguments need no queue.
 while `bounded_output/cfg_reservation.rs` owns its affine ledger and prepaid
 physical-refusal carrier. `loan_plan/cfg_directory.rs` owns private mutable AVL
 scratch for paid CFG identity, root, point and edge directories and endpoint
-live sets. Missing nodes are prepaid before mutation; unique rotations and
+live sets. Private candidate/planner alias, binding, ownership, parent and
+nonconsuming inventories use the same paid directories; `directory_access.rs`
+keeps borrowed receiver dispatch separate from the saved BTree policy, and
+`origin/funded.rs` retains the original projection constructor with a paid
+borrowed-reference cycle set. Missing nodes are prepaid before mutation; unique rotations and
 ordered extraction allocate no additional nodes. The public BTree planner and
 complete saved planner retain their independent storage policies.
 

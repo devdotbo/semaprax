@@ -4,6 +4,8 @@
 use super::*;
 use crate::hir::ResolvedBinding;
 pub(super) mod paid;
+#[cfg(test)]
+pub(super) mod paid_legacy;
 
 pub(crate) struct Proof<'a> {
     pub(crate) source: &'a ResolvedExpr,

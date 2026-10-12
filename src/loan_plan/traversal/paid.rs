@@ -176,7 +176,7 @@ pub(in crate::loan_plan) fn draft(
 pub(in crate::loan_plan) fn draft_bytes(
     expression: &ResolvedExpr,
     cfg: &Cfg<'_>,
-    aliases: &BTreeMap<ValueId, Place>,
+    aliases: &impl crate::loan_plan::directory_access::Aliases,
     work: &mut WorkCounter,
 ) -> Result<Option<CfgDraft>, Diagnostic> {
     let Some(region) = crate::hir::byte_traversal_region(expression)? else {
@@ -187,7 +187,7 @@ pub(in crate::loan_plan) fn draft_bytes(
         .ok_or_else(|| error("borrowed byte traversal view lacks its exact place"))?;
     Ok(Some(CfgDraft {
         site: expression.id.clone(),
-        origin: resolve_origin(aliases, place, work)?,
+        origin: aliases.resolve(place, work)?,
         origin_span: region.view.span,
         parent_root: None,
         binding: None,

@@ -3,6 +3,8 @@
 use super::*;
 use crate::bounded_output::cfg_reservation::CfgReservation;
 #[cfg(test)]
+mod planner_receivers_tests;
+#[cfg(test)]
 mod tests;
 mod tree;
 
@@ -19,6 +21,9 @@ impl<K: Ord, V> Map<K, V> {
     }
     pub(super) fn get(&self, key: &K) -> Option<&V> {
         tree::get(self.root.as_deref(), key)
+    }
+    pub(super) fn contains_key(&self, key: &K) -> bool {
+        self.get(key).is_some()
     }
     fn insert(
         &mut self,
@@ -48,6 +53,12 @@ pub(super) struct Set<K>(Map<K, ()>);
 impl<K: Ord> Set<K> {
     pub(super) fn new(payer: &CfgReservation) -> Result<Self, Diagnostic> {
         Map::new(payer).map(Self)
+    }
+    pub(super) fn contains(&self, key: &K) -> bool {
+        self.0.contains_key(key)
+    }
+    pub(super) fn is_empty(&self) -> bool {
+        self.0.len == 0
     }
     pub(super) fn into_vec(mut self, payer: &CfgReservation) -> Result<Vec<K>, Diagnostic> {
         let mut values = vector(self.0.len, payer)?;

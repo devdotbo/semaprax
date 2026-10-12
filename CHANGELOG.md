@@ -1,5 +1,7 @@
 # Changelog
 
+- Extend the private caller-paid loan planner directories through candidate ownership/alias discovery, native parent bindings, nonconsuming/terminal roots and borrowed cycle sets. Preserve complete pre-change funded BTree receivers and public fallback, full plan/work/error order, and author whole allocation/debit/Drop plus exact/short/sticky controls. Shared draft seed/live propagation and semantic diagnostic funding remain explicit residuals; source-only, consolidated qualification pending.
+
 - Author paid persistent ordered generic-template environments, sharing immutable current-HIR types and untouched checkpoint roots. Unique insertion paths prepay their leaf before mutation; shared path/rotation nodes publish only after complete payment and construction. Retain complete original borrowed-map and owned-map receiver policies and exact caller frontiers. Source-only OPT795 followup; allocation/debit tradeoffs, full application funding and executable qualification remain unassessed.
 
 - Compare replay call-commit ordinals through borrowed signature/transfer receivers, removing two discarded scratch vectors while retaining the complete fallible classification pass and diagnostic priority. Preserve the full vector oracle and author hostile ordinal, later-type-error, actual allocation/Drop and unchanged-debit exact/one-short controls. All parameter fallbacks remain; source-only, consolidated qualification pending.

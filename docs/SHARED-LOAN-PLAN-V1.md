@@ -361,6 +361,41 @@ legacy semantic diagnostic rendering, unrelated validator storage and temporary
 closure function construction retain their separate funding seams. Existing
 whole-subtree/application inequalities and original hostile owners remain intact.
 
+### Private planner discovery directories
+
+Candidate aliases, bound identities, ownership and root-ownership memo maps,
+planner aliases/bindings/ownership/native match-parent maps, nonconsuming and
+terminal-root inventories, and parent/alias cycle sets now use the same exact
+caller-paid AVL nodes. The alias projection cycle set borrows stored ValueId
+handles. Source traversal, cache-first lookup, binding-before-parent precedence,
+last-wins replacement, checked-work increments, complete projection construction
+and full canonical result order remain unchanged. The private borrowed receiver
+seam does not change public directory types or admit a new language/provider shape.
+
+Complete pre-change funded receiver, candidate, planner, native inventories,
+pattern walker and traversal bodies remain separate test-only BTree oracles;
+the public standalone planner and older saved planner remain independent too.
+Actual whole owner construction, transfer/receiving and Drop are measured against
+both policies without normalizing requests or asserting relative savings.
+Literal alias/binding/seen heap layouts and cumulative debits have exact/one-short,
+sticky refusal, cycle/missing-root/binding-priority, nested UTF-8/NUL projection,
+complete error and checked-work controls. Full renewal and nested collection/
+variant application corpora remain. The source owners, pending execution, are:
+
+- `loan_plan::funded_flat::directories_tests::complete_old_btree_receiver_constructor_drop_exact_short_and_original_applications`
+- `loan_plan::funded_flat::directories_tests::complete_old_btree_plan_and_checked_work_first_errors_keep_exact_priority`
+- `loan_plan::cfg_directory::planner_receivers_tests::alias_binding_parent_receiver_literal_actual_heap_debit_exact_short_sticky_drop`
+- `loan_plan::cfg_directory::planner_receivers_tests::alias_parent_cycle_missing_and_binding_priority_match_complete_old_receiver`
+- `loan_plan::cfg_directory::planner_receivers_tests::borrowed_alias_seen_receiver_literal_heap_exact_short_drop_and_full_old_verdict`
+- `loan_plan::cfg_directory::planner_receivers_tests::borrowed_alias_projection_cycle_and_work_diagnostics_equal_complete_old_constructor`
+
+The shared `CfgDraft` seed sets, live-node discovery/parent propagation and
+traversal predicate sets still use the existing BTree allocation envelopes.
+Semantic diagnostic construction and standalone rebuilding retain separate
+funding seams. This source tranche makes no whole OPT792 closure, allocation
+savings, application-fit or executable qualification claim; payer thresholds
+can change while ordinary full-plan/error/work results remain exact.
+
 ## Invocation-local deferred full comparison
 
 The ordinary complete HIR validator and the private byte-partition validator

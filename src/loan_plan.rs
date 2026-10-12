@@ -48,20 +48,31 @@ mod children_tests;
 mod compact_ids;
 use call_arguments::borrowed_call_arguments;
 use children::evaluation_children;
+mod directory_access;
 mod funded_flat;
+#[cfg(test)]
+mod funded_flat_legacy;
 mod guidance;
 #[cfg(test)]
 mod legacy_adjacency;
 mod lexical_exit;
 mod native_view;
+#[cfg(test)]
+mod native_view_legacy;
 mod origin;
 pub(crate) mod owned_capacity;
 mod paid_candidate;
+#[cfg(test)]
+mod paid_candidate_legacy;
 mod paid_cfg;
 mod paid_children;
 mod paid_materialize;
 mod paid_patterns;
+#[cfg(test)]
+mod paid_patterns_legacy;
 mod paid_plan;
+#[cfg(test)]
+mod paid_plan_legacy;
 mod paid_predicates;
 mod paid_substitute;
 mod provisional_result;

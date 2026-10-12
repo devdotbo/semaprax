@@ -1,4 +1,5 @@
 //! Borrowed alias discovery followed by one exact projection materialization.
+pub(super) mod funded;
 use std::collections::{BTreeMap, BTreeSet};
 use std::mem::size_of;
 

@@ -24,11 +24,11 @@ pub(super) fn inspect(
         paid_children::push_children(expression, &mut pending, Some(payer))?;
     }
 
-    let mut aliases = BTreeMap::<ValueId, Place>::new();
-    let mut bound = BTreeMap::<ExpressionId, ValueId>::new();
-    let mut ownership = BTreeMap::new();
+    let mut aliases = cfg_directory::Map::<ValueId, Place>::new(payer)?;
+    let mut bound = cfg_directory::Map::<ExpressionId, ValueId>::new(payer)?;
+    let mut ownership = cfg_directory::Map::new(payer)?;
     for parameter in &function.params {
-        storage::map_insert(
+        cfg_directory::map_insert(
             &mut ownership,
             parameter.id.clone(),
             parameter.ownership,
@@ -47,7 +47,7 @@ pub(super) fn inspect(
         {
             for statement in statements {
                 if let ResolvedStatement::Let { binding, value, .. } = statement {
-                    storage::map_insert(
+                    cfg_directory::map_insert(
                         &mut ownership,
                         binding.id.clone(),
                         binding.ownership,
@@ -55,13 +55,13 @@ pub(super) fn inspect(
                     )?;
                     if matches!(binding.ty, ResolvedType::SliceU8 | ResolvedType::Str) {
                         if let Some(place) = storage::expression_place(value, Some(payer))? {
-                            storage::map_insert(
+                            cfg_directory::map_insert(
                                 &mut aliases,
                                 binding.id.clone(),
                                 place,
                                 Some(payer),
                             )?;
-                            storage::map_insert(
+                            cfg_directory::map_insert(
                                 &mut bound,
                                 value.id.clone(),
                                 binding.id.clone(),
@@ -75,7 +75,7 @@ pub(super) fn inspect(
     }
 
     let provisional = provisional_result::root(function);
-    let mut root_ownership = BTreeMap::<ValueId, bool>::new();
+    let mut root_ownership = cfg_directory::Map::<ValueId, bool>::new(payer)?;
     for expression in expressions {
         if let Some(proof) = traversal::paid::inspect(program, expression, payer)? {
             if storage::expression_place(proof.source, Some(payer))?
@@ -190,9 +190,9 @@ pub(super) fn inspect(
 
 fn ultimate_root_is_own(
     root: &ValueId,
-    aliases: &BTreeMap<ValueId, Place>,
-    ownership: &BTreeMap<ValueId, OwnershipMode>,
-    memo: &mut BTreeMap<ValueId, bool>,
+    aliases: &cfg_directory::Map<ValueId, Place>,
+    ownership: &cfg_directory::Map<ValueId, OwnershipMode>,
+    memo: &mut cfg_directory::Map<ValueId, bool>,
     provisional: Option<&ValueId>,
     payer: &crate::bounded_output::cfg_reservation::CfgReservation,
 ) -> Result<bool, Diagnostic> {
@@ -201,12 +201,12 @@ fn ultimate_root_is_own(
     }
     let mut current = root.clone();
     let mut chain = Vec::new();
-    let mut seen = BTreeSet::new();
+    let mut seen = cfg_directory::Set::new(payer)?;
     let result = loop {
         if let Some(result) = memo.get(&current) {
             break *result;
         }
-        if !storage::set_insert(&mut seen, current.clone(), Some(payer))? {
+        if !cfg_directory::set_insert(&mut seen, current.clone(), Some(payer))? {
             return Err(error("shared-loan alias provenance contains a cycle"));
         }
         let Some(parent) = aliases.get(&current) else {
@@ -216,9 +216,9 @@ fn ultimate_root_is_own(
         storage::push(&mut chain, current, Some(payer))?;
         current = parent.root.clone();
     };
-    storage::map_insert(memo, current, result, Some(payer))?;
+    cfg_directory::map_insert(memo, current, result, Some(payer))?;
     for alias in chain {
-        storage::map_insert(memo, alias, result, Some(payer))?;
+        cfg_directory::map_insert(memo, alias, result, Some(payer))?;
     }
     Ok(result)
 }

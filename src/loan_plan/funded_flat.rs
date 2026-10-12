@@ -79,3 +79,6 @@ fn lexical_preflight(
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod directories_tests;

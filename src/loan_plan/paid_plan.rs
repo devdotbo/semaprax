@@ -8,11 +8,13 @@ pub(super) fn build(
 ) -> Result<LoanPlan, Diagnostic> {
     let payer = work.allocation;
     let cfg = build_cfg(function, work)?;
-    let mut aliases = BTreeMap::<ValueId, Place>::new();
-    let mut bound = BTreeMap::<ExpressionId, ValueId>::new();
-    let mut ownership = BTreeMap::new();
+    let mut aliases =
+        cfg_directory::Map::<ValueId, Place>::new(payer.expect("private funded entry"))?;
+    let mut bound =
+        cfg_directory::Map::<ExpressionId, ValueId>::new(payer.expect("private funded entry"))?;
+    let mut ownership = cfg_directory::Map::new(payer.expect("private funded entry"))?;
     for parameter in &function.params {
-        storage::map_insert(
+        cfg_directory::map_insert(
             &mut ownership,
             parameter.id.clone(),
             parameter.ownership,
@@ -32,7 +34,7 @@ pub(super) fn build(
         {
             for statement in statements {
                 if let ResolvedStatement::Let { binding, value, .. } = statement {
-                    storage::map_insert(
+                    cfg_directory::map_insert(
                         &mut ownership,
                         binding.id.clone(),
                         binding.ownership,
@@ -40,8 +42,13 @@ pub(super) fn build(
                     )?;
                     if matches!(binding.ty, ResolvedType::SliceU8 | ResolvedType::Str) {
                         if let Some(place) = storage::expression_place(value, payer)? {
-                            storage::map_insert(&mut aliases, binding.id.clone(), place, payer)?;
-                            storage::map_insert(
+                            cfg_directory::map_insert(
+                                &mut aliases,
+                                binding.id.clone(),
+                                place,
+                                payer,
+                            )?;
+                            cfg_directory::map_insert(
                                 &mut bound,
                                 value.id.clone(),
                                 binding.id.clone(),
@@ -104,7 +111,11 @@ pub(super) fn build(
                 &mut drafts,
                 CfgDraft {
                     site: expression.id.clone(),
-                    origin: resolve_origin(&aliases, storage::clone_place(&place, payer)?, work)?,
+                    origin: origin::funded::resolve(
+                        &aliases,
+                        storage::clone_place(&place, payer)?,
+                        work,
+                    )?,
                     origin_span: expression.span,
                     parent_root: aliases
                         .contains_key(&place.root)
@@ -130,7 +141,11 @@ pub(super) fn build(
                 &mut drafts,
                 CfgDraft {
                     site: expression.id.clone(),
-                    origin: resolve_origin(&aliases, storage::clone_place(&place, payer)?, work)?,
+                    origin: origin::funded::resolve(
+                        &aliases,
+                        storage::clone_place(&place, payer)?,
+                        work,
+                    )?,
                     origin_span: argument.span,
                     parent_root: aliases
                         .contains_key(&place.root)
@@ -157,7 +172,8 @@ pub(super) fn build(
         {
             let place = storage::expression_place(scrutinee, payer)?
                 .ok_or_else(|| error("borrow match lacks an exact place origin"))?;
-            let origin = resolve_origin(&aliases, storage::clone_place(&place, payer)?, work)?;
+            let origin =
+                origin::funded::resolve(&aliases, storage::clone_place(&place, payer)?, work)?;
             for (index, arm) in arms.iter().enumerate() {
                 let entry = arm.guard.as_deref().unwrap_or(&arm.value);
                 storage::push(
@@ -211,10 +227,10 @@ pub(super) fn build(
         return Err(error("function exceeds 256 shared loans"));
     }
 
-    let mut binding_loans = BTreeMap::new();
+    let mut binding_loans = cfg_directory::Map::new(payer.expect("private funded entry"))?;
     for (index, draft) in drafts.iter().enumerate() {
         if let Some(binding) = &draft.binding {
-            storage::map_insert(
+            cfg_directory::map_insert(
                 &mut binding_loans,
                 binding.clone(),
                 LoanId(index as u16),
@@ -234,7 +250,7 @@ pub(super) fn build(
             )?;
         }
     }
-    let match_parents = native_view::match_parents_paid(&cfg.expressions, &drafts, payer)?;
+    let match_parents = native_view::match_parents_funded(&cfg.expressions, &drafts, payer)?;
     let mut parents = storage::vector(drafts.len(), payer)?;
     for draft in &drafts {
         let parent = if let Some(root) = &draft.parent_root {
@@ -300,7 +316,7 @@ pub(super) fn build(
     // needing a nonexistent successor. Only admit this formerly rejected
     // terminal shape; already admitted v1 plans retain identical bytes.
     if termination_edges.iter().any(Vec::is_empty) {
-        let mut terminal_roots = BTreeSet::new();
+        let mut terminal_roots = cfg_directory::Set::new(payer.expect("private funded entry"))?;
         for root in function
             .requires
             .iter()
@@ -308,7 +324,7 @@ pub(super) fn build(
             .chain(function.ensures.iter())
         {
             charge(work)?;
-            storage::set_insert(
+            cfg_directory::set_insert(
                 &mut terminal_roots,
                 cfg.node(root, LoanPointPhase::After)?,
                 payer,
@@ -351,18 +367,18 @@ pub(super) fn build(
 fn reject_cfg_overlaps_paid(
     program: &ResolvedProgram,
     cfg: &Cfg<'_>,
-    aliases: &BTreeMap<ValueId, Place>,
+    aliases: &cfg_directory::Map<ValueId, Place>,
     drafts: &[CfgDraft],
     live: &[BTreeSet<u16>],
     work: &mut WorkCounter,
 ) -> Result<(), Diagnostic> {
     let payer = work.allocation;
-    let mut nonconsuming = BTreeSet::new();
+    let mut nonconsuming = cfg_directory::Set::new(payer.expect("private funded entry"))?;
     for expression in &cfg.expressions {
         for (_, argument) in
             call_arguments::borrowed_call_arguments_paid(program, expression, payer)?
         {
-            storage::set_insert(&mut nonconsuming, argument.id.clone(), payer)?;
+            cfg_directory::set_insert(&mut nonconsuming, argument.id.clone(), payer)?;
         }
         match &expression.kind {
             ResolvedExprKind::Match {
@@ -370,10 +386,10 @@ fn reject_cfg_overlaps_paid(
                 scrutinee,
                 ..
             } => {
-                storage::set_insert(&mut nonconsuming, scrutinee.id.clone(), payer)?;
+                cfg_directory::set_insert(&mut nonconsuming, scrutinee.id.clone(), payer)?;
             }
             ResolvedExprKind::ByteRange { source, .. } => {
-                storage::set_insert(&mut nonconsuming, source.id.clone(), payer)?;
+                cfg_directory::set_insert(&mut nonconsuming, source.id.clone(), payer)?;
             }
             _ => {}
         }
@@ -383,7 +399,8 @@ fn reject_cfg_overlaps_paid(
         if let ResolvedExprKind::Place(place) = &expression.kind {
             if expression.ownership == OwnershipMode::Own && !nonconsuming.contains(&expression.id)
             {
-                let place = resolve_origin(aliases, storage::clone_place(place, payer)?, work)?;
+                let place =
+                    origin::funded::resolve(aliases, storage::clone_place(place, payer)?, work)?;
                 reject_overlap_at(
                     cfg.node(expression, LoanPointPhase::Before)?,
                     &place,
@@ -412,7 +429,7 @@ fn reject_cfg_overlaps_paid(
                             payer,
                         )?;
                     }
-                    let place = resolve_origin(
+                    let place = origin::funded::resolve(
                         aliases,
                         Place {
                             root: binding.id.clone(),
@@ -434,14 +451,14 @@ fn reject_cfg_overlaps_paid(
     Ok(())
 }
 
-fn resolve_parent_paid(
-    aliases: &BTreeMap<ValueId, Place>,
-    bindings: &BTreeMap<ValueId, LoanId>,
+pub(super) fn resolve_parent_paid(
+    aliases: &cfg_directory::Map<ValueId, Place>,
+    bindings: &cfg_directory::Map<ValueId, LoanId>,
     mut root: ValueId,
     payer: Option<&crate::bounded_output::cfg_reservation::CfgReservation>,
 ) -> Result<Option<LoanId>, Diagnostic> {
-    let mut seen = BTreeSet::new();
-    while storage::set_insert(&mut seen, root.clone(), payer)? {
+    let mut seen = cfg_directory::Set::new(payer.expect("private funded entry"))?;
+    while cfg_directory::set_insert(&mut seen, root.clone(), payer)? {
         if let Some(id) = bindings.get(&root) {
             return Ok(Some(*id));
         }

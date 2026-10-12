@@ -91,7 +91,7 @@ pub(super) fn match_parents(
 pub(super) fn inventory_aliases_paid(
     program: &ResolvedProgram,
     expression: &ResolvedExpr,
-    aliases: &mut BTreeMap<ValueId, Place>,
+    aliases: &mut impl directory_access::Receiver<ValueId, Place>,
     payer: Option<&crate::bounded_output::cfg_reservation::CfgReservation>,
 ) -> Result<(), Diagnostic> {
     let ResolvedExprKind::Match {
@@ -129,27 +129,27 @@ pub(super) fn inventory_aliases_paid(
                 },
                 payer,
             )?;
-            storage::map_insert(aliases, field.binding.id.clone(), place, payer)?;
+            aliases.insert_paid(field.binding.id.clone(), place, payer)?;
         }
     }
     Ok(())
 }
 
-pub(super) fn match_parents_paid(
+pub(super) fn match_parents_funded(
     expressions: &[&ResolvedExpr],
     drafts: &[CfgDraft],
     payer: Option<&crate::bounded_output::cfg_reservation::CfgReservation>,
-) -> Result<BTreeMap<ValueId, LoanId>, Diagnostic> {
-    let mut sites = BTreeMap::new();
+) -> Result<cfg_directory::Map<ValueId, LoanId>, Diagnostic> {
+    let mut sites = cfg_directory::Map::new(payer.ok_or_else(storage::marker)?)?;
     for (index, draft) in drafts.iter().enumerate() {
-        storage::map_insert(
+        cfg_directory::map_insert(
             &mut sites,
             (draft.site.clone(), draft.cause.clone()),
             LoanId(index as u16),
             payer,
         )?;
     }
-    let mut parents = BTreeMap::new();
+    let mut parents = cfg_directory::Map::new(payer.ok_or_else(storage::marker)?)?;
     for expression in expressions {
         let ResolvedExprKind::Match {
             mode: crate::hir::ResolvedMatchMode::Borrow,
@@ -173,7 +173,7 @@ pub(super) fn match_parents_paid(
             };
             for field in fields {
                 if field.binding.ownership == OwnershipMode::Borrow {
-                    storage::map_insert(&mut parents, field.binding.id.clone(), *id, payer)?;
+                    cfg_directory::map_insert(&mut parents, field.binding.id.clone(), *id, payer)?;
                 }
             }
         }
