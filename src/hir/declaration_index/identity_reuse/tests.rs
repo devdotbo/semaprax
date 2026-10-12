@@ -127,3 +127,6 @@ fn inserted_identity_reuse_removes_literal_reconstruction_payloads_through_index
         assert_eq!(observed.allocated, observed.freed);
     }
 }
+
+#[path = "paid.rs"]
+mod paid;

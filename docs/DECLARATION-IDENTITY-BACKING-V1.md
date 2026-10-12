@@ -58,3 +58,23 @@ static/shared clone requests, nested type and conditional-state clone backing,
 and real selected setup through exact/one-short refusal, zero retry and Drop.
 These source controls await execution; they establish no application fit or
 whole-validator/engine funding claim.
+
+## Initial index explicit reservation seam
+
+Initial index construction has a private callback route that requests only
+actual shared identity backing bytes from the caller. It constructs the exact
+borrowed source spelling internally; the callback cannot supply an identity or
+verification authority. All ten original construction positions, metadata
+mutations, duplicate/type/layout errors, and semantic diagnostic ordering remain
+in the shared implementation. Identity refusal returns the exact caller error
+inline and drops the partial index; it constructs no Diagnostic or report Vec.
+The ordinary infallible wrapper remains explicitly unfunded.
+
+The two owning controls compare the complete saved index and literal seventeen
+initial identity requests, preserve empty/NUL/Unicode/duplicate behavior, and
+observe full constructor/partial-index Drop. Their selected physical ledger pays
+only identity backing; other index map/name/type storage and original owned
+semantic diagnostics are not asserted paid by that ledger. Resolver activation
+remains pending an actual caller-owned reservation and outward fixed report
+boundary across verification and both invariant passes. No callback presence
+changes source admission or makes an unsafe mutated index a verified subject.
