@@ -75,7 +75,7 @@ impl IdentityReservation {
     }
 
     #[cfg(test)]
-    fn pointers(&self) -> (*const Diagnostic, *const u8) {
+    pub(crate) fn pointers(&self) -> (*const Diagnostic, *const u8) {
         (self.report.as_ptr(), self.text.as_ptr())
     }
 }

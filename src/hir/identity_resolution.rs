@@ -74,8 +74,16 @@ pub(crate) fn resolve_with_report(
     program: &Program,
     private: Option<source_verify::private_names::PrivateNames<'_>>,
 ) -> Result<(ResolvedProgram, FunctionResolutionWork), CallerFailure> {
+    resolve_with_report_observation(program, private, |_| {})
+}
+fn resolve_with_report_observation(
+    program: &Program,
+    private: Option<source_verify::private_names::PrivateNames<'_>>,
+    observe: impl FnOnce(&crate::bounded_output::identity_reservation::IdentityReservation),
+) -> Result<(ResolvedProgram, FunctionResolutionWork), CallerFailure> {
     let mut owner = crate::bounded_output::identity_reservation::IdentityReservation::acquire()
         .map_err(CallerFailure::Setup)?;
+    observe(&owner);
     match resolve(program, private, |bytes| owner.reserve(bytes)) {
         Ok(value) => Ok(value),
         Err(Failure::Identity(_)) => Err(CallerFailure::Identity(owner.publish())),
