@@ -185,7 +185,7 @@ fn diagnostics_key(
             (
                 diagnostic.code,
                 diagnostic.severity,
-                diagnostic.message.as_str(),
+                diagnostic.message.as_ref(),
                 diagnostic.path.as_deref(),
                 diagnostic.span,
                 diagnostic.help.as_deref(),

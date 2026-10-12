@@ -57,7 +57,7 @@ fn join(diagnostics: &[Diagnostic]) -> &str {
     diagnostics
         .iter()
         .find(|d| d.code == "SPX-T211")
-        .map(|d| d.message.as_str())
+        .map(|d| d.message.as_ref())
         .unwrap_or_else(|| panic!("branch join mismatch: {diagnostics:?}"))
 }
 

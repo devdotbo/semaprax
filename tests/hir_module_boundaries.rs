@@ -213,6 +213,10 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/hir/validation/variant_or.rs"),
         include_str!("../src/hir/validation/variant_guard_state.rs"),
         include_str!("../src/hir/validation/iterative_while_admission_tests.rs"),
+        include_str!("../src/hir/validation/scope_checkpoint/refusal_tests.rs"),
+        include_str!("../src/hir/validation/generic_template/values/refusal_tests.rs"),
+        include_str!("../src/hir/validation/generic_template/values/charge/refusal_tests.rs"),
+        include_str!("../src/hir/validation/iterator_loops/field_scope/refusal_tests.rs"),
     );
     for forbidden in [
         "struct Resolver",

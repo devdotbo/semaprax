@@ -450,7 +450,7 @@ pub(super) fn diagnostics_owned_capacity(diagnostics: &Vec<Diagnostic>) -> usize
         + diagnostics
             .iter()
             .map(|diagnostic| {
-                diagnostic.message.capacity()
+                diagnostic.message_owned_capacity()
                     + diagnostic.path.as_ref().map_or(0, String::capacity)
                     + diagnostic.help.as_ref().map_or(0, String::capacity)
             })

@@ -390,7 +390,7 @@ fn annotate(diagnostics: Vec<Diagnostic>, context: &'static str) -> Vec<Diagnost
     diagnostics
         .into_iter()
         .map(|diagnostic| Diagnostic {
-            message: format!("{context}: {}", diagnostic.message),
+            message: std::borrow::Cow::Owned(format!("{context}: {}", diagnostic.message)),
             ..diagnostic
         })
         .collect()

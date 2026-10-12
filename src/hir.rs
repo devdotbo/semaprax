@@ -727,10 +727,16 @@ pub fn analyze(program: &Program) -> Analysis {
     if ordinary_identity::can_acquire() {
         match ordinary_identity::try_resolve_verified_compatible(program) {
             Ok(Ok((resolved, _))) => {
-                return Analysis { diagnostics, resolved: Some(resolved) };
+                return Analysis {
+                    diagnostics,
+                    resolved: Some(resolved),
+                };
             }
             Ok(Err(diagnostics)) => {
-                return Analysis { diagnostics, resolved: None };
+                return Analysis {
+                    diagnostics,
+                    resolved: None,
+                };
             }
             Err(_) => {} // Legacy setup-only diagnostic compatibility below.
         }
@@ -751,6 +757,10 @@ pub fn analyze(program: &Program) -> Analysis {
 
 fn hir_error(message: impl Into<String>) -> Diagnostic {
     Diagnostic::io("SPX-H006", message)
+}
+
+fn hir_error_static(message: &'static str) -> Diagnostic {
+    Diagnostic::io_static("SPX-H006", message)
 }
 
 struct FunctionReuse<'a> {

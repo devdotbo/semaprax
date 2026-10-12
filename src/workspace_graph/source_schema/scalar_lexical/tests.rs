@@ -118,7 +118,7 @@ fn assert_public(report: &[Diagnostic]) {
         report[0].message,
         "retained static UTF-8 source-site authority disagrees"
     );
-    assert_eq!(report[0].message.capacity(), report[0].message.len());
+    assert_eq!(report[0].message_owned_capacity(), report[0].message.len());
 }
 fn assert_mismatch(refusal: &SelectedReplayRefusal, case: &str) {
     assert!(refusal.is_paid(), "{case}");

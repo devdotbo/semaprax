@@ -1,16 +1,14 @@
 mod direct_apply;
 mod operations;
 mod source_index;
-
+use crate::ast::{Program, Type, TypeDeclaration, TypeDeclarationKind};
+use crate::diagnostic::Diagnostic;
+use crate::{graph, hir, lexer, parse, verify};
 use std::collections::{BTreeMap, BTreeSet};
 use std::ffi::OsString;
 use std::fs::{File, Metadata, OpenOptions, Permissions};
 use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
-
-use crate::ast::{Program, Type, TypeDeclaration, TypeDeclarationKind};
-use crate::diagnostic::Diagnostic;
-use crate::{graph, hir, lexer, parse, verify};
 
 use self::direct_apply::apply_with_commit_hook;
 use self::operations::{PatchSchema, PatchSelector, ReplaceCallTypeArgument, SemanticPatch};
@@ -1147,7 +1145,9 @@ fn preflight_workspace_owned_with_formatter_limit(
             if diagnostic.code == "SPX-G140" {
                 diagnostic.code = "SPX-G151";
                 diagnostic.message =
-                    "workspace candidate exceeds the total candidate-source byte limit".to_owned();
+                    "workspace candidate exceeds the total candidate-source byte limit"
+                        .to_owned()
+                        .into();
             }
         }
         diagnostics

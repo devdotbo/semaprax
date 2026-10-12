@@ -95,7 +95,7 @@ pub fn benchmark_manifest(path: &Path) -> Result<String, Diagnostic> {
                         case.id,
                         errors
                             .first()
-                            .map_or("context failed", |error| error.message.as_str())
+                            .map_or("context failed", |error| error.message.as_ref())
                     ))
                 })?
                 .is_none()
@@ -113,7 +113,7 @@ pub fn benchmark_manifest(path: &Path) -> Result<String, Diagnostic> {
                     case.id,
                     errors
                         .first()
-                        .map_or("context failed", |error| error.message.as_str())
+                        .map_or("context failed", |error| error.message.as_ref())
                 ))
             })?
             .ok_or_else(|| {

@@ -31,7 +31,7 @@ fn assert_paid(refusal: &PaidRefusal, backing: (*const Diagnostic, *const u8)) {
     let first = &report[0];
     assert_eq!(first.code, FORM.code());
     assert_eq!(first.message, FORM.message());
-    assert_eq!(first.message.capacity(), FORM.message().len());
+    assert_eq!(first.message_owned_capacity(), FORM.message().len());
     assert_eq!(first.message.as_ptr(), backing.1, "original prepaid text");
     assert!(first.path.is_none() && first.span.is_none() && first.help.is_none());
 }
@@ -104,7 +104,7 @@ fn paid_report_zero_and_one_short_return_the_exact_rejected_ledger_without_alloc
         // Only the named compatibility boundary allocates its unfunded literal.
         let (legacy, allocations) = measure(|| unpaid.into_unfunded());
         assert_eq!(
-            (legacy[0].code, legacy[0].message.as_str()),
+            (legacy[0].code, legacy[0].message.as_ref()),
             (FORM.code(), FORM.message())
         );
         assert_eq!(allocations.allocations, 2);
@@ -226,7 +226,7 @@ fn paid_report_budget_refusal_moves_the_prepaid_text_once_without_allocating() {
     let receipt = preparation.receipt().expect("first paid receipt");
     assert_eq!(receipt.code, "SPX-H006");
     assert_eq!(
-        (receipt.message.as_ptr(), receipt.message.capacity()),
+        (receipt.message.as_ptr(), receipt.message_owned_capacity()),
         (text, capacity)
     );
     assert!(receipt.message.starts_with("cleanup plan for function `"));
@@ -292,7 +292,7 @@ fn paid_report_session_refusal_transfers_carrier_and_retains_first_receipt_throu
                 Err(refused) => refused,
             };
         assert_eq!(first.code, "SPX-H006");
-        let first_text = (first.message.as_ptr(), first.message.capacity());
+        let first_text = (first.message.as_ptr(), first.message_owned_capacity());
         let charged = preparation.budget.physical.as_deref().unwrap().charged();
         // Observation cannot nest: the pointer identity below proves a move.
         let mut refusal = preparation.refuse_session(first);
@@ -302,7 +302,7 @@ fn paid_report_session_refusal_transfers_carrier_and_retains_first_receipt_throu
         // Diagnostic is the retained first receipt, not the report text.
         let receipt = refusal.receipt().expect("retained Session receipt");
         assert_eq!(
-            (receipt.message.as_ptr(), receipt.message.capacity()),
+            (receipt.message.as_ptr(), receipt.message_owned_capacity()),
             first_text,
             "the Session Diagnostic moved; nothing was cloned or formatted"
         );
@@ -385,7 +385,7 @@ fn paid_report_remap_publishes_only_its_prepaid_form() {
     assert_eq!(unpaid.reason(), UnpaidReason::FormMismatch);
     let legacy = unpaid.into_unfunded();
     assert_eq!(
-        (legacy[0].code, legacy[0].message.as_str()),
+        (legacy[0].code, legacy[0].message.as_ref()),
         (other.code(), other.message()),
         "only the named unfunded boundary allocates the requested literal"
     );
@@ -438,7 +438,7 @@ fn paid_stage_moves_keep_each_report_with_its_original_ledger_without_pairing_ar
         assert_eq!(report_b.as_ptr(), backing_b.0);
         assert_eq!(report_b[0].message.as_ptr(), backing_b.1);
         assert_eq!(
-            (report_b[0].code, report_b[0].message.as_str()),
+            (report_b[0].code, report_b[0].message.as_ref()),
             (other.code(), other.message())
         );
         assert!(std::ptr::eq(&*refused_a.ledger_mut().unwrap(), ledger_a));

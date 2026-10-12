@@ -167,7 +167,7 @@ fn assert_refusal(
             assert_eq!(report.len(), 1);
             assert_eq!(report.capacity(), 1);
             assert_eq!(report[0].message.len(), 48);
-            assert_eq!(report[0].message.capacity(), 48);
+            assert_eq!(report[0].message_owned_capacity(), 48);
             assert_eq!(report[0].code, "SPX-H006");
             // Sticky: zero and fitting retries refuse, and a fresh module
             // attempt stops at setup with the first receipt and no allocation.

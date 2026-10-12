@@ -1215,6 +1215,6 @@ pub(super) fn termination_from_diagnostic(diagnostic: Diagnostic) -> Termination
     Termination {
         status,
         code: Some(diagnostic.code),
-        message: Some(diagnostic.message),
+        message: Some(diagnostic.message.into_owned()),
     }
 }

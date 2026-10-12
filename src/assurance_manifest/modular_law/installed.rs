@@ -22,14 +22,15 @@ pub(super) fn discharge(
     let domain_script = smt::render_domain_witness_script(&encoding, tool.proof_timeout_ms());
     let model = tool
         .smt_domain_model(&domain_script)
-        .map_err(|error| error.message)?;
+        .map_err(|error| error.message.into_owned())?;
     smt::validate_domain_witness(function, &model)
         .map_err(|reason| format!("domain witness failed checked replay: {reason}"))?;
     let rendered = smt::render_postcondition_script(&encoding, index, tool.proof_timeout_ms());
     let script = rendered
         .strip_suffix("(get-model)\n")
         .ok_or_else(|| "unexpected SMT translator response grammar".to_owned())?;
-    tool.confirm_smt(script).map_err(|error| error.message)?;
+    tool.confirm_smt(script)
+        .map_err(|error| error.message.into_owned())?;
     Ok(DischargeOutcome::Proved {
         script_digest: smt::script_digest(&rendered),
         solver_identity: "z3",

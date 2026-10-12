@@ -650,7 +650,7 @@ pub use scalar_wit::{
 pub(crate) fn validate_owned_utf8_closure_function(
     function: &crate::hir::ResolvedFunction,
 ) -> Result<(), String> {
-    public_api::validate_closure_function(function).map_err(|error| error.message)?;
+    public_api::validate_closure_function(function).map_err(|error| error.message.into_owned())?;
     public_utf8_api::validate_closure_shape(function)
 }
 pub(crate) use rename::{PreparedProjectRename, ProjectRenameDerivation};

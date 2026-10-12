@@ -4430,3 +4430,11 @@ main walkers. Production removes owned root, intermediate-field and nested-recor
 labels while retaining all field/type/fact/ownership checks, scope mutations and
 original traversal bounds. Full source-audit joins and unexecuted parity/drop
 controls live under the borrowed continuation-path contract.
+
+The Rust facade v3 diagnostic representation owns dynamic messages with
+`Cow::Owned` and privately borrows fixed compiler refusal literals. Public
+constructors retain `Into<String>` semantics and owned capacity; explicit
+`message_owned_capacity()` retains physical accounting in out-of-crate
+receivers. Diagnostic encoding is independent of facade major negotiation.
+[Embedding API v3](EMBEDDING-API-V3.md) owns this source-incompatible migration;
+report vectors and dynamic output storage retain their existing owners.

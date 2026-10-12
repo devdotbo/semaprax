@@ -17,7 +17,7 @@ pub(super) fn carrier<T>() -> usize {
 }
 pub(in crate::hir::validation) fn failure(requested: usize, message: &'static str) -> Diagnostic {
     crate::bounded_output::refuse_active_required(requested);
-    hir_error(message)
+    hir_error_static(message)
 }
 pub(super) fn reserve(bytes: Option<usize>) -> Result<(), Diagnostic> {
     let Some(bytes) = bytes else {
@@ -29,7 +29,7 @@ pub(super) fn reserve(bytes: Option<usize>) -> Result<(), Diagnostic> {
     if crate::bounded_output::reserve_active_required(bytes) {
         Ok(())
     } else {
-        Err(hir_error(
+        Err(hir_error_static(
             "ownership scope checkpoint exceeds the active validation budget",
         ))
     }

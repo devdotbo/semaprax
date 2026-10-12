@@ -359,7 +359,7 @@ pub(crate) fn observe_interpreter(
                     .find(|item| item.severity.is_error())
                     .or_else(|| diagnostics.first());
                 let (code, detail) = diagnostic
-                    .map(|item| (item.code.to_owned(), item.message.clone()))
+                    .map(|item| (item.code.to_owned(), item.message.clone().into_owned()))
                     .unwrap_or_else(|| {
                         (
                             "SPX-UNKNOWN".to_owned(),

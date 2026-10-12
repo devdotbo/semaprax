@@ -414,7 +414,7 @@ fn settle(
                         carried,
                     },
                 },
-                Err(error) => ControlResumableStep::GuardError(error.message),
+                Err(error) => ControlResumableStep::GuardError(error.message.into_owned()),
             }
         }
         Err(Flow::Failure(status)) => {

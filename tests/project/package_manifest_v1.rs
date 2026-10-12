@@ -340,7 +340,7 @@ fn independent_manifest_structure_errors_arrive_together_with_scaffold_help() {
     assert_eq!(codes(&errors), ["SPX-J100"; 5]);
     let messages = errors
         .iter()
-        .map(|diagnostic| diagnostic.message.as_str())
+        .map(|diagnostic| diagnostic.message.as_ref())
         .collect::<Vec<_>>();
     assert!(messages
         .iter()

@@ -215,7 +215,7 @@ pub(super) fn replay_events(events: &[Event], terminal: &Terminal) -> Result<(),
     Ok(())
 }
 pub(super) fn diagnostic_terminal(diagnostic: &Diagnostic) -> Terminal {
-    let (code, message) = (diagnostic.code, diagnostic.message.as_str());
+    let (code, message) = (diagnostic.code, diagnostic.message.as_ref());
     let status = match code {
         "SPX-I222" => EconomicRunStatus::JournalFailed,
         "SPX-I224" => EconomicRunStatus::ApprovalFailed,

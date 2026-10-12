@@ -247,3 +247,7 @@ impl HirValidator<'_> {
 #[cfg(test)]
 #[path = "scope_checkpoint/tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "scope_checkpoint/refusal_tests.rs"]
+mod refusal_tests;

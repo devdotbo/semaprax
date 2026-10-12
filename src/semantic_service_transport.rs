@@ -487,7 +487,7 @@ pub fn serve_semantic_workspace_stdio<R: BufRead, W: Write>(
             diagnostics
                 .first()
                 .map_or("service open failed", |diagnostic| {
-                    diagnostic.message.as_str()
+                    diagnostic.message.as_ref()
                 }),
         )
     })?;

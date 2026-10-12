@@ -78,7 +78,7 @@ fn parse(sources: &[&str]) -> Vec<Program> {
 fn codes(errors: &[Diagnostic]) -> Vec<(&str, &str)> {
     errors
         .iter()
-        .map(|e| (e.code, e.message.as_str()))
+        .map(|e| (e.code, e.message.as_ref()))
         .collect()
 }
 /// Runs only the borrowed proof for the current member caller, so each

@@ -272,8 +272,7 @@ impl StickyDiagnosticCarrier {
         let mut errors = Vec::with_capacity(1);
         errors.push(diagnostic);
         let retained = errors[0]
-            .message
-            .capacity()
+            .message_owned_capacity()
             .checked_add(
                 errors
                     .capacity()

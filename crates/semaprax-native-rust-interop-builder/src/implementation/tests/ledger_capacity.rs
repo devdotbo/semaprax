@@ -479,6 +479,7 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
             include_str!("../../../../../src/hir/validation/borrowed_str.rs"),
             include_str!("../../../../../src/hir/validation/generic_template.rs"),
             generic_values_source_inventory!(),
+            diagnostic_source_inventory!(),
             include_str!("../../../../../src/hir/validation/host_command.rs"),
             include_str!("../../../../../src/hir/validation/owned_buffer.rs"),
             include_str!("../../../../../src/hir/validation/owned_result_try.rs"),

@@ -49,7 +49,7 @@ fn response_diagnostics(mut diagnostics: Vec<Diagnostic>) -> Vec<Diagnostic> {
                 || message.to_owned(),
                 |prefix| format!("{prefix}and at most two admitted Vec fields"),
             );
-            diagnostic.message = format!("nested response {message}");
+            diagnostic.message = std::borrow::Cow::Owned(format!("nested response {message}"));
         }
     }
     diagnostics

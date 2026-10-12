@@ -1,5 +1,8 @@
 # Embedding API v2
 
+Historical major-2 contract. Current source migration is specified in
+[Embedding API v3](EMBEDDING-API-V3.md); qualification remains separate.
+
 Status: documented bounded Rust compiler-embedding facade, with local
 executable evidence. The completion matrix owns broader product status.
 

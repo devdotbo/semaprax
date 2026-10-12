@@ -154,7 +154,7 @@ fn payload_slice<'a>(binding: &'a str) -> Result<&'a str, Diagnostic> {
 fn project_error(errors: Vec<Diagnostic>, context: &str) -> Diagnostic {
     let detail = errors.first().map_or_else(
         || "unknown Project replay failure".to_owned(),
-        |error| error.message.clone(),
+        |error| error.message.clone().into_owned(),
     );
     drift_error(format!("{context}: {detail}"))
 }

@@ -423,9 +423,9 @@ fn panic_diagnostics(operation: &str) -> Vec<Diagnostic> {
     vec![Diagnostic {
         code: PANIC_NORMALIZED_DIAGNOSTIC_CODE,
         severity: Severity::Error,
-        message: format!(
+        message: std::borrow::Cow::Owned(format!(
             "the embedding boundary caught a panic while {operation}; the operation failed closed"
-        ),
+        )),
         path: None,
         span: None,
         help: Some("this names an embedding-boundary defect; reopen the session and report it against the compiler".to_owned()),
@@ -436,7 +436,7 @@ fn poisoned_diagnostics() -> Vec<Diagnostic> {
     vec![Diagnostic {
         code: PANIC_NORMALIZED_DIAGNOSTIC_CODE,
         severity: Severity::Error,
-        message: "the Project session was poisoned after an embedding-boundary panic and cannot be reused".to_owned(),
+        message: std::borrow::Cow::Owned("the Project session was poisoned after an embedding-boundary panic and cannot be reused".to_owned()),
         path: None,
         span: None,
         help: Some("drop this handle and open a new Project session from explicit source bytes".to_owned()),

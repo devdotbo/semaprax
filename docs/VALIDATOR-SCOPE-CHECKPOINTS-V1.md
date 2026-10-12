@@ -62,3 +62,14 @@ and contracts, nested depth/late errors, and zero-allocation replacement after
 sticky refusal. Their module and both production storage children are joined
 into all existing validator text audits. No tests, Clippy or application owners
 have been executed for this source batch.
+
+## Fixed refusal message backing
+
+The source-authored [Rust facade v3 migration](EMBEDDING-API-V3.md) preserves
+ordinary/generic charge equations, first refusals and complete old receivers.
+Fixed budget/overflow messages and owned iterator-frontier storage refusals
+borrow static diagnostic text, including at zero entry allowance. Exact and
+one-short whole receiving/Drop owners, arithmetic/sticky controls and original
+rich scope bindings are retained in the new `refusal_tests` children. Dynamic
+error strings, output buffers and report Vec backing remain separate funding
+obligations. No current execution or OPT781/OPT795 closure is claimed.

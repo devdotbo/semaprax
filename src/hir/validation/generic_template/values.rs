@@ -1,6 +1,7 @@
 //! Paid persistent symbolic binding environment. Types borrow only the exact
 //! current immutable template; checkpoints grant no validation authority.
 use super::*;
+#[cfg(test)]
 use std::borrow::Cow;
 mod charge;
 mod tree;
@@ -111,3 +112,6 @@ mod tests;
 
 #[cfg(test)]
 mod checkpoint_tests;
+
+#[cfg(test)]
+mod refusal_tests;

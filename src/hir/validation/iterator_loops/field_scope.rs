@@ -24,7 +24,7 @@ impl<'a> Pending<'a> {
             current: None,
             metered,
             error: (!admitted)
-                .then(|| hir_error("owned iterator field-scope carrier exceeds its bound")),
+                .then(|| hir_error_static("owned iterator field-scope carrier exceeds its bound")),
         };
         if metered {
             result.push(expression);
@@ -65,7 +65,7 @@ impl<'a> Pending<'a> {
             if capacity.is_none_or(|count| count > 1_048_576)
                 || bytes.is_none_or(|bytes| !crate::bounded_output::reserve_active_required(bytes))
             {
-                self.error = Some(hir_error(
+                self.error = Some(hir_error_static(
                     "owned iterator field-scope frontier exceeds its bound",
                 ));
                 return;
@@ -77,7 +77,7 @@ impl<'a> Pending<'a> {
                 .is_err()
                 || self.entries.capacity() != capacity
             {
-                self.error = Some(hir_error(
+                self.error = Some(hir_error_static(
                     "owned iterator field-scope frontier allocation refused",
                 ));
                 return;
@@ -324,3 +324,6 @@ mod tests {
         assert!(refused);
     }
 }
+
+#[cfg(test)]
+mod refusal_tests;

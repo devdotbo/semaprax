@@ -35,7 +35,7 @@ fn assert_public(report: &[Diagnostic]) {
         report[0].message,
         "retained static UTF-8 source-site authority disagrees"
     );
-    assert_eq!(report[0].message.capacity(), report[0].message.len());
+    assert_eq!(report[0].message_owned_capacity(), report[0].message.len());
     assert!(report[0].path.is_none() && report[0].span.is_none() && report[0].help.is_none());
 }
 fn lexical_anchor(build: &WorkspaceGraphBuild) -> &hir::ResolvedFunction {
@@ -270,7 +270,7 @@ fn actual_caller_one_short_budget_refusal_retains_the_prepaid_receipt() {
     let receipt = refusal.receipt().expect("prepaid budget receipt");
     assert_eq!(receipt.code, "SPX-H006");
     assert_eq!(
-        receipt.message.capacity(),
+        receipt.message_owned_capacity(),
         lexical_anchor(&build).id.as_str().len() + 512
     );
     assert!(receipt.message.starts_with("cleanup plan for function `"));
@@ -306,10 +306,10 @@ fn reporting_views_publish_the_callers_prepaid_form_and_keep_success_unchanged()
     };
     assert_eq!(report.len(), 1);
     assert_eq!(
-        (report[0].code, report[0].message.as_str()),
+        (report[0].code, report[0].message.as_ref()),
         (FORM.code(), FORM.message())
     );
-    assert_eq!(report[0].message.capacity(), FORM.message().len());
+    assert_eq!(report[0].message_owned_capacity(), FORM.message().len());
     // The typed route: the paid carrier for exactly FORM moves out, while a
     // different requested form fails closed to the unpaid boundary.
     let Err(refusal) = forged().into_change_view_paid(FORM) else {

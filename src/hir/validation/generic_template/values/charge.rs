@@ -11,12 +11,14 @@ struct Carrier<T> {
 fn reserve(bytes: Option<usize>) -> Result<(), Diagnostic> {
     let Some(bytes) = bytes else {
         crate::bounded_output::refuse_active_required(usize::MAX);
-        return Err(hir_error("generic value checkpoint layout overflowed"));
+        return Err(hir_error_static(
+            "generic value checkpoint layout overflowed",
+        ));
     };
     if crate::bounded_output::reserve_active_required(bytes) {
         Ok(())
     } else {
-        Err(hir_error(
+        Err(hir_error_static(
             "generic value checkpoint exceeds the active validation budget",
         ))
     }
@@ -37,3 +39,6 @@ pub(super) fn node() -> Result<(), Diagnostic> {
             .checked_add(std::mem::size_of::<tree::Node<'_>>()),
     )
 }
+
+#[cfg(test)]
+mod refusal_tests;

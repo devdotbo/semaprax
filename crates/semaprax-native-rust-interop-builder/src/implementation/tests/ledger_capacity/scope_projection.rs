@@ -9,6 +9,7 @@ pub(super) const TEXT: &str = concat!(
     include_str!("../../../../../../src/hir/validation/scope_checkpoint/storage.rs"),
     include_str!("../../../../../../src/hir/validation/scope_checkpoint/paths.rs"),
     include_str!("../../../../../../src/hir/validation/scope_checkpoint/tests.rs"),
+    include_str!("../../../../../../src/hir/validation/scope_checkpoint/refusal_tests.rs"),
     include_str!("../../../../../../src/hir/validation/record_pattern.rs"),
     include_str!("../../../../../../src/hir/validation/owned_iterative_oracle.rs"),
     include_str!("../../../../../../src/hir/validation/owned_iterative_oracle/dispatch_0.rs"),

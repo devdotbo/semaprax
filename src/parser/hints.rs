@@ -110,7 +110,9 @@ impl Parser {
                 .and_then(|index| self.tokens.get(index..self.cursor))
                 .is_some_and(|tokens| tokens.iter().all(|token| token.kind == TokenKind::Dot))
         {
-            diagnostic.message = "range `for` loops are not admitted; use `while`".to_owned();
+            diagnostic.message = std::borrow::Cow::Owned(
+                "range `for` loops are not admitted; use `while`".to_owned(),
+            );
             diagnostic.with_help(LOOP_HELP)
         } else {
             diagnostic

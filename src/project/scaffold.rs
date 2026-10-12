@@ -283,7 +283,7 @@ fn agent_skill_workflow_guide() -> Result<String, Vec<Diagnostic>> {
                 .first()
                 .map_or("unknown diagnostic", |diagnostic| diagnostic
                     .message
-                    .as_str())
+                    .as_ref())
         ))
     })?;
     let value: Value = serde_json::from_str(&bundle)
@@ -846,7 +846,7 @@ fn validate_rendered_project(
                 diagnostics
                     .first()
                     .map_or("unknown diagnostic", |diagnostic| {
-                        diagnostic.message.as_str()
+                        diagnostic.message.as_ref()
                     })
             )));
         }

@@ -763,10 +763,10 @@ fn layout_record(
 
         let field_ty = crate::hir::substitute_type(&declaration.ty, record, arguments)?;
         let value = layout_type(program, target, &field_ty, visiting).map_err(|mut error| {
-            error.message = format!(
+            error.message = std::borrow::Cow::Owned(format!(
                 "record `{record}` field `{}`: {}",
                 declaration.id, error.message
-            );
+            ));
             error.span = Some(declaration.span);
             error
         })?;

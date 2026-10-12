@@ -345,7 +345,7 @@ fn raw_sha(source: &str) -> String {
 
 fn diagnostic(error: Vec<Diagnostic>) -> (&'static str, String) {
     assert_eq!(error.len(), 1);
-    (error[0].code, error[0].message.clone())
+    (error[0].code, error[0].message.clone().into_owned())
 }
 
 fn parsed_profile() -> Profile {

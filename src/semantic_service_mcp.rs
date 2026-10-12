@@ -201,7 +201,7 @@ pub fn serve_semantic_workspace_mcp<R: BufRead, W: Write>(
             diagnostics
                 .first()
                 .map_or("service MCP open failed", |diagnostic| {
-                    diagnostic.message.as_str()
+                    diagnostic.message.as_ref()
                 }),
         )
     })?;

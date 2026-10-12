@@ -29,6 +29,8 @@ macro_rules! generic_values_source_inventory {
         concat!(
             include_str!("../../../../../../src/hir/validation/generic_template/values.rs"),
             include_str!("../../../../../../src/hir/validation/generic_template/values/charge.rs"),
+            include_str!("../../../../../../src/hir/validation/generic_template/values/charge/refusal_tests.rs"),
+            include_str!("../../../../../../src/hir/validation/generic_template/values/refusal_tests.rs"),
             include_str!("../../../../../../src/hir/validation/generic_template/values/tree.rs"),
             include_str!("../../../../../../src/hir/validation/generic_template/values/tests.rs"),
             include_str!(
@@ -61,6 +63,30 @@ macro_rules! loan_cfg_source_inventory {
             include_str!("../../../../../../src/loan_plan/cfg_directory/tree.rs"),
             include_str!("../../../../../../src/loan_plan/cfg_directory/tests.rs"),
             include_str!("../../../../../../src/loan_plan/adjacency.rs"),
+        )
+    };
+}
+
+// Full static diagnostic and ordinary scope/frontier owners, including old tests.
+macro_rules! diagnostic_source_inventory {
+    () => {
+        concat!(
+            include_str!("../../../../../../src/diagnostic.rs"),
+            include_str!("../../../../../../src/diagnostic/refusal_tests.rs"),
+            include_str!("../../../../../../src/hir/validation/scope_checkpoint.rs"),
+            include_str!("../../../../../../src/hir/validation/scope_checkpoint/charge.rs"),
+            include_str!("../../../../../../src/hir/validation/scope_checkpoint/tree.rs"),
+            include_str!("../../../../../../src/hir/validation/scope_checkpoint/views.rs"),
+            include_str!("../../../../../../src/hir/validation/scope_checkpoint/merge.rs"),
+            include_str!("../../../../../../src/hir/validation/scope_checkpoint/marks.rs"),
+            include_str!("../../../../../../src/hir/validation/scope_checkpoint/storage.rs"),
+            include_str!("../../../../../../src/hir/validation/scope_checkpoint/paths.rs"),
+            include_str!("../../../../../../src/hir/validation/scope_checkpoint/tests.rs"),
+            include_str!("../../../../../../src/hir/validation/scope_checkpoint/refusal_tests.rs"),
+            include_str!("../../../../../../src/hir/validation/iterator_loops/field_scope.rs"),
+            include_str!(
+                "../../../../../../src/hir/validation/iterator_loops/field_scope/refusal_tests.rs"
+            ),
         )
     };
 }
