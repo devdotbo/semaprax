@@ -163,6 +163,7 @@ impl<'a> PlanBuilder<'a> {
             string_condition_reads: crate::string_ops::conditions::function_reads(function),
             program,
             function,
+            allocation: None,
             byte_helpers,
             ordinary_index: None,
             slots,

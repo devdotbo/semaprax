@@ -8,6 +8,7 @@
 mod allocation;
 pub use allocation::{AllocationCase, AllocationOperation, ALLOCATION_DOMAIN_V1};
 mod build;
+pub(crate) mod checked_allocation;
 mod deferred_commit;
 mod execute;
 mod execution_boundary;
@@ -604,7 +605,7 @@ impl CleanupPlan {
                         normalized_cases.capacity() * std::mem::size_of::<StatusCase>(),
                     )?;
                 }
-                StatusProducer::ContractFalse { .. } => {}
+                StatusProducer::ContractFalse { .. } | StatusProducer::CheckedAllocation { .. } => {}
             }
         }
         for block in &self.blocks {

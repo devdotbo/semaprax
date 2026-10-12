@@ -32,6 +32,7 @@ impl PlanBuilder<'_> {
             || super::super::deferred_commit::is_infallible_box_operation(callee)
             || callee.as_str() == crate::stdin_stream_ops::EOF_ID
         {
+            let (block, mut state) = self.split_allocation(expression, block, state, active_region)?;
             let destination = self.expression_slot(expression, active_region)?;
             if let Some(destination) = destination.clone() {
                 self.initialize_owned_result(block, expression, destination, &mut state)?;
@@ -52,8 +53,11 @@ impl PlanBuilder<'_> {
                 callee: callee.clone(),
             },
         )?;
-        let (success, mut success_state) =
+        let (success, success_state) =
             self.split_status(block, state, active_region, source)?;
+        let (success, mut success_state) = self.split_allocation(
+            expression, success, success_state, active_region,
+        )?;
         if defer_commit {
             for commit in &commits {
                 self.consume_place(&commit.source, &mut success_state, &expression.id)?;

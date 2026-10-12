@@ -25,6 +25,7 @@ use super::{
     CLEANUP_PLAN_SCHEMA_V4,
 };
 
+pub(in crate::cleanup_plan) mod checked_allocation;
 mod lexical_temporary;
 mod owned_frame_finalizers;
 pub(crate) use owned_frame_finalizers::{
@@ -331,7 +332,7 @@ fn builder_nested_capacity(builder: &PlanBuilder<'_>) -> usize {
                     normalized_cases, ..
                 } => normalized_cases.capacity() * std::mem::size_of::<StatusCase>(),
                 StatusProducer::PropagatedCall { callee } => callee.as_str().len(),
-                StatusProducer::ContractFalse { .. } => 0,
+                StatusProducer::ContractFalse { .. } | StatusProducer::CheckedAllocation { .. } => 0,
             }
             + status_source_id_owned_capacity(&source.id)
     });
@@ -610,6 +611,7 @@ struct LeafMetadata {
 struct PlanBuilder<'a> {
     program: &'a ResolvedProgram,
     function: &'a ResolvedFunction,
+    allocation: Option<super::checked_allocation::Function<'a>>,
     byte_helpers: helper_index::HelperSites<'a>,
     ordinary_index: Option<&'a crate::loop_calls::byte_writer::ModuleIndex<'a>>,
     slots: Vec<CleanupSlot>,
@@ -1228,6 +1230,7 @@ impl<'a> PlanBuilder<'a> {
                     normalized_cases, ..
                 } => normalized_cases.len(),
                 StatusProducer::ContractFalse { .. } => 1,
+                StatusProducer::CheckedAllocation { .. } => 3,
             };
             control.status_work = control
                 .status_work
@@ -1408,26 +1411,6 @@ impl<'a> PlanBuilder<'a> {
         )?;
         self.emit_failure(failure, state.clone(), region, source)?;
         Ok((success, state))
-    }
-
-    fn checked_source(
-        &mut self,
-        expression: &ResolvedExpr,
-        operation: CheckedOperation,
-        normalized_cases: Vec<StatusCase>,
-    ) -> Result<StatusSourceId, Diagnostic> {
-        let source = StatusSourceId {
-            expression: expression.id.clone(),
-            lane: StatusLane::OperationFailure,
-        };
-        self.add_status_source(
-            source.clone(),
-            StatusProducer::CheckedArithmetic {
-                operation,
-                normalized_cases,
-            },
-        )?;
-        Ok(source)
     }
 
     fn new_region(&mut self, parent: CleanupRegionId) -> Result<CleanupRegionId, Diagnostic> {

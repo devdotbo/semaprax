@@ -91,9 +91,10 @@ impl PlanBuilder<'_> {
         &mut self,
         expression: &ResolvedExpr,
         block: BlockId,
-        mut state: FlowState,
+        state: FlowState,
     ) -> Result<EvalResult, Diagnostic> {
         let region = self.blocks[block.0 as usize].region;
+        let (block, mut state) = self.split_allocation(expression, block, state, region)?;
         let destination = self
             .expression_slot(expression, region)?
             .ok_or_else(|| plan_error("owned string clone has no temporary slot"))?;

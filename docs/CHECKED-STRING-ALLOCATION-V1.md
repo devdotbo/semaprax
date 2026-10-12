@@ -285,3 +285,32 @@ records the exact generated-writer route and selected allocator-lifetime,
 release-boundary and failure-proof obligations. Its production-compiled
 read-only constructor preflight is not production selection or allocation/drop
 authority. Existing native emission and String OOM semantics remain unchanged.
+
+## Private source preparation and candidate projection
+
+A source-only successor defines the closed `AllocationFailure` lane and
+`CheckedAllocation` provenance with inline `[PayloadRefused, SizeOverflow]`
+cases. It reserves cleanup-plan v20 for this explicit projection; ordinary
+source continues to select its previous canonical schema. These enum values
+are data, and neither a supplied v20 plan nor allocator presence selects a
+runtime profile.
+
+`cleanup_plan::checked_allocation::prepare` borrows the original immutable AST,
+resolves that source, and repeats full independent HIR validation including the
+ordinary canonical plan and final loan checks. The first private boundary is
+a parameter-free, effect-free Copy-scalar command; internal helpers may retain
+their ordinary owning results. Escaped String/Bytes entry results are refused
+until their allocator-release lease is integrated. Every current function is
+lent from this exact held program; equal-content foreign functions do not
+acquire the same projection authority.
+
+Candidate construction keeps ordinary attachments unchanged. Literal and
+implicit String-clone allocation exits precede temporary initialization.
+Consuming calls preserve their existing group commitment, while deferred
+collection calls retain the staged caller group until allocation succeeds.
+This candidate constructor is not independent replay or executor permission.
+Lexical status predeclaration, complete nested materialization coverage,
+independent failure-contour replay, all three checked allocator receivers,
+Project/application preparation, and escaped SDK leases remain pending. The
+new source controls are authored and unexecuted; the original application and
+legacy fatal-boundary controls remain unchanged.
