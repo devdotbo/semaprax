@@ -520,6 +520,7 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
             include_str!("../../src/workspace_graph/expected_projection/record_traversal.rs")
         ),
         include_str!("../../src/workspace_graph/expected_projection/sort_keys.rs"),
+        include_str!("../../src/workspace_graph/expected_projection/field_unique.rs"),
         include_str!("../../src/workspace_graph/expected_projection/string_slots.rs")
     );
     let projection_local_identity =
