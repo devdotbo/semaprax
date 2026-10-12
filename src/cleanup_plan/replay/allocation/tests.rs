@@ -96,6 +96,14 @@ fn active_builder_zero_exact_short_refusal_is_sticky_and_moves_paid_text() {
         let (((), metrics), refused, used, receipt) = with_limit_usage_refusal(limit, || {
             measure(|| {
                 let mut budget = ReplayBudget::new();
+                // Save the actual paid backing before its first failure moves
+                // it into the diagnostic. This adds no second reservation.
+                let paid_text = if limit >= text_bytes {
+                    budget.prepare_builder(function).unwrap();
+                    Some(budget.refusal_text.as_ref().unwrap().as_ptr())
+                } else {
+                    None
+                };
                 let result = budget.reserve_array::<u64>(function, 3, "ordinary literal array");
                 if limit == full {
                     result.unwrap();
@@ -106,6 +114,7 @@ fn active_builder_zero_exact_short_refusal_is_sticky_and_moves_paid_text() {
                     assert_eq!(error.code, "SPX-H006");
                     if limit >= text_bytes {
                         assert!(!error.message.is_empty());
+                        assert_eq!(Some(error.message.as_ptr()), paid_text);
                     } else {
                         assert!(error.message.is_empty());
                     }
