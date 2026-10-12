@@ -1,4 +1,4 @@
-//! Primitive identity audit has no heap worklist; dynamic types keep the old walk.
+//! Identity leaves need no heap worklist; compound types keep the old walk.
 use super::*;
 use crate::test_allocation_observer::measure;
 mod old;
@@ -98,4 +98,67 @@ fn primitive_identity_audit_removes_only_the_old_worklist_and_keeps_dynamic_firs
         .unwrap();
     main.return_type = nominal("unknown.current", Vec::new());
     assert!(crate::hir::validate(&program).is_err());
+}
+
+#[test]
+fn nominal_and_parameter_identity_leaves_keep_exact_nul_refusals_without_query_backing() {
+    let nominal = |id: &str| ResolvedType::Nominal {
+        declaration: DeclarationId::new(id),
+        arguments: Vec::new(),
+    };
+    let parameter = |id: &str| ResolvedType::TypeParameter {
+        owner: DeclarationId::new(id),
+        index: 3,
+    };
+    let accepted = [
+        nominal("unknown.current"),
+        nominal("葉"),
+        parameter("owner"),
+        parameter(""),
+    ];
+    for ty in &accepted {
+        assert_eq!(audit_resolved_type(ty), old::audit_resolved_type(ty));
+    }
+    let ((), current) = measure(|| {
+        for _ in 0..1000 {
+            for ty in &accepted {
+                audit_resolved_type(ty).unwrap();
+            }
+        }
+    });
+    let ((), saved) = measure(|| {
+        for _ in 0..1000 {
+            for ty in &accepted {
+                old::audit_resolved_type(ty).unwrap();
+            }
+        }
+    });
+    assert!(!current.invalid && !saved.invalid);
+    assert_eq!(
+        (current.allocations, current.allocated, current.live),
+        (0, 0, 0)
+    );
+    assert_eq!(saved.allocations, 1000 * accepted.len());
+    assert_eq!(
+        saved.allocated,
+        1000 * accepted.len() * std::mem::size_of::<&ResolvedType>()
+    );
+    assert_eq!(saved.allocated, saved.freed);
+    assert_eq!(saved.live, 0);
+    for (ty, expected) in [
+        (
+            nominal("bad\0nominal"),
+            "resolved nominal type identity contains NUL",
+        ),
+        (
+            parameter("bad\0parameter"),
+            "resolved type-parameter owner identity contains NUL",
+        ),
+    ] {
+        let actual = audit_resolved_type(&ty);
+        assert_eq!(actual, old::audit_resolved_type(&ty));
+        let error = actual.unwrap_err();
+        assert_eq!(error.code, "SPX-H006");
+        assert_eq!(error.message, expected);
+    }
 }

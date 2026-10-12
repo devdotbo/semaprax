@@ -190,9 +190,16 @@ fn audit_resolved_type(root: &ResolvedType) -> Result<(), Diagnostic> {
         | ResolvedType::Str
         | ResolvedType::SliceU8
         | ResolvedType::StringMap => return Ok(()),
-        ResolvedType::Function { .. }
-        | ResolvedType::Nominal { .. }
-        | ResolvedType::TypeParameter { .. } => {}
+        ResolvedType::Nominal {
+            declaration,
+            arguments,
+        } if arguments.is_empty() => {
+            return reject_nul_identity("resolved nominal type", declaration.as_str());
+        }
+        ResolvedType::TypeParameter { owner, .. } => {
+            return reject_nul_identity("resolved type-parameter owner", owner.as_str());
+        }
+        ResolvedType::Function { .. } | ResolvedType::Nominal { .. } => {}
     }
     let mut pending = vec![root];
     while let Some(ty) = pending.pop() {
