@@ -33,7 +33,11 @@ fn try_resolve_verified_observed(
     program: &Program,
     observe: impl FnOnce(&IdentityReservation),
 ) -> Result<Result<(ResolvedProgram, FunctionResolutionWork), Vec<Diagnostic>>, Refused> {
-    resolve_with_acquisition(program, false, IdentityReservation::acquire, observe)
+    // The strict private constructor owns setup refusal before building any
+    // inventory. The public compatibility receiver below keeps the complete
+    // original inventory-first order and legacy setup-refusal channel.
+    let owner = IdentityReservation::acquire()?;
+    resolve_with_acquisition(program, false, || Ok(owner), observe)
 }
 
 fn resolve_with_acquisition(
@@ -102,7 +106,8 @@ fn legacy_pass<'a>(
         function_work: FunctionResolutionWork::default(),
         fused_producer: None,
         partition_profile: false,
-    }.resolve()
+    }
+    .resolve()
 }
 
 enum PassFailure {
@@ -115,12 +120,14 @@ fn pass<'a>(
     prelude: &[crate::ast::TypeDeclaration],
     owner: &mut IdentityReservation,
 ) -> Result<(ResolvedProgram, FunctionResolutionWork), PassFailure> {
-    let declarations = DeclarationIndex::from_verified_with_identity_reservation(
-        program, prelude, |bytes| owner.reserve(bytes),
-    ).map_err(|error| match error {
-        IdentityIndexError::Semantic(error) => PassFailure::Semantic(error),
-        IdentityIndexError::Identity(_) => PassFailure::Identity,
-    })?;
+    let declarations =
+        DeclarationIndex::from_verified_with_identity_reservation(program, prelude, |bytes| {
+            owner.reserve(bytes)
+        })
+        .map_err(|error| match error {
+            IdentityIndexError::Semantic(error) => PassFailure::Semantic(error),
+            IdentityIndexError::Identity(_) => PassFailure::Identity,
+        })?;
     Resolver {
         program,
         byte_helpers: helpers,
@@ -129,7 +136,9 @@ fn pass<'a>(
         function_work: FunctionResolutionWork::default(),
         fused_producer: None,
         partition_profile: false,
-    }.resolve().map_err(PassFailure::Semantic)
+    }
+    .resolve()
+    .map_err(PassFailure::Semantic)
 }
 
 #[cfg(test)]

@@ -143,7 +143,11 @@ another outward Vec. Successful construction also removes the former temporary
 String copy before each shared backing allocation. Both original source warning
 behavior and semantic error replacement remain unchanged.
 
-The private acquisition failure is inline. Public zero/short-setup calls retain
+The strict private verified constructor acquires its owner before constructing
+inventory, so initial refusal is inline and allocates no inventory backing.
+The public compatibility receiver keeps its original inventory-first order;
+this private constructor control is not evidence of zero-allocation public
+setup refusal. Public zero/short-setup calls retain
 their original legacy diagnostic route; allocator/capacity setup refusal also
 uses the legacy receiver on the already-refused ledger, lending the same held
 invariant inventory and helper index rather than constructing them again. This
