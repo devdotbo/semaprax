@@ -69,7 +69,7 @@ pub(super) enum Frame<'a> {
     },
     CallArgument {
         expression: &'a ResolvedExpr,
-        params: Vec<crate::hir::ResolvedParam>,
+        params: super::resolved_call::Params<'a>,
         args: &'a [ResolvedExpr],
         index: usize,
         states: Vec<CallSkeletonState>,

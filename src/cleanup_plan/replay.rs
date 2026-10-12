@@ -2502,7 +2502,7 @@ fn validate_blocks_and_edges(
                             "call has more than one atomic commit",
                         ));
                     }
-                    let params = resolved_call_params(
+                    let params = resolved_call::resolved_call_param_view(
                         program,
                         function,
                         find_resolved_expression(function, call).ok_or_else(|| {
@@ -2527,7 +2527,7 @@ fn validate_blocks_and_edges(
                     let mut expected_parameters = Vec::new();
                     for (index, parameter) in params.iter().enumerate() {
                         if parameter.ownership == OwnershipMode::Own
-                            && type_needs_drop(program, function, &parameter.ty)?
+                            && type_needs_drop(program, function, parameter.ty)?
                         {
                             expected_parameters.push(
                                 u32::try_from(index).map_err(|_| {
@@ -3672,7 +3672,7 @@ fn expression_skeleton_run<'hir>(
                                 frames,
                                 Frame::CallArgument {
                                     expression,
-                                    params,
+                                    params: params.into(),
                                     args,
                                     index: 0,
                                     states
@@ -3705,7 +3705,7 @@ fn expression_skeleton_run<'hir>(
                                 frames,
                                 Frame::CallArgument {
                                     expression,
-                                    params,
+                                    params: params.into(),
                                     args,
                                     index: 0,
                                     states
@@ -3735,7 +3735,7 @@ fn expression_skeleton_run<'hir>(
                                 frames,
                                 Frame::CallArgument {
                                     expression,
-                                    params,
+                                    params: params.into(),
                                     args,
                                     index: 0,
                                     states
@@ -3765,8 +3765,8 @@ fn expression_skeleton_run<'hir>(
                         let held_params: Option<
                             Vec<crate::hir::ResolvedParam>,
                         > = None;
-                        let params = if let Some(params) = held_params {
-                            params
+                        let params: resolved_call::Params<'_> = if let Some(params) = held_params {
+                            params.into()
                         } else {
                             let string_intrinsic = instance
                                 .is_none()
@@ -3803,40 +3803,58 @@ fn expression_skeleton_run<'hir>(
                                     callee,
                                     None,
                                     type_arguments,
-                                )?
+                                )?.into()
                             } else if let Some(op) = string_intrinsic {
-                                typed_storage::static_params(
-                                    op.id(),
-                                    op.param_types(),
-                                    op.param_names(),
-                                    |i, _| op.param_ownership(i),
-                                    work,
-                                )?
+                                if work.budget.selected() || !resolved_call::ordinary_borrows_enabled() {
+                                    typed_storage::static_params(
+                                        op.id(),
+                                        op.param_types(),
+                                        op.param_names(),
+                                        |i, _| op.param_ownership(i),
+                                        work,
+                                    )
+                                    .map(resolved_call::Params::Owned)?
+                                } else {
+                                    work.budget.reserve_bytes(function, 0, "intrinsic parameter slots")?;
+                                    resolved_call::Params::String(op)
+                                }
                             } else if let Some(op) = str_intrinsic {
-                                typed_storage::static_params(
-                                    op.id(),
-                                    op.param_types(),
-                                    op.param_names(),
-                                    |_, ty| {
-                                        if *ty == ResolvedType::Str {
-                                            OwnershipMode::Borrow
-                                        } else {
-                                            OwnershipMode::Value
-                                        }
-                                    },
-                                    work,
-                                )?
+                                if work.budget.selected() || !resolved_call::ordinary_borrows_enabled() {
+                                    typed_storage::static_params(
+                                        op.id(),
+                                        op.param_types(),
+                                        op.param_names(),
+                                        |_, ty| {
+                                            if *ty == ResolvedType::Str {
+                                                OwnershipMode::Borrow
+                                            } else {
+                                                OwnershipMode::Value
+                                            }
+                                        },
+                                        work,
+                                    )
+                                    .map(resolved_call::Params::Owned)?
+                                } else {
+                                    work.budget.reserve_bytes(function, 0, "intrinsic parameter slots")?;
+                                    resolved_call::Params::Str(op)
+                                }
                             } else if let Some(op) = byte_intrinsic {
-                                typed_storage::static_params(
-                                    op.id(),
-                                    op.param_types(),
-                                    op.param_names(),
-                                    |i, _| op.param_ownership(i),
-                                    work,
-                                )?
+                                if work.budget.selected() || !resolved_call::ordinary_borrows_enabled() {
+                                    typed_storage::static_params(
+                                        op.id(),
+                                        op.param_types(),
+                                        op.param_names(),
+                                        |i, _| op.param_ownership(i),
+                                        work,
+                                    )
+                                    .map(resolved_call::Params::Owned)?
+                                } else {
+                                    work.budget.reserve_bytes(function, 0, "intrinsic parameter slots")?;
+                                    resolved_call::Params::Byte(op)
+                                }
                             } else if let Some(op) = host_io_intrinsic {
                                 typed_storage::unsupported_provider(work)?;
-                                crate::host_io_ops::resolved_params(op)
+                                crate::host_io_ops::resolved_params(op).into()
                             } else if instance.is_none()
                                 && (crate::iterator_ops::by_id(callee.as_str()).is_some()
                                     || crate::list_ops::by_id(callee.as_str()).is_some()
@@ -3850,10 +3868,10 @@ fn expression_skeleton_run<'hir>(
                                     callee,
                                     None,
                                     type_arguments,
-                                )?
+                                )?.into()
                             } else if let Some(op) = vec_intrinsic {
-                                if work.budget.selected() {
-                                    typed_storage::vector_params(program, expression, work)?
+                                if work.budget.selected() || !resolved_call::ordinary_borrows_enabled() {
+                                    typed_storage::vector_params(program, expression, work)?.into()
                                 } else {
                                     let [element] = type_arguments.as_slice() else {
                                         return Err(replay_error(
@@ -3865,7 +3883,7 @@ fn expression_skeleton_run<'hir>(
                                         program.declarations(),
                                         op,
                                         element,
-                                    )
+                                    ).into()
                                 }
                             } else if let Some(op) = box_intrinsic {
                                 typed_storage::unsupported_provider(work)?;
@@ -3875,7 +3893,7 @@ fn expression_skeleton_run<'hir>(
                                         "bounded Box skeleton call has incorrect type arity",
                                     ));
                                 };
-                                crate::box_ops::resolved_params(op, element)
+                                crate::box_ops::resolved_params(op, element).into()
                             } else {
                                 let target = program
                                     .resolve_call_target(callee, instance.as_ref())
@@ -3885,7 +3903,12 @@ fn expression_skeleton_run<'hir>(
                                             format!("unknown skeleton callee `{callee}`"),
                                         )
                                     })?;
-                                work.clone_payload(&target.params, "callee parameter clone")?
+                                if work.budget.selected() || !resolved_call::ordinary_borrows_enabled() {
+                                    work.clone_payload(&target.params, "callee parameter clone")?.into()
+                                } else {
+                                    work.budget.reserve_bytes(function, 0, "callee parameter clone")?;
+                                    resolved_call::Params::Borrowed(&target.params)
+                                }
                             }
                         };
                         work.charge(1, "call skeleton root state")?;
@@ -3895,7 +3918,7 @@ fn expression_skeleton_run<'hir>(
                                 frames,
                                 Frame::CallArgument {
                                     expression,
-                                    params,
+                                    params: params.into(),
                                     args,
                                     index: 0,
                                     states,
@@ -3932,7 +3955,7 @@ fn expression_skeleton_run<'hir>(
                                 frames,
                                 Frame::CallArgument {
                                     expression,
-                                    params,
+                                    params: params.into(),
                                     args: &call.args,
                                     index: 0,
                                     states,
@@ -3978,7 +4001,7 @@ fn expression_skeleton_run<'hir>(
                                 frames,
                                 Frame::CallArgument {
                                     expression,
-                                    params,
+                                    params: params.into(),
                                     args: &call.args,
                                     index: 0,
                                     states,
@@ -4282,7 +4305,7 @@ fn expression_skeleton_run<'hir>(
                     let lend = super::native_rust::lends_string_place(
                         expression,
                         &args[next],
-                        params[next].ownership,
+                        params.get(next).expect("next call parameter").ownership,
                     );
                     push_frame!(
                         frames,
@@ -4316,18 +4339,24 @@ fn expression_skeleton_run<'hir>(
                     replay_error(function, "byte range skeleton arity is inconsistent")
                 })?;
                 let op = crate::byte_ops::ByteOp::Range;
-                let params = typed_storage::static_params(
-                    op.id(),
-                    op.param_types(),
-                    op.param_names(),
-                    |i, _| op.param_ownership(i),
-                    work,
-                )?;
+                let params = if work.budget.selected() || !resolved_call::ordinary_borrows_enabled() {
+                    typed_storage::static_params(
+                        op.id(),
+                        op.param_types(),
+                        op.param_names(),
+                        |i, _| op.param_ownership(i),
+                        work,
+                    )
+                    .map(resolved_call::Params::Owned)?
+                } else {
+                    work.budget.reserve_bytes(function, 0, "intrinsic parameter slots")?;
+                    resolved_call::Params::Byte(op)
+                };
                 let parameter = params.get(index).ok_or_else(|| {
                     replay_error(function, "byte range parameter arity is inconsistent")
                 })?;
                 let states = sequence_call_argument(
-                    program, function, expression, parameter, argument, index, states, &suffixes,
+                    program, function, expression, parameter.into(), argument, index, states, &suffixes,
                     work,
                 )?;
                 let next = index + 1;
@@ -6340,7 +6369,7 @@ fn sequence_call_argument(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
-    parameter: &crate::hir::ResolvedParam,
+    parameter: resolved_call::Param<'_>,
     argument: &ResolvedExpr,
     index: usize,
     states: Vec<CallSkeletonState>,
@@ -6383,7 +6412,7 @@ fn sequence_call_argument(
             if !path.failed
                 && !path.residual
                 && parameter.ownership == OwnershipMode::Own
-                && type_needs_drop(program, function, &parameter.ty)?
+                && type_needs_drop(program, function, parameter.ty)?
             {
                 let parameter_index = u32::try_from(index)
                     .map_err(|_| replay_error(function, "too many skeleton call arguments"))?;
