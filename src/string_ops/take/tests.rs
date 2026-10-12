@@ -124,6 +124,8 @@ fn named_only_source_refuses_contracts_computed_borrowed_and_live_loan_transfers
         ("module bad; @id(\"helper\") fn helper(text:string)->i64 requires string_len(string_take(text))>0 {0} @id(\"main\") fn main()->i64 {0}", "SPX-O105"),
         ("module bad; @id(\"helper\") fn helper(text:borrow string)->string {string_take(text)} @id(\"main\") fn main()->i64 {0}", "SPX-O102"),
         ("module bad; @id(\"sink\") fn sink(a:string,b:string)->i64 {string_len(a)+string_len(b)} @id(\"main\") fn main()->i64 {let text=\"x\";sink(string_take(text),string_take(text))}", "SPX-O101"),
+        ("module bad; @id(\"read\") fn read(text:borrow string)->i64 {string_len(text)} @id(\"sink\") fn sink(text:string,n:i64)->i64 {string_len(text)+n} @id(\"main\") fn main()->i64 {let text=\"x\";sink(string_take(text),read(text))}", "SPX-O101"),
+        ("module bad; @id(\"sink\") fn sink(view:borrow str,text:string)->i64 {str_len_bytes(view)+string_len(text)} @id(\"main\") fn main()->i64 {let text=\"x\";let view=string_as_str(text);sink(view,string_take(text))}", "SPX-T265"),
     ] {
         let errors=crate::check(source,"string-take-negative.spx").unwrap_err();
         assert!(errors.iter().any(|error|error.code==code),"{source}: {errors:?}");
