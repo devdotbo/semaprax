@@ -3,9 +3,10 @@
 //! attached schema or certificate is an admission shortcut.
 use super::*;
 mod paid;
+use paid::PaidReport;
+pub(crate) use paid::{Acquired, PaidRefusal, Refused, ReportForm, Unpaid};
 #[cfg(test)]
 pub(crate) use paid::{Cause, UnpaidReason};
-pub(crate) use paid::{PaidRefusal, PaidReport, Refused, ReportForm, Unpaid};
 
 #[cfg(test)]
 pub(crate) fn validate_retained_lexical_with_limit(
@@ -35,6 +36,8 @@ pub(crate) struct Preparation {
     /// First paid refusal Diagnostic, moved in once (the budget's prepaid
     /// text, or a Session's own refusal) and retained with the failed ledger.
     receipt: Option<Diagnostic>,
+    // None is confined to legacy test constructors; production acquires both owners.
+    report: Option<PaidReport>,
 }
 // The owned-Diagnostic constructor and retry methods below are test-only
 // legacy APIs: a failed retry allocates `replay_error`. Production uses the
@@ -52,7 +55,7 @@ impl Preparation {
             replay_error(function, reason.message())
         })
     }
-    pub(crate) fn try_new(
+    fn try_new(
         function: &ResolvedFunction,
         physical: PhysicalReservation,
     ) -> Result<Self, physical_budget::SetupFailure> {
@@ -60,6 +63,7 @@ impl Preparation {
             budget: ReplayBudget::try_from_reservation(function, physical)?,
             failed: false,
             receipt: None,
+            report: None,
         })
     }
     #[cfg(test)]
@@ -174,6 +178,7 @@ pub(crate) struct Session<'a> {
     )]
     anchor: &'a ResolvedFunction,
     failed: bool,
+    report: Option<PaidReport>,
 }
 // `new`, `from_preparation`, `from_budget` and `finish` are test-only legacy
 // owners whose refusals allocate an owned Diagnostic. The production route
@@ -231,6 +236,7 @@ impl<'a> Session<'a> {
             Ok(indexed) => Ok(Self {
                 indexed,
                 budget: preparation.budget,
+                report: preparation.report,
                 anchor,
                 failed: false,
             }),
@@ -254,6 +260,7 @@ impl<'a> Session<'a> {
                 budget,
                 failed: false,
                 receipt: None,
+                report: None,
             },
         )
     }

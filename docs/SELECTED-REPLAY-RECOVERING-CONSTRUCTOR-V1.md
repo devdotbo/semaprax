@@ -65,25 +65,46 @@ follows from it.
 
 `selected_entry/paid.rs` owns the crate-private protocol types. `ReportForm`
 is one fixed outward code and literal message chosen by the actual caller.
-`PaidReport` is an affine carrier: `try_acquire` debits exactly one
+`Acquired` is the affine carrier-and-ledger stage: `try_acquire` debits exactly one
 `Diagnostic` slot and the form's literal bytes on the caller's selected ledger
 before allocating a capacity-one Vec and an exact-capacity String. No function
 id or formatted detail is published, so no further text is needed. A refused
-debit or a capacity mismatch returns the same rejected ledger and a Copy
-`SetupReason` (`ReportCarrier`, `ReportText` or `ReportCapacity`) and
-allocates nothing.
+debit returns the same rejected ledger and a Copy `SetupReason`
+(`ReportCarrier` or `ReportText`) without allocating. `ReportCapacity` is a
+post-allocation invariant refusal: the requested layouts were paid, both
+buffers are dropped, and their debit stays spent. It is not an allocation-free
+initial refusal and does not authorize an unexpected allocator capacity.
 
 `PaidRefusal` is sealed; only `paid.rs` constructs it, so no caller can
 present an unpaid or foreign Vec as paid. Its unpaid form retains the failed
 ledger and reason. Its paid form retains the published carrier, a Copy
 `Refused`, and exactly one ledger owner: the `SetupFailure` from
-`PaidReport::prepare` (`Preparation::try_new` on the ledger that paid the
+`Acquired::prepare` (`Preparation::try_new` on the ledger that paid the
 carrier), the rejected bare ledger, or the failed `Preparation` recovered from
 authentication, a constructor, `Session::try_from_preparation` or a Session
 refusal (`Session::into_failed_preparation`, `Session::finish_paid`).
 Publication writes into the acquired backing without reallocation. Transfer
 marks the preparation failed and rejects its ledger without replacing a first
 receipt. Neither form restores work, physical allowance or admission.
+
+### Affine stage pairing
+
+Acquisition returns one `Acquired`, never a `(report, ledger)` pair. Its
+`prepare(function)` consumes both and returns the existing `Preparation`
+with the carrier held internally. Authentication borrows that combined
+preparation; it cannot take the report. `Preparation::into_paid_session`
+consumes the entire stage and transfers its carrier with the cumulative
+budget into the existing `Session`. Constructor refusal retains that same
+combined preparation. `refuse`, `refuse_session`, `refuse_unprepared`, and
+`finish_paid` accept no external report, preparation or physical ledger.
+Moving a whole stage preserves pairing; no identity token, extra allocation,
+new allowance, or report-to-ledger pointer lookup is introduced.
+
+The neutral raw setup constructor is private to `selected_entry`. Only legacy
+test constructors produce a preparation/session without a report. Production
+cannot construct a detached carrier or split a paid stage; the report's fields
+and publication method remain private. The actual local and imported callers
+use these consuming transitions, rather than reconstructing a pair at finish.
 
 ### Inline refusal on the qualified route
 
@@ -112,7 +133,7 @@ Every authenticator on the route returns `Result<_, Refused>`:
 authenticate_target, fact, calls, same_type}`, `helpers::local`,
 `helpers::graph`, `helpers::types`, and `records::prepared`. None constructs a
 Diagnostic, Vec or String before returning, and the caller transfers the
-carrier with `PaidReport::refuse(preparation, refused)`. The closure boundary
+carrier with `Preparation::refuse(refused)`. The closure boundary
 records its stage with `Refused::at` (one static pointer) instead of
 formatting test help.
 
@@ -123,7 +144,7 @@ reserve_vec}` and `Session::{new, from_preparation, finish}` still allocate
 ### Session refusal and fixed literal remapping
 
 A `Session::try_from_preparation`, `validate` or `validate_scalar` refusal
-returns the Session's own Diagnostic. `PaidReport::refuse_session` moves it
+returns the Session's own Diagnostic. `Preparation::refuse_session` moves it
 into the failed preparation as the first receipt, unless an earlier receipt
 is already held. It is never cloned, formatted or published. The route stops
 at the first member refusal. It never validates or finishes a failed Session
@@ -214,6 +235,7 @@ Owning lib selectors under `cleanup_plan::replay::selected_entry::tests::paid`:
 - `paid_report_session_refusal_transfers_carrier_and_retains_first_receipt_through_drop`
 - `paid_finish_returns_the_same_ledger_and_a_failed_finish_allocates_nothing`
 - `paid_report_remap_publishes_only_its_prepaid_form`
+- `paid_stage_moves_keep_each_report_with_its_original_ledger_without_pairing_arguments`
 
 Actual-caller selectors under
 `workspace_graph::source_schema::static_text::tests::paid_report`:

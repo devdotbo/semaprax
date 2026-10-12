@@ -95,27 +95,45 @@ fn actual_caller_zero_and_report_one_short_return_the_unpaid_ledger_without_allo
 fn actual_caller_paid_setup_refusal_keeps_original_carrier_ledger_and_drop() {
     let build = build(LEXICAL_SOURCE);
     let paid = REPORT.paid_bytes();
-    let (answer, metrics, overflowed, used) = replay_under(&build, paid);
-    let Err(mut refusal) = answer else {
-        panic!("an exact report payment leaves no preparation backing")
-    };
+    // ONE observer spans acquisition, transfer, publication and Drop. A fresh
+    // pointer table at Drop would be unable to observe these original frees.
+    let (((), metrics), overflowed, used) = crate::bounded_output::with_limit_usage(paid, || {
+        measure(|| {
+            let mut refusal = match replay_lexical_paid(
+                writer(&build),
+                &build.hir.modules,
+                &build.hir.declarations,
+                REPORT,
+            ) {
+                Err(refusal) => refusal,
+                Ok(_) => panic!("an exact report payment leaves no preparation backing"),
+            };
+            assert!(refusal.is_paid());
+            assert_public(refusal.report().unwrap());
+            let original = refusal.report().unwrap();
+            let backing = (original.as_ptr(), original[0].message.as_ptr());
+            assert_eq!(
+                refusal.setup_reason().map(|r| r.message()),
+                Some("cleanup replay physical reservation exceeds the bound")
+            );
+            assert_eq!(
+                refusal.refused().map(|r| r.cause()),
+                Some(SelectedReplayCause::Setup)
+            );
+            assert_eq!(
+                first_receipt(&mut refusal),
+                ReplayPhysicalRefusal::EnclosingBudget
+            );
+            assert_eq!(refusal.ledger_mut().unwrap().charged(), paid);
+            let report = refusal.into_published().expect("paid G410 carrier");
+            assert_public(&report);
+            assert_eq!(report.as_ptr(), backing.0);
+            assert_eq!(report[0].message.as_ptr(), backing.1);
+            drop(report);
+        })
+    });
     assert!(overflowed);
     assert_eq!(used, paid);
-    assert!(refusal.is_paid());
-    assert_public(refusal.report().unwrap());
-    assert_eq!(
-        refusal.setup_reason().map(|r| r.message()),
-        Some("cleanup replay physical reservation exceeds the bound")
-    );
-    assert_eq!(
-        refusal.refused().map(|r| r.cause()),
-        Some(SelectedReplayCause::Setup)
-    );
-    assert_eq!(
-        first_receipt(&mut refusal),
-        ReplayPhysicalRefusal::EnclosingBudget
-    );
-    assert_eq!(refusal.ledger_mut().unwrap().charged(), paid);
     assert!(!metrics.invalid);
     assert_eq!(metrics.allocations, 2, "exactly the paid slot and text");
     assert_eq!(
@@ -123,16 +141,8 @@ fn actual_caller_paid_setup_refusal_keeps_original_carrier_ledger_and_drop() {
         "publication kept the original backing"
     );
     assert_eq!(metrics.allocated, paid);
-    assert_eq!(
-        metrics.live, paid,
-        "the report is still owned by the caller"
-    );
-    let (report, moved) = measure(|| refusal.into_published());
-    assert_eq!(moved.allocations, 0, "paid report moves out unchanged");
-    let report = report.expect("paid G410 carrier");
-    assert_public(&report);
-    let (_, dropped) = measure(|| drop(report));
-    assert_eq!((dropped.freed, dropped.allocations), (paid, 0));
+    assert_eq!(metrics.freed, paid);
+    assert_eq!(metrics.live, 0);
 }
 
 #[test]

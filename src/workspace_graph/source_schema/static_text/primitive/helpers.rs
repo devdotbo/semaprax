@@ -1,7 +1,9 @@
 //! One authenticated borrowed cross-module scalar closure. Source facts select
 //! no authority until the actual defining pointers and complete closure match.
 use super::*;
-use crate::cleanup_plan::{SelectedReplayPreparation, SelectedReplaySession};
+use crate::cleanup_plan::SelectedReplayPreparation;
+#[cfg(test)]
+use crate::cleanup_plan::SelectedReplaySession;
 use crate::workspace_graph::static_text::scalar_helpers;
 type Frame<'a> = Option<(hir::lexical_exit::ChildCursor<'a>, bool)>;
 const DEPTH: usize = 514;
@@ -511,36 +513,31 @@ pub(super) fn replay(
     module: &WorkspaceResolvedModule,
     modules: &[WorkspaceResolvedModule],
     facts: &BTreeMap<String, WorkspaceDeclarationFact>,
-    physical: crate::cleanup_plan::ReplayPhysicalReservation,
-    report: SelectedReplayReport,
+    acquired: SelectedReplayReport,
 ) -> Result<(), SelectedReplayRefusal> {
     let Some(anchor) = module.functions.first() else {
-        return Err(report.refuse_unprepared(physical));
+        return Err(acquired.refuse_unprepared());
     };
-    let (mut resources, report) = report.prepare(anchor, physical)?;
+    let mut resources = acquired.prepare(anchor)?;
     let context = match authenticate(module, modules, facts, &mut resources) {
         Ok(context) => context,
-        Err(refused) => return Err(report.refuse(resources, refused)),
+        Err(refused) => return Err(resources.refuse(refused)),
     };
-    let session = SelectedReplaySession::try_from_preparation(&context, anchor, resources);
-    let mut session = match session {
-        Ok(session) => session,
-        Err((resources, error)) => return Err(report.refuse_session(resources, error)),
-    };
+    let mut session = resources.into_paid_session(&context, anchor)?;
     for helper in &context.helpers {
         if let Err(error) = session.validate_scalar(helper.function) {
-            return Err(report.refuse_session(session.into_failed_preparation(), error));
+            return Err(session.into_failed_preparation().refuse_session(error));
         }
     }
     if context.lexical.is_empty() {
-        return Err(report.refuse(session.into_failed_preparation(), Refused::MISMATCH));
+        return Err(session.into_failed_preparation().refuse(Refused::MISMATCH));
     }
     for function in &context.lexical {
         if let Err(error) = session.validate(function) {
-            return Err(report.refuse_session(session.into_failed_preparation(), error));
+            return Err(session.into_failed_preparation().refuse_session(error));
         }
     }
-    session.finish_paid(report).map(drop)
+    session.finish_paid().map(drop)
 }
 
 #[cfg(test)]

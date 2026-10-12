@@ -4,9 +4,9 @@ use super::*;
 mod helpers;
 mod records;
 use crate::cleanup::ReplayContext;
-use crate::cleanup_plan::{
-    SelectedReplayRefusal, SelectedReplayReport, SelectedReplayReportForm, SelectedReplaySession,
-};
+#[cfg(test)]
+use crate::cleanup_plan::SelectedReplaySession;
+use crate::cleanup_plan::{SelectedReplayRefusal, SelectedReplayReport, SelectedReplayReportForm};
 // Every authenticator on the qualified replay route refuses with this Copy
 // value; none constructs a Diagnostic, Vec or String before the transfer.
 use crate::cleanup_plan::SelectedReplayRefused as Refused;
@@ -183,41 +183,37 @@ pub(in crate::workspace_graph::source_schema) fn replay_paid(
         return Ok(false);
     }
     let physical = crate::cleanup_plan::ReplayPhysicalReservation::new(MAX_CHANGE_BUILDER_BYTES);
-    let (report, physical) = SelectedReplayReport::try_acquire(physical, form)?;
+    let acquired = SelectedReplayReport::try_acquire(physical, form)?;
     if inventory
         .lexical
         .as_deref()
         .is_some_and(|inventory| inventory.imported)
     {
-        helpers::replay(module, modules, facts, physical, report)?;
+        helpers::replay(module, modules, facts, acquired)?;
         return Ok(true);
     }
     let Some(anchor) = module.functions.first() else {
-        return Err(report.refuse_unprepared(physical));
+        return Err(acquired.refuse_unprepared());
     };
-    let (mut preparation, report) = report.prepare(anchor, physical)?;
+    let mut preparation = acquired.prepare(anchor)?;
     let (context, lexical) = match members(module, modules, facts, &mut preparation, anchor) {
         Ok(members) => members,
-        Err(refused) => return Err(report.refuse(preparation, refused)),
+        Err(refused) => return Err(preparation.refuse(refused)),
     };
-    let session = SelectedReplaySession::try_from_preparation(&context, anchor, preparation);
-    let mut session = match session {
-        Ok(session) => session,
-        Err((preparation, error)) => return Err(report.refuse_session(preparation, error)),
-    };
+    let mut session = preparation.into_paid_session(&context, anchor)?;
     let mut found = false;
     for function in lexical {
         // The first member refusal stops the route: no failed Session is
         // validated or finished again, so no legacy retry Diagnostic exists.
         if let Err(error) = session.validate(function) {
-            return Err(report.refuse_session(session.into_failed_preparation(), error));
+            return Err(session.into_failed_preparation().refuse_session(error));
         }
         found = true;
     }
     if !found {
-        return Err(report.refuse(session.into_failed_preparation(), Refused::MISMATCH));
+        return Err(session.into_failed_preparation().refuse(Refused::MISMATCH));
     }
-    drop(session.finish_paid(report)?);
+    drop(session.finish_paid()?);
     Ok(true)
 }
 

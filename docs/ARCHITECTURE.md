@@ -1868,7 +1868,9 @@ frozen from-parts routes without declaration provenance retain their refusal.
 view refusal (`ViewRefusal`). The actual selected lexical replay caller in
 `source_schema/static_text/primitive.rs` acquires the caller's outward report
 carrier (`cleanup_plan/replay/selected_entry/paid.rs`) on its module ledger
-before preparation. Every later refusal transfers that carrier, together with
+before preparation. Acquisition, preparation and Session retain the report and
+its ledger as one affine stage; refusal and finish accept no foreign carrier.
+Every later refusal transfers that carrier, together with
 the exact failed ledger owner. The authenticators and selected declaration
 constructors on that route refuse with the Copy `SelectedReplayRefused`. A
 budget's prepaid text or a Session's own Diagnostic stays in the failed

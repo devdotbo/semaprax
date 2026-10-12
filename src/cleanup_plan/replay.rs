@@ -28,14 +28,15 @@ pub(crate) use selected_entry::validate_retained_lexical_with_limit;
 #[cfg(test)]
 pub(crate) use selected_entry::validate_retained_lexical_with_reservation;
 #[cfg(test)]
+pub(crate) use selected_entry::Session as SelectedReplaySession;
+pub(crate) use selected_entry::{
+    Acquired as SelectedReplayReport, PaidRefusal as SelectedReplayRefusal,
+    Preparation as SelectedReplayPreparation, Refused as SelectedReplayRefused,
+    ReportForm as SelectedReplayReportForm, Unpaid as SelectedReplayUnpaid,
+};
+#[cfg(test)]
 pub(crate) use selected_entry::{
     Cause as SelectedReplayCause, UnpaidReason as SelectedReplayUnpaidReason,
-};
-pub(crate) use selected_entry::{
-    PaidRefusal as SelectedReplayRefusal, PaidReport as SelectedReplayReport,
-    Preparation as SelectedReplayPreparation, Refused as SelectedReplayRefused,
-    ReportForm as SelectedReplayReportForm, Session as SelectedReplaySession,
-    Unpaid as SelectedReplayUnpaid,
 };
 mod selected_owner;
 mod selected_profile;

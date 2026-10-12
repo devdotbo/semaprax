@@ -255,7 +255,7 @@ impl Preparation {
 
 /// Affine paid carrier. Its backing is already charged on the selected
 /// ledger; dropping it on success frees that backing without a refund.
-pub(crate) struct PaidReport {
+pub(super) struct PaidReport {
     form: ReportForm,
     diagnostics: Vec<Diagnostic>,
     message: String,
@@ -351,13 +351,20 @@ impl Unpaid {
     }
 }
 
-impl PaidReport {
+/// Affine acquisition stage: the carrier cannot be separated from the exact
+/// ledger which paid it. Only consuming stage transitions expose admission.
+pub(crate) struct Acquired {
+    report: PaidReport,
+    physical: PhysicalReservation,
+}
+
+impl Acquired {
     /// Debit the exact Diagnostic slot and form text, then allocate both.
     /// Refusal returns the same rejected ledger and an inline Copy reason.
     pub(crate) fn try_acquire(
         mut physical: PhysicalReservation,
         form: ReportForm,
-    ) -> Result<(Self, PhysicalReservation), PaidRefusal> {
+    ) -> Result<Self, PaidRefusal> {
         let unpaid = |physical, reason| {
             PaidRefusal(Refusal::Unpaid {
                 failure: SetupFailure::refused(physical, reason),
@@ -372,23 +379,59 @@ impl PaidReport {
         }
         let diagnostics = Vec::<Diagnostic>::with_capacity(1);
         let message = String::with_capacity(form.message.len());
+        // Both requested layouts have already been paid. This is a POST-
+        // allocation invariant check: it drops those allocations, retains
+        // their spent debit, and has no predebit-refusal zero-allocation claim.
         if diagnostics.capacity() != 1 || message.capacity() != form.message.len() {
             drop((diagnostics, message));
             return Err(unpaid(physical, SetupReason::ReportCapacity));
         }
-        Ok((
-            Self {
+        Ok(Self {
+            report: PaidReport {
                 form,
                 diagnostics,
                 message,
             },
             physical,
-        ))
+        })
     }
 
-    /// Acquired Diagnostic slot and text backing, for pointer controls only.
     #[cfg(test)]
     pub(crate) fn backing(&self) -> (*const Diagnostic, *const u8) {
+        self.report.backing()
+    }
+    #[cfg(test)]
+    pub(crate) fn charged(&self) -> usize {
+        self.physical.charged()
+    }
+
+    /// Move the complete paid acquisition into its preparation stage.
+    pub(crate) fn prepare(self, function: &ResolvedFunction) -> Result<Preparation, PaidRefusal> {
+        let Self { report, physical } = self;
+        match Preparation::try_new(function, physical) {
+            Ok(mut preparation) => {
+                preparation.report = Some(report);
+                Ok(preparation)
+            }
+            Err(failure) => {
+                let refused = Refused::new(Cause::Setup, failure.reason_message());
+                Err(report.publish(Ledger::Setup(failure), refused))
+            }
+        }
+    }
+    pub(crate) fn refuse_unprepared(self) -> PaidRefusal {
+        let Self {
+            report,
+            mut physical,
+        } = self;
+        physical.reject();
+        report.publish(Ledger::Unprepared(physical), Refused::MISMATCH)
+    }
+}
+
+impl PaidReport {
+    #[cfg(test)]
+    fn backing(&self) -> (*const Diagnostic, *const u8) {
         (self.diagnostics.as_ptr(), self.message.as_ptr())
     }
 
@@ -408,49 +451,44 @@ impl PaidReport {
             refused,
         })
     }
+}
 
-    /// Run the unchanged neutral setup on the ledger that paid this carrier.
-    pub(crate) fn prepare(
-        self,
-        function: &ResolvedFunction,
-        physical: PhysicalReservation,
-    ) -> Result<(Preparation, Self), PaidRefusal> {
-        match Preparation::try_new(function, physical) {
-            Ok(preparation) => Ok((preparation, self)),
-            Err(failure) => {
-                let refused = Refused::new(Cause::Setup, failure.reason_message());
-                Err(self.publish(Ledger::Setup(failure), refused))
-            }
-        }
+impl Preparation {
+    #[cfg(test)]
+    pub(crate) fn report_backing(&self) -> (*const Diagnostic, *const u8) {
+        self.report.as_ref().expect("paid preparation").backing()
     }
 
-    pub(crate) fn refuse_unprepared(self, mut physical: PhysicalReservation) -> PaidRefusal {
-        physical.reject();
-        self.publish(Ledger::Unprepared(physical), Refused::MISMATCH)
-    }
-
-    /// Transfer on an inline authentication, budget or constructor refusal.
-    /// The held preparation is failed and its ledger rejected; the first
-    /// receipt (ledger and any retained paid Diagnostic) stays.
-    pub(crate) fn refuse(self, mut preparation: Preparation, refused: Refused) -> PaidRefusal {
-        preparation.failed = true;
-        if let Some(physical) = preparation.budget.physical.as_deref_mut() {
+    /// Move the report with its cumulative owner on every refusal. The raw
+    /// constructor is private; production preparations always carry a report.
+    pub(crate) fn refuse(mut self, refused: Refused) -> PaidRefusal {
+        self.failed = true;
+        if let Some(physical) = self.budget.physical.as_deref_mut() {
             physical.reject();
         }
-        self.publish(Ledger::Prepared(preparation), refused)
+        let report = self
+            .report
+            .take()
+            .expect("paid preparation retains its carrier");
+        report.publish(Ledger::Prepared(self), refused)
     }
 
-    /// Transfer on a Session construction or member refusal. The Session's
-    /// own Diagnostic is moved into the failed owner as its first receipt
-    /// unless an earlier one is held; it is never cloned, formatted or
-    /// published. The outward report stays this carrier's fixed literal.
-    pub(crate) fn refuse_session(
+    pub(crate) fn refuse_session(mut self, error: Diagnostic) -> PaidRefusal {
+        let refused = self.record(error, Refused::SESSION);
+        self.refuse(refused)
+    }
+
+    /// A failed constructor returns the SAME combined preparation; no caller
+    /// supplies another report or ledger at this transition.
+    pub(crate) fn into_paid_session<'a>(
         self,
-        mut preparation: Preparation,
-        error: Diagnostic,
-    ) -> PaidRefusal {
-        let refused = preparation.record(error, Refused::SESSION);
-        self.refuse(preparation, refused)
+        program: &'a dyn ReplayContext,
+        anchor: &'a ResolvedFunction,
+    ) -> Result<Session<'a>, PaidRefusal> {
+        match Session::try_from_preparation(program, anchor, self) {
+            Ok(session) => Ok(session),
+            Err((preparation, error)) => Err(preparation.refuse_session(error)),
+        }
     }
 }
 
@@ -462,25 +500,27 @@ impl Session<'_> {
             budget: self.budget,
             failed: true,
             receipt: None,
+            report: self.report,
         }
     }
 
     /// Paid twin of `finish`. Success drops the unused carrier and returns
     /// the same boxed ledger, with no refund or reset; refusal retains the
     /// exact ledger owner and never allocates `finish`'s legacy Diagnostic.
-    pub(crate) fn finish_paid(
-        mut self,
-        report: PaidReport,
-    ) -> Result<Box<PhysicalReservation>, PaidRefusal> {
+    pub(crate) fn finish_paid(mut self) -> Result<Box<PhysicalReservation>, PaidRefusal> {
         if self.failed {
-            return Err(report.refuse(self.into_failed_preparation(), Refused::FAILED));
+            return Err(self.into_failed_preparation().refuse(Refused::FAILED));
         }
         match self.budget.physical.take() {
             Some(physical) => {
-                drop(report);
+                drop(
+                    self.report
+                        .take()
+                        .expect("paid Session retains its carrier"),
+                );
                 Ok(physical)
             }
-            None => Err(report.refuse(self.into_failed_preparation(), Refused::LEDGER)),
+            None => Err(self.into_failed_preparation().refuse(Refused::LEDGER)),
         }
     }
 }

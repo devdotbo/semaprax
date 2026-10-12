@@ -35,15 +35,14 @@ fn assert_paid(refusal: &PaidRefusal, backing: (*const Diagnostic, *const u8)) {
     assert_eq!(first.message.as_ptr(), backing.1, "original prepaid text");
     assert!(first.path.is_none() && first.span.is_none() && first.help.is_none());
 }
-fn acquired(limit: usize) -> (PaidReport, PhysicalReservation) {
-    match PaidReport::try_acquire(PhysicalReservation::new(limit), FORM) {
+fn acquired(limit: usize) -> Acquired {
+    match Acquired::try_acquire(PhysicalReservation::new(limit), FORM) {
         Ok(acquired) => acquired,
         Err(_) => panic!("carrier is acquired before preparation"),
     }
 }
-fn prepared(function: &ResolvedFunction) -> (Preparation, PaidReport) {
-    let (report, physical) = acquired(1 << 26);
-    match report.prepare(function, physical) {
+fn prepared(function: &ResolvedFunction) -> Preparation {
+    match acquired(1 << 26).prepare(function) {
         Ok(prepared) => prepared,
         Err(_) => panic!("ample setup"),
     }
@@ -77,7 +76,7 @@ fn paid_report_zero_and_one_short_return_the_exact_rejected_ledger_without_alloc
     ] {
         let (mut refusal, allocations) =
             measure(
-                || match PaidReport::try_acquire(PhysicalReservation::new(limit), FORM) {
+                || match Acquired::try_acquire(PhysicalReservation::new(limit), FORM) {
                     Ok(_) => panic!("one-short carrier cannot be acquired"),
                     Err(refusal) => refusal,
                 },
@@ -132,10 +131,10 @@ fn paid_report_setup_refusal_publishes_original_backing_and_keeps_setup_ledger()
         ),
     ] {
         let (_, allocations) = measure(|| {
-            let (report, physical) = acquired(limit);
-            assert_eq!(physical.charged(), paid);
-            let backing = report.backing();
-            let mut refusal = match report.prepare(function, physical) {
+            let acquired = acquired(limit);
+            assert_eq!(acquired.charged(), paid);
+            let backing = acquired.backing();
+            let mut refusal = match acquired.prepare(function) {
                 Ok(_) => panic!("one-short setup cannot prepare"),
                 Err(refusal) => refusal,
             };
@@ -162,9 +161,9 @@ fn paid_report_setup_refusal_publishes_original_backing_and_keeps_setup_ledger()
 fn paid_report_constructor_refusal_keeps_the_exact_ledger_and_first_receipt() {
     let program = program();
     let function = members(&program)[0];
-    let (report, physical) = acquired(1 << 26);
-    let backing = report.backing();
-    let (mut preparation, report) = match report.prepare(function, physical) {
+    let acquired = acquired(1 << 26);
+    let backing = acquired.backing();
+    let mut preparation = match acquired.prepare(function) {
         Ok(prepared) => prepared,
         Err(_) => panic!("ample setup"),
     };
@@ -182,7 +181,7 @@ fn paid_report_constructor_refusal_keeps_the_exact_ledger_and_first_receipt() {
     assert_eq!(allocations.allocations, 0, "a constructor refusal is Copy");
     assert_eq!(error, own);
     assert!(preparation.receipt().is_none(), "no Diagnostic was made");
-    let mut refusal = report.refuse(preparation, error);
+    let mut refusal = preparation.refuse(error);
     assert_paid(&refusal, backing);
     assert_eq!(refusal.setup_reason(), None);
     assert_eq!(refusal.refused(), Some(own));
@@ -208,7 +207,7 @@ fn paid_report_constructor_refusal_keeps_the_exact_ledger_and_first_receipt() {
 fn paid_report_budget_refusal_moves_the_prepaid_text_once_without_allocating() {
     let program = program();
     let function = members(&program)[0];
-    let (mut preparation, report) = prepared(function);
+    let mut preparation = prepared(function);
     let (text, capacity) = prepaid_text(&preparation);
     assert_eq!(capacity, function.id.as_str().len() + 512);
     preparation.budget.remaining = 3;
@@ -240,7 +239,7 @@ fn paid_report_budget_refusal_moves_the_prepaid_text_once_without_allocating() {
     });
     assert_eq!(allocations.allocations, 0);
     assert_eq!(later, (Err(Refused::FAILED), Err(Refused::FAILED)));
-    let mut refusal = report.refuse(preparation, refused);
+    let mut refusal = preparation.refuse(refused);
     assert_eq!(refusal.refused(), Some(refused));
     let receipt = refusal.receipt().expect("retained with the failed owner");
     assert_eq!(receipt.message.as_ptr(), text, "same prepaid text pointer");
@@ -251,7 +250,7 @@ fn paid_report_budget_refusal_moves_the_prepaid_text_once_without_allocating() {
 fn paid_report_constructor_exhaustion_spends_the_prepaid_receipt_and_fails_closed() {
     let program = program();
     let function = members(&program)[0];
-    let (mut preparation, report) = prepared(function);
+    let mut preparation = prepared(function);
     let (text, _) = prepaid_text(&preparation);
     preparation.budget.remaining = 2;
     let (refused, allocations) = measure(|| {
@@ -268,7 +267,7 @@ fn paid_report_constructor_exhaustion_spends_the_prepaid_receipt_and_fails_close
     assert_eq!(preparation.budget.remaining, 0, "sticky, no refund");
     let receipt = preparation.receipt().expect("prepaid budget receipt");
     assert_eq!(receipt.message.as_ptr(), text);
-    let refusal = report.refuse(preparation, refused);
+    let refusal = preparation.refuse(refused);
     assert!(refusal.is_paid());
     assert_eq!(refusal.refused(), Some(refused));
 }
@@ -280,9 +279,9 @@ fn paid_report_session_refusal_transfers_carrier_and_retains_first_receipt_throu
     let context = primitive_fixture::Context::new(&program);
     let anchor = &program.functions[0];
     let (_, allocations) = measure(|| {
-        let (report, physical) = acquired(1 << 26);
-        let backing = report.backing();
-        let (preparation, report) = match report.prepare(anchor, physical) {
+        let acquired = acquired(1 << 26);
+        let backing = acquired.backing();
+        let preparation = match acquired.prepare(anchor) {
             Ok(prepared) => prepared,
             Err(_) => panic!("ample setup"),
         };
@@ -296,7 +295,7 @@ fn paid_report_session_refusal_transfers_carrier_and_retains_first_receipt_throu
         let first_text = (first.message.as_ptr(), first.message.capacity());
         let charged = preparation.budget.physical.as_deref().unwrap().charged();
         // Observation cannot nest: the pointer identity below proves a move.
-        let mut refusal = report.refuse_session(preparation, first);
+        let mut refusal = preparation.refuse_session(first);
         assert_paid(&refusal, backing);
         assert_eq!(refusal.refused().unwrap().cause(), Cause::Session);
         // The public form stays the carrier's literal; the Session's own
@@ -328,7 +327,7 @@ fn paid_finish_returns_the_same_ledger_and_a_failed_finish_allocates_nothing() {
     let program = program();
     let context = primitive_fixture::Context::new(&program);
     let [first, second] = members(&program);
-    let (preparation, report) = prepared(first);
+    let preparation = prepared(first);
     let mut session = match Session::try_from_preparation(&context, first, preparation) {
         Ok(session) => session,
         Err(_) => panic!("ample session"),
@@ -339,7 +338,7 @@ fn paid_finish_returns_the_same_ledger_and_a_failed_finish_allocates_nothing() {
     let charged = session.budget.physical.as_deref().unwrap().charged();
     // The carrier's own debit stays charged: success refunds nothing.
     assert!(charged >= carrier(FORM));
-    let (finished, allocations) = measure(|| session.finish_paid(report));
+    let (finished, allocations) = measure(|| session.finish_paid());
     assert_eq!(allocations.allocations, 0);
     let ledger_box = match finished {
         Ok(ledger_box) => ledger_box,
@@ -350,13 +349,13 @@ fn paid_finish_returns_the_same_ledger_and_a_failed_finish_allocates_nothing() {
     drop(ledger_box);
 
     // A failed Session never reaches the legacy `finish` Diagnostic.
-    let (preparation, report) = prepared(first);
+    let preparation = prepared(first);
     let mut session = match Session::try_from_preparation(&context, first, preparation) {
         Ok(session) => session,
         Err(_) => panic!("ample session"),
     };
     session.failed = true;
-    let (refusal, allocations) = measure(|| session.finish_paid(report));
+    let (refusal, allocations) = measure(|| session.finish_paid());
     assert_eq!(allocations.allocations, 0, "no replay_error is formatted");
     let Err(refusal) = refusal else {
         panic!("a failed Session cannot finish")
@@ -368,16 +367,15 @@ fn paid_finish_returns_the_same_ledger_and_a_failed_finish_allocates_nothing() {
 #[test]
 fn paid_report_remap_publishes_only_its_prepaid_form() {
     let other = ReportForm::new("SPX-T782", "a different outward form");
-    let (report, physical) = acquired(1 << 20);
-    let backing = report.backing();
-    let mut refusal = report.refuse_unprepared(physical);
+    let acquired = acquired(1 << 20);
+    let backing = acquired.backing();
+    let mut refusal = acquired.refuse_unprepared();
     assert_eq!(first_receipt(&mut refusal), PhysicalRefusal::LocalLimit);
     let (published, allocations) = measure(|| refusal.into_report(FORM));
     assert_eq!(allocations.allocations, 0, "paid form moves out unchanged");
     assert_eq!(published.unwrap().as_ptr(), backing.0);
-    let (report, physical) = acquired(1 << 20);
-    let (mismatched, allocations) =
-        measure(|| report.refuse_unprepared(physical).into_report(other));
+    let acquired = acquired(1 << 20);
+    let (mismatched, allocations) = measure(|| acquired.refuse_unprepared().into_report(other));
     assert_eq!(
         allocations.allocations, 0,
         "fails closed without rebuilding"
@@ -390,4 +388,65 @@ fn paid_report_remap_publishes_only_its_prepaid_form() {
         (other.code(), other.message()),
         "only the named unfunded boundary allocates the requested literal"
     );
+}
+
+#[test]
+fn paid_stage_moves_keep_each_report_with_its_original_ledger_without_pairing_arguments() {
+    let program = program();
+    let context = primitive_fixture::Context::new(&program);
+    let first = members(&program)[0];
+    let other = ReportForm::new("SPX-T782", "a second independently paid report");
+    let ((), allocations) = measure(|| {
+        let acquired_a = acquired(1 << 26);
+        let acquired_b = match Acquired::try_acquire(PhysicalReservation::new(1 << 26), other) {
+            Ok(owner) => owner,
+            Err(_) => panic!("ample second carrier"),
+        };
+        let backing_a = acquired_a.backing();
+        let backing_b = acquired_b.backing();
+        let mut preparation_a = acquired_a
+            .prepare(first)
+            .unwrap_or_else(|_| panic!("first setup"));
+        let mut preparation_b = acquired_b
+            .prepare(first)
+            .unwrap_or_else(|_| panic!("second setup"));
+        let ledger_a =
+            preparation_a.budget.physical.as_deref().unwrap() as *const PhysicalReservation;
+        let ledger_b =
+            preparation_b.budget.physical.as_deref().unwrap() as *const PhysicalReservation;
+        assert_ne!(ledger_a, ledger_b);
+        // Moving/swapping a whole stage also moves its report. No API accepts
+        // a report, physical ledger or preparation from the other invocation.
+        std::mem::swap(&mut preparation_a, &mut preparation_b);
+        assert_eq!(preparation_a.report_backing(), backing_b);
+        assert_eq!(preparation_b.report_backing(), backing_a);
+        let mut session_b = preparation_a
+            .into_paid_session(&context, first)
+            .unwrap_or_else(|_| panic!("second session"));
+        let mut session_a = preparation_b
+            .into_paid_session(&context, first)
+            .unwrap_or_else(|_| panic!("first session"));
+        session_a.validate(first).unwrap();
+        session_b.validate(first).unwrap();
+        session_a.failed = true;
+        session_b.failed = true;
+        let mut refused_a = session_a.finish_paid().err().expect("first paid refusal");
+        let mut refused_b = session_b.finish_paid().err().expect("second paid refusal");
+        assert_paid(&refused_a, backing_a);
+        let report_b = refused_b.report().unwrap();
+        assert_eq!(report_b.as_ptr(), backing_b.0);
+        assert_eq!(report_b[0].message.as_ptr(), backing_b.1);
+        assert_eq!(
+            (report_b[0].code, report_b[0].message.as_str()),
+            (other.code(), other.message())
+        );
+        assert!(std::ptr::eq(&*refused_a.ledger_mut().unwrap(), ledger_a));
+        assert!(std::ptr::eq(&*refused_b.ledger_mut().unwrap(), ledger_b));
+        assert_eq!(first_receipt(&mut refused_a), PhysicalRefusal::LocalLimit);
+        assert_eq!(first_receipt(&mut refused_b), PhysicalRefusal::LocalLimit);
+        drop((refused_a, refused_b));
+    });
+    assert!(!allocations.invalid);
+    assert_eq!(allocations.live, 0);
+    assert_eq!(allocations.allocated, allocations.freed);
 }

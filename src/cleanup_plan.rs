@@ -34,12 +34,12 @@ pub(crate) use replay::{
     replay_btree_node_upper, replay_reserve_vec, ClonePayload as ReplayClonePayload,
     PhysicalReservation as ReplayPhysicalReservation, SelectedReplayPreparation,
     SelectedReplayRefusal, SelectedReplayRefused, SelectedReplayReport, SelectedReplayReportForm,
-    SelectedReplaySession, SelectedReplayUnpaid,
+    SelectedReplayUnpaid,
 };
 #[cfg(test)]
 pub(crate) use replay::{
     ReplayBorrowedIdentity, ReplayBorrowedLease, ReplayPhysicalRefusal, SelectedReplayCause,
-    SelectedReplayUnpaidReason,
+    SelectedReplaySession, SelectedReplayUnpaidReason,
 };
 mod validate;
 
