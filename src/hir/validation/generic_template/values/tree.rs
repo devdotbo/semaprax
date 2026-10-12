@@ -2,8 +2,8 @@
 //! node is independently paid; only a fully successful root is published.
 use super::*;
 use std::rc::Rc;
-pub(super) type Root<'value> = Option<Rc<Node<'value>>>;
-pub(super) struct Node<'value> {
+pub(in crate::hir::validation) type Root<'value> = Option<Rc<Node<'value>>>;
+pub(in crate::hir::validation) struct Node<'value> {
     key: ValueId,
     ty: &'value ResolvedType,
     left: Root<'value>,
