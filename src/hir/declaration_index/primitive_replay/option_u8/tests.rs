@@ -60,6 +60,103 @@ fn option_u8_replay_admits_replayed_flat_records_at_exact_and_one_short_work() {
     assert!(run(&base, work - 1, bytes).0.is_err());
     assert!(run(&base, work, bytes - 1).0.is_err());
 }
+/// A retained identity is a fixed compiler identity equal to its owned text.
+fn compiler(id: &DeclarationId, oracle: &str) {
+    assert!(id.is_compiler_static(), "{id:?}");
+    assert_eq!(id.owned_allocation_bytes(), 0);
+    assert_eq!(*id, DeclarationId::new(oracle.to_owned()));
+}
+#[test]
+fn option_u8_replay_builds_only_compiler_identities_within_its_reservation_through_drop() {
+    use crate::prelude::{OPTION_ID, OPTION_NONE_ID, OPTION_SOME_ID, OPTION_SOME_VALUE_ID};
+    let (result, index) = run(&DeclarationIndex::default(), 1 << 20, 1 << 20);
+    let (_, charged) = result.unwrap();
+    let (variant, cases) = index.variant_cases.get_key_value(OPTION_ID).unwrap();
+    compiler(variant, OPTION_ID);
+    compiler(&cases[0].id, OPTION_NONE_ID);
+    compiler(&cases[1].id, OPTION_SOME_ID);
+    let field = &cases[1].fields[0];
+    compiler(&field.id, OPTION_SOME_VALUE_ID);
+    let ResolvedType::TypeParameter { owner, .. } = &field.ty else {
+        panic!("Option field type")
+    };
+    compiler(owner, OPTION_ID);
+    let case_fields = index.case_fields.iter().collect::<Vec<_>>();
+    let [(none, no_fields), (some, some_fields)] = case_fields.as_slice() else {
+        panic!("two Option cases")
+    };
+    compiler(none, OPTION_NONE_ID);
+    compiler(some, OPTION_SOME_ID);
+    assert!(no_fields.is_empty());
+    compiler(&some_fields[0].id, OPTION_SOME_VALUE_ID);
+    let oracle = [
+        (OPTION_ID, None),
+        (OPTION_NONE_ID, Some(OPTION_ID)),
+        (OPTION_SOME_ID, Some(OPTION_ID)),
+        (OPTION_SOME_VALUE_ID, Some(OPTION_SOME_ID)),
+    ];
+    assert_eq!(index.declarations.len(), oracle.len());
+    for (text, owner) in oracle {
+        let (key, declaration) = index.declarations.get_key_value(text).unwrap();
+        compiler(key, text);
+        compiler(&declaration.id, text);
+        match (&declaration.owner, owner) {
+            (Some(actual), Some(expected)) => compiler(actual, expected),
+            (None, None) => {}
+            _ => panic!("Option declaration owner"),
+        }
+    }
+    compiler(
+        index.type_parameters.get_key_value(OPTION_ID).unwrap().0,
+        OPTION_ID,
+    );
+    drop(index);
+    // The identical replay against the actual allocator, through Drop: it
+    // requests no more than its reservation and Drop requests nothing.
+    let ((), observed) = crate::test_allocation_observer::measure(|| {
+        let (result, index) = run(&DeclarationIndex::default(), 1 << 20, 1 << 20);
+        assert_eq!(result.unwrap().1, charged);
+        let retained = crate::test_allocation_observer::current_metrics();
+        drop(index);
+        let settled = crate::test_allocation_observer::current_metrics();
+        assert_eq!(settled.allocations, retained.allocations);
+        assert_eq!(settled.live, 0);
+    });
+    assert!(!observed.invalid);
+    assert!(observed.allocated <= charged, "{} > {charged}", observed.allocated);
+    assert_eq!(observed.live, 0);
+}
+#[test]
+fn vec_replay_builds_one_compiler_identity_within_its_reservation_through_drop() {
+    let replay = |physical: &mut ReplayPhysicalReservation| {
+        let mut index = DeclarationIndex::default();
+        index
+            .append_vec_replay_metered(physical, &mut |_| Ok(()))
+            .unwrap();
+        index
+    };
+    let index = replay(&mut ReplayPhysicalReservation::new(1 << 20));
+    let vec = crate::prelude::VEC_ID;
+    let (key, declaration) = index.declarations.get_key_value(vec).unwrap();
+    compiler(key, vec);
+    compiler(&declaration.id, vec);
+    compiler(&index.types_by_name["Vec"], vec);
+    compiler(index.type_parameters.get_key_value(vec).unwrap().0, vec);
+    compiler(index.record_fields.get_key_value(vec).unwrap().0, vec);
+    drop(index);
+    let mut physical = ReplayPhysicalReservation::new(1 << 20);
+    let ((), observed) = crate::test_allocation_observer::measure(|| {
+        let index = replay(&mut physical);
+        let retained = crate::test_allocation_observer::current_metrics();
+        drop(index);
+        let settled = crate::test_allocation_observer::current_metrics();
+        assert_eq!(settled.allocations, retained.allocations);
+        assert_eq!(settled.live, 0);
+    });
+    assert!(!observed.invalid);
+    assert!(observed.allocated <= physical.charged());
+    assert_eq!(observed.live, 0);
+}
 #[test]
 fn option_u8_replay_refuses_generic_compiler_owned_orphan_and_unfielded_entries() {
     let program = program();

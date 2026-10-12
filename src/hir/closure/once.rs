@@ -327,18 +327,19 @@ pub(crate) fn validate(
 /// Canonical call boundaries for retained creation and once-only invocation.
 /// Both use the ordinary owned-argument staging/commit machinery.
 pub(crate) fn call(expression: &ResolvedExpr) -> Option<(&'static DeclarationId, &[ResolvedExpr])> {
+    use crate::hir::CompilerDeclaration as Id;
     static CONSTRUCT: std::sync::LazyLock<DeclarationId> =
-        std::sync::LazyLock::new(|| DeclarationId::new(CONSTRUCT_ID));
+        std::sync::LazyLock::new(|| DeclarationId::compiler(Id::OnceConstruct));
     static INVOKE: std::sync::LazyLock<DeclarationId> =
-        std::sync::LazyLock::new(|| DeclarationId::new(INVOKE_ID));
+        std::sync::LazyLock::new(|| DeclarationId::compiler(Id::OnceInvoke));
     static MIXED_CONSTRUCT: std::sync::LazyLock<DeclarationId> =
-        std::sync::LazyLock::new(|| DeclarationId::new(MIXED_CONSTRUCT_ID));
+        std::sync::LazyLock::new(|| DeclarationId::compiler(Id::OnceMixedConstruct));
     static MIXED_INVOKE: std::sync::LazyLock<DeclarationId> =
-        std::sync::LazyLock::new(|| DeclarationId::new(MIXED_INVOKE_ID));
+        std::sync::LazyLock::new(|| DeclarationId::compiler(Id::OnceMixedInvoke));
     static PAIR_CONSTRUCT: std::sync::LazyLock<DeclarationId> =
-        std::sync::LazyLock::new(|| DeclarationId::new(PAIR_CONSTRUCT_ID));
+        std::sync::LazyLock::new(|| DeclarationId::compiler(Id::OncePairConstruct));
     static PAIR_INVOKE: std::sync::LazyLock<DeclarationId> =
-        std::sync::LazyLock::new(|| DeclarationId::new(PAIR_INVOKE_ID));
+        std::sync::LazyLock::new(|| DeclarationId::compiler(Id::OncePairInvoke));
     match &expression.kind {
         ResolvedExprKind::Closure { captures, .. }
             if expression.ty.is_once_function()

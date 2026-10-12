@@ -1,5 +1,5 @@
 //! Exact conditional iterator and selected native Result ownership.
-use crate::hir::{DeclarationId, ResolvedType};
+use crate::hir::{CompilerDeclaration, DeclarationId, ResolvedType};
 
 pub(crate) fn variant_record_field(
     program: &dyn crate::cleanup::ReplayContext,
@@ -82,15 +82,20 @@ pub(crate) fn variant_leaf_lifecycle<'a>(
 
 /// Compiler-owned primitive cleanup identities, independently derived from type.
 pub(crate) fn primitive_leaf_lifecycle(ty: &ResolvedType) -> Option<&'static str> {
+    primitive_leaf_lifecycle_identity(ty).map(CompilerDeclaration::text)
+}
+
+/// The same closed mapping as fixed compiler identities, which allocate nothing.
+pub(crate) fn primitive_leaf_lifecycle_identity(ty: &ResolvedType) -> Option<CompilerDeclaration> {
     match ty {
-        ResolvedType::OnceFunction => Some(crate::hir::closure::once::DROP_ID),
-        ResolvedType::OnceFunctionI64 => Some(crate::hir::closure::once::MIXED_DROP_ID),
-        ResolvedType::OnceFunctionI64Pair => Some(crate::hir::closure::once::PAIR_DROP_ID),
-        ResolvedType::Bytes => Some(super::BYTES_DROP_LIFECYCLE_ID),
-        ResolvedType::String => Some(super::STRING_DROP_LIFECYCLE_ID),
-        ResolvedType::StringMap => Some(crate::string_ops::MAP_DROP_LIFECYCLE_ID),
-        ty if crate::map_ops::is_typed_collection(ty) => Some(crate::map_ops::DROP_ID),
-        ty if crate::stdin_stream_ops::is_reader(ty) => Some(crate::stdin_stream_ops::DROP_ID),
+        ResolvedType::OnceFunction => Some(CompilerDeclaration::OnceDrop),
+        ResolvedType::OnceFunctionI64 => Some(CompilerDeclaration::OnceMixedDrop),
+        ResolvedType::OnceFunctionI64Pair => Some(CompilerDeclaration::OncePairDrop),
+        ResolvedType::Bytes => Some(CompilerDeclaration::BytesDrop),
+        ResolvedType::String => Some(CompilerDeclaration::StringDrop),
+        ResolvedType::StringMap => Some(CompilerDeclaration::StringMapDrop),
+        ty if crate::map_ops::is_typed_collection(ty) => Some(CompilerDeclaration::CollectionDrop),
+        ty if crate::stdin_stream_ops::is_reader(ty) => Some(CompilerDeclaration::StdinReaderDrop),
         _ => None,
     }
 }

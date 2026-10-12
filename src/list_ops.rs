@@ -3,7 +3,9 @@
 
 use crate::ast::program_source::ProgramSource;
 use crate::ast::{Param, ParamMode, Span, Type};
-use crate::hir::{DeclarationId, OwnershipMode, ResolvedParam, ResolvedType, ValueId};
+use crate::hir::{
+    CompilerDeclaration, DeclarationId, OwnershipMode, ResolvedParam, ResolvedType, ValueId,
+};
 
 pub(crate) const LIST_ID: &str = "core.list";
 pub(crate) const STEP_ID: &str = "core.list-step";
@@ -126,14 +128,14 @@ pub(crate) fn ast_step() -> Type {
 
 pub(crate) fn resolved_list() -> ResolvedType {
     ResolvedType::Nominal {
-        declaration: DeclarationId::new(LIST_ID),
+        declaration: DeclarationId::compiler(CompilerDeclaration::List),
         arguments: vec![ResolvedType::I64],
     }
 }
 
 pub(crate) fn resolved_step() -> ResolvedType {
     ResolvedType::Nominal {
-        declaration: DeclarationId::new(STEP_ID),
+        declaration: DeclarationId::compiler(CompilerDeclaration::ListStep),
         arguments: vec![ResolvedType::I64],
     }
 }
@@ -150,7 +152,7 @@ pub(crate) fn step_shape(index: &crate::hir::DeclarationIndex, ty: &ResolvedType
     if !is_step(ty) {
         return false;
     }
-    let owner = DeclarationId::new(STEP_ID);
+    let owner = DeclarationId::compiler(CompilerDeclaration::ListStep);
     let Some(cases) = index.variant_cases(&owner) else {
         return false;
     };
@@ -164,15 +166,18 @@ pub(crate) fn step_shape(index: &crate::hir::DeclarationIndex, ty: &ResolvedType
         && matches!(cons.fields.as_slice(), [head, tail]
             if head.id.as_str() == HEAD_ID && head.name == "head" && head.index == 0 && head.ty == parameter
             && tail.id.as_str() == TAIL_ID && tail.name == "tail" && tail.index == 1
-            && tail.ty == ResolvedType::Nominal { declaration: DeclarationId::new(LIST_ID), arguments: vec![parameter] }))
+            && tail.ty == ResolvedType::Nominal { declaration: DeclarationId::compiler(CompilerDeclaration::List), arguments: vec![parameter] }))
 }
 
 pub(crate) fn validate_declarations(
     program: &crate::hir::ResolvedProgram,
 ) -> Result<(), crate::diagnostic::Diagnostic> {
     use crate::hir::DeclarationKind;
-    for id in [LIST_ID, STEP_ID] {
-        let key = DeclarationId::new(id);
+    for (id, key) in [
+        (LIST_ID, CompilerDeclaration::List),
+        (STEP_ID, CompilerDeclaration::ListStep),
+    ] {
+        let key = DeclarationId::compiler(key);
         let Some(declaration) = program.declarations.declaration(&key) else {
             continue;
         };
@@ -215,7 +220,7 @@ pub(crate) fn is_step_tail_field(
         && field.name == "tail"
         && field.ty
             == ResolvedType::Nominal {
-                declaration: DeclarationId::new(LIST_ID),
+                declaration: DeclarationId::compiler(CompilerDeclaration::List),
                 arguments: vec![ResolvedType::TypeParameter {
                     owner: owner.clone(),
                     index: 0,

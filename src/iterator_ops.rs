@@ -1,7 +1,9 @@
 //! Exact consuming scalar iterator protocol. Runtime adapters receive no ambient authority.
 use crate::ast::program_source::ProgramSource;
 use crate::ast::{Param, ParamMode, Span, Type};
-use crate::hir::{DeclarationId, OwnershipMode, ResolvedParam, ResolvedType, ValueId};
+use crate::hir::{
+    CompilerDeclaration, DeclarationId, OwnershipMode, ResolvedParam, ResolvedType, ValueId,
+};
 #[cfg(test)]
 mod lazy_adapter_tests;
 mod owned;
@@ -61,9 +63,9 @@ impl IteratorOp {
     pub(crate) fn resolved_param_type(self, element: &ResolvedType) -> ResolvedType {
         resolved(
             if self == Self::VecIntoIter {
-                crate::prelude::VEC_ID
+                CompilerDeclaration::Vec
             } else {
-                ITER_ID
+                CompilerDeclaration::Iter
             },
             element.clone(),
         )
@@ -71,9 +73,9 @@ impl IteratorOp {
     pub(crate) fn resolved_return_type(self, element: &ResolvedType) -> ResolvedType {
         resolved(
             if self == Self::VecIntoIter {
-                ITER_ID
+                CompilerDeclaration::Iter
             } else {
-                STEP_ID
+                CompilerDeclaration::IterStep
             },
             element.clone(),
         )
@@ -104,17 +106,17 @@ fn nominal(name: &str, element: Type) -> Type {
         arguments: vec![element],
     }
 }
-fn resolved(id: &str, element: ResolvedType) -> ResolvedType {
+fn resolved(id: CompilerDeclaration, element: ResolvedType) -> ResolvedType {
     ResolvedType::Nominal {
-        declaration: DeclarationId::new(id),
+        declaration: DeclarationId::compiler(id),
         arguments: vec![element],
     }
 }
 pub(crate) fn resolved_iter(element: ResolvedType) -> ResolvedType {
-    resolved(ITER_ID, element)
+    resolved(CompilerDeclaration::Iter, element)
 }
 pub(crate) fn resolved_iter_step(element: ResolvedType) -> ResolvedType {
-    resolved(STEP_ID, element)
+    resolved(CompilerDeclaration::IterStep, element)
 }
 pub(crate) fn element(ty: &ResolvedType) -> Option<&ResolvedType> {
     match ty {
@@ -402,7 +404,7 @@ pub(crate) fn step_shape(index: &crate::hir::DeclarationIndex, ty: &ResolvedType
     {
         return false;
     }
-    let owner = DeclarationId::new(STEP_ID);
+    let owner = DeclarationId::compiler(CompilerDeclaration::IterStep);
     let Some(cases) = index.variant_cases(&owner) else {
         return false;
     };
@@ -419,8 +421,8 @@ pub(crate) fn validate_declarations(
     program: &crate::hir::ResolvedProgram,
 ) -> Result<(), crate::diagnostic::Diagnostic> {
     use crate::hir::DeclarationKind;
-    for id in [ITER_ID, STEP_ID] {
-        let id = DeclarationId::new(id);
+    for id in [CompilerDeclaration::Iter, CompilerDeclaration::IterStep] {
+        let id = DeclarationId::compiler(id);
         let Some(declaration) = program.declarations.declaration(&id) else {
             continue;
         };

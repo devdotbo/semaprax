@@ -18,8 +18,8 @@
 //! active builder ledger before anything is constructed.
 use super::*;
 use crate::hir::{
-    ResolvedMatchArm, ResolvedMatchMode, ResolvedMatchPattern, ResolvedMatchPatternField,
-    SourceForKind,
+    CompilerDeclaration, ResolvedMatchArm, ResolvedMatchMode, ResolvedMatchPattern,
+    ResolvedMatchPatternField, SourceForKind,
 };
 
 const WRAPPER: &str = "#for-bytes";
@@ -78,10 +78,11 @@ pub(super) fn lower(
 /// Exact requested backing one receiver at a `path_len`-byte path retains
 /// beyond the shared carriers its five `ExpressionId` constructors debit
 /// themselves: the five identity texts, the payload `ValueId`, its name, the
-/// five declaration identities (`byte_get`, the `Option<u8>` result type, and
-/// the matched variant, case and field), the result type's argument vector,
-/// and the boxed scrutinee, argument, arm and field vectors. `None` means the
-/// spelling is not addressable and nothing may be constructed.
+/// result type's argument vector, and the boxed scrutinee, argument, arm and
+/// field vectors. The five declaration identities (`byte_get`, the
+/// `Option<u8>` result type, and the matched variant, case and field) are
+/// fixed compiler identities and retain no bytes. `None` means the spelling
+/// is not addressable and nothing may be constructed.
 pub(super) fn receiver_backing(function: &FunctionExecutionId, path_len: usize) -> Option<usize> {
     use crate::hir::ids::streamed::scoped_len;
     let expression =
@@ -104,13 +105,6 @@ pub(super) fn receiver_backing(function: &FunctionExecutionId, path_len: usize) 
         .0
         .pad_to_align()
         .size();
-    let declarations = [
-        crate::byte_ops::GET_ID.len(),
-        crate::prelude::OPTION_ID.len(),
-        crate::prelude::OPTION_ID.len(),
-        crate::prelude::OPTION_SOME_ID.len(),
-        crate::prelude::OPTION_SOME_VALUE_ID.len(),
-    ];
     let structure = [
         std::mem::size_of::<ResolvedType>(),
         std::mem::size_of::<ResolvedExpr>(),
@@ -121,7 +115,6 @@ pub(super) fn receiver_backing(function: &FunctionExecutionId, path_len: usize) 
     identities
         .into_iter()
         .chain([payload, PAYLOAD.len()])
-        .chain(declarations)
         .chain(structure)
         .try_fold(0usize, usize::checked_add)
 }
@@ -157,7 +150,7 @@ fn receiver(
         ty: crate::byte_ops::ByteOp::Get.return_type(),
         ownership: OwnershipMode::Value,
         kind: ResolvedExprKind::Call {
-            callee: DeclarationId::new(crate::byte_ops::GET_ID),
+            callee: DeclarationId::compiler(CompilerDeclaration::ByteGet),
             type_arguments: Vec::new(),
             instance: None,
             args: vec![view, index],
@@ -173,10 +166,10 @@ fn receiver(
             scrutinee: Box::new(read),
             arms: vec![ResolvedMatchArm {
                 pattern: ResolvedMatchPattern::Variant {
-                    variant: DeclarationId::new(crate::prelude::OPTION_ID),
-                    case: DeclarationId::new(crate::prelude::OPTION_SOME_ID),
+                    variant: DeclarationId::compiler(CompilerDeclaration::Option),
+                    case: DeclarationId::compiler(CompilerDeclaration::OptionSome),
                     fields: vec![ResolvedMatchPatternField {
-                        field: DeclarationId::new(crate::prelude::OPTION_SOME_VALUE_ID),
+                        field: DeclarationId::compiler(CompilerDeclaration::OptionSomeValue),
                         binding: payload,
                     }],
                 },

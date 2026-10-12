@@ -10,8 +10,9 @@ pub(crate) const MAX_TEMPLATE_BYTES: usize = 65_536;
 pub(crate) const MAX_FIELDS: usize = 32;
 
 pub(crate) fn operation_id() -> &'static crate::hir::DeclarationId {
-    static IDENTITY: std::sync::LazyLock<crate::hir::DeclarationId> =
-        std::sync::LazyLock::new(|| crate::hir::DeclarationId::new(ID));
+    static IDENTITY: std::sync::LazyLock<crate::hir::DeclarationId> = std::sync::LazyLock::new(|| {
+        crate::hir::DeclarationId::compiler(crate::hir::CompilerDeclaration::LiteralFormat)
+    });
     &IDENTITY
 }
 

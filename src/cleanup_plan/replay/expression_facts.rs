@@ -251,7 +251,9 @@ fn collect_expression_facts<'a, P: errors::Policy>(
                     })
                 }
                 ResolvedExprKind::HostCommandCall(call) => Some(CallFact {
-                    callee: DeclarationId::new(crate::command_io_ops::id(call.operation)),
+                    callee: DeclarationId::compiler(crate::hir::CompilerDeclaration::Command(
+                        call.operation,
+                    )),
                     instance: None,
                     arguments: call
                         .args

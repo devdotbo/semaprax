@@ -263,11 +263,19 @@ fn whole_record_argument_shape_preserves_contiguous_fields_and_partial_failure_l
         panic!("whole argument shape")
     };
     assert!(matches!(fields[0].shape, FieldLivenessShape::NoDrop));
-    for (field, expected) in fields[1..].iter().zip([0, 1]) {
-        let FieldLivenessShape::Leaf { flag, .. } = &field.shape else {
+    let oracle = [
+        crate::cleanup::STRING_DROP_LIFECYCLE_ID,
+        crate::cleanup::BYTES_DROP_LIFECYCLE_ID,
+    ];
+    for ((field, expected), text) in fields[1..].iter().zip([0, 1]).zip(oracle) {
+        let FieldLivenessShape::Leaf { flag, lifecycle } = &field.shape else {
             panic!("owned direct leaf")
         };
         assert_eq!(flag.0, expected);
+        // A fixed compiler lifecycle that owns no bytes, equal to its text.
+        assert!(lifecycle.is_compiler_static());
+        assert_eq!(lifecycle.owned_allocation_bytes(), 0);
+        assert_eq!(*lifecycle, DeclarationId::new(text.to_owned()));
     }
     let make = program
         .functions

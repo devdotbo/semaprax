@@ -127,7 +127,9 @@ impl PlanBuilder<'_> {
             self.add_status_source(
                 source.clone(),
                 StatusProducer::PropagatedCall {
-                    callee: DeclarationId::new(crate::command_io_ops::id(operation)),
+                    callee: DeclarationId::compiler(crate::hir::CompilerDeclaration::Command(
+                        operation,
+                    )),
                 },
             )?;
             self.split_status(flow.block, state, active_region, source)?
@@ -166,8 +168,11 @@ pub(super) fn stream_next_signature(
             "streaming advancement requires one exact owned reader",
         ));
     }
-    static NEXT: std::sync::LazyLock<DeclarationId> =
-        std::sync::LazyLock::new(|| DeclarationId::new(crate::stdin_stream_ops::NEXT_ID));
+    static NEXT: std::sync::LazyLock<DeclarationId> = std::sync::LazyLock::new(|| {
+        DeclarationId::compiler(crate::hir::CompilerDeclaration::Command(
+            crate::hir::ResolvedHostCommandOperation::StdinStreamNext,
+        ))
+    });
     Ok((
         &NEXT,
         crate::stdin_stream_ops::resolved_host_params(call.operation),

@@ -198,7 +198,8 @@ impl<'a> Decoder<'a> {
     fn length(&mut self) -> Result<usize> {
         Ok(u32::decode(self)? as usize)
     }
-    fn text(&mut self) -> Result<&'a str> {
+    /// Borrowed text from the input; nothing is allocated or charged here.
+    pub(crate) fn text(&mut self) -> Result<&'a str> {
         self.nested(|decoder| {
             let length = decoder.length()?;
             std::str::from_utf8(decoder.take(length)?)

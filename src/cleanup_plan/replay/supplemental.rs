@@ -127,8 +127,11 @@ fn parts<'a>(
                     "streaming advancement has a noncanonical owned signature",
                 ));
             }
-            static NEXT: std::sync::LazyLock<DeclarationId> =
-                std::sync::LazyLock::new(|| DeclarationId::new(crate::stdin_stream_ops::NEXT_ID));
+            static NEXT: std::sync::LazyLock<DeclarationId> = std::sync::LazyLock::new(|| {
+                DeclarationId::compiler(crate::hir::CompilerDeclaration::Command(
+                    crate::hir::ResolvedHostCommandOperation::StdinStreamNext,
+                ))
+            });
             return Ok(Some(super::super::native_rust::CallParts {
                 callee: &NEXT,
                 instance: None,

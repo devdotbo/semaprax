@@ -126,13 +126,18 @@ fn leaf(
     if !crate::cleanup::selected_inventory_needs_drop(ty)? {
         return Ok(FieldLivenessShape::NoDrop);
     }
-    let lifecycle = crate::cleanup::primitive_leaf_lifecycle(ty)
+    let lifecycle = crate::cleanup::primitive_leaf_lifecycle_identity(ty)
         .ok_or_else(|| replay_error(function, "selected field has no primitive lifecycle"))?;
     lifecycle_leaf(function, lifecycle, next, budget)
 }
+/// Lifecycles are fixed compiler identities and allocate no backing. The
+/// original text term is still reserved through the replay budget's own
+/// route, unchanged and whatever that budget's payer is, so caps and the
+/// first-refusal order match the owned-text replay. It is conservative and
+/// pays for no identity allocation.
 fn lifecycle_leaf(
     function: &ResolvedFunction,
-    lifecycle: &str,
+    lifecycle: crate::hir::CompilerDeclaration,
     next: &mut u32,
     budget: &mut ReplayBudget,
 ) -> Result<FieldLivenessShape, Diagnostic> {
@@ -146,10 +151,10 @@ fn lifecycle_leaf(
     *next = next
         .checked_add(1)
         .ok_or_else(|| replay_error(function, "selected field flags overflowed"))?;
-    budget.reserve_bytes(function, lifecycle.len(), "selected field lifecycle")?;
+    budget.reserve_bytes(function, lifecycle.text().len(), "selected field lifecycle")?;
     Ok(FieldLivenessShape::Leaf {
         flag,
-        lifecycle: DeclarationId::new(lifecycle),
+        lifecycle: DeclarationId::compiler(lifecycle),
     })
 }
 pub(super) fn shape(
@@ -170,7 +175,7 @@ pub(super) fn shape(
     if crate::cleanup::selected_vector_element(program, ty)?.is_some() {
         return lifecycle_leaf(
             function,
-            crate::cleanup::VEC_DROP_LIFECYCLE_ID,
+            crate::hir::CompilerDeclaration::VecDrop,
             next,
             budget,
         );

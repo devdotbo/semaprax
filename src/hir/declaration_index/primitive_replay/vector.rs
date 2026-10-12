@@ -70,28 +70,30 @@ impl DeclarationIndex {
             .ok_or_else(fail)?;
         debit(id.len() * 5 + 8)?;
         physical.reserve(bytes).map_err(|_| fail())?;
+        // A fixed compiler identity: it and its four clones own no bytes. The
+        // original identity text terms above stay reserved, unchanged, so the
+        // cap and refusal order are those of the owned-text replay.
+        let declaration = DeclarationId::compiler(crate::hir::CompilerDeclaration::Vec);
         self.declarations.insert(
-            DeclarationId::new(id),
+            declaration.clone(),
             Declaration {
-                id: DeclarationId::new(id),
+                id: declaration.clone(),
                 name: "Vec".into(),
                 kind: DeclarationKind::Record,
                 identity_origin: IdentityOrigin::CompilerOwned,
                 owner: None,
             },
         );
-        self.types_by_name
-            .insert("Vec".into(), DeclarationId::new(id));
+        self.types_by_name.insert("Vec".into(), declaration.clone());
         self.type_parameters.insert(
-            DeclarationId::new(id),
+            declaration.clone(),
             vec![ResolvedTypeParameterDeclaration {
                 name: "T".into(),
                 index: 0,
                 span: crate::ast::Span::default(),
             }],
         );
-        self.record_fields
-            .insert(DeclarationId::new(id), Vec::new());
+        self.record_fields.insert(declaration, Vec::new());
         Ok(())
     }
 }

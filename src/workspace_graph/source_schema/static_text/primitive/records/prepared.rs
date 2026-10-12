@@ -223,7 +223,9 @@ fn authenticate_inner(
 /// The receiving Vec classifier compares a current type declaration against
 /// the index metadata above. Rebuild it from the same fixed compiler-owned
 /// constants, never by copying the index it is compared with. The identity,
-/// name, one exact parameter slot and its name are reserved before construction.
+/// name, one exact parameter slot and its name are reserved before
+/// construction, unchanged; the identity is a fixed compiler identity that
+/// owns no bytes, so its reserved text term is conservative.
 fn vector(
     resources: &mut SelectedReplayPreparation,
     anchor: &ResolvedFunction,
@@ -241,6 +243,7 @@ fn vector(
             .checked_add(std::mem::size_of::<hir::ResolvedTypeParameterDeclaration>())
             .ok_or(refused)?;
         physical.reserve(bytes).map_err(|_| refused)?;
+        let id = hir::DeclarationId::compiler(hir::CompilerDeclaration::Vec);
         let mut type_parameters = Vec::with_capacity(1);
         if type_parameters.capacity() != 1 {
             return Err(refused);
@@ -251,7 +254,7 @@ fn vector(
             span: crate::ast::Span::default(),
         });
         Ok(hir::ResolvedTypeDeclaration {
-            id: hir::DeclarationId::new(id),
+            id,
             name: "Vec".into(),
             type_parameters,
             kind: hir::ResolvedTypeDeclarationKind::Record { fields: Vec::new() },

@@ -53,7 +53,6 @@ fn required(
         .checked_add(cloned_type_bytes(&row.element, 0)?.checked_mul(2)?)?
         .checked_add(cloned_type_bytes(&row.source.ty, 0)?)?
         .checked_add(cloned_type_bytes(&row.index.ty, 0)?)?
-        .checked_add(UNBOUND_CALLEE.len())?
         .checked_add(identity_length(function, path, false)?)?
         .checked_add(identity_length(function, path, true)?.checked_mul(2)?)
 }
@@ -107,6 +106,8 @@ pub(super) fn materialize(
     first.id.owned_allocation_bytes()?;
     let second = place(1, &row.index);
     second.id.owned_allocation_bytes()?;
+    // The sentinel is a fixed compiler identity: no backing, nothing debited.
+    let callee = DeclarationId::compiler(crate::hir::CompilerDeclaration::RowLoanUnbound);
     Some(ResolvedExpr {
         id,
         ty: row.element.clone(),
@@ -117,7 +118,7 @@ pub(super) fn materialize(
                 element: row.element.clone(),
                 traversal: row.region.clone(),
                 bound: row.bound.clone(),
-                callee: DeclarationId::new(UNBOUND_CALLEE),
+                callee,
                 // The unbound callee refuses publication until the exact parameter is installed.
                 parameter: row.bound.clone(),
             }),

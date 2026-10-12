@@ -341,6 +341,7 @@ pub use expr_nodes::{
     ResolvedRecordMatchFieldPattern, ResolvedRecordMatchPatternField, ResolvedStatement,
 };
 pub use ids::{DeclarationId, ExpressionId, FunctionExecutionId, FunctionInstanceId, ValueId};
+pub(crate) use ids::CompilerDeclaration;
 pub(crate) mod row_loan;
 pub(crate) use monomorphize::substitute_type;
 use monomorphize::{

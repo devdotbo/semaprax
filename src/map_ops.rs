@@ -377,7 +377,11 @@ pub(crate) fn ast_resolved(ty: &Type) -> Option<ResolvedType> {
         Type::Bool => ResolvedType::Bool,
         Type::StringMap => ResolvedType::StringMap,
         Type::Named { name, arguments } if ast_collection(ty) => ResolvedType::Nominal {
-            declaration: DeclarationId::new(if name == "Map" { MAP_ID } else { SET_ID }),
+            declaration: DeclarationId::compiler(if name == "Map" {
+                crate::hir::CompilerDeclaration::Map
+            } else {
+                crate::hir::CompilerDeclaration::Set
+            }),
             arguments: arguments
                 .iter()
                 .map(ast_resolved)

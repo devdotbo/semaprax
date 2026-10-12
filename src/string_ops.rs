@@ -707,7 +707,7 @@ impl StringOp {
 /// The compiler-owned `Option<i64>` that `string_to_i64` produces.
 pub(crate) fn option_i64() -> ResolvedType {
     ResolvedType::Nominal {
-        declaration: crate::hir::DeclarationId::new(crate::prelude::OPTION_ID),
+        declaration: crate::hir::DeclarationId::compiler(crate::hir::CompilerDeclaration::Option),
         arguments: vec![ResolvedType::I64],
     }
 }

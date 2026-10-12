@@ -135,7 +135,7 @@ pub(crate) fn ast_box(element: Type) -> Type {
 }
 pub(crate) fn resolved_box(element: ResolvedType) -> ResolvedType {
     ResolvedType::Nominal {
-        declaration: DeclarationId::new(crate::prelude::BOX_ID),
+        declaration: DeclarationId::compiler(crate::hir::CompilerDeclaration::Box),
         arguments: vec![element],
     }
 }

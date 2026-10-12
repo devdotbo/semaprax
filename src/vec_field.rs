@@ -3,8 +3,9 @@ pub(crate) const NAME: &str = "vec_field";
 pub(crate) const ID: &str = "core.vec.field";
 
 pub(crate) fn operation_id() -> &'static crate::hir::DeclarationId {
-    static IDENTITY: std::sync::LazyLock<crate::hir::DeclarationId> =
-        std::sync::LazyLock::new(|| crate::hir::DeclarationId::new(ID));
+    static IDENTITY: std::sync::LazyLock<crate::hir::DeclarationId> = std::sync::LazyLock::new(|| {
+        crate::hir::DeclarationId::compiler(crate::hir::CompilerDeclaration::VecField)
+    });
     &IDENTITY
 }
 pub(crate) fn resolved_params(args: &[crate::hir::ResolvedExpr]) -> Vec<crate::hir::ResolvedParam> {
