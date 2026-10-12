@@ -5,7 +5,7 @@ mod branch_join;
 pub(super) mod storage;
 
 #[allow(clippy::too_many_arguments)] // Keep the independently held phase index explicit.
-pub(super) fn validate_path_states(
+pub(super) fn validate_path_states<E: semantic_refusal::Error>(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     storage: &BTreeSet<StorageId>,
@@ -13,7 +13,7 @@ pub(super) fn validate_path_states(
     budget: &mut ReplayBudget,
     lexical: Option<&lexical_cert::LexicalAuth>,
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
-) -> Result<(), Diagnostic> {
+) -> Result<(), E> {
     // Authenticate the absence once before path traversal. The source/HIR
     // wrapper certificate identifies a conditional Step transfer, which must
     // never acquire the one-leaf renewal authority of another profile.
@@ -24,7 +24,8 @@ pub(super) fn validate_path_states(
                 return Err(replay_error(
                     function,
                     "owning Break conditional Step has unexpected renewal authority",
-                ));
+                )
+                .into());
             }
         }
     }
@@ -90,7 +91,8 @@ pub(super) fn validate_path_states(
                     return Err(replay_error(
                         function,
                         "conditional entry case does not name exact case-qualified leaves",
-                    ));
+                    )
+                    .into());
                 }
                 flags.push(under[0]);
             }
@@ -159,7 +161,8 @@ pub(super) fn validate_path_states(
             return Err(replay_error(
                 function,
                 "reachable cleanup block has no incoming ownership state",
-            ));
+            )
+            .into());
         }
         let join_units =
             states
@@ -200,7 +203,8 @@ pub(super) fn validate_path_states(
                 return Err(replay_error(
                     function,
                     "owning break fragment does not rejoin its parent with exact ownership state",
-                ));
+                )
+                .into());
             }
             validate_control_group_with_budget(function, &states, block_id, budget)?;
             let (live_order, mut conditional_variants) =
@@ -237,7 +241,7 @@ pub(super) fn validate_path_states(
             }
             for transition in &block.transitions {
                 renewal::charge_transition(function, transition, &state, budget)?;
-                execute_replay_transition(
+                execute_replay_transition::<E>(
                     program, function, transition, &mut state, storage, leaves, helpers, budget,
                 )?;
             }
@@ -308,7 +312,7 @@ pub(super) fn validate_path_states(
                                 // history; unexpected authority fails closed.
                                 if continued.renewals.contains_key(assignment) {
                                     return Err(replay_error(function,
-                                        "owning Break conditional Step has unexpected renewal history"));
+                                        "owning Break conditional Step has unexpected renewal history").into());
                                 }
                             }
                             if let Some(auth) = lexical {
@@ -389,7 +393,8 @@ pub(super) fn validate_path_states(
         return Err(replay_error(
             function,
             "cleanup CFG has no replayable terminal success path",
-        ));
+        )
+        .into());
     }
     Ok(())
 }

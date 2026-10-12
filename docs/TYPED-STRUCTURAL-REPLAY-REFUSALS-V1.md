@@ -27,3 +27,28 @@ one-short controls preserve the first capacity receipt; exact allowance reaches
 the typed structural failure. This is not full-driver candidate acceptance or
 whole-pipeline physical funding evidence. Full-driver current-member error parity
 and ordinary/selected detailed status errors remain separate controls.
+
+## Partial transition refusal extension (OPT-781)
+
+The same sealed protocol now retains four additional transition atoms: dead
+call flag, double-consumed call flag, duplicate conditional variant epoch and
+selected failure that differs from its pending edge. Each carries the exact
+shared ExpressionId and, where relevant, Copy flag. Receipt construction clones
+only the immutable identity handle; it renders no String. The legacy policy
+continues to render the original complete H006 text synchronously.
+
+The ordinary and selected transition drivers and the shared path walk select
+this policy explicitly. Earlier child Diagnostics, capacity failures and all
+unmigrated path errors move unchanged into the paid engine error sum. Check,
+mutation and argument order are unchanged; in particular, conditional inventory
+removal before a later duplicate refusal remains observable. The atoms confer
+no permission to bypass source, current-member, schema or path validation.
+
+Two owning bodies in `selected_entry::tests::transition_errors` compare saved
+ordinary/selected cores for success, simultaneous hostiles and exact mutated
+state, and observe actual acquisition through Session, mismatch receipt, paid
+report transfer and Drop. The latter asserts no allocation or debit in that
+specific mismatch subphase, same report/ledger pointers and sticky retry.
+Source/leaf fixture creation and fixed active-ledger context are outside its
+observer. This proves neither all transition allocations funded nor complete
+Session/engine funding. These source-authored controls remain unexecuted.

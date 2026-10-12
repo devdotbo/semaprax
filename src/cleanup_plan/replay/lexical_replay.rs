@@ -147,7 +147,7 @@ fn validate_core<E: semantic_refusal::Error>(
         validate_reachable_acyclic_cfg(function)?;
     }
     // Lexical functions always replay every path: no summary shortcut applies.
-    validate_path_states(
+    validate_path_states::<E>(
         program,
         function,
         &storage,

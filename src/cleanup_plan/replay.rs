@@ -573,7 +573,9 @@ fn validate_structure_with_budget(
         && !status_only_paths_can_be_summarized(function)
         && !cleanup_inert_large_decisions_can_be_summarized(function)
     {
-        validate_path_states(program, function, &storage, &leaves, budget, None, helpers)?;
+        validate_path_states::<Diagnostic>(
+            program, function, &storage, &leaves, budget, None, helpers,
+        )?;
         validate_typed_control_skeleton_with_index(program, function, budget, helpers)?;
     }
     Ok(())

@@ -124,7 +124,7 @@ fn validate_core<E: semantic_refusal::Error>(
     )?;
     structural_maps::validate_reference_coverage(function, budget)?;
     structural_control::validate_reachable_acyclic_cfg(function, budget)?;
-    validate_path_states(program, function, &storage, &leaves, budget, None, None)?;
+    validate_path_states::<E>(program, function, &storage, &leaves, budget, None, None)?;
     match factored::compare_with_index(program, function, budget, None)? {
         Some(true) => Ok(()),
         Some(false) => Err(replay_error(

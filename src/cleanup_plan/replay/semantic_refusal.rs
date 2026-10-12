@@ -7,6 +7,10 @@ pub(super) enum Atom {
     UnknownStatus(ExpressionId),
     NoncontiguousSlot(usize),
     RepeatedStorage(StorageId),
+    DeadCallFlag(ExpressionId, LivenessFlagId),
+    RepeatedCallFlag(ExpressionId, LivenessFlagId),
+    RepeatedVariantEpoch(ExpressionId),
+    MismatchedFailure(ExpressionId),
 }
 #[derive(Debug)]
 pub(crate) struct Receipt {
@@ -29,6 +33,20 @@ impl Receipt {
             }
             Atom::NoncontiguousSlot(index) => {
                 format!("cleanup slot at index {index} has non-contiguous identity or index")
+            }
+            Atom::DeadCallFlag(call, flag) => format!(
+                "call `{call}` atomically consumes dead argument flag {}",
+                flag.0
+            ),
+            Atom::RepeatedCallFlag(call, flag) => format!(
+                "call `{call}` atomically consumes argument flag {} twice",
+                flag.0
+            ),
+            Atom::RepeatedVariantEpoch(call) => {
+                format!("call `{call}` atomically consumes a variant epoch twice")
+            }
+            Atom::MismatchedFailure(expression) => {
+                format!("selected failure `{expression}` does not match the pending failing edge")
             }
             Atom::RepeatedStorage(storage) => format!("cleanup storage `{storage:?}` is repeated"),
         };

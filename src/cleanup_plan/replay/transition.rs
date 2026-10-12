@@ -8,7 +8,7 @@ use super::*;
     clippy::too_many_arguments,
     reason = "keep independent held authority and canonical replay inputs explicit"
 )]
-pub(super) fn execute_replay_transition(
+pub(super) fn execute_replay_transition<E: semantic_refusal::Error>(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     transition: &CleanupTransition,
@@ -17,9 +17,9 @@ pub(super) fn execute_replay_transition(
     leaves: &Leaves,
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
     budget: &mut ReplayBudget,
-) -> Result<(), Diagnostic> {
+) -> Result<(), E> {
     if budget.selected() {
-        return transition_storage::execute(
+        return transition_storage::execute::<E>(
             program, function, transition, state, storage, leaves, helpers, budget,
         );
     }
@@ -27,7 +27,8 @@ pub(super) fn execute_replay_transition(
         return Err(replay_error(
             function,
             "cleanup transition occurs after result publication",
-        ));
+        )
+        .into());
     }
     if state.selected_failure.is_some()
         && !matches!(transition, CleanupTransition::SelectFailure { .. })
@@ -35,7 +36,8 @@ pub(super) fn execute_replay_transition(
         return Err(replay_error(
             function,
             "ordinary cleanup transition occurs after failure selection",
-        ));
+        )
+        .into());
     }
     if state.pending_failure.is_some()
         && !matches!(transition, CleanupTransition::SelectFailure { .. })
@@ -43,7 +45,8 @@ pub(super) fn execute_replay_transition(
         return Err(replay_error(
             function,
             "operation failure is not selected before another transition",
-        ));
+        )
+        .into());
     }
 
     match transition {
@@ -131,7 +134,8 @@ pub(super) fn execute_replay_transition(
                 return Err(replay_error(
                     function,
                     "variant initialization targets a live cleanup place",
-                ));
+                )
+                .into());
             }
             let slot = function
                 .cleanup_plan
@@ -143,7 +147,8 @@ pub(super) fn execute_replay_transition(
                 return Err(replay_error(
                     function,
                     "variant initialization destination is not conditional storage",
-                ));
+                )
+                .into());
             };
             let conditional_cases = cases
                 .iter()
@@ -227,7 +232,8 @@ pub(super) fn execute_replay_transition(
                 return Err(replay_error(
                     function,
                     "variant authentication retains a live inactive-case payload",
-                ));
+                )
+                .into());
             }
         }
         CleanupTransition::CallCommit { call, arguments } => {
@@ -240,20 +246,17 @@ pub(super) fn execute_replay_transition(
                     .position(|variant| variant.root == argument.source)
                 {
                     if !consumed_conditional_roots.insert(argument.source.clone()) {
-                        return Err(replay_error(
+                        return Err(E::structural(
                             function,
-                            format!("call `{call}` atomically consumes a variant epoch twice"),
+                            semantic_refusal::Atom::RepeatedVariantEpoch(call.clone()),
                         ));
                     }
                     let conditional = state.conditional_variants.remove(index);
                     for flag in conditional.cases.into_iter().flat_map(|(_, flags)| flags) {
                         if !consumed.insert(flag) {
-                            return Err(replay_error(
+                            return Err(E::structural(
                                 function,
-                                format!(
-                                    "call `{call}` atomically consumes argument flag {} twice",
-                                    flag.0
-                                ),
+                                semantic_refusal::Atom::RepeatedCallFlag(call.clone(), flag),
                             ));
                         }
                     }
@@ -261,21 +264,15 @@ pub(super) fn execute_replay_transition(
                 }
                 for flag in validate_place(function, &argument.source, storage, leaves)? {
                     if !state.live_order.contains(&flag) {
-                        return Err(replay_error(
+                        return Err(E::structural(
                             function,
-                            format!(
-                                "call `{call}` atomically consumes dead argument flag {}",
-                                flag.0
-                            ),
+                            semantic_refusal::Atom::DeadCallFlag(call.clone(), flag),
                         ));
                     }
                     if !consumed.insert(flag) {
-                        return Err(replay_error(
+                        return Err(E::structural(
                             function,
-                            format!(
-                                "call `{call}` atomically consumes argument flag {} twice",
-                                flag.0
-                            ),
+                            semantic_refusal::Atom::RepeatedCallFlag(call.clone(), flag),
                         ));
                     }
                 }
@@ -291,15 +288,13 @@ pub(super) fn execute_replay_transition(
                 return Err(replay_error(
                     function,
                     "failure selection is not write-once during path replay",
-                ));
+                )
+                .into());
             }
             if state.pending_failure.as_ref() != Some(source) {
-                return Err(replay_error(
+                return Err(E::structural(
                     function,
-                    format!(
-                        "selected failure `{}` does not match the pending failing edge",
-                        source.expression
-                    ),
+                    semantic_refusal::Atom::MismatchedFailure(source.expression.clone()),
                 ));
             }
             state.pending_failure = None;
@@ -310,13 +305,15 @@ pub(super) fn execute_replay_transition(
                 return Err(replay_error(
                     function,
                     "Copy aggregate result is staged more than once on one path",
-                ));
+                )
+                .into());
             }
             if !state.live_order.is_empty() || !state.conditional_variants.is_empty() {
                 return Err(replay_error(
                     function,
                     "Copy aggregate result staging carries resource liveness",
-                ));
+                )
+                .into());
             }
             state.staged_copy_result = Some(source.clone());
         }
