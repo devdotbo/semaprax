@@ -1,5 +1,7 @@
 # Changelog
 
+- Author exact borrowed reserved-record-invariant lookup in the existing declaration map, preserving arbitrary stored declaration presence and complete UTF-8 byte order. Retain the owned suffix-key oracle and author hostile identities, literal zero-query-allocation and complete Drop controls. Source-only followup; executable qualification remains pending.
+
 - Author inline HIR type-admission frames, lazy generic classifiers, and borrowed owned-text record traversal. Presence/ownership queries retain exact arbitrary-cache-first flags; compound substitutions, cycle/depth/field/leaf bounds and diagnostic order remain. Complete pre-change eager and owned traversals plus hostile, boundary and actual allocation/Drop controls are retained. Source-only tranche; coordinated execution and application-efficiency evidence remain pending.
 
 - Keep resolver capacity observations allocation-free while retaining the complete saved HashSet census outside the production allocation observation. Exact highwater, duplicate scope and nested continuation controls remain. This corrects test harness contamination and does not represent a production allocation or live agent token reduction.

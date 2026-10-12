@@ -57,11 +57,7 @@ pub(crate) fn admitted(root: &ResolvedType, declarations: &DeclarationIndex) -> 
                 else {
                     unreachable!()
                 };
-                if declarations
-                    .declaration(&super::DeclarationId::new(format!(
-                        "{declaration}#invariant"
-                    )))
-                    .is_some()
+                if declarations.has_record_invariant(declaration)
                     || !arguments.is_empty()
                     || declarations
                         .type_parameters(declaration)

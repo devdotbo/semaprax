@@ -91,4 +91,12 @@ exact 64/65-depth, 256/257-leaf and 4096/4097-field boundaries, plus literal
 allocation and complete Drop controls. Existing hostile HIR and backend gates
 remain required. These controls have not been executed for this tranche;
 allocation reductions are source hypotheses until the coordinated verification
-round. The reserved invariant declaration probe retains its existing key path.
+round. The reserved invariant declaration probe now streams the exact declaration bytes
+plus `#invariant` into the existing declaration map. Stored declarations and
+borrowed suffix queries compare in the same complete UTF-8 byte order; arbitrary
+exact declaration presence retains the original refusal regardless of kind.
+`declaration_index::invariant_lookup::tests` authors full owned-key parity,
+UTF-8/empty/colon/NUL/suffix/long-identity neighbors, literal zero query heap
+allocation, and complete index Drop controls. The full owned probe remains the
+independent oracle; no map scan, directory, cap or admission bound is introduced.
+This followup also awaits coordinated execution.

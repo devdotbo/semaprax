@@ -1164,3 +1164,220 @@ impl Drop for DeclarationIndex {
 
 #[cfg(test)]
 mod leaf_drop_tests;
+
+// Keep this small exact-key receiver inline so existing source-locked readers
+// continue covering the entire declaration-map lookup contract.
+mod invariant_lookup {
+    use super::{DeclarationId, DeclarationIndex};
+    use std::borrow::Borrow;
+    use std::cmp::Ordering;
+
+    type Bytes<'a> = std::iter::Chain<
+        std::iter::Copied<std::slice::Iter<'a, u8>>,
+        std::iter::Copied<std::slice::Iter<'a, u8>>,
+    >;
+    trait Key {
+        fn bytes(&self) -> Bytes<'_>;
+    }
+    impl Key for DeclarationId {
+        fn bytes(&self) -> Bytes<'_> {
+            self.as_str()
+                .as_bytes()
+                .iter()
+                .copied()
+                .chain([].iter().copied())
+        }
+    }
+    // DeclarationId's Eq/Ord are exact text equality/UTF-8 byte ordering.
+    // The borrowed trait object must use that same order for EVERY stored id.
+    impl<'a> Borrow<dyn Key + 'a> for DeclarationId {
+        fn borrow(&self) -> &(dyn Key + 'a) {
+            self
+        }
+    }
+    impl PartialEq for dyn Key + '_ {
+        fn eq(&self, other: &Self) -> bool {
+            self.cmp(other) == Ordering::Equal
+        }
+    }
+    impl Eq for dyn Key + '_ {}
+    impl PartialOrd for dyn Key + '_ {
+        fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+            Some(self.cmp(other))
+        }
+    }
+    impl Ord for dyn Key + '_ {
+        fn cmp(&self, other: &Self) -> Ordering {
+            self.bytes().cmp(other.bytes())
+        }
+    }
+    struct Invariant<'a>(&'a DeclarationId);
+    impl Key for Invariant<'_> {
+        fn bytes(&self) -> Bytes<'_> {
+            self.0
+                .as_str()
+                .as_bytes()
+                .iter()
+                .copied()
+                .chain(b"#invariant".iter().copied())
+        }
+    }
+    impl DeclarationIndex {
+        /// Exact reserved declaration presence, with the existing map's lookup
+        /// and arbitrary stored declaration precedence. No index or map scan.
+        pub(crate) fn has_record_invariant(&self, declaration: &DeclarationId) -> bool {
+            self.declarations
+                .contains_key(&Invariant(declaration) as &dyn Key)
+        }
+        #[cfg(test)]
+        fn has_record_invariant_owned_oracle(&self, declaration: &DeclarationId) -> bool {
+            self.declaration(&DeclarationId::new(format!("{declaration}#invariant")))
+                .is_some()
+        }
+    }
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+        use crate::hir::{Declaration, DeclarationKind, IdentityOrigin};
+        fn declaration(id: DeclarationId, kind: DeclarationKind) -> Declaration {
+            Declaration {
+                id,
+                name: "arbitrary stored declaration".into(),
+                kind,
+                identity_origin: IdentityOrigin::Explicit,
+                owner: None,
+            }
+        }
+        fn names() -> Vec<String> {
+            vec![
+                "".into(),
+                "a".into(),
+                ":".into(),
+                "::#".into(),
+                "#invariant".into(),
+                "a#invariant".into(),
+                "a#invariant#invariant".into(),
+                "a:0:".into(),
+                "α:0:🦀".into(),
+                "é".into(),
+                "e\u{301}".into(),
+                "a\0b".into(),
+                "a".repeat(65_536),
+                "α".repeat(32_768),
+            ]
+        }
+        #[test]
+        fn suffix_lookup_matches_full_owned_key_for_arbitrary_ids_and_declarations() {
+            let names = names();
+            let queries: Vec<_> = names
+                .iter()
+                .map(|name| DeclarationId::new(name.clone()))
+                .collect();
+            let mut index = DeclarationIndex::default();
+            for id in &queries {
+                index.declarations.insert(
+                    id.clone(),
+                    declaration(id.clone(), DeclarationKind::Resource),
+                );
+                for suffix in ["#invarian", "#invariant!", "#invariant\0", "#invariantα"] {
+                    let neighbor = DeclarationId::new(format!("{id}{suffix}"));
+                    index.declarations.insert(
+                        neighbor.clone(),
+                        declaration(neighbor, DeclarationKind::Record),
+                    );
+                }
+            }
+            for query in &queries {
+                assert_eq!(
+                    index.has_record_invariant(query),
+                    index.has_record_invariant_owned_oracle(query)
+                );
+            }
+            // Kind/name/origin carry no authority for this presence probe: an
+            // arbitrary exact stored declaration selects the original refusal.
+            for (position, query) in queries.iter().enumerate() {
+                let id = DeclarationId::new(format!("{query}#invariant"));
+                index
+                    .declarations
+                    .insert(id.clone(), declaration(id, DeclarationKind::Function));
+                for (probe_position, probe) in queries.iter().enumerate() {
+                    assert_eq!(
+                        index.has_record_invariant(probe),
+                        index.has_record_invariant_owned_oracle(probe)
+                    );
+                    if probe_position <= position {
+                        assert!(index.has_record_invariant(probe));
+                    }
+                }
+            }
+            let (_, metrics) = crate::test_allocation_observer::measure(|| {
+                for query in &queries {
+                    assert!(index.has_record_invariant(query));
+                }
+            });
+            assert!(!metrics.invalid);
+            assert_eq!(
+                (
+                    metrics.allocations,
+                    metrics.allocated,
+                    metrics.live,
+                    metrics.freed
+                ),
+                (0, 0, 0, 0)
+            );
+            let (_, old) = crate::test_allocation_observer::measure(|| {
+                for query in &queries {
+                    assert!(index.has_record_invariant_owned_oracle(query));
+                }
+            });
+            assert!(!old.invalid);
+            assert!(old.allocated > 0 && old.allocations > 0);
+            assert_eq!(old.live, 0);
+            assert_eq!(old.allocated, old.freed);
+            let (_, overflowed, used, first) =
+                crate::bounded_output::with_limit_usage_refusal(0, || {
+                    assert!(!crate::bounded_output::reserve_active_required(1));
+                    for query in &queries {
+                        assert!(index.has_record_invariant(query));
+                    }
+                    assert!(!crate::bounded_output::reserve_active_required(0));
+                });
+            assert!(overflowed);
+            assert_eq!(used, 0);
+            assert_eq!(first.unwrap().requested, 1);
+            // Observe destruction of a complete index, separately from queries.
+            let mut drop_index = DeclarationIndex::default();
+            let (_, dropped) = crate::test_allocation_observer::measure(|| {
+                let id = DeclarationId::new("drop#invariant");
+                drop_index
+                    .declarations
+                    .insert(id.clone(), declaration(id, DeclarationKind::Function));
+                assert!(drop_index.has_record_invariant(&DeclarationId::new("drop")));
+                drop(drop_index);
+            });
+            assert!(!dropped.invalid);
+            assert_eq!(dropped.live, 0);
+            assert_eq!(dropped.allocated, dropped.freed);
+        }
+        #[test]
+        fn streamed_order_is_exact_for_stored_keys_and_suffix_queries() {
+            let names = names();
+            let ids: Vec<_> = names
+                .iter()
+                .map(|name| DeclarationId::new(name.clone()))
+                .collect();
+            for left in &ids {
+                for right in &ids {
+                    let stored_left = left as &dyn Key;
+                    let stored_right = right as &dyn Key;
+                    assert_eq!(stored_left.cmp(stored_right), left.cmp(right));
+                    let query = Invariant(left);
+                    assert_eq!(
+                        (&query as &dyn Key).cmp(stored_right),
+                        format!("{left}#invariant").as_str().cmp(right.as_str())
+                    );
+                }
+            }
+        }
+    }
+}
