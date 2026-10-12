@@ -54,7 +54,7 @@ fn uniqueness_presence_query_lends_all_roots_and_class_methods_without_heap_fron
     let (_, old) = crate::test_allocation_observer::measure(|| saved(&absent));
     assert!(old.allocated >= std::mem::size_of::<&Expr>());
     assert_eq!(old.allocated, old.freed);
-    const SOURCE: &str="module unique; @id(\"row\") record Row{@id(\"row.id\") id:i64,} @id(\"app.main\") fn main()->i64 {let rows=vec_with_capacity<Row>(0usize);let result=vec_unique_by<Row>(rows,\"id\");if result {0}else{1}}";
+    const SOURCE: &str="module unique; @id(\"row\") record Row{@id(\"row.id\") id:i64,} @id(\"app.main\") fn main()->i64 {let rows=vec_with_capacity<Row>(0usize);let outcome=vec_unique_by<Row>(rows,\"id\");if outcome {0}else{1}}";
     let valid = crate::check(SOURCE, "unique-probe.spx").unwrap();
     query(&valid, true);
     let mut shapes = absent.clone();
