@@ -389,6 +389,11 @@ pub struct ResolvedFieldInitializer {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ResolvedStatement {
+    /// Authenticated expression-statement boundary. The scalar value is
+    /// evaluated and discarded; this declares no binding or storage owner.
+    /// Lexical completion is independently checked against the current target.
+    /// An ordinary Let initializer never acquires this boundary implicitly.
+    CopyDiscard { value: ResolvedExpr, span: Span },
     Let {
         binding: ResolvedBinding,
         /// Explicit Mutation v1: `true` when the source declared `let mut`.
@@ -436,7 +441,9 @@ impl ResolvedStatement {
     /// [`ResolvedStatement::child`] instead.
     pub fn value(&self) -> &ResolvedExpr {
         match self {
-            Self::Let { value, .. } | Self::Assign { value, .. } => value,
+            Self::Let { value, .. }
+            | Self::Assign { value, .. }
+            | Self::CopyDiscard { value, .. } => value,
             Self::Unsafe { body, .. } => body,
             Self::While { .. } | Self::LexicalWhile { .. } => {
                 panic!("while statements expose condition and body children")
@@ -447,7 +454,9 @@ impl ResolvedStatement {
     /// Mutable access to the statement's evaluated expression.
     pub fn value_mut(&mut self) -> &mut ResolvedExpr {
         match self {
-            Self::Let { value, .. } | Self::Assign { value, .. } => value,
+            Self::Let { value, .. }
+            | Self::Assign { value, .. }
+            | Self::CopyDiscard { value, .. } => value,
             Self::Unsafe { body, .. } => body,
             Self::While { .. } | Self::LexicalWhile { .. } => {
                 panic!("while statements expose condition and body children")
@@ -460,7 +469,10 @@ impl ResolvedStatement {
     pub fn binding(&self) -> &ResolvedBinding {
         match self {
             Self::Let { binding, .. } | Self::Assign { binding, .. } => binding,
-            Self::Unsafe { .. } | Self::While { .. } | Self::LexicalWhile { .. } => {
+            Self::Unsafe { .. }
+            | Self::While { .. }
+            | Self::LexicalWhile { .. }
+            | Self::CopyDiscard { .. } => {
                 panic!("only let and assignment statements declare a binding")
             }
         }
@@ -484,7 +496,10 @@ impl ResolvedStatement {
     /// condition then its body, in evaluation order.
     pub fn child_count(&self) -> usize {
         match self {
-            Self::Let { .. } | Self::Assign { .. } | Self::Unsafe { .. } => 1,
+            Self::Let { .. }
+            | Self::Assign { .. }
+            | Self::Unsafe { .. }
+            | Self::CopyDiscard { .. } => 1,
             Self::While { .. } | Self::LexicalWhile { .. } => 2,
         }
     }
@@ -492,7 +507,9 @@ impl ResolvedStatement {
     /// One directly nested evaluated expression in left-to-right order.
     pub fn child(&self, index: usize) -> Option<&ResolvedExpr> {
         match self {
-            Self::Let { value, .. } | Self::Assign { value, .. } => (index == 0).then_some(value),
+            Self::Let { value, .. }
+            | Self::Assign { value, .. }
+            | Self::CopyDiscard { value, .. } => (index == 0).then_some(value),
             Self::Unsafe { body, .. } => (index == 0).then_some(body.as_ref()),
             Self::While {
                 condition, body, ..
