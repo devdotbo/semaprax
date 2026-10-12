@@ -131,6 +131,13 @@ pub(in crate::implementation) fn c_expression_shape(
         let (node, next_child, node_depth) = stack[stack_len - 1].take().ok_or_else(b111)?;
         stack_len -= 1;
         if next_child == 0 {
+            if matches!(&node.kind,
+                ResolvedExprKind::Block { statements, .. }
+                | ResolvedExprKind::VecConstructor { statements, .. }
+                if statements.iter().any(|statement| matches!(statement, ResolvedStatement::CopyDiscard { .. }))
+            ) {
+                return Err(b107("copy discard is outside the native Rust scalar profile"));
+            }
             if matches!(node.kind, ResolvedExprKind::RowLoan { .. }) {
                 return Err(b107("scalar value signature required"));
             }

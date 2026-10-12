@@ -687,6 +687,9 @@ pub(in crate::implementation) fn fingerprint_expression_types_scratch(
                         Frame::Statements(statements, index + 1, depth),
                     )?;
                     match statement {
+                        ResolvedStatement::CopyDiscard { value, .. } => {
+                            push(&mut stack, &mut stack_len, Frame::Expr(value, depth))?;
+                        }
                         ResolvedStatement::Let { binding, value, .. }
                         | ResolvedStatement::Assign { binding, value, .. } => {
                             maximum = maximum.max(fingerprint_binding_type_scratch(binding)?);

@@ -1260,7 +1260,7 @@ pub(super) fn validate_selected_scalar_closure(
                     let (binding, value) = match statement {
                         ResolvedStatement::Let { binding, value, .. }
                         | ResolvedStatement::Assign { binding, value, .. } => (binding, value),
-                        ResolvedStatement::Unsafe { .. } | ResolvedStatement::While { .. } | ResolvedStatement::LexicalWhile { .. } => {
+                        ResolvedStatement::CopyDiscard { .. } | ResolvedStatement::Unsafe { .. } | ResolvedStatement::While { .. } | ResolvedStatement::LexicalWhile { .. } => {
                             return Err(b107("scalar value signature required"));
                         }
                     };
@@ -1346,7 +1346,8 @@ pub(super) fn validate_native_unit_discard_bindings(
                         let (binding, value) = match statement {
                             ResolvedStatement::Let { binding, value, .. }
                             | ResolvedStatement::Assign { binding, value, .. } => (binding, value),
-                            ResolvedStatement::Unsafe { .. }
+                            ResolvedStatement::CopyDiscard { .. }
+                            | ResolvedStatement::Unsafe { .. }
                             | ResolvedStatement::While { .. }
                             | ResolvedStatement::LexicalWhile { .. } => {
                                 return Err(b107("scalar value signature required"));

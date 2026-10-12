@@ -418,6 +418,7 @@ pub(in crate::implementation) fn hir_expr_owned_capacity(
                 )?;
                 for statement in statements {
                     match statement {
+                        ResolvedStatement::CopyDiscard { value, .. } => pending.push(value),
                         ResolvedStatement::Let { binding, value, .. }
                         | ResolvedStatement::Assign { binding, value, .. } => {
                             total = total

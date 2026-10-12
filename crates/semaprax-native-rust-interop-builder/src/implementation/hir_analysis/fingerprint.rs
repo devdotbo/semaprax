@@ -186,7 +186,8 @@ pub(in crate::implementation) fn hash_expr(
                         frame(hasher, ownership(binding.ownership));
                         actions.push(HirFingerprintAction::Expr(value, depth));
                     }
-                    ResolvedStatement::LexicalWhile { .. } => {
+                    ResolvedStatement::CopyDiscard { .. }
+                    | ResolvedStatement::LexicalWhile { .. } => {
                         return Err(b107(
                             "lexical control is outside the native Rust scalar profile",
                         ));

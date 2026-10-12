@@ -377,6 +377,9 @@ fn drain_disposal_frames(
                 if let Some(statement) = statements.pop() {
                     disposal_push(frames, ResolvedDisposeFrame::Statements(statements));
                     match statement {
+                        crate::hir::ResolvedStatement::CopyDiscard { value, .. } => {
+                            pending_expression = Some(value);
+                        }
                         crate::hir::ResolvedStatement::Let { binding, value, .. }
                         | crate::hir::ResolvedStatement::Assign { binding, value, .. } => {
                             disposal_push(frames, ResolvedDisposeFrame::Type(binding.ty));
