@@ -508,6 +508,19 @@ pub(super) fn unknown_type_help(name: &str) -> Option<&'static str> {
     }
 }
 
+/// `Option<usize>`: a generic Copy type instantiated with an integer that only
+/// `i64` can carry. Names the two conversions that round-trip it.
+pub(super) fn generic_scalar_argument_help(name: &str, arguments: &[Type]) -> Option<String> {
+    let (scalar, widen, narrow) = arguments.iter().find_map(|argument| match argument {
+        Type::Usize => Some(("usize", "i64_from_usize", "usize_from_i64")),
+        Type::U8 => Some(("u8", "i64_from_u8", "u8_from_i64")),
+        _ => None,
+    })?;
+    Some(format!(
+        "carry the `{scalar}` as `i64`: instantiate `{name}` with `i64`, store `{widen}(value)`, and read it back with `{narrow}(value)`"
+    ))
+}
+
 /// A borrowed-view operation applied to something other than a plain binding.
 pub(super) fn view_place_help(operation: &str, argument: &Expr) -> String {
     let (source, binding) = match (operation, &argument.kind) {

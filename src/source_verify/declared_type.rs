@@ -341,16 +341,19 @@ pub(super) fn check_declared_type(
                 .iter()
                 .any(|argument| !matches!(argument, Type::I64 | Type::Bool)))
         {
-            diagnostics.push(error(
-                program,
-                "SPX-T223",
-                format!(
-                    "generic copy type `{}` accepts only direct `i64` or `bool` arguments",
-                    super::private_names::private_label(program, types, name)
-                        .as_deref()
-                        .unwrap_or(name)
+            diagnostics.push(super::hints::with_optional_help(
+                error(
+                    program,
+                    "SPX-T223",
+                    format!(
+                        "generic copy type `{}` accepts only direct `i64` or `bool` arguments",
+                        super::private_names::private_label(program, types, name)
+                            .as_deref()
+                            .unwrap_or(name)
+                    ),
+                    span,
                 ),
-                span,
+                super::hints::generic_scalar_argument_help(name, arguments),
             ));
         }
         pending.extend(arguments.iter().rev());
