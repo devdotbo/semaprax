@@ -164,3 +164,13 @@ Those regressions still need execution. Checked-HIR reuse, dependency-sensitive
 incremental typechecking, warm cross-process loading, target work reuse,
 incremental candidate application, and measured latency/memory benchmarks remain
 outside this slice and are not completion claims.
+
+The frontend build holds one complete current owned source closure after bundled
+dependency expansion. Once all current-byte/module/invalidation guards finish,
+that exact ordered closure moves into the ordinary Project builder. This handoff
+does not copy its paths/source text, change cache authority or compatibility,
+or change any source/counter/construction limits. Public borrowed input still
+requires its initial owned copy; parsing, checked replay and final publication
+retain their existing ownership and payment obligations. The narrow handoff
+observation excludes construction of the original closure and makes no whole
+build allocation or application-fit claim.

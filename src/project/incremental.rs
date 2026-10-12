@@ -40,6 +40,7 @@ pub(crate) mod checked_hir;
 /// Read-only replay measuring `FrontendPass::lookup`'s `Program::clone` cost
 /// (SPX-AI-031/#130, SPX-AI-032/#131). See that module's doc comment.
 mod clone_cost_report;
+mod source_handoff;
 use checked_hir::{CheckedModuleLease, ResolvedModuleInput};
 
 pub const PROJECT_FRONTEND_CACHE_SCHEMA: &str = "semaprax.project-frontend-cache-work.v1";
@@ -211,13 +212,6 @@ impl ProjectFrontendCache {
             })
             .collect::<Vec<_>>();
         super::standard_dependencies::extend_sources(manifest, &mut complete)?;
-        let complete = complete
-            .into_iter()
-            .map(|source| ProjectFrontendSource {
-                path: source.path,
-                source: source.source,
-            })
-            .collect::<Vec<_>>();
         let sources = complete.as_slice();
         if sources.len() > MAX_PROJECT_FRONTEND_CACHE_MODULES {
             return Err(capacity(
@@ -335,13 +329,10 @@ impl ProjectFrontendCache {
             functions_resolved: 0,
             functions_reused: 0,
         };
-        let owned = sources
-            .iter()
-            .map(|source| SemanticWorkspaceSource {
-                path: source.path.clone(),
-                source: source.source.clone(),
-            })
-            .collect();
+        // All borrowed current-source guards have completed. Transfer their
+        // exact owned closure, preserving order and bytes without another copy.
+        drop(current);
+        let owned = source_handoff::consume(complete);
         let built = super::build::build_owned_with_frontend(manifest, owned, &mut pass)?;
         let revision = Arc::new(ProjectRevision::from_built(manifest.clone(), built));
         let json=super::image::render(json!({"schema":if self.semantic {PROJECT_SEMANTIC_CACHE_SCHEMA}else{PROJECT_FRONTEND_CACHE_SCHEMA},
