@@ -1,5 +1,7 @@
 # Changelog
 
+- Consume newly owned replay observation prefixes when freezing a local extension, removing only the second head-tail clone buffer and its reservation. Preserve borrowed suffix copies, original moved-storage funding, work/node/ordinal/destruction order and complete saved extension oracles. Author full result/error and actual allocation/debit/Drop plus exact/one-short controls; original parameter, union/merge and application controls remain. Source-only; consolidated qualification pending.
+
 - Resolve body-dependent byte-helper callers afresh under function reuse, using the exact shared source proof signature frontier and complete nested call traversal. Current transitive proofs, diagnostics, proof failure and reservations remain; ordinary scalar generic callers still reuse. Author full fresh/error, prior Agent authority, metadata drift and actual allocation/Drop with exact funding controls. Source-only; execution pending.
 
 - Harden complete function reuse signatures with exact yields/follows clause equality and full fresh/nonreuse AST-mutation verdict controls. Make owned-text substitution identity leaves exhaustive so future type variants require review; saved old traversal remains unchanged. Source-only and unqualified.

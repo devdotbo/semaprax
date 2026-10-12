@@ -142,6 +142,7 @@ impl SkeletonWork<'_, '_> {
         Ok(())
     }
 
+    #[cfg(test)]
     pub(super) fn freeze_observations(
         &mut self,
         observations: &Observations,
@@ -195,6 +196,7 @@ impl SkeletonWork<'_, '_> {
         })
     }
 
+    #[cfg(test)]
     pub(super) fn extend_factored_observations(
         &mut self,
         target: &mut Observations,
@@ -226,6 +228,40 @@ impl SkeletonWork<'_, '_> {
         target.prefix = Some(prefix);
         target.items = suffix.items.clone();
         Ok(())
+    }
+
+    pub(super) fn extend_owned_factored_observations(
+        &mut self,
+        mut target: Observations,
+        suffix: &Observations,
+    ) -> Result<Observations, Diagnostic> {
+        let Some(suffix_prefix) = &suffix.prefix else {
+            self.budget.reserve_vec(
+                self.function,
+                &mut target.items,
+                suffix.items.len(),
+                "factored flat suffix",
+            )?;
+            target.items.extend_from_slice(&suffix.items);
+            return Ok(target);
+        };
+        let prefix = match self.freeze_owned_observations(target)? {
+            None => suffix_prefix.clone(),
+            Some(head) => {
+                self.budget.reserve_array::<Rc<ObservationDag>>(
+                    self.function,
+                    2,
+                    "factored concatenation members",
+                )?;
+                self.charged_dag(ObservationDagKind::Cat(vec![head, suffix_prefix.clone()]))?
+            }
+        };
+        self.budget
+            .reserve_clone(self.function, suffix, "factored suffix tail clone")?;
+        Ok(Observations {
+            prefix: Some(prefix),
+            items: suffix.items.clone(),
+        })
     }
 
     pub(super) fn prepend_factored_observation(

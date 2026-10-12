@@ -3133,12 +3133,10 @@ fn sequence_skeleton_paths(
             work.share_prefix_tail(&mut prefix.observations)?;
         }
         for suffix in suffixes.iter() {
-            let mut observations =
+            let observations =
                 work.clone_observations(&prefix.observations, "skeleton prefix clone")?;
-            work.extend_observations(
-                &mut observations,
-                &suffix.observations,
-                "skeleton suffix clone",
+            let observations = work.extend_owned_observations(
+                observations, &suffix.observations, "skeleton suffix clone",
             )?;
             let owned_source = work.clone_owned(
                 &suffix.owned_source,
@@ -6317,9 +6315,11 @@ fn sequence_call_argument(
             work.share_prefix_tail(&mut prefix.observations)?;
         }
         for suffix in suffixes.iter() {
-            let mut observations =
+            let observations =
                 work.clone_observations(&prefix.observations, "call prefix clone")?;
-            work.extend_observations(&mut observations, &suffix.observations, "call suffix clone")?;
+            let observations = work.extend_owned_observations(
+                observations, &suffix.observations, "call suffix clone",
+            )?;
             let owned_source =
                 work.clone_owned(&suffix.owned_source, "call suffix owned-source clone")?;
             let mut path = ExprSkeletonPath {

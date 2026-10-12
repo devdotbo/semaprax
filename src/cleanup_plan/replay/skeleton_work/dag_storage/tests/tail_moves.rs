@@ -520,3 +520,303 @@ fn consuming_merges_preserve_first_work_refusal_at_every_node_boundary() {
         );
     }
 }
+
+fn extension_inputs(
+    work: &mut SkeletonWork<'_, '_>,
+    item: &Observation,
+    target_len: usize,
+    suffix_len: usize,
+    target_prefix: bool,
+    suffix_prefix: bool,
+) -> Result<(Observations, Observations), Diagnostic> {
+    let shared = if target_prefix || suffix_prefix {
+        work.budget
+            .reserve_array::<Observation>(work.function, 1, "extension shared prefix")?;
+        Some(work.charged_dag(ObservationDagKind::Seq(None, vec![item.clone()]))?)
+    } else {
+        None
+    };
+    work.budget
+        .reserve_array::<Observation>(work.function, target_len, "extension target tail")?;
+    work.budget
+        .reserve_array::<Observation>(work.function, suffix_len, "extension suffix tail")?;
+    Ok((
+        Observations {
+            prefix: target_prefix.then(|| shared.as_ref().unwrap().clone()),
+            items: vec![item.clone(); target_len],
+        },
+        Observations {
+            prefix: suffix_prefix.then(|| shared.as_ref().unwrap().clone()),
+            items: vec![item.clone(); suffix_len],
+        },
+    ))
+}
+
+#[test]
+fn consuming_extensions_preserve_complete_shapes_work_errors_and_borrowed_suffixes() {
+    let program = fixture();
+    let function = &program.functions[0];
+    let item = observation(function);
+    for selected in [false, true] {
+        for (target_prefix, suffix_prefix) in
+            [(false, false), (false, true), (true, false), (true, true)]
+        {
+            for (target_len, suffix_len) in [(0, 0), (0, 2), (3, 0), (3, 2)] {
+                for units in [
+                    0,
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    11,
+                    12,
+                    31,
+                    MAX_REPLAY_WORK_UNITS,
+                ] {
+                    let mut a = ReplayBudget::with_physical(function, 1 << 22).unwrap();
+                    let mut b = ReplayBudget::with_physical(function, 1 << 22).unwrap();
+                    if !selected {
+                        a.admission = allocation::AdmissionMode::Ordinary;
+                        b.admission = allocation::AdmissionMode::Ordinary;
+                    }
+                    a.merge_paths = true;
+                    b.merge_paths = true;
+                    a.skeleton_remaining = MAX_REPLAY_WORK_UNITS;
+                    b.skeleton_remaining = MAX_REPLAY_WORK_UNITS;
+                    let mut old_work = SkeletonWork::new(&program, function, &mut a);
+                    let mut new_work = SkeletonWork::new(&program, function, &mut b);
+                    let (old_target, old_suffix) = extension_inputs(
+                        &mut old_work,
+                        &item,
+                        target_len,
+                        suffix_len,
+                        target_prefix,
+                        suffix_prefix,
+                    )
+                    .unwrap();
+                    let (new_target, new_suffix) = extension_inputs(
+                        &mut new_work,
+                        &item,
+                        target_len,
+                        suffix_len,
+                        target_prefix,
+                        suffix_prefix,
+                    )
+                    .unwrap();
+                    let pointer = new_target.items.as_ptr();
+                    old_work.budget.skeleton_remaining = units;
+                    new_work.budget.skeleton_remaining = units;
+                    let old = with_saved_extensions(|| {
+                        old_work.extend_owned_observations(
+                            old_target,
+                            &old_suffix,
+                            "extension receiver",
+                        )
+                    });
+                    let new = new_work.extend_owned_observations(
+                        new_target,
+                        &new_suffix,
+                        "extension receiver",
+                    );
+                    match (old, new) {
+                        (Ok(old), Ok(new)) => {
+                            assert_eq!(old.items, new.items);
+                            assert_eq!(
+                                old.prefix.as_ref().map(|p| shape(p)),
+                                new.prefix.as_ref().map(|p| shape(p))
+                            );
+                            assert_eq!(
+                                new_suffix.items.len(),
+                                suffix_len,
+                                "borrowed suffix remains held"
+                            );
+                            if suffix_prefix && target_len > 0 {
+                                let ObservationDagKind::Cat(parts) =
+                                    &new.prefix.as_ref().unwrap().kind
+                                else {
+                                    panic!("concatenation")
+                                };
+                                let ObservationDagKind::Seq(_, items) = &parts[0].kind else {
+                                    panic!("owned head")
+                                };
+                                assert_eq!(
+                                    items.as_ptr(),
+                                    pointer,
+                                    "receiving node holds original paid tail"
+                                );
+                                assert!(Rc::ptr_eq(&parts[1], new_suffix.prefix.as_ref().unwrap()));
+                            }
+                        }
+                        (Err(old), Err(new)) => assert_eq!(old, new),
+                        _ => {
+                            panic!("consumption changed full extension result or first work error")
+                        }
+                    }
+                    assert_eq!(
+                        old_work.budget.skeleton_spent,
+                        new_work.budget.skeleton_spent
+                    );
+                }
+            }
+        }
+    }
+}
+
+fn extension_probe(
+    program: &ResolvedProgram,
+    selected: bool,
+    saved: bool,
+    limit: usize,
+) -> (
+    Result<(usize, usize), ()>,
+    crate::test_allocation_observer::Metrics,
+) {
+    let function = &program.functions[0];
+    let item = observation(function);
+    let mut budget = ReplayBudget::with_physical(function, limit).unwrap();
+    if !selected {
+        budget.admission = allocation::AdmissionMode::Ordinary;
+    }
+    budget.merge_paths = true;
+    budget.skeleton_remaining = MAX_REPLAY_WORK_UNITS;
+    let before = budget.physical.as_ref().unwrap().charged();
+    let mut work = SkeletonWork::new(program, function, &mut budget);
+    crate::test_allocation_observer::measure(|| {
+        let result = (|| {
+            let (target, suffix) = extension_inputs(&mut work, &item, 3, 2, true, true)?;
+            let pointer = target.items.as_ptr();
+            let value = if saved {
+                with_saved_extensions(|| {
+                    work.extend_owned_observations(target, &suffix, "owned extension")
+                })
+            } else {
+                work.extend_owned_observations(target, &suffix, "owned extension")
+            }?;
+            assert_eq!(value.items, suffix.items);
+            let ObservationDagKind::Cat(parts) = &value.prefix.as_ref().unwrap().kind else {
+                panic!("head")
+            };
+            let ObservationDagKind::Seq(_, items) = &parts[0].kind else {
+                panic!("tail")
+            };
+            if !saved {
+                assert_eq!(items.as_ptr(), pointer);
+            }
+            assert_eq!(items.len(), 3);
+            assert!(Rc::ptr_eq(&parts[1], suffix.prefix.as_ref().unwrap()));
+            drop(value);
+            drop(suffix);
+            Ok::<(), Diagnostic>(())
+        })();
+        drop(work.dag_scratch.take());
+        match result {
+            Ok(()) => Ok((
+                work.budget.physical.as_ref().unwrap().charged() - before,
+                work.budget.skeleton_spent,
+            )),
+            Err(error) => {
+                assert_eq!(error.code, "SPX-H006");
+                drop(error);
+                let charged = work.budget.physical.as_ref().unwrap().charged();
+                drop(
+                    work.budget
+                        .reserve_bytes(function, 0, "sticky extension receiver")
+                        .unwrap_err(),
+                );
+                assert_eq!(work.budget.physical.as_ref().unwrap().charged(), charged);
+                Err(())
+            }
+        }
+    })
+}
+
+#[test]
+fn owned_extension_literal_clone_removal_survives_receiving_exact_short_and_drop() {
+    let program = fixture();
+    let function = &program.functions[0];
+    let setup = ReplayBudget::with_physical(function, 1 << 22)
+        .unwrap()
+        .physical
+        .as_ref()
+        .unwrap()
+        .charged();
+    let removed = 3 * std::mem::size_of::<Observation>();
+    for selected in [false, true] {
+        let (old, old_metrics) = extension_probe(&program, selected, true, 1 << 22);
+        let (new, new_metrics) = extension_probe(&program, selected, false, 1 << 22);
+        let (charged, spent) = new.unwrap();
+        assert_eq!(old.unwrap(), (charged + removed, spent));
+        assert_eq!(old_metrics.allocated, new_metrics.allocated + removed);
+        assert_eq!(old_metrics.allocations, new_metrics.allocations + 1);
+        assert!(new_metrics.highwater <= old_metrics.highwater);
+        for metric in [old_metrics, new_metrics] {
+            assert!(!metric.invalid);
+            assert_eq!(metric.live, 0);
+            assert_eq!(metric.allocated, metric.freed);
+        }
+        let (exact, metric) = extension_probe(&program, selected, false, setup + charged);
+        assert_eq!(exact.unwrap(), (charged, spent));
+        assert!(!metric.invalid && metric.live == 0);
+        assert_eq!(metric.allocated, metric.freed);
+        let (short, metric) = extension_probe(&program, selected, false, setup + charged - 1);
+        assert!(short.is_err());
+        assert!(!metric.invalid && metric.live == 0);
+        assert_eq!(metric.allocated, metric.freed);
+    }
+}
+
+#[test]
+fn whole_factored_cleanup_keeps_saved_local_extension_results_and_diagnostics() {
+    const BRANCHES: &str = "module extension.full; @id(\"consume\") fn consume(a:string,b:string)->i64 {string_len(a)+string_len(b)} @id(\"main\") fn main()->i64 {let a=if true {\"a\"} else {\"b\"}; consume(a,if false {\"c\"} else {\"d\"})}";
+    for source in [
+        BRANCHES,
+        include_str!("../../../../../../tests/owned_data/byte_helper_renewal.spx"),
+    ] {
+        let ast = crate::check(source, "extension-full.spx").unwrap();
+        let program = crate::hir::resolve(&ast).unwrap();
+        assert_eq!(
+            with_saved_extensions(|| validate_program(&program)),
+            validate_program(&program),
+        );
+        let compare = || {
+            let mut budget = ReplayBudget::unobserved();
+            program
+                .functions
+                .iter()
+                .map(|function| factored::compare(&program, function, &mut budget))
+                .collect::<Result<Vec<_>, _>>()
+        };
+        let old = with_saved_extensions(compare);
+        let new = compare();
+        assert_eq!(old, new);
+        assert!(new
+            .unwrap()
+            .iter()
+            .all(|comparison| *comparison == Some(true)));
+        let mut hostile = program.clone();
+        let commit = hostile
+            .functions
+            .iter_mut()
+            .flat_map(|f| &mut f.cleanup_plan.blocks)
+            .flat_map(|b| &mut b.transitions)
+            .find_map(|transition| match transition {
+                CleanupTransition::CallCommit { arguments, .. } if arguments.len() > 1 => {
+                    Some(arguments)
+                }
+                _ => None,
+            });
+        if let Some(commit) = commit {
+            commit.swap(0, 1);
+            let old = with_saved_extensions(|| validate_program(&hostile));
+            let new = validate_program(&hostile);
+            assert!(old.is_err());
+            assert_eq!(old, new);
+        }
+    }
+}

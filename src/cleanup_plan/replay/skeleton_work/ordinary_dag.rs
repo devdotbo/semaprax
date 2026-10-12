@@ -29,6 +29,7 @@ impl SkeletonWork<'_, '_> {
         Ok(node)
     }
 
+    #[cfg(test)]
     fn ordinary_freeze(
         &mut self,
         observations: &Observations,
@@ -86,6 +87,7 @@ impl SkeletonWork<'_, '_> {
         })
     }
 
+    #[cfg(test)]
     pub(super) fn ordinary_extend(
         &mut self,
         target: &mut Observations,
@@ -118,6 +120,40 @@ impl SkeletonWork<'_, '_> {
         target.prefix = Some(joined);
         target.items = items;
         Ok(())
+    }
+
+    pub(super) fn ordinary_extend_owned(
+        &mut self,
+        mut target: Observations,
+        suffix: &Observations,
+    ) -> Result<Observations, Diagnostic> {
+        let Some(prefix) = &suffix.prefix else {
+            self.budget.reserve_vec(
+                self.function,
+                &mut target.items,
+                suffix.items.len(),
+                "ordinary flat suffix",
+            )?;
+            target.items.extend_from_slice(&suffix.items);
+            return Ok(target);
+        };
+        let joined = match self.ordinary_freeze_owned(target)? {
+            None => prefix.clone(),
+            Some(head) => {
+                self.budget.reserve_array::<Rc<ObservationDag>>(
+                    self.function,
+                    2,
+                    "ordinary DAG concatenation",
+                )?;
+                self.ordinary_dag(ObservationDagKind::Cat(vec![head, prefix.clone()]))?
+            }
+        };
+        self.budget
+            .reserve_clone(self.function, &suffix.items, "ordinary DAG suffix tail")?;
+        Ok(Observations {
+            prefix: Some(joined),
+            items: suffix.items.clone(),
+        })
     }
 
     pub(super) fn ordinary_prepend(

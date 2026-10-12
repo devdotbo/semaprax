@@ -37,3 +37,27 @@ Owning library selectors live under
 - `all_operation_payloads_preserve_saved_owned_facts_and_exact_current_references`
 - `borrowed_payloads_remove_literal_clone_requests_through_receiving_and_drop`
 - `current_fact_payloads_survive_complete_replay_and_drop_before_hir_owner`
+
+## Consumed local observation extensions
+
+Sequencing still constructs one paid prefix copy for each suffix. Its local
+`Observations` receiver now transfers that copy into an ordinary or selected
+sequence node instead of cloning its tail a second time before dropping it.
+Borrowed suffix tails still copy and retain their original funding. The moved
+tail keeps its original reservation; only the physically absent head clone
+buffer loses its clone reservation. There are no refunds or work reductions.
+Node kind/order, ordinals, shared prefix identity, selected destruction edge
+registration and suffix-copy reservation order remain unchanged. Flat extension
+retains its original growth/append route. Consumed locals are unpublished on
+error; this route does not mutate a caller-owned borrowed observation value.
+
+The complete prior borrowed extension/freezer implementations remain cfg(test)
+oracles, including original work and physical refusal order. New controls under
+`cleanup_plan::replay::skeleton_work::dag_storage::tests::tail_moves` compare
+complete node shapes and errors, all empty/nonempty/shared-prefix combinations,
+actual moved tail receiving and borrowed suffix retention, literal clone request
+and cumulative debit differences through Drop, exact/one-short sticky funding,
+and complete ordinary plus factored cleanup and hostile commit replay. Original
+parameter-view, merge/union equations and application corpora are retained.
+This source followup awaits consolidated qualification and establishes no
+application fit, runtime efficiency or live-agent token ratio.

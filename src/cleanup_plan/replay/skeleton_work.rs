@@ -228,6 +228,7 @@ impl SkeletonWork<'_, '_> {
         Ok(observations.clone())
     }
 
+    #[cfg(test)]
     pub(super) fn extend_observations(
         &mut self,
         target: &mut Observations,
@@ -258,6 +259,44 @@ impl SkeletonWork<'_, '_> {
             Ok(())
         } else {
             self.ordinary_extend(target, observations)
+        }
+    }
+
+    /// The caller owns this local prefix. Its already-paid tail can transfer
+    /// into a sequence node; the borrowed suffix still needs its own copy.
+    pub(super) fn extend_owned_observations(
+        &mut self,
+        mut target: Observations,
+        observations: &Observations,
+        phase: &str,
+    ) -> Result<Observations, Diagnostic> {
+        #[cfg(test)]
+        if SAVED_EXTENSIONS.with(std::cell::Cell::get) {
+            self.extend_observations(&mut target, observations, phase)?;
+            return Ok(target);
+        }
+        self.charge(1, phase)?;
+        note_skeleton_materialization();
+        if self.budget.selected() {
+            if target.prefix.is_some() || observations.prefix.is_some() {
+                if !self.budget.merge_paths {
+                    return Err(replay_error(
+                        self.function,
+                        "selected lexical replay requires flat observations",
+                    ));
+                }
+                return self.extend_owned_factored_observations(target, observations);
+            }
+            self.budget.reserve_vec(
+                self.function,
+                &mut target.items,
+                observations.items.len(),
+                phase,
+            )?;
+            target.extend(observations);
+            Ok(target)
+        } else {
+            self.ordinary_extend_owned(target, observations)
         }
     }
 
@@ -763,4 +802,20 @@ impl SkeletonWork<'_, '_> {
         }
         Ok(result)
     }
+}
+
+#[cfg(test)]
+thread_local! {
+    static SAVED_EXTENSIONS: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+#[cfg(test)]
+fn with_saved_extensions<T>(operation: impl FnOnce() -> T) -> T {
+    struct Reset(bool);
+    impl Drop for Reset {
+        fn drop(&mut self) {
+            SAVED_EXTENSIONS.with(|cell| cell.set(self.0));
+        }
+    }
+    let _reset = Reset(SAVED_EXTENSIONS.with(|cell| cell.replace(true)));
+    operation()
 }
