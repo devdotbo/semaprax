@@ -5,6 +5,8 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
             concat!(
                 include_str!("../src/hir/validation.rs"),
                 include_str!("../src/hir/validation/aggregate_metadata.rs"),
+                include_str!("../src/hir/validation/continuation_path.rs"),
+                include_str!("../src/hir/validation/continuation_path/tests.rs"),
                 include_str!("../src/hir/validation/aggregate_metadata/tests.rs"),
                 include_str!("../src/hir/inspection/calls.rs"),
                 include_str!("../src/hir/validation/function_lookup.rs"),

@@ -8,6 +8,7 @@ use super::workspace_link::native_owner::admitted_ri06_regex_result as regex_res
 use super::*;
 mod aggregate_metadata;
 mod assign_field;
+mod continuation_path;
 use crate::loan_plan::{LoanCause, LoanId, LoanPointPhase};
 mod borrowed_argument;
 mod borrowed_str;
@@ -2188,12 +2189,12 @@ impl<'a> HirValidator<'a> {
                 expression: &'e ResolvedExpr,
                 index: usize,
                 scope: BTreeMap<ValueId, ValidationBinding>,
-                path: String,
+                path: &'e str,
             },
             InvokeAfter {
                 expression: &'e ResolvedExpr,
                 index: usize,
-                path: String,
+                path: &'e str,
             },
             RestorePublication(bool),
             Enter {
@@ -2209,12 +2210,12 @@ impl<'a> HirValidator<'a> {
                 expression: &'e ResolvedExpr,
                 start: &'e ResolvedExpr,
                 end: &'e ResolvedExpr,
-                path: String,
+                path: &'e str,
             },
             ByteRangeAfterStart {
                 expression: &'e ResolvedExpr,
                 end: &'e ResolvedExpr,
-                path: String,
+                path: &'e str,
             },
             ByteRangeAfterEnd {
                 expression: &'e ResolvedExpr,
@@ -2223,7 +2224,7 @@ impl<'a> HirValidator<'a> {
                 expression: &'e ResolvedExpr,
                 op: BinaryOp,
                 right: &'e ResolvedExpr,
-                path: String,
+                path: &'e str,
             },
             BinaryRight {
                 expression: &'e ResolvedExpr,
@@ -2235,12 +2236,12 @@ impl<'a> HirValidator<'a> {
                 expression: &'e ResolvedExpr,
                 then_branch: &'e ResolvedExpr,
                 else_branch: &'e ResolvedExpr,
-                path: String,
+                path: &'e str,
             },
             IfThen {
                 expression: &'e ResolvedExpr,
                 else_branch: &'e ResolvedExpr,
-                path: String,
+                path: &'e str,
                 outer: BTreeMap<ValueId, ValidationBinding>,
                 outer_ids: Vec<ValueId>,
             },
@@ -2263,7 +2264,7 @@ impl<'a> HirValidator<'a> {
             },
             Try {
                 expression: &'e ResolvedExpr,
-                path: String,
+                path: &'e str,
                 option: bool,
             },
             CallNext {
@@ -2274,7 +2275,7 @@ impl<'a> HirValidator<'a> {
                 return_ownership: OwnershipMode,
                 index: usize,
                 scope: BTreeMap<ValueId, ValidationBinding>,
-                path: String,
+                path: std::borrow::Cow<'e, str>,
             },
             CallAfterArg {
                 expression: &'e ResolvedExpr,
@@ -2283,7 +2284,7 @@ impl<'a> HirValidator<'a> {
                 return_type: call_signature::ResultType<'e>,
                 return_ownership: OwnershipMode,
                 index: usize,
-                path: String,
+                path: std::borrow::Cow<'e, str>,
             },
             NativeNext {
                 expression: &'e ResolvedExpr,
@@ -2292,7 +2293,7 @@ impl<'a> HirValidator<'a> {
                 result: ResolvedType,
                 index: usize,
                 scope: BTreeMap<ValueId, ValidationBinding>,
-                path: String,
+                path: &'e str,
             },
             NativeAfterArg {
                 expression: &'e ResolvedExpr,
@@ -2300,7 +2301,7 @@ impl<'a> HirValidator<'a> {
                 params: &'e [ResolvedImportParameter],
                 result: ResolvedType,
                 index: usize,
-                path: String,
+                path: &'e str,
             },
             BlockNext {
                 expression: &'e ResolvedExpr,
@@ -2310,7 +2311,7 @@ impl<'a> HirValidator<'a> {
                 scope: BTreeMap<ValueId, ValidationBinding>,
                 outer: BTreeMap<ValueId, ValidationBinding>,
                 outer_ids: Vec<ValueId>,
-                path: String,
+                path: &'e str,
             },
             BlockAfterLet {
                 expression: &'e ResolvedExpr,
@@ -2319,7 +2320,7 @@ impl<'a> HirValidator<'a> {
                 index: usize,
                 outer: BTreeMap<ValueId, ValidationBinding>,
                 outer_ids: Vec<ValueId>,
-                path: String,
+                path: &'e str,
             },
             BlockAfterAssign {
                 expression: &'e ResolvedExpr,
@@ -2329,7 +2330,7 @@ impl<'a> HirValidator<'a> {
                 scope: BTreeMap<ValueId, ValidationBinding>,
                 outer: BTreeMap<ValueId, ValidationBinding>,
                 outer_ids: Vec<ValueId>,
-                path: String,
+                path: &'e str,
             },
             BlockAfterUnsafe {
                 expression: &'e ResolvedExpr,
@@ -2338,7 +2339,7 @@ impl<'a> HirValidator<'a> {
                 index: usize,
                 outer: BTreeMap<ValueId, ValidationBinding>,
                 outer_ids: Vec<ValueId>,
-                path: String,
+                path: &'e str,
             },
             BlockAfterWhileCondition {
                 expression: &'e ResolvedExpr,
@@ -2347,7 +2348,7 @@ impl<'a> HirValidator<'a> {
                 index: usize,
                 outer: BTreeMap<ValueId, ValidationBinding>,
                 outer_ids: Vec<ValueId>,
-                path: String,
+                path: &'e str,
                 body: &'e ResolvedExpr,
                 entry: BTreeMap<ValueId, ValidationBinding>,
             },
@@ -2358,7 +2359,7 @@ impl<'a> HirValidator<'a> {
                 index: usize,
                 outer: BTreeMap<ValueId, ValidationBinding>,
                 outer_ids: Vec<ValueId>,
-                path: String,
+                path: &'e str,
                 entry: BTreeMap<ValueId, ValidationBinding>,
             },
             BlockTail {
@@ -2375,7 +2376,7 @@ impl<'a> HirValidator<'a> {
                 seen: BTreeSet<DeclarationId>,
                 index: usize,
                 scope: BTreeMap<ValueId, ValidationBinding>,
-                path: String,
+                path: &'e str,
             },
             RecordAfterField {
                 expression: &'e ResolvedExpr,
@@ -2385,7 +2386,7 @@ impl<'a> HirValidator<'a> {
                 arguments: &'e [ResolvedType],
                 seen: BTreeSet<DeclarationId>,
                 index: usize,
-                path: String,
+                path: &'e str,
             },
             VariantNext {
                 expression: &'e ResolvedExpr,
@@ -2397,7 +2398,7 @@ impl<'a> HirValidator<'a> {
                 seen: BTreeSet<DeclarationId>,
                 index: usize,
                 scope: BTreeMap<ValueId, ValidationBinding>,
-                path: String,
+                path: &'e str,
             },
             VariantAfterField {
                 expression: &'e ResolvedExpr,
@@ -2408,13 +2409,13 @@ impl<'a> HirValidator<'a> {
                 arguments: &'e [ResolvedType],
                 seen: BTreeSet<DeclarationId>,
                 index: usize,
-                path: String,
+                path: &'e str,
             },
             UpdateBase {
                 expression: &'e ResolvedExpr,
                 record: &'e DeclarationId,
                 fields: &'e [ResolvedFieldInitializer],
-                path: String,
+                path: &'e str,
             },
             UpdateNext {
                 expression: &'e ResolvedExpr,
@@ -2425,7 +2426,7 @@ impl<'a> HirValidator<'a> {
                 seen: BTreeSet<DeclarationId>,
                 index: usize,
                 scope: BTreeMap<ValueId, ValidationBinding>,
-                path: String,
+                path: &'e str,
                 ownership: OwnershipMode,
             },
             UpdateAfterField {
@@ -2436,13 +2437,13 @@ impl<'a> HirValidator<'a> {
                 arguments: &'e [ResolvedType],
                 seen: BTreeSet<DeclarationId>,
                 index: usize,
-                path: String,
+                path: &'e str,
                 ownership: OwnershipMode,
             },
             MatchScrutinee {
                 expression: &'e ResolvedExpr,
                 arms: &'e [ResolvedMatchArm],
-                path: String,
+                path: &'e str,
             },
             RecordMatchArm {
                 expression: &'e ResolvedExpr,
@@ -2464,7 +2465,7 @@ impl<'a> HirValidator<'a> {
                 covered: BTreeSet<DeclarationId>,
                 wildcard_seen: bool,
                 result: Option<(ResolvedType, OwnershipMode)>,
-                path: String,
+                path: &'e str,
             },
             VariantMatchAfterArm {
                 expression: &'e ResolvedExpr,
@@ -2479,7 +2480,7 @@ impl<'a> HirValidator<'a> {
                 covered: BTreeSet<DeclarationId>,
                 wildcard_seen: bool,
                 result: Option<(ResolvedType, OwnershipMode)>,
-                path: String,
+                path: &'e str,
             },
             /// Refutable Match v1 decision-chain twins. They mirror the
             /// resolver's Copy-scalar admission structurally, fail-closed.
@@ -2491,7 +2492,7 @@ impl<'a> HirValidator<'a> {
                 outer_ids: Vec<ValueId>,
                 arm_scopes: Vec<BTreeMap<ValueId, ValidationBinding>>,
                 result: Option<(ResolvedType, OwnershipMode)>,
-                path: String,
+                path: &'e str,
             },
             ScalarMatchAfterGuard {
                 expression: &'e ResolvedExpr,
@@ -2501,7 +2502,7 @@ impl<'a> HirValidator<'a> {
                 outer_ids: Vec<ValueId>,
                 arm_scopes: Vec<BTreeMap<ValueId, ValidationBinding>>,
                 result: Option<(ResolvedType, OwnershipMode)>,
-                path: String,
+                path: &'e str,
             },
             ScalarMatchAfterArm {
                 expression: &'e ResolvedExpr,
@@ -2511,7 +2512,7 @@ impl<'a> HirValidator<'a> {
                 outer_ids: Vec<ValueId>,
                 arm_scopes: Vec<BTreeMap<ValueId, ValidationBinding>>,
                 result: Option<(ResolvedType, OwnershipMode)>,
-                path: String,
+                path: &'e str,
             },
         }
 
@@ -2526,36 +2527,15 @@ impl<'a> HirValidator<'a> {
                 validation_scope_owned_capacity(scope)
             };
             let path = match frame {
-                Frame::InvokeNext { path, .. }
-                | Frame::InvokeAfter { path, .. }
-                | Frame::Enter { path, .. }
-                | Frame::BinaryLeft { path, .. }
-                | Frame::IfCondition { path, .. }
-                | Frame::IfThen { path, .. }
-                | Frame::Try { path, .. }
-                | Frame::CallNext { path, .. }
-                | Frame::CallAfterArg { path, .. }
-                | Frame::NativeNext { path, .. }
-                | Frame::NativeAfterArg { path, .. }
-                | Frame::BlockNext { path, .. }
-                | Frame::BlockAfterLet { path, .. }
-                | Frame::BlockAfterAssign { path, .. }
-                | Frame::BlockAfterUnsafe { path, .. }
-                | Frame::BlockAfterWhileCondition { path, .. }
-                | Frame::BlockAfterWhileBody { path, .. }
-                | Frame::RecordNext { path, .. }
-                | Frame::RecordAfterField { path, .. }
-                | Frame::VariantNext { path, .. }
-                | Frame::VariantAfterField { path, .. }
-                | Frame::UpdateBase { path, .. }
-                | Frame::UpdateNext { path, .. }
-                | Frame::UpdateAfterField { path, .. }
-                | Frame::MatchScrutinee { path, .. }
-                | Frame::VariantMatchNext { path, .. }
-                | Frame::VariantMatchAfterArm { path, .. }
-                | Frame::ScalarMatchNext { path, .. }
-                | Frame::ScalarMatchAfterGuard { path, .. }
-                | Frame::ScalarMatchAfterArm { path, .. } => path.capacity(),
+                Frame::Enter { path, .. } => path.capacity(),
+                Frame::CallNext {
+                    path: std::borrow::Cow::Owned(path),
+                    ..
+                }
+                | Frame::CallAfterArg {
+                    path: std::borrow::Cow::Owned(path),
+                    ..
+                } => path.capacity(),
                 _ => 0,
             };
             let retained = match frame {
@@ -2826,6 +2806,9 @@ impl<'a> HirValidator<'a> {
                         )));
                     }
                     self.validate_type(&expression.ty)?;
+                    let expected_path = path;
+                    let path = continuation_path::after_header(expression, expected_path.len());
+                    drop(expected_path);
                     match &expression.kind {
                         ResolvedExprKind::LexicalExit { value, .. } => {
                             if let Some(operand) = value {
@@ -2852,7 +2835,7 @@ impl<'a> HirValidator<'a> {
                                 function,
                                 expression,
                                 &mut scope,
-                                &path,
+                                path,
                                 allow_moves,
                             )?;
                             scopes.push(scope);
@@ -2934,7 +2917,7 @@ impl<'a> HirValidator<'a> {
                                 expression,
                                 start,
                                 end,
-                                path: path.clone(),
+                                path,
                             });
                             frames.push(Frame::Enter {
                                 expression: source,
@@ -3290,7 +3273,7 @@ impl<'a> HirValidator<'a> {
                                 return_ownership,
                                 index: 0,
                                 scope,
-                                path,
+                                path: path.into(),
                             });
                         }
                         ResolvedExprKind::VecFieldRead { args, .. }
@@ -3305,7 +3288,11 @@ impl<'a> HirValidator<'a> {
                                 return_ownership,
                                 index: 0,
                                 scope,
-                                path: if bytes { format!("{path}.arg.0") } else { path },
+                                path: if bytes {
+                                    std::borrow::Cow::Owned(format!("{path}.arg.0"))
+                                } else {
+                                    std::borrow::Cow::Borrowed(path)
+                                },
                             });
                         }
                         ResolvedExprKind::LiteralFormat { template, args } => {
@@ -3321,7 +3308,7 @@ impl<'a> HirValidator<'a> {
                                 return_ownership: OwnershipMode::Own,
                                 index: 0,
                                 scope,
-                                path,
+                                path: path.into(),
                             });
                         }
                         ResolvedExprKind::HostCommandCall(call) => {
@@ -3347,7 +3334,7 @@ impl<'a> HirValidator<'a> {
                                 ),
                                 index: 0,
                                 scope,
-                                path,
+                                path: path.into(),
                             });
                         }
                         ResolvedExprKind::NativeRustImportCall(call) => {
@@ -3406,7 +3393,7 @@ impl<'a> HirValidator<'a> {
                                 expression,
                                 op: *op,
                                 right,
-                                path: path.clone(),
+                                path,
                             });
                             frames.push(Frame::Enter {
                                 expression: left,
@@ -3423,7 +3410,7 @@ impl<'a> HirValidator<'a> {
                                 expression,
                                 then_branch,
                                 else_branch,
-                                path: path.clone(),
+                                path,
                             });
                             frames.push(Frame::Enter {
                                 expression: condition,
@@ -3580,7 +3567,7 @@ impl<'a> HirValidator<'a> {
                                 expression,
                                 record,
                                 fields,
-                                path: path.clone(),
+                                path,
                             });
                             frames.push(Frame::Enter {
                                 expression: base,
@@ -3594,7 +3581,7 @@ impl<'a> HirValidator<'a> {
                             frames.push(Frame::MatchScrutinee {
                                 expression,
                                 arms,
-                                path: path.clone(),
+                                path,
                             });
                             frames.push(Frame::Enter {
                                 expression: scrutinee,
@@ -3642,7 +3629,7 @@ impl<'a> HirValidator<'a> {
                         ResolvedExprKind::Try { operand, .. } => {
                             frames.push(Frame::Try {
                                 expression,
-                                path: path.clone(),
+                                path,
                                 option: false,
                             });
                             frames.push(Frame::Enter {
@@ -3654,7 +3641,7 @@ impl<'a> HirValidator<'a> {
                         ResolvedExprKind::TryOption { operand, .. } => {
                             frames.push(Frame::Try {
                                 expression,
-                                path: path.clone(),
+                                path,
                                 option: true,
                             });
                             frames.push(Frame::Enter {
@@ -3701,7 +3688,7 @@ impl<'a> HirValidator<'a> {
                     frames.push(Frame::ByteRangeAfterStart {
                         expression,
                         end,
-                        path: path.clone(),
+                        path,
                     });
                     frames.push(Frame::Enter {
                         expression: start,
@@ -3769,7 +3756,9 @@ impl<'a> HirValidator<'a> {
                             expression: &args[index],
                             scope,
                             path: crate::vec_ops::string_slot::argument_path(
-                                expression, &path, index,
+                                expression,
+                                path.as_ref(),
+                                index,
                             ),
                         });
                     }
@@ -3852,7 +3841,7 @@ impl<'a> HirValidator<'a> {
                             params,
                             result,
                             index,
-                            path: path.clone(),
+                            path,
                         });
                         frames.push(Frame::Enter {
                             expression: &args[index],
@@ -4050,7 +4039,7 @@ impl<'a> HirValidator<'a> {
                     frames.push(Frame::IfThen {
                         expression,
                         else_branch,
-                        path: path.clone(),
+                        path,
                         outer: outer.clone(),
                         outer_ids,
                     });
@@ -4147,7 +4136,7 @@ impl<'a> HirValidator<'a> {
                                     index,
                                     outer,
                                     outer_ids,
-                                    path: path.clone(),
+                                    path,
                                 });
                                 let enabled = publication.enabled;
                                 publication.enabled = false;
@@ -4179,7 +4168,7 @@ impl<'a> HirValidator<'a> {
                                     scope: target_scope,
                                     outer,
                                     outer_ids,
-                                    path: path.clone(),
+                                    path,
                                 });
                                 let enabled = publication.enabled;
                                 publication.enabled = false;
@@ -4206,7 +4195,7 @@ impl<'a> HirValidator<'a> {
                                     index,
                                     outer,
                                     outer_ids,
-                                    path: path.clone(),
+                                    path,
                                 });
                                 let enabled = publication.enabled;
                                 publication.enabled = false;
@@ -4238,7 +4227,7 @@ impl<'a> HirValidator<'a> {
                                     index,
                                     outer,
                                     outer_ids,
-                                    path: path.clone(),
+                                    path,
                                     body,
                                     entry: scope.clone(),
                                 });
@@ -4320,7 +4309,7 @@ impl<'a> HirValidator<'a> {
                         index,
                         outer,
                         outer_ids,
-                        path: path.clone(),
+                        path,
                         entry: scope.clone(),
                     });
                     let enabled = publication.enabled;
@@ -4690,7 +4679,7 @@ impl<'a> HirValidator<'a> {
                             arguments,
                             seen,
                             index,
-                            path: path.clone(),
+                            path,
                         });
                         frames.push(Frame::Enter {
                             expression: &initializer.value,
@@ -4792,7 +4781,7 @@ impl<'a> HirValidator<'a> {
                             arguments,
                             seen,
                             index,
-                            path: path.clone(),
+                            path,
                         });
                         frames.push(Frame::Enter {
                             expression: &initializer.value,
@@ -4967,7 +4956,7 @@ impl<'a> HirValidator<'a> {
                             arguments,
                             seen,
                             index,
-                            path: path.clone(),
+                            path,
                             ownership,
                         });
                         frames.push(Frame::Enter {
@@ -5538,7 +5527,7 @@ impl<'a> HirValidator<'a> {
                             covered,
                             wildcard_seen,
                             result,
-                            path: path.clone(),
+                            path,
                         });
                         let enabled = publication.enabled;
                         publication.enabled = false;
@@ -5739,7 +5728,7 @@ impl<'a> HirValidator<'a> {
                             outer_ids,
                             arm_scopes,
                             result,
-                            path: path.clone(),
+                            path,
                         });
                         let enabled = publication.enabled;
                         publication.enabled = false;
@@ -5758,7 +5747,7 @@ impl<'a> HirValidator<'a> {
                             outer_ids,
                             arm_scopes,
                             result,
-                            path: path.clone(),
+                            path,
                         });
                         let enabled = publication.enabled;
                         publication.enabled = false;
@@ -5801,7 +5790,7 @@ impl<'a> HirValidator<'a> {
                         outer_ids,
                         arm_scopes,
                         result,
-                        path: path.clone(),
+                        path,
                     });
                     frames.push(Frame::RestorePublication(enabled));
                     frames.push(Frame::Enter {
@@ -5889,7 +5878,7 @@ impl<'a> HirValidator<'a> {
                             self.mark_value_sources_moved(operand, &mut scope)?;
                         }
                     }
-                    self.finish_try_expr(function, expression, &scope, &path, option)?;
+                    self.finish_try_expr(function, expression, &scope, path, option)?;
                     scopes.push(scope);
                 }
             }
