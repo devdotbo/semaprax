@@ -246,7 +246,9 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
             "\n",
             include_str!("../../../../../src/hir/resolve_program/initial_loan_plans.rs"),
             "\n",
-            include_str!("../../../../../src/hir/resolve_program/initial_loan_plans/tests.rs")
+            include_str!("../../../../../src/hir/resolve_program/initial_loan_plans/tests.rs"),
+            include_str!("../../../../../src/hir/resolve_program/initial_loan_plans/staging.rs"),
+            include_str!("../../../../../src/hir/resolve_program/initial_loan_plans/staging_tests.rs")
         ),
         include_str!("../../../../../src/hir/resolve_program/reuse_lowered.rs"),
         include_str!("../../../../../src/hir/resolve_program/reuse_lowered/tests.rs"),

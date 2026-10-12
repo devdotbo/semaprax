@@ -649,6 +649,12 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
         // Exact child-module facades include the field-uniqueness receiver.
         // The complete source union above keeps every child inside this audit.
         "pub(super) fn verify(",
+        // These exact child-only helpers grant no workspace_graph facade:
+        // checked_key::materialize is callable only by borrowed_leaf, and
+        // old::construct is a cfg(test) oracle shared only by its test siblings.
+        // Keep both in the full union and reject any other added helper.
+        "pub(super) fn materialize(view: SyntheticProgramView<'_>) -> Result<Program, Vec<Diagnostic>> {",
+        "pub(super) fn construct(",
         "pub(super) fn collect_edges(",
         "pub(super) fn verify(",
         "pub(super) fn verify(",

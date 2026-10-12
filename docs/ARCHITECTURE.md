@@ -106,7 +106,11 @@ one cumulative ledger; the selected provider/type profile remains separate.
 
 `hir/resolve_program/initial_loan_plans.rs` owns the initial authored and
 instantiated loan-plan attachment. Active construction captures one existing
-CFG reservation and funds complete planner scratch and both staging directories.
+CFG reservation and funds complete planner scratch. One caller-held staging
+directory stores groups of at most 32 plans inline (roughly 20 KiB of bounded
+stack storage); larger groups acquire an exact paid heap directory after the
+first complete plan. The same directory is cleared between authored and
+instantiated groups.
 Each group installs only after its complete collection succeeds, with authored
 attachment preceding instance planning. The later canonical caller still
 rebuilds and compares every full plan independently; initial attachments grant

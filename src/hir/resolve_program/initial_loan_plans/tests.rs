@@ -4,7 +4,7 @@ use crate::bounded_output::{with_limit_usage, with_limit_usage_refusal};
 use crate::hir::{DeclarationId, FunctionExecutionId, ResolvedExprKind};
 use crate::test_allocation_observer::measure;
 
-const SOURCE: &str = r#"module initial.loan.plans;
+pub(super) const SOURCE: &str = r#"module initial.loan.plans;
 @id("packet") record Packet {
  @id("payload") payload:Bytes,
  @id("sibling") sibling:Bytes,
@@ -146,7 +146,7 @@ fn complete_initial_planner_backing_is_paid_through_drop_exact_short_and_sticky(
 
 #[test]
 fn first_complete_plan_precedes_exact_staging_refusal_without_partial_attachment() {
-    let mut program = fixture();
+    let mut program = super::staging_tests::wide_original_fixture();
     let before = program.clone();
     let ((), refused, first_boundary) = with_limit_usage(usize::MAX, || {
         let owner = CfgReservation::acquire().unwrap();

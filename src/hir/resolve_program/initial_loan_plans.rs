@@ -27,6 +27,9 @@ fn refused() -> Diagnostic {
     Diagnostic::io("SPX-H006", String::new())
 }
 
+mod staging;
+use staging::Staging;
+
 pub(in crate::hir) fn attach(program: &mut ResolvedProgram) -> Result<(), Diagnostic> {
     // One exact ledger/report spans both groups. Acquisition grants no quota.
     let captured = if crate::bounded_output::active_remaining().is_some() {
@@ -34,30 +37,56 @@ pub(in crate::hir) fn attach(program: &mut ResolvedProgram) -> Result<(), Diagno
     } else {
         None
     };
-    let result = (|| {
-        let plans = staged!(
-            HirLoanPlans,
-            collect(program, Group::Authored, captured.as_ref())
-        )?;
+    let Some(owner) = captured else {
+        let plans = staged!(HirLoanPlans, collect(program, Group::Authored, None))?;
         for (function, plan) in program.functions.iter_mut().zip(plans) {
             function.loan_plan = plan;
         }
-        // Preserve the original authored attachment before instance planning.
-        let plans = staged!(
-            HirInstanceLoanPlans,
-            collect(program, Group::Instances, captured.as_ref())
-        )?;
+        let plans = staged!(HirInstanceLoanPlans, collect(program, Group::Instances, None))?;
         for (instance, plan) in program.function_instances.iter_mut().zip(plans) {
             instance.function.loan_plan = plan;
         }
+        return Ok(());
+    };
+    // Reuse one bounded stack directory; never return a large staging value.
+    // This trades roughly 20 KiB of bounded stack for up to two paid heap
+    // directories. Nested plan backing still uses the exact caller ledger.
+    let mut plans = Staging::new();
+    let result = (|| {
+        staged!(HirLoanPlans, collect_paid(program, Group::Authored, &owner, &mut plans))?;
+        plans.publish(program, Group::Authored);
+        staged!(HirInstanceLoanPlans, collect_paid(program, Group::Instances, &owner, &mut plans))?;
+        plans.publish(program, Group::Instances);
         Ok(())
     })();
-    if let Some(owner) = captured {
-        if owner.first().is_some() {
-            return Err(owner.diagnostic());
-        }
+    if owner.first().is_some() {
+        return Err(owner.diagnostic());
     }
     result
+}
+
+fn collect_paid(
+    program: &ResolvedProgram,
+    group: Group,
+    owner: &CfgReservation,
+    plans: &mut Staging,
+) -> Result<(), Diagnostic> {
+    owner.reserve(0).map_err(|_| refused())?;
+    for index in 0..group.len(program) {
+        let plan = match crate::loan_plan::build_plan_with_reservation(
+            program, group.function(program, index), owner,
+        ) {
+            Ok(plan) => plan,
+            Err(crate::loan_plan::FundedError::Physical(reason)) => {
+                debug_assert_eq!(owner.first(), Some(reason));
+                return Err(refused());
+            }
+            Err(crate::loan_plan::FundedError::Semantic(error)) => return Err(error),
+        };
+        // First independent plan still precedes any fallible directory backing.
+        plans.push(plan, group.len(program), owner)?;
+    }
+    Ok(())
 }
 
 fn collect(
@@ -118,3 +147,6 @@ fn collect(
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod staging_tests;
