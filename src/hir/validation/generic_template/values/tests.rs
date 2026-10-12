@@ -57,7 +57,11 @@ fn borrowed_template_types_preserve_owned_map_diagnostics_and_current_binding_su
         wrong.body.ty = ResolvedType::String;
         compare(&program, &wrong).unwrap();
         let mut full = program.clone();
-        let target = full.function_templates.iter_mut().find(|candidate| candidate.id == wrong.id).unwrap();
+        let target = full
+            .function_templates
+            .iter_mut()
+            .find(|candidate| candidate.id == wrong.id)
+            .unwrap();
         *target = wrong;
         assert_eq!(crate::hir::validate(&full).unwrap_err().code, "SPX-H006");
         // Borrow Unit genuinely violates the same private header predicate,
@@ -221,7 +225,11 @@ fn generic_closure_scopes_keep_duplicate_priority_and_full_owned_oracle_policy()
         hostile.body.ty = ResolvedType::String;
         compare(&program, &hostile).unwrap();
         let mut full = program.clone();
-        let target = full.function_templates.iter_mut().find(|candidate| candidate.id == hostile.id).unwrap();
+        let target = full
+            .function_templates
+            .iter_mut()
+            .find(|candidate| candidate.id == hostile.id)
+            .unwrap();
         *target = hostile;
         assert_eq!(crate::hir::validate(&full).unwrap_err().code, "SPX-H006");
         let mut invalid = template.clone();

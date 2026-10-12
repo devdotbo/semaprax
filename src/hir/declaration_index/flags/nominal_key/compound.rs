@@ -9,16 +9,26 @@ const NODES: usize = 64;
 const MAX_BYTES: usize = 65_536;
 const MAX_VISITS: usize = 256;
 #[derive(Clone, Copy)]
-struct Node<'a> { ty: &'a ResolvedType, length: usize, end: usize }
+struct Node<'a> {
+    ty: &'a ResolvedType,
+    length: usize,
+    end: usize,
+}
 #[derive(Clone, Copy)]
-struct Census { node: usize, child: usize }
+struct Census {
+    node: usize,
+    child: usize,
+}
 pub(super) struct Plan<'a> {
     nodes: [Option<Node<'a>>; NODES],
     count: usize,
 }
 fn digits(mut number: usize) -> usize {
     let mut count = 1;
-    while number >= 10 { number /= 10; count += 1; }
+    while number >= 10 {
+        number /= 10;
+        count += 1;
+    }
     count
 }
 fn child_count(ty: &ResolvedType) -> Option<usize> {
@@ -32,7 +42,11 @@ fn child(ty: &ResolvedType, index: usize) -> Option<&ResolvedType> {
     match ty {
         ResolvedType::Nominal { arguments, .. } => arguments.get(index),
         ResolvedType::Function { parameters, result } => {
-            if index == parameters.len() { Some(result) } else { parameters.get(index) }
+            if index == parameters.len() {
+                Some(result)
+            } else {
+                parameters.get(index)
+            }
         }
         _ => None,
     }
@@ -44,25 +58,39 @@ fn literal(ty: &ResolvedType) -> Option<&'static [u8]> {
         ResolvedType::OnceFunctionI64Pair => b"fn-once:bytes+i64+i64:i64:v3",
         ResolvedType::MutFunctionI64 => b"fn-mut:i64+i64:i64:v1",
         ResolvedType::Never => b"never:lexical-exit:v1",
-        ResolvedType::Unit => b"unit", ResolvedType::I64 => b"i64",
-        ResolvedType::I32 => b"i32", ResolvedType::Char => b"char",
-        ResolvedType::U8 => b"u8", ResolvedType::Usize => b"usize",
-        ResolvedType::F32 => b"f32", ResolvedType::F64 => b"f64",
-        ResolvedType::Bool => b"bool", ResolvedType::String => b"string",
-        ResolvedType::Bytes => b"bytes", ResolvedType::Str => b"str",
-        ResolvedType::SliceU8 => b"slice-u8", ResolvedType::StringMap => b"map:string:i64:v1",
+        ResolvedType::Unit => b"unit",
+        ResolvedType::I64 => b"i64",
+        ResolvedType::I32 => b"i32",
+        ResolvedType::Char => b"char",
+        ResolvedType::U8 => b"u8",
+        ResolvedType::Usize => b"usize",
+        ResolvedType::F32 => b"f32",
+        ResolvedType::F64 => b"f64",
+        ResolvedType::Bool => b"bool",
+        ResolvedType::String => b"string",
+        ResolvedType::Bytes => b"bytes",
+        ResolvedType::Str => b"str",
+        ResolvedType::SliceU8 => b"slice-u8",
+        ResolvedType::StringMap => b"map:string:i64:v1",
         _ => return None,
     })
 }
 fn prefix_length(ty: &ResolvedType) -> Option<usize> {
-    if let Some(bytes) = literal(ty) { return Some(bytes.len()); }
+    if let Some(bytes) = literal(ty) {
+        return Some(bytes.len());
+    }
     match ty {
         ResolvedType::ArrayU8(length) => 9usize.checked_add(digits(usize::try_from(*length).ok()?)),
         ResolvedType::TypeParameter { owner, index } => 12usize
-            .checked_add(digits(owner.as_str().len()))?.checked_add(owner.as_str().len())?
+            .checked_add(digits(owner.as_str().len()))?
+            .checked_add(owner.as_str().len())?
             .checked_add(digits(*index as usize)),
-        ResolvedType::Nominal { declaration, arguments } => 11usize
-            .checked_add(digits(declaration.as_str().len()))?.checked_add(declaration.as_str().len())?
+        ResolvedType::Nominal {
+            declaration,
+            arguments,
+        } => 11usize
+            .checked_add(digits(declaration.as_str().len()))?
+            .checked_add(declaration.as_str().len())?
             .checked_add(digits(arguments.len())),
         ResolvedType::Function { parameters, .. } => 13usize.checked_add(digits(parameters.len())),
         _ => None,
@@ -73,40 +101,73 @@ impl<'a> Plan<'a> {
         Self::with_limits(ty, NODES, MAX_BYTES, MAX_VISITS)
     }
     fn with_limits(ty: &'a ResolvedType, nodes: usize, bytes: usize, work: usize) -> Option<Self> {
-        if nodes == 0 || nodes > NODES { return None; }
-        let mut plan = Self { nodes: [None; NODES], count: 1 };
-        plan.nodes[0] = Some(Node { ty, length: prefix_length(ty)?, end: 0 });
+        if nodes == 0 || nodes > NODES {
+            return None;
+        }
+        let mut plan = Self {
+            nodes: [None; NODES],
+            count: 1,
+        };
+        plan.nodes[0] = Some(Node {
+            ty,
+            length: prefix_length(ty)?,
+            end: 0,
+        });
         let mut stack = [None; NODES];
         stack[0] = Some(Census { node: 0, child: 0 });
         let mut depth = 1;
         let mut visits = 0usize;
         while depth != 0 {
             visits = visits.checked_add(1)?;
-            if visits > work { return None; }
+            if visits > work {
+                return None;
+            }
             let frame = stack[depth - 1]?;
             let node = plan.nodes[frame.node]?;
             if frame.child < child_count(node.ty)? {
                 let ty = child(node.ty, frame.child)?;
-                stack[depth - 1] = Some(Census { child: frame.child + 1, ..frame });
-                if plan.count == nodes || depth == NODES { return None; }
+                stack[depth - 1] = Some(Census {
+                    child: frame.child + 1,
+                    ..frame
+                });
+                if plan.count == nodes || depth == NODES {
+                    return None;
+                }
                 let index = plan.count;
                 plan.count += 1;
-                plan.nodes[index] = Some(Node { ty, length: prefix_length(ty)?, end: 0 });
-                stack[depth] = Some(Census { node: index, child: 0 });
+                plan.nodes[index] = Some(Node {
+                    ty,
+                    length: prefix_length(ty)?,
+                    end: 0,
+                });
+                stack[depth] = Some(Census {
+                    node: index,
+                    child: 0,
+                });
                 depth += 1;
             } else {
                 let mut length = node.length;
                 let mut index = frame.node + 1;
                 while index < plan.count {
                     visits = visits.checked_add(1)?;
-                    if visits > work { return None; }
+                    if visits > work {
+                        return None;
+                    }
                     let child = plan.nodes[index]?;
-                    length = length.checked_add(digits(child.length))?
-                        .checked_add(1)?.checked_add(child.length)?;
+                    length = length
+                        .checked_add(digits(child.length))?
+                        .checked_add(1)?
+                        .checked_add(child.length)?;
                     index = child.end;
                 }
-                if length > bytes { return None; }
-                plan.nodes[frame.node] = Some(Node { length, end: plan.count, ..node });
+                if length > bytes {
+                    return None;
+                }
+                plan.nodes[frame.node] = Some(Node {
+                    length,
+                    end: plan.count,
+                    ..node
+                });
                 depth -= 1;
             }
         }
@@ -114,16 +175,32 @@ impl<'a> Plan<'a> {
     }
     pub(super) fn bytes(&self) -> Bytes<'_> {
         let mut stack = [None; NODES];
-        stack[0] = Some(Frame { node: 0, stage: 0, child: 1 });
-        Bytes { plan: self, stack, depth: 1, segment: Segment::Empty }
+        stack[0] = Some(Frame {
+            node: 0,
+            stage: 0,
+            child: 1,
+        });
+        Bytes {
+            plan: self,
+            stack,
+            depth: 1,
+            segment: Segment::Empty,
+        }
     }
 }
 #[derive(Clone, Copy)]
-struct Frame { node: usize, stage: u8, child: usize }
+struct Frame {
+    node: usize,
+    stage: u8,
+    child: usize,
+}
 enum Segment<'a> {
     Empty,
     Text(std::slice::Iter<'a, u8>),
-    Decimal { digits: [u8; usize::BITS as usize], index: usize },
+    Decimal {
+        digits: [u8; usize::BITS as usize],
+        index: usize,
+    },
 }
 impl<'a> Segment<'a> {
     fn decimal(mut value: usize) -> Self {
@@ -133,9 +210,14 @@ impl<'a> Segment<'a> {
             index -= 1;
             buffer[index] = b'0' + (value % 10) as u8;
             value /= 10;
-            if value == 0 { break; }
+            if value == 0 {
+                break;
+            }
         }
-        Self::Decimal { digits: buffer, index }
+        Self::Decimal {
+            digits: buffer,
+            index,
+        }
     }
     fn next(&mut self) -> Option<u8> {
         match self {
@@ -165,12 +247,18 @@ fn prefix<'a>(ty: &'a ResolvedType, stage: u8) -> Option<Segment<'a>> {
         (ResolvedType::TypeParameter { .. }, 0) => Segment::Text(b"parameter:".iter()),
         (ResolvedType::TypeParameter { owner, .. }, 1) => Segment::decimal(owner.as_str().len()),
         (ResolvedType::TypeParameter { .. }, 2 | 4) => Segment::Text(b":".iter()),
-        (ResolvedType::TypeParameter { owner, .. }, 3) => Segment::Text(owner.as_str().as_bytes().iter()),
+        (ResolvedType::TypeParameter { owner, .. }, 3) => {
+            Segment::Text(owner.as_str().as_bytes().iter())
+        }
         (ResolvedType::TypeParameter { index, .. }, 5) => Segment::decimal(*index as usize),
         (ResolvedType::Nominal { .. }, 0) => Segment::Text(b"nominal:".iter()),
-        (ResolvedType::Nominal { declaration, .. }, 1) => Segment::decimal(declaration.as_str().len()),
+        (ResolvedType::Nominal { declaration, .. }, 1) => {
+            Segment::decimal(declaration.as_str().len())
+        }
         (ResolvedType::Nominal { .. }, 2 | 4 | 6) => Segment::Text(b":".iter()),
-        (ResolvedType::Nominal { declaration, .. }, 3) => Segment::Text(declaration.as_str().as_bytes().iter()),
+        (ResolvedType::Nominal { declaration, .. }, 3) => {
+            Segment::Text(declaration.as_str().as_bytes().iter())
+        }
         (ResolvedType::Nominal { arguments, .. }, 5) => Segment::decimal(arguments.len()),
         (ResolvedType::Function { .. }, 0) => Segment::Text(b"function:v1:".iter()),
         (ResolvedType::Function { parameters, .. }, 1) => Segment::decimal(parameters.len()),
@@ -182,9 +270,15 @@ impl Iterator for Bytes<'_> {
     type Item = u8;
     fn next(&mut self) -> Option<u8> {
         loop {
-            if let Some(byte) = self.segment.next() { return Some(byte); }
-            if self.depth == 0 { return None; }
-            let frame = self.stack[self.depth - 1].as_mut().expect("validated key cursor");
+            if let Some(byte) = self.segment.next() {
+                return Some(byte);
+            }
+            if self.depth == 0 {
+                return None;
+            }
+            let frame = self.stack[self.depth - 1]
+                .as_mut()
+                .expect("validated key cursor");
             let node = self.plan.nodes[frame.node].expect("validated key node");
             if frame.stage < 16 {
                 if let Some(segment) = prefix(node.ty, frame.stage) {
@@ -197,17 +291,29 @@ impl Iterator for Bytes<'_> {
             if frame.child < node.end {
                 let child = self.plan.nodes[frame.child].expect("validated child");
                 match frame.stage {
-                    16 => { self.segment = Segment::decimal(child.length); frame.stage = 17; }
-                    17 => { self.segment = Segment::Text(b":".iter()); frame.stage = 18; }
+                    16 => {
+                        self.segment = Segment::decimal(child.length);
+                        frame.stage = 17;
+                    }
+                    17 => {
+                        self.segment = Segment::Text(b":".iter());
+                        frame.stage = 18;
+                    }
                     _ => {
                         let index = frame.child;
                         frame.child = child.end;
                         frame.stage = 16;
-                        self.stack[self.depth] = Some(Frame { node: index, stage: 0, child: index + 1 });
+                        self.stack[self.depth] = Some(Frame {
+                            node: index,
+                            stage: 0,
+                            child: index + 1,
+                        });
                         self.depth += 1;
                     }
                 }
-            } else { self.depth -= 1; }
+            } else {
+                self.depth -= 1;
+            }
         }
     }
 }

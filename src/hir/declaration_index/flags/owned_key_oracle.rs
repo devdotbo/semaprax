@@ -3,10 +3,14 @@
 use super::*;
 use std::cell::Cell;
 thread_local! { static OLD: Cell<bool> = const { Cell::new(false) }; }
-pub(in crate::hir::declaration_index) fn enabled() -> bool { OLD.with(Cell::get) }
+pub(in crate::hir::declaration_index) fn enabled() -> bool {
+    OLD.with(Cell::get)
+}
 struct Restore(bool);
 impl Drop for Restore {
-    fn drop(&mut self) { OLD.with(|old| old.set(self.0)); }
+    fn drop(&mut self) {
+        OLD.with(|old| old.set(self.0));
+    }
 }
 fn with_old<R>(run: impl FnOnce() -> R) -> R {
     let previous = OLD.with(|old| old.replace(true));
@@ -31,15 +35,39 @@ fn full_facts_retains_exact_layout_clone_and_hostile_cache_precedence_through_dr
     const QUERIES: usize = 32;
     let types = [
         ResolvedType::Never,
-        ResolvedType::Nominal { declaration: super::super::DeclarationId::new("row"), arguments: Vec::new() },
-        ResolvedType::Nominal { declaration: super::super::DeclarationId::new("é\0:row"), arguments: vec![ResolvedType::I64] },
-        ResolvedType::Function { parameters: vec![ResolvedType::String], result: Box::new(ResolvedType::ArrayU8(8192)) },
+        ResolvedType::Nominal {
+            declaration: super::super::DeclarationId::new("row"),
+            arguments: Vec::new(),
+        },
+        ResolvedType::Nominal {
+            declaration: super::super::DeclarationId::new("é\0:row"),
+            arguments: vec![ResolvedType::I64],
+        },
+        ResolvedType::Function {
+            parameters: vec![ResolvedType::String],
+            result: Box::new(ResolvedType::ArrayU8(8192)),
+        },
     ];
-    let facts = TypeFacts { copy: false, contains_resource: true, sized: false, needs_drop: true, layout_key: LAYOUT.to_owned() };
-    for ty in &types { index.type_facts_by_id.insert(ty.identity_key(), facts.clone()); }
+    let facts = TypeFacts {
+        copy: false,
+        contains_resource: true,
+        sized: false,
+        needs_drop: true,
+        layout_key: LAYOUT.to_owned(),
+    };
+    for ty in &types {
+        index
+            .type_facts_by_id
+            .insert(ty.identity_key(), facts.clone());
+    }
     let retained = index.type_facts_by_id.clone();
     for ty in &types {
-        let cached_pointer = index.type_facts_by_id.get(&ty.identity_key()).unwrap().layout_key.as_ptr();
+        let cached_pointer = index
+            .type_facts_by_id
+            .get(&ty.identity_key())
+            .unwrap()
+            .layout_key
+            .as_ptr();
         let (_, old) = measure(|| {
             for _ in 0..QUERIES {
                 let actual = index.type_facts_owned_key_oracle(ty).unwrap();
@@ -49,7 +77,9 @@ fn full_facts_retains_exact_layout_clone_and_hostile_cache_precedence_through_dr
             }
         });
         let (_, keys) = measure(|| {
-            for _ in 0..QUERIES { drop(std::hint::black_box(ty.identity_key())); }
+            for _ in 0..QUERIES {
+                drop(std::hint::black_box(ty.identity_key()));
+            }
         });
         let (_, new) = measure(|| {
             for _ in 0..QUERIES {
@@ -70,8 +100,20 @@ fn full_facts_retains_exact_layout_clone_and_hostile_cache_precedence_through_dr
         }
     }
     assert_eq!(index.type_facts_by_id, retained);
-    for ty in [ResolvedType::TypeParameter { owner: super::super::DeclarationId::new("missing"), index: 9 }, ResolvedType::Nominal { declaration: super::super::DeclarationId::new("missing"), arguments: vec![ResolvedType::Bool] }] {
-        assert_eq!(index.type_facts(&ty), index.type_facts_owned_key_oracle(&ty));
+    for ty in [
+        ResolvedType::TypeParameter {
+            owner: super::super::DeclarationId::new("missing"),
+            index: 9,
+        },
+        ResolvedType::Nominal {
+            declaration: super::super::DeclarationId::new("missing"),
+            arguments: vec![ResolvedType::Bool],
+        },
+    ] {
+        assert_eq!(
+            index.type_facts(&ty),
+            index.type_facts_owned_key_oracle(&ty)
+        );
     }
 }
 #[test]
@@ -110,10 +152,16 @@ fn ordinary_generic_and_invariant_sources_preserve_full_owned_query_diagnostics_
         assert_eq!(new.resolved, old.resolved);
         let mut hostile = new.resolved.unwrap();
         let ty = hostile.functions[0].return_type.clone();
-        hostile.declarations.type_facts_by_id.insert(ty.identity_key(), TypeFacts {
-            copy: false, contains_resource: true, sized: false, needs_drop: true,
-            layout_key: "stale".to_owned(),
-        });
+        hostile.declarations.type_facts_by_id.insert(
+            ty.identity_key(),
+            TypeFacts {
+                copy: false,
+                contains_resource: true,
+                sized: false,
+                needs_drop: true,
+                layout_key: "stale".to_owned(),
+            },
+        );
         let old = with_old(|| crate::hir::validate(&hostile));
         let new = crate::hir::validate(&hostile);
         assert!(old.is_err());
