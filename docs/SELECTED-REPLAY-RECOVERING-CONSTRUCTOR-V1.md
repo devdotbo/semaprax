@@ -341,6 +341,10 @@ observation, with source, reference indexes, active ledger setup and fixed
 observer metadata outside it. The second uses the independent literal request
 of one refusal String plus three u64 elements for exact/short/sticky boundaries.
 The complete ordinary entry and malformed slot still compare their old verdicts.
+The same body checks all three early work-refusal APIs before facts or slots,
+including complete legacy first text, and independently prices the ordinary
+514-entry clone census cursor for exact/short/reuse boundaries. That cursor is
+paid separately from the expression-fact collector's own type cursor.
 
 This is not whole-validator or whole-replay funding evidence. Ordinary schema,
 status, transition/exit and observation materialization children still contain
