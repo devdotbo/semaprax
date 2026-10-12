@@ -510,6 +510,7 @@ fn complete_arbitrary_aliases_keep_original_source_refusal_without_payer_refusal
                 assert!(reserve_builder_structure(0).is_ok());
                 drop(after);
             }
+            drop(layout);
             drop((before, receiving, view, owned, registry));
         });
         assert!(!refused);
