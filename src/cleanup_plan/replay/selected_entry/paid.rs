@@ -442,7 +442,7 @@ impl Acquired {
 
 impl PaidReport {
     #[cfg(test)]
-    fn backing(&self) -> (*const Diagnostic, *const u8) {
+    pub(super) fn backing(&self) -> (*const Diagnostic, *const u8) {
         (self.diagnostics.as_ptr(), self.message.as_ptr())
     }
 

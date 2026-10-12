@@ -244,16 +244,8 @@ mod tests {
 
         let bound = skeleton_work_upper(&program, function).unwrap();
         reset_skeleton_materializations();
-        let mut insufficient = ReplayBudget {
-            remaining: bound - 1,
-            skeleton_remaining: 0,
-            skeleton_spent: 0,
-            lent_skeleton: false,
-            merge_paths: false,
-            physical: None,
-            refusal_text: None,
-            refusal_spent: false,
-        };
+        let mut insufficient = ReplayBudget::new();
+        insufficient.remaining = bound - 1;
         let error =
             reserve_program_skeleton_work(&program, std::iter::once(function), &mut insufficient)
                 .unwrap_err();

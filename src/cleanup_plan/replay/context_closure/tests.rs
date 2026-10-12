@@ -1,5 +1,7 @@
 use super::{derive, Inventory};
-use crate::cleanup_plan::replay::{physical_storage::PhysicalReservation, ReplayBudget};
+use crate::cleanup_plan::replay::{
+    physical_storage::PhysicalReservation, AdmissionMode, AllocationPayer, ReplayBudget,
+};
 use crate::hir::{ResolvedExprKind as K, ResolvedProgram, ResolvedType};
 
 const SOURCE: &str = r#"module closure;

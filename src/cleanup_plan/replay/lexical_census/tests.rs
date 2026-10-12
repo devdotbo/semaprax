@@ -236,16 +236,8 @@ fn exact_skeleton_reservation_covers_walk_and_one_short_refuses_before_materiali
         .unwrap()
         .is_empty());
     reset_skeleton_materializations();
-    let mut short = ReplayBudget {
-        remaining: bound - 1,
-        skeleton_remaining: 0,
-        skeleton_spent: 0,
-        lent_skeleton: false,
-        merge_paths: false,
-        physical: None,
-        refusal_text: None,
-        refusal_spent: false,
-    };
+    let mut short = ReplayBudget::new();
+    short.remaining = bound - 1;
     assert_eq!(
         factored::strategy::reserve_enumerated(function, &mut short, bound)
             .unwrap_err()

@@ -105,16 +105,8 @@ fn budget_exhausted_factored_comparison_keeps_the_path_budget_diagnostic() {
     let program = independent_decisions(20);
     let main = function(&program, "app.main");
     assert!(hir_terminal_path_bound(&main).unwrap() > MAX_REPLAY_PATHS);
-    let mut starved = ReplayBudget {
-        remaining: 64,
-        skeleton_remaining: 0,
-        skeleton_spent: 0,
-        lent_skeleton: false,
-        merge_paths: false,
-        physical: None,
-        refusal_text: None,
-        refusal_spent: false,
-    };
+    let mut starved = ReplayBudget::new();
+    starved.remaining = 64;
     let error = super::super::factored::validate(&program, &main, &mut starved).unwrap_err();
     assert_eq!(error.code, "SPX-H006");
     assert!(
