@@ -522,6 +522,15 @@ fn validator_oracle_handles_an_exact_depth_512_late_error_with_a_nonempty_scope(
         assert_eq!(depth, 512);
         expression.ownership = OwnershipMode::Borrow;
         let expression = expression.clone();
+        // Full-program acquisition retains its independent narrower contour
+        // refusal; only the private expression oracle admits the detached
+        // candidate at its own unchanged exact boundary.
+        let preflight = HirValidator::new(&hostile).err().unwrap();
+        assert_eq!(preflight.code, "SPX-H006");
+        assert_eq!(
+            preflight.message,
+            "lexical control scan exceeds admitted expression depth"
+        );
         hostile.functions[index].body = original_body;
         assert!(!hir::lexical_exit::requires(&hostile.functions[index]).unwrap());
         assert_eq!(
