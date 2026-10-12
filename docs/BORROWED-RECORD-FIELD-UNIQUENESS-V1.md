@@ -116,7 +116,8 @@ Workspace declaration cost retains the conservative explicit-sort transient
 prebound. These local reservations do not establish complete descriptor replay
 payment: decode copies element/layout/field text, and decimal parsing in the
 shared reader allocates before the identity writer's reservation. Prelude
-source-use discovery also retains an allocated result vector. Exact coverage
+source-use discovery reuses the existing AST visitor without a heap frontier
+inside its fixed-depth contour; its deeper overflow route remains unchanged. Exact coverage
 of those allocations remains an accounting qualification obligation. Runtime
 scratch has no compiler payer: native scratch is an exact allocator request
 with no context ledger, and the interpreter has no general heap ledger. These

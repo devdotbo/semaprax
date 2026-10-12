@@ -45,7 +45,9 @@ pub(crate) fn literal(value: &str) -> bool {
     !value.is_empty()
         && value.len() <= MAX_FIELD_BYTES
         && !value.as_bytes()[0].is_ascii_digit()
-        && value.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_')
+        && value
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b == b'_')
 }
 fn ascending(value: &str) -> Option<String> {
     if !literal(value) {
@@ -286,23 +288,19 @@ pub(crate) fn uses(program: &crate::hir::ResolvedProgram) -> bool {
 /// Source-level selection for the additive prelude contract.
 pub(crate) fn source_uses(program: &dyn crate::ast::program_source::ProgramSource) -> bool {
     let uses = |function: &crate::ast::Function| {
-        let mut pending = function
+        function
             .requires
             .iter()
             .chain(std::iter::once(&function.body))
             .chain(&function.ensures)
-            .collect::<Vec<_>>();
-        while let Some(expr) = pending.pop() {
-            if matches!(&expr.kind, crate::ast::ExprKind::Call { name, .. } if name == NAME) {
-                return true;
-            }
-            let mut i = 0;
-            while let Some(child) = expr.child(i) {
-                pending.push(child);
-                i += 1;
-            }
-        }
-        false
+            .any(|root| {
+                let mut found = false;
+                // Reuse the exhaustive AST visitor and its existing overflow
+                // route. Within its fixed-depth contour the query has no heap
+                // frontier; this is presence only, never admission authority.
+                root.visit_calls(&mut |name, _| found |= name == NAME);
+                found
+            })
     };
     program.functions().iter().any(uses)
         || program.types().iter().any(|ty| {
@@ -318,3 +316,6 @@ pub(crate) fn literal_call(name: &str) -> bool {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod source_probe_tests;
