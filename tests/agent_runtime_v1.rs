@@ -691,6 +691,7 @@ const RUNTIME_TEST_ONLY_SOURCES: &[&str] = &[
     "src/agent_runtime/tests/accounting.rs",
     "src/agent_runtime/tests/admission.rs",
     "src/agent_runtime/tests/deadline.rs",
+    "src/agent_runtime/tests/host_erasure.rs",
     "src/agent_runtime/tests/sinks.rs",
 ];
 

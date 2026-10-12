@@ -3875,7 +3875,9 @@ These areas are deliberately outside the public compiler contract:
   boundary, and canonical document framing (one JSON parse per document).
   Runtime v1 internals live under `src/agent_runtime/private/`, each owner
   private to the runtime: `private.rs` holds run state and the `Agent`
-  constructor/run entry; `admission.rs` owns profile/task/action admission and
+  constructor/run entry. The public `Agent<H>` retains its concrete host;
+  private execution, routing and deadline helpers borrow `dyn AgentHost`
+  without allocating a new host carrier. `admission.rs` owns profile/task/action admission and
   the host-free profile admission that AgentDefinition compilation reuses;
   `request.rs` owns routing, tool authorization and provider request
   construction; `execution.rs` owns the run state machine, provider turns, tool
