@@ -184,8 +184,8 @@ fn validate_selected_with_static_text(
 ) -> Result<bool, Diagnostic> {
     byte_partition::refuse_default(program)?;
     agent_validation::validate(program)?;
-    let selected = inspection::validate_with_static_text(program, fused)?;
-    crate::loan_plan::validate_program(program)?;
+    let (selected, deferred) = inspection::validate_with_loan_comparison(program, fused)?;
+    deferred.finish(program)?;
     Ok(selected)
 }
 

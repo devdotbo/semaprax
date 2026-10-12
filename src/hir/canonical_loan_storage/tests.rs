@@ -8,7 +8,7 @@ use crate::loan_plan::{Loan, LoanEndpoint, LoanPlan, LoanProgramPoint};
 use std::collections::BTreeMap;
 mod old;
 
-fn fixture() -> ResolvedProgram {
+pub(super) fn fixture() -> ResolvedProgram {
     let source = crate::check(
         r#"module loan.storage;
 @id("packet") record Packet { @id("payload") payload:Bytes, @id("sibling") sibling:Bytes, }

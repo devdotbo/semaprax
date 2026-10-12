@@ -305,3 +305,20 @@ closure function construction remain open payers. The terminal independent
 whole-validator funding, application fit or runtime advantage follows from this
 source tranche. Storage observers exclude input plans and fixed ledger setup
 explicitly; complete compiler/application inequalities remain unchanged.
+
+## Invocation-local deferred full comparison
+
+The ordinary complete HIR validator and the private byte-partition validator
+compare each entire independently rebuilt plan with the exact current
+function attachment before consuming the rebuilt storage. A private borrowed
+receipt retains the first mismatch in functions-then-instances order; it does
+not publish a diagnostic until the original final shared-loan validation
+boundary, after all preceding HIR, identity and cleanup checks. A receipt for
+an equal copied program is refused. Attached plans, storage projections,
+serialized markers and cache hashes cannot construct this receipt.
+
+The public standalone loan validator retains its independent rebuild. The
+joined route removes its repeated final rebuild, without refunding the first
+build or discounting forecasts. It changes actual allocation and debit counts,
+so low-budget refusal thresholds are not claimed identical. Independent
+builder scratch and detailed diagnostic funding retain their existing scope.

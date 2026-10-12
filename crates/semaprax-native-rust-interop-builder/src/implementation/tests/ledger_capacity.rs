@@ -333,6 +333,8 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
     let hir_validator = concat!(
         include_str!("../../../../../src/hir/function_directory/caller.rs"),
         include_str!("../../../../../src/hir/canonical_loan_storage.rs"),
+        include_str!("../../../../../src/hir/canonical_loan_storage/deferred.rs"),
+        include_str!("../../../../../src/hir/canonical_loan_storage/deferred/tests.rs"),
         include_str!("../../../../../src/hir/canonical_loan_storage/caller.rs"),
         include_str!("../../../../../src/hir/canonical_loan_storage/tests.rs"),
         include_str!("../../../../../src/hir/canonical_loan_storage/tests/old.rs"),

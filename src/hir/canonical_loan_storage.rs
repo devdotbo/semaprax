@@ -2,6 +2,8 @@
 use super::{Diagnostic, ExpressionId, Place, ResolvedProgram};
 use crate::loan_plan::{LoanCause, LoanId, LoanPointPhase};
 pub(super) mod caller;
+mod deferred;
+pub(in crate::hir) use deferred::Deferred;
 #[cfg(test)]
 mod tests;
 

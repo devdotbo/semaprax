@@ -78,19 +78,43 @@ pub(in crate::hir) fn validate<'a>(
     fused: Option<crate::hir::selected_fused_candidate::Selected<'a>>,
     directory: Option<&'a Directory<'a>>,
 ) -> Result<bool, Diagnostic> {
+    validate_with_comparison(program, fused, directory).map(|(selected, _)| selected)
+}
+
+pub(in crate::hir) fn validate_with_comparison<'a>(
+    program: &'a ResolvedProgram,
+    fused: Option<crate::hir::selected_fused_candidate::Selected<'a>>,
+    directory: Option<&Directory<'a>>,
+) -> Result<(bool, Deferred<'a>), Diagnostic> {
     // Preserve ModuleIndex before the complete constructor preflight, and the
     // preflight before every independent canonical-plan rebuild/allocation.
     let helpers = crate::loop_calls::byte_writer::ModuleIndex::new(program)?;
     let seed = ConstructorSeed::authenticate(program, directory)?;
-    let storage = prepare(&seed)?;
+    let (storage, deferred) = prepare_with_comparison(&seed, program)?;
     let validator = HirValidator::with_storage(seed, &storage)?;
-    crate::hir::validation::owner_renewal::validate_prepared(program, fused, &helpers, validator)
+    let selected = crate::hir::validation::owner_renewal::validate_prepared(
+        program, fused, &helpers, validator,
+    )?;
+    Ok((selected, deferred))
 }
 
+#[cfg(test)]
 pub(in crate::hir) fn prepare<'a>(seed: &ConstructorSeed<'a>) -> Result<Storage<'a>, Diagnostic> {
+    prepare_with_comparison(seed, seed.program()).map(|(storage, _)| storage)
+}
+
+fn prepare_with_comparison<'a>(
+    seed: &ConstructorSeed<'_>,
+    program: &'a ResolvedProgram,
+) -> Result<(Storage<'a>, Deferred<'a>), Diagnostic> {
+    if !std::ptr::eq(seed.program(), program) {
+        return Err(hir_error(
+            "canonical shared-loan constructor belongs to another program",
+        ));
+    }
     let payer = Payer::current();
     payer.reserve(0)?;
-    let program = seed.program();
+    let mut deferred = Deferred::new(program);
     let mut storage = Storage {
         program,
         ids: Vec::new(),
@@ -103,9 +127,10 @@ pub(in crate::hir) fn prepare<'a>(seed: &ConstructorSeed<'a>) -> Result<Storage<
         .chain(program.function_instances.iter().map(|i| &i.function))
     {
         let plan = crate::loan_plan::build_plan(program, function)?;
+        deferred.compare(function, &plan);
         append(&mut storage, plan, payer)?;
     }
-    Ok(storage)
+    Ok((storage, deferred))
 }
 
 fn append(storage: &mut Storage<'_>, plan: LoanPlan, payer: Payer) -> Result<(), Diagnostic> {

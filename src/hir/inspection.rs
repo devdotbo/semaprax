@@ -3,19 +3,30 @@
 use super::*;
 pub(super) mod calls;
 
+#[cfg(test)]
 pub(super) fn validate_with_static_text(
     program: &ResolvedProgram,
     fused: Option<super::selected_fused_candidate::Selected<'_>>,
 ) -> Result<bool, Diagnostic> {
+    validate_with_loan_comparison(program, fused).map(|(selected, _)| selected)
+}
+
+pub(super) fn validate_with_loan_comparison<'a>(
+    program: &'a ResolvedProgram,
+    fused: Option<super::selected_fused_candidate::Selected<'a>>,
+) -> Result<(bool, super::canonical_loan_storage::Deferred<'a>), Diagnostic> {
     let directory = super::function_directory::caller::prepare(program)
         .map_err(|_| Diagnostic::io("SPX-H006", String::new()))?;
-    let selected =
-        super::canonical_loan_storage::caller::validate(program, fused, Some(&directory))?;
+    let (selected, deferred) = super::canonical_loan_storage::caller::validate_with_comparison(
+        program,
+        fused,
+        Some(&directory),
+    )?;
     super::function_value::validate_program(program)?;
     validate_attached_identity_references(program)?;
     crate::cleanup::validate_program(program)?;
     crate::cleanup_plan::validate_program(program)?;
-    Ok(selected)
+    Ok((selected, deferred))
 }
 
 /// The same independent core verdict, with caller-owned function storage.

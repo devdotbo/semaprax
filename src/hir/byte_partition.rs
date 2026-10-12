@@ -151,8 +151,8 @@ fn source_shape(source: &crate::ast::Program) -> Result<(), Diagnostic> {
 /// The same complete validator sequence, with no descriptor as a substitute.
 pub(super) fn validate_private(program: &ResolvedProgram) -> Result<bool, Diagnostic> {
     agent_validation::validate(program)?;
-    let selected = inspection::validate_with_static_text(program, None)?;
-    crate::loan_plan::validate_program(program)?;
+    let (selected, deferred) = inspection::validate_with_loan_comparison(program, None)?;
+    deferred.finish(program)?;
     Ok(selected)
 }
 
