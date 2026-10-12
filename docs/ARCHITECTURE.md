@@ -4322,3 +4322,9 @@ and generic-proof types. Frame payload observations count only owned variants;
 retained declarations remain owned and charged by their existing caller. The
 saved recursive validator and diagnostics are unchanged, as are the conservative
 compiler forecast, inline frame-size assertion, and pure-validator boundary.
+
+Function-local HIR effect membership borrows current declaration strings in an
+ordered set. The private `validation/effect_keys.rs` adapter preserves exact
+membership and diagnostics while the saved recursive oracle retains owned keys.
+Set nodes still allocate; this change removes key text clones only and does not
+change caller payment, forecasts, or the pure-validator authority boundary.

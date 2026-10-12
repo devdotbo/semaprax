@@ -20,6 +20,7 @@ mod callable_types;
 mod canonical_loans;
 mod closure;
 mod contract_owners;
+mod effect_keys;
 mod generic_record_composition;
 mod generic_template;
 mod host_command;
@@ -1633,7 +1634,11 @@ impl<'a> HirValidator<'a> {
                 function.id
             )));
         }
-        let declared_effects = function.effects.iter().cloned().collect::<BTreeSet<_>>();
+        let declared_effects = function
+            .effects
+            .iter()
+            .map(String::as_str)
+            .collect::<BTreeSet<_>>();
         let mut required_lifecycle_effects = BTreeSet::new();
         for param in &function.params {
             if param.ownership == OwnershipMode::Own {
@@ -1688,7 +1693,7 @@ impl<'a> HirValidator<'a> {
         )?;
         if let Some(effect) = required_lifecycle_effects
             .iter()
-            .find(|effect| !declared_effects.contains(*effect))
+            .find(|effect| !declared_effects.contains(effect.as_str()))
         {
             return Err(hir_error(format!(
                 "function `{}` omits lifecycle effect `{effect}`",
@@ -1790,7 +1795,7 @@ impl<'a> HirValidator<'a> {
             &mut scope,
             "body",
             true,
-            Some(&declared_effects),
+            Some(effect_keys::Allowed::Borrowed(&declared_effects)),
         )?;
         if function.body.ty != ResolvedType::Never {
             self.require_type(&function.body.ty, &function.return_type, "function body")?;
@@ -2107,9 +2112,9 @@ impl<'a> HirValidator<'a> {
         scope: &mut BTreeMap<ValueId, ValidationBinding>,
         path: &str,
         allow_moves: bool,
-        allowed_effects: Option<&BTreeSet<String>>,
+        allowed_effects: Option<effect_keys::Allowed<'_>>,
     ) -> Result<(), Diagnostic> {
-        self.validate_expr_iterative(
+        self.validate_expr_iterative_effects(
             function,
             expression,
             scope,
@@ -2163,14 +2168,14 @@ impl<'a> HirValidator<'a> {
     }
 
     #[allow(clippy::too_many_arguments)]
-    pub(super) fn validate_expr_iterative(
+    pub(super) fn validate_expr_iterative_effects(
         &mut self,
         function: &FunctionExecutionId,
         expression: &ResolvedExpr,
         scope: &mut BTreeMap<ValueId, ValidationBinding>,
         path: &str,
         allow_moves: bool,
-        allowed_effects: Option<&BTreeSet<String>>,
+        allowed_effects: Option<effect_keys::Allowed<'_>>,
     ) -> Result<(), Diagnostic> {
         enum Frame<'e> {
             LexicalReturn {
@@ -3381,7 +3386,7 @@ impl<'a> HirValidator<'a> {
                                     "host-command call has a non-canonical identity or shape",
                                 ));
                             }
-                            host_command::require_effects(call.operation, allowed_effects)?;
+                            host_command::require_effects_view(call.operation, allowed_effects)?;
                             frames.push(Frame::CallNext {
                                 expression,
                                 args: &call.args,
@@ -5574,7 +5579,7 @@ impl<'a> HirValidator<'a> {
                                     "resolved Copy variant guard is outside its ordinary Boolean profile",
                                 ));
                             }
-                            self.validate_expr_iterative(
+                            self.validate_expr_iterative_effects(
                                 function,
                                 guard,
                                 &mut arm_scope,

@@ -9,9 +9,17 @@ use super::*;
 
 /// Every effect a host-command call needs must be declared by the enclosing
 /// function; contracts (`allowed_effects == None`) admit no host command.
+#[cfg(test)]
 pub(super) fn require_effects(
     operation: ResolvedHostCommandOperation,
     allowed_effects: Option<&BTreeSet<String>>,
+) -> Result<(), Diagnostic> {
+    require_effects_view(operation, allowed_effects.map(effect_keys::Allowed::Owned))
+}
+
+pub(super) fn require_effects_view(
+    operation: ResolvedHostCommandOperation,
+    allowed_effects: Option<effect_keys::Allowed<'_>>,
 ) -> Result<(), Diagnostic> {
     let Some(allowed) = allowed_effects else {
         return Err(hir_error("contract calls effectful host-command operation"));
