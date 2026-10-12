@@ -203,8 +203,8 @@ pub(in crate::workspace_graph::source_schema) fn replay_paid(
     for function in lexical {
         // The first member refusal stops the route: no failed Session is
         // validated or finished again, so no legacy retry Diagnostic exists.
-        if let Err(error) = session.validate(function) {
-            return Err(session.into_failed_preparation().refuse_session(error));
+        if let Err(error) = session.validate_paid(function) {
+            return Err(session.into_failed_preparation().refuse_engine(error));
         }
         found = true;
     }

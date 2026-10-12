@@ -3,9 +3,15 @@ use super::*;
 use crate::cleanup_plan::replay::physical_storage::{btree_node_upper, PhysicalReservation};
 use std::mem::size_of;
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) struct Failure {
+    pub(super) detail: &'static str,
+    pub(super) physical: bool,
+}
+
 type TypeCursor<'a> = [Option<(&'a ResolvedType, usize)>; 514];
 pub(super) struct FactCapacity<'a, 'p> {
-    function: &'a ResolvedFunction,
+    _function: &'a ResolvedFunction,
     physical: &'p mut PhysicalReservation,
     types: TypeCursor<'a>,
     work: usize,
@@ -14,45 +20,42 @@ impl<'a, 'p> FactCapacity<'a, 'p> {
     pub(super) fn new(
         function: &'a ResolvedFunction,
         physical: &'p mut PhysicalReservation,
-    ) -> Result<Self, Diagnostic> {
+    ) -> Result<Self, Failure> {
         // One reused type cursor and the collector's one active expression cursor.
         physical
             .reserve(size_of::<Self>() + size_of::<[FactFrame<'_>; 514]>())
-            .map_err(|_| {
-                replay_error(
-                    function,
-                    "physical expression-fact cursor reservation refused",
-                )
+            .map_err(|_| Failure {
+                detail: "physical expression-fact cursor reservation refused",
+                physical: true,
             })?;
         Ok(Self {
-            function,
+            _function: function,
             physical,
             types: [None; 514],
             work: MAX_REPLAY_WORK_UNITS,
         })
     }
-    fn reserve(&mut self, bytes: usize) -> Result<(), Diagnostic> {
-        self.physical.reserve(bytes).map_err(|_| {
-            replay_error(
-                self.function,
-                "physical expression-fact reservation refused",
-            )
+    fn reserve(&mut self, bytes: usize) -> Result<(), Failure> {
+        self.physical.reserve(bytes).map_err(|_| Failure {
+            detail: "physical expression-fact reservation refused",
+            physical: true,
         })
     }
-    fn array<T>(&mut self, count: usize) -> Result<(), Diagnostic> {
-        self.physical.reserve_array::<T>(count).map_err(|_| {
-            replay_error(
-                self.function,
-                "physical expression-fact array reservation refused",
-            )
-        })
+    fn array<T>(&mut self, count: usize) -> Result<(), Failure> {
+        self.physical
+            .reserve_array::<T>(count)
+            .map_err(|_| Failure {
+                detail: "physical expression-fact array reservation refused",
+                physical: true,
+            })
     }
-    fn types(&mut self, root: &'a ResolvedType) -> Result<(), Diagnostic> {
+    fn types(&mut self, root: &'a ResolvedType) -> Result<(), Failure> {
         self.types[0] = Some((root, 0));
         let mut len = 1;
         while len != 0 {
-            self.work = self.work.checked_sub(1).ok_or_else(|| {
-                replay_error(self.function, "expression-fact type work exceeds limit")
+            self.work = self.work.checked_sub(1).ok_or_else(|| Failure {
+                detail: "expression-fact type work exceeds limit",
+                physical: false,
             })?;
             let (ty, next) = self.types[len - 1].expect("type cursor frame");
             if next == 0 {
@@ -106,10 +109,10 @@ impl<'a, 'p> FactCapacity<'a, 'p> {
             };
             if let Some(child) = child {
                 if len == self.types.len() {
-                    return Err(replay_error(
-                        self.function,
-                        "expression-fact type depth exceeds limit",
-                    ));
+                    return Err(Failure {
+                        detail: "expression-fact type depth exceeds limit",
+                        physical: false,
+                    });
                 }
                 self.types[len - 1] = Some((ty, next + 1));
                 self.types[len] = Some((child, 0));
@@ -121,16 +124,15 @@ impl<'a, 'p> FactCapacity<'a, 'p> {
         }
         Ok(())
     }
-    pub(super) fn expression(&mut self, expression: &'a ResolvedExpr) -> Result<(), Diagnostic> {
-        self.work = self.work.checked_sub(1).ok_or_else(|| {
-            replay_error(
-                self.function,
-                "expression-fact inventory exceeds work limit",
-            )
+    pub(super) fn expression(&mut self, expression: &'a ResolvedExpr) -> Result<(), Failure> {
+        self.work = self.work.checked_sub(1).ok_or_else(|| Failure {
+            detail: "expression-fact inventory exceeds work limit",
+            physical: false,
         })?;
         self.reserve(
-            btree_node_upper::<ExpressionId, Option<CallFact>>().ok_or_else(|| {
-                replay_error(self.function, "expression-fact tree layout overflow")
+            btree_node_upper::<ExpressionId, Option<CallFact>>().ok_or_else(|| Failure {
+                detail: "expression-fact tree layout overflow",
+                physical: false,
             })?,
         )?;
         // ExpressionId clones retain existing Arc backing; only the new map and

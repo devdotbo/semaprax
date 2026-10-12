@@ -143,12 +143,15 @@ reserve_vec}` and `Session::{new, from_preparation, finish}` still allocate
 
 ### Session refusal and fixed literal remapping
 
-A `Session::try_from_preparation`, `validate` or `validate_scalar` refusal
-returns the Session's own Diagnostic. `Preparation::refuse_session` moves it
-into the failed preparation as the first receipt, unless an earlier receipt
-is already held. It is never cloned, formatted or published. The route stops
-at the first member refusal. It never validates or finishes a failed Session
-again, so the legacy `already failed` retry Diagnostic never exists.
+`Session::try_from_preparation` retains its original Diagnostic contract.
+The actual paid callers use `validate_paid` and `validate_scalar_paid`.
+Their shared expression-fact producer now has the private typed protocol below;
+unmigrated child failures still return the Session's own Diagnostic.
+`Preparation::refuse_engine` retains exactly one first receipt, moving an owned
+Diagnostic unchanged or retaining typed fact data. Neither is formatted or
+published as the outward report. The route stops at the first member refusal.
+The paid siblings refuse an already failed Session inline; they never create
+the legacy `already failed` retry Diagnostic.
 
 The outward report is a fixed literal remapping. The public `SPX-G410` form,
 or the remapping caller's literal, is the carrier's prepaid exact owned text.
@@ -255,3 +258,55 @@ Updated owning callers of the typed constructors and authenticators:
 `loop_calls::byte_writer::resolved::selected` (census control), and the
 `static_text::primitive::{helpers, records}` test modules (closure-graph
 oracle, entry and prepared controls). None has been executed.
+
+
+## Typed expression-fact receipt v1 (private, source-only)
+
+This bounded OPT781 tranche is active on the local/imported paid callers but
+has not been compiled or executed. It adds no source admission, authority,
+physical allowance, work allowance, cache wire change or general engine funding
+claim. Legacy lexical replay and test compatibility drivers keep byte-identical
+owned errors via an explicit legacy policy.
+
+`expression_facts/errors.rs` defines the private policy. Semantic fact failures
+retain a static exact reason, the held body's shared `ExpressionId`, and, for a
+duplicate, the exact repeated shared identity. Cloning these existing Arc handles
+allocates no identity payload; the immutable source remains borrowed by Session.
+These handles are observation data, never lookup permission. They are not a
+formatted Diagnostic and do not promise the old inner Diagnostic text on the
+new paid API. The fixed outward report is unchanged. The owned compatibility
+policy renders the original complete function prefix and duplicate identity,
+without truncation, against the saved independent producer/capacity oracle.
+
+Physical fact-cursor, tree, array or clone-backing refusal returns an inline
+reason from the physical sub-borrow. After that borrow ends, the original
+ReplayBudget consumes its already prepaid text and moves that first Diagnostic
+into the same failed Preparation. A single receipt sum prevents semantic data
+and a later budget error from replacing one another. No new error identity
+allocation, guessed text capacity, quota reset or formatted-error remapping is
+introduced. Type work/depth and expression depth remain the original limits;
+requires/body/ensures preorder, fact insertion/duplicate timing and all
+preclone reservations are unchanged. Capacity and continuation carrier layouts
+are still the actual `size_of` layouts at the existing reservation sites.
+
+Owning lib controls (authored, unexecuted):
+
+- `cleanup_plan::replay::expression_facts::tests::errors::typed_fact_policy_matches_saved_legacy_text_order_and_full_facts`
+- `cleanup_plan::replay::selected_entry::tests::fact_errors::paid_fact_cursor_and_growth_exact_short_keep_first_receipt_and_drop_one_owner`
+- `cleanup_plan::replay::selected_entry::tests::fact_errors::paid_fact_semantic_receipt_keeps_exact_shared_ids_and_driver_verdicts`
+
+The affine owner controls observe acquisition, Preparation, Session, the shared
+fact producer, receipt/report transfer and Drop in one allocator scope. Source,
+enclosing test-ledger setup and fixed observer metadata are excluded explicitly.
+Constructor baseline debits are measured separately; the added two-node fact
+cursor/tree census is independently literal. Exact/one-short constructor and
+later growth, original report/ledger/prepaid text pointers and zero-allocation
+retry/publication remain mandatory. Separate success comparisons run the actual
+complete lexical and scalar drivers against their legacy verdict/work/backing.
+The forged census inputs are not treated as HIR admission or successful replay.
+
+Still open: profile/context/renewal errors, Lookup's structural unknown-ID
+errors, inventory/status/structural/path/factored children and their dynamic
+Diagnostic producers. The selected test-only borrowed-fact route retains its
+existing error contract. This tranche does not establish full transitive
+Session funding, ordinary V6 authority, or application fit/performance.

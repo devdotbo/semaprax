@@ -518,16 +518,16 @@ pub(super) fn replay(
     };
     let mut session = resources.into_paid_session(&context, anchor)?;
     for helper in &context.helpers {
-        if let Err(error) = session.validate_scalar(helper.function) {
-            return Err(session.into_failed_preparation().refuse_session(error));
+        if let Err(error) = session.validate_scalar_paid(helper.function) {
+            return Err(session.into_failed_preparation().refuse_engine(error));
         }
     }
     if context.lexical.is_empty() {
         return Err(session.into_failed_preparation().refuse(Refused::MISMATCH));
     }
     for function in &context.lexical {
-        if let Err(error) = session.validate(function) {
-            return Err(session.into_failed_preparation().refuse_session(error));
+        if let Err(error) = session.validate_paid(function) {
+            return Err(session.into_failed_preparation().refuse_engine(error));
         }
     }
     session.finish_paid().map(drop)

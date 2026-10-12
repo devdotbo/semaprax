@@ -132,7 +132,7 @@ impl Preparation {
     fn record(&mut self, error: Diagnostic, refused: Refused) -> Refused {
         self.failed = true;
         if self.receipt.is_none() {
-            self.receipt = Some(error);
+            self.receipt = Some(expression_facts::errors::EngineError::Owned(error));
         }
         refused
     }
@@ -249,7 +249,10 @@ impl Preparation {
     /// The first retained paid refusal, for owning observations only.
     #[cfg(test)]
     pub(crate) fn receipt(&self) -> Option<&Diagnostic> {
-        self.receipt.as_ref()
+        match self.receipt.as_ref() {
+            Some(expression_facts::errors::EngineError::Owned(error)) => Some(error),
+            _ => None,
+        }
     }
 }
 
@@ -478,6 +481,23 @@ impl Preparation {
         self.refuse(refused)
     }
 
+    pub(crate) fn refuse_engine(
+        mut self,
+        error: expression_facts::errors::EngineError,
+    ) -> PaidRefusal {
+        match error {
+            expression_facts::errors::EngineError::Owned(error) => self.refuse_session(error),
+            expression_facts::errors::EngineError::Failed => self.refuse(Refused::FAILED),
+            expression_facts::errors::EngineError::Fact(receipt) => {
+                self.failed = true;
+                if self.receipt.is_none() {
+                    self.receipt = Some(expression_facts::errors::EngineError::Fact(receipt));
+                }
+                self.refuse(Refused::SESSION.at("expression facts"))
+            }
+        }
+    }
+
     /// A failed constructor returns the SAME combined preparation; no caller
     /// supplies another report or ledger at this transition.
     pub(crate) fn into_paid_session<'a>(
@@ -584,7 +604,21 @@ impl PaidRefusal {
             Refusal::Paid {
                 ledger: Ledger::Prepared(preparation),
                 ..
-            } => preparation.receipt.as_ref(),
+            } => preparation.receipt(),
+            _ => None,
+        }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn fact_receipt(&self) -> Option<&expression_facts::errors::FactReceipt> {
+        match &self.0 {
+            Refusal::Paid {
+                ledger: Ledger::Prepared(preparation),
+                ..
+            } => match preparation.receipt.as_ref() {
+                Some(expression_facts::errors::EngineError::Fact(receipt)) => Some(receipt),
+                _ => None,
+            },
             _ => None,
         }
     }

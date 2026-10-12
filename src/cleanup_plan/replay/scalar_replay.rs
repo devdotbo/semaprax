@@ -2,16 +2,44 @@
 //! Full structure and path states precede exact observation equality.
 use super::*;
 pub(super) mod records;
+#[cfg(test)]
 pub(super) fn validate(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
+    validate_core(program, function, budget, |function, budget| {
+        let physical = budget
+            .physical
+            .as_deref_mut()
+            .ok_or_else(|| replay_error(function, "selected scalar helper lacks backing"))?;
+        expression_facts::expression_facts_with_reservation(function, physical)
+    })
+}
+
+pub(super) fn validate_paid(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+) -> Result<(), expression_facts::errors::EngineError> {
+    validate_core(program, function, budget, expression_facts::paid)
+}
+
+fn validate_core<E: From<Diagnostic>>(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+    build_facts: impl FnOnce(
+        &ResolvedFunction,
+        &mut ReplayBudget,
+    ) -> Result<BTreeMap<ExpressionId, Option<CallFact>>, E>,
+) -> Result<(), E> {
     if !records::signature(program, function, budget)? {
         return Err(replay_error(
             function,
             "selected helper signature is outside Copy scalars",
-        ));
+        )
+        .into());
     }
     #[cfg(test)]
     let borrowed = program.borrowed_helper_lease(function);
@@ -33,7 +61,8 @@ pub(super) fn validate(
         return Err(replay_error(
             function,
             "pure scalar helper carries an unexpected loan proof",
-        ));
+        )
+        .into());
     }
     #[cfg(test)]
     let selected_schema = match &borrowed {
@@ -48,7 +77,8 @@ pub(super) fn validate(
         return Err(replay_error(
             function,
             "selected scalar helper requires its exact nonlexical schema",
-        ));
+        )
+        .into());
     }
     budget.charge(
         function,
@@ -64,20 +94,12 @@ pub(super) fn validate(
         borrowed_facts = expression_facts::BorrowedFacts::build(function, budget)?;
         facts = &borrowed_facts;
     } else {
-        let physical = budget
-            .physical
-            .as_deref_mut()
-            .ok_or_else(|| replay_error(function, "selected scalar helper lacks backing"))?;
-        ordinary_facts = expression_facts::expression_facts_with_reservation(function, physical)?;
+        ordinary_facts = build_facts(function, budget)?;
         facts = &ordinary_facts;
     }
     #[cfg(not(test))]
     {
-        let physical = budget
-            .physical
-            .as_deref_mut()
-            .ok_or_else(|| replay_error(function, "selected scalar helper lacks backing"))?;
-        ordinary_facts = expression_facts::expression_facts_with_reservation(function, physical)?;
+        ordinary_facts = build_facts(function, budget)?;
         facts = &ordinary_facts;
     }
     inventory_coverage::validate_inventory_coverage(program, function, budget)?;
@@ -109,11 +131,13 @@ pub(super) fn validate(
         Some(false) => Err(replay_error(
             function,
             "selected scalar helper control trace disagrees with typed HIR",
-        )),
+        )
+        .into()),
         None => Err(replay_error(
             function,
             "selected scalar helper trace multiplicity overflowed",
-        )),
+        )
+        .into()),
     }
 }
 

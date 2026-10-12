@@ -33,9 +33,9 @@ pub(crate) fn validate_retained_lexical_with_reservation(
 pub(crate) struct Preparation {
     budget: ReplayBudget,
     failed: bool,
-    /// First paid refusal Diagnostic, moved in once (the budget's prepaid
-    /// text, or a Session's own refusal) and retained with the failed ledger.
-    receipt: Option<Diagnostic>,
+    /// One first receipt: the original paid/legacy Diagnostic by move, or
+    /// typed expression-fact data with shared source identity handles.
+    receipt: Option<expression_facts::errors::EngineError>,
     // None is confined to legacy test constructors; production acquires both owners.
     report: Option<PaidReport>,
 }
@@ -265,6 +265,7 @@ impl<'a> Session<'a> {
         )
     }
 
+    #[cfg(test)]
     pub(crate) fn validate(&mut self, function: &ResolvedFunction) -> Result<(), Diagnostic> {
         if self.failed {
             return Err(replay_error(
@@ -282,6 +283,37 @@ impl<'a> Session<'a> {
         Ok(())
     }
 
+    /// Partial typed engine boundary. Only expression-fact production is
+    /// allocation-free on semantic refusal; other children retain Diagnostics.
+    pub(crate) fn validate_paid(
+        &mut self,
+        function: &ResolvedFunction,
+    ) -> Result<(), expression_facts::errors::EngineError> {
+        if self.failed {
+            return Err(expression_facts::errors::EngineError::Failed);
+        }
+        self.failed = true;
+        require_entry(function)?;
+        let context = selected_context::Context::new(&self.indexed, function, &mut self.budget)?;
+        lexical_replay::validate_paid(&context, function, &mut self.budget)?;
+        self.failed = false;
+        Ok(())
+    }
+
+    pub(crate) fn validate_scalar_paid(
+        &mut self,
+        function: &ResolvedFunction,
+    ) -> Result<(), expression_facts::errors::EngineError> {
+        if self.failed {
+            return Err(expression_facts::errors::EngineError::Failed);
+        }
+        self.failed = true;
+        let context = selected_context::Context::new(&self.indexed, function, &mut self.budget)?;
+        scalar_replay::validate_paid(&context, function, &mut self.budget)?;
+        self.failed = false;
+        Ok(())
+    }
+
     #[cfg(test)]
     pub(crate) fn metrics(&self) -> (usize, usize) {
         (
@@ -293,6 +325,7 @@ impl<'a> Session<'a> {
                 .charged(),
         )
     }
+    #[cfg(test)]
     pub(crate) fn validate_scalar(
         &mut self,
         function: &ResolvedFunction,

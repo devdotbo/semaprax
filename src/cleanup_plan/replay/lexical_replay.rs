@@ -16,6 +16,38 @@ pub(super) fn validate_with_index(
     budget: &mut ReplayBudget,
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
 ) -> Result<(), Diagnostic> {
+    validate_core(
+        program,
+        function,
+        budget,
+        helpers,
+        |function, budget| match budget.physical.as_deref_mut() {
+            Some(physical) => {
+                expression_facts::expression_facts_with_reservation(function, physical)
+            }
+            None => expression_facts(function),
+        },
+    )
+}
+
+pub(super) fn validate_paid(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+) -> Result<(), expression_facts::errors::EngineError> {
+    validate_core(program, function, budget, None, expression_facts::paid)
+}
+
+fn validate_core<E: From<Diagnostic>>(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
+    build_facts: impl FnOnce(
+        &ResolvedFunction,
+        &mut ReplayBudget,
+    ) -> Result<BTreeMap<ExpressionId, Option<CallFact>>, E>,
+) -> Result<(), E> {
     let plan = &function.cleanup_plan;
     selected_profile::validate(program, function, budget)?;
     let owner = selected_owner::owner(program, function, budget)?;
@@ -28,13 +60,11 @@ pub(super) fn validate_with_index(
         return Err(replay_error(
             function,
             "cleanup replay structure exceeds the global work budget",
-        ));
+        )
+        .into());
     }
     budget.charge(function, structure_units, "structural validation")?;
-    let expression_facts = match budget.physical.as_deref_mut() {
-        Some(physical) => expression_facts::expression_facts_with_reservation(function, physical)?,
-        None => expression_facts(function)?,
-    };
+    let expression_facts = build_facts(function, budget)?;
     let selected = budget.physical.is_some();
     let (storage, leaves) = if selected {
         inventory_coverage::validate_inventory_coverage(program, function, budget)?;
@@ -138,4 +168,5 @@ pub(super) fn validate_with_index(
         helpers,
         expression_facts.len(),
     )
+    .map_err(E::from)
 }

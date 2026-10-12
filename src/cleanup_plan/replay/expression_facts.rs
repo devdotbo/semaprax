@@ -3,6 +3,7 @@ use super::*;
 #[cfg(test)]
 mod borrowed;
 mod capacity;
+pub(super) mod errors;
 #[cfg(test)]
 pub(super) use borrowed::BorrowedFacts;
 
@@ -77,7 +78,7 @@ pub(super) fn expression_facts(
         .chain(std::iter::once(&function.body))
         .chain(&function.ensures)
     {
-        collect_expression_facts(function, expression, &mut facts, None)?;
+        collect_expression_facts::<errors::Legacy>(function, expression, &mut facts, None)?;
     }
     Ok(facts)
 }
@@ -88,7 +89,15 @@ pub(super) fn expression_facts_with_reservation(
     function: &ResolvedFunction,
     reservation: &mut super::physical_storage::PhysicalReservation,
 ) -> Result<BTreeMap<ExpressionId, Option<CallFact>>, Diagnostic> {
-    let mut capacity = capacity::FactCapacity::new(function, reservation)?;
+    with_policy::<errors::Legacy>(function, reservation)
+}
+
+fn with_policy<P: errors::Policy>(
+    function: &ResolvedFunction,
+    reservation: &mut super::physical_storage::PhysicalReservation,
+) -> Result<BTreeMap<ExpressionId, Option<CallFact>>, P::Error> {
+    let mut capacity = capacity::FactCapacity::new(function, reservation)
+        .map_err(|failure| P::capacity(function, failure))?;
     let mut facts = BTreeMap::new();
     for expression in function
         .requires
@@ -96,17 +105,41 @@ pub(super) fn expression_facts_with_reservation(
         .chain(std::iter::once(&function.body))
         .chain(&function.ensures)
     {
-        collect_expression_facts(function, expression, &mut facts, Some(&mut capacity))?;
+        collect_expression_facts::<P>(function, expression, &mut facts, Some(&mut capacity))?;
     }
     Ok(facts)
 }
 
-fn collect_expression_facts<'a>(
+/// Only this shared producer's errors are inline. Other replay children keep
+/// their owned Diagnostic contract until their independent migration.
+pub(super) fn paid(
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+) -> Result<BTreeMap<ExpressionId, Option<CallFact>>, errors::EngineError> {
+    let result = match budget.physical.as_deref_mut() {
+        Some(physical) => with_policy::<errors::Selected>(function, physical),
+        None => expression_facts(function).map_err(errors::EngineError::Owned),
+    };
+    match result {
+        Err(errors::EngineError::Fact(receipt)) if receipt.physical() => {
+            // End the physical sub-borrow before consuming the original
+            // budget's prepaid text. Never format or discard its first receipt.
+            Err(errors::EngineError::Owned(budget.budget_refusal(
+                function,
+                receipt.detail(),
+                "",
+            )))
+        }
+        other => other,
+    }
+}
+
+fn collect_expression_facts<'a, P: errors::Policy>(
     function: &'a ResolvedFunction,
     expression: &'a ResolvedExpr,
     facts: &mut BTreeMap<ExpressionId, Option<CallFact>>,
     mut capacity: Option<&mut capacity::FactCapacity<'a, '_>>,
-) -> Result<(), Diagnostic> {
+) -> Result<(), P::Error> {
     // One borrowed continuation per ancestor keeps the original pre-order walk
     // and avoids rescanning wide Block/Match prefixes for each child.
     let mut stack = [None; 514];
@@ -121,7 +154,9 @@ fn collect_expression_facts<'a>(
         let current = cursor.expression();
         if !started {
             if let Some(capacity) = capacity.as_deref_mut() {
-                capacity.expression(current)?;
+                capacity
+                    .expression(current)
+                    .map_err(|failure| P::capacity(function, failure))?;
             }
             let fact = match &current.kind {
                 _ if crate::hir::closure::once::call(current).is_some() => {
@@ -208,17 +243,17 @@ fn collect_expression_facts<'a>(
                 _ => None,
             };
             if facts.insert(current.id.clone(), fact).is_some() {
-                return Err(replay_error(
-                    function,
-                    format!("HIR expression identity `{}` is repeated", current.id),
-                ));
+                return Err(P::duplicate(function, &current.id));
             }
         }
         if let Some(child) = cursor.next() {
             if len + 2 > stack.len() {
-                return Err(replay_error(
+                return Err(P::capacity(
                     function,
-                    "HIR expression fact traversal exceeds the admitted depth",
+                    capacity::Failure {
+                        detail: "HIR expression fact traversal exceeds the admitted depth",
+                        physical: false,
+                    },
                 ));
             }
             stack[len] = Some((cursor, true));
@@ -232,6 +267,7 @@ fn collect_expression_facts<'a>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    mod errors;
     use crate::cleanup_plan::replay::physical_storage::PhysicalReservation;
 
     fn program() -> ResolvedProgram {

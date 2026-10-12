@@ -159,3 +159,6 @@ mod setup;
 
 #[path = "tests/paid.rs"]
 mod paid;
+
+#[path = "tests/fact_errors.rs"]
+mod fact_errors;
