@@ -77,6 +77,21 @@ and one-iteration-over refusal, and count a real named-slice `bytes_copy`
 with embedded NUL and 255-byte content. The ordinary/unproved copy-loop
 `SPX-T267` controls remain separate.
 
+The source-only HIR extent repair derives a named slice's length from the actual
+pointer-held current function: a unique immutable binding chain must end at
+`array_as_slice` of an immutable literal or repeat array, whose actual length
+matches its resolved array type. The original embedded-NUL/255 three-byte array
+therefore contributes three bytes per copy, nine across its three proved
+iterations. Supplied provenance and retained totals grant no sizing authority;
+complete independent HIR validation still rejects forged provenance, aliases
+and array types. Unknown, mutable, assigned, duplicate or detached shapes keep
+the original `MAX_OWNED_BYTE_VALUE_BYTES` fallback. No event or payload quota
+increases and no ordinary allocating-loop refusal is bypassed. The borrowed
+cursor walk uses fixed-depth stack storage and at most 32 alias steps, each
+bounded to 65,536 visited nodes; repeated scans are an explicit bounded cost
+tradeoff. The new exact/fallback/hostile owners remain unexecuted until the
+consolidated qualification run.
+
 `owned_data::nested_collection_record::subtree::lifetime::finite_record_named_slice_copy_preserves_live_exits_on_every_engine`
 authors the corresponding interpreter, native O0/O2 and strict Core-Wasm
 repeated-lifetime receiver, in addition to the original zeroed-buffer
