@@ -70,7 +70,9 @@ impl Evaluator<'_> {
             let result_value = if let Value::CheckedString(text) = &value {
                 // A provisional contract root is a borrowed alias of the same
                 // result epoch, never an unpriced second String materialization.
-                Value::CheckedString(text.contract_alias())
+                Value::CheckedString(self.checked_allocation.as_ref()
+                    .ok_or(Flow::Guard("checked contract result has no source invocation"))?
+                    .contract_result(function, text)?)
             } else if retained_result {
                 std::mem::replace(&mut value, Value::Moved)
             } else {

@@ -35,8 +35,6 @@ impl OwnedUtf8 {
         std::str::from_utf8(self.backing.as_ref()).expect("received immutable UTF8 backing")
     }
     pub(in crate::interpreter) fn borrow(&self) -> Backing { self.backing.clone() }
-    // Only the independently checked contract result alias uses this receiver.
-    pub(in crate::interpreter) fn contract_alias(&self) -> Self { Self { backing: self.backing.clone() } }
 }
 
 pub(super) struct Invocation<'hir> {
@@ -55,6 +53,20 @@ impl<'hir> Invocation<'hir> {
                 case.code(), StatusClass::Adapter, Retryability::Known(false))
                 .expect("closed allocation status table")));
         Self { program, provider, physical: None, reports }
+    }
+    pub(in crate::interpreter) fn contract_result(
+        &self, function: &ResolvedFunction, value: &OwnedUtf8,
+    ) -> Result<OwnedUtf8, Flow> {
+        // This is the checked provisional result alias, not an owning source
+        // read. Full source/HIR replay independently protects result storage
+        // from consumption; clause reads still call clone_value normally.
+        if function.ensures.is_empty() || function.return_type != ResolvedType::String
+            || function.body.ownership != hir::OwnershipMode::Own
+            || !self.program.functions.iter().any(|held| std::ptr::eq(held, function))
+            || !Arc::ptr_eq(&self.provider, &value.backing.provider) {
+            return Err(Flow::Guard("checked contract result is not this invocation's current owner"));
+        }
+        Ok(OwnedUtf8 { backing: value.backing.clone() })
     }
     fn materialize(&mut self, pieces: &[&str]) -> Result<OwnedUtf8, Flow> {
         if self.physical.is_some() { return Err(Flow::Guard("checked allocation invocation already refused")); }

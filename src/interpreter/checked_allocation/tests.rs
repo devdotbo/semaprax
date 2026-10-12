@@ -84,6 +84,7 @@ fn escaped_interpreter_utf8_retains_actual_provider_and_pre_post_failure_settles
         ("{ \"\" }", &[""][..], "", false),
         ("requires false { string_concat(\"a\", \"β\") }", &[][..], "", true),
         ("ensures false { string_concat(\"a\", \"β\") }", &["a", "β", "aβ"][..], "", true),
+        ("ensures string_len(result) == 3 { string_concat(\"a\", \"β\") }", &["a", "β", "aβ", "aβ"][..], "aβ", false),
     ] {
         let text = format!("module checked.native; @id(\"checked.native.publish\") fn publish() -> string {body} @id(\"checked.native.main\") fn main() -> i64 {{ 0 }}");
         let source = crate::parse(&text, "checked-interpreter-result.spx").unwrap();
@@ -197,4 +198,32 @@ fn checked_interpreter_fuel_and_late_argument_failure_preserve_original_order_an
         assert!(!observed.invalid); assert_eq!(observed.live, 0);
         assert_eq!(observed.allocated, observed.freed);
     }
+}
+
+#[test]
+fn checked_contract_result_alias_requires_current_function_provider_and_protected_result() {
+    const CONTRACT: &str = r#"module checked.native;
+@id("checked.native.publish") fn publish() -> string ensures string_len(result) == 1 { "a" }
+@id("checked.native.main") fn main() -> i64 { 0 }
+"#;
+    let source = crate::parse(CONTRACT, "checked-interpreter-contract.spx").unwrap();
+    let owner = received(&source, true);
+    let function = owner.program().functions.iter().find(|f| f.id.as_str() == "checked.native.publish").unwrap();
+    let foreign_function = function.clone();
+    let provider = Inventory::acquire(&["a"], usize::MAX);
+    let mut invocation = Invocation::new(owner.program(), provider);
+    let value = invocation.materialize(&["a"]).unwrap();
+    assert!(matches!(invocation.contract_result(&foreign_function, &value), Err(Flow::Guard(_))));
+    let foreign_provider = Inventory::acquire(&["a"], usize::MAX);
+    let foreign_invocation = Invocation::new(owner.program(), foreign_provider);
+    assert!(matches!(foreign_invocation.contract_result(function, &value), Err(Flow::Guard(_))));
+    let alias = invocation.contract_result(function, &value).unwrap();
+    assert_eq!(alias.as_str(), "a");
+    assert!(Arc::ptr_eq(&alias.backing.bytes, &value.backing.bytes));
+    // Ordinary contract ownership forbids explicit consumption of result; the
+    // checked factory must not substitute an alias to admit that source.
+    let hostile = CONTRACT.replace("string_len(result)", "string_len(string_take(result))");
+    let hostile = crate::parse(&hostile, "checked-interpreter-contract-hostile.spx").unwrap();
+    assert!(crate::cleanup_plan::checked_allocation::prepare_string_result(&hostile,
+        &DeclarationId::new("checked.native.publish")).is_err());
 }
