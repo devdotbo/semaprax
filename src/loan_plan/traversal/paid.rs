@@ -29,7 +29,7 @@ pub(in crate::loan_plan) fn inspect_counted<'a>(
     // Every root occurrence must be the exact child of an authenticated read
     // or an ordinary shared-borrow argument. Mutation, transfer, rebind and
     // aggregate storage are not permitted, even when all row fields are Copy.
-    let mut allowed = BTreeSet::new();
+    let mut allowed = cfg_directory::Set::new(work.allocation.ok_or_else(storage::marker)?)?;
     let mut pending = Vec::new();
     storage::push(&mut pending, authored, work.allocation)?;
     while let Some(expression) = pending.pop() {
@@ -56,7 +56,11 @@ pub(in crate::loan_plan) fn inspect_counted<'a>(
                         {
                             return Err(fail());
                         }
-                        storage::set_insert(&mut allowed, vector.id.clone(), work.allocation)?;
+                        cfg_directory::set_insert(
+                            &mut allowed,
+                            vector.id.clone(),
+                            work.allocation,
+                        )?;
                     }
                 }
             }
@@ -78,7 +82,11 @@ pub(in crate::loan_plan) fn inspect_counted<'a>(
                         {
                             return Err(fail());
                         }
-                        storage::set_insert(&mut allowed, vector.id.clone(), work.allocation)?;
+                        cfg_directory::set_insert(
+                            &mut allowed,
+                            vector.id.clone(),
+                            work.allocation,
+                        )?;
                     }
                 }
             }
@@ -111,7 +119,11 @@ pub(in crate::loan_plan) fn inspect_counted<'a>(
                         {
                             return Err(fail());
                         }
-                        storage::set_insert(&mut allowed, vector.id.clone(), work.allocation)?;
+                        cfg_directory::set_insert(
+                            &mut allowed,
+                            vector.id.clone(),
+                            work.allocation,
+                        )?;
                     }
                 }
             }
@@ -129,7 +141,7 @@ pub(in crate::loan_plan) fn inspect_counted<'a>(
             call_arguments::borrowed_call_arguments_paid(program, expression, work.allocation)?
         {
             if matches!(&argument.kind, ResolvedExprKind::Place(place) if place == owner) {
-                storage::set_insert(&mut allowed, argument.id.clone(), work.allocation)?;
+                cfg_directory::set_insert(&mut allowed, argument.id.clone(), work.allocation)?;
             }
         }
         // Parent expressions are inspected before their children; an exact
@@ -149,20 +161,20 @@ pub(in crate::loan_plan) fn draft(
     expression: &ResolvedExpr,
     cfg: &Cfg<'_>,
     work: &mut WorkCounter,
-) -> Result<Option<CfgDraft>, Diagnostic> {
+) -> Result<Option<PaidDraft>, Diagnostic> {
     let Some(proof) = inspect_counted(program, expression, work)? else {
         return Ok(None);
     };
     let origin = storage::expression_place(proof.source, work.allocation)?
         .ok_or_else(|| error("record traversal source lacks its exact place"))?;
-    Ok(Some(CfgDraft {
+    Ok(Some(PaidDraft {
         site: proof.region.id.clone(),
         origin,
         origin_span: proof.source.span,
         parent_root: None,
         binding: None,
         start: cfg.node(proof.region, LoanPointPhase::Before)?,
-        seeds: storage::singleton_set(
+        seeds: cfg_directory::singleton_set(
             cfg.node(proof.region, LoanPointPhase::After)?,
             work.allocation,
         )?,
@@ -178,21 +190,21 @@ pub(in crate::loan_plan) fn draft_bytes(
     cfg: &Cfg<'_>,
     aliases: &impl crate::loan_plan::directory_access::Aliases,
     work: &mut WorkCounter,
-) -> Result<Option<CfgDraft>, Diagnostic> {
+) -> Result<Option<PaidDraft>, Diagnostic> {
     let Some(region) = crate::hir::byte_traversal_region(expression)? else {
         return Ok(None);
     };
     charge(work)?;
     let place = storage::expression_place(region.view, work.allocation)?
         .ok_or_else(|| error("borrowed byte traversal view lacks its exact place"))?;
-    Ok(Some(CfgDraft {
+    Ok(Some(PaidDraft {
         site: expression.id.clone(),
         origin: aliases.resolve(place, work)?,
         origin_span: region.view.span,
         parent_root: None,
         binding: None,
         start: cfg.node(expression, LoanPointPhase::Before)?,
-        seeds: storage::singleton_set(
+        seeds: cfg_directory::singleton_set(
             cfg.node(expression, LoanPointPhase::After)?,
             work.allocation,
         )?,

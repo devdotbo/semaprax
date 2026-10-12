@@ -128,7 +128,11 @@ live sets. Private candidate/planner alias, binding, ownership, parent and
 nonconsuming inventories use the same paid directories; `directory_access.rs`
 keeps borrowed receiver dispatch separate from the saved BTree policy, and
 `origin/funded.rs` retains the original projection constructor with a paid
-borrowed-reference cycle set. Missing nodes are prepaid before mutation; unique rotations and
+borrowed-reference cycle set. `paid_live.rs` owns private seed/live/edge receivers;
+the paid draft parameter leaves the public BTree draft unchanged. Predicate and
+traversal active/allowed sets share those nodes. Borrowed cursors prepay two
+references and use O(n log n) successor traversal; consuming drain remains linear.
+Sticky removal moves existing nodes without allocation or refund. Missing nodes are prepaid before mutation; unique rotations and
 ordered extraction allocate no additional nodes. The public BTree planner and
 complete saved planner retain their independent storage policies.
 

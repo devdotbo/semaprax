@@ -59,7 +59,7 @@ fn admitted(
     }
     let mut pending = Vec::new();
     storage::push(&mut pending, Frame::Enter(root, 1), Some(payer))?;
-    let mut active = BTreeSet::new();
+    let mut active = cfg_directory::Set::new(payer)?;
     let mut fields = 0usize;
     let mut leaves = 0usize;
     let mut has_vector = false;
@@ -88,7 +88,7 @@ fn admitted(
                             || d.identity_origin != crate::hir::IdentityOrigin::Explicit
                     })
                     || invariant(index, declaration, payer)?
-                    || !storage::set_insert(&mut active, declaration, Some(payer))?
+                    || !cfg_directory::set_insert(&mut active, declaration, Some(payer))?
                 {
                     return Ok(false);
                 }
@@ -124,7 +124,7 @@ fn admitted(
                 }
             }
             Frame::Leave(declaration) => {
-                active.remove(declaration);
+                active.remove(&declaration, payer)?;
             }
             Frame::Enter(_, _) => return Ok(false),
         }

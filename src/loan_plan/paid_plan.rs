@@ -61,7 +61,7 @@ pub(super) fn build(
         }
     }
 
-    let mut drafts = Vec::<CfgDraft>::new();
+    let mut drafts = Vec::<PaidDraft>::new();
     for expression in &cfg.expressions {
         charge(work)?;
         if let Some(draft) = traversal::paid::draft(program, expression, &cfg, work)? {
@@ -109,7 +109,7 @@ pub(super) fn build(
         if let Some(place) = view {
             storage::push(
                 &mut drafts,
-                CfgDraft {
+                PaidDraft {
                     site: expression.id.clone(),
                     origin: origin::funded::resolve(
                         &aliases,
@@ -122,7 +122,7 @@ pub(super) fn build(
                         .then(|| place.root.clone()),
                     binding: bound.get(&expression.id).cloned(),
                     start: cfg.node(expression, LoanPointPhase::Before)?,
-                    seeds: BTreeSet::new(),
+                    seeds: cfg_directory::Set::new(payer.expect("private funded entry"))?,
                     cause: if expression.ty == ResolvedType::Str {
                         LoanCause::StrView
                     } else {
@@ -139,7 +139,7 @@ pub(super) fn build(
                 .ok_or_else(|| error("borrowed call lacks an exact place origin"))?;
             storage::push(
                 &mut drafts,
-                CfgDraft {
+                PaidDraft {
                     site: expression.id.clone(),
                     origin: origin::funded::resolve(
                         &aliases,
@@ -152,7 +152,7 @@ pub(super) fn build(
                         .then(|| place.root.clone()),
                     binding: None,
                     start: cfg.node(expression, LoanPointPhase::Before)?,
-                    seeds: storage::singleton_set(
+                    seeds: cfg_directory::singleton_set(
                         cfg.node(expression, LoanPointPhase::After)?,
                         payer,
                     )?,
@@ -178,7 +178,7 @@ pub(super) fn build(
                 let entry = arm.guard.as_deref().unwrap_or(&arm.value);
                 storage::push(
                     &mut drafts,
-                    CfgDraft {
+                    PaidDraft {
                         site: expression.id.clone(),
                         origin: storage::clone_place(&origin, payer)?,
                         origin_span: scrutinee.span,
@@ -187,7 +187,7 @@ pub(super) fn build(
                             .then(|| place.root.clone()),
                         binding: None,
                         start: cfg.node(entry, LoanPointPhase::Before)?,
-                        seeds: storage::singleton_set(
+                        seeds: cfg_directory::singleton_set(
                             cfg.node(&arm.value, LoanPointPhase::After)?,
                             payer,
                         )?,
@@ -243,7 +243,7 @@ pub(super) fn build(
             continue;
         };
         if let Some(id) = binding_loans.get(&place.root) {
-            storage::set_insert(
+            cfg_directory::set_insert(
                 &mut drafts[id.0 as usize].seeds,
                 cfg.node(expression, LoanPointPhase::After)?,
                 payer,
@@ -273,7 +273,7 @@ pub(super) fn build(
     };
     let mut live = storage::vector(drafts.len(), payer)?;
     for (index, draft) in drafts.iter().enumerate() {
-        live.push(work::live_nodes(
+        live.push(paid_live::live_nodes(
             &cfg,
             LoanId(index as u16),
             draft.start,
@@ -290,11 +290,11 @@ pub(super) fn build(
             };
             let parent = parent.0 as usize;
             let before = live[parent].len();
-            let mut seeds = storage::clone_set(&drafts[parent].seeds, payer)?;
-            for node in &live[child] {
-                storage::set_insert(&mut seeds, *node, payer)?;
+            let mut seeds = cfg_directory::clone_set(&drafts[parent].seeds, payer)?;
+            for node in live[child].iter(payer.expect("private funded entry"))? {
+                cfg_directory::set_insert(&mut seeds, *node, payer)?;
             }
-            live[parent] = work::live_nodes(
+            live[parent] = paid_live::live_nodes(
                 &cfg,
                 LoanId(parent as u16),
                 drafts[parent].start,
@@ -310,7 +310,7 @@ pub(super) fn build(
     }
     reject_cfg_overlaps_paid(program, &cfg, &aliases, &drafts, &live, work)?;
 
-    let (mut edge_live, mut termination_edges) = work::edge_liveness(&cfg, &live, work)?;
+    let (mut edge_live, mut termination_edges) = paid_live::edge_liveness(&cfg, &live, work)?;
     // A contract/body root has no outgoing CFG edge. A synchronous call
     // ending at that root completes on its incoming After edge, rather than
     // needing a nonexistent successor. Only admit this formerly rejected
@@ -337,13 +337,13 @@ pub(super) fn build(
                     && cfg.successor_edges(index).is_empty()
                     && terminal_roots.contains(&(index as u16))
                 {
-                    nodes.remove(&(index as u16));
+                    nodes.remove(&(index as u16), payer.expect("private funded entry"))?;
                 }
             }
         }
         for (child, parent) in parents.iter().enumerate() {
             if let Some(parent) = parent {
-                for node in &live[child] {
+                for node in live[child].iter(payer.expect("private funded entry"))? {
                     charge(work)?;
                     if !live[parent.0 as usize].contains(node) {
                         return Err(error("terminal loan child escapes its parent lifetime"));
@@ -352,7 +352,7 @@ pub(super) fn build(
             }
         }
         // Recompute edge proof only for a previously rejected terminal shape.
-        (edge_live, termination_edges) = work::edge_liveness(&cfg, &live, work)?;
+        (edge_live, termination_edges) = paid_live::edge_liveness(&cfg, &live, work)?;
     }
     paid_materialize::materialize(
         cfg,
@@ -368,8 +368,8 @@ fn reject_cfg_overlaps_paid(
     program: &ResolvedProgram,
     cfg: &Cfg<'_>,
     aliases: &cfg_directory::Map<ValueId, Place>,
-    drafts: &[CfgDraft],
-    live: &[BTreeSet<u16>],
+    drafts: &[PaidDraft],
+    live: &[cfg_directory::Set<u16>],
     work: &mut WorkCounter,
 ) -> Result<(), Diagnostic> {
     let payer = work.allocation;

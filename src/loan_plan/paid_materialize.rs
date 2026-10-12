@@ -1,9 +1,9 @@
 //! Same canonical output order; actual result/temporary/replacement payment.
 use super::*;
 
-pub(super) fn materialize(
+pub(super) fn materialize<S>(
     cfg: Cfg<'_>,
-    drafts: Vec<CfgDraft>,
+    drafts: Vec<CfgDraft<S>>,
     parents: Vec<Option<LoanId>>,
     edge_live: Vec<Vec<LoanId>>,
     termination_edges: Vec<Vec<u16>>,

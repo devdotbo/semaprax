@@ -116,3 +116,79 @@ pub(super) fn drain<K>(root: Option<Box<Node<K, ()>>>, values: &mut Vec<K>) {
         drain(right, values);
     }
 }
+
+// Two borrowed references, no heap or unbounded traversal stack. Each
+// successor lookup is O(log n); consuming drain above remains O(n).
+pub(in crate::loan_plan) struct Keys<'a, K, V> {
+    root: Option<&'a Node<K, V>>,
+    next: Option<&'a Node<K, V>>,
+}
+fn minimum<K, V>(mut root: Option<&Node<K, V>>) -> Option<&Node<K, V>> {
+    while let Some(node) = root {
+        if node.left.is_none() {
+            return Some(node);
+        }
+        root = node.left.as_deref();
+    }
+    None
+}
+fn successor<'a, K: Ord, V>(mut root: Option<&'a Node<K, V>>, key: &K) -> Option<&'a Node<K, V>> {
+    let mut next = None;
+    while let Some(node) = root {
+        if key < &node.key {
+            next = Some(node);
+            root = node.left.as_deref();
+        } else {
+            root = node.right.as_deref();
+        }
+    }
+    next
+}
+pub(super) fn keys<K, V>(root: Option<&Node<K, V>>) -> Keys<'_, K, V> {
+    Keys {
+        root,
+        next: minimum(root),
+    }
+}
+impl<'a, K: Ord, V> Iterator for Keys<'a, K, V> {
+    type Item = &'a K;
+    fn next(&mut self) -> Option<Self::Item> {
+        let node = self.next?;
+        self.next = successor(self.root, &node.key);
+        Some(&node.key)
+    }
+}
+fn take_min<K, V>(root: &mut Option<Box<Node<K, V>>>) -> Box<Node<K, V>> {
+    let mut node = root.take().expect("nonempty minimum subtree");
+    if node.left.is_none() {
+        *root = node.right.take();
+        return node;
+    }
+    let first = take_min(&mut node.left);
+    *root = Some(balance(node));
+    first
+}
+// No allocation or fallible work follows the caller's sticky reserve(0).
+// Only owned nodes are moved; failed lookup leaves values and key identity intact.
+pub(super) fn remove<K: Ord, V>(root: &mut Option<Box<Node<K, V>>>, key: &K) -> Option<V> {
+    let mut node = root.take()?;
+    let removed = match key.cmp(&node.key) {
+        Ordering::Less => remove(&mut node.left, key),
+        Ordering::Greater => remove(&mut node.right, key),
+        Ordering::Equal => {
+            if node.left.is_none() {
+                *root = node.right.take();
+            } else if node.right.is_none() {
+                *root = node.left.take();
+            } else {
+                let mut next = take_min(&mut node.right);
+                next.left = node.left.take();
+                next.right = node.right.take();
+                *root = Some(balance(next));
+            }
+            return Some(node.value);
+        }
+    };
+    *root = Some(balance(node));
+    removed
+}

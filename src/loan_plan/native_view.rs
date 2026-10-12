@@ -135,9 +135,9 @@ pub(super) fn inventory_aliases_paid(
     Ok(())
 }
 
-pub(super) fn match_parents_funded(
+pub(super) fn match_parents_funded<S>(
     expressions: &[&ResolvedExpr],
-    drafts: &[CfgDraft],
+    drafts: &[CfgDraft<S>],
     payer: Option<&crate::bounded_output::cfg_reservation::CfgReservation>,
 ) -> Result<cfg_directory::Map<ValueId, LoanId>, Diagnostic> {
     let mut sites = cfg_directory::Map::new(payer.ok_or_else(storage::marker)?)?;

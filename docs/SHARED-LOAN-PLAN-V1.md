@@ -389,12 +389,46 @@ variant application corpora remain. The source owners, pending execution, are:
 - `loan_plan::cfg_directory::planner_receivers_tests::borrowed_alias_seen_receiver_literal_heap_exact_short_drop_and_full_old_verdict`
 - `loan_plan::cfg_directory::planner_receivers_tests::borrowed_alias_projection_cycle_and_work_diagnostics_equal_complete_old_constructor`
 
-The shared `CfgDraft` seed sets, live-node discovery/parent propagation and
-traversal predicate sets still use the existing BTree allocation envelopes.
-Semantic diagnostic construction and standalone rebuilding retain separate
-funding seams. This source tranche makes no whole OPT792 closure, allocation
-savings, application-fit or executable qualification claim; payer thresholds
-can change while ordinary full-plan/error/work results remain exact.
+### Private seed, liveness and predicate sets
+
+The private planner uses `CfgDraft<cfg_directory::Set<u16>>`; the public and
+saved BTree draft type remains the default. Every seed singleton/clone, live-node
+receiver, parent propagation union, traversal allowed-identity set and nominal
+predicate active-declaration set uses exact paid AVL nodes. Private materialization
+and native parent helpers borrow the corresponding draft type without inspecting
+seed storage or changing canonical result order. Complete old paid call-argument,
+predicate and materialization helpers are saved independently too.
+
+Borrowed iteration prepays precisely two optional node-reference fields before
+constructing its cursor. It holds no heap traversal scratch: minimum/successor
+lookup preserves original ascending seed/node order in O(n log n), compared with
+the original BTree iterator's O(n) traversal. The existing CFG point bound (4096),
+not the 256 loan-count bound, bounds live inventories. Consuming ordered extraction
+retains its existing linear one-visit drain. Removal checks the same sticky payer
+with reserve(0) before mutation and moves/rebalances only existing owned boxes;
+neither removal nor Drop refunds cumulative debit. All original seed, LIFO,
+predecessor reverse, parent iteration, edge traversal and checked-work equations
+remain unchanged. The shared overlap helper only generalizes its borrowed draft/
+node-membership interface; its diagnostics and first-conflict order are untouched.
+
+Source controls retain whole old/new constructors and original application corpora,
+full rows/edges/error/span/help/work results, literal actual cursor/node layouts,
+heap/debit/Drop equations, exact/one-short frontiers, every denied cursor byte,
+sticky present/missing removal refusal and insertion/removal adversaries through
+4096 entries. Additional owners, pending execution, are:
+
+- `loan_plan::cfg_directory::live_receivers_tests::paid_seed_clone_cursor_and_remove_literal_heap_debit_exact_short_full_drop`
+- `loan_plan::cfg_directory::live_receivers_tests::paid_cursor_refusal_and_sticky_removal_preserve_complete_original_set`
+- `loan_plan::cfg_directory::live_receivers_tests::complete_old_seed_clone_and_all_avl_removal_shapes_keep_order_and_actual_receivers`
+- `loan_plan::paid_live::tests::paid_seed_live_and_edge_receivers_equal_old_full_rows_and_checked_work_frontiers`
+- `loan_plan::paid_live::tests::paid_full_plan_late_overlap_and_first_work_error_equal_saved_btree_receiver`
+
+Opaque BTree node estimates remain only in the explicit public/legacy or saved
+receiver policy, outside the converted private directory route. Semantic diagnostic
+construction and standalone rebuilding retain separate funding seams. This source
+tranche makes no whole OPT792 closure, request savings, application-fit, measured
+CPU improvement or executable qualification claim. Physical payer frontiers can
+change while ordinary full-plan/error/work results remain exact.
 
 ## Invocation-local deferred full comparison
 

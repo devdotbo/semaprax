@@ -100,7 +100,7 @@ pub(super) fn inspect(
             }
         }
         let view = match &expression.kind {
-            ResolvedExprKind::Call { .. } => paid_predicates::string_slot(expression)
+            ResolvedExprKind::Call { .. } => paid_predicates_legacy::string_slot(expression)
                 .map(|place| storage::clone_place(place, Some(payer)))
                 .transpose()?,
             ResolvedExprKind::BorrowPlace { place, .. } => {
@@ -150,7 +150,7 @@ pub(super) fn inspect(
             }
         }
         for (_, argument) in
-            call_arguments::borrowed_call_arguments_paid(program, expression, Some(payer))?
+            call_arguments_legacy::borrowed_call_arguments_paid(program, expression, Some(payer))?
         {
             if let Some(place) = storage::expression_place(argument, Some(payer))? {
                 if ultimate_root_is_own(

@@ -65,7 +65,7 @@ pub(super) fn build(
             storage::push(&mut drafts, draft, payer)?;
         }
         let view = match &expression.kind {
-            ResolvedExprKind::Call { .. } => paid_predicates::string_slot(expression)
+            ResolvedExprKind::Call { .. } => paid_predicates_legacy::string_slot(expression)
                 .map(|place| storage::clone_place(place, payer))
                 .transpose()?,
             ResolvedExprKind::BorrowPlace { place, .. } => {
@@ -123,7 +123,7 @@ pub(super) fn build(
             )?;
         }
         for (index, argument) in
-            call_arguments::borrowed_call_arguments_paid(program, expression, payer)?
+            call_arguments_legacy::borrowed_call_arguments_paid(program, expression, payer)?
         {
             let place = storage::expression_place(argument, payer)?
                 .ok_or_else(|| error("borrowed call lacks an exact place origin"))?;
@@ -339,7 +339,7 @@ pub(super) fn build(
         // Recompute edge proof only for a previously rejected terminal shape.
         (edge_live, termination_edges) = work::edge_liveness(&cfg, &live, work)?;
     }
-    paid_materialize::materialize(
+    paid_materialize_legacy::materialize(
         cfg,
         drafts,
         parents,
@@ -361,7 +361,7 @@ fn reject_cfg_overlaps_paid(
     let mut nonconsuming = BTreeSet::new();
     for expression in &cfg.expressions {
         for (_, argument) in
-            call_arguments::borrowed_call_arguments_paid(program, expression, payer)?
+            call_arguments_legacy::borrowed_call_arguments_paid(program, expression, payer)?
         {
             storage::set_insert(&mut nonconsuming, argument.id.clone(), payer)?;
         }

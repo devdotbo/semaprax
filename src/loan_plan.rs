@@ -41,6 +41,8 @@ mod adjacency;
 #[cfg(test)]
 mod boundary_tests;
 mod call_arguments;
+#[cfg(test)]
+mod call_arguments_legacy;
 mod cfg_directory;
 mod children;
 #[cfg(test)]
@@ -66,7 +68,10 @@ mod paid_candidate;
 mod paid_candidate_legacy;
 mod paid_cfg;
 mod paid_children;
+mod paid_live;
 mod paid_materialize;
+#[cfg(test)]
+mod paid_materialize_legacy;
 mod paid_patterns;
 #[cfg(test)]
 mod paid_patterns_legacy;
@@ -74,6 +79,8 @@ mod paid_plan;
 #[cfg(test)]
 mod paid_plan_legacy;
 mod paid_predicates;
+#[cfg(test)]
+mod paid_predicates_legacy;
 mod paid_substitute;
 mod provisional_result;
 mod record_vec_borrow;
@@ -203,16 +210,18 @@ pub(crate) fn owned_capacity_bytes(plan: &LoanPlan) -> Option<usize> {
 }
 
 #[derive(Clone)]
-struct CfgDraft {
+struct CfgDraft<S = BTreeSet<u16>> {
     site: ExpressionId,
     origin: Place,
     origin_span: Span,
     parent_root: Option<ValueId>,
     binding: Option<ValueId>,
     start: u16,
-    seeds: BTreeSet<u16>,
+    seeds: S,
     cause: LoanCause,
 }
+
+type PaidDraft = CfgDraft<cfg_directory::Set<u16>>;
 
 struct Cfg<'a> {
     points: Vec<LoanProgramPoint>,
@@ -1136,11 +1145,11 @@ fn reject_cfg_overlaps(
     Ok(())
 }
 
-fn reject_overlap_at(
+fn reject_overlap_at<S, N: paid_live::Membership>(
     node: u16,
     place: &Place,
-    drafts: &[CfgDraft],
-    live: &[BTreeSet<u16>],
+    drafts: &[CfgDraft<S>],
+    live: &[N],
     span: Span,
 ) -> Result<(), Diagnostic> {
     if let Some((loan, _)) = drafts.iter().zip(live).find(|(loan, live)| {

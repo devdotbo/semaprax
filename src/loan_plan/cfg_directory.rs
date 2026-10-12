@@ -3,6 +3,8 @@
 use super::*;
 use crate::bounded_output::cfg_reservation::CfgReservation;
 #[cfg(test)]
+mod live_receivers_tests;
+#[cfg(test)]
 mod planner_receivers_tests;
 #[cfg(test)]
 mod tests;
@@ -60,6 +62,23 @@ impl<K: Ord> Set<K> {
     pub(super) fn is_empty(&self) -> bool {
         self.0.len == 0
     }
+    pub(super) fn len(&self) -> usize {
+        self.0.len
+    }
+    pub(super) fn iter(&self, payer: &CfgReservation) -> Result<tree::Keys<'_, K, ()>, Diagnostic> {
+        payer
+            .reserve(std::mem::size_of::<tree::Keys<'_, K, ()>>())
+            .map_err(|_| storage::marker())?;
+        Ok(tree::keys(self.0.root.as_deref()))
+    }
+    pub(super) fn remove(&mut self, key: &K, payer: &CfgReservation) -> Result<bool, Diagnostic> {
+        payer.reserve(0).map_err(|_| storage::marker())?;
+        let removed = tree::remove(&mut self.0.root, key).is_some();
+        if removed {
+            self.0.len -= 1;
+        }
+        Ok(removed)
+    }
     pub(super) fn into_vec(mut self, payer: &CfgReservation) -> Result<Vec<K>, Diagnostic> {
         let mut values = vector(self.0.len, payer)?;
         tree::drain(self.0.root.take(), &mut values);
@@ -104,4 +123,25 @@ impl Nodes {
             Self::Funded(values) => values.get(key),
         }
     }
+}
+
+pub(super) fn singleton_set<K: Ord>(
+    key: K,
+    payer: Option<&CfgReservation>,
+) -> Result<Set<K>, Diagnostic> {
+    let payer = payer.ok_or_else(storage::marker)?;
+    let mut values = Set::new(payer)?;
+    set_insert(&mut values, key, Some(payer))?;
+    Ok(values)
+}
+pub(super) fn clone_set<K: Ord + Copy>(
+    values: &Set<K>,
+    payer: Option<&CfgReservation>,
+) -> Result<Set<K>, Diagnostic> {
+    let payer = payer.ok_or_else(storage::marker)?;
+    let mut copy = Set::new(payer)?;
+    for value in values.iter(payer)? {
+        set_insert(&mut copy, *value, Some(payer))?;
+    }
+    Ok(copy)
 }

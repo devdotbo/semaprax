@@ -125,9 +125,11 @@ pub(in crate::loan_plan) fn inspect_counted<'a>(
             }
             _ => {}
         }
-        for (_, argument) in
-            call_arguments::borrowed_call_arguments_paid(program, expression, work.allocation)?
-        {
+        for (_, argument) in call_arguments_legacy::borrowed_call_arguments_paid(
+            program,
+            expression,
+            work.allocation,
+        )? {
             if matches!(&argument.kind, ResolvedExprKind::Place(place) if place == owner) {
                 storage::set_insert(&mut allowed, argument.id.clone(), work.allocation)?;
             }
