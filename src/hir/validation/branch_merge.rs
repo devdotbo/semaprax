@@ -21,6 +21,7 @@ impl HirValidator<'_> {
         }
     }
 
+    #[cfg(test)]
     pub(super) fn merge_lexical_borrows(
         target: &mut BTreeMap<ValueId, ValidationBinding>,
         source: &dyn ScopeRead,

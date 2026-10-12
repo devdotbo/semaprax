@@ -491,12 +491,14 @@ struct ValidationBinding {
 /// validation return. Iterative continuations update the publication boundary
 /// before entering a direct child; isolated Block/branch/arm children leave it
 /// at their outer baseline.
+#[cfg(test)]
 struct ValidationScopePublication<'a> {
     target: &'a mut BTreeMap<ValueId, ValidationBinding>,
     published: BTreeMap<ValueId, ValidationBinding>,
     enabled: bool,
 }
 
+#[cfg(test)]
 impl ValidationScopePublication<'_> {
     fn publish(&mut self, scope: &BTreeMap<ValueId, ValidationBinding>) {
         // Full equality includes nested move/partial/loan state and exact
@@ -517,6 +519,7 @@ impl ValidationScopePublication<'_> {
     }
 }
 
+#[cfg(test)]
 impl Drop for ValidationScopePublication<'_> {
     fn drop(&mut self) {
         std::mem::swap(self.target, &mut self.published);

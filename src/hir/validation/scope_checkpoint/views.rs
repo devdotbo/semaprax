@@ -31,6 +31,10 @@ impl<'a> Iterator for TreeIter<'a> {
         Some((&current.key, &current.value))
     }
 }
+// The private AVL walk retains at most 2 * usize::BITS borrowed node slots.
+// This cursor costs 1040 bytes on 64-bit hosts; boxing adds an allocation to
+// every ordered scope read and changes the checkpoint reservation contract.
+#[expect(clippy::large_enum_variant, reason = "bounded inline borrowed AVL cursor preserves allocation-free ordered scope reads")]
 pub(in crate::hir::validation) enum Entries<'a> {
     Old(std::collections::btree_map::Iter<'a, ValueId, ValidationBinding>),
     Checkpoint(TreeIter<'a>),
@@ -232,6 +236,9 @@ pub(in crate::hir::validation) enum IdSnapshot {
     Old(Vec<ValueId>),
     Checkpoint(Scope),
 }
+// Keys retain the same bounded borrowed cursor as Entries, including its
+// 1040-byte 64-bit stack tradeoff, without allocating a fresh ID directory.
+#[expect(clippy::large_enum_variant, reason = "bounded inline borrowed key cursor preserves allocation-free scope ID reads")]
 pub(in crate::hir::validation) enum IdIter<'a> {
     Old(std::slice::Iter<'a, ValueId>),
     Checkpoint(Keys<'a>),

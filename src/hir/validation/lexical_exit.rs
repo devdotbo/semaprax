@@ -19,6 +19,7 @@ impl HirValidator<'_> {
         Ok(())
     }
     #[allow(clippy::too_many_arguments)]
+    #[cfg(test)]
     pub(super) fn finish_lexical_if(
         &self,
         expression: &ResolvedExpr,
