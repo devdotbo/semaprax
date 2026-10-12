@@ -41,11 +41,13 @@ fn full_current_finite_discard_composes_flat_loans_with_nested_storage_in_v84() 
             .find(|f| f.id.as_str() == "score")
             .unwrap();
         assert!(!score.loan_plan.loans.is_empty());
-        assert!(score
-            .loan_plan
-            .loans
-            .iter()
-            .all(|loan| loan.origin.projections.is_empty()));
+        assert!(
+            score
+                .loan_plan
+                .loans
+                .iter()
+                .all(|loan| loan.origin.projections.is_empty())
+        );
         assert_full_replay(&program);
         assert!(authenticate_finite_composition(&program).unwrap());
         assert_eq!(graph_schema(&program).unwrap(), SCHEMA);
@@ -73,10 +75,12 @@ fn full_current_finite_discard_composes_flat_loans_with_nested_storage_in_v84() 
 fn current_v84_composition_does_not_lend_frozen_or_detached_parts_authority() {
     let (ast, program) = resolved(SOURCE);
     assert_eq!(legacy_graph_schema(&program).unwrap_err().code, "SPX-G410");
-    assert!(crate::graph::to_legacy_json(&ast)
-        .unwrap_err()
-        .iter()
-        .any(|e| e.code == "SPX-G410"));
+    assert!(
+        crate::graph::to_legacy_json(&ast)
+            .unwrap_err()
+            .iter()
+            .any(|e| e.code == "SPX-G410")
+    );
     assert_eq!(
         crate::graph::to_legacy_hir_json(&program, "source-only")
             .unwrap_err()
@@ -219,7 +223,8 @@ fn nonfinite_copy_discard_retains_the_existing_nested_projected_loan_route() {
 @id("leaf") record Leaf {@id("leaf.payload") payload:Bytes,}
 @id("outer") record Outer {@id("outer.leaf") leaf:Leaf,}
 @id("take") fn take(value:own Outer)->i64 {
- match own value {Outer{leaf:Leaf{payload}}=>{return 0;},}
+ match own value {Outer{leaf:Leaf{payload}}=>{return 0;},};
+ 0
 }
 @id("inspect") fn inspect(value:own Outer)->usize {
  let view=bytes_as_slice(value.leaf.payload);
@@ -236,11 +241,13 @@ fn nonfinite_copy_discard_retains_the_existing_nested_projected_loan_route() {
         .find(|f| f.id.as_str() == "inspect")
         .unwrap();
     assert!(!inspect.loan_plan.loans.is_empty());
-    assert!(inspect
-        .loan_plan
-        .loans
-        .iter()
-        .all(|loan| loan.origin.projections.len() == 2));
+    assert!(
+        inspect
+            .loan_plan
+            .loans
+            .iter()
+            .all(|loan| loan.origin.projections.len() == 2)
+    );
     assert_full_replay(&program);
     assert_eq!(graph_schema(&program).unwrap(), SCHEMA);
     let graph = crate::graph::to_json(&ast).unwrap();
