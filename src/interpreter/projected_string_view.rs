@@ -21,6 +21,14 @@ pub(super) fn read(
             .get(field)
             .ok_or(Flow::Guard("unresolved String view field"))?;
     }
+    if let Value::CheckedString(text) = value {
+        let backing = Utf8Backing::Checked(text.borrow());
+        return Ok(if bytes {
+            Value::BorrowedSlice(BorrowedSliceValue::from_view(place.root.clone().into(), backing))
+        } else {
+            Value::BorrowedStr(BorrowedStrValue { invocation_root: place.root.clone().into(), bytes: backing })
+        });
+    }
     let Value::String(text) = value else {
         return Err(Flow::Guard("String view field is not live String storage"));
     };

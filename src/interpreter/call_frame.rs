@@ -8,6 +8,11 @@ impl Evaluator<'_> {
         values: Vec<(ValueId, Value)>,
         depth: usize,
     ) -> Result<Value, Flow> {
+        if let Some(receiving) = &self.checked_allocation {
+            if !receiving.program.functions.iter().any(|current| std::ptr::eq(current, function)) {
+                return Err(Flow::Guard("checked UTF8 frame is not in its exact source owner"));
+            }
+        }
         // Stage semantic work v1: one unit per admitted source frame.
         let mut frame = Environment::from(values);
         frame.slot_function = Some(function as *const ResolvedFunction as usize);
@@ -62,7 +67,11 @@ impl Evaluator<'_> {
             && (matches!(value, Value::OnceClosure(_))
                 || matches!(&value, Value::Closure(closure) if closure.mutable.is_some()));
         if !function.ensures.is_empty() {
-            let result_value = if retained_result {
+            let result_value = if let Value::CheckedString(text) = &value {
+                // A provisional contract root is a borrowed alias of the same
+                // result epoch, never an unpriced second String materialization.
+                Value::CheckedString(text.contract_alias())
+            } else if retained_result {
                 std::mem::replace(&mut value, Value::Moved)
             } else {
                 self.clone_value(&value)?

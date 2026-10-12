@@ -129,6 +129,7 @@ pub(crate) fn evaluate_resolved_source_command(
         resumption: resumable::Resumption::Refused,
         semantic: Default::default(),
         string_condition_reads: Default::default(),
+        checked_allocation: None,
     };
     let evaluated = evaluator.call_frame(entry, Vec::new(), 0);
     if let Some(files) = evaluator

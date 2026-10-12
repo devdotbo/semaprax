@@ -20,6 +20,7 @@ impl From<ValueId> for BorrowedRoot {
 }
 #[derive(Clone, Debug, PartialEq)]
 pub(super) enum Utf8Backing {
+    Checked(checked_allocation::Backing),
     Invocation(Arc<[u8]>),
     Static(hir::StaticUtf8),
     VectorStringSlot {
@@ -37,6 +38,7 @@ impl AsRef<[u8]> for Utf8Backing {
     fn as_ref(&self) -> &[u8] {
         match self {
             Self::Invocation(bytes) => bytes,
+            Self::Checked(backing) => backing.as_ref(),
             Self::Static(text) => text.as_str().as_bytes(),
             Self::VectorStringSlot {
                 vector,

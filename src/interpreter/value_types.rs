@@ -31,7 +31,8 @@ impl Evaluator<'_> {
             )
             | (Value::Bytes(_), ResolvedType::Bytes)
             | (Value::Map(_), ResolvedType::StringMap)
-            | (Value::String(_), ResolvedType::String) => true,
+            | (Value::String(_), ResolvedType::String)
+            | (Value::CheckedString(_), ResolvedType::String) => true,
             (Value::Vec(carrier), expected) => {
                 hir::owned_leaf_collection::is_copy_or_leaf_vec(self.declarations, expected)
                     && matches!(expected, ResolvedType::Nominal{arguments,..} if arguments.as_slice()==[carrier.element.clone()])

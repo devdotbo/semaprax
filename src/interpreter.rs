@@ -64,6 +64,7 @@ mod api_admission;
 )]
 pub(crate) mod byte_partition;
 mod call_frame;
+mod checked_allocation;
 mod closures;
 mod command_state;
 pub(crate) mod construction_fusion;
@@ -3107,6 +3108,7 @@ pub(crate) fn evaluate_resolved_language_command(
         resumption: resumable::Resumption::Refused,
         semantic: Default::default(),
         string_condition_reads: Default::default(),
+        checked_allocation: None,
     };
     let evaluated = evaluator.call_frame(entry, Vec::new(), 0);
     let outcome = match evaluated {
@@ -3177,6 +3179,7 @@ enum Value {
     Map(Arc<string_operations::StringMapValue>),
     Collection(Arc<map_collections::MapValue>),
     String(String),
+    CheckedString(checked_allocation::OwnedUtf8),
     BorrowedStr(BorrowedStrValue),
     BorrowedSlice(BorrowedSliceValue),
     OptionU8(Option<u8>),
@@ -3463,6 +3466,7 @@ impl Environment {
 }
 
 enum FunctionLookup<'a> {
+    Checked(&'a hir::ResolvedProgram),
     Borrowed(&'a BTreeMap<&'a str, &'a ResolvedFunction>),
     Prepared {
         functions: &'a [ResolvedFunction],
@@ -3475,6 +3479,7 @@ impl<'a> FunctionLookup<'a> {
     fn get(&self, id: &str) -> Option<&'a ResolvedFunction> {
         match self {
             Self::Borrowed(functions) => functions.get(id).copied(),
+            Self::Checked(program) => program.functions.iter().find(|function| function.id.as_str() == id),
             Self::Prepared {
                 functions,
                 function_instances,
@@ -3515,6 +3520,7 @@ struct Evaluator<'a> {
     resumption: resumable::Resumption,
     semantic: semantic_work::SemanticMeter,
     string_condition_reads: BTreeSet<hir::ExpressionId>,
+    checked_allocation: Option<checked_allocation::Invocation<'a>>,
 }
 
 use function_values::{evaluate_resolved_entry, evaluate_resolved_entry_with_utf8_budget};
@@ -3554,6 +3560,7 @@ impl Evaluator<'_> {
             resumption: resumable::Resumption::Refused,
             semantic: Default::default(),
             string_condition_reads: Default::default(),
+            checked_allocation: None,
         }
     }
 
@@ -4059,6 +4066,15 @@ fn combine(op: BinaryOp, lhs: Value, rhs: Value) -> Option<Result<Value, Normali
         (Value::BorrowedStr(a), Value::BorrowedStr(b)) => match op {
             BinaryOp::Eq => Some(Ok(Value::Bool(a.bytes.as_ref() == b.bytes.as_ref()))),
             BinaryOp::Ne => Some(Ok(Value::Bool(a.bytes.as_ref() != b.bytes.as_ref()))),
+            _ => None,
+        },
+        (Value::CheckedString(a), Value::CheckedString(b)) => match op {
+            BinaryOp::Eq => Some(Ok(Value::Bool(a.as_str() == b.as_str()))),
+            BinaryOp::Ne => Some(Ok(Value::Bool(a.as_str() != b.as_str()))),
+            BinaryOp::Lt => Some(Ok(Value::Bool(a.as_str().as_bytes() < b.as_str().as_bytes()))),
+            BinaryOp::Le => Some(Ok(Value::Bool(a.as_str().as_bytes() <= b.as_str().as_bytes()))),
+            BinaryOp::Gt => Some(Ok(Value::Bool(a.as_str().as_bytes() > b.as_str().as_bytes()))),
+            BinaryOp::Ge => Some(Ok(Value::Bool(a.as_str().as_bytes() >= b.as_str().as_bytes()))),
             _ => None,
         },
         (Value::String(a), Value::String(b)) => match op {
@@ -4943,6 +4959,7 @@ fn main() -> i64 { 0 }
                 resumption: resumable::Resumption::Refused,
                 semantic: Default::default(),
                 string_condition_reads: Default::default(),
+                checked_allocation: None,
             };
             let outcome = evaluator.call_frame(
                 inspect,
@@ -5034,6 +5051,7 @@ fn inspect(value: borrow Either<Bytes, Bytes>) -> i64 {
                 resumption: resumable::Resumption::Refused,
                 semantic: Default::default(),
                 string_condition_reads: Default::default(),
+                checked_allocation: None,
             };
             let outcome = evaluator.call_frame(
                 inspect,

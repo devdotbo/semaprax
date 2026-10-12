@@ -76,6 +76,9 @@ impl Evaluator<'_> {
         depth: usize,
     ) -> Result<Value, Flow> {
         self.charge()?;
+        if self.checked_allocation.is_some() {
+            return self.evaluate_checked_string_op(op, args, environment, depth);
+        }
         if op == crate::string_ops::StringOp::Take {
             let [argument] = args else {
                 return Err(Flow::Guard("String transfer arity changed"));

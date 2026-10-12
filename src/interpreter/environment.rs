@@ -237,6 +237,7 @@ pub(crate) fn evaluate_profile(
         resumption: crate::interpreter::resumable::Resumption::Refused,
         semantic: Default::default(),
         string_condition_reads: Default::default(),
+        checked_allocation: None,
     };
     let mut evaluated = evaluator.call_frame(entry, Vec::new(), 0);
     if let Some(process) = evaluator

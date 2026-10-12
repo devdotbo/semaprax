@@ -30,6 +30,7 @@ impl Evaluator<'_> {
             Value::Map(value) => Value::Map(Arc::clone(value)),
             Value::Collection(value) => Value::Collection(Arc::clone(value)),
             Value::String(value) => Value::String(self.materialize_utf8_copy(value)?),
+            Value::CheckedString(value) => Value::CheckedString(self.checked_utf8(&[value.as_str()])?),
             Value::BorrowedStr(value) => Value::BorrowedStr(value.clone()),
             Value::BorrowedSlice(value) => Value::BorrowedSlice(value.clone()),
             Value::OptionU8(value) => Value::OptionU8(*value),
@@ -237,6 +238,7 @@ pub(super) fn evaluate_resolved_entry_with_utf8_budget<'a>(
         resumption: crate::interpreter::resumable::Resumption::Refused,
         semantic: Default::default(),
         string_condition_reads: Default::default(),
+        checked_allocation: None,
     };
     let outcome = evaluator.evaluate_entry(entry, arguments);
     let utf8_usage = evaluator.utf8_materialization_budget.usage();
