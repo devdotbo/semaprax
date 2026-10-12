@@ -8,7 +8,21 @@ const LEXICAL: &str = r#"module frontier.lexical;
 @id("late") fn late()->i64 {return 1;}
 "#;
 fn program(source: &str) -> ResolvedProgram {
-    let source = crate::check(source, "validation-frontier.spx").unwrap();
+    let source = crate::parse(source, "validation-frontier.spx").unwrap();
+    let diagnostics = crate::verify::verify(&source);
+    // This internal cleanup owner also admits the unchanged library fixture.
+    // Retain every ordinary source check: only the executable-entry diagnostic
+    // is expected when the original corpus has no main declaration.
+    if source
+        .functions
+        .iter()
+        .any(|function| function.name == "main")
+    {
+        assert!(diagnostics.is_empty(), "{diagnostics:?}");
+    } else {
+        assert_eq!(diagnostics.len(), 1, "{diagnostics:?}");
+        assert_eq!(diagnostics[0].code, "SPX-T105");
+    }
     crate::hir::resolve(&source).unwrap()
 }
 fn old(program: &ResolvedProgram) -> Result<(), Diagnostic> {
@@ -108,10 +122,12 @@ fn deferred_frontier_preserves_earlier_mismatch_and_global_lexical_owner_priorit
     }
     parity(&deep);
     deep.functions[0].cleanup_plan.schema = "forged";
-    assert!(old(&deep)
-        .unwrap_err()
-        .message
-        .contains("non-canonical schema"));
+    assert!(
+        old(&deep)
+            .unwrap_err()
+            .message
+            .contains("non-canonical schema")
+    );
     parity(&deep);
 }
 #[test]
@@ -177,7 +193,10 @@ fn deferred_frontier_whole_validation_allocation_debit_and_drop_are_observed() {
                 })
             });
         assert!(!refused);
-        assert!(!metrics.invalid);
+        assert!(
+            !metrics.invalid,
+            "whole validation observation: {metrics:?}"
+        );
         assert_eq!(metrics.live, 0);
         assert_eq!(metrics.allocated, metrics.freed);
         (metrics, debit)
@@ -306,7 +325,10 @@ fn deferred_frontier_large_plain_member_overhead_and_complete_drop_are_observed(
             assert_eq!(attached(&program), before);
             // No expected gain is imposed on the no-helper control. This owns
             // literal current-row/query overhead through complete phase Drop.
-            println!("validation-frontier members={count} indexed={indexed} elapsed_ns={} debit={debit} allocations={measured:?}", elapsed.as_nanos());
+            println!(
+                "validation-frontier members={count} indexed={indexed} elapsed_ns={} debit={debit} allocations={measured:?}",
+                elapsed.as_nanos()
+            );
         }
     }
 }

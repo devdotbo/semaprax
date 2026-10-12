@@ -71,7 +71,25 @@ fn paid_seed_live_and_edge_receivers_equal_old_full_rows_and_checked_work_fronti
 fn paid_full_plan_late_overlap_and_first_work_error_equal_saved_btree_receiver() {
     let (mut program, index) = boundary_tests::fixture_with_uses(3, true);
     let expected = saved_planner::build_plan(&program, &program.functions[index]).unwrap();
-    assert_eq!(expected.loans.len(), 3);
+    // Three retained views and their three synchronous byte_len argument
+    // borrows are all real loans; keep both complete sets in this fixture.
+    assert_eq!(expected.loans.len(), 6);
+    assert_eq!(
+        expected
+            .loans
+            .iter()
+            .filter(|loan| loan.cause == LoanCause::SliceView)
+            .count(),
+        3
+    );
+    assert_eq!(
+        expected
+            .loans
+            .iter()
+            .filter(|loan| matches!(loan.cause, LoanCause::BorrowedCall { .. }))
+            .count(),
+        3
+    );
     let owned = expected.loans[0].origin.root.clone();
     let ResolvedExprKind::Block { statements, .. } = &mut program.functions[index].body.kind else {
         panic!("unchanged boundary block");
