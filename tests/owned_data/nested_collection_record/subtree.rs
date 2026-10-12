@@ -1,5 +1,7 @@
 //! Exact subtree movement versus independent recursive unpack/rebuild.
 use super::*;
+#[path = "subtree/lifetime.rs"]
+mod lifetime;
 const PREFIX: &str = r#"module test.subtree;
 @id("metrics") record Metrics {@id("metrics.total") total:i64,}
 @id("report") record Report {
