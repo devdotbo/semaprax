@@ -604,7 +604,7 @@ pub(crate) fn is_admitted_copy_aggregate_variant_field(
     {
         return false;
     }
-    declarations.type_facts(ty).is_some_and(|facts| {
+    declarations.type_flags(ty).is_some_and(|facts| {
         facts.copy && facts.sized && !facts.contains_resource && !facts.needs_drop
     })
 }

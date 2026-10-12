@@ -401,7 +401,7 @@ pub(crate) fn type_needs_resource_cleanup(
     while let Some(ty) = pending.pop() {
         let facts = program
             .declarations()
-            .type_facts(&ty)
+            .type_flags(&ty)
             .ok_or_else(|| format!("type `{}` has no cleanup facts", ty.identity_key()))?;
         if !facts.needs_drop || !visited.insert(ty.clone()) {
             continue;

@@ -1,6 +1,7 @@
 //! Deterministic declaration lookup, type facts, and inheritance materialization.
 use super::*;
 
+mod flags;
 mod linked_owned_data;
 mod owned_builtin;
 mod primitive_replay;

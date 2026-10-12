@@ -34,7 +34,7 @@ impl Resolver<'_> {
                 self.program.functions().iter().find(|candidate| candidate.stable_id == owner.as_str())
                     .map_or(0, |candidate| candidate.type_parameters.len())));
         let template_variant = matches!(function,FunctionExecutionId::Monomorphic(owner) if self.program.functions().iter().find(|candidate|candidate.stable_id==owner.as_str()).is_some_and(|candidate|super::generic_variant::slot(&self.declarations,&scrutinee.ty,owner,candidate.type_parameters.len())));
-        let facts = self.declarations.type_facts(&scrutinee.ty);
+        let facts = self.declarations.type_flags(&scrutinee.ty);
         let copy = facts.as_ref().is_some_and(|facts| facts.copy);
         let owned = template_owned
             || template_variant
@@ -318,7 +318,7 @@ impl Resolver<'_> {
                             if exact_recursive
                                 && self
                                     .declarations
-                                    .type_facts(&field_ty)
+                                    .type_flags(&field_ty)
                                     .is_some_and(|facts| facts.needs_drop)
                             {
                                 return Err(self.error(

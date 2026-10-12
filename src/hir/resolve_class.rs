@@ -96,7 +96,7 @@ impl Resolver<'_> {
         for field in &child_fields[parent_fields.len()..] {
             let drops = self
                 .declarations
-                .type_facts(&field.ty)
+                .type_flags(&field.ty)
                 .is_some_and(|facts| facts.needs_drop);
             if drops {
                 return Err(self.error(
@@ -119,7 +119,7 @@ impl Resolver<'_> {
         span: Span,
     ) -> Result<OwnershipMode, Diagnostic> {
         self.declarations
-            .type_facts(ty)
+            .type_flags(ty)
             .map(|facts| {
                 if facts.copy {
                     OwnershipMode::Value

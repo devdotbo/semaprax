@@ -399,6 +399,13 @@ Compute recursive type facts once for all consumers:
 copy | contains_resource | sized | needs_drop | layout_key
 ```
 
+Flag-only internal callers may project `copy`, `contains_resource`, `sized` and
+`needs_drop` without constructing owned layout text. The query preserves the
+current declaration index's cached-fact precedence; dynamic type identities keep
+the complete existing facts computation and refusals. This projection is not an
+independent validation of cached facts and changes neither type admission nor the
+owned `layout_key` contract.
+
 Reject by-value recursive cycles. Safe source layout remains abstract until an explicit versioned ABI annotation such as future `@layout(c)` is present.
 
 ## Ownership

@@ -118,7 +118,7 @@ fn profile_refusal(
     }
     if resolver
         .declarations
-        .type_facts(ty)
+        .type_flags(ty)
         .is_some_and(|facts| facts.contains_resource)
     {
         return (
