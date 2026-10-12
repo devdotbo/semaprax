@@ -172,7 +172,12 @@ tests = ["tests.main"]
     let changed_checked = checked.build(&manifest, &changed).unwrap();
     same(&changed_checked, &old_changed);
     let report: serde_json::Value = serde_json::from_str(changed_checked.to_json()).unwrap();
-    assert!(report["work"]["functions_reused"].as_u64().unwrap() > 0);
+    assert!(
+        report["work"]["monomorphic_function_HIR_reused"]
+            .as_u64()
+            .unwrap()
+            > 0
+    );
     let changed_warm = checked.build(&manifest, &changed).unwrap();
     same(&changed_warm, &old_changed);
 }
