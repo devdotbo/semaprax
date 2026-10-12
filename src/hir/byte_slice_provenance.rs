@@ -299,8 +299,8 @@ pub(super) fn derive_byte_slice_provenance(
 
 // Share the complete derivation across borrowed ordered sequences. The iterator
 // lends original bodies; it creates no owning function or attachment projection.
-pub(super) fn derive_byte_slice_provenance_from<'a>(
-    functions: &mut dyn Iterator<Item = &'a ResolvedFunction>,
+pub(super) fn derive_byte_slice_provenance_from(
+    functions: &mut dyn Iterator<Item = &ResolvedFunction>,
     declarations: &DeclarationIndex,
 ) -> Result<BTreeMap<ValueId, ByteSliceProvenance>, Diagnostic> {
     let mut facts = BTreeMap::new();
