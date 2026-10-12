@@ -1084,7 +1084,8 @@ impl<'a> Executor<'a> {
                 ..
             } = &expression.kind
             {
-                if super::deferred_commit::is_total_str_len_bytes(callee)
+                if checked_allocation::is_intrinsic_call(self, expression)
+                    || super::deferred_commit::is_total_str_len_bytes(callee)
                     || crate::string_ops::take::operand(expression).is_some()
                     || crate::byte_ops::by_id(callee.as_str()).is_some_and(|op| !op.is_fallible())
                     || crate::host_io_ops::by_id(callee.as_str()).is_some()

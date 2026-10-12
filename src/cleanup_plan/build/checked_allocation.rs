@@ -86,7 +86,7 @@ impl PlanBuilder<'_> {
 /// are separately classified by the unchanged constructor-owned move sets.
 /// User calls do not allocate a second copy of their returned carrier here;
 /// their current callee plan owns all reached materializations.
-fn operation(expression: &ResolvedExpr) -> Option<AllocationOperation> {
+pub(in crate::cleanup_plan) fn operation(expression: &ResolvedExpr) -> Option<AllocationOperation> {
     use crate::byte_ops::ByteOp as B;
     use crate::string_ops::StringOp as S;
     use AllocationOperation as A;

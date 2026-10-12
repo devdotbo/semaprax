@@ -61,3 +61,27 @@ pub(super) fn failure_status(
     }
     Ok(status)
 }
+
+/// Recognize a builtin only in the already independently replayed private v20
+/// projection. A supplied outcome is never a declaration or allocator grant.
+pub(super) fn is_intrinsic_call(executor: &Executor<'_>, expression: &hir::ResolvedExpr) -> bool {
+    if executor.function.cleanup_plan.schema != crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V20 {
+        return false;
+    }
+    let hir::ResolvedExprKind::Call { instance: None, .. } = &expression.kind else {
+        return false;
+    };
+    let Some(expected) = crate::cleanup_plan::build::checked_allocation::operation(expression) else {
+        return false;
+    };
+    executor.function.cleanup_plan.status_sources.iter().any(|source| {
+        source.id.expression == expression.id
+            && source.id.lane == StatusLane::AllocationFailure
+            && matches!(&source.producer,
+                StatusProducer::CheckedAllocation { operation, normalized_cases }
+                    if *operation == expected && *normalized_cases == [
+                        crate::cleanup_plan::AllocationCase::PayloadRefused,
+                        crate::cleanup_plan::AllocationCase::SizeOverflow,
+                    ])
+    })
+}

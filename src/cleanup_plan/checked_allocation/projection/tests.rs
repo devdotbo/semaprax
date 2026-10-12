@@ -5,11 +5,12 @@ use crate::cleanup_plan::{
 };
 use crate::conformance::{OperationOutcome, TraceEventKind, TraceOutcome, TraceResult};
 const SOURCE: &str = r#"module checked.deferred;
-@id("checked.deferred.main") fn main() -> usize {
-    let values = vec_with_capacity<i64>(1usize);
-    let reserved = vec_reserve_owned<i64>(values, 2usize);
-    vec_capacity<i64>(reserved)
+@id("checked.deferred.main") fn reserve() -> usize {
+    let values = vec_with_capacity<string>(1usize);
+    let reserved = vec_reserve_owned<string>(values, 1usize);
+    vec_capacity<string>(reserved)
 }
+@id("checked.deferred.entry") fn main() -> i64 { 0 }
 "#;
 #[test]
 fn deferred_allocating_call_keeps_caller_epochs_until_both_successes_and_rejects_early_commit() {

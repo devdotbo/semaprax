@@ -175,9 +175,9 @@ fn independent_allocation_status_replay_keeps_take_total_and_implicit_reads_clon
         r#"module checked.read;
 @id("checked.read.main") fn main() -> i64 {
     let text = "abc";
-    let copy = text;
+    let copied_length = string_len(text);
     let moved = string_take(text);
-    string_len(copy) + string_len(moved)
+    copied_length + str_len_bytes(string_as_str(moved))
 }
 "#,
         "checked-read.spx",
@@ -410,7 +410,7 @@ fn aggregate_metadata_cannot_inherit_native_inline_nonallocation_authority() {
 
 #[test]
 fn array_metadata_is_ordinary_valid_but_requires_a_checked_cross_engine_receiver() {
-    for (length, value) in [(0, "[]"), (2, "[1, 2]"), (0, "[0; 0]"), (2, "[7; 2]")] {
+    for (length, value) in [(0, "[]"), (2, "[1u8, 2u8]"), (0, "[0u8; 0]"), (2, "[7u8; 2]")] {
         let input = format!(
             r#"module checked.array;
 @id("checked.array.main") fn main() -> i64 {{
