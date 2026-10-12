@@ -9,8 +9,8 @@ use super::*;
 use crate::ast::{Program, Span, Type, TypeDeclarationKind};
 use crate::hir::ids::FunctionExecutionId;
 use crate::hir::{
-    FunctionResolutionWork, Resolver, ResolvedProgram, ResolvedResourceDropKind, ResolvedType,
-    ResolvedTypeDeclarationKind,
+    FunctionResolutionWork, ResolvedProgram, ResolvedResourceDropKind, ResolvedType,
+    ResolvedTypeDeclarationKind, Resolver,
 };
 
 thread_local! {
@@ -73,7 +73,10 @@ fn backing(length: usize) -> usize {
 }
 
 fn removed_bytes(texts: &[String]) -> usize {
-    texts.iter().map(|text| text.len() + backing(text.len())).sum()
+    texts
+        .iter()
+        .map(|text| text.len() + backing(text.len()))
+        .sum()
 }
 
 const CENSUS: &str = r#"module resolver.held;
@@ -270,7 +273,12 @@ fn expected_requests(program: &Program) -> Vec<String> {
     }
     for interface in &program.interfaces {
         texts.push(interface.stable_id.clone());
-        texts.extend(interface.imports.iter().map(|import| import.stable_id.clone()));
+        texts.extend(
+            interface
+                .imports
+                .iter()
+                .map(|import| import.stable_id.clone()),
+        );
     }
     for declaration in &program.types {
         if matches!(
@@ -371,10 +379,14 @@ fn held_owners(index: &DeclarationIndex, ty: &ResolvedType) {
     match ty {
         ResolvedType::TypeParameter { owner, .. } => held(index, owner),
         ResolvedType::Nominal { arguments, .. } => {
-            arguments.iter().for_each(|argument| held_owners(index, argument));
+            arguments
+                .iter()
+                .for_each(|argument| held_owners(index, argument));
         }
         ResolvedType::Function { parameters, result } => {
-            parameters.iter().for_each(|parameter| held_owners(index, parameter));
+            parameters
+                .iter()
+                .for_each(|parameter| held_owners(index, parameter));
             held_owners(index, result);
         }
         _ => {}
@@ -457,7 +469,8 @@ fn resolver_sharing_equals_saved_construction_for_hir_index_graph_wire_and_work(
         assert_eq!(old_public, new_public);
         assert!(new_public.is_ok());
         let (old_source, new_source) = pair(|| crate::hir::resolve_source(&program, None));
-        let ((old_source, old_work), (new_source, new_work)) = (old_source.unwrap(), new_source.unwrap());
+        let ((old_source, old_work), (new_source, new_work)) =
+            (old_source.unwrap(), new_source.unwrap());
         assert_eq!(old_source, old.0);
         assert_eq!(new_source, new.0);
         assert_eq!(old_source, new_source);
@@ -736,14 +749,12 @@ fn repeated_generic_owner_queries_share_one_carrier_and_remove_exact_reconstruct
         parameters: vec![parameter.clone()],
         result: Box::new(parameter.clone()),
     };
-    let query = |resolver: &Resolver<'_>,
-                 template: &crate::ast::Function,
-                 ty: &Type,
-                 rounds: usize| {
-        for _ in 0..rounds {
-            drop(resolver.resolve_function_type(template, ty, span));
-        }
-    };
+    let query =
+        |resolver: &Resolver<'_>, template: &crate::ast::Function, ty: &Type, rounds: usize| {
+            for _ in 0..rounds {
+                drop(resolver.resolve_function_type(template, ty, span));
+            }
+        };
     let entry = &resolver.declarations.declarations["identity"].id;
     for _ in 0..8 {
         let ResolvedType::TypeParameter { owner, index: 0 } = resolver
@@ -835,10 +846,20 @@ fn callable_and_closure_fixtures_reach_repeated_owner_sites_with_exact_payload_r
     // 2 + 1 + 3 + 1 + 1; `fill<T>(Vec<T>, T)->Vec<T>` is 2 + 1 + 2 + 1, plus
     // the closure's own `fn(T)->T` signature through the closure resolver.
     for (source, path, owner, least) in [
-        (CALLABLE, "resolver-held-callable.spx", "adapter.map", 7usize),
+        (
+            CALLABLE,
+            "resolver-held-callable.spx",
+            "adapter.map",
+            7usize,
+        ),
         (CALLABLE, "resolver-held-callable.spx", "adapter.filter", 6),
         (CALLABLE, "resolver-held-callable.spx", "adapter.fold", 8),
-        (GENERIC_CLOSURE, "resolver-held-generic-closure.spx", "gc.fill", 6),
+        (
+            GENERIC_CLOSURE,
+            "resolver-held-generic-closure.spx",
+            "gc.fill",
+            6,
+        ),
         (CLOSURES, "resolver-held-closures.spx", "snapshot", 1),
         (CLOSURES, "resolver-held-closures.spx", "shadow", 1),
     ] {
@@ -932,7 +953,8 @@ fn checked_function_reuse_keeps_prior_carriers_and_saved_costs_with_old_new_pari
         }
         // Only the optimized policy reconstructs identities from this pass's
         // index. The saved policy deliberately keeps its fresh carriers.
-        let methods: Vec<&DeclarationId> = new.0
+        let methods: Vec<&DeclarationId> = new
+            .0
             .types
             .iter()
             .flat_map(|declaration| match &declaration.kind {
@@ -940,9 +962,7 @@ fn checked_function_reuse_keeps_prior_carriers_and_saved_costs_with_old_new_pari
                 _ => [].iter(),
             })
             .collect();
-        assert_reconstructed_identities_are_index_carriers(&new.0, |id| {
-            methods.contains(&id)
-        });
+        assert_reconstructed_identities_are_index_carriers(&new.0, |id| methods.contains(&id));
         // The same reuse through the paid checked route: identical requests,
         // output and reuse, with and without a prior module.
         let (old_paid, new_paid) = pair(|| paid_checked(&program, Some((&previous, &costs))));

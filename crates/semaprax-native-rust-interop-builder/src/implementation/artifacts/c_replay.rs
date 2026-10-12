@@ -428,7 +428,9 @@ fn replay_c_expression_shape(expression: &ResolvedExpr) -> Result<(usize, usize)
                 | ResolvedExprKind::VecConstructor { statements, .. }
                 if statements.iter().any(|statement| matches!(statement, ResolvedStatement::CopyDiscard { .. }))
             ) {
-                return Err(b107("copy discard is outside the native Rust scalar profile"));
+                return Err(b107(
+                    "copy discard is outside the native Rust scalar profile",
+                ));
             }
             nodes = nodes
                 .checked_add(1)
@@ -1332,22 +1334,33 @@ pub(super) fn replay_c_exact(
     Ok(replay.finish())
 }
 
-
 #[cfg(test)]
 mod copy_discard_tests {
     use super::*;
     #[test]
     fn independent_replay_refuses_discard_before_output_or_counters() {
-        let source = crate::parse(r#"module interop.closed; @id("main") fn main()->i64 {7}"#, std::path::Path::new("copy-discard-replay.spx")).unwrap();
+        let source = crate::parse(
+            r#"module interop.closed; @id("main") fn main()->i64 {7}"#,
+            std::path::Path::new("copy-discard-replay.spx"),
+        )
+        .unwrap();
         let program = hir::resolve(&source).unwrap();
         let mut body = program.functions[0].body.clone();
         body.kind = ResolvedExprKind::Block {
-            statements: vec![ResolvedStatement::CopyDiscard { value: body.clone(), span: body.span }],
+            statements: vec![ResolvedStatement::CopyDiscard {
+                value: body.clone(),
+                span: body.span,
+            }],
             tail: Box::new(body.clone()),
         };
         let mut counter = 0;
         let mut lines = CExpressionLineArena::new();
-        assert_eq!(replay_c_expression(&body, &[], &mut counter, &mut lines).unwrap_err().code, "SPX-B107");
+        assert_eq!(
+            replay_c_expression(&body, &[], &mut counter, &mut lines)
+                .unwrap_err()
+                .code,
+            "SPX-B107"
+        );
         assert_eq!(counter, 0);
         assert_eq!(lines.as_str().unwrap(), "");
     }

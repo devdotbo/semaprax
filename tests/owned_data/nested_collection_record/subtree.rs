@@ -284,7 +284,10 @@ tests = ["test.subtree_tests"]
     // Keep the original unsliced export as a closed-profile negative. The
     // successful cache route retains its full private subtree source and uses
     // the profile's required public slice parameter without changing its body.
-    let errors = cache.build(&manifest, &inputs(&source, unsliced_app)).err().unwrap();
+    let errors = cache
+        .build(&manifest, &inputs(&source, unsliced_app))
+        .err()
+        .unwrap();
     assert!(errors.iter().any(|error| error.code == "SPX-W122"
         && error.message == "Public Useful Data Export v1 function `public.probe` requires 1..=8 slice parameters"));
     let cold = cache.build(&manifest, &inputs(&source, app)).unwrap();

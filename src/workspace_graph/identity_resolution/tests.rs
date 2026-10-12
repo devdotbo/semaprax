@@ -21,14 +21,16 @@ fn owned_and_borrowed_inputs_match_the_legacy_oracle_and_pay_one_report_each() {
     // workspace builder ledger; one shared arbitrary 1 MiB ledger across both
     // refused the second one's independent-replay cursor.
     let before = super::acquisitions();
-    let (first, failed, first_used) = with_limit_usage(crate::workspace_graph::MAX_BUILDER_BYTES, || {
-        resolve_module(None, &program.path, &owned, None).unwrap()
-    });
+    let (first, failed, first_used) =
+        with_limit_usage(crate::workspace_graph::MAX_BUILDER_BYTES, || {
+            resolve_module(None, &program.path, &owned, None).unwrap()
+        });
     assert!(!failed);
     assert_eq!(super::acquisitions(), before + 1);
-    let (second, failed, second_used) = with_limit_usage(crate::workspace_graph::MAX_BUILDER_BYTES, || {
-        resolve_module(None, &program.path, &borrowed, None).unwrap()
-    });
+    let (second, failed, second_used) =
+        with_limit_usage(crate::workspace_graph::MAX_BUILDER_BYTES, || {
+            resolve_module(None, &program.path, &borrowed, None).unwrap()
+        });
     assert!(!failed);
     assert_eq!(super::acquisitions(), before + 2);
     for parts in [&first, &second] {
@@ -69,9 +71,10 @@ fn one_mib_ledger_preserves_first_cursor_refusal_and_sticky_retries() {
             let retry_setup = matches!(retry, Err(ModuleFailure::Setup(Refused::Budget(_))));
             let second_setup = matches!(stage1, Err(ModuleFailure::Setup(Refused::Budget(_))));
             let message = match &stage0 {
-                Err(ModuleFailure::Report(report)) => report
-                    .iter()
-                    .any(|d| d.message.contains("physical expression-fact cursor reservation")),
+                Err(ModuleFailure::Report(report)) => report.iter().any(|d| {
+                    d.message
+                        .contains("physical expression-fact cursor reservation")
+                }),
                 _ => false,
             };
             let first_code = match &stage0 {
@@ -86,11 +89,20 @@ fn one_mib_ledger_preserves_first_cursor_refusal_and_sticky_retries() {
         })
     });
     let ((second_setup, refused_after_stage0, first_code, message), sticky) = outcome;
-    assert!(second_setup, "borrowed sibling must preserve the first refusal at setup");
-    assert!(refused_after_stage0, "the original first owned call exhausted this ledger");
+    assert!(
+        second_setup,
+        "borrowed sibling must preserve the first refusal at setup"
+    );
+    assert!(
+        refused_after_stage0,
+        "the original first owned call exhausted this ledger"
+    );
     assert!(failed);
     assert_eq!(first_code, Some("SPX-H006"));
-    assert!(message, "first owned run must refuse the physical expression-fact cursor reservation");
+    assert!(
+        message,
+        "first owned run must refuse the physical expression-fact cursor reservation"
+    );
     assert_eq!(sticky, (false, false, true, true));
     let receipt = receipt.expect("the first global refusal is recorded");
     assert!(receipt.requested > receipt.remaining);

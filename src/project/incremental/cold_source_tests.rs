@@ -92,11 +92,12 @@ fn checked_cold_source_preserves_limits_costs_current_key_and_body_reuse_fallbac
     // `function_costs` measure the active ledger around each resolved body, so
     // the paid borrowed route is compared with the legacy route under its own
     // separate, equivalent active ledger (the unpaid run above has none).
-    let (legacy_active, legacy_refused, _) = crate::bounded_output::with_limit_usage(usize::MAX, || {
-        pass.resolve_functions(&program.path, &changed, None)
-            .unwrap()
-            .unwrap()
-    });
+    let (legacy_active, legacy_refused, _) =
+        crate::bounded_output::with_limit_usage(usize::MAX, || {
+            pass.resolve_functions(&program.path, &changed, None)
+                .unwrap()
+                .unwrap()
+        });
     assert!(!legacy_refused);
     assert_eq!(legacy_active.resolved, reused.resolved);
     assert_eq!(legacy_active.reused_functions, reused.reused_functions);

@@ -10,23 +10,39 @@ pub(crate) struct GeneratedRoots {
 }
 impl GeneratedRoots {
     pub(crate) fn plain(types: Vec<TypeDeclaration>, functions: Vec<Function>) -> Self {
-        Self { types, functions, iterative: false }
+        Self {
+            types,
+            functions,
+            iterative: false,
+        }
     }
     pub(crate) fn iterative(types: Vec<TypeDeclaration>, functions: Vec<Function>) -> Self {
-        Self { types, functions, iterative: true }
+        Self {
+            types,
+            functions,
+            iterative: true,
+        }
     }
 }
 impl Drop for GeneratedRoots {
     fn drop(&mut self) {
-        if !self.iterative { return; }
+        if !self.iterative {
+            return;
+        }
         // Empty metadata and sidecars acquire no backing. The exact existing
         // Program destructor takes every recursive root before drop glue runs,
         // on success and on partial construction/refusal alike.
         drop(Program {
-            path: String::new(), module: String::new(), module_uses: Vec::new(),
-            permits: Vec::new(), types: std::mem::take(&mut self.types),
-            interfaces: Vec::new(), protocols: Vec::new(), implementations: Vec::new(),
-            session_protocols: Vec::new(), agents: Vec::new(),
+            path: String::new(),
+            module: String::new(),
+            module_uses: Vec::new(),
+            permits: Vec::new(),
+            types: std::mem::take(&mut self.types),
+            interfaces: Vec::new(),
+            protocols: Vec::new(),
+            implementations: Vec::new(),
+            session_protocols: Vec::new(),
+            agents: Vec::new(),
             functions: std::mem::take(&mut self.functions),
         });
     }

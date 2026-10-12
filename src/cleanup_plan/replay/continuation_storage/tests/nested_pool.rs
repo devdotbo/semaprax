@@ -348,9 +348,15 @@ fn ordinary_instances_and_contracts_keep_the_exact_program_storage_owner() {
     let mut budget = ReplayBudget::unobserved();
     reserve_program_skeleton_work(
         &program,
-        program.functions.iter().chain(program.function_instances.iter().map(|instance| &instance.function)),
+        program.functions.iter().chain(
+            program
+                .function_instances
+                .iter()
+                .map(|instance| &instance.function),
+        ),
         &mut budget,
-    ).unwrap();
+    )
+    .unwrap();
     for function in program.functions.iter().chain(
         program
             .function_instances

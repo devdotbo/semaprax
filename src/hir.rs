@@ -614,7 +614,9 @@ pub(crate) fn resolve_source<'p>(
     resolve_source_pass(&desugared)
 }
 
-fn resolve_source_pass(program: &dyn ProgramSource) -> Result<(ResolvedProgram, FunctionResolutionWork), Vec<Diagnostic>> {
+fn resolve_source_pass(
+    program: &dyn ProgramSource,
+) -> Result<(ResolvedProgram, FunctionResolutionWork), Vec<Diagnostic>> {
     (Resolver {
         program,
         byte_helpers: crate::loop_calls::byte_writer::SourceIndex::new(program),

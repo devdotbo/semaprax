@@ -200,10 +200,20 @@ impl<'a> SyntheticProgramView<'a> {
         (self.authored, self.generated)
     }
 
-    pub(crate) fn with_generated_owner(authored: &'a Program, generated: GeneratedRoots) -> Option<Self> {
+    pub(crate) fn with_generated_owner(
+        authored: &'a Program,
+        generated: GeneratedRoots,
+    ) -> Option<Self> {
         authored.types.len().checked_add(generated.types.len())?;
-        authored.functions.len().checked_add(generated.functions.len())?;
-        Some(Self { authored, generated, identity: OverlayIdentity { _nonzero_size: 0 } })
+        authored
+            .functions
+            .len()
+            .checked_add(generated.functions.len())?;
+        Some(Self {
+            authored,
+            generated,
+            identity: OverlayIdentity { _nonzero_size: 0 },
+        })
     }
 
     pub(crate) fn new(authored: &'a Program, generated_functions: Vec<Function>) -> Option<Self> {

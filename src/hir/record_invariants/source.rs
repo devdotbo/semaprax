@@ -1,8 +1,8 @@
 //! The same invariant transformations at their genuine borrowed-source
 //! boundary. Complete ordinary owning producers remain independent oracles.
 use super::{check_function, invariant_function, rewrite, Sites};
-use crate::ast::{Program, TypeDeclarationKind};
 use crate::ast::program_source::ProgramSource;
+use crate::ast::{Program, TypeDeclarationKind};
 use crate::hir::nodes::{ResolvedProgram, ResolvedType};
 use std::collections::BTreeMap;
 
@@ -10,17 +10,24 @@ use std::collections::BTreeMap;
 // presentation once here; no owning synthesis is needed merely for lookup.
 fn clone_source(program: &dyn ProgramSource) -> Program {
     Program {
-        path: program.path().to_owned(), module: program.module().to_owned(),
-        module_uses: program.module_uses().to_vec(), permits: program.permits().to_vec(),
+        path: program.path().to_owned(),
+        module: program.module().to_owned(),
+        module_uses: program.module_uses().to_vec(),
+        permits: program.permits().to_vec(),
         types: program.types().iter().cloned().collect(),
-        interfaces: program.interfaces().to_vec(), protocols: program.protocols().to_vec(),
+        interfaces: program.interfaces().to_vec(),
+        protocols: program.protocols().to_vec(),
         implementations: program.implementations().to_vec(),
-        session_protocols: program.session_protocols().to_vec(), agents: program.agents().to_vec(),
+        session_protocols: program.session_protocols().to_vec(),
+        agents: program.agents().to_vec(),
         functions: program.functions().iter().cloned().collect(),
     }
 }
 
-pub(in crate::hir) fn desugar(program: &dyn ProgramSource, resolved: &ResolvedProgram) -> Option<Program> {
+pub(in crate::hir) fn desugar(
+    program: &dyn ProgramSource,
+    resolved: &ResolvedProgram,
+) -> Option<Program> {
     let declared = program
         .types()
         .iter()

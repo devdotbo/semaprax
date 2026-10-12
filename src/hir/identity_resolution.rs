@@ -101,17 +101,30 @@ pub(crate) fn resolve_source_checked<'p, E>(
     {
         return Err(Failure::Source(diagnostics));
     }
-    let reuse = previous_program.zip(previous_resolved).zip(previous_costs)
+    let reuse = previous_program
+        .zip(previous_resolved)
+        .zip(previous_costs)
         .filter(|((previous, _), _)| function_reuse_environment_is_exact(program, previous))
-        .map(|((program, resolved), costs)| FunctionReuse { program, resolved, costs });
+        .map(|((program, resolved), costs)| FunctionReuse {
+            program,
+            resolved,
+            costs,
+        });
     let clause_program = record_invariants::source::clause_program(program);
     let inventory: &dyn ProgramSource = clause_program.as_ref().map_or(program, |owned| owned);
-    let resolved = source_pass(inventory, if clause_program.is_some() { None } else { reuse }, &mut reserve)?;
+    let resolved = source_pass(
+        inventory,
+        if clause_program.is_some() {
+            None
+        } else {
+            reuse
+        },
+        &mut reserve,
+    )?;
     let Some(desugared) = record_invariants::source::desugar(program, &resolved.0) else {
         return Ok(resolved);
     };
     pass(&desugared, None, &mut reserve)
-
 }
 
 fn source_pass<E>(

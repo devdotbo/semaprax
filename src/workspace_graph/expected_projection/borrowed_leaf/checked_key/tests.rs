@@ -1,7 +1,7 @@
-use super::{append_copies, materialize, reserve_builder_structure};
 use super::super::{construct, private_layout, synthetic_program_with_registry, Input, Span};
-use crate::hir;
+use super::{append_copies, materialize, reserve_builder_structure};
 use crate::ast::program_source::ProgramSource;
+use crate::hir;
 use crate::test_allocation_observer::measure;
 use crate::workspace_graph::index_authored;
 
@@ -98,7 +98,6 @@ fn checked_key_omits_only_discarded_sidecar_clone_payloads_and_preserves_sticky_
     assert!(first.is_some());
 }
 
-
 #[test]
 fn imported_cache_directory_is_paid_while_generated_backing_is_live() {
     let authored = [11u64, 12];
@@ -108,18 +107,20 @@ fn imported_cache_directory_is_paid_while_generated_backing_is_live() {
         // its real replacement; successful receiving Drop also frees it.
         let generated = vec![13u64; 17];
         let ((success, observed), refused, charged, first) =
-            crate::bounded_output::with_limit_usage_refusal(limit, || measure(|| {
-                let result = append_copies(&authored, generated);
-                let success = result.is_ok();
-                if let Ok(values) = &result {
-                    assert_eq!(&values[..2], &authored);
-                    assert_eq!(&values[2..], &[13u64; 17]);
-                } else {
-                    assert!(reserve_builder_structure(0).is_err());
-                }
-                drop(result);
-                success
-            }));
+            crate::bounded_output::with_limit_usage_refusal(limit, || {
+                measure(|| {
+                    let result = append_copies(&authored, generated);
+                    let success = result.is_ok();
+                    if let Ok(values) = &result {
+                        assert_eq!(&values[..2], &authored);
+                        assert_eq!(&values[2..], &[13u64; 17]);
+                    } else {
+                        assert!(reserve_builder_structure(0).is_err());
+                    }
+                    drop(result);
+                    success
+                })
+            });
         // The allocation observer records frees only for its own allocations;
         // generated backing was acquired outside this receiver's observation.
         assert!(!observed.invalid && observed.live == 0);

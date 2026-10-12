@@ -23,10 +23,22 @@ pub(super) fn materialize(view: SyntheticProgramView<'_>) -> Result<Program, Vec
     let (functions, types) = if imported {
         // Both real replacement directories are paid while recursive roots
         // remain under their iterative owner, including short/sticky refusal.
-        let functions = combined_directory::<crate::ast::Function>(authored.functions.len(), roots.functions.len())?;
-        let types = combined_directory::<crate::ast::TypeDeclaration>(authored.types.len(), roots.types.len())?;
-        (append_prepaid(&authored.functions, std::mem::take(&mut roots.functions), functions),
-            append_prepaid(&authored.types, std::mem::take(&mut roots.types), types))
+        let functions = combined_directory::<crate::ast::Function>(
+            authored.functions.len(),
+            roots.functions.len(),
+        )?;
+        let types = combined_directory::<crate::ast::TypeDeclaration>(
+            authored.types.len(),
+            roots.types.len(),
+        )?;
+        (
+            append_prepaid(
+                &authored.functions,
+                std::mem::take(&mut roots.functions),
+                functions,
+            ),
+            append_prepaid(&authored.types, std::mem::take(&mut roots.types), types),
+        )
     } else {
         // Preserve the separately qualified leaf receiver.
         let mut functions = authored.functions.clone();
@@ -51,11 +63,18 @@ pub(super) fn materialize(view: SyntheticProgramView<'_>) -> Result<Program, Vec
 // Owning publication copies authored payloads under its existing complete cache
 // precharge. A real new combined directory is prepaid in full while generated
 // backing remains live; generated declarations themselves are moved once.
-fn combined_directory<T>(authored: usize, generated: usize) -> Result<Option<Vec<T>>, Vec<Diagnostic>> {
-    if authored == 0 || generated == 0 { return Ok(None); }
-    let count = authored.checked_add(generated)
+fn combined_directory<T>(
+    authored: usize,
+    generated: usize,
+) -> Result<Option<Vec<T>>, Vec<Diagnostic>> {
+    if authored == 0 || generated == 0 {
+        return Ok(None);
+    }
+    let count = authored
+        .checked_add(generated)
         .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?;
-    let bytes = count.checked_mul(std::mem::size_of::<T>())
+    let bytes = count
+        .checked_mul(std::mem::size_of::<T>())
         .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?;
     reserve_builder_structure(bytes)?;
     let directory = Vec::with_capacity(count);
@@ -64,9 +83,17 @@ fn combined_directory<T>(authored: usize, generated: usize) -> Result<Option<Vec
     }
     Ok(Some(directory))
 }
-fn append_prepaid<T: Clone>(authored: &[T], generated: Vec<T>, directory: Option<Vec<T>>) -> Vec<T> {
-    if authored.is_empty() { return generated; }
-    if generated.is_empty() { return authored.to_vec(); }
+fn append_prepaid<T: Clone>(
+    authored: &[T],
+    generated: Vec<T>,
+    directory: Option<Vec<T>>,
+) -> Vec<T> {
+    if authored.is_empty() {
+        return generated;
+    }
+    if generated.is_empty() {
+        return authored.to_vec();
+    }
     let mut combined = directory.expect("both source slices have a prepaid checked directory");
     combined.extend_from_slice(authored);
     combined.extend(generated);

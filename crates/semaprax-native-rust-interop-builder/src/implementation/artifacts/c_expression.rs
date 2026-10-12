@@ -136,7 +136,9 @@ pub(in crate::implementation) fn c_expression_shape(
                 | ResolvedExprKind::VecConstructor { statements, .. }
                 if statements.iter().any(|statement| matches!(statement, ResolvedStatement::CopyDiscard { .. }))
             ) {
-                return Err(b107("copy discard is outside the native Rust scalar profile"));
+                return Err(b107(
+                    "copy discard is outside the native Rust scalar profile",
+                ));
             }
             if matches!(node.kind, ResolvedExprKind::RowLoan { .. }) {
                 return Err(b107("scalar value signature required"));

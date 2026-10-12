@@ -20,10 +20,10 @@ use super::{
     HIR_STRUCTURE_EXPANSION_FACTOR, MAX_DEPENDENCY_DEPTH,
 };
 
-#[path = "expected_projection/borrowed_leaf.rs"]
-pub(in crate::workspace_graph) mod borrowed_leaf;
 #[path = "expected_projection/borrowed_imports.rs"]
 pub(in crate::workspace_graph) mod borrowed_imports;
+#[path = "expected_projection/borrowed_leaf.rs"]
+pub(in crate::workspace_graph) mod borrowed_leaf;
 #[path = "expected_projection/cached_exact.rs"]
 pub(super) mod cached_exact;
 #[path = "expected_projection/call_identity.rs"]
