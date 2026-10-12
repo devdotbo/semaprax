@@ -473,6 +473,7 @@ pub(in crate::implementation) fn hash_expr(
                     | ResolvedExprKind::ByteRange { .. }
                     | ResolvedExprKind::LiteralFormat { .. }
                     | ResolvedExprKind::VecFieldRead { .. }
+                    | ResolvedExprKind::RowLoan { .. }
                     // Resumable Effects v1 (issue #204): a `yields`-declaring
                     // function is refused by `validate_selected_scalar_closure`
                     // before this ever runs, exactly like `Closure` and

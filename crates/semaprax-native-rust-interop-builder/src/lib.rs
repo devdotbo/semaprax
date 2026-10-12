@@ -12,9 +12,17 @@ pub(crate) use semaprax::format;
 pub(crate) use semaprax::{ast, cleanup, cleanup_plan, diagnostic, hir, lexer};
 #[cfg(test)]
 pub(crate) use semaprax::{parse, parse_with_comments};
+#[allow(
+    unused_imports,
+    reason = "path-included capacity contract retains compiler-only lexical reexports"
+)]
 #[path = "../../../src/private_capacity_contract.rs"]
 pub(crate) mod private_capacity_contract;
 #[allow(dead_code, clippy::all, unexpected_cfgs)]
+#[allow(
+    unused_imports,
+    reason = "path-included formatter retains compiler-only literal reexports"
+)]
 #[path = "../../../src/format.rs"]
 pub(crate) mod private_format;
 pub mod rustc_diagnostics;

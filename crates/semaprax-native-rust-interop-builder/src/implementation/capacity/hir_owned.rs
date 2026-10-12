@@ -270,6 +270,22 @@ pub(in crate::implementation) fn hir_expr_owned_capacity(
                 )?;
                 pending.extend(args);
             }
+            ResolvedExprKind::RowLoan { loan, args } => {
+                total = total
+                    .checked_add(std::mem::size_of::<hir::RowLoan>())
+                    .and_then(|bytes| bytes.checked_add(hir_type_owned_capacity(&loan.element)?))
+                    .and_then(|bytes| bytes.checked_add(loan.traversal.owned_allocation_bytes()?))
+                    .and_then(|bytes| bytes.checked_add(loan.bound.as_str().len()))
+                    .and_then(|bytes| bytes.checked_add(loan.callee.as_str().len()))
+                    .and_then(|bytes| bytes.checked_add(loan.parameter.as_str().len()))
+                    .ok_or_else(|| b109("max_builder_bytes", MAX_BUILDER_BYTES))?;
+                add_capacity(
+                    &mut total,
+                    args.capacity(),
+                    std::mem::size_of::<ResolvedExpr>(),
+                )?;
+                pending.extend(args);
+            }
             ResolvedExprKind::LiteralFormat { template, args } => {
                 total = total
                     .checked_add(template.capacity())

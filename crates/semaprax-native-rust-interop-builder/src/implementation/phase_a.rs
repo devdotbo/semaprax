@@ -1295,6 +1295,7 @@ pub(super) fn validate_selected_scalar_closure(
             | ResolvedExprKind::ByteRange { .. }
             | ResolvedExprKind::LiteralFormat { .. }
             | ResolvedExprKind::VecFieldRead { .. }
+                    | ResolvedExprKind::RowLoan { .. }
             | ResolvedExprKind::Call { .. }
             | ResolvedExprKind::ConstructVariant { .. }
             | ResolvedExprKind::Match { .. }
@@ -1337,6 +1338,9 @@ pub(super) fn validate_native_unit_discard_bindings(
                 return Err(b107("scalar value signature required"));
             }
             match &expression.kind {
+                ResolvedExprKind::RowLoan { .. } => {
+                    return Err(b107("scalar value signature required"))
+                }
                 ResolvedExprKind::Block { statements, tail } => {
                     for statement in statements {
                         let (binding, value) = match statement {

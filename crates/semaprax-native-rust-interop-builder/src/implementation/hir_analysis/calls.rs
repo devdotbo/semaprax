@@ -94,6 +94,9 @@ pub(in crate::implementation) fn visit_calls(
     while let Some((expression, next)) = frames.pop() {
         if next == 0 {
             match &expression.kind {
+                ResolvedExprKind::RowLoan { .. } => {
+                    return Err(b107("scalar value signature required"))
+                }
                 ResolvedExprKind::Call { callee, .. } => {
                     functions.insert(callee.clone());
                 }
@@ -168,7 +171,8 @@ pub(in crate::implementation) fn resolved_expression_child<'a>(
             advance(index.checked_add(1)?, index, args.get(index)?)
         }
         ResolvedExprKind::LiteralFormat { args, .. }
-        | ResolvedExprKind::VecFieldRead { args, .. } => {
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => {
             advance(index.checked_add(1)?, index, args.get(index)?)
         }
         ResolvedExprKind::NativeRustImportCall(call) => {
@@ -346,6 +350,9 @@ pub(in crate::implementation) fn expression_call_site_census(
         frame_len -= 1;
         if next == 0 {
             match &expression.kind {
+                ResolvedExprKind::RowLoan { .. } => {
+                    return Err(b107("scalar value signature required"))
+                }
                 ResolvedExprKind::Call { callee, .. } => {
                     census.function_sites = census
                         .function_sites

@@ -131,6 +131,9 @@ pub(in crate::implementation) fn c_expression_shape(
         let (node, next_child, node_depth) = stack[stack_len - 1].take().ok_or_else(b111)?;
         stack_len -= 1;
         if next_child == 0 {
+            if matches!(node.kind, ResolvedExprKind::RowLoan { .. }) {
+                return Err(b107("scalar value signature required"));
+            }
             nodes = nodes
                 .checked_add(1)
                 .ok_or_else(|| b109("max_builder_bytes", MAX_BUILDER_BYTES))?;
@@ -294,7 +297,8 @@ fn c_expression_linear(
                 | ResolvedExprKind::BorrowPlace { .. }
                 | ResolvedExprKind::ByteRange { .. }
                 | ResolvedExprKind::LiteralFormat { .. }
-                | ResolvedExprKind::VecFieldRead { .. } => {
+                | ResolvedExprKind::VecFieldRead { .. }
+                | ResolvedExprKind::RowLoan { .. } => {
                     // Non-i64 scalar signatures are outside the scalar
                     // native boundary; admission rejects them first.
                     return Err(b107("scalar value signature required"));

@@ -37,6 +37,8 @@ mod phase_b_staging;
 mod phase_b_toolchain;
 #[path = "tests/resolved_disposal.rs"]
 mod resolved_disposal;
+#[path = "tests/row_loan_closed.rs"]
+mod row_loan_closed;
 #[path = "tests/source_census.rs"]
 mod source_census;
 

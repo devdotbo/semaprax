@@ -142,7 +142,8 @@ pub(in crate::implementation) fn validate_native_rust_expression_budget_for_clos
                 pending.extend(args.iter().map(|value| (value, child_depth)))
             }
             ResolvedExprKind::LiteralFormat { args, .. }
-            | ResolvedExprKind::VecFieldRead { args, .. } => {
+            | ResolvedExprKind::VecFieldRead { args, .. }
+            | ResolvedExprKind::RowLoan { args, .. } => {
                 pending.extend(args.iter().map(|value| (value, child_depth)))
             }
             ResolvedExprKind::ByteRange {

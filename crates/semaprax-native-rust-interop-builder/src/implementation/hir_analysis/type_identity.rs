@@ -474,6 +474,9 @@ pub(in crate::implementation) fn fingerprint_expression_types_scratch(
                 })?;
                 maximum = maximum.max(type_identity_scratch_upper(&expression.ty)?);
                 match &expression.kind {
+                    ResolvedExprKind::RowLoan { .. } => {
+                        return Err(b107("scalar value signature required"))
+                    }
                     ResolvedExprKind::Closure {
                         parameters,
                         captures,
