@@ -1,6 +1,7 @@
 //! Validation and read-only inspection over resolved HIR.
 
 use super::*;
+pub(super) mod calls;
 
 pub(super) fn validate_with_static_text(
     program: &ResolvedProgram,
@@ -877,10 +878,21 @@ pub(super) fn path_is_prefix<T: PartialEq>(prefix: &[T], path: &[T]) -> bool {
     prefix.len() <= path.len() && prefix.iter().zip(path).all(|(left, right)| left == right)
 }
 
+#[cfg(test)]
 pub(super) fn resolved_lifecycle_effects(
     program: &ResolvedProgram,
     ty: &ResolvedType,
 ) -> Result<BTreeSet<String>, Diagnostic> {
+    let mut effects = BTreeSet::new();
+    extend_resolved_lifecycle_effects(program, ty, &mut effects)?;
+    Ok(effects)
+}
+
+pub(super) fn extend_resolved_lifecycle_effects(
+    program: &ResolvedProgram,
+    ty: &ResolvedType,
+    effects: &mut BTreeSet<String>,
+) -> Result<(), Diagnostic> {
     fn collect(
         program: &ResolvedProgram,
         ty: &ResolvedType,
@@ -932,145 +944,20 @@ pub(super) fn resolved_lifecycle_effects(
         Ok(())
     }
 
-    let mut effects = BTreeSet::new();
-    collect(program, ty, &mut BTreeSet::new(), &mut effects)?;
-    Ok(effects)
+    collect(program, ty, &mut BTreeSet::new(), effects)
 }
 
 pub(crate) fn visit_resolved_calls(
     expression: &ResolvedExpr,
     visit: &mut impl FnMut(&DeclarationId, Option<&FunctionInstanceId>, &[ResolvedType]),
 ) {
-    match &expression.kind {
-        ResolvedExprKind::ByteRange {
-            source, start, end, ..
-        } => {
-            visit_resolved_calls(source, visit);
-            visit_resolved_calls(start, visit);
-            visit_resolved_calls(end, visit);
-        }
-        ResolvedExprKind::Closure { body, captures, .. } => {
-            visit_resolved_calls(body, visit);
-            for capture in captures {
-                visit_resolved_calls(&capture.value, visit);
-            }
-        }
-        ResolvedExprKind::FunctionReference { target } => visit(target, None, &[]),
-        ResolvedExprKind::Invoke { callable, args } => {
-            visit_resolved_calls(callable, visit);
-            for arg in args {
-                visit_resolved_calls(arg, visit);
-            }
-        }
-        ResolvedExprKind::Call {
-            callee,
-            instance,
-            type_arguments,
-            args,
-        } => {
-            visit(callee, instance.as_ref(), type_arguments);
-            for arg in args {
-                visit_resolved_calls(arg, visit);
-            }
-        }
-        ResolvedExprKind::LiteralFormat { args, .. }
-        | ResolvedExprKind::VecFieldRead { args, .. }
-        | ResolvedExprKind::RowLoan { args, .. } => {
-            for arg in args {
-                visit_resolved_calls(arg, visit);
-            }
-        }
-        ResolvedExprKind::NativeRustImportCall(call) => {
-            for arg in &call.args {
-                visit_resolved_calls(arg, visit);
-            }
-        }
-        ResolvedExprKind::HostCommandCall(call) => {
-            for arg in &call.args {
-                visit_resolved_calls(arg, visit);
-            }
-        }
-        ResolvedExprKind::LexicalExit { value, .. } => {
-            if let Some(value) = value {
-                visit_resolved_calls(value, visit);
-            }
-        }
-        ResolvedExprKind::Unary { value, .. }
-        | ResolvedExprKind::Try { operand: value, .. }
-        | ResolvedExprKind::TryOption { operand: value, .. }
-        | ResolvedExprKind::Project { base: value, .. }
-        | ResolvedExprKind::Upcast { source: value }
-        | ResolvedExprKind::Yield { request: value } => visit_resolved_calls(value, visit),
-        ResolvedExprKind::Binary { left, right, .. } => {
-            visit_resolved_calls(left, visit);
-            visit_resolved_calls(right, visit);
-        }
-        ResolvedExprKind::Block { statements, tail }
-        | ResolvedExprKind::VecConstructor {
-            statements, tail, ..
-        } => {
-            for statement in statements {
-                for index in 0..statement.child_count() {
-                    if let Some(child) = statement.child(index) {
-                        visit_resolved_calls(child, visit);
-                    }
-                }
-            }
-            visit_resolved_calls(tail, visit);
-        }
-        ResolvedExprKind::If {
-            condition,
-            then_branch,
-            else_branch,
-        } => {
-            visit_resolved_calls(condition, visit);
-            visit_resolved_calls(then_branch, visit);
-            visit_resolved_calls(else_branch, visit);
-        }
-        ResolvedExprKind::ConstructRecord { fields, .. } => {
-            for field in fields {
-                visit_resolved_calls(&field.value, visit);
-            }
-        }
-        ResolvedExprKind::ConstructVariant { fields, .. } => {
-            for field in fields {
-                visit_resolved_calls(&field.value, visit);
-            }
-        }
-        ResolvedExprKind::Match {
-            scrutinee, arms, ..
-        } => {
-            visit_resolved_calls(scrutinee, visit);
-            for arm in arms {
-                // A guard is authored before the arm value and, under left to
-                // right evaluation, runs before it. Skipping it would hide a
-                // callee reached only from a guard.
-                if let Some(guard) = &arm.guard {
-                    visit_resolved_calls(guard, visit);
-                }
-                visit_resolved_calls(&arm.value, visit);
-            }
-        }
-        ResolvedExprKind::UpdateRecord { base, fields, .. } => {
-            visit_resolved_calls(base, visit);
-            for field in fields {
-                visit_resolved_calls(&field.value, visit);
-            }
-        }
-        ResolvedExprKind::Int(_)
-        | ResolvedExprKind::Int32(_)
-        | ResolvedExprKind::Char(_)
-        | ResolvedExprKind::Uint8(_)
-        | ResolvedExprKind::Usize(_)
-        | ResolvedExprKind::ArrayU8(_)
-        | ResolvedExprKind::RepeatArrayU8 { .. }
-        | ResolvedExprKind::Float32(_)
-        | ResolvedExprKind::Float64(_)
-        | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::String(_)
-        | ResolvedExprKind::BorrowedUtf8Literal(_)
-        | ResolvedExprKind::Place(_)
-        | ResolvedExprKind::BorrowPlace { .. } => {}
+    let result = calls::try_visit_resolved_calls(expression, &mut |callee, instance, arguments| {
+        visit(callee, instance, arguments);
+        Ok::<(), std::convert::Infallible>(())
+    });
+    match result {
+        Ok(()) => {}
+        Err(never) => match never {},
     }
 }
 

@@ -4306,3 +4306,11 @@ only the sealed full-validation owner, funds flat invocation-local storage from
 the active physical account, and publishes after canonical settlement. This
 conformance receiver is separate from ordinary and retained Project selection;
 its authored controls await consolidated qualification.
+
+The pure HIR lifecycle preflight streams the exact borrowed call preorder via
+`hir/inspection/calls.rs`. It lends current target result types, retains the
+owned generic-proof substitution boundary, and appends lifecycle effects to
+the existing ordered union. It does not retain a cloned call staging vector or
+create a separate effect-set result for each call. Compiler forecasts and caller
+prepayment remain conservative; this storage change supplies no validation or
+execution authority and makes no application-fit claim.

@@ -263,7 +263,8 @@ pub(crate) use inspection::{
     validate_attached_identity_references, workspace_expression_identity,
 };
 use inspection::{
-    path_is_prefix, reject_nul_identity, resolved_lifecycle_effects, validate_nul_free_identities,
+    extend_resolved_lifecycle_effects, path_is_prefix, reject_nul_identity,
+    validate_nul_free_identities,
 };
 pub(crate) use inspection::{visit_resolved_calls, visit_workspace_call_sites};
 

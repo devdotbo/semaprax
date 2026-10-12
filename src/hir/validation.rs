@@ -1665,47 +1665,55 @@ impl<'a> HirValidator<'a> {
         let mut required_lifecycle_effects = BTreeSet::new();
         for param in &function.params {
             if param.ownership == OwnershipMode::Own {
-                required_lifecycle_effects
-                    .extend(resolved_lifecycle_effects(self.program, &param.ty)?);
+                extend_resolved_lifecycle_effects(
+                    self.program,
+                    &param.ty,
+                    &mut required_lifecycle_effects,
+                )?;
             }
         }
-        required_lifecycle_effects.extend(resolved_lifecycle_effects(
+        extend_resolved_lifecycle_effects(
             self.program,
             &function.return_type,
-        )?);
-        let mut callees = Vec::new();
-        visit_resolved_calls(&function.body, &mut |callee, instance, arguments| {
-            callees.push((callee.clone(), instance.cloned(), arguments.to_vec()));
-        });
-        for (callee, instance, type_arguments) in callees {
-            if instance.is_none()
-                && (crate::string_ops::by_id(callee.as_str()).is_some()
-                    || crate::str_ops::by_id(callee.as_str()).is_some()
-                    || crate::byte_ops::by_id(callee.as_str()).is_some()
-                    || box_intrinsic::is_intrinsic_id(&callee)
-                    || crate::host_io_ops::by_id(callee.as_str()).is_some())
-            {
-                // String operations carry no authored declaration and their
-                // scalar/string results contribute no lifecycle effects.
-                continue;
-            }
-            let return_type = if let Some(target) =
-                self.program.resolve_call_target(&callee, instance.as_ref())
-            {
-                target.return_type.clone()
-            } else if self.proof_generic_calls {
-                generic_template::proof_return_type(
-                    self.program,
-                    &callee,
-                    instance.as_ref(),
-                    &type_arguments,
-                )?
-            } else {
-                return Err(hir_error(format!("function `{callee}` is not indexed")));
-            };
-            required_lifecycle_effects
-                .extend(resolved_lifecycle_effects(self.program, &return_type)?);
-        }
+            &mut required_lifecycle_effects,
+        )?;
+        super::inspection::calls::try_visit_resolved_calls(
+            &function.body,
+            &mut |callee, instance, type_arguments| {
+                if instance.is_none()
+                    && (crate::string_ops::by_id(callee.as_str()).is_some()
+                        || crate::str_ops::by_id(callee.as_str()).is_some()
+                        || crate::byte_ops::by_id(callee.as_str()).is_some()
+                        || box_intrinsic::is_intrinsic_id(callee)
+                        || crate::host_io_ops::by_id(callee.as_str()).is_some())
+                {
+                    // Intrinsic scalar/string results contribute no lifecycle effects.
+                    return Ok(());
+                }
+                if let Some(target) = self.program.resolve_call_target(callee, instance) {
+                    extend_resolved_lifecycle_effects(
+                        self.program,
+                        &target.return_type,
+                        &mut required_lifecycle_effects,
+                    )
+                } else if self.proof_generic_calls {
+                    // The generic proof boundary genuinely produces an owned substituted type.
+                    let return_type = generic_template::proof_return_type(
+                        self.program,
+                        callee,
+                        instance,
+                        type_arguments,
+                    )?;
+                    extend_resolved_lifecycle_effects(
+                        self.program,
+                        &return_type,
+                        &mut required_lifecycle_effects,
+                    )
+                } else {
+                    Err(hir_error(format!("function `{callee}` is not indexed")))
+                }
+            },
+        )?;
         if let Some(effect) = required_lifecycle_effects
             .iter()
             .find(|effect| !declared_effects.contains(*effect))
