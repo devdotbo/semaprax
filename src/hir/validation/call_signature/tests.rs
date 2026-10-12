@@ -156,7 +156,11 @@ fn wide_current_signature_access_removes_literal_owned_payload_and_drops_without
     let program = program();
     let target = &program.functions[0];
     let import = &program.interfaces[0].imports[0];
-    let ResolvedType::Nominal { arguments, .. } = &target.return_type else {
+    let ResolvedType::Nominal {
+        declaration,
+        arguments,
+    } = &target.return_type
+    else {
         panic!("Vec nominal")
     };
     assert_eq!(arguments.as_slice(), &[ResolvedType::I64]);
@@ -164,7 +168,8 @@ fn wide_current_signature_access_removes_literal_owned_payload_and_drops_without
     assert_eq!(import.parameters.len(), 2);
     // Clone requests only: inline descriptors are stack storage; original Program
     // and validator setup, diagnostic reporting and final publication are excluded.
-    let result_payload = std::mem::size_of::<ResolvedType>();
+    assert_eq!(declaration.as_str(), "core.vec");
+    let result_payload = std::mem::size_of::<ResolvedType>() + "core.vec".len();
     let effects_payload = std::mem::size_of::<String>() + "host.math".len();
     let native_payload =
         2 * std::mem::size_of::<ResolvedImportParameter>() + "left".len() + "right".len();
