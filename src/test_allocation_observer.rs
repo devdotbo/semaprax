@@ -54,6 +54,7 @@ impl State {
     fn allocated(&mut self, pointer: usize, bytes: usize) {
         let Some(slot) = self.slots.iter_mut().find(|slot| slot.pointer == 0) else {
             INVALID.with(|invalid| invalid.set(true));
+            note_invalid_reason("pointer table exhausted");
             return;
         };
         *slot = Slot { pointer, bytes };
@@ -63,6 +64,7 @@ impl State {
             self.metrics.allocations.checked_add(1),
         ) else {
             INVALID.with(|invalid| invalid.set(true));
+            note_invalid_reason("allocation counter overflow");
             return;
         };
         self.metrics.allocated = allocated;
@@ -76,6 +78,7 @@ impl State {
         };
         if slot.bytes != bytes {
             INVALID.with(|invalid| invalid.set(true));
+            note_invalid_reason("deallocation layout mismatch");
         }
         let actual = slot.bytes;
         *slot = EMPTY;
@@ -84,6 +87,7 @@ impl State {
             self.metrics.live.checked_sub(actual),
         ) else {
             INVALID.with(|invalid| invalid.set(true));
+            note_invalid_reason("deallocation counter underflow or overflow");
             return;
         };
         self.metrics.freed = freed;
@@ -96,6 +100,19 @@ thread_local! {
     static STATE: RefCell<State> = const {RefCell::new(State::new())};
     static ACTIVE: Cell<bool> = const {Cell::new(false)};
     static INVALID: Cell<bool> = const {Cell::new(false)};
+    static INVALID_REASON: Cell<Option<&'static str>> = const {Cell::new(None)};
+}
+// Preserve the invalid flag and every measured counter. First-cause text is
+// fixed instrumentation only, so a failed probe can identify its own limit.
+fn note_invalid_reason(reason: &'static str) {
+    let _ = INVALID_REASON.try_with(|slot| {
+        if slot.get().is_none() {
+            slot.set(Some(reason));
+        }
+    });
+}
+pub(crate) fn invalid_reason() -> Option<&'static str> {
+    INVALID_REASON.with(Cell::get)
 }
 fn active() -> bool {
     ACTIVE.try_with(Cell::get).unwrap_or(false)
@@ -105,10 +122,12 @@ fn record(callback: impl FnOnce(&mut State)) {
         Ok(mut state) => callback(&mut state),
         Err(_) => {
             let _ = INVALID.try_with(|invalid| invalid.set(true));
+            note_invalid_reason("reentrant observer callback");
         }
     });
     if result.is_err() {
         let _ = INVALID.try_with(|invalid| invalid.set(true));
+        note_invalid_reason("observer thread-local unavailable");
     }
 }
 struct ObservedSystem;
@@ -149,6 +168,7 @@ unsafe impl GlobalAlloc for ObservedSystem {
         }
         let Ok(next) = Layout::from_size_align(size, layout.align()) else {
             INVALID.with(|invalid| invalid.set(true));
+            note_invalid_reason("invalid replacement layout");
             return std::ptr::null_mut();
         };
         // SAFETY: allocate disjoint replacement backing of the requested alignment.
@@ -194,6 +214,7 @@ fn begin_observation() -> Guard {
         state.metrics = Metrics::default();
     });
     INVALID.with(|invalid| invalid.set(false));
+    INVALID_REASON.with(|reason| reason.set(None));
     ACTIVE.with(|active| active.set(true));
     Guard
 }

@@ -195,7 +195,8 @@ fn deferred_frontier_whole_validation_allocation_debit_and_drop_are_observed() {
         assert!(!refused);
         assert!(
             !metrics.invalid,
-            "whole validation observation: {metrics:?}"
+            "whole validation observation: {metrics:?}; first invalid cause: {:?}",
+            crate::test_allocation_observer::invalid_reason()
         );
         assert_eq!(metrics.live, 0);
         assert_eq!(metrics.allocated, metrics.freed);
