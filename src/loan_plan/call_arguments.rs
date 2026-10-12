@@ -86,12 +86,14 @@ pub(super) fn borrowed_call_arguments_paid<'a>(
                 if (super::paid_predicates::string_slot(expression).is_some() && index == 0)
                     || crate::vec_ops::field_unique::borrowed_source(expression, index)
                     || record_vec_borrow::argument(program, expression, index, argument)
-                    || target.map_or_else(
-                        || argument.ownership == OwnershipMode::Borrow
-                            || crate::hir::owned_collection_record::borrowed_vec_argument(
-                                program, expression, index, argument),
-                        |target| target.params.get(index)
-                            .is_some_and(|parameter| parameter.ownership == OwnershipMode::Borrow))
+                    || match target {
+                        Some(target) => target.params.get(index).is_some_and(|parameter| parameter.ownership == OwnershipMode::Borrow),
+                        None => argument.ownership == OwnershipMode::Borrow
+                            || match payer {
+                                Some(payer) => super::paid_predicates::borrowed_vec_argument(program, expression, index, argument, payer)?,
+                                None => crate::hir::owned_collection_record::borrowed_vec_argument(program, expression, index, argument),
+                            },
+                    }
                 {
                     super::storage::push(&mut out, (index, argument), payer)?;
                 }

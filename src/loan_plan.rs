@@ -59,6 +59,7 @@ mod paid_patterns;
 mod paid_cfg;
 mod paid_materialize;
 mod paid_predicates;
+mod paid_substitute;
 mod paid_plan;
 #[cfg(test)]
 mod whole_oracle_tests;

@@ -29,6 +29,16 @@ pub(crate) fn source_for_wrapper<'a>(
     program: &dyn crate::cleanup::ReplayContext,
     region: &'a ResolvedExpr,
 ) -> Result<Option<SourceForWrapper<'a>>, Diagnostic> {
+    source_for_wrapper_with(program, region, &mut |program, region| {
+        crate::loan_plan::traversal::inspect(program, region).map(|proof| proof.is_some())
+    })
+}
+
+pub(crate) fn source_for_wrapper_with<'a>(
+    program: &dyn crate::cleanup::ReplayContext,
+    region: &'a ResolvedExpr,
+    inspect: &mut dyn FnMut(&dyn crate::cleanup::ReplayContext, &ResolvedExpr) -> Result<bool, Diagnostic>,
+) -> Result<Option<SourceForWrapper<'a>>, Diagnostic> {
     let ResolvedExprKind::Block { statements, tail } = &region.kind else {
         return Ok(None);
     };
@@ -82,8 +92,8 @@ pub(crate) fn source_for_wrapper<'a>(
             || seed.ty != step.ty
             || seed.ownership != OwnershipMode::Own
             || source.ownership != OwnershipMode::Own
-            || source.ty != crate::iterator_ops::resolved_iter(element.clone())
-            || step.ty != crate::iterator_ops::resolved_iter_step(element.clone())
+            || !nominal_matches(&source.ty, crate::iterator_ops::ITER_ID, element)
+            || !nominal_matches(&step.ty, crate::iterator_ops::STEP_ID, element)
         {
             return Err(fail());
         }
@@ -145,7 +155,7 @@ pub(crate) fn source_for_wrapper<'a>(
         || count.ty != length.ty
         || count.ownership != OwnershipMode::Value
         || callee.as_str() != crate::vec_ops::LEN_ID
-        || source.ty != crate::vec_ops::resolved_vec(element.clone())
+        || !crate::vec_ops::resolved_vec_matches(&source.ty, element)
         || !matches!(source.ownership, OwnershipMode::Own | OwnershipMode::Borrow)
         || !matches!(&source.kind,ResolvedExprKind::Place(p) if p.projections.is_empty())
     {
@@ -181,12 +191,12 @@ pub(crate) fn source_for_wrapper<'a>(
             else {
                 return Err(fail());
             };
-            if type_arguments.as_slice() != [element.clone()] || args.first() != Some(source) {
+            if type_arguments.as_slice() != std::slice::from_ref(element) || args.first() != Some(source) {
                 // Identity differs at each source site: compare exact place/type/mode, not expression ID.
                 let Some(owner) = args.first() else {
                     return Err(fail());
                 };
-                if type_arguments.as_slice() != [element.clone()]
+                if type_arguments.as_slice() != std::slice::from_ref(element)
                     || owner.ty != source.ty
                     || owner.ownership != source.ownership
                     || !matches!((&owner.kind,&source.kind),(ResolvedExprKind::Place(a),ResolvedExprKind::Place(b)) if a==b)
@@ -199,7 +209,7 @@ pub(crate) fn source_for_wrapper<'a>(
             kind: SourceForKind::BorrowRecord,
             ..
         } => {
-            if crate::loan_plan::traversal::inspect(program, region)?.is_none() {
+            if !inspect(program, region)? {
                 return Err(fail());
             }
         }
@@ -209,4 +219,9 @@ pub(crate) fn source_for_wrapper<'a>(
         authored_body,
         iterator_step: None,
     }))
+}
+
+fn nominal_matches(ty: &ResolvedType, id: &str, element: &ResolvedType) -> bool {
+    matches!(ty, ResolvedType::Nominal { declaration, arguments }
+        if declaration.as_str() == id && arguments.as_slice() == std::slice::from_ref(element))
 }

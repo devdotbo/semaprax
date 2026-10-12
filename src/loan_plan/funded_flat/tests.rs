@@ -1,4 +1,5 @@
 use super::*;
+use crate::hir::DeclarationId;
 use crate::bounded_output::{with_limit_usage, with_limit_usage_refusal};
 use crate::test_allocation_observer::measure;
 
@@ -166,4 +167,86 @@ fn actual_flat_adjacency_and_fixed_queue_arrays_have_exact_short_drop_payment() 
     assert_eq!(observed.freed, observed.allocated);
     assert_eq!(observed.live, 0);
     assert!(!observed.invalid);
+}
+
+#[test]
+fn complete_projected_and_lexical_planner_uses_one_paid_owner_through_drop() {
+    const PROJECTED: &str = include_str!("../../../tests/fixtures/nested-collection-records.spx");
+    const STRINGS: &str = include_str!("../../../tests/fixtures/nested-collection-string-record.spx");
+    const LEXICAL: &str = r#"module app.paid_lexical;
+@id("row") record Row { @id("row.left") left:i64, @id("row.right") right:i64, }
+@id("app.main") fn main()->i64 {
+ let empty=vec_with_capacity<Row>(1usize);
+ let rows=vec_push<Row>(empty,Row{left:7,right:9});
+ let mut total=0;
+ for borrow row at index in rows {
+  total=total+row.left+row.right+i64_from_usize(index);
+  if total<0 {continue;} else {0}
+  0
+ }
+ total
+}"#;
+    for (source, name, lexical) in [
+        (PROJECTED, "collection.inspect", false),
+        (STRINGS, "collection.inspect", false),
+        (LEXICAL, "app.main", true),
+    ] {
+        let ast = crate::check(source, "paid-planner.spx").unwrap();
+        let program = crate::hir::resolve(&ast).unwrap();
+        let function = program.functions.iter().find(|f| f.id.as_str() == name).unwrap();
+        assert_eq!(crate::hir::lexical_exit::requires(function).unwrap(), lexical);
+        let old = saved_planner::build_plan(&program, function).unwrap();
+        assert!(!old.loans.is_empty());
+        if !lexical { assert!(old.loans.iter().any(|loan| !loan.origin.projections.is_empty())); }
+        let run = |limit| with_limit_usage_refusal(limit, || {
+            // Only the already established Budget/Rc context is excluded.
+            measure(|| {
+                let owner = CfgReservation::acquire().unwrap();
+                match build(&program, function, &owner) {
+                    Ok(plan) => {
+                        assert_eq!(plan, old);
+                        drop(plan);
+                        drop(owner);
+                        true
+                    }
+                    Err(PlannerError::Physical(reason)) => {
+                        assert_eq!(owner.reserve(0), Err(reason));
+                        assert_eq!(owner.reserve(1), Err(reason));
+                        let pointer = owner.text_pointer();
+                        let report = owner.diagnostic();
+                        assert_eq!(report.message.as_ptr(), pointer);
+                        drop(report);
+                        false
+                    }
+                    Err(PlannerError::Semantic(_)) => panic!("checked positive planner selected semantic failure"),
+                }
+            })
+        });
+        let ((success, observed), refused, exact, first) = run(usize::MAX);
+        assert!(success);
+        assert!(!refused);
+        assert_eq!(first, None);
+        assert!(observed.allocations > 8);
+        assert!(observed.allocated <= exact);
+        assert_eq!(observed.freed, observed.allocated);
+        assert_eq!(observed.live, 0);
+        assert!(!observed.invalid);
+        let ((success, repeated), refused, used, first) = run(exact);
+        assert!(success);
+        assert!(!refused);
+        assert_eq!(used, exact);
+        assert_eq!(first, None);
+        assert_eq!(repeated.allocated, observed.allocated);
+        assert_eq!(repeated.allocations, observed.allocations);
+        assert_eq!(repeated.freed, repeated.allocated);
+        assert_eq!(repeated.live, 0);
+        assert!(!repeated.invalid);
+        let ((success, short), refused, _, first) = run(exact - 1);
+        assert!(!success);
+        assert!(refused);
+        assert!(first.is_some());
+        assert_eq!(short.freed, short.allocated);
+        assert_eq!(short.live, 0);
+        assert!(!short.invalid);
+    }
 }

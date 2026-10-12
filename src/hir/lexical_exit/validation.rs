@@ -1,5 +1,5 @@
 //! Independent typed contour replay before cleanup certificates may authorize exits.
-use super::{child, contains, source_for_wrapper, validate_latch, validate_owner};
+use super::{child, contains, source_for_wrapper_with, validate_latch, validate_owner};
 use crate::diagnostic::Diagnostic;
 use crate::hir::*;
 fn error(message: &str) -> Diagnostic {
@@ -84,6 +84,17 @@ pub(crate) fn validate_function(
     function: &ResolvedFunction,
     owner: &FunctionExecutionId,
 ) -> Result<(), Diagnostic> {
+    validate_function_with(program, function, owner, &mut |program, region| {
+        crate::loan_plan::traversal::inspect(program, region).map(|proof| proof.is_some())
+    })
+}
+
+pub(crate) fn validate_function_with(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+    owner: &FunctionExecutionId,
+    inspect: &mut dyn FnMut(&dyn crate::cleanup::ReplayContext, &ResolvedExpr) -> Result<bool, Diagnostic>,
+) -> Result<(), Diagnostic> {
     validate_owner(function, owner)?;
     if storage_has_bottom(&function.return_type, 0)
         || function.params.iter().any(|p| storage_has_bottom(&p.ty, 0))
@@ -93,7 +104,7 @@ pub(crate) fn validate_function(
         ));
     }
     for contract in function.requires.iter().chain(&function.ensures) {
-        walk(program, function, owner, contract, false, None, None, 0)?;
+        walk(program, function, owner, contract, false, None, None, 0, inspect)?;
     }
     walk(
         program,
@@ -104,6 +115,7 @@ pub(crate) fn validate_function(
         None,
         None,
         0,
+        inspect,
     )
 }
 fn walk<'a>(
@@ -115,6 +127,7 @@ fn walk<'a>(
     nearest: Option<&'a ExpressionId>,
     allowed: Option<&'a ResolvedExpr>,
     depth: usize,
+    inspect: &mut dyn FnMut(&dyn crate::cleanup::ReplayContext, &ResolvedExpr) -> Result<bool, Diagnostic>,
 ) -> Result<(), Diagnostic> {
     if depth > crate::cache_codec::MAX_DEPTH {
         return Err(error("lexical contour exceeds admitted HIR depth"));
@@ -159,6 +172,7 @@ fn walk<'a>(
                         nearest,
                         None,
                         depth + 1,
+                        inspect,
                     )?;
                 }
                 (
@@ -199,6 +213,7 @@ fn walk<'a>(
                             nearest,
                             allowed,
                             depth + 1,
+                            inspect,
                         )?;
                         walk(
                             program,
@@ -209,6 +224,7 @@ fn walk<'a>(
                             Some(&condition.id),
                             allowed,
                             depth + 1,
+                            inspect,
                         )?;
                     }
                     ResolvedStatement::LexicalWhile {
@@ -230,6 +246,7 @@ fn walk<'a>(
                             nearest,
                             allowed,
                             depth + 1,
+                            inspect,
                         )?;
                         walk(
                             program,
@@ -240,6 +257,7 @@ fn walk<'a>(
                             Some(&condition.id),
                             allowed,
                             depth + 1,
+                            inspect,
                         )?;
                     }
                     ResolvedStatement::Let {
@@ -248,7 +266,7 @@ fn walk<'a>(
                         value,
                         ..
                     } => {
-                        if let Some(wrapper) = source_for_wrapper(program, value)? {
+                        if let Some(wrapper) = source_for_wrapper_with(program, value, inspect)? {
                             if *mutable
                                 || binding.ty != value.ty
                                 || binding.ownership != OwnershipMode::Value
@@ -266,6 +284,7 @@ fn walk<'a>(
                                 nearest,
                                 Some(wrapper.authored_body),
                                 depth + 1,
+                                inspect,
                             )?;
                         } else {
                             let guard = contains(value)
@@ -299,6 +318,7 @@ fn walk<'a>(
                                 nearest,
                                 allowed,
                                 depth + 1,
+                                inspect,
                             )?;
                         }
                     }
@@ -313,6 +333,7 @@ fn walk<'a>(
                             nearest,
                             allowed,
                             depth + 1,
+                            inspect,
                         )?;
                     }
                     ResolvedStatement::Assign { value, .. } => walk(
@@ -324,6 +345,7 @@ fn walk<'a>(
                         nearest,
                         allowed,
                         depth + 1,
+                        inspect,
                     )?,
                     ResolvedStatement::Unsafe { body, .. } => walk(
                         program,
@@ -334,6 +356,7 @@ fn walk<'a>(
                         nearest,
                         None,
                         depth + 1,
+                        inspect,
                     )?,
                 }
             }
@@ -346,6 +369,7 @@ fn walk<'a>(
                 nearest,
                 allowed,
                 depth + 1,
+                inspect,
             )?;
         }
         ResolvedExprKind::If {
@@ -362,6 +386,7 @@ fn walk<'a>(
                 nearest,
                 allowed,
                 depth + 1,
+                inspect,
             )?;
             walk(
                 program,
@@ -372,6 +397,7 @@ fn walk<'a>(
                 nearest,
                 allowed,
                 depth + 1,
+                inspect,
             )?;
             walk(
                 program,
@@ -382,6 +408,7 @@ fn walk<'a>(
                 nearest,
                 allowed,
                 depth + 1,
+                inspect,
             )?;
         }
         ResolvedExprKind::Match {
@@ -396,6 +423,7 @@ fn walk<'a>(
                 nearest,
                 allowed,
                 depth + 1,
+                inspect,
             )?;
             for arm in arms {
                 if let Some(guard) = &arm.guard {
@@ -408,6 +436,7 @@ fn walk<'a>(
                         nearest,
                         None,
                         depth + 1,
+                        inspect,
                     )?;
                 }
                 walk(
@@ -419,6 +448,7 @@ fn walk<'a>(
                     nearest,
                     allowed,
                     depth + 1,
+                    inspect,
                 )?;
             }
         }
@@ -433,9 +463,10 @@ fn walk<'a>(
                     nearest,
                     None,
                     depth + 1,
+                    inspect,
                 )?;
             }
-            walk(program, function, owner, body, false, None, None, depth + 1)?;
+            walk(program, function, owner, body, false, None, None, depth + 1, inspect)?;
         }
         _ => {
             let mut index = 0;
@@ -449,6 +480,7 @@ fn walk<'a>(
                     nearest,
                     allowed,
                     depth + 1,
+                    inspect,
                 )?;
                 index += 1;
             }

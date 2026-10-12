@@ -405,7 +405,19 @@ possibly held initial root, separately from cloned projection payload.
 Draft/live inventories, native arm-parent maps, traversal freeze scratch and
 canonical result materialization also use the captured owner, including the
 actual starts/kills vectors and compact-list shrink replacement while old
-backing remains live. Canonical activation still awaits the final caller
+backing remains live. Projected-record discovery retains the old generic
+substitution verdict through a paid iterative twin: frames, actual type
+argument directories, callable result boxes and cloned argument backing are
+paid before construction. Physical failures propagate; a discarded semantic
+substitution error alone retains the original false predicate result.
+Lexical preflight remains at its original position. Its temporary type
+comparisons are borrowed, actual generic execution-ID clones are paid, and
+its borrowed-record freeze inspection uses the same explicit caller owner.
+Rejected execution-owner probes no longer construct discarded diagnostics;
+selected missing/ambiguous diagnostics keep their original text and order.
+Whole private planner observers now include projected record Vecs, String
+Vecs and lexical For freeze validation through exact/short refusal and Drop.
+Canonical activation still awaits the final caller
 handoff and independent source review. Upstream ModuleIndex
 and ConstructorSeed ordering, standalone legacy planning, final independent
 loan validation, forecasts and every literal limit remain unchanged. These

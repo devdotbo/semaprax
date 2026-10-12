@@ -21,8 +21,12 @@ pub(super) fn build(
         payer.reserve(0).map_err(|_| storage::marker())?;
         let lexical = crate::hir::lexical_exit::requires(function)?;
         if lexical {
-            let owner = crate::hir::lexical_exit::owner(program, function)?;
-            crate::hir::lexical_exit::validate_function(program, function, &owner)?;
+            let owner = crate::hir::lexical_exit::owner_with(program, function, &mut |bytes| {
+                payer.reserve(bytes).map_err(|_| storage::marker())
+            })?;
+            crate::hir::lexical_exit::validate_function_with(program, function, &owner, &mut |program, region| {
+                traversal::paid::inspect(program, region, payer).map(|proof| proof.is_some())
+            })?;
         }
         if paid_candidate::inspect(program, function, payer)? {
             let mut work = WorkCounter::new(MAX_LOAN_PLAN_WORK_V1);

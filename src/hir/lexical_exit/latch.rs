@@ -132,10 +132,10 @@ pub(crate) fn validate_latch(
                         return Err(fail());
                     };
                     if callee.as_str() != crate::vec_ops::GET_ID
-                        || type_arguments.as_slice() != [item.ty.clone()]
+                        || type_arguments.as_slice() != std::slice::from_ref(&item.ty)
                         || !crate::vec_ops::resolved_element_is_admitted(&item.ty)
                         || !place(index, counter)
-                        || owner.ty != crate::vec_ops::resolved_vec(item.ty.clone())
+                        || !crate::vec_ops::resolved_vec_matches(&owner.ty, &item.ty)
                         || !matches!(&owner.kind,ResolvedExprKind::Place(p) if p.projections.is_empty())
                     {
                         return Err(fail());
