@@ -173,6 +173,7 @@ tests = ["cold.tests"]
             )
             .unwrap()
             .to_json()
+            .to_owned()
         };
         assert_eq!(image(actual), image(expected));
     };
