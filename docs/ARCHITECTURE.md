@@ -136,15 +136,22 @@ Sticky removal moves existing nodes without allocation or refund. Missing nodes 
 ordered extraction allocate no additional nodes. The public BTree planner and
 complete saved planner retain their independent storage policies.
 
-`hir/validation/identity_insert.rs` owns conservative B-tree node payment at
-ordinary/generic expression headers and the shared value insertion helper.
-Shared identity clones request no payload backing; duplicate detection retains its original
-priority without constructing a node. This acquisition is separate from actual
-allocator-request observations. Whole function-chain controls retain their full
-allocation/debit inequality, exact/short sticky refusals and complete Drop.
-Unwind controls own, catch and drop their actual message payload inside the
-observation, without invoking the test harness panic hook. These source-only
-corrections assert no measured funding closure or application recovery.
+`hir/validation/identity_directory.rs` owns the validator's private ordered
+expression/value identity sets. Its sealed keys share immutable backing.
+`transaction.rs` borrows the current root while paying and constructing a
+shared or weak suffix, then mutates the unique prefix and rotates without
+further fallible work. Each actual new Rc node acquires its owning carrier and
+literal initializer before construction. Snapshots share a root; duplicate
+priority precedes acquisition. `iter.rs` provides allocation-free ordered
+cursors with an address-space bound derived from private AVL construction.
+`identity_insert.rs` preserves caller order. The complete saved function,
+iterative, recursive and closure receivers use independent original BTree
+storage through test-only entry adapters; the original conservative BTree
+receiver and full controls remain in `identity_insert/coarse.rs`. Whole-chain
+and directory controls retain exact/short sticky refusals, complete identity
+state and actual allocation through Drop. Requested allocation and cumulative
+acquisition remain separate: shared path copies may allocate more than an
+amortized BTree insertion. Qualification and application recovery are pending.
 
 `hir/closure/paid.rs` and `paid/copy.rs` own the private validation product's
 canonical identity/result backing and literal parameter/body constructors.

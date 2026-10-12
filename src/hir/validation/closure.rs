@@ -8,6 +8,10 @@ impl HirValidator<'_> {
         path: &str,
         allow_moves: bool,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.expression_ids.is_legacy() {
+            return self.validate_closure_owned_reference(function, expression, scope, path, allow_moves);
+        }
         super::super::closure::validate_shape(self.program, expression)?;
         let ResolvedExprKind::Closure { captures, .. } = &expression.kind else {
             unreachable!()
@@ -97,6 +101,10 @@ impl HirValidator<'_> {
         values: &mut generic_template::values::Values<'value>,
         path: &str,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.expression_ids.is_legacy() {
+            return self.validate_template_closure_owned_reference(template, execution, expression, values, path);
+        }
         if !super::super::generic_collection::profile(template) {
             return Err(hir_error(
                 "generic closure requires the private scalar collection profile",

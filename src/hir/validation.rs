@@ -6,6 +6,7 @@ mod function_lookup;
 mod function_scope;
 mod identity_scratch;
 mod identity_insert;
+mod identity_directory;
 #[cfg(test)]
 mod owned_iterative_oracle;
 mod scope_checkpoint;
@@ -72,8 +73,8 @@ pub(super) struct HirValidator<'a> {
     byte_helpers: Option<&'a crate::loop_calls::byte_writer::ModuleIndex<'a>>,
     nominal_facts: nominal_facts::Lookup<'a>,
     functions: function_lookup::Lookup<'a>,
-    expression_ids: BTreeSet<ExpressionId>,
-    value_ids: BTreeSet<ValueId>,
+    expression_ids: identity_directory::Set<ExpressionId>,
+    value_ids: identity_directory::Set<ValueId>,
     byte_slice_aliases: BTreeMap<ValueId, Place>,
     /// Expression identities of the `bytes_set` calls that are the right-hand
     /// side of a same-owner re-open, `buffer = bytes_set(buffer, index,
@@ -137,8 +138,8 @@ impl<'a> HirValidator<'a> {
             byte_helpers: None,
             nominal_facts: nominal_facts::Lookup::default(),
             functions: seed.functions,
-            expression_ids: BTreeSet::new(),
-            value_ids: BTreeSet::new(),
+            expression_ids: identity_directory::Set::new(),
+            value_ids: identity_directory::Set::new(),
             byte_slice_aliases: BTreeMap::new(),
             buffer_reopen_sites: BTreeSet::new(),
             borrowed_str_aliases: BTreeMap::new(),
@@ -5605,7 +5606,7 @@ impl<'a> HirValidator<'a> {
 
     #[cfg(test)]
     #[allow(dead_code)]
-    pub(super) fn validate_expr_recursive_reference(
+    pub(super) fn validate_expr_recursive_reference_body(
         &mut self,
         function: &FunctionExecutionId,
         expression: &ResolvedExpr,
@@ -5706,7 +5707,7 @@ impl<'a> HirValidator<'a> {
             }
 
             ResolvedExprKind::Closure { .. } => {
-                self.validate_closure(function, expression, scope, path, allow_moves)?;
+                self.validate_closure_owned_reference(function, expression, scope, path, allow_moves)?;
                 (expression.ty.clone(), expression.ownership)
             }
             ResolvedExprKind::FunctionReference { target } => {

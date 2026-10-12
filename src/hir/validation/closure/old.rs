@@ -1,6 +1,6 @@
 use super::super::*;
 impl HirValidator<'_> {
-    pub(in crate::hir::validation) fn validate_closure_owned_reference(
+    pub(in crate::hir::validation) fn validate_closure_owned_reference_body(
         &mut self,
         function: &FunctionExecutionId,
         expression: &ResolvedExpr,
@@ -66,7 +66,7 @@ impl HirValidator<'_> {
         } else {
             HirValidator::with_directory(self.program, self.functions.directory())?
         };
-        checked.validate_function(&body, &execution)?;
+        checked.validate_function_owned_reference(&body, &execution)?;
         if checked
             .expression_ids
             .iter()
@@ -85,7 +85,7 @@ impl HirValidator<'_> {
 }
 
 impl HirValidator<'_> {
-    pub(in crate::hir::validation) fn validate_template_closure_owned_reference<'value>(
+    pub(in crate::hir::validation) fn validate_template_closure_owned_reference_body<'value>(
         &mut self,
         template: &'value ResolvedFunctionTemplate,
         execution: &FunctionExecutionId,

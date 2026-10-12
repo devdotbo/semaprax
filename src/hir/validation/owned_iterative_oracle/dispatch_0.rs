@@ -95,7 +95,7 @@ macro_rules! owned_dispatch_0 {
                             }
                         }
                         ResolvedExprKind::Closure { .. } => {
-                            $this.validate_closure(
+                            $this.validate_closure_owned_reference(
                                 $function,
                                 expression,
                                 &mut scope,

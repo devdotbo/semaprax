@@ -1,5 +1,11 @@
 # Changelog
 
+- Author a constructor-local paid ordered HIR identity directory. Stage shared
+  or weak AVL suffixes before changing unique prefixes, retaining duplicate
+  priority, canonical merge order and complete original BTree receivers. Add
+  full rotation, snapshot, ordered cursor, every-byte refusal and physical Drop
+  controls. Source-only; qualification and allocation effects remain pending.
+
 - Author constructor-local HIR closure funding for capture and nested-body identity
   insertions, canonical identity/result backing, parameter names/types, and the
   recursively admitted body payload. Construct the body root directly, retaining

@@ -5,7 +5,7 @@ include!("owned_iterative_oracle/dispatch_2.rs");
 include!("owned_iterative_oracle/dispatch_1.rs");
 include!("owned_iterative_oracle/dispatch_0.rs");
 impl HirValidator<'_> {
-    pub(in crate::hir) fn validate_expr_iterative_owned_reference(
+    pub(in crate::hir) fn validate_expr_iterative_owned_reference_body(
         &mut self,
         function: &FunctionExecutionId,
         expression: &ResolvedExpr,

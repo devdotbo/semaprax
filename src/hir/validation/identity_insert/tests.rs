@@ -1,5 +1,6 @@
 //! Full identity state, actual requested backing, Drop and each paid boundary.
-use super::*;
+use super::super::*;
+use super::coarse::{expression, value};
 use crate::test_allocation_observer::{current_metrics, measure};
 const LIMIT: usize = 64 * 1024 * 1024;
 fn keys() -> (Vec<ExpressionId>, Vec<ValueId>) {

@@ -32,6 +32,7 @@ fn compare(
 ) -> Result<(), Diagnostic> {
     let mut borrowed = HirValidator::new(program).unwrap();
     let mut owned = borrowed.clone();
+    owned.use_legacy_identities();
     let execution = FunctionExecutionId::Monomorphic(template.id.clone());
     // Owned insert/snapshot/root are the saved original map operations. Both
     // routes execute the complete symbolic walk, not an env-only mock verdict.

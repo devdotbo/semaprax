@@ -3,7 +3,7 @@
 use super::super::*;
 impl HirValidator<'_> {
     #[rustfmt::skip]
-    pub(in crate::hir::validation) fn validate_function_owned_reference(
+    pub(in crate::hir::validation) fn validate_function_owned_reference_body(
         &mut self,
         function: &ResolvedFunction,
         execution: &FunctionExecutionId,
