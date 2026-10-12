@@ -1,7 +1,7 @@
 //! Independent current inventory comparison without cloned entry directories.
 use super::*;
 #[cfg(test)]
-mod owned;
+pub(super) mod owned;
 pub(super) mod storage;
 pub(super) mod substitute;
 

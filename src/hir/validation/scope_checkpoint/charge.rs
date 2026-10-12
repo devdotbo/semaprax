@@ -19,7 +19,7 @@ pub(in crate::hir::validation) fn failure(requested: usize, message: &'static st
     crate::bounded_output::refuse_active_required(requested);
     hir_error_static(message)
 }
-pub(super) fn reserve(bytes: Option<usize>) -> Result<(), Diagnostic> {
+pub(in crate::hir::validation) fn reserve(bytes: Option<usize>) -> Result<(), Diagnostic> {
     let Some(bytes) = bytes else {
         return Err(failure(
             usize::MAX,

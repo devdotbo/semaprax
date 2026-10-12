@@ -86,7 +86,7 @@ fn validate_core<'hir, E: semantic_refusal::Error>(
         )?;
         (storage, leaves)
     } else {
-        validate_inventory_coverage(program, function)?;
+        ordinary_inventory::validate_inventory_coverage(program, function, budget)?;
         validate_required_status_sources(program, function)?;
         let storage = validate_slots_paid_core::<E>(function, budget)?;
         let leaves = collect_leaves_paid(function, budget)?;

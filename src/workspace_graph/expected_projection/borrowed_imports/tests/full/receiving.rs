@@ -4,6 +4,7 @@ use super::{
     BOX_PROVIDER, CLASS_CALLER, CLASS_PROVIDER, INVARIANT_CALLER, INVARIANT_PROVIDER, VEC_CALLER,
     VEC_PROVIDER,
 };
+use crate::ast::program_source::ProgramSource;
 use crate::bounded_output::with_limit_usage_refusal;
 use crate::diagnostic::Diagnostic;
 use crate::hir;

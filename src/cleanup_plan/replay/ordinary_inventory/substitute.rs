@@ -1,7 +1,9 @@
 //! Paid counterpart of the complete original type substitution receiver.
 use super::super::*;
 use super::storage::{array, push};
-use crate::hir::hir_error;
+fn hir_error(message: impl Into<String>) -> Diagnostic {
+    Diagnostic::io("SPX-H006", message)
+}
 
 pub(in crate::cleanup_plan::replay) fn substitute_type(
     template: &ResolvedType,

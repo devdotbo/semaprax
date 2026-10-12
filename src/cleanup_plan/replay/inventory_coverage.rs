@@ -410,7 +410,10 @@ requires 0usize<byte_len(bytes_as_slice(data)) {
             .iter()
             .filter(|f| f.id.as_str().starts_with("coverage."))
         {
-            super::super::validate_inventory_coverage(&program, function).unwrap();
+            super::super::ordinary_inventory::owned::validate_inventory_coverage(
+                &program, function,
+            )
+            .unwrap();
             let (_, refused, bytes) = crate::bounded_output::with_limit_usage(usize::MAX, || {
                 run(&program, function, usize::MAX).unwrap()
             });

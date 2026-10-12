@@ -169,7 +169,8 @@ fn pick(value: _spx_layout_1, other: _spx_layout_0) -> i64
 }
 ";
 
-const PRESENTED: &str = "`if` branches return different types: Decoded [unimported @id(\"copy\") from held.provider] \
+const PRESENTED: &str =
+    "`if` branches return different types: Decoded [unimported @id(\"copy\") from held.provider] \
      and _spx_layout_0";
 const ORDINARY: &str = "`if` branches return different types: _spx_layout_1 and _spx_layout_0";
 
@@ -191,11 +192,10 @@ fn complete_old_private_presentation_keeps_exact_subject_provider_and_authored_s
         PRESENTED
     );
     let mut generic_private = program.clone();
-    generic_private.functions.extend(
-        crate::parse(GENERIC, "generic-private.spx")
-            .unwrap()
-            .functions,
-    );
+    let mut generic_program = crate::parse(GENERIC, "generic-private.spx").unwrap();
+    generic_private
+        .functions
+        .append(&mut generic_program.functions);
     let generic_view = PrivateNames::new(
         &generic_private,
         &generic_private,

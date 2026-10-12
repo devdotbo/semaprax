@@ -480,13 +480,9 @@ fn complete_arbitrary_aliases_keep_original_source_refusal_without_payer_refusal
             .unwrap();
             reserve_builder_structure(costs.raw_clone_and_hir).unwrap();
             let view = construct(&programs[0], &authored, &programs, &registry).unwrap();
-            let receiving = super::super::super::construct_receiving(
-                &programs[0],
-                &authored,
-                &programs,
-                &registry,
-            )
-            .unwrap();
+            let receiving =
+                super::super::construct_receiving(&programs[0], &authored, &programs, &registry)
+                    .unwrap();
             let layout = registry.get(&programs[0], &authored, &programs).unwrap();
             let before = linked(|| {
                 hir::resolve_with_function_reuse(

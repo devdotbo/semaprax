@@ -368,9 +368,7 @@ fn full_owned_identity_substitution_and_admission_oracles_keep_every_payload() {
                 index.classifier_admission_for_test(&ty),
                 (
                     crate::hir::ResolvedImportResultKind::is_owned_container_type(&ty, index),
-                    crate::hir::type_reachability::is_admitted_concrete_owned_byte_variant(
-                        index, &ty
-                    )
+                    crate::hir::is_admitted_concrete_owned_byte_variant(index, &ty)
                 )
             );
         }

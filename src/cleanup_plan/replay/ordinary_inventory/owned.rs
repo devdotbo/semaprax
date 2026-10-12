@@ -1,7 +1,7 @@
 //! Complete saved pre-change inventory receiver.
 use super::super::*;
 
-pub(super) fn validate_inventory_coverage(
+pub(in crate::cleanup_plan::replay) fn validate_inventory_coverage(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
 ) -> Result<(), Diagnostic> {
