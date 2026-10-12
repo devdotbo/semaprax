@@ -147,7 +147,7 @@ impl Resolver<'_> {
                 OwnershipMode::Borrow,
             ),
             ExprKind::Var(name) => {
-                if let Some(loan) = self.row_argument(function, expr, bindings, path) {
+                if let Some(loan) = self.row_argument(function, expr, bindings, path.into()) {
                     return loan;
                 }
                 let binding = bindings.get(name).ok_or_else(|| {

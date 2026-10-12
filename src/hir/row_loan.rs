@@ -91,13 +91,13 @@ impl Resolver<'_> {
         function: &FunctionExecutionId,
         expr: &crate::ast::Expr,
         bindings: &BTreeMap<String, Binding>,
-        path: &str,
+        path: resolve_expr::path_arena::ExprPath<'_>,
     ) -> Option<Result<ResolvedExpr, Diagnostic>> {
         let crate::ast::ExprKind::Var(name) = &expr.kind else {
             return None;
         };
         let row = bindings.get(name)?.traversal_row.as_deref()?;
-        Some(
+        path.with_text(|path| Some(
             self.provisional_row_loan(function, expr.span, path, row)
                 .ok_or_else(|| {
                     self.error(
@@ -106,7 +106,7 @@ impl Resolver<'_> {
                         expr.span,
                     )
                 }),
-        )
+        ))
     }
 
     fn provisional_row_loan(

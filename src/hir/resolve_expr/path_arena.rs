@@ -575,6 +575,15 @@ impl ExprPath<'_> {
         }
     }
 
+    /// Borrow an existing textual path, or hold one exactly paid arena spelling
+    /// only while a receiver that requires source path text uses it.
+    pub(crate) fn with_text<T>(self, receive: impl FnOnce(&str) -> T) -> T {
+        match self.0 {
+            Repr::Text(text) => receive(text),
+            Repr::Arena(..) => receive(&self.materialize()),
+        }
+    }
+
     pub(crate) fn materialize(self) -> String {
         self.materialize_with(&[])
     }

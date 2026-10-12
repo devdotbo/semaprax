@@ -67,6 +67,16 @@ fn source() -> String {
     );
     source.push_str("  if flag && !false { return picked; } else { 0 }\n");
     source.push_str("  -(picked * 2) + scalar(s999) + deep(s1000)\n}\n");
+    // An actual new whole-row argument reaches the same path-text receiver
+    // through paid arena spelling and the saved recursive borrowed-text route.
+    source.push_str(
+        "@id(\"loan.row\") record LoanRow { @id(\"loan.row.n\") n:i64, \
+         @id(\"loan.row.text\") text:string, }\n\
+         @id(\"loan.read\") fn loan_read(row:borrow LoanRow)->i64 {row.n+1}\n\
+         @id(\"loan.loop\") fn loan_loop()->i64 {\n\
+         let rows=vec_push<LoanRow>(vec_with_capacity<LoanRow>(1usize),LoanRow{n:7,text:\"x\"});\n\
+         let mut total=0; for borrow row in rows {total=total+loan_read(row);0} total }\n",
+    );
     source.push_str("@id(\"main\") fn main() -> i64 { 0 }\n");
     source
 }
