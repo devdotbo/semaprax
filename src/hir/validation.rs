@@ -3,6 +3,7 @@
 //! Validates HIR meaning; source resolution remains in
 //! the parent module.
 mod function_lookup;
+mod identity_scratch;
 mod type_requirement;
 use super::workspace_link::native_owner::admitted_ri06_regex_result as regex_result;
 use super::*;
@@ -153,16 +154,16 @@ impl<'a> HirValidator<'a> {
             .program
             .types
             .iter()
-            .map(|declaration| declaration.id.clone())
-            .collect::<BTreeSet<_>>();
+            .map(|declaration| &declaration.id)
+            .collect::<identity_scratch::Ids>();
         if type_ids.len() != self.program.types.len() {
             return Err(hir_error("duplicate resolved type declaration identity"));
         }
-        let mut interface_ids = BTreeSet::new();
-        let mut import_ids = BTreeSet::new();
-        let mut imports = BTreeMap::new();
+        let mut interface_ids = identity_scratch::Ids::new();
+        let mut import_ids = identity_scratch::Ids::new();
+        let mut imports = identity_scratch::Imports::new();
         for interface in &self.program.interfaces {
-            if !interface_ids.insert(interface.id.clone()) {
+            if !interface_ids.insert(&interface.id) {
                 return Err(hir_error(format!(
                     "duplicate resolved interface identity `{}`",
                     interface.id
@@ -235,9 +236,7 @@ impl<'a> HirValidator<'a> {
                         import.id
                     )));
                 }
-                if !import_ids.insert(import.id.clone())
-                    || imports.insert(import.id.clone(), import).is_some()
-                {
+                if !import_ids.insert(&import.id) || imports.insert(&import.id, import).is_some() {
                     return Err(hir_error(format!(
                         "duplicate resolved import identity `{}`",
                         import.id

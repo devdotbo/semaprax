@@ -411,6 +411,8 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         include_str!("../../../../../src/hir/validation/owned_buffer.rs"),
         include_str!("../../../../../src/hir/validation/owned_result_try.rs"),
         include_str!("../../../../../src/hir/validation/owner_renewal.rs"),
+        include_str!("../../../../../src/hir/validation/identity_scratch.rs"),
+        include_str!("../../../../../src/hir/validation/identity_scratch/tests.rs"),
         include_str!("../../../../../src/hir/validation/type_profiles.rs"),
         include_str!("../../../../../src/hir/validation/type_profiles/owned_bytes_tests.rs"),
         include_str!("../../../../../src/hir/validation/type_profiles/owned_bytes_tests/old.rs"),
