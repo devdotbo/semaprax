@@ -63,6 +63,19 @@ macro_rules! loan_cfg_source_inventory {
             include_str!("../../../../../../src/loan_plan/cfg_directory/tree.rs"),
             include_str!("../../../../../../src/loan_plan/cfg_directory/tests.rs"),
             include_str!("../../../../../../src/loan_plan/adjacency.rs"),
+            include_str!("../../../../../../src/loan_plan/directory_access.rs"),
+            include_str!("../../../../../../src/loan_plan/origin.rs"),
+            include_str!("../../../../../../src/loan_plan/origin/funded.rs"),
+            include_str!("../../../../../../src/loan_plan/native_view.rs"),
+            include_str!("../../../../../../src/loan_plan/traversal.rs"),
+            include_str!("../../../../../../src/loan_plan/funded_flat/directories_tests.rs"),
+            include_str!("../../../../../../src/loan_plan/cfg_directory/planner_receivers_tests.rs"),
+            include_str!("../../../../../../src/loan_plan/funded_flat_legacy.rs"),
+            include_str!("../../../../../../src/loan_plan/native_view_legacy.rs"),
+            include_str!("../../../../../../src/loan_plan/paid_candidate_legacy.rs"),
+            include_str!("../../../../../../src/loan_plan/paid_patterns_legacy.rs"),
+            include_str!("../../../../../../src/loan_plan/paid_plan_legacy.rs"),
+            include_str!("../../../../../../src/loan_plan/traversal/paid_legacy.rs"),
         )
     };
 }
