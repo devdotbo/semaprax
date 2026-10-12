@@ -755,6 +755,7 @@ fn scalar_branch_join(flag: bool) -> i64 {
                         | ResolvedStatement::LexicalWhile { body, .. } => {
                             (None, None, Some(body.as_ref()))
                         }
+                        ResolvedStatement::CopyDiscard { value, .. } => (None, None, Some(value)),
                         ResolvedStatement::Unsafe { body, .. } => (None, None, Some(body.as_ref())),
                     };
                     if let Some(binding) = binding {

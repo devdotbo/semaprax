@@ -44,18 +44,20 @@ fn fixture() -> (
         .iter()
         .map(|slot| slot.storage.clone())
         .collect();
-    let leaves = actions
-        .iter()
-        .map(|action| {
-            (
-                action.guard_flag,
-                Leaf {
-                    place: action.source.clone(),
-                    lifecycle: action.lifecycle_id.clone(),
-                },
-            )
-        })
-        .collect();
+    let leaves = Leaves::new(
+        actions
+            .iter()
+            .map(|action| {
+                (
+                    action.guard_flag,
+                    Leaf {
+                        place: action.source.clone(),
+                        lifecycle: action.lifecycle_id.clone(),
+                    },
+                )
+            })
+            .collect(),
+    );
     (function, actions, known, leaves)
 }
 

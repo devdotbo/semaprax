@@ -224,10 +224,14 @@ fn record_variant_and_update_children_follow_field_order() {
                 fields: fields("record", count),
             },
         );
-        let ResolvedExprKind::ConstructRecord { fields, .. } = &record.kind else {
+        let ResolvedExprKind::ConstructRecord {
+            fields: record_fields,
+            ..
+        } = &record.kind
+        else {
             unreachable!()
         };
-        match fields.as_slice() {
+        match record_fields.as_slice() {
             [] => assert_children("record/0", &record, &[], &[]),
             [only] => assert_children("record/1", &record, &[&only.value], &[]),
             [first, second, third] => assert_children(
