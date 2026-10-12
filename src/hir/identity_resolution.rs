@@ -92,6 +92,8 @@ pub(crate) fn resolve_source_checked<'p, E>(
     private: Option<source_verify::private_names::PrivateNames<'p>>,
     mut reserve: impl FnMut(usize) -> Result<(), E>,
 ) -> Result<(ResolvedProgram, FunctionResolutionWork), Failure<E>> {
+    #[cfg(feature = "unstable-workflow-profiling")]
+    let _workflow_span = crate::workflow_profile::span(crate::workflow_profile::Stage::Resolve);
     let diagnostics = source_verify::verify_presenting(program, private);
     if diagnostics
         .iter()
@@ -109,9 +111,15 @@ pub(crate) fn resolve_source_checked<'p, E>(
             "borrowed projection requires owned invariant desugaring",
         )]));
     }
-    let reuse = previous_program.zip(previous_resolved).zip(previous_costs)
+    let reuse = previous_program
+        .zip(previous_resolved)
+        .zip(previous_costs)
         .filter(|((previous, _), _)| function_reuse_environment_is_exact(program, previous))
-        .map(|((program, resolved), costs)| FunctionReuse { program, resolved, costs });
+        .map(|((program, resolved), costs)| FunctionReuse {
+            program,
+            resolved,
+            costs,
+        });
     // SourceIndex precedes the DeclarationIndex, as in the legacy route.
     let byte_helpers = crate::loop_calls::byte_writer::SourceIndex::new(program);
     let declarations = DeclarationIndex::from_verified_with_identity_reservation(

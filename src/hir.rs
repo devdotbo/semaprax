@@ -760,8 +760,14 @@ fn function_reuse_environment_is_exact(current: &dyn ProgramSource, previous: &P
         && current.protocols() == previous.protocols
         && current.implementations() == previous.implementations
         && current.functions().len() == previous.functions.len()
-        && current.functions().iter().all(|function| function.type_parameters.is_empty())
-        && current.functions().iter().zip(&previous.functions)
+        && current
+            .functions()
+            .iter()
+            .all(|function| function.type_parameters.is_empty())
+        && current
+            .functions()
+            .iter()
+            .zip(&previous.functions)
             .all(|(current, previous)| function_signature_is_exact(current, previous))
 }
 

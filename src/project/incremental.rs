@@ -836,7 +836,8 @@ fn checked_source_matches(
     current: &dyn crate::ast::program_source::ProgramSource,
     previous: &Program,
 ) -> bool {
-    current.path() == previous.path && current.module() == previous.module
+    current.path() == previous.path
+        && current.module() == previous.module
         && current.module_uses() == previous.module_uses
         && current.permits() == previous.permits
         && current.types().iter().eq(&previous.types)

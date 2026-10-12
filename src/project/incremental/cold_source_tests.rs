@@ -76,11 +76,15 @@ fn checked_cold_source_preserves_limits_costs_current_key_and_body_reuse_fallbac
     assert!(checked_source_matches(&view, &program));
     assert!(!checked_source_matches(&changed_view, &program));
     assert!(pass.checked_module_source(&program.path, &view).is_some());
-    assert!(pass.checked_module_source(&program.path, &changed_view).is_none());
+    assert!(pass
+        .checked_module_source(&program.path, &changed_view)
+        .is_none());
     let (borrowed, refused, _) = crate::bounded_output::with_limit_usage(usize::MAX, || {
-        let mut owner = crate::bounded_output::identity_reservation::IdentityReservation::acquire().unwrap();
+        let mut owner =
+            crate::bounded_output::identity_reservation::IdentityReservation::acquire().unwrap();
         pass.resolve_borrowed_cold_source_paid(&program.path, &changed_view, None, &mut owner)
-            .unwrap().unwrap()
+            .unwrap()
+            .unwrap()
     });
     assert!(!refused);
     assert_eq!(borrowed.resolved, reused.resolved);

@@ -1100,7 +1100,10 @@ mod continuation_tests {
                 assert_eq!(old.moves, current.moves);
                 assert_eq!(old.epsilon, current.epsilon);
             }
-            assert!(storage.frames.is_some(), "top-level continuation lease returned");
+            assert!(
+                storage.frames.is_some(),
+                "top-level continuation lease returned"
+            );
             assert!(storage.frames.as_ref().unwrap().is_empty());
         }
         assert_eq!(old_budget.remaining, current_budget.remaining);
@@ -1140,7 +1143,10 @@ mod continuation_tests {
                             break;
                         }
                     }
-                    assert!(storage.frames.is_some(), "top-level continuation lease returned");
+                    assert!(
+                        storage.frames.is_some(),
+                        "top-level continuation lease returned"
+                    );
                     drop(storage);
                     drop(budget);
                     success
