@@ -82,7 +82,7 @@ fn ordered_checkpoints_preserve_both_complete_old_maps_through_rotations_and_rep
             let mut current = Values::new().unwrap();
             let mut old = Values::borrowed_reference();
             let mut snapshots = Vec::new();
-            for i in order {
+            for &i in &order {
                 if shared {
                     snapshots.push(current.checkpoint().unwrap());
                 }
