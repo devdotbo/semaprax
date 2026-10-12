@@ -177,13 +177,27 @@ tests = ["cold.tests"]
         };
         assert_eq!(image(actual), image(expected));
     };
+    let trace = |label: &str| {
+        let trace = crate::bounded_output::stage_debits::take_completed().unwrap();
+        assert_eq!(trace.sum(), trace.consumed);
+        // Only fixed Copy counters were captured on the real ledger. Formatting
+        // happens after construction, outside that ledger and any allocator scope.
+        println!("checked-cold source route={label} prebound={} layouts={} mode={} consumed={} stages={:?}",
+            trace.prebound, trace.layouts, trace.mode, trace.consumed, trace.debits);
+        trace
+    };
     let original = sources(2);
     let mut ordinary = ProjectFrontendCache::new();
+    let _ = crate::bounded_output::stage_debits::take_completed();
     let old = ordinary.build(&manifest, &original).unwrap();
+    let old_trace = trace("ordinary-cold");
     let mut checked = ProjectFrontendCache::new_with_semantic_cache();
     let cold = checked.build(&manifest, &original).unwrap();
-    same(&cold, &old);
+    let cold_trace = trace("checked-cold");
     let warm = checked.build(&manifest, &original).unwrap();
+    let warm_trace = trace("checked-warm");
+    println!("checked-cold complete attempts ordinary={old_trace:?} cold={cold_trace:?} warm={warm_trace:?}");
+    same(&cold, &old);
     same(&warm, &old);
     let report: serde_json::Value = serde_json::from_str(warm.to_json()).unwrap();
     assert_eq!(report["work"]["modules_resolved"], 0);
@@ -191,7 +205,9 @@ tests = ["cold.tests"]
     let old_changed = ProjectFrontendCache::new()
         .build(&manifest, &changed)
         .unwrap();
+    let changed_old_trace = trace("changed-ordinary-cold");
     let changed_checked = checked.build(&manifest, &changed).unwrap();
+    let _ = trace("changed-checked-reuse");
     same(&changed_checked, &old_changed);
     let report: serde_json::Value = serde_json::from_str(changed_checked.to_json()).unwrap();
     assert!(
@@ -201,5 +217,7 @@ tests = ["cold.tests"]
             > 0
     );
     let changed_warm = checked.build(&manifest, &changed).unwrap();
+    let changed_warm_trace = trace("changed-checked-warm");
+    println!("checked-cold changed attempts ordinary={changed_old_trace:?} warm={changed_warm_trace:?}");
     same(&changed_warm, &old_changed);
 }
