@@ -66,7 +66,7 @@ fn source() -> String {
          Choice::B {} => -rebuilt.f9, };\n",
     );
     source.push_str("  if flag && !false { return picked; } else { 0 }\n");
-    source.push_str("  -(picked * 2) + scalar(s999) + deep(s1000)\n}\n");
+    source.push_str("  let result = -(picked * 2) + scalar(s999) + deep(s1000);\n  result\n}\n");
     // An actual new whole-row argument reaches the same path-text receiver
     // through paid arena spelling and the saved recursive borrowed-text route.
     source.push_str(
@@ -104,6 +104,19 @@ fn assert_same(
 
 fn compare() {
     let source = source();
+    // Preserve the original rejected boundary independently: a unary operator
+    // after the guard continues value evaluation instead of starting an item.
+    let crossed = source.replace(
+        "let result = -(picked * 2) + scalar(s999) + deep(s1000);\n  result",
+        "-(picked * 2) + scalar(s999) + deep(s1000)",
+    );
+    assert_ne!(crossed, source);
+    let crossed = crate::parse(&crossed, Path::new("path-arena-crossed.spx")).unwrap();
+    let errors = crate::hir::resolve(&crossed).unwrap_err();
+    assert!(
+        errors.iter().any(|error| error.code == "SPX-T312"),
+        "{errors:?}"
+    );
     let parsed = crate::parse(&source, Path::new("path-arena-oracle.spx")).unwrap();
     let resolved = crate::hir::resolve(&parsed).unwrap();
     crate::hir::validate(&resolved).unwrap();

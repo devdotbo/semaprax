@@ -96,8 +96,10 @@ fn decoded_index_collision_boundaries_and_failure_order_run_on_native_and_wasm()
                 "{}\n{}",
                 std::fs::read_to_string(test_root.join("environment_provider_fixture.mjs"))
                     .unwrap(),
-                std::fs::read_to_string(test_root.join("catalog_normalizer_application.mjs"))
-                    .unwrap()
+                std::fs::read_to_string(
+                    test_root.join("catalog_normalizer_application/decoded_index/host.mjs")
+                )
+                .unwrap()
             );
             std::fs::write(&script, host).unwrap();
             let run = Command::new("node")

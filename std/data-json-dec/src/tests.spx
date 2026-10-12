@@ -219,11 +219,11 @@ fn raw_fingerprint_equivalence() -> bool
     let mut closed_buffer = bytes_set(bytes_set(bytes_zeroed(3usize), 0usize, 34u8), 2usize, 34u8);
     let mut unclosed_buffer = bytes_set(bytes_zeroed(2usize), 0usize, 34u8);
     while value < 256usize {
-        closed_buffer = bytes_set(closed_buffer, 1usize, u8_from_usize(value));
+        closed_buffer = bytes_set(closed_buffer, 1usize, code_byte(i64_from_usize(value)));
         let view = bytes_as_slice(closed_buffer);
         let expected = if value >= 32usize && value != 34usize && value != 92usize { 65536usize + value } else { 0usize };
         equal = equal && decoded_fingerprint(view, 0usize, 1usize) == expected && frozen_fingerprint(view, 0usize, 1usize) == expected;
-        unclosed_buffer = bytes_set(unclosed_buffer, 1usize, u8_from_usize(value));
+        unclosed_buffer = bytes_set(unclosed_buffer, 1usize, code_byte(i64_from_usize(value)));
         let unclosed_view = bytes_as_slice(unclosed_buffer);
         equal = equal && decoded_fingerprint(unclosed_view, 0usize, 1usize) == 0usize && frozen_fingerprint(unclosed_view, 0usize, 1usize) == 0usize;
         value = value + 1usize;

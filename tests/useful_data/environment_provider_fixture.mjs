@@ -1,5 +1,5 @@
 // Concatenate into the caller's fixture. All authority is passed in explicitly.
-function environmentProvider(module, maxOwnedBytes = 65536) {
+function environmentProvider(module, maxOwnedBytes = 65536, scalarVecUpdates = false) {
   if (!Number.isSafeInteger(maxOwnedBytes) || maxOwnedBytes < 0) throw Error('invalid arena capacity');
   const acceptsOwnedLength=length=>Number.isSafeInteger(length)&&length>=0&&length<=maxOwnedBytes;
   const ownedLength=value=>{
@@ -77,6 +77,25 @@ function environmentProvider(module, maxOwnedBytes = 65536) {
     spx_vec_capacity:(value,tag)=>BigInt(vecRead(value,tag).capacity),
     spx_vec_get:(value,tag,index)=>{const old=vecRead(value,tag),n=Number(index);if(!Number.isSafeInteger(n)||n<0||n>=old.values.length)throw Error('Vec index');return old.values[n]},
     spx_vec_drop:value=>{if(!vectors.delete(vecKey(value)))throw Error('double Vec drop')},
+  });
+  // Indexed application fixture opt-in: the same affine scalar Vec table,
+  // with invalid operations leaving the current owner available for cleanup.
+  if (scalarVecUpdates) Object.assign(imports.env, {
+    spx_vec_reserve_exact:(value,tag,additional)=>{
+      const old=vecRead(value,tag);
+      if(typeof additional!=='bigint'||additional<0n||BigInt(old.values.length)+additional>8192n)return 0n;
+      const capacity=Math.max(old.capacity,Number(BigInt(old.values.length)+additional));
+      vectors.delete(vecKey(value));return vecAlloc(tag,capacity,old.values);
+    },
+    spx_vec_set:(value,tag,index,bits)=>{
+      const old=vecRead(value,tag);
+      if(typeof index!=='bigint'||index<0n||index>=BigInt(old.values.length))return 0n;
+      const values=old.values.slice();values[Number(index)]=bits;
+      vectors.delete(vecKey(value));return vecAlloc(tag,old.capacity,values);
+    },
+    spx_vec_clear:(value,tag)=>{
+      const old=vecRead(value,tag);vectors.delete(vecKey(value));return vecAlloc(tag,old.capacity);
+    },
   });
   return {imports,acceptsOwnedLength,attach(value){instance=value;let cursor=512;refs=entries.map(entry=>entry.map(text=>{const data=new TextEncoder().encode(text);new Uint8Array(memory().buffer).set(data,cursor);const result=carrier(cursor,data.length);cursor+=data.length+1;return result}))},settled(){if(owned.size||vectors.size)throw Error('unsettled owners')},live(){return owned.size+vectors.size}};
 }

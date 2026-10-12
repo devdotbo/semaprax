@@ -21,7 +21,7 @@ const SUBTREE: &str = r#"@id("forward") fn forward(value:own Outer)->i64 {
  let answer=match own value {Outer{sibling:Sibling{bytes:unused,tag:_},report,valid}=>
  if valid {score(report)}else{0},};
  let mut once=true;
- while once {once=false;if answer==42 {return answer;}else{0};}
+ while once {once=false;if answer==42 {return answer;}else{0} 0}
  answer
 }
 "#;
@@ -29,7 +29,7 @@ const RECURSIVE: &str = r#"@id("forward") fn forward(value:own Outer)->i64 {
  let answer=match own value {Outer{sibling:Sibling{bytes:unused,tag:_},report:Report{bytes,text,words,metrics:Metrics{total}},valid}=>
  if valid {score(Report{bytes:bytes,text:text,words:words,metrics:Metrics{total:total}})}else{0},};
  let mut once=true;
- while once {once=false;if answer==42 {return answer;}else{0};}
+ while once {once=false;if answer==42 {return answer;}else{0} 0}
  answer
 }
 "#;
@@ -172,16 +172,12 @@ fn subtree_transfer_refuses_hidden_owner_borrow_use_after_move_and_live_descenda
 #[test]
 fn subtree_cache_cold_warm_and_current_source_drift_replay_exact_graph_facts() {
     let manifest = semaprax::project::ProjectManifest::parse(
-        r#"schema="semaprax.manifest.v1"
-[package]
-name="subtree"
-version="0.1.0"
-[modules]
-entry="test.subtree"
-sources=["app.spx","tests.spx"]
-tests=["test.subtree_tests"]
-[exports]
-web=["public.probe"]
+        r#"schema = "semaprax.project.v1"
+name = "subtree"
+entry = "test.subtree"
+sources = ["app.spx", "tests.spx"]
+tests = ["test.subtree_tests"]
+web_exports = ["public.probe"]
 "#,
     )
     .unwrap();
