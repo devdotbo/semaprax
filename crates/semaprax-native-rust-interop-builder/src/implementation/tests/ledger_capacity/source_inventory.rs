@@ -76,6 +76,12 @@ macro_rules! loan_cfg_source_inventory {
             include_str!("../../../../../../src/loan_plan/paid_patterns_legacy.rs"),
             include_str!("../../../../../../src/loan_plan/paid_plan_legacy.rs"),
             include_str!("../../../../../../src/loan_plan/traversal/paid_legacy.rs"),
+            include_str!("../../../../../../src/loan_plan/paid_live.rs"),
+            include_str!("../../../../../../src/loan_plan/paid_live/tests.rs"),
+            include_str!("../../../../../../src/loan_plan/cfg_directory/live_receivers_tests.rs"),
+            include_str!("../../../../../../src/loan_plan/call_arguments_legacy.rs"),
+            include_str!("../../../../../../src/loan_plan/paid_materialize_legacy.rs"),
+            include_str!("../../../../../../src/loan_plan/paid_predicates_legacy.rs"),
         )
     };
 }
