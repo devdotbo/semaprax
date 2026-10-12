@@ -92,6 +92,10 @@ macro_rules! diagnostic_source_inventory {
         concat!(
             include_str!("../../../../../../src/diagnostic.rs"),
             include_str!("../../../../../../src/diagnostic/refusal_tests.rs"),
+            include_str!("../../../../../../src/workspace_report.rs"),
+            include_str!("../../../../../../src/workspace_report/tests.rs"),
+            include_str!("../../../../../../src/semantic_workspace/reporting.rs"),
+            include_str!("../../../../../../src/semantic_workspace/reporting/tests.rs"),
             include_str!("../../../../../../src/hir/validation/scope_checkpoint.rs"),
             include_str!("../../../../../../src/hir/validation/scope_checkpoint/charge.rs"),
             include_str!("../../../../../../src/hir/validation/scope_checkpoint/tree.rs"),

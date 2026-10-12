@@ -1947,6 +1947,14 @@ passes renewal authority explicitly through the Graph classifiers for that
 invocation. It retains no additional declaration index. Cleanup selector
 equivalences are checked before higher Graph selectors can mask a mismatch;
 frozen from-parts routes without declaration provenance retain their refusal.
+`workspace_report.rs` retains one affine selected-replay failure, its exact
+ledger and any paid diagnostic backing; explicit legacy materialization stays
+an allocating boundary. `semantic_workspace/reporting.rs` owns the additive
+source-only checked preflight and its independent receiving replay. Its checked
+manifest/revision view grants no filesystem lock or publication authority.
+Filesystem preparers and dynamic directory/TLS attribution remain legacy;
+this source-only route does not qualify those reports as funded. See
+[Workspace Report Owner v1](WORKSPACE-REPORT-OWNER-V1.md).
 `workspace_graph/paid_view.rs` owns the typed change, operation and schema
 view refusal (`ViewRefusal`). The actual selected lexical replay caller in
 `source_schema/static_text/primitive.rs` acquires the caller's outward report
