@@ -3,6 +3,7 @@
 use super::*;
 #[path = "ledger_capacity/scope_projection.rs"]
 mod scope_projection;
+include!("ledger_capacity/source_inventory.rs");
 #[test]
 fn cumulative_builder_limit_is_exact_and_cannot_be_widened() {
     let (program, spec) = fixture();
@@ -115,24 +116,7 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
     // The resolver is split across submodules; its layout pins live beside the
     // frame machinery they describe, so bind the root and the resolver files.
     let hir_resolver = concat!(
-        include_str!("../../../../../src/loop_calls/byte_writer.rs"),
-        include_str!("../../../../../src/loop_calls/byte_writer/source.rs"),
-        include_str!("../../../../../src/loop_calls/byte_writer/source_index.rs"),
-        include_str!("../../../../../src/loop_calls/byte_writer/resolved.rs"),
-        include_str!("../../../../../src/loop_calls/byte_writer/resolved/validation.rs"),
-        include_str!("../../../../../src/loop_calls/byte_writer/validation_frontier.rs"),
-        include_str!("../../../../../src/loop_calls/byte_writer/validation_frontier/storage.rs"),
-        include_str!(
-            "../../../../../src/loop_calls/byte_writer/validation_frontier/ordinary_receiver.rs"
-        ),
-        include_str!("../../../../../src/cleanup_plan/renewal_profile/ordinary/validation.rs"),
-        include_str!("../../../../../src/cleanup_plan/build/helper_index/ordinary_view.rs"),
-        include_str!("../../../../../src/cleanup_plan/build/helper_index/validation.rs"),
-        include_str!("../../../../../src/cleanup_plan/build/lexical_control/validation.rs"),
-        include_str!("../../../../../src/cleanup_plan/validate.rs"),
-        include_str!("../../../../../src/cleanup_plan/validate/owned.rs"),
-        include_str!("../../../../../src/loop_calls/byte_writer/bindings.rs"),
-        include_str!("../../../../../src/loop_calls/byte_writer/module_index.rs"),
+        byte_writer_source_inventory!(),
         concat!(
             include_str!("../../../../../src/hir.rs"),
             include_str!("../../../../../src/hir/ordinary_identity.rs"),
@@ -425,21 +409,7 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
             include_str!("../../../../../src/hir/static_text.rs"),
             include_str!("../../../../../src/hir/static_text/backing.rs"),
             include_str!("../../../../../src/hir/static_text/origin.rs"),
-            include_str!("../../../../../src/loop_calls/byte_writer.rs"),
-            include_str!("../../../../../src/loop_calls/byte_writer/resolved.rs"),
-        include_str!("../../../../../src/loop_calls/byte_writer/resolved/validation.rs"),
-        include_str!("../../../../../src/loop_calls/byte_writer/validation_frontier.rs"),
-        include_str!("../../../../../src/loop_calls/byte_writer/validation_frontier/storage.rs"),
-        include_str!("../../../../../src/loop_calls/byte_writer/validation_frontier/ordinary_receiver.rs"),
-        include_str!("../../../../../src/cleanup_plan/renewal_profile/ordinary/validation.rs"),
-        include_str!("../../../../../src/cleanup_plan/build/helper_index/ordinary_view.rs"),
-        include_str!("../../../../../src/cleanup_plan/build/helper_index/validation.rs"),
-        include_str!("../../../../../src/cleanup_plan/build/lexical_control/validation.rs"),
-        include_str!("../../../../../src/cleanup_plan/validate.rs"),
-        include_str!("../../../../../src/cleanup_plan/validate/owned.rs"),
-
-            include_str!("../../../../../src/loop_calls/byte_writer/bindings.rs"),
-            include_str!("../../../../../src/loop_calls/byte_writer/module_index.rs"),
+            byte_writer_source_inventory!(),
             concat!(
                 concat!(
                     concat!(
