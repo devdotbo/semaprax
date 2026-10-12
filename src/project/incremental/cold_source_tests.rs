@@ -125,7 +125,7 @@ name = "cold"
 entry = "cold.app"
 sources = ["src/app.spx", "src/tests.spx"]
 web_exports = ["answer"]
-tests = ["tests.main"]
+tests = ["cold.tests"]
 "#,
     )
     .unwrap();
