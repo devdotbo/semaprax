@@ -62,6 +62,19 @@ fn borrowed_template_types_preserve_owned_map_diagnostics_and_current_binding_su
     let ResolvedMatchPattern::Record { fields, .. } = &mut arms[0].pattern else { panic!("record pattern"); };
     fields[0].field = DeclarationId::new("foreign.field");
     assert_eq!(compare(&program, &stale).unwrap_err().code, "SPX-H006");
+    for wrong_type in [true, false] {
+        let mut wrong = template.clone();
+        let ResolvedExprKind::Block { tail, .. } = &mut wrong.body.kind else { panic!("block"); };
+        let ResolvedExprKind::Match { arms, .. } = &mut tail.kind else { panic!("match"); };
+        let ResolvedMatchPattern::Record { fields, .. } = &mut arms[0].pattern else { panic!("Wrap"); };
+        let ResolvedRecordMatchFieldPattern::Record { fields, .. } = &mut fields[0].pattern else { panic!("Pair"); };
+        let ResolvedRecordMatchFieldPattern::Binding(binding) = &mut fields[0].pattern else { panic!("payload"); };
+        if wrong_type { binding.ty = ResolvedType::String; }
+        else { binding.ownership = OwnershipMode::Borrow; }
+        // Fresh field substitution must reject before this binding's type can
+        // enter either environment, regardless of its immutable source address.
+        assert_eq!(compare(&program, &wrong).unwrap_err().code, "SPX-H006");
+    }
 }
 #[test]
 fn borrowed_template_snapshots_remove_real_type_payloads_through_complete_drop() {
