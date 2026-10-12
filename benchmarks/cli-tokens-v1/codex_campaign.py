@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import re
 import signal
@@ -394,10 +395,22 @@ def trace_usage(exec_usage: dict[str, Any], rollout: Path) -> dict[str, Any]:
     }
 
 
-def list_price_estimate(requests: list[dict[str, Any]]) -> dict[str, Any]:
+def list_price_estimate(requests: list[dict[str, Any]], price_book: dict[str, Any] | None = None) -> dict[str, Any]:
     """Conditional standard-price estimate; actual billing and cache-write amount remain unknown."""
+    # Compatibility calls use the explicitly dated historical card, never a
+    # claim about today's price. Live/recount routes pass their saved card.
+    card = ({"date": "2026-10-08", "standard_short_context_usd_per_million": PRICE_USD_PER_MTOK}
+            if price_book is None else price_book)
+    prices = card.get("standard_short_context_usd_per_million") if isinstance(card, dict) else None
+    date = card.get("date") if isinstance(card, dict) else None
+    card_valid = (isinstance(date, str) and re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", date) is not None
+        and isinstance(prices, dict) and set(prices) == set(PRICE_USD_PER_MTOK)
+        and all(isinstance(rate, (int, float)) and not isinstance(rate, bool)
+                and math.isfinite(rate) and rate >= 0 for rate in prices.values()))
     amount, writes = 0.0, 0
-    valid = bool(requests)
+    valid = bool(requests) and card_valid
+    if not card_valid:
+        requests = []
     for request in requests:
         known = _usage(request.get("usage"))
         if not all(known[key] is not None for key in ("input_tokens", "cached_input_tokens", "cache_write_input_tokens", "output_tokens")):
@@ -406,13 +419,15 @@ def list_price_estimate(requests: list[dict[str, Any]]) -> dict[str, Any]:
         if uncached < 0 or known["input_tokens"] > SHORT_CONTEXT_LIMIT:
             valid = False; break
         writes += known["cache_write_input_tokens"]
-        amount += (uncached * PRICE_USD_PER_MTOK["input"] + known["cached_input_tokens"] * PRICE_USD_PER_MTOK["cache_read"] + known["cache_write_input_tokens"] * PRICE_USD_PER_MTOK["cache_write"] + known["output_tokens"] * PRICE_USD_PER_MTOK["output"]) / 1_000_000
+        amount += (uncached * prices["input"] + known["cached_input_tokens"] * prices["cache_read"] + known["cache_write_input_tokens"] * prices["cache_write"] + known["output_tokens"] * prices["output"]) / 1_000_000
+        if not math.isfinite(amount):
+            valid = False; break
     return {
         "standard_short_context_api_equivalent_usd": round(amount, 6) if valid else None,
         "assumptions": "each request input <=272k; input/cache-read/cache-write/output use published standard rates",
         "actual_billed_usd": None, "cache_write_tokens": writes if valid else None,
-        "cache_write_cost_usd": round(writes * PRICE_USD_PER_MTOK["cache_write"] / 1_000_000, 6) if valid else None,
-        "reason": None if valid else "missing per-request usage, invalid bucket subset, or a request exceeds the short-context threshold",
+        "cache_write_cost_usd": round(writes * prices["cache_write"] / 1_000_000, 6) if valid else None,
+        "reason": None if valid else "missing/invalid dated rate card, per-request usage, bucket subset, or short-context threshold",
     }
 
 
@@ -630,7 +645,7 @@ def launch_trial(repo: Path, artifacts: Path, commit: str, trial: dict[str, Any]
     trace_result = trace_usage(exec_usage, copied) if copied else {"reconciled": False, "model_request_count": None, "model_observed": None}
     row["observed"] = {**exec_usage, **trace_result, "stable_context_tokens": None}
     row["rollout_trace"] = str(copied) if copied else None
-    row["list_price"] = list_price_estimate(trace_result.get("model_requests", []))
+    row["list_price"] = list_price_estimate(trace_result.get("model_requests", []), settings.get("price_book", {}))
     row["provider_receipt_actual_usd"] = None
     if process["timed_out"]:
         row["failure"] = "trial hit wall-clock timeout"
@@ -703,7 +718,7 @@ def launch_calibration(repo: Path, artifacts: Path, commit: str, settings: dict[
     trace_result = trace_usage(usage, copied) if copied else {"reconciled": False}
     row["observed"] = {**usage, **trace_result, "stable_context_tokens": None}
     row["rollout_trace"] = str(copied) if copied else None
-    row["list_price"] = list_price_estimate(trace_result.get("model_requests", []))
+    row["list_price"] = list_price_estimate(trace_result.get("model_requests", []), settings.get("price_book", {}))
     messages = [json.loads(line).get("item", {}) for line in transcript.read_text().splitlines() if line]
     replies = [item.get("text", "").strip() for item in messages if item.get("type") == "agent_message"]
     counts = usage.get("tool_item_counts", {})

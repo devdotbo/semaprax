@@ -168,3 +168,25 @@ separate `acceptance_subprocess_seconds`, with missing phase measurements null.
 Wall per accepted task includes all attempted tasks, including rejected ones;
 a zero accepted denominator or incomplete measurements remains unavailable.
 These accounting fields do not revise any retained campaign or imply a gain.
+
+### Receipt accounting maintenance (OPT606)
+
+The shared Claude parser requires every deduplicated message bucket before
+calling a per-message sum complete. A provider aggregate result can supply a
+missing total; the original messages and result remain retained separately.
+Conflicting result/model totals remain unavailable with both projections saved.
+`modelUsage` fallback sums all models rather than selecting one requested model.
+A mixed-model aggregate cannot use a single-model rate card; its conditional
+estimate stays unavailable. Provider `total_cost_usd` remains an API-equivalent
+report, never proof of account billing. Tool IDs do not replace assistant message
+IDs when deduplicating visible text.
+
+Codex live and recount routes use the campaign's retained dated `price_book`,
+including cache subsets. Missing or invalid cards yield an unavailable estimate.
+Direct compatibility helpers retain the explicit 2026-10-08 historical card;
+they do not claim current pricing. Fixed context, final authored-source proxy
+tokens, total provider output and historical net input stay separate. Existing
+all-attempt cost divided by accepted-task denominators are unchanged.
+
+Offline owning checks: `python3 -m unittest discover -s benchmarks -p 'test_metric_accounting.py'`. These synthetic checks do not run campaigns,
+invoke providers, establish accepted samples or reconcile account billing.

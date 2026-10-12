@@ -89,7 +89,7 @@ def recount(path: Path) -> dict:
         if observed['reconciled']:
             for key in ('model_request_count', 'request_usage_sum', 'legacy_net_input_tokens', 'model_observed', 'effort_observed'):
                 require(observed[key] == original['observed'][key], f'{label}: saved {key} differs from trace')
-            price = campaign.list_price_estimate(observed['model_requests'])
+            price = campaign.list_price_estimate(observed['model_requests'], data.get('campaign', {}).get('price_book', {}))
             require(price == original['list_price'], f'{label}: saved price differs from conditional recount')
         else:
             require(not original.get('observed', {}).get('reconciled'), f'{label}: saved reconciled usage differs from trace')

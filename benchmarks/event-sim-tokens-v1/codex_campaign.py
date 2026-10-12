@@ -166,14 +166,14 @@ def invalidate(row: dict[str, Any], reason: str) -> None:
         row["acceptance"]["invalidated"] = reason
 
 
-def observe(workspace: Path, artifacts: Path, label: str, stream: Path) -> dict[str, Any]:
+def observe(workspace: Path, artifacts: Path, label: str, stream: Path, price_book: dict[str, Any] | None = None) -> dict[str, Any]:
     usage = codex.parse_exec_jsonl(stream)
     copied = codex.copy_task_rollout(usage["thread_ids"], workspace,
                                      artifacts / "transcripts" / f"{label}.rollout.jsonl")
     trace = codex.trace_usage(usage, copied) if copied else {"reconciled": False, "model_requests": []}
     return {"rollout_trace": str(copied) if copied else None,
             "observed": {**usage, **trace, "stable_context_tokens": None},
-            "list_price": codex.list_price_estimate(trace.get("model_requests", [])),
+            "list_price": codex.list_price_estimate(trace.get("model_requests", []), price_book),
             "provider_receipt_actual_usd": None}
 
 
@@ -230,7 +230,7 @@ def launch_trial(seed_repo: Path, artifacts: Path, seed_commit: str, trial: dict
             shiftsim.common.require_compiler_binding(settings, semaprax_bin)
             row.update(codex.run_codex(command_for(settings, prompt), workspace,
                                        authoring_env, stream, stderr, settings["timeout_seconds"]))
-        row.update(observe(workspace, artifacts, label, stream))
+        row.update(observe(workspace, artifacts, label, stream, settings.get("price_book", {})))
         observed = row["observed"]
         row["telemetry_valid"] = (observed.get("reconciled") is True
             and observed.get("model_observed") == MODEL and observed.get("effort_observed") == EFFORT
@@ -401,7 +401,7 @@ def launch_calibration(seed_repo: Path, artifacts: Path, seed_commit: str,
         shiftsim.common.require_compiler_binding(settings, semaprax_bin)
         row.update(codex.run_codex(command_for(settings, shiftsim.CALIBRATION_PROMPT), workspace,
                                    shiftsim.trial_environment(semaprax_bin), stream, stderr, settings["timeout_seconds"]))
-        row.update(observe(workspace, artifacts, "calibration", stream))
+        row.update(observe(workspace, artifacts, "calibration", stream, settings.get("price_book", {})))
         observed = row["observed"]
         events = [json.loads(line) for line in stream.read_text().splitlines() if line]
         messages = [event.get("item") for event in events if isinstance(event, dict)]

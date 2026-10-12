@@ -153,7 +153,7 @@ def _acceptance_subprocess_seconds(original: dict[str, Any]) -> float | None:
     return sum(pieces) if pieces and all(_duration(value) for value in pieces) else None
 
 
-def _recount_trial(original: dict[str, Any]) -> dict[str, Any]:
+def _recount_trial(original: dict[str, Any], price_book: dict[str, Any] | None = None) -> dict[str, Any]:
     label = f"{original.get('arm')}-{original.get('number', 0):02d}"
     stream, trace = _path(original.get("transcript")), _path(original.get("rollout_trace"))
     evidence: dict[str, str] = {}
@@ -174,7 +174,7 @@ def _recount_trial(original: dict[str, Any]) -> dict[str, Any]:
     if stream is not None and trace is not None and stream.is_file() and trace.is_file():
         observed = campaign.codex.trace_usage(campaign.codex.parse_exec_jsonl(stream), trace)
         if observed.get("reconciled"):
-            price = campaign.codex.list_price_estimate(observed.get("model_requests", []))
+            price = campaign.codex.list_price_estimate(observed.get("model_requests", []), price_book)
         else:
             price["reason"] = "unreconciled task-owned rollout usage"
     usage = observed.get("request_usage_sum", {}) if observed.get("reconciled") else {}
@@ -215,7 +215,7 @@ def recount(path: Path) -> dict[str, Any]:
     require(isinstance(data.get("trials"), list), "results file has no trials array")
     require(all(isinstance(row, dict) for row in data["trials"]),
             "results file contains a malformed trial")
-    rows = [_recount_trial(row) for row in data["trials"]]
+    rows = [_recount_trial(row, data.get("campaign", {}).get("price_book", {})) for row in data["trials"]]
     result = summarize(data, rows)
     campaign_data = data.get("campaign", {})
     calibration = data.get("calibration")
