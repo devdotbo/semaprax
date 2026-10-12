@@ -442,7 +442,7 @@ def stream_usage(path: Path, model_preference: str) -> dict[str, Any]:
             {"message_id": identity, "usage": values}
             for identity, values in raw_usage_by_id.items()
         ],
-        "turns_with_usage_definition": "deduplicated assistant message IDs carrying usage; not tool calls or the provider's session turn count",
+        "turns_with_usage_definition": "observed deduplicated assistant message IDs, including unavailable usage; not tool calls or the provider's session turn count",
         "provider_reported_session_turns": provider_turns,
         "legacy_net_input": legacy_net,
         "legacy_net_input_definition": (
