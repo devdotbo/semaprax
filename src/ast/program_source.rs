@@ -193,6 +193,10 @@ pub(crate) struct SyntheticProgramView<'a> {
     identity: OverlayIdentity,
 }
 impl<'a> SyntheticProgramView<'a> {
+    pub(crate) fn into_parts(self) -> (&'a Program, Vec<Function>) {
+        (self.authored, self.generated_functions)
+    }
+
     pub(crate) fn new(authored: &'a Program, generated_functions: Vec<Function>) -> Option<Self> {
         // This first route owns only leaf main bodies. All recursive generated
         // overlays remain on the explicitly paid owned projection path.

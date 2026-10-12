@@ -497,6 +497,39 @@ impl FrontendPass {
         ))
     }
 
+    /// Only a genuinely first checked resolution may use a borrowed source.
+    /// Existing candidates retain exact owned environment/body-reuse checks.
+    pub(crate) fn permits_borrowed_cold_source(&self, path: &str) -> bool {
+        self.semantic && !self.checked.contains_key(path)
+    }
+
+    pub(crate) fn resolve_borrowed_cold_source<'p>(
+        &self,
+        path: &str,
+        synthetic: &'p dyn crate::ast::program_source::ProgramSource,
+        private: Option<crate::source_verify::private_names::PrivateNames<'p>>,
+    ) -> Option<Result<SelectiveResolvedModule>> {
+        if !self.permits_borrowed_cold_source(path) {
+            return None;
+        }
+        // Preserve the exact checked-function limit even without a prior key.
+        if synthetic.functions().len() > MAX_PROJECT_CHECKED_FUNCTIONS {
+            return Some(Err(capacity(
+                "checked function inventory exceeds its bound",
+            )));
+        }
+        Some(
+            crate::hir::resolve_source(synthetic, private).map(|(resolved, work)| {
+                SelectiveResolvedModule {
+                    reused_functions: work.reused(),
+                    static_text: work.static_text(),
+                    function_costs: work.costs(),
+                    resolved,
+                }
+            }),
+        )
+    }
+
     pub(crate) fn resolve_functions<'p>(
         &self,
         path: &str,
@@ -769,3 +802,7 @@ mod semantic_tests {
         assert_eq!(pass.checked_reused, 1);
     }
 }
+
+#[cfg(test)]
+#[path = "incremental/cold_source_tests.rs"]
+mod cold_source_tests;

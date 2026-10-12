@@ -123,7 +123,8 @@ pub(in crate::workspace_graph) fn input_carrier_delta() -> Result<usize, Vec<Dia
         .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])
 }
 
-/// Cache keys and invariant transforms keep the old owned representation.
+/// Hits/reuse candidates and invariant transforms keep the owned input.
+/// First checked cold keys become owned only at the retention boundary.
 // The reused inline owning fallback is priced by input_carrier_delta using
 // actual sizeof; a Box would introduce a separate unpriced allocation.
 #[allow(clippy::large_enum_variant)]
@@ -146,6 +147,20 @@ impl<'a> Input<'a> {
                 .map(Self::Owned)
         }
     }
+    pub(in crate::workspace_graph) fn borrowed(&self) -> Option<&SyntheticProgramView<'_>> {
+        match self {
+            Self::Owned(_) => None,
+            Self::Borrowed(program) => Some(program),
+        }
+    }
+
+    pub(in crate::workspace_graph) fn into_checked_key(self) -> Result<Program, Vec<Diagnostic>> {
+        match self {
+            Self::Owned(program) => Ok(program),
+            Self::Borrowed(view) => checked_key::materialize(view),
+        }
+    }
+
     pub(in crate::workspace_graph) fn owned(&self) -> Option<&Program> {
         match self {
             Self::Owned(program) => Some(program),
@@ -160,6 +175,7 @@ impl<'a> Input<'a> {
             Self::Borrowed(program) => program,
         }
     }
+    #[cfg(test)]
     pub(in crate::workspace_graph) fn into_owned(self) -> Result<Program, Vec<Diagnostic>> {
         match self {
             Self::Owned(program) => Ok(program),
@@ -185,3 +201,6 @@ impl<'a> Input<'a> {
 #[cfg(test)]
 #[path = "borrowed_leaf/tests.rs"]
 mod tests;
+
+#[path = "borrowed_leaf/checked_key.rs"]
+mod checked_key;

@@ -4109,7 +4109,10 @@ fn build_owned_inner(
             crate::bounded_output::with_limit_usage_refusal(active_builder_limit(), || {
                 #[cfg(test)]
                 let _trace = crate::bounded_output::stage_debits::start(
-                    resolve_builder_bytes, layouts.receipt(), fallback_mode);
+                    resolve_builder_bytes,
+                    layouts.receipt(),
+                    fallback_mode,
+                );
                 reserve_builder_structure(layouts.receipt())?;
                 staged!(CorePrebound, charge_builder_prebound(resolve_builder_bytes))?;
                 staged!(
@@ -4375,7 +4378,9 @@ fn build_resolved_core(
                 authored,
                 programs,
                 layouts,
-                frontend.is_none()
+                frontend
+                    .as_deref()
+                    .is_none_or(|cache| cache.permits_borrowed_cold_source(&program.path))
             )
         )?;
         // Exact stubs/spans and the unconditional prebound govern hits.
@@ -4441,12 +4446,24 @@ fn build_resolved_core(
                         if let Some(selective) = selective {
                             selective.map(|resolved| resolved.into_parts())
                         } else {
-                            staged!(FreshResolution, synthetic.resolve(private)).map(
-                                |(resolved, work)| {
-                                    let selected = work.static_text();
-                                    (resolved, BTreeMap::new(), 0, selected)
-                                },
-                            )
+                            staged!(FreshResolution, {
+                                if let Some(cold) = frontend.as_deref().and_then(|cache| {
+                                    synthetic.borrowed().and_then(|view| {
+                                        cache.resolve_borrowed_cold_source(
+                                            &program.path,
+                                            view,
+                                            private,
+                                        )
+                                    })
+                                }) {
+                                    cold.map(|resolved| resolved.into_parts())
+                                } else {
+                                    synthetic.resolve(private).map(|(resolved, work)| {
+                                        let selected = work.static_text();
+                                        (resolved, BTreeMap::new(), 0, selected)
+                                    })
+                                }
+                            })
                         }
                     })
                 })?;
@@ -4460,7 +4477,7 @@ fn build_resolved_core(
                     let loan_bytes = resolved_loan_bytes(&resolved)?;
                     Ok::<_, Vec<Diagnostic>>(cache.resolved_module(
                         &program.path,
-                        synthetic.into_owned()?,
+                        synthetic.into_checked_key()?,
                         resolved,
                         resolver_bytes,
                         loan_bytes,

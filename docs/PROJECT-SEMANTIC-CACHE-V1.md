@@ -290,3 +290,21 @@ and actual discovery through owning publication and Drop for 1/8/32 unused bodie
 The physical observer excludes workspace preparation and does not establish cache
 acquisition funding or application fit. No forecast, cap or persisted wire changes
 follow from this subset. Qualification remains pending.
+
+### First checked cold source view
+
+An import-free synthetic input without type invariants can lend its exact
+authored declarations to the first checked resolution. The existing complete
+source verifier, current private-name subject, and checked function ceiling
+still run. Resolution retains its per-function costs for later body reuse.
+An existing checked candidate, an imported overlay, or a type invariant uses
+the original owned input path and its exact association checks.
+
+The cache key remains an owning `Program`. Its construction occurs after the
+resolver-debit snapshot and before checked publication: retained authored
+declarations are copied once, generated main storage moves, and discarded
+module-use/implementation sidecars are not copied. This delays the owning
+boundary; it does not establish a shared AST cache owner. Cached forecasts and
+cold-equivalent accounting remain conservative and unchanged. The narrow
+allocation witness measures only removed sidecar clone payloads through Drop;
+it does not establish whole Project funding or application fit.
