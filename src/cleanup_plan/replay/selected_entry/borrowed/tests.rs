@@ -8,14 +8,14 @@ impl ReplayContext for Provider<'_> {
     fn declarations(&self) -> &crate::hir::DeclarationIndex {
         &self.declarations
     }
-    fn types(&self) -> &[crate::hir::ResolvedTypeDeclaration] {
-        &self.program.types
+    fn types(&self) -> crate::hir::items::View<'_, crate::hir::ResolvedTypeDeclaration> {
+        crate::hir::items::View::slice(&self.program.types)
     }
     fn interfaces(&self) -> &[crate::hir::ResolvedInterface] {
         &self.program.interfaces
     }
-    fn functions(&self) -> &[ResolvedFunction] {
-        &self.program.functions
+    fn functions(&self) -> crate::hir::items::View<'_, ResolvedFunction> {
+        crate::hir::items::View::slice(&self.program.functions)
     }
     fn function_templates(&self) -> &[crate::hir::ResolvedFunctionTemplate] {
         &self.program.function_templates

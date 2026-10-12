@@ -733,7 +733,7 @@ fn main() -> i64
         )
         .unwrap();
         let program = crate::hir::resolve(&source).unwrap();
-        let function = &program.functions()[0];
+        let function = program.functions().get(0).expect("current replay ordinal");
         assert_eq!(function.cleanup_plan.schema, CLEANUP_PLAN_SCHEMA_V15);
         validate_structure(&program, function).unwrap();
         for mode in 0..6 {
@@ -812,7 +812,7 @@ fn main() -> i64
         )
         .unwrap();
         let program = crate::hir::resolve(&source).unwrap();
-        let function = &program.functions()[0];
+        let function = program.functions().get(0).expect("current replay ordinal");
         assert_eq!(function.cleanup_plan.schema, CLEANUP_PLAN_SCHEMA_V17);
         validate_structure(&program, function).unwrap();
         for mode in 0..6 {

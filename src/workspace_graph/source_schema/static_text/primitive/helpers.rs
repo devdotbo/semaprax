@@ -42,8 +42,8 @@ impl ReplayContext for Closure<'_> {
     fn declarations(&self) -> &hir::DeclarationIndex {
         &self.local.index
     }
-    fn types(&self) -> &[ResolvedTypeDeclaration] {
-        &self.local.module.types
+    fn types(&self) -> crate::hir::items::View<'_, ResolvedTypeDeclaration> {
+        crate::hir::items::ItemSource::view(&self.local.module.types)
     }
     fn type_count(&self) -> usize {
         self.local.module.types.len() + self.types.len() + usize::from(self.local.vector.is_some())
@@ -64,8 +64,8 @@ impl ReplayContext for Closure<'_> {
     fn interfaces(&self) -> &[ResolvedInterface] {
         &[]
     }
-    fn functions(&self) -> &[ResolvedFunction] {
-        &self.local.module.functions
+    fn functions(&self) -> crate::hir::items::View<'_, ResolvedFunction> {
+        crate::hir::items::ItemSource::view(&self.local.module.functions)
     }
     fn function_count(&self) -> usize {
         self.count

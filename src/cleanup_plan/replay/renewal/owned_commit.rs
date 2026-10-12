@@ -49,7 +49,7 @@ fn owned_element_renewal_replays_exact_staging_commit_and_unrelated_history() {
     let graph = crate::graph::to_json(&checked).unwrap();
     crate::graph::verify_json(&checked, &graph).unwrap();
     let program = crate::hir::resolve(&checked).unwrap();
-    let function = &program.functions()[0];
+    let function = program.functions().get(0).expect("current replay ordinal");
     validate_structure(&program, function).unwrap();
     let at = crate::hir::vec_loop_renewal::bindings_in(&program, function)
         .keys()

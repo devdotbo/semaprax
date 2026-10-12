@@ -43,7 +43,7 @@ impl ReplayContext for Context<'_> {
     fn declarations(&self) -> &crate::hir::DeclarationIndex {
         self.source.declarations()
     }
-    fn types(&self) -> &[crate::hir::ResolvedTypeDeclaration] {
+    fn types(&self) -> crate::hir::items::View<'_, crate::hir::ResolvedTypeDeclaration> {
         self.source.types()
     }
     fn type_count(&self) -> usize {
@@ -55,7 +55,7 @@ impl ReplayContext for Context<'_> {
     fn interfaces(&self) -> &[crate::hir::ResolvedInterface] {
         self.source.interfaces()
     }
-    fn functions(&self) -> &[ResolvedFunction] {
+    fn functions(&self) -> crate::hir::items::View<'_, ResolvedFunction> {
         self.source.functions()
     }
     fn function_count(&self) -> usize {

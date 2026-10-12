@@ -4,9 +4,9 @@ use crate::hir::*;
 
 pub(crate) trait ReplayContext {
     fn declarations(&self) -> &DeclarationIndex;
-    fn types(&self) -> &[ResolvedTypeDeclaration];
+    fn types(&self) -> crate::hir::items::View<'_, ResolvedTypeDeclaration>;
     /// Types may be borrowed from several authenticated defining modules.
-    /// The slice accessor remains the local contiguous projection.
+    /// The view accessor remains the local ordered projection, including sparse selections.
     fn type_count(&self) -> usize {
         self.types().len()
     }
@@ -14,7 +14,7 @@ pub(crate) trait ReplayContext {
         self.types().get(index)
     }
     fn interfaces(&self) -> &[ResolvedInterface];
-    fn functions(&self) -> &[ResolvedFunction];
+    fn functions(&self) -> crate::hir::items::View<'_, ResolvedFunction>;
     /// Indexed borrowed members may come from several held defining modules.
     fn function_count(&self) -> usize {
         self.functions().len()
@@ -74,14 +74,14 @@ impl ReplayContext for ResolvedProgram {
     fn declarations(&self) -> &DeclarationIndex {
         &self.declarations
     }
-    fn types(&self) -> &[ResolvedTypeDeclaration] {
-        &self.types
+    fn types(&self) -> crate::hir::items::View<'_, ResolvedTypeDeclaration> {
+        crate::hir::items::View::slice(&self.types)
     }
     fn interfaces(&self) -> &[ResolvedInterface] {
         &self.interfaces
     }
-    fn functions(&self) -> &[ResolvedFunction] {
-        &self.functions
+    fn functions(&self) -> crate::hir::items::View<'_, ResolvedFunction> {
+        crate::hir::items::View::slice(&self.functions)
     }
     fn function_templates(&self) -> &[ResolvedFunctionTemplate] {
         &self.function_templates

@@ -134,13 +134,13 @@ fn option_profile_cannot_bless_forged_case_or_result_trace_and_failure_is_sticky
             fn declarations(&self) -> &crate::hir::DeclarationIndex {
                 self.0.declarations()
             }
-            fn types(&self) -> &[crate::hir::ResolvedTypeDeclaration] {
+            fn types(&self) -> crate::hir::items::View<'_, crate::hir::ResolvedTypeDeclaration> {
                 self.0.types()
             }
             fn interfaces(&self) -> &[crate::hir::ResolvedInterface] {
                 self.0.interfaces()
             }
-            fn functions(&self) -> &[ResolvedFunction] {
+            fn functions(&self) -> crate::hir::items::View<'_, ResolvedFunction> {
                 self.0.functions()
             }
             fn function_templates(&self) -> &[crate::hir::ResolvedFunctionTemplate] {

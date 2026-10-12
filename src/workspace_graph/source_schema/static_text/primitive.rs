@@ -25,15 +25,15 @@ pub(super) struct Context<'a> {
     module: &'a WorkspaceResolvedModule,
     /// Retained modules hold only authored types. The canonical compiler-owned
     /// Vec, rebuilt with its index metadata on the same preparation, follows
-    /// them in the receiving current directory; `types()` stays module-local.
+    /// them in the receiving current directory; `types()` lends the exact module-local view.
     vector: Option<ResolvedTypeDeclaration>,
 }
 impl ReplayContext for Context<'_> {
     fn declarations(&self) -> &hir::DeclarationIndex {
         &self.index
     }
-    fn types(&self) -> &[ResolvedTypeDeclaration] {
-        &self.module.types
+    fn types(&self) -> crate::hir::items::View<'_, ResolvedTypeDeclaration> {
+        crate::hir::items::ItemSource::view(&self.module.types)
     }
     fn type_count(&self) -> usize {
         self.module.types.len() + usize::from(self.vector.is_some())
@@ -48,8 +48,8 @@ impl ReplayContext for Context<'_> {
     fn interfaces(&self) -> &[ResolvedInterface] {
         &[]
     }
-    fn functions(&self) -> &[ResolvedFunction] {
-        &self.module.functions
+    fn functions(&self) -> crate::hir::items::View<'_, ResolvedFunction> {
+        crate::hir::items::ItemSource::view(&self.module.functions)
     }
     fn function_templates(&self) -> &[ResolvedFunctionTemplate] {
         &[]

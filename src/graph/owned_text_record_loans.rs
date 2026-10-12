@@ -1,7 +1,10 @@
 //! Graph v69 composes bounded owned String records with authenticated loans.
 use super::*;
 
-fn string_record_slot(function: &ResolvedFunction, types: &[hir::ResolvedTypeDeclaration]) -> bool {
+fn string_record_slot(
+    function: &ResolvedFunction,
+    types: &(impl crate::hir::items::ItemSource<hir::ResolvedTypeDeclaration> + ?Sized),
+) -> bool {
     if function.loan_plan.loans.is_empty() {
         return false;
     }

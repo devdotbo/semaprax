@@ -51,7 +51,7 @@ impl<'a, 'b> Walk<'a, 'b> {
             }
         }
         let i = found.ok_or_else(|| self.error())?;
-        let f = &source.functions()[i];
+        let f = source.functions().get(i).ok_or_else(|| self.error())?;
         self.debit(id.as_str().len().saturating_add(1))?;
         let d = self
             .source
@@ -95,7 +95,9 @@ impl<'a, 'b> Walk<'a, 'b> {
                 let i = self.nominal(declaration)?;
                 if self.type_state[i] == 0 {
                     self.type_state[i] = 1;
-                    self.inventory.types.push(&source.types()[i]);
+                    self.inventory
+                        .types
+                        .push(source.types().get(i).ok_or_else(|| self.error())?);
                 }
                 Ok(())
             }
@@ -140,7 +142,7 @@ impl<'a, 'b> Walk<'a, 'b> {
                     return Err(self.error());
                 }
                 let i = self.function(callee)?;
-                let target = &source.functions()[i];
+                let target = source.functions().get(i).ok_or_else(|| self.error())?;
                 self.debit(args.len().saturating_add(1))?;
                 self.ty(&target.return_type)?;
                 if target.return_type != e.ty || target.params.len() != args.len() {
@@ -350,7 +352,7 @@ impl<'a, 'b> Walk<'a, 'b> {
             while depth != 0 {
                 self.debit(1)?;
                 let (i, child) = frames[depth - 1].unwrap();
-                let t = &source.types()[i];
+                let t = source.types().get(i).ok_or_else(|| self.error())?;
                 // Charge the complete inspected prefix for this deliberately
                 // conservative borrowed cycle scan; no hidden map is built.
                 let width = match &t.kind {
@@ -451,7 +453,10 @@ pub(super) fn derive<'a>(
     walk.function_state.resize(source.functions().len(), 0);
     walk.type_state.resize(source.types().len(), 0);
     let first = walk.function(&root.id)?;
-    if !std::ptr::eq(&source.functions()[first], root) {
+    if !std::ptr::eq(
+        source.functions().get(first).ok_or_else(|| walk.error())?,
+        root,
+    ) {
         return Err(walk.error());
     }
     let mut frames = [None; DEPTH];
@@ -461,7 +466,7 @@ pub(super) fn derive<'a>(
         walk.debit(1)?;
         match frames[depth - 1].unwrap() {
             Frame::Function(i, n) => {
-                let f = &source.functions()[i];
+                let f = source.functions().get(i).ok_or_else(|| walk.error())?;
                 if n == 0 {
                     if walk.function_state[i] == 1 {
                         return Err(walk.error());

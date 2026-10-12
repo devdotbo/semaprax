@@ -44,14 +44,14 @@ impl ReplayContext for Context<'_> {
     fn declarations(&self) -> &DeclarationIndex {
         &self.0.declarations
     }
-    fn types(&self) -> &[ResolvedTypeDeclaration] {
-        &[]
+    fn types(&self) -> crate::hir::items::View<'_, ResolvedTypeDeclaration> {
+        crate::hir::items::View::slice(&[])
     }
     fn interfaces(&self) -> &[ResolvedInterface] {
         &[]
     }
-    fn functions(&self) -> &[ResolvedFunction] {
-        &self.0.functions
+    fn functions(&self) -> crate::hir::items::View<'_, ResolvedFunction> {
+        crate::hir::items::View::slice(&self.0.functions)
     }
     fn function_templates(&self) -> &[ResolvedFunctionTemplate] {
         &[]

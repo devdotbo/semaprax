@@ -44,7 +44,7 @@ fn multiset(dag: &ObservationDag) -> Vec<Vec<Observation>> {
 #[test]
 fn precharged_union_retains_duplicate_empty_alternatives() {
     let program = fixture();
-    let function = &program.functions()[0];
+    let function = program.functions().get(0).expect("current replay ordinal");
     let mut budget = ReplayBudget::with_physical(function, 1 << 20).unwrap();
     budget.skeleton_remaining = MAX_REPLAY_WORK_UNITS;
     let mut work = SkeletonWork::new(&program, function, &mut budget);
@@ -65,7 +65,7 @@ fn storage_probe(
     Result<usize, Diagnostic>,
     crate::test_allocation_observer::Metrics,
 ) {
-    let function = &program.functions()[0];
+    let function = program.functions().get(0).expect("current replay ordinal");
     let mut budget = ReplayBudget::with_physical(function, limit).unwrap();
     budget.skeleton_remaining = MAX_REPLAY_WORK_UNITS;
     // Existing legacy index construction belongs to its own admission owner;
@@ -100,7 +100,7 @@ fn deep_shared_dag_creation_and_drop_fit_the_precharged_frontier() {
     assert_eq!(observed.live, 0);
     // Obtain the existing budget's exact held header independently rather than
     // guessing the Box carrier layout used by the enclosing admission owner.
-    let function = &program.functions()[0];
+    let function = program.functions().get(0).expect("current replay ordinal");
     let baseline = ReplayBudget::with_physical(function, 1 << 24).unwrap();
     let admission = baseline.physical.as_ref().unwrap().charged();
     let (exact, observed) = storage_probe(&program, admission + charged);
@@ -116,7 +116,7 @@ fn deep_shared_dag_creation_and_drop_fit_the_precharged_frontier() {
 #[test]
 fn merge_keys_preserve_pending_owned_commits_and_failure_classes() {
     let program = fixture();
-    let function = &program.functions()[0];
+    let function = program.functions().get(0).expect("current replay ordinal");
     let mut budget = ReplayBudget::with_physical(function, 1 << 20).unwrap();
     budget.skeleton_remaining = MAX_REPLAY_WORK_UNITS;
     budget.merge_paths = true;
@@ -194,7 +194,7 @@ fn lexical_failure_and_abrupt_duplicates_stay_separate() {
 #[test]
 fn sibling_suffixes_share_one_authentic_prefix_without_path_state_merging() {
     let program = fixture();
-    let function = &program.functions()[0];
+    let function = program.functions().get(0).expect("current replay ordinal");
     let mut budget = ReplayBudget::with_physical(function, 1 << 20).unwrap();
     budget.skeleton_remaining = MAX_REPLAY_WORK_UNITS;
     budget.remaining = 0;
@@ -250,7 +250,7 @@ fn shared_prefix_probe(
     Result<(usize, usize), ()>,
     crate::test_allocation_observer::Metrics,
 ) {
-    let function = &program.functions()[0];
+    let function = program.functions().get(0).expect("current replay ordinal");
     let mut budget = ReplayBudget::with_physical(function, physical).unwrap();
     budget.remaining = 0;
     budget.skeleton_remaining = work_limit;
@@ -312,7 +312,11 @@ fn shared_prefix_creation_through_drop_has_exact_work_and_backing_limits() {
             && observed.allocated <= charged
             && observed.highwater <= charged
     );
-    let baseline = ReplayBudget::with_physical(&program.functions()[0], 1 << 20).unwrap();
+    let baseline = ReplayBudget::with_physical(
+        program.functions().get(0).expect("current replay ordinal"),
+        1 << 20,
+    )
+    .unwrap();
     let admission = baseline.physical.as_ref().unwrap().charged();
     let (result, observed) = shared_prefix_probe(&program, admission + charged, spent);
     assert_eq!(result.unwrap(), (charged, spent));
@@ -336,7 +340,7 @@ fn shared_prefix_creation_through_drop_has_exact_work_and_backing_limits() {
 #[test]
 fn selected_refusal_backing_is_prepaid_sticky_and_observed_through_drop() {
     let program = fixture();
-    let function = &program.functions()[0];
+    let function = program.functions().get(0).expect("current replay ordinal");
     let (result, observed) = crate::test_allocation_observer::measure(|| {
         let mut budget = ReplayBudget::with_physical(function, 1 << 20).unwrap();
         let paid = budget.physical.as_ref().unwrap().charged();
