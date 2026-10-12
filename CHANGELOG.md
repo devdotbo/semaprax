@@ -897,6 +897,18 @@ format: `Unreleased` then release buckets, grouped by impact.
 
 ## Unreleased
 
+- Add explicit named `string_take` owner transfer while preserving cloning
+  reads, canonical argument staging, source move checks and backend forwarding.
+  Owning qualification of this consolidated batch remains pending.
+- Fund caller-owned canonical loan lookup storage before growth, borrow current
+  identity keys, and reuse inserted declaration identities and closed Vec/Box
+  compiler constants. Initial dynamic identity and loan-builder funding remain
+  separate open work; no compiler budget or forecast is increased.
+- Scope diagnostic attribution to one invocation and initialize exact byte-array
+  literals directly in their binding slots. Preserve assignment/block-result
+  copies and the fixed-array loop refusal, with repeated-call reinitialization
+  controls. Owning qualification remains pending.
+
 - Optimize changed HIR scope publications by cloning only changed/new bindings,
   preserving exact nested state and saved full-map publication controls.
 

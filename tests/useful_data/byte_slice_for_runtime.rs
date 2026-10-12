@@ -342,7 +342,12 @@ fn literal_array_bindings_reuse_exact_slots_while_nonliteral_copy_boundaries_rem
             Ok(_) => panic!("loop-local array literals unexpectedly admitted"),
             Err(errors) => errors,
         };
-        assert!(format!("{errors:?}").contains("while loops cannot contain fixed-array literals"));
+        let diagnostic = format!("{errors:?}");
+        assert!(diagnostic.contains("SPX-T252"), "{diagnostic}");
+        assert!(
+            diagnostic.contains("fixed-array literals are not admitted in bounded while bodies"),
+            "{diagnostic}"
+        );
         let source = format!("{header}@id(\"app.sample\") fn sample()->i64 {{ let mut data = {initializer}; let first = sum(array_as_slice(data)); data = [9u8]; first + sum(array_as_slice(data)) }} @id(\"app.main\") fn main()->i64 {{ sample() + sample() + sample() }}");
         let path = root.join(format!("reinitialize-{old}.spx"));
         std::fs::write(&path, &source).unwrap();
