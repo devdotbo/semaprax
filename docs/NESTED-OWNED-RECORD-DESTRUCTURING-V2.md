@@ -50,3 +50,30 @@ memmove payload work and every realloc request, alongside the old recursive cont
 requires three exercised boundaries and complete canonical settlement at O0/O2;
 it excludes compiler preparation. These authored controls are pending execution,
 not a whole-backend memory or application-fit claim.
+
+Independent ordinary replay now compares inventory entry places and supplemental
+slots directly from current immutable HIR instead of collecting duplicate owned
+expected directories. A paid sorted borrowed index retains the old last duplicate
+storage-ID selection; liveness lookup still retains first duplicate flag selection.
+A mismatch is selected only after the complete corresponding old fallible source
+collection frontier. Supplemental traversal reuses one actual paid 1028-frame
+cursor without changing its depth/capacity rule or replay Work equations.
+Direct reconstructed shape vectors, lifecycle backing, type substitution vectors
+and callable boxes acquire the current invocation's payer before construction.
+The complete old coverage, supplemental and shape receivers remain independent
+oracles. New original-corpus verdict/work, duplicate/late-error, whole allocation,
+debit, exact/short/sticky and receiving Drop controls are authored source only.
+Declaration fact-cache miss reconstruction, ordinary droppability classification,
+and synthetic owning parameter-provider backing remain explicitly unpaid
+residuals; no whole-replay funding, savings, OPT closure or execution is claimed.
+
+The new owning selector prefix is
+`cleanup_plan::replay::ordinary_inventory::tests::`, with controls
+`complete_original_nested_and_resource_variant_receivers_preserve_verdicts_and_work`,
+`late_unknown_entry_storage_precedes_retained_earlier_entry_mismatch`,
+`one_paid_fixed_cursor_reuses_original_capacity_without_per_expression_requests`,
+`whole_current_inventory_exact_short_and_sticky_refusal_settle_through_receiving_drop`,
+`paid_substitution_preserves_complete_original_callable_and_nominal_payloads`,
+`duplicate_inventory_ids_keep_the_complete_old_last_insertion_receiver`,
+`complete_original_inventory_construction_receiving_and_drop_reports_both_real_costs`,
+and `complete_paid_shape_receivers_keep_original_flags_exact_short_sticky_and_drop`.

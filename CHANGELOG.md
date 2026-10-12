@@ -15,6 +15,14 @@
   public/private diagnostic JSON and allocation/Drop owners. Source-only; observed
   allocation, ledger and application-fit evidence remains pending.
 
+- Author direct ordinary cleanup-inventory replay with paid borrowed ordinal
+  indexing, deferred full-frontier comparisons, one reused actual 1028-frame
+  cursor, and paid direct shape/type reconstruction. Preserve complete original
+  owned receivers, duplicate selection, work/depth limits and error ordering;
+  add original-corpus and real allocation/debit/Drop/refusal controls. Source-only;
+  classifier fact-cache misses and synthetic parameter backing remain unpaid
+  residuals, and qualification and whole-replay funding remain open.
+
 - Author transactional paid HIR scope insertion: stage a shared suffix with exact
   owning node carrier/initializer payments, then commit the unique prefix without
   fallible work or allocation. Preserve the complete coarse receiving policy and

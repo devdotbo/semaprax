@@ -37,6 +37,7 @@ struct Budget {
     visited_fields: usize,
 }
 
+#[cfg(test)]
 pub(super) fn expected_shape_for_type(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
@@ -44,6 +45,25 @@ pub(super) fn expected_shape_for_type(
     next_flag: &mut u32,
 ) -> Result<FieldLivenessShape, Diagnostic> {
     derive(program, function, ty, next_flag, 0, &mut Budget::default())
+}
+
+mod paid;
+pub(super) fn expected_shape_for_type_paid(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+    ty: &ResolvedType,
+    next_flag: &mut u32,
+    physical: &mut ReplayBudget,
+) -> Result<FieldLivenessShape, Diagnostic> {
+    paid::derive(
+        program,
+        function,
+        ty,
+        next_flag,
+        0,
+        &mut Budget::default(),
+        physical,
+    )
 }
 
 /// Depth-first shape derivation over an explicit work stack.
@@ -55,6 +75,7 @@ pub(super) fn expected_shape_for_type(
 /// parent charges its fields before any child is entered, children are entered
 /// left to right, and liveness flags are therefore still allocated in
 /// depth-first order.
+#[cfg(test)]
 fn derive(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,

@@ -3841,7 +3841,18 @@ These areas are deliberately outside the public compiler contract:
   follows that exact exit on refusal.
 - `src/cleanup_plan/native_rust.rs` selects ownership-bearing native imports
   for canonical argument epochs and atomic call settlement; scalar native
-  imports retain their existing plan projection. `replay/supplemental.rs`
+  imports retain their existing plan projection. Ordinary independent inventory
+  comparison lives in `replay/ordinary_inventory.rs`: a paid sorted borrowed
+  ordinal directory preserves last duplicate storage selection, while entry and
+  supplemental comparisons select mismatches only after the complete original
+  fallible collection frontier. Its `owned.rs` retains the full old receiver;
+  `storage.rs` and `substitute.rs` acquire direct actual backing. Paid direct
+  shape reconstruction lives in `replay/nested_shape/paid.rs`, retaining the
+  complete original shape derivation. `replay/supplemental/receiving.rs` owns one
+  paid fixed 1028-frame cursor reused between source expressions; parameter
+  providers and declaration fact-cache misses retain their original semantics
+  and explicitly unpaid residual storage. These internal owners grant no replay
+  admission and make no all-profile funding claim. `replay/supplemental.rs`
   independently reconstructs their argument slots.
 - `src/hir/workspace_link/native_owner.rs` admits only the destructor of a
   resource tied to an indexed constructor/consuming-method pair in one Rust

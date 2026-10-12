@@ -1,6 +1,8 @@
 //! Supplemental call-argument storage replay.
 use super::*;
+pub(super) mod receiving;
 
+#[cfg(test)]
 pub(super) fn collect_supplemental_slots(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
