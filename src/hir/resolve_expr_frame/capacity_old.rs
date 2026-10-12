@@ -52,7 +52,7 @@ pub(in crate::hir) fn frame_owned_capacity(
     let retained = match frame {
         Frame::FinishVecConstructor { element, .. } => resolved_type_owned_capacity(element),
         Frame::EnterLoop(target) | Frame::FinishLexicalExit { target, .. } => {
-            super::capacity_probe::lexical_target_capacity(target)
+            crate::hir::capacity_probe::lexical_target_capacity(target)
         }
         Frame::FinishInvoke { callable, .. } => resolved_expr_owned_capacity(callable),
         Frame::FinishLiteralFormat { template, .. } => template.capacity(),

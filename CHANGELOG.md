@@ -1,5 +1,7 @@
 # Changelog
 
+- Keep resolver capacity observations allocation-free while retaining the complete saved HashSet census outside the production allocation observation. Exact highwater, duplicate scope and nested continuation controls remain. This corrects test harness contamination and does not represent a production allocation or live agent token reduction.
+
 - Borrow exact generic-template binding types while retaining ordered scope snapshots, substitutions, duplicate diagnostics and the full owned-map oracle. Compose current finite record-discard Graph v84 only after independent source/HIR/loan/capacity/cleanup replay; preserve frozen, detached and native-import refusals. Repair the checked native allocator zero-clause join without removing existing authority checks, and use the actual ordinary interpreter engine for its private provider controls. Paid scope checkpoints, fixed initial loan-plan staging and cached flag-only queries retain complete owning controls. Consolidated focused execution and scoped Clippy are pending; these compiler changes do not establish live agent token savings.
 
 - Reuse exact initial loan-plan funding in linked workspace metadata, borrow complete authored/instance HIR for provenance, and avoid declaration-index Drop scratch for leaf roots. Preserve full derivation, diagnostic order, canonical replay and iterative nested disposal; independent old-path allocation and hostile controls await current-source execution.
