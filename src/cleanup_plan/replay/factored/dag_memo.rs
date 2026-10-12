@@ -127,18 +127,22 @@ pub(super) fn insert(
     };
     #[cfg(not(test))]
     let ordinary = memo;
-    let ordinal = key.ordinal.ok_or_else(|| {
-        replay_error(function, "ordinary DAG memo has no construction ordinal")
-    })?;
+    let ordinal = key
+        .ordinal
+        .ok_or_else(|| replay_error(function, "ordinary DAG memo has no construction ordinal"))?;
     let numeric = (ordinal, key.continuation);
     budget.charge(function, 1, "ordinary DAG memo exact insertion pointer")?;
     if let Some((pointer, _)) = ordinary.get(&numeric) {
         if *pointer != key.pointer {
-            return Err(replay_error(function, "ordinary DAG memo construction identity collides"));
+            return Err(replay_error(
+                function,
+                "ordinary DAG memo construction identity collides",
+            ));
         }
     } else {
         budget.reserve_btree_node::<(usize, usize), (usize, usize)>(
-            function, "factored DAG identity memo",
+            function,
+            "factored DAG identity memo",
         )?;
     }
     #[cfg(test)]
@@ -153,15 +157,18 @@ fn ordinary_get(
     key: &Key,
     budget: &mut ReplayBudget,
 ) -> Result<Option<usize>, Diagnostic> {
-    let ordinal = key.ordinal.ok_or_else(|| {
-        replay_error(function, "ordinary DAG memo has no construction ordinal")
-    })?;
+    let ordinal = key
+        .ordinal
+        .ok_or_else(|| replay_error(function, "ordinary DAG memo has no construction ordinal"))?;
     let Some((pointer, end)) = memo.get(&(ordinal, key.continuation)) else {
         return Ok(None);
     };
     budget.charge(function, 1, "ordinary DAG memo exact current pointer")?;
     if *pointer != key.pointer {
-        return Err(replay_error(function, "ordinary DAG memo construction identity collides"));
+        return Err(replay_error(
+            function,
+            "ordinary DAG memo construction identity collides",
+        ));
     }
     Ok(Some(*end))
 }

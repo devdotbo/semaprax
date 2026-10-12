@@ -27,17 +27,34 @@ fn named_string_transfer_checked_cache_keeps_cold_warm_provider_drift_and_recove
     // call belongs to the current owning tests-program expression tree.
     let program = warm.revision().test_program();
     assert_eq!(program, cold.revision().test_program());
-    let helper = program.functions.iter()
-        .find(|function| function.id.as_str() == "calculator.tests.moved").unwrap();
-    let semaprax::hir::ResolvedExprKind::Block { statements, .. } = &helper.body.kind
-        else { panic!("current moved helper lost its authored block") };
-    let value = statements.iter().find_map(|statement| match statement {
-        semaprax::hir::ResolvedStatement::Let { binding, value, .. }
-            if binding.name == "moved" => Some(value),
-        _ => None,
-    }).unwrap();
-    let semaprax::hir::ResolvedExprKind::Call { callee, instance, args, type_arguments } = &value.kind
-        else { panic!("current moved initializer lost its exact intrinsic call") };
+    let helper = program
+        .functions
+        .iter()
+        .find(|function| function.id.as_str() == "calculator.tests.moved")
+        .unwrap();
+    let semaprax::hir::ResolvedExprKind::Block { statements, .. } = &helper.body.kind else {
+        panic!("current moved helper lost its authored block")
+    };
+    let value = statements
+        .iter()
+        .find_map(|statement| match statement {
+            semaprax::hir::ResolvedStatement::Let { binding, value, .. }
+                if binding.name == "moved" =>
+            {
+                Some(value)
+            }
+            _ => None,
+        })
+        .unwrap();
+    let semaprax::hir::ResolvedExprKind::Call {
+        callee,
+        instance,
+        args,
+        type_arguments,
+    } = &value.kind
+    else {
+        panic!("current moved initializer lost its exact intrinsic call")
+    };
     assert_eq!(callee.as_str(), "core.string.take");
     assert!(instance.is_none());
     assert!(type_arguments.is_empty());

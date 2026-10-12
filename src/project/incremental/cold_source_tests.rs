@@ -218,6 +218,8 @@ tests = ["cold.tests"]
     );
     let changed_warm = checked.build(&manifest, &changed).unwrap();
     let changed_warm_trace = trace("changed-checked-warm");
-    println!("checked-cold changed attempts ordinary={changed_old_trace:?} warm={changed_warm_trace:?}");
+    println!(
+        "checked-cold changed attempts ordinary={changed_old_trace:?} warm={changed_warm_trace:?}"
+    );
     same(&changed_warm, &old_changed);
 }

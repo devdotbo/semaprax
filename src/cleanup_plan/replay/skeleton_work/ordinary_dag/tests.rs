@@ -2,7 +2,11 @@ use super::*;
 use crate::test_allocation_observer::measure;
 
 fn fixture() -> ResolvedProgram {
-    let source = crate::check("module ordinary.dag; @id(\"main\") fn main()->i64 {0}", "ordinary-dag.spx").unwrap();
+    let source = crate::check(
+        "module ordinary.dag; @id(\"main\") fn main()->i64 {0}",
+        "ordinary-dag.spx",
+    )
+    .unwrap();
     crate::hir::resolve(&source).unwrap()
 }
 
@@ -24,7 +28,9 @@ fn ordinary_empty_union_preserves_saved_multiset_and_literal_node_storage_throug
         let value = work.ordinary_union(new_members).unwrap();
         let root = value.prefix.as_ref().unwrap();
         assert_eq!(root.ordinal, Some(4));
-        let ObservationDagKind::Alt(parts) = &root.kind else { panic!("saved union shape"); };
+        let ObservationDagKind::Alt(parts) = &root.kind else {
+            panic!("saved union shape");
+        };
         assert_eq!(parts.len(), 4);
         for (ordinal, part) in parts.iter().enumerate() {
             assert_eq!(part.ordinal, Some(ordinal));
@@ -36,7 +42,10 @@ fn ordinary_empty_union_preserves_saved_multiset_and_literal_node_storage_throug
     assert_eq!(new.allocations, 6);
     assert_eq!(old.allocated, required);
     assert_eq!(new.allocated, required);
-    assert_eq!(work.budget.physical.as_ref().unwrap().charged() - setup, required);
+    assert_eq!(
+        work.budget.physical.as_ref().unwrap().charged() - setup,
+        required
+    );
     assert_eq!(work.next_ordinary_dag, 5);
     assert_eq!(work.budget.skeleton_spent, 5);
     for observed in [old, new] {
@@ -61,7 +70,10 @@ fn ordinary_empty_union_preserves_saved_multiset_and_literal_node_storage_throug
         assert_eq!(observed.live, 0);
         if !accepted {
             let used = work.budget.physical.as_ref().unwrap().charged();
-            assert!(work.budget.reserve_bytes(function, 0, "sticky ordinary union").is_err());
+            assert!(work
+                .budget
+                .reserve_bytes(function, 0, "sticky ordinary union")
+                .is_err());
             assert_eq!(work.budget.physical.as_ref().unwrap().charged(), used);
         }
     }

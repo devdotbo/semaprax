@@ -46,9 +46,8 @@ fn identity_owner_cannot_spend_nested_or_restored_budget() {
     let request = size_of::<IdentityReservation>() + size_of::<Diagnostic>() + MESSAGE.len();
     let (mut escaped, failed, used) = with_limit_usage(request, || {
         let mut owner = IdentityReservation::acquire().unwrap();
-        let ((refusal, inner_remaining), inner_failed, inner_used) = with_limit_usage(10, || {
-            (owner.reserve(1), active_remaining())
-        });
+        let ((refusal, inner_remaining), inner_failed, inner_used) =
+            with_limit_usage(10, || (owner.reserve(1), active_remaining()));
         assert_eq!(refusal, Err(Refused::Detached));
         assert_eq!(inner_remaining, Some(0)); // parent has already spent its whole allowance
         assert!(!inner_failed);

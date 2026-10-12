@@ -1,9 +1,9 @@
 //! Independent structural validation of attached cleanup plans without invoking the builder.
 // Private prerequisite only: no selected replay admission hook.
-mod continuation_storage;
 mod constructed_variant;
 #[cfg(test)]
 mod context_closure;
+mod continuation_storage;
 use constructed_variant::materialize_constructed_variant;
 mod call_payload;
 mod expression_children;
@@ -464,10 +464,22 @@ pub(super) fn validate_program(program: &ResolvedProgram) -> Result<(), Diagnost
         &mut budget,
     )?;
     for function in program.functions() {
-        validate_structure_with_budget_storage(program, function, &mut budget, Some(&helpers), Some(&mut continuations))?;
+        validate_structure_with_budget_storage(
+            program,
+            function,
+            &mut budget,
+            Some(&helpers),
+            Some(&mut continuations),
+        )?;
     }
     for instance in program.function_instances() {
-        validate_structure_with_budget_storage(program, &instance.function, &mut budget, Some(&helpers), Some(&mut continuations))?;
+        validate_structure_with_budget_storage(
+            program,
+            &instance.function,
+            &mut budget,
+            Some(&helpers),
+            Some(&mut continuations),
+        )?;
     }
     Ok(())
 }
@@ -588,7 +600,13 @@ fn validate_structure_with_budget_storage<'hir>(
         validate_path_states::<Diagnostic>(
             program, function, &storage, &leaves, budget, None, helpers,
         )?;
-        validate_typed_control_skeleton_with_index(program, function, budget, helpers, continuations)?;
+        validate_typed_control_skeleton_with_index(
+            program,
+            function,
+            budget,
+            helpers,
+            continuations,
+        )?;
     }
     Ok(())
 }
@@ -3030,7 +3048,8 @@ fn validate_typed_control_skeleton_with_index<'hir>(
     {
         return Ok(());
     }
-    let mut expected = hir_skeleton_paths_with_index_storage(program, function, budget, helpers, continuations)?;
+    let mut expected =
+        hir_skeleton_paths_with_index_storage(program, function, budget, helpers, continuations)?;
     let mut actual = plan_skeleton_paths(function, budget)?;
     expected.sort();
     actual.sort();
@@ -3238,23 +3257,38 @@ fn expression_skeleton<'hir>(
 ) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
     let reuse = if let Some(storage) = work.continuations.as_ref() {
         if !storage.matches(program) {
-            return Err(replay_error(function, "typed-HIR continuation storage belongs to another program"));
+            return Err(replay_error(
+                function,
+                "typed-HIR continuation storage belongs to another program",
+            ));
         }
         !storage.leased
-    } else { false };
+    } else {
+        false
+    };
     let mut frames = if reuse {
-        work.continuations.as_mut().unwrap().frames.take().unwrap_or_default()
-    } else { Vec::new() };
+        work.continuations
+            .as_mut()
+            .unwrap()
+            .frames
+            .take()
+            .unwrap_or_default()
+    } else {
+        Vec::new()
+    };
     if frames.capacity() == 0 {
         frames = continuation_storage::fresh(function, work.budget)?;
     } else {
         // Reuse requests no backing, but cannot bypass an enclosing sticky
         // refusal at the original traversal-acquisition boundary.
-        work.budget.reserve_bytes(function, 0, "typed HIR continuation stack")?;
+        work.budget
+            .reserve_bytes(function, 0, "typed HIR continuation stack")?;
     }
     // Nested guarded variants see this lease and use the original separate local
     // receiver. They never install their backing into the outer slot.
-    if reuse { work.continuations.as_mut().unwrap().leased = true; }
+    if reuse {
+        work.continuations.as_mut().unwrap().leased = true;
+    }
     let result = expression_skeleton_run(program, function, expression, work, &mut frames);
     frames.clear(); // Drop every owned continuation payload before reuse.
     if reuse {
@@ -4323,14 +4357,7 @@ fn expression_skeleton_run<'hir>(
                     ResolvedStatement::CopyDiscard { .. } | ResolvedStatement::Unsafe { .. } => {
                         // Unsafe boundaries bind and own nothing here: their ordinary block body was evaluated as this statement's value expression.
                         if let Some(settled) = advance_block_value(
-                            function,
-                            frames,
-                            work,
-                            expression,
-                            statements,
-                            tail,
-                            index,
-                            paths,
+                            function, frames, work, expression, statements, tail, index, paths,
                         )? {
                             produced = Some(settled);
                         }
@@ -4357,14 +4384,7 @@ fn expression_skeleton_run<'hir>(
                             )?;
                         }
                         if let Some(settled) = advance_block_value(
-                            function,
-                            frames,
-                            work,
-                            expression,
-                            statements,
-                            tail,
-                            index,
-                            paths,
+                            function, frames, work, expression, statements, tail, index, paths,
                         )? {
                             produced = Some(settled);
                         }
@@ -4414,14 +4434,7 @@ fn expression_skeleton_run<'hir>(
                     work.push_expr_path(&mut results, path, "while join path")?;
                 }
                 if let Some(settled) = advance_block_value(
-                    function,
-                    frames,
-                    work,
-                    expression,
-                    statements,
-                    tail,
-                    index,
-                    results,
+                    function, frames, work, expression, statements, tail, index, results,
                 )? {
                     produced = Some(settled);
                 }
@@ -4556,14 +4569,7 @@ fn expression_skeleton_run<'hir>(
                     work.push_expr_path(&mut results, path, "lexical loop join path")?;
                 }
                 if let Some(settled) = advance_block_value(
-                    function,
-                    frames,
-                    work,
-                    expression,
-                    statements,
-                    tail,
-                    index,
-                    results,
+                    function, frames, work, expression, statements, tail, index, results,
                 )? {
                     produced = Some(settled);
                 }

@@ -259,17 +259,26 @@ pub(super) fn check(
     let expected = state.live_order.iter().rev().copied();
     let expected_conditional = state.conditional_variants.iter().rev().flat_map(|variant| {
         variant.cases.iter().rev().flat_map(move |(case, flags)| {
-            flags.iter().rev().map(move |flag| {
-                (*flag, &variant.root.storage, &variant.variant, case)
-            })
+            flags
+                .iter()
+                .rev()
+                .map(move |flag| (*flag, &variant.root.storage, &variant.variant, case))
         })
     });
     let actual = item.finalize_in_order.iter().filter_map(|action| {
-        state.live_order.contains(&action.guard_flag).then_some(action.guard_flag)
+        state
+            .live_order
+            .contains(&action.guard_flag)
+            .then_some(action.guard_flag)
     });
     let actual_conditional = item.finalize_in_order.iter().filter_map(|action| {
         action.active_case.as_ref().map(|condition| {
-            (action.guard_flag, &condition.storage, &condition.variant, &condition.case)
+            (
+                action.guard_flag,
+                &condition.storage,
+                &condition.variant,
+                &condition.case,
+            )
         })
     });
     // Every action must finalize a live leaf of this exact state: a stale

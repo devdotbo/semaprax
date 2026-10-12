@@ -12,7 +12,10 @@ impl SkeletonWork<'_, '_> {
         self.charge(1, "ordinary DAG construction ordinal")?;
         let ordinal = self.next_ordinary_dag;
         let next = ordinal.checked_add(1).ok_or_else(|| {
-            replay_error(self.function, "ordinary DAG construction ordinal overflowed")
+            replay_error(
+                self.function,
+                "ordinary DAG construction ordinal overflowed",
+            )
         })?;
         self.budget.reserve_bytes(
             self.function,
@@ -34,11 +37,15 @@ impl SkeletonWork<'_, '_> {
             return Ok(observations.prefix.clone());
         }
         self.budget.reserve_clone(
-            self.function, &observations.items, "ordinary DAG sequence tail",
+            self.function,
+            &observations.items,
+            "ordinary DAG sequence tail",
         )?;
         self.ordinary_dag(ObservationDagKind::Seq(
-            observations.prefix.clone(), observations.items.clone(),
-        )).map(Some)
+            observations.prefix.clone(),
+            observations.items.clone(),
+        ))
+        .map(Some)
     }
 
     pub(super) fn ordinary_union(
@@ -46,7 +53,9 @@ impl SkeletonWork<'_, '_> {
         members: Vec<Observations>,
     ) -> Result<Observations, Diagnostic> {
         self.budget.reserve_array::<Rc<ObservationDag>>(
-            self.function, members.len(), "ordinary DAG alternatives",
+            self.function,
+            members.len(),
+            "ordinary DAG alternatives",
         )?;
         let mut nodes = Vec::with_capacity(members.len());
         for member in &members {
@@ -69,7 +78,10 @@ impl SkeletonWork<'_, '_> {
     ) -> Result<(), Diagnostic> {
         let Some(prefix) = &suffix.prefix else {
             self.budget.reserve_vec(
-                self.function, &mut target.items, suffix.items.len(), "ordinary flat suffix",
+                self.function,
+                &mut target.items,
+                suffix.items.len(),
+                "ordinary flat suffix",
             )?;
             target.items.extend_from_slice(&suffix.items);
             return Ok(());
@@ -78,14 +90,15 @@ impl SkeletonWork<'_, '_> {
             None => prefix.clone(),
             Some(head) => {
                 self.budget.reserve_array::<Rc<ObservationDag>>(
-                    self.function, 2, "ordinary DAG concatenation",
+                    self.function,
+                    2,
+                    "ordinary DAG concatenation",
                 )?;
                 self.ordinary_dag(ObservationDagKind::Cat(vec![head, prefix.clone()]))?
             }
         };
-        self.budget.reserve_clone(
-            self.function, &suffix.items, "ordinary DAG suffix tail",
-        )?;
+        self.budget
+            .reserve_clone(self.function, &suffix.items, "ordinary DAG suffix tail")?;
         let items = suffix.items.clone();
         target.prefix = Some(joined);
         target.items = items;
@@ -97,13 +110,18 @@ impl SkeletonWork<'_, '_> {
         target: &mut Observations,
         observation: Observation,
     ) -> Result<(), Diagnostic> {
-        let prefix = target.prefix.as_ref().expect("caller observed prefix").clone();
-        self.budget.reserve_array::<Observation>(
-            self.function, 1, "ordinary DAG prepend head",
-        )?;
+        let prefix = target
+            .prefix
+            .as_ref()
+            .expect("caller observed prefix")
+            .clone();
+        self.budget
+            .reserve_array::<Observation>(self.function, 1, "ordinary DAG prepend head")?;
         let head = self.ordinary_dag(ObservationDagKind::Seq(None, vec![observation]))?;
         self.budget.reserve_array::<Rc<ObservationDag>>(
-            self.function, 2, "ordinary DAG prepend concatenation",
+            self.function,
+            2,
+            "ordinary DAG prepend concatenation",
         )?;
         let joined = self.ordinary_dag(ObservationDagKind::Cat(vec![head, prefix]))?;
         target.prefix = Some(joined);

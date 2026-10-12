@@ -51,9 +51,9 @@ mod saved_planner;
 #[cfg(test)]
 mod shared_identity_tests;
 pub(crate) mod traversal;
-mod work;
 #[cfg(test)]
 mod whole_oracle_tests;
+mod work;
 
 pub(crate) use work::{REACHABILITY_BYTES_PER_EXPRESSION, REACHABILITY_FIXED_BYTES};
 

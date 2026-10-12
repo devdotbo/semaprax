@@ -24,16 +24,52 @@ fn both_invariant_passes_keep_exact_identity_refusal_and_partial_index_drop() {
     let program = crate::check(SOURCE, "identity-paid.spx").unwrap();
     // Independent source identities include the actual compiler-generated
     // invariant and check functions, with the original source order.
-    const FIRST: &[&str] = &["range.type", "core.option", "core.result", "app.main", "range.type#invariant", "range.lo", "range.hi", "core.option.none", "core.option.some", "core.option.some.value", "core.result.ok", "core.result.ok.value", "core.result.err", "core.result.err.error"];
-    const SECOND: &[&str] = &["range.type", "core.option", "core.result", "app.main", "range.type#invariant", "range.type#check", "range.lo", "range.hi", "core.option.none", "core.option.some", "core.option.some.value", "core.result.ok", "core.result.ok.value", "core.result.err", "core.result.err.error"];
-    let requests: Vec<_> = FIRST.iter().chain(SECOND).map(|text| backing(text)).collect();
+    const FIRST: &[&str] = &[
+        "range.type",
+        "core.option",
+        "core.result",
+        "app.main",
+        "range.type#invariant",
+        "range.lo",
+        "range.hi",
+        "core.option.none",
+        "core.option.some",
+        "core.option.some.value",
+        "core.result.ok",
+        "core.result.ok.value",
+        "core.result.err",
+        "core.result.err.error",
+    ];
+    const SECOND: &[&str] = &[
+        "range.type",
+        "core.option",
+        "core.result",
+        "app.main",
+        "range.type#invariant",
+        "range.type#check",
+        "range.lo",
+        "range.hi",
+        "core.option.none",
+        "core.option.some",
+        "core.option.some.value",
+        "core.result.ok",
+        "core.result.ok.value",
+        "core.result.err",
+        "core.result.err.error",
+    ];
+    let requests: Vec<_> = FIRST
+        .iter()
+        .chain(SECOND)
+        .map(|text| backing(text))
+        .collect();
     let old = super::super::resolve_verified(&program, None).unwrap();
     let mut seen = 0;
     let current = resolve(&program, None, |bytes| {
         assert_eq!(bytes, requests[seen]);
         seen += 1;
         Ok::<_, Stop>(())
-    }).unwrap();
+    })
+    .unwrap();
     assert_eq!(seen, 29);
     assert_eq!(current.0, old.0);
     assert_eq!(current.1.reused(), old.1.reused());
@@ -44,8 +80,14 @@ fn both_invariant_passes_keep_exact_identity_refusal_and_partial_index_drop() {
                 assert_eq!(bytes, requests[seen]);
                 let at = seen;
                 seen += 1;
-                if at == stop { Err(Stop(at)) } else { Ok(()) }
-            }).err().unwrap()
+                if at == stop {
+                    Err(Stop(at))
+                } else {
+                    Ok(())
+                }
+            })
+            .err()
+            .unwrap()
         });
         assert!(matches!(error, Failure::Identity(Stop(at)) if at == stop));
         assert_eq!(seen, stop + 1);
@@ -56,9 +98,17 @@ fn both_invariant_passes_keep_exact_identity_refusal_and_partial_index_drop() {
     // The original source-verifier error wins before any identity request.
     let mut malformed = program.clone();
     malformed.functions[0].stable_id.clear();
-    let old = super::super::resolve_with_function_reuse(&malformed, None, None, None, None).err().unwrap();
-    let current = resolve(&malformed, None, |_| -> Result<(), Stop> { panic!("request after verifier refusal") }).err().unwrap();
-    let Failure::Source(current) = current else { panic!("source error remapped") };
+    let old = super::super::resolve_with_function_reuse(&malformed, None, None, None, None)
+        .err()
+        .unwrap();
+    let current = resolve(&malformed, None, |_| -> Result<(), Stop> {
+        panic!("request after verifier refusal")
+    })
+    .err()
+    .unwrap();
+    let Failure::Source(current) = current else {
+        panic!("source error remapped")
+    };
     assert_eq!(current, old);
 }
 
@@ -77,15 +127,17 @@ fn actual_identity_caller_setup_refuses_without_diagnostic_or_report_allocation(
 
 #[test]
 fn actual_nonzero_resolver_identity_refusal_transfers_paid_report_and_first_receipt_through_drop() {
-    use crate::bounded_output::{active_refused, active_remaining, reserve_active_required,
-        with_limit_usage_refusal};
     use crate::bounded_output::identity_reservation::IdentityReservation;
+    use crate::bounded_output::{
+        active_refused, active_remaining, reserve_active_required, with_limit_usage_refusal,
+    };
     use crate::diagnostic::Diagnostic;
     use std::mem::size_of;
     let program = crate::check(
         "module identity.caller; @id(\"main\") fn main()->i64 {0}",
         "identity-caller.spx",
-    ).unwrap();
+    )
+    .unwrap();
     // Warm only process-static ordinary tables outside the observation.
     super::super::resolve_verified(&program, None).unwrap();
     // With no authored types, the original first initial identity is Option.
@@ -100,7 +152,9 @@ fn actual_nonzero_resolver_identity_refusal_transfers_paid_report_and_first_rece
             let mut pointers = None;
             let failure = resolve_with_report_observation(&program, None, |owner| {
                 pointers = Some(owner.pointers());
-            }).err().unwrap();
+            })
+            .err()
+            .unwrap();
             let CallerFailure::Identity(report) = failure else {
                 panic!("nonzero actual identity refusal lost its paid publication")
             };
@@ -109,7 +163,10 @@ fn actual_nonzero_resolver_identity_refusal_transfers_paid_report_and_first_rece
             assert_eq!(report[0].message.as_ptr(), pointers.1);
             assert_eq!(report.len(), 1);
             assert_eq!(report[0].code, "SPX-H006");
-            assert_eq!(report[0].message, "declaration identity backing reservation refused");
+            assert_eq!(
+                report[0].message,
+                "declaration identity backing reservation refused"
+            );
             assert!(active_refused());
             assert_eq!(active_remaining(), Some(identity - 1));
             assert!(!reserve_active_required(0));

@@ -21,7 +21,10 @@ pub(super) fn fixture(loan_count: usize) -> (ResolvedProgram, usize) {
     fixture_with_uses(loan_count, false)
 }
 
-pub(super) fn fixture_with_uses(loan_count: usize, retain_last_uses: bool) -> (ResolvedProgram, usize) {
+pub(super) fn fixture_with_uses(
+    loan_count: usize,
+    retain_last_uses: bool,
+) -> (ResolvedProgram, usize) {
     let mut source = String::from(
         "module test.loan_plan_boundaries;\n\
          @id(\"loan.boundary\")\n\
@@ -632,7 +635,10 @@ fn forged_cfg(points: usize, edges: Vec<(u16, u16)>) -> Cfg<'static> {
 fn assert_adjacency_matches_original(cfg: &Cfg<'_>, points: usize) {
     let legacy = legacy_adjacency::LegacyAdjacency::from_edges(points, &cfg.edges);
     for node in 0..points {
-        assert_eq!(cfg.successors(node).collect::<Vec<_>>(), legacy.successors[node]);
+        assert_eq!(
+            cfg.successors(node).collect::<Vec<_>>(),
+            legacy.successors[node]
+        );
         assert_eq!(
             cfg.successors(node).rev().collect::<Vec<_>>(),
             legacy.successors[node]
@@ -712,7 +718,10 @@ fn flat_adjacency_refuses_an_edge_count_beyond_its_offsets_with_the_edge_cap_dia
     assert_eq!(error.message, "function exceeds 4,096 loan CFG edges");
 }
 
-type OraclePipeline = (Result<(Vec<BTreeSet<u16>>, work::EdgeLiveness), String>, usize);
+type OraclePipeline = (
+    Result<(Vec<BTreeSet<u16>>, work::EdgeLiveness), String>,
+    usize,
+);
 
 fn flat_pipeline(
     cfg: &Cfg<'_>,
@@ -726,7 +735,9 @@ fn flat_pipeline(
         let mut live = Vec::new();
         for (loan, start) in starts.iter().copied().enumerate() {
             let id = LoanId(loan as u16);
-            live.push(work::live_nodes(cfg, id, start, seeds, &reachable, &mut work)?);
+            live.push(work::live_nodes(
+                cfg, id, start, seeds, &reachable, &mut work,
+            )?);
         }
         let edges = work::edge_liveness(cfg, &live, &mut work)?;
         Ok((live, edges))

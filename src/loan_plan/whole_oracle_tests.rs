@@ -19,7 +19,9 @@ use super::*;
 const WORK_ERROR: &str = "loan analysis exceeds 1,000,000 checked work";
 
 enum Outcome {
-    Plan { min_loans: usize },
+    Plan {
+        min_loans: usize,
+    },
     /// The structural refusal both planners must select, with its message.
     Refused(&'static str),
     /// Plans without a limit but exceeds the production 1,000,000 limit.
@@ -154,7 +156,14 @@ fn push_heavy_boundaries(out: &mut Vec<Source>) {
 
     let (program, _index, exact) = fixtures::exact_million_work_boundary();
     let mut over = exact.clone();
-    fixtures::add_live_padding(&mut over, fixtures::WORK_ROOT_LOANS, "work.overflow", 1, 0, 0);
+    fixtures::add_live_padding(
+        &mut over,
+        fixtures::WORK_ROOT_LOANS,
+        "work.overflow",
+        1,
+        0,
+        0,
+    );
     out.push(source(
         "exactly 1,000,000 checked work",
         &program,
@@ -192,7 +201,10 @@ fn assert_outcome(label: &str, result: &Result<LoanPlan, Diagnostic>, outcome: &
             let error = result.as_ref().expect_err(label);
             assert_eq!(error.code, "SPX-H006", "{label}");
             assert_eq!(error.message, WORK_ERROR, "{label}");
-            assert!(error.help.is_some(), "{label}: work refusal names the function");
+            assert!(
+                error.help.is_some(),
+                "{label}: work refusal names the function"
+            );
         }
     }
 }
@@ -231,10 +243,14 @@ fn flat_planner_matches_the_saved_planner_result_and_work_at_every_limit() {
         assert!(used > 0, "{label}");
         match &source.outcome {
             Outcome::Plan { .. } => {
-                new.0.as_ref().unwrap_or_else(|error| panic!("{label}: {error:?}"));
+                new.0
+                    .as_ref()
+                    .unwrap_or_else(|error| panic!("{label}: {error:?}"));
             }
             Outcome::OverProductionWork => {
-                new.0.as_ref().unwrap_or_else(|error| panic!("{label}: {error:?}"));
+                new.0
+                    .as_ref()
+                    .unwrap_or_else(|error| panic!("{label}: {error:?}"));
                 assert!(used > MAX_LOAN_PLAN_WORK_V1, "{label}");
             }
             Outcome::Refused(message) => {
@@ -251,7 +267,11 @@ fn flat_planner_matches_the_saved_planner_result_and_work_at_every_limit() {
         let (short_new, short_old) = counted_pair(&source, used - 1);
         assert_eq!(short_new, short_old, "{label}: one short");
         if !matches!(source.outcome, Outcome::Refused(_)) {
-            assert_eq!(short_new.0.as_ref().unwrap_err().message, WORK_ERROR, "{label}");
+            assert_eq!(
+                short_new.0.as_ref().unwrap_err().message,
+                WORK_ERROR,
+                "{label}"
+            );
             assert_eq!(short_new.1, used, "{label}: one-short ledger");
         }
 
@@ -260,11 +280,18 @@ fn flat_planner_matches_the_saved_planner_result_and_work_at_every_limit() {
         assert_eq!(half_new, half_old, "{label}: half limit");
         let (zero_new, zero_old) = counted_pair(&source, 0);
         assert_eq!(zero_new, zero_old, "{label}: zero limit");
-        assert_eq!(zero_new.0.as_ref().unwrap_err().message, WORK_ERROR, "{label}");
+        assert_eq!(
+            zero_new.0.as_ref().unwrap_err().message,
+            WORK_ERROR,
+            "{label}"
+        );
         assert_eq!(zero_new.1, 1, "{label}: zero-limit ledger");
         ladders += 1;
     }
-    assert!(ladders >= 9, "boundary, padded, cap, points, work and renewal ladders");
+    assert!(
+        ladders >= 9,
+        "boundary, padded, cap, points, work and renewal ladders"
+    );
     assert!(renewal_loans > 0, "the renewal source must plan real loans");
 }
 
@@ -310,16 +337,29 @@ fn whole_planning_through_drop_requests_fewer_allocations_and_bytes_than_the_sav
         for (side, metrics) in [("saved", old), ("flat", new)] {
             assert!(!metrics.invalid, "{label}: {side} observation invalid");
             assert_eq!(metrics.live, 0, "{label}: {side} retained backing");
-            assert_eq!(metrics.freed, metrics.allocated, "{label}: {side} not fully freed");
+            assert_eq!(
+                metrics.freed, metrics.allocated,
+                "{label}: {side} not fully freed"
+            );
         }
         // Genuine reductions, compared exactly: no discount or tolerance.
-        assert!(new.allocations < old.allocations, "{label}: {new:?} vs {old:?}");
+        assert!(
+            new.allocations < old.allocations,
+            "{label}: {new:?} vs {old:?}"
+        );
         assert!(new.allocated < old.allocated, "{label}: {new:?} vs {old:?}");
         // The observation is deterministic, so repeating it is exact.
-        assert_eq!(observed_planning(build_plan, &source), (new_census, new), "{label}");
+        assert_eq!(
+            observed_planning(build_plan, &source),
+            (new_census, new),
+            "{label}"
+        );
         owners += 1;
     }
-    assert!(owners >= 3, "boundary base, padded and 32-view owners must be measured");
+    assert!(
+        owners >= 3,
+        "boundary base, padded and 32-view owners must be measured"
+    );
 }
 
 #[test]
@@ -344,7 +384,12 @@ fn saved_planner_refuses_new_discard_in_body_and_contracts_before_shared_helpers
             function.body = block;
         }
         let expected = "saved c8a loan planner does not admit CopyDiscard";
-        assert_eq!(saved_planner::build_plan(&program, &function).unwrap_err().message, expected);
+        assert_eq!(
+            saved_planner::build_plan(&program, &function)
+                .unwrap_err()
+                .message,
+            expected
+        );
         let (result, used) = saved_planner::build_cfg_plan_with_work_limit(&program, &function, 0);
         assert_eq!(result.unwrap_err().message, expected);
         assert_eq!(used, 0);

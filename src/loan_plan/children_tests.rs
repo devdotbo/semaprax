@@ -99,7 +99,10 @@ fn assert_children(
 ) {
     let mut borrowed = children::evaluation_children(parent);
     let actual = borrowed.by_ref().collect::<Vec<_>>();
-    assert!(borrowed.next().is_none(), "{label}: iterator stays exhausted");
+    assert!(
+        borrowed.next().is_none(),
+        "{label}: iterator stays exhausted"
+    );
     assert_identical(label, "borrowed", &actual, expected);
     let saved = saved_planner::evaluation_children(parent);
     assert_identical(label, "saved original", &saved, expected);
@@ -161,12 +164,9 @@ fn invoke_children_are_the_callable_then_each_argument() {
         match args.as_slice() {
             [] => assert_children("invoke/0", &parent, &[callable], &[]),
             [only] => assert_children("invoke/1", &parent, &[callable, only], &[]),
-            [first, second, third] => assert_children(
-                "invoke/3",
-                &parent,
-                &[callable, first, second, third],
-                &[],
-            ),
+            [first, second, third] => {
+                assert_children("invoke/3", &parent, &[callable, first, second, third], &[])
+            }
             _ => unreachable!(),
         }
     }
@@ -507,7 +507,12 @@ fn structured_and_leaf_arms_have_no_evaluation_children_even_with_subexpressions
         },
     );
     assert_children("borrow place", &borrow, &[], &[]);
-    assert_children("place", &expr("place", ResolvedExprKind::Place(place)), &[], &[]);
+    assert_children(
+        "place",
+        &expr("place", ResolvedExprKind::Place(place)),
+        &[],
+        &[],
+    );
     assert_children("int", &expr("int", ResolvedExprKind::Int(7)), &[], &[]);
     assert_children(
         "string",

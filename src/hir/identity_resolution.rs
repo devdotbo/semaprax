@@ -21,14 +21,23 @@ impl<E> From<IdentityIndexError<E>> for Failure<E> {
 
 /// One explicit callback survives both invariant passes. It cannot replace
 /// IDs or authorize a source shape; full ordinary verification runs first.
-#[cfg_attr(not(test), allow(dead_code, reason = "private identity-only caller migration; ordinary API remains legacy"))]
+#[cfg_attr(
+    not(test),
+    allow(
+        dead_code,
+        reason = "private identity-only caller migration; ordinary API remains legacy"
+    )
+)]
 pub(crate) fn resolve<E>(
     program: &Program,
     private: Option<source_verify::private_names::PrivateNames<'_>>,
     mut reserve: impl FnMut(usize) -> Result<(), E>,
 ) -> Result<(ResolvedProgram, FunctionResolutionWork), Failure<E>> {
     let diagnostics = source_verify::verify_presenting(program, private);
-    if diagnostics.iter().any(|diagnostic| diagnostic.severity.is_error()) {
+    if diagnostics
+        .iter()
+        .any(|diagnostic| diagnostic.severity.is_error())
+    {
         return Err(Failure::Source(diagnostics));
     }
     let clause_program = record_invariants::clause_program(program);
@@ -47,7 +56,9 @@ fn pass<E>(
     // Preserve the old Resolver field-evaluation order before index creation.
     let byte_helpers = crate::loop_calls::byte_writer::SourceIndex::new(program);
     let declarations = DeclarationIndex::from_verified_with_identity_reservation(
-        program, crate::prelude::declarations_for_program(program), reserve,
+        program,
+        crate::prelude::declarations_for_program(program),
+        reserve,
     )?;
     (Resolver {
         program,
@@ -57,19 +68,33 @@ fn pass<E>(
         function_work: FunctionResolutionWork::default(),
         fused_producer: None,
         partition_profile: false,
-    }).resolve().map_err(Failure::Semantic)
+    })
+    .resolve()
+    .map_err(Failure::Semantic)
 }
 
 /// Actual caller acquires the fixed report BEFORE invoking either pass.
 /// Setup is Copy-only; owned Source/Semantic errors are explicitly unfunded.
 #[derive(Debug)]
-#[cfg_attr(not(test), allow(dead_code, reason = "private identity-only outward route remains inactive"))]
+#[cfg_attr(
+    not(test),
+    allow(
+        dead_code,
+        reason = "private identity-only outward route remains inactive"
+    )
+)]
 pub(crate) enum CallerFailure {
     Setup(crate::bounded_output::identity_reservation::Refused),
     Legacy(Failure<std::convert::Infallible>),
     Identity(Vec<Diagnostic>),
 }
-#[cfg_attr(not(test), allow(dead_code, reason = "private identity-only caller migration; ordinary API remains legacy"))]
+#[cfg_attr(
+    not(test),
+    allow(
+        dead_code,
+        reason = "private identity-only caller migration; ordinary API remains legacy"
+    )
+)]
 pub(crate) fn resolve_with_report(
     program: &Program,
     private: Option<source_verify::private_names::PrivateNames<'_>>,

@@ -188,7 +188,10 @@ fn actual_cold_warm_cache_core_and_publication_match_owned_receiver_through_drop
     assert_eq!(actual.len(), 2, "{actual:?}");
     for error in &actual {
         assert_eq!(error.code, "SPX-T205");
-        assert_eq!(error.message, "argument `value` to `helper` expects i32, received i64");
+        assert_eq!(
+            error.message,
+            "argument `value` to `helper` expects i32, received i64"
+        );
         assert_eq!(error.path.as_deref(), Some("src/app.spx"));
     }
     assert_eq!(

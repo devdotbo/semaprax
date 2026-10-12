@@ -17,14 +17,26 @@ pub(crate) enum Refused {
 }
 
 /// Affine report and exact existing owner; never a source/admission proof.
-#[cfg_attr(not(test), allow(dead_code, reason = "private explicit identity caller route awaits outward API integration"))]
+#[cfg_attr(
+    not(test),
+    allow(
+        dead_code,
+        reason = "private explicit identity caller route awaits outward API integration"
+    )
+)]
 pub(crate) struct IdentityReservation {
     budget: Rc<Budget>,
     report: Vec<Diagnostic>,
     text: String,
 }
 
-#[cfg_attr(not(test), allow(dead_code, reason = "private explicit identity caller route awaits outward API integration"))]
+#[cfg_attr(
+    not(test),
+    allow(
+        dead_code,
+        reason = "private explicit identity caller route awaits outward API integration"
+    )
+)]
 impl IdentityReservation {
     pub(crate) fn acquire() -> Result<Self, Refused> {
         let budget = active().ok_or(Refused::NoOwner)?;
@@ -46,15 +58,24 @@ impl IdentityReservation {
         // Allocator discrepancy is exceptional: debit excess, but never admit
         // an output whose actual storage differs from the prepaid request.
         if report.capacity() != 1 || text.capacity() != MESSAGE.len() {
-            let excess = report.capacity().saturating_sub(1)
+            let excess = report
+                .capacity()
+                .saturating_sub(1)
                 .checked_mul(size_of::<Diagnostic>())
                 .and_then(|bytes| bytes.checked_add(text.capacity().saturating_sub(MESSAGE.len())))
-                .ok_or_else(|| { poison(&budget, usize::MAX); Refused::Arithmetic })?;
+                .ok_or_else(|| {
+                    poison(&budget, usize::MAX);
+                    Refused::Arithmetic
+                })?;
             required(&budget, excess)?;
             poison(&budget, 0);
             return Err(Refused::Capacity);
         }
-        Ok(Self { budget, report, text })
+        Ok(Self {
+            budget,
+            report,
+            text,
+        })
     }
 
     pub(crate) fn reserve(&mut self, bytes: usize) -> Result<(), Refused> {
@@ -85,9 +106,16 @@ fn poison(budget: &Budget, bytes: usize) {
     budget.overflowed.set(true);
 }
 fn required(budget: &Budget, bytes: usize) -> Result<(), Refused> {
-    if reserve(Some(budget), bytes) { return Ok(()); }
+    if reserve(Some(budget), bytes) {
+        return Ok(());
+    }
     poison(budget, bytes);
-    Err(Refused::Budget(budget.first_refusal.get().expect("required refusal recorded")))
+    Err(Refused::Budget(
+        budget
+            .first_refusal
+            .get()
+            .expect("required refusal recorded"),
+    ))
 }
 
 #[cfg(test)]
