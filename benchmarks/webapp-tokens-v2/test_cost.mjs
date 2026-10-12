@@ -66,3 +66,62 @@ test("unavailable provider usage stays null instead of becoming a zero-cost buck
   assert.equal(run.usd.input, null);
   assert.equal(run.usd.total_lower_bound, null);
 });
+
+function completeMessage(id, model, usage = {}) {
+  return { type: "assistant", message: {
+    id, model, usage: { input_tokens: 10, cache_creation_input_tokens: 2,
+      cache_read_input_tokens: 3, output_tokens: 7, ...usage },
+    content: [{ type: "text", text: "visible" }],
+  } };
+}
+
+test("unknown and mixed models retain counters without borrowing the Sonnet rate card", () => {
+  for (const events of [
+    [completeMessage("a", "gpt-6.1-sol")],
+    [completeMessage("a", "claude-sonnet-5-5"), completeMessage("b", "gpt-6.1-sol")],
+    [completeMessage("a", "claude-sonnet-5-5"), completeMessage("a", "gpt-6.1-sol")],
+  ]) {
+    const run = runCost(events);
+    assert.ok(run.tokens.input > 0);
+    assert.ok(run.tokens.output_visible > 0);
+    assert.equal(run.actual_billed_usd, null);
+    for (const value of Object.values(run.usd)) assert.equal(value, null);
+    assert.notEqual(run.pricing_status, "matched_archived_rate_card");
+  }
+});
+
+test("an observed request without usage cannot vanish from a partial aggregate", () => {
+  const run = runCost([completeMessage("a", "claude-sonnet-5-5"), {
+    type: "assistant", message: { id: "b", model: "claude-sonnet-5-5", content: [] },
+  }]);
+  assert.equal(run.turns, 2);
+  assert.equal(run.tokens.input, null);
+  assert.equal(run.tokens.output_provider_reported, null);
+  assert.equal(run.usd.input, null);
+  assert.equal(run.usd.output_provider_usage_rate_card_estimate, null);
+  assert.equal(run.usd.total_lower_bound, null);
+});
+
+test("split events bind one request model and merge its available counters once", () => {
+  const run = runCost([{
+    type: "assistant", message: { id: "a", model: "claude-sonnet-5-5", content: [] },
+  }, completeMessage("a", undefined), completeMessage("a", undefined)]);
+  assert.equal(run.turns, 1);
+  assert.deepEqual(run.reported_models, ["claude-sonnet-5-5"]);
+  assert.equal(run.pricing_status, "matched_archived_rate_card");
+  assert.equal(run.tokens.input, 10);
+  assert.equal(run.tokens.output_provider_reported, 7);
+  assert.equal(run.tokens.output_visible, 8);
+  assert.equal(run.actual_billed_usd, null);
+});
+
+test("unattributed assistant requests make aggregate counters and prices unavailable", () => {
+  for (const event of [{ type: "assistant" }, completeMessage(undefined, "claude-sonnet-5-5")]) {
+    const run = runCost([completeMessage("a", "claude-sonnet-5-5"), event]);
+    assert.equal(run.turn_count_status, "incomplete");
+    assert.equal(run.pricing_status, "unresolved_request_model");
+    assert.equal(run.tokens.input, null);
+    assert.equal(run.tokens.output_provider_reported, null);
+    for (const value of Object.values(run.usd)) assert.equal(value, null);
+  }
+});

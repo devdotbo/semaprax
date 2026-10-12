@@ -8,6 +8,14 @@ API, persistence, and a browser UI. It measures how many tokens an AI agent
 spends building it in TypeScript/React and in SEMAPRAX with
 [Web Application Projection v2](../../docs/WEBAPP-PROJECTION-V2.md).
 
+The transcript cost calculator reports its archived Sonnet 5.5 rate card separately
+from request models and actual billing. It applies that card only when every
+observed request has one resolved matching model. Unmatched, mixed or unresolved
+models have unavailable monetary estimates; requests without usage counters stay
+in the request census and make affected aggregate counters unavailable. Split
+transcript events merge counters by request identity. These accounting controls
+do not qualify an application or establish an agent efficiency improvement.
+
 ## Independent full-SPEC qualification
 
 The additive [acceptance contract](acceptance/CONTRACT.md) and external API/Chromium
