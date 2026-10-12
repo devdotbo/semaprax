@@ -6,7 +6,7 @@ pub(super) fn owner(
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
 ) -> Result<crate::hir::FunctionExecutionId, Diagnostic> {
-    if budget.physical.is_none() {
+    if !budget.selected() {
         return crate::hir::lexical_exit::owner(program, function);
     }
     if !program.function_templates().is_empty() || !program.function_instances().is_empty() {

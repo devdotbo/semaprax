@@ -132,6 +132,8 @@ fn work(remaining: usize) -> ReplayBudget {
 
 fn backing(bytes: usize) -> ReplayBudget {
     let mut budget = ReplayBudget::new();
+    budget.admission = AdmissionMode::SelectedRetained;
+    budget.payer = AllocationPayer::SelectedReservation;
     budget.physical = Some(Box::new(PhysicalReservation::new(bytes)));
     budget
 }

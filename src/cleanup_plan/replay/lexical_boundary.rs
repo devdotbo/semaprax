@@ -220,7 +220,7 @@ pub(super) fn check(
         leaves,
         budget,
     )?;
-    if budget.physical.is_some() {
+    if budget.selected() {
         if !state.conditional_variants.is_empty()
             || item
                 .finalize_in_order

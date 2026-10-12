@@ -188,8 +188,7 @@ pub(super) fn renew(
             "renewal destination is not one owner leaf",
         ));
     }
-    if budget.physical.is_none() && crate::string_ops::replacement::binding(function, at).is_some()
-    {
+    if !budget.selected() && crate::string_ops::replacement::binding(function, at).is_some() {
         let source_flags =
             path_join::storage::validate_place(function, source, storage, leaves, budget)?;
         if source_flags == flags {
@@ -210,8 +209,7 @@ pub(super) fn renew(
         budget,
     )?;
     let flag = flags[0];
-    if budget.physical.is_none() && crate::string_ops::replacement::binding(function, at).is_some()
-    {
+    if !budget.selected() && crate::string_ops::replacement::binding(function, at).is_some() {
         return string_replacement::finish(function, flag, &history, state);
     }
     if !history.contains(&flag)

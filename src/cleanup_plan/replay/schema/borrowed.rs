@@ -243,7 +243,7 @@ pub(in crate::cleanup_plan::replay) fn build<'a>(
     budget: &mut ReplayBudget,
 ) -> Result<Profile<'a>, Diagnostic> {
     budget.charge(function, 1, "borrowed helper current context header")?;
-    if budget.physical.is_none()
+    if !budget.selected()
         || !program.interfaces().is_empty()
         || !program.function_templates().is_empty()
         || !program.function_instances().is_empty()
@@ -483,6 +483,8 @@ pub(in crate::cleanup_plan::replay) fn build<'a>(
             &mut |units| budget.charge(function, units, "borrowed helper independent inventory"),
         )
     })();
+    budget.admission = AdmissionMode::SelectedRetained;
+    budget.payer = AllocationPayer::SelectedReservation;
     budget.physical = Some(physical);
     let inventory = result?;
     budget.reserve_array::<Profile<'_>>(function, 1, "borrowed helper held profile")?;

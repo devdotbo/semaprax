@@ -52,6 +52,17 @@ pub(crate) struct FactReceipt {
     physical: bool,
 }
 impl FactReceipt {
+    pub(super) fn legacy(self, function: &ResolvedFunction) -> Diagnostic {
+        if let Some(expression) = self.expression {
+            replay_error(
+                function,
+                format!("HIR expression identity `{expression}` is repeated"),
+            )
+        } else {
+            replay_error(function, self.detail)
+        }
+    }
+
     pub(super) fn physical(&self) -> bool {
         self.physical
     }

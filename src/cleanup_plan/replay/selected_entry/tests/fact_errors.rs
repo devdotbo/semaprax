@@ -50,9 +50,14 @@ fn paid_fact_cursor_and_growth_exact_short_keep_first_receipt_and_drop_one_owner
     });
     assert!(!refused);
     // Layout twin of FactCapacity's four held fields, not its implementation.
+    #[allow(dead_code, reason = "independent physical layout twin")]
+    enum PayerLayout<'a> {
+        Selected(&'a mut PhysicalReservation),
+        ActiveBuilder,
+    }
     struct CapacityLayout<'a> {
         _function: &'a ResolvedFunction,
-        _physical: &'a mut PhysicalReservation,
+        _physical: PayerLayout<'a>,
         _types: [Option<(&'a ResolvedType, usize)>; 514],
         _work: usize,
     }

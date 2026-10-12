@@ -17,6 +17,8 @@ fn function() -> ResolvedFunction {
 }
 fn budget(bytes: usize) -> ReplayBudget {
     let mut budget = ReplayBudget::new();
+    budget.admission = AdmissionMode::SelectedRetained;
+    budget.payer = AllocationPayer::SelectedReservation;
     budget.physical = Some(Box::new(physical_storage::PhysicalReservation::new(bytes)));
     budget
 }

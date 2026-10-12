@@ -90,6 +90,8 @@ impl ReplayBudget {
             refused!(SetupReason::TextCapacity);
         }
         Ok(Self {
+            admission: AdmissionMode::SelectedRetained,
+            payer: AllocationPayer::SelectedReservation,
             refusal_text: Some(refusal_text),
             physical: Some(Box::new(physical)),
             ..Self::new()

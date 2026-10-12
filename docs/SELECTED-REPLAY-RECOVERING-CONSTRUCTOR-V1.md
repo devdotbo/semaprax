@@ -310,3 +310,44 @@ errors, inventory/status/structural/path/factored children and their dynamic
 Diagnostic producers. The selected test-only borrowed-fact route retains its
 existing error contract. This tranche does not establish full transitive
 Session funding, ordinary V6 authority, or application fit/performance.
+
+
+## Ordinary admission and allocation payment
+
+The internal replay budget now separates `AdmissionMode` from
+`AllocationPayer`. Ordinary replay remains ordinary when an existing active
+builder pays for it. That payer never grants selected type, schema, provider,
+renewal or profile authority. Selected reservations already debit the enclosing
+builder, so they never receive a second active-builder debit. Legacy standalone
+replay outside a bounded builder remains unobserved.
+
+The actual ordinary fact map, slot tree, arbitrary record/variant shape walk,
+leaf trees and storage directory reserve their known carrier/backing requests
+before construction. Queue/vector growth, clone payment and shared certificate,
+path and factored storage guards can consume the active builder. No new limit,
+refund or separate ledger is introduced. The original arbitrary-shape algorithm
+remains inline; a saved uncharged test oracle preserves its old verdict/order.
+The first ordinary refusal String is charged before allocation; initial short
+setup returns an inline H006 and retries allocate nothing. Longer current
+function IDs acquire replacement refusal backing while the old buffer is held.
+
+Authored controls (not executed):
+
+- `cleanup_plan::replay::allocation::tests::ordinary_builder_payment_never_grants_selected_admission_and_covers_index_drop`
+- `cleanup_plan::replay::allocation::tests::active_builder_zero_exact_short_refusal_is_sticky_and_moves_paid_text`
+
+The first control encloses the actual paid indexes and Drop in one allocator
+observation, with source, reference indexes, active ledger setup and fixed
+observer metadata outside it. The second uses the independent literal request
+of one refusal String plus three u64 elements for exact/short/sticky boundaries.
+The complete ordinary entry and malformed slot still compare their old verdicts.
+
+This is not whole-validator or whole-replay funding evidence. Ordinary schema,
+status, transition/exit and observation materialization children still contain
+owned constructors, and full HIR validation independently constructs function,
+origin, endpoint, scope/type, permit/effect and call indexes. Those remaining
+allocations and semantic diagnostic producers require their own actual payment
+joins before claiming complete final-validation allocation coverage. Existing
+whole-lifecycle owners retain their inequalities and detect the remaining gaps.
+No application fit, runtime result, cap increase or ordinary V6 admission is
+claimed.

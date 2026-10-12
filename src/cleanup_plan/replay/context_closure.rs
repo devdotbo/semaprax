@@ -405,7 +405,7 @@ pub(super) fn derive<'a>(
     root: &'a ResolvedFunction,
     budget: &mut ReplayBudget,
 ) -> Result<Inventory<'a>, Diagnostic> {
-    if budget.physical.is_none() {
+    if !budget.selected() {
         return Err(replay_error(
             root,
             "context closure requires a physical reservation",

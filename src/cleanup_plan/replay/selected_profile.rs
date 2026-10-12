@@ -18,7 +18,7 @@ pub(super) fn validate(
     if let Some(lease) = program.borrowed_helper_lease(function) {
         return lease.validate(program, function, budget);
     }
-    if budget.physical.is_none() {
+    if !budget.selected() {
         return Ok(());
     }
     flat_records::module(program, function, budget)?;
@@ -368,6 +368,8 @@ mod tests {
     }
     fn budget(limit: usize) -> ReplayBudget {
         let mut budget = ReplayBudget::new();
+        budget.admission = AdmissionMode::SelectedRetained;
+        budget.payer = AllocationPayer::SelectedReservation;
         budget.physical = Some(Box::new(
             super::super::physical_storage::PhysicalReservation::new(limit),
         ));
@@ -467,6 +469,8 @@ mod cursor_work_tests {
     ) -> Result<usize, Diagnostic> {
         let mut budget = ReplayBudget::new();
         budget.remaining = limit;
+        budget.admission = AdmissionMode::SelectedRetained;
+        budget.payer = AllocationPayer::SelectedReservation;
         budget.physical = Some(Box::new(
             super::super::physical_storage::PhysicalReservation::new(usize::MAX),
         ));

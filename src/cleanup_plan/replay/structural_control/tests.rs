@@ -57,6 +57,8 @@ fn cfg_backing_refusal_is_sticky_before_color_or_stack_construction() {
         .unwrap();
     assert!(function.cleanup_plan.lexical_control.is_some());
     let mut budget = ReplayBudget {
+        admission: AdmissionMode::SelectedRetained,
+        payer: AllocationPayer::SelectedReservation,
         physical: Some(Box::new(PhysicalReservation::new(0))),
         ..ReplayBudget::new()
     };

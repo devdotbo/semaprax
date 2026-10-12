@@ -35,7 +35,12 @@ impl SkeletonWork<'_, '_> {
             .ok_or_else(|| replay_error(self.function, "factored DAG work bound overflowed"))?;
         // Cover construction/registration and the later destruction traversal.
         self.charge(units, "factored observation DAG node and release")?;
-        if self.budget.physical.is_none() {
+        if !self.budget.selected() {
+            self.budget.reserve_bytes(
+                self.function,
+                physical_clone::rc_backing_bytes::<ObservationDag>(),
+                "ordinary observation DAG node",
+            )?;
             return Ok(Rc::new(ObservationDag::legacy(kind)));
         }
         if self.dag_scratch.is_none() {

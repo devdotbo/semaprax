@@ -8,7 +8,7 @@ pub(in crate::cleanup_plan::replay) fn insert<K: Ord, V>(
     key: K,
     value: V,
 ) -> Result<Option<V>, Diagnostic> {
-    if budget.physical.is_none() {
+    if !budget.pays_allocations() {
         return Ok(map.insert(key, value));
     }
     if !map.contains_key(&key) {
@@ -22,7 +22,7 @@ pub(super) fn insert_set<K: Ord>(
     set: &mut BTreeSet<K>,
     key: K,
 ) -> Result<bool, Diagnostic> {
-    if budget.physical.is_none() {
+    if !budget.pays_allocations() {
         return Ok(set.insert(key));
     }
     if set.contains(&key) {
@@ -72,7 +72,7 @@ pub(super) fn reach(
     excluded: Option<&[bool]>,
     budget: &mut ReplayBudget,
 ) -> Result<Vec<bool>, Diagnostic> {
-    if budget.physical.is_none() {
+    if !budget.pays_allocations() {
         return Ok(super::reach(function, start, avoid, stop, excluded));
     }
     budget.reserve_array::<bool>(
@@ -144,7 +144,7 @@ pub(in crate::cleanup_plan::replay) fn region_chain(
     start: CleanupRegionId,
     budget: &mut ReplayBudget,
 ) -> Result<Vec<CleanupRegionId>, Diagnostic> {
-    if budget.physical.is_none() {
+    if !budget.pays_allocations() {
         return region_chain_to_root(function, start);
     }
     let mut current = Some(start);
@@ -184,7 +184,7 @@ pub(in crate::cleanup_plan::replay) fn finalizer_actions(
     leaves: &Leaves,
     budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
-    if budget.physical.is_none() {
+    if !budget.pays_allocations() {
         return validate_finalizer_actions(function, actions, known, leaves);
     }
     let mut finalized = BTreeSet::new();
@@ -252,6 +252,8 @@ mod tests {
         let expected =
             super::super::reach(&function, function.cleanup_plan.entry, None, &stop, None);
         let mut budget = ReplayBudget::new();
+        budget.admission = AdmissionMode::SelectedRetained;
+        budget.payer = AllocationPayer::SelectedReservation;
         budget.physical = Some(Box::new(physical_storage::PhysicalReservation::new(
             1 << 20,
         )));
@@ -268,6 +270,8 @@ mod tests {
             expected
         );
         let mut short = ReplayBudget::new();
+        short.admission = AdmissionMode::SelectedRetained;
+        short.payer = AllocationPayer::SelectedReservation;
         short.physical = Some(Box::new(physical_storage::PhysicalReservation::new(0)));
         assert!(reach(
             &function,
@@ -299,6 +303,8 @@ mod tests {
         let start = function.cleanup_plan.blocks[function.cleanup_plan.entry.0 as usize].region;
         let expected = region_chain_to_root(&function, start).unwrap();
         let mut budget = ReplayBudget::new();
+        budget.admission = AdmissionMode::SelectedRetained;
+        budget.payer = AllocationPayer::SelectedReservation;
         budget.physical = Some(Box::new(physical_storage::PhysicalReservation::new(
             1 << 20,
         )));

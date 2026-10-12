@@ -291,7 +291,7 @@ pub(in crate::cleanup_plan::replay) fn validate_authenticated(
     }
     // Selected physical replay has no unmetered legacy census fallback.
     // Its independently closed provider/type profile is unchanged.
-    if budget.physical.is_some() {
+    if budget.selected() {
         candidate.strategy = Strategy::LexicalFactored;
     }
     #[cfg(test)]
@@ -300,7 +300,7 @@ pub(in crate::cleanup_plan::replay) fn validate_authenticated(
     }
     match candidate.strategy {
         Strategy::Enumerated => {
-            if budget.physical.is_some() {
+            if budget.selected() {
                 return Err(replay_error(
                     function,
                     "selected physical replay requires its metered factored strategy",

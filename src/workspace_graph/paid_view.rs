@@ -12,6 +12,10 @@ use crate::cleanup_plan::{SelectedReplayRefusal, SelectedReplayReportForm, Selec
 
 /// Typed view refusal. `Legacy` is an existing owned report; `Replay` is
 /// either a paid carrier with its retained ledger or an unpaid inline refusal.
+#[allow(
+    clippy::large_enum_variant,
+    reason = "the affine paid report and ledger move inline; refusal must not allocate a fresh Box"
+)]
 pub(crate) enum ViewRefusal {
     Legacy(Vec<Diagnostic>),
     Replay(SelectedReplayRefusal),

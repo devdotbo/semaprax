@@ -125,7 +125,7 @@ fn scan<'a>(
             "lexical flow scan exceeds the admitted expression depth",
         ));
     }
-    if budget.physical.is_some() {
+    if budget.selected() {
         budget.charge(function, 1, "selected lexical HIR facts")?;
     }
     match &expression.kind {

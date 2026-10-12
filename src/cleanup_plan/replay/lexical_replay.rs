@@ -21,12 +21,7 @@ pub(super) fn validate_with_index(
         function,
         budget,
         helpers,
-        |function, budget| match budget.physical.as_deref_mut() {
-            Some(physical) => {
-                expression_facts::expression_facts_with_reservation(function, physical)
-            }
-            None => expression_facts(function),
-        },
+        expression_facts::with_budget,
     )
 }
 
@@ -65,7 +60,7 @@ fn validate_core<E: From<Diagnostic>>(
     }
     budget.charge(function, structure_units, "structural validation")?;
     let expression_facts = build_facts(function, budget)?;
-    let selected = budget.physical.is_some();
+    let selected = budget.selected();
     let (storage, leaves) = if selected {
         inventory_coverage::validate_inventory_coverage(program, function, budget)?;
         status_construction::validate_required_status_sources(program, function, budget)?;
@@ -93,8 +88,8 @@ fn validate_core<E: From<Diagnostic>>(
     } else {
         validate_inventory_coverage(program, function)?;
         validate_required_status_sources(program, function)?;
-        let storage = validate_slots(function)?;
-        let leaves = collect_leaves(function)?;
+        let storage = validate_slots_paid(function, budget)?;
+        let leaves = collect_leaves_paid(function, budget)?;
         validate_status_sources(function, &expression_facts)?;
         validate_regions(function, &storage)?;
         validate_entry(function, &storage, &leaves)?;

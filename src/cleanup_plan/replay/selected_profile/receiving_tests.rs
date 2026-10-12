@@ -40,6 +40,8 @@ fn direct(source: &str) -> ResolvedProgram {
 }
 fn budget() -> ReplayBudget {
     let mut result = ReplayBudget::new();
+    result.admission = AdmissionMode::SelectedRetained;
+    result.payer = AllocationPayer::SelectedReservation;
     result.physical = Some(Box::new(PhysicalReservation::new(usize::MAX)));
     result
 }
@@ -309,6 +311,8 @@ fn string_read_move_and_renewal_censuses_keep_exact_work_backing_and_sticky_refu
     ] {
         let mut current = ReplayBudget::new();
         current.remaining = work_limit;
+        current.admission = AdmissionMode::SelectedRetained;
+        current.payer = AllocationPayer::SelectedReservation;
         current.physical = Some(Box::new(PhysicalReservation::new(byte_limit)));
         let outcome = conditions::reads(function, &mut current)
             .and_then(|_| conditions::moves(function, &mut current));

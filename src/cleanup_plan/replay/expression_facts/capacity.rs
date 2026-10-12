@@ -9,17 +9,37 @@ pub(super) struct Failure {
     pub(super) physical: bool,
 }
 
+pub(super) enum Payer<'p> {
+    Selected(&'p mut PhysicalReservation),
+    ActiveBuilder,
+}
+impl Payer<'_> {
+    fn reserve(&mut self, bytes: usize) -> Result<(), ()> {
+        match self {
+            Self::Selected(physical) => physical.reserve(bytes).map_err(|_| ()),
+            Self::ActiveBuilder => {
+                if crate::bounded_output::active_refused()
+                    || !crate::bounded_output::reserve_active_required(bytes)
+                {
+                    Err(())
+                } else {
+                    Ok(())
+                }
+            }
+        }
+    }
+}
 type TypeCursor<'a> = [Option<(&'a ResolvedType, usize)>; 514];
 pub(super) struct FactCapacity<'a, 'p> {
     _function: &'a ResolvedFunction,
-    physical: &'p mut PhysicalReservation,
+    physical: Payer<'p>,
     types: TypeCursor<'a>,
     work: usize,
 }
 impl<'a, 'p> FactCapacity<'a, 'p> {
-    pub(super) fn new(
+    pub(super) fn with_payer(
         function: &'a ResolvedFunction,
-        physical: &'p mut PhysicalReservation,
+        mut physical: Payer<'p>,
     ) -> Result<Self, Failure> {
         // One reused type cursor and the collector's one active expression cursor.
         physical
@@ -42,12 +62,14 @@ impl<'a, 'p> FactCapacity<'a, 'p> {
         })
     }
     fn array<T>(&mut self, count: usize) -> Result<(), Failure> {
-        self.physical
-            .reserve_array::<T>(count)
-            .map_err(|_| Failure {
-                detail: "physical expression-fact array reservation refused",
-                physical: true,
-            })
+        let bytes = count.checked_mul(size_of::<T>()).ok_or(Failure {
+            detail: "physical expression-fact array reservation refused",
+            physical: true,
+        })?;
+        self.physical.reserve(bytes).map_err(|_| Failure {
+            detail: "physical expression-fact array reservation refused",
+            physical: true,
+        })
     }
     fn types(&mut self, root: &'a ResolvedType) -> Result<(), Failure> {
         self.types[0] = Some((root, 0));

@@ -18,7 +18,7 @@ pub(super) fn execute_replay_transition(
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
     budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
-    if budget.physical.is_some() {
+    if budget.selected() {
         return transition_storage::execute(
             program, function, transition, state, storage, leaves, helpers, budget,
         );
@@ -333,7 +333,7 @@ pub(super) fn replay_transfer(
     leaves: &Leaves,
     budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
-    if budget.physical.is_some() {
+    if budget.selected() {
         return transition_storage::transfer(
             function,
             state,
@@ -572,7 +572,7 @@ pub(super) fn replay_exit(
     extra_disposed: &BTreeSet<StorageId>,
     budget: &mut ReplayBudget,
 ) -> Result<ExitFlow, Diagnostic> {
-    if budget.physical.is_some() {
+    if budget.selected() {
         return transition_storage::exit(
             function,
             exit,
@@ -818,7 +818,7 @@ pub(super) fn finish_exit(
                         ));
                     }
                     if state.returned.is_none()
-                        && budget.physical.is_none()
+                        && !budget.selected()
                         && expression_has_try(&function.body)
                     {
                         let staged = state.staged_copy_result.take().ok_or_else(|| {
@@ -862,7 +862,7 @@ pub(super) fn finish_exit(
                             "owned result commit has incomplete result or remaining non-result ownership",
                         ));
                         }
-                        if budget.physical.is_some() {
+                        if budget.selected() {
                             state.live_order.clear();
                         } else {
                             let result_flags = result_flags.into_iter().collect::<BTreeSet<_>>();

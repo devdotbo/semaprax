@@ -149,7 +149,12 @@ const UNRESOLVED_NORMAL_END: super::ExitTargetId = super::ExitTargetId(u32::MAX)
 const MAX_REPLAY_PATHS: usize = 65_536;
 const MAX_REPLAY_WORK_UNITS: usize = 32_000_000;
 
+mod allocation;
+use allocation::{AdmissionMode, AllocationPayer};
+
 struct ReplayBudget {
+    admission: AdmissionMode,
+    payer: AllocationPayer,
     remaining: usize,
     skeleton_remaining: usize,
     /// Actual successful skeleton debits, including deferred lexical walks.
@@ -166,32 +171,6 @@ struct ReplayBudget {
 }
 
 impl ReplayBudget {
-    fn new() -> Self {
-        Self {
-            remaining: MAX_REPLAY_WORK_UNITS,
-            skeleton_remaining: 0,
-            skeleton_spent: 0,
-            lent_skeleton: false,
-            merge_paths: false,
-            physical: None,
-            refusal_text: None,
-            refusal_spent: false,
-        }
-    }
-    #[cfg(test)]
-    fn with_skeleton_limit(limit: usize) -> Self {
-        Self {
-            remaining: MAX_REPLAY_WORK_UNITS,
-            skeleton_remaining: limit,
-            skeleton_spent: 0,
-            lent_skeleton: false,
-            merge_paths: false,
-            physical: None,
-            refusal_text: None,
-            refusal_spent: false,
-        }
-    }
-
     fn charge(
         &mut self,
         function: &ResolvedFunction,
@@ -563,11 +542,11 @@ fn validate_structure_with_budget(
         "structural validation",
     )?;
 
-    let expression_facts = expression_facts(function)?;
+    let expression_facts = expression_facts::with_budget(function, budget)?;
     validate_inventory_coverage(program, function)?;
     validate_required_status_sources(program, function)?;
-    let storage = validate_slots(function)?;
-    let leaves = collect_leaves(function)?;
+    let storage = validate_slots_paid(function, budget)?;
+    let leaves = collect_leaves_paid(function, budget)?;
     validate_status_sources(function, &expression_facts)?;
     validate_regions(function, &storage)?;
     validate_entry(function, &storage, &leaves)?;
@@ -2146,7 +2125,14 @@ fn checked_status(
     }
 }
 
+#[cfg(test)]
 fn validate_slots(function: &ResolvedFunction) -> Result<BTreeSet<StorageId>, Diagnostic> {
+    validate_slots_paid(function, &mut ReplayBudget::unobserved())
+}
+fn validate_slots_paid(
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+) -> Result<BTreeSet<StorageId>, Diagnostic> {
     let mut storage = BTreeSet::new();
     for (index, slot) in function.cleanup_plan.slots.iter().enumerate() {
         let expected = u32_index(function, index, "cleanup slot")?;
@@ -2156,6 +2142,7 @@ fn validate_slots(function: &ResolvedFunction) -> Result<BTreeSet<StorageId>, Di
                 format!("cleanup slot at index {index} has non-contiguous identity or index"),
             ));
         }
+        allocation::set_key(function, budget, &storage, &slot.storage)?;
         if !storage.insert(slot.storage.clone()) {
             return Err(replay_error(
                 function,
@@ -2166,7 +2153,14 @@ fn validate_slots(function: &ResolvedFunction) -> Result<BTreeSet<StorageId>, Di
     Ok(storage)
 }
 
+#[cfg(test)]
 fn collect_leaves(function: &ResolvedFunction) -> Result<Leaves, Diagnostic> {
+    collect_leaves_paid(function, &mut ReplayBudget::unobserved())
+}
+fn collect_leaves_paid(
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+) -> Result<Leaves, Diagnostic> {
     let mut leaves = BTreeMap::new();
     let mut places = BTreeSet::new();
     for slot in &function.cleanup_plan.slots {
@@ -2177,6 +2171,7 @@ fn collect_leaves(function: &ResolvedFunction) -> Result<Leaves, Diagnostic> {
             &slot.field_liveness_shape,
             &mut leaves,
             &mut places,
+            budget,
         )?;
     }
     for (expected, flag) in leaves.keys().enumerate() {
@@ -2187,7 +2182,7 @@ fn collect_leaves(function: &ResolvedFunction) -> Result<Leaves, Diagnostic> {
             ));
         }
     }
-    Ok(Leaves::new(leaves))
+    Leaves::new_with_budget(function, leaves, budget)
 }
 
 fn collect_shape(
@@ -2197,6 +2192,7 @@ fn collect_shape(
     shape: &FieldLivenessShape,
     leaves: &mut BTreeMap<LivenessFlagId, Leaf>,
     places: &mut BTreeSet<CleanupPlace>,
+    budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
     enum Item<'a> {
         Shape(&'a FieldLivenessShape),
@@ -2205,7 +2201,9 @@ fn collect_shape(
     }
 
     let initial_projection_depth = projections.len();
-    let mut pending = vec![Item::Shape(shape)];
+    let mut pending = Vec::new();
+    budget.reserve_vec(function, &mut pending, 1, "shape worklist")?;
+    pending.push(Item::Shape(shape));
     let mut work = 0usize;
     while let Some(item) = pending.pop() {
         work = work
@@ -2219,6 +2217,8 @@ fn collect_shape(
         }
         match item {
             Item::Push(projection) => {
+                budget.reserve_vec(function, projections, 1, "shape projections")?;
+                budget.reserve_clone(function, projection, "shape identity")?;
                 projections.try_reserve(1).map_err(|_| {
                     replay_error(
                         function,
@@ -2238,6 +2238,7 @@ fn collect_shape(
             }
             Item::Shape(FieldLivenessShape::NoDrop) => {}
             Item::Shape(FieldLivenessShape::Leaf { flag, lifecycle }) => {
+                allocation::leaf_payload(function, budget, storage, projections, lifecycle)?;
                 let leaf = Leaf {
                     place: CleanupPlace {
                         storage: storage.clone(),
@@ -2245,6 +2246,7 @@ fn collect_shape(
                     },
                     lifecycle: lifecycle.clone(),
                 };
+                allocation::leaf_indexes(function, budget, &leaves, &places, *flag, &leaf)?;
                 if leaves.insert(*flag, leaf.clone()).is_some() {
                     return Err(replay_error(
                         function,
@@ -2259,13 +2261,21 @@ fn collect_shape(
                 let mut field_ids = BTreeSet::new();
                 for (index, field) in fields.iter().enumerate() {
                     let expected = u32_index(function, index, "cleanup field")?;
-                    if field.field_index != expected || !field_ids.insert(field.field.clone()) {
+                    if field.field_index != expected
+                        || !allocation::insert_id(function, budget, &mut field_ids, &field.field)?
+                    {
                         return Err(replay_error(
                             function,
                             "record cleanup shape has non-contiguous or repeated fields",
                         ));
                     }
                 }
+                budget.reserve_vec(
+                    function,
+                    &mut pending,
+                    fields.len().saturating_mul(3),
+                    "record shape worklist",
+                )?;
                 pending
                     .try_reserve(fields.len().saturating_mul(3))
                     .map_err(|_| {
@@ -2302,7 +2312,7 @@ fn collect_shape(
                 let mut item_count = 0usize;
                 for (case_index, case) in cases.iter().enumerate() {
                     if case.case_index != u32_index(function, case_index, "cleanup variant case")?
-                        || !case_ids.insert(case.case.clone())
+                        || !allocation::insert_id(function, budget, &mut case_ids, &case.case)?
                     {
                         return Err(replay_error(
                             function,
@@ -2313,7 +2323,12 @@ fn collect_shape(
                     for (field_index, field) in case.fields.iter().enumerate() {
                         if field.field_index
                             != u32_index(function, field_index, "cleanup variant field")?
-                            || !field_ids.insert(field.field.clone())
+                            || !allocation::insert_id(
+                                function,
+                                budget,
+                                &mut field_ids,
+                                &field.field,
+                            )?
                         {
                             return Err(replay_error(
                                 function,
@@ -2333,6 +2348,7 @@ fn collect_shape(
                             replay_error(function, "cleanup shape replay work overflowed")
                         })?;
                 }
+                budget.reserve_vec(function, &mut pending, item_count, "variant shape worklist")?;
                 pending.try_reserve(item_count).map_err(|_| {
                     replay_error(
                         function,
@@ -4026,7 +4042,7 @@ fn expression_skeleton(
                         }
                     }
                     ResolvedExprKind::VecFieldRead { args, .. } => {
-                        let params = if work.budget.physical.is_some() {
+                        let params = if work.budget.selected() {
                             typed_storage::field_params(program, expression, work)?
                         } else {
                             resolved_call_params(
@@ -4192,7 +4208,7 @@ fn expression_skeleton(
                                     type_arguments,
                                 )?
                             } else if let Some(op) = vec_intrinsic {
-                                if work.budget.physical.is_some() {
+                                if work.budget.selected() {
                                     typed_storage::vector_params(program, expression, work)?
                                 } else {
                                     let [element] = type_arguments.as_slice() else {

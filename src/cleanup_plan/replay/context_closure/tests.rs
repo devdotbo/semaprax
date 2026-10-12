@@ -18,6 +18,8 @@ fn checked() -> ResolvedProgram {
 }
 fn budget(bytes: usize) -> ReplayBudget {
     let mut b = ReplayBudget::new();
+    b.admission = AdmissionMode::SelectedRetained;
+    b.payer = AllocationPayer::SelectedReservation;
     b.physical = Some(Box::new(PhysicalReservation::new(bytes)));
     b
 }

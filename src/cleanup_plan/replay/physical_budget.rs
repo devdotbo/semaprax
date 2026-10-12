@@ -16,8 +16,7 @@ impl ReplayBudget {
         physical: physical_storage::PhysicalReservation,
     ) -> Result<Self, Diagnostic> {
         Self::try_from_reservation(function, physical).map_err(|failure| {
-            let (physical, reason) = failure.into_parts();
-            drop(physical);
+            let (_, reason) = failure.into_parts();
             // Compatibility boundary: this legacy wrapper constructs an owned
             // Diagnostic without an outer paid carrier. try_from_reservation
             // itself publishes only an inline reason and the failed ledger.
@@ -31,16 +30,30 @@ impl ReplayBudget {
         bytes: usize,
         phase: &str,
     ) -> Result<(), Diagnostic> {
-        let Some(physical) = self.physical.as_deref_mut() else {
-            return Ok(());
+        self.prepare_builder(function)?;
+        let accepted = match self.payer {
+            AllocationPayer::LegacyUnobserved => true,
+            AllocationPayer::ActiveBuilder => {
+                !self.refusal_spent
+                    && !crate::bounded_output::active_refused()
+                    && crate::bounded_output::reserve_active_required(bytes)
+            }
+            AllocationPayer::SelectedReservation => self
+                .physical
+                .as_deref_mut()
+                .expect("selected reservation payer")
+                .reserve(bytes)
+                .is_ok(),
         };
-        physical.reserve(bytes).map_err(|_| {
-            self.budget_refusal(
+        if accepted {
+            Ok(())
+        } else {
+            Err(self.budget_refusal(
                 function,
                 "cleanup replay physical reservation exhausted during ",
                 phase,
-            )
-        })
+            ))
+        }
     }
 
     pub(super) fn reserve_clone<T: ClonePayload>(
@@ -49,7 +62,7 @@ impl ReplayBudget {
         value: &T,
         phase: &str,
     ) -> Result<(), Diagnostic> {
-        if self.physical.is_none() {
+        if !self.pays_allocations() {
             return Ok(());
         }
         let bytes = value.clone_payload_bytes().ok_or_else(|| {
@@ -68,16 +81,17 @@ impl ReplayBudget {
         count: usize,
         phase: &str,
     ) -> Result<(), Diagnostic> {
-        let Some(physical) = self.physical.as_deref_mut() else {
+        if !self.pays_allocations() {
             return Ok(());
-        };
-        physical.reserve_array::<T>(count).map_err(|_| {
+        }
+        let bytes = count.checked_mul(std::mem::size_of::<T>()).ok_or_else(|| {
             self.budget_refusal(
                 function,
-                "cleanup replay physical reservation exhausted during ",
-                phase,
+                "cleanup replay physical array layout overflowed",
+                "",
             )
-        })
+        })?;
+        self.reserve_bytes(function, bytes, phase)
     }
 
     pub(super) fn reserve_btree_node<K, V>(
@@ -85,7 +99,7 @@ impl ReplayBudget {
         function: &ResolvedFunction,
         phase: &str,
     ) -> Result<(), Diagnostic> {
-        if self.physical.is_none() {
+        if !self.pays_allocations() {
             return Ok(());
         }
         let bytes = physical_storage::btree_node_upper::<K, V>().ok_or_else(|| {
@@ -105,7 +119,7 @@ impl ReplayBudget {
         additional: usize,
         phase: &str,
     ) -> Result<(), Diagnostic> {
-        if self.physical.is_none() {
+        if !self.pays_allocations() {
             return Ok(());
         }
         self.reserve_bytes(function, 0, phase)?;
@@ -157,7 +171,7 @@ impl ReplayBudget {
         additional: usize,
         phase: &str,
     ) -> Result<(), Diagnostic> {
-        if self.physical.is_none() {
+        if !self.pays_allocations() {
             return Ok(());
         }
         self.reserve_bytes(function, 0, phase)?;
@@ -216,7 +230,11 @@ impl ReplayBudget {
         reason: &str,
         phase: &str,
     ) -> Diagnostic {
-        if self.physical.is_none() || (self.refusal_text.is_none() && !self.refusal_spent) {
+        if self.payer == AllocationPayer::LegacyUnobserved
+            || (self.payer == AllocationPayer::SelectedReservation
+                && self.refusal_text.is_none()
+                && !self.refusal_spent)
+        {
             // Detached test ledgers retain their previous unadmitted route;
             // only from_reservation establishes a prepaid selected budget.
             return replay_error(function, format!("{reason}{phase}"));
@@ -224,10 +242,9 @@ impl ReplayBudget {
         self.refusal_spent = true;
         self.remaining = 0;
         self.skeleton_remaining = 0;
-        self.physical
-            .as_deref_mut()
-            .expect("selected reservation")
-            .reject();
+        if let Some(physical) = self.physical.as_deref_mut() {
+            physical.reject();
+        }
         let Some(mut text) = self.refusal_text.take() else {
             // A selected budget is sticky; no second diagnostic allocation can
             // spend a consumed reservation. The stable error identity remains.

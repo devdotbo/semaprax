@@ -22,7 +22,7 @@ impl<'a> Context<'a> {
         function: &ResolvedFunction,
         budget: &mut ReplayBudget,
     ) -> Result<Self, Diagnostic> {
-        if budget.physical.is_none()
+        if !budget.selected()
             || !source.function_templates().is_empty()
             || !source.function_instances().is_empty()
         {
@@ -187,6 +187,8 @@ mod tests {
     }
     fn budget(bytes: usize) -> ReplayBudget {
         let mut budget = ReplayBudget::new();
+        budget.admission = AdmissionMode::SelectedRetained;
+        budget.payer = AllocationPayer::SelectedReservation;
         budget.physical = Some(Box::new(ReplayPhysicalReservation::new(bytes)));
         budget
     }

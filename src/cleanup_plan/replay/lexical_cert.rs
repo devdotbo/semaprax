@@ -411,12 +411,7 @@ pub(super) fn authenticate(
                 };
                 if target != &certificate.target
                     || !route_ok
-                    || !storage::chain_contains(
-                        function,
-                        exit.from,
-                        lp.region,
-                        budget.physical.is_some(),
-                    )?
+                    || !storage::chain_contains(function, exit.from, lp.region, budget.selected())?
                 {
                     return Err(fail("loop break exit disagrees with its loop join"));
                 }
@@ -892,7 +887,7 @@ fn validate_normal_ends(
                             function,
                             exit.from,
                             plan.blocks[failure.from.0 as usize].region,
-                            budget.physical.is_some(),
+                            budget.selected(),
                         )
                         .unwrap_or(false)
                 });
@@ -921,18 +916,8 @@ fn validate_normal_ends(
         }
         for edge in &plan.edges {
             if domains[edge.from.0 as usize].is_none()
-                && storage::chain_contains(
-                    function,
-                    edge.from,
-                    region.id,
-                    budget.physical.is_some(),
-                )?
-                && !storage::chain_contains(
-                    function,
-                    edge.to,
-                    region.id,
-                    budget.physical.is_some(),
-                )?
+                && storage::chain_contains(function, edge.from, region.id, budget.selected())?
+                && !storage::chain_contains(function, edge.to, region.id, budget.selected())?
                 && !lexical_edges.contains(&edge.id)
             {
                 return Err(fail(

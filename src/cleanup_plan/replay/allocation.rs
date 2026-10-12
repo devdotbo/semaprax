@@ -1,0 +1,166 @@
+//! Admission is independent of the actual allocation payer. An active builder
+//! does not grant any selected schema, helper lease or replay shortcut.
+use super::*;
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum AdmissionMode {
+    Ordinary,
+    SelectedRetained,
+}
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum AllocationPayer {
+    LegacyUnobserved,
+    ActiveBuilder,
+    SelectedReservation,
+}
+pub(super) fn set_key<K: Ord + ClonePayload>(
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+    set: &BTreeSet<K>,
+    key: &K,
+) -> Result<(), Diagnostic> {
+    if !set.contains(key) {
+        budget.reserve_btree_node::<K, ()>(function, "ordinary identity tree")?;
+    }
+    budget.reserve_clone(function, key, "ordinary identity clone")
+}
+pub(super) fn insert_id(
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+    set: &mut BTreeSet<DeclarationId>,
+    key: &DeclarationId,
+) -> Result<bool, Diagnostic> {
+    set_key(function, budget, set, key)?;
+    Ok(set.insert(key.clone()))
+}
+pub(super) fn leaf_payload(
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+    storage: &StorageId,
+    projections: &Vec<DeclarationId>,
+    lifecycle: &DeclarationId,
+) -> Result<(), Diagnostic> {
+    budget.reserve_clone(function, storage, "ordinary leaf storage")?;
+    budget.reserve_clone(function, projections, "ordinary leaf projections")?;
+    budget.reserve_clone(function, lifecycle, "ordinary leaf lifecycle")
+}
+pub(super) fn leaf_indexes(
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+    leaves: &BTreeMap<LivenessFlagId, Leaf>,
+    places: &BTreeSet<CleanupPlace>,
+    flag: LivenessFlagId,
+    leaf: &Leaf,
+) -> Result<(), Diagnostic> {
+    if !leaves.contains_key(&flag) {
+        budget.reserve_btree_node::<LivenessFlagId, Leaf>(function, "ordinary leaf index")?;
+    }
+    budget.reserve_clone(function, &leaf.place, "ordinary leaf clone")?;
+    budget.reserve_clone(function, &leaf.lifecycle, "ordinary leaf lifecycle clone")?;
+    if !places.contains(&leaf.place) {
+        budget.reserve_btree_node::<CleanupPlace, ()>(function, "ordinary leaf places")?;
+    }
+    Ok(())
+}
+impl ReplayBudget {
+    #[cfg(test)]
+    pub(super) fn unobserved() -> Self {
+        Self {
+            payer: AllocationPayer::LegacyUnobserved,
+            ..Self::new()
+        }
+    }
+
+    pub(super) fn new() -> Self {
+        Self {
+            admission: AdmissionMode::Ordinary,
+            payer: if crate::bounded_output::active_limit().is_some() {
+                AllocationPayer::ActiveBuilder
+            } else {
+                AllocationPayer::LegacyUnobserved
+            },
+            remaining: MAX_REPLAY_WORK_UNITS,
+            skeleton_remaining: 0,
+            skeleton_spent: 0,
+            lent_skeleton: false,
+            merge_paths: false,
+            physical: None,
+            refusal_text: None,
+            refusal_spent: false,
+        }
+    }
+    #[cfg(test)]
+    pub(super) fn with_skeleton_limit(limit: usize) -> Self {
+        Self {
+            admission: AdmissionMode::Ordinary,
+            payer: if crate::bounded_output::active_limit().is_some() {
+                AllocationPayer::ActiveBuilder
+            } else {
+                AllocationPayer::LegacyUnobserved
+            },
+            remaining: MAX_REPLAY_WORK_UNITS,
+            skeleton_remaining: limit,
+            skeleton_spent: 0,
+            lent_skeleton: false,
+            merge_paths: false,
+            physical: None,
+            refusal_text: None,
+            refusal_spent: false,
+        }
+    }
+
+    pub(super) fn selected(&self) -> bool {
+        self.admission == AdmissionMode::SelectedRetained
+    }
+    pub(super) fn pays_allocations(&self) -> bool {
+        self.payer != AllocationPayer::LegacyUnobserved
+    }
+    /// Reserve the first refusal's backing on the existing builder before any
+    /// replay allocation. Initial refusal is inline, never an unfunded string.
+    pub(super) fn prepare_builder(
+        &mut self,
+        function: &ResolvedFunction,
+    ) -> Result<(), Diagnostic> {
+        if self.payer != AllocationPayer::ActiveBuilder {
+            return Ok(());
+        }
+        if self.refusal_spent || crate::bounded_output::active_refused() {
+            return Err(self.budget_refusal(function, "ordinary builder already failed", ""));
+        }
+        let Some(capacity) = function.id.as_str().len().checked_add(512) else {
+            return Err(self.budget_refusal(
+                function,
+                "ordinary replay refusal layout overflowed",
+                "",
+            ));
+        };
+        if self
+            .refusal_text
+            .as_ref()
+            .is_some_and(|text| text.capacity() >= capacity)
+        {
+            return Ok(());
+        }
+        // A later function may have a longer current ID. Charge its new
+        // complete backing while the earlier buffer is still held.
+        if !crate::bounded_output::reserve_active_required(capacity) {
+            return Err(self.budget_refusal(
+                function,
+                "ordinary replay refusal reservation exhausted",
+                "",
+            ));
+        }
+        let text = String::with_capacity(capacity);
+        if text.capacity() != capacity {
+            return Err(self.budget_refusal(
+                function,
+                "ordinary replay refusal capacity differs",
+                "",
+            ));
+        }
+        self.refusal_text = Some(text);
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests;

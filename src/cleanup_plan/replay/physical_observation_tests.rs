@@ -99,6 +99,8 @@ fn physical_refusal_survives_work_reset_and_prevents_actual_vector_growth() {
         .find(|function| function.id.as_str() == "physical.loop")
         .unwrap();
     let mut budget = ReplayBudget::new();
+    budget.admission = AdmissionMode::SelectedRetained;
+    budget.payer = AllocationPayer::SelectedReservation;
     budget.physical = Some(Box::new(physical_storage::PhysicalReservation::new(8)));
     let (capacity, observed) = test_allocation_observer::measure(|| {
         budget

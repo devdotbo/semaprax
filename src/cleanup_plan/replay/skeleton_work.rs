@@ -66,7 +66,7 @@ impl<'a, 'b> SkeletonWork<'a, 'b> {
         budget: &'b mut ReplayBudget,
         index: Option<&'a crate::loop_calls::byte_writer::ModuleIndex<'a>>,
     ) -> Result<Self, Diagnostic> {
-        if budget.physical.is_none() {
+        if !budget.selected() {
             return Ok(Self::with_index(program, function, budget, index));
         }
         selected_profile::validate(program, function, budget)?;
@@ -228,7 +228,7 @@ impl SkeletonWork<'_, '_> {
     ) -> Result<(), Diagnostic> {
         self.charge(1, phase)?;
         note_skeleton_materialization();
-        if self.budget.physical.is_some() {
+        if self.budget.selected() {
             if target.prefix.is_some() || observations.prefix.is_some() {
                 if !self.budget.merge_paths {
                     return Err(replay_error(
@@ -257,9 +257,7 @@ impl SkeletonWork<'_, '_> {
     ) -> Result<(), Diagnostic> {
         self.charge(1, phase)?;
         note_skeleton_materialization();
-        if self.budget.physical.is_some()
-            && path.observations.prefix.is_some()
-            && !self.budget.merge_paths
+        if self.budget.selected() && path.observations.prefix.is_some() && !self.budget.merge_paths
         {
             return Err(replay_error(
                 self.function,
@@ -283,7 +281,7 @@ impl SkeletonWork<'_, '_> {
     ) -> Result<(), Diagnostic> {
         self.budget
             .reserve_bytes(self.function, physical_clone::observation_rc_bytes(), phase)?;
-        if self.budget.physical.is_some() && observations.prefix.is_some() {
+        if self.budget.selected() && observations.prefix.is_some() {
             if !self.budget.merge_paths {
                 return Err(replay_error(
                     self.function,
@@ -624,7 +622,7 @@ impl SkeletonWork<'_, '_> {
         let mut result = Vec::with_capacity(groups.len());
         for (mut path, members) in groups {
             if members.len() > 1 {
-                path.observations = if self.budget.physical.is_some() {
+                path.observations = if self.budget.selected() {
                     self.union_observations(members)?
                 } else {
                     Observations::union(members)
@@ -736,7 +734,7 @@ impl SkeletonWork<'_, '_> {
         let mut result = Vec::with_capacity(groups.len());
         for ((mut path, commits), members) in groups {
             if members.len() > 1 {
-                path.observations = if self.budget.physical.is_some() {
+                path.observations = if self.budget.selected() {
                     self.union_observations(members)?
                 } else {
                     Observations::union(members)

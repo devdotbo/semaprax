@@ -72,8 +72,7 @@ fn validate_core<E: From<Diagnostic>>(
     #[cfg(not(test))]
     let selected_schema = schema::selected_schema_with_index(program, function, None)?;
     let plan = &function.cleanup_plan;
-    if budget.physical.is_none() || plan.lexical_control.is_some() || plan.schema != selected_schema
-    {
+    if !budget.selected() || plan.lexical_control.is_some() || plan.schema != selected_schema {
         return Err(replay_error(
             function,
             "selected scalar helper requires its exact nonlexical schema",

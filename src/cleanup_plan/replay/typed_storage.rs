@@ -34,7 +34,7 @@ pub(super) fn push_observation(
     work: &mut SkeletonWork<'_, '_>,
     phase: &str,
 ) -> Result<(), Diagnostic> {
-    if work.budget.physical.is_some() && observations.prefix.is_some() {
+    if work.budget.selected() && observations.prefix.is_some() {
         return Err(replay_error(
             work.function,
             "selected lexical replay requires flat observations",
@@ -67,7 +67,13 @@ fn parameter_id(
     work: &mut SkeletonWork<'_, '_>,
     metered: bool,
 ) -> Result<crate::hir::ValueId, Diagnostic> {
-    if work.budget.physical.is_none() {
+    if metered && !work.budget.selected() {
+        return Err(replay_error(
+            work.function,
+            "borrowed parameter constructor requires backing reservation",
+        ));
+    }
+    if !work.budget.pays_allocations() {
         if metered {
             return Err(replay_error(
                 work.function,
@@ -176,7 +182,7 @@ fn static_params_impl(
 /// construction. Refuse before catalog helpers can create uncharged types,
 /// names or identities; ordinary replay retains the existing provider path.
 pub(super) fn unsupported_provider(work: &mut SkeletonWork<'_, '_>) -> Result<(), Diagnostic> {
-    if work.budget.physical.is_some() {
+    if work.budget.selected() {
         Err(replay_error(
             work.function,
             "selected lexical replay parameter provider is outside the metered primitive profile",

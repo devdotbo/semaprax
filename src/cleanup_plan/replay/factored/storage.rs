@@ -44,7 +44,7 @@ pub(super) fn reserve_transition_observation(
     budget: &mut ReplayBudget,
     transition: &CleanupTransition,
 ) -> Result<(), Diagnostic> {
-    if budget.physical.is_none() {
+    if !budget.pays_allocations() {
         return Ok(());
     }
     match transition {

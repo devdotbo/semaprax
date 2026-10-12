@@ -96,7 +96,13 @@ fn with_policy<P: errors::Policy>(
     function: &ResolvedFunction,
     reservation: &mut super::physical_storage::PhysicalReservation,
 ) -> Result<BTreeMap<ExpressionId, Option<CallFact>>, P::Error> {
-    let mut capacity = capacity::FactCapacity::new(function, reservation)
+    with_capacity::<P>(function, capacity::Payer::Selected(reservation))
+}
+fn with_capacity<P: errors::Policy>(
+    function: &ResolvedFunction,
+    payer: capacity::Payer<'_>,
+) -> Result<BTreeMap<ExpressionId, Option<CallFact>>, P::Error> {
+    let mut capacity = capacity::FactCapacity::with_payer(function, payer)
         .map_err(|failure| P::capacity(function, failure))?;
     let mut facts = BTreeMap::new();
     for expression in function
@@ -108,6 +114,33 @@ fn with_policy<P: errors::Policy>(
         collect_expression_facts::<P>(function, expression, &mut facts, Some(&mut capacity))?;
     }
     Ok(facts)
+}
+
+/// Ordinary callers retain the complete legacy verdict and error text. Only
+/// acquisition refusal consumes the actual builder's already-paid diagnostic.
+pub(super) fn with_budget(
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+) -> Result<BTreeMap<ExpressionId, Option<CallFact>>, Diagnostic> {
+    if budget.payer == AllocationPayer::ActiveBuilder {
+        budget.prepare_builder(function)?;
+        let result = with_capacity::<errors::Selected>(function, capacity::Payer::ActiveBuilder);
+        return match result {
+            Err(errors::EngineError::Fact(receipt)) if receipt.physical() => {
+                Err(budget.budget_refusal(function, receipt.detail(), ""))
+            }
+            Err(errors::EngineError::Fact(receipt)) => Err(receipt.legacy(function)),
+            Err(errors::EngineError::Owned(error)) => Err(error),
+            Err(errors::EngineError::Failed) => {
+                Err(budget.budget_refusal(function, "expression facts already failed", ""))
+            }
+            Ok(facts) => Ok(facts),
+        };
+    }
+    match budget.physical.as_deref_mut() {
+        Some(physical) => expression_facts_with_reservation(function, physical),
+        None => expression_facts(function),
+    }
 }
 
 /// Only this shared producer's errors are inline. Other replay children keep

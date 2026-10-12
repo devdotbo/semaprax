@@ -13,6 +13,7 @@ pub(super) struct Leaves {
 }
 
 impl Leaves {
+    #[cfg(test)]
     pub(super) fn new(by_flag: BTreeMap<LivenessFlagId, Leaf>) -> Self {
         let mut by_storage = BTreeMap::<StorageId, Vec<LivenessFlagId>>::new();
         for (flag, leaf) in &by_flag {

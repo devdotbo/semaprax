@@ -271,6 +271,10 @@ pub(super) struct PaidReport {
         reason = "each owner is held for its Drop and owning observations"
     )
 )]
+#[allow(
+    clippy::large_enum_variant,
+    reason = "affine paid carrier retains the original inline ledger; boxing on failure would require new unpaid allocation"
+)]
 enum Ledger {
     /// Initial preparation setup refused after the carrier was paid.
     Setup(SetupFailure),
@@ -286,6 +290,10 @@ enum Ledger {
         dead_code,
         reason = "the ledger and inline reason travel with the report"
     )
+)]
+#[allow(
+    clippy::large_enum_variant,
+    reason = "whole paid owner is deliberately inline and sizeof-priced; failure cannot allocate a replacement Box"
 )]
 enum Refusal {
     Unpaid {
@@ -562,8 +570,7 @@ impl PaidRefusal {
                 reason: UnpaidReason::FormMismatch,
             }),
             Refusal::Unpaid { failure, .. } => {
-                let (physical, reason) = failure.into_parts();
-                drop(physical);
+                let (_, reason) = failure.into_parts();
                 Err(Unpaid {
                     form: expected,
                     reason: UnpaidReason::Carrier(reason),

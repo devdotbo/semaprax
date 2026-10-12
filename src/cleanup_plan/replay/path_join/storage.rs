@@ -163,7 +163,7 @@ pub(in crate::cleanup_plan::replay) fn reserve_btree_node<K, V>(
     budget: &mut ReplayBudget,
     phase: &str,
 ) -> Result<(), Diagnostic> {
-    if budget.physical.is_none() {
+    if !budget.pays_allocations() {
         return Ok(());
     }
     budget.reserve_bytes(
@@ -178,7 +178,7 @@ pub(in crate::cleanup_plan::replay) fn reserve_state_clone(
     budget: &mut ReplayBudget,
     phase: &str,
 ) -> Result<(), Diagnostic> {
-    if budget.physical.is_none() {
+    if !budget.pays_allocations() {
         return Ok(());
     }
     if state.staged_copy_result.is_some() {
@@ -195,7 +195,7 @@ pub(super) fn reserve_ownership_clone(
     state: &PathState,
     budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
-    if budget.physical.is_none() {
+    if !budget.pays_allocations() {
         return Ok(());
     }
     let bytes = (|| {
@@ -219,7 +219,7 @@ pub(super) fn reserve_control_clone(
     state: &PathState,
     budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
-    if budget.physical.is_none() {
+    if !budget.pays_allocations() {
         return Ok(());
     }
     if state.staged_copy_result.is_some() {
@@ -280,7 +280,7 @@ pub(super) fn reserve_variant_identity(
     id: &DeclarationId,
     budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
-    if budget.physical.is_none() {
+    if !budget.pays_allocations() {
         return Ok(());
     }
     budget.reserve_bytes(
@@ -304,7 +304,7 @@ pub(in crate::cleanup_plan::replay) fn validate_place(
     if !known.contains(&place.storage) {
         return super::super::validate_place(function, place, known, leaves);
     }
-    if budget.physical.is_none() {
+    if !budget.pays_allocations() {
         return super::super::validate_place(function, place, known, leaves);
     }
     let matches = |leaf: &super::super::Leaf| {
@@ -408,12 +408,16 @@ mod tests {
         };
         let bytes = state_bytes(&state).unwrap();
         let mut exact = ReplayBudget::new();
+        exact.admission = AdmissionMode::SelectedRetained;
+        exact.payer = AllocationPayer::SelectedReservation;
         exact.physical = Some(Box::new(
             super::super::super::physical_storage::PhysicalReservation::new(bytes),
         ));
         reserve_state_clone(&function, &state, &mut exact, "test state clone").unwrap();
         assert_eq!(state.clone(), state);
         let mut short = ReplayBudget::new();
+        short.admission = AdmissionMode::SelectedRetained;
+        short.payer = AllocationPayer::SelectedReservation;
         short.physical = Some(Box::new(
             super::super::super::physical_storage::PhysicalReservation::new(bytes - 1),
         ));

@@ -153,6 +153,8 @@ fn heap_continuation_backing_and_path_storage_refuse_one_short_before_growth() {
         let mut budget = ReplayBudget::new();
         reserve_program_skeleton_work(program, std::iter::once(function), &mut budget).unwrap();
         let mut work = SkeletonWork::new(program, function, &mut budget);
+        work.budget.admission = AdmissionMode::SelectedRetained;
+        work.budget.payer = AllocationPayer::SelectedReservation;
         work.budget.physical = Some(Box::new(PhysicalReservation::new(bytes)));
         let result = expression_skeleton(program, function, &function.body, &mut work);
         let physical = work.budget.physical.as_mut().unwrap();
