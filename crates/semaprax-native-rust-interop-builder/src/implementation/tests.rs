@@ -430,11 +430,13 @@ fn observe_cleanup_function(
         observe_place(place, false, observed);
     }
     for status in &plan.status_sources {
-        if let StatusProducer::CheckedArithmetic {
-            normalized_cases, ..
-        } = &status.producer
-        {
-            observed.status_case_capacity_entries += normalized_cases.capacity();
+        match &status.producer {
+            StatusProducer::CheckedArithmetic {
+                normalized_cases, ..
+            } => observed.status_case_capacity_entries += normalized_cases.capacity(),
+            StatusProducer::PropagatedCall { .. } | StatusProducer::ContractFalse { .. } => {}
+            // The frozen capacity census has no allocation-status accounting.
+            StatusProducer::CheckedAllocation { .. } => return None,
         }
     }
     for block in &plan.blocks {

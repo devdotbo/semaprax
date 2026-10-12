@@ -145,6 +145,7 @@ fn operation_source(function: &ResolvedFunction, callee: &str) -> StatusSourceId
                 Some(source.id.clone())
             }
             StatusProducer::CheckedArithmetic { .. }
+            | StatusProducer::CheckedAllocation { .. }
             | StatusProducer::ContractFalse { .. }
             | StatusProducer::PropagatedCall { .. } => None,
         })
@@ -173,6 +174,7 @@ fn callee_for_call(
                 Some(callee.clone())
             }
             StatusProducer::CheckedArithmetic { .. }
+            | StatusProducer::CheckedAllocation { .. }
             | StatusProducer::ContractFalse { .. }
             | StatusProducer::PropagatedCall { .. } => None,
         })
@@ -727,6 +729,7 @@ fn ensures_failure_finalizes_the_provisional_owned_result_without_publication() 
                 ..
             } => Some(source.id.clone()),
             StatusProducer::CheckedArithmetic { .. }
+            | StatusProducer::CheckedAllocation { .. }
             | StatusProducer::ContractFalse { .. }
             | StatusProducer::PropagatedCall { .. } => None,
         })

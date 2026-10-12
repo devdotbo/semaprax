@@ -72,6 +72,9 @@ impl Emitter<'_> {
         match source.lane {
             StatusLane::OwnerAdmission => Ok(format!("spx_admit_{index}(context,f)")),
             StatusLane::OperationFailure => Ok(format!("spx_eval_{index}(context,f).status")),
+            StatusLane::AllocationFailure => Err(sdk_error(
+                "native allocation failure status is outside the closed profile",
+            )),
             StatusLane::ContractFalse => Err(sdk_error(
                 "native owner contract status is outside the closed profile",
             )),
