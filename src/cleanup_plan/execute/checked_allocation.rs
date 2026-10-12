@@ -40,7 +40,7 @@ pub(in crate::cleanup_plan) fn execute_for_conformance(
     if function.return_type != ResolvedType::Usize {
         validate_public_result_type(program, function)?;
     }
-    Executor::new(program, function, scenario)?.run()
+    Executor::new_with_lifecycle_policy(program, function, scenario, true)?.run()
 }
 
 pub(super) fn failure_status(

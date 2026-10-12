@@ -679,10 +679,11 @@ struct Executor<'a> {
 }
 
 impl<'a> Executor<'a> {
-    fn new(
+    fn new_with_lifecycle_policy(
         program: &'a ResolvedProgram,
         function: &'a ResolvedFunction,
         scenario: CleanupScenario,
+        checked_allocation: bool,
     ) -> Result<Self, CleanupExecutionError> {
         let mut leaves = BTreeMap::new();
         for slot in &function.cleanup_plan.slots {
@@ -697,7 +698,8 @@ impl<'a> Executor<'a> {
         // and before execution can emit any event. A binding is required for
         // every imported lifecycle present anywhere in this function's plan,
         // even when the selected path would leave its guard false.
-        let lifecycle_bindings = preflight_finalizer_bindings(program, function, &scenario)?;
+        let lifecycle_bindings =
+            preflight_finalizer_bindings(program, function, &scenario, checked_allocation)?;
         let variant_domains = collect_variant_domains(program, function)?;
         let status_arena = StatusArena::new(
             StatusContextId::new(scenario.context_nonce),

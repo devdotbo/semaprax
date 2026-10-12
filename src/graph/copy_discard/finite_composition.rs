@@ -48,18 +48,19 @@ pub(in crate::graph) fn authenticate(program: &ResolvedProgram) -> Result<bool, 
                         return Ok(false);
                     }
                     let mut child_covered = *covered;
-                    if let Some((statement, 1)) = cursor.last_statement_child() {
-                        if let S::While {
+                    if let Some((
+                        S::While {
                             condition, body, ..
                         }
                         | S::LexicalWhile {
                             condition, body, ..
-                        } = statement
-                        {
-                            child_covered |=
-                                crate::finite_owned_record_loop::resolved(program, condition, body)
-                                    .is_some();
-                        }
+                        },
+                        1,
+                    )) = cursor.last_statement_child()
+                    {
+                        child_covered |=
+                            crate::finite_owned_record_loop::resolved(program, condition, body)
+                                .is_some();
                     }
                     frames[length] = Some((
                         crate::hir::lexical_exit::ChildCursor::new(child),

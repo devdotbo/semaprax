@@ -132,7 +132,7 @@ fn current_v84_composition_does_not_lend_frozen_or_detached_parts_authority() {
 }
 #[test]
 fn native_import_flags_precede_current_finite_composition_authentication() {
-    let (_, mut program) = resolved(SOURCE);
+    let (_, program) = resolved(SOURCE);
     assert_eq!(
         super::super::nested_owned::nested_cleanup_graph_schema(
             Some(&program),
@@ -144,21 +144,22 @@ fn native_import_flags_precede_current_finite_composition_authentication() {
         .code,
         "SPX-G410"
     );
-    let native = crate::hir::resolve(
-        &crate::parse(
-            r#"module native;
+    // Resolve the whole interface-bearing source so its declaration facts and
+    // imported-interface authority are current, rather than splice stale HIR.
+    let native_source = SOURCE.replacen(
+        "module app;",
+        r#"module app;
 @id("native.host") interface Host permits {} {
  @id("native.ping") import rust fn ping(value:i64)->i64 effects {} failure infallible;
-}
-@id("native.main") fn main()->i64 {0}
-"#,
-            "graph-v84-native-flags.spx",
-        )
-        .unwrap(),
-    )
-    .unwrap();
-    program.interfaces = native.interfaces;
-    assert_eq!(graph_schema(&program).unwrap_err().code, "SPX-G410");
+}"#,
+        1,
+    );
+    let (_, native) = resolved(&native_source);
+    assert_eq!(graph_schema(&native).unwrap_err().code, "SPX-G410");
+    let mut stale = program.clone();
+    stale.interfaces = native.interfaces;
+    assert_eq!(crate::hir::validate(&stale).unwrap_err().code, "SPX-H006");
+    assert_eq!(graph_schema(&stale).unwrap_err().code, "SPX-H006");
 }
 #[test]
 fn forged_flat_loan_cleanup_and_finite_counter_cannot_select_current_v84_composition() {
@@ -200,11 +201,7 @@ fn forged_flat_loan_cleanup_and_finite_counter_cannot_select_current_v84_composi
         }
         assert_eq!(
             graph_schema(&program).unwrap_err().code,
-            if mutation == 2 {
-                "SPX-G410"
-            } else {
-                "SPX-H006"
-            },
+            "SPX-H006",
             "mutation {mutation}"
         );
         assert_eq!(
@@ -222,8 +219,7 @@ fn nonfinite_copy_discard_retains_the_existing_nested_projected_loan_route() {
 @id("leaf") record Leaf {@id("leaf.payload") payload:Bytes,}
 @id("outer") record Outer {@id("outer.leaf") leaf:Leaf,}
 @id("take") fn take(value:own Outer)->i64 {
- match own value {Outer{leaf:Leaf{payload}}=>{return 0;},};
- 0
+ match own value {Outer{leaf:Leaf{payload}}=>{return 0;},}
 }
 @id("inspect") fn inspect(value:own Outer)->usize {
  let view=bytes_as_slice(value.leaf.payload);
