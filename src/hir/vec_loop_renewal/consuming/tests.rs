@@ -540,8 +540,10 @@ fn absent_current_explicit_record_keeps_old_negative_without_cursor_reservation(
         old_sites, 0,
         "full independent old scan has no positive proof"
     );
-    let ((empty, overflow, charged), observed) = crate::test_allocation_observer::measure(|| {
-        crate::bounded_output::with_limit_usage(0, || {
+    // The fixed ledger context is established before observing the collectors.
+    // Its Rc is test setup, not consuming-renewal traversal storage.
+    let ((empty, observed), overflow, charged) = crate::bounded_output::with_limit_usage(0, || {
+        crate::test_allocation_observer::measure(|| {
             let mut found = BTreeMap::new();
             append_bindings(&program, function, &mut found);
             found.is_empty() && sites(&program, function).is_empty()
