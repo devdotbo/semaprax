@@ -44,7 +44,11 @@ pub(crate) fn program_uses_owned_leaf_vec(program: &ResolvedProgram) -> bool {
                 let mut pending = vec![root];
                 while let Some(expr) = pending.pop() {
                     if private_iterator(&expr.ty)
-                        || matches!(expr.kind, crate::hir::ResolvedExprKind::VecFieldRead { .. })
+                        || matches!(
+                            expr.kind,
+                            crate::hir::ResolvedExprKind::VecFieldRead { .. }
+                                | crate::hir::ResolvedExprKind::RowLoan { .. }
+                        )
                     {
                         return true;
                     }

@@ -229,7 +229,9 @@ impl Evaluator<'_> {
                 };
                 let mut values: Vec<(ValueId, Value)> = Vec::with_capacity(args.len());
                 for (param, argument) in function.params.iter().zip(args.iter()) {
-                    let value = if param.ownership == hir::OwnershipMode::Borrow
+                    let value = if let ResolvedExprKind::RowLoan { loan, args } = &argument.kind {
+                        self.evaluate_row_loan(param, loan, args, environment, depth)?
+                    } else if param.ownership == hir::OwnershipMode::Borrow
                         && param.ty == ResolvedType::Bytes
                     {
                         self.borrow_bytes_call_argument(environment, argument, depth)?

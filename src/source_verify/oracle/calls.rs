@@ -986,17 +986,35 @@ pub(super) fn oracle_call(
         activate_borrowed_bytes_call_loans(program, args, &target.params, variables, types)
     });
     for (index, arg) in args.iter().enumerate() {
-        let actual = check_expr(
-            program,
-            current,
-            arg,
-            variables,
-            functions,
-            types,
-            result_type,
-            allow_moves,
-            diagnostics,
-        );
+        // Row Loan v1: the one admitted value use of a traversal row.
+        let loan = target.and_then(|target| {
+            super::super::record_traversal::row_loan::loan_argument(
+                arg, target, index, variables, types,
+            )
+            .inspect(|_| {
+                if !super::super::record_traversal::row_loan::reader_proof(types, target, index) {
+                    diagnostics.push(error(
+                        program,
+                        "SPX-T284",
+                        super::super::record_traversal::row_loan::HELPER_REFUSAL,
+                        arg.span,
+                    ));
+                }
+            })
+        });
+        let actual = loan.or_else(|| {
+            check_expr(
+                program,
+                current,
+                arg,
+                variables,
+                functions,
+                types,
+                result_type,
+                allow_moves,
+                diagnostics,
+            )
+        });
         let Some(param) = specialized_target
             .as_ref()
             .and_then(|target| target.params.get(index))

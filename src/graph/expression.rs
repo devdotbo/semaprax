@@ -79,6 +79,9 @@ pub(super) fn expr_json(
             crate::byte_ops::RANGE_START_AFTER_END_CODE,
             crate::byte_ops::RANGE_END_OUT_OF_BOUNDS_CODE,
         ),
+        ResolvedExprKind::RowLoan { loan, args } => {
+            super::row_loan::expression_json(program, &header, loan, args)?
+        }
         ResolvedExprKind::VecFieldRead { element, field, bytes, args } => {
             let arguments = args.iter().map(|arg| expr_json(program, arg))
                 .collect::<Result<Vec<_>, _>>()?.budgeted_join(",");

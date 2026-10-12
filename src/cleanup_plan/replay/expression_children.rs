@@ -146,7 +146,9 @@ pub(super) fn replay_expression_child(
         | ResolvedExprKind::String(_)
         | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::Place(_)
-        | ResolvedExprKind::BorrowPlace { .. } => None,
+        | ResolvedExprKind::BorrowPlace { .. }
+        // Row Loan v1 is a cleanup-inert borrowed leaf over two exact places.
+        | ResolvedExprKind::RowLoan { .. } => None,
     }
 }
 

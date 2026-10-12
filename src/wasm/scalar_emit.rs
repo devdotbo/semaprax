@@ -993,6 +993,7 @@ pub(super) fn emit_with_control(
         }
         ResolvedExprKind::LiteralFormat { .. }
         | ResolvedExprKind::VecFieldRead { .. }
+        | ResolvedExprKind::RowLoan { .. }
         | ResolvedExprKind::ConstructRecord { .. }
         | ResolvedExprKind::ArrayU8(_)
         | ResolvedExprKind::RepeatArrayU8 { .. }

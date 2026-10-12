@@ -4,6 +4,16 @@ use std::sync::atomic::{AtomicU64, Ordering};
 static SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
 pub(super) fn run(source: &str, expected_code: u32, expected_value: i64) {
+    run_status(source, expected_code, "semaprax.vec.v1", expected_value);
+}
+
+/// `run` with the selected failure's exact status domain.
+pub(super) fn run_status(
+    source: &str,
+    expected_code: u32,
+    expected_domain: &str,
+    expected_value: i64,
+) {
     let program = semaprax::check(source, "scoped-vec-field-native.spx").unwrap();
     let resolved = semaprax::hir::resolve(&program).unwrap();
     let generated = semaprax::codegen::emit_hir_c(&resolved).unwrap();
@@ -49,7 +59,7 @@ int main(void) {{
    if(status!=SPX_STATUS_SUCCESS||result!=INT64_C({expected_value})||context.status_arena.length!=before)return 3;
   }}else{{
    const struct spx_normalized_status *entry=spx_status_resolve(&context,status);
-   if(status==SPX_STATUS_SUCCESS||result!=INT64_C(252525)||!entry||entry->code!={expected_code}||strcmp(entry->domain_id,"semaprax.vec.v1")||context.status_arena.length!=before+1)return 4;
+   if(status==SPX_STATUS_SUCCESS||result!=INT64_C(252525)||!entry||entry->code!={expected_code}||strcmp(entry->domain_id,"{expected_domain}")||context.status_arena.length!=before+1)return 4;
   }}
   if(spx_test_live)return 5;
   for(uint32_t j=0;j<SPX_VEC_AUTHORITY_CAPACITY;++j)if(context.vec_authority[j].live)return 6;

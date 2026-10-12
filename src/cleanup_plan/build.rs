@@ -2473,6 +2473,16 @@ impl<'a> PlanBuilder<'a> {
                             commits: Vec::new(),
                         });
                     }
+                    // Row Loan v1 borrows two exact places; neither transfers,
+                    // and the loan owns no storage, status or transition.
+                    ResolvedExprKind::RowLoan { args, .. } => {
+                        super::row_loan::require_places(args)?;
+                        results.push(EvalResult {
+                            block,
+                            state,
+                            owned_source: None,
+                        });
+                    }
                     ResolvedExprKind::VecFieldRead { args, .. } => {
                         frames.push(Frame::CallNext {
                             expression,
@@ -4679,6 +4689,14 @@ impl<'a> PlanBuilder<'a> {
             ResolvedExprKind::Invoke { .. } | ResolvedExprKind::Closure { .. } => {
                 let (callee, args, _) = crate::hir::function_value::cleanup_call(expression)?;
                 self.lower_call(expression, callee, None, args, (block, state, region))
+            }
+            ResolvedExprKind::RowLoan { args, .. } => {
+                super::row_loan::require_places(args)?;
+                Ok(EvalResult {
+                    block,
+                    state,
+                    owned_source: None,
+                })
             }
             ResolvedExprKind::VecFieldRead { args, .. } => self.lower_call(
                 expression,

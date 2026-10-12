@@ -14,6 +14,7 @@ pub(in crate::codegen) struct Layout {
 pub(in crate::codegen) fn program_uses_field_reads(program: &ResolvedProgram) -> bool {
     if crate::vec_ops::sort_keys::uses(program)
         || crate::vec_ops::string_slot::resolved_uses(program)
+        || crate::hir::row_loan::program_uses(program)
     {
         return true;
     }
@@ -131,11 +132,13 @@ pub(super) fn emit_runtime(output: &mut impl super::super::COutput, program: &Re
         {
             let mut pending = vec![root];
             while let Some(expression) = pending.pop() {
-                if let crate::hir::ResolvedExprKind::VecFieldRead { element, .. } = &expression.kind
-                {
-                    if let Some(l) = layout(program, element) {
-                        layouts.insert(l.symbol.clone(), l);
-                    }
+                let element = match &expression.kind {
+                    crate::hir::ResolvedExprKind::VecFieldRead { element, .. } => Some(element),
+                    crate::hir::ResolvedExprKind::RowLoan { loan, .. } => Some(&loan.element),
+                    _ => None,
+                };
+                if let Some(l) = element.and_then(|element| layout(program, element)) {
+                    layouts.insert(l.symbol.clone(), l);
                 }
                 if field_reads {
                     if let crate::hir::ResolvedExprKind::Closure { body, .. } = &expression.kind {

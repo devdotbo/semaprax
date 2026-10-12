@@ -42,7 +42,8 @@ pub(super) fn collect_locals(
         }
         ResolvedExprKind::Call { args, .. }
         | ResolvedExprKind::LiteralFormat { args, .. }
-        | ResolvedExprKind::VecFieldRead { args, .. } => {
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => {
             for arg in args {
                 collect_locals(arg, parameter_count, layout)?;
             }

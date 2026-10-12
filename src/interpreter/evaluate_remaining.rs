@@ -409,6 +409,10 @@ impl Evaluator<'_> {
                 bytes,
                 args,
             } => self.evaluate_vec_field(element, field, *bytes, args, environment, depth),
+            // Only the call boundary stages a row loan, against its parameter.
+            ResolvedExprKind::RowLoan { .. } => Err(Flow::Guard(
+                "row loan reached evaluation outside its call argument slot",
+            )),
             ResolvedExprKind::LiteralFormat { template, args } => {
                 self.evaluate_literal_format(template, args, environment, depth)
             }

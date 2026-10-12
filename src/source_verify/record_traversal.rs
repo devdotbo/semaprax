@@ -153,5 +153,7 @@ fn child_counted<'a>(
     Ok(expression.child(index))
 }
 
+pub(super) mod row_loan;
+
 #[cfg(test)]
 mod tests;

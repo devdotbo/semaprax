@@ -30,6 +30,7 @@ mod partition;
 mod places;
 mod record_iterator_item;
 mod resource_text;
+pub(super) mod row_loan;
 mod scalar_match;
 mod stdin_stream;
 mod str_equality;
@@ -624,6 +625,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 bytes,
                 args,
             } => self.emit_vec_field_read(expr, element, field, *bytes, args),
+            ResolvedExprKind::RowLoan { loan, args } => self.emit_row_loan(expr, loan, args),
             ResolvedExprKind::ByteRange {
                 operation,
                 source,
@@ -903,6 +905,10 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         let mut arguments = Vec::with_capacity(args.len());
         for (index, (expected, argument)) in target.params.iter().zip(values).enumerate() {
             self.require_type(&argument.ty, expected, &format!("call argument {index}"))?;
+            if target.lent.get(index) == Some(&true) {
+                arguments.push(self.row_loan_argument(&args[index], &argument)?);
+                continue;
+            }
             arguments.push(if is_direct_plan_owned(self.program, expected) {
                 match target.param_ownerships[index] {
                     hir::OwnershipMode::Own => {

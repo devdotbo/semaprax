@@ -370,7 +370,8 @@ pub(super) fn derive_byte_slice_provenance(
                     }
                     ResolvedExprKind::Call { args, .. }
                     | ResolvedExprKind::LiteralFormat { args, .. }
-                    | ResolvedExprKind::VecFieldRead { args, .. } => pending.extend(args),
+                    | ResolvedExprKind::VecFieldRead { args, .. }
+                    | ResolvedExprKind::RowLoan { args, .. } => pending.extend(args),
                     ResolvedExprKind::ByteRange {
                         source, start, end, ..
                     } => {

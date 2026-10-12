@@ -899,7 +899,8 @@ fn collect_expr_record_types(
             }
             ResolvedExprKind::Call { args, .. }
             | ResolvedExprKind::LiteralFormat { args, .. }
-            | ResolvedExprKind::VecFieldRead { args, .. } => {
+            | ResolvedExprKind::VecFieldRead { args, .. }
+            | ResolvedExprKind::RowLoan { args, .. } => {
                 pending.extend(args.iter().rev().map(Work::Expression));
             }
             ResolvedExprKind::NativeRustImportCall(call) => {

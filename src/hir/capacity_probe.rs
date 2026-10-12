@@ -244,6 +244,16 @@ pub(super) fn resolved_expr_owned_capacity(expression: &ResolvedExpr) -> usize {
                 + args.capacity() * std::mem::size_of::<ResolvedExpr>();
             bytes += args.iter().map(resolved_expr_owned_capacity).sum::<usize>();
         }
+        ResolvedExprKind::RowLoan { loan, args } => {
+            bytes += std::mem::size_of::<super::RowLoan>()
+                + resolved_type_owned_capacity(&loan.element)
+                + loan.traversal.as_str().len()
+                + loan.bound.as_str().len()
+                + loan.callee.as_str().len()
+                + loan.parameter.as_str().len()
+                + args.capacity() * std::mem::size_of::<ResolvedExpr>();
+            bytes += args.iter().map(resolved_expr_owned_capacity).sum::<usize>();
+        }
         ResolvedExprKind::LiteralFormat { template, args } => {
             bytes += template.capacity() + args.capacity() * std::mem::size_of::<ResolvedExpr>();
             bytes += args.iter().map(resolved_expr_owned_capacity).sum::<usize>();

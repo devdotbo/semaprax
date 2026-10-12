@@ -20,7 +20,8 @@ pub(super) fn find_expression_by<'a>(
             .or_else(|| args.iter().find_map(|a| find_expression_by(a, predicate))),
         hir::ResolvedExprKind::Call { args, .. }
         | hir::ResolvedExprKind::LiteralFormat { args, .. }
-        | hir::ResolvedExprKind::VecFieldRead { args, .. } => args
+        | hir::ResolvedExprKind::VecFieldRead { args, .. }
+        | hir::ResolvedExprKind::RowLoan { args, .. } => args
             .iter()
             .find_map(|argument| find_expression_by(argument, predicate)),
         hir::ResolvedExprKind::NativeRustImportCall(call) => call

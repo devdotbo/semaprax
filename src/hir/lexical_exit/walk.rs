@@ -153,9 +153,10 @@ pub(crate) fn child(expr: &ResolvedExpr, index: usize) -> Option<&ResolvedExpr> 
                 args.get(index - 1)
             }
         }
-        K::Call { args, .. } | K::LiteralFormat { args, .. } | K::VecFieldRead { args, .. } => {
-            args.get(index)
-        }
+        K::Call { args, .. }
+        | K::LiteralFormat { args, .. }
+        | K::VecFieldRead { args, .. }
+        | K::RowLoan { args, .. } => args.get(index),
         K::NativeRustImportCall(call) => call.args.get(index),
         K::HostCommandCall(call) => call.args.get(index),
         K::ByteRange {

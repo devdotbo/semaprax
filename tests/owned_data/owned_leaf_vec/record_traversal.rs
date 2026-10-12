@@ -64,6 +64,79 @@ fn repeated_singleton_loops_expire_views_before_owner_reentry() {
     );
 }
 
+// Row Loan v1: one authored helper, compiled once, reads lent frozen rows and an
+// ordinary resident record through the versioned borrowed-record carrier. The
+// native witness aborts on any allocation after the first field read, so a row,
+// record or leaf copy in the loan path cannot pass. Arguments evaluate left to
+// right, contracts read the lent row, and the guarded strict call stays lazy.
+const ROW_LOAN: &str = r#"@id("app.weight") fn weight(row:borrow Row, bias:i64)->i64
+ requires row.priority>0
+ ensures result>bias
+{ row.priority+bias }
+@id("app.strict") fn strict(row:borrow Row)->i64
+ requires row.priority>100
+{ row.priority }
+@id("app.main") fn main()->i64 {
+ let resident=Row{priority:5,title:"r",payload:bytes_zeroed(1usize)};
+ let empty=vec_with_capacity<Row>(3usize);
+ let first=vec_push<Row>(empty,Row{priority:7,title:"é\u{0}",payload:bytes_zeroed(3usize)});
+ let second=vec_push<Row>(first,Row{priority:11,title:"x",payload:bytes_zeroed(1usize)});
+ let rows=vec_push<Row>(second,Row{priority:13,title:"",payload:bytes_zeroed(0usize)});
+ let direct=weight(resident,0);
+ let mut total=0;
+ for borrow row at index in rows {
+  total=total+weight(row,i64_from_usize(index));
+  if index==99usize && strict(row)>0 {total=0;};
+  0
+ }
+ let renewed=vec_sort_owned<Row>(rows);
+ if total==34 && direct==5 && vec_len<Row>(renewed)==3usize {29}else{0}
+}"#;
+
+#[test]
+fn row_loans_reach_one_scalar_reader_without_copies_across_engines() {
+    run(ROW_LOAN, 29);
+}
+
+#[test]
+fn row_loan_contract_failure_is_canonical_and_settles_the_frozen_owner() {
+    let failing = ROW_LOAN.replace(
+        "if index==99usize && strict(row)>0 {total=0;};",
+        "if index==1usize && strict(row)>0 {total=0;};",
+    );
+    assert_ne!(failing, ROW_LOAN);
+    let source = format!("{DECLARATION}{failing}");
+    let path = std::env::temp_dir().join(format!(
+        "record-row-loan-failure-{}-{}.spx",
+        std::process::id(),
+        SEQUENCE.fetch_add(1, Ordering::Relaxed)
+    ));
+    std::fs::write(&path, &source).unwrap();
+    let result =
+        semaprax::interpreter::interpret(&path, "app.main", &[], &Default::default()).unwrap();
+    std::fs::remove_file(path).unwrap();
+    assert!(
+        result.envelope.contains("semaprax.contract.v1"),
+        "{}",
+        result.envelope
+    );
+    // requires-false is semaprax.contract.v1 code 1. Native selects exactly that
+    // status after the lent reads began, publishes no result, allocates nothing
+    // and settles the frozen owner on every reentry; the Wasm host proves the same.
+    super::super::scoped_vec_field_native::run_status(&source, 1, "semaprax.contract.v1", 0);
+    run_wasm(&failing, 1, 0, "none");
+}
+
+#[test]
+fn hostile_host_read_refuses_inside_a_row_loan_helper_before_publication() {
+    // A hostile status or forged descriptor must stop the helper at its first
+    // lent read (exactly one import call); the host proves teardown settles
+    // every frozen owner. An i64 field has no malformed bit pattern to test.
+    for refusal in ["field-unknown-status", "field-forged-shape"] {
+        run_wasm(ROW_LOAN, 0, 29, refusal);
+    }
+}
+
 #[test]
 fn malformed_host_row_refuses_before_scalar_or_view_publication() {
     run_wasm(

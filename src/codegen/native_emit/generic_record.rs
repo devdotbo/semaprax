@@ -68,7 +68,11 @@ impl<'a, O: COutput> CEmitter<'a, O> {
     pub(super) fn mark_unused_parameter_aliases(&mut self) -> Result<(), Diagnostic> {
         for (index, parameter) in self.function.params.iter().enumerate() {
             self.line(&format!("(void)spx_param_{index};"));
-            if parameter.ownership == OwnershipMode::Borrow {
+            // Lent parameters declare only the versioned row carrier; their
+            // ordinary hidden leaf aliases do not exist in this signature.
+            if parameter.ownership == OwnershipMode::Borrow
+                && self.lent_parameter(&parameter.id).is_none()
+            {
                 for path in super::borrowed_aggregate_byte_paths(
                     self.program,
                     self.record_layouts,

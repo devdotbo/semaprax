@@ -207,7 +207,8 @@ pub(super) fn validate_expression(
             | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::String(_)
             | ResolvedExprKind::LiteralFormat { .. }
-            | ResolvedExprKind::VecFieldRead { .. } => return Err(body_error(function_id)),
+            | ResolvedExprKind::VecFieldRead { .. }
+            | ResolvedExprKind::RowLoan { .. } => return Err(body_error(function_id)),
             ResolvedExprKind::Place(place) => {
                 if !place.projections.is_empty() {
                     return Err(body_error(function_id));

@@ -311,7 +311,8 @@ pub(crate) fn push_resolved_expression_children_in_authored_order<'a>(
         }
         ResolvedExprKind::Call { args, .. }
         | ResolvedExprKind::LiteralFormat { args, .. }
-        | ResolvedExprKind::VecFieldRead { args, .. } => pending.extend(args.iter().rev()),
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => pending.extend(args.iter().rev()),
         ResolvedExprKind::NativeRustImportCall(call) => pending.extend(call.args.iter().rev()),
         ResolvedExprKind::HostCommandCall(call) => pending.extend(call.args.iter().rev()),
         ResolvedExprKind::ByteRange {
@@ -815,7 +816,8 @@ fn byte_capacity_expression_in(
                         }
                     }
                     ResolvedExprKind::LiteralFormat { args, .. }
-                    | ResolvedExprKind::VecFieldRead { args, .. } => {
+                    | ResolvedExprKind::VecFieldRead { args, .. }
+                    | ResolvedExprKind::RowLoan { args, .. } => {
                         frames.push(Frame::Sequence(args.len()));
                         for argument in args.iter().rev() {
                             frames.push(Frame::Visit(argument, false));

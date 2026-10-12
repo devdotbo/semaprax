@@ -116,6 +116,15 @@ pub enum ResolvedExprKind {
         bytes: bool,
         args: Vec<ResolvedExpr>,
     },
+    /// Row Loan v1: a call-only borrow of one frozen owned-leaf Vec row. It
+    /// appears only as a direct argument of an ordinary monomorphic call whose
+    /// matching parameter is the descriptor's exact `borrow R` parameter.
+    /// `args` are exactly [named Vec place, row index place], authored order.
+    /// No record value is materialized; see `hir::row_loan`.
+    RowLoan {
+        loan: Box<super::row_loan::RowLoan>,
+        args: Vec<ResolvedExpr>,
+    },
     NativeRustImportCall(ResolvedNativeRustImportCall),
     HostCommandCall(ResolvedHostCommandCall),
     Unary {

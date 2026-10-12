@@ -232,6 +232,7 @@ fn normalize_expression_spans(expression: &mut ResolvedExpr) {
         ResolvedExprKind::Call { args, .. }
         | ResolvedExprKind::LiteralFormat { args, .. }
         | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. }
         | ResolvedExprKind::NativeRustImportCall(crate::hir::ResolvedNativeRustImportCall {
             args,
             ..

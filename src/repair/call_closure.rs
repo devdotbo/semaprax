@@ -118,6 +118,7 @@ fn collect_calls(
         | ResolvedExprKind::ArrayU8(_)
         | ResolvedExprKind::RepeatArrayU8 { .. }
         | ResolvedExprKind::BorrowPlace { .. }
+        | ResolvedExprKind::RowLoan { .. }
         | ResolvedExprKind::Place(_) => {}
         ResolvedExprKind::LiteralFormat { args, .. }
         | ResolvedExprKind::VecFieldRead { args, .. } => {

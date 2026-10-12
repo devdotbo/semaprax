@@ -588,6 +588,7 @@ fn validate_expression_profile(
             ResolvedExprKind::ConstructRecord { .. }
             | ResolvedExprKind::LiteralFormat { .. }
             | ResolvedExprKind::VecFieldRead { .. }
+            | ResolvedExprKind::RowLoan { .. }
             | ResolvedExprKind::ConstructVariant { .. }
             | ResolvedExprKind::Match { .. }
             | ResolvedExprKind::Try { .. }

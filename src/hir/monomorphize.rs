@@ -468,7 +468,9 @@ pub(super) fn materialize_template_expr(
         ResolvedExprKind::BorrowedUtf8Literal(value) => {
             ResolvedExprKind::BorrowedUtf8Literal(value.clone())
         }
-        ResolvedExprKind::LiteralFormat { .. } | ResolvedExprKind::VecFieldRead { .. } => {
+        ResolvedExprKind::LiteralFormat { .. }
+        | ResolvedExprKind::VecFieldRead { .. }
+        | ResolvedExprKind::RowLoan { .. } => {
             return Err(hir_error(
                 "generic templates cannot construct literal formats",
             ))

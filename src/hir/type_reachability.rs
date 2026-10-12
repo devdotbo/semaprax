@@ -204,6 +204,12 @@ fn collect_expression(expression: &ResolvedExpr, declarations: &mut BTreeSet<Dec
                 collect_expression(argument, declarations);
             }
         }
+        ResolvedExprKind::RowLoan { loan, args } => {
+            collect_type(&loan.element, declarations);
+            for argument in args {
+                collect_expression(argument, declarations);
+            }
+        }
         ResolvedExprKind::NativeRustImportCall(call) => {
             for argument in &call.args {
                 collect_expression(argument, declarations);

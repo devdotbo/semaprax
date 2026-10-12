@@ -233,6 +233,14 @@ fn walk(
                 walk(program, child, inventory, depth + 1)?;
             }
         }
+        // Row Loan v1 borrows its whole Vec place for its own read interval;
+        // the receiving call counts the call-long borrowed argument itself.
+        ResolvedExprKind::RowLoan { args, .. } => {
+            add(&mut inventory.drafts, 1)?;
+            for argument in args {
+                walk(program, argument, inventory, depth + 1)?;
+            }
+        }
         ResolvedExprKind::VecFieldRead { args, .. } => {
             add(
                 &mut inventory.drafts,
@@ -462,7 +470,8 @@ fn edge_entries(expression: &ResolvedExpr) -> Result<usize> {
         ResolvedExprKind::Invoke { args, .. } => sum(&[args.len(), 1])?,
         ResolvedExprKind::Call { args, .. }
         | ResolvedExprKind::LiteralFormat { args, .. }
-        | ResolvedExprKind::VecFieldRead { args, .. } => args.len(),
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => args.len(),
         ResolvedExprKind::NativeRustImportCall(call) => call.args.len(),
         ResolvedExprKind::HostCommandCall(call) => call.args.len(),
         ResolvedExprKind::ByteRange { .. } => 3,

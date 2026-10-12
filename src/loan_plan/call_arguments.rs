@@ -8,10 +8,13 @@ pub(super) fn borrowed_call_arguments<'a>(
     expression: &'a ResolvedExpr,
 ) -> Vec<(usize, &'a ResolvedExpr)> {
     match &expression.kind {
-        ResolvedExprKind::VecFieldRead { args, .. } => args
-            .first()
-            .map(|source| vec![(0, source)])
-            .unwrap_or_default(),
+        // A Row Loan v1 borrows its whole Vec place exactly like a scoped field
+        // read; its enclosing call adds the call-long loan of that same origin.
+        ResolvedExprKind::VecFieldRead { args, .. } | ResolvedExprKind::RowLoan { args, .. } => {
+            args.first()
+                .map(|source| vec![(0, source)])
+                .unwrap_or_default()
+        }
         ResolvedExprKind::Call {
             callee,
             instance,

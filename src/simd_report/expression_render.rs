@@ -126,6 +126,18 @@ pub(super) fn render_expr(
                 output.push(')');
             }
         }
+        // A lent row has no source spelling beyond its row name; render the
+        // exact borrowed Vec slot it denotes.
+        ResolvedExprKind::RowLoan { args, .. } => {
+            if let [vector, index] = args.as_slice() {
+                output.push_str(&render_child(walker, vector, 0));
+                output.push('[');
+                output.push_str(&render_child(walker, index, 0));
+                output.push(']');
+            } else {
+                output.push_str("<invalid>");
+            }
+        }
         ResolvedExprKind::Call { callee, args, .. } => {
             let name = walker.declaration_name(callee);
             output.push_str(&name);

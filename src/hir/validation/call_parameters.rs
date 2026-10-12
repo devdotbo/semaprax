@@ -164,7 +164,11 @@ impl HirValidator<'_> {
                 OwnershipMode::Own => actual == OwnershipMode::Own,
                 OwnershipMode::Borrow => {
                     let exact_place = matches!(&argument.kind, ResolvedExprKind::Place(_));
-                    if crate::stdin_stream_ops::is_reader(param.ty) {
+                    if let ResolvedExprKind::RowLoan { loan, .. } = &argument.kind {
+                        // Row Loan v1: its call slot, parameter identity and
+                        // callee proof are replayed by `hir::row_loan`.
+                        actual == OwnershipMode::Borrow && loan.element == *param.ty
+                    } else if crate::stdin_stream_ops::is_reader(param.ty) {
                         matches!(actual, OwnershipMode::Own | OwnershipMode::Borrow)
                             && matches!(&argument.kind, ResolvedExprKind::Place(place) if place.projections.is_empty())
                     } else if *param.ty == ResolvedType::Bytes

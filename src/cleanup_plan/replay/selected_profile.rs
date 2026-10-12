@@ -6,6 +6,7 @@ pub(super) mod collections;
 pub(super) mod conditions;
 #[cfg(test)]
 mod receiving_tests;
+mod row_loan;
 const DEPTH: usize = 514;
 type Frame<'a> = Option<(crate::hir::lexical_exit::ChildCursor<'a>, bool)>;
 pub(super) fn validate(
@@ -112,6 +113,9 @@ pub(super) fn validate(
                     }
                     ResolvedExprKind::VecFieldRead { .. } => {
                         collections::field(program, function, expression, budget)?
+                    }
+                    ResolvedExprKind::RowLoan { .. } => {
+                        row_loan::validate(program, function, expression, budget)?
                     }
                     ResolvedExprKind::BorrowedUtf8Literal(value) => {
                         if expression.ty != ResolvedType::Str

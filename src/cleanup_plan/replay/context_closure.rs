@@ -189,6 +189,7 @@ impl<'a, 'b> Walk<'a, 'b> {
             | K::ByteRange { .. }
             | K::LiteralFormat { .. }
             | K::VecFieldRead { .. }
+            | K::RowLoan { .. }
             | K::NativeRustImportCall(_)
             | K::HostCommandCall(_)
             | K::ConstructRecord { .. }

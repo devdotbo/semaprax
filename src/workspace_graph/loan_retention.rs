@@ -390,7 +390,10 @@ fn walk(
                 child(argument)?;
             }
         }
-        E::Call { args, .. } | E::LiteralFormat { args, .. } | E::VecFieldRead { args, .. } => {
+        E::Call { args, .. }
+        | E::LiteralFormat { args, .. }
+        | E::VecFieldRead { args, .. }
+        | E::RowLoan { args, .. } => {
             for argument in args {
                 child(argument)?;
             }

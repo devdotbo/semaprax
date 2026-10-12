@@ -699,7 +699,8 @@ fn render_expr(
         | ResolvedExprKind::ByteRange { .. }
         | ResolvedExprKind::Call { .. }
         | ResolvedExprKind::LiteralFormat { .. }
-        | ResolvedExprKind::VecFieldRead { .. } => Err(package_error(
+        | ResolvedExprKind::VecFieldRead { .. }
+        | ResolvedExprKind::RowLoan { .. } => Err(package_error(
             "owned-data semantic recipe expression is unsupported",
         )),
     }

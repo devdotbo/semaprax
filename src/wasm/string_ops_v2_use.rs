@@ -23,7 +23,8 @@ pub(super) fn program_uses_string_ops_v2(program: &ResolvedProgram) -> bool {
             }
             ResolvedExprKind::Call { args, .. }
             | ResolvedExprKind::LiteralFormat { args, .. }
-            | ResolvedExprKind::VecFieldRead { args, .. } => pending.extend(args.iter()),
+            | ResolvedExprKind::VecFieldRead { args, .. }
+            | ResolvedExprKind::RowLoan { args, .. } => pending.extend(args.iter()),
             ResolvedExprKind::Invoke { callable, args } => {
                 pending.push(callable);
                 pending.extend(args.iter());

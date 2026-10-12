@@ -261,6 +261,7 @@ fn expression_json(
         ),
         ResolvedExprKind::NativeRustImportCall(_)
         | ResolvedExprKind::HostCommandCall(_)
+        | ResolvedExprKind::RowLoan { .. }
         | ResolvedExprKind::Block { .. } | ResolvedExprKind::VecConstructor { .. }
         | ResolvedExprKind::Match { .. }
         | ResolvedExprKind::Try { .. }

@@ -335,11 +335,13 @@ pub use expr_nodes::{
     ResolvedRecordMatchFieldPattern, ResolvedRecordMatchPatternField, ResolvedStatement,
 };
 pub use ids::{DeclarationId, ExpressionId, FunctionExecutionId, FunctionInstanceId, ValueId};
+pub(crate) mod row_loan;
 pub(crate) use monomorphize::substitute_type;
 use monomorphize::{
     materialize_function_template, resolved_owned_record_substitutions,
     resolved_scalar_substitutions, same_function_meaning,
 };
+pub use row_loan::{RowLoan, RowLoanVersion, ROW_LOAN_V1};
 
 pub(crate) fn is_exact_materialized_function_instance(
     template: &ResolvedFunctionTemplate,

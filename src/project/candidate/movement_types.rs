@@ -779,6 +779,7 @@ impl<'a> Node<'a> {
                             ..
                         },
                     ) => a == b && af == bf && ab == bb,
+                    (E::RowLoan { loan: a, .. }, E::RowLoan { loan: b, .. }) => a == b,
                     (
                         E::Call {
                             callee: a,
@@ -896,7 +897,8 @@ impl<'a> Node<'a> {
                     .map(Self::Expression),
                 E::Call { args, .. }
                 | E::LiteralFormat { args, .. }
-                | E::VecFieldRead { args, .. } => args.get(index).map(Self::Expression),
+                | E::VecFieldRead { args, .. }
+                | E::RowLoan { args, .. } => args.get(index).map(Self::Expression),
                 E::NativeRustImportCall(c) => c.args.get(index).map(Self::Expression),
                 E::HostCommandCall(c) => c.args.get(index).map(Self::Expression),
                 E::Unary { value, .. }

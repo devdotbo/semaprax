@@ -291,6 +291,14 @@ fn audit_resolved_expression(root: &ResolvedExpr) -> Result<(), Diagnostic> {
                 reject_nul_identity("scoped vector field", field.as_str())?;
                 pending.extend(args);
             }
+            ResolvedExprKind::RowLoan { loan, args } => {
+                audit_resolved_type(&loan.element)?;
+                reject_nul_identity("row loan traversal", loan.traversal.as_str())?;
+                reject_nul_identity("row loan bound", loan.bound.as_str())?;
+                reject_nul_identity("row loan callee", loan.callee.as_str())?;
+                reject_nul_identity("row loan parameter", loan.parameter.as_str())?;
+                pending.extend(args);
+            }
             ResolvedExprKind::Upcast { source } | ResolvedExprKind::Yield { request: source } => {
                 pending.push(source)
             }
@@ -939,7 +947,8 @@ pub(crate) fn visit_resolved_calls(
             }
         }
         ResolvedExprKind::LiteralFormat { args, .. }
-        | ResolvedExprKind::VecFieldRead { args, .. } => {
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => {
             for arg in args {
                 visit_resolved_calls(arg, visit);
             }
@@ -1122,7 +1131,8 @@ pub(crate) fn visit_workspace_call_sites<'a, E>(
                 }
             }
             ResolvedExprKind::LiteralFormat { args, .. }
-            | ResolvedExprKind::VecFieldRead { args, .. } => {
+            | ResolvedExprKind::VecFieldRead { args, .. }
+            | ResolvedExprKind::RowLoan { args, .. } => {
                 for argument in args {
                     walk(owner, argument, visit)?;
                 }

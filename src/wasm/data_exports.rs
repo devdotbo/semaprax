@@ -472,6 +472,7 @@ fn validate_function(
             | ResolvedExprKind::VecConstructor { .. }
             | ResolvedExprKind::LiteralFormat { .. }
             | ResolvedExprKind::VecFieldRead { .. }
+            | ResolvedExprKind::RowLoan { .. }
             | ResolvedExprKind::NativeRustImportCall(_)
             | ResolvedExprKind::HostCommandCall(_) => {
                 return Err(admission(format!(

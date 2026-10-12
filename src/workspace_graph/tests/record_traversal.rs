@@ -341,3 +341,119 @@ fn operation_projection_authenticates_constructor_provenance_and_children() {
         "SPX-G173"
     );
 }
+
+fn row_loan_mut(expression: &mut hir::ResolvedExpr) -> Option<&mut hir::ResolvedExpr> {
+    if matches!(expression.kind, hir::ResolvedExprKind::RowLoan { .. }) {
+        return Some(expression);
+    }
+    match &mut expression.kind {
+        hir::ResolvedExprKind::Block { statements, tail } => {
+            for statement in statements.iter_mut() {
+                let found = match statement {
+                    hir::ResolvedStatement::Let { value, .. }
+                    | hir::ResolvedStatement::Assign { value, .. } => row_loan_mut(value),
+                    hir::ResolvedStatement::Unsafe { body, .. } => row_loan_mut(body),
+                    hir::ResolvedStatement::While {
+                        condition, body, ..
+                    }
+                    | hir::ResolvedStatement::LexicalWhile {
+                        condition, body, ..
+                    } => match row_loan_mut(condition) {
+                        Some(found) => Some(found),
+                        None => row_loan_mut(body),
+                    },
+                };
+                if let Some(found) = found {
+                    return Some(found);
+                }
+            }
+            row_loan_mut(tail)
+        }
+        hir::ResolvedExprKind::Binary { left, right, .. } => match row_loan_mut(left) {
+            Some(found) => Some(found),
+            None => row_loan_mut(right),
+        },
+        hir::ResolvedExprKind::Call { args, .. } => args.iter_mut().find_map(row_loan_mut),
+        _ => None,
+    }
+}
+
+// Row Loan v1: an authored `score(row)` slot binds to exactly one retained
+// descriptor whose callee and parameter come from current provider source.
+#[test]
+fn imported_row_loan_slots_replay_current_provider_source_and_refuse_forgery() {
+    let input = vec![
+        canonical_source(
+            "library.spx",
+            r#"module library;
+@id("library.row") record Row { @id("library.row.left") left:i64, @id("library.row.label") label:string, }
+@id("library.score") fn score(row:borrow Row)->i64 { row.left }
+@id("library.zero") fn zero()->i64 { 0 }
+"#,
+        ),
+        canonical_source(
+            "app.spx",
+            r#"module app;
+use type @id("library.row") from library as Row;
+use function @id("library.score") from library as score;
+@id("app.walk") fn walk(rows:borrow Vec<Row>)->i64 {
+ let mut total=0;
+ for borrow row in rows { total=total+score(row); 0 }
+ total
+}
+@id("app.main") fn main()->i64 {0}
+"#,
+        ),
+    ];
+    let programs = parsed_sources(&input);
+    let build = build_owned(input.clone()).unwrap();
+    super::super::record_traversal::validate(&programs, &build.hir.modules).unwrap();
+    for attack in 0..4 {
+        let mut build = build_owned(input.clone()).unwrap();
+        let modules = &mut build.hir.modules;
+        let walk = modules
+            .iter_mut()
+            .find(|module| module.module == "app")
+            .unwrap()
+            .functions
+            .iter_mut()
+            .find(|function| function.id.as_str() == "app.walk")
+            .unwrap();
+        let loan = row_loan_mut(&mut walk.body).expect("retained row loan");
+        match attack {
+            // Same signature shape, different stable callee identity.
+            0 => {
+                let hir::ResolvedExprKind::RowLoan { loan, .. } = &mut loan.kind else {
+                    unreachable!()
+                };
+                loan.callee = hir::DeclarationId::new("library.zero");
+            }
+            // The descriptor's parameter must be the callee's exact one.
+            1 => {
+                let hir::ResolvedExprKind::RowLoan { loan, .. } = &mut loan.kind else {
+                    unreachable!()
+                };
+                loan.parameter = loan.bound.clone();
+            }
+            // Its Vec and index children must be the authored loop's places.
+            2 => {
+                let hir::ResolvedExprKind::RowLoan { args, .. } = &mut loan.kind else {
+                    unreachable!()
+                };
+                args.swap(0, 1);
+            }
+            // A retained slot without its descriptor is not an authored loan.
+            _ => {
+                let hir::ResolvedExprKind::RowLoan { args, .. } = &loan.kind else {
+                    unreachable!()
+                };
+                let vector = args[0].clone();
+                *loan = vector;
+            }
+        }
+        assert!(
+            super::super::record_traversal::validate(&programs, &build.hir.modules).is_err(),
+            "attack {attack}"
+        );
+    }
+}

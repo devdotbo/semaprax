@@ -99,6 +99,7 @@ mod owned_vec;
 mod prepared;
 mod projected_string_view;
 mod public_api_argument;
+mod row_loan;
 mod string_slot;
 mod vec_field;
 pub use public_api_argument::PublicApiArgument;
@@ -2635,9 +2636,9 @@ fn scan_closure(
             {
                 Err(reject_scan(expression, REASON_PLACE_PROJECTION))
             }
-            ResolvedExprKind::LiteralFormat { .. } | ResolvedExprKind::VecFieldRead { .. } => {
-                Ok(())
-            }
+            ResolvedExprKind::LiteralFormat { .. }
+            | ResolvedExprKind::VecFieldRead { .. }
+            | ResolvedExprKind::RowLoan { .. } => Ok(()),
             ResolvedExprKind::Call {
                 callee, instance, ..
             } => {

@@ -675,6 +675,10 @@ fn relocate_expression(
         ResolvedExprKind::Call { args, .. } | ResolvedExprKind::LiteralFormat { args, .. } => {
             relocate_arguments(args, execution, path, "arg", values)?;
         }
+        // A row loan names its traversal region; relocation would forge it.
+        ResolvedExprKind::RowLoan { .. } => {
+            return Err(invalid("resumable projection cannot relocate a row loan"))
+        }
         ResolvedExprKind::VecFieldRead { args, bytes, .. } => {
             let call_path = if *bytes {
                 format!("{path}.arg.0")

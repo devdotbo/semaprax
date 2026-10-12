@@ -134,6 +134,9 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     .bindings
                     .get(name)
                     .is_some_and(|binding| binding.traversal_row.is_some())
+                    && !self
+                        .row_loan_sites
+                        .contains(&(expression.span.start, expression.span.end))
                 {
                     return Err(error(
                         self.program,
@@ -868,6 +871,12 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     });
                     VerifierCallTarget::Ordinary(specialized)
                 };
+                if let VerifierCallTarget::Ordinary(Some(VerifierFunctionSignature::Borrowed(
+                    function,
+                ))) = &target
+                {
+                    self.note_row_loan_arguments(function, args, scope);
+                }
                 let borrowed_bytes_loans = match &target {
                     VerifierCallTarget::Ordinary(Some(VerifierFunctionSignature::Borrowed(
                         function,

@@ -81,7 +81,7 @@ path,source_graph_schema,source_revision,source_digest,bytes
 Manifest files retain path order. The base v1 source graph schemas are
 `semaprax.graph.v10` through `semaprax.graph.v14`. Admitted additive language
 profiles register exact additional spellings, including `semaprax.graph.v81`
-for typed Vec constructors. Every tag is selected by authenticated per-file HIR;
+for typed Vec constructors and `semaprax.graph.v82` for record row loans. Every tag is selected by authenticated per-file HIR;
 unknown, padded, suffixed and combined schema spellings remain refused. `source_revision` is the existing Graph revision of that file's
 canonical AST. `source_digest` is
 `sha256("semaprax.semantic-review.source-digest.v1\0" ||

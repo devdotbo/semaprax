@@ -839,7 +839,8 @@ fn expression_path_counts_with_while(
             | ResolvedExprKind::String(_)
             | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::Place(_)
-            | ResolvedExprKind::BorrowPlace { .. } => None,
+            | ResolvedExprKind::BorrowPlace { .. }
+            | ResolvedExprKind::RowLoan { .. } => None,
             ResolvedExprKind::Unary { value, .. }
             | ResolvedExprKind::Upcast { source: value }
             | ResolvedExprKind::Yield { request: value }
@@ -974,7 +975,8 @@ fn expression_path_counts_with_while(
                     | ResolvedExprKind::String(_)
                     | ResolvedExprKind::BorrowedUtf8Literal(_)
                     | ResolvedExprKind::Place(_)
-                    | ResolvedExprKind::BorrowPlace { .. } => HirPathCounts::ONE,
+                    | ResolvedExprKind::BorrowPlace { .. }
+                    | ResolvedExprKind::RowLoan { .. } => HirPathCounts::ONE,
                     ResolvedExprKind::Unary { op, .. } => {
                         let inner = children[0];
                         if *op == UnaryOp::Neg {
@@ -1290,6 +1292,7 @@ fn expression_skeleton_work_upper(
                 ResolvedExprKind::BorrowPlace { place, .. } => {
                     place.projections.len().saturating_mul(2) + 8
                 }
+                ResolvedExprKind::RowLoan { .. } => 8,
                 ResolvedExprKind::Unary { .. } => 8,
                 ResolvedExprKind::Binary { .. } => 12,
                 ResolvedExprKind::Invoke { args, .. }
@@ -2107,7 +2110,8 @@ fn collect_expression_statuses(
             | ResolvedExprKind::String(_)
             | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::Place(_)
-            | ResolvedExprKind::BorrowPlace { .. } => {}
+            | ResolvedExprKind::BorrowPlace { .. }
+            | ResolvedExprKind::RowLoan { .. } => {}
         }
     }
     Ok(())
@@ -3903,6 +3907,17 @@ fn expression_skeleton(
                     ResolvedExprKind::BorrowPlace { .. } => {
                         produced =
                             Some(work.singleton_path(empty_expr_path(), "borrow skeleton path")?);
+                    }
+                    // Row Loan v1 borrows two exact places and owns no state.
+                    ResolvedExprKind::RowLoan { args, .. } => {
+                        if !super::row_loan::exact_places(args) {
+                            return Err(replay_error(
+                                function,
+                                "row loan skeleton children are not exact places",
+                            ));
+                        }
+                        produced =
+                            Some(work.singleton_path(empty_expr_path(), "row loan skeleton path")?);
                     }
                     ResolvedExprKind::ByteRange {
                         operation, source, ..

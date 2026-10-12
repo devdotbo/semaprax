@@ -210,6 +210,9 @@ struct IterativeVerifier<'a, 'p> {
     /// The held selection's exact producer call, set only by the private
     /// `FusedConstructionV1` candidate route. `None` on every default path.
     fused_producer: Option<&'p Expr>,
+    /// Byte spans of traversal-row arguments admitted as Row Loan v1 by
+    /// their exact enclosing ordinary call before that argument is entered.
+    row_loan_sites: std::collections::BTreeSet<(usize, usize)>,
 }
 
 /// Declared in the module root, rather than beside the frame loop, because the
@@ -253,6 +256,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             loop_depth: 0,
             owned_iterator_items: Vec::new(),
             fused_producer: None,
+            row_loan_sites: std::collections::BTreeSet::new(),
         }
     }
 

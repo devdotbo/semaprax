@@ -4,7 +4,10 @@ use crate::hir;
 use super::*;
 
 pub(super) fn uses(program: &ResolvedProgram) -> bool {
-    if crate::vec_ops::string_slot::resolved_uses(program) {
+    // Row Loan v1 helpers read lent rows through the same private import.
+    if crate::vec_ops::string_slot::resolved_uses(program)
+        || crate::hir::row_loan::program_uses(program)
+    {
         return true;
     }
     program

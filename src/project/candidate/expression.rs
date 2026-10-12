@@ -657,6 +657,7 @@ fn join<'a, 'b>(
         fact.expression.kind,
         ResolvedExprKind::Upcast { .. }
             | ResolvedExprKind::VecFieldRead { .. }
+            | ResolvedExprKind::RowLoan { .. }
             | ResolvedExprKind::BorrowPlace { .. }
             | ResolvedExprKind::ByteRange { .. }
             | ResolvedExprKind::NativeRustImportCall(_)
@@ -1174,6 +1175,7 @@ fn hir_kind(kind: &ResolvedExprKind) -> &'static str {
         ResolvedExprKind::VecFieldRead { .. }
         | ResolvedExprKind::Call { .. }
         | ResolvedExprKind::LiteralFormat { .. } => "call",
+        ResolvedExprKind::RowLoan { .. } => "row_loan",
         ResolvedExprKind::BorrowPlace { .. } => "borrow_place",
         ResolvedExprKind::ByteRange { .. } => "byte_range",
         ResolvedExprKind::NativeRustImportCall(_) => "native_import_call",

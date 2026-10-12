@@ -1011,7 +1011,8 @@ fn evaluation_children(expression: &ResolvedExpr) -> Vec<&ResolvedExpr> {
             .collect(),
         ResolvedExprKind::Call { args, .. }
         | ResolvedExprKind::LiteralFormat { args, .. }
-        | ResolvedExprKind::VecFieldRead { args, .. } => args.iter().collect(),
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => args.iter().collect(),
         ResolvedExprKind::NativeRustImportCall(call) => call.args.iter().collect(),
         ResolvedExprKind::HostCommandCall(call) => call.args.iter().collect(),
         ResolvedExprKind::ByteRange {
@@ -1305,7 +1306,9 @@ fn resolve_origin(
 fn expression_place(expression: &ResolvedExpr) -> Option<Place> {
     match &expression.kind {
         ResolvedExprKind::Call { .. } => crate::vec_ops::string_slot::place(expression).cloned(),
-        ResolvedExprKind::VecFieldRead { args, .. } => args.first().and_then(expression_place),
+        ResolvedExprKind::VecFieldRead { args, .. } | ResolvedExprKind::RowLoan { args, .. } => {
+            args.first().and_then(expression_place)
+        }
         ResolvedExprKind::Place(place) | ResolvedExprKind::BorrowPlace { place, .. } => {
             Some(place.clone())
         }
@@ -1368,7 +1371,8 @@ fn push_children<'a>(expression: &'a ResolvedExpr, pending: &mut Vec<&'a Resolve
         }
         ResolvedExprKind::Call { args, .. }
         | ResolvedExprKind::LiteralFormat { args, .. }
-        | ResolvedExprKind::VecFieldRead { args, .. } => pending.extend(args.iter().rev()),
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => pending.extend(args.iter().rev()),
         ResolvedExprKind::NativeRustImportCall(call) => pending.extend(call.args.iter().rev()),
         ResolvedExprKind::HostCommandCall(call) => pending.extend(call.args.iter().rev()),
         ResolvedExprKind::ByteRange {

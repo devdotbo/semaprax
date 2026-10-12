@@ -29,8 +29,12 @@ order. Empty vectors execute no body. The optional index is an immutable
 body. Evaluation within the authored body remains left to right, including
 lazy boolean evaluation. Existing admitted bounded-loop body rules apply.
 
-The row is source-only metadata: it cannot be passed, copied, returned,
-captured or stored as an aggregate. `row.field` selects an exact persistent
+The row is source-only metadata: it cannot be copied, returned, captured or
+stored as an aggregate. The one admitted whole-row use is the additive
+call-only loan of [Scoped Record Row Loan v1](SCOPED-RECORD-ROW-LOAN-V1.md):
+a flat owned-leaf row passed directly to an ordinary `borrow R` parameter whose
+helper is independently proven to read only Copy scalar fields. Every other
+passing form, including Copy-record rows, remains refused. `row.field` selects an exact persistent
 field identity. Copy scalars return by value; String fields return `borrow str`
 and Bytes fields return `borrow Slice<u8>`. `str_as_bytes(row.text)` uses the
 existing authenticated String field byte-view operation. No owned row or leaf

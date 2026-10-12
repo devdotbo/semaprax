@@ -4,6 +4,9 @@ use super::*;
 
 impl<'a, O: COutput> CEmitter<'a, O> {
     pub(super) fn emit_place(&mut self, place: &hir::Place) -> Result<CValue, Diagnostic> {
+        if let Some(index) = self.lent_parameter(&place.root) {
+            return self.emit_row_loan_field_read(index, place);
+        }
         let binding = self.variables.get(&place.root).cloned().ok_or_else(|| {
             backend_error(format!("resolved value `{}` is not in scope", place.root))
         })?;

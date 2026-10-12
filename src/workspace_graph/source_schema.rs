@@ -312,6 +312,15 @@ pub(super) fn schema_with_proofs<'a>(
             }
         }
     }
+    // Row Loan v1 seam: its additive layer retains every inner v81 fact.
+    if graph::row_loan::functions_require(
+        module
+            .functions
+            .iter()
+            .chain(module.function_instances.iter().map(|i| &i.function)),
+    ) {
+        return Ok(graph::row_loan::SCHEMA);
+    }
     if module
         .functions
         .iter()

@@ -61,8 +61,16 @@ pub(crate) fn validate_selected_with_static_text(
     fused: Option<crate::hir::selected_fused_candidate::Selected<'_>>,
 ) -> Result<bool, Diagnostic> {
     let helpers = crate::loop_calls::byte_writer::ModuleIndex::new(program)?;
-    HirValidator::new(program)?
+    let row_loans = std::cell::Cell::new(false);
+    let selected = HirValidator::new(program)?
+        .with_row_loan_observer(&row_loans)
         .with_helpers(&helpers)
         .with_selected(fused)
-        .validate()
+        .validate()?;
+    // This observation belongs only to this successful complete primary walk;
+    // no attached marker or persisted hint can suppress independent replay.
+    if row_loans.get() {
+        crate::hir::row_loan::validate_program(program)?;
+    }
+    Ok(selected)
 }

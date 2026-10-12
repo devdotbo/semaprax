@@ -147,11 +147,8 @@ impl Resolver<'_> {
                 OwnershipMode::Borrow,
             ),
             ExprKind::Var(name) => {
-                if bindings
-                    .get(name)
-                    .is_some_and(|binding| binding.traversal_row.is_some())
-                {
-                    return Err(self.error("SPX-H006", "record traversal row cannot escape or materialize aggregate storage; select a field", expr.span));
+                if let Some(loan) = self.row_argument(function, expr, bindings, path) {
+                    return loan;
                 }
                 let binding = bindings.get(name).ok_or_else(|| {
                     self.error("SPX-H002", format!("unresolved value `{name}`"), expr.span)
@@ -654,6 +651,7 @@ impl Resolver<'_> {
                         )
                     })
                     .collect::<Result<_, _>>()?;
+                let args = self.bind_row_loans(&template, &instance, &resolved_arguments, args)?;
                 let ty =
                     self.resolve_call_type_argument(function, &return_source_type, target.span)?;
                 let ownership = self.function_expression_ownership(

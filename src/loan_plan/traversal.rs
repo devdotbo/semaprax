@@ -91,6 +91,28 @@ fn inspect_counted<'a>(
                     }
                 }
             }
+            // Row Loan v1 names this exact region, bound and row index; the
+            // freeze covers the whole call that receives the loan.
+            ResolvedExprKind::RowLoan { loan, args } => {
+                if let [vector, index] = args.as_slice() {
+                    if matches!(&vector.kind, ResolvedExprKind::Place(place) if place.root == owner.root)
+                    {
+                        if vector.ty != source.ty
+                            || vector.ownership != source.ownership
+                            || !matches!(&vector.kind, ResolvedExprKind::Place(place) if place == owner)
+                            || loan.element != *element
+                            || loan.traversal != region.id
+                            || loan.bound != length.id
+                            || !place_is(index, row_index)
+                            || expression.ty != *element
+                            || expression.ownership != OwnershipMode::Borrow
+                        {
+                            return Err(fail());
+                        }
+                        allowed.insert(vector.id.clone());
+                    }
+                }
+            }
             ResolvedExprKind::Call {
                 callee,
                 type_arguments,
@@ -178,6 +200,33 @@ pub(super) fn draft(
 
 #[cfg(test)]
 mod tests;
+
+/// Row Loan v1 replay facts of one exact lowered owned-leaf traversal region,
+/// reconstructed by the same structural prefix as the traversal freeze.
+pub(crate) struct RowRegion<'a> {
+    pub(crate) source: &'a ResolvedExpr,
+    pub(crate) owner: &'a crate::hir::Place,
+    pub(crate) element: &'a ResolvedType,
+    pub(crate) length: &'a crate::hir::ValueId,
+    pub(crate) row_index: &'a crate::hir::ValueId,
+}
+pub(crate) fn row_region<'a>(
+    index: &crate::hir::DeclarationIndex,
+    region: &'a ResolvedExpr,
+) -> Option<RowRegion<'a>> {
+    let Ok(Some(prefix)) = prefix(region, |element| {
+        crate::hir::row_loan::element_admitted(index, element)
+    }) else {
+        return None;
+    };
+    Some(RowRegion {
+        source: prefix.source,
+        owner: prefix.owner,
+        element: prefix.element,
+        length: &prefix.length.id,
+        row_index: &prefix.row_index.id,
+    })
+}
 
 // Shared allocation-free structural prefix. Callers supply their independently
 // authenticated element profile; no attached loan plan participates.
@@ -345,3 +394,5 @@ fn prefix<'a>(
 }
 mod borrowed;
 pub(crate) use borrowed::inspect as inspect_borrowed;
+
+pub(crate) mod row_metered;

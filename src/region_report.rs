@@ -451,7 +451,8 @@ fn collect_expr(
             collect_expr(end, scope_end, resolved, facts);
         }
         ResolvedExprKind::LiteralFormat { args, .. }
-        | ResolvedExprKind::VecFieldRead { args, .. } => {
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => {
             for argument in args {
                 collect_expr(argument, scope_end, resolved, facts);
                 if argument.ty == ResolvedType::String {

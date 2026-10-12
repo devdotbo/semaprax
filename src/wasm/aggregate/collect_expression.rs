@@ -13,6 +13,10 @@ impl FunctionPlan {
         if expr.ty == ResolvedType::Never {
             // Bottom expressions still have declarations and children to plan;
             // only the expression's own storage is absent.
+        } else if matches!(expr.kind, ResolvedExprKind::RowLoan { .. }) {
+            // A row loan's nominal type is the lent record, but no record is
+            // ever materialized: its only storage is the 16-byte descriptor
+            // block and i32 local reserved by `collect_row_loans`.
         } else if is_aggregate(program, &expr.ty)? {
             let (size, align) = aggregate_size_align(program, variant_layouts, &expr.ty)?;
             let offset = frame.allocate(size, align)?;
@@ -149,7 +153,9 @@ impl FunctionPlan {
                     frame,
                 )?;
             }
-            ResolvedExprKind::Call { args, .. } | ResolvedExprKind::VecFieldRead { args, .. } => {
+            ResolvedExprKind::Call { args, .. }
+            | ResolvedExprKind::VecFieldRead { args, .. }
+            | ResolvedExprKind::RowLoan { args, .. } => {
                 self.collect_exprs(program, variant_layouts, args, parameter_count, frame)?
             }
             ResolvedExprKind::NativeRustImportCall(call) => {

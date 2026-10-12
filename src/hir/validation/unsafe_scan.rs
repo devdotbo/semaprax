@@ -34,7 +34,8 @@ pub(super) fn contains_unsafe_boundary(expression: &ResolvedExpr) -> bool {
             }
             ResolvedExprKind::Call { args, .. }
             | ResolvedExprKind::LiteralFormat { args, .. }
-            | ResolvedExprKind::VecFieldRead { args, .. } => pending.extend(args.iter().rev()),
+            | ResolvedExprKind::VecFieldRead { args, .. }
+            | ResolvedExprKind::RowLoan { args, .. } => pending.extend(args.iter().rev()),
             ResolvedExprKind::NativeRustImportCall(call) => {
                 pending.extend(call.args.iter().rev());
             }

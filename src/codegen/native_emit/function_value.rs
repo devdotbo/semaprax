@@ -237,6 +237,7 @@ pub(super) fn resolved_expr_children<'a>(
             .into_iter(),
         ),
         ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. }
         | ResolvedExprKind::Call { args, .. }
         | ResolvedExprKind::LiteralFormat { args, .. } => Box::new(args.iter()),
         ResolvedExprKind::Closure { captures, .. } => {

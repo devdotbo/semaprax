@@ -12,7 +12,8 @@ pub(super) fn child_expressions(expression: &ResolvedExpr) -> Vec<&ResolvedExpr>
         }
         ResolvedExprKind::Call { args, .. }
         | ResolvedExprKind::LiteralFormat { args, .. }
-        | ResolvedExprKind::VecFieldRead { args, .. } => args.iter().collect(),
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => args.iter().collect(),
         ResolvedExprKind::Invoke { callable, args } => std::iter::once(callable.as_ref())
             .chain(args.iter())
             .collect(),

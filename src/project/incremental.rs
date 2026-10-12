@@ -45,7 +45,7 @@ use checked_hir::{CheckedModuleLease, ResolvedModuleInput};
 pub const PROJECT_FRONTEND_CACHE_SCHEMA: &str = "semaprax.project-frontend-cache-work.v1";
 pub const PROJECT_FRONTEND_CACHE_COMPATIBILITY: &str = "semaprax.project-frontend-canonical-ast.v3";
 pub const PROJECT_SEMANTIC_CACHE_SCHEMA: &str = "semaprax.project-semantic-cache-work.v1";
-pub const PROJECT_SEMANTIC_CACHE_COMPATIBILITY: &str = "semaprax.project-checked-module-hir.v7";
+pub const PROJECT_SEMANTIC_CACHE_COMPATIBILITY: &str = "semaprax.project-checked-module-hir.v8";
 pub const MAX_PROJECT_FRONTEND_CACHE_SOURCE_BYTES: usize = MAX_TOTAL_SOURCE_BYTES;
 /// The frontend retains the complete admitted semantic module closure, which
 /// includes bundled/dependency modules beyond the manifest's sixteen authored

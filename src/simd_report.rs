@@ -658,7 +658,8 @@ impl Walker<'_> {
             }
             ResolvedExprKind::Call { args, .. }
             | ResolvedExprKind::LiteralFormat { args, .. }
-            | ResolvedExprKind::VecFieldRead { args, .. } => {
+            | ResolvedExprKind::VecFieldRead { args, .. }
+            | ResolvedExprKind::RowLoan { args, .. } => {
                 self.record_call();
                 self.push_ineligible(expr, REASON_CALL);
                 for argument in args {

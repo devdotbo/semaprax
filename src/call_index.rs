@@ -254,7 +254,8 @@ impl PersistentCallIndex {
                     .nth(index),
                 ResolvedExprKind::Call { args, .. }
                 | ResolvedExprKind::LiteralFormat { args, .. }
-                | ResolvedExprKind::VecFieldRead { args, .. } => args.get(index),
+                | ResolvedExprKind::VecFieldRead { args, .. }
+                | ResolvedExprKind::RowLoan { args, .. } => args.get(index),
                 ResolvedExprKind::NativeRustImportCall(call) => call.args.get(index),
                 ResolvedExprKind::HostCommandCall(call) => call.args.get(index),
                 ResolvedExprKind::ByteRange {

@@ -232,7 +232,8 @@ fn functions_use_strings<'a>(
             }
             ResolvedExprKind::Call { args, .. }
             | ResolvedExprKind::LiteralFormat { args, .. }
-            | ResolvedExprKind::VecFieldRead { args, .. } => pending.extend(args.iter()),
+            | ResolvedExprKind::VecFieldRead { args, .. }
+            | ResolvedExprKind::RowLoan { args, .. } => pending.extend(args.iter()),
             ResolvedExprKind::Invoke { callable, args } => {
                 pending.push(callable);
                 pending.extend(args.iter());
@@ -363,7 +364,8 @@ fn program_uses_byte_data(program: &ResolvedProgram) -> bool {
             }
             ResolvedExprKind::Call { args, .. }
             | ResolvedExprKind::LiteralFormat { args, .. }
-            | ResolvedExprKind::VecFieldRead { args, .. } => pending.extend(args),
+            | ResolvedExprKind::VecFieldRead { args, .. }
+            | ResolvedExprKind::RowLoan { args, .. } => pending.extend(args),
             ResolvedExprKind::Invoke { callable, args } => {
                 pending.push(callable);
                 pending.extend(args);
@@ -467,7 +469,8 @@ fn program_uses_string_ops(program: &ResolvedProgram) -> bool {
             }
             ResolvedExprKind::Call { args, .. }
             | ResolvedExprKind::LiteralFormat { args, .. }
-            | ResolvedExprKind::VecFieldRead { args, .. } => pending.extend(args.iter()),
+            | ResolvedExprKind::VecFieldRead { args, .. }
+            | ResolvedExprKind::RowLoan { args, .. } => pending.extend(args.iter()),
             ResolvedExprKind::Invoke { callable, args } => {
                 pending.push(callable);
                 pending.extend(args.iter());
@@ -577,7 +580,8 @@ fn collect_string_data(program: &ResolvedProgram) -> StringData {
             }
             ResolvedExprKind::Call { args, .. }
             | ResolvedExprKind::LiteralFormat { args, .. }
-            | ResolvedExprKind::VecFieldRead { args, .. } => {
+            | ResolvedExprKind::VecFieldRead { args, .. }
+            | ResolvedExprKind::RowLoan { args, .. } => {
                 for arg in args.iter().rev() {
                     pending.push(arg);
                 }

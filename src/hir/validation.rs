@@ -27,6 +27,7 @@ mod owned_result_try;
 pub(super) mod owner_renewal;
 mod proof_return;
 mod record_traversal;
+mod row_loan;
 mod stdin_stream;
 mod string_intrinsic;
 mod type_profiles;
@@ -48,6 +49,7 @@ use unsafe_scan::contains_unsafe_boundary;
 pub(super) struct HirValidator<'a> {
     program: &'a ResolvedProgram,
     static_text: std::cell::Cell<(bool, usize)>,
+    row_loan_observer: Option<&'a std::cell::Cell<bool>>,
     byte_helpers: Option<&'a crate::loop_calls::byte_writer::ModuleIndex<'a>>,
     nominal_facts: nominal_facts::Lookup<'a>,
     functions: BTreeMap<DeclarationId, &'a ResolvedFunction>,
@@ -196,6 +198,7 @@ impl<'a> HirValidator<'a> {
         Ok(Self {
             program,
             static_text: std::cell::Cell::new((false, 0)),
+            row_loan_observer: None,
             byte_helpers: None,
             nominal_facts: nominal_facts::Lookup::default(),
             functions,
@@ -1620,6 +1623,7 @@ impl<'a> HirValidator<'a> {
             // slice's direct-scalar admission if it were ever reached.
             ResolvedExprKind::TryOption { .. }
             | ResolvedExprKind::Upcast { .. }
+            | ResolvedExprKind::RowLoan { .. }
             | ResolvedExprKind::Yield { .. } => {
                 return Err(hir_error(
                     "generic template expression is outside the direct-scalar slice",
@@ -3403,16 +3407,10 @@ impl<'a> HirValidator<'a> {
                                 path,
                             });
                         }
-                        ResolvedExprKind::VecFieldRead { args, bytes, .. } => {
-                            let return_type =
-                                self.validate_vec_field_shape(function, expression, &scope)?;
-                            let return_ownership =
-                                if matches!(return_type, ResolvedType::Str | ResolvedType::SliceU8)
-                                {
-                                    OwnershipMode::Borrow
-                                } else {
-                                    OwnershipMode::Value
-                                };
+                        ResolvedExprKind::VecFieldRead { args, .. }
+                        | ResolvedExprKind::RowLoan { args, .. } => {
+                            let (return_type, return_ownership, bytes) =
+                                self.validate_scoped_vec_node(function, expression, &scope)?;
                             frames.push(Frame::CallNext {
                                 expression,
                                 args,
@@ -3421,11 +3419,7 @@ impl<'a> HirValidator<'a> {
                                 return_ownership,
                                 index: 0,
                                 scope,
-                                path: if *bytes {
-                                    format!("{path}.arg.0")
-                                } else {
-                                    path
-                                },
+                                path: if bytes { format!("{path}.arg.0") } else { path },
                             });
                         }
                         ResolvedExprKind::LiteralFormat { template, args } => {
@@ -6462,10 +6456,12 @@ impl<'a> HirValidator<'a> {
                 }
                 (ResolvedType::SliceU8, OwnershipMode::Borrow)
             }
-            ResolvedExprKind::VecFieldRead { args, bytes, .. } => {
-                let ty = self.validate_vec_field_shape(function, expression, scope)?;
+            ResolvedExprKind::VecFieldRead { args, .. }
+            | ResolvedExprKind::RowLoan { args, .. } => {
+                let (ty, ownership, bytes) =
+                    self.validate_scoped_vec_node(function, expression, scope)?;
                 for (index, argument) in args.iter().enumerate() {
-                    let child = if *bytes {
+                    let child = if bytes {
                         format!("{path}.arg.0.arg.{index}")
                     } else {
                         format!("{path}.arg.{index}")
@@ -6483,11 +6479,6 @@ impl<'a> HirValidator<'a> {
                         CallParameters::VecField(args).parameter(index),
                     )?;
                 }
-                let ownership = if matches!(ty, ResolvedType::Str | ResolvedType::SliceU8) {
-                    OwnershipMode::Borrow
-                } else {
-                    OwnershipMode::Value
-                };
                 (ty, ownership)
             }
             ResolvedExprKind::LiteralFormat { template, args } => {
@@ -8665,6 +8656,7 @@ impl<'a> HirValidator<'a> {
                     | ResolvedExprKind::Call { .. }
                     | ResolvedExprKind::LiteralFormat { .. }
                     | ResolvedExprKind::VecFieldRead { .. }
+                    | ResolvedExprKind::RowLoan { .. }
                     | ResolvedExprKind::NativeRustImportCall(_)
                     | ResolvedExprKind::HostCommandCall(_)
                     | ResolvedExprKind::Unary { .. }

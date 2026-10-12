@@ -3,7 +3,7 @@
 use super::*;
 mod append;
 mod cells;
-use crate::cleanup_plan::{ReplayPhysicalReservation, replay_btree_node_upper};
+use crate::cleanup_plan::{replay_btree_node_upper, ReplayPhysicalReservation};
 use crate::hir::{ResolvedExprKind, ResolvedStatement, ValueId};
 pub(crate) use append::admitted as selected_string_append;
 use std::collections::BTreeSet;

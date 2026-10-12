@@ -736,6 +736,7 @@ Audience: all documentation readers.
 - [Selective owned npm lexical semantic recipe v1](OWNED-NPM-LEXICAL-RECIPE-V1.md)
 - [Rooted record String views v1](PROJECTED-STRING-VIEWS-V1.md)
 - [Scoped Record Vec Traversal v2](SCOPED-RECORD-VEC-TRAVERSAL-V2.md)
+- [Scoped Record Row Loan v1](SCOPED-RECORD-ROW-LOAN-V1.md)
 - [Scoped owned-vector field reads v1](SCOPED-VEC-FIELD-READS-V1.md)
 - [Primitive String Vec views v1](PRIMITIVE-STRING-VEC-VIEWS-V1.md)
 - [Stream Data Command v2 (Project v29)](STREAM-DATA-COMMAND-V2.md)

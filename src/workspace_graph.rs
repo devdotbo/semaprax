@@ -2437,6 +2437,7 @@ fn resolved_function_imports(function: &hir::ResolvedFunction) -> BTreeSet<hir::
             }
             hir::ResolvedExprKind::LiteralFormat { args, .. }
             | hir::ResolvedExprKind::VecFieldRead { args, .. }
+            | hir::ResolvedExprKind::RowLoan { args, .. }
             | hir::ResolvedExprKind::Call { args, .. }
             | hir::ResolvedExprKind::HostCommandCall(hir::ResolvedHostCommandCall {
                 args, ..
@@ -4807,7 +4808,8 @@ impl<'a> CheckedValueNode<'a> {
                     .map(Self::Expression),
                 E::Call { args, .. }
                 | E::LiteralFormat { args, .. }
-                | E::VecFieldRead { args, .. } => args.get(index).map(Self::Expression),
+                | E::VecFieldRead { args, .. }
+                | E::RowLoan { args, .. } => args.get(index).map(Self::Expression),
                 E::Invoke { callable, args } => {
                     if index == 0 {
                         Some(Self::Expression(callable))

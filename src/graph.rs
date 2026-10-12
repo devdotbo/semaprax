@@ -68,10 +68,11 @@ mod string_slots;
 mod vec_constructor;
 use facts_object::facts_object;
 mod finite_byte_scratch;
+pub(crate) mod row_loan;
 mod static_text;
 mod view_render;
-use vec_constructor::graph_json;
-pub(crate) use vec_constructor::{graph_schema, legacy_graph_schema};
+use row_loan::graph_json;
+pub(crate) use row_loan::{graph_schema, legacy_graph_schema};
 use view_render::view_json;
 #[path = "graph/native_import.rs"]
 mod native_import;
@@ -1025,7 +1026,8 @@ fn collect_result_propagations<'a>(
         }
         ResolvedExprKind::Call { args, .. }
         | ResolvedExprKind::LiteralFormat { args, .. }
-        | ResolvedExprKind::VecFieldRead { args, .. } => {
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => {
             for argument in args {
                 collect_result_propagations(argument, propagations);
             }
@@ -1200,7 +1202,8 @@ fn expression_has_byte_range(expression: &ResolvedExpr) -> bool {
             ResolvedExprKind::ByteRange { .. } => return true,
             ResolvedExprKind::Call { args, .. }
             | ResolvedExprKind::LiteralFormat { args, .. }
-            | ResolvedExprKind::VecFieldRead { args, .. } => pending.extend(args),
+            | ResolvedExprKind::VecFieldRead { args, .. }
+            | ResolvedExprKind::RowLoan { args, .. } => pending.extend(args),
             ResolvedExprKind::NativeRustImportCall(call) => pending.extend(&call.args),
             ResolvedExprKind::HostCommandCall(call) => pending.extend(&call.args),
             ResolvedExprKind::LexicalExit { value, .. } => pending.extend(value.as_deref()),
@@ -1306,7 +1309,8 @@ fn expression_has_explicit_match_mode(expression: &ResolvedExpr) -> bool {
         }
         ResolvedExprKind::Call { args, .. }
         | ResolvedExprKind::LiteralFormat { args, .. }
-        | ResolvedExprKind::VecFieldRead { args, .. } => {
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => {
             args.iter().any(expression_has_explicit_match_mode)
         }
         ResolvedExprKind::NativeRustImportCall(call) => {
@@ -1630,7 +1634,8 @@ fn expression_has_usize(expression: &ResolvedExpr) -> bool {
         }
         ResolvedExprKind::Call { args, .. }
         | ResolvedExprKind::LiteralFormat { args, .. }
-        | ResolvedExprKind::VecFieldRead { args, .. } => args.iter().any(expression_has_usize),
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => args.iter().any(expression_has_usize),
         ResolvedExprKind::NativeRustImportCall(call) => call.args.iter().any(expression_has_usize),
         ResolvedExprKind::HostCommandCall(call) => call.args.iter().any(expression_has_usize),
         ResolvedExprKind::ByteRange {
@@ -1725,7 +1730,8 @@ fn expression_has_while(expression: &ResolvedExpr) -> bool {
         }
         ResolvedExprKind::Call { args, .. }
         | ResolvedExprKind::LiteralFormat { args, .. }
-        | ResolvedExprKind::VecFieldRead { args, .. } => args.iter().any(expression_has_while),
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => args.iter().any(expression_has_while),
         ResolvedExprKind::NativeRustImportCall(call) => call.args.iter().any(expression_has_while),
         ResolvedExprKind::HostCommandCall(call) => call.args.iter().any(expression_has_while),
         ResolvedExprKind::LexicalExit { value, .. } => {
@@ -1785,6 +1791,7 @@ fn expression_has_while(expression: &ResolvedExpr) -> bool {
 fn expression_has_stdout_write(expression: &ResolvedExpr) -> bool {
     match &expression.kind {
         ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. }
         | ResolvedExprKind::LiteralFormat { args, .. } => {
             args.iter().any(expression_has_stdout_write)
         }
@@ -1878,7 +1885,8 @@ fn expression_has_command_io(expression: &ResolvedExpr) -> bool {
         }
         ResolvedExprKind::Call { args, .. }
         | ResolvedExprKind::LiteralFormat { args, .. }
-        | ResolvedExprKind::VecFieldRead { args, .. } => args.iter().any(expression_has_command_io),
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => args.iter().any(expression_has_command_io),
         ResolvedExprKind::NativeRustImportCall(call) => {
             call.args.iter().any(expression_has_command_io)
         }
@@ -1992,9 +2000,8 @@ fn expression_has_record_pattern(expression: &ResolvedExpr) -> bool {
         }
         ResolvedExprKind::Call { args, .. }
         | ResolvedExprKind::LiteralFormat { args, .. }
-        | ResolvedExprKind::VecFieldRead { args, .. } => {
-            args.iter().any(expression_has_record_pattern)
-        }
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => args.iter().any(expression_has_record_pattern),
         ResolvedExprKind::NativeRustImportCall(call) => {
             call.args.iter().any(expression_has_record_pattern)
         }
@@ -2111,9 +2118,8 @@ fn expression_has_refutable_match(expression: &ResolvedExpr) -> bool {
         }
         ResolvedExprKind::Call { args, .. }
         | ResolvedExprKind::LiteralFormat { args, .. }
-        | ResolvedExprKind::VecFieldRead { args, .. } => {
-            args.iter().any(expression_has_refutable_match)
-        }
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => args.iter().any(expression_has_refutable_match),
         ResolvedExprKind::NativeRustImportCall(call) => {
             call.args.iter().any(expression_has_refutable_match)
         }
@@ -2278,7 +2284,8 @@ fn collect_agent_contract_values(expression: &ResolvedExpr, values: &mut BTreeSe
         }
         ResolvedExprKind::Call { args, .. }
         | ResolvedExprKind::LiteralFormat { args, .. }
-        | ResolvedExprKind::VecFieldRead { args, .. } => {
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => {
             for argument in args {
                 collect_agent_contract_values(argument, values);
             }
@@ -2444,6 +2451,7 @@ pub(crate) fn agent_contract_expr_json(expression: &ResolvedExpr) -> Result<Stri
             crate::byte_ops::RANGE_END_OUT_OF_BOUNDS_CODE,
         ),
         ResolvedExprKind::VecFieldRead { element, field, bytes, args } => scoped_vec_field::contract_json(element, field, *bytes, args)?,
+        ResolvedExprKind::RowLoan { .. } => return Err(Diagnostic::io("SPX-G410", "record row loans are outside agent contract projection")),
         ResolvedExprKind::Call {
             callee,
             type_arguments,
@@ -3966,6 +3974,13 @@ fn render_graph_json(
     let schema = if concrete_ownership {
         nested_owned::generic_payload_schema(program)?
     } else {
+        // Row loans exist only in Graph v82; no legacy projection admits them.
+        if row_loan::requires(program) {
+            return Err(Diagnostic::io(
+                "SPX-G410",
+                "record row loans require Graph v82",
+            ));
+        }
         scoped_vec_field::legacy_graph_schema(program)?
     };
     let mut output = crate::bounded_output::CappedString::new();
@@ -4722,7 +4737,8 @@ fn visit_expr_call_instances(
         | ResolvedExprKind::BorrowPlace { .. } => {}
         ResolvedExprKind::Call { args, .. }
         | ResolvedExprKind::LiteralFormat { args, .. }
-        | ResolvedExprKind::VecFieldRead { args, .. } => {
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => {
             for argument in args {
                 visit_expr_call_instances(argument, visit);
             }
@@ -4842,6 +4858,7 @@ fn visit_expr_calls(expression: &ResolvedExpr, visit: &mut impl FnMut(&Declarati
             }
         }
         ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. }
         | ResolvedExprKind::LiteralFormat { args, .. } => {
             for argument in args {
                 visit_expr_calls(argument, visit);
@@ -4982,7 +4999,8 @@ fn collect_expr_type_declarations(
         | ResolvedExprKind::BorrowPlace { .. } => {}
         ResolvedExprKind::Call { args, .. }
         | ResolvedExprKind::LiteralFormat { args, .. }
-        | ResolvedExprKind::VecFieldRead { args, .. } => {
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => {
             for argument in args {
                 collect_expr_type_declarations(argument, declarations);
             }
@@ -5276,7 +5294,8 @@ fn collect_expr_types(expression: &ResolvedExpr, types: &mut BTreeMap<String, Re
         | ResolvedExprKind::BorrowPlace { .. } => {}
         ResolvedExprKind::Call { args, .. }
         | ResolvedExprKind::LiteralFormat { args, .. }
-        | ResolvedExprKind::VecFieldRead { args, .. } => {
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => {
             for argument in args {
                 collect_expr_types(argument, types);
             }

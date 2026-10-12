@@ -963,6 +963,7 @@ impl Resolver<'_> {
                     argument_count,
                 } => {
                     let args = take_results(&mut results, argument_count);
+                    let args = self.bind_row_loans(&callee, &instance, &type_arguments, args)?;
                     let (ty, ownership) =
                         self.resolve_call_result(function, &return_source_type, target_span)?;
                     results.push(ResolvedExpr {

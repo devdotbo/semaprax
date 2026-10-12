@@ -608,7 +608,8 @@ fn expression_reaches_import(root: &ResolvedExpr) -> Result<bool, Diagnostic> {
             }
             ResolvedExprKind::Call { args, .. }
             | ResolvedExprKind::LiteralFormat { args, .. }
-            | ResolvedExprKind::VecFieldRead { args, .. } => pending.extend(args),
+            | ResolvedExprKind::VecFieldRead { args, .. }
+            | ResolvedExprKind::RowLoan { args, .. } => pending.extend(args),
             ResolvedExprKind::ByteRange {
                 source, start, end, ..
             } => pending.extend([source.as_ref(), start.as_ref(), end.as_ref()]),

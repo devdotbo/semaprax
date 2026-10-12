@@ -184,6 +184,7 @@ fn validate_function(
             | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::LiteralFormat { .. }
             | ResolvedExprKind::VecFieldRead { .. }
+            | ResolvedExprKind::RowLoan { .. }
             | ResolvedExprKind::NativeRustImportCall(_)
             | ResolvedExprKind::HostCommandCall(_) => {
                 return Err(admission(format!(

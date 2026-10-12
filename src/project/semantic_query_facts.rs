@@ -373,6 +373,7 @@ fn push_children<'a>(expression: &'a ResolvedExpr, pending: &mut Vec<&'a Resolve
         }
         ResolvedExprKind::LiteralFormat { args, .. }
         | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. }
         | ResolvedExprKind::Call { args, .. }
         | ResolvedExprKind::NativeRustImportCall(crate::hir::ResolvedNativeRustImportCall {
             args,
@@ -736,6 +737,7 @@ fn expression_kind(kind: &ResolvedExprKind) -> &'static str {
         ResolvedExprKind::Call { .. } => "call",
         ResolvedExprKind::LiteralFormat { .. } => "literal_format",
         ResolvedExprKind::VecFieldRead { .. } => "vec_field_read",
+        ResolvedExprKind::RowLoan { .. } => "row_loan",
         ResolvedExprKind::NativeRustImportCall(_) => "native_import_call",
         ResolvedExprKind::HostCommandCall(_) => "host_command_call",
         ResolvedExprKind::LexicalExit { .. } => "lexical_exit",

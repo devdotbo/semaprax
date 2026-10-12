@@ -6,6 +6,9 @@ pub(in crate::hir) struct Row {
     pub(in crate::hir) source: ResolvedBinding,
     pub(in crate::hir) index: ResolvedBinding,
     pub(in crate::hir) element: ResolvedType,
+    /// Lowered loop region and its length snapshot, named by Row Loan v1.
+    pub(in crate::hir) region: ExpressionId,
+    pub(in crate::hir) bound: ValueId,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -359,6 +362,8 @@ fn prepare(
                 source: source.clone(),
                 index: index_binding,
                 element: element.clone(),
+                region: ExpressionId::new(function, &format!("{statement_path}.value")),
+                bound: ValueId::local(function, &format!("{statement_path}.value.s0")),
             })),
         },
     );

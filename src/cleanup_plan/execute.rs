@@ -267,7 +267,8 @@ fn collect_variant_domains(
             }
             hir::ResolvedExprKind::Call { args, .. }
             | hir::ResolvedExprKind::LiteralFormat { args, .. }
-            | hir::ResolvedExprKind::VecFieldRead { args, .. } => {
+            | hir::ResolvedExprKind::VecFieldRead { args, .. }
+            | hir::ResolvedExprKind::RowLoan { args, .. } => {
                 for argument in args {
                     visit(program, argument, domains)?;
                 }

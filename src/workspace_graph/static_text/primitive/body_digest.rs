@@ -426,6 +426,28 @@ impl Encoder<'_> {
                 }
                 Some(())
             }
+            // Row Loan v1: every descriptor identity participates in drift.
+            E::RowLoan { loan, args } => {
+                if !admitted_vec_element(&loan.element) || args.len() != 2 {
+                    return None;
+                }
+                self.text("row-loan")?;
+                self.text(loan.version.as_str())?;
+                self.ty(&loan.element)?;
+                for identity in [
+                    loan.traversal.as_str(),
+                    loan.bound.as_str(),
+                    loan.callee.as_str(),
+                    loan.parameter.as_str(),
+                ] {
+                    self.text(identity)?;
+                }
+                self.number(args.len() as u64)?;
+                for argument in args {
+                    self.expression(argument, depth + 1)?;
+                }
+                Some(())
+            }
             E::Project { base, field } => {
                 self.text("project")?;
                 self.text(field.as_str())?;

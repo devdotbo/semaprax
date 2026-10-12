@@ -37,7 +37,9 @@ pub(super) struct Loop<'a> {
 pub(super) struct Expected<'a> {
     pub(super) reads: Vec<Read<'a>>,
     pub(super) loops: Vec<Loop<'a>>,
+    pub(super) loans: Vec<row_loan::Lend<'a>>,
 }
+mod row_loan;
 #[derive(Clone)]
 struct Binding<'a> {
     name: &'a str,
@@ -49,6 +51,7 @@ struct Row<'a> {
     declaration: &'a TypeDeclaration,
     root: hir::ValueId,
     index: hir::ValueId,
+    region: String,
 }
 
 fn declaration<'a>(
@@ -247,6 +250,7 @@ pub(super) fn collect<'a>(program: &'a Program, programs: &'a [Program]) -> Resu
     let mut expected = Expected {
         reads: Vec::new(),
         loops: Vec::new(),
+        loans: Vec::new(),
     };
     for function in &program.functions {
         if !has_traversal(&function.body) {
@@ -414,6 +418,7 @@ fn walk<'a>(
                             declaration,
                             root: binding.id.clone(),
                             index: index_id.clone(),
+                            region: region_path.clone(),
                         };
                         out.loops.push(Loop {
                             function,
@@ -452,7 +457,10 @@ fn walk<'a>(
             child!(tail, "tail", bindings, row)?;
             bindings.truncate(base);
         }
-        ExprKind::Call { args, .. } => {
+        ExprKind::Call { name, args, .. } => {
+            if let Some(row) = row {
+                row_loan::collect(program, programs, function, path, name, args, row, out)?;
+            }
             for (index, argument) in args.iter().enumerate() {
                 child!(
                     argument,
@@ -598,6 +606,7 @@ pub(super) fn validate(programs: &[Program], modules: &[WorkspaceResolvedModule]
             let mut matched_loops = 0;
             let mut actual_loops = 0;
             let mut matched_reads = 0;
+            let mut matched_loans = 0;
             while let Some(expression) = pending.pop() {
                 hir::vec_constructor::authenticate(expression).map_err(|_| refusal())?;
                 if matches!(&expression.kind, hir::ResolvedExprKind::Block { statements, .. }
@@ -702,10 +711,14 @@ pub(super) fn validate(programs: &[Program], modules: &[WorkspaceResolvedModule]
                     }
                     matched_reads += 1;
                 }
+                if row_loan::matches(&expected.loans, function, expression)? {
+                    matched_loans += 1;
+                }
                 hir::push_resolved_expression_children_in_authored_order(expression, &mut pending);
             }
             if actual_loops != loop_count
                 || matched_loops != loop_count
+                || matched_loans != row_loan::count(&expected.loans, function)
                 || matched_reads
                     != expected
                         .reads

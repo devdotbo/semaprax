@@ -86,6 +86,7 @@ use crate::hir::{
 use crate::variant_layout::{VariantLayout, VariantLayoutCache, VariantTarget};
 
 mod box_ops;
+mod row_loan;
 mod scalar_shape;
 pub(super) mod string_runtime;
 mod string_slot;
@@ -295,6 +296,7 @@ struct FunctionPlan {
     range_scratch: Option<RangeScratch>,
     copy_record_scratch: Option<[u32; 14]>,
     owned_leaf_scratch: HashMap<ExpressionId, u32>,
+    row_loans: row_loan::Plan,
     cleanup_flags: std::collections::BTreeMap<crate::cleanup::LivenessFlagId, u32>,
     cleanup_place_flags: std::collections::BTreeMap<crate::cleanup_plan::CleanupPlace, u32>,
     runtime_cleanup_storage: std::collections::BTreeSet<crate::cleanup_plan::StorageId>,
@@ -577,6 +579,7 @@ impl FunctionPlan {
             range_scratch,
             copy_record_scratch,
             owned_leaf_scratch: HashMap::new(),
+            row_loans: row_loan::Plan::default(),
             cleanup_flags,
             cleanup_place_flags,
             runtime_cleanup_storage: cleanup::runtime_storages(&function.cleanup_plan),
@@ -619,6 +622,7 @@ impl FunctionPlan {
                 &mut frame,
             )?;
         }
+        plan.collect_row_loans(program, function, &mut frame)?;
         plan.frame_size = frame.finish()?;
         Ok(plan)
     }
@@ -4668,6 +4672,9 @@ impl Emitter<'_> {
                 })
             }
             ResolvedExprKind::Place(place) => {
+                if let Some(value) = self.emit_row_loan_read(expr, place)? {
+                    return Ok(value);
+                }
                 let value = self.place_value(place)?;
                 if self.string_condition_reads.contains(&expr.id) {
                     return Ok(value);
@@ -4725,6 +4732,9 @@ impl Emitter<'_> {
             | ResolvedExprKind::VecFieldRead { .. } => {
                 unreachable!("recursive expression is handled by the small dispatcher")
             }
+            ResolvedExprKind::RowLoan { .. } => Err(error(
+                "row loan reached evaluation outside its call argument slot",
+            )),
             ResolvedExprKind::ConstructRecord { record, fields } => {
                 let destination = Value::Aggregate {
                     pointer: self.plan.expr_pointer(expr)?,
@@ -6159,7 +6169,9 @@ impl Emitter<'_> {
                 && crate::cleanup::is_owned_bounded_box_type(&parameter.ty);
             let borrowed_aggregate = parameter.ownership == crate::hir::OwnershipMode::Borrow
                 && is_aggregate(self.program, &parameter.ty)?;
-            let value = if borrowed_bytes || borrowed_vec || borrowed_box || borrowed_aggregate {
+            let value = if matches!(argument.kind, ResolvedExprKind::RowLoan { .. }) {
+                self.emit_row_loan_argument(argument)?
+            } else if borrowed_bytes || borrowed_vec || borrowed_box || borrowed_aggregate {
                 self.borrowed_call_argument(argument, borrowed_bytes)?
             } else {
                 self.emit_expr(argument)?

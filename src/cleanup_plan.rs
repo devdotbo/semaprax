@@ -27,6 +27,7 @@ mod renewal_history;
 mod renewal_profile;
 pub(crate) use renewal_profile::RenewalBindings as ReplayRenewalBindings;
 mod replay;
+mod row_loan;
 #[cfg(test)]
 pub(crate) use replay::validate_retained_lexical_with_reservation;
 pub(crate) use replay::{

@@ -245,7 +245,8 @@ pub(super) fn expression_has_try(expression: &ResolvedExpr) -> bool {
         ResolvedExprKind::Try { .. } | ResolvedExprKind::TryOption { .. } => true,
         ResolvedExprKind::Call { args, .. }
         | ResolvedExprKind::LiteralFormat { args, .. }
-        | ResolvedExprKind::VecFieldRead { args, .. } => args.iter().any(expression_has_try),
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => args.iter().any(expression_has_try),
         ResolvedExprKind::Invoke { callable, args } => {
             expression_has_try(callable) || args.iter().any(expression_has_try)
         }

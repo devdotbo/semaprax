@@ -446,7 +446,8 @@ fn visit_resolved_calls<'a>(
             }
         }
         hir::ResolvedExprKind::LiteralFormat { args, .. }
-        | hir::ResolvedExprKind::VecFieldRead { args, .. } => {
+        | hir::ResolvedExprKind::VecFieldRead { args, .. }
+        | hir::ResolvedExprKind::RowLoan { args, .. } => {
             for argument in args {
                 visit_resolved_calls(argument, visit);
             }
@@ -976,6 +977,9 @@ fn collect_resolved_expression_type_sites<'a>(
                 )?;
             }
         }
+        // A lent row is authored as a bare name: no type spelling, and its
+        // two children are synthetic places of existing bindings.
+        hir::ResolvedExprKind::RowLoan { .. } => {}
         hir::ResolvedExprKind::LiteralFormat { args, .. } => {
             for (index, argument) in args.iter().enumerate() {
                 collect_resolved_expression_type_sites(

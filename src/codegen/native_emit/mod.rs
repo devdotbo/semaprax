@@ -375,6 +375,9 @@ fn emit_native_prelude_inner(
     if native_vec::program_uses_vec(program) || native_iter::program_uses_iterator(program) {
         native_vec::emit_runtime(output, program);
     }
+    if crate::hir::row_loan::program_uses(program) {
+        output.push_str(expression::row_loan::RUNTIME);
+    }
     if native_iter::program_uses_iterator(program) {
         native_iter::emit_runtime(output, program);
     }
@@ -920,7 +923,11 @@ pub(super) fn emit_function_prototypes(
             metadata.symbol,
         )
         .expect("writing to a string cannot fail");
-        for param in &function.params {
+        for (index, param) in function.params.iter().enumerate() {
+            if metadata.lent.get(index) == Some(&true) {
+                output.push_str(", const spx_row_loan_v1 *");
+                continue;
+            }
             let ty = c_value_type(program, resource_abi, &param.ty)?;
             if is_direct_plan_owned(program, &param.ty)
                 && param.ownership == crate::hir::OwnershipMode::Borrow
@@ -1547,6 +1554,11 @@ fn emit_function(
     )
     .expect("writing to a string cannot fail");
     for (index, param) in function.params.iter().enumerate() {
+        if metadata.lent.get(index) == Some(&true) {
+            write!(output, ", const spx_row_loan_v1 *spx_param_{index}")
+                .expect("writing to a string cannot fail");
+            continue;
+        }
         let ty = c_value_type(program, resource_abi, &param.ty)?;
         if owned(&param.ty) && param.ownership == crate::hir::OwnershipMode::Borrow {
             let ty = owned_carrier::borrowed_parameter_type(&param.ty, &ty);
@@ -1629,6 +1641,17 @@ fn emit_function(
     let mut variables = HashMap::new();
     let mut borrowed_aggregate_bytes = HashMap::new();
     for (index, param) in function.params.iter().enumerate() {
+        if metadata.lent.get(index) == Some(&true) {
+            // The carrier pointer itself; only scalar field reads reach it.
+            variables.insert(
+                param.id.clone(),
+                CBinding {
+                    name: format!("spx_param_{index}"),
+                    ty: param.ty.clone(),
+                },
+            );
+            continue;
+        }
         let name = if owned(&param.ty) {
             match param.ownership {
                 crate::hir::OwnershipMode::Own => bytes_plan
@@ -2016,12 +2039,16 @@ pub(super) struct CFunction {
     pub(super) params: Vec<ResolvedType>,
     pub(super) param_ownerships: Vec<crate::hir::OwnershipMode>,
     pub(super) return_type: ResolvedType,
+    /// Row Loan v1: parameters compiled over the versioned borrowed-record
+    /// carrier instead of the ordinary record pointer and leaf pointers.
+    pub(super) lent: Vec<bool>,
 }
 
 pub(super) fn function_index(
     program: &ResolvedProgram,
 ) -> Result<HashMap<FunctionExecutionId, CFunction>, Diagnostic> {
     let mut functions = HashMap::new();
+    let lent = crate::hir::row_loan::lent_parameters(program);
     for function in &program.functions {
         let declaration = program
             .declarations
@@ -2051,6 +2078,12 @@ pub(super) fn function_index(
                 .map(|param| param.ownership)
                 .collect(),
             return_type: function.return_type.clone(),
+            lent: (0..function.params.len())
+                .map(|index| {
+                    lent.get(&function.id)
+                        .is_some_and(|set| set.contains(&index))
+                })
+                .collect(),
         };
         if functions
             .insert(
@@ -2081,6 +2114,7 @@ pub(super) fn function_index(
                 .map(|param| param.ownership)
                 .collect(),
             return_type: function.return_type.clone(),
+            lent: vec![false; function.params.len()],
         };
         if functions.insert(execution, metadata).is_some() {
             return Err(backend_error(format!(
@@ -2104,6 +2138,7 @@ pub(super) fn function_index(
                 .map(|param| param.ownership)
                 .collect(),
             return_type: function.return_type.clone(),
+            lent: vec![false; function.params.len()],
         };
         if functions.insert(execution, metadata).is_some() {
             return Err(backend_error(format!(

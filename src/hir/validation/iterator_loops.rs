@@ -133,7 +133,8 @@ impl HirValidator<'_> {
                 // Owned String Loops v1: a literal allocates one owned String
                 // in the per-iteration body region.
                 ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_) => {}
-                ResolvedExprKind::VecFieldRead { args, .. } => {
+                ResolvedExprKind::VecFieldRead { args, .. }
+                | ResolvedExprKind::RowLoan { args, .. } => {
                     let [_, index] = args.as_slice() else {
                         return Err(hir_error("scoped vector read loop shape is invalid"));
                     };
@@ -557,10 +558,13 @@ impl HirValidator<'_> {
                             )
                             .is_some())
                         {
+                            // Row Loan v1 descriptors are replayed against their
+                            // exact traversal and proven callee by `hir::row_loan`.
                             if !matches!(&argument.kind, ResolvedExprKind::Place(place)
                                 if place.projections.is_empty()
                                     && matches!(argument.ownership,
                                         OwnershipMode::Own | OwnershipMode::Borrow))
+                                && !matches!(&argument.kind, ResolvedExprKind::RowLoan { .. })
                             {
                                 return Err(hir_error(
                                     "while loop owner observer requires a whole named cursor",

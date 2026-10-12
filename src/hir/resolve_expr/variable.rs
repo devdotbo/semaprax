@@ -1,4 +1,6 @@
-//! Named expression resolution, including source-only row refusal.
+//! Named expression resolution, including source-only row refusal. A row in an
+//! argument slot becomes an unbound Row Loan v1 descriptor that only an
+//! ordinary call can bind; every other row use is refused here.
 use super::path_arena::ExprPath;
 use super::*;
 impl Resolver<'_> {
@@ -10,11 +12,8 @@ impl Resolver<'_> {
         path: ExprPath<'_>,
         name: &str,
     ) -> Result<ResolvedExpr, Diagnostic> {
-        if bindings
-            .get(name)
-            .is_some_and(|binding| binding.traversal_row.is_some())
-        {
-            return Err(self.error("SPX-H006", "record traversal row cannot escape or materialize aggregate storage; select a field", expr.span));
+        if let Some(loan) = self.row_argument(function, expr, bindings, path) {
+            return loan;
         }
         if let Some(reference) = self.function_reference(function, expr, bindings, path)? {
             return Ok(reference);

@@ -146,6 +146,7 @@ pub(super) fn lookup(query: &str) -> Result<String, String> {
             "Scoped record traversal source implementation; executable qualification pending.\n",
             "Use for borrow row in rows or for borrow row at index in rows. rows is an immutable named Vec of an existing admitted explicit monomorphic Copy record or flat owned-leaf record. The length is read once and indices ascend from zero; the optional index is immutable usize.\n",
             "Select row.field: Copy scalars copy, String returns borrow str, Bytes returns borrow Slice<u8>. The row has no aggregate runtime storage and cannot escape. Field views expire within the iteration. Moving, rebinding or mutating the whole Vec inside the loop is refused even for Copy-only rows.\n",
+            "Row Loan v1: a flat owned-leaf row may be passed whole only as a direct argument f(row) to an ordinary monomorphic borrow R parameter whose effect-free helper reads only Copy scalar fields of it and returns a Value Copy scalar; the call borrows the frozen row, no record is copied. Storing, returning, capturing, owning, forwarding or viewing the row, generic/function-value helpers and Copy-record rows stay SPX-T284. Contract: docs/SCOPED-RECORD-ROW-LOAN-V1.md.\n",
             "Use statement guards if skip { continue; }; or if done { break; }; under author:lexical-exits. Views settle before continue advances exactly once or break releases the loop freeze. Qualification remains pending. Nested for loops, computed/projected iterable roots, generic rows, primitive Vec<string> and row shadowing remain closed. Existing capacities and cleanup order are unchanged.\n",
             "Exact contract and pending gates: docs/SCOPED-RECORD-VEC-TRAVERSAL-V2.md. Scalar for retains docs/OWNED-BOUNDED-VEC-FOR-TRAVERSAL-V1.md.\n"
         ).to_owned()),
@@ -392,6 +393,43 @@ fn footer(word: &str, next: usize, total: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn traversal_card_describes_only_the_checked_row_loan_shape() {
+        let traversal = lookup("author:record-traversal").unwrap();
+        assert!(traversal.len() <= MAX_BYTES);
+        assert!(traversal.contains("Row Loan v1"));
+        assert!(traversal.contains("effect-free helper"));
+        assert!(traversal.contains("returns a Value Copy scalar"));
+        assert!(traversal.contains("Copy-record rows stay SPX-T284"));
+        let row = r#"module help.loan;
+@id("help.row") record Row { @id("help.row.n") n:i64, @id("help.row.text") text:string, }
+@id("help.weight") fn weight(row:borrow Row)->i64 {row.n+1}
+@id("help.main") fn main()->i64 {
+ let rows=vec_push<Row>(vec_with_capacity<Row>(1usize),Row{n:3,text:"r"});
+ let mut seen=0;
+ for borrow row in rows { seen=seen+weight(row); 0 }
+ seen
+}"#;
+        let checked = semaprax::check(row, "help-row-loan.spx").unwrap();
+        let resolved = semaprax::hir::resolve(&checked).unwrap();
+        semaprax::hir::validate(&resolved).unwrap();
+        for (helper, body) in [
+            (
+                "fn weight(row:own Row)->i64 {row.n+1}",
+                "seen=seen+weight(row);",
+            ),
+            ("fn weight(row:borrow Row)->i64 {row.n+1}", "let kept=row;"),
+        ] {
+            let source = row
+                .replace("fn weight(row:borrow Row)->i64 {row.n+1}", helper)
+                .replace("seen=seen+weight(row);", body);
+            assert!(semaprax::check(&source, "help-row-loan-refused.spx")
+                .unwrap_err()
+                .iter()
+                .any(|d| d.code == "SPX-T284"));
+        }
+    }
 
     #[test]
     fn traversal_and_buffer_cards_match_selective_typed_profiles_without_promoting_qualification() {

@@ -898,15 +898,58 @@ fn retained_imported_record_and_helper_use_the_actual_typed_namespace() {
 }
 
 #[test]
-fn retained_traversal_row_cannot_be_lent_owned_or_stored_through_imported_helpers() {
-    // Passing, transferring or storing the source-only row stays refused even
-    // when an imported helper names the exact provider record type.
+fn retained_traversal_row_lends_to_an_imported_borrowed_scalar_reader() {
+    // Row Loan v1: this exact original source was the former blanket refusal.
+    // It is now the admitted call-only loan; the imported helper is proven from
+    // the current provider body and executes identically to the direct oracle.
+    let helper = "fn weight(row:borrow Row)->i64 {row.n+1}";
+    let provider = PROVIDER.replace("fn weight(n:i64)->i64 {n+1}", helper);
+    let consumer = IMPORTED.replace("weight(row.n)", "weight(row)");
+    assert_ne!(consumer, IMPORTED);
+    let retained = build_imported(&provider, &consumer);
+    assert_eq!(
+        retained.source_graph_schemas().unwrap()["writer.spx"],
+        "semaprax.graph.v82"
+    );
+    let scan = function(writer(&retained), "static.scan");
+    assert_lexical(scan, &[LexicalExitKind::Continue, LexicalExitKind::Return]);
+    let local = SOURCE_FOR
+        .replace("@id(\"static.row", "@id(\"rows.row")
+        .replace("@id(\"static.weight\")", "@id(\"rows.weight\")")
+        .replace("fn weight(n:i64)->i64 {n+1}", helper)
+        .replace("weight(row.n)", "weight(row)");
+    runtime_parity(&retained, &direct(&local), Some(8));
+    // Imported helper bodies that escape, view or forward the row refuse, and
+    // a provider edit after a successful build is re-proven, never retained.
+    for escaping in [
+        "fn keep(row:borrow Row)->i64 {row.n} @id(\"rows.weight\") fn weight(row:borrow Row)->i64 {keep(row)}",
+        "fn weight(row:borrow Row)->i64 {str_len_bytes(string_as_str(row.text))}",
+        "fn weight(row:borrow Row)->i64 {weight(row)}",
+    ] {
+        let escaping = if escaping.starts_with("fn keep") {
+            PROVIDER.replace(
+                "@id(\"rows.weight\") fn weight(n:i64)->i64 {n+1}",
+                &format!("@id(\"rows.keep\") {escaping}"),
+            )
+        } else {
+            PROVIDER.replace("fn weight(n:i64)->i64 {n+1}", escaping)
+        };
+        assert_ne!(escaping, PROVIDER);
+        let errors = try_build_imported(&escaping, &consumer)
+            .err()
+            .expect("an escaping imported helper is not a row reader");
+        assert!(
+            errors.iter().any(|error| error.code == "SPX-T284"),
+            "{escaping}: {errors:#?}"
+        );
+    }
+}
+
+#[test]
+fn retained_traversal_row_cannot_be_owned_or_stored_through_imported_helpers() {
+    // Transferring or storing the source-only row stays refused even when an
+    // imported helper names the exact provider record type.
     for (helper, authored, consumer_use) in [
-        (
-            "fn weight(row:borrow Row)->i64 {row.n+1}",
-            "weight(row.n)",
-            "weight(row)",
-        ),
         (
             "fn weight(row:own Row)->i64 {row.n+1}",
             "weight(row.n)",

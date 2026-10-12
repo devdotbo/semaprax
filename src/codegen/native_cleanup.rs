@@ -841,7 +841,7 @@ fn validate_expression(
                 ));
             }
         }
-        ResolvedExprKind::VecFieldRead { args, .. } => {
+        ResolvedExprKind::VecFieldRead { args, .. } | ResolvedExprKind::RowLoan { args, .. } => {
             for argument in args {
                 validate_expression(program, function, argument)?;
             }
