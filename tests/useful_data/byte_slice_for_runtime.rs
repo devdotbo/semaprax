@@ -326,6 +326,53 @@ fn literal_array_bindings_reuse_exact_slots_while_nonliteral_copy_boundaries_rem
         "assignment keeps separate expression storage"
     );
     raw_wasm(&root, "view", &module, 8);
+    // Each iteration must reinitialize the literal slot after its previous
+    // mutation. The block-result oracle retains separate expression storage;
+    // both reads borrow the exact current binding only for the call.
+    for old in [false, true] {
+        let initializer = if old {
+            "{ let pad = 0; [7u8] }"
+        } else {
+            "[7u8]"
+        };
+        let source = format!("{header}@id(\"app.main\") fn main()->i64 {{ let mut index = 0; let mut total = 0; while index < 3 {{ let mut data = {initializer}; let first = sum(array_as_slice(data)); data = [9u8]; total = total + first + sum(array_as_slice(data)); index = index + 1; 0 }} total }}");
+        let path = root.join(format!("reinitialize-{old}.spx"));
+        std::fs::write(&path, &source).unwrap();
+        let program = parse(&source, &path).unwrap();
+        let resolved = hir::resolve(&program).unwrap();
+        hir::validate(&resolved).unwrap();
+        let outcome = interpreter::interpret(
+            &path,
+            "app.main",
+            &[],
+            &interpreter::InterpreterOptions::default(),
+        )
+        .unwrap();
+        let expected = 3 * (7 + 9);
+        assert!(outcome.returned, "{}", outcome.envelope);
+        assert!(
+            outcome
+                .envelope
+                .contains(&format!("\"value\":\"{expected}\"")),
+            "{}",
+            outcome.envelope
+        );
+        let module = semaprax::wasm::emit_module(&program).unwrap();
+        assert_eq!(module, semaprax::wasm::emit_module(&program).unwrap());
+        if old {
+            assert!(
+                copies(&module) > 1,
+                "block result keeps its independent initialization copy"
+            );
+        } else {
+            assert_eq!(
+                copies(&module),
+                1,
+                "only the later assignment copies storage"
+            );
+        }
+        raw_wasm(&root, "view", &module, expected);
+    }
     std::fs::remove_dir_all(root).unwrap();
 }
 
