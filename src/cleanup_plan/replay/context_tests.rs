@@ -113,8 +113,9 @@ fn sparse_local_replay_sequences_lend_exact_current_members_without_materializat
             .unwrap()
     });
     let function_ordinals = [2usize, 0];
+    let program = &program;
     let context = Sparse {
-        program: &program,
+        program,
         types: crate::hir::items::View::indexed(&program.types, &type_ordinals),
         functions: crate::hir::items::View::indexed(&program.functions, &function_ordinals),
     };
