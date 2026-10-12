@@ -1288,13 +1288,16 @@ pub fn validate_program(program: &ResolvedProgram) -> Result<(), Diagnostic> {
             .map(|instance| &instance.function),
     ) {
         if function.loan_plan != build_plan(program, function)? {
-            return Err(error(format!(
-                "function `{}` has forged shared-loan evidence",
-                function.id
-            )));
+            return Err(forged_evidence(function));
         }
     }
     Ok(())
+}
+
+// The original owned diagnostic policy is shared with the invocation-local
+// deferred comparison. This renderer grants no proof or validation authority.
+pub(crate) fn forged_evidence(function: &ResolvedFunction) -> Diagnostic {
+    error(format!("function `{}` has forged shared-loan evidence", function.id))
 }
 
 fn resolve_parent(

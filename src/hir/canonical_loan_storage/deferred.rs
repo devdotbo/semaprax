@@ -31,10 +31,7 @@ impl<'a> Deferred<'a> {
             ));
         }
         match self.first_mismatch {
-            Some(function) => Err(Diagnostic::io(
-                "SPX-H006",
-                format!("function `{}` has forged shared-loan evidence", function.id),
-            )),
+            Some(function) => Err(crate::loan_plan::forged_evidence(function)),
             None => Ok(()),
         }
     }
