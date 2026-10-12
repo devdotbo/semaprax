@@ -323,6 +323,7 @@ thread_local! {
 mod cache_codec;
 mod declaration_index;
 pub(crate) mod identity_resolution;
+mod ordinary_identity;
 pub use declaration_index::{dispose_declaration_index_for_private_contract, DeclarationIndex};
 
 // Resolved data model and shared probes, re-exported so this module and its
@@ -719,6 +720,20 @@ pub fn analyze(program: &Program) -> Analysis {
         };
     }
 
+    // The ordinary caller captures only its existing invocation ledger. A
+    // setup-short compatibility call retains the original owned diagnostic
+    // route; initial report setup is not claimed funded by this activation.
+    if ordinary_identity::can_acquire() {
+        match ordinary_identity::try_resolve_verified(program) {
+            Ok(Ok((resolved, _))) => {
+                return Analysis { diagnostics, resolved: Some(resolved) };
+            }
+            Ok(Err(diagnostics)) => {
+                return Analysis { diagnostics, resolved: None };
+            }
+            Err(_) => {} // Legacy setup-only diagnostic compatibility below.
+        }
+    }
     match resolve_verified(program, None) {
         Ok((resolved, _)) => Analysis {
             diagnostics,

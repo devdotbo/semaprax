@@ -123,6 +123,8 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         include_str!("../../../../../src/loop_calls/byte_writer/module_index.rs"),
         concat!(
             include_str!("../../../../../src/hir.rs"),
+            include_str!("../../../../../src/hir/ordinary_identity.rs"),
+            include_str!("../../../../../src/hir/ordinary_identity/tests.rs"),
             include_str!("../../../../../src/hir/static_text.rs"),
             include_str!("../../../../../src/hir/static_text/backing.rs"),
             include_str!("../../../../../src/hir/static_text/origin.rs"),
@@ -398,6 +400,8 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
             include_str!("../../../../../src/hir/canonical_loan_storage/tests.rs"),
             include_str!("../../../../../src/hir/canonical_loan_storage/tests/old.rs"),
             include_str!("../../../../../src/hir.rs"),
+            include_str!("../../../../../src/hir/ordinary_identity.rs"),
+            include_str!("../../../../../src/hir/ordinary_identity/tests.rs"),
             include_str!("../../../../../src/hir/static_text.rs"),
             include_str!("../../../../../src/hir/static_text/backing.rs"),
             include_str!("../../../../../src/hir/static_text/origin.rs"),

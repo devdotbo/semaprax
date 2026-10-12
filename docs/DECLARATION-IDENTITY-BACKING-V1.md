@@ -85,7 +85,8 @@ The private `hir::identity_resolution` route preserves source verification and
 both invariant-resolution passes. It carries `Identity(E)` unchanged and uses
 one caller callback for all initial index identities; source and semantic
 errors retain their legacy owned channels. SourceIndex construction remains
-before index construction in each pass. The ordinary resolver stays unchanged.
+before index construction in each pass. Ordinary public activation is described
+separately below; this private callback API remains unchanged.
 
 `bounded_output::identity_reservation::IdentityReservation` captures the
 existing ActiveBuilder budget Rc without allocating a new budget. Before any
@@ -124,3 +125,42 @@ and generic-owner identities), genuinely new agent/generated identities, other
 initial-index callers (selected fused candidate, byte partition, compiler
 prelude link), source/semantic diagnostics and operation constructors. No
 whole-resolver funding claim is made.
+
+### Ordinary analyzed caller activation (identity-only)
+
+With an existing ActiveBuilder invocation and enough backing for the exact
+identity/report setup, public `hir::analyze` now uses one captured affine owner
+for both initial declaration-index passes. Original source verification still
+runs first. Clause inventory, SourceIndex and compiler prelude discovery keep
+their original order before acquisition and the first identity request. Each
+identity is constructed internally from the exact borrowed current source text;
+no callback can supply an ID or bypass ordinary validation. The second invariant
+pass keeps the same owner and sticky first receipt.
+
+A late identity refusal moves the already-paid capacity-one diagnostic Vec and
+literal text directly into Analysis. It does not pop the report and allocate
+another outward Vec. Successful construction also removes the former temporary
+String copy before each shared backing allocation. Both original source warning
+behavior and semantic error replacement remain unchanged.
+
+The private acquisition failure is inline. Public zero/short-setup calls retain
+their original legacy diagnostic route; allocator/capacity setup refusal also
+falls back to that compatibility wrapper on the already-refused ledger. This
+setup-only outward channel remains an explicit OPT781 gap, not a funded report.
+Calls without an active owner preserve the old infallible index receiver. There
+is no fresh ledger, additional allowance, refund, profile selection, source
+forecast adjustment or physical identity sentinel.
+
+Authored controls compare full current HIR/diagnostics with the saved ordinary
+analysis across both invariant passes; a literal 29-request source census pins
+removed temporary text and new report backing through complete Drop. Actual
+public late refusals pin exact/one-short first identity requests and zero retries,
+plus prepaid report pointers at the shared caller seam. Setup/source precedence
+and the original nested/detached-owner controls remain. These are same-process,
+source-only controls, not executed current-head or cold-static evidence.
+
+This activation pays identity backing and its refusal report only. Source
+verification, invariant cloning, SourceIndex proof storage, index maps/names/type
+payloads, resolver continuations and legacy semantic diagnostics retain their
+existing separate owners or open gaps. It establishes neither whole-resolver
+funding nor an application fit claim.

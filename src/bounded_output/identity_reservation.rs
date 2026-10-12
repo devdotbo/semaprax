@@ -17,37 +17,29 @@ pub(crate) enum Refused {
 }
 
 /// Affine report and exact existing owner; never a source/admission proof.
-#[cfg_attr(
-    not(test),
-    allow(
-        dead_code,
-        reason = "private explicit identity caller route awaits outward API integration"
-    )
-)]
 pub(crate) struct IdentityReservation {
     budget: Rc<Budget>,
     report: Vec<Diagnostic>,
     text: String,
 }
 
-#[cfg_attr(
-    not(test),
-    allow(
-        dead_code,
-        reason = "private explicit identity caller route awaits outward API integration"
-    )
-)]
 impl IdentityReservation {
-    pub(crate) fn acquire() -> Result<Self, Refused> {
-        let budget = active().ok_or(Refused::NoOwner)?;
-        let bytes = size_of::<Self>()
+    /// Exact setup prebound, shared with the ordinary compatibility dispatcher.
+    /// A short public setup keeps its preexisting owned diagnostic path; this
+    /// predicate grants neither source admission nor reservation credit.
+    pub(crate) fn setup_bytes() -> Option<usize> {
+        size_of::<Self>()
             .checked_add(size_of::<Diagnostic>())
             .and_then(|bytes| bytes.checked_add(MESSAGE.len()))
-            .ok_or_else(|| {
-                record_refusal(&budget, usize::MAX);
-                budget.overflowed.set(true);
-                Refused::Arithmetic
-            })?;
+    }
+
+    pub(crate) fn acquire() -> Result<Self, Refused> {
+        let budget = active().ok_or(Refused::NoOwner)?;
+        let bytes = Self::setup_bytes().ok_or_else(|| {
+            record_refusal(&budget, usize::MAX);
+            budget.overflowed.set(true);
+            Refused::Arithmetic
+        })?;
         required(&budget, bytes)?;
         let mut report = Vec::new();
         let mut text = String::new();
