@@ -582,7 +582,7 @@ impl SkeletonWork<'_, '_> {
         type Group = (ExprSkeletonPath, Vec<Observations>);
         let mut order = BTreeMap::<Key, usize>::new();
         let mut groups = Vec::<Group>::new();
-        for path in paths {
+        for mut path in paths {
             if !self.lexical_merge_normal(&path) {
                 self.budget
                     .reserve_vec(self.function, &mut groups, 1, "isolated lexical path")?;
@@ -622,8 +622,7 @@ impl SkeletonWork<'_, '_> {
                         1,
                         "factored first merge member",
                     )?;
-                    let observations =
-                        self.clone_payload(&path.observations, "factored first member tail")?;
+                    let observations = std::mem::take(&mut path.observations);
                     order.insert(key, groups.len());
                     groups.push((path, vec![observations]));
                 }
@@ -635,13 +634,16 @@ impl SkeletonWork<'_, '_> {
             "factored merged paths",
         )?;
         let mut result = Vec::with_capacity(groups.len());
-        for (mut path, members) in groups {
+        for (mut path, mut members) in groups {
             if members.len() > 1 {
                 path.observations = if self.budget.selected() {
                     self.union_observations(members)?
                 } else {
                     self.ordinary_union(members)?
                 };
+            } else if let Some(observations) = members.pop() {
+                // A singleton keeps its original prefix and Vec backing.
+                path.observations = observations;
             }
             result.push(path);
         }
@@ -686,7 +688,7 @@ impl SkeletonWork<'_, '_> {
         type Group = (CallSkeletonState, Vec<Observations>);
         let mut order = BTreeMap::<Key, usize>::new();
         let mut groups = Vec::<Group>::new();
-        for (path, commits) in states {
+        for (mut path, commits) in states {
             if !self.lexical_merge_normal(&path)
                 || (self.function.cleanup_plan.lexical_control.is_some() && !commits.is_empty())
             {
@@ -734,8 +736,7 @@ impl SkeletonWork<'_, '_> {
                         1,
                         "factored first call member",
                     )?;
-                    let observations =
-                        self.clone_payload(&path.observations, "factored first call tail")?;
+                    let observations = std::mem::take(&mut path.observations);
                     order.insert(key, groups.len());
                     groups.push(((path, commits), vec![observations]));
                 }
@@ -747,13 +748,16 @@ impl SkeletonWork<'_, '_> {
             "factored merged call states",
         )?;
         let mut result = Vec::with_capacity(groups.len());
-        for ((mut path, commits), members) in groups {
+        for ((mut path, commits), mut members) in groups {
             if members.len() > 1 {
                 path.observations = if self.budget.selected() {
                     self.union_observations(members)?
                 } else {
                     self.ordinary_union(members)?
                 };
+            } else if let Some(observations) = members.pop() {
+                // A singleton keeps its original prefix and Vec backing.
+                path.observations = observations;
             }
             result.push((path, commits));
         }

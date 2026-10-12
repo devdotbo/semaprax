@@ -48,6 +48,18 @@ impl SkeletonWork<'_, '_> {
         .map(Some)
     }
 
+    /// Owned union members already paid for their tail backing.
+    fn ordinary_freeze_owned(
+        &mut self,
+        observations: Observations,
+    ) -> Result<Option<Rc<ObservationDag>>, Diagnostic> {
+        if observations.items.is_empty() {
+            return Ok(observations.prefix);
+        }
+        self.ordinary_dag(ObservationDagKind::Seq(observations.prefix, observations.items))
+            .map(Some)
+    }
+
     pub(super) fn ordinary_union(
         &mut self,
         members: Vec<Observations>,
@@ -58,8 +70,8 @@ impl SkeletonWork<'_, '_> {
             "ordinary DAG alternatives",
         )?;
         let mut nodes = Vec::with_capacity(members.len());
-        for member in &members {
-            let node = match self.ordinary_freeze(member)? {
+        for member in members {
+            let node = match self.ordinary_freeze_owned(member)? {
                 Some(node) => node,
                 None => self.ordinary_dag(ObservationDagKind::Seq(None, Vec::new()))?,
             };

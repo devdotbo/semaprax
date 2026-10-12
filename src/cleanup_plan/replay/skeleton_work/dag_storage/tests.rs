@@ -382,3 +382,5 @@ fn selected_refusal_backing_is_prepaid_sticky_and_observed_through_drop() {
     );
     assert!(observed.allocated <= result && observed.highwater <= result);
 }
+
+mod tail_moves;

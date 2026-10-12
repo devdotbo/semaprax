@@ -155,6 +155,18 @@ impl SkeletonWork<'_, '_> {
         self.charged_dag(kind).map(Some)
     }
 
+    /// Consumed members transfer their paid tail without a clone buffer.
+    fn freeze_owned_observations(
+        &mut self,
+        observations: Observations,
+    ) -> Result<Option<Rc<ObservationDag>>, Diagnostic> {
+        if observations.items.is_empty() {
+            return Ok(observations.prefix);
+        }
+        self.charged_dag(ObservationDagKind::Seq(observations.prefix, observations.items))
+            .map(Some)
+    }
+
     pub(in crate::cleanup_plan::replay) fn union_observations(
         &mut self,
         members: Vec<Observations>,
@@ -167,7 +179,7 @@ impl SkeletonWork<'_, '_> {
         )?;
         let mut alternatives = Vec::with_capacity(members.len());
         for member in members {
-            let node = match self.freeze_observations(&member)? {
+            let node = match self.freeze_owned_observations(member)? {
                 Some(node) => node,
                 None => self.charged_dag(ObservationDagKind::Seq(None, Vec::new()))?,
             };
