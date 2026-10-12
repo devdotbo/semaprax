@@ -51,9 +51,7 @@ impl<K: Ord> Set<K> {
     }
     pub(super) fn into_vec(mut self, payer: &CfgReservation) -> Result<Vec<K>, Diagnostic> {
         let mut values = vector(self.0.len, payer)?;
-        while let Some((key, ())) = tree::pop_first(&mut self.0.root) {
-            values.push(key);
-        }
+        tree::drain(self.0.root.take(), &mut values);
         Ok(values)
     }
 }

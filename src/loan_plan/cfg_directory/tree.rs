@@ -104,14 +104,15 @@ pub(super) fn insert<K: Ord, V>(
     }
     *root = Some(balance(node));
 }
-pub(super) fn pop_first<K, V>(root: &mut Option<Box<Node<K, V>>>) -> Option<(K, V)> {
-    let mut node = root.take()?;
-    if node.left.is_none() {
-        *root = node.right.take();
-        Some((node.key, node.value))
-    } else {
-        let result = pop_first(&mut node.left);
-        *root = Some(balance(node));
-        result
+// One in-order visit per node, with recursion bounded by the AVL height.
+// Output capacity was paid before the caller detached its root. No sorting,
+// rebalancing, allocation, payment failure or refund occurs while draining.
+pub(super) fn drain<K>(root: Option<Box<Node<K, ()>>>, values: &mut Vec<K>) {
+    if let Some(mut node) = root {
+        let left = node.left.take();
+        let right = node.right.take();
+        drain(left, values);
+        values.push(node.key);
+        drain(right, values);
     }
 }

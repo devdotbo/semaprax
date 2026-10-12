@@ -334,8 +334,8 @@ actual node heap layout and node initializer before construction or publication.
 Replacement retains the old key and checks the same sticky payer even when it
 allocates nothing. Rotations move unique nodes without allocation or fallible
 payment; lookup and insertion preserve logarithmic height for arbitrary key
-orders. Edge and live-set extraction drains in original key order into one
-exact paid vector. It never sorts or repairs a canonical plan. The original
+orders. Edge and live-set extraction visits each node once in original key order into
+one exact paid vector. It never sorts or repairs a canonical plan. The original
 public BTree builder and complete saved independent builder remain available.
 
 Source controls compare ascending, descending and interleaved insertion-heavy
@@ -346,6 +346,15 @@ observed together; exact and one-short allowances retain sticky refusal and
 failed-node publication leaves the complete prior directory unchanged. Per-node
 allocation overhead and CPU tradeoffs require execution evidence; this source
 change claims no efficiency improvement or issue closure.
+
+The source owners, pending qualification, use the selector prefix
+`loan_plan::cfg_directory::tests::`:
+
+- `whole_ordered_directory_ascending_descending_interleaved_receivers_keep_log_height`
+- `exact_short_and_sticky_directory_payment_preserves_prior_publication`
+- `cfg_carriers_preserve_complete_canonical_graph_and_original_work_equations`
+- `complete_saved_planner_constructor_receiving_and_drop_have_exact_short_sticky_payment`
+- `duplicate_keys_retain_original_key_and_detached_payer_cannot_publish`
 
 This is the private funded CFG route only. Standalone unobserved rebuilding,
 legacy semantic diagnostic rendering, unrelated validator storage and temporary
