@@ -490,15 +490,16 @@ fn consuming_publication_reuses_one_paid_cursor_and_settles_without_heap_backing
     assert!(old_visit(&function.body, |_| old += 1));
     assert_eq!((first, second), (old, old));
     assert!(scratch.iter().all(Option::is_none));
-    let ((complete, charged), allocation) = crate::test_allocation_observer::measure(|| {
-        let (empty, overflow, charged) = crate::bounded_output::with_limit_usage(exact, || {
-            let mut found = BTreeMap::new();
-            append_bindings(&program, function, &mut found);
-            found.is_empty()
+    // The active ledger is fixed harness context, outside the cursor observer.
+    let ((complete, allocation), overflow, charged) =
+        crate::bounded_output::with_limit_usage(exact, || {
+            crate::test_allocation_observer::measure(|| {
+                let mut found = BTreeMap::new();
+                append_bindings(&program, function, &mut found);
+                found.is_empty()
+            })
         });
-        (empty && !overflow, charged)
-    });
-    assert!(complete);
+    assert!(complete && !overflow);
     assert_eq!(
         charged, exact,
         "two independent scans have one held storage payer"

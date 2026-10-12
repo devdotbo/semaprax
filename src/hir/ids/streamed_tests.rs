@@ -83,8 +83,8 @@ fn streamed_identity_charges_exact_bytes_before_one_allocation() {
         let refused = crate::test_allocation_observer::measure(|| {
             emit(&owner, "expression", path.len(), fill)
         });
-        // A zero-unit retry neither clears the refusal nor charges anything.
-        assert!(crate::bounded_output::reserve_active(0));
+        // A zero-unit retry is refused without clearing or charging the first refusal.
+        assert!(!crate::bounded_output::reserve_active(0));
         assert!(active_refused());
         refused
     });
