@@ -95,6 +95,21 @@ fn same(
     assert_eq!(left.image_digest(), right.image_digest());
     assert_eq!(left.to_json(), right.to_json());
 }
+// Success also needs its actual ledger receipts: the published graph takes
+// max(canonical forecast, actual core consumption), so graph equality alone
+// can conceal different successful stage debits. Render only after all three
+// builds, outside their watched ledgers and any allocation observation.
+fn print_receipt(bytes: bool, route: &str, trace: Trace) {
+    eprintln!(
+        "cache-core-receipt bytes={bytes} route={route} prebound={} layouts={} mode={} consumed={} sum={}",
+        trace.prebound, trace.layouts, trace.mode, trace.consumed, trace.sum()
+    );
+    // Ordinal zero is unlabelled; n+1 follows ReservationStage's fixed enum
+    // order, exactly as stage_debits::debit records it. Include zero debits.
+    for (ordinal, debit) in trace.debits.into_iter().enumerate() {
+        eprintln!("cache-core-stage bytes={bytes} route={route} tuple=({ordinal},{debit})");
+    }
+}
 fn reproduce(bytes: bool) {
     // Independent saved construction canonicalizes the row fixture BEFORE
     // mixed-byte edits, exactly like the original integration producer.
@@ -132,6 +147,9 @@ fn reproduce(bytes: bool) {
     let report: serde_json::Value = serde_json::from_str(warm.to_json()).unwrap();
     assert_eq!(report["work"]["modules_resolved"], 0);
     assert_eq!(report["work"]["checked_HIR_reused"], 3);
+    print_receipt(bytes, "checked-cold", checked_trace);
+    print_receipt(bytes, "ordinary", ordinary_trace);
+    print_receipt(bytes, "checked-warm", warm_trace);
     same(
         checked.revision(),
         ordinary,
