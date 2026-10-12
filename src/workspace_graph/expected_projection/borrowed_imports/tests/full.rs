@@ -185,3 +185,20 @@ fn literal_box_wrapper_overlay_removes_real_caller_copy_and_function_growth() {
         assert_eq!(observed.allocated,observed.freed);
     }
 }
+
+#[test]
+fn conservative_class_default_census_keeps_real_owned_record_forwarding() {
+    let caller=super::CALLER.replacen("module function_layout.app;",
+        "module function_layout.app; use type @id(\"overlay.unused_class\") from function_layout.provider as Unused;",1);
+    let provider=format!("{} @id(\"overlay.unused_class\") class Unused {{ @id(\"overlay.unused_class.x\") x:i64, }}",super::PROVIDER);
+    parity(&caller,&provider);
+    let programs=sources(&caller,&provider);
+    let authored=index_authored(&programs).unwrap();
+    let registry=LayoutRegistry::new(&programs,&authored);
+    let view=construct(&programs[0],&authored,&programs,&registry).unwrap();
+    let forward=view.functions().iter().find(|function| function.name=="forward").unwrap();
+    // A class import enables iterative ownership. The census deliberately
+    // overbounds the record default tree; the unchanged actual provider proof
+    // still forwards exactly one existing owner through a Var expression.
+    assert!(matches!(&forward.body.kind,crate::ast::ExprKind::Var(_)));
+}
