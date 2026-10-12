@@ -1,0 +1,551 @@
+//! Owning controls for the closed scalar lexical receiver. Every positive case
+//! is an actual retained Workspace build of the original persisted
+//! terminated-guard owner (or a mixed scalar module), compared with the
+//! independently resolved full-program Graph schema, HIR, cleanup and runtime
+//! oracle. Every hostile case first requires the same unmodified admission.
+//! These definitions are authored; executable qualification is pending.
+use super::*;
+use crate::cleanup_plan::{
+    ReplayPhysicalRefusal, SelectedReplayCause, SelectedReplayUnpaidReason,
+};
+use crate::interpreter::ResolvedEvaluationOutcome;
+use crate::test_allocation_observer::{measure, Metrics};
+use crate::workspace_graph::source_schema::REPORT;
+
+const PATH: &str = "src/app.spx";
+const TESTS_PATH: &str = "src/tests.spx";
+const TESTS: &str = "module calculator.tests;\n@id(\"calculator.tests.main\") fn main() -> i64 { 0 }\n";
+/// The original OPT766 body, verbatim from the persisted CLI owner.
+const BODY: &str = "let mut i=0; let mut total=0; while i<3 { i=i+1; if i==2 {continue;} else {0}; total=total+i; 0 } total";
+
+fn source(body: &str) -> String {
+    format!("module calculator.app; @id(\"calculator.app.main\") fn main()->i64 {{ {body} }}")
+}
+fn with_spare(body: &str, spare: &str) -> String {
+    format!(
+        "module calculator.app; {spare} @id(\"calculator.app.main\") fn main()->i64 {{ {body} }}"
+    )
+}
+fn canonical(text: &str) -> String {
+    format::canonical(&crate::parse(text, std::path::Path::new(PATH)).unwrap())
+}
+fn sources_with(app: &str, extra: &[(&str, &str)]) -> Vec<WorkspaceSource> {
+    [(PATH, app), (TESTS_PATH, TESTS)]
+        .into_iter()
+        .chain(extra.iter().copied())
+        .map(|(path, text)| WorkspaceSource {
+            path: path.to_owned(),
+            source: format::canonical(&crate::parse(text, std::path::Path::new(path)).unwrap()),
+        })
+        .collect()
+}
+fn try_build_with(
+    app: &str,
+    extra: &[(&str, &str)],
+) -> Result<(WorkspaceGraphBuild, Vec<WorkspaceSource>), Vec<Diagnostic>> {
+    build_owned_retaining_sources_for_change(sources_with(app, extra), MAX_CHANGE_BUILDER_BYTES)
+}
+fn build(app: &str) -> (WorkspaceGraphBuild, Vec<WorkspaceSource>) {
+    try_build_with(app, &[]).unwrap()
+}
+fn module<'a>(build: &'a WorkspaceGraphBuild, path: &str) -> &'a WorkspaceResolvedModule {
+    build.hir.modules.iter().find(|m| m.path == path).unwrap()
+}
+fn module_mut<'a>(build: &'a mut WorkspaceGraphBuild, path: &str) -> &'a mut WorkspaceResolvedModule {
+    build.hir.modules.iter_mut().find(|m| m.path == path).unwrap()
+}
+fn main_mut(build: &mut WorkspaceGraphBuild) -> &mut ResolvedFunction {
+    module_mut(build, PATH)
+        .functions
+        .iter_mut()
+        .find(|f| f.id.as_str() == "calculator.app.main")
+        .unwrap()
+}
+
+/// Independent full-program oracle on independently resolved source: complete
+/// HIR validation, canonical cleanup replay and the original Graph schema.
+fn oracle(text: &str) -> (hir::ResolvedProgram, &'static str) {
+    let program = crate::check(text, PATH).unwrap();
+    let resolved = hir::resolve(&program).unwrap();
+    hir::validate(&resolved).unwrap();
+    crate::cleanup_plan::validate_program(&resolved).unwrap();
+    let schema = crate::graph::graph_schema(&resolved).unwrap();
+    (resolved, schema)
+}
+fn evaluate(program: &hir::ResolvedProgram) -> ResolvedEvaluationOutcome {
+    crate::interpreter::evaluate_resolved_zero_arg_i64(program, "calculator.app.main", 100_000)
+        .unwrap()
+        .outcome
+}
+fn received(
+    build: &WorkspaceGraphBuild,
+    path: &str,
+    sources: &dyn ReceivingSources,
+) -> Result<Option<&'static str>, SelectedReplayRefusal> {
+    let held = module(build, path);
+    receive_paid(held, &build.hir.modules, &build.hir.declarations, sources, REPORT)
+        .map(|receipt| receipt.map(|receipt| receipt.select(held).expect("own module")))
+}
+fn refused(build: &WorkspaceGraphBuild, sources: &dyn ReceivingSources) -> SelectedReplayRefusal {
+    match received(build, PATH, sources) {
+        Err(refusal) => refusal,
+        Ok(schema) => panic!("hostile reception must refuse, selected {schema:?}"),
+    }
+}
+fn assert_public(report: &[Diagnostic]) {
+    assert_eq!(report.len(), 1);
+    assert_eq!(report[0].code, "SPX-G410");
+    assert_eq!(
+        report[0].message,
+        "retained static UTF-8 source-site authority disagrees"
+    );
+    assert_eq!(report[0].message.capacity(), report[0].message.len());
+}
+fn assert_mismatch(refusal: &SelectedReplayRefusal, case: &str) {
+    assert!(refusal.is_paid(), "{case}");
+    assert_public(refusal.report().unwrap());
+    assert_eq!(
+        refusal.refused().map(|r| r.cause()),
+        Some(SelectedReplayCause::Mismatch),
+        "{case}"
+    );
+}
+fn first_receipt(refusal: &mut SelectedReplayRefusal) -> ReplayPhysicalRefusal {
+    let ledger = refusal.ledger_mut().expect("retained ledger");
+    let first = ledger.reserve(0).unwrap_err();
+    assert_eq!(ledger.reserve(1).unwrap_err(), first);
+    first
+}
+
+#[test]
+fn original_terminated_guard_is_received_from_current_source_with_full_program_parity() {
+    let text = canonical(&source(BODY));
+    let (build, sources) = build(&text);
+    let app = module(&build, PATH);
+    assert!(app.scalar_lexical.is_some(), "lexical scalar owner captured");
+    assert!(
+        module(&build, TESTS_PATH).scalar_lexical.is_none(),
+        "an exit-free module keeps its existing route"
+    );
+    // Frozen from-parts and source-less routes keep their original refusal.
+    let frozen = graph::graph_schema_from_parts_and_instances(
+        &app.interfaces,
+        &app.types,
+        &app.functions,
+        &app.function_templates,
+        &app.function_instances,
+    )
+    .unwrap_err();
+    assert_eq!(frozen.code, "SPX-G410");
+    assert_eq!(build.source_graph_schemas().unwrap_err()[0].code, "SPX-G410");
+    let (direct, schema) = oracle(&text);
+    let tests_schema = crate::graph::graph_schema(
+        &hir::resolve(&crate::check(TESTS, TESTS_PATH).unwrap()).unwrap(),
+    )
+    .unwrap();
+    let schemas = build.source_graph_schemas_receiving(&sources).unwrap();
+    assert_eq!(schemas[PATH], schema, "original full-program Graph family");
+    assert_eq!(schemas[TESTS_PATH], tests_schema);
+    assert_eq!(received(&build, PATH, &sources).unwrap(), Some(schema));
+    // Retained HIR and canonical plans equal the independent program's.
+    for retained in &app.functions {
+        let control = direct.functions.iter().find(|f| f.id == retained.id).unwrap();
+        assert_eq!(retained.params, control.params, "{}", retained.id);
+        assert_eq!(retained.return_type, control.return_type, "{}", retained.id);
+        assert_eq!(retained.body, control.body, "{}", retained.id);
+        assert_eq!(retained.cleanup_plan, control.cleanup_plan, "{}", retained.id);
+    }
+    let linked = build
+        .linked_owned_data_api_program_with_roots("calculator.app", &[])
+        .unwrap();
+    for _ in 0..3 {
+        assert_eq!(evaluate(&linked), evaluate(&direct));
+        assert_eq!(evaluate(&linked), ResolvedEvaluationOutcome::ReturnedI64(4));
+    }
+}
+
+#[test]
+fn canonical_semicolon_control_is_the_same_generation_and_body_drift_is_a_new_receipt() {
+    let text = canonical(&source(BODY));
+    let control = canonical(&source(&BODY.replace("else {0};", "else {0}")));
+    assert_eq!(control, text, "optional guard terminator canonicalizes away");
+    let drift = canonical(&source(&BODY.replace("total+i", "total+i+1")));
+    for (text, expected) in [(&text, 4), (&drift, 6)] {
+        let (build, sources) = build(text);
+        let (direct, schema) = oracle(text);
+        assert_eq!(
+            build.source_graph_schemas_receiving(&sources).unwrap()[PATH],
+            schema
+        );
+        let linked = build
+            .linked_owned_data_api_program_with_roots("calculator.app", &[])
+            .unwrap();
+        assert_eq!(evaluate(&linked), evaluate(&direct));
+        assert_eq!(evaluate(&linked), ResolvedEvaluationOutcome::ReturnedI64(expected));
+    }
+    // A former generation's source cannot authorize the drifted build, and
+    // the drifted source cannot authorize the former build.
+    let (original, original_sources) = build(&text);
+    let (drifted, drifted_sources) = build(&drift);
+    assert_mismatch(&refused(&original, &drifted_sources), "old build, new source");
+    assert_mismatch(&refused(&drifted, &original_sources), "new build, old source");
+}
+
+#[test]
+fn mixed_unrelated_scalar_member_is_replayed_and_selects_the_oracle_usize_family() {
+    let text = canonical(&with_spare(
+        BODY,
+        "@id(\"calculator.app.spare\") fn spare(n:usize)->usize { n }",
+    ));
+    let (build, sources) = build(&text);
+    assert_eq!(module(&build, PATH).functions.len(), 2);
+    let (direct, schema) = oracle(&text);
+    assert_eq!(
+        build.source_graph_schemas_receiving(&sources).unwrap()[PATH],
+        schema
+    );
+    let linked = build
+        .linked_owned_data_api_program_with_roots("calculator.app", &[])
+        .unwrap();
+    assert_eq!(evaluate(&linked), evaluate(&direct));
+}
+
+#[test]
+fn mixed_exit_free_looping_member_is_replayed_by_the_paid_scalar_validator() {
+    let text = canonical(&with_spare(
+        BODY,
+        "@id(\"calculator.app.count\") fn count(n:i64)->i64 { let mut k=0; while k<n { k=k+1; 0 } k }",
+    ));
+    let (build, sources) = build(&text);
+    let (_, schema) = oracle(&text);
+    assert_eq!(
+        build.source_graph_schemas_receiving(&sources).unwrap()[PATH],
+        schema
+    );
+}
+
+#[test]
+fn current_source_namespace_member_and_layout_attacks_refuse_with_one_paid_report() {
+    let text = canonical(&source(BODY));
+    let drift = canonical(&source(&BODY.replace("total+i", "total+i+1")));
+    for attack in 0..10 {
+        let (mut build, mut sources) = build(&text);
+        assert!(received(&build, PATH, &sources).unwrap().is_some(), "{attack}");
+        let at = sources.iter().position(|s| s.path == PATH).unwrap();
+        match attack {
+            // Authentic HIR paired with another generation's source bytes.
+            0 => sources[at].source = drift.clone(),
+            // Missing or duplicated current source path.
+            1 => {
+                sources.remove(at);
+            }
+            2 => sources.push(sources[at].clone()),
+            // Current HIR signature, body span and contract drift.
+            3 => main_mut(&mut build).return_type = hir::ResolvedType::I32,
+            4 => main_mut(&mut build).body.span.start += 1,
+            5 => {
+                let tail = main_mut(&mut build).body.clone();
+                main_mut(&mut build).ensures.push(tail);
+            }
+            // Explicit identity origin and current namespace/path drift.
+            6 => {
+                build
+                    .hir
+                    .declarations
+                    .get_mut("calculator.app.main")
+                    .unwrap()
+                    .origin = hir::IdentityOrigin::Automatic
+            }
+            7 => module_mut(&mut build, PATH).module.push('x'),
+            8 => module_mut(&mut build, PATH).path.push('x'),
+            // Forged loop-latch kind is outside the closed family.
+            _ => {
+                let hir::ResolvedExprKind::Block { statements, .. } =
+                    &mut main_mut(&mut build).body.kind
+                else {
+                    panic!("block")
+                };
+                let mut forged = false;
+                for statement in statements {
+                    if let hir::ResolvedStatement::LexicalWhile { latch, body, .. } = statement {
+                        *latch = hir::lexical_exit::LoopLatchKind::SourceForStep {
+                            kind: hir::lexical_exit::SourceForKind::Copy,
+                            step: body.id.clone(),
+                        };
+                        forged = true;
+                    }
+                }
+                assert!(forged, "the authored loop is a typed lexical while");
+            }
+        }
+        let refusal = match received(&build, PATH, &sources) {
+            Err(refusal) => refusal,
+            Ok(schema) => panic!("attack {attack} selected {schema:?}"),
+        };
+        assert_mismatch(&refusal, &format!("attack {attack}"));
+        assert!(refusal.receipt().is_none(), "attack {attack}: no Session receipt");
+        assert_public(&build.source_graph_schemas_receiving(&sources).unwrap_err());
+    }
+}
+
+#[test]
+fn reordered_missing_transplanted_detached_and_inserted_inventories_refuse() {
+    let spare = "@id(\"calculator.app.spare\") fn spare(n:i64)->i64 { n+1 }";
+    let text = canonical(&with_spare(BODY, spare));
+    let other = canonical(&with_spare(&BODY.replace("total+i", "total+i+1"), spare));
+    for attack in 0..5 {
+        let (mut build, sources) = build(&text);
+        assert!(received(&build, PATH, &sources).unwrap().is_some());
+        match attack {
+            0 => module_mut(&mut build, PATH)
+                .scalar_lexical
+                .as_mut()
+                .unwrap()
+                .members_mut()
+                .swap(0, 1),
+            1 => {
+                module_mut(&mut build, PATH)
+                    .scalar_lexical
+                    .as_mut()
+                    .unwrap()
+                    .members_mut()
+                    .pop();
+            }
+            // Same-cardinality inventory copied from another generation.
+            2 => {
+                let (mut donor, _) = self::build(&other);
+                std::mem::swap(
+                    &mut module_mut(&mut build, PATH).scalar_lexical,
+                    &mut module_mut(&mut donor, PATH).scalar_lexical,
+                );
+            }
+            // Inventory inserted into an otherwise unqualified module.
+            3 => {
+                let inventory = module_mut(&mut build, PATH).scalar_lexical.take();
+                module_mut(&mut build, TESTS_PATH).scalar_lexical = inventory;
+                let refusal = match received(&build, TESTS_PATH, &sources) {
+                    Err(refusal) => refusal,
+                    Ok(schema) => panic!("inserted inventory selected {schema:?}"),
+                };
+                assert_mismatch(&refusal, "inserted");
+                continue;
+            }
+            // A detached equal module object outside the live module slice.
+            _ => {
+                let (detached, _) = self::build(&text);
+                let held = module(&detached, PATH);
+                let answer = receive_paid(
+                    held,
+                    &build.hir.modules,
+                    &build.hir.declarations,
+                    &sources,
+                    REPORT,
+                );
+                let Err(refusal) = answer else {
+                    panic!("detached equal HIR must not authorize publication")
+                };
+                assert_mismatch(&refusal, "detached");
+                continue;
+            }
+        }
+        assert_mismatch(&refused(&build, &sources), &format!("inventory {attack}"));
+    }
+}
+
+#[test]
+fn certificate_and_plan_mutations_refuse_without_repair() {
+    let text = canonical(&source(BODY));
+    for attack in 0..3 {
+        let (mut build, sources) = build(&text);
+        assert!(received(&build, PATH, &sources).unwrap().is_some());
+        let function = main_mut(&mut build);
+        let site = function.body.id.clone();
+        let control = function.cleanup_plan.lexical_control.as_mut().unwrap();
+        match attack {
+            0 => control.exits[0].site = site,
+            1 => {
+                control.loops[0].target = hir::ControlTarget::Function(
+                    hir::FunctionExecutionId::Monomorphic(function.id.clone()),
+                )
+            }
+            // A forged higher cleanup family is excluded before the Session.
+            _ => function.cleanup_plan.schema = crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V15,
+        }
+        let mut refusal = refused(&build, &sources);
+        assert!(refusal.is_paid());
+        assert_public(refusal.report().unwrap());
+        let cause = refusal.refused().unwrap().cause();
+        if attack < 2 {
+            // The independently replayed cause is the Session's own refusal,
+            // retained as the first receipt (an owned Diagnostic or a fact).
+            assert_eq!(cause, SelectedReplayCause::Session, "attack {attack}");
+            assert!(
+                refusal.receipt().is_some() || refusal.fact_receipt().is_some(),
+                "attack {attack}: Session receipt"
+            );
+        } else {
+            assert_eq!(cause, SelectedReplayCause::Mismatch);
+        }
+        let _ = first_receipt(&mut refusal);
+        // The paid report restores no admission: the owner remains failed.
+        let mut preparation = refusal.into_preparation().expect("retained owner");
+        let anchor = module(&build, PATH).functions.first().unwrap();
+        assert!(preparation.try_charge(anchor, 0, "restore").is_err());
+        drop(preparation);
+    }
+}
+
+#[test]
+fn closed_family_exclusions_keep_their_existing_route() {
+    const PROVIDER: &str = "module calculator.lib;\n@id(\"calculator.lib.one\") fn one()->i64 { 1 }\n";
+    let probe = "@id(\"calculator.app.probe\") fn probe(x:i64)->i64 { x }";
+    let cases: [(String, &[(&str, &str)]); 6] = [
+        // An ordinary Call in a dead branch.
+        (
+            with_spare(
+                &BODY.replace("else {0};", "else {if false {probe(1)} else {0}};"),
+                probe,
+            ),
+            &[],
+        ),
+        // An owned String operation hidden in a dead branch.
+        (
+            source(&BODY.replace("else {0};", "else {if false {string_len(\"dead\")} else {0}};")),
+            &[],
+        ),
+        // An unused nominal record declaration.
+        (
+            with_spare(
+                BODY,
+                "@id(\"calculator.app.row\") record Row { @id(\"calculator.app.row.n\") n:i64, }",
+            ),
+            &[],
+        ),
+        // A Vec carrier.
+        (
+            source(&format!("let v=vec_with_capacity<i64>(1usize); {BODY}")),
+            &[],
+        ),
+        // A Call hidden in a contract.
+        (
+            format!(
+                "module calculator.app; {probe} @id(\"calculator.app.main\") fn main()->i64 requires probe(0)==0 {{ {BODY} }}"
+            ),
+            &[],
+        ),
+        // An import, even unused, leaves the no-import profile.
+        (
+            format!(
+                "module calculator.app; use function @id(\"calculator.lib.one\") from calculator.lib as one; @id(\"calculator.app.main\") fn main()->i64 {{ {BODY} }}"
+            ),
+            &[("src/lib.spx", PROVIDER)],
+        ),
+    ];
+    for (index, (text, extra)) in cases.iter().enumerate() {
+        // The contract and import shapes may be refused by the ordinary
+        // checker itself, which also keeps them outside every route; the
+        // dead-branch Call, String, record and Vec controls must build.
+        let built = try_build_with(&canonical(text), extra);
+        let Ok((build, sources)) = built else {
+            assert!(index >= 4, "case {index} must be an admitted ordinary module");
+            continue;
+        };
+        assert!(
+            module(&build, PATH).scalar_lexical.is_none(),
+            "case {index}: excluded shapes capture no inventory"
+        );
+        let receiving = build.source_graph_schemas_receiving(&sources);
+        let legacy = build.source_graph_schemas();
+        match (receiving, legacy) {
+            (Ok(receiving), Ok(legacy)) => assert_eq!(receiving, legacy, "case {index}"),
+            (Err(receiving), Err(legacy)) => {
+                assert_eq!(receiving[0].code, legacy[0].code, "case {index}")
+            }
+            _ => panic!("case {index}: sources changed an excluded route"),
+        }
+    }
+}
+
+#[test]
+fn source_less_change_view_keeps_the_original_refusal() {
+    let (build, _) = build(&canonical(&source(BODY)));
+    assert_eq!(build.into_change_view().unwrap_err()[0].code, "SPX-G410");
+}
+
+fn receive_under(
+    build: &WorkspaceGraphBuild,
+    sources: &dyn ReceivingSources,
+    limit: usize,
+) -> (Result<Option<&'static str>, SelectedReplayRefusal>, Metrics, bool, usize) {
+    let ((answer, metrics), overflowed, used) =
+        crate::bounded_output::with_limit_usage(limit, || measure(|| received(build, PATH, sources)));
+    (answer, metrics, overflowed, used)
+}
+
+#[test]
+fn zero_and_report_one_short_return_the_unpaid_ledger_without_allocating() {
+    let (build, sources) = build(&canonical(&source(BODY)));
+    let slot = std::mem::size_of::<Diagnostic>();
+    for (limit, charged) in [(0, 0), (slot - 1, 0), (REPORT.paid_bytes() - 1, slot)] {
+        let (answer, metrics, overflowed, used) = receive_under(&build, &sources, limit);
+        let Err(mut refusal) = answer else {
+            panic!("a one-short enclosing budget cannot fund the report carrier")
+        };
+        assert!(!metrics.invalid);
+        assert_eq!((metrics.allocations, metrics.allocated, metrics.live), (0, 0, 0));
+        assert!(overflowed);
+        assert_eq!(used, charged);
+        assert!(!refusal.is_paid());
+        assert_eq!(first_receipt(&mut refusal), ReplayPhysicalRefusal::EnclosingBudget);
+        let (unpaid, typed) = measure(|| refusal.into_published());
+        assert_eq!(typed.allocations, 0);
+        let unpaid = unpaid.expect_err("unpaid carrier");
+        assert!(matches!(unpaid.reason(), SelectedReplayUnpaidReason::Carrier(_)));
+        // Only the named unfunded boundary allocates the same literal.
+        assert_public(&unpaid.into_unfunded());
+    }
+}
+
+#[test]
+fn exact_success_one_short_refusal_and_drop_share_one_observed_owner() {
+    let (build, sources) = build(&canonical(&source(BODY)));
+    // Exact report payment: paid setup refusal on the original carrier.
+    let paid = REPORT.paid_bytes();
+    let (answer, metrics, overflowed, used) = receive_under(&build, &sources, paid);
+    let Err(refusal) = answer else {
+        panic!("an exact report payment leaves no preparation backing")
+    };
+    assert!(overflowed && used == paid && refusal.is_paid());
+    assert_eq!(
+        refusal.refused().map(|r| r.cause()),
+        Some(SelectedReplayCause::Setup)
+    );
+    assert!(!metrics.invalid);
+    drop(refusal);
+    // Successful receipt: acquisition, setup, authentication, Session, every
+    // member, finish, the returned receipt and Drop in one observed scope.
+    let (answer, metrics, overflowed, used) =
+        receive_under(&build, &sources, MAX_CHANGE_BUILDER_BYTES);
+    assert!(matches!(answer, Ok(Some(_))) && !overflowed);
+    assert!(!metrics.invalid);
+    assert_eq!(metrics.live, 0, "every owner and the receipt dropped");
+    assert!(metrics.allocated <= used, "every allocation was charged first");
+    // One byte short of the successful route refuses with the prepaid receipt.
+    let (answer, metrics, overflowed, _) = receive_under(&build, &sources, used - 1);
+    let Err(refusal) = answer else {
+        panic!("one byte short of the successful route must refuse")
+    };
+    assert!(overflowed && refusal.is_paid());
+    assert_public(refusal.report().unwrap());
+    let cause = refusal.refused().unwrap().cause();
+    assert!(
+        matches!(cause, SelectedReplayCause::Budget | SelectedReplayCause::Session),
+        "{cause:?}"
+    );
+    assert!(
+        refusal.receipt().is_some() || refusal.fact_receipt().is_some(),
+        "the first paid receipt stays with the failed owner"
+    );
+    assert!(!metrics.invalid);
+    drop(refusal);
+}

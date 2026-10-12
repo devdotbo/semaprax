@@ -35,6 +35,12 @@ pub(in crate::workspace_graph) fn retain_checked_module(
         authenticated_sources,
     )?;
     let record_source_revision = record_closure.as_ref().map(|facts| facts.revision());
+    // Captured from the complete checked owner before any filtered selection.
+    let scalar_lexical = if static_text.is_none() {
+        static_text::scalar_lexical::capture(program, &owner, authored, authenticated_sources)?
+    } else {
+        None
+    };
     hir::replay_agent_source_associations(program, &owner.agents).map_err(|error| vec![error])?;
     let mut session_protocol_facts = session_protocol_decl::declaration_facts(program, &owner)?;
     session_protocol_facts.extend(session_protocol_decl::follows_facts(program)?);
@@ -132,6 +138,7 @@ pub(in crate::workspace_graph) fn retain_checked_module(
             scalar_helpers,
             record_closure,
             record_source_revision,
+            scalar_lexical,
         },
         imported_instances,
     ))

@@ -290,7 +290,9 @@ pub(in crate::workspace_graph) fn with_prepared_test_context<T>(
     Ok(apply(&context, preparation))
 }
 
-fn current_module(
+/// Exact object membership in the live module slice, with a unique path and
+/// namespace. Shared by every retained source receiver.
+pub(in crate::workspace_graph::source_schema) fn current_module(
     module: &WorkspaceResolvedModule,
     modules: &[WorkspaceResolvedModule],
     preparation: &mut crate::cleanup_plan::SelectedReplayPreparation,

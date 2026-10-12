@@ -69,6 +69,17 @@ pub(crate) struct SemanticWorkspaceFileFact {
     source: String,
 }
 
+// The preflight's own held normalized sources, for exact schema reception.
+impl workspace_graph::ReceivingSources for Vec<SemanticWorkspaceFileFact> {
+    fn source_count(&self) -> usize {
+        self.len()
+    }
+    fn source_at(&self, index: usize) -> Option<(&str, &str)> {
+        self.get(index)
+            .map(|file| (file.path.as_str(), file.source.as_str()))
+    }
+}
+
 pub(crate) struct SemanticWorkspacePreflight {
     path_set: Vec<String>,
     files: Vec<SemanticWorkspaceFileFact>,
@@ -286,7 +297,8 @@ fn preflight_owned_inner_mode(
     } else {
         workspace_graph::build_owned_retaining_sources(graph_sources)?
     };
-    let mut schemas = graph.source_graph_schemas()?;
+    // The exact sources this build consumed are the receiving authority.
+    let mut schemas = graph.source_graph_schemas_receiving(&recovered_sources)?;
     let mut files = Vec::with_capacity(recovered_sources.len());
     for source in recovered_sources {
         let schema = schemas.remove(&source.path).ok_or_else(|| {
@@ -821,7 +833,9 @@ fn validate_preflight_replay_with_frontend(
     preflight: &SemanticWorkspacePreflight,
     frontend: Option<&crate::project::incremental::FrontendPass>,
 ) -> Result<(), Vec<Diagnostic>> {
-    let schemas = preflight.graph.source_graph_schemas()?;
+    let schemas = preflight
+        .graph
+        .source_graph_schemas_receiving(&preflight.files)?;
     if schemas.len() != preflight.files.len() || preflight.path_set.len() != preflight.files.len() {
         return Err(invariant(
             "Semantic Workspace preflight fact cardinality disagrees",

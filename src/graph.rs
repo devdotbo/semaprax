@@ -61,6 +61,8 @@ use generic_instances::legacy_graph_json;
 pub(crate) use generic_instances::to_legacy_hir_json;
 pub use generic_instances::{legacy_context_json, to_legacy_json, verify_json};
 pub(crate) use generic_mapping::requires_v35;
+mod base_lattice;
+pub(crate) use base_lattice::scalar_base_lattice;
 mod byte_helper_renewal;
 mod byte_traversal;
 mod consuming_vec_renewal;
@@ -1495,87 +1497,73 @@ pub(crate) fn graph_schema_from_parts_without_loans(
     }) {
         return Ok("semaprax.graph.v18");
     }
-    // Portable Indexed Byte Data v1 selects v17 above the existing v16/v15
-    // schemas whenever the authenticated program carries target-independent
-    // usize meaning or a borrowed byte view.
-    // Programs without the new scalar retain byte-identical v10-v16 output.
-    if types.iter().any(type_declaration_has_usize)
-        || functions.iter().any(function_has_usize)
-        || function_templates.iter().any(|template| {
-            template
-                .params
+    // The ordered v17..v10 tail is the shared base-lattice mapping; these are
+    // this classifier's own predicates, evaluated lazily in the same order.
+    Ok(base_lattice::scalar_base_lattice(
+        || {
+            types.iter().any(type_declaration_has_usize)
+                || functions.iter().any(function_has_usize)
+                || function_templates.iter().any(|template| {
+                    template
+                        .params
+                        .iter()
+                        .any(|param| type_has_usize(&param.ty))
+                        || type_has_usize(&template.return_type)
+                        || template
+                            .requires
+                            .iter()
+                            .chain(std::iter::once(&template.body))
+                            .chain(&template.ensures)
+                            .any(expression_has_usize)
+                })
+        },
+        || {
+            functions
                 .iter()
-                .any(|param| type_has_usize(&param.ty))
-                || type_has_usize(&template.return_type)
-                || template
+                .any(|function| expression_has_refutable_match(&function.body))
+        },
+        || {
+            functions
+                .iter()
+                .any(|function| expression_has_while(&function.body))
+        },
+        !function_templates.is_empty(),
+        || {
+            functions.iter().any(|function| {
+                function
                     .requires
                     .iter()
-                    .chain(std::iter::once(&template.body))
-                    .chain(&template.ensures)
-                    .any(expression_has_usize)
-        })
-    {
-        return Ok("semaprax.graph.v17");
-    }
-    // Refutable Match v1 selects v16 above the whole lower lattice (including
-    // the v15 while extension) only when an authenticated refutable node
-    // exists; programs without refutable-match syntax keep their exact
-    // pre-existing schema and bytes.
-    if functions
-        .iter()
-        .any(|function| expression_has_refutable_match(&function.body))
-    {
-        return Ok("semaprax.graph.v16");
-    }
-    // Bounded While-Loops v1 selects v15 above the whole lower lattice only
-    // when an authenticated while node exists; programs without while syntax
-    // keep their exact pre-existing schema and bytes.
-    if functions
-        .iter()
-        .any(|function| expression_has_while(&function.body))
-    {
-        return Ok("semaprax.graph.v15");
-    }
-    if !function_templates.is_empty() {
-        return Ok("semaprax.graph.v14");
-    }
-    if functions.iter().any(|function| {
-        function
-            .requires
-            .iter()
-            .chain(std::iter::once(&function.body))
-            .chain(&function.ensures)
-            .any(expression_has_record_pattern)
-    }) {
-        return Ok("semaprax.graph.v13");
-    }
-    if types.iter().any(|declaration| {
-        matches!(
-            declaration.kind,
-            ResolvedTypeDeclarationKind::Record { .. } | ResolvedTypeDeclarationKind::Class { .. }
-        ) && !declaration.type_parameters.is_empty()
-    }) {
-        return Ok("semaprax.graph.v12");
-    }
-    let has_option_try = functions.iter().any(|function| {
-        function
-            .requires
-            .iter()
-            .chain(std::iter::once(&function.body))
-            .chain(&function.ensures)
-            .any(|expression| {
-                let mut propagations = Vec::new();
-                collect_result_propagations(expression, &mut propagations);
-                propagations
-                    .iter()
-                    .any(|candidate| matches!(candidate.kind, ResolvedExprKind::TryOption { .. }))
+                    .chain(std::iter::once(&function.body))
+                    .chain(&function.ensures)
+                    .any(expression_has_record_pattern)
             })
-    });
-    if has_option_try {
-        Ok("semaprax.graph.v11")
-    } else {
-        Ok("semaprax.graph.v10")
-    }
+        },
+        || {
+            types.iter().any(|declaration| {
+                matches!(
+                    declaration.kind,
+                    ResolvedTypeDeclarationKind::Record { .. }
+                        | ResolvedTypeDeclarationKind::Class { .. }
+                ) && !declaration.type_parameters.is_empty()
+            })
+        },
+        || {
+            functions.iter().any(|function| {
+                function
+                    .requires
+                    .iter()
+                    .chain(std::iter::once(&function.body))
+                    .chain(&function.ensures)
+                    .any(|expression| {
+                        let mut propagations = Vec::new();
+                        collect_result_propagations(expression, &mut propagations);
+                        propagations.iter().any(|candidate| {
+                            matches!(candidate.kind, ResolvedExprKind::TryOption { .. })
+                        })
+                    })
+            })
+        },
+    ))
 }
 
 use function_values::type_has_usize;

@@ -3,6 +3,7 @@
 use super::*;
 use std::fmt::{self, Write};
 mod byte_helper;
+mod scalar_lexical;
 mod static_text;
 pub(super) use byte_helper::Proofs;
 pub(super) use static_text::REPORT;
@@ -222,10 +223,37 @@ pub(super) fn schema_with_proofs_paid<'a>(
     proofs: &mut byte_helper::Proofs<'a>,
     form: crate::cleanup_plan::SelectedReplayReportForm,
 ) -> Result<&'static str, ViewRefusal> {
+    schema_receiving_paid(module, modules, facts, proofs, form, None)
+}
+
+/// With the receiving caller's own current sources, a module holding the
+/// closed scalar lexical inventory is selected only through its consumed
+/// receipt. Without sources, or without that inventory, every module keeps
+/// its existing route, including the frozen from-parts G410 refusal.
+pub(super) fn schema_receiving_paid<'a>(
+    module: &'a WorkspaceResolvedModule,
+    modules: &'a [WorkspaceResolvedModule],
+    facts: &'a BTreeMap<String, WorkspaceDeclarationFact>,
+    proofs: &mut byte_helper::Proofs<'a>,
+    form: crate::cleanup_plan::SelectedReplayReportForm,
+    sources: Option<&dyn ReceivingSources>,
+) -> Result<&'static str, ViewRefusal> {
     if module.native_law {
         return Ok("semaprax.native-law.v1");
     }
     let static_schema = static_text::schema(module, facts)?;
+    if let (None, Some(sources)) = (static_schema, sources) {
+        if let Some(received) =
+            scalar_lexical::receive_paid(module, modules, facts, sources, form)
+                .map_err(ViewRefusal::Replay)?
+        {
+            // The receipt names this exact module; any other module is an
+            // impossible caller error kept at the unfunded legacy literal.
+            return received
+                .select(module)
+                .ok_or_else(|| ViewRefusal::Legacy(static_text::REPORT.legacy()));
+        }
+    }
     let mut lexical_static = false;
     if static_schema.is_some() {
         lexical_static = static_text::replay_lexical_paid(module, modules, facts, form)

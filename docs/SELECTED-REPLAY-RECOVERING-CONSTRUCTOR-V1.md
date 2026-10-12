@@ -196,8 +196,9 @@ qualified contract:
   literal-site, helper and schema-selection refusals. A remapping caller drops
   it and publishes its literal through `Unpaid::into_unfunded`.
 - The pass-through wrappers `into_change_view` (test-only),
-  `into_operation_view` (nominal rename) and `source_graph_schemas`
-  (Semantic Workspace preflight/replay). These use the public `SPX-G410` form.
+  `into_operation_view` (nominal rename), `source_graph_schemas` (test-only)
+  and `source_graph_schemas_receiving` (Semantic Workspace preflight/replay,
+  with that preflight's own held sources). These use the public `SPX-G410` form.
   A paid G410 carrier passes through them. An unpaid one is allocated there,
   only through `Unpaid::into_unfunded`.
 - Callers above `semantic_workspace` preflight and the Change, Structural
@@ -258,6 +259,55 @@ Updated owning callers of the typed constructors and authenticators:
 `loop_calls::byte_writer::resolved::selected` (census control), and the
 `static_text::primitive::{helpers, records}` test modules (closure-graph
 oracle, entry and prepared controls). None has been executed.
+
+### Closed scalar lexical receiver (OPT766, authored, not yet executed)
+
+A second actual caller, `workspace_graph/source_schema/scalar_lexical.rs`
+`receive_paid`, receives only the separate inventory captured by
+`workspace_graph/static_text/scalar_lexical.rs` in both retention routes. It is
+a finite profile: a no-import module whose every retained authored function,
+contract and dead branch passes the closed census in
+`static_text/scalar_lexical/census.rs` (Value scalar signatures, scalar
+literals and unprojected places, unary/binary, block, `if`, condition-latched
+loops, scalar `let`/assignment and typed exits; `Never` only on an exit and
+the block/`if` nodes carrying it), with at least one authored exit. Every
+other shape, and every view without receiving sources (Change, Structural
+Change, Operations), keeps its existing route and refusal; the frozen
+from-parts selectors still produce `SPX-G410`.
+
+The inventory retains the exact path, module, ordered member identities,
+captured identity origins and typed member digests. It retains no source
+revision, plan or schema. At reception the Semantic Workspace preflight passes
+its own held normalized sources (`ReceivingSources`); the receiver recomputes
+the primitive source revision from those bytes and requires every member's
+typed digest to replay under it. One existing paid owner then runs exact live
+membership, inventory binding, namespace/origin facts, digests, the closed
+census, the declaration index, the Session constructor, every member replay
+(`validate_paid` for lexical members, `validate_scalar_paid` for the others)
+and `finish_paid`, in that order, with one carrier acquired before setup.
+Authentication refuses with the Copy `SelectedReplayRefused`.
+
+Only the private consumed `Received` receipt can select this module's Graph
+schema. It names the exact live module and member view, and maps census-derived
+flags through `graph::scalar_base_lattice`, the shared ordered v17..v10 tail of
+the base classifier; the excluded families' predicates are fixed `false`. A
+receipt presented for any other module is the existing unfunded `SPX-G410`
+literal. The Session's unmigrated `EngineError::Owned` Diagnostics remain the
+open #781 gap above, so this route is not end-to-end funded.
+
+Owning selectors under `workspace_graph::source_schema::scalar_lexical::tests`:
+
+- `original_terminated_guard_is_received_from_current_source_with_full_program_parity`
+- `canonical_semicolon_control_is_the_same_generation_and_body_drift_is_a_new_receipt`
+- `mixed_unrelated_scalar_member_is_replayed_and_selects_the_oracle_usize_family`
+- `mixed_exit_free_looping_member_is_replayed_by_the_paid_scalar_validator`
+- `current_source_namespace_member_and_layout_attacks_refuse_with_one_paid_report`
+- `reordered_missing_transplanted_detached_and_inserted_inventories_refuse`
+- `certificate_and_plan_mutations_refuse_without_repair`
+- `closed_family_exclusions_keep_their_existing_route`
+- `source_less_change_view_keeps_the_original_refusal`
+- `zero_and_report_one_short_return_the_unpaid_ledger_without_allocating`
+- `exact_success_one_short_refusal_and_drop_share_one_observed_owner`
 
 
 ## Typed expression-fact receipt v1 (private, source-only)

@@ -364,6 +364,8 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
                     "../../src/workspace_graph/static_text/scalar_helpers/borrowed_records.rs"
                 ),
                 include_str!("../../src/workspace_graph/static_text/record_closure.rs"),
+                include_str!("../../src/workspace_graph/static_text/scalar_lexical.rs"),
+                include_str!("../../src/workspace_graph/static_text/scalar_lexical/census.rs"),
                 include_str!(
                     "../../src/workspace_graph/static_text/scalar_helpers/capture_directory.rs"
                 ),
@@ -387,6 +389,11 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
                 include_str!("../../src/workspace_graph/record_traversal.rs"),
                 "\n",
                 include_str!("../../src/workspace_graph/source_schema.rs"),
+                include_str!("../../src/workspace_graph/source_schema/scalar_lexical.rs"),
+                include_str!(
+                    "../../src/workspace_graph/source_schema/scalar_lexical/received.rs"
+                ),
+                include_str!("../../src/workspace_graph/source_schema/scalar_lexical/tests.rs"),
                 include_str!("../../src/workspace_graph/source_schema/static_text.rs"),
                 include_str!("../../src/workspace_graph/source_schema/static_text/primitive.rs"),
                 include_str!(

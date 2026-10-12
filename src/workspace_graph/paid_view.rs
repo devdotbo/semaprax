@@ -57,6 +57,25 @@ impl ViewRefusal {
     }
 }
 
+/// Exact authoritative sources held by the receiving caller for the same
+/// generation it built. They select nothing by themselves: a retained scalar
+/// lexical inventory is admitted only when every current typed member replays
+/// under the revision recomputed here from these bytes. Duplicate or missing
+/// paths refuse.
+pub(crate) trait ReceivingSources {
+    fn source_count(&self) -> usize;
+    fn source_at(&self, index: usize) -> Option<(&str, &str)>;
+}
+impl ReceivingSources for Vec<WorkspaceSource> {
+    fn source_count(&self) -> usize {
+        self.len()
+    }
+    fn source_at(&self, index: usize) -> Option<(&str, &str)> {
+        self.get(index)
+            .map(|source| (source.path.as_str(), source.source.as_str()))
+    }
+}
+
 impl WorkspaceGraphBuild {
     /// Change view for a caller that publishes one fixed `form` on refusal.
     /// The unpaid case is the explicit, allocating legacy edge.
@@ -175,19 +194,32 @@ impl WorkspaceGraphBuild {
         })
     }
 
+    #[cfg(test)]
     pub(crate) fn source_graph_schemas_paid(
         &self,
         form: SelectedReplayReportForm,
     ) -> Result<BTreeMap<String, &'static str>, ViewRefusal> {
+        self.source_graph_schemas_receiving_paid(form, None)
+    }
+
+    /// The same schema view. With the receiving caller's own authoritative
+    /// sources, a retained closed scalar lexical inventory may be received;
+    /// without them every module keeps its existing route and refusal.
+    pub(crate) fn source_graph_schemas_receiving_paid(
+        &self,
+        form: SelectedReplayReportForm,
+        sources: Option<&dyn ReceivingSources>,
+    ) -> Result<BTreeMap<String, &'static str>, ViewRefusal> {
         let mut schemas = BTreeMap::new();
         let mut proofs = source_schema::Proofs::new(&self.hir.modules, &self.hir.declarations);
         for module in &self.hir.modules {
-            let schema = source_schema::schema_with_proofs_paid(
+            let schema = source_schema::schema_receiving_paid(
                 module,
                 &self.hir.modules,
                 &self.hir.declarations,
                 &mut proofs,
                 form,
+                sources,
             )?;
             if schemas.insert(module.path.clone(), schema).is_some() {
                 return Err(vec![graph_error(

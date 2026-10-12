@@ -6,6 +6,7 @@ use std::fmt::Write;
 pub(super) mod primitive;
 pub(super) mod record_closure;
 pub(super) mod scalar_helpers;
+pub(super) mod scalar_lexical;
 
 const DEPTH: usize = 514;
 const WORK: usize = 1_048_576;

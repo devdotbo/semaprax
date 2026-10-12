@@ -4,6 +4,7 @@ use super::*;
 use std::fmt::Write;
 mod primitive;
 pub(super) use primitive::replay_paid as replay_lexical_paid;
+pub(super) use primitive::current_module;
 
 const WORK: usize = 1_048_576;
 

@@ -31,7 +31,7 @@ mod native_law;
 mod owned_generics;
 mod package;
 mod paid_view;
-pub(crate) use paid_view::ViewRefusal;
+pub(crate) use paid_view::{ReceivingSources, ViewRefusal};
 mod prelude_binding;
 mod project_render;
 mod record_traversal;
@@ -535,6 +535,8 @@ struct WorkspaceResolvedModule {
     scalar_helpers: Option<Box<static_text::scalar_helpers::Inventory>>,
     record_closure: Option<Box<static_text::record_closure::Inventory>>,
     record_source_revision: Option<[u8; 32]>,
+    // Live-reconstructed on every retention; never serialized or trusted alone.
+    scalar_lexical: Option<Box<static_text::scalar_lexical::Inventory>>,
 }
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub(crate) struct WorkspaceEdge {
@@ -2319,10 +2321,21 @@ impl WorkspaceGraphBuild {
             .map_err(ViewRefusal::into_legacy)
     }
 
+    // Source-less view: owning tests only. Production receivers pass sources.
+    #[cfg(test)]
     pub(crate) fn source_graph_schemas(
         &self,
     ) -> Result<BTreeMap<String, &'static str>, Vec<Diagnostic>> {
         self.source_graph_schemas_paid(source_schema::REPORT)
+            .map_err(ViewRefusal::into_legacy)
+    }
+
+    /// The same pass-through view, receiving the caller's exact sources.
+    pub(crate) fn source_graph_schemas_receiving(
+        &self,
+        sources: &dyn ReceivingSources,
+    ) -> Result<BTreeMap<String, &'static str>, Vec<Diagnostic>> {
+        self.source_graph_schemas_receiving_paid(source_schema::REPORT, Some(sources))
             .map_err(ViewRefusal::into_legacy)
     }
 }

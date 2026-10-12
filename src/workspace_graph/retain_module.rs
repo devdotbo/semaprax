@@ -35,6 +35,12 @@ fn retain_owned_workspace_module(
         authenticated_sources,
     )?;
     let record_source_revision = record_closure.as_ref().map(|facts| facts.revision());
+    // Captured while the held source and complete resolved module are present.
+    let scalar_lexical = if static_text.is_none() {
+        static_text::scalar_lexical::capture(program, &resolved, authored, authenticated_sources)?
+    } else {
+        None
+    };
     let retained_output_only = loan_scratch.is_some();
     hir::replay_agent_source_associations(program, &resolved.agents)
         .map_err(|error| vec![error])?;
@@ -106,6 +112,7 @@ fn retain_owned_workspace_module(
             scalar_helpers,
             record_closure,
             record_source_revision,
+            scalar_lexical,
         },
         imported_instances,
     ))

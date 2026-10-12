@@ -1896,6 +1896,13 @@ Operations callers pass the literal they publish. A missing or mismatched form
 fails closed to `SelectedReplayUnpaid`. The remaining allocating boundaries
 are listed in
 [the selected replay protocol](SELECTED-REPLAY-RECOVERING-CONSTRUCTOR-V1.md).
+`workspace_graph/static_text/scalar_lexical.rs` captures a separate closed
+scalar lexical inventory in both retention routes; it retains no revision,
+plan or schema. `source_schema/scalar_lexical.rs` receives it only with the
+Semantic Workspace preflight's own held sources, recomputes the source
+revision, replays every member on one paid Session, and yields a private
+consumed receipt that alone selects the module's family through the shared
+`graph/base_lattice.rs` mapping.
 `src/workspace_graph/session_protocol_decl.rs` owns issue #297's follow-on
 (R21) projection of declared `.spx` `session protocol`s into the Workspace
 Semantic Graph: `semaprax.workspace-semantic-graph.v2`, selected only for a
