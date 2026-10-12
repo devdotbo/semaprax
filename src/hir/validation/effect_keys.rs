@@ -1,7 +1,7 @@
 //! Function-local borrowed effect keys; membership only, never a capability.
 use super::*;
 #[derive(Clone, Copy)]
-pub(super) enum Allowed<'a> {
+pub(in crate::hir) enum Allowed<'a> {
     Borrowed(&'a BTreeSet<&'a str>),
     #[cfg(test)]
     Owned(&'a BTreeSet<String>),
@@ -20,7 +20,7 @@ impl Allowed<'_> {
 #[cfg(test)]
 impl HirValidator<'_> {
     #[allow(clippy::too_many_arguments)]
-    pub(super) fn validate_expr_iterative(
+    pub(in crate::hir) fn validate_expr_iterative(
         &mut self,
         function: &FunctionExecutionId,
         expression: &ResolvedExpr,

@@ -1,6 +1,7 @@
 //! Unchanged publication storage only; initial and changed snapshots remain owned.
 use super::*;
 use crate::test_allocation_observer::{current_metrics, measure, Metrics};
+#[path = "scope_publication_tests/old.rs"]
 mod old;
 
 fn scope(count: usize) -> BTreeMap<ValueId, ValidationBinding> {

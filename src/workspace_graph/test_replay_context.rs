@@ -31,8 +31,8 @@ impl SourceRecordReplayFixture {
             .find(|module| module.path == "flat.spx")
             .unwrap()
     }
-    pub(crate) fn functions(&self) -> &[hir::ResolvedFunction] {
-        &self.module().functions
+    pub(crate) fn functions(&self) -> hir::items::View<'_, hir::ResolvedFunction> {
+        hir::items::ItemSource::view(&self.module().functions)
     }
     pub(crate) fn function_mut(&mut self, id: &str) -> &mut hir::ResolvedFunction {
         self.0

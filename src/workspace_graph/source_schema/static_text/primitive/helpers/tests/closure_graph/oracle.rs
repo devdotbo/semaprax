@@ -77,7 +77,7 @@ fn lookup<'a>(
 /// Saved `resolve_call_target`: the first ordinal-order match over locals
 /// then selected helpers.
 pub(super) fn linear<'a>(
-    locals: &'a [ResolvedFunction],
+    locals: crate::hir::items::View<'a, ResolvedFunction>,
     helpers: &[&'a ResolvedFunction],
     id: &str,
 ) -> Option<&'a ResolvedFunction> {
