@@ -15,14 +15,31 @@ pub(super) fn can_acquire() -> bool {
 /// The caller has verified this exact immutable Program. Initial acquisition
 /// fails inline; later identity refusal moves the owner's prepaid report.
 /// The public setup-only compatibility wrapper is deliberately kept outside.
+#[cfg(test)]
 pub(super) fn try_resolve_verified(
     program: &Program,
 ) -> Result<Result<(ResolvedProgram, FunctionResolutionWork), Vec<Diagnostic>>, Refused> {
     try_resolve_verified_observed(program, |_| {})
 }
 
+pub(super) fn try_resolve_verified_compatible(
+    program: &Program,
+) -> Result<Result<(ResolvedProgram, FunctionResolutionWork), Vec<Diagnostic>>, Refused> {
+    resolve_with_acquisition(program, true, IdentityReservation::acquire, |_| {})
+}
+
+#[cfg(test)]
 fn try_resolve_verified_observed(
     program: &Program,
+    observe: impl FnOnce(&IdentityReservation),
+) -> Result<Result<(ResolvedProgram, FunctionResolutionWork), Vec<Diagnostic>>, Refused> {
+    resolve_with_acquisition(program, false, IdentityReservation::acquire, observe)
+}
+
+fn resolve_with_acquisition(
+    program: &Program,
+    setup_compatibility: bool,
+    acquire: impl FnOnce() -> Result<IdentityReservation, Refused>,
     observe: impl FnOnce(&IdentityReservation),
 ) -> Result<Result<(ResolvedProgram, FunctionResolutionWork), Vec<Diagnostic>>, Refused> {
     // Match the original inventory and field-evaluation order before the first
@@ -31,7 +48,15 @@ fn try_resolve_verified_observed(
     let inventory = clause_program.as_ref().unwrap_or(program);
     let helpers = crate::loop_calls::byte_writer::SourceIndex::new(inventory);
     let prelude = crate::prelude::declarations_for_program(inventory);
-    let mut owner = IdentityReservation::acquire()?;
+    let mut owner = match acquire() {
+        Ok(owner) => owner,
+        Err(_) if setup_compatibility => {
+            // Reuse this exact inventory and SourceIndex. Re-running the outer
+            // resolver would clone/synthesize the inventory on a refused ledger.
+            return Ok(legacy_inventory(program, inventory, helpers, prelude));
+        }
+        Err(error) => return Err(error),
+    };
     observe(&owner);
     let resolved = match pass(inventory, helpers, prelude, &mut owner) {
         Ok(resolved) => resolved,
@@ -48,6 +73,36 @@ fn try_resolve_verified_observed(
         Err(PassFailure::Identity) => Err(owner.publish()),
         Err(PassFailure::Semantic(error)) => Err(vec![error]),
     })
+}
+
+fn legacy_inventory<'a>(
+    program: &Program,
+    inventory: &'a Program,
+    helpers: crate::loop_calls::byte_writer::SourceIndex<'a>,
+    prelude: &[crate::ast::TypeDeclaration],
+) -> Result<(ResolvedProgram, FunctionResolutionWork), Vec<Diagnostic>> {
+    let resolved = legacy_pass(inventory, helpers, prelude).map_err(|error| vec![error])?;
+    let Some(desugared) = record_invariants::desugar(program, &resolved.0) else {
+        return Ok(resolved);
+    };
+    let helpers = crate::loop_calls::byte_writer::SourceIndex::new(&desugared);
+    let prelude = crate::prelude::declarations_for_program(&desugared);
+    legacy_pass(&desugared, helpers, prelude).map_err(|error| vec![error])
+}
+fn legacy_pass<'a>(
+    program: &'a Program,
+    helpers: crate::loop_calls::byte_writer::SourceIndex<'a>,
+    prelude: &[crate::ast::TypeDeclaration],
+) -> Result<(ResolvedProgram, FunctionResolutionWork), Diagnostic> {
+    Resolver {
+        program,
+        byte_helpers: helpers,
+        declarations: DeclarationIndex::from_verified_with_prelude(program, prelude)?,
+        reuse: None,
+        function_work: FunctionResolutionWork::default(),
+        fused_producer: None,
+        partition_profile: false,
+    }.resolve()
 }
 
 enum PassFailure {

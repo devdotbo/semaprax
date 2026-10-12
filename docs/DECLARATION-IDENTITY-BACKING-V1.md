@@ -145,7 +145,8 @@ behavior and semantic error replacement remain unchanged.
 
 The private acquisition failure is inline. Public zero/short-setup calls retain
 their original legacy diagnostic route; allocator/capacity setup refusal also
-falls back to that compatibility wrapper on the already-refused ledger. This
+uses the legacy receiver on the already-refused ledger, lending the same held
+invariant inventory and helper index rather than constructing them again. This
 setup-only outward channel remains an explicit OPT781 gap, not a funded report.
 Calls without an active owner preserve the old infallible index receiver. There
 is no fresh ledger, additional allowance, refund, profile selection, source

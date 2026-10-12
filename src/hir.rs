@@ -724,7 +724,7 @@ pub fn analyze(program: &Program) -> Analysis {
     // setup-short compatibility call retains the original owned diagnostic
     // route; initial report setup is not claimed funded by this activation.
     if ordinary_identity::can_acquire() {
-        match ordinary_identity::try_resolve_verified(program) {
+        match ordinary_identity::try_resolve_verified_compatible(program) {
             Ok(Ok((resolved, _))) => {
                 return Analysis { diagnostics, resolved: Some(resolved) };
             }

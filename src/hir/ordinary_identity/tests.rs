@@ -142,3 +142,82 @@ fn ordinary_identity_setup_and_source_errors_preserve_legacy_public_priority() {
     assert_eq!(used, 0);
     assert_eq!((observed.allocations, observed.allocated, observed.live), (0, 0, 0));
 }
+
+// Saved original receiver with the setup hook inserted after the original
+// inventory/helpers/prelude phase. No production fallback helper is reused.
+fn old_with_setup_refusal(program: &Program) -> Result<(ResolvedProgram, FunctionResolutionWork), Vec<Diagnostic>> {
+    let clause = record_invariants::clause_program(program);
+    let inventory = clause.as_ref().unwrap_or(program);
+    let helpers = crate::loop_calls::byte_writer::SourceIndex::new(inventory);
+    let prelude = crate::prelude::declarations_for_program(inventory);
+    assert!(matches!(refuse_setup(), Err(Refused::Budget(_))));
+    let resolved = (Resolver {
+        program: inventory,
+        byte_helpers: helpers,
+        declarations: DeclarationIndex::from_verified_with_prelude(inventory, prelude)
+            .map_err(|error| vec![error])?,
+        reuse: None,
+        function_work: FunctionResolutionWork::default(),
+        fused_producer: None,
+        partition_profile: false,
+    }).resolve().map_err(|error| vec![error])?;
+    let Some(desugared) = record_invariants::desugar(program, &resolved.0) else {
+        return Ok(resolved);
+    };
+    (Resolver {
+        program: &desugared,
+        byte_helpers: crate::loop_calls::byte_writer::SourceIndex::new(&desugared),
+        declarations: DeclarationIndex::from_verified(&desugared)
+            .map_err(|error| vec![error])?,
+        reuse: None,
+        function_work: FunctionResolutionWork::default(),
+        fused_producer: None,
+        partition_profile: false,
+    }).resolve().map_err(|error| vec![error])
+}
+fn refuse_setup() -> Result<IdentityReservation, Refused> {
+    // Inject the real sticky budget refusal at the acquisition boundary. This
+    // tests fallback ownership, not an allocator-failure simulation or funding
+    // for the legacy semantic diagnostic selected after setup has failed.
+    assert!(!reserve_active_required(usize::MAX));
+    IdentityReservation::acquire()
+}
+
+#[test]
+fn setup_refusal_reuses_one_invariant_inventory_and_preserves_legacy_diagnostic_and_drop() {
+    let program = crate::check(INVARIANT, "ordinary-identity.spx").unwrap();
+    let (expected, failed, _) = with_limit_usage(64 * 1024 * 1024, || old_with_setup_refusal(&program));
+    assert!(failed);
+    let compare = |actual: &Result<(ResolvedProgram, FunctionResolutionWork), Vec<Diagnostic>>| {
+        match (actual, &expected) {
+            (Ok((actual, _)), Ok((expected, _))) => assert_eq!(actual, expected),
+            (Err(actual), Err(expected)) => assert_eq!(actual, expected),
+            _ => panic!("setup fallback changed success/refusal selection"),
+        }
+    };
+    let (((), old_metrics), old_failed, old_used, old_first) =
+        with_limit_usage_refusal(64 * 1024 * 1024, || measure(|| {
+            let result = old_with_setup_refusal(&program);
+            compare(&result);
+            drop(result);
+        }));
+    let (((), new_metrics), new_failed, new_used, new_first) =
+        with_limit_usage_refusal(64 * 1024 * 1024, || measure(|| {
+            let result = resolve_with_acquisition(&program, true, refuse_setup, |_| {
+                panic!("refused acquisition cannot lend a paid owner")
+            }).unwrap();
+            compare(&result);
+            assert!(!reserve_active_required(0));
+            drop(result);
+        }));
+    assert!(old_failed && new_failed);
+    assert_eq!(old_used, new_used);
+    assert_eq!(old_first, new_first);
+    assert_eq!(new_first.unwrap().requested, usize::MAX);
+    // Entire single-inventory construction, legacy publication and teardown
+    // are observed together; a second clause clone cannot hide after refusal.
+    assert_eq!(old_metrics, new_metrics);
+    assert!(!new_metrics.invalid);
+    assert_eq!(new_metrics.live, 0);
+    assert_eq!(new_metrics.allocated, new_metrics.freed);
+}
