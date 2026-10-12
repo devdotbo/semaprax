@@ -46,7 +46,7 @@ this complete acceptance boundary is qualified.
 The additional `nested_collection_record::subtree::lifetime` owners keep a
 transferred child live on actual Break/Continue paths, and instrument the native
 forward-entry to first-consumer boundary for allocator requests and memcpy/
-memmove payload work, alongside the old recursive control. The observer also
+memmove payload work and every realloc request, alongside the old recursive control. The observer also
 requires three exercised boundaries and complete canonical settlement at O0/O2;
 it excludes compiler preparation. These authored controls are pending execution,
 not a whole-backend memory or application-fit claim.

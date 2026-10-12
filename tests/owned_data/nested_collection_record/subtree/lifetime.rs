@@ -84,18 +84,26 @@ fn subtree_forwarding_allocates_no_replacement_tree_or_payload_copy_at_runtime()
             let generated = semaprax::codegen::emit_c(&ast).unwrap();
             // Actual allocator census begins at forward entry, after literal
             // owners exist; score entry is the first consumer of the child.
-            // Count memcpy/memmove payload work independently as well. Ordinary
+            // Count memcpy/memmove work and every realloc attempt (including existing
+            // backing, allocator-internal copying and refusals) independently. Ordinary
             // inline aggregate metadata assignments are not payload copies.
             let generated = generated
                 .replace("memcpy(", "subtree_memcpy(")
-                .replace("memmove(", "subtree_memmove(");
+                .replace("memmove(", "subtree_memmove(")
+                .replace("realloc(", "subtree_resize(")
+                .replace(
+                    "#define SPX_VEC_REALLOC realloc",
+                    "#define SPX_VEC_REALLOC subtree_resize",
+                );
             let generated=insert_entry_probe(&generated,"spx_decl_666f7277617264",
-                "    ++subtree_forward_entries; subtree_before_allocations=outcome_total_allocations; subtree_before_copies=subtree_payload_copies;");
+                "    ++subtree_forward_entries; subtree_before_allocations=outcome_total_allocations; subtree_before_copies=subtree_payload_copies; subtree_before_resize=subtree_resize_requests;");
             let generated=insert_entry_probe(&generated,"spx_decl_73636f7265",
-                "    ++subtree_score_entries; if(outcome_total_allocations!=subtree_before_allocations || subtree_payload_copies!=subtree_before_copies)abort();");
+                "    ++subtree_score_entries; if(outcome_total_allocations!=subtree_before_allocations || subtree_payload_copies!=subtree_before_copies || subtree_resize_requests!=subtree_before_resize)abort();");
             let probes = r#"#include <string.h>
 static uint64_t subtree_before_allocations=0,subtree_before_copies=0,subtree_payload_copies=0;
 static uint64_t subtree_forward_entries=0,subtree_score_entries=0;
+static uint64_t subtree_before_resize=0,subtree_resize_requests=0;
+static __attribute__((unused)) void *subtree_resize(void *p,size_t n){++subtree_resize_requests;return realloc(p,n);}
 static __attribute__((destructor)) void subtree_probe_done(void){if(subtree_forward_entries!=3||subtree_score_entries!=3)abort();}
 static __attribute__((unused)) void *subtree_memcpy(void *to,const void *from,size_t n){if(n)++subtree_payload_copies;return memcpy(to,from,n);}
 static __attribute__((unused)) void *subtree_memmove(void *to,const void *from,size_t n){if(n)++subtree_payload_copies;return memmove(to,from,n);}
