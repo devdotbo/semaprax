@@ -42,7 +42,7 @@ fn helper_renewal_cache_roundtrips_with_and_without_lexical_control() {
 
 #[test]
 fn helper_cache_rejects_future_token_and_legacy_lexical_schema_mismatch() {
-    let future = super::super::encode(&"semaprax.cleanup-plan.v20".to_owned()).unwrap();
+    let future = super::super::encode(&"semaprax.cleanup-plan.v21".to_owned()).unwrap();
     assert!(super::super::decode::<&'static str>(&future).is_err());
     let ast = crate::check(
         "module cache.legacy; @id(\"main\") fn main()->i64 {let mut index=0; while index<1 {index=index+1; if index==1 {return 7;}; 0} 7}",

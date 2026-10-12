@@ -3,7 +3,7 @@ use super::{codec_enum, codec_struct, Codec, Decoder, Encoder, Result};
 use crate::cleanup_plan::{
     CleanupPlan, ExecutionBoundaryCertificate, ExecutionBoundaryKind, LexicalControlPlan,
     LexicalExitCertificate, LoopCertificate, ResumeCertificate, CLEANUP_PLAN_SCHEMA_V18,
-    CLEANUP_PLAN_SCHEMA_V19,
+    CLEANUP_PLAN_SCHEMA_V19, CLEANUP_PLAN_SCHEMA_V20,
 };
 
 codec_struct!(LoopCertificate {
@@ -38,7 +38,8 @@ codec_struct!(LexicalControlPlan {
 
 impl Codec for CleanupPlan {
     fn encode(&self, out: &mut Encoder) -> Result<()> {
-        if self.schema != CLEANUP_PLAN_SCHEMA_V19
+        super::checked_allocation::validate(self)?;
+        if !matches!(self.schema, CLEANUP_PLAN_SCHEMA_V19 | CLEANUP_PLAN_SCHEMA_V20)
             && (self.schema == CLEANUP_PLAN_SCHEMA_V18) != self.lexical_control.is_some()
         {
             return Err(super::grammar(
@@ -55,7 +56,7 @@ impl Codec for CleanupPlan {
             self.edges.encode(out)?;
             self.regions.encode(out)?;
             self.exits.encode(out)?;
-            if self.schema == CLEANUP_PLAN_SCHEMA_V19 {
+            if matches!(self.schema, CLEANUP_PLAN_SCHEMA_V19 | CLEANUP_PLAN_SCHEMA_V20) {
                 // v19 composes helper renewal with optional lexical authority.
                 // Earlier schemas retain their exact append-only encoding.
                 self.lexical_control.encode(out)?;
@@ -77,14 +78,14 @@ impl Codec for CleanupPlan {
             let edges = Codec::decode(input)?;
             let regions = Codec::decode(input)?;
             let exits = Codec::decode(input)?;
-            let lexical_control = if schema == CLEANUP_PLAN_SCHEMA_V19 {
+            let lexical_control = if matches!(schema, CLEANUP_PLAN_SCHEMA_V19 | CLEANUP_PLAN_SCHEMA_V20) {
                 Codec::decode(input)?
             } else if schema == CLEANUP_PLAN_SCHEMA_V18 {
                 Some(Codec::decode(input)?)
             } else {
                 None
             };
-            Ok(Self {
+            let plan = Self {
                 schema,
                 entry,
                 entry_state,
@@ -95,7 +96,9 @@ impl Codec for CleanupPlan {
                 regions,
                 exits,
                 lexical_control,
-            })
+            };
+            super::checked_allocation::validate(&plan)?;
+            Ok(plan)
         })
     }
 }

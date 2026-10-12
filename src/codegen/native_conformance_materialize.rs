@@ -384,7 +384,7 @@ fn materialize_status(
             .map(|case| NormalizedStatus::arithmetic(*case))
             .find(|candidate| wire_status_matches(wire, candidate))
             .ok_or(MaterializeError::StatusMismatch),
-        StatusProducer::PropagatedCall { .. } => Err(MaterializeError::UnsupportedStatusProducer),
+        StatusProducer::PropagatedCall { .. } | StatusProducer::CheckedAllocation { .. } => Err(MaterializeError::UnsupportedStatusProducer),
     }
 }
 

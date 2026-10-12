@@ -386,7 +386,7 @@ mod plan {
     codec_tuple!(CleanupRegionId(0));
     codec_tuple!(ExitTargetId(0));
     codec_tuple!(CleanupSlotId(0));
-    codec_enum!(StatusLane { 0 => OperationFailure, 1 => ContractFalse, 2 => OwnerAdmission });
+    codec_enum!(StatusLane { 0 => OperationFailure, 1 => ContractFalse, 2 => OwnerAdmission, 3 => AllocationFailure });
     codec_struct!(StatusSourceId { expression, lane });
     codec_enum!(StorageId {
         0 => Value(value), 1 => Temporary(expression),
@@ -438,7 +438,8 @@ mod plan {
     codec_enum!(ContractPhase { 0 => Requires, 1 => Ensures });
     codec_enum!(StatusProducer {
         0 => PropagatedCall { callee }, 1 => CheckedArithmetic { operation, normalized_cases },
-        2 => ContractFalse { phase, ordinal }
+        2 => ContractFalse { phase, ordinal },
+        3 => CheckedAllocation { operation, normalized_cases }
     });
     codec_struct!(StatusSource { id, producer });
     codec_enum!(CleanupTerminator { 0 => Goto(edge), 1 => Branch(edges), 2 => Exit(target) });

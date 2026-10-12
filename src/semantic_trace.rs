@@ -284,6 +284,7 @@ fn status_source_json(source: &crate::cleanup_plan::StatusSourceId) -> String {
     let lane = match source.lane {
         crate::cleanup_plan::StatusLane::OwnerAdmission => "owner_admission",
         crate::cleanup_plan::StatusLane::OperationFailure => "operation_failure",
+        crate::cleanup_plan::StatusLane::AllocationFailure => "allocation_failure",
         crate::cleanup_plan::StatusLane::ContractFalse => "contract_false",
     };
     format!(

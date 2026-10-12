@@ -176,6 +176,10 @@ fn status_source_json(source: &StatusSource) -> String {
 
 fn status_producer_json(producer: &StatusProducer) -> String {
     match producer {
+        StatusProducer::CheckedAllocation { operation, normalized_cases } => format!(
+            "{{\"kind\":\"checked_allocation\",\"operation\":{},\"domain\":\"semaprax.allocation.v1\",\"class\":\"adapter\",\"retryable\":false,\"normalized_cases\":{}}}",
+            quote_json(operation.name()), array_json(normalized_cases, |case| case.code().to_string())
+        ),
         StatusProducer::PropagatedCall { callee } => format!(
             "{{\"kind\":\"propagated_call\",\"callee\":{}}}",
             quote_json(callee.as_str())
@@ -573,6 +577,7 @@ fn status_lane_text(lane: StatusLane) -> &'static str {
     match lane {
         StatusLane::OwnerAdmission => "owner_admission",
         StatusLane::OperationFailure => "operation_failure",
+        StatusLane::AllocationFailure => "allocation_failure",
         StatusLane::ContractFalse => "contract_false",
     }
 }
