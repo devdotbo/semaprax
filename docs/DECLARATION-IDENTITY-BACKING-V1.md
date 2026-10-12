@@ -118,12 +118,12 @@ another owner or building an index. Setup refusal stays Copy through the
 `Vec<Diagnostic>` layer only outside it; that outer graph/report layer remains
 unqualified. Public `hir::resolve`/`analyze` stay explicit unpaid legacy.
 
-Only the initial `DeclarationIndex` identities are paid. Still unpaid: the
-fresh `DeclarationId::new` reconstructions in `Resolver::resolve` (entrypoint,
-type, lifecycle, class method, interface, import, generic, function-template
-and generic-owner identities), genuinely new agent/generated identities, other
-initial-index callers (selected fused candidate, byte partition, compiler
-prelude link), source/semantic diagnostics and operation constructors. No
+Only the initial `DeclarationIndex` identities are paid by this route. The
+resolver's current `held_identity` queries share carriers already constructed
+by its exact pass index; they create no fresh identity backing. Genuinely new
+agent/generated identities, other initial-index callers (selected fused
+candidate, byte partition, compiler prelude link), source/semantic diagnostics
+and operation constructors remain outside this payment scope. No
 whole-resolver funding claim is made.
 
 ### Ordinary analyzed caller activation (identity-only)
