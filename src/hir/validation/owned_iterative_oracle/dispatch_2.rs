@@ -465,7 +465,7 @@ macro_rules! owned_dispatch_2 {
                                 instance,
                                 fields,
                             } => $this
-                                .validate_record_match_pattern(
+                                .validate_record_match_pattern_owned_reference(
                                     $function,
                                     &scrutinee.ty,
                                     record,

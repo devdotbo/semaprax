@@ -911,6 +911,12 @@ format: `Unreleased` then release buckets, grouped by impact.
 
 ## Unreleased
 
+- Source-only nested record-pattern validation now streams exact binding paths
+  from its existing depth-first continuation indices, removing owned root/field/
+  record labels without another directory or quota. The complete old receiver
+  remains saved for both full main oracles; Copy/Own/Borrow diagnostic, scope,
+  decimal/depth and actual complete-drop controls are authored but unexecuted.
+
 - Source-only HIR expected child labels now borrow authenticated parent text and
   stream static suffixes/indices into exact identity comparison. Saved full
   owned iterative and recursive oracles, frame bounds and forecasts remain;

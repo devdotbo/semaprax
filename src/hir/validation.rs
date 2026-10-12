@@ -7403,7 +7403,7 @@ impl<'a> HirValidator<'a> {
                             instance,
                             fields,
                         } => self
-                            .validate_record_match_pattern(
+                            .validate_record_match_pattern_owned_reference(
                                 function,
                                 &scrutinee.ty,
                                 record,

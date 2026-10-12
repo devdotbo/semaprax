@@ -12,8 +12,8 @@ Child expected labels stream the original bytes and checked byte length into
 identity comparison. Contract roots and local binding probes use the same label.
 Call continuations borrow the authenticated parent; child construction replays
 the exact String-slot, fused Bytes-field and literal-format argument prefixes
-from the current expression shape. Record-pattern traversal retains its existing
-owned nested path storage, rendering only at that receiving boundary. Scopes,
+from the current expression shape. Record-pattern traversal streams its root and the visited indices already
+held by its depth-first continuation directory; it owns no nested path buffer. Scopes,
 publication, traversal order, diagnostic priority and current HIR checks remain
 unchanged. Expected label allocation/refusal points disappear; diagnostic text,
 owned literal builders and their refusal carriers keep their original owners.
@@ -57,3 +57,38 @@ against the original argument-path producer. The removed-buffer refusal control
 is `hir::validation::path_label::tests::removed_label_buffer_refusal_retains_the_owned_formatter_control`.
 The complete new owner and test module are joined into
 `tests/hir_module_boundaries.rs`'s authority and formatting source audit.
+
+## Nested record-pattern receiver
+
+`validation/record_pattern/binding_path.rs` streams the supplied root followed by
+exact `.field.N.record` ancestor segments and the final `.field.N.binding` leaf.
+The unchanged DFS directory already retains each active Fields continuation with
+its next index. After pushing the current continuation, every such frame names
+exactly its visited index minus one. No text is inferred from the binding under
+admission, no additional directory is built, and no new depth/work quota is added.
+Field lookup, duplicate detection, substitutions, ownership/fact/type admission,
+value-ID insertion and scope publication keep their original order. Removing
+path buffers removes their physical-refusal points only; diagnostic text and
+remaining owned type/directory allocations keep their existing ownership.
+
+The complete prechange record walker is saved in `record_pattern/owned.rs`.
+Both saved full main walkers now dispatch record admission to that saved receiver,
+so production streaming cannot silently become part of either owned oracle.
+The entire receiver, saved owner and controls are joined into the existing
+`hir_module_boundaries` source authority/formatting audit without weaker checks.
+
+New lib controls, source-authored and unexecuted:
+
+- `hir::validation::record_pattern::tests::borrowed_nested_record_cursor_preserves_complete_owned_admission_and_late_state`
+- `hir::validation::record_pattern::tests::nested_record_cursor_removes_actual_owned_path_buffers_through_complete_drop`
+- `hir::validation::record_pattern::tests::streamed_nested_binding_labels_match_decimal_unicode_and_depth_boundaries_without_a_directory`
+- `hir::validation::record_pattern::tests::owned_and_borrowed_nested_record_paths_preserve_owned_leaf_diagnostics_and_scope`
+
+They compare complete diagnostics, identity membership and partially populated
+scopes on late nested failures, sibling swaps, wildcards and Copy/Own/Borrow
+profiles. The actual complete-drop control includes the current directory and
+all owned traversal scratch. The narrow streamed label control uses the exact
+original spelling at depths 1/2/32/512, decimal boundaries through `usize::MAX`,
+Unicode and monomorphic/generic owners with zero debit and zero allocations.
+Original current-cursor limits, literal quotas, forecasts and whole-validator
+observations remain unchanged. No application-fit or measured reduction is claimed.

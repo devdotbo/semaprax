@@ -4391,7 +4391,16 @@ authenticated parent text, a static suffix and at most two decimal indices. Ente
 frames and local binding probes compare exact bytes and checked lengths without
 owned path buffers; call continuations borrow their authenticated parent. Full
 header validation still precedes borrowing from the current expression identity.
-Record-pattern nested traversal retains its owned receiver storage. Saved full
+Record-pattern nested traversal streams the root and exact ancestor indices
+from its existing DFS continuation directory, with no second path directory. Saved full
 owned iterative/recursive oracles and the exact frame-size assertion remain;
 source-authored controls are pending execution as recorded in
 [Borrowed continuation paths](HIR-BORROWED-CONTINUATION-PATH-V1.md).
+
+`hir/validation/record_pattern/binding_path.rs` owns exact nested binding path
+spelling over the current Fields continuations. The saved complete receiver in
+`record_pattern/owned.rs` remains the record-admission owner for both saved full
+main walkers. Production removes owned root, intermediate-field and nested-record
+labels while retaining all field/type/fact/ownership checks, scope mutations and
+original traversal bounds. Full source-audit joins and unexecuted parity/drop
+controls live under the borrowed continuation-path contract.

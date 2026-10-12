@@ -1,5 +1,10 @@
 //! Complete record-pattern binding admission over either scope owner.
 use super::*;
+mod binding_path;
+#[cfg(test)]
+mod owned;
+#[cfg(test)]
+mod tests;
 impl HirValidator<'_> {
     #[allow(clippy::too_many_arguments)]
     pub(super) fn validate_record_match_pattern(
@@ -25,7 +30,6 @@ impl HirValidator<'_> {
                 record: &'a DeclarationId,
                 instance: &'a ResolvedType,
                 fields: &'a [ResolvedRecordMatchPatternField],
-                path: String,
                 mode: ResolvedMatchMode,
             },
             Fields {
@@ -35,7 +39,6 @@ impl HirValidator<'_> {
                 declared_fields: &'a [ResolvedFieldDeclaration],
                 index: usize,
                 seen: BTreeSet<DeclarationId>,
-                path: String,
                 mode: ResolvedMatchMode,
             },
         }
@@ -44,7 +47,6 @@ impl HirValidator<'_> {
             record,
             instance,
             fields,
-            path: path.to_string(),
             mode,
         }];
         while let Some(frame) = frames.pop() {
@@ -54,7 +56,6 @@ impl HirValidator<'_> {
                     record,
                     instance,
                     fields,
-                    path,
                     mode,
                 } => {
                     if instance != &expected {
@@ -125,7 +126,6 @@ impl HirValidator<'_> {
                         declared_fields,
                         index: 0,
                         seen: BTreeSet::new(),
-                        path,
                         mode,
                     });
                 }
@@ -136,7 +136,6 @@ impl HirValidator<'_> {
                     declared_fields,
                     index,
                     mut seen,
-                    path,
                     mode,
                 } => {
                     let Some(field) = fields.get(index) else {
@@ -163,7 +162,6 @@ impl HirValidator<'_> {
                         unreachable!("validated record instance remains nominal")
                     };
                     let field_ty = substitute_type(&declared.ty, record, arguments)?;
-                    let field_path = format!("{path}.field.{index}");
                     frames.push(Frame::Fields {
                         expected,
                         record,
@@ -171,7 +169,6 @@ impl HirValidator<'_> {
                         declared_fields,
                         index: index + 1,
                         seen,
-                        path,
                         mode,
                     });
                     match &field.pattern {
@@ -202,10 +199,23 @@ impl HirValidator<'_> {
                             } else {
                                 OwnershipMode::Value
                             };
-                            if !binding
-                                .id
-                                .matches_local(function, &format!("{field_path}.binding"))
-                                || binding.ty != field_ty
+                            // The depth-first directory contains only pending ancestor
+                            // Fields continuations, including this field's continuation.
+                            // Its next index is exactly the visited field index plus one.
+                            let expected_path = binding_path::BindingPath::new(
+                                &path,
+                                frames.iter().map(|frame| match frame {
+                                    Frame::Fields { index, .. } => index - 1,
+                                    Frame::Enter { .. } => {
+                                        unreachable!("record entry consumed before binding")
+                                    }
+                                }),
+                            );
+                            if !binding.id.matches_local_display(
+                                function,
+                                expected_path.len()?,
+                                &expected_path,
+                            ) || binding.ty != field_ty
                                 || binding.ownership != ownership
                             {
                                 return Err(hir_error(
@@ -272,7 +282,6 @@ impl HirValidator<'_> {
                                 record,
                                 instance,
                                 fields,
-                                path: format!("{field_path}.record"),
                                 mode: nested_mode,
                             });
                         }
