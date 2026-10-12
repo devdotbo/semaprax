@@ -103,7 +103,7 @@ pub(super) fn validate_replay_size_budget(function: &ResolvedFunction) -> Result
     }
     // The factored skeleton comparison grows with distinct cleanup states,
     // not with the product of independent decisions, and charges its own work.
-    if super::factored::selected(function, cfg.terminal_paths, semantic_paths) {
+    if super::factored::selected_paid(function, cfg.terminal_paths, semantic_paths, &mut ReplayBudget::new())? {
         return Ok(());
     }
     path_budget_errors(function, cfg.terminal_paths, semantic_paths)?;

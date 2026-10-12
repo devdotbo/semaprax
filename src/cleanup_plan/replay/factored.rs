@@ -51,6 +51,25 @@ struct Node {
     epsilon: Vec<usize>,
 }
 
+/// Semantic nonselection remains false; a physical scratch refusal is sticky
+/// and must reach the caller instead of becoming enumerating-route authority.
+pub(super) fn selected_paid(
+    function: &ResolvedFunction,
+    cfg_paths: usize,
+    semantic_paths: usize,
+    budget: &mut ReplayBudget,
+) -> Result<bool, Diagnostic> {
+    if cfg_paths <= FACTORED_PATH_THRESHOLD && semantic_paths <= FACTORED_PATH_THRESHOLD {
+        return Ok(false);
+    }
+    match structural_control::validate_ordinary_cfg(function, budget) {
+        Ok(()) => Ok(true),
+        Err(error) if budget.refusal_spent || crate::bounded_output::active_refused() => Err(error),
+        Err(_) => Ok(false),
+    }
+}
+
+#[cfg(test)]
 /// `true` when this function's typed-control skeleton is compared factored.
 /// A cyclic CFG saturates the path census and keeps the census diagnostic.
 pub(super) fn selected(
@@ -90,7 +109,7 @@ pub(super) fn validate_with_index_storage<'hir>(
 ) -> Result<bool, Diagnostic> {
     let cfg_paths = branch_sensitive_cfg_bounds(function)?.terminal_paths;
     let semantic_paths = hir_terminal_path_bound(function)?;
-    if !selected(function, cfg_paths, semantic_paths) {
+    if !selected_paid(function, cfg_paths, semantic_paths, &mut ReplayBudget::new())? {
         #[cfg(test)]
         cross_check(program, function);
         return Ok(false);

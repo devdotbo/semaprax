@@ -1,5 +1,6 @@
 //! Selected structural validation borrows immutable plan facts and reserves
-//! every retained scratch constructor before allocation. Legacy routes stay exact.
+//! every retained scratch constructor before allocation. Ordinary CFG traversal
+//! retains its independent legacy order and semantic work charges.
 use super::*;
 mod blocks;
 #[cfg(test)]
@@ -12,6 +13,7 @@ pub(super) use blocks::validate_blocks_and_edges;
 mod entry;
 mod exits;
 pub(super) use cfg::validate_reachable_acyclic_cfg;
+pub(super) use cfg::validate_ordinary as validate_ordinary_cfg;
 pub(super) use entry::validate_entry;
 pub(super) use exits::validate_exits;
 

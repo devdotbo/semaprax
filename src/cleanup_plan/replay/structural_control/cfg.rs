@@ -105,3 +105,6 @@ pub(in crate::cleanup_plan::replay) fn validate_reachable_acyclic_cfg(
     }
     Ok(())
 }
+
+mod ordinary;
+pub(in crate::cleanup_plan::replay) use ordinary::validate as validate_ordinary;

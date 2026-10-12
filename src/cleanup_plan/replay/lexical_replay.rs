@@ -143,8 +143,8 @@ fn validate_core<'hir, E: semantic_refusal::Error>(
         structural_maps::validate_reference_coverage(function, budget)?;
         structural_control::validate_reachable_acyclic_cfg(function, budget)?;
     } else {
-        validate_reference_coverage(function)?;
-        validate_reachable_acyclic_cfg(function)?;
+        structural_maps::validate_reference_coverage(function, budget)?;
+        structural_control::validate_ordinary_cfg(function, budget)?;
     }
     // Lexical functions always replay every path: no summary shortcut applies.
     validate_path_states::<E>(
