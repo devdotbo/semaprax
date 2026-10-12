@@ -72,9 +72,18 @@ pub(in crate::hir) fn validate_with_directory<'a>(
     fused: Option<crate::hir::selected_fused_candidate::Selected<'a>>,
     directory: Option<&'a crate::hir::function_directory::Directory<'a>>,
 ) -> Result<bool, Diagnostic> {
+    let observation = Observation::default();
     let helpers = crate::loop_calls::byte_writer::ModuleIndex::new(program)?;
     let validator = HirValidator::with_directory(program, directory)?;
-    validate_prepared(program, fused, &helpers, validator)
+    validate_prepared(program, fused, &helpers, validator, &observation)
+}
+
+// The stack owner precedes fresh validator construction, so invariant lazy
+// lookup state may borrow this primary-walk lifetime from the start.
+#[derive(Default)]
+pub(in crate::hir) struct Observation {
+    row_loans: std::cell::Cell<bool>,
+    byte_traversals: std::cell::Cell<bool>,
 }
 
 pub(in crate::hir) fn validate_prepared<'a>(
@@ -82,21 +91,20 @@ pub(in crate::hir) fn validate_prepared<'a>(
     fused: Option<crate::hir::selected_fused_candidate::Selected<'a>>,
     helpers: &'a crate::loop_calls::byte_writer::ModuleIndex<'a>,
     validator: HirValidator<'a>,
+    observation: &'a Observation,
 ) -> Result<bool, Diagnostic> {
-    let row_loans = std::cell::Cell::new(false);
-    let byte_traversals = std::cell::Cell::new(false);
     let selected = validator
-        .with_row_loan_observer(&row_loans)
-        .with_byte_traversal_observer(&byte_traversals)
+        .with_row_loan_observer(&observation.row_loans)
+        .with_byte_traversal_observer(&observation.byte_traversals)
         .with_helpers(helpers)
         .with_selected(fused)
         .validate()?;
     // This observation belongs only to this successful complete primary walk;
     // no attached marker or persisted hint can suppress independent replay.
-    if row_loans.get() {
+    if observation.row_loans.get() {
         crate::hir::row_loan::validate_program(program)?;
     }
-    if byte_traversals.get() {
+    if observation.byte_traversals.get() {
         for function in program.functions.iter().chain(
             program
                 .function_instances

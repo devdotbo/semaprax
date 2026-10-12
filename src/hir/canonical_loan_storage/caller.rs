@@ -88,12 +88,17 @@ pub(in crate::hir) fn validate_with_comparison<'a>(
 ) -> Result<(bool, Deferred<'a>), Diagnostic> {
     // Preserve ModuleIndex before the complete constructor preflight, and the
     // preflight before every independent canonical-plan rebuild/allocation.
+    let observation = crate::hir::validation::owner_renewal::Observation::default();
     let helpers = crate::loop_calls::byte_writer::ModuleIndex::new(program)?;
     let seed = ConstructorSeed::authenticate(program, directory)?;
     let (storage, deferred) = prepare_with_comparison(&seed, program)?;
     let validator = HirValidator::with_storage(seed, &storage)?;
     let selected = crate::hir::validation::owner_renewal::validate_prepared(
-        program, fused, &helpers, validator,
+        program,
+        fused,
+        &helpers,
+        validator,
+        &observation,
     )?;
     Ok((selected, deferred))
 }
