@@ -206,6 +206,7 @@ fn inline_string_copy_refuses_forged_view_operation_type_and_root() {
                 for statement in statements {
                     let found = match statement {
                         ResolvedStatement::Assign { value, .. }
+                        | ResolvedStatement::CopyDiscard { value, .. }
                         | ResolvedStatement::Let { value, .. } => input(value),
                         ResolvedStatement::While { body, .. }
                         | ResolvedStatement::LexicalWhile { body, .. } => input(body),

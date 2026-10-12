@@ -476,6 +476,7 @@ impl Encoder<'_> {
             | ResolvedStatement::Assign { span, .. }
             | ResolvedStatement::While { span, .. }
             | ResolvedStatement::LexicalWhile { span, .. }
+            | ResolvedStatement::CopyDiscard { span, .. }
             | ResolvedStatement::Unsafe { span, .. } => *span,
         })?;
         match statement {
@@ -534,7 +535,8 @@ impl Encoder<'_> {
                 self.expression(condition, depth)?;
                 self.expression(body, depth)
             }
-            ResolvedStatement::Unsafe { .. } => None,
+            // The closed digest profile cannot authenticate this boundary.
+            ResolvedStatement::CopyDiscard { .. } | ResolvedStatement::Unsafe { .. } => None,
         }
     }
 }

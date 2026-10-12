@@ -351,6 +351,7 @@ fn row_loan_mut(expression: &mut hir::ResolvedExpr) -> Option<&mut hir::Resolved
             for statement in statements.iter_mut() {
                 let found = match statement {
                     hir::ResolvedStatement::Let { value, .. }
+                    | hir::ResolvedStatement::CopyDiscard { value, .. }
                     | hir::ResolvedStatement::Assign { value, .. } => row_loan_mut(value),
                     hir::ResolvedStatement::Unsafe { body, .. } => row_loan_mut(body),
                     hir::ResolvedStatement::While {

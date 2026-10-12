@@ -602,6 +602,17 @@ pub(super) fn materialize_template_expr(
             for (index, statement) in statements.iter().enumerate() {
                 let statement_path = format!("{path}.s{index}");
                 match statement {
+                    ResolvedStatement::CopyDiscard { value, span } => {
+                        let value = materialize_template_expr(
+                            template,
+                            arguments,
+                            execution,
+                            value,
+                            &block_values,
+                            &format!("{statement_path}.value"),
+                        )?;
+                        materialized.push(ResolvedStatement::CopyDiscard { value, span: *span });
+                    }
                     ResolvedStatement::Let {
                         binding,
                         mutable,

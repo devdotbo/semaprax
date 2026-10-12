@@ -123,6 +123,7 @@ fn synthesized(expression: &ResolvedExpr, authored: &hir::ExpressionId) -> usize
                         condition, body, ..
                     } => synthesized(condition, authored) + synthesized(body, authored),
                     ResolvedStatement::Unsafe { .. } => panic!("unsafe in lowering"),
+                    ResolvedStatement::CopyDiscard { .. } => panic!("copy discard in lowering"),
                 })
                 .sum::<usize>()
                 + synthesized(tail, authored)

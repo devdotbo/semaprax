@@ -483,6 +483,8 @@ pub(super) fn resolved_statement_owned_capacity(statement: &ResolvedStatement) -
             resolved_binding_owned_capacity(statement.binding())
                 + resolved_expr_owned_capacity(statement.value())
         }
+        // CopyDiscard carries only its evaluated value and declares no binding.
+        ResolvedStatement::CopyDiscard { value, .. } => resolved_expr_owned_capacity(value),
         // Unsafe boundaries carry only the verbatim audit summary plus their
         // ordinary block body.
         ResolvedStatement::Unsafe { audit, body, .. } => {

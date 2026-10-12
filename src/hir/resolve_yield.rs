@@ -1042,6 +1042,20 @@ fn scan_statement(
 ) -> Result<(), Diagnostic> {
     use super::expr_nodes::ResolvedStatement;
     match statement {
+        // A CopyDiscard value is never an admitted yield slot: scan it with
+        // `top_level` closed so a `yield` there stays unaccepted.
+        ResolvedStatement::CopyDiscard { value, .. } => scan_expr(
+            resolver,
+            function_name,
+            yields,
+            params,
+            return_type,
+            value,
+            false,
+            false,
+            found,
+            yielded_bindings,
+        ),
         ResolvedStatement::Let { binding, value, .. } => {
             // A `let` value is a slot at any depth in the admitted chain
             // (`top_level` carries that), but the value can never itself be

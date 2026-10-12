@@ -34,9 +34,9 @@ pub(super) fn block_anchors(
             }
         }
         let value = match statement {
-            ResolvedStatement::Let { value, .. } | ResolvedStatement::Assign { value, .. } => {
-                Some(value)
-            }
+            ResolvedStatement::Let { value, .. }
+            | ResolvedStatement::Assign { value, .. }
+            | ResolvedStatement::CopyDiscard { value, .. } => Some(value),
             ResolvedStatement::Unsafe { body, .. } => Some(body.as_ref()),
             ResolvedStatement::While { .. } | ResolvedStatement::LexicalWhile { .. } => None,
         };
@@ -82,8 +82,9 @@ fn direct_block_anchors(
                 anchors.insert(storage);
             }
         }
-        if let ResolvedStatement::Let { value, .. } | ResolvedStatement::Assign { value, .. } =
-            statement
+        if let ResolvedStatement::Let { value, .. }
+        | ResolvedStatement::Assign { value, .. }
+        | ResolvedStatement::CopyDiscard { value, .. } = statement
         {
             let storage = StorageId::Temporary(value.id.clone());
             if owned(&storage, &value.ty) {

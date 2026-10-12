@@ -35,6 +35,7 @@ fn loan_call(expression: &mut ResolvedExpr) -> Option<&mut ResolvedExpr> {
             for statement in statements.iter_mut() {
                 let found = match statement {
                     ResolvedStatement::Let { value, .. }
+                    | ResolvedStatement::CopyDiscard { value, .. }
                     | ResolvedStatement::Assign { value, .. } => loan_call(value),
                     ResolvedStatement::Unsafe { body, .. } => loan_call(body),
                     ResolvedStatement::While {
