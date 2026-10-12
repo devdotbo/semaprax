@@ -153,8 +153,10 @@ fn borrowed_directory_preserves_family_bits_priority_opposing_keys_and_literal_b
     let crate::hir::ResolvedStatement::Let { binding, .. } = &statements[0] else {
         panic!("fixture binding");
     };
-    let first = ExpressionId::new("a");
-    let last = ExpressionId::new("z");
+    // Synthetic one-byte keys keep this insertion/sort ledger independent of
+    // scoped source identity spelling; current subject checks remain real.
+    let first = ExpressionId::from_owned("a".to_owned());
+    let last = ExpressionId::from_owned("z".to_owned());
     // Two entries: replacement requests 1+2 entries and their two transient
     // Vec headers, one retained header and the exact Directory carrier.
     let header = 3 * std::mem::size_of::<usize>();
