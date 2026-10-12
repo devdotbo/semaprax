@@ -9,6 +9,12 @@
   diagnostic, exact/short/sticky, actual payload Drop and unwind controls.
   Source-only; no measured allocation improvement or application-fit claim.
 
+- Add exact `help language detail:<slug>` retrieval for six complete profile
+  appendix sections, preserving their original paragraph bytes and all 17
+  existing topic routes. Topic cards name one actionable detail lookup; unknown,
+  stale or oversized details fail without truncation. Author exact source and CLI
+  projection controls; executable qualification remains pending.
+
 - Keep all 17 exact language help topics within their existing bounds by moving
   complete detailed profile rules verbatim to the full-reference appendix.
   Preserve every canonical example, diagnostic marker, full-card rule and route;

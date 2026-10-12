@@ -1,12 +1,11 @@
 use std::fmt::Write as _;
 use std::process::ExitCode;
-
 mod authoring;
 mod diagnostic_index;
+mod language_details;
 mod library;
 mod reference_links;
 mod shapes;
-
 use library::library_help;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -422,6 +421,9 @@ fn language_topics() -> String {
 }
 
 pub(crate) fn language_topic(query: &str) -> Result<String, String> {
+    if query.starts_with("detail:") {
+        return language_details::lookup(query, LANGUAGE_REFERENCE);
+    }
     if query.starts_with("author:") || query.starts_with("find:") {
         return authoring::lookup(query);
     }

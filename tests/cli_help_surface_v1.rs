@@ -850,3 +850,6 @@ fn fmt_and_context_failures_keep_stable_diagnostic_codes() {
     std::fs::remove_file(source_path).unwrap();
     std::fs::remove_dir(directory).unwrap();
 }
+
+#[path = "cli_help_surface_v1/language_details.rs"]
+mod language_details;

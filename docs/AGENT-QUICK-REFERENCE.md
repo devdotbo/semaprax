@@ -339,12 +339,12 @@ fn main() -> i64
   must name every field (`SPX-T213`).
 - Owned String/Bytes records, whole-subtree binding, finite record loops and
   Copy/owned-leaf record Vecs each have an exact admitting profile. Pending
-  features remain pending; see [complete record profile rules](#record-profile-details)
+  features remain pending; see `help language detail:records`
   and `help language author:copy-record-vec` / `author:owned-data`.
 
 - Import every type you name with explicit `use type`, including nested types,
   factory results, annotations, patterns and constructors (`SPX-G172`). See
-  [complete visibility rules and import example](#record-import-visibility-details).
+  `help language detail:imports` for complete visibility rules and an import example.
 
 - Classes hold fields and `fn name(self: Class, …)` methods, called as
   `value.method(args)`. `class Dog : Animal` inherits; `super.method()`
@@ -658,7 +658,7 @@ fn main() -> i64
   `process.stdout.write` selects transcripts (above: `banana!0`). Args/file/stderr
   effects select the CLI route; `stdin_read` needs native `useful-data-command.v1`.
 - Network and filesystem calls require exact capabilities and an injected
-  provider. See [complete I/O rules](#network-and-filesystem-details).
+  provider. See `help language detail:io` for complete I/O rules.
 
 - Interpreter/native recursion caps at 256 frames: overflow reports runtime
   capacity without language status/process signal. Raw Wasm traps at its engine stack limit.
@@ -716,7 +716,7 @@ Exact grammar/gates: `help language author:literal-format`.
 
 Reserved `string_len`: `SPX-S113`.
 
-Box boundaries: [complete constraints](#box-profile-details).
+Box boundaries: `help language detail:boxes` gives complete constraints.
 
 Render, borrow and write an integer:
 
@@ -1040,7 +1040,7 @@ remain refused. Executable qualification is pending; see
 [Borrowed Byte Slice For Traversal v1](BORROWED-BYTE-SLICE-FOR-TRAVERSAL-V1.md).
 
 `for borrow row at index in rows { body }` is a scoped row view; `at index`
-is optional. Qualification remains pending. See [complete row and loan rules](#scoped-record-traversal-details)
+is optional. Qualification remains pending. See `help language detail:record-traversal` for complete row and loan rules
 and `help language author:record-traversal`.
 
 ### Consuming scalar iterators
@@ -1475,7 +1475,7 @@ charges; no loop allocation/refund.
 [Renewal](CONSUMING-OWNED-RECORD-VEC-RENEWAL-V1.md).
 
 V31 adds private records/admitted Vecs and scoped field reads. See
-[complete field-view boundaries](#project-field-view-details);
+`help language detail:field-views` for complete field-view boundaries;
 `help language author:record-field-views`. Qualification remains pending.
 
 `vec_sort_by<Row>(rows,"priority:desc,arrival:asc")`: 1..8 unique literal keys,
@@ -1584,9 +1584,9 @@ Project profile controls runtime. Qualification pending.
 
 ## Detailed profile rules
 
-Exact topics link to the complete rules below. `help language all` retains this
-appendix and every compiler-checked example; links do not change admission or
-qualification status.
+Exact topics name `help language detail:<slug>` to retrieve one complete section
+below. `help language all` retains this appendix and every compiler-checked
+example; lookup does not change admission or qualification status.
 
 ### Record profile details
 
