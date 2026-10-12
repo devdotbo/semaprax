@@ -3,17 +3,25 @@
 //! validated here; selected direct records retain exact field projections.
 use super::*;
 
+#[cfg(test)]
 pub(super) fn validate_slots(
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
 ) -> Result<BTreeSet<StorageId>, Diagnostic> {
+    validate_slots_core::<Diagnostic>(function, budget)
+}
+
+pub(super) fn validate_slots_core<E: semantic_refusal::Error>(
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+) -> Result<BTreeSet<StorageId>, E> {
     let mut storage = BTreeSet::new();
     for (index, slot) in function.cleanup_plan.slots.iter().enumerate() {
         let expected = u32_index(function, index, "cleanup slot")?;
         if slot.id.0 != expected || slot.storage_index != expected {
-            return Err(replay_error(
+            return Err(E::structural(
                 function,
-                format!("cleanup slot at index {index} has non-contiguous identity or index"),
+                semantic_refusal::Atom::NoncontiguousSlot(index),
             ));
         }
         if !storage.contains(&slot.storage) {
@@ -21,9 +29,9 @@ pub(super) fn validate_slots(
             budget.reserve_clone(function, &slot.storage, "slot storage identity")?;
         }
         if !storage.insert(slot.storage.clone()) {
-            return Err(replay_error(
+            return Err(E::structural(
                 function,
-                format!("cleanup storage `{:?}` is repeated", slot.storage),
+                semantic_refusal::Atom::RepeatedStorage(slot.storage.clone()),
             ));
         }
     }

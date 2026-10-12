@@ -25,7 +25,7 @@ pub(super) fn validate_paid(
     validate_core(program, function, budget, expression_facts::paid)
 }
 
-fn validate_core<E: From<Diagnostic>>(
+fn validate_core<E: semantic_refusal::Error>(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
@@ -103,9 +103,9 @@ fn validate_core<E: From<Diagnostic>>(
     }
     inventory_coverage::validate_inventory_coverage(program, function, budget)?;
     status_construction::validate_required_status_sources(program, function, budget)?;
-    let storage = structural_maps::validate_slots(function, budget)?;
+    let storage = structural_maps::validate_slots_core::<E>(function, budget)?;
     let leaves = structural_maps::collect_leaves(function, budget)?;
-    status_validation::validate_status_sources(function, facts, budget)?;
+    status_validation::validate_core::<E>(function, facts, budget)?;
     structural_maps::validate_regions(function, &storage, budget)?;
     structural_control::validate_entry(function, &storage, &leaves, budget)?;
     let renewals = program

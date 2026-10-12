@@ -283,8 +283,8 @@ impl<'a> Session<'a> {
         Ok(())
     }
 
-    /// Partial typed engine boundary. Only expression-fact production is
-    /// allocation-free on semantic refusal; other children retain Diagnostics.
+    /// Partial typed engine boundary: expression-fact and four structural
+    /// families retain sealed semantic data. Other children keep Diagnostics.
     pub(crate) fn validate_paid(
         &mut self,
         function: &ResolvedFunction,

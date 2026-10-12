@@ -1,11 +1,20 @@
 //! Selected status identity validation preserves every legacy assertion while
 //! charging the identity set and checking small case lists without allocation.
 use super::*;
+#[cfg(test)]
 pub(super) fn validate_status_sources(
     function: &ResolvedFunction,
     expressions: &dyn expression_facts::Lookup,
     budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
+    validate_core::<Diagnostic>(function, expressions, budget)
+}
+
+pub(super) fn validate_core<E: semantic_refusal::Error>(
+    function: &ResolvedFunction,
+    expressions: &dyn expression_facts::Lookup,
+    budget: &mut ReplayBudget,
+) -> Result<(), E> {
     let mut ids = BTreeSet::new();
     #[cfg(test)]
     let mut borrowed_ids = if expressions.is_metered() {
@@ -44,21 +53,18 @@ pub(super) fn validate_status_sources(
             ids.insert(source.id.clone())
         };
         if !inserted {
-            return Err(replay_error(
+            return Err(E::structural(
                 function,
-                format!("status source for `{}` is repeated", source.id.expression),
+                semantic_refusal::Atom::RepeatedStatus(source.id.expression.clone()),
             ));
         }
         if expressions
             .fact(function, &source.id.expression, budget)?
             .is_none()
         {
-            return Err(replay_error(
+            return Err(E::structural(
                 function,
-                format!(
-                    "status source references unknown expression `{}`",
-                    source.id.expression
-                ),
+                semantic_refusal::Atom::UnknownStatus(source.id.expression.clone()),
             ));
         }
         match (&source.id.lane, &source.producer) {
@@ -71,7 +77,8 @@ pub(super) fn validate_status_sources(
                     return Err(replay_error(
                         function,
                         "propagated-call status source does not name a call expression",
-                    ));
+                    )
+                    .into());
                 };
                 #[cfg(test)]
                 let agrees = if expressions.is_metered() {
@@ -90,7 +97,8 @@ pub(super) fn validate_status_sources(
                     return Err(replay_error(
                         function,
                         "propagated-call status source names the wrong callee",
-                    ));
+                    )
+                    .into());
                 }
             }
             (
@@ -108,7 +116,8 @@ pub(super) fn validate_status_sources(
                     return Err(replay_error(
                         function,
                         "checked-arithmetic status cases are empty or repeated",
-                    ));
+                    )
+                    .into());
                 }
             }
             (StatusLane::ContractFalse, StatusProducer::ContractFalse { .. }) => {}
@@ -116,7 +125,8 @@ pub(super) fn validate_status_sources(
                 return Err(replay_error(
                     function,
                     "status source lane does not match its producer",
-                ));
+                )
+                .into());
             }
         }
     }

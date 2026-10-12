@@ -41,6 +41,7 @@ pub(crate) use selected_entry::{
 };
 mod selected_owner;
 mod selected_profile;
+mod semantic_refusal;
 mod status_validation;
 pub(crate) use physical_clone::ClonePayload;
 #[cfg(test)]
@@ -1850,20 +1851,27 @@ fn validate_slots_paid(
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
 ) -> Result<BTreeSet<StorageId>, Diagnostic> {
+    validate_slots_paid_core::<Diagnostic>(function, budget)
+}
+
+fn validate_slots_paid_core<E: semantic_refusal::Error>(
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+) -> Result<BTreeSet<StorageId>, E> {
     let mut storage = BTreeSet::new();
     for (index, slot) in function.cleanup_plan.slots.iter().enumerate() {
         let expected = u32_index(function, index, "cleanup slot")?;
         if slot.id.0 != expected || slot.storage_index != expected {
-            return Err(replay_error(
+            return Err(E::structural(
                 function,
-                format!("cleanup slot at index {index} has non-contiguous identity or index"),
+                semantic_refusal::Atom::NoncontiguousSlot(index),
             ));
         }
         allocation::set_key(function, budget, &storage, &slot.storage)?;
         if !storage.insert(slot.storage.clone()) {
-            return Err(replay_error(
+            return Err(E::structural(
                 function,
-                format!("cleanup storage `{:?}` is repeated", slot.storage),
+                semantic_refusal::Atom::RepeatedStorage(slot.storage.clone()),
             ));
         }
     }
@@ -2097,21 +2105,25 @@ fn validate_status_sources(
     function: &ResolvedFunction,
     expressions: &BTreeMap<ExpressionId, Option<CallFact>>,
 ) -> Result<(), Diagnostic> {
+    validate_status_sources_core::<Diagnostic>(function, expressions)
+}
+
+fn validate_status_sources_core<E: semantic_refusal::Error>(
+    function: &ResolvedFunction,
+    expressions: &BTreeMap<ExpressionId, Option<CallFact>>,
+) -> Result<(), E> {
     let mut ids = BTreeSet::new();
     for source in &function.cleanup_plan.status_sources {
         if !ids.insert(source.id.clone()) {
-            return Err(replay_error(
+            return Err(E::structural(
                 function,
-                format!("status source for `{}` is repeated", source.id.expression),
+                semantic_refusal::Atom::RepeatedStatus(source.id.expression.clone()),
             ));
         }
         if !expressions.contains_key(&source.id.expression) {
-            return Err(replay_error(
+            return Err(E::structural(
                 function,
-                format!(
-                    "status source references unknown expression `{}`",
-                    source.id.expression
-                ),
+                semantic_refusal::Atom::UnknownStatus(source.id.expression.clone()),
             ));
         }
         match (&source.id.lane, &source.producer) {
@@ -2123,13 +2135,15 @@ fn validate_status_sources(
                     return Err(replay_error(
                         function,
                         "propagated-call status source does not name a call expression",
-                    ));
+                    )
+                    .into());
                 };
                 if &call.callee != callee {
                     return Err(replay_error(
                         function,
                         "propagated-call status source names the wrong callee",
-                    ));
+                    )
+                    .into());
                 }
             }
             (
@@ -2143,7 +2157,8 @@ fn validate_status_sources(
                     return Err(replay_error(
                         function,
                         "checked-arithmetic status cases are empty or repeated",
-                    ));
+                    )
+                    .into());
                 }
             }
             (StatusLane::ContractFalse, StatusProducer::ContractFalse { .. }) => {}
@@ -2151,7 +2166,8 @@ fn validate_status_sources(
                 return Err(replay_error(
                     function,
                     "status source lane does not match its producer",
-                ));
+                )
+                .into());
             }
         }
     }

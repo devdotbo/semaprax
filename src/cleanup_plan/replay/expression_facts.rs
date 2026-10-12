@@ -131,6 +131,7 @@ pub(super) fn with_budget(
             }
             Err(errors::EngineError::Fact(receipt)) => Err(receipt.legacy(function)),
             Err(errors::EngineError::Owned(error)) => Err(error),
+            Err(errors::EngineError::Structural(receipt)) => Err(receipt.legacy(function)),
             Err(errors::EngineError::Failed) => {
                 Err(budget.budget_refusal(function, "expression facts already failed", ""))
             }

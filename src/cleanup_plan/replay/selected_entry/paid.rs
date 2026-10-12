@@ -496,6 +496,13 @@ impl Preparation {
         match error {
             expression_facts::errors::EngineError::Owned(error) => self.refuse_session(error),
             expression_facts::errors::EngineError::Failed => self.refuse(Refused::FAILED),
+            expression_facts::errors::EngineError::Structural(receipt) => {
+                self.failed = true;
+                if self.receipt.is_none() {
+                    self.receipt = Some(expression_facts::errors::EngineError::Structural(receipt));
+                }
+                self.refuse(Refused::SESSION.at("structural replay"))
+            }
             expression_facts::errors::EngineError::Fact(receipt) => {
                 self.failed = true;
                 if self.receipt.is_none() {
@@ -624,6 +631,20 @@ impl PaidRefusal {
                 ..
             } => match preparation.receipt.as_ref() {
                 Some(expression_facts::errors::EngineError::Fact(receipt)) => Some(receipt),
+                _ => None,
+            },
+            _ => None,
+        }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn structural_receipt(&self) -> Option<&semantic_refusal::Receipt> {
+        match &self.0 {
+            Refusal::Paid {
+                ledger: Ledger::Prepared(preparation),
+                ..
+            } => match preparation.receipt.as_ref() {
+                Some(expression_facts::errors::EngineError::Structural(receipt)) => Some(receipt),
                 _ => None,
             },
             _ => None,

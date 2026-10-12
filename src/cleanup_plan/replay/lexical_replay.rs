@@ -33,7 +33,7 @@ pub(super) fn validate_paid(
     validate_core(program, function, budget, None, expression_facts::paid)
 }
 
-fn validate_core<E: From<Diagnostic>>(
+fn validate_core<E: semantic_refusal::Error>(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
@@ -64,9 +64,9 @@ fn validate_core<E: From<Diagnostic>>(
     let (storage, leaves) = if selected {
         inventory_coverage::validate_inventory_coverage(program, function, budget)?;
         status_construction::validate_required_status_sources(program, function, budget)?;
-        let storage = structural_maps::validate_slots(function, budget)?;
+        let storage = structural_maps::validate_slots_core::<E>(function, budget)?;
         let leaves = structural_maps::collect_leaves(function, budget)?;
-        status_validation::validate_status_sources(function, &expression_facts, budget)?;
+        status_validation::validate_core::<E>(function, &expression_facts, budget)?;
         structural_maps::validate_regions(function, &storage, budget)?;
         structural_control::validate_entry(function, &storage, &leaves, budget)?;
         let renewals = program.primitive_renewals(function).ok_or_else(|| {
@@ -88,9 +88,9 @@ fn validate_core<E: From<Diagnostic>>(
     } else {
         validate_inventory_coverage(program, function)?;
         validate_required_status_sources(program, function)?;
-        let storage = validate_slots_paid(function, budget)?;
+        let storage = validate_slots_paid_core::<E>(function, budget)?;
         let leaves = collect_leaves_paid(function, budget)?;
-        validate_status_sources(function, &expression_facts)?;
+        validate_status_sources_core::<E>(function, &expression_facts)?;
         validate_regions(function, &storage)?;
         validate_entry(function, &storage, &leaves)?;
         validate_blocks_and_edges(

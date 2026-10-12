@@ -24,12 +24,13 @@ impl Policy for Legacy {
 }
 
 /// Partial engine migration: unmigrated children keep their original owned
-/// Diagnostic. A Fact receipt never formats authored identity text.
+/// Diagnostic. Fact/Structural receipts never format authored identity text.
 #[derive(Debug)]
 pub(crate) enum EngineError {
     Failed,
     Owned(Diagnostic),
     Fact(FactReceipt),
+    Structural(semantic_refusal::Receipt),
 }
 impl From<Diagnostic> for EngineError {
     fn from(error: Diagnostic) -> Self {

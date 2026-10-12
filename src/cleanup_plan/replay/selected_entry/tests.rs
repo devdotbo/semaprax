@@ -162,3 +162,4 @@ mod paid;
 
 #[path = "tests/fact_errors.rs"]
 mod fact_errors;
+mod structural_errors;
