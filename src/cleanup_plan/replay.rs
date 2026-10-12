@@ -3870,7 +3870,7 @@ fn expression_skeleton_run<'hir>(
                                     type_arguments,
                                 )?.into()
                             } else if let Some(op) = vec_intrinsic {
-                                if work.budget.selected() || !resolved_call::ordinary_borrows_enabled() {
+                                if work.budget.selected() {
                                     typed_storage::vector_params(program, expression, work)?.into()
                                 } else {
                                     let [element] = type_arguments.as_slice() else {

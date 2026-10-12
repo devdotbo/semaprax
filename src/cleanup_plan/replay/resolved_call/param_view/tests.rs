@@ -293,3 +293,53 @@ fn saved_constructor_work_refusals_and_hostile_argument_arity_type_are_equal() {
         assert_eq!(old, new);
     }
 }
+
+#[test]
+fn ordinary_vec_fallback_keeps_original_owned_provider_and_payment_with_old_selector() {
+    let program = program("module param.vector; @id(\"probe\") fn probe()->usize {let mut values=vec_with_capacity<i64>(2usize); values=vec_push<i64>(values,7); vec_len<i64>(values)} @id(\"main\") fn main()->i64 {0}");
+    let function = &program.functions[0];
+    // This is an actual ordinary Vec expression, outside selected admission.
+    let callee = DeclarationId::new(crate::vec_ops::VecOp::Len.id());
+    let old = resolved_call_params(&program, function, &function.body, &callee, None, &[ResolvedType::I64]).unwrap();
+    let view = resolved_call_param_view(&program, function, &function.body, &callee, None, &[ResolvedType::I64]).unwrap();
+    let Params::Owned(current) = view else { panic!("Vec remains on its owned fallback") };
+    assert_eq!(old, current);
+    let observe = |owned| {
+        let operation = || with_limit_usage_refusal(usize::MAX, || measure(|| {
+            let mut budget = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
+            let mut work = SkeletonWork::new(&program, function, &mut budget);
+            assert!(!work.budget.selected());
+            let result = expression_skeleton(&program, function, &function.body, &mut work);
+            let result = result.unwrap();
+            let spent = work.budget.skeleton_spent;
+            drop(result);
+            drop(work);
+            drop(budget);
+            spent
+        }));
+        if owned { with_owned_oracle(operation) } else { operation() }
+    };
+    let ((old_spent, old), old_refused, old_charge, _) = observe(true);
+    let ((current_spent, current), current_refused, current_charge, _) = observe(false);
+    assert!(!old_refused && !current_refused);
+    assert_eq!(old_spent, current_spent);
+    assert_eq!(old_charge, current_charge, "original ordinary Vec reservations stay unchanged");
+    assert_eq!(old.allocated, current.allocated);
+    assert_eq!(old.allocations, current.allocations);
+    for observed in [old, current] {
+        assert!(!observed.invalid && observed.live == 0);
+        assert_eq!(observed.allocated, observed.freed);
+    }
+    let old = paths(&program, true);
+    let current = paths(&program, false);
+    for (old, current) in old.iter().zip(&current) {
+        assert_eq!(old.len(), current.len());
+        for (old, current) in old.iter().zip(current) {
+            assert_eq!(old.observations, current.observations);
+            assert_eq!(old.owned_source, current.owned_source);
+            assert_eq!((old.failed, old.residual, &old.continuation), (current.failed, current.residual, &current.continuation));
+        }
+    }
+    with_owned_oracle(|| validate_program(&program)).unwrap();
+    validate_program(&program).unwrap();
+}
