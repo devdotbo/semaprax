@@ -17,7 +17,7 @@ fn target_json(target: &ControlTarget) -> String {
 fn latch_json(latch: &LoopLatchKind) -> String {
     match latch {
         LoopLatchKind::Condition => "{\"kind\":\"condition\"}".to_owned(),
-        LoopLatchKind::SourceForStep { kind, step } => format!("{{\"kind\":\"source_for_step\",\"source_kind\":{},\"step\":{}}}",quote_json(match kind { SourceForKind::Copy=>"copy",SourceForKind::BorrowRecord=>"borrow_record",SourceForKind::OwnedIterator=>"owned_iterator"}),quote_json(step.as_str())),
+        LoopLatchKind::SourceForStep { kind, step } => format!("{{\"kind\":\"source_for_step\",\"source_kind\":{},\"step\":{}}}",quote_json(match kind { SourceForKind::Copy=>"copy",SourceForKind::BorrowRecord=>"borrow_record",SourceForKind::OwnedIterator=>"owned_iterator",SourceForKind::BorrowBytes=>"borrow_bytes"}),quote_json(step.as_str())),
         LoopLatchKind::OwnedIteratorStep { next, assignment, step, remainder } => format!("{{\"kind\":\"owned_iterator_step\",\"next\":{},\"assignment\":{},\"step\":{},\"remainder\":{}}}",quote_json(next.as_str()),quote_json(assignment.as_str()),quote_json(step.as_str()),quote_json(remainder.as_str())),
     }
 }

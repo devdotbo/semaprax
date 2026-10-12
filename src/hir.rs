@@ -342,6 +342,10 @@ use monomorphize::{
     resolved_scalar_substitutions, same_function_meaning,
 };
 pub use row_loan::{RowLoan, RowLoanVersion, ROW_LOAN_V1};
+pub(crate) use validation::byte_traversal::{
+    function_uses as byte_traversal_function_uses, partial_receiver as is_partial_byte_receiver,
+    program_uses as byte_traversal_program_uses, region as byte_traversal_region,
+};
 
 pub(crate) fn is_exact_materialized_function_instance(
     template: &ResolvedFunctionTemplate,

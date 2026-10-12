@@ -42,6 +42,8 @@ pub enum SourceForKind {
     Copy,
     BorrowRecord,
     OwnedIterator,
+    /// Immutable `Slice<u8>` traversal; each item is an authenticated `byte_get` receiver.
+    BorrowBytes,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

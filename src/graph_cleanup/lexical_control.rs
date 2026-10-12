@@ -28,6 +28,7 @@ fn latch_json(latch: &LoopLatchKind) -> String {
                 SourceForKind::Copy => "copy",
                 SourceForKind::BorrowRecord => "borrow_record",
                 SourceForKind::OwnedIterator => "owned_iterator",
+                SourceForKind::BorrowBytes => "borrow_bytes",
             };
             format!("{{\"kind\":\"source_for_step\",\"source_kind\":{},\"step\":{}}}",
                 quote_json(kind), quote_json(step.as_str()))

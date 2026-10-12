@@ -92,6 +92,17 @@ pub(crate) fn source_for_wrapper<'a>(
             iterator_step: Some(step),
         }));
     }
+    if let LoopLatchKind::SourceForStep {
+        kind: SourceForKind::BorrowBytes,
+        ..
+    } = latch
+    {
+        let proof = crate::hir::validation::byte_traversal::region(region)?.ok_or_else(fail)?;
+        return Ok(Some(SourceForWrapper {
+            authored_body: proof.authored_body,
+            iterator_step: None,
+        }));
+    }
     let [ResolvedStatement::Let {
         binding: length,
         mutable: false,

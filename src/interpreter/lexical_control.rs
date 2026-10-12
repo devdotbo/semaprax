@@ -290,7 +290,9 @@ impl<'a> Evaluator<'a> {
             hir::LoopLatchKind::SourceForStep { kind, step } => {
                 if !matches!(
                     kind,
-                    hir::SourceForKind::Copy | hir::SourceForKind::BorrowRecord
+                    hir::SourceForKind::Copy
+                        | hir::SourceForKind::BorrowRecord
+                        | hir::SourceForKind::BorrowBytes
                 ) {
                     return Err(Flow::Guard(
                         "own iterator requires its distinct typed latch",

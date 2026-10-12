@@ -237,8 +237,10 @@ pub(super) fn expr_json(
             // Refutable Match v1: matches carrying guards or literal/or
             // patterns project `"exhaustive":false` plus additive per-arm
             // guard nodes; every pre-feature match keeps the exact
-            // `"exhaustive":true` bytes.
-            let exhaustive = !arms.iter().any(|arm| {
+            // `"exhaustive":true` bytes. A borrowed byte traversal receiver
+            // selects only `Some`; its `None` is the backend invariant refusal.
+            let exhaustive = !crate::hir::is_partial_byte_receiver(expression)
+                && !arms.iter().any(|arm| {
                 arm.guard.is_some()
                     || matches!(
                         &arm.pattern,

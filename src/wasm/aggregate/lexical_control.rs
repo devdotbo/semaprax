@@ -219,7 +219,9 @@ impl<'a> Emitter<'a> {
             LoopLatchKind::SourceForStep { kind, step } => {
                 if !matches!(
                     kind,
-                    crate::hir::SourceForKind::Copy | crate::hir::SourceForKind::BorrowRecord
+                    crate::hir::SourceForKind::Copy
+                        | crate::hir::SourceForKind::BorrowRecord
+                        | crate::hir::SourceForKind::BorrowBytes
                 ) {
                     return Err(error("owned iterator needs its distinct typed latch"));
                 }

@@ -174,6 +174,16 @@ impl Drop for Guard {
         ACTIVE.with(|active| active.set(false));
     }
 }
+/// Read the live counters inside an already active, nonnested observation.
+/// This copies fixed instrumentation only and never changes its pointer table.
+pub(crate) fn current_metrics() -> Metrics {
+    assert!(active(), "live metrics require an active observation");
+    STATE.with(|state| {
+        let mut metrics = state.borrow().metrics;
+        metrics.invalid = INVALID.with(Cell::get);
+        metrics
+    })
+}
 pub(crate) fn measure<T>(operation: impl FnOnce() -> T) -> (T, Metrics) {
     assert!(!active(), "allocation observation cannot nest");
     STATE.with(|state| {

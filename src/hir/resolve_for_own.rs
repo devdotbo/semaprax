@@ -484,12 +484,13 @@ pub(super) fn capacity(
 
 // Shared continuation adapter keeps the legacy Vec traversal unchanged.
 pub(super) fn resume_vec<'a>(
+    resolver: &Resolver<'_>,
     function: &FunctionExecutionId,
     frame: Frame<'a>,
     frames: &mut Vec<Frame<'a>>,
     paths: &mut PathArena<'_>,
     results: &mut Vec<ResolvedExpr>,
-) {
+) -> Result<(), Diagnostic> {
     let Frame::BlockForBody {
         span,
         path,
@@ -505,9 +506,9 @@ pub(super) fn resume_vec<'a>(
         unreachable!()
     };
     super::resolve_for::resume(
-        function, frames, paths, results, span, path, statements, tail, index, scope, resolved,
-        source, element,
-    );
+        resolver, function, frames, paths, results, span, path, statements, tail, index, scope,
+        resolved, source, element,
+    )
 }
 #[cfg(test)]
 pub(super) fn resolve_statement_reference(

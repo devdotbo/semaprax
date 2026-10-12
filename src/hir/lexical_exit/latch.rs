@@ -146,6 +146,13 @@ pub(crate) fn validate_latch(
                         return Err(fail());
                     }
                 }
+                SourceForKind::BorrowBytes => {
+                    let proof = crate::hir::validation::byte_traversal::receiver_shape(read)
+                        .ok_or_else(fail)?;
+                    if item.ty != ResolvedType::U8 || !place(proof.index, counter) {
+                        return Err(fail());
+                    }
+                }
                 SourceForKind::OwnedIterator => return Err(fail()),
             }
             Ok(())

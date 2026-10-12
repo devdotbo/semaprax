@@ -134,6 +134,7 @@ pub(super) fn pre_filesystem_graph_json(
         && !crate::vec_ops::string_slot::resolved_uses(program)
         && !crate::hir::vec_constructor::program_uses(program)?
         && !super::row_loan::requires(program)
+        && !crate::hir::byte_traversal_program_uses(program)
         && !view.static_text()
         && !program
             .declarations

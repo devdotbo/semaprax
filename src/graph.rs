@@ -62,6 +62,7 @@ pub(crate) use generic_instances::to_legacy_hir_json;
 pub use generic_instances::{legacy_context_json, to_legacy_json, verify_json};
 pub(crate) use generic_mapping::requires_v35;
 mod byte_helper_renewal;
+mod byte_traversal;
 mod consuming_vec_renewal;
 mod facts_object;
 mod string_slots;
@@ -71,8 +72,8 @@ mod finite_byte_scratch;
 pub(crate) mod row_loan;
 mod static_text;
 mod view_render;
-use row_loan::graph_json;
-pub(crate) use row_loan::{graph_schema, legacy_graph_schema};
+use byte_traversal::graph_json;
+pub(crate) use byte_traversal::{graph_schema, legacy_graph_schema};
 use view_render::view_json;
 #[path = "graph/native_import.rs"]
 mod native_import;

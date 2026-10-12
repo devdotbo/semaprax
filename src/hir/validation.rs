@@ -12,6 +12,7 @@ mod borrowed_str;
 mod box_intrinsic;
 mod branch_merge;
 mod byte_range;
+pub(in crate::hir) mod byte_traversal;
 mod call_parameters;
 mod callable_types;
 mod closure;
@@ -1665,6 +1666,7 @@ impl<'a> HirValidator<'a> {
         execution: &FunctionExecutionId,
     ) -> Result<(), Diagnostic> {
         super::lexical_exit::validate_function(self.program, function, execution)?;
+        byte_traversal::validate_function(&self.program.declarations, function)?;
         super::declared_collection::validate_function(&self.program.declarations, function)?;
         crate::hir::iterator_loop::validate_function(function)?;
         owner_renewal::validate_function(self.program, self.byte_helpers, function)?;
@@ -5451,7 +5453,10 @@ impl<'a> HirValidator<'a> {
                         unreachable!()
                     };
                     if index == arms.len() {
-                        if !wildcard_seen && covered.len() != cases.len() {
+                        if !wildcard_seen
+                            && covered.len() != cases.len()
+                            && !byte_traversal::partial_receiver(expression)
+                        {
                             return Err(hir_error("resolved match is not exhaustive"));
                         }
                         let (ty, ownership) =
@@ -8089,7 +8094,10 @@ impl<'a> HirValidator<'a> {
                         arm_scopes.push(arm_scope);
                     }
                 }
-                if !wildcard_seen && covered.len() != cases.len() {
+                if !wildcard_seen
+                    && covered.len() != cases.len()
+                    && !byte_traversal::partial_receiver(expression)
+                {
                     return Err(hir_error("resolved match is not exhaustive"));
                 }
                 if let Some((first, rest)) = arm_scopes.split_first() {

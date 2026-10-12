@@ -30,6 +30,7 @@ use crate::diagnostic::Diagnostic;
 mod arguments;
 mod binding;
 pub(crate) mod borrowed_closure;
+mod byte_traversal;
 mod capacity;
 pub(crate) mod closure;
 mod contract_owners;

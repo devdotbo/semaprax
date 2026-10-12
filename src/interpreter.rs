@@ -91,6 +91,8 @@ pub(crate) mod process;
 pub mod source_entry;
 use command_state::CommandInputState;
 #[cfg(test)]
+mod byte_traversal_peak_tests;
+#[cfg(test)]
 mod fused_row_backing;
 mod owned_box;
 mod owned_buffer;

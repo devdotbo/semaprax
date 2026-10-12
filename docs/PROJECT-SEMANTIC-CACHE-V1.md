@@ -109,11 +109,14 @@ can reuse the previous successful cache.
 ## Work report and limits
 
 Semantic mode emits `semaprax.project-semantic-cache-work.v1`, with compatibility
-`semaprax.project-checked-module-hir.v8`. The v8 binding refuses payloads
-written before the additive Row Loan v1 HIR tag, and v7 did the same for scoped
-Vec field reads. The v6 binding invalidates stored
-full-capacity metadata before it can be interpreted as mutable clone capacity.
-Earlier compatibility bumps included `.v3` when a function
+`semaprax.project-checked-module-hir.v9`. The v9 binding owns the combined
+Row Loan v1 and [Borrowed Byte Slice For Traversal v1](BORROWED-BYTE-SLICE-FOR-TRAVERSAL-V1.md)
+wire: `SourceForKind` tag `3` (`BorrowBytes`), single-arm byte receivers and
+`TraversalFreeze` loans. The v8 binding introduced Row Loan v1; v7 bound scoped
+Vec field reads to canonical selectors. Older payloads are never decoded under
+v9; decoded HIR still undergoes complete independent validation. The v6 binding
+invalidates stored full-capacity metadata before it can be interpreted as mutable
+clone capacity. Earlier compatibility bumps included `.v3` when a function
 gained the endpoint typestate `follows` clause, issue #297 follow-on, and
 before that from `.v1` when the sealed source carrier gained declared session
 protocols, issue #297, so a persisted payload from an older layout is never

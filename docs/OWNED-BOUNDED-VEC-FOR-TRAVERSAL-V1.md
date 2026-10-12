@@ -60,6 +60,9 @@ the resolved program, so it names those same paths; a change to the shape in
 `expected_projection::collect_expression_type_edges`. That reconstruction
 fails closed, so changing one alone refuses every workspace project containing
 a `for` with `SPX-G173` rather than admitting a wrong edge.
+[Borrowed Byte Slice For Traversal v1](BORROWED-BYTE-SLICE-FOR-TRAVERSAL-V1.md)
+reuses these exact paths for an immutable `Slice<u8>` source; its own receiver
+and latch do not widen this Vec profile.
 
 ## Focused local evidence
 

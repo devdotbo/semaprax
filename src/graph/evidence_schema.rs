@@ -34,6 +34,7 @@ pub(crate) fn reject_while_loop_evidence_schema(schema: &str) -> Result<(), Diag
             | "semaprax.graph.v80"
             | "semaprax.graph.v81"
             | "semaprax.graph.v82"
+            | "semaprax.graph.v83"
             | "semaprax.graph.v77"
     ) {
         return Err(Diagnostic::io(
@@ -103,6 +104,12 @@ pub(crate) fn reject_while_loop_evidence_schema(schema: &str) -> Result<(), Diag
 #[test]
 fn byte_helper_graph_remains_outside_frozen_evidence() {
     let error = reject_while_loop_evidence_schema("semaprax.graph.v76").unwrap_err();
+    assert_eq!(error.code, "SPX-G410");
+}
+
+#[test]
+fn byte_traversal_graph_remains_outside_frozen_evidence() {
+    let error = super::reject_evidence_schema("semaprax.graph.v83").unwrap_err();
     assert_eq!(error.code, "SPX-G410");
 }
 

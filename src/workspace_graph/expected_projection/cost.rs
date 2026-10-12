@@ -5,7 +5,10 @@
 //! per visited expression cover direct ordinary/native/host/intrinsic lowering.
 //! `super` methods charge four, conservatively including the discarded receiver;
 //! sixteen per authored traversal statement cover `for` (16) and `for own`
-//! (15), independently of their source/body children. Cloned identities share
+//! (15), independently of their source/body children. Raw AST has no source
+//! type: a `Slice<u8>` `for` receiver is outside this count, and its lowering
+//! debits its own carriers and backing on the live ledger before construction
+//! (`hir::resolve_for::bytes`). Cloned identities share
 //! backing. Defaults, imported wrappers and generic materializations propagate
 //! their own counts before resolution. This bounds retained/direct lowering,
 //! not cumulative constructor attempts: upcast retries can revisit subtrees.

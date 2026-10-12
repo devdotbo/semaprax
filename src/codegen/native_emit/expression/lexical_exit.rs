@@ -88,7 +88,9 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             LoopLatchKind::SourceForStep { kind, step } => {
                 if !matches!(
                     kind,
-                    hir::SourceForKind::Copy | hir::SourceForKind::BorrowRecord
+                    hir::SourceForKind::Copy
+                        | hir::SourceForKind::BorrowRecord
+                        | hir::SourceForKind::BorrowBytes
                 ) {
                     return Err(backend_error("native source-for step kind is not scalar"));
                 }

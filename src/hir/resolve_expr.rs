@@ -1820,12 +1820,13 @@ impl Resolver<'_> {
                     &mut results,
                 )?,
                 frame @ Frame::BlockForBody { .. } => super::resolve_for_own::resume_vec(
+                    self,
                     function,
                     frame,
                     &mut frames,
                     &mut paths,
                     &mut results,
-                ),
+                )?,
                 Frame::FinishBlock {
                     span,
                     path,

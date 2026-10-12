@@ -312,7 +312,15 @@ pub(super) fn schema_with_proofs<'a>(
             }
         }
     }
-    // Row Loan v1 seam: its additive layer retains every inner v81 fact.
+    // Byte traversal is the outer v83 layer, preserving row-loan v82 facts.
+    if module
+        .functions
+        .iter()
+        .chain(module.function_instances.iter().map(|i| &i.function))
+        .any(crate::hir::byte_traversal_function_uses)
+    {
+        return Ok("semaprax.graph.v83");
+    }
     if graph::row_loan::functions_require(
         module
             .functions

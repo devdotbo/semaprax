@@ -1241,6 +1241,16 @@ v11, and graph selection independently binds it through v39. Wasm borrowed
 remainder bindings alias the active payload; consuming moves may clear only a
 distinct source slot. Native conditional owners stay in canonical plan storage.
 
+`src/hir/resolve_for/bytes.rs` lowers immutable `Slice<u8>` traversal onto the
+shared `for` paths (`resolve_for::lower_profile`) with one single-arm
+`byte_get` receiver, after debiting its exact backing on the builder ledger.
+The independent `src/hir/validation/byte_traversal.rs` replays the region,
+`BorrowBytes` latch and body freeze. Its census confines the only partial match
+HIR admits to that receiver and freezes the view's authenticated provenance
+root. `src/loan_plan/traversal.rs` adds the region-spanning `TraversalFreeze`
+loan on the resolved owner. `src/source_verify/byte_traversal.rs` freezes the
+same root at source. `src/graph/byte_traversal.rs` selects Graph v83 over the row-loan v82 layer.
+
 `src/hir/iterator_loop/renewal.rs` recognizes only compiler-owned same-owner
 Vec intrinsic assignments in `If` branches of an authenticated `for own` body.
 `src/cleanup_plan/build/renewal.rs` derives the reserved cleanup position and

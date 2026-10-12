@@ -24,6 +24,8 @@ mod bounded_language_command_io;
 mod bounded_language_network_io;
 #[path = "useful_data/bounded_stdout_transcript.rs"]
 mod bounded_stdout_transcript;
+#[path = "useful_data/byte_slice_for_runtime.rs"]
+mod byte_slice_for_runtime;
 #[path = "useful_data/catalog_normalizer_application.rs"]
 mod catalog_normalizer_application;
 #[path = "useful_data/catalog_normalizer_oracle.rs"]

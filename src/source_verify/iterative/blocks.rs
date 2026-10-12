@@ -688,6 +688,9 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             _ => None,
         };
         let element = actual.as_ref().and_then(|actual| match &actual.ty {
+            ty @ Type::SliceU8 if !consuming && !borrowing => {
+                crate::source_verify::byte_traversal::element(ty)
+            }
             Type::Named { name, arguments }
                 if name == (if consuming { "Iter" } else { "Vec" })
                     && matches!(arguments.as_slice(), [ty] if crate::vec_ops::ast_element_is_admitted(ty) && !borrowing
@@ -891,6 +894,18 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 }
             }
         }
+        let byte_source = actual
+            .as_ref()
+            .is_some_and(|actual| actual.ty == Type::SliceU8)
+            && !consuming
+            && !borrowing;
+        if let (true, Some(source)) = (byte_source && item_inserted, source) {
+            crate::source_verify::byte_traversal::freeze(
+                &mut self.scopes[block_scope].bindings,
+                source,
+                &crate::source_verify::byte_traversal::freeze_id(item, values.span, body.span),
+            );
+        }
         self.frames
             .push(crate::source_verify::scope::VerifierFrame::ResumeForBody {
                 expression,
@@ -951,6 +966,12 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             if let Some(owner) = self.scopes[block_scope].bindings.get_mut(&row.root) {
                 owner.active_loans.retain(|loan| loan.id != row.freeze);
             }
+        }
+        if let Statement::For { values, body, .. } = &statements[index] {
+            crate::source_verify::byte_traversal::release(
+                &mut self.scopes[block_scope].bindings,
+                &crate::source_verify::byte_traversal::freeze_id(item, values.span, body.span),
+            );
         }
         let index_inserted = self.scopes[block_scope]
             .bindings

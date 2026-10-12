@@ -196,6 +196,7 @@ Audience: all documentation readers.
 - [Owned Bounded Vec](OWNED-BOUNDED-VEC-V1.md)
 - [Owned Bounded Vec v2](OWNED-BOUNDED-VEC-V2.md)
 - [Owned Bounded Vec For Traversal](OWNED-BOUNDED-VEC-FOR-TRAVERSAL-V1.md)
+- [Borrowed Byte Slice For Traversal](BORROWED-BYTE-SLICE-FOR-TRAVERSAL-V1.md)
 - [Owned Bounded Box](OWNED-BOUNDED-BOX-V1.md)
 - [Owned Bounded Box v2](OWNED-BOUNDED-BOX-V2.md)
 - [Owning Iterators v1](OWNING-ITERATORS-V1.md)

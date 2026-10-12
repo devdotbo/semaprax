@@ -40,7 +40,7 @@ impl Codec for ExpressionId {
 }
 codec_enum!(FunctionExecutionId {0=>Monomorphic(value),1=>Generic(value)});
 codec_enum!(ControlTarget {0=>Function(value),1=>Loop{owner,site}});
-codec_enum!(SourceForKind {0=>Copy,1=>BorrowRecord,2=>OwnedIterator});
+codec_enum!(SourceForKind {0=>Copy,1=>BorrowRecord,2=>OwnedIterator,3=>BorrowBytes});
 codec_enum!(LoopLatchKind {0=>Condition,1=>SourceForStep{kind,step},2=>OwnedIteratorStep{next,assignment,step,remainder}});
 codec_enum!(DeclarationKind {0=>Resource,1=>ResourceDrop,2=>Record,3=>Field,4=>Class,5=>Variant,6=>VariantCase,7=>CaseField,8=>Interface,9=>Import,10=>Function});
 codec_enum!(IdentityOrigin {0=>Explicit,1=>Automatic,2=>CompilerOwned});
@@ -326,6 +326,9 @@ mod tests;
 
 #[cfg(test)]
 mod record_traversal_tests;
+
+#[cfg(test)]
+mod byte_traversal_tests;
 
 impl Codec for super::StaticUtf8 {
     fn encode(&self, encoder: &mut Encoder) -> crate::cache_codec::Result<()> {

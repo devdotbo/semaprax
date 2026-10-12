@@ -239,6 +239,20 @@ fn has_own_root_candidate(
                 return Ok(true);
             }
         }
+        // A borrowed byte traversal freezes its view's ultimate owner.
+        if let Some(region) = crate::hir::byte_traversal_region(expression)? {
+            if let Some(place) = expression_place(region.view) {
+                if ultimate_root_is_own(
+                    &place.root,
+                    &aliases,
+                    &ownership,
+                    &mut root_ownership,
+                    provisional,
+                )? {
+                    return Ok(true);
+                }
+            }
+        }
         let view = match &expression.kind {
             ResolvedExprKind::Call { .. } => {
                 crate::vec_ops::string_slot::place(expression).cloned()
@@ -439,6 +453,9 @@ fn build_cfg_plan_counted(
     for expression in &cfg.expressions {
         charge(work)?;
         if let Some(draft) = traversal::draft(program, expression, &cfg, work)? {
+            drafts.push(draft);
+        }
+        if let Some(draft) = traversal::draft_bytes(expression, &cfg, &aliases, work)? {
             drafts.push(draft);
         }
         let view = match &expression.kind {

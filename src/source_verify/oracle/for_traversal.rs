@@ -47,6 +47,7 @@ pub(super) fn check(
         _ => None,
     };
     let element = actual.as_ref().and_then(|actual| match &actual.ty {
+                            ty @ Type::SliceU8 if !borrowing => crate::source_verify::byte_traversal::element(ty),
                             Type::Named { name, arguments }
                                 if name == "Vec" && matches!(arguments.as_slice(), [ty] if (!borrowing && crate::vec_ops::ast_element_is_admitted(ty)) || (borrowing && crate::source_verify::record_traversal::admitted(types, ty))) =>
                             {
@@ -182,6 +183,15 @@ pub(super) fn check(
             }
         }
     }
+    let byte_freeze = (!borrowing
+        && item_inserted
+        && actual
+            .as_ref()
+            .is_some_and(|actual| actual.ty == Type::SliceU8))
+    .then(|| crate::source_verify::byte_traversal::freeze_id(item, values.span, body.span));
+    if let (Some(id), Some(root)) = (&byte_freeze, source) {
+        crate::source_verify::byte_traversal::freeze(scope, root, id);
+    }
     let _ = matching::in_loop(|| {
         check_expr(
             program,
@@ -197,6 +207,9 @@ pub(super) fn check(
     });
     if item_inserted {
         scope.remove(item);
+    }
+    if let Some(id) = &byte_freeze {
+        crate::source_verify::byte_traversal::release(scope, id);
     }
     if borrowing {
         if let Some(root) = source {
