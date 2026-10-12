@@ -3900,6 +3900,7 @@ fn build_owned_inner(
     retain_operation_programs: bool,
     mut frontend: Option<&mut crate::project::incremental::FrontendPass>,
 ) -> Result<(WorkspaceGraphBuild, Vec<WorkspaceSource>), Vec<Diagnostic>> {
+    let _diagnostics = diagnostics::invocation_scope();
     if sources.len() < 2 {
         return Err(vec![graph_error(
             "SPX-G170",

@@ -287,3 +287,6 @@ pub(super) fn live_builder_refusal(
 
 #[cfg(test)]
 mod refusal_tests;
+
+mod invocation;
+pub(super) use invocation::enter as invocation_scope;
