@@ -15,6 +15,7 @@ mod byte_range;
 pub(in crate::hir) mod byte_traversal;
 mod call_parameters;
 mod callable_types;
+mod canonical_loans;
 mod closure;
 mod contract_owners;
 mod generic_record_composition;
@@ -69,7 +70,8 @@ pub(super) struct HirValidator<'a> {
     proof_generic_calls: bool,
     proof_return: Option<(FunctionInstanceId, ResolvedType)>,
     canonical_loan_ids: BTreeMap<(ExpressionId, LoanCause), LoanId>,
-    canonical_loan_liveness: BTreeMap<(ExpressionId, LoanPointPhase, LoanId), Place>,
+    canonical_loan_liveness: BTreeMap<(ExpressionId, LoanPointPhase, LoanId), usize>,
+    canonical_loan_origins: Vec<Place>,
     /// Joined `FusedConstructionV1` selection; `None` on every ordinary path.
     selected: Option<crate::hir::selected_fused_candidate::Selected<'a>>,
 }
@@ -147,56 +149,7 @@ impl<'a> HirValidator<'a> {
                 )));
             }
         }
-        let mut canonical_loan_ids = BTreeMap::new();
-        let mut canonical_loan_liveness = BTreeMap::new();
-        for function in program.functions.iter().chain(
-            program
-                .function_instances
-                .iter()
-                .map(|instance| &instance.function),
-        ) {
-            let plan = crate::loan_plan::build_plan(program, function)?;
-            let origins = plan
-                .loans
-                .iter()
-                .map(|loan| (loan.id, loan.origin.clone()))
-                .collect::<BTreeMap<_, _>>();
-            for endpoint in &plan.endpoints {
-                let live = match endpoint.point.phase {
-                    LoanPointPhase::Before => &endpoint.live_before,
-                    LoanPointPhase::After => &endpoint.live_after,
-                };
-                for loan in live {
-                    let origin = origins.get(loan).cloned().ok_or_else(|| {
-                        hir_error("canonical shared-loan endpoint names an unknown loan")
-                    })?;
-                    if canonical_loan_liveness
-                        .insert(
-                            (
-                                endpoint.point.expression.clone(),
-                                endpoint.point.phase,
-                                *loan,
-                            ),
-                            origin,
-                        )
-                        .is_some()
-                    {
-                        return Err(hir_error("canonical shared-loan liveness is duplicated"));
-                    }
-                }
-            }
-            for loan in plan.loans {
-                if loan.start.phase != LoanPointPhase::Before
-                    || canonical_loan_ids
-                        .insert((loan.site, loan.cause), loan.id)
-                        .is_some()
-                {
-                    return Err(hir_error(
-                        "canonical shared-loan identity is ambiguous or malformed",
-                    ));
-                }
-            }
-        }
+        let canonical_loans = canonical_loans::Inventory::rebuild(program)?;
         Ok(Self {
             program,
             static_text: std::cell::Cell::new((false, 0)),
@@ -212,8 +165,9 @@ impl<'a> HirValidator<'a> {
             borrowed_str_aliases: BTreeMap::new(),
             proof_generic_calls: false,
             proof_return: None,
-            canonical_loan_ids,
-            canonical_loan_liveness,
+            canonical_loan_ids: canonical_loans.ids,
+            canonical_loan_liveness: canonical_loans.liveness,
+            canonical_loan_origins: canonical_loans.origins,
             selected: None,
         })
     }

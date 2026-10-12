@@ -260,3 +260,18 @@ Component ABI. Beyond the exact direct field profile, it does not admit nested
 owned aggregate borrowing, generalize
 `match borrow`, execute cleanup, prove process memory safety outside verified
 HIR, or complete either ownership row in the completion matrix.
+
+## Private validation storage
+
+Core HIR validation still independently rebuilds each function and instance's
+loan plan before using its canonical identities or liveness. Its private
+canonical-origin directory moves each rebuilt `Place` once and associates each
+live endpoint with that origin's ordinal. Ordinals carry no source or runtime
+authority, and function-local loan IDs retain their distinct function context.
+All projection order, unknown-endpoint, duplicate-liveness, and start/site checks
+retain their existing order. Attached plans remain independently validated.
+
+This storage optimization does not reduce a forecast, change a limit, or give
+pure validation a physical account. Complete caller prepayment for validator
+storage remains a separate owning contract; the relative allocation control is
+not a whole-validator funding or application-fit receipt.
