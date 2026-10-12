@@ -1,5 +1,7 @@
 //! Selected physical allocation requests; ordinary replay keeps its exact route.
 use super::*;
+mod setup;
+pub(crate) use setup::SetupFailure;
 
 impl ReplayBudget {
     pub(super) fn with_physical(
@@ -11,43 +13,15 @@ impl ReplayBudget {
 
     pub(super) fn from_reservation(
         function: &ResolvedFunction,
-        mut physical: physical_storage::PhysicalReservation,
+        physical: physical_storage::PhysicalReservation,
     ) -> Result<Self, Diagnostic> {
-        physical
-            .reserve_array::<physical_storage::PhysicalReservation>(1)
-            .map_err(|_| {
-                replay_error(
-                    function,
-                    "cleanup replay physical reservation exceeds the bound",
-                )
-            })?;
-        physical
-            .reserve_array::<Option<(&ResolvedType, usize)>>(514)
-            .map_err(|_| {
-                replay_error(function, "cleanup replay clone cursor reservation refused")
-            })?;
-        // One selected budget can publish one refusal. Its actual String
-        // backing is paid before any operation can exhaust the ledger.
-        let capacity = function
-            .id
-            .as_str()
-            .len()
-            .checked_add(REFUSAL_FIXED_BYTES)
-            .ok_or_else(|| replay_error(function, "cleanup replay refusal layout overflowed"))?;
-        physical.reserve(capacity).map_err(|_| {
-            replay_error(function, "cleanup replay refusal text reservation refused")
-        })?;
-        let refusal_text = String::with_capacity(capacity);
-        if refusal_text.capacity() != capacity {
-            return Err(replay_error(
-                function,
-                "cleanup replay refusal allocator capacity differs",
-            ));
-        }
-        Ok(Self {
-            refusal_text: Some(refusal_text),
-            physical: Some(Box::new(physical)),
-            ..Self::new()
+        Self::try_from_reservation(function, physical).map_err(|failure| {
+            let (physical, reason) = failure.into_parts();
+            drop(physical);
+            // Compatibility boundary: this legacy wrapper constructs an owned
+            // Diagnostic without an outer paid carrier. try_from_reservation
+            // itself publishes only an inline reason and the failed ledger.
+            replay_error(function, reason.message())
         })
     }
 

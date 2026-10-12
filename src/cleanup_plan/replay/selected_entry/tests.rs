@@ -153,3 +153,6 @@ fn malformed_later_certificate_body_and_target_cannot_reuse_an_earlier_lease() {
 }
 
 mod recovering;
+
+#[path = "tests/setup.rs"]
+mod setup;

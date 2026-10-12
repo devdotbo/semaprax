@@ -34,8 +34,19 @@ impl Preparation {
         function: &ResolvedFunction,
         physical: PhysicalReservation,
     ) -> Result<Self, Diagnostic> {
+        Self::try_new(function, physical).map_err(|failure| {
+            let (physical, reason) = failure.into_parts();
+            drop(physical);
+            // Legacy outward Diagnostic has no separately funded report carrier.
+            replay_error(function, reason.message())
+        })
+    }
+    pub(crate) fn try_new(
+        function: &ResolvedFunction,
+        physical: PhysicalReservation,
+    ) -> Result<Self, physical_budget::SetupFailure> {
         Ok(Self {
-            budget: ReplayBudget::from_reservation(function, physical)?,
+            budget: ReplayBudget::try_from_reservation(function, physical)?,
             failed: false,
         })
     }
