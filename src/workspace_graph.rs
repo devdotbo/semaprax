@@ -4387,9 +4387,12 @@ fn build_resolved_core(
         // Exact stubs/spans and the unconditional prebound govern hits.
         let cached = staged!(
             FrontendLookup,
-            frontend.as_deref_mut().and_then(|cache| synthetic
-                .owned()
-                .and_then(|input| cache.checked_module(&program.path, input)))
+            frontend.as_deref_mut().and_then(|cache| match &synthetic {
+                expected_projection::borrowed_leaf::Input::Owned(input) =>
+                    cache.checked_module(&program.path, input),
+                expected_projection::borrowed_leaf::Input::Borrowed(input) =>
+                    cache.checked_module_source(&program.path, input),
+            })
         );
         let (resolved, static_text) = if let Some((resolved, resolver_bytes, original_loan_bytes)) =
             cached

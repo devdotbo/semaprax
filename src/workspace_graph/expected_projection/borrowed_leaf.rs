@@ -139,9 +139,9 @@ impl<'a> Input<'a> {
         authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
         programs: &[Program],
         registry: &private_layout::registry::LayoutRegistry<'_>,
-        uncached: bool,
+        _uncached: bool,
     ) -> Result<Self, Vec<Diagnostic>> {
-        if uncached && eligible(program) {
+        if eligible(program) {
             construct(program).map(Self::Borrowed)
         } else {
             synthetic_program_with_registry(program, authored, programs, Some(registry))

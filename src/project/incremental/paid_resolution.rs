@@ -35,7 +35,7 @@ impl FrontendPass {
         private: Option<crate::source_verify::private_names::PrivateNames<'p>>,
         owner: &mut IdentityReservation,
     ) -> Option<Result<SelectiveResolvedModule, SelectiveFailure>> {
-        if !self.permits_borrowed_cold_source(path) {
+        if !self.semantic {
             return None;
         }
         if synthetic.functions().len() > MAX_PROJECT_CHECKED_FUNCTIONS {
@@ -44,9 +44,14 @@ impl FrontendPass {
             ))));
         }
         Some(
-            crate::hir::identity_resolution::resolve_source(synthetic, private, |bytes| {
-                owner.reserve(bytes)
-            })
+            crate::hir::identity_resolution::resolve_source_checked(
+                synthetic,
+                self.checked.get(path).map(|entry| &entry.synthetic),
+                self.checked.get(path).map(|entry| &entry.resolved),
+                self.checked.get(path).map(|entry| &entry.function_costs),
+                private,
+                |bytes| owner.reserve(bytes),
+            )
             .map(module)
             .map_err(SelectiveFailure::Resolve),
         )

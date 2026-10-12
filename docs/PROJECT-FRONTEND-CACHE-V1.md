@@ -174,3 +174,20 @@ requires its initial owned copy; parsing, checked replay and final publication
 retain their existing ownership and payment obligations. The narrow handoff
 observation excludes construction of the original closure and makes no whole
 build allocation or application-fit claim.
+
+### Borrowed current body-reuse input
+
+The private checked resolver can read the exact synthetic declaration view even
+when a previous owning cache key exists. Full current-source verification runs
+before the unchanged non-body environment and signature comparisons. Complete
+key equality includes every owned Program field; a view is never a cache hint.
+A newly published key still owns its authored declarations. Invariant desugaring
+retains its owning fallback.
+
+Only resolver staging omits old canonical loan and cleanup attachments from a
+reused function clone. Capacity analysis then runs on ordinary lowered input,
+and the existing loan, inventory and cleanup producers rebuild every attachment
+before independent validation and publication. The saved resolution cost remains
+charged; removed attachment storage is never refunded. Source controls compare
+the old full clone through Drop and retain complete graph/image body-edit parity.
+These controls await execution and establish no whole-build fit or latency claim.

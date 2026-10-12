@@ -74,10 +74,21 @@ pub(crate) fn resolve_checked<'p, E>(
     resolve_verified_paid(program, reuse, &mut reserve)
 }
 
-/// Paid sibling of `resolve_source`: full verification and its explicit
-/// invariant refusal precede any identity request.
 pub(crate) fn resolve_source<'p, E>(
     program: &'p dyn ProgramSource,
+    private: Option<source_verify::private_names::PrivateNames<'p>>,
+    reserve: impl FnMut(usize) -> Result<(), E>,
+) -> Result<(ResolvedProgram, FunctionResolutionWork), Failure<E>> {
+    resolve_source_checked(program, None, None, None, private, reserve)
+}
+
+/// Paid sibling of `resolve_source`: full verification and its explicit
+/// invariant refusal precede any identity request.
+pub(crate) fn resolve_source_checked<'p, E>(
+    program: &'p dyn ProgramSource,
+    previous_program: Option<&Program>,
+    previous_resolved: Option<&ResolvedProgram>,
+    previous_costs: Option<&BTreeMap<String, usize>>,
     private: Option<source_verify::private_names::PrivateNames<'p>>,
     mut reserve: impl FnMut(usize) -> Result<(), E>,
 ) -> Result<(ResolvedProgram, FunctionResolutionWork), Failure<E>> {
@@ -98,6 +109,9 @@ pub(crate) fn resolve_source<'p, E>(
             "borrowed projection requires owned invariant desugaring",
         )]));
     }
+    let reuse = previous_program.zip(previous_resolved).zip(previous_costs)
+        .filter(|((previous, _), _)| function_reuse_environment_is_exact(program, previous))
+        .map(|((program, resolved), costs)| FunctionReuse { program, resolved, costs });
     // SourceIndex precedes the DeclarationIndex, as in the legacy route.
     let byte_helpers = crate::loop_calls::byte_writer::SourceIndex::new(program);
     let declarations = DeclarationIndex::from_verified_with_identity_reservation(
@@ -109,7 +123,7 @@ pub(crate) fn resolve_source<'p, E>(
         program,
         byte_helpers,
         declarations,
-        reuse: None,
+        reuse,
         function_work: FunctionResolutionWork::default(),
         fused_producer: None,
         partition_profile: false,

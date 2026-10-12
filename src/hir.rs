@@ -750,24 +750,18 @@ struct Resolver<'a> {
     partition_profile: bool,
 }
 
-fn function_reuse_environment_is_exact(current: &Program, previous: &Program) -> bool {
-    current.path == previous.path
-        && current.module == previous.module
-        && current.module_uses == previous.module_uses
-        && current.permits == previous.permits
-        && current.types == previous.types
-        && current.interfaces == previous.interfaces
-        && current.protocols == previous.protocols
-        && current.implementations == previous.implementations
-        && current.functions.len() == previous.functions.len()
-        && current
-            .functions
-            .iter()
-            .all(|function| function.type_parameters.is_empty())
-        && current
-            .functions
-            .iter()
-            .zip(&previous.functions)
+fn function_reuse_environment_is_exact(current: &dyn ProgramSource, previous: &Program) -> bool {
+    current.path() == previous.path
+        && current.module() == previous.module
+        && current.module_uses() == previous.module_uses
+        && current.permits() == previous.permits
+        && current.types().iter().eq(&previous.types)
+        && current.interfaces() == previous.interfaces
+        && current.protocols() == previous.protocols
+        && current.implementations() == previous.implementations
+        && current.functions().len() == previous.functions.len()
+        && current.functions().iter().all(|function| function.type_parameters.is_empty())
+        && current.functions().iter().zip(&previous.functions)
             .all(|(current, previous)| function_signature_is_exact(current, previous))
 }
 

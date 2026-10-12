@@ -240,6 +240,8 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         include_str!("../../../../../src/hir/iterator_loop/renewal.rs"),
         include_str!("../../../../../src/hir/resolve_pattern.rs"),
         include_str!("../../../../../src/hir/resolve_program.rs"),
+        include_str!("../../../../../src/hir/resolve_program/reuse_lowered.rs"),
+        include_str!("../../../../../src/hir/resolve_program/reuse_lowered/tests.rs"),
         include_str!("../../../../../src/hir/resolve_statement.rs"),
         include_str!("../../../../../src/hir/resolve_variant_or.rs"),
         include_str!("../../../../../src/hir/variant_equality.rs"),

@@ -476,11 +476,19 @@ impl FrontendPass {
         path: &str,
         synthetic: &Program,
     ) -> Option<(CheckedModuleLease, usize, usize)> {
+        self.checked_module_source(path, synthetic)
+    }
+
+    pub(crate) fn checked_module_source(
+        &mut self,
+        path: &str,
+        synthetic: &dyn crate::ast::program_source::ProgramSource,
+    ) -> Option<(CheckedModuleLease, usize, usize)> {
         if !self.semantic {
             return None;
         }
         let entry = self.checked.get(path)?;
-        if entry.synthetic != *synthetic {
+        if !checked_source_matches(synthetic, &entry.synthetic) {
             return None;
         }
         crate::hir::replay_agent_source_associations(
@@ -821,3 +829,21 @@ mod semantic_tests {
 #[cfg(test)]
 #[path = "incremental/cold_source_tests.rs"]
 mod cold_source_tests;
+
+// Complete owned Program equality expressed over the sealed two-slice source.
+// No fingerprint, provider hint or subject identity substitutes for a field.
+fn checked_source_matches(
+    current: &dyn crate::ast::program_source::ProgramSource,
+    previous: &Program,
+) -> bool {
+    current.path() == previous.path && current.module() == previous.module
+        && current.module_uses() == previous.module_uses
+        && current.permits() == previous.permits
+        && current.types().iter().eq(&previous.types)
+        && current.interfaces() == previous.interfaces
+        && current.protocols() == previous.protocols
+        && current.implementations() == previous.implementations
+        && current.session_protocols() == previous.session_protocols
+        && current.agents() == previous.agents
+        && current.functions().iter().eq(&previous.functions)
+}

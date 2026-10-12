@@ -633,7 +633,7 @@ impl Resolver<'_> {
                             function.span,
                         ));
                     }
-                    return Ok((resolved.clone(), cost, true));
+                    return Ok((reuse_lowered::clone_for_rebuild(resolved), cost, true));
                 }
             }
         }
@@ -1427,3 +1427,5 @@ fn resolve_agent_declaration(
 
 #[cfg(test)]
 mod tests;
+
+mod reuse_lowered;
