@@ -10,6 +10,9 @@ use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 use super::*;
 
+// Saved original predicates, including their Url branch and first-match order.
+mod native_owner_old;
+
 pub(crate) fn owned_reachable_types(
     functions: &[LinkedScalarFunction],
     instances: &[ResolvedFunctionInstance],
@@ -50,17 +53,15 @@ pub(crate) fn owned_reachable_types(
                 cases.iter().flat_map(|case| &case.fields).collect()
             }
             ResolvedTypeDeclarationKind::Resource { .. }
-                if workspace_link::native_owner::admitted_resource(
-                    declaration,
-                    owner_interfaces,
-                ) || workspace_link::native_owner::admitted_ri06_regex_resource(
-                    declaration,
-                    if owner_interfaces.is_empty() {
-                        interfaces
-                    } else {
-                        owner_interfaces
-                    },
-                ) =>
+                if native_owner_old::admitted_resource(declaration, owner_interfaces)
+                    || native_owner_old::admitted_ri06_regex_resource(
+                        declaration,
+                        if owner_interfaces.is_empty() {
+                            interfaces
+                        } else {
+                            owner_interfaces
+                        },
+                    ) =>
             {
                 Vec::new()
             }
@@ -473,4 +474,75 @@ fn split_owner_interfaces_admit_exactly_like_concatenated_owned_oracle() {
     let expected = owned_reachable_types(&[], &[], &[], &owned, &roots, first);
     assert_eq!(actual, expected);
     assert_eq!(actual.unwrap_err().code, "SPX-G172");
+    // The first eligible constructor determines the digest/path universe.
+    // A later valid constructor cannot repair a conflicting earlier one.
+    for conflict_first in [true, false] {
+        let mut competing = interfaces.clone();
+        let imports = &mut competing[1].imports;
+        let position = imports
+            .iter()
+            .position(|i| i.id.as_str() == "reach.native.owner_new")
+            .unwrap();
+        let mut conflict = imports[position].clone();
+        conflict.id = DeclarationId::new("reach.native.conflict");
+        conflict.selected_index_digest = Some("conflicting-digest".to_owned());
+        imports.insert(position + usize::from(!conflict_first), conflict);
+        let actual = reachable_types(&[], &[], &[], &borrowed, &roots, competing.iter());
+        let expected = owned_reachable_types(&[], &[], &[], &owned, &roots, &competing);
+        assert_eq!(actual, expected);
+        assert_eq!(actual.is_ok(), !conflict_first);
+    }
+
+    // Exact Url constructor/view/finalizer coverage uses the saved Url twin.
+    let mut url_drop = import("reach.url.drop", "reach.url.interface");
+    let url = resource("reach.url", "Url", &url_drop);
+    url_drop.parameters = vec![parameter(nominal(&url.id), OwnershipMode::Own)];
+    let mut url_new = import("reach.url.parse", "reach.url.interface");
+    url_new.native_rust = true;
+    url_new.index_selected = true;
+    url_new.selected_index_digest = Some("url-digest".to_owned());
+    url_new.rust_path = Some("url_alias::Url::parse".to_owned());
+    url_new.parameters = vec![parameter(ResolvedType::String, OwnershipMode::Borrow)];
+    url_new.result.kind = ResolvedImportResultKind::OwnedResultResourceI64 {
+        resource: url.id.clone(),
+    };
+    let mut url_view = url_new.clone();
+    url_view.id = DeclarationId::new("reach.url.view");
+    url_view.rust_path = Some("url_alias::Url::as_str".to_owned());
+    url_view.selected_receiver = Some("shared".to_owned());
+    url_view.parameters = vec![parameter(nominal(&url.id), OwnershipMode::Borrow)];
+    url_view.result.kind = ResolvedImportResultKind::BorrowedStr {
+        resource: url.id.clone(),
+    };
+    let url_types = [url];
+    let url_owned = owned_map(&url_types);
+    let url_borrowed = BorrowedTypeInventory::collect(&url_types).unwrap();
+    let url_roots = [url_types[0].id.clone()];
+    let mut url_interfaces = [ResolvedInterface {
+        id: DeclarationId::new("reach.url.interface"),
+        name: "Url".to_owned(),
+        permits: Vec::new(),
+        imports: vec![url_drop, url_new, url_view],
+        span: Span::default(),
+    }];
+    for forged in [false, true] {
+        if forged {
+            url_interfaces[0].imports[2].selected_index_digest = Some("foreign".to_owned());
+        }
+        let actual = reachable_types(
+            &[],
+            &[],
+            &[],
+            &url_borrowed,
+            &url_roots,
+            url_interfaces.iter(),
+        );
+        let expected =
+            owned_reachable_types(&[], &[], &[], &url_owned, &url_roots, &url_interfaces);
+        assert_eq!(actual, expected);
+        assert_eq!(actual.is_ok(), !forged);
+        if forged {
+            assert_eq!(actual.unwrap_err().code, "SPX-G172");
+        }
+    }
 }
