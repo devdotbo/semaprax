@@ -38,6 +38,7 @@ fn ordinary_empty_union_preserves_saved_multiset_and_literal_node_storage_throug
     assert_eq!(new.allocated, required);
     assert_eq!(work.budget.physical.as_ref().unwrap().charged() - setup, required);
     assert_eq!(work.next_ordinary_dag, 5);
+    assert_eq!(work.budget.skeleton_spent, 5);
     for observed in [old, new] {
         assert!(!observed.invalid);
         assert_eq!(observed.live, 0);
@@ -62,6 +63,24 @@ fn ordinary_empty_union_preserves_saved_multiset_and_literal_node_storage_throug
             let used = work.budget.physical.as_ref().unwrap().charged();
             assert!(work.budget.reserve_bytes(function, 0, "sticky ordinary union").is_err());
             assert_eq!(work.budget.physical.as_ref().unwrap().charged(), used);
+        }
+    }
+    // Five new ordinals are five actual metadata publications. This is a
+    // literal work boundary, independent of measured storage or implementation
+    // counters, and it does not claim old low-budget admission is unchanged.
+    for (units, accepted, nodes) in [(5, true, 5), (4, false, 4)] {
+        let mut budget = ReplayBudget::with_physical(function, setup + required).unwrap();
+        budget.skeleton_remaining = units;
+        let mut work = SkeletonWork::new(&program, function, &mut budget);
+        let result = work.ordinary_union(members());
+        assert_eq!(result.is_ok(), accepted);
+        drop(result);
+        assert_eq!(work.next_ordinary_dag, nodes);
+        assert_eq!(work.budget.skeleton_spent, nodes);
+        if !accepted {
+            let charged = work.budget.physical.as_ref().unwrap().charged();
+            assert!(work.charge(0, "sticky ordinal work").is_err());
+            assert_eq!(work.budget.physical.as_ref().unwrap().charged(), charged);
         }
     }
 }
