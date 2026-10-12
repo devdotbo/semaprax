@@ -959,14 +959,18 @@ pub(super) fn oracle_match(
                 .iter()
                 .find(|case| !covered.contains(case.name.as_str()))
             {
-                diagnostics.push(crate::source_verify::private_names::missing_case(
+                let missing = crate::source_verify::private_names::missing_case(
                     program,
                     types,
                     variant_name,
                     &missing.name,
                     !missing.fields.is_empty(),
                     expr.span,
-                ));
+                );
+                if !crate::source_verify::recovery::has_refused_pattern(arms, &missing, diagnostics)
+                {
+                    diagnostics.push(missing);
+                }
             }
         }
     }

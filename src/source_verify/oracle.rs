@@ -122,6 +122,7 @@ pub(super) fn check_expr(
                 );
                 None
             }),
+        ExprKind::Var(name) if !diagnostics.is_empty() && super::recovery::reads_refused_parameter(program, current, name, types) => None,
         ExprKind::Var(name) => variables
             .get(name.as_str())
             .map(|binding| {
@@ -210,7 +211,7 @@ pub(super) fn check_expr(
                     ),
                     hints::variant_shorthand_help(name).map(str::to_owned),
                 );
-                if !super::recovery::follows_refused_let(current, name, &unknown, diagnostics) { diagnostics.push(unknown); }
+                if !super::recovery::follows_refused_binding(current, name, &unknown, diagnostics) { diagnostics.push(unknown); }
                 None
             }),
         ExprKind::Call { name, type_arguments, args } => oracle_call(

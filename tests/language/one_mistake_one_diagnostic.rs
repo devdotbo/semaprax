@@ -99,6 +99,10 @@ fn one_mistake_reports_one_diagnostic() {
         ("missing match case", main_with(SHAPE, "    let s = Shape::Dot {};\n    match s { Shape::Dot {} => 0, }"), "SPX-M101"),
         ("match arms of different types", main("    let n = 2;\n    let x = match n { 0 => 1, _ => true, };\n    x"), "SPX-T259"),
         ("scalar match without a catch-all", main("    let n = 2;\n    match n { 0 => 1, 1 => 2, }"), "SPX-T257"),
+        ("unknown case in a match pattern", main_with(SHAPE, "    let s = Shape::Dot {};\n    match s { Shape::Dot {} => 0, Shape::Square { w: w } => w, }"), "SPX-M103"),
+        // Signatures that name an unknown type.
+        ("unknown parameter type", helper("fn f(a: int) -> i64", "    a + 1"), "SPX-T001"),
+        ("unknown result type", helper("fn f(a: i64) -> int", "    a + 1"), "SPX-T001"),
         // Bindings.
         ("assignment to an immutable binding", main("    let x = 1;\n    x = x + 1;\n    x"), "SPX-U101"),
         ("shadowing", main("    let x = 1;\n    let x = x + 1;\n    x"), "SPX-T209"),
@@ -116,22 +120,54 @@ fn one_mistake_reports_one_diagnostic() {
 }
 
 #[test]
-fn remaining_follow_ons_are_pinned_until_their_root_is_fixed() {
-    // These three mistakes still report follow-ons. They are pinned exactly,
-    // not endorsed: fixing one means moving its case into the table above.
-    let unknown_parameter_type = helper("fn f(a: int) -> i64", "    a + 1");
-    assert_eq!(codes(&unknown_parameter_type), ["SPX-T001", "SPX-T208"]);
-
-    let unknown_result_type = helper("fn f(a: i64) -> int", "    a + 1");
-    assert_eq!(codes(&unknown_result_type), ["SPX-T001", "SPX-T103"]);
-
-    let unknown_match_case = main_with(
-        SHAPE,
-        "    let s = Shape::Dot {};\n    match s { Shape::Dot {} => 0, Shape::Square { w: w } => w, }",
-    );
+fn refused_patterns_and_signatures_excuse_only_their_own_names() {
+    // A complete match still reports the unknown value in an arm it admits.
     assert_eq!(
-        codes(&unknown_match_case),
-        ["SPX-M103", "SPX-T202", "SPX-M101"]
+        codes(&main_with(
+            SHAPE,
+            "    let s = Shape::Dot {};\n    match s { Shape::Dot {} => missing, Shape::Box { w: w } => w, }"
+        )),
+        ["SPX-T202"]
+    );
+    // A refused pattern excuses the names it binds, not other unknown names.
+    assert_eq!(
+        codes(&main_with(
+            SHAPE,
+            "    let s = Shape::Dot {};\n    match s { Shape::Dot {} => 0, Shape::Square { w: w } => w + missing, }"
+        )),
+        ["SPX-M103", "SPX-T202"]
+    );
+    // Coverage is still judged when every pattern is admitted.
+    assert_eq!(
+        codes(&main_with(
+            SHAPE,
+            "    let s = Shape::Dot {};\n    match s { Shape::Dot {} => 0, }"
+        )),
+        ["SPX-M101"]
+    );
+    // An unknown parameter type excuses that parameter, not the others.
+    assert_eq!(
+        codes(&helper("fn f(a: int, b: bool) -> i64", "    a + b")),
+        ["SPX-T001", "SPX-T208"]
+    );
+    // An ownership-mode error leaves a known parameter type in force.
+    assert_eq!(
+        codes(&helper("fn f(a: own i64) -> bool", "    a + 1")),
+        ["SPX-O002", "SPX-T103"]
+    );
+    // A type that exists but is refused keeps later refusals of its uses.
+    assert_eq!(
+        codes(&helper(
+            "fn f(a: Option<Option<i64>>) -> Option<bool>",
+            "    let inner = a?;
+    Option<bool>::None {}"
+        )),
+        ["SPX-T223", "SPX-T218"]
+    );
+    // A known result type is still compared with the body.
+    assert_eq!(
+        codes(&helper("fn f(a: int) -> bool", "    1")),
+        ["SPX-T001", "SPX-T103"]
     );
 }
 

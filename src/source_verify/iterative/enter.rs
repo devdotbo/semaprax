@@ -129,6 +129,17 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 }
                 self.values.push(value);
             }
+            ExprKind::Var(name)
+                if !self.diagnostics.is_empty()
+                    && crate::source_verify::recovery::reads_refused_parameter(
+                        self.program,
+                        self.current,
+                        name,
+                        self.types,
+                    ) =>
+            {
+                self.values.push(None);
+            }
             ExprKind::Var(name) => {
                 if self.scopes[scope]
                     .bindings
@@ -216,7 +227,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         ),
                         hints::variant_shorthand_help(name).map(str::to_owned),
                     );
-                    if !crate::source_verify::recovery::follows_refused_let(
+                    if !crate::source_verify::recovery::follows_refused_binding(
                         self.current,
                         name,
                         &unknown,

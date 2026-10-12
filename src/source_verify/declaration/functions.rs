@@ -1212,6 +1212,12 @@ pub(super) fn check_function_bodies<'p>(
                 if !actual.native_unit
                     && actual.ty != Type::Never
                     && actual.ty != function.return_type
+                    && !crate::source_verify::recovery::declared_type_unknown(
+                        program,
+                        function,
+                        &function.return_type,
+                        types,
+                    )
                 {
                     diagnostics.push(error(
                         program,

@@ -294,7 +294,9 @@ fn patterns_and_arm_results_are_checked_independently() {
         "        Choice::Number { value: number } => number,",
         "        Other::Number { value: number } => number,",
     );
-    assert_eq!(codes(&incompatible), ["SPX-M103", "SPX-T202", "SPX-M101"]);
+    // The refused pattern is the one mistake: its bound name and the case it
+    // displaced are not reported again (#799).
+    assert_eq!(codes(&incompatible), ["SPX-M103"]);
 
     let fields = VARIANTS.replace(
         "Choice::Number { value: number } => number,",

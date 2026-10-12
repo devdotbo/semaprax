@@ -92,14 +92,21 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         .iter()
                         .find(|case| !state.covered.contains(&case.name))
                     {
-                        self.diagnostics.push(missing_case(
+                        let missing = missing_case(
                             self.program,
                             self.types,
                             variant_name,
                             &missing.name,
                             !missing.fields.is_empty(),
                             state.expression.span,
-                        ));
+                        );
+                        if !crate::source_verify::recovery::has_refused_pattern(
+                            state.arms,
+                            &missing,
+                            self.diagnostics,
+                        ) {
+                            self.diagnostics.push(missing);
+                        }
                     }
                 }
             }
