@@ -648,7 +648,7 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         ),
         (
             hir_validator,
-            "pub const VALIDATOR_FRAME_BYTES: usize = 256;",
+            "pub const VALIDATOR_FRAME_BYTES: usize = 248;",
         ),
         (verifier, "size_of::<VerifierFrame<'static>>() == 320"),
         (verifier, "size_of::<VariantMatchState<'static>>() == 312"),
