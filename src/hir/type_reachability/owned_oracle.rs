@@ -141,7 +141,67 @@ const DENSE: &str = r#"module reach.dense;
 
 fn dense_program() -> ResolvedProgram {
     let source = crate::parse(DENSE, std::path::Path::new("reach-dense.spx")).unwrap();
-    crate::hir::resolve(&source).unwrap()
+    // Keep the original nested-generic source as an independent admission
+    // refusal. Reachability is a structural inventory operation, not a grant
+    // of source-language or public ABI authority for these nested arguments.
+    let errors = crate::hir::resolve(&source).unwrap_err();
+    assert!(errors.iter().any(|error| error.code == "SPX-T223"));
+    assert!(errors.iter().any(|error| error.code == "SPX-T215"));
+    let admitted = DENSE
+        .replace("Wrap<Pair<Leaf, i64>>", "i64")
+        .replace("Pair<Wrap<Leaf>, Wrap<bool>>", "Pair<i64, bool>");
+    let source = crate::parse(&admitted, std::path::Path::new("reach-dense-admitted.spx")).unwrap();
+    let mut program = crate::hir::resolve(&source).unwrap();
+    fn nominal(id: &str, arguments: Vec<ResolvedType>) -> ResolvedType {
+        ResolvedType::Nominal {
+            declaration: DeclarationId::new(id),
+            arguments,
+        }
+    }
+    // Construct only the two original dense inventory edges after resolving
+    // an admitted skeleton. Both algorithms still receive the complete,
+    // identical record/variant/nested-argument graph and every original root.
+    // No consumer may treat this structural oracle as a checked program.
+    let mode = program
+        .types
+        .iter_mut()
+        .find(|ty| ty.id.as_str() == "reach.mode")
+        .unwrap();
+    let ResolvedTypeDeclarationKind::Variant { cases } = &mut mode.kind else {
+        panic!("dense Mode must retain its original variant kind")
+    };
+    let held = cases
+        .iter_mut()
+        .find(|case| case.id.as_str() == "reach.mode.held")
+        .unwrap();
+    assert_eq!(held.fields.len(), 1);
+    held.fields[0].ty = nominal(
+        "reach.wrap",
+        vec![nominal(
+            "reach.pair",
+            vec![nominal("reach.leaf", Vec::new()), ResolvedType::I64],
+        )],
+    );
+    let outer = program
+        .types
+        .iter_mut()
+        .find(|ty| ty.id.as_str() == "reach.outer")
+        .unwrap();
+    let ResolvedTypeDeclarationKind::Record { fields } = &mut outer.kind else {
+        panic!("dense Outer must retain its original record kind")
+    };
+    let wraps = fields
+        .iter_mut()
+        .find(|field| field.id.as_str() == "reach.outer.wraps")
+        .unwrap();
+    wraps.ty = nominal(
+        "reach.pair",
+        vec![
+            nominal("reach.wrap", vec![nominal("reach.leaf", Vec::new())]),
+            nominal("reach.wrap", vec![ResolvedType::Bool]),
+        ],
+    );
+    program
 }
 
 fn linked_functions(program: &ResolvedProgram) -> Vec<LinkedScalarFunction> {
