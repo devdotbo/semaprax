@@ -4,9 +4,9 @@ use super::*;
 pub(super) mod values;
 
 impl HirValidator<'_> {
-    pub(super) fn validate_template_expressions<'value>(
+    pub(super) fn validate_template_expressions(
         &mut self,
-        template: &'value ResolvedFunctionTemplate,
+        template: &ResolvedFunctionTemplate,
         execution: &FunctionExecutionId,
     ) -> Result<(), Diagnostic> {
         self.validate_template_expressions_with_values(template, execution, values::Values::new())
