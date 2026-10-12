@@ -83,8 +83,11 @@ Wasm's existing strict host checks registry settlement; private internal Wasm
 repeated results alone do not prove storage settlement. The independent last-view-use loan owner and actual operation/operand charge
 boundary owner now cover forged loan metadata, exact pointer retention, unchanged
 source availability on both fuel refusals, and complete owner/environment Drop
-against the saved construction-only allocation baseline. Full private Wasm
-storage counters remain open acceptance work, alongside historical ordinary
-inventory scratch funding and the broader
+against the saved construction-only allocation baseline. The private internal Wasm owner now instruments the actual compiler-paired
+host mint, byte-copy and authenticated drop boundaries for empty/nonempty,
+clone-reference and failure calls. Exact literal request counts and balanced
+owner/byte retirement supplement existing mandatory empty-registry settlement.
+Those counters measure host payload operations, not total JS engine memory.
+Historical ordinary inventory scratch funding and the broader
 OPT781 transitive engine diagnostic boundary. No issue closure follows this
 source tranche.

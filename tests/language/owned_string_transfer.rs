@@ -115,13 +115,49 @@ fn explicit_transfer_interpreter_and_private_wasm_reentry_keep_selected_status()
     )
     .unwrap();
     fixture.write("program.wasm", artifact.wasm_bytes());
-    fixture.write("program.mjs", artifact.runtime_source());
+    // Test-only counters surround the actual compiler-paired host mint/copy/drop
+    // operations. They expose no handle, import replacement or mint authority.
+    // Existing authenticate/delete/settle checks remain byte-for-byte present.
+    let mut runtime = artifact.runtime_source().to_owned();
+    for (before, after) in [
+        (
+            "const bytes=new Bytes(length);fill(bytes);",
+            "const bytes=new Bytes(length);++takeMints;takeMintBytes+=length;fill(bytes);",
+        ),
+        (
+            "out=>apply(byteSet,out,[source,0])",
+            "out=>{++takeCopies;takeCopyBytes+=source.length;apply(byteSet,out,[source,0])}",
+        ),
+        (
+            "out=>apply(byteSet,out,[bytes,0])",
+            "out=>{++takeCopies;takeCopyBytes+=bytes.length;apply(byteSet,out,[bytes,0])}",
+        ),
+        (
+            "liveBytes-=bytes.length;",
+            "liveBytes-=bytes.length;++takeDrops;takeDropBytes+=bytes.length;",
+        ),
+    ] {
+        assert_eq!(
+            runtime.matches(before).count(),
+            1,
+            "exact host observation boundary {before}"
+        );
+        runtime = runtime.replacen(before, after, 1);
+    }
+    runtime.push_str("\nlet takeMints=0,takeMintBytes=0,takeCopies=0,takeCopyBytes=0,takeDrops=0,takeDropBytes=0;\nexport function takeObservation(){return Object.freeze([takeMints,takeMintBytes,takeCopies,takeCopyBytes,takeDrops,takeDropBytes])}\n");
+    fixture.write("program.mjs", runtime);
     let script=fixture.write("probe.mjs",r#"import {readFileSync} from 'node:fs';
-import {instantiate} from './program.mjs';
+import {instantiate,takeObservation} from './program.mjs';
 const api=await instantiate(Uint8Array.from(readFileSync('program.wasm')));
+function observe(id,mints,bytes,body){
+ const before=takeObservation();body();const after=takeObservation();
+ const expected=[mints,bytes,mints,bytes,mints,bytes];
+ for(let j=0;j<expected.length;j++)if(after[j]-before[j]!==expected[j])throw Error(id+' owner/copy census '+j+': '+(after[j]-before[j]));
+ if(after[0]!==after[4]||after[1]!==after[5])throw Error(id+' retained owner');
+}
 for(let i=0;i<3;i++){
- for(const [id,value] of [['unicode',3n],['empty',0n],['clone',3n]]){const r=api.call(id);if(r.kind!=='success'||r.value!==value)throw Error(JSON.stringify(r));}
- for(const [id,domain,code] of [['late','semaprax.arithmetic.v1',4],['pre','semaprax.contract.v1',1],['post','semaprax.contract.v1',2]]){const r=api.call(id);if(r.kind!=='failure'||r.domain!==domain||r.code!==code||'value'in r)throw Error(JSON.stringify(r));}
+ for(const [id,value,mints,bytes] of [['unicode',3n,1,3],['empty',0n,1,0],['clone',3n,2,6]])observe(id,mints,bytes,()=>{const r=api.call(id);if(r.kind!=='success'||r.value!==value)throw Error(JSON.stringify(r));});
+ for(const [id,domain,code] of [['late','semaprax.arithmetic.v1',4],['pre','semaprax.contract.v1',1],['post','semaprax.contract.v1',2]])observe(id,1,3,()=>{const r=api.call(id);if(r.kind!=='failure'||r.domain!==domain||r.code!==code||'value'in r)throw Error(JSON.stringify(r));});
 }
 "#);
     let output = Command::new("node")
