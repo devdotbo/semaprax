@@ -89,7 +89,13 @@ fn received(
     path: &str,
     sources: &dyn ReceivingSources,
 ) -> Result<Option<&'static str>, SelectedReplayRefusal> {
-    let held = module(build, path);
+    received_member(build, module(build, path), sources)
+}
+fn received_member(
+    build: &WorkspaceGraphBuild,
+    held: &WorkspaceResolvedModule,
+    sources: &dyn ReceivingSources,
+) -> Result<Option<&'static str>, SelectedReplayRefusal> {
     receive_paid(
         held,
         &build.hir.modules,
@@ -279,6 +285,14 @@ fn current_source_namespace_member_and_layout_attacks_refuse_with_one_paid_repor
             "{attack}"
         );
         let at = sources.iter().position(|s| s.path == PATH).unwrap();
+        // Record exact current membership before corrupting the path. A lookup
+        // by the stale authored path would panic before the paid receiver.
+        let member = build
+            .hir
+            .modules
+            .iter()
+            .position(|m| m.path == PATH)
+            .unwrap();
         match attack {
             // Authentic HIR paired with another generation's source bytes.
             0 => sources[at].source = drift.clone(),
@@ -325,7 +339,7 @@ fn current_source_namespace_member_and_layout_attacks_refuse_with_one_paid_repor
                 assert!(forged, "the authored loop is a typed lexical while");
             }
         }
-        let refusal = match received(&build, PATH, &sources) {
+        let refusal = match received_member(&build, &build.hir.modules[member], &sources) {
             Err(refusal) => refusal,
             Ok(schema) => panic!("attack {attack} selected {schema:?}"),
         };
@@ -458,14 +472,14 @@ fn closed_family_exclusions_keep_their_existing_route() {
         // An ordinary Call in a dead branch.
         (
             with_spare(
-                &BODY.replace("else {0};", "else {if false {probe(1)} else {0}};"),
+                &BODY.replace("else {0};", "else {if false {let unused=probe(1);0} else {0}};"),
                 probe,
             ),
             &[],
         ),
         // An owned String operation hidden in a dead branch.
         (
-            source(&BODY.replace("else {0};", "else {if false {string_len(\"dead\")} else {0}};")),
+            source(&BODY.replace("else {0};", "else {if false {let unused=string_len(\"dead\");0} else {0}};")),
             &[],
         ),
         // An unused nominal record declaration.
@@ -497,16 +511,36 @@ fn closed_family_exclusions_keep_their_existing_route() {
         ),
     ];
     for (index, (text, extra)) in cases.iter().enumerate() {
+        if index < 4 {
+            // Independently establish ordinary language/HIR admission before
+            // asking the retained builder to prove its narrower route. The
+            // dormant Call/String children are preserved, not constant-folded
+            // away to make the selected family accept them.
+            let ordinary_source = crate::check(text, PATH).unwrap();
+            let ordinary = hir::resolve(&ordinary_source).unwrap();
+            hir::validate(&ordinary).unwrap();
+            let main = ordinary
+                .functions
+                .iter()
+                .find(|f| f.id.as_str() == "calculator.app.main")
+                .unwrap();
+            assert!(main.cleanup_plan.lexical_control.is_some(), "case {index}");
+        }
+        // Dormant operations remain actual children, while every normal
+        // lexical guard completion retains its mandatory literal-zero tail.
         // The contract and import shapes may be refused by the ordinary
         // checker itself, which also keeps them outside every route; the
         // dead-branch Call, String, record and Vec controls must build.
         let built = try_build_with(&canonical(text), extra);
-        let Ok((build, sources)) = built else {
-            assert!(
-                index >= 4,
-                "case {index} must be an admitted ordinary module"
-            );
-            continue;
+        let (build, sources) = match built {
+            Ok(built) => built,
+            Err(errors) => {
+                assert!(
+                    index >= 4,
+                    "case {index} must be an admitted ordinary module: {errors:?}"
+                );
+                continue;
+            }
         };
         assert!(
             module(&build, PATH).scalar_lexical.is_none(),
