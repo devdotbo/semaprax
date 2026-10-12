@@ -21,8 +21,10 @@ No quota, forecast, cache schema or admission reduction accompanies borrowing.
 The saved owned collector keeps its original complete payload construction and
 capacity policy for independent output, diagnostic and allocation comparisons.
 
-The payload owner measures construction, actual lookup receiving and Drop,
-with an independent literal request delta for a generic call. The full-driver
+The payload owner measures payload clone construction, actual lookup receiving
+and Drop, with an independent literal array request delta for a generic call
+and a separately observed identity-clone baseline. Complete maps are built
+outside that observer; no equal map-node layout is assumed. The full-driver
 owner separately retains complete HIR equality and actual replay through Drop;
 it does not assert that every allocation in that scope has a payer. Existing
 selected exact/one-short, duplicate and late-depth owners remain executable
