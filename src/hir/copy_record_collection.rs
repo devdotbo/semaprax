@@ -35,6 +35,45 @@ pub(crate) fn fields<'a>(
     Some(fields)
 }
 
+pub(crate) fn fields_with_work<'a>(
+    index: &'a dyn super::renewal_probes::Index,
+    ty: &ResolvedType,
+    work: &mut super::renewal_probes::Work<'_>,
+) -> Result<Option<&'a [ResolvedFieldDeclaration]>, ()> {
+    let ResolvedType::Nominal {
+        declaration,
+        arguments,
+    } = ty
+    else {
+        return Ok(None);
+    };
+    let Some(item) = index.declaration(declaration, work)? else {
+        return Ok(None);
+    };
+    if !arguments.is_empty()
+        || item.kind != DeclarationKind::Record
+        || item.identity_origin != IdentityOrigin::Explicit
+        || !index
+            .parameters(declaration, work)?
+            .is_some_and(|parameters| parameters.is_empty())
+    {
+        return Ok(None);
+    }
+    let Some(fields) = index.fields(declaration, work)? else {
+        return Ok(None);
+    };
+    if !(1..=MAX_FIELDS).contains(&fields.len()) {
+        return Ok(None);
+    }
+    for field in fields {
+        super::renewal_probes::units(work, 1)?;
+        if !crate::vec_ops::resolved_element_is_admitted(&field.ty) {
+            return Ok(None);
+        }
+    }
+    Ok(Some(fields.as_slice()))
+}
+
 pub(crate) fn admitted(index: &DeclarationIndex, ty: &ResolvedType) -> bool {
     fields(index, ty).is_some()
 }

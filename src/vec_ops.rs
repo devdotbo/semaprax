@@ -11,6 +11,8 @@ mod sort;
 pub(crate) mod sort_keys;
 pub(crate) mod string_slot;
 mod wrappers;
+mod by_id_metered;
+pub(crate) use by_id_metered::by_id_with_work;
 pub(crate) use sort::{program_uses_sort, resolved_program_uses_sort};
 pub(crate) use wrappers::*;
 #[cfg(test)]
@@ -304,14 +306,14 @@ impl VecOp {
             (Self::WithCapacity, 0) => *ty == ResolvedType::Usize,
             (Self::Push, 0)
             | (Self::Len | Self::Capacity | Self::Get | Self::CloneAt | Self::StrAt, 0) => {
-                *ty == resolved_vec(element.clone())
+                resolved_vec_matches(ty, element)
             }
             (Self::Push, 1) => ty == element,
             (Self::Get | Self::CloneAt | Self::StrAt, 1) => *ty == ResolvedType::Usize,
             (Self::ReserveExact | Self::ReserveOwned, 0)
             | (Self::Set | Self::Replace, 0)
             | (Self::Clear | Self::Sort | Self::SortOwned | Self::SortBy, 0) => {
-                *ty == resolved_vec(element.clone())
+                resolved_vec_matches(ty, element)
             }
             (Self::ReserveExact | Self::ReserveOwned, 1) | (Self::Set | Self::Replace, 1) => {
                 *ty == ResolvedType::Usize
@@ -320,6 +322,13 @@ impl VecOp {
             _ => false,
         }
     }
+}
+
+/// Exact equality to resolved_vec without constructing its temporary owners.
+pub(crate) fn resolved_vec_matches(ty: &ResolvedType, element: &ResolvedType) -> bool {
+    matches!(ty, ResolvedType::Nominal { declaration, arguments }
+        if declaration.as_str() == crate::prelude::VEC_ID
+            && arguments.as_slice() == std::slice::from_ref(element))
 }
 
 pub(crate) fn by_name(name: &str) -> Option<VecOp> {

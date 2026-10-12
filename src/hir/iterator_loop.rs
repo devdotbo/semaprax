@@ -12,6 +12,13 @@ pub(crate) struct IteratorLoop<'a> {
     pub(crate) authored_body: &'a ResolvedExpr,
     pub(crate) owned_item: Option<&'a ResolvedBinding>,
 }
+// The former owned expected type contained exactly this compiler ID and one
+// cloned argument. Borrowing those operands preserves complete type equality.
+fn iter_matches(ty: &ResolvedType, element: &ResolvedType) -> bool {
+    matches!(ty, ResolvedType::Nominal { declaration, arguments }
+        if declaration.as_str() == crate::iterator_ops::ITER_ID
+            && arguments.as_slice() == std::slice::from_ref(element))
+}
 fn zero(value: &ResolvedExpr) -> bool {
     value.ownership == OwnershipMode::Value
         && matches!(
@@ -64,7 +71,7 @@ fn replacement<'a>(
     let element = step_element(&value.ty, owner)?;
     if fields[0].binding.ty != *element
         || fields[0].binding.ownership != crate::iterator_ops::item_ownership(element, false)
-        || fields[1].binding.ty != crate::iterator_ops::resolved_iter(element.clone())
+        || !iter_matches(&fields[1].binding.ty, element)
         || fields[1].binding.ownership != OwnershipMode::Own
     {
         return None;
@@ -93,7 +100,7 @@ fn replacement<'a>(
         return None;
     }
     if !matches!(&tail.kind, ResolvedExprKind::Call { callee, type_arguments, instance: None, args }
-        if callee.as_str() == crate::iterator_ops::NEXT_ID && type_arguments.as_slice() == [element.clone()]
+        if callee.as_str() == crate::iterator_ops::NEXT_ID && type_arguments.as_slice() == std::slice::from_ref(element)
         && matches!(args.as_slice(), [argument] if place(argument, &fields[1].binding.id) && argument.ty == fields[1].binding.ty && argument.ownership == OwnershipMode::Own))
         || tail.ty != value.ty
         || tail.ownership != OwnershipMode::Own
@@ -156,7 +163,7 @@ fn recognize_scoped<'a>(
     };
     if fields[0].binding.ty != *element
         || fields[0].binding.ownership != crate::iterator_ops::item_ownership(element, true)
-        || fields[1].binding.ty != crate::iterator_ops::resolved_iter(element.clone())
+        || !iter_matches(&fields[1].binding.ty, element)
         || fields[1].binding.ownership != OwnershipMode::Borrow
     {
         return None;

@@ -19,10 +19,7 @@ pub(super) fn validate_path_states(
     // never acquire the one-leaf renewal authority of another profile.
     if let Some(auth) = lexical {
         for assignment in auth.wrapper_cancels.values() {
-            if crate::cleanup_plan::renewal_profile::binding_with_index(
-                program, function, assignment, helpers,
-            )
-            .is_some()
+            if ordinary_renewals::lookup(program, function, assignment, helpers, budget)?.is_some()
             {
                 return Err(replay_error(
                     function,

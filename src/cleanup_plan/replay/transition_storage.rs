@@ -87,7 +87,7 @@ pub(super) fn execute(
             source,
             destination,
         } => {
-            renewal::reject_unmarked_finish(program, function, at, destination, helpers)?;
+            renewal::reject_unmarked_finish(program, function, at, destination, helpers, budget)?;
             let append = strings::reserve_selected_append(
                 program,
                 function,

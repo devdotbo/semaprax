@@ -13,6 +13,8 @@ pub(super) struct SkeletonWork<'a, 'b> {
     pub(super) active_copy_region: Option<ExpressionId>,
     dag_scratch: Option<std::rc::Rc<std::cell::RefCell<dag_storage::DestructionScratch>>>,
     held_renewals: Option<&'a crate::cleanup_plan::renewal_profile::RenewalBindings<'a>>,
+    ordinary_index: Option<&'a crate::loop_calls::byte_writer::ModuleIndex<'a>>,
+    ordinary_program: Option<&'a dyn crate::cleanup::ReplayContext>,
     /// Authored same-owner append and direct literal-format String moves.
     pub(super) string_owner_moves: BTreeSet<ExpressionId>,
     pub(super) string_condition_reads: BTreeSet<ExpressionId>,
@@ -41,9 +43,13 @@ impl<'a, 'b> SkeletonWork<'a, 'b> {
             active_copy_region: None,
             dag_scratch: None,
             held_renewals: None,
-            renewal_bindings: crate::cleanup_plan::renewal_profile::bindings_with_index(
-                program, function, index,
-            ),
+            ordinary_index: index,
+            ordinary_program: Some(program),
+            renewal_bindings: if index.is_some() {
+                crate::cleanup_plan::renewal_profile::RenewalBindings::empty()
+            } else {
+                crate::cleanup_plan::renewal_profile::bindings_with_index(program, function, None)
+            },
             string_owner_moves: crate::literal_format::moving_string_operands(function),
             string_condition_reads: crate::string_ops::conditions::function_reads(function),
             owner: if super::lexical_cert::requires_lexical(function) {
@@ -82,6 +88,8 @@ impl<'a, 'b> SkeletonWork<'a, 'b> {
             active_copy_region: None,
             dag_scratch: None,
             held_renewals: Some(held_renewals),
+            ordinary_index: None,
+            ordinary_program: None,
             string_owner_moves,
             string_condition_reads,
             owner: Some(owner),
@@ -89,13 +97,17 @@ impl<'a, 'b> SkeletonWork<'a, 'b> {
     }
 
     pub(super) fn renewal_binding(
-        &self,
-        at: &crate::hir::ExpressionId,
-    ) -> Option<&'a crate::hir::ResolvedBinding> {
-        match self.held_renewals {
-            Some(sites) => sites.get(at),
-            None => self.renewal_bindings.get(at),
+        &mut self,
+        at: &ExpressionId,
+    ) -> Result<Option<&'a crate::hir::ResolvedBinding>, Diagnostic> {
+        if let Some(sites) = self.held_renewals {
+            return Ok(sites.get(at));
         }
+        if let (Some(index), Some(program)) = (self.ordinary_index, self.ordinary_program) {
+            return ordinary_renewals::lookup(program, self.function, at, Some(index), self.budget)
+                .map(|found| found.map(|(binding, _)| binding));
+        }
+        Ok(self.renewal_bindings.get(at))
     }
 }
 

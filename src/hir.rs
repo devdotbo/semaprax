@@ -790,6 +790,7 @@ pub(crate) mod iterator_loop;
 pub(crate) mod owned_leaf_collection;
 pub(crate) mod owned_record_collection;
 pub(crate) mod vec_loop_renewal;
+pub(crate) mod renewal_probes;
 
 pub(crate) mod generic_mapping;
 

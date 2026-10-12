@@ -67,12 +67,7 @@ pub(super) fn build_with_index<'a>(
             "construction helper index belongs to another typed program",
         ));
     }
-    build_with_helpers(
-        program,
-        function,
-        execution,
-        (!index.is_empty()).then_some(index),
-    )
+    build_with_helpers(program, function, execution, Some(index))
 }
 fn build_with_helpers<'a>(
     program: &'a ResolvedProgram,
@@ -114,7 +109,11 @@ fn build_with_helpers<'a>(
             },
         }));
     }
-    builder.build()
+    let plan = builder.build()?;
+    if let Some(index) = index {
+        index.ordinary_complete()?;
+    }
+    Ok(plan)
 }
 
 #[derive(Clone)]

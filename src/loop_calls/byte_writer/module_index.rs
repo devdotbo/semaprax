@@ -4,12 +4,17 @@ use super::*;
 use crate::diagnostic::Diagnostic;
 use crate::hir::ResolvedProgram;
 mod directory;
+mod ordinary;
 mod textual;
 use directory::Site;
 type Sites<'a> = (&'a ResolvedFunction, HelperBindings<'a>);
 #[derive(Debug, Default)]
 pub(crate) struct ModuleIndex<'a> {
     program: Option<&'a ResolvedProgram>,
+    ordinary: Vec<crate::cleanup_plan::renewal_profile::ordinary::Directory<'a>>,
+    ordinary_positions: Vec<(usize, usize)>,
+    lookup_work: std::cell::Cell<usize>,
+    ordinary_failed: std::cell::Cell<bool>,
     sites: Vec<Sites<'a>>,
     // Discovery directories never replace exact borrowed identity checks.
     functions: Vec<usize>,
@@ -22,10 +27,11 @@ pub(crate) struct ModuleIndex<'a> {
     query_probes: std::cell::Cell<usize>,
 }
 impl<'a> ModuleIndex<'a> {
-    pub(crate) fn new(program: &'a ResolvedProgram) -> Result<Self, Diagnostic> {
+    fn new_helpers(program: &'a ResolvedProgram) -> Result<Self, Diagnostic> {
         if !resolved::potential(program) {
             return Ok(Self {
                 program: Some(program),
+                lookup_work: std::cell::Cell::new(WORK),
                 ..Self::default()
             });
         }
@@ -158,6 +164,10 @@ impl<'a> ModuleIndex<'a> {
         )?;
         Ok(Self {
             program: Some(program),
+            ordinary: Vec::new(),
+            ordinary_positions: Vec::new(),
+            lookup_work: std::cell::Cell::new(lookup_work),
+            ordinary_failed: std::cell::Cell::new(false),
             sites,
             functions,
             expressions,
@@ -256,7 +266,16 @@ impl<'a> ModuleIndex<'a> {
     /// every retained Vec capacity, including empty function-site carriers.
     #[cfg(test)]
     pub(crate) fn owned_capacity_bytes(&self) -> usize {
-        self.functions.capacity() * std::mem::size_of::<usize>()
+        self.ordinary_positions.capacity() * std::mem::size_of::<(usize, usize)>()
+            + self.ordinary.capacity()
+                * std::mem::size_of::<crate::cleanup_plan::renewal_profile::ordinary::Directory<'_>>(
+                )
+            + self
+                .ordinary
+                .iter()
+                .map(|directory| directory.backing_bytes())
+                .sum::<usize>()
+            + self.functions.capacity() * std::mem::size_of::<usize>()
             + self.expressions.capacity() * std::mem::size_of::<Site<'_>>()
             + self.targets.capacity() * std::mem::size_of::<&ResolvedFunction>()
             + self.sites.capacity() * std::mem::size_of::<Sites<'a>>()

@@ -1,4 +1,5 @@
 //! Renewal site identity is derived from HIR, independently of attached transitions.
+pub(crate) mod ordinary;
 mod selected;
 #[cfg(test)]
 use crate::hir::ResolvedProgram;

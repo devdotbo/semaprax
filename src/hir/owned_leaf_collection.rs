@@ -118,6 +118,127 @@ pub(crate) fn layout<'a>(
     })
 }
 
+pub(crate) fn layout_with_work<'a>(
+    index: &'a dyn super::renewal_probes::Index,
+    element: &ResolvedType,
+    work: &mut super::renewal_probes::Work<'_>,
+) -> Result<Option<ElementLayout<'a>>, ()> {
+    if *element == ResolvedType::String {
+        return Ok(Some(ElementLayout {
+            fields: None,
+            owned_fields: [
+                Some(OwnedField {
+                    index: 0,
+                    kind: OwnedLeafKind::String,
+                }),
+                None,
+            ],
+            owned_count: 1,
+            scalar_count: 0,
+        }));
+    }
+    let ResolvedType::Nominal {
+        declaration,
+        arguments,
+    } = element
+    else {
+        return Ok(None);
+    };
+    let Some(declared) = index.declaration(declaration, work)? else {
+        return Ok(None);
+    };
+    if !arguments.is_empty()
+        || declared.kind != DeclarationKind::Record
+        || declared.identity_origin != IdentityOrigin::Explicit
+        || !index
+            .parameters(declaration, work)?
+            .is_some_and(|parameters| parameters.is_empty())
+    {
+        return Ok(None);
+    }
+    let Some(fields) = index.fields(declaration, work)? else {
+        return Ok(None);
+    };
+    if !(1..=MAX_FIELDS).contains(&fields.len()) {
+        return Ok(None);
+    }
+    let mut owned_fields = [None; MAX_OWNED_FIELDS];
+    let mut owned_count = 0;
+    let mut scalar_count = 0;
+    for (position, field) in fields.iter().enumerate() {
+        super::renewal_probes::units(work, 3)?;
+        let Some(declared_field) = index.declaration(&field.id, work)? else {
+            return Ok(None);
+        };
+        if declared_field.kind != DeclarationKind::Field
+            || declared_field.identity_origin != IdentityOrigin::Explicit
+        {
+            return Ok(None);
+        }
+        let kind = match field.ty {
+            ResolvedType::String => Some(OwnedLeafKind::String),
+            ResolvedType::Bytes => Some(OwnedLeafKind::Bytes),
+            _ if crate::vec_ops::resolved_element_is_admitted(&field.ty) => {
+                scalar_count += 1;
+                None
+            }
+            _ => return Ok(None),
+        };
+        if let Some(kind) = kind {
+            let Some(slot) = owned_fields.get_mut(owned_count) else {
+                return Ok(None);
+            };
+            *slot = Some(OwnedField {
+                index: position,
+                kind,
+            });
+            owned_count += 1;
+        }
+    }
+    Ok((owned_count != 0).then_some(ElementLayout {
+        fields: Some(fields),
+        owned_fields,
+        owned_count,
+        scalar_count,
+    }))
+}
+
+/// Same short-circuit family order as vec_operation_admitted/runtime_element.
+/// Current-key probes belong to the caller's existing phase work account.
+pub(crate) fn operation_with_work(
+    index: &dyn super::renewal_probes::Index,
+    op: crate::vec_ops::VecOp,
+    element: &ResolvedType,
+    work: &mut super::renewal_probes::Work<'_>,
+) -> Result<bool, ()> {
+    super::renewal_probes::units(work, 1)?;
+    if op == crate::vec_ops::VecOp::StrAt {
+        return Ok(*element == ResolvedType::String);
+    }
+    if crate::vec_ops::resolved_operation_element_is_admitted(op, element) {
+        return Ok(true);
+    }
+    if !op.owned_leaf_only()
+        && super::copy_record_collection::fields_with_work(index, element, work)?.is_some()
+    {
+        return Ok(true);
+    }
+    if super::owned_record_collection::admits_vec_operation(op)
+        && super::owned_record_collection::element_with_work(index, element, work)?
+    {
+        return Ok(true);
+    }
+    Ok(op.admits_owned_leaf() && layout_with_work(index, element, work)?.is_some())
+}
+pub(crate) fn runtime_with_work(
+    index: &dyn super::renewal_probes::Index,
+    element: &ResolvedType,
+    work: &mut super::renewal_probes::Work<'_>,
+) -> Result<bool, ()> {
+    Ok(layout_with_work(index, element, work)?.is_some()
+        || super::owned_record_collection::element_with_work(index, element, work)?)
+}
+
 pub(crate) fn is_vec(index: &DeclarationIndex, ty: &ResolvedType) -> bool {
     matches!(ty, ResolvedType::Nominal { declaration, arguments }
         if declaration.as_str() == crate::prelude::VEC_ID
@@ -363,3 +484,7 @@ pub(crate) fn projected_leaf_admitted(
 #[cfg(test)]
 #[path = "owned_leaf_collection/native_identity_tests.rs"]
 mod native_identity_tests;
+
+#[cfg(test)]
+#[path = "owned_leaf_collection/renewal_probes_tests.rs"]
+mod renewal_probes_tests;

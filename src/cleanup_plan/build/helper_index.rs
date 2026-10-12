@@ -40,7 +40,7 @@ impl<'a> PlanBuilder<'a> {
         function: &'a ResolvedFunction,
     ) -> Result<Self, Diagnostic> {
         let sites = crate::loop_calls::byte_writer::checked_bindings(program, function)?;
-        Self::with_helper_sites(program, function, HelperSites::Owned(sites))
+        Self::with_helper_sites(program, function, HelperSites::Owned(sites), None)
     }
     pub(super) fn with_index(
         program: &'a ResolvedProgram,
@@ -52,23 +52,34 @@ impl<'a> PlanBuilder<'a> {
                 "construction helper index belongs to another typed program",
             ));
         }
-        let sites = index.function_sites(function).ok_or_else(|| {
-            plan_error("construction helper index has no exact function authority")
-        })?;
-        Self::with_helper_sites(
-            program,
-            function,
-            HelperSites::Indexed {
+        let sites = match index.function_sites(function) {
+            Some(sites) => HelperSites::Indexed {
                 sites,
                 #[cfg(test)]
                 index,
             },
-        )
+            None if index.is_empty() => HelperSites::Owned(Default::default()),
+            None => {
+                return Err(plan_error(
+                    "construction helper index has no exact function authority",
+                ))
+            }
+        };
+        let mut builder = Self::with_helper_sites(program, function, sites, Some(index))?;
+        builder.ordinary_index = Some(index);
+        index.ordinary_complete()?;
+        Ok(builder)
     }
+
     pub(super) fn renewal_binding(&self, at: &ExpressionId) -> Option<&'a ResolvedBinding> {
         // Canonical transition anchors own copies of source identities. Membership
         // is derived once from the exact held function, preserving legacy key and
         // profile priority, never from attached cleanup transitions.
+        if let Some(index) = self.ordinary_index {
+            return index
+                .ordinary_at(self.program, self.function, at)
+                .map(|(binding, _)| binding);
+        }
         self.byte_helpers
             .get(at)
             .or_else(|| crate::string_ops::replacement::binding(self.function, at))
@@ -80,6 +91,7 @@ impl<'a> PlanBuilder<'a> {
         program: &'a ResolvedProgram,
         function: &'a ResolvedFunction,
         byte_helpers: helper_index::HelperSites<'a>,
+        ordinary: Option<&'a ModuleIndex<'a>>,
     ) -> Result<Self, Diagnostic> {
         let has_byte_helpers = !byte_helpers.is_empty();
         let mut storage_to_slot = BTreeMap::new();
@@ -152,6 +164,7 @@ impl<'a> PlanBuilder<'a> {
             program,
             function,
             byte_helpers,
+            ordinary_index: None,
             slots,
             storage_to_slot,
             inventory_storage,
@@ -185,11 +198,38 @@ impl<'a> PlanBuilder<'a> {
             lexical: None,
             schema: if has_byte_helpers {
                 crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V19
-            } else if crate::byte_ops::requires_same_owner_set(function) {
+            } else if ordinary.map_or_else(
+                || crate::byte_ops::requires_same_owner_set(function),
+                |index| {
+                    index.ordinary_has(
+                        program,
+                        function,
+                        crate::cleanup_plan::renewal_profile::ordinary::Family::ByteSet,
+                    )
+                },
+            ) {
                 crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V17
-            } else if crate::string_ops::replacement::requires(function) {
+            } else if ordinary.map_or_else(
+                || crate::string_ops::replacement::requires(function),
+                |index| {
+                    index.ordinary_has(
+                        program,
+                        function,
+                        crate::cleanup_plan::renewal_profile::ordinary::Family::String,
+                    )
+                },
+            ) {
                 crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V16
-            } else if crate::hir::vec_loop_renewal::requires_in(program, function) {
+            } else if ordinary.map_or_else(
+                || crate::hir::vec_loop_renewal::requires_in(program, function),
+                |index| {
+                    index.ordinary_has(
+                        program,
+                        function,
+                        crate::cleanup_plan::renewal_profile::ordinary::Family::Vec,
+                    )
+                },
+            ) {
                 crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V15
             } else if crate::iterator_ops::function_uses_owned_iterator(function)
                 || crate::iterator_ops::function_uses_record_iterator_in(
@@ -198,9 +238,21 @@ impl<'a> PlanBuilder<'a> {
                 )
             {
                 crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V13
-            } else if crate::hir::iterator_loop::function_requires_renewal(function)
-                || crate::hir::iterator_loop::function_requires_record_renewal(program, function)
-            {
+            } else if ordinary.map_or_else(
+                || {
+                    crate::hir::iterator_loop::function_requires_renewal(function)
+                        || crate::hir::iterator_loop::function_requires_record_renewal(
+                            program, function,
+                        )
+                },
+                |index| {
+                    index.ordinary_has(
+                        program,
+                        function,
+                        crate::cleanup_plan::renewal_profile::ordinary::Family::Iterator,
+                    )
+                },
+            ) {
                 crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V12
             } else if crate::hir::iterator_loop::function_contains(function) {
                 crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V11

@@ -60,7 +60,7 @@ impl<'a> HelperBindings<'a> {
     pub(crate) fn owned_capacity_bytes(&self) -> usize {
         self.entries.capacity() * std::mem::size_of::<Entry<'_>>()
     }
-    pub(super) fn borrowed_entries(&self) -> impl Iterator<Item = Entry<'a>> + '_ {
+    pub(crate) fn borrowed_entries(&self) -> impl Iterator<Item = Entry<'a>> + '_ {
         self.entries.iter().copied()
     }
     pub(crate) fn len(&self) -> usize {

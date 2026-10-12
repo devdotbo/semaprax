@@ -10,10 +10,18 @@ pub(super) fn validate_binding(
     at: &ExpressionId,
     place: &CleanupPlace,
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
+    budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
     if let Some(sites) = program.primitive_renewals(function) {
         return validate_binding_selected(function, at, place, sites);
     }
+    use crate::cleanup_plan::renewal_profile::ordinary::Family;
+    let found = ordinary_renewals::lookup(program, function, at, helpers, budget)?;
+    let families = found.map_or(0, |(_, families)| families);
+    let place_matches = match found {
+        Some((binding, _)) => ordinary_renewals::whole(function, place, binding, budget)?,
+        None => false,
+    };
     if !matches!(
         function.cleanup_plan.schema,
         CLEANUP_PLAN_SCHEMA_V12
@@ -24,7 +32,7 @@ pub(super) fn validate_binding(
             | CLEANUP_PLAN_SCHEMA_V17
             | CLEANUP_PLAN_SCHEMA_V18
             | CLEANUP_PLAN_SCHEMA_V19
-    ) || (crate::hir::vec_loop_renewal::binding_in(program, function, at).is_some()
+    ) || (ordinary_renewals::has(families, Family::Vec)
         && !matches!(
             function.cleanup_plan.schema,
             CLEANUP_PLAN_SCHEMA_V15
@@ -33,7 +41,7 @@ pub(super) fn validate_binding(
                 | CLEANUP_PLAN_SCHEMA_V18
                 | CLEANUP_PLAN_SCHEMA_V19
         ))
-        || (crate::string_ops::replacement::binding(function, at).is_some()
+        || (ordinary_renewals::has(families, Family::String)
             && !matches!(
                 function.cleanup_plan.schema,
                 CLEANUP_PLAN_SCHEMA_V16
@@ -41,20 +49,14 @@ pub(super) fn validate_binding(
                     | CLEANUP_PLAN_SCHEMA_V18
                     | CLEANUP_PLAN_SCHEMA_V19
             ))
-        || (crate::byte_ops::same_owner_set_binding(function, at).is_some()
+        || (ordinary_renewals::has(families, Family::ByteSet)
             && !matches!(
                 function.cleanup_plan.schema,
                 CLEANUP_PLAN_SCHEMA_V17 | CLEANUP_PLAN_SCHEMA_V18 | CLEANUP_PLAN_SCHEMA_V19
             ))
-        || (crate::cleanup_plan::renewal_profile::helper_binding_with_index(
-            program, function, at, helpers,
-        )
-        .is_some()
+        || (ordinary_renewals::has(families, Family::Helper)
             && function.cleanup_plan.schema != CLEANUP_PLAN_SCHEMA_V19)
-        || !crate::cleanup_plan::renewal_profile::binding_with_index(program, function, at, helpers)
-            .is_some_and(|binding| {
-                *place == CleanupPlace::whole(StorageId::Value(binding.id.clone()))
-            })
+        || !place_matches
     {
         return Err(replay_error(
             function,
@@ -92,12 +94,14 @@ pub(super) fn reject_unmarked_finish(
     at: &ExpressionId,
     destination: &CleanupPlace,
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
+    budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
-    if crate::cleanup_plan::renewal_profile::binding_with_index(program, function, at, helpers)
-        .is_some_and(|binding| {
-            *destination == CleanupPlace::whole(StorageId::Value(binding.id.clone()))
-        })
-    {
+    let found = ordinary_renewals::lookup(program, function, at, helpers, budget)?;
+    let matches = match found {
+        Some((binding, _)) => ordinary_renewals::whole(function, destination, binding, budget)?,
+        None => false,
+    };
+    if matches {
         return Err(replay_error(
             function,
             "authenticated renewal uses an ordinary transfer",
@@ -117,7 +121,7 @@ pub(super) fn reserve(
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
     budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
-    validate_binding(program, function, at, binding, helpers)?;
+    validate_binding(program, function, at, binding, helpers, budget)?;
     let flags = path_join::storage::validate_place(function, binding, storage, leaves, budget)?;
     if flags.len() != 1
         || !state.live_order.contains(&flags[0])
@@ -172,7 +176,7 @@ pub(super) fn renew(
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
     budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
-    validate_binding(program, function, at, destination, helpers)?;
+    validate_binding(program, function, at, destination, helpers, budget)?;
     let history = state
         .renewals
         .remove(at)
@@ -234,7 +238,7 @@ pub(super) fn prepend_reservation(
     work: &mut SkeletonWork<'_, '_>,
 ) -> Result<(), Diagnostic> {
     let binding = work
-        .renewal_binding(&expression.id)
+        .renewal_binding(&expression.id)?
         .ok_or_else(|| replay_error(function, "renewal HIR binding disappeared"))?;
     for path in paths {
         let at = work.clone_owned(&expression.id, "renewal expression clone")?;

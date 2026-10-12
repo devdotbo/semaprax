@@ -6,34 +6,51 @@ fn program(source: &str) -> ResolvedProgram {
 }
 #[test]
 fn construction_index_reuses_exact_sites_and_preserves_independent_plan_bytes() {
-    let program = program(SOURCE);
-    let index = ModuleIndex::new(&program).unwrap();
-    let actual = build_program_plans(&program).unwrap();
-    for (function, plan) in program.functions.iter().zip(&actual) {
-        let execution = crate::hir::FunctionExecutionId::Monomorphic(function.id.clone());
-        let direct =
-            lexical_control::build_plan_for_execution(&program, function, &execution).unwrap();
-        assert_eq!(plan, &direct);
-        assert_eq!(
-            crate::cache_codec::encode(plan).unwrap(),
-            crate::cache_codec::encode(&direct).unwrap()
-        );
-        let builder = PlanBuilder::with_index(&program, function, &index).unwrap();
-        let independently =
-            crate::loop_calls::byte_writer::checked_bindings(&program, function).unwrap();
-        for (at, binding) in independently {
-            let (found, overflowed, used) =
-                crate::bounded_output::with_limit_usage(0, || builder.renewal_binding(at));
-            assert_eq!(found, Some(binding));
-            assert!(!overflowed);
-            assert_eq!(used, 0);
+    for source in [
+        SOURCE,
+        r#"module ordinary_phase;
+@id("main") fn main()->i64 {let mut values=vec_with_capacity<i64>(2usize);let mut bytes=bytes_zeroed(2usize);let mut i=0;
+ while i<2 {values=vec_push<i64>(values,i);bytes=bytes_set(bytes,0usize,65u8);i=i+1;0} 0}
+"#,
+    ] {
+        let program = program(source);
+
+        let index = ModuleIndex::new(&program).unwrap();
+        let actual = build_program_plans(&program).unwrap();
+        for (function, plan) in program.functions.iter().zip(&actual) {
+            let execution = crate::hir::FunctionExecutionId::Monomorphic(function.id.clone());
+            let direct =
+                lexical_control::build_plan_for_execution(&program, function, &execution).unwrap();
+            assert_eq!(plan, &direct);
+            assert_eq!(
+                crate::cache_codec::encode(plan).unwrap(),
+                crate::cache_codec::encode(&direct).unwrap()
+            );
+            let builder = PlanBuilder::with_index(&program, function, &index).unwrap();
+            let independently =
+                crate::loop_calls::byte_writer::checked_bindings(&program, function).unwrap();
+            for (at, binding) in independently {
+                let (found, overflowed, used) =
+                    crate::bounded_output::with_limit_usage(0, || builder.renewal_binding(at));
+                assert_eq!(found, Some(binding));
+                assert!(!overflowed);
+                assert_eq!(used, 0);
+            }
+            // Construction keeps this program's own backing, not a cloned function.
+            if source == SOURCE {
+                assert!(matches!(builder.byte_helpers, HelperSites::Indexed { .. }));
+            } else {
+                assert!(builder.ordinary_index.is_some());
+                assert!(builder.byte_helpers.is_empty());
+            }
         }
-        // Construction keeps this program's own backing, not a cloned function.
-        assert!(matches!(builder.byte_helpers, HelperSites::Indexed { .. }));
+        crate::hir::validate(&program).unwrap();
+        crate::cleanup_plan::validate_program(&program).unwrap();
+        crate::cleanup_plan::replay::phase_measurement::replay(&program, false).unwrap();
+        crate::cleanup_plan::replay::phase_measurement::replay(&program, true).unwrap();
     }
-    crate::hir::validate(&program).unwrap();
-    crate::cleanup_plan::validate_program(&program).unwrap();
 }
+
 #[test]
 fn construction_exact_one_short_and_zero_budget_leave_attached_plans_unchanged() {
     let mut program = program(SOURCE);

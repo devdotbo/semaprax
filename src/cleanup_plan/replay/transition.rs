@@ -74,7 +74,7 @@ pub(super) fn execute_replay_transition(
             source,
             destination,
         } => {
-            renewal::reject_unmarked_finish(program, function, at, destination, helpers)?;
+            renewal::reject_unmarked_finish(program, function, at, destination, helpers, budget)?;
             let append = strings::reserve_append(function, at, source, destination, state)?;
             replay_transfer(
                 function,

@@ -113,6 +113,7 @@ mod lexical_skeleton;
 #[cfg(test)]
 mod mixed_result_tests;
 mod nested_shape;
+mod ordinary_renewals;
 mod path_join;
 mod renewal;
 mod string_replacement;
@@ -461,8 +462,8 @@ fn validate_structure(
 }
 
 pub(super) fn validate_program(program: &ResolvedProgram) -> Result<(), Diagnostic> {
-    let helpers = crate::loop_calls::byte_writer::ModuleIndex::new(program)?;
     let mut budget = ReplayBudget::new();
+    let helpers = phase_measurement::ordinary_index(program, &mut budget)?;
     reserve_program_skeleton_work(
         program,
         program.functions().iter().chain(
@@ -3813,7 +3814,7 @@ fn expression_skeleton(
                     let previous = work.active_copy_region.replace(identity);
                     push_frame!(frames, Frame::FinishCopyRegion { previous });
                 }
-                if work.renewal_binding(&expression.id).is_some() {
+                if work.renewal_binding(&expression.id)?.is_some() {
                     push_frame!(frames, Frame::RenewalPrefix(expression));
                 }
                 if strings::owns_clone(expression)
