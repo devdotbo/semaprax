@@ -165,3 +165,27 @@ verification, invariant cloning, SourceIndex proof storage, index maps/names/typ
 payloads, resolver continuations and legacy semantic diagnostics retain their
 existing separate owners or open gaps. It establishes neither whole-resolver
 funding nor an application fit claim.
+
+### Borrowed canonical type-fact cache queries
+
+Flag-only queries preserve the current cache's complete byte-key ordering and
+arbitrary cached facts. A private heterogeneous ordered query streams the exact
+existing key bytes without copying text. Zero-argument nominal keys borrow the
+current identity directly. Compound keys prepare a borrowed fixed-stack plan
+with at most 64 nodes/depth, 65,536 encoded bytes and 256 census visits; overflow
+uses the unchanged owning `identity_key` receiver. These optimization bounds do
+not restrict admitted types or substitute for current-HIR validation.
+
+The plan holds 64 optional borrowed nodes; each comparison has 64 optional cursor
+frames and a platform-bounded decimal buffer. There is no recursive Rust walk,
+heap directory or whole-cache scan. Comparisons restart their byte cursor, so
+CPU cost is proportional to compared key bytes times ordered-cache comparisons;
+the old route constructed one owning key first. Both representations retain
+exact Unicode/NUL bytes, decimal lengths and current cache-first precedence.
+
+The saved owning builder remains the byte/verdict oracle with adequate backing.
+Its compound `CappedString` can truncate after a physical refusal; that truncated
+key is not a semantic authority to preserve in the allocation-free route.
+Existing caller refusal stays sticky and must still prevent publication. This
+query change neither pays the remaining compiler storage nor changes forecasts,
+quotas, wire keys, fresh identity construction or validator admission.

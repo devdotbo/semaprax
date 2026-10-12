@@ -5,6 +5,7 @@ use super::super::{DeclarationId, TypeFacts};
 use std::borrow::Borrow;
 use std::cmp::Ordering;
 use std::collections::BTreeMap;
+mod compound;
 
 trait Key {
     fn bytes(&self) -> Bytes<'_>;
@@ -12,6 +13,7 @@ trait Key {
 enum Bytes<'a> {
     Text(std::iter::Copied<std::slice::Iter<'a, u8>>),
     Nominal(NominalBytes<'a>),
+    Compound(compound::Bytes<'a>),
 }
 impl Iterator for Bytes<'_> {
     type Item = u8;
@@ -19,6 +21,7 @@ impl Iterator for Bytes<'_> {
         match self {
             Self::Text(bytes) => bytes.next(),
             Self::Nominal(bytes) => bytes.next(),
+            Self::Compound(bytes) => bytes.next(),
         }
     }
 }
@@ -106,6 +109,20 @@ pub(super) fn get<'a>(
 ) -> Option<&'a TypeFacts> {
     let query = Nominal(identity);
     facts.get::<dyn Key + '_>(&query)
+}
+
+struct Compound<'a>(compound::Plan<'a>);
+impl Key for Compound<'_> {
+    fn bytes(&self) -> Bytes<'_> {
+        Bytes::Compound(self.0.bytes())
+    }
+}
+pub(super) fn compound_get<'a>(
+    facts: &'a BTreeMap<String, TypeFacts>,
+    ty: &super::super::ResolvedType,
+) -> Option<Option<&'a TypeFacts>> {
+    let query = Compound(compound::Plan::new(ty)?);
+    Some(facts.get::<dyn Key + '_>(&query))
 }
 
 #[cfg(test)]

@@ -361,7 +361,7 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         include_str!("../../../../../src/hir/declaration_index/identity_reuse/old.rs"),
         include_str!("../../../../../src/hir/declaration_index/identity_reuse/resolver_held.rs"),
         include_str!("../../../../../src/hir/declaration_index/flags.rs"),
-        include_str!("../../../../../src/hir/declaration_index/flags/nominal_key.rs"),
+        concat!(include_str!("../../../../../src/hir/declaration_index/flags/nominal_key.rs"), include_str!("../../../../../src/hir/declaration_index/flags/nominal_key/compound.rs"), include_str!("../../../../../src/hir/declaration_index/flags/nominal_key/compound/tests.rs")),
         include_str!("../../../../../src/hir/declaration_index/flags/tests.rs"),
         include_str!("../../../../../src/hir/declaration_index/primitive_replay.rs"),
         include_str!("../../../../../src/hir/declaration_index/primitive_replay/flat_record.rs"),

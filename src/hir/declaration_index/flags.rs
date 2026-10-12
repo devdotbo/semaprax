@@ -50,6 +50,10 @@ impl DeclarationIndex {
                     .or_else(|| self.recompute_type_facts(ty).as_ref().map(TypeFlags::from));
             }
             _ => {
+                if let Some(facts) = nominal_key::compound_get(&self.type_facts_by_id, ty) {
+                    return facts.map(TypeFlags::from)
+                        .or_else(|| self.recompute_type_facts(ty).as_ref().map(TypeFlags::from));
+                }
                 let key = ty.identity_key();
                 return self
                     .type_facts_by_id

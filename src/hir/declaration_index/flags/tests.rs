@@ -229,15 +229,19 @@ fn dynamic_cached_flags_remove_only_retained_layout_clones_through_drop() {
             assert_eq!(index.type_flags(&ty), expected);
         }
     });
-    // Both paths still allocate identical dynamic key traversal scratch. Only
-    // the owned oracle clones this literal retained String once per query.
-    assert!(!owned.invalid && !borrowed.invalid);
+    // Independent saved key-only construction isolates every original scratch
+    // request; the streamed query now removes those AND the owned layout clone.
+    let (_, keys) = crate::test_allocation_observer::measure(|| {
+        for _ in 0..QUERIES { drop(std::hint::black_box(ty.identity_key())); }
+    });
+    assert!(!owned.invalid && !borrowed.invalid && !keys.invalid);
     assert_eq!(owned.live, 0);
-    assert_eq!(borrowed.live, 0);
+    assert_eq!(keys.live, 0);
     assert_eq!(owned.allocated, owned.freed);
-    assert_eq!(borrowed.allocated, borrowed.freed);
-    assert_eq!(owned.allocations, borrowed.allocations + QUERIES);
-    assert_eq!(owned.allocated, borrowed.allocated + QUERIES * 23);
+    assert_eq!(keys.allocated, keys.freed);
+    assert_eq!(owned.allocations, keys.allocations + QUERIES);
+    assert_eq!(owned.allocated, keys.allocated + QUERIES * 23);
+    assert_eq!((borrowed.allocations, borrowed.reallocations, borrowed.allocated, borrowed.freed, borrowed.live), (0, 0, 0, 0, 0));
     assert_eq!(LAYOUT.len(), 23);
     assert_eq!(index.type_flags(&ty), old(&index, &ty));
 }
