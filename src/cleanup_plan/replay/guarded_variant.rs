@@ -1,17 +1,17 @@
 //! Independent case and Boolean observations for guarded Copy variants.
 use super::*;
 #[allow(clippy::too_many_arguments)]
-pub(super) fn finish_arm(
-    program: &dyn crate::cleanup::ReplayContext,
-    function: &ResolvedFunction,
-    expression: &ResolvedExpr,
-    scrutinee: &ResolvedExpr,
-    arm: &ResolvedMatchArm,
+pub(super) fn finish_arm<'hir>(
+    program: &'hir dyn crate::cleanup::ReplayContext,
+    function: &'hir ResolvedFunction,
+    expression: &'hir ResolvedExpr,
+    scrutinee: &'hir ResolvedExpr,
+    arm: &'hir ResolvedMatchArm,
     final_arm: bool,
     remaining: Vec<ExprSkeletonPath>,
     arm_paths: &[ExprSkeletonPath],
     results: &mut Vec<ExprSkeletonPath>,
-    work: &mut SkeletonWork<'_, '_>,
+    work: &mut SkeletonWork<'hir, '_>,
 ) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
     let ResolvedExprKind::Match { mode, .. } = &expression.kind else {
         unreachable!()
@@ -117,7 +117,7 @@ pub(super) fn census(arms: &[ResolvedMatchArm], counts: HirPathCounts) -> HirPat
     }
 }
 
-pub(super) fn selected(expression: &ResolvedExpr) -> bool {
+pub(super) fn selected(expression: &'hir ResolvedExpr) -> bool {
     matches!(&expression.kind, ResolvedExprKind::Match { scrutinee, arms, .. } if !crate::hir::is_refutable_match_scalar(&scrutinee.ty) && arms.iter().any(|arm| arm.guard.is_some()))
 }
 

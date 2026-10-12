@@ -7,6 +7,7 @@ use super::*;
 mod dag_storage;
 
 pub(super) struct SkeletonWork<'a, 'b> {
+    pub(super) continuations: Option<&'b mut continuation_storage::Storage<'a>>,
     pub(super) function: &'a ResolvedFunction,
     pub(super) budget: &'b mut ReplayBudget,
     pub(super) renewal_bindings: crate::cleanup_plan::renewal_profile::RenewalBindings<'a>,
@@ -40,6 +41,7 @@ impl<'a, 'b> SkeletonWork<'a, 'b> {
         Ok(Self {
             function,
             budget,
+            continuations: None,
             active_copy_region: None,
             dag_scratch: None,
             held_renewals: None,
@@ -84,6 +86,7 @@ impl<'a, 'b> SkeletonWork<'a, 'b> {
         Ok(Self {
             function,
             budget,
+            continuations: None,
             renewal_bindings: crate::cleanup_plan::renewal_profile::RenewalBindings::empty(),
             active_copy_region: None,
             dag_scratch: None,

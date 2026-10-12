@@ -1,5 +1,6 @@
 //! Independent structural validation of attached cleanup plans without invoking the builder.
 // Private prerequisite only: no selected replay admission hook.
+mod continuation_storage;
 mod constructed_variant;
 #[cfg(test)]
 mod context_closure;
@@ -450,6 +451,7 @@ fn validate_structure(
 
 pub(super) fn validate_program(program: &ResolvedProgram) -> Result<(), Diagnostic> {
     let mut budget = ReplayBudget::new();
+    let mut continuations = continuation_storage::Storage::new(program);
     let helpers = ordinary_renewals::index(program, &mut budget)?;
     reserve_program_skeleton_work(
         program,
@@ -462,10 +464,10 @@ pub(super) fn validate_program(program: &ResolvedProgram) -> Result<(), Diagnost
         &mut budget,
     )?;
     for function in program.functions() {
-        validate_structure_with_budget(program, function, &mut budget, Some(&helpers))?;
+        validate_structure_with_budget_storage(program, function, &mut budget, Some(&helpers), Some(&mut continuations))?;
     }
     for instance in program.function_instances() {
-        validate_structure_with_budget(program, &instance.function, &mut budget, Some(&helpers))?;
+        validate_structure_with_budget_storage(program, &instance.function, &mut budget, Some(&helpers), Some(&mut continuations))?;
     }
     Ok(())
 }
@@ -511,6 +513,15 @@ fn validate_structure_with_budget(
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
+) -> Result<(), Diagnostic> {
+    validate_structure_with_budget_storage(program, function, budget, helpers, None)
+}
+fn validate_structure_with_budget_storage<'hir>(
+    program: &'hir dyn crate::cleanup::ReplayContext,
+    function: &'hir ResolvedFunction,
+    budget: &mut ReplayBudget,
+    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'hir>>,
+    continuations: Option<&mut continuation_storage::Storage<'hir>>,
 ) -> Result<(), Diagnostic> {
     let plan = &function.cleanup_plan;
     if helpers.is_some_and(|index| {
@@ -577,7 +588,7 @@ fn validate_structure_with_budget(
         validate_path_states::<Diagnostic>(
             program, function, &storage, &leaves, budget, None, helpers,
         )?;
-        validate_typed_control_skeleton_with_index(program, function, budget, helpers)?;
+        validate_typed_control_skeleton_with_index(program, function, budget, helpers, continuations)?;
     }
     Ok(())
 }
@@ -3007,18 +3018,19 @@ fn region_chain_to_root(
     Ok(chain)
 }
 
-fn validate_typed_control_skeleton_with_index(
-    program: &dyn crate::cleanup::ReplayContext,
-    function: &ResolvedFunction,
+fn validate_typed_control_skeleton_with_index<'hir>(
+    program: &'hir dyn crate::cleanup::ReplayContext,
+    function: &'hir ResolvedFunction,
     budget: &mut ReplayBudget,
-    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
+    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'hir>>,
+    continuations: Option<&mut continuation_storage::Storage<'hir>>,
 ) -> Result<(), Diagnostic> {
     if function.cleanup_plan.lexical_control.is_none()
         && factored::validate_with_index(program, function, budget, helpers)?
     {
         return Ok(());
     }
-    let mut expected = hir_skeleton_paths_with_index(program, function, budget, helpers)?;
+    let mut expected = hir_skeleton_paths_with_index_storage(program, function, budget, helpers, continuations)?;
     let mut actual = plan_skeleton_paths(function, budget)?;
     expected.sort();
     actual.sort();
@@ -3053,7 +3065,17 @@ fn hir_skeleton_paths_with_index(
     budget: &mut ReplayBudget,
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
 ) -> Result<Vec<SkeletonPath>, Diagnostic> {
+    hir_skeleton_paths_with_index_storage(program, function, budget, helpers, None)
+}
+fn hir_skeleton_paths_with_index_storage<'hir>(
+    program: &'hir dyn crate::cleanup::ReplayContext,
+    function: &'hir ResolvedFunction,
+    budget: &mut ReplayBudget,
+    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'hir>>,
+    continuations: Option<&mut continuation_storage::Storage<'hir>>,
+) -> Result<Vec<SkeletonPath>, Diagnostic> {
     let mut work = SkeletonWork::checked_with_index(program, function, budget, helpers)?;
+    work.continuations = continuations;
     let mut paths = work.singleton_path(empty_expr_path(), "HIR root path")?;
     for contract in &function.requires {
         paths = sequence_expression(program, function, paths, contract, &mut work)?;
@@ -3144,12 +3166,12 @@ fn hir_skeleton_paths_with_index(
     Ok(completed)
 }
 
-fn sequence_expression(
-    program: &dyn crate::cleanup::ReplayContext,
-    function: &ResolvedFunction,
+fn sequence_expression<'hir>(
+    program: &'hir dyn crate::cleanup::ReplayContext,
+    function: &'hir ResolvedFunction,
     prefixes: Vec<ExprSkeletonPath>,
-    expression: &ResolvedExpr,
-    work: &mut SkeletonWork<'_, '_>,
+    expression: &'hir ResolvedExpr,
+    work: &mut SkeletonWork<'hir, '_>,
 ) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
     if !has_active_paths(&prefixes) {
         return Ok(prefixes);
@@ -3208,186 +3230,48 @@ fn sequence_skeleton_paths(
 
 use path_summary::has_active_paths;
 
-fn expression_skeleton(
-    program: &dyn crate::cleanup::ReplayContext,
-    function: &ResolvedFunction,
-    expression: &ResolvedExpr,
-    work: &mut SkeletonWork<'_, '_>,
+fn expression_skeleton<'hir>(
+    program: &'hir dyn crate::cleanup::ReplayContext,
+    function: &'hir ResolvedFunction,
+    expression: &'hir ResolvedExpr,
+    work: &mut SkeletonWork<'hir, '_>,
 ) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
-    enum Frame<'a> {
-        Eval(&'a ResolvedExpr),
-        FinishCopyRegion {
-            previous: Option<ExpressionId>,
-        },
-        RenewalPrefix(&'a ResolvedExpr),
-        UpcastPassthrough,
-        Unary {
-            expression: &'a ResolvedExpr,
-            op: UnaryOp,
-        },
-        BinaryLeft {
-            expression: &'a ResolvedExpr,
-            op: BinaryOp,
-            right: &'a ResolvedExpr,
-        },
-        BinaryRight {
-            expression: &'a ResolvedExpr,
-            op: BinaryOp,
-            left_paths: Vec<ExprSkeletonPath>,
-        },
-        LazyRight {
-            expression: &'a ResolvedExpr,
-            op: BinaryOp,
-            left: &'a ResolvedExpr,
-            left_paths: Vec<ExprSkeletonPath>,
-        },
-        CallArgument {
-            expression: &'a ResolvedExpr,
-            params: Vec<crate::hir::ResolvedParam>,
-            args: &'a [ResolvedExpr],
-            index: usize,
-            states: Vec<CallSkeletonState>,
-        },
-        ByteRangeArgument {
-            expression: &'a ResolvedExpr,
-            index: usize,
-            states: Vec<CallSkeletonState>,
-        },
-        NativeArgument {
-            args: &'a [ResolvedExpr],
-            index: usize,
-            paths: Vec<ExprSkeletonPath>,
-        },
-        BlockValue {
-            expression: &'a ResolvedExpr,
-            statements: &'a [ResolvedStatement],
-            tail: &'a ResolvedExpr,
-            index: usize,
-            paths: Vec<ExprSkeletonPath>,
-        },
-        BlockTail {
-            expression: &'a ResolvedExpr,
-            paths: Vec<ExprSkeletonPath>,
-        },
-        WhileAfterCondition {
-            prefixes: Vec<ExprSkeletonPath>,
-            expression: &'a ResolvedExpr,
-            statements: &'a [ResolvedStatement],
-            tail: &'a ResolvedExpr,
-            index: usize,
-            condition: &'a ResolvedExpr,
-            body: &'a ResolvedExpr,
-        },
-        WhileAfterBody {
-            expression: &'a ResolvedExpr,
-            statements: &'a [ResolvedStatement],
-            tail: &'a ResolvedExpr,
-            index: usize,
-            results: Vec<ExprSkeletonPath>,
-            true_prefixes: Vec<ExprSkeletonPath>,
-            false_prefixes: Vec<ExprSkeletonPath>,
-        },
-        LexicalReturn {
-            expression: &'a ResolvedExpr,
-        },
-        ContinueAdvance {
-            expression: &'a ResolvedExpr,
-            step: OwnedStep<'a>,
-        },
-        LexicalLoopCondition {
-            prefixes: Vec<ExprSkeletonPath>,
-            expression: &'a ResolvedExpr,
-            statements: &'a [ResolvedStatement],
-            tail: &'a ResolvedExpr,
-            index: usize,
-            condition: &'a ResolvedExpr,
-            body: &'a ResolvedExpr,
-            latch: &'a crate::hir::LoopLatchKind,
-        },
-        LexicalLoopBody {
-            expression: &'a ResolvedExpr,
-            statements: &'a [ResolvedStatement],
-            tail: &'a ResolvedExpr,
-            index: usize,
-            results: Vec<ExprSkeletonPath>,
-            true_prefixes: Vec<ExprSkeletonPath>,
-            false_prefixes: Vec<ExprSkeletonPath>,
-            condition: &'a ResolvedExpr,
-        },
-        VariantField {
-            expression: &'a ResolvedExpr,
-            case: &'a DeclarationId,
-            fields: &'a [crate::hir::ResolvedFieldInitializer],
-            index: usize,
-            paths: Vec<ExprSkeletonPath>,
-        },
-        RecordField {
-            expression: &'a ResolvedExpr,
-            fields: &'a [crate::hir::ResolvedFieldInitializer],
-            index: usize,
-            paths: Vec<ExprSkeletonPath>,
-        },
-        UpdateBase {
-            expression: &'a ResolvedExpr,
-            base: &'a ResolvedExpr,
-            record: &'a DeclarationId,
-            fields: &'a [crate::hir::ResolvedFieldInitializer],
-        },
-        UpdateField {
-            expression: &'a ResolvedExpr,
-            base: &'a ResolvedExpr,
-            record: &'a DeclarationId,
-            fields: &'a [crate::hir::ResolvedFieldInitializer],
-            index: usize,
-            paths: Vec<ExprSkeletonPath>,
-            replaced: BTreeSet<DeclarationId>,
-            needs_cleanup: bool,
-        },
-        Try {
-            expression: &'a ResolvedExpr,
-        },
-        TryOption {
-            expression: &'a ResolvedExpr,
-        },
-        Project {
-            expression: &'a ResolvedExpr,
-            field: &'a DeclarationId,
-        },
-        IfCondition {
-            expression: &'a ResolvedExpr,
-            condition: &'a ResolvedExpr,
-            then_branch: &'a ResolvedExpr,
-            else_branch: &'a ResolvedExpr,
-        },
-        IfThen {
-            expression: &'a ResolvedExpr,
-            else_branch: &'a ResolvedExpr,
-            true_prefixes: Vec<ExprSkeletonPath>,
-            false_prefixes: Vec<ExprSkeletonPath>,
-            results: Vec<ExprSkeletonPath>,
-        },
-        IfElse {
-            expression: &'a ResolvedExpr,
-            false_prefixes: Vec<ExprSkeletonPath>,
-            results: Vec<ExprSkeletonPath>,
-        },
-        ScalarGuard(scalar_match::Guard<'a>),
-        ScalarValue(scalar_match::Value<'a>),
-        MatchScrutinee {
-            expression: &'a ResolvedExpr,
-            scrutinee: &'a ResolvedExpr,
-            arms: &'a [ResolvedMatchArm],
-        },
-        MatchArm {
-            expression: &'a ResolvedExpr,
-            scrutinee: &'a ResolvedExpr,
-            arms: &'a [ResolvedMatchArm],
-            index: usize,
-            remaining: Vec<ExprSkeletonPath>,
-            results: Vec<ExprSkeletonPath>,
-            is_record: bool,
-        },
+    let reuse = if let Some(storage) = work.continuations.as_ref() {
+        if !storage.matches(program) {
+            return Err(replay_error(function, "typed-HIR continuation storage belongs to another program"));
+        }
+        !storage.leased
+    } else { false };
+    let mut frames = if reuse {
+        work.continuations.as_mut().unwrap().frames.take().unwrap_or_default()
+    } else { Vec::new() };
+    if frames.capacity() == 0 {
+        frames = continuation_storage::fresh(function, work.budget)?;
+    } else {
+        // Reuse requests no backing, but cannot bypass an enclosing sticky
+        // refusal at the original traversal-acquisition boundary.
+        work.budget.reserve_bytes(function, 0, "typed HIR continuation stack")?;
     }
+    // Nested guarded variants see this lease and use the original separate local
+    // receiver. They never install their backing into the outer slot.
+    if reuse { work.continuations.as_mut().unwrap().leased = true; }
+    let result = expression_skeleton_run(program, function, expression, work, &mut frames);
+    frames.clear(); // Drop every owned continuation payload before reuse.
+    if reuse {
+        let storage = work.continuations.as_mut().unwrap();
+        storage.frames = Some(frames);
+        storage.leased = false;
+    }
+    result
+}
+fn expression_skeleton_run<'hir>(
+    program: &'hir dyn crate::cleanup::ReplayContext,
+    function: &'hir ResolvedFunction,
+    expression: &'hir ResolvedExpr,
+    work: &mut SkeletonWork<'hir, '_>,
+    frames: &mut Vec<continuation_storage::Frame<'hir>>,
+) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
+    use continuation_storage::{Frame, OwnedStep};
 
     macro_rules! push_frame {
         ($frames:expr, $frame:expr) => {{
@@ -3513,15 +3397,6 @@ fn expression_skeleton(
         Ok(None)
     }
 
-    // Depth excludes the body block; the machine retains its evaluated child, that block, and 512 expression ancestors.
-    // One independently authenticated lexical Copy scope adds a metadata frame.
-    let frame_capacity = 516;
-    work.budget.reserve_array::<Frame<'_>>(
-        function,
-        frame_capacity,
-        "typed HIR continuation stack",
-    )?;
-    let mut frames = Vec::with_capacity(frame_capacity);
     push_frame!(frames, Frame::Eval(expression));
     let mut produced: Option<Vec<ExprSkeletonPath>> = None;
     /// Lexical loops whose body is being evaluated, innermost last. A `continue`
@@ -3532,13 +3407,6 @@ fn expression_skeleton(
         advance: Option<&'a ResolvedExpr>,
         step: OwnedStep<'a>,
     }
-    /// An owning traversal's Step assignment: the match, its renewed binding and
-    /// the Yield arm block that evaluates the certified Next tail.
-    type OwnedStep<'a> = Option<(
-        &'a ResolvedExpr,
-        &'a crate::hir::ResolvedBinding,
-        &'a ResolvedExpr,
-    )>;
     let mut active_loops: Vec<ActiveLoop<'_>> = Vec::new();
     while let Some(frame) = frames.pop() {
         match frame {
@@ -4456,7 +4324,7 @@ fn expression_skeleton(
                         // Unsafe boundaries bind and own nothing here: their ordinary block body was evaluated as this statement's value expression.
                         if let Some(settled) = advance_block_value(
                             function,
-                            &mut frames,
+                            frames,
                             work,
                             expression,
                             statements,
@@ -4490,7 +4358,7 @@ fn expression_skeleton(
                         }
                         if let Some(settled) = advance_block_value(
                             function,
-                            &mut frames,
+                            frames,
                             work,
                             expression,
                             statements,
@@ -4547,7 +4415,7 @@ fn expression_skeleton(
                 }
                 if let Some(settled) = advance_block_value(
                     function,
-                    &mut frames,
+                    frames,
                     work,
                     expression,
                     statements,
@@ -4689,7 +4557,7 @@ fn expression_skeleton(
                 }
                 if let Some(settled) = advance_block_value(
                     function,
-                    &mut frames,
+                    frames,
                     work,
                     expression,
                     statements,
@@ -5850,18 +5718,18 @@ fn validate_match_skeleton_shape(
 }
 
 #[allow(clippy::too_many_arguments)]
-fn finish_match_arm(
-    program: &dyn crate::cleanup::ReplayContext,
-    function: &ResolvedFunction,
-    expression: &ResolvedExpr,
-    scrutinee: &ResolvedExpr,
-    arms: &[ResolvedMatchArm],
+fn finish_match_arm<'hir>(
+    program: &'hir dyn crate::cleanup::ReplayContext,
+    function: &'hir ResolvedFunction,
+    expression: &'hir ResolvedExpr,
+    scrutinee: &'hir ResolvedExpr,
+    arms: &'hir [ResolvedMatchArm],
     index: usize,
     remaining: Vec<ExprSkeletonPath>,
     arm_paths: &[ExprSkeletonPath],
     results: &mut Vec<ExprSkeletonPath>,
     is_record: bool,
-    work: &mut SkeletonWork<'_, '_>,
+    work: &mut SkeletonWork<'hir, '_>,
 ) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
     if arms[index].guard.is_some() {
         return guarded_variant::finish_arm(
