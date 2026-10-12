@@ -4,7 +4,11 @@ use crate::hir::selected_fused_candidate::{validate_selected, Selected};
 use crate::test_allocation_observer::{current_metrics, Metrics};
 
 fn old(program: &ResolvedProgram, selected: Selected<'_>) -> Result<bool, Diagnostic> {
-    old_stages(program, selected, &mut [Metrics::default(); 3])
+    crate::hir::byte_partition::refuse_default(program)?;
+    crate::hir::agent_validation::validate(program)?;
+    let output = crate::hir::inspection::validate_with_static_text(program, Some(selected))?;
+    crate::loan_plan::validate_program(program)?;
+    Ok(output)
 }
 fn old_stages(
     program: &ResolvedProgram,
