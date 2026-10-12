@@ -483,7 +483,13 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
             include_str!("../../../../../src/hir/validation/branch_merge.rs"),
             include_str!("../../../../../src/hir/validation/vec_intrinsic.rs"),
             include_str!("../../../../../src/hir/validation/borrowed_str.rs"),
-            concat!(include_str!("../../../../../src/hir/validation/generic_template.rs"), include_str!("../../../../../src/hir/validation/generic_template/values.rs"), include_str!("../../../../../src/hir/validation/generic_template/values/tests.rs")),
+            include_str!("../../../../../src/hir/validation/generic_template.rs"),
+            include_str!(
+                "../../../../../src/hir/validation/generic_template/values.rs"
+            ),
+            include_str!(
+                "../../../../../src/hir/validation/generic_template/values/tests.rs"
+            ),
             include_str!("../../../../../src/hir/validation/host_command.rs"),
             include_str!("../../../../../src/hir/validation/owned_buffer.rs"),
             include_str!("../../../../../src/hir/validation/owned_result_try.rs"),
@@ -1105,7 +1111,6 @@ fn final_artifact_sinks_reject_one_less_before_output_allocation() {
     assert_eq!(exact_rust.1, prepared.private_ffi_source);
     EXACT_ARTIFACT_OUTPUT_ALLOCATION_COUNT.with(|count| assert_eq!(count.get(), 5));
 }
-
 #[test]
 fn post_hir_named_phase_envelopes_cover_representative_and_depth_512_c() {
     fn measure(program: &Program, spec: &Spec) -> ([usize; 4], [usize; 3]) {
@@ -1160,7 +1165,6 @@ fn post_hir_named_phase_envelopes_cover_representative_and_depth_512_c() {
         drop(resolved);
         measured
     }
-
     // This historical evidence tuple was authorized for the Apple-arm
     // target. Freeze that target explicitly so host triple length cannot
     // silently repin a target-specific retained-allocation census.
@@ -1231,7 +1235,6 @@ fn post_hir_named_phase_envelopes_cover_representative_and_depth_512_c() {
         },
     );
 }
-
 #[test]
 fn post_hir_facts_cross_product_maxima_stay_inside_named_scratch() {
     let capabilities = (0..MAX_IMPORTS)
@@ -1352,7 +1355,6 @@ fn post_hir_facts_cross_product_maxima_stay_inside_named_scratch() {
         capacity.replay_scratch_upper
     );
 }
-
 #[test]
 fn post_hir_facts_zero_entry_collections_have_zero_backing_and_stay_bounded() {
     let empty_strings = Vec::<String>::new();
@@ -1415,7 +1417,6 @@ fn post_hir_facts_zero_entry_collections_have_zero_backing_and_stay_bounded() {
     );
     assert!(near_max_source.complete().unwrap() <= MAX_BUILDER_BYTES);
 }
-
 #[test]
 fn post_hir_dense_fan_in_duplicates_and_all_interface_imports_stay_bounded() {
     let mut source = String::from(
@@ -1469,7 +1470,6 @@ fn post_hir_dense_fan_in_duplicates_and_all_interface_imports_stay_bounded() {
     assert!(total <= capacity.retained_upper + capacity.facts_scratch_upper);
     assert!(scratch <= capacity.facts_scratch_upper);
 }
-
 #[test]
 fn serde_json_lock_and_near_max_escaped_payload_match_parser_contract() {
     assert!(include_str!("../../../Cargo.toml").contains("serde_json = \"=1.0.151\""));
