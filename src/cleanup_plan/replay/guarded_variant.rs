@@ -117,7 +117,7 @@ pub(super) fn census(arms: &[ResolvedMatchArm], counts: HirPathCounts) -> HirPat
     }
 }
 
-pub(super) fn selected(expression: &'hir ResolvedExpr) -> bool {
+pub(super) fn selected(expression: &ResolvedExpr) -> bool {
     matches!(&expression.kind, ResolvedExprKind::Match { scrutinee, arms, .. } if !crate::hir::is_refutable_match_scalar(&scrutinee.ty) && arms.iter().any(|arm| arm.guard.is_some()))
 }
 
