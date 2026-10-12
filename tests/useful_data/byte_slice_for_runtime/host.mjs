@@ -72,6 +72,7 @@ for(let run=0;run<4;run++){
   assert.equal(owners.size,0,'all reached owned carriers settle');
   const count=kind==='success'?2:kind==='failure'?1:0;
   assert.equal(copies,count);assert.equal(drops,count);
-  assert.equal(allocated,kind==='success'?263:kind==='failure'?3:0);
+  // Complete success source copies the 256-byte array and 8-byte SEMAPRAX String.
+  assert.equal(allocated,kind==='success'?256+new TextEncoder().encode('SEMAPRAX').length:kind==='failure'?3:0);
 }
 console.log('byte-slice-for-ok');

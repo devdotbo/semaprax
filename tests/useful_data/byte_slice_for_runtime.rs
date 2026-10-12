@@ -310,25 +310,10 @@ fn literal_array_bindings_reuse_exact_slots_while_nonliteral_copy_boundaries_rem
     let path = root.join("assignment.spx");
     std::fs::write(&path, &source).unwrap();
     let program = parse(&source, &path).unwrap();
-    let outcome = interpreter::interpret(
-        &path,
-        "app.main",
-        &[],
-        &interpreter::InterpreterOptions::default(),
-    )
-    .unwrap();
-    assert!(outcome.returned, "{}", outcome.envelope);
-    assert!(outcome.envelope.contains("\"value\":\"8\""));
-    let module = semaprax::wasm::emit_module(&program).unwrap();
-    assert_eq!(
-        copies(&module),
-        1,
-        "assignment keeps separate expression storage"
-    );
-    raw_wasm(&root, "view", &module, 8);
-    // Repeated scalar helper calls reinitialize the same function-frame slot
-    // after mutation. Fixed-array literals remain unadmitted inside while;
-    // preserve that negative separately rather than widening its profile.
+    let errors = hir::resolve(&program).expect_err("array assignment must stay unadmitted");
+    assert!(errors.iter().any(|error| error.code == "SPX-U105"), "{errors:?}");
+    // Repeated calls reinitialize the same function-frame slots. Keep array
+    // mutation and loop-local literals as explicit negative controls.
     for old in [false, true] {
         let initializer = if old {
             "{ let pad = 0; [7u8] }"
@@ -348,7 +333,7 @@ fn literal_array_bindings_reuse_exact_slots_while_nonliteral_copy_boundaries_rem
             diagnostic.contains("fixed-array literals are not admitted in bounded while bodies"),
             "{diagnostic}"
         );
-        let source = format!("{header}@id(\"app.sample\") fn sample()->i64 {{ let mut data = {initializer}; let first = sum(array_as_slice(data)); data = [9u8]; first + sum(array_as_slice(data)) }} @id(\"app.main\") fn main()->i64 {{ sample() + sample() + sample() }}");
+        let source = format!("{header}@id(\"app.sample\") fn sample()->i64 {{ let data = {initializer}; let first = sum(array_as_slice(data)); let other = [9u8]; first + sum(array_as_slice(other)) }} @id(\"app.main\") fn main()->i64 {{ sample() + sample() + sample() }}");
         let path = root.join(format!("reinitialize-{old}.spx"));
         std::fs::write(&path, &source).unwrap();
         let program = parse(&source, &path).unwrap();
@@ -374,14 +359,14 @@ fn literal_array_bindings_reuse_exact_slots_while_nonliteral_copy_boundaries_rem
         assert_eq!(module, semaprax::wasm::emit_module(&program).unwrap());
         if old {
             assert!(
-                copies(&module) > 1,
+                copies(&module) > 0,
                 "block result keeps its independent initialization copy"
             );
         } else {
             assert_eq!(
                 copies(&module),
-                1,
-                "only the later assignment copies storage"
+                0,
+                "both literal bindings reuse their exact initialization slots"
             );
         }
         raw_wasm(&root, "view", &module, expected);
