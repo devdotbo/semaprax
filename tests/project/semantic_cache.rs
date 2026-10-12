@@ -573,3 +573,5 @@ fn warm_row_loan_consumers_reprove_current_provider_helpers() {
 
 #[path = "semantic_cache/byte_traversal.rs"]
 mod byte_traversal;
+
+mod string_transfer;

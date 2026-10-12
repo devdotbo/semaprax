@@ -209,6 +209,12 @@ fn signature<'a>(
         return Ok(Signature::Byte(op));
     }
     if let Some(op) = crate::string_ops::by_id(fact.callee.as_str()) {
+        if op == crate::string_ops::StringOp::Take {
+            super::super::selected_profile::string_transfer::operand(function, expression, budget)?
+                .ok_or_else(|| {
+                    replay_error(function, "selected String transfer call identity differs")
+                })?;
+        }
         return Ok(Signature::String(op));
     }
     if let Some(op) = crate::str_ops::by_id(fact.callee.as_str()) {

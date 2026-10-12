@@ -30,7 +30,8 @@ ordinary Take set entries prepay their maximum tree-node backing on the current
 active compiler ledger before insertion; refusal is sticky and propagates
 without allocating another message. Historical concat/format traversal scratch
 and work remain an open ordinary inventory funding boundary. The
-selected lexical replay and checked final-UTF8 closure retain an explicit
+selected lexical replay independently reconstructs the exact named operand and
+prepays its move-set node and key work. Checked final-UTF8 closure retains an explicit
 refusal, and the frozen candidate builtin catalog does not accept Take IDs. Compiler-owned callee identity
 uses the closed static declaration variant; this spelling grants no admission
 or loan authority. Existing capacities and source/type limits are unchanged.
@@ -66,3 +67,24 @@ complete loan/status/transfer forgeries, complete compiler metadata funding beyo
 exact/one-short/sticky/Drop control, current Project cache cold/warm/provider drift and the
 full original OPT779 forwarding populations. No Catalog rewrite, forecast
 reduction, accepted-ticket completion or performance claim follows this draft.
+
+The next acceptance tranche adds full empty/populated recursive String+Bytes
+records, three repeated old-clone/explicit-take/subtree calls, pre/postcondition
+and later-field failure, current ProjectFrontendCache cold/warm/provider drift
+and restoration, canonical transfer/commit/status forgeries, and every fuel
+limit below each measured source entry's ordinary completion. All are authored
+and unexecuted. Fuel envelopes prove no partial publication or refuelling; they
+do not independently count interpreter retained owner storage. The native
+forward-to-score window separately counts allocation, payload copy and all
+reallocation attempts; only the explicit-take/subtree controls require zero.
+The original OPT779 recursive default-read zero-copy assertion is unchanged
+and remains unresolved: its ordinary String read clones by contract. Aggregate
+Wasm's existing strict host checks registry settlement; private internal Wasm
+repeated results alone do not prove storage settlement. The independent last-view-use loan owner and actual operation/operand charge
+boundary owner now cover forged loan metadata, exact pointer retention, unchanged
+source availability on both fuel refusals, and complete owner/environment Drop
+against the saved construction-only allocation baseline. Full private Wasm
+storage counters remain open acceptance work, alongside historical ordinary
+inventory scratch funding and the broader
+OPT781 transitive engine diagnostic boundary. No issue closure follows this
+source tranche.

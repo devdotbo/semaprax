@@ -123,6 +123,7 @@ fn named_only_source_refuses_contracts_computed_borrowed_and_live_loan_transfers
         ("module bad; @id(\"main\") fn main()->i64 {let text=\"x\";let view=string_as_str(text);let moved=string_take(text);str_len_bytes(view)}", "SPX-T265"),
         ("module bad; @id(\"helper\") fn helper(text:string)->i64 requires string_len(string_take(text))>0 {0} @id(\"main\") fn main()->i64 {0}", "SPX-O105"),
         ("module bad; @id(\"helper\") fn helper(text:borrow string)->string {string_take(text)} @id(\"main\") fn main()->i64 {0}", "SPX-O102"),
+        ("module bad; @id(\"sink\") fn sink(a:string,b:string)->i64 {string_len(a)+string_len(b)} @id(\"main\") fn main()->i64 {let text=\"x\";sink(string_take(text),string_take(text))}", "SPX-O101"),
     ] {
         let errors=crate::check(source,"string-take-negative.spx").unwrap_err();
         assert!(errors.iter().any(|error|error.code==code),"{source}: {errors:?}");
@@ -213,4 +214,167 @@ fn added_transfer_inventory_pays_its_node_exact_short_sticky_and_drop() {
     let first = first.unwrap();
     assert_eq!(first.requested, required);
     assert_eq!(first.remaining, required - 1);
+}
+
+#[test]
+fn transfer_commit_epochs_and_total_status_are_independently_revalidated() {
+    let ast = crate::check(SOURCE, "string-take-forged-plan.spx").unwrap();
+    let program = crate::hir::resolve(&ast).unwrap();
+    crate::hir::validate(&program).unwrap();
+    for mutation in 0..8 {
+        let mut forged = program.clone();
+        let f = forged
+            .functions
+            .iter_mut()
+            .find(|f| f.id.as_str() == "take")
+            .unwrap();
+        let mut root = &f.body;
+        while let ResolvedExprKind::Block { tail, .. } = &root.kind {
+            root = tail;
+        }
+        let call = root.id.clone();
+        let callee = match &root.kind {
+            ResolvedExprKind::Call { callee, .. } => callee.clone(),
+            _ => unreachable!(),
+        };
+        let argument = operand(root).unwrap().id.clone();
+        if mutation >= 5 && mutation <= 6 {
+            f.cleanup_plan
+                .status_sources
+                .push(crate::cleanup_plan::StatusSource {
+                    id: crate::cleanup_plan::StatusSourceId {
+                        expression: call.clone(),
+                        lane: if mutation == 5 {
+                            StatusLane::OperationFailure
+                        } else {
+                            StatusLane::OwnerAdmission
+                        },
+                    },
+                    producer: crate::cleanup_plan::StatusProducer::PropagatedCall { callee },
+                });
+        } else if mutation <= 1 {
+            let block = f
+                .cleanup_plan
+                .blocks
+                .iter_mut()
+                .find(|b| {
+                    b.transitions.iter().any(
+                        |t| matches!(t,CleanupTransition::CallCommit {call:at,..} if at==&call),
+                    )
+                })
+                .unwrap();
+            let index = block
+                .transitions
+                .iter()
+                .position(|t| matches!(t,CleanupTransition::CallCommit {call:at,..} if at==&call))
+                .unwrap();
+            if mutation == 0 {
+                block.transitions.remove(index);
+            } else {
+                let duplicate = block.transitions[index].clone();
+                block.transitions.insert(index, duplicate);
+            }
+        } else if mutation == 7 {
+            let transfer = f
+                .cleanup_plan
+                .blocks
+                .iter()
+                .flat_map(|b| &b.transitions)
+                .find_map(|t| {
+                    if let CleanupTransition::Transfer { at, source, .. } = t {
+                        (at == &argument).then_some(source.clone())
+                    } else {
+                        None
+                    }
+                })
+                .unwrap();
+            let initialization = f
+                .cleanup_plan
+                .blocks
+                .iter_mut()
+                .flat_map(|b| &mut b.transitions)
+                .find(|t| matches!(t,CleanupTransition::Initialize {at,..} if at==&call))
+                .unwrap();
+            let CleanupTransition::Initialize { destination, .. } = initialization else {
+                unreachable!()
+            };
+            *destination = transfer;
+        } else {
+            let transfer = f
+                .cleanup_plan
+                .blocks
+                .iter_mut()
+                .flat_map(|b| &mut b.transitions)
+                .find(|t| matches!(t,CleanupTransition::Transfer {at,..} if at==&argument))
+                .unwrap();
+            let CleanupTransition::Transfer {
+                at,
+                source,
+                destination,
+            } = transfer
+            else {
+                unreachable!()
+            };
+            match mutation {
+                2 => *source = destination.clone(),
+                3 => *destination = source.clone(),
+                4 => *at = call.clone(),
+                _ => unreachable!(),
+            }
+        }
+        assert_eq!(
+            crate::hir::validate(&forged).unwrap_err().code,
+            "SPX-H006",
+            "mutation {mutation}"
+        );
+        assert!(
+            crate::cleanup_plan::validate_program(&forged).is_err(),
+            "independent cleanup mutation {mutation}"
+        );
+    }
+}
+
+#[test]
+fn last_view_use_allows_transfer_but_current_loan_mutations_remain_refused() {
+    const SOURCE: &str = r#"module loan;
+@id("main") fn main()->i64 {let text="é";let view=string_as_str(text);let n=str_len_bytes(view);let moved=string_take(text);n+string_len(moved)}
+"#;
+    let ast = crate::check(SOURCE, "string-take-last-loan.spx").unwrap();
+    let program = crate::hir::resolve(&ast).unwrap();
+    crate::hir::validate(&program).unwrap();
+    let main = &program.functions[0];
+    assert_eq!(main.id.as_str(), "main");
+    assert!(!main.loan_plan.loans.is_empty());
+    assert_eq!(
+        crate::loan_plan::build_plan(&program, main).unwrap(),
+        main.loan_plan
+    );
+    for mutation in 0..3 {
+        let mut forged = program.clone();
+        let plan = &mut forged.functions[0].loan_plan;
+        let id = plan.loans[0].id;
+        match mutation {
+            0 => plan.loans[0]
+                .origin
+                .projections
+                .push(crate::hir::PlaceProjection::Field(
+                    crate::hir::DeclarationId::new("foreign.field"),
+                )),
+            1 => plan.loans[0].ends.clear(),
+            _ => {
+                let endpoint = plan
+                    .endpoints
+                    .iter_mut()
+                    .find(|e| e.live_after.is_empty())
+                    .unwrap();
+                endpoint.live_after = vec![id].into_boxed_slice();
+            }
+        }
+        assert_eq!(
+            crate::hir::validate(&forged).unwrap_err().code,
+            "SPX-H006",
+            "loan mutation {mutation}"
+        );
+        assert!(crate::loan_plan::validate_program(&forged).is_err());
+    }
 }

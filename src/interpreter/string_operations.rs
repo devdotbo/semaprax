@@ -544,3 +544,6 @@ fn text_failure(code: u32) -> Flow {
 
 #[cfg(test)]
 mod bulk_utf8_tests;
+
+#[cfg(test)]
+mod take_tests;

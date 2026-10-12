@@ -226,3 +226,53 @@ for(let i=0;i<3;i++) if(instance.exports.semaprax_main()!==6n) throw Error('name
     std::fs::remove_dir(web).unwrap();
     fixture.cleanup();
 }
+
+#[test]
+fn explicit_transfer_fuel_sweep_never_refuels_or_publishes_a_partial_owner() {
+    let mut fixture = Fixture::new(SOURCE);
+    for entry in ["unicode", "empty", "clone", "late", "pre", "post"] {
+        let ordinary = interpreter::internal_strings::interpret(
+            &fixture.source,
+            entry,
+            &[],
+            &InterpreterOptions::default(),
+        )
+        .unwrap();
+        let baseline: serde_json::Value = serde_json::from_str(&ordinary.envelope).unwrap();
+        let steps = baseline["payload"]["fuel"]["steps_used"].as_u64().unwrap() as usize;
+        assert!(steps > 1);
+        for limit in 1..steps {
+            let options =
+                InterpreterOptions::new(InterpreterOptions::default().max_bytes, limit).unwrap();
+            let refused =
+                interpreter::internal_strings::interpret(&fixture.source, entry, &[], &options)
+                    .unwrap();
+            assert!(!refused.returned, "{entry} fuel {limit}");
+            interpreter::internal_strings::verify_envelope_against_source(
+                &refused.envelope,
+                &fixture.source,
+            )
+            .unwrap();
+            let receipt: serde_json::Value = serde_json::from_str(&refused.envelope).unwrap();
+            assert_eq!(receipt["payload"]["outcome"]["kind"], "fuel_exhausted");
+            assert!(receipt["payload"]["outcome"].get("value").is_none());
+            assert_eq!(receipt["payload"]["fuel"]["budget"], limit);
+            assert_eq!(receipt["payload"]["fuel"]["steps_used"], limit);
+            assert_eq!(receipt["payload"]["fuel"]["exhausted"], true);
+        }
+        let exact = interpreter::internal_strings::interpret(
+            &fixture.source,
+            entry,
+            &[],
+            &InterpreterOptions::new(InterpreterOptions::default().max_bytes, steps).unwrap(),
+        )
+        .unwrap();
+        let receipt: serde_json::Value = serde_json::from_str(&exact.envelope).unwrap();
+        assert_eq!(
+            receipt["payload"]["outcome"],
+            baseline["payload"]["outcome"]
+        );
+        assert_eq!(receipt["payload"]["fuel"]["exhausted"], false);
+    }
+    fixture.cleanup();
+}

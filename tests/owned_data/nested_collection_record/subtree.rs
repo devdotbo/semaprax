@@ -2,6 +2,8 @@
 use super::*;
 #[path = "subtree/lifetime.rs"]
 mod lifetime;
+#[path = "subtree/string_transfer.rs"]
+mod string_transfer;
 const PREFIX: &str = r#"module test.subtree;
 @id("metrics") record Metrics {@id("metrics.total") total:i64,}
 @id("report") record Report {

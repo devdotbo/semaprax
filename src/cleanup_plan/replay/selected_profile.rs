@@ -7,6 +7,7 @@ pub(super) mod conditions;
 #[cfg(test)]
 mod receiving_tests;
 mod row_loan;
+pub(super) mod string_transfer;
 const DEPTH: usize = 514;
 type Frame<'a> = Option<(crate::hir::lexical_exit::ChildCursor<'a>, bool)>;
 pub(super) fn validate(
@@ -257,14 +258,7 @@ pub(super) fn validate(
                         type_arguments,
                         ..
                     } => {
-                        if crate::string_ops::by_id(callee.as_str())
-                            == Some(crate::string_ops::StringOp::Take)
-                        {
-                            return Err(replay_error(
-                                function,
-                                "selected lexical replay does not admit explicit String transfer",
-                            ));
-                        }
+                        string_transfer::operand(function, expression, budget)?;
                         if collections::call(program, function, expression, budget)? {
                             frames[depth - 1] = Some((cursor, true));
                             continue;

@@ -145,6 +145,22 @@ pub(in crate::cleanup_plan::replay) fn moves(
         let (mut cursor, entered) = frames[depth - 1].expect("current frame");
         let expression = cursor.expression();
         if !entered {
+            if let Some(argument) = super::string_transfer::operand(function, expression, budget)? {
+                let id = &argument.id;
+                let units = (result.len() + 1)
+                    .checked_mul(id.as_str().len() + 1)
+                    .and_then(|n| n.checked_mul(2))
+                    .ok_or_else(|| replay_error(function, "selected move key work overflow"))?;
+                budget.charge(function, units, "selected String transfer move key")?;
+                if !result.contains(id) {
+                    budget.reserve_btree_node::<ExpressionId, ()>(
+                        function,
+                        "selected String move set",
+                    )?;
+                    budget.reserve_clone(function, id, "selected String moving identity")?;
+                    result.insert(id.clone());
+                }
+            }
             if let ResolvedExprKind::Block { statements, .. }
             | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
             {

@@ -482,3 +482,73 @@ fn string_append_reserved_refusal_and_retry_allocate_only_the_prepaid_diagnostic
         assert!(actual.highwater <= charged);
     }
 }
+
+#[test]
+fn named_string_transfer_retained_replay_matches_ordinary_exact_and_short() {
+    const SOURCE: &str = r#"module receiving;
+@id("app.probe") fn probe()->i64 {
+ let mut at=0;while at<2 {at=at+1;let text="é";let moved=string_take(text);
+ if at==1 {continue;} else {0} return string_len(moved);0} 0
+}
+@id("app.main") fn main()->i64 {probe()}
+"#;
+    let ordinary = direct(SOURCE);
+    let expected = function(&ordinary);
+    assert!(expected.cleanup_plan.lexical_control.is_some());
+    let fixture = SourceRecordReplayFixture::new(SOURCE);
+    let retained = fixture
+        .functions()
+        .iter()
+        .find(|f| f.id == expected.id)
+        .unwrap();
+    assert_eq!(retained.cleanup_plan, expected.cleanup_plan);
+    fixture.with_prepared_context(|context| {
+        let receiver = super::super::selected_entry::validate_retained_lexical_with_reservation;
+        let measured = receiver(context, retained, PhysicalReservation::new(usize::MAX)).unwrap();
+        let charged = measured.charged();
+        assert!(charged > 0);
+        drop(measured);
+        let exact = receiver(context, retained, PhysicalReservation::new(charged)).unwrap();
+        assert_eq!(exact.charged(), charged);
+        drop(exact);
+        assert_eq!(
+            receiver(context, retained, PhysicalReservation::new(charged - 1))
+                .err()
+                .unwrap()
+                .code,
+            "SPX-H006"
+        );
+    });
+    let call = nodes(&expected.body)
+        .into_iter()
+        .find(|e| crate::string_ops::take::operand(e).is_some())
+        .unwrap();
+    let mut paid = budget();
+    let moves = conditions::moves(expected, &mut paid).unwrap();
+    assert_eq!(moves.len(), 1);
+    assert!(moves.contains(&crate::string_ops::take::operand(call).unwrap().id));
+    for mutation in 0..3 {
+        let mut forged = call.clone();
+        match mutation {
+            0 => forged.ownership = OwnershipMode::Borrow,
+            1 => {
+                let ResolvedExprKind::Call { args, .. } = &mut forged.kind else {
+                    unreachable!()
+                };
+                args[0].ownership = OwnershipMode::Borrow;
+            }
+            _ => {
+                let ResolvedExprKind::Call { type_arguments, .. } = &mut forged.kind else {
+                    unreachable!()
+                };
+                type_arguments.push(ResolvedType::String);
+            }
+        }
+        assert_eq!(
+            string_transfer::operand(expected, &forged, &mut budget())
+                .unwrap_err()
+                .code,
+            "SPX-H006"
+        );
+    }
+}
