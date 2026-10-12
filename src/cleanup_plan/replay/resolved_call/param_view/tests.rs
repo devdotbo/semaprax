@@ -592,7 +592,7 @@ fn ordinal_transfers(
             |&parameter_index| crate::cleanup_plan::CallArgumentTransfer {
                 parameter_index,
                 source: CleanupPlace {
-                    storage: StorageId::Binding(params[0].id.clone()),
+                    storage: StorageId::Value(params[0].id.clone()),
                     projections: Vec::new(),
                 },
             },
