@@ -9,6 +9,10 @@ mod call_payload;
 mod expression_children;
 mod expression_facts;
 mod flat_records;
+pub(in crate::cleanup_plan) mod allocation_coverage;
+mod allocation_paths;
+mod call_paths;
+use call_paths::finish_call_states;
 mod inventory_coverage;
 pub(in crate::cleanup_plan) mod ordinary_status;
 mod physical_budget;
@@ -450,8 +454,15 @@ fn validate_structure(
 }
 
 pub(super) fn validate_program(program: &ResolvedProgram) -> Result<(), Diagnostic> {
+    validate_program_context(program)
+}
+
+pub(in crate::cleanup_plan) fn validate_program_context(
+    program: &dyn crate::cleanup::ReplayContext,
+) -> Result<(), Diagnostic> {
+    let full = program.full_program().ok_or_else(|| Diagnostic::io("SPX-H006", "allocation replay requires the held complete program"))?;
     let mut budget = ReplayBudget::new();
-    let mut continuations = continuation_storage::Storage::new(program);
+    let mut continuations = continuation_storage::Storage::new(full);
     let helpers = ordinary_renewals::index(program, &mut budget)?;
     reserve_program_skeleton_work(
         program,
@@ -546,7 +557,15 @@ fn validate_structure_with_budget_storage<'hir>(
             "cleanup replay helper index belongs to a different typed program",
         ));
     }
-    let expected_schema = schema::selected_schema_with_index(program, function, helpers)?;
+    // Reconstruct the ordinary schema first, preserving all its current-source
+    // probes/error order. A private source-held projection adds allocation
+    // branches; neither its attached v20 string nor an ordinary context selects it.
+    let ordinary_schema = schema::selected_schema_with_index(program, function, helpers)?;
+    let expected_schema = if allocation_paths::current(program, function).is_some() {
+        super::CLEANUP_PLAN_SCHEMA_V20
+    } else {
+        ordinary_schema
+    };
     if plan.schema != expected_schema {
         return Err(replay_error(
             function,
@@ -1725,7 +1744,10 @@ fn validate_required_status_sources(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
 ) -> Result<(), Diagnostic> {
-    ordinary_status::validate(program, function)
+    match allocation_paths::current(program, function) {
+        Some(current) => ordinary_status::validate_allocation_projection(current, &function.cleanup_plan),
+        None => ordinary_status::validate(program, function),
+    }
 }
 
 fn checked_status(
@@ -2063,6 +2085,9 @@ fn validate_status_sources_core<E: semantic_refusal::Error>(
                     .into());
                 }
             }
+            (StatusLane::AllocationFailure, StatusProducer::CheckedAllocation { normalized_cases, .. })
+                if function.cleanup_plan.schema == super::CLEANUP_PLAN_SCHEMA_V20
+                    && *normalized_cases == [super::AllocationCase::PayloadRefused, super::AllocationCase::SizeOverflow] => {}
             (StatusLane::ContractFalse, StatusProducer::ContractFalse { .. }) => {}
             _ => {
                 return Err(replay_error(
@@ -3333,7 +3358,11 @@ fn expression_skeleton_run<'hir>(
                     && !work.string_owner_moves.contains(&expression.id)
                     && !work.string_condition_reads.contains(&expression.id)
                 {
-                    produced = Some(strings::paths(expression, work)?);
+                    produced = Some(if allocation_paths::current(program, function).is_some() {
+                        allocation_paths::string_paths(expression, work)?
+                    } else {
+                        strings::paths(expression, work)?
+                    });
                     continue;
                 }
 
@@ -6341,161 +6370,6 @@ fn sequence_call_argument(
     Ok(next)
 }
 
-fn finish_call_states(
-    program: &dyn crate::cleanup::ReplayContext,
-    function: &ResolvedFunction,
-    expression: &ResolvedExpr,
-    states: Vec<CallSkeletonState>,
-    work: &mut SkeletonWork<'_, '_>,
-) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
-    #[cfg(test)]
-    let borrowed_total = match program.borrowed_helper_lease(function) {
-        Some(lease) => Some(lease.call_is_total(program, function, expression, work.budget)?),
-        None => None,
-    };
-    #[cfg(not(test))]
-    let borrowed_total: Option<bool> = None;
-    let infallible_compiler_operation = match borrowed_total {
-        Some(total) => total,
-        None => super::deferred_commit::expression_is_infallible_compiler_operation(expression),
-    };
-    // `vec_push` and the one fallible byte operation both check their bound before the owner transfer commits, so their status observation precedes the
-    // call-commit and a failed call leaves the owner in its call-argument slot for the ordinary region cleanup.
-    // The complete held profile excludes deferred owner-transfer opcodes.
-    let defer_commit = borrowed_total.is_none() && resolved_call::defers_owner_commit(expression);
-    let infallible_compiler_operation = infallible_compiler_operation
-        || matches!(
-            &expression.kind,
-            ResolvedExprKind::HostCommandCall(call)
-                if crate::command_io_ops::failure(call.operation)
-                    == crate::command_io_ops::CommandIoFailure::Infallible
-        );
-    let source_expression =
-        work.clone_owned(&expression.id, "call status source expression clone")?;
-    let source = StatusSourceId {
-        expression: source_expression,
-        lane: StatusLane::OperationFailure,
-    };
-    let mut results = Vec::new();
-    for (mut path, commits) in states {
-        if path.failed || path.residual {
-            work.push_expr_path(&mut results, path, "short-circuited call path")?;
-            continue;
-        }
-        if borrowed_total.is_none() && super::owner_admission::required(program, expression) {
-            let admission = StatusSourceId {
-                expression: work.clone_owned(&expression.id, "owner-admission identity clone")?,
-                lane: StatusLane::OwnerAdmission,
-            };
-            let mut refused = work.clone_expr_path(&path, "owner-admission failure path")?;
-            work.push_observation(
-                &mut refused,
-                SkeletonObservation::Status {
-                    source: admission.clone(),
-                    success: false,
-                },
-                "owner-admission failure",
-            )?;
-            refused.failed = true;
-            refused.owned_source = None;
-            work.push_expr_path(&mut results, refused, "owner-admission failed path")?;
-            work.push_observation(
-                &mut path,
-                SkeletonObservation::Status {
-                    source: admission,
-                    success: true,
-                },
-                "owner-admission success",
-            )?;
-        }
-        if !defer_commit {
-            let call = work.clone_owned(&expression.id, "call-commit identity clone")?;
-            let arguments = work.clone_payload(&commits, "call-commit argument payload")?;
-            work.push_observation(
-                &mut path,
-                SkeletonObservation::CallCommit { call, arguments },
-                "call-commit observation",
-            )?;
-        }
-        if infallible_compiler_operation {
-            if expression.ownership == OwnershipMode::Own
-                && type_needs_drop(program, function, &expression.ty)?
-            {
-                let destination = temporary_place(expression, work)?;
-                let at = work.clone_owned(&expression.id, "byte result expression clone")?;
-                let initialized =
-                    work.clone_owned(&destination, "byte result destination clone")?;
-                work.push_observation(
-                    &mut path,
-                    SkeletonObservation::Initialize {
-                        at,
-                        destination: initialized,
-                    },
-                    "owned infallible byte result initialization",
-                )?;
-                path.owned_source = Some(destination);
-            } else {
-                path.owned_source = None;
-            }
-            work.push_expr_path(&mut results, path, "infallible byte call path")?;
-            continue;
-        }
-        let mut failure = work.clone_expr_path(&path, "call failure path clone")?;
-        let failure_source = work.clone_owned(&source, "call failure status-source clone")?;
-        work.push_observation(
-            &mut failure,
-            SkeletonObservation::Status {
-                source: failure_source,
-                success: false,
-            },
-            "call failure observation",
-        )?;
-        failure.failed = true;
-        failure.owned_source = None;
-        work.push_expr_path(&mut results, failure, "call failure path")?;
-
-        let success_source = work.clone_owned(&source, "call success status-source clone")?;
-        work.push_observation(
-            &mut path,
-            SkeletonObservation::Status {
-                source: success_source,
-                success: true,
-            },
-            "call success observation",
-        )?;
-        if defer_commit {
-            let call = work.clone_owned(&expression.id, "call-commit identity clone")?;
-            work.push_observation(
-                &mut path,
-                SkeletonObservation::CallCommit {
-                    call,
-                    arguments: commits,
-                },
-                "deferred success call-commit observation",
-            )?;
-        }
-        if expression.ownership == OwnershipMode::Own
-            && type_needs_drop(program, function, &expression.ty)?
-        {
-            let destination = temporary_place(expression, work)?;
-            let at = work.clone_owned(&expression.id, "call result expression clone")?;
-            let initialized = work.clone_owned(&destination, "call result destination clone")?;
-            work.push_observation(
-                &mut path,
-                SkeletonObservation::Initialize {
-                    at,
-                    destination: initialized,
-                },
-                "owned call result initialization",
-            )?;
-            path.owned_source = Some(destination);
-        } else {
-            path.owned_source = None;
-        }
-        work.push_expr_path(&mut results, path, "call success path")?;
-    }
-    Ok(results)
-}
 
 fn split_status_paths(
     paths: Vec<ExprSkeletonPath>,

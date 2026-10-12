@@ -10,6 +10,10 @@
 use crate::{ast::Program, diagnostic::Diagnostic, hir};
 use hir::{DeclarationId, FunctionExecutionId, ResolvedFunction, ResolvedProgram};
 
+mod projection;
+pub(crate) use projection::Validated;
+pub(crate) mod lease;
+
 #[cfg(test)]
 mod tests;
 
@@ -27,6 +31,10 @@ pub(crate) enum Refusal {
     Source(Vec<Diagnostic>),
     Validation(Diagnostic),
     Boundary(Diagnostic),
+    Projection(Diagnostic),
+    Coverage(Diagnostic),
+    Lease(Diagnostic),
+    Storage,
 }
 
 /// An exact current function lent by the source owner. Its private fields and
@@ -71,6 +79,12 @@ pub(crate) fn prepare<'source>(
 }
 
 impl<'source> Prepared<'source> {
+    /// Consume the ordinary proof owner. Projected attachments cannot escape
+    /// before complete independent status, path and failure-cleanup receiving.
+    pub(crate) fn receive(self) -> Result<Validated<'source>, Refusal> {
+        projection::receive(self)
+    }
+
     pub(crate) fn source(&self) -> &'source Program { self.source }
     pub(crate) fn ordinary_program(&self) -> &ResolvedProgram { &self.program }
     pub(crate) fn entry(&self) -> &DeclarationId { &self.entry }

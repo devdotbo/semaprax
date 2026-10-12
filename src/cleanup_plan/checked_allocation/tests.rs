@@ -137,3 +137,117 @@ fn independent_allocation_status_replay_keeps_take_total_and_implicit_reads_clon
             "take forwards the original carrier; an ordinary owning read still clones");
     }).unwrap();
 }
+
+fn allocation_refused() -> crate::conformance::NormalizedStatus {
+    crate::conformance::NormalizedStatus::try_new(
+        crate::cleanup_plan::ALLOCATION_DOMAIN_V1,
+        crate::cleanup_plan::AllocationCase::PayloadRefused.code(),
+        crate::conformance::StatusClass::Adapter,
+        crate::conformance::Retryability::Known(false),
+    ).unwrap()
+}
+
+#[test]
+fn coverage_refuses_uncatalogued_materialization_before_any_candidate() {
+    let source = crate::parse(r#"module checked.sort;
+@id("checked.sort.main") fn main() -> i64 {
+    let values = vec_of<i64>(3, 1);
+    let sorted = vec_sort<i64>(values);
+    if vec_len<i64>(sorted) == 2usize { 1 } else { 0 }
+}
+"#, "checked-sort.spx").unwrap();
+    let prepared = prepare(&source, &DeclarationId::new("checked.sort.main"))
+        .expect("ordinary source remains admitted");
+    assert!(matches!(prepared.receive(), Err(Refusal::Coverage(_))),
+        "sort scratch has no failure inventory; the whole closure refuses");
+}
+
+#[test]
+fn validated_oracle_injects_each_allocation_failure_with_sticky_canonical_cleanup() {
+    use crate::cleanup_plan::execute::{CleanupExecutionError, CleanupScenario};
+    use crate::cleanup_plan::StatusLane;
+    use crate::conformance::{OperationOutcome, TraceEventKind, TraceOutcome, TraceResult};
+    let source = source();
+    let validated = prepare(&source, &DeclarationId::new("checked.main")).unwrap()
+        .receive().expect("full projected replay");
+    let text = validated.program().functions.iter()
+        .find(|function| function.id.as_str() == "checked.text").unwrap();
+    let rows: Vec<_> = text.cleanup_plan.status_sources.iter().map(|row| row.id.clone()).collect();
+    assert_eq!(rows.len(), 4, "two literal headers, concat status, concat payload");
+    assert!(matches!(rows[0].lane, StatusLane::AllocationFailure));
+    assert!(matches!(rows[1].lane, StatusLane::AllocationFailure));
+    assert!(matches!(rows[2].lane, StatusLane::OperationFailure));
+    assert!(matches!(rows[3].lane, StatusLane::AllocationFailure));
+    let run = |scenario| super::super::execute::checked_allocation::execute_for_conformance(
+        &validated, &text.id, scenario);
+    let refused = allocation_refused();
+    // (failing row, finalized temporaries, committed group present)
+    for (failing, finalized, committed) in [(0usize, 0usize, false), (1, 1, false), (3, 0, true)] {
+        let mut scenario = CleanupScenario::new(format!("allocation-{failing}"), None);
+        for (index, id) in rows.iter().enumerate().take(failing + 1) {
+            scenario.operations.insert(id.clone(), if index == failing {
+                OperationOutcome::Failure(refused.clone())
+            } else {
+                OperationOutcome::Success
+            });
+        }
+        let trace = run(scenario).expect("injected allocation failure is a language outcome");
+        let TraceOutcome::Failure { selected_source, status } = &trace.outcome else {
+            panic!("allocation refusal never publishes a result")
+        };
+        assert_eq!(selected_source, &rows[failing]);
+        assert_eq!(status, &refused);
+        let count = |pick: fn(&TraceEventKind) -> bool| trace.events.iter().filter(|event| pick(&event.event)).count();
+        assert_eq!(count(|event| matches!(event, TraceEventKind::SelectFailure { .. })), 1);
+        assert_eq!(count(|event| matches!(event, TraceEventKind::ResultCommit { .. })), 0);
+        assert_eq!(count(|event| matches!(event, TraceEventKind::FinalizeEnd { .. })), finalized);
+        // Concat's group commits before its payload allocation; the failure
+        // exit cannot reacquire or finalize callee-owned arguments.
+        assert_eq!(count(|event| matches!(event, TraceEventKind::CallCommit { arguments, .. } if arguments.len() == 2)),
+            usize::from(committed));
+    }
+    let mut success = CleanupScenario::new("allocation-success", Some(TraceResult::String));
+    for id in &rows {
+        success.operations.insert(id.clone(), OperationOutcome::Success);
+    }
+    assert!(matches!(run(success).unwrap().outcome, TraceOutcome::Success { result: TraceResult::String }));
+    let mut foreign = CleanupScenario::new("allocation-wrong-domain", None);
+    foreign.operations.insert(rows[0].clone(), OperationOutcome::Failure(
+        crate::conformance::NormalizedStatus::arithmetic(crate::cleanup_plan::StatusCase::AddOverflow)));
+    assert!(matches!(run(foreign), Err(CleanupExecutionError::HarnessInvariant(_))));
+    // The ordinary oracle never selects allocation replay for a v20 plan.
+    let ordinary = crate::cleanup_plan::execute::execute_for_conformance(
+        validated.program(), &text.id, CleanupScenario::new("ordinary", Some(TraceResult::String)));
+    assert!(matches!(ordinary, Err(CleanupExecutionError::InvalidProgram(_))));
+}
+
+#[test]
+fn release_lease_binds_allocator_families_and_every_engine_refuses() {
+    use super::lease::{capture, Engine, Release};
+    let source = source();
+    let validated = prepare(&source, &DeclarationId::new("checked.main")).unwrap().receive().unwrap();
+    let lease = capture(&validated).expect("String owners use the allocator-owned family");
+    assert!(std::ptr::eq(lease.validated(), &validated));
+    assert_eq!(lease.releases().collect::<Vec<_>>(), vec![Release::String]);
+    for engine in [Engine::Native, Engine::Wasm, Engine::Interpreter] {
+        assert!(matches!(lease.receive(engine), Err(Refusal::Lease(_))));
+    }
+}
+
+
+#[test]
+fn aggregate_metadata_cannot_inherit_native_inline_nonallocation_authority() {
+    let source = crate::parse(r#"module checked.aggregate;
+@id("checked.aggregate.Pair") record Pair { left: i64, right: i64 }
+@id("checked.aggregate.main") fn main() -> i64 {
+    let pair = Pair { left: 1, right: 2 };
+    pair.left + pair.right
+}
+"#, "checked-aggregate.spx").unwrap();
+    let prepared = prepare(&source, &DeclarationId::new("checked.aggregate.main"))
+        .expect("ordinary Copy-record source remains admitted");
+    let Err(Refusal::Coverage(diagnostic)) = prepared.receive() else {
+        panic!("interpreter map/Arc metadata requires its checked receiver")
+    };
+    assert!(diagnostic.message.contains("aggregate carrier metadata"));
+}

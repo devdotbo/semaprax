@@ -3,7 +3,7 @@
 //! retain their original priority over the final table mismatch. No plan row is
 //! authority for discovering a failure producer.
 use super::*;
-mod allocation;
+pub(in crate::cleanup_plan) mod allocation;
 #[cfg(test)]
 mod old;
 #[cfg(test)]

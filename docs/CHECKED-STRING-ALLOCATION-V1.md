@@ -323,3 +323,44 @@ order, and rederives consuming String operands and condition reads. This check
 is deliberately separate from failure-cleanup and skeleton replay: passing it
 does not lend an executor, allocator or output lease. Its current ordinary
 predicate storage is not a claim of complete compiler funding.
+
+## Private coverage, oracle and release-lease seams
+
+Before any candidate is built, the projection walks every held function's
+requires, body and ensures separately from the builder and status discovery.
+Each expression must be a catalogued allocation site, a non-allocating or
+same-owner forwarding form, or a call to a held function whose own candidate
+covers its sites. Everything else refuses the whole closure: closures and
+function-value invocations, once-closure environments, resumable requests,
+owned host/native/Vec-field results, file text, byte partitions, List and
+iterator carriers, Vec sort/selection scratch, cloned non-String owned keys,
+owned collection value/element reads and unknown call targets. These shapes
+keep their ordinary meaning; they are only outside this projection until each
+has its own failure inventory and partial-owner cleanup.
+
+A held candidate then passes the full projected skeleton replay. The literal,
+owning-place, consuming and deferred call allocation splits are rederived
+from HIR at the same frontier as the builder. A consuming group still commits
+before its payload allocation, and its failure exit finalizes no committed
+argument. A deferred group stays staged for caller cleanup.
+
+A private attached-plan oracle receiver accepts only the validated owner. It
+repeats the projected replay and refuses ordinary plans. Its scenarios inject
+a refusal at an exact canonical allocation source. This is semantic evidence
+only, with no physical allocator claim. The ordinary oracle still refuses
+every v20 plan.
+
+A private release lease repeats that replay. It binds each held lifecycle to
+one closed allocator-owned family: String, Bytes, Vec, Box, String map or
+typed collection. Any other finalizer refuses. Native, Core-Wasm and
+interpreter receivers all refuse for now; their success type is uninhabited.
+No engine, manifest, graph, cache or public SDK route is enabled. Escaped
+String/Bytes results still refuse at preparation. These controls are authored
+and unexecuted.
+
+
+Aggregate coverage is not inferred from native inline layout. The ordinary
+interpreter currently allocates field maps and Arc record/variant carriers;
+record construction, variant construction and updates therefore remain closed
+in this private projection until their checked metadata receivers join. Native
+inline constructors alone do not qualify equivalent all-engine refusal behavior.

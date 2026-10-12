@@ -5,24 +5,31 @@
 use super::*;
 use crate::cleanup_plan::AllocationOperation as A;
 
-pub(super) struct Selection {
+pub(in crate::cleanup_plan) struct Selection {
     moves: BTreeSet<ExpressionId>,
     reads: BTreeSet<ExpressionId>,
 }
 impl Selection {
-    pub(super) fn new(function: &ResolvedFunction) -> Result<Self, Diagnostic> {
+    pub(in crate::cleanup_plan) fn new(function: &ResolvedFunction) -> Result<Self, Diagnostic> {
         Ok(Self {
             moves: crate::literal_format::checked_moving_string_operands(function)?,
             reads: crate::string_ops::conditions::function_reads(function),
         })
     }
-    pub(super) fn operation(&self, expression: &ResolvedExpr) -> Option<A> {
+    pub(in crate::cleanup_plan) fn operation(&self, expression: &ResolvedExpr) -> Option<A> {
+        Self::operation_with(expression, &self.moves, &self.reads)
+    }
+    pub(in crate::cleanup_plan) fn operation_with(
+        expression: &ResolvedExpr,
+        moves: &BTreeSet<ExpressionId>,
+        reads: &BTreeSet<ExpressionId>,
+    ) -> Option<A> {
         match &expression.kind {
             ResolvedExprKind::String(_) => Some(A::StringLiteral),
             ResolvedExprKind::Place(_) if expression.ty == ResolvedType::String
                 && expression.ownership == OwnershipMode::Own
-                && !self.moves.contains(&expression.id)
-                && !self.reads.contains(&expression.id) => Some(A::StringClone),
+                && !moves.contains(&expression.id)
+                && !reads.contains(&expression.id) => Some(A::StringClone),
             ResolvedExprKind::LiteralFormat { .. } => Some(A::LiteralFormat),
             ResolvedExprKind::Call { callee, instance: None, type_arguments, .. } => {
                 use crate::string_ops::StringOp as S;

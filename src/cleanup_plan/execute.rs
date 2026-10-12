@@ -1156,19 +1156,8 @@ impl<'a> Executor<'a> {
             .map(|candidate| candidate.producer.clone())
             .ok_or_else(|| invariant(format!("unknown failure source `{}`", source.expression)))?;
         let status = match producer {
-            StatusProducer::CheckedAllocation { normalized_cases, .. } => {
-                let status = self.failure_outcome(&source)?;
-                if source.lane != StatusLane::AllocationFailure
-                    || normalized_cases != [super::AllocationCase::PayloadRefused, super::AllocationCase::SizeOverflow]
-                    || status.domain_id() != super::ALLOCATION_DOMAIN_V1
-                    || !normalized_cases.iter().any(|case| status.code() == case.code())
-                    || status.class() != crate::conformance::StatusClass::Adapter
-                    || status.retryability() != crate::conformance::Retryability::Known(false)
-                {
-                    return Err(invariant("allocation failure supplied a status outside its exact refusal domain"));
-                }
-                status
-            }
+            StatusProducer::CheckedAllocation { normalized_cases, .. } =>
+                checked_allocation::failure_status(self, &source, normalized_cases)?,
             StatusProducer::ContractFalse { phase, .. } => NormalizedStatus::contract(phase),
             StatusProducer::CheckedArithmetic {
                 normalized_cases, ..
@@ -1769,7 +1758,7 @@ fn invariant(detail: impl Into<String>) -> CleanupExecutionError {
 }
 
 mod propagated_status;
-
+pub(in crate::cleanup_plan) mod checked_allocation;
 use propagated_status::validate_propagated_status;
 
 #[cfg(test)]

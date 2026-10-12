@@ -49,6 +49,14 @@ pub(crate) trait ReplayContext {
     fn selected_flat_records(&self) -> bool {
         false
     }
+    /// Only an exact-source checked allocation projection can lend this opaque
+    /// current member. Ordinary/decoded contexts do not select allocation replay.
+    fn allocation_function<'a>(
+        &'a self,
+        _function: &'a ResolvedFunction,
+    ) -> Option<crate::cleanup_plan::checked_allocation::Function<'a>> {
+        None
+    }
     fn full_program(&self) -> Option<&ResolvedProgram> {
         None
     }
