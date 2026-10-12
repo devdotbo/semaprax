@@ -837,7 +837,10 @@ path readers.
 ### Validated HIR
 
 `project/json_codec/suitability.rs` owns the read-only exact-type explanation
-and bounded whole-row continuation. It shares the existing profile fragment
+and bounded whole-row continuation. Its `inspection` child retains compact facts
+for the complete ordered profile inventory; `paging` renders and moves only
+queried rows into the envelope. Full fragment checks precede paging. It shares
+the existing profile fragment
 predicate dispatch and codec selector descriptor, binding checked source and
 Project/workspace revisions while keeping candidate and backend admission
 unperformed. `cli/json_codec/suitability.rs` accepts strict optional policy and

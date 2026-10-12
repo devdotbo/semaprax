@@ -1,3 +1,4 @@
+use super::saved_page::page;
 use super::*;
 fn revision(field: &str) -> ProjectRevision {
     revision_with_padding(field, None)
@@ -184,4 +185,116 @@ fn exact_byte_budget_and_one_short_continue_without_dropping_profile_rows() {
     assert!(remainder["next_offset"].is_null());
     assert!(page(envelope.clone(), &rows, 12, 16384).is_err());
     assert!(page(envelope, &rows, 0, 1).is_err());
+}
+
+#[test]
+fn compact_inventory_paging_matches_saved_eager_bytes_and_renders_only_page_rows() {
+    let rows = (0..12)
+        .map(|i| json!({"selector":format!("policy-{i}"),"shape_matches":i%2==0,"reason":"é\\\""}))
+        .collect::<Vec<_>>();
+    let envelope = json!({"schema":"test-boundary","profiles":[],"offset":0,"next_offset":Value::Null,"coverage":"continued"});
+    // Observe only paging and its output Drop, excluding the independent
+    // input inventory. This proves a local allocation reduction, not the
+    // fragment generators' or complete Project's memory requirements.
+    let (_, eager) = crate::test_allocation_observer::measure(|| {
+        drop(page(envelope.clone(), &rows, 0, 16384).unwrap());
+    });
+    let (_, compact) = crate::test_allocation_observer::measure(|| {
+        drop(
+            paging::page(envelope.clone(), rows.len(), 0, 16384, |index| {
+                rows[index].clone()
+            })
+            .unwrap(),
+        );
+    });
+    assert!(!eager.invalid && !compact.invalid);
+    assert_eq!((eager.live, compact.live), (0, 0));
+    assert!(compact.allocated < eager.allocated);
+    for offset in 0..12 {
+        let mut envelope = envelope.clone();
+        envelope["offset"] = json!(offset);
+        let full = page(envelope.clone(), &rows, offset, 16384).unwrap();
+        for maximum in [1, full.len() - 1, full.len(), full.len() + 1, 16384] {
+            let mut rendered = Vec::new();
+            let actual = paging::page(envelope.clone(), rows.len(), offset, maximum, |index| {
+                rendered.push(index);
+                rows[index].clone()
+            });
+            let expected = page(envelope.clone(), &rows, offset, maximum);
+            match (actual, expected) {
+                (Ok(actual), Ok(expected)) => {
+                    assert_eq!(actual, expected);
+                    let output: Value = serde_json::from_str(&actual).unwrap();
+                    let accepted = output["profiles"].as_array().unwrap().len();
+                    assert_eq!(
+                        rendered,
+                        (offset..offset + accepted + usize::from(offset + accepted < rows.len()))
+                            .collect::<Vec<_>>()
+                    );
+                }
+                (Err(actual), Err(expected)) => assert_eq!(actual, expected),
+                _ => panic!("paging verdict differs"),
+            }
+        }
+    }
+}
+
+#[test]
+fn compact_profile_facts_preserve_all_twelve_saved_predicates_imports_and_refusals() {
+    for field in ["i64", "string", "bool"] {
+        let revision = revision(field);
+        let source = revision
+            .sources()
+            .iter()
+            .find(|s| s.path() == "src/core.spx")
+            .unwrap();
+        let program = crate::parse(source.source(), source.path()).unwrap();
+        let declaration = program
+            .types
+            .iter()
+            .find(|t| t.stable_id == "explain.Row")
+            .unwrap();
+        for policy in [None, Some(1), Some(64)] {
+            let options = JsonCodecSuitabilityOptions {
+                record: "explain.Row".into(),
+                max_string_bytes: policy,
+                max_array_items: policy.map(|_| 256),
+                ..Default::default()
+            };
+            let expected =
+                saved_inspection::rows(&revision, &options, &program, declaration, source.path());
+            let actual = profiles(
+                options.max_string_bytes.unwrap_or(1),
+                options.max_array_items.unwrap_or(1),
+            )
+            .into_iter()
+            .map(|profile| {
+                inspection::inspect(
+                    &revision,
+                    &options,
+                    &program,
+                    declaration,
+                    source.path(),
+                    profile,
+                )
+                .map(|facts| facts.render())
+            })
+            .collect::<Result<Vec<_>, _>>();
+            assert_eq!(actual, expected, "field={field}, policy={policy:?}");
+            if let Ok(rows) = actual {
+                assert_eq!(rows.len(), 12);
+                for offset in 0..12 {
+                    let envelope = json!({"profiles":[],"offset":offset,"coverage":"continued","next_offset":Value::Null});
+                    let expected = page(envelope.clone(), &rows, offset, 16384).unwrap();
+                    assert_eq!(
+                        paging::page(envelope, rows.len(), offset, expected.len(), |index| rows
+                            [index]
+                            .clone())
+                        .unwrap(),
+                        expected
+                    );
+                }
+            }
+        }
+    }
 }

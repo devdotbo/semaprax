@@ -75,65 +75,12 @@ fn profiles(string: usize, array: usize) -> [JsonCodecProfile; 12] {
         },
     ]
 }
-fn page(
-    mut envelope: Value,
-    rows: &[Value],
-    offset: usize,
-    maximum: usize,
-) -> Result<String, Vec<Diagnostic>> {
-    if offset >= rows.len() {
-        return Err(refusal(
-            "codec explanation offset is outside the complete profile inventory",
-        ));
-    }
-    let mut accepted = Vec::new();
-    for row in &rows[offset..] {
-        accepted.push(row.clone());
-        let next = offset + accepted.len();
-        envelope["profiles"] = json!(accepted);
-        envelope["next_offset"] = if next == rows.len() {
-            Value::Null
-        } else {
-            json!(next)
-        };
-        envelope["coverage"] = json!(if next == rows.len() {
-            "complete"
-        } else {
-            "continued"
-        });
-        let output =
-            serde_json::to_string(&envelope).expect("fixed explanation fields serialize") + "\n";
-        if output.len() > maximum {
-            accepted.pop();
-            break;
-        }
-    }
-    if accepted.is_empty() {
-        return Err(refusal(
-            "codec explanation byte budget cannot hold one complete profile row and its binding",
-        ));
-    }
-    let next = offset + accepted.len();
-    envelope["profiles"] = json!(accepted);
-    envelope["next_offset"] = if next == rows.len() {
-        Value::Null
-    } else {
-        json!(next)
-    };
-    envelope["coverage"] = json!(if next == rows.len() {
-        "complete"
-    } else {
-        "continued"
-    });
-    let output =
-        serde_json::to_string(&envelope).expect("fixed explanation fields serialize") + "\n";
-    if output.len() > maximum {
-        return Err(refusal(
-            "codec explanation envelope exceeds its byte budget",
-        ));
-    }
-    Ok(output)
-}
+mod inspection;
+mod paging;
+#[cfg(test)]
+mod saved_inspection;
+#[cfg(test)]
+mod saved_page;
 
 /// Inspect existing generator predicates against one currently admitted source.
 /// No replacement is checked, retained, written or returned. All candidate and
@@ -218,60 +165,21 @@ pub fn explain_json_codec_suitability(
             Err(e) => json!({"manifest_allows":false,"refusals":diagnostics(e)}),
         }
     });
+    // Every profile is inspected before paging, including profiles outside
+    // this page. Internal generation/parse/size failures retain their order.
     let mut rows = Vec::with_capacity(12);
     for profile in profiles(
         options.max_string_bytes.unwrap_or(1),
         options.max_array_items.unwrap_or(1),
     ) {
-        let (selector, string, array) = plan::profile_fields(profile);
-        let mut missing = Vec::new();
-        if string.is_some() && options.max_string_bytes.is_none() {
-            missing.push("--max-string-bytes 1..64");
-        }
-        if array.is_some() && options.max_array_items.is_none() {
-            missing.push("--max-array-items 1..256");
-        }
-        let mut row = json!({"selector":selector,"shape_matches":Value::Null,"missing_policy":missing,
-            "max_string_bytes":if string.is_some() { options.max_string_bytes } else { None },
-            "max_array_items":if array.is_some() { options.max_array_items } else { None },
-            "candidate_admission":"not_evaluated","backend_admission":"not_evaluated"});
-        if row["missing_policy"]
-            .as_array()
-            .expect("policy list")
-            .is_empty()
-        {
-            match profile_fragment(&program, declaration, profile) {
-                Err(errors) => {
-                    row["shape_matches"] = json!(false);
-                    row["refusals"] = diagnostics(errors);
-                }
-                Ok(fragment) => {
-                    if fragment.len() > MAX_GENERATED_BYTES {
-                        return Err(refusal("codec explanation fragment exceeds the existing generated-source bound"));
-                    }
-                    let generated = crate::parse(&fragment, source.path()).map_err(|d| vec![d])?;
-                    let mut modules = std::collections::BTreeSet::new();
-                    let mut absent = std::collections::BTreeSet::new();
-                    for import in &generated.module_uses {
-                        modules.insert(import.target_module.as_str());
-                        let id = crate::hir::DeclarationId::new(import.persistent_id.as_str());
-                        if revision
-                            .entry_program()
-                            .declarations
-                            .declaration(&id)
-                            .is_none()
-                        {
-                            absent.insert(import.persistent_id.as_str());
-                        }
-                    }
-                    row["shape_matches"] = json!(true);
-                    row["required_modules"] = json!(modules);
-                    row["imports_absent_from_current_entry_index"] = json!(absent);
-                    row["remaining_prerequisites"]=json!(["ordinary complete candidate dependency/signature/profile/target/ownership/verification admission"]);
-                }
-            }
-        }
-        rows.push(row);
+        rows.push(inspection::inspect(
+            revision,
+            options,
+            &program,
+            declaration,
+            source.path(),
+            profile,
+        )?);
     }
     let envelope = json!({"schema":"semaprax.json-codec-suitability.v1","project_revision":revision.project_revision(),
         "workspace_revision":revision.workspace_revision(),"source":source.path(),"source_sha256":hash(source.source().as_bytes()),
@@ -279,7 +187,14 @@ pub fn explain_json_codec_suitability(
         "policy":{"max_string_bytes":options.max_string_bytes,"max_array_items":options.max_array_items},
         "profile_count":rows.len(),"offset":options.offset,
         "profiles":[],"next_offset":Value::Null,"coverage":"continued"});
-    page(envelope, &rows, options.offset, options.max_bytes)
+    let count = rows.len();
+    let mut selected_rows = rows.into_iter().skip(options.offset);
+    paging::page(envelope, count, options.offset, options.max_bytes, |_| {
+        selected_rows
+            .next()
+            .expect("checked sequential profile page")
+            .render()
+    })
 }
 
 #[cfg(test)]

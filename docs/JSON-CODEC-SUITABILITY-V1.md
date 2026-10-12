@@ -45,8 +45,14 @@ otherwise `next_offset` identifies the next whole row. No matching or refused
 profile is silently omitted. A byte budget unable to hold the binding and one
 whole row refuses. Exact and one-byte-short budgets preserve this rule.
 
-Each row uses the existing selector/bound descriptor and unchanged generator
-predicate dispatch. Temporary internal fragments are inspected and discarded;
+All twelve profiles are inspected in their original order before paging, using
+the existing selector/bound descriptor and unchanged generator predicate
+dispatch. Compact inspection facts retain actual imports and refusals; only the
+requested page and its first nonfitting row are rendered into JSON. Each row is
+moved into the page envelope once rather than repeatedly cloning accepted rows.
+Fragment generation, parsing and their global error order remain unchanged.
+This narrows report-construction work; it does not eliminate generator storage
+or establish a measured allocation or authoring improvement. Temporary internal fragments are inspected and discarded;
 no replacement is returned or checked as a candidate. `shape_matches` is true
 or false only after that predicate runs. Profiles needing omitted bounds instead
 return null and complete `missing_policy` requirements. Predicates retain their
