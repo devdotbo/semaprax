@@ -69,7 +69,9 @@ pub(super) fn wide_original_fixture() -> ResolvedProgram {
     let mut source = super::tests::SOURCE.to_owned();
     // Preserve the original first body and loan semantics. Only the outer
     // authored directory grows; the shared small fixture remains unchanged.
-    for index in 4..33 {
+    // Its generic identity lives in templates, leaving three authored HIR
+    // functions; add thirty bodies so this genuinely crosses the 32-slot tier.
+    for index in 3..33 {
         source.push_str(&format!(
             "@id(\"wide{index}\") fn wide{index}()->i64 {{0}}\n"
         ));
