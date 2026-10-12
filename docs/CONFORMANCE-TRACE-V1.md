@@ -296,3 +296,10 @@ The public Rust types and canonical serializer are a data protocol, not by thems
 Validation must independently replay the attached `CleanupPlan`; it must not call the canonical plan builder or accept equality with another backend as its only oracle. Native and Wasm traces must each match the same independently validated expected trace and then match each other. Backend execution additionally requires the relevant sanitizer, hostile-adapter, context-isolation, and target-matrix evidence from RFC 0003.
 
 The current reference executor satisfies the target-neutral single-frame subset of these gates and models caller result publication explicitly, but it stubs internal-call outcomes and rejects callable imports. Replay is exhaustive only for the current acyclic CFG surface and rejects a statically estimated path bound above 65,536 or more than 1,000,000 charged work units with `SPX-H006`; loops require a later symbolic/fixpoint design. For the narrow 14-case shape, generated native C and Wasm each emit actual dictionary ordinals and match the independently produced trace and outcome exactly. The private physical native host separately proves ownership plumbing without generated loaded-code execution. That narrow equality is not a substitute for a production native-host trace validator or general-shape conformance; until those remaining gates pass, the protocols and reference oracle do not establish full backend resource conformance.
+
+The private checked-allocation v20 producer is outside the frozen single-frame
+semantic-event dictionary: it receives `SPX-B104` with the closed reason
+`checked allocation is outside the single-frame slice`. No dictionary ordinal
+or ordinary owned-Wasm/resumable status decoder grants its allocator authority.
+Those receivers explicitly reject the new producer; their earlier producer
+ordering, wire encodings and admitted scenarios are unchanged.

@@ -17,7 +17,7 @@ pub(super) fn finish_call_states(
     let borrowed_total: Option<bool> = None;
     let infallible_compiler_operation = match borrowed_total {
         Some(total) => total,
-        None => super::deferred_commit::expression_is_infallible_compiler_operation(expression),
+        None => crate::cleanup_plan::deferred_commit::expression_is_infallible_compiler_operation(expression),
     };
     // `vec_push` and the one fallible byte operation both check their bound before the owner transfer commits, so their status observation precedes the
     // call-commit and a failed call leaves the owner in its call-argument slot for the ordinary region cleanup.
@@ -42,7 +42,7 @@ pub(super) fn finish_call_states(
             work.push_expr_path(&mut results, path, "short-circuited call path")?;
             continue;
         }
-        if borrowed_total.is_none() && super::owner_admission::required(program, expression) {
+        if borrowed_total.is_none() && crate::cleanup_plan::owner_admission::required(program, expression) {
             let admission = StatusSourceId {
                 expression: work.clone_owned(&expression.id, "owner-admission identity clone")?,
                 lane: StatusLane::OwnerAdmission,

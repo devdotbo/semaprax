@@ -522,6 +522,9 @@ fn fixed_status(
                 function.id
             ))),
         },
+        StatusProducer::CheckedAllocation { .. } => Err(dictionary_error(
+            "checked allocation is outside the single-frame slice".to_owned(),
+        )),
         StatusProducer::PropagatedCall { callee } => Err(dictionary_error(format!(
             "propagated call `{callee}` is outside the single-frame slice"
         ))),

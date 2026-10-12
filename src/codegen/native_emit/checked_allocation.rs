@@ -256,7 +256,7 @@ fn classify(program: &ResolvedProgram, expression: &ResolvedExpr) -> Result<(), 
     }
 }
 
-fn join_runtime(mut prelude: String) -> Result<String, Diagnostic> {
+pub(super) fn join_runtime(mut prelude: String) -> Result<String, Diagnostic> {
     let header = "struct spx_string_v10 { uint64_t len; char data[]; };";
     // A Bytes-only closure still uses the same allocation status adapter.
     // No ordinary String prelude exists in that case; supply only its unused

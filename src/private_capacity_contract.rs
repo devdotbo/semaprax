@@ -446,7 +446,9 @@ pub(crate) fn cleanup_plan_owned_capacity(
             } => normalized_cases
                 .capacity()
                 .checked_mul(std::mem::size_of::<crate::cleanup_plan::StatusCase>())?,
-            StatusProducer::ContractFalse { .. } => 0,
+            // The two allocation cases are inline; StatusSource backing above
+            // already includes their full layout, with no separate Vec payload.
+            StatusProducer::CheckedAllocation { .. } | StatusProducer::ContractFalse { .. } => 0,
         })?;
     }
     for block in &plan.blocks {

@@ -532,6 +532,7 @@ pub(super) fn decode_language(
     )?;
     for source in &plan.function().cleanup_plan.status_sources {
         match &source.producer {
+            StatusProducer::CheckedAllocation { .. } => return Err(Error::Binding),
             StatusProducer::ContractFalse { phase, .. } => {
                 let status = NormalizedStatus::contract(*phase);
                 if codec::parse(status.to_json().as_bytes(), codec::MAX_CARRIER)? == *value {

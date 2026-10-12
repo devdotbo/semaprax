@@ -29,7 +29,7 @@ pub(in crate::cleanup_plan) fn candidate(
 }
 
 impl PlanBuilder<'_> {
-    fn checked_source(
+    pub(super) fn checked_source(
         &mut self,
         expression: &ResolvedExpr,
         operation: CheckedOperation,

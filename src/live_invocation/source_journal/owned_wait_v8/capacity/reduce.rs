@@ -114,6 +114,7 @@ fn failure_statuses(plan: &v2::CheckedOwnedReduceV2) -> Result<Vec<Value>, Sourc
     for source in &plan.function().cleanup_plan.status_sources {
         use crate::cleanup_plan::StatusProducer;
         let values = match &source.producer {
+            StatusProducer::CheckedAllocation { .. } => return Err(SourceJournalError::Binding),
             StatusProducer::ContractFalse { phase, .. } => {
                 vec![crate::conformance::NormalizedStatus::contract(*phase)]
             }
