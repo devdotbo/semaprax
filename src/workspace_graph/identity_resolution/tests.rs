@@ -412,7 +412,8 @@ fn actual_selective_import_receiver_matches_fresh_owned_for_vec_and_box() {
                 layout.presentation(&current[0], hostile.source()).unwrap(),
             )
         })
-        .unwrap_err();
+        .err()
+        .expect("hostile wrapper must preserve source refusal");
         let (actual, refused, _) =
             with_limit_usage(crate::workspace_graph::MAX_BUILDER_BYTES, || {
                 resolve_module(

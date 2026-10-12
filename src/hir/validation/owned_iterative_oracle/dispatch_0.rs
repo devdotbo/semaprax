@@ -1,4 +1,4 @@
-//! Saved original iterative validator arms, preserving literal content.
+// Saved original iterative validator arms, preserving literal content.
 macro_rules! owned_dispatch_0 {
     ($frame:expr, $this:ident, $function:ident, $allow_moves:ident, $allowed_effects:ident, $program:ident, $publication:ident, $frames:ident, $scopes:ident, $Frame:ident) => {
         match $frame {

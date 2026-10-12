@@ -150,7 +150,7 @@ fn deferred_allocating_call_keeps_caller_epochs_until_both_successes_and_rejects
     let before = plan
         .edges
         .iter()
-        .find(|edge| edge.condition == EdgeCondition::StatusZero(physical))
+        .find(|edge| matches!(&edge.condition, EdgeCondition::StatusZero(id) if id == &physical))
         .unwrap()
         .from;
     plan.blocks[before.0 as usize].transitions.push(transition);

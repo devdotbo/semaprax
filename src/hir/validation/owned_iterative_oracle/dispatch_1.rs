@@ -1,4 +1,4 @@
-//! Saved original iterative validator arms, preserving literal content.
+// Saved original iterative validator arms, preserving literal content.
 macro_rules! owned_dispatch_1 {
     ($frame:expr, $this:ident, $function:ident, $allow_moves:ident, $allowed_effects:ident, $program:ident, $publication:ident, $frames:ident, $scopes:ident, $Frame:ident) => {
         match $frame {
@@ -632,7 +632,7 @@ macro_rules! owned_dispatch_1 {
                     // continuation must preserve the loop-entry ownership state.
                     let after = $scopes.pop().expect("while body scope retained");
                     let body = statements[index].child(1).expect("loop body");
-                    if !super::lexical_exit::returns_only(body) && after != entry {
+                    if !crate::hir::lexical_exit::returns_only(body) && after != entry {
                         return Err(hir_error("while loop body changes ownership liveness"));
                     }
                     $frames.push($Frame::BlockNext {

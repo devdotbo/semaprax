@@ -1,4 +1,4 @@
-//! Saved original iterative validator arms, preserving literal content.
+// Saved original iterative validator arms, preserving literal content.
 macro_rules! owned_dispatch_3 {
     ($frame:expr, $this:ident, $function:ident, $allow_moves:ident, $allowed_effects:ident, $program:ident, $publication:ident, $frames:ident, $scopes:ident, $Frame:ident) => {
         match $frame {
@@ -204,7 +204,7 @@ macro_rules! owned_dispatch_3 {
                     let arm_scope = $scopes.pop().expect("scalar match arm scope retained");
                     let arm = &arms[index];
                     $this.join_lexical_match(&mut result, &arm.value)?;
-                    if !super::lexical_exit::returns_only(&arm.value) {
+                    if !crate::hir::lexical_exit::returns_only(&arm.value) {
                         arm_scopes.push(arm_scope);
                     }
                     $frames.push($Frame::ScalarMatchNext {
