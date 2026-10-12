@@ -104,7 +104,7 @@ fn exact_paid_setup_refusal_transfers_original_slot_text_and_ledger_through_drop
     )
     .unwrap();
     let functions = program.functions();
-    let function = &functions[0];
+    let function = functions.get(0).expect("original single-function fixture");
     let ((), cost) = measure(|| {
         let owner = acquire(paid());
         let pointers = owner.backing();
@@ -143,7 +143,7 @@ fn constructor_receipt_and_same_ledger_survive_typed_owner_and_no_paid_form_rema
     )
     .unwrap();
     let functions = program.functions();
-    let function = &functions[0];
+    let function = functions.get(0).expect("original single-function fixture");
     let (used, cost) = measure(|| {
         let owner = acquire(1 << 26);
         let pointers = owner.backing();
@@ -337,7 +337,7 @@ fn prepaid_first_budget_receipt_moves_with_affine_typed_owner_without_reformatti
     )
     .unwrap();
     let functions = program.functions();
-    let function = &functions[0];
+    let function = functions.get(0).expect("original single-function fixture");
     let (used, cost) = measure(|| {
         let owner = acquire(1 << 26);
         let report_pointers = owner.backing();

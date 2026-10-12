@@ -320,7 +320,7 @@ fn borrowed_deadline_dispatch_preserves_complete_generic_observation_priority_wi
                     &cancellation,
                     7,
                 )
-                .unwrap()
+                .unwrap_or_else(|_| panic!("original positive deadline fixture was refused"))
             });
             assert_eq!(result, 1000 - elapsed);
             assert_eq!(metrics.allocated, 0);
