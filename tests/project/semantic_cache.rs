@@ -582,4 +582,5 @@ fn warm_row_loan_consumers_reprove_current_provider_helpers() {
     same(restored.revision(), Arc::clone(cold.revision()));
 }
 
+#[path = "semantic_cache/byte_traversal.rs"]
 mod byte_traversal;
