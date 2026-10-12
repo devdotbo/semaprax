@@ -157,7 +157,7 @@ pub(crate) use agent_validation::embedded::replay_agent_source_associations;
 pub(crate) use workspace_link::compiler_prelude_declarations;
 pub(crate) use workspace_link::native_owner::admitted_helper as indexed_owner_helper_signature;
 pub(crate) use workspace_link::native_owner::{
-    admitted_ri06_regex_resource, admitted_ri06_regex_result,
+    admitted_ri06_regex_resource, admitted_ri06_regex_resource_in, admitted_ri06_regex_result,
 };
 
 /// Validate resolved HIR and independently replay its canonical shared-loan
@@ -266,9 +266,12 @@ use inspection::{
 };
 pub(crate) use inspection::{visit_resolved_calls, visit_workspace_call_sites};
 
+#[cfg(test)]
+pub(crate) use type_reachability::owned_oracle::owned_reachable_types as owned_reachable_types_oracle;
 pub(crate) use type_reachability::{
     authored_nominal_declarations, is_admitted_nested_owned_byte_record, is_flat_owned_byte_record,
     reachable_authored_types, reachable_authored_types_with_roots, reachable_scalar_authored_types,
+    BorrowedTypeInventory,
 };
 pub(crate) use validation::resolved_type_contains_owned_bytes;
 pub(crate) use validation::validate_core;

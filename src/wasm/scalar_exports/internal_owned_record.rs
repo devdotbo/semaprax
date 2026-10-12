@@ -4,17 +4,9 @@ use super::*;
 use crate::hir::{ResolvedMatchMode, ResolvedMatchPattern};
 
 pub(super) fn validate_program(program: &ResolvedProgram) -> Result<(), Diagnostic> {
-    let mut available = BTreeMap::new();
-    for declaration in &program.types {
-        if available
-            .insert(declaration.id.clone(), declaration.clone())
-            .is_some()
-        {
-            return Err(admission(
-                "Public Scalar Export Profile v1 internal record identity is duplicated",
-            ));
-        }
-    }
+    let available = hir::BorrowedTypeInventory::collect(&program.types).map_err(|_| {
+        admission("Public Scalar Export Profile v1 internal record identity is duplicated")
+    })?;
     let functions = program
         .functions
         .iter()

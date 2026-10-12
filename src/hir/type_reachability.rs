@@ -5,17 +5,22 @@
 //! cleanup consumers never receive a declaration set inferred from signatures
 //! alone.
 
-use std::collections::{BTreeMap, BTreeSet, VecDeque};
+use std::collections::{BTreeSet, VecDeque};
 
 use super::*;
 
+mod inventory;
 mod nested_generic_function;
+#[cfg(test)]
+pub(crate) mod owned_oracle;
+
+pub(crate) use inventory::BorrowedTypeInventory;
 
 pub(crate) fn reachable_authored_types(
     functions: &[LinkedScalarFunction],
     instances: &[ResolvedFunctionInstance],
     interfaces: &[ResolvedInterface],
-    available: &BTreeMap<DeclarationId, ResolvedTypeDeclaration>,
+    available: &BorrowedTypeInventory<'_>,
 ) -> Result<Vec<ResolvedTypeDeclaration>, Diagnostic> {
     reachable_authored_types_with_roots(functions, instances, interfaces, available, &[])
 }
@@ -24,33 +29,44 @@ pub(crate) fn reachable_authored_types_with_roots(
     functions: &[LinkedScalarFunction],
     instances: &[ResolvedFunctionInstance],
     interfaces: &[ResolvedInterface],
-    available: &BTreeMap<DeclarationId, ResolvedTypeDeclaration>,
+    available: &BorrowedTypeInventory<'_>,
     roots: &[DeclarationId],
 ) -> Result<Vec<ResolvedTypeDeclaration>, Diagnostic> {
-    reachable_types(functions, instances, interfaces, available, roots, &[])
+    reachable_types(
+        functions,
+        instances,
+        interfaces,
+        available,
+        roots,
+        std::iter::empty::<&ResolvedInterface>(),
+    )
 }
 
 /// Scalar Project roots may retain a checked selected-native owner internally.
 /// The supporting interfaces authorize that resource but do not seed extra
 /// types into the exact function-reachable inventory. Owned-data and Wasm
-/// callers continue using the record/variant-only wrappers above.
-pub(crate) fn reachable_scalar_authored_types(
+/// callers continue using the record/variant-only wrappers above. The owner
+/// interfaces are borrowed in caller flattening order and never copied.
+pub(crate) fn reachable_scalar_authored_types<'a>(
     functions: &[LinkedScalarFunction],
     instances: &[ResolvedFunctionInstance],
-    available: &BTreeMap<DeclarationId, ResolvedTypeDeclaration>,
-    owner_interfaces: &[ResolvedInterface],
+    available: &BorrowedTypeInventory<'_>,
+    owner_interfaces: impl Iterator<Item = &'a ResolvedInterface> + Clone,
 ) -> Result<Vec<ResolvedTypeDeclaration>, Diagnostic> {
     reachable_types(functions, instances, &[], available, &[], owner_interfaces)
 }
 
-fn reachable_types(
+fn reachable_types<'a>(
     functions: &[LinkedScalarFunction],
     instances: &[ResolvedFunctionInstance],
     interfaces: &[ResolvedInterface],
-    available: &BTreeMap<DeclarationId, ResolvedTypeDeclaration>,
+    available: &BorrowedTypeInventory<'_>,
     roots: &[DeclarationId],
-    owner_interfaces: &[ResolvedInterface],
+    owner_interfaces: impl Iterator<Item = &'a ResolvedInterface> + Clone,
 ) -> Result<Vec<ResolvedTypeDeclaration>, Diagnostic> {
+    // An absent owner inventory falls back to the seeding interfaces for RI-06
+    // admission, exactly as the former empty owned vector did.
+    let owner_interfaces_empty = owner_interfaces.clone().next().is_none();
     let mut selected = roots.iter().cloned().collect::<BTreeSet<_>>();
     for linked in functions {
         collect_function(&linked.function, &mut selected);
@@ -77,25 +93,31 @@ fn reachable_types(
                 format!("owned-data closure references unknown type `{id}`"),
             )
         })?;
-        let fields = match &declaration.kind {
-            ResolvedTypeDeclarationKind::Record { fields } => fields.iter().collect::<Vec<_>>(),
-            ResolvedTypeDeclarationKind::Variant { cases } => {
-                cases.iter().flat_map(|case| &case.fields).collect()
-            }
+        // Borrowed field slices replace the former per-declaration pointer
+        // vector; record fields, then each case's fields, in declared order.
+        let (record_fields, cases): (
+            &[ResolvedFieldDeclaration],
+            &[ResolvedVariantCaseDeclaration],
+        ) = match &declaration.kind {
+            ResolvedTypeDeclarationKind::Record { fields } => (fields.as_slice(), &[]),
+            ResolvedTypeDeclarationKind::Variant { cases } => (&[], cases.as_slice()),
             ResolvedTypeDeclarationKind::Resource { .. }
-                if workspace_link::native_owner::admitted_resource(
+                if workspace_link::native_owner::admitted_resource_in(
                     declaration,
-                    owner_interfaces,
-                ) || workspace_link::native_owner::admitted_ri06_regex_resource(
-                    declaration,
-                    if owner_interfaces.is_empty() {
-                        interfaces
-                    } else {
-                        owner_interfaces
-                    },
-                ) =>
+                    owner_interfaces.clone(),
+                ) || if owner_interfaces_empty {
+                    workspace_link::native_owner::admitted_ri06_regex_resource_in(
+                        declaration,
+                        interfaces.iter(),
+                    )
+                } else {
+                    workspace_link::native_owner::admitted_ri06_regex_resource_in(
+                        declaration,
+                        owner_interfaces.clone(),
+                    )
+                } =>
             {
-                Vec::new()
+                (&[], &[])
             }
             ResolvedTypeDeclarationKind::Class { .. }
             | ResolvedTypeDeclarationKind::Resource { .. } => {
@@ -107,7 +129,10 @@ fn reachable_types(
                 ));
             }
         };
-        for field in fields {
+        for field in record_fields
+            .iter()
+            .chain(cases.iter().flat_map(|case| &case.fields))
+        {
             let mut referenced = BTreeSet::new();
             collect_type(&field.ty, &mut referenced);
             for referenced_id in referenced {
@@ -121,6 +146,8 @@ fn reachable_types(
     selected
         .into_iter()
         .filter(|id| !crate::prelude::is_compiler_owned_id(id.as_str()))
+        // The owned publication boundary: each selected declaration is
+        // cloned here exactly once from the borrowed inventory.
         .map(|id| {
             available.get(&id).cloned().ok_or_else(|| {
                 Diagnostic::io(

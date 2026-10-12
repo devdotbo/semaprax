@@ -20,6 +20,8 @@ use super::{
 };
 
 mod available;
+#[cfg(test)]
+mod borrowed_inventory_tests;
 mod retention;
 use available::BorrowedFunction;
 
@@ -27,33 +29,28 @@ use available::BorrowedFunction;
 /// scalar function closure. This is needed when an otherwise scalar public
 /// root constructs and consumes an owned aggregate entirely inside its body;
 /// function-declaration ownership is not evidence of that expression type.
+///
+/// The type and interface inventories are borrowed views of the current
+/// modules: every module's identities are still checked for duplication,
+/// reachable or not, and only selected declarations are cloned on publication.
 pub(super) fn reachable_scalar_types(
     modules: &[WorkspaceResolvedModule],
     functions: &[hir::LinkedScalarFunction],
     function_instances: &[hir::ResolvedFunctionInstance],
 ) -> Result<Vec<hir::ResolvedTypeDeclaration>, Vec<Diagnostic>> {
-    let mut available = BTreeMap::new();
-    for declaration in modules.iter().flat_map(|module| &module.types) {
-        if available
-            .insert(declaration.id.clone(), declaration.clone())
-            .is_some()
-        {
-            return Err(vec![graph_error(
-                "SPX-G173",
-                "workspace scalar type identity is duplicated",
-            )]);
-        }
-    }
-    let owner_interfaces = modules
-        .iter()
-        .flat_map(|module| &module.interfaces)
-        .cloned()
-        .collect::<Vec<_>>();
+    let available =
+        hir::BorrowedTypeInventory::collect(modules.iter().flat_map(|module| module.types.iter()))
+            .map_err(|_| {
+                vec![graph_error(
+                    "SPX-G173",
+                    "workspace scalar type identity is duplicated",
+                )]
+            })?;
     hir::reachable_scalar_authored_types(
         functions,
         function_instances,
         &available,
-        &owner_interfaces,
+        modules.iter().flat_map(|module| &module.interfaces),
     )
     .map_err(|error| vec![error])
 }
@@ -1054,19 +1051,14 @@ impl super::WorkspaceGraphBuild {
         // Resource finalizers belong to the exact reachable owner closure even
         // though no authored expression calls them. Retain only the finalizer
         // identified by an admitted selected Regex resource, never its module.
-        let all_interfaces = self
-            .hir
-            .modules
-            .iter()
-            .flat_map(|m| m.interfaces.iter().cloned())
-            .collect::<Vec<_>>();
+        let all_interfaces = self.hir.modules.iter().flat_map(|m| &m.interfaces);
         let reached_types = functions
             .iter()
             .flat_map(|f| hir::authored_nominal_declarations(&f.function))
             .collect::<BTreeSet<_>>();
         for declaration in self.hir.modules.iter().flat_map(|m| &m.types) {
             if reached_types.contains(&declaration.id)
-                && hir::admitted_ri06_regex_resource(declaration, &all_interfaces)
+                && hir::admitted_ri06_regex_resource_in(declaration, all_interfaces.clone())
             {
                 if let hir::ResolvedTypeDeclarationKind::Resource { drop } = &declaration.kind {
                     if let hir::ResolvedResourceDropKind::Imported { import, .. } = &drop.kind {
@@ -1109,20 +1101,18 @@ impl super::WorkspaceGraphBuild {
             })
             .collect::<Result<Vec<_>, Vec<Diagnostic>>>()?;
 
-        let mut available_types = BTreeMap::new();
-        for module in &self.hir.modules {
-            for declaration in &module.types {
-                if available_types
-                    .insert(declaration.id.clone(), declaration.clone())
-                    .is_some()
-                {
-                    return Err(vec![graph_error(
-                        "SPX-G173",
-                        "workspace owned-data type identity is duplicated",
-                    )]);
-                }
-            }
-        }
+        let available_types = hir::BorrowedTypeInventory::collect(
+            self.hir
+                .modules
+                .iter()
+                .flat_map(|module| module.types.iter()),
+        )
+        .map_err(|_| {
+            vec![graph_error(
+                "SPX-G173",
+                "workspace owned-data type identity is duplicated",
+            )]
+        })?;
         let types = hir::reachable_authored_types_with_roots(
             &functions,
             &function_instances,
