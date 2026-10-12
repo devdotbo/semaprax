@@ -36,11 +36,14 @@ int main(void) {
             struct spx_checked_string_result_handle_v1 handle = {NULL, UINT64_C(919)};
             spx_status_token selected = spx_checked_string_result_invoke_v1(&lease, &handle);
             if (probe.context.checked_allocation != NULL || probe.references != 1 || lease.selected != selected) return 4;
-            if (refused != 0) {
+            if (refused != 0 || ESCAPED_CONTRACT_FAILURE != 0) {
                 if (selected == SPX_STATUS_SUCCESS || handle.identity != NULL || handle.generation != UINT64_C(919) ||
-                    probe.requests != refused || probe.releases != refused - 1 || probe.live != 0) return 5;
+                    probe.requests != (refused == 0 ? ESCAPED_REQUESTS : refused) ||
+                    probe.releases != (refused == 0 ? ESCAPED_REQUESTS : refused - 1) || probe.live != 0) return 5;
                 const struct spx_status_entry *entry = &probe.entries[selected - 1];
-                if (strcmp(entry->status.domain_id, "semaprax.allocation.v1") != 0 || entry->status.code != UINT32_C(1)) return 6;
+                const char *domain = refused == 0 ? "semaprax.contract.v1" : "semaprax.allocation.v1";
+                uint32_t code = refused == 0 ? ESCAPED_CONTRACT_FAILURE : UINT32_C(1);
+                if (strcmp(entry->status.domain_id, domain) != 0 || entry->status.code != code) return 6;
             } else {
                 if (selected != SPX_STATUS_SUCCESS || probe.requests != ESCAPED_REQUESTS || probe.live != 1 || probe.releases != ESCAPED_REQUESTS - 1) return 7;
                 if (spx_checked_string_result_close_v1(&lease)) return 8;

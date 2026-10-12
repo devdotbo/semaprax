@@ -84,15 +84,23 @@ fn generated_native_format_null_sweep_settles_all_committed_fields_and_prefixes(
 
 #[test]
 fn escaped_native_string_result_retains_provider_and_rejects_stale_borrow_drop() {
-    for (source, allocations, expected) in [
+    for (source, allocations, expected, contract_failure) in [
         (r#"module checked.native;
 @id("checked.native.publish") fn publish() -> string { string_concat("a", "β") }
 @id("checked.native.main") fn main() -> i64 { 0 }
-"#, 3usize, "aβ"),
+"#, 3usize, "aβ", 0u32),
         (r#"module checked.native;
 @id("checked.native.publish") fn publish() -> string { "" }
 @id("checked.native.main") fn main() -> i64 { 0 }
-"#, 1usize, ""),
+"#, 1usize, "", 0u32),
+        (r#"module checked.native;
+@id("checked.native.publish") fn publish() -> string requires false { string_concat("a", "β") }
+@id("checked.native.main") fn main() -> i64 { 0 }
+"#, 0usize, "", 1u32),
+        (r#"module checked.native;
+@id("checked.native.publish") fn publish() -> string ensures false { string_concat("a", "β") }
+@id("checked.native.main") fn main() -> i64 { 0 }
+"#, 3usize, "", 2u32),
     ] {
         let source = crate::parse(source, "checked-native-escaped.spx").unwrap();
         // The old scalar factory remains closed for an owning result.
@@ -103,7 +111,7 @@ fn escaped_native_string_result_retains_provider_and_rejects_stale_borrow_drop()
         let emitted = Projection::receive(&owner).unwrap().emit().unwrap();
         assert!(!emitted.contains("spx_checked_allocation_invoke_v1("));
         assert!(emitted.contains("spx_checked_string_result_invoke_v1("));
-        let probe = format!("#define ESCAPED_REQUESTS {allocations}u\n#define ESCAPED_TEXT \"{}\"\n#define ESCAPED_LENGTH {}u\n{}", c_string(expected), expected.len(), include_str!("escaped_probe.c"));
+        let probe = format!("#define ESCAPED_REQUESTS {allocations}u\n#define ESCAPED_CONTRACT_FAILURE {contract_failure}u\n#define ESCAPED_TEXT \"{}\"\n#define ESCAPED_LENGTH {}u\n{}", c_string(expected), expected.len(), include_str!("escaped_probe.c"));
         run_generated(&emitted, &probe);
     }
 }
