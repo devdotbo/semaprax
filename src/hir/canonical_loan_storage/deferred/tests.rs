@@ -148,6 +148,49 @@ fn deferred_complete_plans_preserve_saved_full_validator_forgery_and_error_prior
         .unwrap_err()
         .message
         .contains("forged shared-loan"));
+    let mut cleanup = program.clone();
+    cleanup.functions[first].loan_plan.schema = "forged";
+    cleanup.functions[first].cleanup_plan.schema = "forged.cleanup";
+    same(&cleanup);
+    assert!(!crate::hir::validate(&cleanup)
+        .unwrap_err()
+        .message
+        .contains("forged shared-loan"));
+    // The second own-root body is independently rebuilt after the first
+    // mismatch. A genuine duplicate CFG identity must still be selected first.
+    let mut constructor = program.clone();
+    constructor.functions[first].loan_plan.schema = "forged";
+    let second = constructor
+        .functions
+        .iter()
+        .enumerate()
+        .skip(first + 1)
+        .find(|(_, f)| !f.loan_plan.loans.is_empty())
+        .map(|(i, _)| i)
+        .unwrap();
+    let child_id = {
+        let crate::hir::ResolvedExprKind::Block { statements, .. } =
+            &constructor.functions[second].body.kind
+        else {
+            panic!("authored block")
+        };
+        let crate::hir::ResolvedStatement::Let { value, .. } = &statements[0] else {
+            panic!("authored view binding")
+        };
+        value.id.clone()
+    };
+    constructor.functions[second].body.id = child_id;
+    let builder_error =
+        crate::loan_plan::build_plan(&constructor, &constructor.functions[second]).unwrap_err();
+    assert_eq!(
+        builder_error.message,
+        "CFG contains a duplicate expression identity"
+    );
+    same(&constructor);
+    assert_eq!(
+        crate::hir::validate(&constructor).unwrap_err(),
+        builder_error
+    );
     let mut later = program.clone();
     later.functions[first].loan_plan.schema = "forged";
     later.functions.last_mut().unwrap().body.ty = crate::hir::ResolvedType::Bool;
