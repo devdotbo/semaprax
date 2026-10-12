@@ -214,8 +214,9 @@ tests = ["test.subtree_tests"]
     // Its owned Report helper cannot be exposed as a scalar public signature.
     let source =
         source(SUBTREE, true).replacen("module test.subtree;", "module test.subtree_tests;", 1);
-    let app = "module test.subtree; @id(\"public.probe\") fn probe()->i64 {0} @id(\"public.main\") fn main()->i64 {0}";
-    let inputs = |text: &str| {
+    let unsliced_app = "module test.subtree; @id(\"public.probe\") fn probe()->i64 {0} @id(\"public.main\") fn main()->i64 {0}";
+    let app = "module test.subtree; @id(\"public.probe\") fn probe(input:borrow Slice<u8>)->i64 {0} @id(\"public.main\") fn main()->i64 {0}";
+    let inputs = |text: &str, app: &str| {
         [("app.spx", app), ("tests.spx", text)]
             .into_iter()
             .map(|(path, raw)| {
@@ -280,19 +281,25 @@ tests = ["test.subtree_tests"]
 "#,
     )
     .unwrap();
-    let cold = cache.build(&manifest, &inputs(&source)).unwrap();
+    // Keep the original unsliced export as a closed-profile negative. The
+    // successful cache route retains its full private subtree source and uses
+    // the profile's required public slice parameter without changing its body.
+    let errors = cache.build(&manifest, &inputs(&source, unsliced_app)).err().unwrap();
+    assert!(errors.iter().any(|error| error.code == "SPX-W122"
+        && error.message == "Public Useful Data Export v1 function `public.probe` requires 1..=8 slice parameters"));
+    let cold = cache.build(&manifest, &inputs(&source, app)).unwrap();
     let cold_graph = cold.revision().semantic_graph().to_owned();
-    let warm = cache.build(&manifest, &inputs(&source)).unwrap();
+    let warm = cache.build(&manifest, &inputs(&source, app)).unwrap();
     assert_eq!(warm.revision().semantic_graph(), cold_graph);
     let work: serde_json::Value = serde_json::from_str(warm.to_json()).unwrap();
     assert_eq!(work["work"]["modules_parsed"], 0);
     let drift = source.replace("@id(\"report.bytes\")", "@id(\"report.bytes.current\")");
     assert_ne!(source, drift);
-    let current = cache.build(&manifest, &inputs(&drift)).unwrap();
+    let current = cache.build(&manifest, &inputs(&drift, app)).unwrap();
     assert_ne!(current.revision().semantic_graph(), cold_graph);
     let malformed = drift.replace("report,valid", "report:_,valid");
     assert_ne!(malformed, drift);
-    assert!(cache.build(&manifest, &inputs(&malformed)).is_err());
-    let restored = cache.build(&manifest, &inputs(&source)).unwrap();
+    assert!(cache.build(&manifest, &inputs(&malformed, app)).is_err());
+    let restored = cache.build(&manifest, &inputs(&source, app)).unwrap();
     assert_eq!(restored.revision().semantic_graph(), cold_graph);
 }
