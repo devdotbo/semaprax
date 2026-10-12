@@ -226,15 +226,37 @@ fn paid_siblings_refuse_initial_middle_and_final_identity_with_the_exact_caller_
 #[test]
 fn paid_borrowed_source_keeps_verifier_and_invariant_refusals_before_identity() {
     let program = crate::check(SOURCE, "identity-paid.spx").unwrap();
-    // Record invariants stay on the owned route; no identity is requested.
-    let legacy = super::super::resolve_source(&program, None).err().unwrap();
-    let paid = resolve_source(&program, None, |_| -> Result<(), Stop> {
-        panic!("identity request before borrowed invariant refusal")
-    })
-    .err()
-    .unwrap();
-    let Failure::Source(paid) = paid else {
-        panic!("invariant refusal remapped")
+    // Valid invariants now use the same two-pass source transformation as the
+    // owned receiver. Keep a literal request census and complete owned oracle.
+    let expected = super::super::resolve_verified(&program, None).unwrap();
+    const IDS: &[&str] = &[
+        "range.type", "core.option", "core.result", "app.main", "range.type#invariant",
+        "range.lo", "range.hi", "core.option.none", "core.option.some", "core.option.some.value",
+        "core.result.ok", "core.result.ok.value", "core.result.err", "core.result.err.error",
+        "range.type", "core.option", "core.result", "app.main", "range.type#invariant", "range.type#check",
+        "range.lo", "range.hi", "core.option.none", "core.option.some", "core.option.some.value",
+        "core.result.ok", "core.result.ok.value", "core.result.err", "core.result.err.error",
+    ];
+    assert_eq!(IDS.len(), 29);
+    let mut requests = 0;
+    let paid = resolve_source(&program, None, |bytes| {
+        assert_eq!(bytes, backing(IDS[requests]));
+        requests += 1;
+        Ok::<_, Stop>(())
+    }).unwrap();
+    assert_eq!(requests, 29);
+    assert_eq!(paid.0, expected.0);
+    assert_eq!(paid.1.reused(), expected.1.reused());
+    // A genuine malformed invariant remains a source refusal before the first
+    // identity request; the old valid-invariant exclusion is no longer current.
+    let invalid = crate::parse(&SOURCE.replace("lo <= hi", "lo"),
+        std::path::Path::new("identity-paid.spx")).unwrap();
+    let legacy = super::super::resolve_source(&invalid, None).err().unwrap();
+    assert!(legacy.iter().any(|error| error.severity.is_error()));
+    let Failure::Source(paid) = resolve_source(&invalid, None, |_| -> Result<(), Stop> {
+        panic!("identity request before malformed invariant refusal")
+    }).err().unwrap() else {
+        panic!("invariant source refusal remapped")
     };
     assert_eq!(paid, legacy);
     let mut malformed = program.clone();
