@@ -23,10 +23,10 @@ pub(super) fn materialize(view: SyntheticProgramView<'_>) -> Result<Program, Vec
     let (functions, types) = if imported {
         // Both real replacement directories are paid while recursive roots
         // remain under their iterative owner, including short/sticky refusal.
-        pay_append::<crate::ast::Function>(authored.functions.len(), roots.functions.len())?;
-        pay_append::<crate::ast::TypeDeclaration>(authored.types.len(), roots.types.len())?;
-        (append_prepaid(&authored.functions, std::mem::take(&mut roots.functions)),
-            append_prepaid(&authored.types, std::mem::take(&mut roots.types)))
+        let functions = combined_directory::<crate::ast::Function>(authored.functions.len(), roots.functions.len())?;
+        let types = combined_directory::<crate::ast::TypeDeclaration>(authored.types.len(), roots.types.len())?;
+        (append_prepaid(&authored.functions, std::mem::take(&mut roots.functions), functions),
+            append_prepaid(&authored.types, std::mem::take(&mut roots.types), types))
     } else {
         // Preserve the separately qualified leaf receiver.
         let mut functions = authored.functions.clone();
@@ -51,26 +51,31 @@ pub(super) fn materialize(view: SyntheticProgramView<'_>) -> Result<Program, Vec
 // Owning publication copies authored payloads under its existing complete cache
 // precharge. A real new combined directory is prepaid in full while generated
 // backing remains live; generated declarations themselves are moved once.
-fn pay_append<T>(authored: usize, generated: usize) -> Result<(), Vec<Diagnostic>> {
-    if authored == 0 || generated == 0 { return Ok(()); }
+fn combined_directory<T>(authored: usize, generated: usize) -> Result<Option<Vec<T>>, Vec<Diagnostic>> {
+    if authored == 0 || generated == 0 { return Ok(None); }
     let count = authored.checked_add(generated)
         .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?;
     let bytes = count.checked_mul(std::mem::size_of::<T>())
         .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?;
-    reserve_builder_structure(bytes)
+    reserve_builder_structure(bytes)?;
+    let directory = Vec::with_capacity(count);
+    if directory.capacity() != count {
+        return Err(vec![limit_error("builder_bytes", active_builder_limit())]);
+    }
+    Ok(Some(directory))
 }
-fn append_prepaid<T: Clone>(authored: &[T], generated: Vec<T>) -> Vec<T> {
+fn append_prepaid<T: Clone>(authored: &[T], generated: Vec<T>, directory: Option<Vec<T>>) -> Vec<T> {
     if authored.is_empty() { return generated; }
     if generated.is_empty() { return authored.to_vec(); }
-    let mut combined = Vec::with_capacity(authored.len() + generated.len());
+    let mut combined = directory.expect("both source slices have a prepaid checked directory");
     combined.extend_from_slice(authored);
     combined.extend(generated);
     combined
 }
 #[cfg(test)]
 fn append_copies<T: Clone>(authored: &[T], generated: Vec<T>) -> Result<Vec<T>, Vec<Diagnostic>> {
-    pay_append::<T>(authored.len(), generated.len())?;
-    Ok(append_prepaid(authored, generated))
+    let directory = combined_directory::<T>(authored.len(), generated.len())?;
+    Ok(append_prepaid(authored, generated, directory))
 }
 
 #[cfg(test)]

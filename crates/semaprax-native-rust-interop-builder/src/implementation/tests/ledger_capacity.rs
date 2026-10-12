@@ -246,6 +246,7 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         include_str!("../../../../../src/hir/resolve_variant_or.rs"),
         include_str!("../../../../../src/hir/variant_equality.rs"),
         include_str!("../../../../../src/hir/record_invariants.rs"),
+        include_str!("../../../../../src/hir/record_invariants/source.rs"),
         concat!(
             include_str!("../../../../../src/hir/byte_capacity.rs"),
             "\n",
