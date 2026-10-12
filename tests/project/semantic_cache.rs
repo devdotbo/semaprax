@@ -468,7 +468,9 @@ fn row_loan_fixture() -> Fixture {
         std::fs::copy(sample.join(path), fixture.0.join(path)).unwrap();
     }
     for (path, source) in checked_cache_profiles::sources(false) {
-        fixture.write(path, &source);
+        if path != "src/app.spx" {
+            fixture.write(path, &source);
+        }
     }
     fixture
 }

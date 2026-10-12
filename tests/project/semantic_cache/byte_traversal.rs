@@ -5,7 +5,9 @@ fn byte_fixture() -> Fixture {
     // Retain the row-loan provider/consumer so v83 must compose with v82 facts.
     let fixture = row_loan_fixture();
     for (path, source) in checked_cache_profiles::sources(true) {
-        fixture.write(path, &source);
+        if path != "src/app.spx" {
+            fixture.write(path, &source);
+        }
     }
     fixture
 }

@@ -1,5 +1,7 @@
 //! Exact original Project cache cases, with test-only core debit attribution.
 //! Trace rendering occurs after construction, outside the watched ledger.
+#[path = "../../../tests/fixtures/checked_cache_profiles_old.rs"]
+mod old_profiles;
 #[path = "../../../tests/fixtures/checked_cache_profiles.rs"]
 mod profiles;
 use crate::bounded_output::stage_debits::{take_completed, Trace};
@@ -28,8 +30,13 @@ impl Fixture {
         )
         .unwrap();
         for (path, source) in profiles::sources(bytes) {
-            let ast = crate::parse(&source, path).unwrap();
-            std::fs::write(root.join(path), crate::format::canonical(&ast)).unwrap();
+            let source = if path == "src/app.spx" {
+                source
+            } else {
+                let ast = crate::parse(&source, path).unwrap();
+                crate::format::canonical(&ast)
+            };
+            std::fs::write(root.join(path), source).unwrap();
         }
         Self(root.canonicalize().unwrap())
     }
@@ -89,6 +96,21 @@ fn same(
     assert_eq!(left.to_json(), right.to_json());
 }
 fn reproduce(bytes: bool) {
+    // Independent saved construction canonicalizes the row fixture BEFORE
+    // mixed-byte edits, exactly like the original integration producer.
+    let canonical = |path: &str, source: &str| {
+        if path == "src/app.spx" {
+            source.to_owned()
+        } else {
+            crate::format::canonical(&crate::parse(source, path).unwrap())
+        }
+    };
+    let current = profiles::sources(bytes);
+    let saved = old_profiles::sources(bytes, canonical);
+    for ((path, source), (old_path, old_source)) in current.iter().zip(&saved) {
+        assert_eq!(*path, *old_path);
+        assert_eq!(canonical(path, source), canonical(old_path, old_source));
+    }
     let fixture = Fixture::new(bytes);
     let manifest = fixture.manifest();
     let mut cache = ProjectFrontendCache::new_with_semantic_cache();
