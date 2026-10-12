@@ -7,7 +7,7 @@
 //! core retention, final publication and Drop. Counts are requested layouts,
 //! not RSS, compiler quotas, or a claim about every Project profile.
 use super::super::super::*;
-use crate::test_allocation_observer::{measure, Metrics};
+use crate::test_allocation_observer::{current_metrics, measure, Metrics};
 
 const MANIFEST: &str = r#"schema = "semaprax.project.v1"
 name = "lifecycle"
@@ -59,6 +59,26 @@ fn settled(label: &str, metrics: Metrics) {
     println!("OPT777 requested-layout scope={label} allocations={} reallocations={} requested={} highwater={} freed={} live={} observer_metadata=excluded", metrics.allocations, metrics.reallocations, metrics.allocated, metrics.highwater, metrics.freed, metrics.live);
 }
 
+/// Fixed Copy snapshots contain no observer-time text/backing. Report them
+/// after the whole observation, before its unchanged settlement assertion, so
+/// an actual surviving allocation is attributable to its acquisition phase.
+fn stages(label: &str, snapshots: [Metrics; 7]) {
+    for (stage, metrics) in [
+        "cache_new",
+        "build",
+        "independent_parity",
+        "json_report",
+        "publication_drop",
+        "cache_drop",
+        "report_drop",
+    ]
+    .into_iter()
+    .zip(snapshots)
+    {
+        println!("OPT777 stage scope={label} stage={stage} metrics={metrics:?} fixed_copy_observation=excluded");
+    }
+}
+
 #[test]
 fn actual_cold_warm_cache_core_and_publication_match_owned_receiver_through_drop() {
     let manifest = ProjectManifest::parse(MANIFEST).unwrap();
@@ -85,39 +105,61 @@ fn actual_cold_warm_cache_core_and_publication_match_owned_receiver_through_drop
     // no checked HIR lease and resolves/retains owned modules independently.
     let mut ordinary = ProjectFrontendCache::new();
     let oracle = ordinary.build(&manifest, &sources).unwrap();
-    let (_, cold) = measure(|| {
+    let (cold_stages, cold) = measure(|| {
+        let mut snapshots = [Metrics::default(); 7];
         let mut cache = ProjectFrontendCache::new_with_semantic_cache();
+        snapshots[0] = current_metrics();
         let published = cache.build(&manifest, &sources).unwrap();
+        snapshots[1] = current_metrics();
         same(published.revision(), oracle.revision());
+        snapshots[2] = current_metrics();
         let report: Value = serde_json::from_str(published.to_json()).unwrap();
+        snapshots[3] = current_metrics();
         assert_eq!(report["work"]["modules_parsed"], 3);
         assert_eq!(report["work"]["modules_resolved"], 3);
         assert_eq!(report["work"]["checked_HIR_reused"], 0);
         assert_eq!(cache.checked.len(), 3);
         drop(published);
+        snapshots[4] = current_metrics();
         drop(cache);
+        snapshots[5] = current_metrics();
+        drop(report);
+        snapshots[6] = current_metrics();
+        snapshots
     });
+    stages("cold_parse_to_publication_drop", cold_stages);
     settled("cold_parse_to_publication_drop", cold);
 
     let mut cache = ProjectFrontendCache::new_with_semantic_cache();
     drop(cache.build(&manifest, &sources).unwrap());
     let pointer = cache.checked["src/core.spx"].resolved.functions.as_ptr();
-    let (_, warm) = measure(|| {
+    let (warm_stages, warm) = measure(|| {
+        let mut snapshots = [Metrics::default(); 7];
+        snapshots[0] = current_metrics();
         let published = cache.build(&manifest, &sources).unwrap();
+        snapshots[1] = current_metrics();
         same(published.revision(), oracle.revision());
+        snapshots[2] = current_metrics();
         assert_eq!(
             pointer,
             cache.checked["src/core.spx"].resolved.functions.as_ptr()
         );
         let report: Value = serde_json::from_str(published.to_json()).unwrap();
+        snapshots[3] = current_metrics();
         assert_eq!(report["work"]["modules_parsed"], 0);
         assert_eq!(report["work"]["modules_resolved"], 0);
         assert_eq!(report["work"]["checked_HIR_reused"], 3);
         assert_eq!(report["work"]["full_cross_file_checks"], true);
         assert_eq!(report["work"]["full_link_and_profile_admission"], true);
         drop(published);
+        snapshots[4] = current_metrics();
         drop(cache);
+        snapshots[5] = current_metrics();
+        drop(report);
+        snapshots[6] = current_metrics();
+        snapshots
     });
+    stages("warm_lookup_to_publication_drop", warm_stages);
     settled("warm_lookup_to_publication_drop", warm);
 
     // A source signature drift must fail the actual complete current compiler

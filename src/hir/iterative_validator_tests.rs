@@ -479,6 +479,11 @@ fn validator_oracle_handles_an_exact_depth_512_late_error_with_a_nonempty_scope(
             hir::resolve(&parse(source, Path::new("validator-depth-hostile.spx")).unwrap())
                 .unwrap();
         let index = function_index(&hostile, "hostile.depth");
+        // This owner tests the expression validator's exact 512-node boundary,
+        // not the separate 256-depth full-program lexical/loan preflight.
+        // Keep that independently checked constructor subject intact while
+        // supplying the hostile expression to both saved expression drivers.
+        let original_body = hostile.functions[index].body.clone();
         let execution = FunctionExecutionId::Monomorphic(hostile.functions[index].id.clone());
         let mut nested = tail_mut(&mut hostile.functions[index]).clone();
         let call_path = format!("body.tail{}", ".value".repeat(UNARY_NODES));
@@ -517,6 +522,13 @@ fn validator_oracle_handles_an_exact_depth_512_late_error_with_a_nonempty_scope(
         assert_eq!(depth, 512);
         expression.ownership = OwnershipMode::Borrow;
         let expression = expression.clone();
+        hostile.functions[index].body = original_body;
+        assert!(!hir::lexical_exit::requires(&hostile.functions[index]).unwrap());
+        assert_eq!(
+            crate::loan_plan::build_plan(&hostile, &hostile.functions[index]).unwrap(),
+            hostile.functions[index].loan_plan,
+            "the full constructor still independently replays the checked source subject"
+        );
         let scope =
             validate_expression_hostile(&hostile, "hostile.depth", &expression, "body.tail");
         assert_eq!(scope["token"], Availability::Moved);
