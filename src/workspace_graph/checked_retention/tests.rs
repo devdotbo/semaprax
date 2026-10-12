@@ -211,3 +211,6 @@ fn select_owned_oracle<T: Clone>(
 
 #[path = "tests/ordinals.rs"]
 mod ordinals;
+
+#[path = "tests/input_accounting.rs"]
+mod input_accounting;

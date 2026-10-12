@@ -71,6 +71,27 @@ impl<T> Retained<T> {
         read: fn(&hir::ResolvedProgram) -> &[T],
         keep: impl Fn(&T) -> bool,
     ) -> Result<Self, Vec<Diagnostic>> {
+        Self::select_prepaid(owner, read, keep, 0)
+    }
+    /// Pay the original complete-input retention contract on this exact owner,
+    /// then use its fixed carrier allowance for this call's smaller index only.
+    /// No transferable receipt or credit crosses an active-ledger boundary.
+    fn select_accounted(
+        owner: CheckedModuleLease,
+        read: fn(&hir::ResolvedProgram) -> &[T],
+        keep: impl Fn(&T) -> bool,
+        fixed: usize,
+        extra: impl FnMut(&T) -> Result<usize, Vec<Diagnostic>>,
+    ) -> Result<Self, Vec<Diagnostic>> {
+        let prepaid = retained_vectors::reserve_full_input(read(&owner), fixed, extra)?;
+        Self::select_prepaid(owner, read, keep, prepaid)
+    }
+    fn select_prepaid(
+        owner: CheckedModuleLease,
+        read: fn(&hir::ResolvedProgram) -> &[T],
+        keep: impl Fn(&T) -> bool,
+        prepaid: usize,
+    ) -> Result<Self, Vec<Diagnostic>> {
         reserve_builder_structure(0)?;
         let items = read(&owner);
         let mut start = None;
@@ -99,18 +120,20 @@ impl<T> Retained<T> {
             let payload = count
                 .checked_mul(std::mem::size_of::<usize>())
                 .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?;
-            reserve_builder_structure(
-                std::mem::size_of::<Vec<usize>>()
-                    .checked_add(payload)
-                    .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?,
-            )?;
+            let requested = std::mem::size_of::<Vec<usize>>()
+                .checked_add(payload)
+                .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?;
+            reserve_builder_structure(requested.saturating_sub(prepaid))?;
             let mut ordinals = Vec::with_capacity(count);
             let actual = ordinals
                 .capacity()
                 .checked_mul(std::mem::size_of::<usize>())
                 .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?;
             if actual > payload {
-                reserve_builder_structure(actual - payload)?;
+                let actual_request = std::mem::size_of::<Vec<usize>>()
+                    .checked_add(actual)
+                    .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?;
+                reserve_builder_structure(actual_request.saturating_sub(prepaid.max(requested)))?;
             }
             for (index, item) in items.iter().enumerate() {
                 if keep(item) {

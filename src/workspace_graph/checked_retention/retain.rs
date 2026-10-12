@@ -44,30 +44,55 @@ pub(in crate::workspace_graph) fn retain_checked_module(
             .get(id.as_str())
             .is_some_and(|item| item.module == program.module)
     };
-    let types = Retained::select(owner.clone(), |p| &p.types, |item| local(&item.id))?;
-    let functions = Retained::select(
-        owner.clone(),
-        |p| &p.functions,
-        |item| loan_retention::authored_function(item, program, authored),
-    )?;
-    let function_templates = Retained::select(
-        owner.clone(),
-        |p| &p.function_templates,
-        |item| local(&item.id),
-    )?;
-    let agents = Retained::select(owner.clone(), |p| &p.agents, |_| true)?;
-    // Preserve every cold-equivalent loan proof debit. Sharing avoids capacity
-    // shrink; it does not authorize omitting proof validation or its census.
-    if let Some(scratch) = loan_scratch.as_deref_mut() {
-        scratch.prepare(functions.iter())?;
-    }
-    for function in &functions {
-        let bytes = match loan_scratch.as_deref_mut() {
-            Some(scratch) => scratch.measure(function)?,
-            None => retained_function_loan_bytes(function)?,
-        };
-        reserve_builder_structure(bytes)?;
-    }
+    let retained_output_only = loan_scratch.is_some();
+    let types = if retained_output_only {
+        Retained::select(owner.clone(), |p| &p.types, |item| local(&item.id))?
+    } else {
+        Retained::select_accounted(
+            owner.clone(),
+            |p| &p.types,
+            |item| local(&item.id),
+            std::mem::size_of::<hir::ResolvedTypeDeclaration>(),
+            |_| Ok(0),
+        )?
+    };
+    let functions = if retained_output_only {
+        let functions = Retained::select(
+            owner.clone(),
+            |p| &p.functions,
+            |item| loan_retention::authored_function(item, program, authored),
+        )?;
+        if let Some(scratch) = loan_scratch.as_deref_mut() {
+            scratch.prepare(functions.iter())?;
+            for function in &functions {
+                reserve_builder_structure(scratch.measure(function)?)?;
+            }
+        }
+        functions
+    } else {
+        Retained::select_accounted(
+            owner.clone(),
+            |p| &p.functions,
+            |item| loan_retention::authored_function(item, program, authored),
+            GRAPH_ACCOUNTED_RESOLVED_FUNCTION_BYTES,
+            retained_function_loan_bytes,
+        )?
+    };
+    let function_templates = if retained_output_only {
+        Retained::select(
+            owner.clone(),
+            |p| &p.function_templates,
+            |item| local(&item.id),
+        )?
+    } else {
+        Retained::select_accounted(
+            owner.clone(),
+            |p| &p.function_templates,
+            |item| local(&item.id),
+            std::mem::size_of::<hir::ResolvedFunctionTemplate>(),
+            |_| Ok(0),
+        )?
+    };
     // Instances remain a separately owned compatibility overlay, since current
     // imported wrapper attachment mutates this field after exact equality checks.
     let (function_instances, imported_instances) = owned_generics::retain_module_instances(
@@ -78,6 +103,17 @@ pub(in crate::workspace_graph) fn retain_checked_module(
         loan_scratch,
     )?;
     let signature_types = retained_signature_type_facts(&functions, &owner.declarations)?;
+    let agents = if retained_output_only {
+        Retained::select(owner.clone(), |p| &p.agents, |_| true)?
+    } else {
+        Retained::select_accounted(
+            owner.clone(),
+            |p| &p.agents,
+            |_| true,
+            std::mem::size_of::<hir::ResolvedAgentDeclaration>(),
+            |_| Ok(0),
+        )?
+    };
     Ok((
         WorkspaceResolvedModule {
             path: crate::bounded_output::budgeted_clone(&program.path),

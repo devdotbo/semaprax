@@ -127,6 +127,29 @@ pub(super) fn filter_owned_vec<T>(
     Ok(retained)
 }
 
+/// Legacy retention counter contract: every input fixed carrier and sidecar,
+/// including entries later filtered out. Sharing does not change this debit.
+/// The fixed amount can cover a smaller physical selection carrier in the same
+/// receiving call; it is not evidence that a second HIR allocation occurred.
+pub(super) fn reserve_full_input<T>(
+    items: &[T],
+    fixed_element_bytes: usize,
+    mut extra_owned_bytes: impl FnMut(&T) -> Result<usize, Vec<Diagnostic>>,
+) -> Result<usize, Vec<Diagnostic>> {
+    let fixed = items
+        .len()
+        .checked_mul(fixed_element_bytes)
+        .ok_or_else(limit_error)?;
+    let mut bytes = fixed;
+    for item in items {
+        bytes = bytes
+            .checked_add(extra_owned_bytes(item)?)
+            .ok_or_else(limit_error)?;
+    }
+    reserve_builder_structure(bytes)?;
+    Ok(fixed)
+}
+
 /// Move selected entries and account their loan-plan sidecars.
 pub(super) fn filter_owned_vec_accounted<T>(
     items: Vec<T>,
@@ -136,17 +159,7 @@ pub(super) fn filter_owned_vec_accounted<T>(
     retained_output_only: bool,
 ) -> Result<Vec<T>, Vec<Diagnostic>> {
     if !retained_output_only {
-        let fixed = items
-            .len()
-            .checked_mul(fixed_element_bytes)
-            .ok_or_else(limit_error)?;
-        let mut bytes = fixed;
-        for item in &items {
-            bytes = bytes
-                .checked_add(extra_owned_bytes(item)?)
-                .ok_or_else(limit_error)?;
-        }
-        reserve_builder_structure(bytes)?;
+        reserve_full_input(&items, fixed_element_bytes, extra_owned_bytes)?;
         return Ok(items.into_iter().filter(|item| keep(item)).collect());
     }
 

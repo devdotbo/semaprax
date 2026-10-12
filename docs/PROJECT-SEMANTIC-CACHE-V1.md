@@ -253,3 +253,23 @@ one-short requests. The prior noncontiguous copying controls remain saved old
 oracles. Existing complete Project/cache wire, source/environment drift and
 forged replay controls remain required. Authored source changes and static
 review do not establish execution, full pipeline allocation or application fit.
+
+### Full-input retention counters with shared selections
+
+Normal checked and owned retention preserve the same established fixed-carrier
+and loan-sidecar debit for every input type, function, template and agent,
+including functions filtered out of local output. This conservative counter is
+not a claim that checked retention physically clones those carriers. The shared
+receiver pays it on the exact immutable input before selecting; its fixed portion
+covers the smaller sparse ordinal header/backing in that same receiving call.
+Only checked excess is separately reserved. Loan-sidecar charges never supply
+ordinal credit, and no allowance is transferred, refunded or reset. Standalone
+ordinal constructors continue to reserve their exact actual layouts. Final
+uncached output-only retention remains its separate existing payer. Forecasts
+and the mutable instance overlay remain unchanged.
+
+The two `checked_retention::tests::input_accounting` owners retain the literal
+six-function counter witness, actual ordinal allocation/Drop scope and unchanged
+all-input owned sidecar oracle with exact/one-short/sticky controls. These are
+source controls pending qualification; they do not establish total diagnostic
+funding or an application fit/performance result.
