@@ -369,3 +369,15 @@ receiver does not use the enumerating path sort, whose flat prefixes are absent.
 The complete selected owner preserves exact old/current/removed allocation
 and byte equations in both measurement orders; narrow memo controls also use
 real opposite Rc address ranks with the saved pointer-key result oracle.
+
+
+One memo receives one `hir_skeleton_paths_with_index` result. That producer
+constructs exactly one `SkeletonWork`, covering requires clauses, the body,
+argument/guard evaluation, and ensures clauses. A modeled call resolves its
+current target parameter metadata and records call observations; it does not
+inline a callee skeleton or import a callee DAG. Callee functions receive their
+own separate validation/work/memo invocation. The independent multihelper
+control retains complete ordinary HIR validation, saved flat enumeration
+against the cleanup CFG, factored comparison, and an ordinal-to-exact-pointer
+census of each returned family. The ordinary ordinal counter is thus scoped to
+the complete family reaching that memo, not reused across combined work owners.
