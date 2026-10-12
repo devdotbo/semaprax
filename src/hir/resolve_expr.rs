@@ -10,6 +10,7 @@ use super::expr_nodes::{
     PatternValue, ResolvedExpr, ResolvedExprKind, ResolvedFieldInitializer, ResolvedMatchArm,
     ResolvedMatchPattern, ResolvedMatchPatternField, ResolvedStatement,
 };
+use super::ids::CompilerDeclaration as CId;
 use super::ids::{DeclarationId, ExpressionId, FunctionExecutionId, ValueId};
 use super::monomorphize::substitute_type;
 use super::nodes::{
@@ -19,7 +20,6 @@ use super::nodes::{
 use super::resolve_expr_frame::{take_pair, take_results, take_triple, Frame};
 use super::type_reachability::record_args_ok;
 use super::{Binding, Place, PlaceProjection, Resolver};
-
 use path_arena::{PathArena, PathId, Seg, Step};
 
 mod byte_view;
@@ -2619,7 +2619,7 @@ impl Resolver<'_> {
                                 some_field: DeclarationId::new(
                                     crate::prelude::OPTION_SOME_VALUE_ID,
                                 ),
-                                none_case: DeclarationId::new(crate::prelude::OPTION_NONE_ID),
+                                none_case: DeclarationId::compiler(CId::OptionNone),
                                 residual_type,
                             },
                             some_type.clone(),

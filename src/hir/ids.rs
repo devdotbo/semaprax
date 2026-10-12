@@ -113,8 +113,8 @@ impl DeclarationId {
 
     pub fn as_str(&self) -> &str {
         match &self.0 {
-            DeclarationText::CompilerStatic(text) => *text,
-            DeclarationText::Shared(text) => &**text,
+            DeclarationText::CompilerStatic(text) => text,
+            DeclarationText::Shared(text) => text,
         }
     }
 

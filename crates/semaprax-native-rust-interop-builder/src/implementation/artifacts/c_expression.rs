@@ -34,7 +34,7 @@ pub(in crate::implementation) const C_EXPRESSION_FRAME_BYTES: usize =
 /// expression. The final C artifact has a separate reservation; this arena is
 /// transient scratch and cannot grow geometrically past the admitted artifact
 /// ceiling before the final-size gate observes it.
-pub(super) struct CExpressionLineArena {
+pub(in crate::implementation) struct CExpressionLineArena {
     bytes: Box<[u8]>,
     len: usize,
 }
@@ -1129,7 +1129,7 @@ pub(super) fn c_expr(
     )
 }
 
-pub(super) fn c_expr(
+pub(in crate::implementation) fn c_expr(
     expression: &ResolvedExpr,
     imports: &[ImportFact],
     temporary_count: &mut usize,

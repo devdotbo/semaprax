@@ -3,6 +3,7 @@ use super::expr_nodes::{
     PatternValue, ResolvedExpr, ResolvedExprKind, ResolvedFieldInitializer, ResolvedMatchArm,
     ResolvedMatchPattern, ResolvedMatchPatternField, ResolvedStatement,
 };
+use super::ids::CompilerDeclaration as CId;
 use super::ids::{DeclarationId, ExpressionId, FunctionExecutionId, ValueId};
 use super::monomorphize::substitute_type;
 use super::nodes::{
@@ -15,7 +16,6 @@ use super::{Binding, Place, PlaceProjection, Resolver};
 use crate::ast::{BinaryOp, Expr, ExprKind, MatchPattern, Statement, TypeDeclarationKind, UnaryOp};
 use crate::diagnostic::Diagnostic;
 use std::collections::BTreeMap;
-
 mod control;
 mod literal_format;
 mod projection;
@@ -1727,7 +1727,7 @@ impl Resolver<'_> {
                             option: DeclarationId::new(crate::prelude::OPTION_ID),
                             some_case: DeclarationId::new(crate::prelude::OPTION_SOME_ID),
                             some_field: DeclarationId::new(crate::prelude::OPTION_SOME_VALUE_ID),
-                            none_case: DeclarationId::new(crate::prelude::OPTION_NONE_ID),
+                            none_case: DeclarationId::compiler(CId::OptionNone),
                             residual_type,
                         },
                         some_type.clone(),

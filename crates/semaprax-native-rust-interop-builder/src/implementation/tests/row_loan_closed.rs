@@ -47,7 +47,10 @@ fn row_loan_arguments_and_descriptor_are_censused_and_disposed_but_scalar_abi_re
             .sum::<usize>();
     assert_eq!(capacity::hir_expr_owned_capacity(&row).unwrap(), expected);
     assert_eq!(
-        expression_call_site_census(&row).unwrap_err().code,
+        expression_call_site_census(&row)
+            .err()
+            .expect("row loan is refused")
+            .code,
         "SPX-B107"
     );
     let mut calls = BTreeSet::new();
