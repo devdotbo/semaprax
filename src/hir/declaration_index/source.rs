@@ -5,7 +5,7 @@ impl DeclarationIndex {
     /// inserted every top-level subject (or the immediately preceding method).
     /// Borrow text for lookup and share its exact existing valid carrier. This
     /// does not authenticate a source ID or pay initial legacy construction.
-    fn inserted_identity(&self, text: &str) -> DeclarationId {
+    pub(super) fn inserted_identity(&self, text: &str) -> DeclarationId {
         self.declarations
             .get(text)
             .expect("subject inserted by the preceding index pass")
