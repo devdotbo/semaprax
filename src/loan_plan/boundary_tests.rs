@@ -90,11 +90,14 @@ pub(super) fn first_loan_overflow() -> (ResolvedProgram, usize, ResolvedFunction
     binding.id = ValueId::local(&execution, "overflow.extra.binding");
     binding.name = "boundary_extra".to_string();
     value.id = ExpressionId::new(&execution, "overflow.extra.call");
-    let ResolvedExprKind::Call { args, .. } = &mut value.kind else {
-        panic!("first view remains a call")
+    let ResolvedExprKind::BorrowPlace { place, .. } = &value.kind else {
+        panic!("first view remains an authenticated place borrow")
     };
-    assert_eq!(args.len(), 1);
-    args[0].id = ExpressionId::new(&execution, "overflow.extra.root");
+    let ResolvedStatement::Let { binding: owner, .. } = &statements[0] else {
+        panic!("first statement remains the owned bytes root")
+    };
+    assert_eq!(place.root, owner.id);
+    assert!(place.projections.is_empty());
     statements.push(extra);
     (program, index, function)
 }
