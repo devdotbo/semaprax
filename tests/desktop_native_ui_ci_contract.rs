@@ -114,7 +114,7 @@ fn private_native_ui_is_platform_real_feature_gated_and_source_locked() {
             root,
             "src/codegen/native_stdin_stream/exit_status/process_adapter.rs"
         ),
-        format!(
+        format_args!(
             "{}\n{}\n{}\n{}\n{}",
             [
                 read(root, "src/codegen/native_vec.rs"),
