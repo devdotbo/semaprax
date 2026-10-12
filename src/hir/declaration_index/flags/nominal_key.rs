@@ -10,6 +10,11 @@ mod compound;
 trait Key {
     fn bytes(&self) -> Bytes<'_>;
 }
+// The bounded compound cursor deliberately stays inline: boxing would allocate
+// scratch during every ordered-map comparison and invalidate the allocation-free
+// type-key receiver. Its fixed storage is covered by the layout/Drop controls;
+// compound census overflow retains the complete owned canonical-key fallback.
+#[allow(clippy::large_enum_variant)]
 enum Bytes<'a> {
     Text(std::iter::Copied<std::slice::Iter<'a, u8>>),
     Nominal(NominalBytes<'a>),
