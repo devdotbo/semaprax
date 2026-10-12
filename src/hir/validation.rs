@@ -6,6 +6,7 @@ mod function_lookup;
 mod type_requirement;
 use super::workspace_link::native_owner::admitted_ri06_regex_result as regex_result;
 use super::*;
+mod aggregate_metadata;
 mod assign_field;
 use crate::loan_plan::{LoanCause, LoanId, LoanPointPhase};
 mod borrowed_argument;
@@ -2177,6 +2178,7 @@ impl<'a> HirValidator<'a> {
         allow_moves: bool,
         allowed_effects: Option<effect_keys::Allowed<'_>>,
     ) -> Result<(), Diagnostic> {
+        let program = self.program;
         enum Frame<'e> {
             LexicalReturn {
                 expression: &'e ResolvedExpr,
@@ -2367,9 +2369,9 @@ impl<'a> HirValidator<'a> {
             RecordNext {
                 expression: &'e ResolvedExpr,
                 fields: &'e [ResolvedFieldInitializer],
-                expected: Vec<ResolvedFieldDeclaration>,
-                record: DeclarationId,
-                arguments: Vec<ResolvedType>,
+                expected: &'e [ResolvedFieldDeclaration],
+                record: &'e DeclarationId,
+                arguments: &'e [ResolvedType],
                 seen: BTreeSet<DeclarationId>,
                 index: usize,
                 scope: BTreeMap<ValueId, ValidationBinding>,
@@ -2378,9 +2380,9 @@ impl<'a> HirValidator<'a> {
             RecordAfterField {
                 expression: &'e ResolvedExpr,
                 fields: &'e [ResolvedFieldInitializer],
-                expected: Vec<ResolvedFieldDeclaration>,
-                record: DeclarationId,
-                arguments: Vec<ResolvedType>,
+                expected: &'e [ResolvedFieldDeclaration],
+                record: &'e DeclarationId,
+                arguments: &'e [ResolvedType],
                 seen: BTreeSet<DeclarationId>,
                 index: usize,
                 path: String,
@@ -2388,10 +2390,10 @@ impl<'a> HirValidator<'a> {
             VariantNext {
                 expression: &'e ResolvedExpr,
                 fields: &'e [ResolvedFieldInitializer],
-                expected: Vec<ResolvedFieldDeclaration>,
-                variant: DeclarationId,
-                case: DeclarationId,
-                arguments: Vec<ResolvedType>,
+                expected: &'e [ResolvedFieldDeclaration],
+                variant: &'e DeclarationId,
+                case: &'e DeclarationId,
+                arguments: &'e [ResolvedType],
                 seen: BTreeSet<DeclarationId>,
                 index: usize,
                 scope: BTreeMap<ValueId, ValidationBinding>,
@@ -2400,10 +2402,10 @@ impl<'a> HirValidator<'a> {
             VariantAfterField {
                 expression: &'e ResolvedExpr,
                 fields: &'e [ResolvedFieldInitializer],
-                expected: Vec<ResolvedFieldDeclaration>,
-                variant: DeclarationId,
-                case: DeclarationId,
-                arguments: Vec<ResolvedType>,
+                expected: &'e [ResolvedFieldDeclaration],
+                variant: &'e DeclarationId,
+                case: &'e DeclarationId,
+                arguments: &'e [ResolvedType],
                 seen: BTreeSet<DeclarationId>,
                 index: usize,
                 path: String,
@@ -2417,9 +2419,9 @@ impl<'a> HirValidator<'a> {
             UpdateNext {
                 expression: &'e ResolvedExpr,
                 fields: &'e [ResolvedFieldInitializer],
-                expected: Vec<ResolvedFieldDeclaration>,
-                record: DeclarationId,
-                arguments: Vec<ResolvedType>,
+                expected: &'e [ResolvedFieldDeclaration],
+                record: &'e DeclarationId,
+                arguments: &'e [ResolvedType],
                 seen: BTreeSet<DeclarationId>,
                 index: usize,
                 scope: BTreeMap<ValueId, ValidationBinding>,
@@ -2429,9 +2431,9 @@ impl<'a> HirValidator<'a> {
             UpdateAfterField {
                 expression: &'e ResolvedExpr,
                 fields: &'e [ResolvedFieldInitializer],
-                expected: Vec<ResolvedFieldDeclaration>,
-                record: DeclarationId,
-                arguments: Vec<ResolvedType>,
+                expected: &'e [ResolvedFieldDeclaration],
+                record: &'e DeclarationId,
+                arguments: &'e [ResolvedType],
                 seen: BTreeSet<DeclarationId>,
                 index: usize,
                 path: String,
@@ -2452,9 +2454,9 @@ impl<'a> HirValidator<'a> {
             VariantMatchNext {
                 expression: &'e ResolvedExpr,
                 arms: &'e [ResolvedMatchArm],
-                cases: Vec<ResolvedVariantCaseDeclaration>,
-                variant: DeclarationId,
-                arguments: Vec<ResolvedType>,
+                cases: &'e [ResolvedVariantCaseDeclaration],
+                variant: &'e DeclarationId,
+                arguments: &'e [ResolvedType],
                 index: usize,
                 outer: BTreeMap<ValueId, ValidationBinding>,
                 outer_ids: Vec<ValueId>,
@@ -2467,9 +2469,9 @@ impl<'a> HirValidator<'a> {
             VariantMatchAfterArm {
                 expression: &'e ResolvedExpr,
                 arms: &'e [ResolvedMatchArm],
-                cases: Vec<ResolvedVariantCaseDeclaration>,
-                variant: DeclarationId,
-                arguments: Vec<ResolvedType>,
+                cases: &'e [ResolvedVariantCaseDeclaration],
+                variant: &'e DeclarationId,
+                arguments: &'e [ResolvedType],
                 index: usize,
                 outer: BTreeMap<ValueId, ValidationBinding>,
                 outer_ids: Vec<ValueId>,
@@ -2519,13 +2521,6 @@ impl<'a> HirValidator<'a> {
             let ids = |values: &Vec<ValueId>| {
                 values.capacity() * std::mem::size_of::<ValueId>()
                     + values.iter().map(|id| id.as_str().len()).sum::<usize>()
-            };
-            let types = |values: &Vec<ResolvedType>| {
-                values.capacity() * std::mem::size_of::<ResolvedType>()
-                    + values
-                        .iter()
-                        .map(resolved_type_owned_capacity)
-                        .sum::<usize>()
             };
             let scope = |scope: &BTreeMap<ValueId, ValidationBinding>| {
                 validation_scope_owned_capacity(scope)
@@ -2619,73 +2614,32 @@ impl<'a> HirValidator<'a> {
                     outer, outer_ids, ..
                 } => scope(outer) + ids(outer_ids),
                 Frame::RecordNext {
-                    expected,
-                    arguments,
-                    seen,
-                    scope: value,
-                    ..
+                    seen, scope: value, ..
                 }
                 | Frame::VariantNext {
-                    expected,
-                    arguments,
-                    seen,
-                    scope: value,
-                    ..
+                    seen, scope: value, ..
                 }
                 | Frame::UpdateNext {
-                    expected,
-                    arguments,
-                    seen,
-                    scope: value,
-                    ..
+                    seen, scope: value, ..
                 } => {
-                    expected.capacity() * std::mem::size_of::<ResolvedFieldDeclaration>()
-                        + expected
-                            .iter()
-                            .map(resolved_field_declaration_owned_capacity)
-                            .sum::<usize>()
-                        + types(arguments)
-                        + seen.len()
-                            * (std::mem::size_of::<DeclarationId>()
-                                + std::mem::size_of::<BTreeSet<DeclarationId>>())
+                    seen.len()
+                        * (std::mem::size_of::<DeclarationId>()
+                            + std::mem::size_of::<BTreeSet<DeclarationId>>())
                         + seen.iter().map(|id| id.as_str().len()).sum::<usize>()
                         + scope(value)
                 }
-                Frame::RecordAfterField {
-                    expected,
-                    arguments,
-                    seen,
-                    ..
-                }
-                | Frame::VariantAfterField {
-                    expected,
-                    arguments,
-                    seen,
-                    ..
-                }
-                | Frame::UpdateAfterField {
-                    expected,
-                    arguments,
-                    seen,
-                    ..
-                } => {
-                    expected.capacity() * std::mem::size_of::<ResolvedFieldDeclaration>()
-                        + expected
-                            .iter()
-                            .map(resolved_field_declaration_owned_capacity)
-                            .sum::<usize>()
-                        + types(arguments)
-                        + seen.len()
-                            * (std::mem::size_of::<DeclarationId>()
-                                + std::mem::size_of::<BTreeSet<DeclarationId>>())
+                Frame::RecordAfterField { seen, .. }
+                | Frame::VariantAfterField { seen, .. }
+                | Frame::UpdateAfterField { seen, .. } => {
+                    seen.len()
+                        * (std::mem::size_of::<DeclarationId>()
+                            + std::mem::size_of::<BTreeSet<DeclarationId>>())
                         + seen.iter().map(|id| id.as_str().len()).sum::<usize>()
                 }
                 Frame::RecordMatchArm {
                     outer, outer_ids, ..
                 } => scope(outer) + ids(outer_ids),
                 Frame::VariantMatchNext {
-                    cases,
-                    arguments,
                     outer,
                     outer_ids,
                     arm_scopes,
@@ -2694,8 +2648,6 @@ impl<'a> HirValidator<'a> {
                     ..
                 }
                 | Frame::VariantMatchAfterArm {
-                    cases,
-                    arguments,
                     outer,
                     outer_ids,
                     arm_scopes,
@@ -2703,13 +2655,7 @@ impl<'a> HirValidator<'a> {
                     result,
                     ..
                 } => {
-                    cases.capacity() * std::mem::size_of::<ResolvedVariantCaseDeclaration>()
-                        + cases
-                            .iter()
-                            .map(resolved_variant_case_owned_capacity)
-                            .sum::<usize>()
-                        + types(arguments)
-                        + scope(outer)
+                    scope(outer)
                         + ids(outer_ids)
                         + arm_scopes.capacity()
                             * std::mem::size_of::<BTreeMap<ValueId, ValidationBinding>>()
@@ -3528,14 +3474,10 @@ impl<'a> HirValidator<'a> {
                                     "constructor target `{record}` is not a record or class"
                                 )));
                             }
-                            let expected = self
-                                .program
-                                .declarations
-                                .record_fields(record)
+                            let expected = aggregate_metadata::record_fields(program, record)
                                 .ok_or_else(|| {
                                     hir_error(format!("record `{record}` has no fields"))
-                                })?
-                                .to_vec();
+                                })?;
                             let ResolvedType::Nominal {
                                 declaration: instance,
                                 arguments,
@@ -3566,8 +3508,8 @@ impl<'a> HirValidator<'a> {
                                 expression,
                                 fields,
                                 expected,
-                                record: record.clone(),
-                                arguments: arguments.clone(),
+                                record,
+                                arguments,
                                 seen: BTreeSet::new(),
                                 index: 0,
                                 scope,
@@ -3607,10 +3549,7 @@ impl<'a> HirValidator<'a> {
                                     "constructor target `{variant}` is not a variant"
                                 )));
                             }
-                            let expected = self
-                                .program
-                                .declarations
-                                .variant_cases(variant)
+                            let expected = aggregate_metadata::variant_cases(program, variant)
                                 .and_then(|cases| cases.iter().find(|item| item.id == *case))
                                 .ok_or_else(|| {
                                     hir_error(format!(
@@ -3618,14 +3557,14 @@ impl<'a> HirValidator<'a> {
                                     ))
                                 })?
                                 .fields
-                                .clone();
+                                .as_slice();
                             frames.push(Frame::VariantNext {
                                 expression,
                                 fields,
                                 expected,
-                                variant: variant.clone(),
-                                case: case.clone(),
-                                arguments: arguments.clone(),
+                                variant,
+                                case,
+                                arguments,
                                 seen: BTreeSet::new(),
                                 index: 0,
                                 scope,
@@ -4777,7 +4716,7 @@ impl<'a> HirValidator<'a> {
                         .iter()
                         .find(|field| field.id == initializer.field)
                         .expect("field authenticated before child");
-                    let field_ty = substitute_type(&declared.ty, &record, &arguments)?;
+                    let field_ty = substitute_type(&declared.ty, record, arguments)?;
                     self.require_type(&initializer.value.ty, &field_ty, "record field")?;
                     let ownership = self.expected_ownership(&field_ty, OwnershipMode::Own)?;
                     if initializer.value.ownership != ownership {
@@ -4880,7 +4819,7 @@ impl<'a> HirValidator<'a> {
                         .iter()
                         .find(|field| field.id == initializer.field)
                         .expect("variant field authenticated before child");
-                    let field_ty = substitute_type(&declared.ty, &variant, &arguments)?;
+                    let field_ty = substitute_type(&declared.ty, variant, arguments)?;
                     self.require_type(&initializer.value.ty, &field_ty, "variant payload field")?;
                     let ownership = self.expected_ownership(&field_ty, OwnershipMode::Own)?;
                     if initializer.value.ownership != ownership {
@@ -4972,18 +4911,14 @@ impl<'a> HirValidator<'a> {
                         self.mark_value_sources_moved(base, &mut scope)?;
                         publication.publish(&scope);
                     }
-                    let expected = self
-                        .program
-                        .declarations
-                        .record_fields(record)
-                        .ok_or_else(|| hir_error(format!("record `{record}` has no fields")))?
-                        .to_vec();
+                    let expected = aggregate_metadata::record_fields(program, record)
+                        .ok_or_else(|| hir_error(format!("record `{record}` has no fields")))?;
                     frames.push(Frame::UpdateNext {
                         expression,
                         fields,
                         expected,
-                        record: record.clone(),
-                        arguments: arguments.clone(),
+                        record,
+                        arguments,
                         seen: BTreeSet::new(),
                         index: 0,
                         scope,
@@ -5060,7 +4995,7 @@ impl<'a> HirValidator<'a> {
                         .iter()
                         .find(|field| field.id == initializer.field)
                         .expect("update field authenticated before child");
-                    let field_ty = substitute_type(&declared.ty, &record, &arguments)?;
+                    let field_ty = substitute_type(&declared.ty, record, arguments)?;
                     self.require_type(&initializer.value.ty, &field_ty, "record replacement")?;
                     let expected_ownership =
                         self.expected_ownership(&field_ty, OwnershipMode::Own)?;
@@ -5318,12 +5253,10 @@ impl<'a> HirValidator<'a> {
                                 ));
                             }
                         }
-                        let cases = self
-                            .program
-                            .declarations
-                            .variant_cases(matched)
-                            .ok_or_else(|| hir_error(format!("variant `{matched}` has no cases")))?
-                            .to_vec();
+                        let cases = aggregate_metadata::variant_cases(program, matched)
+                            .ok_or_else(|| {
+                                hir_error(format!("variant `{matched}` has no cases"))
+                            })?;
                         if arms.is_empty() {
                             return Err(hir_error("resolved match has no arms"));
                         }
@@ -5331,8 +5264,8 @@ impl<'a> HirValidator<'a> {
                             expression,
                             arms,
                             cases,
-                            variant: matched.clone(),
-                            arguments: arguments.clone(),
+                            variant: matched,
+                            arguments,
                             index: 0,
                             outer,
                             outer_ids,
@@ -5454,7 +5387,7 @@ impl<'a> HirValidator<'a> {
                                 fields,
                             } => {
                                 if wildcard_seen
-                                    || pattern_variant != &variant
+                                    || pattern_variant != variant
                                     || covered.contains(case)
                                     || (arm.guard.is_none() && !covered.insert(case.clone()))
                                 {
@@ -5483,7 +5416,7 @@ impl<'a> HirValidator<'a> {
                                             ))
                                         })?;
                                     let binding_ty =
-                                        substitute_type(&declared.ty, &variant, &arguments)?;
+                                        substitute_type(&declared.ty, variant, arguments)?;
                                     let facts = self
                                         .program
                                         .declarations
@@ -5550,8 +5483,8 @@ impl<'a> HirValidator<'a> {
                                 let mut candidate = covered.clone();
                                 variant_or::cover_variant_or_pattern(
                                     alternatives,
-                                    &variant,
-                                    &cases,
+                                    variant,
+                                    cases,
                                     *mode,
                                     wildcard_seen,
                                     &mut candidate,

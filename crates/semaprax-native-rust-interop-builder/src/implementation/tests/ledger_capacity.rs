@@ -336,6 +336,8 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
             concat!(
                 concat!(
                     include_str!("../../../../../src/hir/validation.rs"),
+                    include_str!("../../../../../src/hir/validation/aggregate_metadata.rs"),
+                    include_str!("../../../../../src/hir/validation/aggregate_metadata/tests.rs"),
                     "\n",
                     concat!(
                         include_str!("../../../../../src/hir/validation/function_lookup.rs"),
