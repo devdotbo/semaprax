@@ -92,6 +92,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         } else {
             self.temporary(&op.return_type())?
         };
+        if !self.emit_checked_string_operation(op, &arguments, &temporary, expression)? {
         match op {
             crate::string_ops::StringOp::Take => {
                 let input = &arguments[0].code;
@@ -178,6 +179,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             | crate::string_ops::StringOp::I64FromUsize => {
                 self.emit_conversion_op(op, &arguments[0].code, &temporary)?;
             }
+        }
         }
         let code = if is_direct_plan_owned(self.program, &op.return_type()) {
             self.apply_owned_plan_at_value(

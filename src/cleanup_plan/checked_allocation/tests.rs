@@ -251,3 +251,22 @@ fn aggregate_metadata_cannot_inherit_native_inline_nonallocation_authority() {
     };
     assert!(diagnostic.message.contains("aggregate carrier metadata"));
 }
+
+#[test]
+fn array_metadata_is_ordinary_valid_but_requires_a_checked_cross_engine_receiver() {
+    for (length, value) in [(0, "[]"), (2, "[1, 2]"), (0, "[0; 0]"), (2, "[7; 2]")] {
+        let input = format!(r#"module checked.array;
+@id("checked.array.main") fn main() -> i64 {{
+    let data: [u8; {length}] = {value};
+    0
+}}
+"#);
+        let source = crate::parse(&input, "checked-array.spx").unwrap();
+        let prepared = prepare(&source, &DeclarationId::new("checked.array.main"))
+            .expect("ordinary fixed arrays retain their existing admission");
+        let Err(Refusal::Coverage(diagnostic)) = prepared.receive() else {
+            panic!("empty and nonempty interpreter Arc carriers are physical allocations")
+        };
+        assert!(diagnostic.message.contains("array carrier metadata"));
+    }
+}

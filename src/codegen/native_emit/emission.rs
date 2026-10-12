@@ -63,6 +63,7 @@ pub(super) fn emit_hir_c_with_options(
         semantic,
         selected,
         None,
+        None,
     )
 }
 
@@ -76,6 +77,17 @@ pub(in crate::codegen) fn emit_partition_source(
         None,
         None,
         None,
+        Some(projection),
+        None,
+    )
+}
+
+pub(super) fn emit_checked_allocation_source(
+    projection: &checked_allocation::Projection<'_, '_>,
+) -> Result<String, Diagnostic> {
+    emit_hir_c_with_receiving(
+        projection.owner().program(), &HashMap::new(),
+        NativeOutputProfile::CheckedAllocation, None, None, None, None,
         Some(projection),
     )
 }
@@ -91,8 +103,16 @@ fn emit_hir_c_with_receiving(
     partition: Option<
         &super::super::native_byte_data::native_shared_bytes::source::Projection<'_, '_>,
     >,
+    allocation: Option<&checked_allocation::Projection<'_, '_>>,
 ) -> Result<String, Diagnostic> {
-    if let Some(projection) = partition {
+    if let Some(projection) = allocation {
+        if partition.is_some() || selected.is_some()
+            || output_profile != NativeOutputProfile::CheckedAllocation
+            || !std::ptr::eq(program, projection.owner().program()) {
+            return Err(backend_error("checked allocation native subject is not current"));
+        }
+        projection.revalidate()?;
+    } else if let Some(projection) = partition {
         if output_profile != NativeOutputProfile::SelectedPartition
             || !std::ptr::eq(program, projection.owner().program())
         {
@@ -102,9 +122,9 @@ fn emit_hir_c_with_receiving(
         }
         projection.owner().revalidate_compiler()?;
     } else {
-        if output_profile == NativeOutputProfile::SelectedPartition {
+        if matches!(output_profile, NativeOutputProfile::SelectedPartition | NativeOutputProfile::CheckedAllocation) {
             return Err(backend_error(
-                "partition native emission requires its sealed source projection",
+                "native emission requires its exact sealed source projection",
             ));
         }
         hir::validate(program)?;
@@ -138,7 +158,9 @@ fn emit_hir_c_with_receiving(
     }) {
         return Err(resource_lowering_gate());
     }
-    let resource_abi = if let Some(projection) = partition {
+    let resource_abi = if let Some(projection) = allocation {
+        native_resource::build_checked_allocation_resource_abi(projection.owner())?
+    } else if let Some(projection) = partition {
         native_resource::build_partition_resource_abi(projection.owner())?
     } else {
         native_resource::build_resource_abi(authoritative_program)?
@@ -176,6 +198,11 @@ fn emit_hir_c_with_receiving(
             program,
             output_profile.string_runtime(),
         );
+    }
+    if allocation.is_some() {
+        let joined = checked_allocation::join_runtime(output.into_string())?;
+        output = crate::bounded_output::CappedString::new();
+        output.push_str(&joined);
     }
     if let Some(projection) = partition {
         let extended = super::super::native_byte_data::native_shared_bytes::extend_context(
@@ -296,6 +323,10 @@ fn emit_hir_c_with_receiving(
             )?;
         }
         closure::emit_thunks(&mut output, program, &emission)?;
+    }
+    if let Some(projection) = allocation {
+        projection.emit_entry(&mut output, &functions, &resource_abi)?;
+        return Ok(output.into_string());
     }
     if let Some(selection) = selected {
         super::super::selected_final_utf8::emit_adapter(

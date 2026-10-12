@@ -439,11 +439,17 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                     .ok_or_else(|| backend_error("owned String literal has no cleanup plan"))?
                     .value(&crate::cleanup_plan::StorageId::Temporary(expr.id.clone()))?
                     .to_owned();
+                if self.output_profile == NativeOutputProfile::CheckedAllocation {
+                    self.checked_string_constructor(&expr.id,
+                        crate::cleanup_plan::AllocationOperation::StringLiteral,
+                        &format!("spx_checked_string_adapter_from_literal_v1(spx_checked_native_adapter_v1(spx_ctx), \"{}\", UINT64_C({}), &{temporary})", c_string(value), value.len()), false)?;
+                } else {
                 self.line(&format!(
                     "{temporary} = spx_string_from_literal(\"{}\", UINT64_C({}));",
                     c_string(value),
                     value.len()
                 ));
+                }
                 let value = CValue {
                     code: temporary,
                     ty: ResolvedType::String,
@@ -479,7 +485,13 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                         })?
                         .value(&crate::cleanup_plan::StorageId::Temporary(expr.id.clone()))?
                         .to_owned();
+                    if self.output_profile == NativeOutputProfile::CheckedAllocation {
+                        self.checked_string_constructor(&expr.id,
+                            crate::cleanup_plan::AllocationOperation::StringClone,
+                            &format!("spx_checked_string_adapter_clone_v1(spx_checked_native_adapter_v1(spx_ctx), {}, &{temporary})", value.code), false)?;
+                    } else {
                     self.line(&format!("{temporary} = spx_string_clone({});", value.code));
+                    }
                     self.apply_owned_plan_at_value(
                         &expr.id,
                         &CValue {

@@ -88,6 +88,9 @@ fn classify(
         ResolvedExprKind::Closure { .. } => {
             Err(refuse(function, expression, "closure backing and capture clones"))
         }
+        ResolvedExprKind::FunctionReference { .. } => {
+            Err(refuse(function, expression, "function-value signature metadata"))
+        }
         ResolvedExprKind::Invoke { .. } => {
             Err(refuse(function, expression, "a function-value invocation"))
         }
@@ -118,10 +121,14 @@ fn classify(
         | ResolvedExprKind::UpdateRecord { .. } => {
             Err(refuse(function, expression, "aggregate carrier metadata"))
         }
+        // Even an empty interpreter array owns an Arc carrier. Native inline
+        // array storage cannot certify allocation behavior on the other engines.
+        ResolvedExprKind::ArrayU8(_) | ResolvedExprKind::RepeatArrayU8 { .. } => {
+            Err(refuse(function, expression, "array carrier metadata"))
+        }
         // An owning String place outside the catalogue is a selected move or
         // condition read; any other owning place is a transfer, not a copy.
         ResolvedExprKind::Place(_)
-        | ResolvedExprKind::FunctionReference { .. }
         | ResolvedExprKind::ByteRange { .. }
         | ResolvedExprKind::Unary { .. }
         | ResolvedExprKind::Binary { .. }
@@ -141,8 +148,6 @@ fn classify(
         | ResolvedExprKind::Char(_)
         | ResolvedExprKind::Uint8(_)
         | ResolvedExprKind::Usize(_)
-        | ResolvedExprKind::ArrayU8(_)
-        | ResolvedExprKind::RepeatArrayU8 { .. }
         | ResolvedExprKind::Float32(_)
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)

@@ -11,6 +11,8 @@ use super::function_uses_strings;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum NativeOutputProfile {
     Legacy,
+    /// Private original-source allocation owner; no raw-HIR caller can select it.
+    CheckedAllocation,
     /// Private sealed partition source unit.
     SelectedPartition,
     /// Exact rederived native-only final constructor and opaque lease boundary.
@@ -113,6 +115,7 @@ impl NativeOutputProfile {
                 ..StringRuntimeSelection::FROZEN
             },
             Self::Legacy
+            | Self::CheckedAllocation
             | Self::SelectedPartition
             | Self::StdoutTranscript
             | Self::OwnedDataProvider => StringRuntimeSelection {
@@ -208,6 +211,7 @@ impl NativeOutputProfile {
         matches!(
             self,
             Self::Legacy
+                | Self::CheckedAllocation
                 | Self::SelectedFinalUtf8
                 | Self::StdoutTranscript
                 | Self::SourceCommand

@@ -199,6 +199,14 @@ pub(super) fn build_partition_resource_abi(
     build_validated_resource_abi(owner.program())
 }
 
+/// No raw v20 attachment can reach this exact original-source receiver.
+pub(super) fn build_checked_allocation_resource_abi(
+    owner: &crate::cleanup_plan::checked_allocation::Validated<'_>,
+) -> Result<NativeResourceAbi, Diagnostic> {
+    owner.replay()?;
+    build_validated_resource_abi(owner.program())
+}
+
 fn build_validated_resource_abi(
     program: &ResolvedProgram,
 ) -> Result<NativeResourceAbi, Diagnostic> {

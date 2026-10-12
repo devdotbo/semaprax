@@ -91,3 +91,7 @@ impl ReplayContext for Projected<'_> {
             .then_some(Function { program: self.program, function })
     }
 }
+
+#[cfg(test)]
+#[path = "projection/tests.rs"]
+mod tests;

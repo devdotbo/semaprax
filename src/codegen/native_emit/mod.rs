@@ -1,3 +1,4 @@
+pub(crate) mod checked_allocation;
 mod emission;
 use emission::emit_hir_c_with_options;
 pub(in crate::codegen) use emission::{

@@ -364,3 +364,24 @@ interpreter currently allocates field maps and Arc record/variant carriers;
 record construction, variant construction and updates therefore remain closed
 in this private projection until their checked metadata receivers join. Native
 inline constructors alone do not qualify equivalent all-engine refusal behavior.
+
+### Exact-source native String receiver (qualification pending)
+
+The private native receiver now consumes the immutable `Validated` projection,
+replays it before emission, and checks the entire held function closure against
+its joined String/scalar operations. It emits a caller-supplied allocator entry;
+no ordinary profile or decoded plan can select that entry. Literal, implicit
+clone, concat, character/integer conversion, borrowed text/UTF-8, slice and trim
+materializations use status-returning out cells. Physical refusal takes the
+exact AllocationFailure cleanup route before initialization. Concat retires
+both canonical argument epochs together and settles its callee-owned group on
+both success and failure. Postconditions and non-result cleanup still precede
+publication. Every String header retains its release callback and state.
+
+This receiver is executable source, with a generated helper-closure NULL sweep
+at O0/O2 authored but not executed. It is still a private scalar-output boundary:
+Bytes/Vec/Map/Box/literal-format materializations, interpreter and Core-Wasm
+receivers, and escaped SDK outputs require their actual runtime joins. Neither
+this receiver nor the earlier family inventory establishes those joins. Arrays
+(including empty arrays) and function-value signature metadata now fail coverage
+rather than borrowing a native inline/nonallocating classification.
