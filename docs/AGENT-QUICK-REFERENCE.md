@@ -335,6 +335,13 @@ fn main() -> i64
   records. Pass with `own` or `borrow`; results own their leaves. Generic,
   resource/view/class and invariant-bearing String records are `SPX-T309`;
   see [String records](OWNED-STRING-RECORDS-V1.md).
+- Whole-subtree binding (source implementation; qualification pending):
+  `match own packet { Envelope { left, right, sequence } => sequence, }`
+  moves each named record child without recursively unpacking it. Include every
+  field exactly once; `_` cannot hide an owned subtree. The scrutinee must be a
+  named unprojected owner with no live descendant loan. Complete hidden children
+  still count toward limits; `match borrow` keeps recursive patterns.
+  See [owned subtree patterns](NESTED-OWNED-RECORD-DESTRUCTURING-V2.md).
 - Copy-record Vec admits identified flat records with 1–8 Copy fields. Project
   v30 adds `Vec<string>` and flat records with up to two direct owned
   String/Bytes fields. User records need `@id`; ask
