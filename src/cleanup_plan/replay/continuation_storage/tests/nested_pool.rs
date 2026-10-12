@@ -131,6 +131,11 @@ fn genuine_guard_receivers_remove_only_repeated_frames_and_pay_directory_overlap
             with_limit_usage_refusal(limit, || {
                 measure(|| {
                     let mut budget = ReplayBudget::new();
+                    // This owner directly executes the enumerating skeleton,
+                    // so pay its ordinary full census before the first root.
+                    // A zero allowance fails before any genuine nested guard.
+                    let upper = skeleton_work_upper(&program, function).unwrap();
+                    budget.reserve_skeleton(function, upper).unwrap();
                     let mut storage = Storage::new(&program);
                     let mut work = SkeletonWork::new(&program, function, &mut budget);
                     work.continuations = Some(&mut storage);
@@ -341,6 +346,11 @@ fn ordinary_instances_and_contracts_keep_the_exact_program_storage_owner() {
     );
     let mut storage = Storage::new(&program);
     let mut budget = ReplayBudget::unobserved();
+    reserve_program_skeleton_work(
+        &program,
+        program.functions.iter().chain(program.function_instances.iter().map(|instance| &instance.function)),
+        &mut budget,
+    ).unwrap();
     for function in program.functions.iter().chain(
         program
             .function_instances

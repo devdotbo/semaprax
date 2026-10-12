@@ -424,7 +424,7 @@ fn paid_checked(
     (resolved, paid_work(work), reserved)
 }
 
-/// The paid borrowed-source route; invariant programs refuse it explicitly.
+/// The paid borrowed-source route retains the full invariant inventory and rewrite.
 fn paid_borrowed(program: &Program) -> Result<Paid, String> {
     let mut reserved = Vec::new();
     crate::hir::identity_resolution::resolve_source(program, None, |bytes| {
@@ -457,15 +457,18 @@ fn resolver_sharing_equals_saved_construction_for_hir_index_graph_wire_and_work(
         assert_eq!(old_public, new_public);
         assert!(new_public.is_ok());
         let (old_source, new_source) = pair(|| crate::hir::resolve_source(&program, None));
+        let ((old_source, old_work), (new_source, new_work)) = (old_source.unwrap(), new_source.unwrap());
+        assert_eq!(old_source, old.0);
+        assert_eq!(new_source, new.0);
+        assert_eq!(old_source, new_source);
+        assert_eq!(old_work.costs, new_work.costs);
+        assert_eq!(old_work.reused, new_work.reused);
+        assert_eq!(old_work.static_text, new_work.static_text);
         if invariant {
-            // Explicitly pinned refusal; the owned routes above are the positives.
-            assert_eq!(old_source.err().unwrap(), new_source.err().unwrap());
-        } else {
-            let ((old, old_work), (new, new_work)) = (old_source.unwrap(), new_source.unwrap());
-            assert_eq!(old, new);
-            assert_eq!(old_work.costs, new_work.costs);
-            assert_eq!(old_work.reused, new_work.reused);
-            assert_eq!(old_work.static_text, new_work.static_text);
+            // Both inventory and transformed passes suppress reuse exactly as
+            // the complete saved owning route does; neither is a refusal.
+            assert_eq!(old_work.reused, 0);
+            assert_eq!(new_work.reused, 0);
         }
         // Real paid owned, paid checked, and paid borrowed receivers.
         let (old_paid, new_paid) = pair(|| paid_owned(&program));
@@ -474,14 +477,17 @@ fn resolver_sharing_equals_saved_construction_for_hir_index_graph_wire_and_work(
         let (old_paid, new_paid) = pair(|| paid_checked(&program, None));
         assert_eq!(old_paid, new_paid);
         let (old_paid, new_paid) = pair(|| paid_borrowed(&program));
+        let (old_paid, new_paid) = (old_paid.unwrap(), new_paid.unwrap());
+        assert_eq!(old_paid, new_paid);
+        assert_eq!(wire(&old_paid.0), wire(&new_paid.0));
         if invariant {
-            let (old_refused, new_refused) = (old_paid.unwrap_err(), new_paid.unwrap_err());
-            assert_eq!(old_refused, new_refused);
-            assert!(old_refused.contains("SPX-H006"), "{old_refused}");
-        } else {
-            let (old_paid, new_paid) = (old_paid.unwrap(), new_paid.unwrap());
-            assert_eq!(old_paid, new_paid);
-            assert_eq!(wire(&old_paid.0), wire(&new_paid.0));
+            // Independently saved construction is still the owning oracle.
+            // Compare the complete identity request sequence across both
+            // clause inventory and transformed passes, including real bytes.
+            let (old_owned, new_owned) = pair(|| paid_owned(&program));
+            assert_eq!(old_paid, old_owned);
+            assert_eq!(new_paid, new_owned);
+            assert!(!old_paid.2.is_empty());
         }
     }
 }
