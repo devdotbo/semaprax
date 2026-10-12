@@ -1,5 +1,6 @@
 //! Flag-only receiver; the owned layout/fact API remains the independent oracle.
 use super::{DeclarationIndex, ResolvedType, TypeFacts};
+mod nominal_key;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) struct TypeFlags {
@@ -43,6 +44,11 @@ impl DeclarationIndex {
             ResolvedType::OnceFunctionI64 => "fn-once:bytes+i64:i64:v2",
             ResolvedType::OnceFunctionI64Pair => "fn-once:bytes+i64+i64:i64:v3",
             ResolvedType::MutFunctionI64 => "fn-mut:i64+i64:i64:v1",
+            ResolvedType::Nominal { declaration, arguments } if arguments.is_empty() => {
+                return nominal_key::get(&self.type_facts_by_id, declaration)
+                    .map(TypeFlags::from)
+                    .or_else(|| self.recompute_type_facts(ty).as_ref().map(TypeFlags::from));
+            }
             _ => {
                 let key = ty.identity_key();
                 return self
