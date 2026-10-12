@@ -44,7 +44,7 @@ fn compound_key_bytes_cache_facts_and_order_match_the_full_saved_builder() {
         });
     }
     for ty in &types {
-        let old = index.type_facts(ty);
+        let old = index.type_facts_owned_key_oracle(ty);
         assert_eq!(index.type_flags(ty), old.as_ref().map(TypeFlags::from));
         let query = super::super::Compound(Plan::new(ty).unwrap());
         for stored in index.type_facts_by_id.keys() {
@@ -54,7 +54,7 @@ fn compound_key_bytes_cache_facts_and_order_match_the_full_saved_builder() {
     }
     // A real uncached compound miss retains the complete old recomputation.
     let missing = nominal("foreign", vec![ResolvedType::I64]);
-    assert_eq!(index.type_flags(&missing), index.type_facts(&missing).as_ref().map(TypeFlags::from));
+    assert_eq!(index.type_flags(&missing), index.type_facts_owned_key_oracle(&missing).as_ref().map(TypeFlags::from));
 }
 #[test]
 fn compound_key_exact_node_byte_and_work_boundaries_keep_owned_fallback() {
@@ -70,7 +70,7 @@ fn compound_key_exact_node_byte_and_work_boundaries_keep_owned_fallback() {
     index.type_facts_by_id.insert(over.identity_key(), TypeFacts {
         copy: true, contains_resource: true, sized: false, needs_drop: true, layout_key: "fallback".to_owned(),
     });
-    assert_eq!(index.type_flags(&over), index.type_facts(&over).as_ref().map(TypeFlags::from));
+    assert_eq!(index.type_flags(&over), index.type_facts_owned_key_oracle(&over).as_ref().map(TypeFlags::from));
     let simple = nominal("row", vec![ResolvedType::I64]);
     const KEY: &str = "nominal:3:row:1:3:i64";
     assert_eq!(simple.identity_key(), KEY);
@@ -107,7 +107,7 @@ fn cached_compound_query_has_zero_heap_and_removes_only_real_old_backing_through
     let expected = Some(TypeFlags { copy: true, contains_resource: true, sized: false, needs_drop: true });
     let (_, old) = measure(|| {
         for _ in 0..QUERIES {
-            let facts = index.type_facts(std::hint::black_box(&ty));
+            let facts = index.type_facts_owned_key_oracle(std::hint::black_box(&ty));
             assert_eq!(facts.as_ref().map(TypeFlags::from), expected);
             drop(facts);
         }

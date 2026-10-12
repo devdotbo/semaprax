@@ -25,7 +25,7 @@ fn leaves() -> Vec<(ResolvedType, bool, bool)> {
     ]
 }
 fn old(index: &DeclarationIndex, ty: &ResolvedType) -> Option<TypeFlags> {
-    index.type_facts(ty).as_ref().map(TypeFlags::from)
+    index.type_facts_owned_key_oracle(ty).as_ref().map(TypeFlags::from)
 }
 #[test]
 fn leaf_flags_preserve_literal_facts_and_current_cached_precedence_without_query_allocations() {
@@ -63,7 +63,7 @@ fn leaf_flags_preserve_literal_facts_and_current_cached_precedence_without_query
     );
     let (_, owned) = crate::test_allocation_observer::measure(|| {
         for (ty, _, _) in &types {
-            std::hint::black_box(index.type_facts(ty));
+            std::hint::black_box(index.type_facts_owned_key_oracle(ty));
         }
     });
     assert!(!owned.invalid && owned.allocations > 0 && owned.allocated > 0);
@@ -219,7 +219,7 @@ fn dynamic_cached_flags_remove_only_retained_layout_clones_through_drop() {
     });
     let (_, owned) = crate::test_allocation_observer::measure(|| {
         for _ in 0..QUERIES {
-            let facts = std::hint::black_box(index.type_facts(&ty));
+            let facts = std::hint::black_box(index.type_facts_owned_key_oracle(&ty));
             assert_eq!(facts.as_ref().map(TypeFlags::from), expected);
             drop(facts);
         }

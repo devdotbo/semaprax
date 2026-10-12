@@ -98,3 +98,20 @@ impl DeclarationIndex {
 }
 #[cfg(test)]
 mod tests;
+
+/// None means the bounded key census declined; Some(None) is a genuine exact
+/// cache miss. Neither route changes the original semantic miss computation.
+pub(super) fn cached_facts<'a>(
+    index: &'a DeclarationIndex,
+    ty: &ResolvedType,
+) -> Option<Option<&'a TypeFacts>> {
+    match ty {
+        ResolvedType::Nominal { declaration, arguments } if arguments.is_empty() =>
+            Some(nominal_key::get(&index.type_facts_by_id, declaration)),
+        _ => nominal_key::compound_get(&index.type_facts_by_id, ty),
+    }
+}
+#[cfg(test)]
+mod owned_key_oracle;
+#[cfg(test)]
+pub(super) use owned_key_oracle::enabled as old_key_enabled;

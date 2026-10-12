@@ -313,6 +313,13 @@ impl DeclarationIndex {
     /// `None` covers unresolved type parameters, malformed HIR, and the
     /// non-storable `Never` completion marker. Verified value types have facts.
     pub fn type_facts(&self, ty: &ResolvedType) -> Option<TypeFacts> {
+        #[cfg(test)]
+        if flags::old_key_enabled() {
+            return self.type_facts_owned_key_oracle(ty);
+        }
+        if let Some(facts) = flags::cached_facts(self, ty) {
+            return facts.cloned().or_else(|| self.recompute_type_facts(ty));
+        }
         self.type_facts_by_id
             .get(&ty.identity_key())
             .cloned()

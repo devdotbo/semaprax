@@ -158,7 +158,7 @@ mod tests {
         for name in names.iter().chain(["missing"].iter()) {
             let id = DeclarationId::new(*name);
             let ty = ResolvedType::Nominal { declaration: id.clone(), arguments: Vec::new() };
-            let expected = index.type_facts(&ty).as_ref().map(super::super::TypeFlags::from);
+            let expected = index.type_facts_owned_key_oracle(&ty).as_ref().map(super::super::TypeFlags::from);
             assert_eq!(index.type_flags(&ty), expected);
             for stored in index.type_facts_by_id.keys() {
                 let query = Nominal(&id);
@@ -170,7 +170,7 @@ mod tests {
         let generic = ResolvedType::Nominal {
             declaration: DeclarationId::new("row"), arguments: vec![ResolvedType::I64],
         };
-        assert_eq!(index.type_flags(&generic), index.type_facts(&generic).as_ref().map(super::super::TypeFlags::from));
+        assert_eq!(index.type_flags(&generic), index.type_facts_owned_key_oracle(&generic).as_ref().map(super::super::TypeFlags::from));
     }
 
     #[test]
@@ -193,7 +193,7 @@ mod tests {
         let (_, old) = measure(|| {
             for _ in 0..QUERIES {
                 // Saved complete owned-key lookup and layout clone API.
-                let facts = index.type_facts(std::hint::black_box(&ty)).unwrap();
+                let facts = index.type_facts_owned_key_oracle(std::hint::black_box(&ty)).unwrap();
                 assert_eq!(super::super::TypeFlags::from(&facts), expected);
                 drop(facts);
             }

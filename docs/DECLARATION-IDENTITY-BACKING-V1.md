@@ -189,3 +189,12 @@ key is not a semantic authority to preserve in the allocation-free route.
 Existing caller refusal stays sticky and must still prevent publication. This
 query change neither pays the remaining compiler storage nor changes forecasts,
 quotas, wire keys, fresh identity construction or validator admission.
+
+The full owned `type_facts` API uses the same exact cached-key query. A hit still
+clones and returns the complete `TypeFacts`, including its mandatory owned layout
+String. A miss performs the original recomputation; optimization overflow uses
+the original key builder. The full prechange API is retained under `cfg(test)`
+as an independently callable owned-key oracle, and allocation owners that claim
+old key requests call that saved API explicitly. Scoped test-only old-key policy
+also compares complete ordinary generic/invariant diagnostics and resolved HIR.
+No production policy switch or new public receiver is introduced.
