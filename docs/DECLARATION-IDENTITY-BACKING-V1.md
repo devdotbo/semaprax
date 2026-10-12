@@ -78,3 +78,29 @@ semantic diagnostics are not asserted paid by that ledger. Resolver activation
 remains pending an actual caller-owned reservation and outward fixed report
 boundary across verification and both invariant passes. No callback presence
 changes source admission or makes an unsafe mutated index a verified subject.
+
+### Private explicit resolver caller (identity-only, not public activation)
+
+The private `hir::identity_resolution` route preserves source verification and
+both invariant-resolution passes. It carries `Identity(E)` unchanged and uses
+one caller callback for all initial index identities; source and semantic
+errors retain their legacy owned channels. SourceIndex construction remains
+before index construction in each pass. The ordinary resolver stays unchanged.
+
+`bounded_output::identity_reservation::IdentityReservation` captures the
+existing ActiveBuilder budget Rc without allocating a new budget. Before any
+identity request the caller reserves its actual inline carrier, one Diagnostic
+slot and the fixed 48-byte outward message. Setup refusal is Copy-only and
+creates neither report nor diagnostic. Exact report capacity is checked before
+publication; allocator excess is debited then refused, never normalized.
+Identity reservations use that exact owner and cannot spend after its scope or
+inside a nested budget. The existing first sticky receipt survives; publication
+moves the paid String and Vec unchanged. No refund or new allowance is issued.
+
+The two-pass tests observe partial-index Drop and original source error
+priority. The report tests separately observe actual acquisition, first
+identity refusal, zero/positive retries, publication and Drop, plus exact and
+one-short setup. They do not assert payment for source verification, index
+maps/names/type payloads, invariant cloning, resolver scratch, legacy semantic
+errors or the complete public diagnostic pipeline. Public activation and those
+remaining funding obligations stay open.

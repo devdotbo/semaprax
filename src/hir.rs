@@ -317,6 +317,7 @@ thread_local! {
 
 mod cache_codec;
 mod declaration_index;
+pub(crate) mod identity_resolution;
 pub use declaration_index::{dispose_declaration_index_for_private_contract, DeclarationIndex};
 
 // Resolved data model and shared probes, re-exported so this module and its

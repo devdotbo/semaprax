@@ -1,3 +1,4 @@
+pub(crate) mod identity_reservation;
 #[cfg(test)]
 pub(crate) mod stage_debits;
 use std::cell::{Cell, RefCell};
