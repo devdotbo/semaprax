@@ -14,6 +14,10 @@ pub(super) use views::{IdSnapshot,Ids,Owned,Read,Write};
 #[derive(Clone,Default)]
 pub(super) struct Scope {root: Option<Rc<tree::Node>>}
 impl Scope {
+    pub(super) fn fresh_baseline(values: &BTreeMap<ValueId,ValidationBinding>)->Result<Self,Diagnostic> {
+        charge::fresh_baseline(values)?;
+        Ok(Self{root:tree::build_fresh(&mut values.iter(),values.len())})
+    }
     pub(super) fn prepare(count: usize) -> Result<(),Diagnostic> {charge::initial(count)}
     pub(super) fn from_prepaid(values: BTreeMap<ValueId,ValidationBinding>) -> Self {
         let count=values.len();

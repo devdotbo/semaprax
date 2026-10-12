@@ -2507,16 +2507,16 @@ impl<'a> HirValidator<'a> {
                 } => {
                     reject_nul_identity("resolved expression", expression.id.as_str())?;
                     if !expression.id.matches(function, &path) {
-                        return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                        return Err(scope_checkpoint::paths::diagnostic(format_args!(
                             "expression `{}` has a non-canonical identity",
                             expression.id
-                        ))?));
+                        )));
                     }
                     if !self.expression_ids.insert(expression.id.clone()) {
-                        return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                        return Err(scope_checkpoint::paths::diagnostic(format_args!(
                             "duplicate resolved expression identity `{}`",
                             expression.id
-                        ))?));
+                        )));
                     }
                     self.validate_type(&expression.ty)?;
                     let expected_path = path;
@@ -2695,55 +2695,55 @@ impl<'a> HirValidator<'a> {
                         }
                         ResolvedExprKind::Place(place) => {
                             let binding = scope.get(&place.root).ok_or_else(|| {
-                                hir_error(scope_checkpoint::paths::format(format_args!(
+                                scope_checkpoint::paths::diagnostic(format_args!(
                                     "resolved value `{}` is out of scope",
                                     place.root
-                                ))?)
+                                ))
                             })?;
                             match (place.projections.is_empty(), binding.availability) {
                                 (true, Availability::Available) => {
                                     match Self::place_availability(binding, &[]) {
                                         Availability::Available => {}
                                         Availability::Moved => {
-                                            return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                                            return Err(scope_checkpoint::paths::diagnostic(format_args!(
                                                 "resolved value `{}` is partially moved",
                                                 place.root
-                                            ))?));
+                                            )));
                                         }
                                         Availability::MaybeMoved => {
-                                            return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                                            return Err(scope_checkpoint::paths::diagnostic(format_args!(
                                                 "resolved value `{}` may be partially moved",
                                                 place.root
-                                            ))?));
+                                            )));
                                         }
                                     }
                                 }
                                 (true, Availability::Moved) => {
-                                    return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                                    return Err(scope_checkpoint::paths::diagnostic(format_args!(
                                         "resolved value `{}` is used after it was moved",
                                         place.root
-                                    ))?));
+                                    )));
                                 }
                                 (true, Availability::MaybeMoved) => {
-                                    return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                                    return Err(scope_checkpoint::paths::diagnostic(format_args!(
                                         "resolved value `{}` may have been moved",
                                         place.root
-                                    ))?));
+                                    )));
                                 }
                                 (false, _) => {
                                     match Self::place_availability(binding, &place.projections) {
                                         Availability::Available => {}
                                         Availability::Moved => {
-                                            return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                                            return Err(scope_checkpoint::paths::diagnostic(format_args!(
                                                 "resolved place rooted at `{}` is partially moved",
                                                 place.root
-                                            ))?));
+                                            )));
                                         }
                                         Availability::MaybeMoved => {
-                                            return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                                            return Err(scope_checkpoint::paths::diagnostic(format_args!(
                                                 "resolved place rooted at `{}` may be conditionally moved",
                                                 place.root
-                                            ))?));
+                                            )));
                                         }
                                     }
                                 }
@@ -2817,12 +2817,12 @@ impl<'a> HirValidator<'a> {
                                     ));
                                 }
                                 if args.len() != op.arity() {
-                                    return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                                    return Err(scope_checkpoint::paths::diagnostic(format_args!(
                                         "string operation `{}` expects {} arguments but received {}",
                                         op.name(),
                                         op.arity(),
                                         args.len()
-                                    ))?));
+                                    )));
                                 }
                                 intrinsic_parameters = Some(CallParameters::String(op));
                                 (
@@ -2836,12 +2836,12 @@ impl<'a> HirValidator<'a> {
                                     ));
                                 }
                                 if args.len() != op.arity() {
-                                    return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                                    return Err(scope_checkpoint::paths::diagnostic(format_args!(
                                         "borrowed string operation `{}` expects {} arguments but received {}",
                                         op.name(),
                                         op.arity(),
                                         args.len()
-                                    ))?));
+                                    )));
                                 }
                                 intrinsic_parameters = Some(CallParameters::Str(op));
                                 (
@@ -2855,12 +2855,12 @@ impl<'a> HirValidator<'a> {
                                     ));
                                 }
                                 if args.len() != op.arity() {
-                                    return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                                    return Err(scope_checkpoint::paths::diagnostic(format_args!(
                                         "byte operation `{}` expects {} arguments but received {}",
                                         op.name(),
                                         op.arity(),
                                         args.len()
-                                    ))?));
+                                    )));
                                 }
                                 owned_buffer::require_admitted_chain(
                                     op,
@@ -2879,19 +2879,19 @@ impl<'a> HirValidator<'a> {
                                     ));
                                 }
                                 if args.len() != op.arity() {
-                                    return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                                    return Err(scope_checkpoint::paths::diagnostic(format_args!(
                                         "host I/O operation `{}` expects {} arguments but received {}",
                                         op.name(),
                                         op.arity(),
                                         args.len()
-                                    ))?));
+                                    )));
                                 }
                                 match allowed_effects {
                                     Some(allowed) if !allowed.contains(op.effect()) => {
-                                        return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                                        return Err(scope_checkpoint::paths::diagnostic(format_args!(
                                             "call to `{callee}` requires undeclared effect `{}`",
                                             op.effect()
-                                        ))?));
+                                        )));
                                     }
                                     None => {
                                         return Err(hir_error(
@@ -2928,33 +2928,33 @@ impl<'a> HirValidator<'a> {
                                         std::borrow::Cow::Owned(effects),
                                     )
                                 } else {
-                                    return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                                    return Err(scope_checkpoint::paths::diagnostic(format_args!(
                                         "resolved callee `{callee}` is not indexed"
-                                    ))?));
+                                    )));
                                 };
                                 let parameter_count = borrowed_parameters
                                     .map_or(params.len(), |parameters| parameters.len());
                                 if args.len() != parameter_count {
-                                    return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                                    return Err(scope_checkpoint::paths::diagnostic(format_args!(
                                         "call to `{callee}` has {} arguments but expects {}",
                                         args.len(),
                                         parameter_count
-                                    ))?));
+                                    )));
                                 }
                                 match allowed_effects {
                                     Some(allowed) => {
                                         for effect in target_effects.iter() {
                                             if !allowed.contains(effect) {
-                                                return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                                                return Err(scope_checkpoint::paths::diagnostic(format_args!(
                                                     "call to `{callee}` requires undeclared effect `{effect}`"
-                                                ))?));
+                                                )));
                                             }
                                         }
                                     }
                                     None if !target_effects.is_empty() => {
-                                        return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                                        return Err(scope_checkpoint::paths::diagnostic(format_args!(
                                             "contract calls effectful function `{callee}`"
-                                        ))?));
+                                        )));
                                     }
                                     None => {}
                                 }
@@ -3160,19 +3160,19 @@ impl<'a> HirValidator<'a> {
                                 .declarations
                                 .declaration(record)
                                 .ok_or_else(|| {
-                                    hir_error(scope_checkpoint::paths::format(format_args!("record `{record}` is not indexed"))?)
+                                    scope_checkpoint::paths::diagnostic(format_args!("record `{record}` is not indexed"))
                                 })?;
                             if !matches!(
                                 declaration.kind,
                                 DeclarationKind::Record | DeclarationKind::Class
                             ) {
-                                return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                                return Err(scope_checkpoint::paths::diagnostic(format_args!(
                                     "constructor target `{record}` is not a record or class"
-                                ))?));
+                                )));
                             }
                             let expected = aggregate_metadata::record_fields(program, record)
                                 .ok_or_else(|| {
-                                    hir_error(scope_checkpoint::paths::format(format_args!("record `{record}` has no fields"))?)
+                                    scope_checkpoint::paths::diagnostic(format_args!("record `{record}` has no fields"))
                                 })?;
                             let ResolvedType::Nominal {
                                 declaration: instance,
@@ -3186,7 +3186,7 @@ impl<'a> HirValidator<'a> {
                                 .declarations
                                 .type_parameters(record)
                                 .ok_or_else(|| {
-                                    hir_error(scope_checkpoint::paths::format(format_args!("record `{record}` has no parameters"))?)
+                                    scope_checkpoint::paths::diagnostic(format_args!("record `{record}` has no parameters"))
                                 })?;
                             if instance != record
                                 || arguments.len() != parameters.len()
@@ -3196,9 +3196,9 @@ impl<'a> HirValidator<'a> {
                                     arguments,
                                 )
                             {
-                                return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                                return Err(scope_checkpoint::paths::diagnostic(format_args!(
                                     "constructor for `{record}` has an invalid concrete instance"
-                                ))?));
+                                )));
                             }
                             frames.push(Frame::RecordNext {
                                 expression,
@@ -3238,19 +3238,19 @@ impl<'a> HirValidator<'a> {
                             }
                             let declaration =
                                 self.program.declarations.declaration(variant).ok_or_else(
-                                    || hir_error(scope_checkpoint::paths::format(format_args!("variant `{variant}` is not indexed"))?),
+                                    || scope_checkpoint::paths::diagnostic(format_args!("variant `{variant}` is not indexed")),
                                 )?;
                             if declaration.kind != DeclarationKind::Variant {
-                                return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                                return Err(scope_checkpoint::paths::diagnostic(format_args!(
                                     "constructor target `{variant}` is not a variant"
-                                ))?));
+                                )));
                             }
                             let expected = aggregate_metadata::variant_cases(program, variant)
                                 .and_then(|cases| cases.iter().find(|item| item.id == *case))
                                 .ok_or_else(|| {
-                                    hir_error(scope_checkpoint::paths::format(format_args!(
+                                    scope_checkpoint::paths::diagnostic(format_args!(
                                         "constructor for `{variant}` contains foreign case `{case}`"
-                                    ))?)
+                                    ))
                                 })?
                                 .fields
                                 .as_slice();
@@ -3506,9 +3506,9 @@ impl<'a> HirValidator<'a> {
                                 ResolvedExprKind::VecFieldRead { .. } => crate::vec_field::ID,
                                 _ => unreachable!(),
                             };
-                            return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                            return Err(scope_checkpoint::paths::diagnostic(format_args!(
                                 "contract cannot transfer ownership to `{callee}`"
-                            ))?));
+                            )));
                         }
                         self.mark_value_sources_moved(argument, &mut scope)?;
                         publication.publish(&scope)?;
@@ -3882,10 +3882,10 @@ impl<'a> HirValidator<'a> {
                                 // The target must be a previously declared
                                 // mutable scalar binding in this block's scope.
                                 if !scope.contains_key(&binding.id) {
-                                    return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                                    return Err(scope_checkpoint::paths::diagnostic(format_args!(
                                         "assignment target `{}` has no enclosing binding",
                                         binding.id
-                                    ))?));
+                                    )));
                                 }
                                 let target_scope = scope.clone();
                                 frames.push(Frame::BlockAfterAssign {
@@ -4103,18 +4103,18 @@ impl<'a> HirValidator<'a> {
                     };
                     let statement_path = scope_checkpoint::paths::format(format_args!("{path}.s{index}"))?;
                     if !binding.id.matches_local(function, &statement_path) {
-                        return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                        return Err(scope_checkpoint::paths::diagnostic(format_args!(
                             "local `{}` has a non-canonical identity",
                             binding.id
-                        ))?));
+                        )));
                     }
                     self.insert_value(&binding.id)?;
                     self.require_type(&binding.ty, &value.ty, "local binding")?;
                     if binding.ownership != value.ownership {
-                        return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                        return Err(scope_checkpoint::paths::diagnostic(format_args!(
                             "local `{}` has inconsistent ownership",
                             binding.id
-                        ))?));
+                        )));
                     }
                     self.validate_declared_ownership(&binding.ty, binding.ownership)?;
                     if binding.ty == ResolvedType::SliceU8 {
@@ -4285,10 +4285,10 @@ impl<'a> HirValidator<'a> {
                     }
                     let target = scope.get(&binding.id).cloned();
                     let Some(target) = target else {
-                        return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                        return Err(scope_checkpoint::paths::diagnostic(format_args!(
                             "assignment target `{}` has no enclosing binding",
                             binding.id
-                        ))?));
+                        )));
                     };
                     let assigned_place = Place {
                         root: binding.id.clone(),
@@ -4337,10 +4337,10 @@ impl<'a> HirValidator<'a> {
                         }
                     }
                     if target.availability != Availability::Available {
-                        return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                        return Err(scope_checkpoint::paths::diagnostic(format_args!(
                             "assignment target `{}` is not available",
                             binding.id
-                        ))?));
+                        )));
                     }
                     frames.push(Frame::BlockNext {
                         expression,
@@ -4382,9 +4382,9 @@ impl<'a> HirValidator<'a> {
                 } => {
                     if index == fields.len() {
                         if seen.len() != expected.len() {
-                            return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                            return Err(scope_checkpoint::paths::diagnostic(format_args!(
                                 "constructor for `{record}` is missing required fields"
-                            ))?));
+                            )));
                         }
                         let ownership =
                             self.expected_ownership(&expression.ty, OwnershipMode::Own)?;
@@ -4394,16 +4394,16 @@ impl<'a> HirValidator<'a> {
                         let initializer = &fields[index];
                         let mut seen = seen;
                         if !expected.iter().any(|field| field.id == initializer.field) {
-                            return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                            return Err(scope_checkpoint::paths::diagnostic(format_args!(
                                 "constructor for `{record}` contains foreign field `{}`",
                                 initializer.field
-                            ))?));
+                            )));
                         }
                         if !seen.insert(initializer.field.clone()) {
-                            return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                            return Err(scope_checkpoint::paths::diagnostic(format_args!(
                                 "constructor for `{record}` repeats field `{}`",
                                 initializer.field
-                            ))?));
+                            )));
                         }
                         frames.push(Frame::RecordAfterField {
                             expression,
@@ -4443,10 +4443,10 @@ impl<'a> HirValidator<'a> {
                     self.require_type(&initializer.value.ty, &field_ty, "record field")?;
                     let ownership = self.expected_ownership(&field_ty, OwnershipMode::Own)?;
                     if initializer.value.ownership != ownership {
-                        return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                        return Err(scope_checkpoint::paths::diagnostic(format_args!(
                             "field `{}` has incompatible ownership",
                             initializer.field
-                        ))?));
+                        )));
                     }
                     if ownership == OwnershipMode::Own {
                         if !allow_moves {
@@ -4483,9 +4483,9 @@ impl<'a> HirValidator<'a> {
                 } => {
                     if index == fields.len() {
                         if seen.len() != expected.len() {
-                            return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                            return Err(scope_checkpoint::paths::diagnostic(format_args!(
                                 "constructor for `{case}` is missing required payload fields"
-                            ))?));
+                            )));
                         }
                         let ownership =
                             self.expected_ownership(&expression.ty, OwnershipMode::Own)?;
@@ -4495,16 +4495,16 @@ impl<'a> HirValidator<'a> {
                         let initializer = &fields[index];
                         let mut seen = seen;
                         if !expected.iter().any(|field| field.id == initializer.field) {
-                            return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                            return Err(scope_checkpoint::paths::diagnostic(format_args!(
                                 "constructor for `{case}` contains foreign field `{}`",
                                 initializer.field
-                            ))?));
+                            )));
                         }
                         if !seen.insert(initializer.field.clone()) {
-                            return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                            return Err(scope_checkpoint::paths::diagnostic(format_args!(
                                 "constructor for `{case}` repeats field `{}`",
                                 initializer.field
-                            ))?));
+                            )));
                         }
                         frames.push(Frame::VariantAfterField {
                             expression,
@@ -4546,10 +4546,10 @@ impl<'a> HirValidator<'a> {
                     self.require_type(&initializer.value.ty, &field_ty, "variant payload field")?;
                     let ownership = self.expected_ownership(&field_ty, OwnershipMode::Own)?;
                     if initializer.value.ownership != ownership {
-                        return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                        return Err(scope_checkpoint::paths::diagnostic(format_args!(
                             "variant payload field `{}` has incompatible ownership",
                             initializer.field
-                        ))?));
+                        )));
                     }
                     if ownership == OwnershipMode::Own {
                         if !allow_moves {
@@ -4588,11 +4588,11 @@ impl<'a> HirValidator<'a> {
                         .program
                         .declarations
                         .declaration(record)
-                        .ok_or_else(|| hir_error(scope_checkpoint::paths::format(format_args!("record `{record}` is not indexed"))?))?;
+                        .ok_or_else(|| scope_checkpoint::paths::diagnostic(format_args!("record `{record}` is not indexed")))?;
                     if declaration.kind != DeclarationKind::Record {
-                        return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                        return Err(scope_checkpoint::paths::diagnostic(format_args!(
                             "record update target `{record}` is not a record"
-                        ))?));
+                        )));
                     }
                     let ResolvedType::Nominal {
                         declaration: instance,
@@ -4605,7 +4605,7 @@ impl<'a> HirValidator<'a> {
                         .program
                         .declarations
                         .type_parameters(record)
-                        .ok_or_else(|| hir_error(scope_checkpoint::paths::format(format_args!("record `{record}` has no parameters"))?))?;
+                        .ok_or_else(|| scope_checkpoint::paths::diagnostic(format_args!("record `{record}` has no parameters")))?;
                     if instance != record
                         || arguments.len() != parameters.len()
                         || !super::type_reachability::record_args_ok(
@@ -4614,16 +4614,16 @@ impl<'a> HirValidator<'a> {
                             arguments,
                         )
                     {
-                        return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                        return Err(scope_checkpoint::paths::diagnostic(format_args!(
                             "record update for `{record}` has an invalid concrete instance"
-                        ))?));
+                        )));
                     }
                     validate_nested_update_base_shape(self.program, base, expression.span)?;
                     let ownership = self.expected_ownership(&base.ty, OwnershipMode::Own)?;
                     if base.ownership != ownership {
-                        return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                        return Err(scope_checkpoint::paths::diagnostic(format_args!(
                             "record update base for `{record}` has incompatible ownership"
-                        ))?));
+                        )));
                     }
                     if ownership == OwnershipMode::Own {
                         if !allow_moves {
@@ -4635,7 +4635,7 @@ impl<'a> HirValidator<'a> {
                         publication.publish(&scope)?;
                     }
                     let expected = aggregate_metadata::record_fields(program, record)
-                        .ok_or_else(|| hir_error(scope_checkpoint::paths::format(format_args!("record `{record}` has no fields"))?))?;
+                        .ok_or_else(|| scope_checkpoint::paths::diagnostic(format_args!("record `{record}` has no fields")))?;
                     frames.push(Frame::UpdateNext {
                         expression,
                         fields,
@@ -4671,16 +4671,16 @@ impl<'a> HirValidator<'a> {
                         let initializer = &fields[index];
                         let mut seen = seen;
                         if !expected.iter().any(|field| field.id == initializer.field) {
-                            return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                            return Err(scope_checkpoint::paths::diagnostic(format_args!(
                                 "update for `{record}` contains foreign field `{}`",
                                 initializer.field
-                            ))?));
+                            )));
                         }
                         if !seen.insert(initializer.field.clone()) {
-                            return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                            return Err(scope_checkpoint::paths::diagnostic(format_args!(
                                 "update for `{record}` repeats field `{}`",
                                 initializer.field
-                            ))?));
+                            )));
                         }
                         frames.push(Frame::UpdateAfterField {
                             expression,
@@ -4723,10 +4723,10 @@ impl<'a> HirValidator<'a> {
                     let expected_ownership =
                         self.expected_ownership(&field_ty, OwnershipMode::Own)?;
                     if initializer.value.ownership != expected_ownership {
-                        return Err(hir_error(scope_checkpoint::paths::format(format_args!(
+                        return Err(scope_checkpoint::paths::diagnostic(format_args!(
                             "replacement field `{}` has incompatible ownership",
                             initializer.field
-                        ))?));
+                        )));
                     }
                     if expected_ownership == OwnershipMode::Own {
                         if !allow_moves {
@@ -4978,7 +4978,7 @@ impl<'a> HirValidator<'a> {
                         }
                         let cases = aggregate_metadata::variant_cases(program, matched)
                             .ok_or_else(|| {
-                                hir_error(scope_checkpoint::paths::format(format_args!("variant `{matched}` has no cases"))?)
+                                scope_checkpoint::paths::diagnostic(format_args!("variant `{matched}` has no cases"))
                             })?;
                         if arms.is_empty() {
                             return Err(hir_error("resolved match has no arms"));
@@ -5120,9 +5120,9 @@ impl<'a> HirValidator<'a> {
                                     .iter()
                                     .find(|item| item.id == *case)
                                     .ok_or_else(|| {
-                                        hir_error(scope_checkpoint::paths::format(format_args!(
+                                        scope_checkpoint::paths::diagnostic(format_args!(
                                             "resolved match references foreign case `{case}`"
-                                        ))?)
+                                        ))
                                     })?;
                                 let mut seen = BTreeSet::new();
                                 for (field_index, field) in fields.iter().enumerate() {
@@ -5131,10 +5131,10 @@ impl<'a> HirValidator<'a> {
                                         .iter()
                                         .find(|item| item.id == field.field)
                                         .ok_or_else(|| {
-                                            hir_error(scope_checkpoint::paths::format(format_args!(
+                                            scope_checkpoint::paths::diagnostic(format_args!(
                                                 "resolved pattern contains foreign field `{}`",
                                                 field.field
-                                            ))?)
+                                            ))
                                         })?;
                                     let binding_ty =
                                         substitute_type(&declared.ty, variant, arguments)?;

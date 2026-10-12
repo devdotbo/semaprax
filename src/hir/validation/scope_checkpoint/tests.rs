@@ -214,3 +214,62 @@ fn nested_guard_publication_shares_untouched_backing_and_restores_full_changed_s
     assert!(scope.iter().eq(changed.iter()));
     assert!(baseline.iter().eq(expected.iter()));
 }
+
+
+#[test]
+fn actual_continuation_allocator_and_excess_capacity_failures_keep_first_receipts() {
+    for (request,bytes,message) in [
+        (storage::Request::AllocationFailure,8,"scope continuation directory allocation failed"),
+        (storage::Request::ExcessCapacity,16,"scope continuation directory capacity changed"),
+    ] {
+        let (((),metrics),refused,used,receipt)=crate::bounded_output::with_limit_usage_refusal(usize::MAX,||measure(|| {
+            let Err(error)=Storage::<u64>::with_frontier(1,request) else {panic!("injected frontier must fail");};
+            assert_eq!(error.message,message);
+            assert!(!crate::bounded_output::reserve_active_required(0));
+            drop(error);
+        }));
+        assert!(refused && !metrics.invalid);assert_eq!(metrics.live,0);
+        assert_eq!(used,bytes);
+        let receipt=receipt.expect("actual active payer first refusal");
+        assert_eq!(receipt.requested,bytes);assert_eq!(receipt.remaining,usize::MAX-bytes);
+        // This owner observes reports through Drop without claiming that the
+        // continuation allowance pays the separate failure-report carrier.
+    }
+    let (((),metrics),refused,used,receipt)=crate::bounded_output::with_limit_usage_refusal(usize::MAX,||measure(|| {
+        let error=charge::reserve(None).unwrap_err();
+        assert!(!crate::bounded_output::reserve_active_required(0));drop(error);
+    }));
+    assert!(refused && !metrics.invalid);assert_eq!(metrics.live,0);assert_eq!(used,0);
+    assert_eq!(receipt.unwrap().requested,usize::MAX);
+}
+
+#[test]
+fn contract_baseline_copies_all_fields_once_and_pays_real_backing_through_drop() {
+    let input=rich(17);
+    let mut expected=input.clone();for value in expected.values_mut() {value.contract_local=false;}
+    let ((),one)=measure(|| {let mut old=input.clone();for value in old.values_mut(){value.contract_local=false;}drop(old);});
+    let ((),old)=measure(|| {for _ in 0..17 {let mut clause=input.clone();for value in clause.values_mut(){value.contract_local=false;}drop(clause);}});
+    let (((),actual),refused,used)=crate::bounded_output::with_limit_usage(64*1024*1024,||measure(|| {
+        let baseline=Scope::fresh_baseline(&input).unwrap();
+        assert!(baseline.iter().eq(expected.iter()));drop(baseline);
+    }));
+    assert!(!refused && !actual.invalid);assert_eq!(actual.live,0);
+    assert!(actual.allocated<=used && actual.highwater<=used);
+    let baseline=Scope::fresh_baseline(&input).unwrap();
+    let ((),checkpoints)=measure(|| {for _ in 0..17 {drop(baseline.clone());}});
+    assert_eq!(checkpoints.allocated,0);assert_eq!(checkpoints.allocations,0);
+    assert_eq!(old.allocated,checkpoints.allocated+17*one.allocated);
+    assert_eq!(old.allocations,checkpoints.allocations+17*one.allocations);
+    // The retained baseline has its own observed backing and payment. Its
+    // allocation/highwater is reported separately from absent clause copies.
+    let (((),exact),refused,paid)=crate::bounded_output::with_limit_usage(used,||measure(|| {
+        drop(Scope::fresh_baseline(&input).unwrap());
+    }));
+    assert!(!refused && !exact.invalid);assert_eq!(exact.live,0);assert_eq!(paid,used);
+    let (((),short),refused,_,receipt)=crate::bounded_output::with_limit_usage_refusal(used-1,||measure(|| {
+        let Err(error)=Scope::fresh_baseline(&input) else {panic!("one short baseline must fail");};
+        assert!(!crate::bounded_output::reserve_active_required(0));drop(error);
+    }));
+    assert!(refused && !short.invalid);assert_eq!(short.live,0);assert!(receipt.is_some());
+    assert_eq!(input,rich(17));
+}

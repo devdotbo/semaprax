@@ -2,6 +2,8 @@
 //! envelopes, and the named scratch bounds they may not exceed.
 
 use super::*;
+#[path="ledger_capacity/scope_projection.rs"]
+mod scope_projection;
 
 #[test]
 fn cumulative_builder_limit_is_exact_and_cannot_be_widened() {
@@ -119,7 +121,7 @@ fn full_bundle_builder_limit_is_cumulative_exact_and_cannot_be_widened() {
 fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
     // The resolver is split across submodules; its layout pins live beside the
     // frame machinery they describe, so bind the root and the resolver files.
-    let hir_resolver = concat!(
+    let hir_resolver = [concat!(
         include_str!("../../../../../src/loop_calls/byte_writer.rs"),
         include_str!("../../../../../src/loop_calls/byte_writer/source.rs"),
         include_str!("../../../../../src/loop_calls/byte_writer/source_index.rs"),
@@ -402,6 +404,7 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
             concat!(
                 concat!(
                     include_str!("../../../../../src/hir/validation.rs"),
+
                     include_str!("../../../../../src/hir/validation/constructor_seed.rs"),
                     include_str!("../../../../../src/hir/validation/canonical_loans.rs"),
                     include_str!("../../../../../src/hir/validation/aggregate_metadata.rs"),
@@ -425,7 +428,6 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
                 )
             ),
             include_str!("../../../../../src/hir/validation/assign_field.rs"),
-            include_str!("../../../../../src/hir/validation/contract_owners.rs"),
             "\n",
             include_str!("../../../../../src/hir/validation/byte_range.rs"),
             "\n",
@@ -492,7 +494,7 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         include_str!("../../../../../src/hir/validation/proof_return.rs"),
         include_str!("../../../../../src/hir/validation/variant_or.rs"),
         include_str!("../../../../../src/hir/validation/iterative_while_admission_tests.rs"),
-    );
+    ),scope_projection::TEXT].concat();
     let verifier = concat!(
         include_str!("../../../../../src/loop_calls/byte_writer.rs"),
         include_str!("../../../../../src/loop_calls/byte_writer/source.rs"),
@@ -743,7 +745,7 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
     );
     let calls = include_str!("../../../../../src/call_index.rs");
     for (source, expected) in [
-        (hir_resolver, "size_of::<Frame<'static>>() <= 592"),
+        (hir_resolver.as_str(), "size_of::<Frame<'static>>() <= 592"),
         (
             hir_validator,
             "size_of::<Frame<'static>>() == super::VALIDATOR_FRAME_BYTES",

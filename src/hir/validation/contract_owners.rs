@@ -48,19 +48,15 @@ impl super::HirValidator<'_> {
         outer: &BTreeMap<ValueId, ValidationBinding>,
         phase: &str,
     ) -> Result<(), crate::diagnostic::Diagnostic> {
+        if contracts.is_empty() {return Ok(());}
+        let baseline=super::scope_checkpoint::Scope::fresh_baseline(outer)?;
         for (index, contract) in contracts.iter().enumerate() {
-            let mut scope = outer.clone();
-            // Every clause starts a new freshness domain. Entry parameters,
-            // body owners and the provisional result are protected even if
-            // an internal caller retained an earlier temporary scope.
-            for binding in scope.values_mut() {
-                binding.contract_local = false;
-            }
-            self.validate_expr(
+            let mut scope = baseline.clone();
+            self.validate_expr_iterative_effects(
                 execution,
                 contract,
                 &mut scope,
-                &format!("{phase}.{index}"),
+                &super::scope_checkpoint::paths::format(format_args!("{phase}.{index}"))?,
                 false,
                 None,
             )?;

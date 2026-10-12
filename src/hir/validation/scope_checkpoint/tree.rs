@@ -116,3 +116,19 @@ pub(super) fn value<'a>(mut node: Option<&'a Node>,key: &ValueId)->Option<&'a Rc
         std::cmp::Ordering::Greater=>node=current.right.as_deref(),
     }} None
 }
+
+
+pub(super) fn build_fresh(
+    values: &mut std::collections::btree_map::Iter<'_,ValueId,ValidationBinding>,count: usize,
+)->Option<Rc<Node>> {
+    if count==0 {return None;}
+    let left=build_fresh(values,count/2);
+    let (key,value)=values.next().expect("exact borrowed baseline count");
+    let mut value=value.clone();
+    // Every clause begins a new freshness domain, including hostile internal
+    // callers that retain true flags in an otherwise unchanged outer map.
+    value.contract_local=false;
+    let right=build_fresh(values,count-count/2-1);
+    let mut node=Node{key:key.clone(),value:Rc::new(value),left,right,height:0,count:0};
+    update(&mut node);Some(Rc::new(node))
+}

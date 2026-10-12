@@ -124,7 +124,9 @@ physical-refusal carrier.
 scopes. Branch, loop, match and source-move checkpoints share immutable roots;
 mutation pays for copied paths and full binding payloads before copying. Output
 publication moves the last complete state into prepaid map slots after child
-checkpoints drop. Nested guard publication restores a private scope directly.
+checkpoints drop. Nested guard publication restores a private scope directly. Contract validation
+pays one complete freshness-reset baseline and shares its immutable root across
+clauses; each clause retains an independent mutation and publication domain.
 `hir/validation/record_pattern.rs` retains complete record-pattern admission
 against the same ordered read/write interface. Neither owner accepts attached
 proof authority or changes the validation traversal or admitted language profile.

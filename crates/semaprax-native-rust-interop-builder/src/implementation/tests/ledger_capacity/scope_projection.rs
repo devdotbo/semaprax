@@ -1,0 +1,21 @@
+//! Complete relocated validator checkpoint and oracle source audit.
+pub(super) const TEXT: &str=concat!(
+    include_str!("../../../../../../src/hir/validation/scope_checkpoint.rs"),
+    include_str!("../../../../../../src/hir/validation/scope_checkpoint/charge.rs"),
+    include_str!("../../../../../../src/hir/validation/scope_checkpoint/tree.rs"),
+    include_str!("../../../../../../src/hir/validation/scope_checkpoint/views.rs"),
+    include_str!("../../../../../../src/hir/validation/scope_checkpoint/merge.rs"),
+    include_str!("../../../../../../src/hir/validation/scope_checkpoint/marks.rs"),
+    include_str!("../../../../../../src/hir/validation/scope_checkpoint/storage.rs"),
+    include_str!("../../../../../../src/hir/validation/scope_checkpoint/paths.rs"),
+    include_str!("../../../../../../src/hir/validation/scope_checkpoint/tests.rs"),
+    include_str!("../../../../../../src/hir/validation/record_pattern.rs"),
+    include_str!("../../../../../../src/hir/validation/owned_iterative_oracle.rs"),
+    include_str!("../../../../../../src/hir/validation/owned_iterative_oracle/dispatch_0.rs"),
+    include_str!("../../../../../../src/hir/validation/owned_iterative_oracle/dispatch_1.rs"),
+    include_str!("../../../../../../src/hir/validation/owned_iterative_oracle/dispatch_2.rs"),
+    include_str!("../../../../../../src/hir/validation/owned_iterative_oracle/dispatch_3.rs"),
+    include_str!("../../../../../../src/hir/validation/contract_owners.rs"),
+    include_str!("../../../../../../src/hir/validation/contract_owners/tests.rs"),
+    include_str!("../../../../../../src/hir/validation/contract_owners/tests/old.rs"),
+);

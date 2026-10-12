@@ -42,6 +42,8 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
             ),
             include_str!("../src/hir/validation/assign_field.rs"),
             include_str!("../src/hir/validation/contract_owners.rs"),
+            include_str!("../src/hir/validation/contract_owners/tests.rs"),
+            include_str!("../src/hir/validation/contract_owners/tests/old.rs"),
             "\n",
             include_str!("../src/hir/validation/byte_range.rs"),
             "\n",

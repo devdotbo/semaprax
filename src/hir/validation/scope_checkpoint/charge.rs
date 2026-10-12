@@ -6,10 +6,18 @@ use std::alloc::Layout;
 #[allow(dead_code, reason="layout mirror of the two reference counts and the retained value")]
 struct Carrier<T> { strong: usize, weak: usize, value: T }
 pub(super) fn carrier<T>() -> usize { Layout::new::<Carrier<T>>().size() }
-pub(super) fn reserve(bytes: Option<usize>) -> Result<(),Diagnostic> {
-    if bytes.is_some_and(crate::bounded_output::reserve_active_required) { Ok(()) }
-    else { Err(hir_error("ownership scope checkpoint exceeds the active validation budget")) }
+pub(super) fn failure(requested: usize,message: &'static str)->Diagnostic {
+    crate::bounded_output::refuse_active_required(requested);
+    hir_error(message)
 }
+pub(super) fn reserve(bytes: Option<usize>) -> Result<(),Diagnostic> {
+    let Some(bytes)=bytes else {
+        return Err(failure(usize::MAX,"ownership scope checkpoint layout overflowed"));
+    };
+    if crate::bounded_output::reserve_active_required(bytes) {Ok(())}
+    else {Err(hir_error("ownership scope checkpoint exceeds the active validation budget"))}
+}
+
 fn tree<K,V>(len: usize) -> Option<usize> {
     crate::cleanup_plan::replay_btree_node_upper::<K,V>()?.checked_mul(len)
 }
@@ -27,9 +35,12 @@ pub(super) fn binding(value: &ValidationBinding) -> Option<usize> {
 pub(super) fn publication_slots(count: usize) -> Result<(),Diagnostic> {
     reserve(tree::<ValueId,ValidationBinding>(count))
 }
-pub(super) fn initial(count: usize) -> Result<(),Diagnostic> {
+pub(super) fn checkpoint_carriers(count: usize) -> Result<(),Diagnostic> {
     let carriers=carrier::<tree::Node>().checked_add(carrier::<ValidationBinding>());
-    reserve(carriers.and_then(|bytes|bytes.checked_mul(count)))?;
+    reserve(carriers.and_then(|bytes|bytes.checked_mul(count)))
+}
+pub(super) fn initial(count: usize) -> Result<(),Diagnostic> {
+    checkpoint_carriers(count)?;
     publication_slots(count)
 }
 pub(super) fn edit(root: &Option<std::rc::Rc<tree::Node>>,key: &ValueId) -> Result<(),Diagnostic> {
@@ -40,12 +51,12 @@ pub(super) fn edit(root: &Option<std::rc::Rc<tree::Node>>,key: &ValueId) -> Resu
     let mut owner=root.as_ref();
     while let Some(node)=current {
         shared|=owner.is_some_and(|owner|std::rc::Rc::strong_count(owner)>1);
-        if shared { nodes=nodes.checked_add(1).ok_or_else(||hir_error("scope path layout overflowed"))?; }
+        if shared { nodes=nodes.checked_add(1).ok_or_else(||failure(usize::MAX,"scope path layout overflowed"))?; }
         match key.cmp(&node.key) {
             std::cmp::Ordering::Equal=>{
                 if shared || std::rc::Rc::strong_count(&node.value)>1 {
-                    let payload=binding(&node.value).ok_or_else(||hir_error("scope binding clone layout overflowed"))?;
-                    bytes=carrier::<ValidationBinding>().checked_add(payload).ok_or_else(||hir_error("scope binding carrier layout overflowed"))?;
+                    let payload=binding(&node.value).ok_or_else(||failure(usize::MAX,"scope binding clone layout overflowed"))?;
+                    bytes=carrier::<ValidationBinding>().checked_add(payload).ok_or_else(||failure(usize::MAX,"scope binding carrier layout overflowed"))?;
                 }
                 break;
             }
@@ -57,3 +68,9 @@ pub(super) fn edit(root: &Option<std::rc::Rc<tree::Node>>,key: &ValueId) -> Resu
 }
 
 pub(in crate::hir::validation) fn clone_type(value: &ResolvedType)->Result<(),Diagnostic> {reserve(value.clone_payload_bytes())}
+
+pub(super) fn fresh_baseline(values: &BTreeMap<ValueId,ValidationBinding>)->Result<(),Diagnostic> {
+    checkpoint_carriers(values.len())?;
+    for value in values.values() {reserve(binding(value))?;}
+    Ok(())
+}

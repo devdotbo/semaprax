@@ -97,3 +97,63 @@ fn forged_fresh_local_identity_cannot_alias_the_result_domain() {
         .message
         .contains("non-canonical identity"));
 }
+
+
+#[path="tests/old.rs"]
+mod old;
+fn repeated_program(count: usize)->ResolvedProgram {
+    let clauses=(0..count).map(|_|" requires {let local=bytes_zeroed(2usize);byte_len(bytes_as_slice(local))==2usize}\n").collect::<String>();
+    let source=format!("module contract.repeated;\n@id(\"probe\") fn probe(input:own Bytes)->Bytes\n{clauses}{{bytes_zeroed(1usize)}}\n@id(\"main\") fn main()->i64{{0}}\n");
+    let ast=crate::check(&source,"contract-repeated.spx").unwrap();
+    hir::resolve(&ast).unwrap()
+}
+fn outer_scope(function: &hir::ResolvedFunction)->std::collections::BTreeMap<hir::ValueId,super::super::super::ValidationBinding> {
+    function.params.iter().map(|parameter|(parameter.id.clone(),super::super::super::ValidationBinding {
+        contract_local:true,mutable:true,ty:parameter.ty.clone(),ownership:parameter.ownership,
+        availability:super::super::super::Availability::Available,
+        moved_places:std::collections::BTreeMap::new(),
+        definitely_partial:std::collections::BTreeSet::new(),
+        active_loans:std::collections::BTreeSet::new(),
+    })).collect()
+}
+#[test]
+fn persistent_contract_domains_match_the_complete_saved_owning_oracle() {
+    use super::super::HirValidator;
+    for count in [0,1,2,17] {
+        let program=repeated_program(count);
+        let function=program.functions.iter().find(|f|f.id.as_str()=="probe").unwrap();
+        let execution=hir::FunctionExecutionId::Monomorphic(function.id.clone());
+        let outer=outer_scope(function);let before=outer.clone();
+        let mut current=HirValidator::new(&program).unwrap();let mut old=current.clone();
+        let expected=old.validate_contracts_owned_reference(&execution,&function.requires,&outer,"requires");
+        let actual=current.validate_contracts(&execution,&function.requires,&outer,"requires");
+        HirValidator::assert_validation_oracle(&actual,&expected,&current,&old,&outer,&before,"repeated contracts");
+        HirValidator::assert_scope_auxiliary_oracle(&current,&old);
+        actual.unwrap();assert_eq!(outer,before);
+    }
+}
+#[test]
+fn contract_domain_flags_and_first_error_preserve_preexisting_owner_protection() {
+    use super::super::HirValidator;
+    for ensures in [false,true] {
+        let mut program=program();
+        let function=program.functions.iter().find(|f|f.id.as_str()=="probe").unwrap();
+        let root=if ensures {function.result_id.clone()} else {function.params[0].id.clone()};
+        initializer(&mut program,ensures).kind=ResolvedExprKind::Place(hir::Place{root:root.clone(),projections:Vec::new()});
+        let function=program.functions.iter().find(|f|f.id.as_str()=="probe").unwrap();
+        let execution=hir::FunctionExecutionId::Monomorphic(function.id.clone());
+        let mut outer=outer_scope(function);
+        let mut protected=outer.values().next().unwrap().clone();protected.ty=function.return_type.clone();
+        outer.insert(function.result_id.clone(),protected);
+        let before=outer.clone();
+        let clauses=if ensures {&function.ensures} else {&function.requires};
+        let phase=if ensures {"ensures"} else {"requires"};
+        let mut current=HirValidator::new(&program).unwrap();let mut old=current.clone();
+        let expected=old.validate_contracts_owned_reference(&execution,clauses,&outer,phase);
+        let actual=current.validate_contracts(&execution,clauses,&outer,phase);
+        HirValidator::assert_validation_oracle(&actual,&expected,&current,&old,&outer,&before,phase);
+        HirValidator::assert_scope_auxiliary_oracle(&current,&old);
+        assert!(actual.unwrap_err().message.contains("contract cannot transfer ownership into a local binding"));
+        assert_eq!(outer,before);
+    }
+}

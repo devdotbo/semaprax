@@ -9,7 +9,7 @@ impl Write for Count {
 }
 pub(in crate::hir::validation) fn format(arguments: Arguments<'_>) -> Result<String,Diagnostic> {
     let mut count=Count(0);
-    count.write_fmt(arguments).map_err(|_|hir_error("scope continuation label layout overflowed"))?;
+    count.write_fmt(arguments).map_err(|_|charge::failure(usize::MAX,"scope continuation label layout overflowed"))?;
     charge::reserve(Some(count.0))?;
     let mut result=String::with_capacity(count.0);
     if result.capacity()>count.0 {charge::reserve(Some(result.capacity()-count.0))?;}
@@ -17,3 +17,11 @@ pub(in crate::hir::validation) fn format(arguments: Arguments<'_>) -> Result<Str
     Ok(result)
 }
 pub(in crate::hir::validation) fn owned(value: &str)->Result<String,Diagnostic> {format(format_args!("{value}"))}
+
+
+// Called only on the missing-value branch of lazy diagnostic closures. A
+// physical refusal remains the selected diagnostic instead of being mapped
+// back into a later semantic error.
+pub(in crate::hir::validation) fn diagnostic(arguments: Arguments<'_>)->Diagnostic {
+    match format(arguments) {Ok(message)=>hir_error(message),Err(error)=>error}
+}
