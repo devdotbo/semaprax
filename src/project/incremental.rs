@@ -614,6 +614,51 @@ impl FrontendPass {
             ResolvedModuleInput::Owned(resolved)
         }
     }
+    /// Obtain an owning key only for actual semantic publication. The producer
+    /// closure is dropped without execution for an AST-only receiving pass.
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn resolved_module_receiving(
+        &mut self,
+        path: &str,
+        key: impl FnOnce() -> Result<Program, Vec<crate::diagnostic::Diagnostic>>,
+        resolved: crate::hir::ResolvedProgram,
+        resolver_bytes: usize,
+        retained_loan_bytes: usize,
+        function_costs: BTreeMap<String, usize>,
+        reused_functions: usize,
+    ) -> Result<ResolvedModuleInput, Vec<crate::diagnostic::Diagnostic>> {
+        if self.semantic {
+            Ok(self.resolved_module(
+                path,
+                key()?,
+                resolved,
+                resolver_bytes,
+                retained_loan_bytes,
+                function_costs,
+                reused_functions,
+            ))
+        } else {
+            Ok(self.resolved_module_without_key(resolved, reused_functions))
+        }
+    }
+
+    /// AST-only passes retain the resolved owner without constructing a cache
+    /// key which would immediately be discarded. Counters match resolved_module.
+    pub(crate) fn resolved_module_without_key(
+        &mut self,
+        resolved: crate::hir::ResolvedProgram,
+        reused_functions: usize,
+    ) -> ResolvedModuleInput {
+        assert!(
+            !self.semantic,
+            "semantic retention requires an owning checked key"
+        );
+        self.resolved += 1;
+        self.functions_reused += reused_functions;
+        self.functions_resolved += resolved.functions.len().saturating_sub(reused_functions);
+        ResolvedModuleInput::Owned(resolved)
+    }
+
     pub(crate) fn lookup(&mut self, path: &str, source: &str) -> Option<Program> {
         let entry = self.entries.get(path)?;
         if entry.source != source || entry.program.path != path {

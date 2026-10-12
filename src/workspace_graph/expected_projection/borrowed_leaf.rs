@@ -131,6 +131,7 @@ pub(in crate::workspace_graph) enum Input<'a> {
     Borrowed(SyntheticProgramView<'a>),
 }
 impl<'a> Input<'a> {
+    #[cfg(test)]
     pub(in crate::workspace_graph) fn construct(
         program: &'a Program,
         authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
@@ -148,6 +149,23 @@ impl<'a> Input<'a> {
                 .map(Self::Owned)
         }
     }
+    pub(in crate::workspace_graph) fn construct_receiving(
+        program: &'a Program,
+        authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+        programs: &[Program],
+        registry: &private_layout::registry::LayoutRegistry<'_>,
+        _uncached: bool,
+    ) -> Result<Self, Vec<Diagnostic>> {
+        if eligible(program) {
+            construct(program).map(Self::Borrowed)
+        } else if super::borrowed_imports::eligible(program, authored, programs) {
+            super::borrowed_imports::construct_receiving(program, authored, programs, registry)
+                .map(Self::Borrowed)
+        } else {
+            synthetic_program_with_registry(program, authored, programs, Some(registry))
+                .map(Self::Owned)
+        }
+    }
     pub(in crate::workspace_graph) fn borrowed(&self) -> Option<&SyntheticProgramView<'_>> {
         match self {
             Self::Owned(_) => None,
@@ -155,10 +173,18 @@ impl<'a> Input<'a> {
         }
     }
 
+    #[cfg(test)]
     pub(in crate::workspace_graph) fn into_checked_key(self) -> Result<Program, Vec<Diagnostic>> {
         match self {
             Self::Owned(program) => Ok(program),
             Self::Borrowed(view) => checked_key::materialize(view),
+        }
+    }
+
+    pub(in crate::workspace_graph) fn into_receiving_key(self) -> Result<Program, Vec<Diagnostic>> {
+        match self {
+            Self::Owned(program) => Ok(program),
+            Self::Borrowed(view) => checked_key::materialize_receiving(view),
         }
     }
 

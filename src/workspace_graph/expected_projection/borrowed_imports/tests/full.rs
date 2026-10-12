@@ -11,14 +11,14 @@ use crate::workspace_graph::index_authored;
 const VEC_PROVIDER: &str = include_str!("../../../../../std/collections/src/collections.spx");
 const BOX_PROVIDER: &str = include_str!("../../../../../std/mem/src/mem.spx");
 const VEC_CALLER: &str = r#"module overlay.vec;
-use function @id("std.collections.vec.with-capacity") from std.collections as vec_with_capacity;
-use function @id("std.collections.vec.push") from std.collections as vec_push;
-use function @id("std.collections.vec.get") from std.collections as vec_get;
-@id("overlay.vec.main") fn main()->i64 { let values=vec_with_capacity<i64>(2usize); let appended=vec_push<i64>(values,42); vec_get<i64>(appended,0usize) }"#;
+use function @id("std.collections.vec.with-capacity") from std.collections as new_vec;
+use function @id("std.collections.vec.push") from std.collections as append_vec;
+use function @id("std.collections.vec.get") from std.collections as read_vec;
+@id("overlay.vec.main") fn main()->i64 { let values=new_vec<i64>(2usize); let appended=append_vec<i64>(values,42); read_vec<i64>(appended,0usize) }"#;
 const BOX_CALLER: &str = r#"module overlay.box;
-use function @id("std.mem.box.new") from std.mem as box_new;
-use function @id("std.mem.box.into-inner") from std.mem as box_into_inner;
-@id("overlay.box.main") fn main()->i64 { box_into_inner<i64>(box_new<i64>(42)) }"#;
+use function @id("std.mem.box.new") from std.mem as new_box;
+use function @id("std.mem.box.into-inner") from std.mem as take_box;
+@id("overlay.box.main") fn main()->i64 { take_box<i64>(new_box<i64>(42)) }"#;
 // Class methods are not module functions; each record/class-only provider also
 // declares one inert function so it parses (SPX-P101). Type imports never
 // project a provider function, and the original declarations stay verbatim.
@@ -124,16 +124,13 @@ fn retained_vec_box_class_and_invariant_sources_match_full_owning_projection() {
 fn invariant_and_wrapper_invalid_cases_keep_the_entire_old_error_order() {
     let cases = [
         (
-            VEC_CALLER.replace(
-                "vec_with_capacity<i64>(2usize)",
-                "vec_with_capacity<string>(2usize)",
-            ),
+            VEC_CALLER.replace("new_vec<i64>(2usize)", "new_vec<string>(2usize)"),
             VEC_PROVIDER.to_owned(),
         ),
         (
             BOX_CALLER.replace(
-                "box_into_inner<i64>(box_new<i64>(42))",
-                "box_into_inner<i64>(box_new<i64>(true))",
+                "take_box<i64>(new_box<i64>(42))",
+                "take_box<i64>(new_box<i64>(true))",
             ),
             BOX_PROVIDER.to_owned(),
         ),
@@ -314,14 +311,14 @@ fn literal_box_wrapper_overlay_removes_real_caller_copy_and_function_growth() {
         + 2 * std::mem::size_of::<crate::ast::Type>()
         + "overlay.box.main".len()
         + "main".len()
-        + "box_into_inner".len()
-        + "box_new".len();
+        + "take_box".len()
+        + "new_box".len();
     let sidecars = 2 * std::mem::size_of::<crate::ast::ModuleUse>()
         + "std.mem.box.new".len()
         + "std.mem.box.into-inner".len()
         + 2 * "std.mem".len()
-        + "box_new".len()
-        + "box_into_inner".len()
+        + "new_box".len()
+        + "take_box".len()
         + "caller.spx".len()
         + "overlay.box".len();
     // Both iterative receivers obtain Expr capacity4. The new receiver has
@@ -434,3 +431,6 @@ fn assert_forward_owner(function: &crate::ast::Function) {
         tail.kind
     );
 }
+
+#[path = "full/receiving.rs"]
+mod receiving;

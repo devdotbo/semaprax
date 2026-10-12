@@ -22,6 +22,13 @@ separate [Semantic Cache v1](PROJECT-SEMANTIC-CACHE-V1.md) constructor adds
 checked-module reuse and emits its own work schema; it does not change this
 report's zero-HIR contract or make the source-backed store warm.
 
+AST-only resolved-core reception keeps the full resolved owner and original
+work counters, but does not materialize an owning synthetic key that this mode
+would discard. Actual imported presentations acquire real spare declaration
+backing uniformly before resolution; this raises ordinary/warm live storage
+and is not a claimed savings. Semantic publication alone consumes it, as owned
+by [Workspace Semantic Graph v1](WORKSPACE-SEMANTIC-GRAPH-V1.md).
+
 Project finalization reuses the exact retained source AST for source Agent
 extraction and prelude-bound source revision construction/replay. Each borrow checks the source bytes and path. It neither clones the AST nor
 counts as a frontend cache hit. The revision hashing inputs and independent preflight fact checks

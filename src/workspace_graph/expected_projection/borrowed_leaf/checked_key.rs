@@ -53,6 +53,61 @@ pub(super) fn materialize(view: SyntheticProgramView<'_>) -> Result<Program, Vec
     })
 }
 
+pub(super) fn materialize_receiving(
+    view: SyntheticProgramView<'_>,
+) -> Result<Program, Vec<Diagnostic>> {
+    reserve_builder_structure(0)?;
+    let (authored, owner) = view.into_receiving_owner();
+    let mut roots = match owner {
+        crate::ast::program_source::receiving_roots::GeneratedOwner::Plain(roots) => {
+            return materialize(
+                SyntheticProgramView::with_generated_owner(authored, roots)
+                    .expect("unchanged generated view retains checked lengths"),
+            );
+        }
+        crate::ast::program_source::receiving_roots::GeneratedOwner::Receiving(roots) => roots,
+    };
+    roots
+        .types
+        .as_ref()
+        .expect("type directory acquired")
+        .validate(&authored.types)
+        .map_err(|()| vec![limit_error("builder_bytes", active_builder_limit())])?;
+    roots
+        .functions
+        .as_ref()
+        .expect("function directory acquired")
+        .validate(&authored.functions)
+        .map_err(|()| vec![limit_error("builder_bytes", active_builder_limit())])?;
+    // Both real Vecs remain inseparable from their owners until validation of
+    // both roots succeeds. No external backing or address receipt is accepted.
+    let functions = roots
+        .functions
+        .take()
+        .expect("validated function directory")
+        .finish(&authored.functions)
+        .map_err(|()| vec![limit_error("builder_bytes", active_builder_limit())])?;
+    let types = roots
+        .types
+        .take()
+        .expect("validated type directory")
+        .finish(&authored.types)
+        .map_err(|()| vec![limit_error("builder_bytes", active_builder_limit())])?;
+    Ok(Program {
+        path: authored.path.clone(),
+        module: authored.module.clone(),
+        module_uses: Vec::new(),
+        permits: authored.permits.clone(),
+        types,
+        interfaces: authored.interfaces.clone(),
+        protocols: authored.protocols.clone(),
+        implementations: Vec::new(),
+        session_protocols: authored.session_protocols.clone(),
+        agents: authored.agents.clone(),
+        functions,
+    })
+}
+
 // Owning publication copies authored payloads under its existing complete cache
 // precharge. A real new combined directory is prepaid in full while generated
 // backing remains live; generated declarations themselves are moved once.

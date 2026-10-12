@@ -1,5 +1,7 @@
 //! Exact-source imported overlays, including ordinary classified retained
 //! wrappers and invariant/class roots. Views confer no import authority.
+#[path = "borrowed_imports/receiving.rs"]
+mod receiving;
 use super::{
     active_builder_limit, ast_function_cost, ast_function_signature_cost,
     ast_type_declaration_cost, budgeted_format, default_expr, graph_error, import_stub,
@@ -11,6 +13,7 @@ use crate::ast::{
     Expr, ExprKind, Function, ModuleUseKind, Program, Type, TypeDeclaration, TypeDeclarationKind,
 };
 use crate::diagnostic::Diagnostic;
+pub(in crate::workspace_graph) use receiving::construct_receiving;
 use std::collections::BTreeMap;
 
 pub(in crate::workspace_graph) fn eligible(

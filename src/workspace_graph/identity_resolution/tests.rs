@@ -45,70 +45,137 @@ fn owned_and_borrowed_inputs_match_the_legacy_oracle_and_pay_one_report_each() {
 }
 
 /// Additive observed control for the earlier shared arbitrary 1 MiB ledger:
-/// the original first owned invocation exhausts the independent replay cursor.
-/// The borrowed sibling and all retries preserve that sticky first receipt.
+/// each successful invocation retains complete old HIR/work/static parity.
+/// Any actual physical refusal and all retries preserve its sticky first receipt.
 /// Both results remain live until Drop inside the allocation observation.
 #[test]
 fn one_mib_ledger_preserves_first_cursor_refusal_and_sticky_retries() {
     let program = crate::check(SOURCE, "identity-workspace.spx").unwrap();
     let input = Input::Owned(program.clone());
     let borrowed = Input::Borrowed(SyntheticProgramView::new(&program, Vec::new()).unwrap());
-    // Warm process-static ordinary tables outside the observation.
+    let oracle = crate::hir::resolve_with_function_reuse(&program, None, None, None, None).unwrap();
+    let expected_reused = oracle.1.reused();
+    let expected_static = oracle.1.static_text();
+    let expected_costs = oracle.1.costs();
     with_limit_usage(crate::workspace_graph::MAX_BUILDER_BYTES, || {
         resolve_module(None, &program.path, &input, None).unwrap()
     });
-    let ((outcome, observed), failed, _, receipt) = with_limit_usage_refusal(1 << 20, || {
+    // Keep the original literal ledger, all three invocations and their live
+    // receiving results. A reduced real request may move the refusal frontier.
+    let (((), observed), failed, used, receipt) = with_limit_usage_refusal(1 << 20, || {
         measure(|| {
-            let stage0 = resolve_module(None, &program.path, &input, None);
-            let refused_after_stage0 = crate::bounded_output::active_refused();
-            let stage1 = resolve_module(None, &program.path, &borrowed, None);
-            let sticky_zero = crate::bounded_output::reserve_active_required(0);
-            let sticky_fit = crate::bounded_output::reserve_active_required(1);
-            let live = current_metrics();
-            let retry = resolve_module(None, &program.path, &input, None);
-            let after = current_metrics();
-            let unchanged = (after.allocations, after.live) == (live.allocations, live.live);
-            let retry_setup = matches!(retry, Err(ModuleFailure::Setup(Refused::Budget(_))));
-            let second_setup = matches!(stage1, Err(ModuleFailure::Setup(Refused::Budget(_))));
-            let message = match &stage0 {
-                Err(ModuleFailure::Report(report)) => report.iter().any(|d| {
-                    d.message
-                        .contains("physical expression-fact cursor reservation")
-                }),
-                _ => false,
+            let run = |current: &Input<'_>| {
+                let result = resolve_module(None, &program.path, current, None);
+                match &result {
+                    Ok(parts) => {
+                        assert_eq!(parts.0, oracle.0);
+                        assert_eq!(parts.1, expected_costs);
+                        assert_eq!(parts.2, expected_reused);
+                        assert_eq!(parts.3, expected_static);
+                        assert!(!crate::bounded_output::active_refused());
+                    }
+                    Err(_) => {
+                        assert!(crate::bounded_output::active_refused());
+                        let remaining = crate::bounded_output::active_remaining();
+                        assert!(!crate::bounded_output::reserve_active_required(0));
+                        assert!(!crate::bounded_output::reserve_active_required(1));
+                        let live = current_metrics();
+                        let retry = resolve_module(None, &program.path, current, None);
+                        let after = current_metrics();
+                        assert_eq!(
+                            (after.allocations, after.live),
+                            (live.allocations, live.live)
+                        );
+                        assert!(matches!(
+                            retry,
+                            Err(ModuleFailure::Setup(Refused::Budget(_)))
+                        ));
+                        assert_eq!(remaining, crate::bounded_output::active_remaining());
+                        drop(retry);
+                    }
+                }
+                result
             };
-            let first_code = match &stage0 {
-                Err(ModuleFailure::Report(report)) => report.first().map(|d| d.code),
-                _ => None,
-            };
+            let stage0 = run(&input);
+            let stage1 = run(&borrowed);
+            let retry = run(&input);
             drop((stage0, stage1, retry));
-            (
-                (second_setup, refused_after_stage0, first_code, message),
-                (sticky_zero, sticky_fit, retry_setup, unchanged),
-            )
         })
     });
-    let ((second_setup, refused_after_stage0, first_code, message), sticky) = outcome;
-    assert!(
-        second_setup,
-        "borrowed sibling must preserve the first refusal at setup"
-    );
-    assert!(
-        refused_after_stage0,
-        "the original first owned call exhausted this ledger"
-    );
-    assert!(failed);
-    assert_eq!(first_code, Some("SPX-H006"));
-    assert!(
-        message,
-        "first owned run must refuse the physical expression-fact cursor reservation"
-    );
-    assert_eq!(sticky, (false, false, true, true));
-    let receipt = receipt.expect("the first global refusal is recorded");
-    assert!(receipt.requested > receipt.remaining);
-    assert!(!observed.invalid);
-    assert_eq!(observed.live, 0);
+    assert_eq!(receipt.is_some(), failed);
+    if let Some(first) = receipt {
+        assert!(first.requested > first.remaining);
+    }
+    assert!(used <= 1 << 20);
+    assert!(!observed.invalid && observed.live == 0);
     assert_eq!(observed.allocated, observed.freed);
+}
+
+#[test]
+fn complete_owned_and_borrowed_actual_payment_exact_short_and_sticky_receivers() {
+    let program = crate::check(SOURCE, "identity-workspace.spx").unwrap();
+    let owned = Input::Owned(program.clone());
+    let borrowed = Input::Borrowed(SyntheticProgramView::new(&program, Vec::new()).unwrap());
+    let oracle = crate::hir::resolve_with_function_reuse(&program, None, None, None, None).unwrap();
+    let expected_reused = oracle.1.reused();
+    let expected_static = oracle.1.static_text();
+    let expected_costs = oracle.1.costs();
+    with_limit_usage(crate::workspace_graph::MAX_BUILDER_BYTES, || {
+        resolve_module(None, &program.path, &owned, None).unwrap()
+    });
+    for input in [&owned, &borrowed] {
+        let observe = |limit, expect_refused| {
+            with_limit_usage_refusal(limit, || {
+                measure(|| {
+                    let result = resolve_module(None, &program.path, input, None);
+                    if expect_refused {
+                        assert!(result.is_err() && crate::bounded_output::active_refused());
+                        let remaining = crate::bounded_output::active_remaining();
+                        assert!(!crate::bounded_output::reserve_active_required(0));
+                        assert!(!crate::bounded_output::reserve_active_required(1));
+                        let live = current_metrics();
+                        let retry = resolve_module(None, &program.path, input, None);
+                        let after = current_metrics();
+                        assert_eq!(
+                            (after.allocations, after.live),
+                            (live.allocations, live.live)
+                        );
+                        assert!(matches!(
+                            retry,
+                            Err(ModuleFailure::Setup(Refused::Budget(_)))
+                        ));
+                        assert_eq!(remaining, crate::bounded_output::active_remaining());
+                        drop(retry);
+                    } else {
+                        let parts = result.as_ref().unwrap();
+                        assert_eq!(parts.0, oracle.0);
+                        assert_eq!(parts.1, expected_costs);
+                        assert_eq!(parts.2, expected_reused);
+                        assert_eq!(parts.3, expected_static);
+                        assert!(!crate::bounded_output::active_refused());
+                    }
+                    drop(result);
+                })
+            })
+        };
+        let (((), allocation), failed, required, first) =
+            observe(crate::workspace_graph::MAX_BUILDER_BYTES, false);
+        assert!(!failed && first.is_none() && required > report_bytes());
+        assert!(!allocation.invalid && allocation.live == 0);
+        assert_eq!(allocation.allocated, allocation.freed);
+        assert!(allocation.allocated <= required && allocation.highwater <= required);
+        let (((), exact), failed, used, first) = observe(required, false);
+        assert!(!failed && first.is_none() && used == required);
+        assert!(!exact.invalid && exact.live == 0);
+        assert_eq!(exact.allocated, exact.freed);
+        assert!(exact.allocated <= used && exact.highwater <= used);
+        let (((), short), failed, used, first) = observe(required - 1, true);
+        let first = first.expect("one-short selects a real original request");
+        assert!(failed && first.requested > first.remaining && used <= required - 1);
+        assert!(!short.invalid && short.live == 0);
+        assert_eq!(short.allocated, short.freed);
+        assert!(short.allocated <= used && short.highwater <= used);
+    }
 }
 
 #[test]
@@ -408,6 +475,43 @@ fn actual_selective_import_receiver_matches_fresh_owned_for_vec_and_box() {
             .find(|function| !function.type_parameters.is_empty())
             .unwrap();
         wrapper.stable_id = "receiver.wrong.wrapper".to_owned();
+        // An unreserved persistent identity describes an ordinary generic
+        // forwarding function. Retain that entire old fixture as admission
+        // parity, rather than treating an ordinary ID as reserved authority.
+        let ordinary = Input::Owned(hostile.clone());
+        let expected_ordinary = linked_import_resolution(|| {
+            crate::hir::resolve_source(
+                ordinary.source(),
+                layout.presentation(&current[0], ordinary.source()).unwrap(),
+            )
+        })
+        .unwrap();
+        let (actual_ordinary, refused, _) =
+            with_limit_usage(crate::workspace_graph::MAX_BUILDER_BYTES, || {
+                resolve_module(
+                    Some(&pass),
+                    "caller.spx",
+                    &ordinary,
+                    layout.presentation(&current[0], ordinary.source()).unwrap(),
+                )
+            });
+        assert!(!refused);
+        let actual_ordinary = actual_ordinary.unwrap();
+        assert_eq!(actual_ordinary.0, expected_ordinary.0);
+        assert_eq!(actual_ordinary.3, expected_ordinary.1.static_text());
+        // Preserve the complete selected wrapper signature/body, but spoof a
+        // different known reserved operation whose descriptor cannot match it.
+        let wrapper = hostile
+            .functions
+            .iter_mut()
+            .find(|function| !function.type_parameters.is_empty())
+            .unwrap();
+        wrapper.stable_id = if provider.contains("module std.collections") {
+            "std.collections.vec.push"
+        } else {
+            "std.mem.box.into-inner"
+        }
+        .to_owned();
         let hostile = Input::Owned(hostile);
         let expected = linked_import_resolution(|| {
             crate::hir::resolve_source(
@@ -433,3 +537,6 @@ fn actual_selective_import_receiver_matches_fresh_owned_for_vec_and_box() {
         assert_eq!(actual, expected);
     }
 }
+
+#[path = "tests/refusal_reference.rs"]
+mod refusal_reference;

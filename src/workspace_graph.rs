@@ -4374,7 +4374,7 @@ fn build_resolved_core(
         }
         let synthetic = staged!(
             SyntheticModule,
-            expected_projection::borrowed_leaf::Input::construct(
+            expected_projection::borrowed_leaf::Input::construct_receiving(
                 program,
                 authored,
                 programs,
@@ -4457,15 +4457,15 @@ fn build_resolved_core(
             let resolved = if let Some(cache) = frontend.as_deref_mut() {
                 staged!(FrontendRetention, {
                     let loan_bytes = resolved_loan_bytes(&resolved)?;
-                    Ok::<_, Vec<Diagnostic>>(cache.resolved_module(
+                    cache.resolved_module_receiving(
                         &program.path,
-                        synthetic.into_checked_key()?,
+                        || synthetic.into_receiving_key(),
                         resolved,
                         resolver_bytes,
                         loan_bytes,
                         function_costs,
                         reused_functions,
-                    ))
+                    )
                 })?
             } else {
                 ResolvedModuleInput::Owned(resolved)

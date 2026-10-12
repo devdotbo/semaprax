@@ -851,10 +851,25 @@ contract](DOCTOR-PROBE-V1.md).
 `src/lexer.rs`, `src/parser.rs`, and `src/ast.rs` parse human-readable source.
 `ast/program_source` owns a sealed two-slice compiler input and a concrete
 presentation identity. `workspace_graph/expected_projection/borrowed_leaf`
-lends authored AST collections for uncached import-free, invariant-free
-synthetic inputs and owns only their optional scalar main. The source verifier,
-prelude/declaration index and resolver consume that exact input; cached,
-imported and invariant-desugared projections keep the owned representation.
+lends authored AST collections for admitted import-free synthetic inputs and
+owns only their optional scalar main. Imported views own generated aliases and
+checking bodies while lending immutable authored slices. The source verifier,
+prelude/declaration index and resolver consume that exact input; invariant
+transformations and semantic cache publication keep genuine owning boundaries.
+`expected_projection/borrowed_imports/receiving.rs` owns the actual core import
+walk, retaining the full standalone producer as an independent receiver. Its
+`bounded_output/key_directory.rs` affine owner allocates and pays real spare
+Vec backing on the current ledger; `ast/program_source/receiving_roots.rs`
+retains inseparable directory owners through recursive teardown and transfers
+them once to the unchanged `generated_roots.rs` iterative destructor. The consuming
+`borrowed_leaf/checked_key.rs` receiver validates payer/source/backing, transfers
+those same directories once and restores authored-before-generated order.
+`project/incremental.rs::resolved_module_receiving` executes cache-key construction
+only for semantic publication. Ordinary/warm spare backing is an explicit tradeoff,
+not forecast credit, source authority or a qualified memory reduction. The
+standalone key receiver and all prior full graph/authority controls remain;
+`key_directory/tests.rs` and `borrowed_imports/tests/full/receiving.rs` own the
+additional physical backing and complete constructor-through-Drop controls.
 
 The parser separates recursive prefix atoms from postfix construction so
 inactive postfix temporaries do not accumulate during nested atom parsing.

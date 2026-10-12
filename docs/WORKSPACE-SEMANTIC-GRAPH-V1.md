@@ -330,9 +330,35 @@ copied, the producer pays each teardown worklist's minimum backing and a
 fourfold undiscounted inline AST census, covering cumulative geometric worklist
 requests; this is real new teardown allowance, with no cap increase or forecast
 refund. Plain scalar/default overlays keep their allocation-free teardown.
-Cache publication pays both combined directories while recursive roots remain
-under their owner, then clones authored declarations and moves generated roots
-into canonical order. It does not create a shared authored AST cache.
+The standalone cache-key receiver still pays both replacement directories
+while recursive roots remain under their owner. The actual resolved-core import
+producer instead acquires each real combined directory at its original
+construction frontier: types before copying types, functions only after the
+complete type-name verdict. It pays the affine owner and requested backing
+before `try_reserve_exact`, settles any actual excess capacity before refusal,
+and keeps only generated declarations in the borrowed view's logical length.
+The structurally affine owner contains the actual Vec and immutable authored
+slice plus the current payer. It lends element slices and bounded push only,
+never a mutable Vec or detachable pointer ticket. Allocator address reuse cannot
+transplant backing authority; this is ownership, not admission authority.
+Semantic publication validates both owners and sticky state before cloning
+payloads, appends authored roots into the paid spare backing, then rotates to
+canonical authored-before-generated order and moves the same Vec once.
+Original raw payload forecasts, counters and caps remain unchanged. Ordinary
+and warm import construction retain additional spare capacity/control storage;
+cold retention avoids a second overlapping directory allocation. This is an
+explicit storage tradeoff, not an established efficiency or fit improvement.
+AST-only frontend passes receive resolved HIR without constructing a discarded
+cache key; original counters and the explicit legacy owning receiver remain.
+No shared authored AST cache or forecast-based allocation credit is created.
+
+Source-authored controls retain all original standalone and raw-graph gates.
+`key_directory::tests` covers real zero/exact/short/sticky allocation/Drop,
+source/detached-owner refusal, bounded no-growth mutation and terminal transfer; `borrowed_imports::tests::full::receiving`
+covers complete old/current projections and full constructor/retention/Drop
+costs separately, without subtracting the ordinary/warm spare storage. These
+controls require executable qualification; semantic diagnostic materialization
+and whole application funding remain separate residuals.
 
 Record invariants run ordinary source verification first, then the same clause
 inventory and desugaring passes. Writable AST is copied at those genuine
@@ -697,3 +723,11 @@ re-derived from a compiled build before they are re-pinned; this source-only
 tranche asserts neither. No retained HIR identity storage is removed and no
 application recovery, token, runtime, memory or RSS gain is claimed; Catalog23
 and Shift15/MAX evidence requires actual owning execution.
+
+The unchanged literal 1 MiB identity receiver keeps all three invocations and
+full old HIR/work/static parity on success; physical refusal timing follows
+actual requested backing. Each owned and borrowed receiver additionally has
+measured full payment exact/one-short controls with first receipt, sticky zero
+and one probes, allocation-free retry, unchanged debits and complete Drop.
+`identity_resolution/tests/refusal_reference.rs` preserves the full historical
+threshold body verbatim as source provenance, not a current execution claim.
