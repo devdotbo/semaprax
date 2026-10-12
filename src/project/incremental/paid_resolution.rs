@@ -87,3 +87,28 @@ impl FrontendPass {
         )
     }
 }
+
+
+#[cfg(test)]
+impl FrontendPass {
+    /// A compiler-created previous candidate for actual receiver tests. The
+    /// ordinary checked resolver still authenticates its complete environment.
+    pub(crate) fn paid_receiver_candidate(
+        synthetic: crate::ast::Program,
+        resolved: crate::hir::ResolvedProgram,
+        function_costs: std::collections::BTreeMap<String,usize>,
+    ) -> Self {
+        let checked=std::collections::BTreeMap::from([(
+            synthetic.path.clone(),std::sync::Arc::new(super::CheckedModule {
+                synthetic,resolved,function_costs,resolver_bytes:0,retained_loan_bytes:0,
+            }),
+        )]);
+        Self {
+            indexed_imports:Vec::new(),entries:std::collections::BTreeMap::new(),
+            parsed:0,reused:0,canonicalizations:0,parsed_bytes:0,reused_bytes:0,
+            resolved:0,retained_source_bytes:0,ast_budget:0,semantic:true,checked,
+            next_checked:std::collections::BTreeMap::new(),checked_reused:0,
+            functions_resolved:0,functions_reused:0,
+        }
+    }
+}

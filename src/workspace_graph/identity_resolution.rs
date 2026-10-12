@@ -61,22 +61,24 @@ pub(super) fn resolve_module<'s>(
     .map_err(ModuleFailure::Setup)?;
     #[cfg(test)]
     observe_acquired(&owner);
-    // Selective resolution is evaluated before the linked Vec/Box scopes.
-    let selective = staged!(
-        SelectiveResolution,
-        frontend.and_then(|cache| {
-            synthetic
-                .owned()
-                .and_then(|input| cache.resolve_functions_paid(path, input, private, &mut owner))
-                .or_else(|| {
-                    synthetic.borrowed().and_then(|view| {
-                        cache.resolve_borrowed_cold_source_paid(path, view, private, &mut owner)
-                    })
-                })
-        })
-    );
+    // Both routes execute inside the same linked-source authentication scope.
+    // Evaluating a selective Result before these guards would reject retained
+    // imported wrapper bodies before the guards could authenticate them.
     crate::vec_ops::with_authenticated_linked_source(|| {
         crate::box_ops::with_authenticated_linked_source(|| {
+            let selective = staged!(
+                SelectiveResolution,
+                frontend.and_then(|cache| {
+                    synthetic
+                        .owned()
+                        .and_then(|input| cache.resolve_functions_paid(path, input, private, &mut owner))
+                        .or_else(|| {
+                            synthetic.borrowed().and_then(|view| {
+                                cache.resolve_borrowed_cold_source_paid(path, view, private, &mut owner)
+                            })
+                        })
+                })
+            );
             if let Some(selective) = selective {
                 selective.map(|resolved| resolved.into_parts())
             } else {

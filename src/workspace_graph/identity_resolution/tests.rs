@@ -291,3 +291,73 @@ fn source_errors_stay_legacy_owned_after_one_report_acquisition() {
     // legacy and equal to the unpaid oracle whatever stage raised it.
     assert!(used >= report_bytes());
 }
+
+
+fn linked_import_resolution<T>(operation: impl FnOnce()->T)->T {
+    crate::vec_ops::with_authenticated_linked_source(|| {
+        crate::box_ops::with_authenticated_linked_source(operation)
+    })
+}
+
+#[test]
+fn actual_selective_import_receiver_matches_fresh_owned_for_vec_and_box() {
+    use crate::workspace_graph::{expected_projection,index_authored};
+    use expected_projection::private_layout::registry::LayoutRegistry;
+    let cases=[
+        (include_str!("../../../std/collections/src/collections.spx"),
+         "module receiver.vec; use function @id(\"std.collections.vec.with-capacity\") from std.collections as allocate; use function @id(\"std.collections.vec.push\") from std.collections as append; use function @id(\"std.collections.vec.get\") from std.collections as read; @id(\"receiver.helper\") fn helper()->i64 {1} @id(\"receiver.main\") fn main()->i64 {let values=allocate<i64>(2usize); let values=append<i64>(values,42); read<i64>(values,0usize)}"),
+        (include_str!("../../../std/mem/src/mem.spx"),
+         "module receiver.box; use function @id(\"std.mem.box.new\") from std.mem as allocate; use function @id(\"std.mem.box.into-inner\") from std.mem as consume; @id(\"receiver.helper\") fn helper()->i64 {1} @id(\"receiver.main\") fn main()->i64 {consume<i64>(allocate<i64>(42))}"),
+    ];
+    for (provider,caller) in cases {
+        let previous=[crate::parse(caller,"caller.spx").unwrap(),crate::parse(provider,"provider.spx").unwrap()];
+        let authored=index_authored(&previous).unwrap();
+        let registry=LayoutRegistry::new(&previous,&authored);
+        let old_key=expected_projection::synthetic_program_with_registry(&previous[0],&authored,&previous,Some(&registry)).unwrap();
+        let layout=registry.get(&previous[0],&authored,&previous).unwrap();
+        let (old_hir,old_work)=linked_import_resolution(|| crate::hir::resolve_with_function_reuse(
+            &old_key,None,None,None,layout.presentation(&previous[0],&old_key).unwrap(),
+        )).unwrap();
+        let pass=FrontendPass::paid_receiver_candidate(old_key,old_hir,old_work.costs());
+        // The edited main misses the complete-key cache; an unchanged helper
+        // remains a genuine selective candidate under the original environment.
+        let edited=caller.replace("42","43");
+        let current=[crate::parse(&edited,"caller.spx").unwrap(),crate::parse(provider,"provider.spx").unwrap()];
+        let authored=index_authored(&current).unwrap();
+        let registry=LayoutRegistry::new(&current,&authored);
+        let owned=Input::Owned(expected_projection::synthetic_program_with_registry(&current[0],&authored,&current,Some(&registry)).unwrap());
+        let borrowed=Input::construct(&current[0],&authored,&current,&registry,false).unwrap();
+        assert!(borrowed.borrowed().is_some());
+        let layout=registry.get(&current[0],&authored,&current).unwrap();
+        let oracle=linked_import_resolution(|| crate::hir::resolve_with_function_reuse(
+            owned.owned().unwrap(),None,None,None,layout.presentation(&current[0],owned.source()).unwrap(),
+        )).unwrap();
+        for input in [&owned,&borrowed] {
+            // The public unauthenticated entry continues to reject foreign
+            // retained wrappers: moving a caller scope does not widen it.
+            let outside=crate::hir::resolve_source(input.source(),layout.presentation(&current[0],input.source()).unwrap());
+            assert!(outside.is_err());
+            let before=super::acquisitions();
+            let (result,refused,_)=with_limit_usage(crate::workspace_graph::MAX_BUILDER_BYTES,|| {
+                resolve_module(Some(&pass),"caller.spx",input,layout.presentation(&current[0],input.source()).unwrap())
+            });
+            assert!(!refused);let result=result.unwrap();
+            assert_eq!(result.0,oracle.0);assert_eq!(result.3,oracle.1.static_text());
+            assert!(result.2>0);assert_eq!(super::acquisitions(),before+1);
+            assert!(crate::hir::resolve_source(input.source(),layout.presentation(&current[0],input.source()).unwrap()).is_err());
+        }
+        // A retained generic wrapper with the wrong persistent identity must
+        // still undergo ordinary source verification, even with a warm cache.
+        let mut hostile=owned.into_owned().unwrap();
+        let wrapper=hostile.functions.iter_mut().find(|function| !function.type_parameters.is_empty()).unwrap();
+        wrapper.stable_id="receiver.wrong.wrapper".to_owned();
+        let hostile=Input::Owned(hostile);
+        let expected=linked_import_resolution(|| crate::hir::resolve_source(hostile.source(),layout.presentation(&current[0],hostile.source()).unwrap())).unwrap_err();
+        let (actual,refused,_)=with_limit_usage(crate::workspace_graph::MAX_BUILDER_BYTES,|| {
+            resolve_module(Some(&pass),"caller.spx",&hostile,layout.presentation(&current[0],hostile.source()).unwrap())
+        });
+        assert!(!refused);
+        let ModuleFailure::Report(actual)=actual.unwrap_err() else {panic!("wrong identity must preserve semantic report");};
+        assert_eq!(actual,expected);
+    }
+}
