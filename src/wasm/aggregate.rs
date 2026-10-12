@@ -2059,7 +2059,7 @@ fn emit_profile_with_scalar_exports(
     let uses_vec_sort = crate::vec_ops::resolved_program_uses_sort(program);
     let uses_vec_record = super::vec_ops::program_uses_record_vec(program);
     let uses_owned_leaf_vec = super::vec_ops::program_uses_owned_leaf_vec(program)
-        || crate::vec_ops::sort_keys::uses(program);
+        || vec_owned_leaf::binds_record_keys(program);
     let uses_owned_iterator = crate::iterator_ops::resolved_program_uses_owned_iterator(program);
     let uses_box = super::program_uses_box(program);
     let uses_list = crate::list_ops::resolved_program_uses_list(program);
@@ -6315,6 +6315,9 @@ impl Emitter<'_> {
         if op == crate::vec_ops::VecOp::StrAt {
             return self.emit_string_slot(expr);
         }
+        if op == crate::vec_ops::VecOp::UniqueBy {
+            return self.emit_field_unique(expr);
+        }
         let [element] = type_arguments else {
             return Err(error("Vec operation requires one exact type argument"));
         };
@@ -6620,7 +6623,8 @@ impl Emitter<'_> {
             | crate::vec_ops::VecOp::Replace
             | crate::vec_ops::VecOp::ReserveOwned
             | crate::vec_ops::VecOp::SortOwned
-            | crate::vec_ops::VecOp::SortBy => {
+            | crate::vec_ops::VecOp::SortBy
+            | crate::vec_ops::VecOp::UniqueBy => {
                 Err(error("owned-leaf Vec operation has no admitted element"))
             }
         }

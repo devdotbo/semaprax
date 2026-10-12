@@ -8,6 +8,9 @@ pub(crate) fn by_id_with_work(
     if id.starts_with(sort_keys::PREFIX) {
         return Ok(Some(VecOp::SortBy));
     }
+    // Borrowed field uniqueness is deliberately unclassified here: every
+    // renewal-profile caller admits only owner-reopening or Push operations, so
+    // its None result is equivalent and existing lookup work stays unchanged.
     const KEYS: [(&str, VecOp); 15] = [
         (string_slot::ID, VecOp::StrAt),
         (string_slot::BYTES_ID, VecOp::StrAt),

@@ -158,7 +158,7 @@ impl Emitter<'_> {
             self.get_scalar(&result);
             self.output.push(0x50);
             self.emit_vec_failure_if(expr, STATUS_VEC_ALLOCATION_FAILURE)?;
-            if crate::vec_ops::sort_keys::uses(self.program) {
+            if vec_owned_leaf::binds_record_keys(self.program) {
                 self.explicit_sort(expr, element, &result, true)?;
                 self.cr_set(scalar_local(&result)?);
                 self.get_scalar(&result);

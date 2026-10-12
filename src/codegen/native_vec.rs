@@ -28,6 +28,7 @@ pub(super) fn emit_runtime(
         if crate::hir::copy_record_collection::program_uses(program) {
             copy_record::emit_runtime(output, sort_keys);
         }
+        emit_field_unique_runtime(output, program, owned_leaf);
         return;
     }
     output.push_str(NATIVE_VEC_RUNTIME_C);
@@ -40,6 +41,26 @@ pub(super) fn emit_runtime(
     }
     if crate::hir::copy_record_collection::program_uses(program) {
         copy_record::emit_runtime(output, sort_keys);
+    }
+    emit_field_unique_runtime(output, program, false);
+}
+
+/// Borrowed Record-Field Uniqueness v1 helpers follow their family runtimes;
+/// programs without the operation keep their exact prior runtime text.
+fn emit_field_unique_runtime(
+    output: &mut impl super::COutput,
+    program: &crate::hir::ResolvedProgram,
+    owned_leaf: bool,
+) {
+    if !crate::vec_ops::field_unique::uses(program) {
+        return;
+    }
+    output.push_str(include_str!("native_vec/field_unique.c"));
+    if crate::hir::copy_record_collection::program_uses(program) {
+        output.push_str(include_str!("native_vec/copy_field_unique.c"));
+    }
+    if owned_leaf {
+        output.push_str(include_str!("native_vec/owned_field_unique.c"));
     }
 }
 
@@ -105,8 +126,11 @@ pub(super) fn program_uses_owned_leaf(program: &crate::hir::ResolvedProgram) -> 
                                                     | crate::vec_ops::VecOp::ReserveOwned
                                                     | crate::vec_ops::VecOp::SortOwned
                                             )
-                                            || (op == crate::vec_ops::VecOp::SortBy
-                                                && crate::hir::owned_leaf_collection::layout(
+                                            || (matches!(
+                                                op,
+                                                crate::vec_ops::VecOp::SortBy
+                                                    | crate::vec_ops::VecOp::UniqueBy
+                                            ) && crate::hir::owned_leaf_collection::layout(
                                                     &program.declarations,
                                                     element,
                                                 )

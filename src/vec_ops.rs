@@ -7,6 +7,7 @@ use crate::hir::{
     ValueId,
 };
 
+pub(crate) mod field_unique;
 mod sort;
 pub(crate) mod sort_keys;
 pub(crate) mod string_slot;
@@ -69,9 +70,10 @@ pub(crate) enum VecOp {
     SortOwned,
     SortBy,
     StrAt,
+    UniqueBy,
 }
 
-pub(crate) const ALL: [VecOp; 15] = [
+pub(crate) const ALL: [VecOp; 16] = [
     VecOp::WithCapacity,
     VecOp::Push,
     VecOp::Len,
@@ -87,6 +89,7 @@ pub(crate) const ALL: [VecOp; 15] = [
     VecOp::SortOwned,
     VecOp::SortBy,
     VecOp::StrAt,
+    VecOp::UniqueBy,
 ];
 
 impl VecOp {
@@ -101,7 +104,7 @@ impl VecOp {
             self,
             Self::WithCapacity | Self::Push | Self::Len | Self::Capacity | Self::Clear
         ) || self.owned_leaf_only()
-            || matches!(self, Self::SortBy)
+            || matches!(self, Self::SortBy | Self::UniqueBy)
     }
 
     pub(crate) const fn reopens_same_owner(self) -> bool {
@@ -180,6 +183,7 @@ impl VecOp {
             Self::SortOwned => SORT_OWNED_NAME,
             Self::SortBy => sort_keys::NAME,
             Self::StrAt => string_slot::NAME,
+            Self::UniqueBy => field_unique::NAME,
         }
     }
     pub(crate) const fn id(self) -> &'static str {
@@ -199,13 +203,14 @@ impl VecOp {
             Self::SortOwned => SORT_OWNED_ID,
             Self::SortBy => sort_keys::PREFIX,
             Self::StrAt => string_slot::ID,
+            Self::UniqueBy => field_unique::PREFIX,
         }
     }
     pub(crate) const fn arity(self) -> usize {
         match self {
             Self::WithCapacity => 1,
             Self::Push => 2,
-            Self::Len | Self::Capacity => 1,
+            Self::Len | Self::Capacity | Self::UniqueBy => 1,
             Self::Get | Self::CloneAt | Self::StrAt => 2,
             Self::ReserveExact | Self::ReserveOwned => 2,
             Self::Set | Self::Replace => 3,
@@ -226,9 +231,15 @@ impl VecOp {
                 | Self::SortBy,
                 0,
             ) => OwnershipMode::Own,
-            (Self::Len | Self::Capacity | Self::Get | Self::CloneAt | Self::StrAt, 0) => {
-                OwnershipMode::Borrow
-            }
+            (
+                Self::Len
+                | Self::Capacity
+                | Self::Get
+                | Self::CloneAt
+                | Self::StrAt
+                | Self::UniqueBy,
+                0,
+            ) => OwnershipMode::Borrow,
             _ => OwnershipMode::Value,
         }
     }
@@ -274,6 +285,7 @@ impl VecOp {
             Self::Len | Self::Capacity => ResolvedType::Usize,
             Self::Get | Self::CloneAt => element.clone(),
             Self::StrAt => ResolvedType::Str,
+            Self::UniqueBy => ResolvedType::Bool,
         }
     }
     pub(crate) fn ast_return_type(self, element: &Type) -> Type {
@@ -291,6 +303,7 @@ impl VecOp {
             Self::Len | Self::Capacity => Type::Usize,
             Self::Get | Self::CloneAt => element.clone(),
             Self::StrAt => Type::Str,
+            Self::UniqueBy => Type::Bool,
         }
     }
     pub(crate) fn accepts_resolved(
@@ -305,9 +318,15 @@ impl VecOp {
         match (self, index) {
             (Self::WithCapacity, 0) => *ty == ResolvedType::Usize,
             (Self::Push, 0)
-            | (Self::Len | Self::Capacity | Self::Get | Self::CloneAt | Self::StrAt, 0) => {
-                resolved_vec_matches(ty, element)
-            }
+            | (
+                Self::Len
+                | Self::Capacity
+                | Self::Get
+                | Self::CloneAt
+                | Self::StrAt
+                | Self::UniqueBy,
+                0,
+            ) => resolved_vec_matches(ty, element),
             (Self::Push, 1) => ty == element,
             (Self::Get | Self::CloneAt | Self::StrAt, 1) => *ty == ResolvedType::Usize,
             (Self::ReserveExact | Self::ReserveOwned, 0)
@@ -348,12 +367,16 @@ pub(crate) fn by_name(name: &str) -> Option<VecOp> {
         SORT_OWNED_NAME => Some(VecOp::SortOwned),
         sort_keys::NAME => Some(VecOp::SortBy),
         string_slot::NAME => Some(VecOp::StrAt),
+        field_unique::NAME => Some(VecOp::UniqueBy),
         _ => None,
     }
 }
 pub(crate) fn by_id(id: &str) -> Option<VecOp> {
     if id.starts_with(sort_keys::PREFIX) {
         return Some(VecOp::SortBy);
+    }
+    if id.starts_with(field_unique::PREFIX) {
+        return Some(VecOp::UniqueBy);
     }
     match id {
         string_slot::ID | string_slot::BYTES_ID => Some(VecOp::StrAt),
@@ -420,13 +443,13 @@ pub(crate) fn resolved_vec_element_is_admitted(ty: &ResolvedType) -> bool {
 }
 pub(crate) fn ast_operation_element_is_admitted(op: VecOp, ty: &Type) -> bool {
     !op.owned_leaf_only()
-        && op != VecOp::SortBy
+        && !matches!(op, VecOp::SortBy | VecOp::UniqueBy)
         && (ast_element_is_admitted(ty)
             || (*ty == Type::Bytes && !matches!(op, VecOp::Get | VecOp::Sort)))
 }
 pub(crate) fn resolved_operation_element_is_admitted(op: VecOp, ty: &ResolvedType) -> bool {
     !op.owned_leaf_only()
-        && op != VecOp::SortBy
+        && !matches!(op, VecOp::SortBy | VecOp::UniqueBy)
         && (resolved_element_is_admitted(ty)
             || (*ty == ResolvedType::Bytes && !matches!(op, VecOp::Get | VecOp::Sort)))
 }
@@ -461,7 +484,7 @@ pub(crate) fn ast_params_with_owned_element(
     let types = match op {
         VecOp::WithCapacity => vec![Type::Usize],
         VecOp::Push => vec![ast_vec(element.clone()), element.clone()],
-        VecOp::Len | VecOp::Capacity => vec![ast_vec(element.clone())],
+        VecOp::Len | VecOp::Capacity | VecOp::UniqueBy => vec![ast_vec(element.clone())],
         VecOp::Get | VecOp::CloneAt | VecOp::StrAt => vec![ast_vec(element.clone()), Type::Usize],
         VecOp::ReserveExact | VecOp::ReserveOwned => vec![ast_vec(element.clone()), Type::Usize],
         VecOp::Set | VecOp::Replace => vec![ast_vec(element.clone()), Type::Usize, element.clone()],
@@ -496,7 +519,7 @@ pub(crate) fn resolved_params(op: VecOp, element: &ResolvedType) -> Vec<Resolved
     let types = match op {
         VecOp::WithCapacity => vec![ResolvedType::Usize],
         VecOp::Push => vec![resolved_vec(element.clone()), element.clone()],
-        VecOp::Len | VecOp::Capacity => vec![resolved_vec(element.clone())],
+        VecOp::Len | VecOp::Capacity | VecOp::UniqueBy => vec![resolved_vec(element.clone())],
         VecOp::Get | VecOp::CloneAt | VecOp::StrAt => {
             vec![resolved_vec(element.clone()), ResolvedType::Usize]
         }

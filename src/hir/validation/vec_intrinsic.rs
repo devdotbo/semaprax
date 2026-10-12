@@ -124,6 +124,19 @@ pub(super) fn signature(
             "explicit sort key nominal/field/layout/direction descriptor is forged or stale",
         ));
     }
+    if op == crate::vec_ops::VecOp::UniqueBy
+        && (!crate::vec_ops::field_unique::arguments(args, &type_arguments[0])
+            || crate::vec_ops::field_unique::replay(
+                declarations,
+                &type_arguments[0],
+                callee.as_str(),
+            )
+            .is_none())
+    {
+        return Err(hir_error(
+            "borrowed field uniqueness root/nominal/field/layout descriptor is forged or stale",
+        ));
+    }
     Ok(Some((
         crate::vec_ops::resolved_params_in(declarations, op, &type_arguments[0]),
         if callee.as_str() == crate::vec_ops::string_slot::BYTES_ID {

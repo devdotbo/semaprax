@@ -929,6 +929,20 @@ prelude v15 binds only this additive operation. The literal is not a runtime
 String and the synthetic callee is not a declaration/import target. The owning
 contract is [Explicit Record Sort Keys v1](EXPLICIT-RECORD-SORT-KEYS-V1.md).
 
+`vec_ops/field_unique.rs` owns the distinct borrowed `core.vec.unique-by.v1`
+descriptor, reusing only the sort-key layout derivation. Source admission is
+`source_verify/field_unique.rs`; the resolver shares the literal-metadata route
+in `hir/resolve_expr/sort_keys.rs`; HIR validation replays it in
+`hir/validation/vec_intrinsic.rs`, the whole-root call loan is the
+`field_unique` receiver in `loan_plan/call_arguments.rs`, and workspace source
+replay is `workspace_graph/expected_projection/field_unique.rs`. Runtime owners
+are interpreter `owned_vec/field_unique.rs`, native
+`native_emit/expression/vec_ops/field_unique.rs` with
+`native_vec/{field_unique,copy_field_unique,owned_field_unique}.c`, and Wasm
+`aggregate/vec_owned_leaf/field_unique.rs` (private
+`env.spx_vec_unique_by_v1`). Selective prelude v18 binds it. Contract:
+[Borrowed Record-Field Uniqueness v1](BORROWED-RECORD-FIELD-UNIQUENESS-V1.md).
+
 `src/hir/vec_field.rs` authenticates the additive `vec_field<Row>(items, index, "field")`
 descriptor and its literal field selection; `src/hir/byte_slice_provenance/vec_field.rs`
 retains the complete named-vector origin. Native `field_read.rs` reads the

@@ -2,6 +2,7 @@
 
 mod copy_record;
 mod field_read;
+mod field_unique;
 mod owned_leaf;
 mod owned_payload;
 mod plan_infallible;
@@ -27,6 +28,9 @@ impl<'a, O: COutput> CEmitter<'a, O> {
     ) -> Result<CValue, Diagnostic> {
         if op == crate::vec_ops::VecOp::StrAt {
             return self.emit_string_slot(expr);
+        }
+        if op == crate::vec_ops::VecOp::UniqueBy {
+            return self.emit_field_unique(expr);
         }
         let [element] = type_arguments else {
             return Err(backend_error(
@@ -96,7 +100,8 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             | crate::vec_ops::VecOp::Replace
             | crate::vec_ops::VecOp::ReserveOwned
             | crate::vec_ops::VecOp::SortOwned
-            | crate::vec_ops::VecOp::SortBy => {
+            | crate::vec_ops::VecOp::SortBy
+            | crate::vec_ops::VecOp::UniqueBy => {
                 Err(backend_error("owned operation reached scalar Vec lowering"))
             }
             crate::vec_ops::VecOp::WithCapacity => {

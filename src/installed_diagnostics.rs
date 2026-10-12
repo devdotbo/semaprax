@@ -212,6 +212,12 @@ pub fn explain_installed_diagnostic(code: &str) -> Result<InstalledDiagnosticExp
             "requirements": ["one explicit monomorphic admitted flat record type", "one owning Vec", "1..8 unique literal field:asc/field:desc keys", "exact persistent field identities and complete layout", "no live owner field/view loans"],
             "repair": "Use a literal policy naming declared fields; end field loans before consuming the Vec. See docs/EXPLICIT-RECORD-SORT-KEYS-V1.md.",
         })),
+        "SPX-T319" => Some(json!({
+            "summary": "borrowed record-field uniqueness has an unsupported field, record or root",
+            "required_shape": "vec_unique_by<Row>(rows, \"id\")",
+            "requirements": ["one explicit monomorphic Copy or owned-leaf record with persistent field identities", "rows is a named available own or borrow Vec<Row>", "one literal field identifier", "a String or i64/i32/u8/usize/bool/char field; no floating or Bytes key"],
+            "repair": "Name a declared String or integer-like field with a literal and pass the named Vec. See docs/BORROWED-RECORD-FIELD-UNIQUENESS-V1.md.",
+        })),
         "SPX-T310" => Some(json!({
             "summary": "scoped Vec record-field read has an unsupported operand or field selector",
             "required_shape": "vec_field<Row>(rows, index, \"field\")",

@@ -118,7 +118,8 @@ impl Emitter<'_> {
             | VecOp::Replace
             | VecOp::ReserveOwned
             | VecOp::SortOwned
-            | VecOp::SortBy => {
+            | VecOp::SortBy
+            | VecOp::UniqueBy => {
                 return Err(error(
                     "owned Vec payload new operation requires an admitted leaf layout",
                 ));

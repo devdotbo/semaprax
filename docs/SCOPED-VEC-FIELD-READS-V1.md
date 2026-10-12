@@ -26,7 +26,10 @@ nonescaping `borrow str`; a Bytes field returns the existing `borrow Slice<u8>`.
 The exact composition `str_as_bytes(vec_field<Row>(values,index,"text"))` borrows
 the same String bytes. These operations never deep-clone or materialize an owned
 leaf, transfer an element, drop a leaf, allocate a result owner, or renew a vector.
-`vec_clone_at` keeps its distinct allocating owning-result contract.
+`vec_clone_at` keeps its distinct allocating owning-result contract. A whole-Vec
+duplicate check over one field uses
+[Borrowed Record-Field Uniqueness v1](BORROWED-RECORD-FIELD-UNIQUENESS-V1.md)
+instead of copying field views into a temporary Vec.
 
 ## Evaluation, loans and failure
 

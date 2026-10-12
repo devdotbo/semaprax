@@ -288,7 +288,7 @@ impl Resolver<'_> {
                                 path,
                                 segment: Seg::NativeRustArg,
                             });
-                        } else if name == crate::vec_ops::sort_keys::NAME {
+                        } else if crate::vec_ops::field_unique::literal_call(name) {
                             frames.extend(self.sort_by_frames(
                                 function,
                                 expr,

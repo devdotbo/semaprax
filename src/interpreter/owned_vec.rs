@@ -1,5 +1,6 @@
 //! Reference-interpreter carrier and evaluation for compiler-owned bounded Vec.
 
+mod field_unique;
 #[cfg(test)]
 mod float_order_probe;
 mod owned_leaf;
@@ -179,6 +180,13 @@ impl Evaluator<'_> {
         {
             return Err(Flow::Guard("forged explicit Vec sort descriptor"));
         }
+        if op == crate::vec_ops::VecOp::UniqueBy
+            && (!crate::vec_ops::field_unique::arguments(args, &element)
+                || crate::vec_ops::field_unique::replay(declarations, &element, identity)
+                    .is_none())
+        {
+            return Err(Flow::Guard("forged borrowed field uniqueness descriptor"));
+        }
         let mut values = Vec::with_capacity(args.len());
         for (index, argument) in args.iter().enumerate() {
             if index == 0
@@ -188,6 +196,7 @@ impl Evaluator<'_> {
                         | crate::vec_ops::VecOp::Capacity
                         | crate::vec_ops::VecOp::Get
                         | crate::vec_ops::VecOp::CloneAt
+                        | crate::vec_ops::VecOp::UniqueBy
                 )
             {
                 self.charge()?;
@@ -203,6 +212,9 @@ impl Evaluator<'_> {
             crate::vec_ops::VecOp::CloneAt => self.clone_owned_vec_element(&element, &values),
             crate::vec_ops::VecOp::SortOwned => self.sort_owned_vec_elements(&element, values),
             crate::vec_ops::VecOp::SortBy => self.sort_record_vec_by(&element, identity, values),
+            crate::vec_ops::VecOp::UniqueBy => {
+                self.unique_record_vec_by(&element, identity, values)
+            }
             crate::vec_ops::VecOp::WithCapacity => {
                 let [Value::Usize(capacity)] = values.as_slice() else {
                     return Err(Flow::Guard(

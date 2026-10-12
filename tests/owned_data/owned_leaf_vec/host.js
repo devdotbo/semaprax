@@ -33,8 +33,12 @@ const payloads = new Map(), vectors = new Map(), iterators = new Map();
 const AUTHORITY_ENCODING = 'semaprax.test.owned-leaf-authority.v2';
 const EMPTY_BYTES = new Uint8Array(0);
 let sorting = false, fieldReading = false, fieldReads = 0;
+// Borrowed field uniqueness: requested ordinal scratch is counted separately
+// from owner inventory. JS typed-array storage is fixture memory, not paid
+// native backing; it only proves no row/payload/authority work occurs.
+let uniqueChecking = false, uniqueChecks = 0, uniqueScratchRequests = 0, uniqueScratchBytes = 0;
 const allocationOutsideSort = name => {
-  if(sorting||fieldReading)throw Error(`infallible read/sort reached allocating/settling helper: ${name}`);
+  if(sorting||fieldReading||uniqueChecking)throw Error(`infallible read/sort reached allocating/settling helper: ${name}`);
 };
 // Test-only guards make a future slice/sort/map or authority re-mint fail the
 // same executable corpus, rather than quietly reintroducing a failure lane.
@@ -577,6 +581,63 @@ const env = {
       return BigInt.asIntN(64,(value.generation<<32n)|value.authority_slot);
     }finally{sorting=false}
   },
+  spx_vec_unique_by_v1:(handle,identity,shape,position)=>{
+    // Borrowed authority: exact already-bound facts only. No binding, renewal,
+    // consumption, payload copy, drop or authority insertion is permitted.
+    const value=vectorValue(handle);
+    if(!value||value.identity!==identity||value.shape!==shape)
+      throw Error('unbound, stale or foreign uniqueness authority');
+    const copy=value.tag===1;
+    if(!copy&&value.tag!==10&&value.tag!==11)throw Error('uniqueness carrier tag');
+    let width=0,seen=0;
+    for(let raw=BigInt.asUintN(64,shape);raw;raw>>=8n){
+      const field=Number(raw&255n),code=field>>4,slot=field&15;
+      if(!field||code<1||code>10||slot>=8||(seen&(1<<slot))||(copy&&code>8))throw Error('uniqueness shape');
+      width++;seen|=1<<slot;
+    }
+    if(!width||seen!==(1<<width)-1||typeof position!=='bigint'||position<0n||position>=BigInt(width))
+      throw Error('uniqueness field position');
+    const byte=Number((BigInt.asUintN(64,shape)>>(position*8n))&255n),code=byte>>4,slot=byte&15;
+    if(code===6||code===7||code===9)throw Error('uniqueness key outside v1 profile');
+    if(copy&&(value.values.length%width||value.capacity%BigInt(width)))throw Error('Copy uniqueness stride');
+    if(uniqueChecking||sorting||fieldReading)throw Error('reentrant field uniqueness');
+    const rows=value.values,length=copy?rows.length/width:rows.length;
+    if(length<2)return 1;
+    const generation=value.generation,copied=copies,dropped=drops,payloadId=nextPayload,vecId=nextVec,authorities=vectors.size;
+    uniqueScratchRequests++;
+    if(refusal==='unique-scratch')return 3;
+    let ordinals;
+    try{ordinals=new Uint32Array(length)}catch(error){if(error instanceof RangeError)return 3;throw error}
+    uniqueScratchBytes+=4*length;
+    uniqueChecking=true;
+    try{
+      const key=i=>copy?rows[i*width+slot]:rows[i][slot];
+      const compare=(a,b)=>{
+        const x=key(a),y=key(b);
+        if(code===10)return compareOwnedBytes(x,y);
+        const left=totalKey(x,code),right=totalKey(y,code);
+        return left<right?-1:left>right?1:0;
+      };
+      for(let i=0;i<length;i++)ordinals[i]=i;
+      const sift=(root,n)=>{
+        for(;;){
+          let child=2*root+1;if(child>=n)return;
+          if(child+1<n&&compare(ordinals[child],ordinals[child+1])<0)child++;
+          if(compare(ordinals[root],ordinals[child])>=0)return;
+          const t=ordinals[root];ordinals[root]=ordinals[child];ordinals[child]=t;root=child;
+        }
+      };
+      for(let i=Math.floor(length/2);i-->0;)sift(i,length);
+      for(let end=length-1;end>0;end--){const t=ordinals[0];ordinals[0]=ordinals[end];ordinals[end]=t;sift(0,end)}
+      let unique=1;
+      for(let i=1;i<length&&unique;i++)if(compare(ordinals[i-1],ordinals[i])===0)unique=0;
+      if(copies!==copied||drops!==dropped||nextPayload!==payloadId||nextVec!==vecId||vectors.size!==authorities
+         ||value.generation!==generation||value.values!==rows||vectorValue(handle)!==value)
+        throw Error('field uniqueness changed authority or inventory');
+      uniqueChecks++;
+      return unique;
+    }finally{uniqueChecking=false}
+  },
   spx_vec_leaf_sort_v1:(handle,identity,shape)=>{
     if(sorting)throw Error('reentrant owned sort');
     sorting=true;
@@ -694,6 +755,38 @@ if(copyRecordCodec)require('./copy_scalar_imports.js')(env,vectorValue);
     catch(error){if(!(error instanceof WebAssembly.LinkError))throw error;absent=true}
     if(!absent)throw Error('explicit sort linked without its authenticated private import');
   }
+  if(requiredImports.some(entry=>entry.name==='spx_vec_unique_by_v1')){
+    const missingUnique={...env};delete missingUnique.spx_vec_unique_by_v1;
+    let absent=false;
+    try{await WebAssembly.instantiate(moduleBytes,{env:missingUnique})}
+    catch(error){if(!(error instanceof WebAssembly.LinkError))throw error;absent=true}
+    if(!absent)throw Error('field uniqueness linked without its distinct private import');
+  }
+  if(refusal==='unique-bad-result'||refusal==='unique-forged-shape'||refusal==='unique-forged-position'){
+    let calls=0,trapped=false;
+    const actual=env.spx_vec_unique_by_v1;
+    const hostile={...env,spx_vec_unique_by_v1:(...args)=>{
+      calls++;
+      if(refusal==='unique-bad-result')return 2;
+      if(refusal==='unique-forged-shape')args[2]^=1n;
+      if(refusal==='unique-forged-position')args[3]=8n;
+      return actual(...args);
+    }};
+    ({instance}=await WebAssembly.instantiate(moduleBytes,{env:hostile}));
+    fieldOutput=new DataView(memory().buffer);
+    try{instance.exports.semaprax_main()}
+    catch(error){
+      if(refusal==='unique-bad-result'&&!(error instanceof WebAssembly.RuntimeError))throw error;
+      if(refusal==='unique-forged-shape'&&error.message!=='unbound, stale or foreign uniqueness authority')throw error;
+      if(refusal==='unique-forged-position'&&error.message!=='uniqueness field position')throw error;
+      trapped=true;
+    }
+    if(!trapped||calls!==1)throw Error('forged uniqueness result/descriptor did not trap');
+    for(const owner of vectors.values())
+      env.spx_vec_drop_v2(BigInt.asIntN(64,(owner.generation<<32n)|owner.authority_slot));
+    if(payloads.size||vectors.size||iterators.size||copies!==drops)throw Error('uniqueness trap teardown leaked');
+    return;
+  }
   if(refusal==='field-no-allocation'||refusal==='slot-no-copy'){
     const withoutRead={...env};delete withoutRead.spx_vec_leaf_field_read_v1;
     let absent=false;
@@ -767,6 +860,46 @@ if(copyRecordCodec)require('./copy_scalar_imports.js')(env,vectorValue);
     if(refusal==='slot-no-copy'&&copies-beforeSlotCopies!==3)throw Error('String-slot reads copied payload storage');
     if(codecPushFailure&&codecPushAttempts!==Number(codecPushFailure[1]))
       throw Error('partial codec allocation failure did not reach its exact owning commit');
+    if(refusal==='unique-scratch'&&uniqueScratchBytes!==0)throw Error('refused uniqueness scratch was observed as allocated');
+    if(refusal==='unique-scratch'&&uniqueScratchRequests===0)throw Error('uniqueness scratch refusal was not exercised');
+  }
+  if(refusal==='unique-controls'){
+    // Independent host controls over exact bound facts; every refusal leaves
+    // the owner, rows and payload inventory unchanged.
+    const fieldOut=0,mark=()=>[copies,drops,nextPayload,nextVec,vectors.size];
+    const strings=['a\u0000','a','a\u0000b','é','é','é'];
+    let rows=env.spx_vec_leaf_new_v1(31n,0xa180n,BigInt(strings.length));
+    for(const [i,text] of strings.entries())
+      rows=env.spx_vec_leaf_push_v1(rows,31n,0xa180n,BigInt(i%2),ownBytes(new TextEncoder().encode(text)),0n,0n,0n,0n,0n,0n);
+    const owner=vectorValue(rows),stored=owner.values,before=mark(),payloadWords=stored.map(row=>row[1]);
+    if(env.spx_vec_unique_by_v1(rows,31n,0xa180n,1n)!==0)throw Error('UTF-8 duplicate was not found');
+    if(env.spx_vec_unique_by_v1(rows,31n,0xa180n,0n)!==0)throw Error('Bool duplicate was not found');
+    if(mark().some((item,i)=>item!==before[i])||vectorValue(rows)!==owner||owner.values!==stored
+       ||stored.some((row,i)=>row[1]!==payloadWords[i]))
+      throw Error('uniqueness changed rows, payload identity or authority');
+    for(const [identity,shape,position] of [[32n,0xa180n,1n],[31n,0xa180n^1n,1n],[31n,0xa180n,2n],[31n,0xa180n,-1n]]){
+      let rejected=false;
+      try{env.spx_vec_unique_by_v1(rows,identity,shape,position)}catch(error){rejected=true}
+      if(!rejected)throw Error('forged uniqueness facts were accepted');
+    }
+    const consumed=rows;rows=env.spx_vec_leaf_sort_v1(rows,31n,0xa180n);
+    let stale=false;
+    try{env.spx_vec_unique_by_v1(consumed,31n,0xa180n,1n)}catch(error){stale=true}
+    if(!stale)throw Error('stale generation permitted uniqueness');
+    env.spx_vec_drop_v2(rows);
+    let floating=env.spx_vec_leaf_new_v1(29n,0xa170n,2n);
+    floating=env.spx_vec_leaf_push_v1(floating,29n,0xa170n,0n,0n,0n,0n,0n,0n,0n,0n);
+    floating=env.spx_vec_leaf_push_v1(floating,29n,0xa170n,1n,0n,0n,0n,0n,0n,0n,0n);
+    let floatRefused=false;
+    try{env.spx_vec_unique_by_v1(floating,29n,0xa170n,0n)}catch(error){floatRefused=true}
+    if(!floatRefused)throw Error('floating key entered the v1 uniqueness profile');
+    env.spx_vec_drop_v2(floating);
+    const unbound=env.spx_vec_with_capacity_v2(10,1n);
+    let unboundRefused=false;
+    try{env.spx_vec_unique_by_v1(unbound,1n,0x929110n,2n)}catch(error){unboundRefused=true}
+    if(!unboundRefused||vectorValue(unbound).shape!==undefined)throw Error('uniqueness lazily bound an authority');
+    env.spx_vec_drop_v2(unbound);
+    if(vectors.size||iterators.size||payloads.size||copies!==drops)throw Error('uniqueness controls leaked');
   }
   if(sharedOwner){
     // Leaf rows own registry leases: renewal, stale/foreign refusal, clone,

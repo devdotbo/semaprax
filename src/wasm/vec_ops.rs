@@ -56,7 +56,7 @@ pub(crate) fn program_uses_owned_leaf_vec(program: &ResolvedProgram) -> bool {
                         if let [element] = type_arguments.as_slice() {
                             if crate::hir::owned_leaf_collection::layout(&program.declarations, element).is_some()
                                 && crate::vec_ops::by_id(callee.as_str()).is_some_and(|op|
-                                    op.owned_leaf_only() || op == crate::vec_ops::VecOp::SortBy
+                                    op.owned_leaf_only() || matches!(op, crate::vec_ops::VecOp::SortBy | crate::vec_ops::VecOp::UniqueBy)
                                         || !crate::hir::owned_record_collection::is_admitted_owned_record_collection_element(
                                             &program.declarations, element))
                             {

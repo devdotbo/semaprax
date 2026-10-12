@@ -80,6 +80,16 @@ pub(super) fn validate_uses_with_registry(
                     "compiler-owned explicit sort descriptors cannot be imported",
                 )]);
             }
+            if module_use
+                .persistent_id
+                .starts_with(crate::vec_ops::field_unique::PREFIX)
+            {
+                return Err(vec![use_error(
+                    program,
+                    module_use,
+                    "compiler-owned field uniqueness descriptors cannot be imported",
+                )]);
+            }
             if !imported_targets.insert((module_use.kind, module_use.persistent_id.as_str())) {
                 return Err(vec![use_error(
                     program,

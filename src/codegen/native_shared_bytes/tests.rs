@@ -233,6 +233,7 @@ fn every_byte_and_bytes_vec_operation_is_classified() {
         "SortOwned",
         "SortBy",
         "StrAt",
+        "UniqueBy",
     ]
     .into_iter()
     .map(str::to_owned)

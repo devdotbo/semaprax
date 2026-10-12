@@ -59,6 +59,7 @@ mod place;
 pub(crate) mod private_names;
 mod record_invariants;
 mod record_traversal;
+mod field_unique;
 mod scope;
 mod sort_keys;
 pub(crate) mod static_text;

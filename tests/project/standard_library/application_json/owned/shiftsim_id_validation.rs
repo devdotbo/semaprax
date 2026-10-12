@@ -1,9 +1,13 @@
-//! Frozen pairwise oracle versus sorted, separately owned validation IDs.
+//! Frozen pairwise and clone/sort oracles versus the adopted borrowed
+//! field-uniqueness helper (#786).
 use super::super::public_example::{compile_native, execute};
 use super::{REQUEST_SCHEMA, SCHEDULE};
 use semaprax::{codegen, format, graph, interpreter};
 
 const ORIGINAL: &str = include_str!("shiftsim_id_validation/original_helper.txt");
+/// The prior application helpers, saved byte-for-byte: a temporary owned
+/// `Vec<string>` of cloned IDs, `vec_sort_owned` and a neighbor scan.
+const CLONE_SORT: &str = include_str!("shiftsim_id_validation/clone_sort_helpers.txt");
 fn section<'a>(source: &'a str, first: &str, next: &str) -> &'a str {
     let begin = source.find(first).unwrap();
     let end = source[begin..].find(next).unwrap() + begin;
@@ -15,16 +19,21 @@ fn source(count: usize, identifiers: &str, expected: bool) -> String {
         "@id(\"shiftsim.patient\")",
         "@id(\"shiftsim.request\")",
     );
-    let sorted = section(
-        SCHEDULE,
-        "@id(\"shiftsim.schedule.unique_identifiers\")",
-        "@id(\"shiftsim.schedule.unique_patient_ids\")",
-    );
     let adopted = section(
         SCHEDULE,
         "@id(\"shiftsim.schedule.unique_patient_ids\")",
         "@id(\"shiftsim.schedule.patient_fields_invalid\")",
     );
+    let sorted = CLONE_SORT
+        .replace(
+            "shiftsim.schedule.unique_identifiers",
+            "shiftsim.clone_sort.unique_identifiers",
+        )
+        .replace(
+            "shiftsim.schedule.unique_patient_ids",
+            "shiftsim.clone_sort.unique_patient_ids",
+        )
+        .replace("fn unique_patient_ids(", "fn clone_sort_unique_patient_ids(");
     let old = ORIGINAL
         .replace(
             "shiftsim.schedule.unique_patient_ids",
@@ -42,13 +51,16 @@ fn source(count: usize, identifiers: &str, expected: bool) -> String {
  let mut index=0usize;
  while index<{count}usize {{
   let identifier={identifiers};
-  people=vec_push<Patient>(people,Patient{{priority:1,arrival:0,id:identifier,service:1,deadline:1}});
+  people=vec_push<Patient>(people,Patient{{priority:1,arrival:i64_from_usize(index),id:identifier,service:1,deadline:1}});
   index=index+1usize;
   0
  }}
  let before=original_unique_patient_ids(people);
+ let sorted=clone_sort_unique_patient_ids(people);
  let after=unique_patient_ids(people);
- if before=={expected} && after=={expected} {{0}}else{{1}}
+ let again=vec_unique_by<Patient>(people,"id");
+ let retained=vec_len<Patient>(people)=={count}usize;
+ if before=={expected} && sorted=={expected} && after=={expected} && again=={expected} && retained {{0}}else{{1}}
 }}
 "#
     )
@@ -57,6 +69,13 @@ fn source(count: usize, identifiers: &str, expected: bool) -> String {
 fn sorted_patient_id_validation_matches_frozen_pairwise_bytes_and_256_bound() {
     assert!(ORIGINAL.contains("previous_index < index"));
     assert!(!SCHEDULE.contains("previous_index < index"));
+    // The workaround disappears from the application; it survives only as the
+    // saved independent oracle. Source evidence only, not a cost measurement.
+    assert!(CLONE_SORT.contains("vec_sort_owned<string>(values)"));
+    assert!(CLONE_SORT.contains("string_from_str(person_id_view)"));
+    assert!(!SCHEDULE.contains("shiftsim.schedule.unique_identifiers"));
+    assert!(!SCHEDULE.contains("vec_sort_owned<string>"));
+    assert!(SCHEDULE.contains("vec_unique_by<Patient>(values, \"id\")"));
     let root = crate::standard_library::temporary("shiftsim-sorted-id-control");
     std::fs::create_dir_all(&root).unwrap();
     for (name, count, ids, expected) in [
@@ -70,6 +89,42 @@ fn sorted_patient_id_validation_matches_frozen_pairwise_bytes_and_256_bound() {
             true,
         ),
         ("unicode-nul-duplicate", 2, "\"é\\u{0}\"", false),
+        (
+            "first-duplicate",
+            3,
+            "if index==1usize {\"P0\"}else{string_format(\"P{}\",index)}",
+            false,
+        ),
+        (
+            "middle-duplicate",
+            5,
+            "if index==3usize {\"P1\"}else{string_format(\"P{}\",index)}",
+            false,
+        ),
+        (
+            "prefix-distinct",
+            2,
+            "if index==0usize {\"P1\"}else{\"P10\"}",
+            true,
+        ),
+        (
+            "nul-prefix-distinct",
+            2,
+            "if index==0usize {\"a\"}else{\"a\\u{0}\"}",
+            true,
+        ),
+        (
+            "utf8-composed-decomposed-distinct",
+            2,
+            "if index==0usize {\"\\u{e9}\"}else{\"e\\u{301}\"}",
+            true,
+        ),
+        (
+            "max-adjacent-last-duplicate",
+            256,
+            "if index==255usize {\"P254\"}else{string_format(\"P{}\",index)}",
+            false,
+        ),
         ("max-distinct", 256, "string_format(\"P{}\",index)", true),
         (
             "max-distant-duplicate",

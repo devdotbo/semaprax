@@ -729,6 +729,7 @@ Audience: all documentation readers.
 - [Copy Record Collections v1](COPY-RECORD-COLLECTIONS-V1.md)
 - [Declared Text Collections v1](DECLARED-TEXT-COLLECTIONS-V1.md)
 - [Explicit Record Sort Keys v1](EXPLICIT-RECORD-SORT-KEYS-V1.md)
+- [Borrowed Record-Field Uniqueness v1](BORROWED-RECORD-FIELD-UNIQUENESS-V1.md)
 - [Lexical structured exits v1](LEXICAL-STRUCTURED-EXITS-V1.md)
 - [Nested owned collection records v1](NESTED-OWNED-COLLECTION-RECORDS-V1.md)
 - [Nonallocating Byte Helper Renewal v1](NONALLOCATING-BYTE-HELPER-RENEWAL-V1.md)

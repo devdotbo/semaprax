@@ -5,6 +5,7 @@ use crate::cache_codec::{self, codec_struct};
 use std::collections::BTreeSet;
 
 mod borrowed_encoding;
+mod field_unique;
 mod literal_format;
 mod loan_replay;
 mod vec_field;
@@ -199,6 +200,7 @@ pub(crate) fn decode_snapshot(bytes: &[u8]) -> Result<ProjectFrontendCache> {
             .map_err(|error| vec![error])?;
         literal_format::replay_source(&entry.source, &entry.synthetic, &entry.resolved)?;
         vec_field::replay_source(&entry.source, &entry.synthetic, &entry.resolved)?;
+        field_unique::replay_source(&entry.source, &entry.synthetic, &entry.resolved)?;
         loan_replay::reconstruct(&mut entry.resolved)?;
         sources.push(ProjectFrontendSource::new(&entry.path, &entry.source)?);
         cache.entries.insert(

@@ -39,7 +39,7 @@ pub(in crate::cleanup_plan::replay) fn call_facts(
     let Some(op) = crate::vec_ops::by_id(callee.as_str()) else {
         return Ok(None);
     };
-    if instance.is_some() || op == VecOp::SortBy || op == VecOp::StrAt {
+    if instance.is_some() || matches!(op, VecOp::SortBy | VecOp::StrAt | VecOp::UniqueBy) {
         return Err(replay_error(
             function,
             "selected Vec call requires a separately authenticated operation",

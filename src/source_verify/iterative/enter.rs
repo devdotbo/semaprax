@@ -261,6 +261,21 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         return Ok(());
                     }
                     &args[..1]
+                } else if name == crate::vec_ops::field_unique::NAME {
+                    if !self.current.type_parameters.is_empty()
+                        || crate::source_verify::field_unique::descriptor(
+                            self.types,
+                            type_arguments,
+                            args,
+                            &self.scopes[scope].bindings,
+                        )
+                        .is_none()
+                    {
+                        self.diagnostics.push(error(self.program,"SPX-T319",crate::vec_ops::field_unique::SHAPE,expression.span));
+                        self.values.push(None);
+                        return Ok(());
+                    }
+                    &args[..1]
                 } else {
                     args
                 };

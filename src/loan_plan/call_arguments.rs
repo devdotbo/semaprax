@@ -26,6 +26,7 @@ pub(super) fn borrowed_call_arguments<'a>(
                 .enumerate()
                 .filter(|(index, argument)| {
                     (crate::vec_ops::string_slot::inspect(expression).is_some() && *index == 0)
+                        || crate::vec_ops::field_unique::borrowed_source(expression, *index)
                         || record_vec_borrow::argument(program, expression, *index, argument)
                         || target.map_or_else(
                             || {

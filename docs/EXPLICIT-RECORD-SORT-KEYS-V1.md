@@ -65,6 +65,12 @@ family, storage and epoch; it sorts existing storage and renews exactly once.
 An invalid result or exhausted epoch is an invariant trap, not a Vec/3 result.
 This private host fixture is an owning executable gate, not public host support.
 
+[Borrowed Record-Field Uniqueness v1](BORROWED-RECORD-FIELD-UNIQUENESS-V1.md)
+reuses only this layout/field derivation for its distinct borrowed
+`core.vec.unique-by.v1` descriptor; it never selects this consuming opcode or
+renews an owner. When that operation is present, Copy constructors also bind
+their layout through the zero policy above.
+
 ## Owning regressions and qualification
 
 Owning regression definitions cover independent multiple-ranking policies over

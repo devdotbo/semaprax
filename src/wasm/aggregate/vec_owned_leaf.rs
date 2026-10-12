@@ -1,8 +1,15 @@
 //! Private Core-Wasm carrier for directly owned String/Bytes vector leaves.
 //! The old tag-10 two-Bytes carrier remains byte-for-byte on its old routes.
+mod field_unique;
 mod sort_keys;
 use super::*;
 use sha2::{Digest, Sha256};
+
+/// Copy-record layouts are bound at construction through the sort import when
+/// either explicit keys or borrowed field uniqueness will authenticate them.
+pub(super) fn binds_record_keys(program: &ResolvedProgram) -> bool {
+    crate::vec_ops::sort_keys::uses(program) || crate::vec_ops::field_unique::uses(program)
+}
 
 pub(super) const IMPORT_COUNT: u32 = 9;
 const NEW: u32 = 0;
@@ -99,6 +106,7 @@ pub(super) struct Imports {
     legacy: Option<[u32; IMPORT_COUNT as usize]>,
     field: Option<u32>,
     keys: Option<u32>,
+    unique: Option<u32>,
 }
 
 pub(super) fn import_count(program: &ResolvedProgram) -> u32 {
@@ -107,7 +115,8 @@ pub(super) fn import_count(program: &ResolvedProgram) -> u32 {
     } else {
         0
     }) + u32::from(super::vec_field::uses(program))
-        + u32::from(crate::vec_ops::sort_keys::uses(program))
+        + u32::from(binds_record_keys(program))
+        + u32::from(crate::vec_ops::field_unique::uses(program))
 }
 
 pub(super) fn import_types(
@@ -142,7 +151,7 @@ pub(super) fn import_types(
                 indexes,
             )
         });
-        let keys = crate::vec_ops::sort_keys::uses(program).then(|| {
+        let keys = binds_record_keys(program).then(|| {
             intern_type(
                 Signature {
                     params: vec![I64; 4],
@@ -152,10 +161,21 @@ pub(super) fn import_types(
                 indexes,
             )
         });
+        let unique = crate::vec_ops::field_unique::uses(program).then(|| {
+            intern_type(
+                Signature {
+                    params: vec![I64; 4],
+                    results: vec![I32],
+                },
+                types,
+                indexes,
+            )
+        });
         Imports {
             legacy,
             field,
             keys,
+            unique,
         }
     })
 }
@@ -184,6 +204,9 @@ pub(super) fn emit_imports(output: &mut Vec<u8>, types: Imports) {
     }
     if let Some(ty) = types.keys {
         function_import(output, "env", "spx_vec_sort_by_v1", ty);
+    }
+    if let Some(ty) = types.unique {
+        function_import(output, "env", field_unique::IMPORT, ty);
     }
 }
 
@@ -644,6 +667,9 @@ impl Emitter<'_> {
             }
             VecOp::StrAt | VecOp::Get | VecOp::Set | VecOp::ReserveExact | VecOp::Sort => {
                 return Err(error("owned-leaf Vec old operation is not admitted"));
+            }
+            VecOp::UniqueBy => {
+                return Err(error("field uniqueness requires its exact borrowed receiver"));
             }
         }
         Ok(result)

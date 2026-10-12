@@ -51,6 +51,8 @@ pub(in crate::workspace_graph) use held_projection::{
 mod record_traversal;
 #[path = "expected_projection/retention.rs"]
 mod retention;
+#[path = "expected_projection/field_unique.rs"]
+mod field_unique;
 #[path = "expected_projection/sort_keys.rs"]
 mod sort_keys;
 #[path = "expected_projection/statement_segment.rs"]
@@ -1556,6 +1558,7 @@ pub(super) fn verify_resolved_call_edges(
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
 ) -> Result<(), Vec<Diagnostic>> {
     sort_keys::verify(program, resolved, authored)?;
+    field_unique::verify(program, resolved, authored)?;
     string_slots::verify(program, resolved)?;
     vec_constructor::verify(program, resolved)?;
     let aliases = program

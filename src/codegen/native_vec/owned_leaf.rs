@@ -13,6 +13,7 @@ pub(in crate::codegen) struct Layout {
 
 pub(in crate::codegen) fn program_uses_field_reads(program: &ResolvedProgram) -> bool {
     if crate::vec_ops::sort_keys::uses(program)
+        || crate::vec_ops::field_unique::uses(program)
         || crate::vec_ops::string_slot::resolved_uses(program)
         || crate::hir::row_loan::program_uses(program)
     {

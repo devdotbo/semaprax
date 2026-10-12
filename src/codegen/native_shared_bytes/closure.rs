@@ -187,7 +187,9 @@ impl Consumer {
             VecOp::CloneAt => Self::VecCloneAt,
             VecOp::Replace => Self::VecReplace,
             VecOp::Sort | VecOp::SortBy => Self::VecSort,
-            VecOp::ReserveOwned | VecOp::SortOwned | VecOp::StrAt => Self::VecOwnedLeafOnly,
+            VecOp::ReserveOwned | VecOp::SortOwned | VecOp::StrAt | VecOp::UniqueBy => {
+                Self::VecOwnedLeafOnly
+            }
         }
     }
 }

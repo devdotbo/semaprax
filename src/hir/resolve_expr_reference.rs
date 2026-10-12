@@ -221,7 +221,7 @@ impl Resolver<'_> {
                         span: expr.span,
                     });
                 }
-                if name == crate::vec_ops::sort_keys::NAME {
+                if crate::vec_ops::field_unique::literal_call(name) {
                     let (element, callee) =
                         self.prepare_sort_by(function, expr, type_arguments, args)?;
                     let value = self.resolve_expr_recursive_reference_inner(

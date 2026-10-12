@@ -29,12 +29,33 @@ spx_vec_sort_by_v1:(h,identity,shape,policy)=>{
   if(order<=0)break;for(let f=0;f<width;f++){const word=rows[(j-1)*width+f];rows[(j-1)*width+f]=rows[j*width+f];rows[j*width+f]=word;}j--;
  }}
  v.generation++;if(rows!==v.values||entries.size!==inventory)throw Error('Copy sort replaced storage/authority');return BigInt.asIntN(64,(v.generation<<32n)|slot(h));
+},
+// Borrowed field uniqueness: exact bound facts, ordinal scratch only, no renewal.
+spx_vec_unique_by_v1:(h,identity,shape,position)=>{
+ const v=read(h,1),rows=v.values;let width=0;
+ if(v.identity!==identity||v.shape!==shape)throw Error('foreign Copy uniqueness descriptor');
+ for(let raw=BigInt.asUintN(64,shape);raw;raw>>=8n){const f=Number(raw&255n);if((f>>4)<1||(f>>4)>8||(f&15)!==width)throw Error('Copy uniqueness layout');width++;}
+ if(!width||width>8||rows.length%width||v.capacity%width||position<0n||position>=BigInt(width))throw Error('Copy uniqueness position');
+ const tag=Number((BigInt.asUintN(64,shape)>>(position*8n+4n))&15n),f=Number(position),n=rows.length/width;
+ if(tag===6||tag===7)throw Error('Copy uniqueness key outside v1 profile');
+ if(n<2)return 1;if(refuse)return 3;
+ const inventory=entries.size,generation=v.generation,o=new Uint32Array(n);for(let i=0;i<n;i++)o[i]=i;
+ const cmp=(a,b)=>{const x=totalKey(rows[a*width+f],tag),y=totalKey(rows[b*width+f],tag);return x<y?-1:x>y?1:0};
+ const sift=(r,m)=>{for(;;){let c=2*r+1;if(c>=m)return;if(c+1<m&&cmp(o[c],o[c+1])<0)c++;if(cmp(o[r],o[c])>=0)return;const t=o[r];o[r]=o[c];o[c]=t;r=c;}};
+ for(let i=Math.floor(n/2);i-->0;)sift(i,n);for(let e=n-1;e>0;e--){const t=o[0];o[0]=o[e];o[e]=t;sift(0,e);}
+ let unique=1;for(let i=1;i<n&&unique;i++)if(cmp(o[i-1],o[i])===0)unique=0;
+ if(rows!==v.values||entries.size!==inventory||v.generation!==generation)throw Error('Copy uniqueness changed storage/authority');return unique;
 }};
 (async()=>{
  if(WebAssembly.Module.imports(new WebAssembly.Module(bytes)).some(entry=>entry.name==='spx_vec_sort_by_v1')){
   const missing={...env};delete missing.spx_vec_sort_by_v1;let refused=false;
   try{await WebAssembly.instantiate(bytes,{env:missing})}catch(error){if(!(error instanceof WebAssembly.LinkError))throw error;refused=true;}
   if(!refused)throw Error('explicit Copy sort linked without private import');
+ }
+ if(WebAssembly.Module.imports(new WebAssembly.Module(bytes)).some(entry=>entry.name==='spx_vec_unique_by_v1')){
+  const missing={...env};delete missing.spx_vec_unique_by_v1;let refused=false;
+  try{await WebAssembly.instantiate(bytes,{env:missing})}catch(error){if(!(error instanceof WebAssembly.LinkError))throw error;refused=true;}
+  if(!refused)throw Error('Copy field uniqueness linked without its distinct private import');
  }
  return WebAssembly.instantiate(bytes,{env});
 })().then(({instance})=>{for(let n=0;n<3;n++){let result,selected=0;try{result=instance.exports.semaprax_main()}catch(e){if(!e.message.startsWith('status:'))throw e;selected=Number(e.message.slice(7))}if(selected!==expected||(!expected&&result!==expectedValue)||entries.size!==0)throw Error(`result/settlement ${selected}/${result}/${entries.size}`)}}).catch(e=>{console.error(e);process.exit(2)});

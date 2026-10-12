@@ -252,6 +252,11 @@ pub(super) fn finish<'p>(
     if op == crate::vec_ops::VecOp::StrAt && !crate::vec_ops::string_slot::arguments(&args) {
         return Err(resolver.error("SPX-H006", crate::vec_ops::string_slot::SHAPE, span));
     }
+    if op == crate::vec_ops::VecOp::UniqueBy
+        && !crate::vec_ops::field_unique::arguments(&args, &element)
+    {
+        return Err(resolver.error("SPX-H006", crate::vec_ops::field_unique::SHAPE, span));
+    }
     let ownership = if op == crate::vec_ops::VecOp::StrAt {
         OwnershipMode::Borrow
     } else if op.returns_owner() {

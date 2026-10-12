@@ -17,11 +17,11 @@ pub(crate) struct Descriptor {
     pub(crate) layout: String,
     pub(crate) keys: Vec<Key>,
 }
-fn part_len(value: &str) -> Option<usize> {
+pub(super) fn part_len(value: &str) -> Option<usize> {
     let digits = value.len().checked_ilog10().unwrap_or(0) as usize + 1;
     value.len().checked_add(digits)?.checked_add(1)
 }
-fn part(out: &mut String, value: &str) {
+pub(super) fn part(out: &mut String, value: &str) {
     write!(out, "{}:{value}", value.len()).unwrap();
 }
 pub(crate) fn selector(value: &str) -> Option<Vec<(&str, bool)>> {
@@ -83,7 +83,7 @@ impl Descriptor {
         (out.len() <= MAX_DESCRIPTOR_BYTES).then_some(out)
     }
 }
-fn take<'a>(input: &mut &'a str) -> Option<&'a str> {
+pub(super) fn take<'a>(input: &mut &'a str) -> Option<&'a str> {
     let (size, tail) = input.split_once(':')?;
     let size_value = size.parse::<usize>().ok()?;
     if size_value.to_string() != size {

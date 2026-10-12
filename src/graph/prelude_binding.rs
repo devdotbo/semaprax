@@ -246,7 +246,9 @@ fn uses_vec_v3(program: &ResolvedProgram) -> bool {
 }
 
 pub(super) fn schema(program: &ResolvedProgram) -> &'static str {
-    if crate::vec_ops::string_slot::resolved_uses(program) {
+    if crate::vec_ops::field_unique::uses(program) {
+        prelude::SCHEMA_V18
+    } else if crate::vec_ops::string_slot::resolved_uses(program) {
         prelude::SCHEMA_V17
     } else if crate::vec_ops::sort_keys::uses(program) {
         prelude::SCHEMA_V15
@@ -282,7 +284,9 @@ pub(super) fn schema(program: &ResolvedProgram) -> &'static str {
 }
 
 pub(super) fn digest(program: &ResolvedProgram) -> String {
-    if crate::vec_ops::string_slot::resolved_uses(program) {
+    if crate::vec_ops::field_unique::uses(program) {
+        prelude::field_unique::digest_text()
+    } else if crate::vec_ops::string_slot::resolved_uses(program) {
         prelude::string_slots::digest_text()
     } else if crate::vec_ops::sort_keys::uses(program) {
         prelude::sort_keys::digest_text()
@@ -385,7 +389,9 @@ module iterator.binding;
 
 // Selection comes from the mandatory validator at the outer projection boundary.
 pub(super) fn schema_selected(program: &ResolvedProgram, selected: bool) -> &'static str {
-    if crate::vec_ops::string_slot::resolved_uses(program) {
+    if crate::vec_ops::field_unique::uses(program) {
+        prelude::SCHEMA_V18
+    } else if crate::vec_ops::string_slot::resolved_uses(program) {
         prelude::SCHEMA_V17
     } else if selected {
         prelude::SCHEMA_V16
@@ -394,7 +400,9 @@ pub(super) fn schema_selected(program: &ResolvedProgram, selected: bool) -> &'st
     }
 }
 pub(super) fn digest_selected(program: &ResolvedProgram, selected: bool) -> String {
-    if crate::vec_ops::string_slot::resolved_uses(program) {
+    if crate::vec_ops::field_unique::uses(program) {
+        prelude::field_unique::digest_text()
+    } else if crate::vec_ops::string_slot::resolved_uses(program) {
         prelude::string_slots::digest_text()
     } else if selected {
         prelude::static_text::digest_text()

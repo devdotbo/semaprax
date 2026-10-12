@@ -245,6 +245,25 @@ pub(super) fn oracle_call(
             return None;
         }
         &args[..1]
+    } else if name == crate::vec_ops::field_unique::NAME {
+        if !current.type_parameters.is_empty()
+            || crate::source_verify::field_unique::descriptor(
+                types,
+                type_arguments,
+                args,
+                variables,
+            )
+            .is_none()
+        {
+            diagnostics.push(error(
+                program,
+                "SPX-T319",
+                crate::vec_ops::field_unique::SHAPE,
+                expr.span,
+            ));
+            return None;
+        }
+        &args[..1]
     } else {
         args
     };
