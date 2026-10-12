@@ -144,7 +144,7 @@ pub(in crate::loan_plan) fn inspect_counted<'a>(
     Ok(Some(Proof { source, region }))
 }
 
-pub(super) fn draft(
+pub(in crate::loan_plan) fn draft(
     program: &dyn crate::cleanup::ReplayContext,
     expression: &ResolvedExpr,
     cfg: &Cfg<'_>,
@@ -173,7 +173,7 @@ pub(super) fn draft(
 /// Borrowed `Slice<u8>` traversal: the view's resolved owner is frozen from
 /// before the complete lowered region until after it. The loan is independent
 /// of the view's own liveness, which may end at its last read inside the body.
-pub(super) fn draft_bytes(
+pub(in crate::loan_plan) fn draft_bytes(
     expression: &ResolvedExpr,
     cfg: &Cfg<'_>,
     aliases: &BTreeMap<ValueId, Place>,
