@@ -130,7 +130,9 @@ fn total_calls(expression: &ResolvedExpr, out: &mut Vec<(ExpressionId, Declarati
     // Independent fixture census: refuse unknown shapes instead of silently
     // omitting calls when this fixture evolves.
     match &expression.kind {
-        ResolvedExprKind::Call { args, .. } | ResolvedExprKind::VecFieldRead { args, .. } => {
+        ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => {
             for child in args {
                 total_calls(child, out);
             }

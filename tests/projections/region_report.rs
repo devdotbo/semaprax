@@ -246,7 +246,8 @@ fn reported_binding_ids_equal_the_resolved_hir_inventory() {
             }
             hir::ResolvedExprKind::Call { args, .. }
             | hir::ResolvedExprKind::LiteralFormat { args, .. }
-            | hir::ResolvedExprKind::VecFieldRead { args, .. } => {
+            | hir::ResolvedExprKind::VecFieldRead { args, .. }
+            | hir::ResolvedExprKind::RowLoan { args, .. } => {
                 for argument in args {
                     collect_expr(argument, ids);
                 }

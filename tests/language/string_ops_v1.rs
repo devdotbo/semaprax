@@ -139,7 +139,8 @@ fn hir_children(expression: &hir::ResolvedExpr) -> Vec<&hir::ResolvedExpr> {
         ],
         hir::ResolvedExprKind::Call { args, .. }
         | hir::ResolvedExprKind::LiteralFormat { args, .. }
-        | hir::ResolvedExprKind::VecFieldRead { args, .. } => args.iter().collect(),
+        | hir::ResolvedExprKind::VecFieldRead { args, .. }
+        | hir::ResolvedExprKind::RowLoan { args, .. } => args.iter().collect(),
         _ => Vec::new(),
     }
 }

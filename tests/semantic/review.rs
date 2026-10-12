@@ -87,7 +87,8 @@ fn first_call<'a>(expression: &'a ResolvedExpr, template: &str) -> Option<&'a Re
             .or_else(|| first_call(end, template)),
         ResolvedExprKind::Call { args, .. }
         | ResolvedExprKind::LiteralFormat { args, .. }
-        | ResolvedExprKind::VecFieldRead { args, .. } => args
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => args
             .iter()
             .find_map(|argument| first_call(argument, template)),
         ResolvedExprKind::NativeRustImportCall(call) => call
