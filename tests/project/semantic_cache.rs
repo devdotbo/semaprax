@@ -581,3 +581,5 @@ fn warm_row_loan_consumers_reprove_current_provider_helpers() {
     same(restored.revision(), fixture.cold().unwrap());
     same(restored.revision(), Arc::clone(cold.revision()));
 }
+
+mod byte_traversal;
