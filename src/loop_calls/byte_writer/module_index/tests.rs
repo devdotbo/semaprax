@@ -88,8 +88,11 @@ fn irrelevant_modules_have_no_new_backing_and_allocating_legacy_helpers_keep_old
     assert!(!overflowed);
     assert_eq!(used, 0);
     assert_eq!(index.owned_capacity_bytes(), 0);
-    let mut expected = std::mem::size_of::<ModuleIndex<'_>>() + 30 * std::mem::size_of::<usize>();
-    let mut payload = 7 * std::mem::size_of::<usize>();
+    let mut expected = std::mem::size_of::<ModuleIndex<'_>>() + 86 * std::mem::size_of::<usize>();
+    // Probes9 + directory(3+5+3+8) + numeric5 + iterator16
+    // + vector11 + two leaf collectors26 = 86 fixed requested words.
+    // Payload: directory5 + numeric2 + iterator4 + vector2 + leaf2.
+    let mut payload = 15 * std::mem::size_of::<usize>();
     for count in crate::hir::renewal_probes::phase::current_map_counts(&plain.declarations) {
         expected += 3 * std::mem::size_of::<usize>();
         let mut capacity = 1;
