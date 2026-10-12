@@ -1141,6 +1141,7 @@ fn skeleton_work_upper(
 
     let cfg = match branch_sensitive_cfg_bounds(function) {
         Ok(cfg) if cfg.terminal_paths <= MAX_REPLAY_PATHS => cfg,
+        Err(error) if crate::bounded_output::active_refused() => return Err(error),
         Ok(_) | Err(_) => return Ok(0),
     };
     let plan_expansion = cfg.skeleton_work;

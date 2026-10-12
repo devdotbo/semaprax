@@ -240,3 +240,13 @@ fn saturating_product_census_preserves_original_work_and_path_ceiling() {
     assert_eq!(original.work,MAX_REPLAY_WORK_UNITS+1);
     assert_eq!(original.terminal_paths,MAX_REPLAY_PATHS+1);
 }
+
+#[test]
+fn skeleton_preflight_does_not_reclassify_funding_refusal_as_zero_allowance() {
+    let program=program();
+    let function=program.functions().iter().find(|f|f.id.as_str()=="probe").unwrap();
+    let (result,refused,_)=crate::bounded_output::with_limit_usage(0,|| {
+        super::super::skeleton_work_upper(&program,function)
+    });
+    assert!(result.is_err() && refused);
+}
