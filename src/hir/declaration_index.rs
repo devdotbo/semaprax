@@ -2,6 +2,7 @@
 use super::*;
 
 mod flags;
+pub(crate) use flags::{TypeFactsPayer, TypeFlags};
 pub(super) mod identity_payer;
 mod linked_owned_data;
 mod owned_builtin;

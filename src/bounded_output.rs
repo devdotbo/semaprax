@@ -464,6 +464,8 @@ fn join_slices<T: AsRef<str>>(values: &[T], separator: &str) -> String {
     output
 }
 
+pub(crate) mod classifier_string;
+
 pub(crate) struct CappedString {
     bytes: String,
     budget: Option<Rc<Budget>>,

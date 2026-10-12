@@ -446,5 +446,8 @@ pub(super) fn type_needs_drop_with_budget(
             budget,
         )?;
     }
-    type_needs_drop(program, function, ty)
+    if program.selected_flat_records() {
+        return type_needs_drop(program, function, ty);
+    }
+    super::paid_type_facts::needs_drop(program, function, ty, budget)
 }

@@ -325,6 +325,7 @@ mod declaration_index;
 pub(crate) mod identity_resolution;
 mod ordinary_identity;
 pub use declaration_index::{dispose_declaration_index_for_private_contract, DeclarationIndex};
+pub(crate) use declaration_index::{TypeFactsPayer, TypeFlags};
 
 // Resolved data model and shared probes, re-exported so this module and its
 // submodules keep reaching every HIR item through `hir::` as before.

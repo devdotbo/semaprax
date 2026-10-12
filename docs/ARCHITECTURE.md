@@ -3876,9 +3876,18 @@ These areas are deliberately outside the public compiler contract:
   shape reconstruction lives in `replay/nested_shape/paid.rs`, retaining the
   complete original shape derivation. `replay/supplemental/receiving.rs` owns one
   paid fixed 1028-frame cursor reused between source expressions; parameter
-  providers and declaration fact-cache misses retain their original semantics
-  and explicitly unpaid residual storage. These internal owners grant no replay
-  admission and make no all-profile funding claim. `replay/supplemental.rs`
+  providers retain their original semantics and explicitly unpaid residual
+  storage. `replay/paid_type_facts.rs` binds the actual ordinary nested-shape
+  and Result/Option fact probes to their existing invocation payer.
+  `hir/declaration_index/flags/paid/{compute,key,substitute,storage,builtin,admission}.rs`
+  owns the corresponding paid classifier, exact key and inline semantic
+  substitution receivers; the complete original classifier/key/substitution
+  bodies remain independent. `bounded_output/classifier_string.rs` owns physical
+  string growth while preserving original logical floor/partial-output rules.
+  `paid_type_facts/droppability.rs` retains the complete ordinary cleanup walk
+  with a paid fact callback; its outer pending/visited/substitution/semantic
+  String storage remains unpaid. These internal owners grant no replay admission
+  and make no all-profile funding claim. `replay/supplemental.rs`
   independently reconstructs their argument slots.
 - `src/hir/workspace_link/native_owner.rs` admits only the destructor of a
   resource tied to an indexed constructor/consuming-method pair in one Rust

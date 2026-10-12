@@ -1,6 +1,8 @@
 //! Flag-only receiver; the owned layout/fact API remains the independent oracle.
 use super::{DeclarationIndex, ResolvedType, TypeFacts};
 mod nominal_key;
+mod paid;
+pub(crate) use paid::TypeFactsPayer;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) struct TypeFlags {

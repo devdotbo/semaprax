@@ -21,6 +21,15 @@
   concise topic guidance links to the full constraints. Static source review
   only; compiler and CLI qualification remains pending.
 
+- Author caller-paid declaration fact-cache misses on actual cleanup replay
+  routes, removing discarded admission trees and child-fact directories while
+  funding retained classifier keys, layouts, ordered maps and scratch backing.
+  Preserve complete original classifiers, cache precedence, work/error order,
+  and logical reserved-floor/partial-output behavior. Add full old/current and
+  actual allocation/debit/receiving-Drop/refusal controls. Source-only; outer
+  droppability scratch, semantic diagnostic text and synthetic providers remain
+  explicit residuals, and execution/whole-replay funding evidence stays open.
+
 - Author persistent HIR contract baselines that inspect every current freshness
   flag, share unchanged roots and bindings, and pay complete true-flag payloads
   plus changed node constructors before returning a staged root. Retain the full

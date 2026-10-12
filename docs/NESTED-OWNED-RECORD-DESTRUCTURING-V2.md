@@ -63,9 +63,37 @@ and callable boxes acquire the current invocation's payer before construction.
 The complete old coverage, supplemental and shape receivers remain independent
 oracles. New original-corpus verdict/work, duplicate/late-error, whole allocation,
 debit, exact/short/sticky and receiving Drop controls are authored source only.
-Declaration fact-cache miss reconstruction, ordinary droppability classification,
-and synthetic owning parameter-provider backing remain explicitly unpaid
-residuals; no whole-replay funding, savings, OPT closure or execution is claimed.
+Declaration fact-cache misses on the actual replay classifier route now acquire
+existing caller payment before owned type/key/layout, vector, callable box and
+ordered memo/visiting backing. Exact borrowed admission checks remove discarded
+native-result and authored byte-variant substitution trees; Finish borrows the
+existing child facts instead of collecting another discarded vector. Current
+cached facts retain their complete original precedence, including hostile flags
+and the owned-key fallback when the bounded borrowed census declines. No new
+classification depth, work allowance, cache authority or quota is introduced.
+
+The paid string receiver preserves the original logical append order, reserved
+floor suppression, partial CappedString output and strict formatter behavior.
+A logical sink decline performs no physical growth and is not converted into a
+sticky physical refusal. Actual additional physical construction debits may
+refuse earlier than the original unfunded constructor; rejected intermediate
+backing stays charged through Drop. All accepted full classifiers compare full
+layout keys against the complete original classifier. The ordinary droppability
+twin changes only its fact callback and retains source/call/error order; its
+pending/visited/substitution and semantic error-String backing, plus the fifteen
+synthetic owning parameter-provider families, remain explicitly unpaid residuals.
+No whole-replay funding, savings, OPT closure or execution is claimed.
+
+Additional authored owning controls have prefixes
+`cleanup_plan::replay::paid_type_facts::tests::` and
+`bounded_output::classifier_string::tests::`. They compare complete original
+nested/resource replay verdicts and Work, full uncached layouts, hostile cache
+precedence, full identity/substitution/admission oracles, actual same-payer
+constructor/receiving/Drop allocation versus debit, zero/exact/short/sticky
+refusal, cross-invocation refusal, and independent floor/overflow formatter
+behavior. The TLS invocation factory is outside the classifier payer contract;
+the cross-invocation control observes no allocation by the refused classifier,
+without claiming the separate factory is paid by that classifier.
 
 The new owning selector prefix is
 `cleanup_plan::replay::ordinary_inventory::tests::`, with controls
