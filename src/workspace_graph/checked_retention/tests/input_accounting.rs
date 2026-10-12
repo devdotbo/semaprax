@@ -29,15 +29,31 @@ fn checked_retention_keeps_full_input_counter_and_sparse_backing_at_literal_limi
         crate::project::incremental::checked_hir::tests::cold_source(&six(false));
     assert_eq!(owner.functions.len(), 6);
     assert!(owner.functions.iter().all(|f| f.loan_plan.loans.is_empty()));
-    let fixed = GRAPH_ACCOUNTED_RESOLVED_FUNCTION_BYTES;
-    #[cfg(target_pointer_width = "64")]
+    // Independent current field-layout census, excluding the separately
+    // charged LoanPlan sidecar. No historical whole-function width is pinned.
+    let fields = std::mem::size_of::<hir::DeclarationId>()
+        + std::mem::size_of::<String>()
+        + std::mem::size_of::<Vec<hir::ResolvedParam>>()
+        + std::mem::size_of::<hir::ValueId>()
+        + std::mem::size_of::<hir::ResolvedType>()
+        + std::mem::size_of::<Vec<String>>()
+        + std::mem::size_of::<Option<hir::ResolvedYieldsClause>>()
+        + 2 * std::mem::size_of::<Vec<hir::ResolvedExpr>>()
+        + std::mem::size_of::<hir::ResolvedExpr>()
+        + std::mem::size_of::<crate::cleanup::CleanupInventory>()
+        + std::mem::size_of::<crate::cleanup_plan::CleanupPlan>()
+        + std::mem::size_of::<crate::ast::Span>();
+    let alignment = std::mem::align_of::<hir::ResolvedFunction>();
+    let fixed = fields.div_ceil(alignment) * alignment;
     assert_eq!(
-        fixed, 1160,
-        "actual function carrier excluding the frozen empty loan sidecar"
+        GRAPH_ACCOUNTED_RESOLVED_FUNCTION_BYTES, fixed,
+        "current function carrier equals the independent field census"
+    );
+    assert_eq!(
+        std::mem::size_of::<hir::ResolvedFunction>(),
+        fixed + std::mem::size_of::<crate::loan_plan::LoanPlan>()
     );
     let required = 6 * fixed;
-    #[cfg(target_pointer_width = "64")]
-    assert_eq!(required, 6960);
     let payload = 3 * std::mem::size_of::<usize>();
     let (result, overflow, charged, _) =
         crate::bounded_output::with_limit_usage_refusal(required, || {

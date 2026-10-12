@@ -176,8 +176,8 @@ fn subtree_cache_cold_warm_and_current_source_drift_replay_exact_graph_facts() {
 name = "subtree"
 entry = "test.subtree"
 sources = ["app.spx", "tests.spx"]
-tests = ["test.subtree_tests"]
 web_exports = ["public.probe"]
+tests = ["test.subtree_tests"]
 "#,
     )
     .unwrap();

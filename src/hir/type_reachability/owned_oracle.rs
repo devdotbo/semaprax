@@ -151,7 +151,7 @@ fn dense_program() -> ResolvedProgram {
     assert!(errors.iter().any(|error| error.code == "SPX-T215"));
     let admitted = DENSE
         .replace("Wrap<Pair<Leaf, i64>>", "i64")
-        .replace("Pair<Wrap<Leaf>, Wrap<bool>>", "Pair<i64, bool>");
+        .replace("Pair<Wrap<Leaf>, Wrap<bool>>", "i64");
     let source = crate::parse(&admitted, std::path::Path::new("reach-dense-admitted.spx")).unwrap();
     let mut program = crate::hir::resolve(&source).unwrap();
     fn nominal(id: &str, arguments: Vec<ResolvedType>) -> ResolvedType {
@@ -160,7 +160,9 @@ fn dense_program() -> ResolvedProgram {
             arguments,
         }
     }
-    // Construct only the two original dense inventory edges after resolving
+    // The skeleton has scalar payload fields; even Pair<i64,bool> as a record
+    // field is outside the current concrete storage profile. Construct only
+    // the two original dense inventory edges after resolving
     // an admitted skeleton. Both algorithms still receive the complete,
     // identical record/variant/nested-argument graph and every original root.
     // No consumer may treat this structural oracle as a checked program.

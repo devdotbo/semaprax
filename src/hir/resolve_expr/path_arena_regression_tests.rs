@@ -66,7 +66,7 @@ fn source() -> String {
          Choice::B {} => -rebuilt.f9, };\n",
     );
     source.push_str("  if flag && !false { return picked; } else { 0 }\n");
-    source.push_str("  let result = -(picked * 2) + scalar(s999) + deep(s1000);\n  result\n}\n");
+    source.push_str("  let outcome = -(picked * 2) + scalar(s999) + deep(s1000);\n  outcome\n}\n");
     // An actual new whole-row argument reaches the same path-text receiver
     // through paid arena spelling and the saved recursive borrowed-text route.
     source.push_str(
@@ -107,7 +107,7 @@ fn compare() {
     // Preserve the original rejected boundary independently: a unary operator
     // after the guard continues value evaluation instead of starting an item.
     let crossed = source.replace(
-        "let result = -(picked * 2) + scalar(s999) + deep(s1000);\n  result",
+        "let outcome = -(picked * 2) + scalar(s999) + deep(s1000);\n  outcome",
         "-(picked * 2) + scalar(s999) + deep(s1000)",
     );
     assert_ne!(crossed, source);
