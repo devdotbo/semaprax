@@ -1,14 +1,12 @@
 //! Private consumed receipt of one finished closed scalar lexical Session.
 //! It is not Clone, not public, not serialized and has no constructor outside
-//! the receiver. It names the exact live module object and its exact ordered
-//! member view, and it is the only value that can select this family's Graph
-//! schema. Plan schemas, cached Arcs, copied inventories and detached equal
-//! HIR cannot construct it.
+//! the receiver. It names the exact live module object, and it is the only
+//! value that can select this family's Graph schema. Plan schemas, cached
+//! Arcs, copied inventories and detached equal HIR cannot construct it.
 use super::*;
 
 pub(in crate::workspace_graph::source_schema) struct Received<'a> {
     module: &'a WorkspaceResolvedModule,
-    members: crate::hir::items::View<'a, ResolvedFunction>,
     flags: census::Flags,
 }
 
@@ -16,14 +14,16 @@ impl<'a> Received<'a> {
     /// Only the receiver seals, after `finish_paid` has returned the same
     /// ledger it held for acquisition, authentication and every member replay.
     pub(super) fn seal(module: &'a WorkspaceResolvedModule, flags: census::Flags) -> Self {
-        Self {
-            module,
-            members: crate::hir::items::ItemSource::view(&module.functions),
-            flags,
-        }
+        Self { module, flags }
     }
 
-    /// Consume the receipt for exactly its own module and current members.
+    /// Consume the receipt for exactly its own module. This runs after the
+    /// ledger is released, so it does no per-member work: the receipt holds a
+    /// shared `'a` borrow of the replayed module for its whole life, and the
+    /// module's function carrier (owned `Vec` or immutable checked `Arc`
+    /// range) has no interior mutability. Pointer equality with that object
+    /// is therefore the exact replayed member sequence.
+    ///
     /// The shared base-lattice mapping receives only census-derived flags; the
     /// census has excluded every match, template, record pattern, generic
     /// record and Option-try node, so those predicates are fixed `false`.
@@ -31,13 +31,8 @@ impl<'a> Received<'a> {
         self,
         module: &WorkspaceResolvedModule,
     ) -> Option<&'static str> {
-        if !std::ptr::eq(self.module, module) || self.members.len() != module.functions.len() {
+        if !std::ptr::eq(self.module, module) {
             return None;
-        }
-        for (held, current) in self.members.iter().zip(&module.functions) {
-            if !std::ptr::eq(held, current) {
-                return None;
-            }
         }
         let flags = self.flags;
         Some(crate::graph::scalar_base_lattice(

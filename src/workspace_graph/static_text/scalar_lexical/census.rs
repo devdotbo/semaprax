@@ -18,7 +18,8 @@ use crate::hir::{
 pub(in crate::workspace_graph) const DEPTH: usize = crate::cache_codec::MAX_DEPTH + 1;
 type Frame<'a> = Option<hir::lexical_exit::ChildCursor<'a>>;
 
-/// Fixed cursor backing of one census, priced before the walk begins.
+/// Fixed cursor backing of one census, reserved once by the caller before the
+/// first body walk. Each walk then charges its own `DEPTH` slot initialization.
 pub(in crate::workspace_graph) fn cursor_bytes() -> usize {
     DEPTH * std::mem::size_of::<Frame<'static>>()
 }
@@ -44,6 +45,22 @@ pub(in crate::workspace_graph) fn function<E>(
     function: &ResolvedFunction,
     charge: &mut dyn FnMut(usize) -> Result<(), E>,
 ) -> Result<Option<Flags>, E> {
+    let Some(mut flags) = signature(function, charge)? else {
+        return Ok(None);
+    };
+    let Some(walked) = body(function, charge)? else {
+        return Ok(None);
+    };
+    flags.merge(walked);
+    Ok(Some(flags))
+}
+
+/// Signature half of the census: no cursor, no allocation. Only `usize` can
+/// be set here.
+pub(in crate::workspace_graph) fn signature<E>(
+    function: &ResolvedFunction,
+    charge: &mut dyn FnMut(usize) -> Result<(), E>,
+) -> Result<Option<Flags>, E> {
     let Some(units) = function.params.len().checked_add(1) else {
         return Ok(None);
     };
@@ -65,8 +82,20 @@ pub(in crate::workspace_graph) fn function<E>(
         }
         flags.usize |= param.ty == ResolvedType::Usize;
     }
+    Ok(Some(flags))
+}
+
+/// Body half of the census over every requires/body/ensures root. The caller
+/// has already reserved `cursor_bytes`; the `DEPTH` slot initialization of
+/// this walk's cursor is charged here before the array is created.
+pub(in crate::workspace_graph) fn body<E>(
+    function: &ResolvedFunction,
+    charge: &mut dyn FnMut(usize) -> Result<(), E>,
+) -> Result<Option<Flags>, E> {
+    let mut flags = Flags::default();
+    charge(DEPTH)?;
     let mut stack: [Frame<'_>; DEPTH] = [None; DEPTH];
-    let body = function.requires.len();
+    let body_root = function.requires.len();
     for (index, root) in function
         .requires
         .iter()
@@ -76,7 +105,7 @@ pub(in crate::workspace_graph) fn function<E>(
     {
         // Graph's base while family reads the body only; contracts still
         // belong to the closed census.
-        let in_body = index == body;
+        let in_body = index == body_root;
         stack[0] = Some(hir::lexical_exit::ChildCursor::new(root));
         let mut depth = 1;
         while depth != 0 {

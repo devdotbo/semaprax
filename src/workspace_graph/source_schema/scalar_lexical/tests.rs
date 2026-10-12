@@ -467,6 +467,139 @@ fn closed_family_exclusions_keep_their_existing_route() {
 }
 
 #[test]
+fn receipt_selects_only_its_own_module_without_post_release_work() {
+    let (build, sources) = build(&canonical(&source(BODY)));
+    let held = module(&build, PATH);
+    for own in [true, false] {
+        let receipt = receive_paid(held, &build.hir.modules, &build.hir.declarations, &sources, REPORT)
+            .unwrap()
+            .expect("captured owner");
+        let target = if own { held } else { module(&build, TESTS_PATH) };
+        let (selected, metrics) = measure(|| receipt.select(target));
+        assert_eq!(selected.is_some(), own);
+        assert!(!metrics.invalid);
+        assert_eq!((metrics.allocations, metrics.allocated), (0, 0));
+    }
+}
+
+/// Independent reference for one in-family census: the signature charge, the
+/// `DEPTH` cursor initialization, one unit per walk step (each node once plus
+/// once per returned child) and each block's statement count.
+fn census_reference_units(function: &ResolvedFunction) -> usize {
+    let mut units = function.params.len() + 1 + census::DEPTH;
+    for root in function
+        .requires
+        .iter()
+        .chain(std::iter::once(&function.body))
+        .chain(&function.ensures)
+    {
+        let mut pending = vec![(root, 0usize)];
+        while let Some((expression, next)) = pending.pop() {
+            units += 1;
+            if next == 0 {
+                if let hir::ResolvedExprKind::Block { statements, .. } = &expression.kind {
+                    units += statements.len();
+                }
+            }
+            if let Some(child) = hir::lexical_exit::child(expression, next) {
+                pending.push((expression, next + 1));
+                pending.push((child, 0));
+            }
+        }
+    }
+    units
+}
+
+#[test]
+fn census_charges_cursor_initialization_before_the_walk_with_exact_one_short_and_zero_work() {
+    let program = crate::check(&canonical(&source(BODY)), PATH).unwrap();
+    let resolved = hir::resolve(&program).unwrap();
+    let function = resolved
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "calculator.app.main")
+        .unwrap();
+    let signature = function.params.len() + 1;
+    let expected = census_reference_units(function);
+    let run = |budget: usize| {
+        let mut charges = Vec::new();
+        let mut left = budget;
+        let answer = census::function(function, &mut |units| {
+            charges.push(units);
+            left = left.checked_sub(units).ok_or(())?;
+            Ok::<(), ()>(())
+        });
+        (answer, charges, left)
+    };
+    let (answer, charges, left) = run(expected);
+    assert_eq!(
+        answer,
+        Ok(Some(census::Flags {
+            lexical: true,
+            usize: false,
+            body_loop: true,
+        }))
+    );
+    assert_eq!(left, 0, "the reference is the exact census work");
+    // Signature, then the slot initialization, then the first walk step.
+    assert_eq!(&charges[..3], &[signature, census::DEPTH, 1]);
+    let (answer, charges, _) = run(expected - 1);
+    assert_eq!(answer, Err(()));
+    // The same debit sequence refuses at its final charge, never earlier.
+    assert_eq!(charges.iter().sum::<usize>(), expected);
+    // One short of the initialization refuses before the cursor exists.
+    let (answer, charges, _) = run(signature + census::DEPTH - 1);
+    assert_eq!((answer, charges), (Err(()), vec![signature, census::DEPTH]));
+    let (answer, charges, _) = run(0);
+    assert_eq!((answer, charges), (Err(()), vec![signature]));
+}
+
+#[test]
+fn capture_selection_is_metered_and_unaffected_modules_keep_exact_builder_usage() {
+    let text = canonical(&source(BODY));
+    let program = crate::check(&text, PATH).unwrap();
+    let resolved = hir::resolve(&program).unwrap();
+    let authored = crate::workspace_graph::index_authored(std::slice::from_ref(&program)).unwrap();
+    let sources = sources_with(&text, &[]);
+    let start = crate::cache_codec::MAX_NODES;
+    let mut left = start;
+    assert!(capture::capture_metered(&program, &resolved, &authored, &sources, &mut left)
+        .unwrap()
+        .is_some());
+    let spent = start - left;
+    let mut exact = spent;
+    assert!(capture::capture_metered(&program, &resolved, &authored, &sources, &mut exact)
+        .unwrap()
+        .is_some());
+    assert_eq!(exact, 0, "capture work is exactly the successful debit sum");
+    // One short fails the final member digest debit: not captured, no error.
+    let mut short = spent - 1;
+    assert!(matches!(
+        capture::capture_metered(&program, &resolved, &authored, &sources, &mut short),
+        Ok(None)
+    ));
+    // Zero work declines at the first selection debit, before any builder byte.
+    let (answer, overflowed, used) =
+        crate::bounded_output::with_limit_usage(MAX_CHANGE_BUILDER_BYTES, || {
+            capture::capture_metered(&program, &resolved, &authored, &sources, &mut 0)
+        });
+    assert!(matches!(answer, Ok(None)) && !overflowed);
+    assert_eq!(used, 0);
+    // An exit-free closed module pays exactly the one reserved census cursor.
+    let tests = crate::check(TESTS, TESTS_PATH).unwrap();
+    let tests_resolved = hir::resolve(&tests).unwrap();
+    let tests_authored =
+        crate::workspace_graph::index_authored(std::slice::from_ref(&tests)).unwrap();
+    let mut work = start;
+    let (answer, overflowed, used) =
+        crate::bounded_output::with_limit_usage(MAX_CHANGE_BUILDER_BYTES, || {
+            capture::capture_metered(&tests, &tests_resolved, &tests_authored, &sources, &mut work)
+        });
+    assert!(matches!(answer, Ok(None)) && !overflowed);
+    assert_eq!(used, census::cursor_bytes());
+}
+
+#[test]
 fn source_less_change_view_keeps_the_original_refusal() {
     let (build, _) = build(&canonical(&source(BODY)));
     assert_eq!(build.into_change_view().unwrap_err()[0].code, "SPX-G410");

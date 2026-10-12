@@ -167,7 +167,8 @@ fn authenticate<'a>(
         preparation.fail();
         return Err(Refused::MISMATCH);
     }
-    // One fixed census cursor serves every member walk.
+    // One fixed census cursor backing serves every member walk; each walk
+    // charges its own slot initialization before the array exists.
     preparation.try_reserve_array::<u8>(
         anchor,
         census::cursor_bytes(),

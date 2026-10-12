@@ -275,6 +275,15 @@ other shape, and every view without receiving sources (Change, Structural
 Change, Operations), keeps its existing route and refusal; the frozen
 from-parts selectors still produce `SPX-G410`.
 
+Capture is metered on its local work before it reads. After an O(1) shape gate
+(which also requires equal authored and resolved function counts), it debits
+each member's selector fields, one exact identity key comparison against the
+paired resolved function and the census signature. Only then does it reserve
+the one census cursor. Each body walk charges its `DEPTH` slot initialization
+before the array exists. No `BTreeMap` lookup is performed. Before demand,
+exhaustion declines (`None`); it does not fail. A module that is not selected
+pays no builder bytes beyond that cursor.
+
 The inventory retains the exact path, module, ordered member identities,
 captured identity origins and typed member digests. It retains no source
 revision, plan or schema. At reception the Semantic Workspace preflight passes
@@ -288,7 +297,9 @@ and `finish_paid`, in that order, with one carrier acquired before setup.
 Authentication refuses with the Copy `SelectedReplayRefused`.
 
 Only the private consumed `Received` receipt can select this module's Graph
-schema. It names the exact live module and member view, and maps census-derived
+schema. It holds a shared borrow of the exact replayed live module, so `select`
+needs only pointer equality and does no per-member work after the ledger is
+released. It maps census-derived
 flags through `graph::scalar_base_lattice`, the shared ordered v17..v10 tail of
 the base classifier; the excluded families' predicates are fixed `false`. A
 receipt presented for any other module is the existing unfunded `SPX-G410`
@@ -305,6 +316,9 @@ Owning selectors under `workspace_graph::source_schema::scalar_lexical::tests`:
 - `reordered_missing_transplanted_detached_and_inserted_inventories_refuse`
 - `certificate_and_plan_mutations_refuse_without_repair`
 - `closed_family_exclusions_keep_their_existing_route`
+- `receipt_selects_only_its_own_module_without_post_release_work`
+- `census_charges_cursor_initialization_before_the_walk_with_exact_one_short_and_zero_work`
+- `capture_selection_is_metered_and_unaffected_modules_keep_exact_builder_usage`
 - `source_less_change_view_keeps_the_original_refusal`
 - `zero_and_report_one_short_return_the_unpaid_ledger_without_allocating`
 - `exact_success_one_short_refusal_and_drop_share_one_observed_owner`
