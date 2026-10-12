@@ -88,12 +88,20 @@ fn zero_scope_and_arithmetic_refusal_keep_original_full_diagnostics_without_mess
 #[test]
 fn whole_rich_scope_exact_short_sticky_refusal_includes_error_clone_and_drop() {
     let input = rich(17);
+    let original = input.clone();
+    let mut expected = input.clone();
+    assert!(input.values().any(|value| value.contract_local));
+    for value in expected.values_mut() {
+        value.contract_local = false;
+    }
     let run = |limit| {
         with_limit_usage_refusal(limit, || {
             measure(|| match Scope::fresh_baseline(&input) {
                 Ok(scope) => {
                     assert_eq!(scope.len(), input.len());
-                    assert!(scope.iter().eq(input.iter()));
+                    assert!(scope.iter().eq(expected.iter()));
+                    assert!(scope.values().all(|value| !value.contract_local));
+                    assert_eq!(input, original);
                     let checkpoint = scope.clone();
                     assert_eq!(scope, checkpoint);
                     drop(checkpoint);

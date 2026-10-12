@@ -167,8 +167,8 @@ pub(super) fn value<'a>(
     None
 }
 
-pub(super) fn build_fresh(
-    values: &mut std::collections::btree_map::Iter<'_, ValueId, ValidationBinding>,
+pub(super) fn build_fresh<'a>(
+    values: &mut impl Iterator<Item = (&'a ValueId, &'a ValidationBinding)>,
     count: usize,
 ) -> Option<Rc<Node>> {
     if count == 0 {

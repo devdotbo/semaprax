@@ -218,7 +218,7 @@ interface HostEcho permits { host.echo } {
     assert_eq!(iterative.help, recursive.help);
 }
 
-const SOURCE: &str = r#"
+pub(super) const SOURCE: &str = r#"
 module test.validator_oracle_hostiles;
 permit { host.echo }
 

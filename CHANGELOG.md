@@ -1,5 +1,15 @@
 # Changelog
 
+- Author direct paid persistent HIR function scopes across parameters, requires,
+  body, result and ensures through a sealed owner of the mutable scope borrow.
+  Preserve complete saved map function/expression/
+  contract drivers, original publication restoration and conservative insertion
+  payments. Add full-chain diagnostics, hostile payload, allocation/debit/Drop,
+  exact/short/sticky and unwind owners; correct only the contradictory freshness
+  expectation in the unchanged rich refusal fixture. Repair inadmitted I64
+  literal suffixes in the generic reuse fixture with the same default-I64 values.
+  Source-only; consolidated qualification and OPT795 remain open.
+
 - Complete private paid loan-plan seed/live propagation, traversal allowed identities and nominal predicate cycle directories. Retain default public BTree drafts and complete old call/predicate/materialization receivers; preserve full canonical plans, first diagnostics and checked-work equations. Prepay two-reference zero-heap ordered cursors and use sticky allocation-free AVL removal, with explicit O(n log n) borrowed traversal tradeoff. Author literal allocation/debit/Drop, exact/short/denied-mutation and full late-error controls through 4096 entries. Source-only, qualification and full application-fit evidence pending.
 
 - Extend the private caller-paid loan planner directories through candidate ownership/alias discovery, native parent bindings, nonconsuming/terminal roots and borrowed cycle sets. Preserve complete pre-change funded BTree receivers and public fallback, full plan/work/error order, and author whole allocation/debit/Drop plus exact/short/sticky controls. Shared draft seed/live propagation and semantic diagnostic funding remain explicit residuals; source-only, consolidated qualification pending.

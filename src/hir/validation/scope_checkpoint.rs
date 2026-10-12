@@ -16,9 +16,7 @@ pub(super) struct Scope {
     root: Option<Rc<tree::Node>>,
 }
 impl Scope {
-    pub(super) fn fresh_baseline(
-        values: &BTreeMap<ValueId, ValidationBinding>,
-    ) -> Result<Self, Diagnostic> {
+    pub(super) fn fresh_baseline(values: &dyn ScopeRead) -> Result<Self, Diagnostic> {
         charge::fresh_baseline(values)?;
         Ok(Self {
             root: tree::build_fresh(&mut values.iter(), values.len()),
@@ -63,6 +61,10 @@ impl Scope {
         key: ValueId,
         value: ValidationBinding,
     ) -> Result<(), Diagnostic> {
+        self.prepare_insert()?.insert(key, value);
+        Ok(())
+    }
+    pub(super) fn prepare_insert(&mut self) -> Result<PreparedInsert<'_>, Diagnostic> {
         // One new binding carrier plus the complete path and double rotation
         // headroom; all prior versions remain live and receive no refund.
         let nodes = usize::from(tree::height(&self.root))
@@ -73,8 +75,18 @@ impl Scope {
                 .and_then(|n| n.checked_mul(charge::carrier::<tree::Node>()))
                 .and_then(|n| n.checked_add(charge::carrier::<ValidationBinding>())),
         )?;
-        self.root = Some(tree::insert(self.root.take(), key, Rc::new(value)));
-        Ok(())
+        Ok(PreparedInsert { scope: self })
+    }
+}
+// Only Scope can construct this paid owner. Its exclusive borrow pins the
+// receiving root between payment and the one consuming insertion. Dropping
+// the owner (including after payload-payment refusal) leaves the root intact.
+pub(super) struct PreparedInsert<'a> {
+    scope: &'a mut Scope,
+}
+impl PreparedInsert<'_> {
+    pub(super) fn insert(self, key: ValueId, value: ValidationBinding) {
+        self.scope.root = Some(tree::insert(self.scope.root.take(), key, Rc::new(value)));
     }
 }
 impl PartialEq for Scope {
@@ -251,3 +263,7 @@ mod tests;
 #[cfg(test)]
 #[path = "scope_checkpoint/refusal_tests.rs"]
 mod refusal_tests;
+
+#[cfg(test)]
+#[path = "scope_checkpoint/persistent_input_tests.rs"]
+mod persistent_input_tests;

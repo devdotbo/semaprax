@@ -1,8 +1,8 @@
 //! Independent closed fresh contract-local owner replay; no attached fact.
-use super::super::{
-    Availability, OwnershipMode, ResolvedExpr, ResolvedExprKind, ResolvedType, ValidationBinding,
-    ValueId,
-};
+use super::super::{Availability, OwnershipMode, ResolvedExpr, ResolvedExprKind, ResolvedType};
+#[cfg(test)]
+use super::super::{ValidationBinding, ValueId};
+#[cfg(test)]
 use std::collections::BTreeMap;
 
 pub(super) fn local(expr: &ResolvedExpr, scope: &dyn super::ScopeRead) -> bool {
@@ -41,11 +41,30 @@ pub(super) fn fresh(expr: &ResolvedExpr, scope: &dyn super::ScopeRead) -> bool {
 }
 
 impl super::HirValidator<'_> {
+    #[cfg(test)]
     pub(super) fn validate_contracts(
         &mut self,
         execution: &super::FunctionExecutionId,
         contracts: &[ResolvedExpr],
         outer: &BTreeMap<ValueId, ValidationBinding>,
+        phase: &str,
+    ) -> Result<(), crate::diagnostic::Diagnostic> {
+        self.validate_contracts_baseline(execution, contracts, outer, phase)
+    }
+    pub(super) fn validate_contracts_persistent(
+        &mut self,
+        execution: &super::FunctionExecutionId,
+        contracts: &[ResolvedExpr],
+        outer: &super::scope_checkpoint::Scope,
+        phase: &str,
+    ) -> Result<(), crate::diagnostic::Diagnostic> {
+        self.validate_contracts_baseline(execution, contracts, outer, phase)
+    }
+    fn validate_contracts_baseline(
+        &mut self,
+        execution: &super::FunctionExecutionId,
+        contracts: &[ResolvedExpr],
+        outer: &dyn super::ScopeRead,
         phase: &str,
     ) -> Result<(), crate::diagnostic::Diagnostic> {
         if contracts.is_empty() {

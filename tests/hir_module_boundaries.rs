@@ -4,6 +4,9 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         concat!(
             concat!(
                 include_str!("../src/hir/validation.rs"),
+                include_str!("../src/hir/validation/function_scope.rs"),
+                include_str!("../src/hir/validation/function_scope/old.rs"),
+                include_str!("../src/hir/validation/function_scope/tests.rs"),
                 include_str!("../src/hir/validation/scope_checkpoint.rs"),
                 include_str!("../src/hir/validation/scope_checkpoint/charge.rs"),
                 include_str!("../src/hir/validation/scope_checkpoint/tree.rs"),
@@ -13,6 +16,7 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
                 include_str!("../src/hir/validation/scope_checkpoint/storage.rs"),
                 include_str!("../src/hir/validation/scope_checkpoint/paths.rs"),
                 include_str!("../src/hir/validation/scope_checkpoint/tests.rs"),
+                include_str!("../src/hir/validation/scope_checkpoint/persistent_input_tests.rs"),
                 include_str!("../src/hir/validation/owned_iterative_oracle.rs"),
                 include_str!("../src/hir/validation/owned_iterative_oracle/dispatch_0.rs"),
                 include_str!("../src/hir/validation/owned_iterative_oracle/dispatch_1.rs"),

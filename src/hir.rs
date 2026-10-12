@@ -883,7 +883,7 @@ mod generic_environment_reuse_tests {
 @id("reuse.other") fn other<T>(one:T,two:T)->T {two}
 @id("reuse.relay") fn relay<T>(one:T,two:T)->T {first<T>(one,two)}
 @id("reuse.helper") fn helper()->i64 {relay<i64>(3,4)}
-@id("reuse.main") fn main()->i64 {if relay<i64>(3i64,4i64)==3i64 {helper()+1} else {0}}
+@id("reuse.main") fn main()->i64 {if relay<i64>(3,4)==3 {helper()+1} else {0}}
 "#;
     fn parse(source: &str) -> Program {
         crate::parse(source, "generic-reuse.spx").unwrap()
@@ -933,7 +933,7 @@ mod generic_environment_reuse_tests {
             SOURCE.replace("helper()+1", "helper()+2"),
             SOURCE.replace("->T {one}", "->T {two}"),
             SOURCE.replace("{first<T>(one,two)}", "{other<T>(one,two)}"),
-            SOURCE.replace("relay<i64>(3i64,4i64)==3i64", "relay<bool>(true,false)    "),
+            SOURCE.replace("relay<i64>(3,4)==3", "relay<bool>(true,false)    "),
         ] {
             let current = parse(&source);
             assert!(function_reuse_environment_is_exact(&current, &previous));

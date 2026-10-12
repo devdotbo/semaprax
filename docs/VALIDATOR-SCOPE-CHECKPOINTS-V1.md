@@ -73,3 +73,49 @@ one-short whole receiving/Drop owners, arithmetic/sticky controls and original
 rich scope bindings are retained in the new `refusal_tests` children. Dynamic
 error strings, output buffers and report Vec backing remain separate funding
 obligations. No current execution or OPT781/OPT795 closure is claimed.
+
+## Persistent function receiving scope
+
+The private function driver seeds a paid persistent scope directly, validates
+requires clauses from a full freshness-reset copy, runs its body through the
+existing iterative checkpoint publication guard, inserts the complete result
+binding, and validates ensures clauses from their own full baseline. Every
+baseline copies all mutable/type/ownership/availability/loan/move/partial fields
+and changes only `contract_local=false`. Each clause owns a root checkpoint;
+its mutations and local publication never update the function input or siblings.
+Parameter and result insertion backing and full type clone payloads are paid
+before those payloads are cloned. A sealed paid insertion owner holds the exclusive
+scope borrow until its one consuming insertion. Dropping it after clone-payment
+refusal leaves the prior root unchanged; there is no unfunded insertion entry. The body preserves Publication destruction
+order and RestorePublication frames. The map adapter and its materialization
+charges remain; no map is created on the persistent function route. The ordinary
+`3 * height + 8` insertion prepayment remains conservative and unchanged.
+
+The full prior map function is saved in `function_scope/old.rs`, retaining its
+entire preflight, parameter order, body, result and contract order. Only the
+entry name, owner-path qualification after relocation, and calls to complete
+saved map expression/contract drivers differ. No original multi-line literal
+content is dedented. New function-chain owners compare full diagnostics,
+identity membership and auxiliary state over the entire saved iterative corpus,
+contract owners and parameter/requires/body/result/ensures hostile failures.
+Physical owners record actual requests, cumulative debits and complete Drop,
+exact/one-short/sticky refusal and postvalidation unwind. Additional persistent
+input owners retain rich nested type, loan, projection and partial payloads and
+exercise checkpoint publication with live children during unwind. The original
+rich refusal fixture is unchanged; its expected baseline now resets only the
+freshness flag and compares every field while proving the hostile input unchanged.
+
+All source-audit joins include the production child, complete saved body and new
+controls. Original late-child, suppression, depth-512, full iterative corpus,
+contract and checkpoint controls remain selected, as do whole-subtree and original
+application owners at the unchanged 64 MiB allowance. This source-only batch
+runs no compiler, tests, Clippy or application gates. Consolidated qualification
+remains required; no allocation reduction, application fit or OPT795 closure is
+claimed before execution. Full baseline payload copying remains a separate cost.
+
+The unchanged generic nested-block depth cases `[1,17,64]` and complete current,
+borrowed-map and owned-map walkers now run in a joined 16 MiB oracle test thread,
+following the existing expression depth-oracle convention. All original bodies,
+fixtures, diagnostic and identity assertions remain. This is test-oracle stack
+provisioning only; production admission depth, stack behavior and support claims
+are unchanged and still require independent qualification.

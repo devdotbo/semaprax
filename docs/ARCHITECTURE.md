@@ -137,7 +137,19 @@ ordered extraction allocate no additional nodes. The public BTree planner and
 complete saved planner retain their independent storage policies.
 
 `hir/validation/scope_checkpoint.rs` owns private persistent ordered ownership
-scopes. Branch, loop, match and source-move checkpoints share immutable roots;
+scopes. `hir/validation/function_scope.rs` seeds parameter bindings directly
+into that paid scope, validates the body through the existing checkpoint-target
+publication guard, inserts the full provisional result, and lends persistent
+inputs to independent contract baselines. Parameter/result type payload clones
+and tree insertion backing are prepaid before construction. A sealed paid owner
+holds the mutable scope borrow through the one consuming insertion; dropping it
+before insertion preserves the prior root. The complete prior
+map function is retained in `function_scope/old.rs` beside the saved expression
+and contract drivers; all children are joined into the validator source audit.
+The map-entry adapter retains map publication and its charges. Persistent inputs
+have no physical publication map; their guard returns the selected root on Drop.
+The ordinary insertion allowance remains the unchanged `3 * height + 8` bound.
+Branch, loop, match and source-move checkpoints share immutable roots;
 mutation pays for copied paths and full binding payloads before copying. Output
 publication moves the last complete state into prepaid map slots after child
 checkpoints drop. Nested guard publication restores a private scope directly. Contract validation

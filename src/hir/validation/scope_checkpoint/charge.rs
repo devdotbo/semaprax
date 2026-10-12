@@ -121,9 +121,7 @@ pub(in crate::hir::validation) fn clone_type(value: &ResolvedType) -> Result<(),
     reserve(value.clone_payload_bytes())
 }
 
-pub(super) fn fresh_baseline(
-    values: &BTreeMap<ValueId, ValidationBinding>,
-) -> Result<(), Diagnostic> {
+pub(super) fn fresh_baseline(values: &dyn ScopeRead) -> Result<(), Diagnostic> {
     checkpoint_carriers(values.len())?;
     for value in values.values() {
         reserve(binding(value))?;

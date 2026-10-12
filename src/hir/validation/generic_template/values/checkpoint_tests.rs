@@ -414,28 +414,39 @@ fn full_original_symbolic_walks_preserve_contract_closure_nested_and_late_error_
 }
 #[test]
 fn nested_generic_block_depth_preserves_full_old_identity_state_and_late_error() {
-    for depth in [1, 17, 64] {
-        let mut body = "value".to_owned();
-        for _ in 0..depth {
-            body = format!("{{{body}}}");
-        }
-        let source = format!(
+    fn run() {
+        for depth in [1, 17, 64] {
+            let mut body = "value".to_owned();
+            for _ in 0..depth {
+                body = format!("{{{body}}}");
+            }
+            let source = format!(
             "module checkpoint.depth; @id(\"c.local\") fn local<T>(value:T)->T {{{body}}} @id(\"c.main\") fn main()->i64 {{0}}"
         );
-        let program = checked(&source);
-        let template = &program.function_templates[0];
-        let before = full_walk(&program, template, Policy::BorrowedMap);
-        assert!(before.0.is_ok());
-        assert_eq!(before, full_walk(&program, template, Policy::OwnedMap));
-        assert_eq!(before, full_walk(&program, template, Policy::Current));
-        let mut hostile = template.clone();
-        let wrong_id = hostile.body.id.clone();
-        spoil_deep_leaf(&mut hostile.body, wrong_id);
-        let before = full_walk(&program, &hostile, Policy::BorrowedMap);
-        assert!(before.0.is_err());
-        assert_eq!(before, full_walk(&program, &hostile, Policy::OwnedMap));
-        assert_eq!(before, full_walk(&program, &hostile, Policy::Current));
+            let program = checked(&source);
+            let template = &program.function_templates[0];
+            let before = full_walk(&program, template, Policy::BorrowedMap);
+            assert!(before.0.is_ok());
+            assert_eq!(before, full_walk(&program, template, Policy::OwnedMap));
+            assert_eq!(before, full_walk(&program, template, Policy::Current));
+            let mut hostile = template.clone();
+            let wrong_id = hostile.body.id.clone();
+            spoil_deep_leaf(&mut hostile.body, wrong_id);
+            let before = full_walk(&program, &hostile, Policy::BorrowedMap);
+            assert!(before.0.is_err());
+            assert_eq!(before, full_walk(&program, &hostile, Policy::OwnedMap));
+            assert_eq!(before, full_walk(&program, &hostile, Policy::Current));
+        }
     }
+    // Complete reference walkers use the existing bounded oracle-test stack
+    // convention. This changes no production depth or runtime stack contract.
+    std::thread::Builder::new()
+        .name("generic-checkpoint-depth-oracle".to_owned())
+        .stack_size(16 * 1024 * 1024)
+        .spawn(run)
+        .unwrap()
+        .join()
+        .unwrap();
 }
 
 #[test]
