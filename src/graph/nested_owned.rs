@@ -215,9 +215,9 @@ fn composition_error(message: &str) -> Diagnostic {
 }
 
 fn parts_use_iterator(
-    types: &[crate::hir::ResolvedTypeDeclaration],
-    functions: &[ResolvedFunction],
-    templates: &[crate::hir::ResolvedFunctionTemplate],
+    types: &(impl crate::hir::items::ItemSource<crate::hir::ResolvedTypeDeclaration> + ?Sized),
+    functions: &(impl crate::hir::items::ItemSource<ResolvedFunction> + ?Sized),
+    templates: &(impl crate::hir::items::ItemSource<crate::hir::ResolvedFunctionTemplate> + ?Sized),
     instances: &[crate::hir::ResolvedFunctionInstance],
 ) -> bool {
     fn function_uses_iterator(function: &ResolvedFunction) -> bool {
@@ -277,9 +277,10 @@ fn parts_use_iterator(
 // Frozen workspace source metadata retains its versioned pre-v34 contract.
 pub(super) fn pre_filesystem_schema_from_parts(
     interfaces: &[crate::hir::ResolvedInterface],
-    types: &[crate::hir::ResolvedTypeDeclaration],
-    functions: &[ResolvedFunction],
-    function_templates: &[crate::hir::ResolvedFunctionTemplate],
+    types: &(impl crate::hir::items::ItemSource<crate::hir::ResolvedTypeDeclaration> + ?Sized),
+    functions: &(impl crate::hir::items::ItemSource<ResolvedFunction> + ?Sized),
+    function_templates: &(impl crate::hir::items::ItemSource<crate::hir::ResolvedFunctionTemplate>
+          + ?Sized),
     function_instances: &[crate::hir::ResolvedFunctionInstance],
 ) -> Result<&'static str, Diagnostic> {
     pre_filesystem_schema_from_parts_with_renewal_authority(
@@ -294,9 +295,10 @@ pub(super) fn pre_filesystem_schema_from_parts(
 
 pub(super) fn pre_filesystem_schema_from_parts_with_renewal_authority(
     interfaces: &[crate::hir::ResolvedInterface],
-    types: &[crate::hir::ResolvedTypeDeclaration],
-    functions: &[ResolvedFunction],
-    function_templates: &[crate::hir::ResolvedFunctionTemplate],
+    types: &(impl crate::hir::items::ItemSource<crate::hir::ResolvedTypeDeclaration> + ?Sized),
+    functions: &(impl crate::hir::items::ItemSource<ResolvedFunction> + ?Sized),
+    function_templates: &(impl crate::hir::items::ItemSource<crate::hir::ResolvedFunctionTemplate>
+          + ?Sized),
     function_instances: &[crate::hir::ResolvedFunctionInstance],
     renewal_authority: Option<&dyn Fn(&ResolvedFunction) -> bool>,
 ) -> Result<&'static str, Diagnostic> {
@@ -865,7 +867,7 @@ fn iterator_loop_schema<'a>(
     program: Option<&ResolvedProgram>,
     renewal_authority: Option<&dyn Fn(&ResolvedFunction) -> bool>,
     functions: impl IntoIterator<Item = &'a ResolvedFunction>,
-    templates: &[crate::hir::ResolvedFunctionTemplate],
+    templates: &(impl crate::hir::items::ItemSource<crate::hir::ResolvedFunctionTemplate> + ?Sized),
 ) -> Result<&'static str, Diagnostic> {
     let mut has_loop = templates
         .iter()

@@ -40,7 +40,7 @@ fn noncontiguous_output_carrier_reservation_is_exact_sticky_and_precedes_clone()
         .collect::<Vec<_>>();
     let debit = 2 * std::mem::size_of::<hir::ResolvedFunction>();
     let select = || {
-        Retained::select(
+        select_owned_oracle(
             owner.clone(),
             |program| &program.functions,
             |function| function.id.as_str() != "local.middle",
@@ -115,7 +115,7 @@ fn noncontiguous_three_and_five_backings_have_no_growth_and_input_headers_pay_ac
         let (_, observed) = crate::test_allocation_observer::measure(|| {
             let (view, overflow, charged, _) =
                 crate::bounded_output::with_limit_usage_refusal(debit, || {
-                    Retained::select(owner.clone(), |program| &program.functions, keep)
+                    select_owned_oracle(owner.clone(), |program| &program.functions, keep)
                 });
             assert!(!overflow);
             assert_eq!(charged, debit);
@@ -153,3 +153,61 @@ fn noncontiguous_three_and_five_backings_have_no_growth_and_input_headers_pay_ac
 
 #[path = "tests/publication.rs"]
 mod publication;
+
+// Frozen old noncontiguous owning path; the production ordinal witness is
+// independent of this carrier/cloning oracle.
+fn select_owned_oracle<T: Clone>(
+    owner: CheckedModuleLease,
+    read: fn(&hir::ResolvedProgram) -> &[T],
+    keep: impl Fn(&T) -> bool,
+) -> Result<Retained<T>, Vec<Diagnostic>> {
+    let items = read(&owner);
+    let mut start = None;
+    let mut end = 0;
+    let mut gap = false;
+    let mut contiguous = true;
+    for (index, item) in items.iter().enumerate() {
+        if keep(item) {
+            if gap {
+                contiguous = false;
+            }
+            start.get_or_insert(index);
+            end = index + 1;
+        } else if start.is_some() {
+            gap = true;
+        }
+    }
+    if contiguous {
+        // Range and owner handles are inline, covered by the actual module
+        // carrier. Arc clones allocate no extra control block.
+        Ok(Retained::Checked {
+            owner,
+            selection: Selection::Range(start.unwrap_or(0)..end),
+            read,
+        })
+    } else {
+        // Truthful compatibility fallback: the unchanged cached two-copy
+        // prebound still funds the copied HIR. The actual output carrier is
+        // reserved before allocation, as with ordinary retained filtering.
+        let count = items.iter().filter(|item| keep(item)).count();
+        let reserved = count
+            .checked_mul(std::mem::size_of::<T>())
+            .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?;
+        reserve_builder_structure(reserved)?;
+        let mut output = Vec::with_capacity(count);
+        let actual = output
+            .capacity()
+            .checked_mul(std::mem::size_of::<T>())
+            .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?;
+        if actual > reserved {
+            reserve_builder_structure(actual - reserved)?;
+        }
+        for item in items.iter().filter(|item| keep(item)) {
+            output.push(item.clone());
+        }
+        Ok(Retained::Owned(output))
+    }
+}
+
+#[path = "tests/ordinals.rs"]
+mod ordinals;

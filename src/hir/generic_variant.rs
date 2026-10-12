@@ -200,7 +200,7 @@ pub(crate) fn symbolic_slot(ty: &ResolvedType, owner: &DeclarationId, count: usi
 /// Re-derive the private two-argument carrier from retained declarations. The
 /// workspace separately authenticates each declaration's explicit provenance.
 pub(crate) fn concrete_signature(
-    types: &[super::ResolvedTypeDeclaration],
+    types: &(impl crate::hir::items::ItemSource<super::ResolvedTypeDeclaration> + ?Sized),
     function: &ResolvedFunction,
 ) -> bool {
     let scalar = super::type_reachability::nested_record_copy_scalar_is_admitted;

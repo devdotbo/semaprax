@@ -31,7 +31,7 @@ pub(crate) const NATIVE_VIEW_SCHEMA: &str = "semaprax.graph.v61";
 
 pub(crate) fn selected_schema(
     interfaces: &[ResolvedInterface],
-    functions: &[crate::hir::ResolvedFunction],
+    functions: &(impl crate::hir::items::ItemSource<crate::hir::ResolvedFunction> + ?Sized),
 ) -> Option<&'static str> {
     if interfaces
         .iter()

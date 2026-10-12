@@ -354,6 +354,7 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
                 include_str!("../../src/workspace_graph/import_validation.rs"),
                 include_str!("../../src/workspace_graph/retain_module.rs"),
                 include_str!("../../src/workspace_graph/checked_retention.rs"),
+                include_str!("../../src/hir/items.rs"),
                 include_str!("../../src/workspace_graph/checked_retention/retain.rs"),
                 include_str!("../../src/workspace_graph/owned_generics/available.rs"),
                 include_str!("../../src/workspace_graph/static_text.rs"),

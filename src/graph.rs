@@ -1389,9 +1389,9 @@ fn expression_has_explicit_match_mode(expression: &ResolvedExpr) -> bool {
 
 pub(crate) fn graph_schema_from_parts_without_loans(
     interfaces: &[hir::ResolvedInterface],
-    types: &[hir::ResolvedTypeDeclaration],
-    functions: &[ResolvedFunction],
-    function_templates: &[hir::ResolvedFunctionTemplate],
+    types: &(impl crate::hir::items::ItemSource<hir::ResolvedTypeDeclaration> + ?Sized),
+    functions: &(impl crate::hir::items::ItemSource<ResolvedFunction> + ?Sized),
+    function_templates: &(impl crate::hir::items::ItemSource<hir::ResolvedFunctionTemplate> + ?Sized),
 ) -> Result<&'static str, Diagnostic> {
     let has_v10_iterator_cleanup = functions.iter().any(nested_owned::has_iterator_cleanup);
     let has_nested_cleanup = functions.iter().any(nested_owned::has_nested_cleanup);

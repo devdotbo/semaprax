@@ -15,7 +15,7 @@ fn equal<E>(a: &str, b: &str, take: &mut dyn FnMut(usize) -> Result<(), E>) -> R
     Ok(true)
 }
 fn fields<'a, E>(
-    records: &'a [hir::ResolvedTypeDeclaration],
+    records: &'a (impl crate::hir::items::ItemSource<hir::ResolvedTypeDeclaration> + ?Sized),
     ty: &hir::ResolvedType,
     take: &mut dyn FnMut(usize) -> Result<(), E>,
 ) -> Result<Option<&'a [hir::ResolvedFieldDeclaration]>, E> {
@@ -30,7 +30,7 @@ fn fields<'a, E>(
         return Ok(None);
     }
     let mut selected = None;
-    for record in records {
+    for record in records.iter() {
         if equal(record.id.as_str(), declaration.as_str(), take)?
             && selected.replace(record).is_some()
         {
@@ -61,7 +61,7 @@ fn fields<'a, E>(
 }
 pub(super) fn signature<E>(
     function: &ResolvedFunction,
-    records: &[hir::ResolvedTypeDeclaration],
+    records: &(impl crate::hir::items::ItemSource<hir::ResolvedTypeDeclaration> + ?Sized),
     take: &mut dyn FnMut(usize) -> Result<(), E>,
 ) -> Result<bool, E> {
     if !hir::is_scalar_resolved_type(&function.return_type) {
@@ -83,7 +83,7 @@ pub(super) fn signature<E>(
 fn root<E>(
     function: &ResolvedFunction,
     expression: &hir::ResolvedExpr,
-    records: &[hir::ResolvedTypeDeclaration],
+    records: &(impl crate::hir::items::ItemSource<hir::ResolvedTypeDeclaration> + ?Sized),
     take: &mut dyn FnMut(usize) -> Result<(), E>,
 ) -> Result<bool, E> {
     let ResolvedExprKind::Place(place) = &expression.kind else {
@@ -136,7 +136,7 @@ fn projected_place<E>(
     function: &ResolvedFunction,
     expression: &hir::ResolvedExpr,
     place: &hir::Place,
-    records: &[hir::ResolvedTypeDeclaration],
+    records: &(impl crate::hir::items::ItemSource<hir::ResolvedTypeDeclaration> + ?Sized),
     take: &mut dyn FnMut(usize) -> Result<(), E>,
 ) -> Result<bool, E> {
     take(1)?;
@@ -178,7 +178,7 @@ fn projected_place<E>(
 pub(super) fn expression<E>(
     function: &ResolvedFunction,
     expression: &hir::ResolvedExpr,
-    records: &[hir::ResolvedTypeDeclaration],
+    records: &(impl crate::hir::items::ItemSource<hir::ResolvedTypeDeclaration> + ?Sized),
     take: &mut dyn FnMut(usize) -> Result<(), E>,
 ) -> Result<Option<bool>, E> {
     match &expression.kind {

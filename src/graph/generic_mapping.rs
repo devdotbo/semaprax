@@ -26,7 +26,9 @@ fn roots(template: &hir::ResolvedFunctionTemplate) -> Vec<(String, &ResolvedExpr
         .collect()
 }
 
-pub(crate) fn requires_v35(templates: &[hir::ResolvedFunctionTemplate]) -> bool {
+pub(crate) fn requires_v35(
+    templates: &(impl crate::hir::items::ItemSource<hir::ResolvedFunctionTemplate> + ?Sized),
+) -> bool {
     templates.iter().any(|template| {
         let mut pending = template.requires.iter().chain(std::iter::once(&template.body)).chain(&template.ensures).collect::<Vec<_>>();
         while let Some(expression) = pending.pop() {

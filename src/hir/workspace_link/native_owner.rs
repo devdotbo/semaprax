@@ -179,7 +179,7 @@ pub(super) fn admitted_finalizer(
 /// The public scalar entry remains scalar, and every nominal signature type
 /// must be the resource authenticated by the same selected Rust import pair.
 pub(crate) fn admitted_helper(
-    types: &[ResolvedTypeDeclaration],
+    types: &(impl crate::hir::items::ItemSource<ResolvedTypeDeclaration> + ?Sized),
     interfaces: &[ResolvedInterface],
     function: &ResolvedFunction,
 ) -> bool {

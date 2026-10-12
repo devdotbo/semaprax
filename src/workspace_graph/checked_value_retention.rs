@@ -138,7 +138,7 @@ pub(super) fn retain_checked_nominal_type(
 }
 
 pub(super) fn retained_signature_type_facts(
-    functions: &[hir::ResolvedFunction],
+    functions: &(impl crate::hir::items::ItemSource<hir::ResolvedFunction> + ?Sized),
     declarations: &hir::DeclarationIndex,
 ) -> Result<BTreeMap<String, (hir::DeclarationKind, hir::TypeFacts)>, Vec<Diagnostic>> {
     let mut retained = BTreeMap::new();
@@ -149,7 +149,7 @@ pub(super) fn retained_signature_type_facts(
             ) + checked_value_retention::NOMINAL_KEY_SCRATCH_BYTES,
         )?;
     }
-    for function in functions {
+    for function in functions.iter() {
         for ty in function
             .params
             .iter()

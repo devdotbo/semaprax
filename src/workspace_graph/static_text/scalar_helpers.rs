@@ -67,7 +67,7 @@ pub(in crate::workspace_graph) fn pure_shape_metered(
 }
 pub(in crate::workspace_graph) fn pure_records_metered(
     function: &ResolvedFunction,
-    records: &[hir::ResolvedTypeDeclaration],
+    records: &(impl crate::hir::items::ItemSource<hir::ResolvedTypeDeclaration> + ?Sized),
     work: &mut usize,
     charge: &mut dyn FnMut(usize) -> Result<(), Vec<Diagnostic>>,
 ) -> Result<bool, Vec<Diagnostic>> {
@@ -84,7 +84,7 @@ pub(in crate::workspace_graph) enum PurityRefusal<E> {
 /// traversal, charges, verdicts and first refusal, but no diagnostic is built.
 pub(in crate::workspace_graph) fn pure_records_checked<E>(
     function: &ResolvedFunction,
-    records: &[hir::ResolvedTypeDeclaration],
+    records: &(impl crate::hir::items::ItemSource<hir::ResolvedTypeDeclaration> + ?Sized),
     work: &mut usize,
     charge: &mut dyn FnMut(usize) -> Result<(), E>,
 ) -> Result<bool, PurityRefusal<E>> {
@@ -111,7 +111,7 @@ fn pure_profile_metered(
     work: &mut usize,
     charge: &mut dyn FnMut(usize) -> Result<(), Vec<Diagnostic>>,
     option_shape: bool,
-    records: &[hir::ResolvedTypeDeclaration],
+    records: &(impl crate::hir::items::ItemSource<hir::ResolvedTypeDeclaration> + ?Sized),
 ) -> Result<bool, Vec<Diagnostic>> {
     legacy_refusal(pure_profile_checked(
         function,
@@ -126,7 +126,7 @@ fn pure_profile_checked<E>(
     work: &mut usize,
     charge: &mut dyn FnMut(usize) -> Result<(), E>,
     option_shape: bool,
-    records: &[hir::ResolvedTypeDeclaration],
+    records: &(impl crate::hir::items::ItemSource<hir::ResolvedTypeDeclaration> + ?Sized),
 ) -> Result<bool, PurityRefusal<E>> {
     let mut take = |units| -> Result<(), PurityRefusal<E>> {
         let remaining = work.checked_sub(units).ok_or(PurityRefusal::LocalLimit)?;

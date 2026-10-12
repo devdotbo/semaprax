@@ -29,7 +29,7 @@ pub(crate) fn legacy_graph_schema(program: &ResolvedProgram) -> Result<&'static 
 
 pub(crate) fn reject_frozen<'a>(
     functions: impl IntoIterator<Item = &'a ResolvedFunction>,
-    templates: &'a [hir::ResolvedFunctionTemplate],
+    templates: &'a (impl crate::hir::items::ItemSource<hir::ResolvedFunctionTemplate> + ?Sized),
 ) -> Result<(), Diagnostic> {
     let mut selected = false;
     let roots = functions

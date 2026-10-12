@@ -81,9 +81,14 @@ resolves afresh. An exact whole-module persistent hit remains eligible.
 The freshly validated checked owner is charged the resolver's retained bounded
 output consumption so hits preserve cold-equivalent construction accounting.
 Loan-proof capacity census and its original residual debit remain required;
-sharing does not authorize removing either charge. Contiguous retained selections
-keep the original vector/string capacities. Compatibility materialization can
-still shrink capacities, so the original cold allowance remains conservative.
+sharing does not authorize removing either charge. Contiguous and noncontiguous retained selections
+keep the original checked owner and its vector/string capacities. Sparse local
+selections retain separately prepaid authored ordinals, not cloned HIR bodies.
+Read-only graph, signature and operation receivers traverse those exact references;
+indices supply access, never validation authority. Final owning link/projection
+products still materialize at their original boundary. The separately owned
+imported-instance attachment overlay remains unchanged. The cached two-bundle
+forecast and original cold allowance remain conservative and unchanged.
 Immutable expression-identity backing remains shared. The allocation-free census
 does not repeat the full physical-storage census's scratch allocation inside the
 graph budget. Full census and required scratch reservations remain unchanged for
@@ -227,3 +232,24 @@ and fixed observer metadata are outside those scopes; in-scope equality and wire
 checks are included. Final publication remains a real deep clone. These authored
 controls require execution; they establish no quota reduction, process-memory
 bound, application fit or complete OPT777 acceptance by themselves.
+
+
+## Sparse checked-owner retention (OPT777)
+
+The private `Retained` carrier has explicit range and ordinal forms. Sparse
+selection reserves the local index Vec header plus `count * size_of::<usize>()`
+before allocation; any allocator excess is debited before publication. The
+actual module-carrier layout pays its enlarged inline retained fields. Operation
+sidecar views similarly prepay the actual increase over their previous slice
+carrier before constructing the directory. These charges use the current
+builder ledger; refusal stays sticky.
+
+The new sparse owner gate is
+`workspace_graph::checked_retention::tests::ordinals::sparse_checked_ordinals_preserve_cold_warm_body_identity_old_wire_and_paid_drop`.
+It uses real cold insertion and warm checked lookup, compares exact body
+addresses and saved old owning wire, retains both owner drop orders, and
+observes only additional ordinal allocation and Drop under literal exact and
+one-short requests. The prior noncontiguous copying controls remain saved old
+oracles. Existing complete Project/cache wire, source/environment drift and
+forged replay controls remain required. Authored source changes and static
+review do not establish execution, full pipeline allocation or application fit.

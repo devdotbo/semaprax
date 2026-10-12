@@ -13,6 +13,7 @@
 //! `monomorphize`, `byte_capacity`, and `byte_slice_provenance` own the
 //! derivations layered over resolved HIR.
 
+pub(crate) mod items;
 use crate::ast::program_source::ProgramSource;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
@@ -789,8 +790,8 @@ pub(crate) mod generic_result;
 pub(crate) mod iterator_loop;
 pub(crate) mod owned_leaf_collection;
 pub(crate) mod owned_record_collection;
-pub(crate) mod vec_loop_renewal;
 pub(crate) mod renewal_probes;
+pub(crate) mod vec_loop_renewal;
 
 pub(crate) mod generic_mapping;
 

@@ -26,14 +26,15 @@ pub(super) fn build_operation_sidecar(
     modules: &[WorkspaceResolvedModule],
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
 ) -> Result<WorkspaceOperationSidecar, Vec<Diagnostic>> {
+    constructor::reserve_module_views(modules.len())?;
     let modules = modules
         .iter()
         .map(|module| OperationModule {
             path: &module.path,
-            types: &module.types,
+            types: crate::hir::items::ItemSource::view(&module.types),
             interfaces: &module.interfaces,
-            functions: &module.functions,
-            function_templates: &module.function_templates,
+            functions: crate::hir::items::ItemSource::view(&module.functions),
+            function_templates: crate::hir::items::ItemSource::view(&module.function_templates),
         })
         .collect::<Vec<_>>();
     build_sidecar(programs, sources, &modules, authored, true)
@@ -41,10 +42,10 @@ pub(super) fn build_operation_sidecar(
 
 struct OperationModule<'a> {
     path: &'a str,
-    types: &'a [hir::ResolvedTypeDeclaration],
+    types: crate::hir::items::View<'a, hir::ResolvedTypeDeclaration>,
     interfaces: &'a [hir::ResolvedInterface],
-    functions: &'a [hir::ResolvedFunction],
-    function_templates: &'a [hir::ResolvedFunctionTemplate],
+    functions: crate::hir::items::View<'a, hir::ResolvedFunction>,
+    function_templates: crate::hir::items::View<'a, hir::ResolvedFunctionTemplate>,
 }
 
 /// Reuse the exact source/HIR occurrence join over an already checked Project.
@@ -55,14 +56,15 @@ pub(crate) fn project_operation_sidecar(
     modules: &[super::WorkspaceGraphProjectionModule],
 ) -> Result<WorkspaceOperationSidecar, Vec<Diagnostic>> {
     let authored = super::index_authored(programs)?;
+    constructor::reserve_module_views(modules.len())?;
     let modules = modules
         .iter()
         .map(|module| OperationModule {
             path: module.path(),
-            types: module.types(),
+            types: crate::hir::items::View::slice(module.types()),
             interfaces: module.interfaces(),
-            functions: module.functions(),
-            function_templates: module.function_templates(),
+            functions: crate::hir::items::View::slice(module.functions()),
+            function_templates: crate::hir::items::View::slice(module.function_templates()),
         })
         .collect::<Vec<_>>();
     build_sidecar(programs, sources, &modules, &authored, false)
