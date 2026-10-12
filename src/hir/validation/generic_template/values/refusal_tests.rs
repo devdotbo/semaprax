@@ -60,7 +60,7 @@ fn zero_and_one_short_generic_entry_keep_full_original_error_without_allocating(
 
 #[test]
 fn refused_generic_checkpoint_and_shared_edit_preserve_full_prior_map_and_settle_drop() {
-    let id = ValueId::new("refusal.generic.current");
+    let id = ValueId::new("refusal.generic.current".to_owned());
     let old_type = ResolvedType::I64;
     let new_type = ResolvedType::Bool;
     // Measure full current construction and checkpoint, not a prefilled root.

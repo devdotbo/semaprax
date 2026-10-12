@@ -40,7 +40,7 @@ fn same(actual: &Storage<'_>, expected: &old::Inventory) {
     assert_eq!(actual.origins, expected.origins);
 }
 fn message(error: Diagnostic) -> (&'static str, String) {
-    (error.code, error.message)
+    (error.code, error.message.into_owned())
 }
 
 #[test]

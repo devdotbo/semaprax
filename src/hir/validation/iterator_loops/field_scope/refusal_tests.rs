@@ -5,8 +5,11 @@ use crate::test_allocation_observer::measure;
 use std::borrow::Cow;
 #[test]
 fn literal_frontier_zero_exact_short_and_sticky_refusal_settle_message_and_entries() {
+    let execution = crate::hir::FunctionExecutionId::Monomorphic(crate::hir::DeclarationId::new(
+        "frontier.literal",
+    ));
     let expression = ResolvedExpr {
-        id: crate::hir::ExpressionId::new("frontier.literal"),
+        id: crate::hir::ExpressionId::new(&execution, "frontier.literal"),
         ty: ResolvedType::I64,
         ownership: OwnershipMode::Value,
         kind: ResolvedExprKind::Int(0),

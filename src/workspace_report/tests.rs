@@ -1,5 +1,6 @@
 //! Full same-invocation carrier transfer; output uses a caller-owned stack.
 use super::*;
+use crate::cleanup::ReplayContext;
 use crate::cleanup_plan::{
     ReplayPhysicalReservation as Physical, SelectedReplayRefused as Refused,
     SelectedReplayReport as Acquired,

@@ -22,7 +22,7 @@ fn counted_profile(source: &str) -> (Result<Profile, Diagnostic>, u64) {
 fn rejected_profile(source: &str) -> (&'static str, String, u64) {
     match counted_profile(source) {
         (Ok(_), _) => panic!("profile unexpectedly parsed"),
-        (Err(error), parses) => (error.code, error.message, parses),
+        (Err(error), parses) => (error.code, error.message.into_owned(), parses),
     }
 }
 
@@ -183,7 +183,7 @@ fn outcome(result: Result<u64, Vec<Diagnostic>>) -> Result<u64, Vec<(&'static st
     result.map_err(|errors| {
         errors
             .into_iter()
-            .map(|error| (error.code, error.message))
+            .map(|error| (error.code, error.message.into_owned()))
             .collect()
     })
 }

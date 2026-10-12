@@ -14,7 +14,7 @@ fn paid_seed_live_and_edge_receivers_equal_old_full_rows_and_checked_work_fronti
         cfg_work.allocation = Some(&payer);
         let cfg = build_cfg(function, &mut cfg_work).unwrap();
         let starts = [0u16];
-        let reachable = work::Reachability::build(&cfg, starts, &mut cfg_work).unwrap();
+        let reachable = work::Reachability::build(&cfg, starts.into_iter(), &mut cfg_work).unwrap();
         let old_seeds: BTreeSet<_> = (0..cfg.points.len() as u16).collect();
         let mut seeds = cfg_directory::Set::new(&payer).unwrap();
         for seed in &old_seeds {

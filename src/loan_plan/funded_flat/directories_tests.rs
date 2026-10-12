@@ -15,7 +15,7 @@ fn observe(
     (bool, Metrics),
     bool,
     usize,
-    Option<crate::bounded_output::cfg_reservation::Refused>,
+    Option<crate::bounded_output::ReservationRefusal>,
 ) {
     with_limit_usage_refusal(limit, || {
         measure(|| {

@@ -446,7 +446,7 @@ mod type_admission_tests {
         crate::hir::resolve(&source).unwrap()
     }
     fn verdict(result: Result<(), Diagnostic>) -> Result<(), (String, String)> {
-        result.map_err(|error| (error.code.to_string(), error.message))
+        result.map_err(|error| (error.code.to_string(), error.message.into_owned()))
     }
     fn nominal(id: &str, arguments: Vec<ResolvedType>) -> ResolvedType {
         ResolvedType::Nominal {
