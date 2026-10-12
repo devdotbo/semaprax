@@ -74,6 +74,10 @@ impl CfgReservation {
         self.fail(Refused::Allocation, requested).unwrap_err()
     }
 
+    pub(crate) fn arithmetic(&self) -> Refused {
+        self.fail(Refused::Arithmetic, usize::MAX).unwrap_err()
+    }
+
     pub(crate) fn first(&self) -> Option<Refused> { self.first.get() }
 
     fn fail(&self, reason: Refused, requested: usize) -> Result<(), Refused> {

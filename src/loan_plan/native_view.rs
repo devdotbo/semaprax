@@ -87,3 +87,46 @@ pub(super) fn match_parents(
     }
     parents
 }
+
+pub(super) fn inventory_aliases_paid(
+    program: &ResolvedProgram,
+    expression: &ResolvedExpr,
+    aliases: &mut BTreeMap<ValueId, Place>,
+    payer: Option<&crate::bounded_output::cfg_reservation::CfgReservation>,
+) -> Result<(), Diagnostic> {
+    let ResolvedExprKind::Match {
+        mode: crate::hir::ResolvedMatchMode::Borrow,
+        scrutinee,
+        arms,
+    } = &expression.kind
+    else {
+        return Ok(());
+    };
+    let Some(origin) = storage::expression_place(scrutinee, payer)? else {
+        return Ok(());
+    };
+    for arm in arms {
+        let ResolvedMatchPattern::Variant { case, fields, .. } = &arm.pattern else {
+            continue;
+        };
+        for field in fields {
+            let ResolvedType::Nominal {
+                declaration,
+                arguments,
+            } = &field.binding.ty
+            else {
+                continue;
+            };
+            if field.binding.ownership != OwnershipMode::Borrow || !arguments.is_empty()
+                || !program.interfaces.iter().flat_map(|interface| &interface.imports).any(|import|
+                    matches!(&import.result.kind, crate::hir::ResolvedImportResultKind::BorrowedStr { resource } if resource == declaration)) { continue; }
+            let mut place = storage::clone_place(&origin, payer)?;
+            storage::push(&mut place.projections, PlaceProjection::VariantField {
+                case: case.clone(),
+                field: field.field.clone(),
+            }, payer)?;
+            storage::map_insert(aliases, field.binding.id.clone(), place, payer)?;
+        }
+    }
+    Ok(())
+}

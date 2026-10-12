@@ -39,6 +39,33 @@ fn cfg_owner_exact_setup_short_and_paid_first_refusal_settle_through_drop() {
     assert_eq!(first.unwrap().requested, request);
     assert_eq!(observed.allocations, 0);
     assert_eq!(observed.live, 0);
+
+    // Fault injection at the allocator/capacity continuation, not a claim of a
+    // real allocator discrepancy. Three u16 elements request SIX bytes.
+    for capacity_fault in [false, true] {
+        let (((), observed), refused, used, first) = with_limit_usage_refusal(request + 8, || {
+            measure(|| {
+                let owner = CfgReservation::acquire().unwrap();
+                owner.array::<u16>(3).unwrap();
+                let values = Vec::<u16>::with_capacity(3);
+                let reason = if capacity_fault {
+                    owner.capacity(6, 2).unwrap_err()
+                } else {
+                    owner.allocation(6)
+                };
+                assert_eq!(owner.reserve(0), Err(reason));
+                drop(values);
+                drop(owner.diagnostic());
+            })
+        });
+        assert!(refused);
+        assert_eq!(first.unwrap().requested, 6);
+        assert_eq!(used, request + 6 + if capacity_fault { 2 } else { 0 });
+        assert_eq!(observed.allocated, 46 + 6);
+        assert_eq!(observed.freed, observed.allocated);
+        assert_eq!(observed.live, 0);
+        assert!(!observed.invalid);
+    }
 }
 
 #[test]

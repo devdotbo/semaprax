@@ -397,9 +397,13 @@ account excess and fail closed. Its observer encloses acquisition, all those
 constructors, refusal publication and Drop, excluding only prior source/CFG
 construction and the already established Budget context.
 
-This is partial storage funding, not canonical caller activation. Candidate,
-native/pattern alias maps, draft/live inventories and final materialization
-still require same-owner payment before that activation. Upstream ModuleIndex
+This is partial storage funding, not canonical caller activation. Candidate
+discovery, native/pattern alias inventories and current CFG containers also
+use the captured owner on the private path. Map/set payment uses a disclosed
+conservative pinned B-tree node upper for each genuinely new key and one
+possibly held initial root, separately from cloned projection payload.
+Draft/live inventories and final materialization still require same-owner
+payment before canonical activation. Upstream ModuleIndex
 and ConstructorSeed ordering, standalone legacy planning, final independent
 loan validation, forecasts and every literal limit remain unchanged. These
 source controls are unexecuted and establish no application fit or whole-plan

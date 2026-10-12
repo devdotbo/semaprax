@@ -53,6 +53,10 @@ mod shared_identity_tests;
 pub(crate) mod traversal;
 mod storage;
 mod funded_flat;
+mod paid_candidate;
+mod paid_children;
+mod paid_patterns;
+mod paid_cfg;
 #[cfg(test)]
 mod whole_oracle_tests;
 mod work;
@@ -763,6 +767,9 @@ fn build_cfg<'a>(
     function: &'a ResolvedFunction,
     work: &mut WorkCounter,
 ) -> Result<Cfg<'a>, Diagnostic> {
+    if work.allocation.is_some() {
+        return paid_cfg::build(function, work);
+    }
     let roots = function
         .requires
         .iter()

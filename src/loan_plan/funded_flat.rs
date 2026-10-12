@@ -1,4 +1,4 @@
-//! Private partial funding route. Candidate/maps/draft/materialization payment
+//! Private partial funding route. Draft/liveness/materialization payment
 //! is intentionally unfinished; canonical callers must not activate this entry.
 use super::*;
 use crate::bounded_output::cfg_reservation::CfgReservation;
@@ -23,7 +23,7 @@ pub(super) fn build(
             let owner = crate::hir::lexical_exit::owner(program, function)?;
             crate::hir::lexical_exit::validate_function(program, function, &owner)?;
         }
-        if has_own_root_candidate(program, function)? {
+        if paid_candidate::inspect(program, function, payer)? {
             let mut work = WorkCounter::new(MAX_LOAN_PLAN_WORK_V1);
             work.allocation = Some(payer);
             build_cfg_plan_counted(program, function, &mut work)
