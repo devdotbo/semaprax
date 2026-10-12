@@ -199,6 +199,12 @@ They cover:
   detached-receiver, and counter-rewind HIR.
 - AST/HIR codec transport round-trips with latch drift, the tag-`4` refusal and
   the v9 literal.
+- Actual `ProjectFrontendCache` cold/warm full-revision parity for a mixed
+  byte-traversal/row-loan provider and consumer, a current provider body edit,
+  mutable-view refusal matching a cold build, and restoration after refusal:
+  `semantic_cache::byte_traversal::warm_byte_traversal_cache_preserves_mixed_graph_and_current_provider_refusals`.
+  This owner is authored and unexecuted; codec transport alone is not warm-cache
+  evidence.
 - Graph v83 selection, forged-schema refusal, and an unchanged Vec-traversal
   graph.
 - The receiver's exact debited backing, its complete Drop, an exact limit, a
