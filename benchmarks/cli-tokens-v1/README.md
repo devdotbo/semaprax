@@ -176,7 +176,8 @@ calling a per-message sum complete. A provider aggregate result can supply a
 missing total; the original messages and result remain retained separately.
 Conflicting result/model totals remain unavailable with both projections saved.
 `modelUsage` fallback sums all models rather than selecting one requested model.
-A mixed-model aggregate cannot use a single-model rate card; its conditional
+Pricing checks all observed message/modelUsage identities; unresolved aliases
+also cannot establish a single-model card. A mixed-model aggregate cannot use a single-model rate card; its conditional
 estimate stays unavailable. Provider `total_cost_usd` remains an API-equivalent
 report, never proof of account billing. Tool IDs do not replace assistant message
 IDs when deduplicating visible text.

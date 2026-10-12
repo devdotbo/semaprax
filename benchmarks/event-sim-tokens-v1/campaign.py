@@ -1013,7 +1013,7 @@ def launch_calibration(seed_repo: Path, artifacts: Path, seed_commit: str,
     row["status"] = "ready" if process["process_exit_code"] == 0 and row["observed_model_id"] else "failed"
     row["list_price_estimate_usd"] = common.rate_card_estimate_details(
         usage.get("usage", {}), settings.get("price_book", {}).get("per_million_tokens"),
-        model_usage_keys=usage.get("model_usage_keys_observed"),
+        model_usage_keys=usage.get("pricing_model_identities_observed"),
     )["usd"]
     common.save_json(artifacts / "calibration.json", row)
     return row
@@ -1336,7 +1336,7 @@ def launch_trial(seed_repo: Path, artifacts: Path, seed_commit: str, trial: dict
     row["provider_input_plus_cache_tokens_raw"] = common.input_tokens_total(usage["usage"])
     row["list_price_estimate_usd"] = common.rate_card_estimate_details(
         usage["usage"], settings.get("price_book", {}).get("per_million_tokens"),
-        model_usage_keys=usage.get("model_usage_keys_observed"),
+        model_usage_keys=usage.get("pricing_model_identities_observed"),
     )["usd"]
     row["provider_quota"] = provider_quota_failure(usage)
     row["provider_reported_api_equivalent_total_cost_usd"] = usage.get("provider_reported_api_equivalent_total_cost_usd")

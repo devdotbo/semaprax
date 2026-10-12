@@ -45,6 +45,22 @@ class MetricAccountingTests(unittest.TestCase):
         self.assertIsNone(observed["fixed_context_tokens_in_this_session"])
         self.assertEqual(observed["result_event"]["usage"], final)
 
+        # Missing entire usage and mixed message models remain independent controls.
+        usage = {"input_tokens": 5, "cache_creation_input_tokens": 0, "cache_read_input_tokens": 0, "output_tokens": 3}
+        events = [{"type": "assistant", "message": {"id": "a", "model": "model-a", "usage": usage}},
+                  {"type": "assistant", "message": {"id": "b", "model": "model-b"}}]
+        observed = self.receipt(events)
+        self.assertEqual(observed["turns_with_usage"], 2)
+        self.assertIsNone(observed["usage"]["input_tokens"])
+        self.assertIsNone(observed["usage"]["output_tokens"])
+        events[1]["message"]["usage"] = usage
+        observed = self.receipt(events)
+        self.assertEqual(observed["usage"]["input_tokens"], 10)
+        self.assertEqual(observed["pricing_model_identities_observed"], ["model-a", "model-b"])
+        self.assertEqual(observed["model_usage_keys_observed"], [])
+        self.assertIsNone(common.rate_card_estimate_details(observed["usage"],
+            model_usage_keys=observed["pricing_model_identities_observed"])["usd"])
+
     def test_tool_ids_do_not_replace_message_identity_or_duplicate_visible_output(self):
         def message(text, tools):
             return {"type": "assistant", "message": {"id": "message-a", "model": "model-a", "usage": {"output_tokens": 8},

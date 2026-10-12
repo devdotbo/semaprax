@@ -555,7 +555,7 @@ def launch_calibration(
         "One-turn diagnostic only: provider first-turn input plus cache minus this fixed calibration prompt's legacy tokenizer proxy. "
         "It is not task-only or exact net input; trial contexts repeat across turns and grow with task/tool history. No value is subtracted from trial totals."
     )
-    estimate = rate_card_estimate_details(observed.get("usage", {}), settings["price_book"]["per_million_tokens"], model_usage_keys=observed.get("model_usage_keys_observed"))
+    estimate = rate_card_estimate_details(observed.get("usage", {}), settings["price_book"]["per_million_tokens"], model_usage_keys=observed.get("pricing_model_identities_observed"))
     row["list_price_estimate_usd"] = estimate["usd"]
     row["list_price_cache_write_pricing"] = estimate["cache_write_pricing"]
     row["provider_reported_api_equivalent_total_cost_usd"] = observed.get(
@@ -848,7 +848,7 @@ def launch_trial(
         "visible_output_bytes": 0, "result_event": None, "invalid_stream_lines": 0,
     }
     row["observed"] = usage
-    estimate = rate_card_estimate_details(usage["usage"], settings["price_book"]["per_million_tokens"], model_usage_keys=usage.get("model_usage_keys_observed"))
+    estimate = rate_card_estimate_details(usage["usage"], settings["price_book"]["per_million_tokens"], model_usage_keys=usage.get("pricing_model_identities_observed"))
     row["list_price_estimate_usd"] = estimate["usd"]
     row["list_price_cache_write_pricing"] = estimate["cache_write_pricing"]
     row["provider_reported_api_equivalent_total_cost_usd"] = usage.get(
@@ -1110,7 +1110,7 @@ def _recount_usage_row(row: dict[str, Any], transcript: Path | None, label: str,
     else:
         observed = stream_usage(transcript)
         row["accounting_status"] = "recounted"
-    estimate = rate_card_estimate_details(observed["usage"], prices, model_usage_keys=observed.get("model_usage_keys_observed"))
+    estimate = rate_card_estimate_details(observed["usage"], prices, model_usage_keys=observed.get("pricing_model_identities_observed"))
     row["observed"] = observed
     row["list_price_estimate_usd"] = estimate["usd"]
     row["list_price_cache_write_pricing"] = estimate["cache_write_pricing"]

@@ -352,6 +352,9 @@ def stream_usage(path: Path, model_preference: str) -> dict[str, Any]:
                 if isinstance(model, str):
                     message_models.add(model)
                 identity = message.get("id")
+                if isinstance(identity, str):
+                    usage_by_id.setdefault(identity, {name: None for name in USAGE_FIELDS})
+                    raw_usage_by_id.setdefault(identity, {name: None for name in (*ALL_USAGE_FIELDS, "thinking_tokens")})
                 usage = message.get("usage")
                 if isinstance(identity, str) and isinstance(usage, dict):
                     parsed = _usage_values(usage)
@@ -433,6 +436,7 @@ def stream_usage(path: Path, model_preference: str) -> dict[str, Any]:
         "models_observed": sorted(message_models or model_usage_models),
         "assistant_message_models_observed": sorted(message_models),
         "model_usage_keys_observed": sorted(model_usage_models),
+        "pricing_model_identities_observed": sorted(message_models | model_usage_models),
         "turns_with_usage": len(usage_by_id),
         "turn_usage_by_message": [
             {"message_id": identity, "usage": values}
