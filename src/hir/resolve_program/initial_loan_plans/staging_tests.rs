@@ -49,14 +49,18 @@ fn fixture(group: Group, count: usize) -> ResolvedProgram {
             source.push_str("0}\n");
         }
     }
-    if matches!(group, Group::Authored) && count == 0 {
-        // Private empty-group control, derived from admitted source. This does
-        // not admit a source module without a function or change syntax rules.
-        source.push_str("@id(\"empty.seed\") fn empty_seed()->i64 {0}\n");
+    if matches!(group, Group::Authored) {
+        // The executable resolver requires a real scalar entry point. Resolve
+        // admitted source first, then remove only this separate entry outside
+        // every measured planner operation. The exact authored group, including
+        // the private zero-member control, retains all requested loan bodies.
+        source.push_str("@id(\"staging.entry\") fn main()->i64 {0}\n");
     }
     let mut program = resolve(&source);
-    if matches!(group, Group::Authored) && count == 0 {
-        program.functions.clear();
+    if matches!(group, Group::Authored) {
+        let entry = program.functions.pop().expect("separate scalar entry");
+        assert_eq!(entry.id.as_str(), "staging.entry");
+        assert!(entry.loan_plan.loans.is_empty());
     }
     assert_eq!(group.len(&program), count);
     program

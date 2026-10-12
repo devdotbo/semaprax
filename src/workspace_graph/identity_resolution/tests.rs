@@ -302,11 +302,14 @@ fn linked_import_resolution<T>(operation: impl FnOnce() -> T) -> T {
 fn actual_selective_import_receiver_matches_fresh_owned_for_vec_and_box() {
     use crate::workspace_graph::{expected_projection, index_authored};
     use expected_projection::private_layout::registry::LayoutRegistry;
+    // Exact transparent wrappers authenticate their canonical declaration name
+    // as well as persistent identity and body. Keep those names in the linked
+    // projection; imported aliases are a separate source-admission concern.
     let cases=[
         (include_str!("../../../std/collections/src/collections.spx"),
-         "module receiver.vec; use function @id(\"std.collections.vec.with-capacity\") from std.collections as allocate; use function @id(\"std.collections.vec.push\") from std.collections as append; use function @id(\"std.collections.vec.get\") from std.collections as read; @id(\"receiver.helper\") fn helper()->i64 {1} @id(\"receiver.main\") fn main()->i64 {let values=allocate<i64>(2usize); let values=append<i64>(values,42); read<i64>(values,0usize)}"),
+         "module receiver.vec; use function @id(\"std.collections.vec.with-capacity\") from std.collections as with_capacity; use function @id(\"std.collections.vec.push\") from std.collections as push; use function @id(\"std.collections.vec.get\") from std.collections as get; @id(\"receiver.helper\") fn helper()->i64 {1} @id(\"receiver.main\") fn main()->i64 {let empty=with_capacity<i64>(2usize); let values=push<i64>(empty,42); get<i64>(values,0usize)}"),
         (include_str!("../../../std/mem/src/mem.spx"),
-         "module receiver.box; use function @id(\"std.mem.box.new\") from std.mem as allocate; use function @id(\"std.mem.box.into-inner\") from std.mem as consume; @id(\"receiver.helper\") fn helper()->i64 {1} @id(\"receiver.main\") fn main()->i64 {consume<i64>(allocate<i64>(42))}"),
+         "module receiver.box; use function @id(\"std.mem.box.new\") from std.mem as new; use function @id(\"std.mem.box.into-inner\") from std.mem as into_inner; @id(\"receiver.helper\") fn helper()->i64 {1} @id(\"receiver.main\") fn main()->i64 {into_inner<i64>(new<i64>(42))}"),
     ];
     for (provider, caller) in cases {
         let previous = [
