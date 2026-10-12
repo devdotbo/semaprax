@@ -3,7 +3,7 @@
 use super::*;
 use std::cell::Cell;
 thread_local! { static OLD: Cell<bool> = const { Cell::new(false) }; }
-pub(super) fn enabled() -> bool { OLD.with(Cell::get) }
+pub(in crate::hir::declaration_index) fn enabled() -> bool { OLD.with(Cell::get) }
 struct Restore(bool);
 impl Drop for Restore {
     fn drop(&mut self) { OLD.with(|old| old.set(self.0)); }

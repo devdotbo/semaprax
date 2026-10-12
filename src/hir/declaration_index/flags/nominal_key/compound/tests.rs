@@ -13,7 +13,7 @@ fn cases() -> Vec<ResolvedType> {
         ResolvedType::Str, ResolvedType::SliceU8, ResolvedType::StringMap,
         ResolvedType::OnceFunction, ResolvedType::OnceFunctionI64,
         ResolvedType::OnceFunctionI64Pair, ResolvedType::MutFunctionI64,
-        ResolvedType::ArrayU8(0), ResolvedType::ArrayU8(10), ResolvedType::ArrayU8(usize::MAX),
+        ResolvedType::ArrayU8(0), ResolvedType::ArrayU8(10), ResolvedType::ArrayU8(u32::MAX),
         ResolvedType::TypeParameter { owner: DeclarationId::new("é\0:owner"), index: 19 },
         nominal("", vec![]), nominal("é✓\0:row", vec![ResolvedType::I64, ResolvedType::ArrayU8(8192)]),
         ResolvedType::Function { parameters: vec![], result: Box::new(ResolvedType::Never) },
