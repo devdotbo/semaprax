@@ -4,8 +4,6 @@ use super::*;
 mod helpers;
 mod records;
 use crate::cleanup::ReplayContext;
-#[cfg(test)]
-use crate::cleanup_plan::SelectedReplaySession;
 use crate::cleanup_plan::{SelectedReplayRefusal, SelectedReplayReport, SelectedReplayReportForm};
 // Every authenticator on the qualified replay route refuses with this Copy
 // value; none constructs a Diagnostic, Vec or String before the transfer.

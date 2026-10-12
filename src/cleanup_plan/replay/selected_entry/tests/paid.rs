@@ -367,9 +367,9 @@ fn paid_finish_returns_the_same_ledger_and_a_failed_finish_allocates_nothing() {
 #[test]
 fn paid_report_remap_publishes_only_its_prepaid_form() {
     let other = ReportForm::new("SPX-T782", "a different outward form");
-    let acquired = acquired(1 << 20);
-    let backing = acquired.backing();
-    let mut refusal = acquired.refuse_unprepared();
+    let first_acquired = acquired(1 << 20);
+    let backing = first_acquired.backing();
+    let mut refusal = first_acquired.refuse_unprepared();
     assert_eq!(first_receipt(&mut refusal), PhysicalRefusal::LocalLimit);
     let (published, allocations) = measure(|| refusal.into_report(FORM));
     assert_eq!(allocations.allocations, 0, "paid form moves out unchanged");

@@ -239,6 +239,7 @@ pub(crate) struct RowRegion<'a> {
     pub(crate) length: &'a crate::hir::ValueId,
     pub(crate) row_index: &'a crate::hir::ValueId,
 }
+#[cfg(test)]
 pub(crate) fn row_region<'a>(
     index: &crate::hir::DeclarationIndex,
     region: &'a ResolvedExpr,

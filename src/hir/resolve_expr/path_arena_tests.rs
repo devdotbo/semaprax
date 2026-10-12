@@ -298,7 +298,7 @@ fn allocator_capacity_mismatch_refuses_before_publishing_an_arena_node() {
         let parent = paths.child_at(1, actual, PathId::ROOT, Seg::Value.into());
         assert_eq!(paths.at(parent).materialize(), "body.value");
         let parent_pointer = paths.nodes.as_ptr();
-        let ((accepted, retried, metrics), overflowed, used) = with_limit_usage(1024, || {
+        let (((accepted, retried), metrics), overflowed, used) = with_limit_usage(1024, || {
             measure(|| {
                 assert!(crate::bounded_output::reserve_active_required(
                     requested * 20
