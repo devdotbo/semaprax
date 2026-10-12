@@ -326,3 +326,6 @@ fn complete_invocation_removes_exact_saved_final_rebuild_and_preserves_sticky_bu
     assert_eq!(observed.live, 0);
     assert_eq!(observed.allocated, observed.freed);
 }
+
+#[path = "tests/selected.rs"]
+mod selected;

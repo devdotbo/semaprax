@@ -162,6 +162,18 @@ impl<'s> ValidatedFusedSelection<'s> {
         }
         Ok(current)
     }
+    /// Test-only real join receiver for independent final-boundary controls.
+    /// A candidate still passes the complete current source/HIR join; this
+    /// neither publishes it nor changes production constructor visibility.
+    #[cfg(test)]
+    pub(in crate::hir) fn with_selected_for_test<R>(
+        &self,
+        program: &ResolvedProgram,
+        receive: impl FnOnce(&Joined<'_>, Selected<'_>) -> R,
+    ) -> Result<R, Refusal> {
+        let joined = resolution::join_current(self.source, self.producer, program)?;
+        Ok(receive(&joined, Selected::from_joined(&joined)))
+    }
     /// Freshly derive and join over the held source and program, then lend
     /// the `Joined` to `receive` for the duration of the call.
     pub(crate) fn with_joined<R>(
