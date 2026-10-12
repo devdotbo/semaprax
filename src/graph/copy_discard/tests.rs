@@ -232,7 +232,9 @@ fn nonfinite_copy_discard_retains_the_existing_nested_projected_loan_route() {
 @id("app.main") fn main()->i64 {0}
 "#;
     let rejected = crate::check(original, "graph-v84-composition.spx").unwrap_err();
-    assert!(rejected.iter().any(|diagnostic| diagnostic.code == "SPX-P209"));
+    assert!(rejected
+        .iter()
+        .any(|diagnostic| diagnostic.code == "SPX-P209"));
     // Retain the whole original return case as a negative control, and exercise
     // the same owning match's reachable discard on a conditional return path.
     let reachable = original.replace(
