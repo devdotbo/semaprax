@@ -376,3 +376,43 @@ fn full_owned_identity_substitution_and_admission_oracles_keep_every_payload() {
         }
     }
 }
+
+#[test]
+fn complete_classifier_source_join_keeps_the_existing_payer_and_full_receiver_inventory() {
+    let production = concat!(
+        include_str!("../../../bounded_output/classifier_string.rs"),
+        include_str!("../paid_type_facts.rs"),
+        include_str!("droppability.rs"),
+        include_str!("../../../hir/declaration_index/flags/paid.rs"),
+        include_str!("../../../hir/declaration_index/flags/paid/admission.rs"),
+        include_str!("../../../hir/declaration_index/flags/paid/builtin.rs"),
+        include_str!("../../../hir/declaration_index/flags/paid/compute.rs"),
+        include_str!("../../../hir/declaration_index/flags/paid/key.rs"),
+        include_str!("../../../hir/declaration_index/flags/paid/storage.rs"),
+        include_str!("../../../hir/declaration_index/flags/paid/substitute.rs")
+    );
+    // Read every production child, not just the facade. Classifier construction
+    // must use the existing explicit payer rather than mint a phase allowance.
+    for forbidden in ["ReplayBudget::new(", "with_limit_usage(", "with_limit("] {
+        assert!(
+            !production.contains(forbidden),
+            "new classifier authority: {forbidden}"
+        );
+    }
+    let complete = [
+        production,
+        include_str!("../../../bounded_output/classifier_string/tests.rs"),
+        include_str!("tests.rs"),
+        include_str!("../../../cleanup.rs"),
+        include_str!("../../../hir/declaration_index/flags.rs"),
+    ];
+    for source in complete {
+        assert!(!source.is_empty());
+    }
+    let routes = concat!(
+        include_str!("../../replay.rs"),
+        include_str!("../nested_shape.rs")
+    );
+    assert!(routes.contains("paid_type_facts::flags("));
+    assert!(routes.contains("super::paid_type_facts::needs_drop("));
+}
