@@ -11,6 +11,8 @@
 //!   call-boundary ownership, and diagnostic construction; [`hints`] holds the
 //!   fix hints both verifiers attach to the same diagnostics; [`private_names`]
 //!   presents Workspace Graph private layout declarations by provenance.
+//! - [`recovery`] recognises a read of a name whose declaring `let` was
+//!   already refused, so both verifiers report that mistake once.
 //! - [`capacity`] projects storage capacity; [`oracle`] is the test-only
 //!   recursive cross-check of the frame loop.
 
@@ -60,6 +62,7 @@ mod place;
 pub(crate) mod private_names;
 mod record_invariants;
 mod record_traversal;
+mod recovery;
 mod scope;
 mod sort_keys;
 pub(crate) mod static_text;

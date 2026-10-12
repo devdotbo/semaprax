@@ -112,7 +112,25 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                                 }
                             }
                         }
-                        if exact || upcast {
+                        // The annotation states the intended type. Binding it
+                        // after a refused value keeps that one mismatch from
+                        // failing every later use of the name. Views, arrays,
+                        // callables and undeclared names keep the value's type.
+                        let intended = match declared_ty {
+                            Type::Named { name, .. } => self.types.declaration(name).is_some(),
+                            Type::I64
+                            | Type::I32
+                            | Type::Char
+                            | Type::U8
+                            | Type::Usize
+                            | Type::F32
+                            | Type::F64
+                            | Type::Bool
+                            | Type::String
+                            | Type::Bytes => true,
+                            _ => false,
+                        };
+                        if exact || upcast || intended {
                             binding_ty = declared_ty.clone();
                             binding_mode = if matches!(declared_ty, Type::SliceU8 | Type::Str) {
                                 ParamMode::Borrow
@@ -123,7 +141,8 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                             } else {
                                 ParamMode::Value
                             };
-                        } else {
+                        }
+                        if !(exact || upcast) {
                             let diagnostic = if matches!(
                                 (&actual.ty, declared_ty),
                                 (Type::ArrayU8(_), Type::ArrayU8(_))

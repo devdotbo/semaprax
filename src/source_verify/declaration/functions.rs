@@ -1231,7 +1231,10 @@ pub(super) fn check_function_bodies<'p>(
                         function.body.span,
                     ));
                 }
+                // A body of the wrong type is already reported above; its
+                // ownership mode says nothing about the declared result.
                 if actual.ty != Type::Never
+                    && (actual.native_unit || actual.ty == function.return_type)
                     && types.needs_drop(&function.return_type)
                     && actual.mode != ParamMode::Own
                 {

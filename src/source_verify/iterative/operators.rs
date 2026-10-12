@@ -34,7 +34,8 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             (UnaryOp::Neg, None) => Type::I64,
             (UnaryOp::Not, _) => Type::Bool,
         };
-        if !actual.native_unit && actual.ty != expected {
+        let mismatched = !actual.native_unit && actual.ty != expected;
+        if mismatched {
             self.diagnostics.push(error(
                 self.program,
                 "SPX-T206",
@@ -43,7 +44,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             ));
         }
         reject_native_unit_value(self.program, operand, &actual, self.diagnostics);
-        self.values.push(Some(CheckedValue::value(expected)));
+        // A refused operand leaves the result unknown, so the reported
+        // operator stays the only diagnostic for this expression.
+        self.values
+            .push((!mismatched).then(|| CheckedValue::value(expected)));
         Ok(())
     }
 
@@ -204,6 +208,15 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 )
                 .with_help(crate::source_verify::hints::STRING_OPERATOR_HELP),
             );
+            // An arithmetic result over a string has no type. Leaving it
+            // unknown keeps a made-up i64 from failing later checks.
+            if matches!(
+                op,
+                BinaryOp::Add | BinaryOp::Sub | BinaryOp::Mul | BinaryOp::Div | BinaryOp::Rem
+            ) {
+                self.values.push(None);
+                return Ok(());
+            }
         }
         let (expected, output) = match op {
             BinaryOp::Add | BinaryOp::Sub | BinaryOp::Mul | BinaryOp::Div | BinaryOp::Rem => {

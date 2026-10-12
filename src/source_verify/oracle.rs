@@ -201,7 +201,7 @@ pub(super) fn check_expr(
                     .map(CheckedValue::value)
             })
             .or_else(|| {
-                diagnostics.push(hints::with_optional_help(
+                let unknown = hints::with_optional_help(
                     error(
                         program,
                         "SPX-T202",
@@ -209,7 +209,8 @@ pub(super) fn check_expr(
                         expr.span,
                     ),
                     hints::variant_shorthand_help(name).map(str::to_owned),
-                ));
+                );
+                if !super::recovery::follows_refused_let(current, name, &unknown, diagnostics) { diagnostics.push(unknown); }
                 None
             }),
         ExprKind::Call { name, type_arguments, args } => oracle_call(
@@ -271,7 +272,8 @@ pub(super) fn check_expr(
                     (UnaryOp::Neg, None) => Type::I64,
                     (UnaryOp::Not, _) => Type::Bool,
                 };
-                if !actual.native_unit && actual.ty != expected {
+                let mismatched = !actual.native_unit && actual.ty != expected;
+                if mismatched {
                     diagnostics.push(error(
                         program,
                         "SPX-T206",
@@ -280,6 +282,8 @@ pub(super) fn check_expr(
                     ));
                 }
                 reject_native_unit_value(program, operand, &actual, diagnostics);
+                // A refused operand leaves the result unknown.
+                if mismatched { return None; }
                 actual = CheckedValue::value(expected);
             }
             Some(actual)
@@ -385,6 +389,11 @@ pub(super) fn check_expr(
                     format!("operator `{}` does not support string operands", op.text()),
                     expr.span,
                 ).with_help(crate::source_verify::hints::STRING_OPERATOR_HELP));
+                // An arithmetic result over a string has no type. Leaving it
+                // unknown keeps a made-up i64 from failing later checks.
+                if matches!(op, BinaryOp::Add | BinaryOp::Sub | BinaryOp::Mul | BinaryOp::Div | BinaryOp::Rem) {
+                    return None;
+                }
             }
             let (expected, output) = match op {
                 BinaryOp::Add | BinaryOp::Sub | BinaryOp::Mul | BinaryOp::Div | BinaryOp::Rem => {
@@ -457,6 +466,7 @@ pub(super) fn check_expr(
                 name: type_name.clone(),
                 arguments: type_arguments.clone(),
             };
+            let reported = diagnostics.len();
             check_declared_type(
                 program,
                 &instance,
@@ -469,7 +479,8 @@ pub(super) fn check_expr(
                 TypeDeclarationKind::Record { fields } | TypeDeclarationKind::Class { fields, .. } => Some(fields.as_slice()),
                 TypeDeclarationKind::Resource { .. } | TypeDeclarationKind::Variant { .. } => None,
             });
-            if declared_fields.is_none() {
+            // A type the declared-type check just refused is reported once.
+            if declared_fields.is_none() && !diagnostics[reported..].iter().any(|diagnostic| diagnostic.severity.is_error()) {
                 diagnostics.push(error(
                     program,
                     "SPX-T215",
@@ -485,7 +496,8 @@ pub(super) fn check_expr(
                         .iter()
                         .find(|candidate| candidate.name == field.name)
                 });
-                if !supplied.insert(field.name.as_str()) || declared.is_none() {
+                let duplicate = !supplied.insert(field.name.as_str());
+                if duplicate || (declared.is_none() && declared_fields.is_some()) {
                     diagnostics.push(error(
                         program,
                         "SPX-T212",

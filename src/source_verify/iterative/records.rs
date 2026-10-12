@@ -38,7 +38,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         .find(|candidate| candidate.name == field.name)
                 })
             });
-        if !supplied.insert(field.name.as_str()) || declared.is_none() {
+        // Without declared fields the type itself is already refused, so an
+        // unknown field there repeats that one mistake.
+        let duplicate = !supplied.insert(field.name.as_str());
+        if duplicate || (declared.is_none() && declared_fields.is_some()) {
             self.diagnostics.push(error(
                 self.program,
                 "SPX-T212",

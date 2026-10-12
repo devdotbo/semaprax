@@ -207,7 +207,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         .map(CheckedValue::value)
                 });
                 if value.is_none() {
-                    self.diagnostics.push(hints::with_optional_help(
+                    let unknown = hints::with_optional_help(
                         error(
                             self.program,
                             "SPX-T202",
@@ -215,7 +215,15 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                             expression.span,
                         ),
                         hints::variant_shorthand_help(name).map(str::to_owned),
-                    ));
+                    );
+                    if !crate::source_verify::recovery::follows_refused_let(
+                        self.current,
+                        name,
+                        &unknown,
+                        self.diagnostics,
+                    ) {
+                        self.diagnostics.push(unknown);
+                    }
                 }
                 self.values.push(value);
             }
@@ -1288,6 +1296,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     name: type_name.clone(),
                     arguments: type_arguments.clone(),
                 };
+                let reported = self.diagnostics.len();
                 check_declared_type(
                     self.program,
                     &instance,
@@ -1297,7 +1306,12 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     self.diagnostics,
                 );
                 let declared_fields = effective_record_fields(self.types, &instance);
-                if declared_fields.is_none() {
+                // A type the declared-type check just refused is reported once.
+                if declared_fields.is_none()
+                    && !self.diagnostics[reported..]
+                        .iter()
+                        .any(|diagnostic| diagnostic.severity.is_error())
+                {
                     self.diagnostics.push(error(
                         self.program,
                         "SPX-T215",
