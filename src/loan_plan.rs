@@ -10,6 +10,16 @@ use crate::hir::{
     ResolvedStatement, ResolvedType, ValueId,
 };
 
+pub(crate) use storage::PlannerError as FundedError;
+
+pub(crate) fn build_plan_with_reservation(
+    program: &ResolvedProgram,
+    function: &ResolvedFunction,
+    payer: &crate::bounded_output::cfg_reservation::CfgReservation,
+) -> Result<LoanPlan, FundedError> {
+    funded_flat::build(program, function, payer)
+}
+
 pub const LOAN_PLAN_SCHEMA_V1: &str = "semaprax.loan-plan.v1";
 pub const LOAN_PLAN_SCHEMA_V2: &str = "semaprax.loan-plan.v2";
 pub const LOAN_PLAN_SCHEMA_V3: &str = "semaprax.loan-plan.v3";

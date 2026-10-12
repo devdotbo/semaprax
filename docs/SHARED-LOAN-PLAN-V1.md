@@ -397,7 +397,7 @@ account excess and fail closed. Its observer encloses acquisition, all those
 constructors, refusal publication and Drop, excluding only prior source/CFG
 construction and the already established Budget context.
 
-This is partial storage funding, not canonical caller activation. Candidate
+This is scoped planner storage funding. Candidate
 discovery, native/pattern alias inventories and current CFG containers also
 use the captured owner on the private path. Map/set payment uses a disclosed
 conservative pinned B-tree node upper for each genuinely new key and one
@@ -417,9 +417,15 @@ Rejected execution-owner probes no longer construct discarded diagnostics;
 selected missing/ambiguous diagnostics keep their original text and order.
 Whole private planner observers now include projected record Vecs, String
 Vecs and lexical For freeze validation through exact/short refusal and Drop.
-Canonical activation still awaits the final caller
-handoff and independent source review. Upstream ModuleIndex
-and ConstructorSeed ordering, standalone legacy planning, final independent
-loan validation, forecasts and every literal limit remain unchanged. These
-source controls are unexecuted and establish no application fit or whole-plan
+The active canonical caller acquires one owner after the unchanged ModuleIndex
+and ConstructorSeed phases. Every function/instance rebuild, complete Deferred
+comparison and actual append uses it before storage is lent to the pure
+validator. Physical failure publishes that owner's paid text; semantic errors
+retain their legacy diagnostic unchanged. A failed owner is never replaced
+within the invocation. Standalone unobserved planning remains the original
+receiver, and raw-plan storage-only tests retain their independent payer.
+Upstream seed/index work, later validation allocations and legacy semantic
+diagnostic text remain outside this scope. Original final independent loan
+validation, forecasts and every literal limit remain unchanged. These source
+controls are unexecuted and establish no application fit or whole-validator
 funding claim.

@@ -1,11 +1,10 @@
-//! Private funding route pending actual canonical caller handoff. Legacy
+//! Private funding route for the authenticated canonical caller. Legacy
 //! semantic diagnostics and upstream compiler preflight remain outside this
-//! storage protocol; canonical callers must not activate it until reviewed.
+//! storage protocol; no whole-validator funding claim follows.
 use super::*;
 use crate::bounded_output::cfg_reservation::CfgReservation;
 use super::storage::{classify, PlannerError};
 
-#[cfg_attr(not(test), allow(dead_code, reason = "private partial flat-storage receiver; full caller inventory payment is not yet activated"))]
 pub(super) fn build(
     program: &ResolvedProgram,
     function: &ResolvedFunction,

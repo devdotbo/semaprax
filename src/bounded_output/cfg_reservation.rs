@@ -24,7 +24,6 @@ pub(crate) struct CfgReservation {
 }
 
 impl CfgReservation {
-    #[cfg_attr(not(test), allow(dead_code, reason = "private CFG caller acquisition awaits complete inventory payment"))]
     pub(crate) fn acquire() -> Result<Self, Refused> {
         let budget = active().ok_or(Refused::NoOwner)?;
         let bytes = size_of::<Self>().checked_add(MESSAGE.len()).ok_or_else(|| {
@@ -88,7 +87,6 @@ impl CfgReservation {
     }
 
     /// Consumes this exact owner; no new String or formatting after refusal.
-    #[cfg_attr(not(test), allow(dead_code, reason = "paid outward CFG report awaits complete caller activation"))]
     pub(crate) fn diagnostic(mut self) -> Diagnostic {
         debug_assert!(self.first.get().is_some());
         self.text.push_str(MESSAGE);

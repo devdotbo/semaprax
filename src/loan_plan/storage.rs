@@ -40,7 +40,6 @@ pub(super) fn filled<T: Clone>(
 
 // This tag is selected exclusively from the actual affine owner's first
 // failure, never from Diagnostic code/text (including a semantic empty H006).
-#[cfg_attr(not(test), allow(dead_code, reason = "private typed outward receipt awaits complete caller activation"))]
 pub(crate) enum PlannerError {
     Physical(crate::bounded_output::cfg_reservation::Refused),
     Semantic(Diagnostic),

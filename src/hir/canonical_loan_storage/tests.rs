@@ -320,3 +320,76 @@ fn actual_storage_payer_literal_capacities_exact_short_and_drop_keep_first_recei
     assert_eq!(used, 3);
     assert_eq!(receipt.unwrap().requested, 5);
 }
+
+#[test]
+fn actual_canonical_caller_funds_rebuild_append_and_drop_on_one_invocation() {
+    use crate::test_allocation_observer::measure;
+    let program = fixture();
+    let directory = crate::hir::function_directory::caller::prepare(&program).unwrap();
+    let seed = ConstructorSeed::authenticate(&program, Some(&directory)).unwrap();
+    let expected = old::Inventory::rebuild(&program).unwrap();
+    assert_eq!(expected.origins.len(), 9);
+    assert!(!program.function_instances.is_empty());
+    // Source checking, ModuleIndex/constructor authentication, and the fixed
+    // existing Budget context are outside this planner+append observation.
+    // No claim about the later full validator allocations is made here.
+    let run = |limit| crate::bounded_output::with_limit_usage_refusal(limit, || measure(|| {
+        match caller::prepare(&seed) {
+            Ok(storage) => {
+                same(&storage, &expected);
+                assert!(storage.is_current(&program));
+                drop(storage);
+                true
+            }
+            Err(report) => {
+                assert_eq!(report.code, "SPX-H006");
+                assert_eq!(report.message, "canonical loan CFG storage reservation refused");
+                drop(report);
+                // The same invocation cannot acquire a fresh report/allowance
+                // after failure. This inline setup refusal allocates no text.
+                let retry = caller::prepare(&seed).err().unwrap();
+                assert_eq!(retry.code, "SPX-H006");
+                assert!(retry.message.is_empty());
+                drop(retry);
+                assert!(!crate::bounded_output::reserve_active_required(0));
+                false
+            }
+        }
+    }));
+    let ((success, observed), refused, exact, first) = run(usize::MAX);
+    assert!(success);
+    assert!(!refused);
+    assert_eq!(first, None);
+    assert!(observed.allocations > 8);
+    assert!(observed.allocated <= exact);
+    assert_eq!(observed.freed, observed.allocated);
+    assert_eq!(observed.live, 0);
+    assert!(!observed.invalid);
+    let ((success, repeated), refused, used, first) = run(exact);
+    assert!(success);
+    assert!(!refused);
+    assert_eq!(used, exact);
+    assert_eq!(first, None);
+    assert_eq!(repeated.allocated, observed.allocated);
+    assert_eq!(repeated.allocations, observed.allocations);
+    assert_eq!(repeated.freed, repeated.allocated);
+    assert_eq!(repeated.live, 0);
+    assert!(!repeated.invalid);
+    let ((success, short), refused, _, first) = run(exact - 1);
+    assert!(!success);
+    assert!(refused);
+    assert!(first.is_some());
+    assert_eq!(short.freed, short.allocated);
+    assert_eq!(short.live, 0);
+    assert!(!short.invalid);
+    // A different invocation gets its own existing ledger; the prior failure
+    // neither grants storage nor poisons an unrelated fresh caller.
+    let ((success, isolated), refused, used, first) = run(exact);
+    assert!(success);
+    assert!(!refused);
+    assert_eq!(used, exact);
+    assert_eq!(first, None);
+    assert_eq!(isolated.freed, isolated.allocated);
+    assert_eq!(isolated.live, 0);
+    assert!(!isolated.invalid);
+}
