@@ -249,6 +249,32 @@ fn deferred_receipt_seals_exact_subject_and_allocates_no_carrier_or_plan_payload
         (0, 0, 0, 0)
     );
     assert!(!observed.invalid);
+    let mut forged = program.clone();
+    forged.functions[0].loan_plan.schema = "forged";
+    // The exact detailed legacy text is constructed outside the active owner.
+    // Neither old nor deferred diagnostic rendering claims paid storage.
+    let expected = Diagnostic::io(
+        "SPX-H006",
+        format!(
+            "function `{}` has forged shared-loan evidence",
+            forged.functions[0].id
+        ),
+    );
+    for limit in [0usize, 1] {
+        let deferred = receipt(&forged);
+        let ((), failed, used, first) =
+            crate::bounded_output::with_limit_usage_refusal(limit, || {
+                assert_eq!(crate::bounded_output::active_remaining(), Some(limit));
+                let original = crate::loan_plan::forged_evidence(&forged.functions[0]);
+                let actual = deferred.finish(&forged).unwrap_err();
+                assert_eq!(original, expected);
+                assert_eq!(actual, expected);
+                drop((original, actual));
+                assert_eq!(crate::bounded_output::active_remaining(), Some(limit));
+                assert!(crate::bounded_output::reserve_active_required(0));
+            });
+        assert_eq!((failed, used, first), (false, 0, None));
+    }
 }
 
 #[test]

@@ -300,8 +300,9 @@ constructors retain the original owned indexes for independent oracle controls.
 
 This prices only the explicit lookup/probe vectors. Independent loan-plan
 builder scratch, semantic diagnostics, other validator storage and temporary
-closure function construction remain open payers. The terminal independent
-`loan_plan::validate_program` is unchanged. No forecast discount, quota change,
+closure function construction remain open payers. The standalone/legacy
+`loan_plan::validate_program` remains an independent rebuild; the joined
+invocation route below removes only its repeated terminal rebuild. No forecast discount, quota change,
 whole-validator funding, application fit or runtime advantage follows from this
 source tranche. Storage observers exclude input plans and fixed ledger setup
 explicitly; complete compiler/application inequalities remain unchanged.
