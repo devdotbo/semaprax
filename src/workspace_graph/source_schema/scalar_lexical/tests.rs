@@ -9,7 +9,7 @@ use crate::cleanup_plan::{
     ReplayPhysicalRefusal, SelectedReplayCause, SelectedReplayUnpaidReason,
 };
 use crate::interpreter::ResolvedEvaluationOutcome;
-use crate::test_allocation_observer::{measure, Metrics};
+use crate::test_allocation_observer::{current_metrics, measure, Metrics};
 use crate::workspace_graph::source_schema::REPORT;
 
 const PATH: &str = "src/app.spx";
@@ -600,19 +600,55 @@ fn capture_selection_is_metered_and_unaffected_modules_keep_exact_builder_usage(
 }
 
 #[test]
+fn capture_capacity_excess_is_debited_after_the_fact_and_stays_refused() {
+    let member = std::mem::size_of::<capture::Member>();
+    let excess = |limit: usize, actual: usize| {
+        crate::bounded_output::with_limit_usage_refusal(limit, || {
+            let report = capture::refuse_excess::<capture::Member>(actual, 3);
+            // No later zero or fitting request can restore admission.
+            let restored = crate::bounded_output::reserve_active(0);
+            (report[0].code, restored)
+        })
+    };
+    // Admitted actual excess is debited exactly, then the mismatch poisons.
+    let ((code, restored), overflowed, used, first) = excess(2 * member + 7, 5);
+    assert_eq!((code, restored, overflowed), ("SPX-G171", false, true));
+    assert_eq!(used, 2 * member);
+    assert_eq!(first.unwrap().requested, usize::MAX);
+    // Unpayable actual excess is the sticky first refusal and debits nothing.
+    let ((code, restored), overflowed, used, first) = excess(2 * member - 1, 5);
+    assert_eq!((code, restored, overflowed), ("SPX-G171", false, true));
+    assert_eq!(used, 0);
+    assert_eq!(first.unwrap().requested, 2 * member);
+    // A short allocation has no excess to debit and still poisons.
+    let ((code, restored), overflowed, used, first) = excess(MAX_CHANGE_BUILDER_BYTES, 2);
+    assert_eq!((code, restored, overflowed, used), ("SPX-G171", false, true, 0));
+    assert_eq!(first.unwrap().requested, usize::MAX);
+}
+
+#[test]
 fn source_less_change_view_keeps_the_original_refusal() {
     let (build, _) = build(&canonical(&source(BODY)));
     assert_eq!(build.into_change_view().unwrap_err()[0].code, "SPX-G410");
 }
 
-fn receive_under(
+/// One observation for reception and the whole lifetime of what it returns.
+/// `inspect` receives the owned answer and the live metrics at return; it
+/// inspects and drops every receipt, report and ledger owner inside the
+/// observed scope and hands back Copy scalar facts only.
+fn receive_observed<F: Copy>(
     build: &WorkspaceGraphBuild,
     sources: &dyn ReceivingSources,
     limit: usize,
-) -> (Result<Option<&'static str>, SelectedReplayRefusal>, Metrics, bool, usize) {
-    let ((answer, metrics), overflowed, used) =
-        crate::bounded_output::with_limit_usage(limit, || measure(|| received(build, PATH, sources)));
-    (answer, metrics, overflowed, used)
+    inspect: impl FnOnce(Result<Option<&'static str>, SelectedReplayRefusal>, Metrics) -> F,
+) -> (F, Metrics, bool, usize) {
+    let ((facts, metrics), overflowed, used) = crate::bounded_output::with_limit_usage(limit, || {
+        measure(|| {
+            let answer = received(build, PATH, sources);
+            inspect(answer, current_metrics())
+        })
+    });
+    (facts, metrics, overflowed, used)
 }
 
 #[test]
@@ -620,22 +656,28 @@ fn zero_and_report_one_short_return_the_unpaid_ledger_without_allocating() {
     let (build, sources) = build(&canonical(&source(BODY)));
     let slot = std::mem::size_of::<Diagnostic>();
     for (limit, charged) in [(0, 0), (slot - 1, 0), (REPORT.paid_bytes() - 1, slot)] {
-        let (answer, metrics, overflowed, used) = receive_under(&build, &sources, limit);
-        let Err(mut refusal) = answer else {
-            panic!("a one-short enclosing budget cannot fund the report carrier")
-        };
+        let ((), metrics, overflowed, used) =
+            receive_observed(&build, &sources, limit, |answer, returned| {
+                let Err(mut refusal) = answer else {
+                    panic!("a one-short enclosing budget cannot fund the report carrier")
+                };
+                assert!(!returned.invalid);
+                assert_eq!((returned.allocations, returned.allocated, returned.live), (0, 0, 0));
+                assert!(!refusal.is_paid());
+                assert_eq!(first_receipt(&mut refusal), ReplayPhysicalRefusal::EnclosingBudget);
+                // The typed boundary consumes the refusal and its ledger here.
+                let unpaid = refusal.into_published().expect_err("unpaid carrier");
+                assert_eq!(current_metrics().allocations, returned.allocations);
+                assert!(matches!(unpaid.reason(), SelectedReplayUnpaidReason::Carrier(_)));
+                // Only the named unfunded boundary allocates the same literal.
+                let literal = unpaid.into_unfunded();
+                assert_public(&literal);
+                drop(literal);
+            });
         assert!(!metrics.invalid);
-        assert_eq!((metrics.allocations, metrics.allocated, metrics.live), (0, 0, 0));
+        assert_eq!(metrics.live, 0, "ledger and unfunded literal dropped in scope");
         assert!(overflowed);
         assert_eq!(used, charged);
-        assert!(!refusal.is_paid());
-        assert_eq!(first_receipt(&mut refusal), ReplayPhysicalRefusal::EnclosingBudget);
-        let (unpaid, typed) = measure(|| refusal.into_published());
-        assert_eq!(typed.allocations, 0);
-        let unpaid = unpaid.expect_err("unpaid carrier");
-        assert!(matches!(unpaid.reason(), SelectedReplayUnpaidReason::Carrier(_)));
-        // Only the named unfunded boundary allocates the same literal.
-        assert_public(&unpaid.into_unfunded());
     }
 }
 
@@ -644,41 +686,51 @@ fn exact_success_one_short_refusal_and_drop_share_one_observed_owner() {
     let (build, sources) = build(&canonical(&source(BODY)));
     // Exact report payment: paid setup refusal on the original carrier.
     let paid = REPORT.paid_bytes();
-    let (answer, metrics, overflowed, used) = receive_under(&build, &sources, paid);
-    let Err(refusal) = answer else {
-        panic!("an exact report payment leaves no preparation backing")
-    };
-    assert!(overflowed && used == paid && refusal.is_paid());
-    assert_eq!(
-        refusal.refused().map(|r| r.cause()),
-        Some(SelectedReplayCause::Setup)
-    );
+    let (cause, metrics, overflowed, used) = receive_observed(&build, &sources, paid, |answer, _| {
+        let Err(refusal) = answer else {
+            panic!("an exact report payment leaves no preparation backing")
+        };
+        assert!(refusal.is_paid());
+        let cause = refusal.refused().map(|r| r.cause());
+        drop(refusal);
+        cause
+    });
+    assert!(overflowed && used == paid);
+    assert_eq!(cause, Some(SelectedReplayCause::Setup));
     assert!(!metrics.invalid);
-    drop(refusal);
+    assert_eq!(metrics.live, 0, "the paid setup refusal dropped in scope");
     // Successful receipt: acquisition, setup, authentication, Session, every
     // member, finish, the returned receipt and Drop in one observed scope.
-    let (answer, metrics, overflowed, used) =
-        receive_under(&build, &sources, MAX_CHANGE_BUILDER_BYTES);
-    assert!(matches!(answer, Ok(Some(_))) && !overflowed);
+    let (selected, metrics, overflowed, used) =
+        receive_observed(&build, &sources, MAX_CHANGE_BUILDER_BYTES, |answer, _| {
+            matches!(answer, Ok(Some(_)))
+        });
+    assert!(selected && !overflowed);
     assert!(!metrics.invalid);
     assert_eq!(metrics.live, 0, "every owner and the receipt dropped");
     assert!(metrics.allocated <= used, "every allocation was charged first");
-    // One byte short of the successful route refuses with the prepaid receipt.
-    let (answer, metrics, overflowed, _) = receive_under(&build, &sources, used - 1);
-    let Err(refusal) = answer else {
-        panic!("one byte short of the successful route must refuse")
-    };
-    assert!(overflowed && refusal.is_paid());
-    assert_public(refusal.report().unwrap());
-    let cause = refusal.refused().unwrap().cause();
+    // One byte short of the successful route refuses with the prepaid receipt;
+    // the report, receipt and ledger are inspected and dropped in scope.
+    let (cause, metrics, overflowed, _) =
+        receive_observed(&build, &sources, used - 1, |answer, _| {
+            let Err(refusal) = answer else {
+                panic!("one byte short of the successful route must refuse")
+            };
+            assert!(refusal.is_paid());
+            assert_public(refusal.report().unwrap());
+            assert!(
+                refusal.receipt().is_some() || refusal.fact_receipt().is_some(),
+                "the first paid receipt stays with the failed owner"
+            );
+            let cause = refusal.refused().unwrap().cause();
+            drop(refusal);
+            cause
+        });
+    assert!(overflowed);
     assert!(
         matches!(cause, SelectedReplayCause::Budget | SelectedReplayCause::Session),
         "{cause:?}"
     );
-    assert!(
-        refusal.receipt().is_some() || refusal.fact_receipt().is_some(),
-        "the first paid receipt stays with the failed owner"
-    );
     assert!(!metrics.invalid);
-    drop(refusal);
+    assert_eq!(metrics.live, 0, "the paid refusal and its ledger dropped in scope");
 }

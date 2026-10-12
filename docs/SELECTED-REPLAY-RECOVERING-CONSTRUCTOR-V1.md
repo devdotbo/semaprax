@@ -282,7 +282,12 @@ paired resolved function and the census signature. Only then does it reserve
 the one census cursor. Each body walk charges its `DEPTH` slot initialization
 before the array exists. No `BTreeMap` lookup is performed. Before demand,
 exhaustion declines (`None`); it does not fail. A module that is not selected
-pays no builder bytes beyond that cursor.
+pays no builder bytes beyond that cursor. If the capture member `Vec` or the
+receiver's member census `Vec` is allocated with a capacity other than the one
+requested, the allocator's actual excess is charged afterwards to the same
+ledger. That charge is never treated as prepaid. Capture then poisons the
+active builder budget, and the receiver fails its preparation. Either way the
+first refusal stays sticky.
 
 The inventory retains the exact path, module, ordered member identities,
 captured identity origins and typed member digests. It retains no source
@@ -319,6 +324,7 @@ Owning selectors under `workspace_graph::source_schema::scalar_lexical::tests`:
 - `receipt_selects_only_its_own_module_without_post_release_work`
 - `census_charges_cursor_initialization_before_the_walk_with_exact_one_short_and_zero_work`
 - `capture_selection_is_metered_and_unaffected_modules_keep_exact_builder_usage`
+- `capture_capacity_excess_is_debited_after_the_fact_and_stays_refused`
 - `source_less_change_view_keeps_the_original_refusal`
 - `zero_and_report_one_short_return_the_unpaid_ledger_without_allocating`
 - `exact_success_one_short_refusal_and_drop_share_one_observed_owner`

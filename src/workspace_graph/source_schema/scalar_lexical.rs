@@ -164,6 +164,12 @@ fn authenticate<'a>(
     preparation.try_reserve_array::<bool>(anchor, count, "scalar lexical member census")?;
     let mut lexical = Vec::with_capacity(count);
     if lexical.capacity() != count {
+        // The allocator's actual excess already exists: debit it on the same
+        // ledger after the fact (never claimed prepaid). A refused debit is
+        // the sticky first refusal; otherwise the mismatch poisons the owner.
+        if let Some(excess) = lexical.capacity().checked_sub(count) {
+            preparation.try_reserve_array::<bool>(anchor, excess, "scalar lexical member census")?;
+        }
         preparation.fail();
         return Err(Refused::MISMATCH);
     }

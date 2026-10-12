@@ -90,6 +90,21 @@ fn key_units(left: &str, right: &str) -> Option<usize> {
     left.len().min(right.len()).checked_add(1)
 }
 
+/// A capacity mismatch after allocation. The allocator's actual excess
+/// already exists: debit it after the fact (never claimed prepaid), then
+/// poison the active owner so the first refusal stays sticky even when that
+/// debit was admitted.
+pub(in crate::workspace_graph) fn refuse_excess<T>(actual: usize, count: usize) -> Vec<Diagnostic> {
+    if let Some(excess) = actual
+        .checked_sub(count)
+        .and_then(|slots| slots.checked_mul(std::mem::size_of::<T>()))
+    {
+        let _ = crate::bounded_output::reserve_active_required(excess);
+    }
+    let _ = crate::bounded_output::reserve_active_required(usize::MAX);
+    capacity()
+}
+
 fn debit(work: &mut usize, units: usize) -> Result<(), Vec<Diagnostic>> {
     *work = work.checked_sub(units).ok_or_else(fail)?;
     Ok(())
@@ -216,7 +231,7 @@ pub(in crate::workspace_graph) fn capture_metered(
     )?;
     let mut members = Vec::with_capacity(count);
     if members.capacity() != count {
-        return Err(capacity());
+        return Err(refuse_excess::<Member>(members.capacity(), count));
     }
     // The authored origin is the paired AST function's own identity flag.
     for (source, function) in program.functions.iter().zip(&resolved.functions) {
