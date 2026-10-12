@@ -321,6 +321,8 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         include_str!("../../../../../src/hir/declaration_index/identity_payer.rs"),
         include_str!("../../../../../src/hir/identity_resolution.rs"),
         include_str!("../../../../../src/hir/identity_resolution/tests.rs"),
+        include_str!("../../../../../src/bounded_output/cfg_reservation.rs"),
+        include_str!("../../../../../src/bounded_output/cfg_reservation/tests.rs"),
         include_str!("../../../../../src/bounded_output/identity_reservation.rs"),
         include_str!("../../../../../src/bounded_output/identity_reservation/tests.rs"),
         include_str!("../../../../../src/hir/declaration_index/identity_reuse/paid.rs"),

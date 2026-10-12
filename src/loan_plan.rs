@@ -51,6 +51,8 @@ mod saved_planner;
 #[cfg(test)]
 mod shared_identity_tests;
 pub(crate) mod traversal;
+mod storage;
+mod funded_flat;
 #[cfg(test)]
 mod whole_oracle_tests;
 mod work;
@@ -386,17 +388,19 @@ fn build_cfg_plan(
     build_cfg_plan_counted(program, function, &mut work)
 }
 
-#[derive(Clone, Copy, Debug)]
-struct WorkCounter {
+#[derive(Clone, Copy)]
+struct WorkCounter<'payer> {
+    allocation: Option<&'payer crate::bounded_output::cfg_reservation::CfgReservation>,
     #[cfg(test)]
     uncached_reachability: bool,
     used: usize,
     limit: usize,
 }
 
-impl WorkCounter {
+impl<'payer> WorkCounter<'payer> {
     fn new(limit: usize) -> Self {
         Self {
+            allocation: None,
             used: 0,
             limit,
             #[cfg(test)]
@@ -986,7 +990,7 @@ fn build_cfg<'a>(
     if edges.len() > MAX_LOAN_EDGES_V1 {
         return Err(error("function exceeds 4,096 loan CFG edges"));
     }
-    let adjacency = adjacency::Adjacency::build(points.len(), &edges)?;
+    let adjacency = adjacency::Adjacency::build_with_storage(points.len(), &edges, work.allocation)?;
     Ok(Cfg {
         points,
         nodes,

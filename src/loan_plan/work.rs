@@ -37,13 +37,13 @@ struct PointQueue {
 impl PointQueue {
     const NONE: u16 = u16::MAX;
 
-    fn new(points: usize) -> Self {
-        Self {
-            next: vec![Self::NONE; points].into_boxed_slice(),
-            previous: vec![Self::NONE; points].into_boxed_slice(),
-            queued: vec![false; points].into_boxed_slice(),
+    fn new(points: usize, work: &WorkCounter<'_>) -> Result<Self, Diagnostic> {
+        Ok(Self {
+            next: super::storage::filled(points, Self::NONE, work.allocation)?.into_boxed_slice(),
+            previous: super::storage::filled(points, Self::NONE, work.allocation)?.into_boxed_slice(),
+            queued: super::storage::filled(points, false, work.allocation)?.into_boxed_slice(),
             head: Self::NONE,
-        }
+        })
     }
 
     fn push(&mut self, point: u16) {
@@ -88,8 +88,8 @@ impl Reachability {
         work: &mut WorkCounter,
     ) -> Result<Self, Diagnostic> {
         let words = starts.len().div_ceil(u64::BITS as usize);
-        let mut by_point = vec![0; words * cfg.points.len()].into_boxed_slice();
-        let mut pending = PointQueue::new(cfg.points.len());
+        let mut by_point = super::storage::filled(words * cfg.points.len(), 0_u64, work.allocation)?.into_boxed_slice();
+        let mut pending = PointQueue::new(cfg.points.len(), work)?;
         // Charge actual row initialization, seeding, dequeues and edge-word
         // merges. No hypothetical separate traversal per loan is charged.
         for _ in &by_point {

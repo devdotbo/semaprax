@@ -381,3 +381,26 @@ control retains complete ordinary HIR validation, saved flat enumeration
 against the cleanup CFG, factored comparison, and an ordinal-to-exact-pointer
 census of each returned family. The ordinary ordinal counter is thus scoped to
 the complete family reaching that memo, not reused across combined work owners.
+### Private caller-held flat-storage funding (OPT-792, source-only)
+
+A private affine CFG reservation captures the existing active builder ledger
+and a dedicated prepaid refusal String. It creates no quota. Every request,
+including zero bytes, checks the same invocation identity and sticky first
+refusal. Physical failure is distinguished by an owner-held Copy tag; a legacy
+semantic empty H006 is not a funding receipt. Paid refusal transfers the same
+text backing without formatting or acquiring a replacement ledger.
+
+The first private receiver prepays actual flat adjacency and batched forward
+reachability arrays before construction and retains the unchanged semantic
+work order and complete saved planner oracle. Exact-capacity discrepancies
+account excess and fail closed. Its observer encloses acquisition, all those
+constructors, refusal publication and Drop, excluding only prior source/CFG
+construction and the already established Budget context.
+
+This is partial storage funding, not canonical caller activation. Candidate,
+native/pattern alias maps, draft/live inventories and final materialization
+still require same-owner payment before that activation. Upstream ModuleIndex
+and ConstructorSeed ordering, standalone legacy planning, final independent
+loan validation, forecasts and every literal limit remain unchanged. These
+source controls are unexecuted and establish no application fit or whole-plan
+funding claim.

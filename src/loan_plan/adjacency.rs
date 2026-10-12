@@ -19,11 +19,20 @@ pub(super) struct Adjacency {
 }
 
 impl Adjacency {
+    #[cfg(test)]
     pub(super) fn build(points: usize, edges: &[(u16, u16)]) -> Result<Self, Diagnostic> {
+        Self::build_with_storage(points, edges, None)
+    }
+
+    pub(super) fn build_with_storage(
+        points: usize,
+        edges: &[(u16, u16)],
+        payer: Option<&crate::bounded_output::cfg_reservation::CfgReservation>,
+    ) -> Result<Self, Diagnostic> {
         let edge_count = u16::try_from(edges.len())
             .map_err(|_| error("function exceeds 4,096 loan CFG edges"))?;
         debug_assert!(edges.windows(2).all(|pair| pair[0] <= pair[1]));
-        let mut successor_offsets = Vec::with_capacity(points + 1);
+        let mut successor_offsets = super::storage::vector(points + 1, payer)?;
         let mut cursor = 0;
         for node in 0..=points {
             while cursor < edges.len() && (edges[cursor].0 as usize) < node {
@@ -33,7 +42,7 @@ impl Adjacency {
         }
         // Count, convert to end offsets, then fill from the last edge so each
         // bucket keeps ascending edge order; every slot ends at its start.
-        let mut predecessor_offsets = vec![0_u16; points + 1];
+        let mut predecessor_offsets = super::storage::filled(points + 1, 0_u16, payer)?;
         for (_, to) in edges {
             predecessor_offsets[*to as usize] += 1;
         }
@@ -43,7 +52,7 @@ impl Adjacency {
             *slot = end;
         }
         predecessor_offsets[points] = edge_count;
-        let mut predecessors = vec![0_u16; edges.len()];
+        let mut predecessors = super::storage::filled(edges.len(), 0_u16, payer)?;
         for (from, to) in edges.iter().rev() {
             let slot = &mut predecessor_offsets[*to as usize];
             *slot -= 1;
