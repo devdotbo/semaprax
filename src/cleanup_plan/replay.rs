@@ -3918,7 +3918,7 @@ fn expression_skeleton_run<'hir>(
                                 frames,
                                 Frame::CallArgument {
                                     expression,
-                                    params: params.into(),
+                                    params,
                                     args,
                                     index: 0,
                                     states,
@@ -4356,7 +4356,7 @@ fn expression_skeleton_run<'hir>(
                     replay_error(function, "byte range parameter arity is inconsistent")
                 })?;
                 let states = sequence_call_argument(
-                    program, function, expression, parameter.into(), argument, index, states, &suffixes,
+                    program, function, expression, parameter, argument, index, states, &suffixes,
                     work,
                 )?;
                 let next = index + 1;
