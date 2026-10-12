@@ -70,10 +70,10 @@ fn production_chain_preserves_parameter_requires_body_result_and_ensures_first_e
     ] {
         let mut function = original.clone();
         match phase {
-            "parameter" => function.params[0].id = ValueId::new("bad.parameter"),
+            "parameter" => function.params[0].id = ValueId::new("bad.parameter".to_owned()),
             "requires" => function.requires[0].ty = ResolvedType::I64,
             "body" => function.body.ownership = OwnershipMode::Borrow,
-            "result" => function.result_id = ValueId::new("bad.result"),
+            "result" => function.result_id = ValueId::new("bad.result".to_owned()),
             "ensures" => function.ensures[0].ty = ResolvedType::I64,
             "requires-owner" | "ensures-owner" => {
                 let ensures = phase == "ensures-owner";

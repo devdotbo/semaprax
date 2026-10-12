@@ -223,7 +223,7 @@ fn duplicate_aliases_identities_and_late_wrong_types_preserve_old_diagnostics() 
             }
             (Err(before), Err(after)) => assert_eq!(before, after),
             _ => panic!("owned/view constructor verdict differs"),
-        }
+        };
     }
 }
 #[test]

@@ -191,7 +191,7 @@ fn invariant_and_wrapper_invalid_cases_keep_the_entire_old_error_order() {
                 );
             }
             _ => panic!("complete old/new constructor verdict differs"),
-        }
+        };
     }
 }
 

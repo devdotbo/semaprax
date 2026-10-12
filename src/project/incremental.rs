@@ -620,13 +620,13 @@ impl FrontendPass {
     pub(crate) fn resolved_module_receiving(
         &mut self,
         path: &str,
-        key: impl FnOnce() -> Result<Program, Vec<crate::diagnostic::Diagnostic>>,
+        key: impl FnOnce() -> Result<Program>,
         resolved: crate::hir::ResolvedProgram,
         resolver_bytes: usize,
         retained_loan_bytes: usize,
         function_costs: BTreeMap<String, usize>,
         reused_functions: usize,
-    ) -> Result<ResolvedModuleInput, Vec<crate::diagnostic::Diagnostic>> {
+    ) -> Result<ResolvedModuleInput> {
         if self.semantic {
             Ok(self.resolved_module(
                 path,
