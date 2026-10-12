@@ -295,7 +295,6 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
             include_str!("../../../../../src/hir/byte_slice_provenance/inline_range.rs"),
             "\n",
             include_str!("../../../../../src/hir/byte_slice_provenance/vec_field.rs"),
-            "\n",
             include_str!("../../../../../src/hir/byte_slice_provenance/borrowed_sequence_tests.rs")
         ),
         include_str!("../../../../../src/hir/capacity_probe.rs"),
@@ -329,7 +328,6 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         include_str!("../../../../../src/hir/cache_codec.rs"),
         concat!(
             include_str!("../../../../../src/hir/declaration_index.rs"),
-            "\n",
             include_str!("../../../../../src/hir/declaration_index/leaf_drop_tests.rs")
         ),
         include_str!("../../../../../src/hir/declaration_index/source.rs"),
