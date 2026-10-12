@@ -790,7 +790,7 @@ impl DeclarationIndex {
                     IdentityOrigin::Automatic
                 },
             );
-            let owner = DeclarationId::new(declaration.stable_id.clone());
+            let owner = index.inserted_identity(&declaration.stable_id);
             let parameters = declaration
                 .type_parameters
                 .iter()
@@ -849,7 +849,7 @@ impl DeclarationIndex {
                     .as_ref()
                     .expect("verified lifecycle has an explicit identity");
                 index.insert_owned_declaration(
-                    DeclarationId::new(declaration.stable_id.clone()),
+                    index.inserted_identity(&declaration.stable_id),
                     "drop".to_owned(),
                     DeclarationId::new(lifecycle_id.clone()),
                     DeclarationKind::ResourceDrop,
@@ -912,7 +912,7 @@ impl DeclarationIndex {
             else {
                 continue;
             };
-            let owner = DeclarationId::new(declaration.stable_id.clone());
+            let owner = index.inserted_identity(&declaration.stable_id);
             let mut resolved_fields = Vec::with_capacity(fields.len());
             for (ordinal, field) in fields.iter().enumerate() {
                 let ty = index
@@ -957,7 +957,7 @@ impl DeclarationIndex {
             let TypeDeclarationKind::Class { fields, methods } = &declaration.kind else {
                 continue;
             };
-            let owner = DeclarationId::new(declaration.stable_id.clone());
+            let owner = index.inserted_identity(&declaration.stable_id);
             let mut resolved_fields = Vec::with_capacity(fields.len());
             for (ordinal, field) in fields.iter().enumerate() {
                 let ty = index
@@ -1031,14 +1031,14 @@ impl DeclarationIndex {
                 }
                 index
                     .type_parameters
-                    .insert(DeclarationId::new(method.stable_id.clone()), Vec::new());
+                    .insert(index.inserted_identity(&method.stable_id), Vec::new());
             }
         }
         for declaration in program.types().iter().chain(prelude) {
             let TypeDeclarationKind::Variant { cases } = &declaration.kind else {
                 continue;
             };
-            let owner = DeclarationId::new(declaration.stable_id.clone());
+            let owner = index.inserted_identity(&declaration.stable_id);
             let mut resolved_cases = Vec::with_capacity(cases.len());
             for (case_ordinal, case) in cases.iter().enumerate() {
                 let case_id = DeclarationId::new(case.stable_id.clone());
@@ -1142,7 +1142,7 @@ impl DeclarationIndex {
             let Some(extends) = &declaration.extends else {
                 continue;
             };
-            let child = DeclarationId::new(declaration.stable_id.clone());
+            let child = self.inserted_identity(&declaration.stable_id);
             let Type::Named {
                 name: parent_name,
                 arguments: parent_arguments,
@@ -1200,7 +1200,7 @@ impl DeclarationIndex {
             if !matches!(declaration.kind, TypeDeclarationKind::Class { .. }) {
                 continue;
             }
-            let child = DeclarationId::new(declaration.stable_id.clone());
+            let child = self.inserted_identity(&declaration.stable_id);
             let mut visited = BTreeSet::new();
             let mut cursor = child.clone();
             while let Some(parent) = self.class_parents.get(&cursor) {
@@ -1224,7 +1224,7 @@ impl DeclarationIndex {
         let mut declared_fields = BTreeMap::new();
         for declaration in program.types() {
             if matches!(declaration.kind, TypeDeclarationKind::Class { .. }) {
-                let id = DeclarationId::new(declaration.stable_id.clone());
+                let id = self.inserted_identity(&declaration.stable_id);
                 if let Some(fields) = self.record_fields(&id) {
                     declared_fields.insert(id, fields.to_vec());
                 }
@@ -1234,7 +1234,7 @@ impl DeclarationIndex {
             let TypeDeclarationKind::Class { .. } = &declaration.kind else {
                 continue;
             };
-            let child = DeclarationId::new(declaration.stable_id.clone());
+            let child = self.inserted_identity(&declaration.stable_id);
             let mut chain = self.class_ancestors(&child);
             chain.reverse();
             chain.push(child.clone());
