@@ -94,6 +94,27 @@ fn checked_cold_source_preserves_limits_costs_current_key_and_body_reuse_fallbac
     assert!(old[0]
         .message
         .contains("checked function inventory exceeds its bound"));
+    // Checked cold runs before linked-source Vec/Box scopes, exactly like
+    // the original selective receiver. Foreign identities remain refused.
+    for (module, function, code) in [
+        ("std.collections", "@id(\"std.collections.vec.with-capacity\") fn with_capacity<T>(capacity:usize)->Vec<T> {vec_with_capacity<T>(capacity)}", "SPX-T283"),
+        ("std.mem", "@id(\"std.mem.box.new\") fn new<T>(value:T)->Box<T> {box_new<T>(value)}", "SPX-T286"),
+    ] {
+        let text = format!("module {module}; {function} @id(\"main\") fn main()->i64 {{0}}");
+        let current = crate::parse(&text, "cold.spx").unwrap();
+        let fresh = self::pass(&text, &current);
+        let view = SyntheticProgramView::new(&current, Vec::new()).unwrap();
+        let old = fresh.resolve_functions(&current.path, &current, None).unwrap().unwrap();
+        let new = fresh.resolve_borrowed_cold_source(&current.path, &view, None).unwrap().unwrap();
+        assert_eq!(old.resolved, new.resolved);
+        let mut foreign = current.clone();
+        foreign.module = "foreign".to_owned();
+        let view = SyntheticProgramView::new(&foreign, Vec::new()).unwrap();
+        let old = fresh.resolve_functions(&foreign.path, &foreign, None).unwrap().err().unwrap();
+        let new = fresh.resolve_borrowed_cold_source(&foreign.path, &view, None).unwrap().err().unwrap();
+        assert_eq!(old, new);
+        assert!(new.iter().any(|error| error.code == code));
+    }
 }
 
 #[test]

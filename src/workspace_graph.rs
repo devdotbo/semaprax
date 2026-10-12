@@ -4436,9 +4436,16 @@ fn build_resolved_core(
                 .flatten();
             let selective = staged!(
                 SelectiveResolution,
-                frontend.as_deref().and_then(|cache| synthetic
-                    .owned()
-                    .and_then(|input| cache.resolve_functions(&program.path, input, private)))
+                frontend.as_deref().and_then(|cache| {
+                    synthetic
+                        .owned()
+                        .and_then(|input| cache.resolve_functions(&program.path, input, private))
+                        .or_else(|| {
+                            synthetic.borrowed().and_then(|view| {
+                                cache.resolve_borrowed_cold_source(&program.path, view, private)
+                            })
+                        })
+                })
             );
             let (resolved, function_costs, reused_functions, static_text) =
                 crate::vec_ops::with_authenticated_linked_source(|| {
@@ -4447,22 +4454,10 @@ fn build_resolved_core(
                             selective.map(|resolved| resolved.into_parts())
                         } else {
                             staged!(FreshResolution, {
-                                if let Some(cold) = frontend.as_deref().and_then(|cache| {
-                                    synthetic.borrowed().and_then(|view| {
-                                        cache.resolve_borrowed_cold_source(
-                                            &program.path,
-                                            view,
-                                            private,
-                                        )
-                                    })
-                                }) {
-                                    cold.map(|resolved| resolved.into_parts())
-                                } else {
-                                    synthetic.resolve(private).map(|(resolved, work)| {
-                                        let selected = work.static_text();
-                                        (resolved, BTreeMap::new(), 0, selected)
-                                    })
-                                }
+                                synthetic.resolve(private).map(|(resolved, work)| {
+                                    let selected = work.static_text();
+                                    (resolved, BTreeMap::new(), 0, selected)
+                                })
                             })
                         }
                     })
