@@ -15,12 +15,19 @@ fn shape(node: &ObservationDag) -> Shape {
             prefix.as_ref().map(|p| Box::new(shape(p))),
             items.clone(),
         ),
-        ObservationDagKind::Cat(parts) => Shape::Cat(node.ordinal, parts.iter().map(|p| shape(p)).collect()),
-        ObservationDagKind::Alt(parts) => Shape::Alt(node.ordinal, parts.iter().map(|p| shape(p)).collect()),
+        ObservationDagKind::Cat(parts) => {
+            Shape::Cat(node.ordinal, parts.iter().map(|p| shape(p)).collect())
+        }
+        ObservationDagKind::Alt(parts) => {
+            Shape::Alt(node.ordinal, parts.iter().map(|p| shape(p)).collect())
+        }
     }
 }
 fn observation(function: &ResolvedFunction) -> Observation {
-    Rc::new(SkeletonObservation::Boolean { expression: function.body.id.clone(), value: true })
+    Rc::new(SkeletonObservation::Boolean {
+        expression: function.body.id.clone(),
+        value: true,
+    })
 }
 fn path(item: &Observation, len: usize) -> ExprSkeletonPath {
     let mut path = empty_expr_path();
@@ -35,7 +42,10 @@ fn assert_paths(old: &[ExprSkeletonPath], new: &[ExprSkeletonPath]) {
         assert_eq!(old.residual, new.residual);
         assert_eq!(old.continuation, new.continuation);
         assert_eq!(old.observations.items, new.observations.items);
-        assert_eq!(old.observations.prefix.as_ref().map(|p| shape(p)), new.observations.prefix.as_ref().map(|p| shape(p)));
+        assert_eq!(
+            old.observations.prefix.as_ref().map(|p| shape(p)),
+            new.observations.prefix.as_ref().map(|p| shape(p))
+        );
     }
 }
 
@@ -62,17 +72,31 @@ fn complete_saved_merges(selected: bool) {
     failed.failed = true;
     let mut abrupt = path(&item, 1);
     abrupt.continuation = lexical_skeleton::Continuation::Exit(item.clone());
-    let inputs = vec![path(&item, 2), singleton, failed.clone(), path(&item, 0), failed, abrupt];
+    let inputs = vec![
+        path(&item, 2),
+        singleton,
+        failed.clone(),
+        path(&item, 0),
+        failed,
+        abrupt,
+    ];
     let old = old_work.saved_merged_paths(inputs.clone()).unwrap();
     let new = new_work.merged_paths(inputs).unwrap();
     assert_paths(&old, &new);
     assert_eq!(new[1].observations.items.as_ptr(), singleton_pointer);
-    assert_eq!(old_work.budget.skeleton_spent, new_work.budget.skeleton_spent);
+    assert_eq!(
+        old_work.budget.skeleton_spent,
+        new_work.budget.skeleton_spent
+    );
     let commits = vec![(0, CleanupPlace::whole(StorageId::ProvisionalResult))];
     let mut single_call = path(&item, 4);
     single_call.residual = true;
     let call_pointer = single_call.observations.items.as_ptr();
-    let states = vec![(path(&item, 2), commits.clone()), (single_call, vec![]), (path(&item, 0), commits)];
+    let states = vec![
+        (path(&item, 2), commits.clone()),
+        (single_call, vec![]),
+        (path(&item, 0), commits),
+    ];
     let old = old_work.saved_merged_call_states(states.clone()).unwrap();
     let new = new_work.merged_call_states(states).unwrap();
     assert_eq!(old.len(), new.len());
@@ -81,7 +105,10 @@ fn complete_saved_merges(selected: bool) {
         assert_eq!(ac, bc);
     }
     assert_eq!(new[1].0.observations.items.as_ptr(), call_pointer);
-    assert_eq!(old_work.budget.skeleton_spent, new_work.budget.skeleton_spent);
+    assert_eq!(
+        old_work.budget.skeleton_spent,
+        new_work.budget.skeleton_spent
+    );
 }
 
 #[test]
@@ -96,23 +123,58 @@ fn saved_unions_preserve_shared_prefixes_ordinals_and_move_nonempty_backing() {
         b.skeleton_remaining = MAX_REPLAY_WORK_UNITS;
         let mut old_work = SkeletonWork::new(&program, function, &mut a);
         let mut new_work = SkeletonWork::new(&program, function, &mut b);
-        let old_prefix = old_work.charged_dag(ObservationDagKind::Seq(None, vec![item.clone()])).unwrap();
-        let new_prefix = new_work.charged_dag(ObservationDagKind::Seq(None, vec![item.clone()])).unwrap();
-        let members = |prefix: &Rc<ObservationDag>| vec![
-            Observations { prefix: Some(prefix.clone()), items: vec![item.clone(); 3] },
-            Observations { prefix: Some(prefix.clone()), items: vec![] },
-            Observations::default(),
-            Observations { prefix: Some(prefix.clone()), items: vec![item.clone(); 2] },
-        ];
+        let old_prefix = old_work
+            .charged_dag(ObservationDagKind::Seq(None, vec![item.clone()]))
+            .unwrap();
+        let new_prefix = new_work
+            .charged_dag(ObservationDagKind::Seq(None, vec![item.clone()]))
+            .unwrap();
+        let members = |prefix: &Rc<ObservationDag>| {
+            vec![
+                Observations {
+                    prefix: Some(prefix.clone()),
+                    items: vec![item.clone(); 3],
+                },
+                Observations {
+                    prefix: Some(prefix.clone()),
+                    items: vec![],
+                },
+                Observations::default(),
+                Observations {
+                    prefix: Some(prefix.clone()),
+                    items: vec![item.clone(); 2],
+                },
+            ]
+        };
         let inputs = members(&new_prefix);
         let pointers = [inputs[0].items.as_ptr(), inputs[3].items.as_ptr()];
-        let old = if selected { old_work.saved_union_observations(members(&old_prefix)) } else { old_work.saved_ordinary_union(members(&old_prefix)) }.unwrap();
-        let new = if selected { new_work.union_observations(inputs) } else { new_work.ordinary_union(inputs) }.unwrap();
-        assert_eq!(shape(old.prefix.as_ref().unwrap()), shape(new.prefix.as_ref().unwrap()));
-        assert_eq!(old_work.budget.skeleton_spent, new_work.budget.skeleton_spent);
-        let ObservationDagKind::Alt(parts) = &new.prefix.as_ref().unwrap().kind else { panic!("union") };
+        let old = if selected {
+            old_work.saved_union_observations(members(&old_prefix))
+        } else {
+            old_work.saved_ordinary_union(members(&old_prefix))
+        }
+        .unwrap();
+        let new = if selected {
+            new_work.union_observations(inputs)
+        } else {
+            new_work.ordinary_union(inputs)
+        }
+        .unwrap();
+        assert_eq!(
+            shape(old.prefix.as_ref().unwrap()),
+            shape(new.prefix.as_ref().unwrap())
+        );
+        assert_eq!(
+            old_work.budget.skeleton_spent,
+            new_work.budget.skeleton_spent
+        );
+        let ObservationDagKind::Alt(parts) = &new.prefix.as_ref().unwrap().kind else {
+            panic!("union")
+        };
         for (index, pointer) in [(0, pointers[0]), (3, pointers[1])] {
-            let ObservationDagKind::Seq(Some(prefix), items) = &parts[index].kind else { panic!("tail") };
+            let ObservationDagKind::Seq(Some(prefix), items) = &parts[index].kind else {
+                panic!("tail")
+            };
             assert_eq!(items.as_ptr(), pointer);
             assert!(Rc::ptr_eq(prefix, &new_prefix));
         }
@@ -122,7 +184,12 @@ fn saved_unions_preserve_shared_prefixes_ordinals_and_move_nonempty_backing() {
     }
 }
 
-fn union_probe(program: &ResolvedProgram, selected: bool, saved: bool, limit: usize) -> (Result<usize, ()>, crate::test_allocation_observer::Metrics) {
+fn union_probe(
+    program: &ResolvedProgram,
+    selected: bool,
+    saved: bool,
+    limit: usize,
+) -> (Result<usize, ()>, crate::test_allocation_observer::Metrics) {
     let function = &program.functions[0];
     let item = observation(function);
     let mut budget = ReplayBudget::with_physical(function, limit).unwrap();
@@ -132,11 +199,13 @@ fn union_probe(program: &ResolvedProgram, selected: bool, saved: bool, limit: us
     crate::test_allocation_observer::measure(|| {
         let result = (|| {
             // Input carrier/tails are real allocations paid before construction.
-            work.budget.reserve_array::<Observations>(function, 3, "test union input")?;
+            work.budget
+                .reserve_array::<Observations>(function, 3, "test union input")?;
             let mut inputs = Vec::with_capacity(3);
             let mut pointers = [std::ptr::null(); 3];
             for (index, len) in [0, 2, 5].into_iter().enumerate() {
-                work.budget.reserve_array::<Observation>(function, len, "test input tail")?;
+                work.budget
+                    .reserve_array::<Observation>(function, len, "test input tail")?;
                 let items = vec![item.clone(); len];
                 pointers[index] = items.as_ptr();
                 inputs.push(Observations::from(items));
@@ -148,9 +217,13 @@ fn union_probe(program: &ResolvedProgram, selected: bool, saved: bool, limit: us
                 (false, false) => work.ordinary_union(inputs),
             }?;
             if !saved {
-                let ObservationDagKind::Alt(parts) = &value.prefix.as_ref().unwrap().kind else { panic!("union") };
+                let ObservationDagKind::Alt(parts) = &value.prefix.as_ref().unwrap().kind else {
+                    panic!("union")
+                };
                 for index in [1, 2] {
-                    let ObservationDagKind::Seq(_, items) = &parts[index].kind else { panic!("tail") };
+                    let ObservationDagKind::Seq(_, items) = &parts[index].kind else {
+                        panic!("tail")
+                    };
                     assert_eq!(items.as_ptr(), pointers[index]);
                 }
             }
@@ -164,7 +237,10 @@ fn union_probe(program: &ResolvedProgram, selected: bool, saved: bool, limit: us
                 assert_eq!(error.code, "SPX-H006");
                 drop(error);
                 let charged = work.budget.physical.as_ref().unwrap().charged();
-                let error = work.budget.reserve_bytes(function, 0, "sticky consumed union").unwrap_err();
+                let error = work
+                    .budget
+                    .reserve_bytes(function, 0, "sticky consumed union")
+                    .unwrap_err();
                 assert_eq!(error.code, "SPX-H006");
                 drop(error);
                 assert_eq!(work.budget.physical.as_ref().unwrap().charged(), charged);
@@ -178,7 +254,12 @@ fn union_probe(program: &ResolvedProgram, selected: bool, saved: bool, limit: us
 fn owned_union_literal_clone_request_delta_and_exact_one_short_drop_receivers() {
     let program = fixture();
     let function = &program.functions[0];
-    let admission = ReplayBudget::with_physical(function, 1 << 22).unwrap().physical.as_ref().unwrap().charged();
+    let admission = ReplayBudget::with_physical(function, 1 << 22)
+        .unwrap()
+        .physical
+        .as_ref()
+        .unwrap()
+        .charged();
     let removed = 7 * std::mem::size_of::<Observation>();
     for selected in [false, true] {
         let (old, old_metrics) = union_probe(&program, selected, true, 1 << 22);
@@ -205,7 +286,11 @@ fn saved_lexical_merges_keep_failure_residual_return_and_conditional_isolation()
     let source = "module tail.lexical; @id(\"probe\") fn probe(n:i64)->i64 {let owner=\"prefix\"; let mut i=0; while i<1 {i=i+1; if n==0 {return 1;}; 0} return 0;} @id(\"main\") fn main()->i64 {0}";
     let parsed = crate::check(source, "tail-lexical.spx").unwrap();
     let program = crate::hir::resolve(&parsed).unwrap();
-    let function = program.functions.iter().find(|f| f.id.as_str() == "probe").unwrap();
+    let function = program
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "probe")
+        .unwrap();
     assert!(function.cleanup_plan.lexical_control.is_some());
     let item = observation(function);
     let mut failed = path(&item, 2);
@@ -215,9 +300,13 @@ fn saved_lexical_merges_keep_failure_residual_return_and_conditional_isolation()
     let mut returned = path(&item, 4);
     returned.continuation = lexical_skeleton::Continuation::Exit(item.clone());
     let mut conditional = path(&item, 1);
-    conditional.observations.items.push(Rc::new(SkeletonObservation::Boolean {
-        expression: function.body.id.clone(), value: false,
-    }));
+    conditional
+        .observations
+        .items
+        .push(Rc::new(SkeletonObservation::Boolean {
+            expression: function.body.id.clone(),
+            value: false,
+        }));
     for active_region in [false, true] {
         let mut a = ReplayBudget::with_physical(function, 1 << 22).unwrap();
         a.skeleton_remaining = MAX_REPLAY_WORK_UNITS;
@@ -231,8 +320,19 @@ fn saved_lexical_merges_keep_failure_residual_return_and_conditional_isolation()
             old_work.active_copy_region = Some(function.body.id.clone());
             new_work.active_copy_region = Some(function.body.id.clone());
         }
-        let inputs = vec![failed.clone(), failed.clone(), residual.clone(), returned.clone(), returned.clone(), conditional.clone(), path(&item, 0)];
-        let pointers: Vec<_> = inputs.iter().map(|p| p.observations.items.as_ptr()).collect();
+        let inputs = vec![
+            failed.clone(),
+            failed.clone(),
+            residual.clone(),
+            returned.clone(),
+            returned.clone(),
+            conditional.clone(),
+            path(&item, 0),
+        ];
+        let pointers: Vec<_> = inputs
+            .iter()
+            .map(|p| p.observations.items.as_ptr())
+            .collect();
         let old = old_work.saved_merged_paths(inputs.clone()).unwrap();
         let new = new_work.merged_paths(inputs).unwrap();
         assert_paths(&old, &new);
@@ -241,7 +341,10 @@ fn saved_lexical_merges_keep_failure_residual_return_and_conditional_isolation()
             assert_eq!(new[index].observations.items.as_ptr(), pointers[index]);
         }
         let commits = vec![(0, CleanupPlace::whole(StorageId::ProvisionalResult))];
-        let states = vec![(conditional.clone(), commits.clone()), (conditional.clone(), commits)];
+        let states = vec![
+            (conditional.clone(), commits.clone()),
+            (conditional.clone(), commits),
+        ];
         let old = old_work.saved_merged_call_states(states.clone()).unwrap();
         let new = new_work.merged_call_states(states).unwrap();
         assert_eq!(new.len(), 2);
@@ -252,7 +355,12 @@ fn saved_lexical_merges_keep_failure_residual_return_and_conditional_isolation()
     }
 }
 
-fn merge_probe(program: &ResolvedProgram, calls: bool, saved: bool, limit: usize) -> (Result<usize, ()>, crate::test_allocation_observer::Metrics) {
+fn merge_probe(
+    program: &ResolvedProgram,
+    calls: bool,
+    saved: bool,
+    limit: usize,
+) -> (Result<usize, ()>, crate::test_allocation_observer::Metrics) {
     let function = &program.functions[0];
     let item = observation(function);
     let mut budget = ReplayBudget::with_physical(function, limit).unwrap();
@@ -262,10 +370,12 @@ fn merge_probe(program: &ResolvedProgram, calls: bool, saved: bool, limit: usize
     let before = work.budget.physical.as_ref().unwrap().charged();
     crate::test_allocation_observer::measure(|| {
         let result = (|| {
-            work.budget.reserve_array::<ExprSkeletonPath>(function, 3, "test merge input")?;
+            work.budget
+                .reserve_array::<ExprSkeletonPath>(function, 3, "test merge input")?;
             let mut inputs = Vec::with_capacity(3);
             for len in [2, 3, 5] {
-                work.budget.reserve_array::<Observation>(function, len, "test merge tail")?;
+                work.budget
+                    .reserve_array::<Observation>(function, len, "test merge tail")?;
                 inputs.push(path(&item, len));
             }
             inputs[1].residual = true;
@@ -273,27 +383,48 @@ fn merge_probe(program: &ResolvedProgram, calls: bool, saved: bool, limit: usize
             let singleton = inputs[1].observations.items.as_ptr();
             let last = inputs[2].observations.items.as_ptr();
             let result: Result<(), Diagnostic> = if calls {
-                work.budget.reserve_array::<CallSkeletonState>(function, 3, "test call input")?;
+                work.budget
+                    .reserve_array::<CallSkeletonState>(function, 3, "test call input")?;
                 let states = inputs.into_iter().map(|p| (p, vec![])).collect();
-                let merged = if saved { work.saved_merged_call_states(states) } else { work.merged_call_states(states) }?;
+                let merged = if saved {
+                    work.saved_merged_call_states(states)
+                } else {
+                    work.merged_call_states(states)
+                }?;
                 // This receiver owns all state carriers until explicitly dropped.
                 if !saved {
                     assert_eq!(merged[1].0.observations.items.as_ptr(), singleton);
-                    let ObservationDagKind::Alt(parts) = &merged[0].0.observations.prefix.as_ref().unwrap().kind else { panic!("merge") };
+                    let ObservationDagKind::Alt(parts) =
+                        &merged[0].0.observations.prefix.as_ref().unwrap().kind
+                    else {
+                        panic!("merge")
+                    };
                     for (part, pointer) in parts.iter().zip([first, last]) {
-                        let ObservationDagKind::Seq(_, items) = &part.kind else { panic!("tail") };
+                        let ObservationDagKind::Seq(_, items) = &part.kind else {
+                            panic!("tail")
+                        };
                         assert_eq!(items.as_ptr(), pointer);
                     }
                 }
                 drop(merged);
                 Ok(())
             } else {
-                let merged = if saved { work.saved_merged_paths(inputs) } else { work.merged_paths(inputs) }?;
+                let merged = if saved {
+                    work.saved_merged_paths(inputs)
+                } else {
+                    work.merged_paths(inputs)
+                }?;
                 if !saved {
                     assert_eq!(merged[1].observations.items.as_ptr(), singleton);
-                    let ObservationDagKind::Alt(parts) = &merged[0].observations.prefix.as_ref().unwrap().kind else { panic!("merge") };
+                    let ObservationDagKind::Alt(parts) =
+                        &merged[0].observations.prefix.as_ref().unwrap().kind
+                    else {
+                        panic!("merge")
+                    };
                     for (part, pointer) in parts.iter().zip([first, last]) {
-                        let ObservationDagKind::Seq(_, items) = &part.kind else { panic!("tail") };
+                        let ObservationDagKind::Seq(_, items) = &part.kind else {
+                            panic!("tail")
+                        };
                         assert_eq!(items.as_ptr(), pointer);
                     }
                 }
@@ -309,7 +440,11 @@ fn merge_probe(program: &ResolvedProgram, calls: bool, saved: bool, limit: usize
                 assert_eq!(error.code, "SPX-H006");
                 drop(error);
                 let used = work.budget.physical.as_ref().unwrap().charged();
-                drop(work.budget.reserve_bytes(function, 0, "sticky merged tail").unwrap_err());
+                drop(
+                    work.budget
+                        .reserve_bytes(function, 0, "sticky merged tail")
+                        .unwrap_err(),
+                );
                 assert_eq!(work.budget.physical.as_ref().unwrap().charged(), used);
                 Err(())
             }
@@ -321,7 +456,12 @@ fn merge_probe(program: &ResolvedProgram, calls: bool, saved: bool, limit: usize
 fn saved_merge_literal_clone_delta_and_exact_one_short_receivers() {
     let program = fixture();
     let function = &program.functions[0];
-    let admission = ReplayBudget::with_physical(function, 1 << 22).unwrap().physical.as_ref().unwrap().charged();
+    let admission = ReplayBudget::with_physical(function, 1 << 22)
+        .unwrap()
+        .physical
+        .as_ref()
+        .unwrap()
+        .charged();
     // First group tails 2+3; union tails 2+5. These are four real Vec requests.
     let removed = (2 + 3 + 2 + 5) * std::mem::size_of::<Observation>();
     for calls in [false, true] {
@@ -374,6 +514,9 @@ fn consuming_merges_preserve_first_work_refusal_at_every_node_boundary() {
             }
             _ => panic!("consumption changed the first work refusal"),
         }
-        assert_eq!(old_work.budget.skeleton_spent, new_work.budget.skeleton_spent);
+        assert_eq!(
+            old_work.budget.skeleton_spent,
+            new_work.budget.skeleton_spent
+        );
     }
 }

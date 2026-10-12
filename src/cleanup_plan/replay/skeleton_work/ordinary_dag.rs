@@ -56,8 +56,11 @@ impl SkeletonWork<'_, '_> {
         if observations.items.is_empty() {
             return Ok(observations.prefix);
         }
-        self.ordinary_dag(ObservationDagKind::Seq(observations.prefix, observations.items))
-            .map(Some)
+        self.ordinary_dag(ObservationDagKind::Seq(
+            observations.prefix,
+            observations.items,
+        ))
+        .map(Some)
     }
 
     pub(super) fn ordinary_union(

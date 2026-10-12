@@ -175,7 +175,8 @@ impl SkeletonWork<'_, '_> {
             result.push((path, commits));
         }
         Ok(result)
-    }    fn saved_ordinary_freeze(
+    }
+    fn saved_ordinary_freeze(
         &mut self,
         observations: &Observations,
     ) -> Result<Option<Rc<ObservationDag>>, Diagnostic> {
@@ -254,5 +255,4 @@ impl SkeletonWork<'_, '_> {
             items: Vec::new(),
         })
     }
-
 }

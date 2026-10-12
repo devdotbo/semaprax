@@ -163,8 +163,11 @@ impl SkeletonWork<'_, '_> {
         if observations.items.is_empty() {
             return Ok(observations.prefix);
         }
-        self.charged_dag(ObservationDagKind::Seq(observations.prefix, observations.items))
-            .map(Some)
+        self.charged_dag(ObservationDagKind::Seq(
+            observations.prefix,
+            observations.items,
+        ))
+        .map(Some)
     }
 
     pub(in crate::cleanup_plan::replay) fn union_observations(
