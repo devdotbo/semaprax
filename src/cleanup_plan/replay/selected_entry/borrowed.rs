@@ -9,6 +9,7 @@ impl Preparation {
         self.construct(function, |physical, debit| {
             declarations.append_option_u8_replay_metered(physical, debit)
         })
+        .map_err(Refused::into_legacy_diagnostic)
     }
 }
 impl Session<'_> {

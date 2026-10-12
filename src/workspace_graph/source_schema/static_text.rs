@@ -3,15 +3,20 @@
 use super::*;
 use std::fmt::Write;
 mod primitive;
-pub(super) use primitive::replay as replay_lexical;
+pub(super) use primitive::replay_paid as replay_lexical_paid;
 
 const WORK: usize = 1_048_576;
 
-fn fail() -> Vec<Diagnostic> {
-    vec![graph_error(
+/// The public retained-source literal, also the legacy pass-through form a
+/// paid selected replay carrier publishes without allocation.
+pub(in crate::workspace_graph) const REPORT: crate::cleanup_plan::SelectedReplayReportForm =
+    crate::cleanup_plan::SelectedReplayReportForm::new(
         "SPX-G410",
         "retained static UTF-8 source-site authority disagrees",
-    )]
+    );
+
+fn fail() -> Vec<Diagnostic> {
+    REPORT.legacy()
 }
 struct Compare<'a>(&'a str);
 impl Write for Compare<'_> {

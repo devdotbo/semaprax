@@ -13,10 +13,10 @@ fn current(
     module: &WorkspaceResolvedModule,
     modules: &[WorkspaceResolvedModule],
     facts: &BTreeMap<String, WorkspaceDeclarationFact>,
-) -> Result<oracle::Shape, Vec<Diagnostic>> {
-    let anchor = module.functions.first().ok_or_else(fail)?;
-    let mut resources =
-        SelectedReplayPreparation::with_limits(anchor, 32_000_000, 1 << 28).map_err(|_| fail())?;
+) -> Result<oracle::Shape, Refused> {
+    let anchor = module.functions.first().ok_or(Refused::MISMATCH)?;
+    let mut resources = SelectedReplayPreparation::with_limits(anchor, 32_000_000, 1 << 28)
+        .map_err(|_| Refused::MISMATCH)?;
     let graph = graph::discover(module, modules, facts, &mut resources, anchor)?;
     let mut order = Vec::new();
     let verdict = graph::order(&graph, &mut resources, anchor, |vertex| order.push(vertex));
@@ -75,8 +75,9 @@ fn avl_bound(n: usize) -> usize {
     }
     height
 }
-fn codes(errors: &[Diagnostic]) -> Vec<&'static str> {
-    errors.iter().map(|d| d.code).collect()
+/// Public codes the legacy test-only rendering of an inline refusal carries.
+fn codes(refused: Refused) -> Vec<&'static str> {
+    legacy(refused).iter().map(|d| d.code).collect()
 }
 fn parity(build: &WorkspaceGraphBuild, name: &str) -> Result<oracle::Shape, Vec<&'static str>> {
     let module = build.hir.modules.iter().find(|m| m.module == name).unwrap();
@@ -95,8 +96,8 @@ fn parity(build: &WorkspaceGraphBuild, name: &str) -> Result<oracle::Shape, Vec<
             Ok(actual)
         }
         (Err(saved), Err(actual)) => {
-            assert_eq!(codes(&actual), codes(&saved));
-            Err(codes(&actual))
+            assert_eq!(codes(actual), codes(saved));
+            Err(codes(actual))
         }
         (saved, actual) => panic!(
             "verdict split: saved {} current {}",

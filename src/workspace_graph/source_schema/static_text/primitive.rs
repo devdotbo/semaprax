@@ -4,6 +4,19 @@ use super::*;
 mod helpers;
 mod records;
 use crate::cleanup::ReplayContext;
+use crate::cleanup_plan::{
+    SelectedReplayRefusal, SelectedReplayReport, SelectedReplayReportForm, SelectedReplaySession,
+};
+// Every authenticator on the qualified replay route refuses with this Copy
+// value; none constructs a Diagnostic, Vec or String before the transfer.
+use crate::cleanup_plan::SelectedReplayRefused as Refused;
+
+/// Test-only legacy rendering of an inline refusal as the public G410 Vec,
+/// for owners outside the qualified route that still return `Vec`.
+#[cfg(test)]
+fn legacy(_: Refused) -> Vec<Diagnostic> {
+    fail()
+}
 use crate::hir::{
     ResolvedFunction, ResolvedFunctionInstance, ResolvedFunctionTemplate, ResolvedInterface,
     ResolvedTypeDeclaration,
@@ -147,11 +160,22 @@ pub(super) fn authenticate<'a>(
 /// Static literal sites have already been independently authenticated by the
 /// caller. Rebuild primitive declarations, then run complete typed lexical
 /// replay with the same cumulative reservation for every selected function.
-pub(in crate::workspace_graph::source_schema) fn replay(
+///
+/// The actual caller selects one fixed outward `form`. Its paid carrier is
+/// acquired on this module's ledger before preparation and is the only
+/// outward report: setup, authentication, constructor and Session refusals
+/// transfer it without allocation. Authentication refuses with the Copy
+/// `Refused`; a Session refusal moves its own Diagnostic into the failed
+/// owner as the first receipt, never into the report (the public G410
+/// literal is a fixed remapping). A refused carrier returns the rejected
+/// ledger and Copy reason; only the caller's named `Unpaid` boundary may turn
+/// that into an owned, unfunded Diagnostic.
+pub(in crate::workspace_graph::source_schema) fn replay_paid(
     module: &WorkspaceResolvedModule,
     modules: &[WorkspaceResolvedModule],
     facts: &BTreeMap<String, WorkspaceDeclarationFact>,
-) -> Result<bool, Vec<Diagnostic>> {
+    form: SelectedReplayReportForm,
+) -> Result<bool, SelectedReplayRefusal> {
     let Some(inventory) = module.static_text.as_deref() else {
         return Ok(false);
     };
@@ -159,81 +183,74 @@ pub(in crate::workspace_graph::source_schema) fn replay(
         return Ok(false);
     }
     let physical = crate::cleanup_plan::ReplayPhysicalReservation::new(MAX_CHANGE_BUILDER_BYTES);
+    let (report, physical) = SelectedReplayReport::try_acquire(physical, form)?;
     if inventory
         .lexical
         .as_deref()
         .is_some_and(|inventory| inventory.imported)
     {
-        helpers::replay(module, modules, facts, physical)?;
+        helpers::replay(module, modules, facts, physical, report)?;
         return Ok(true);
     }
-    let anchor = module.functions.first().ok_or_else(fail)?;
-    let mut preparation = crate::cleanup_plan::SelectedReplayPreparation::new(anchor, physical)
-        .map_err(|_| fail())?;
-    current_module(module, modules, &mut preparation, anchor)?;
-    preparation
-        .reserve_array::<Context<'_>>(anchor, 1, "retained lexical context")
-        .map_err(|_| fail())?;
-    let context = helpers::local::authenticate(module, facts, &mut preparation, anchor)?;
-    preparation
-        .reserve_array::<&ResolvedFunction>(
-            anchor,
-            module.functions.len(),
-            "retained lexical member references",
-        )
-        .map_err(|_| fail())?;
-    let mut lexical = Vec::with_capacity(module.functions.len());
-    if lexical.capacity() != module.functions.len() {
-        preparation.fail();
-        return Err(fail());
-    }
-    for function in &module.functions {
-        if helpers::local::requires(function, &mut preparation, anchor)? {
-            preparation
-                .charge(anchor, 1, "retained lexical member insertion")
-                .map_err(|_| fail())?;
-            lexical.push(function);
-        }
-    }
-    let mut session =
-        crate::cleanup_plan::SelectedReplaySession::from_preparation(&context, anchor, preparation)
-            .map_err(|_| fail())?;
+    let Some(anchor) = module.functions.first() else {
+        return Err(report.refuse_unprepared(physical));
+    };
+    let (mut preparation, report) = report.prepare(anchor, physical)?;
+    let (context, lexical) = match members(module, modules, facts, &mut preparation, anchor) {
+        Ok(members) => members,
+        Err(refused) => return Err(report.refuse(preparation, refused)),
+    };
+    let session = SelectedReplaySession::try_from_preparation(&context, anchor, preparation);
+    let mut session = match session {
+        Ok(session) => session,
+        Err((preparation, error)) => return Err(report.refuse_session(preparation, error)),
+    };
     let mut found = false;
     for function in lexical {
-        session.validate(function).map_err(|error| {
-            let errors = fail();
-            // Keep the public retained-source diagnostic stable. Owning
-            // tests must distinguish its independently replayed cause from
-            // a literal-site/namespace mismatch before proposing a repair.
-            #[cfg(test)]
-            let errors: Vec<_> = errors
-                .into_iter()
-                .map(|diagnostic| {
-                    let prefix = error.message.get(..error.message.len().min(512));
-                    let detail = prefix.unwrap_or_else(|| {
-                        let mut end = error.message.len().min(512);
-                        while !error.message.is_char_boundary(end) {
-                            end -= 1;
-                        }
-                        &error.message[..end]
-                    });
-                    diagnostic.with_help(format!(
-                        "independent primitive lexical replay for `{}`: {}: {}",
-                        function.id, error.code, detail
-                    ))
-                })
-                .collect();
-            #[cfg(not(test))]
-            let _ = error;
-            errors
-        })?;
+        // The first member refusal stops the route: no failed Session is
+        // validated or finished again, so no legacy retry Diagnostic exists.
+        if let Err(error) = session.validate(function) {
+            return Err(report.refuse_session(session.into_failed_preparation(), error));
+        }
         found = true;
     }
     if !found {
-        return Err(fail());
+        return Err(report.refuse(session.into_failed_preparation(), Refused::MISMATCH));
     }
-    session.finish().map_err(|_| fail())?;
+    drop(session.finish_paid(report)?);
     Ok(true)
+}
+
+/// Local authentication and lexical member selection on the held preparation.
+/// Every refusal is the inline Copy `Refused`; the held preparation keeps the
+/// failed ledger and any first paid budget receipt.
+fn members<'a>(
+    module: &'a WorkspaceResolvedModule,
+    modules: &[WorkspaceResolvedModule],
+    facts: &BTreeMap<String, WorkspaceDeclarationFact>,
+    preparation: &mut crate::cleanup_plan::SelectedReplayPreparation,
+    anchor: &ResolvedFunction,
+) -> Result<(Context<'a>, Vec<&'a ResolvedFunction>), Refused> {
+    current_module(module, modules, preparation, anchor)?;
+    preparation.try_reserve_array::<Context<'_>>(anchor, 1, "retained lexical context")?;
+    let context = helpers::local::authenticate(module, facts, preparation, anchor)?;
+    preparation.try_reserve_array::<&ResolvedFunction>(
+        anchor,
+        module.functions.len(),
+        "retained lexical member references",
+    )?;
+    let mut lexical = Vec::with_capacity(module.functions.len());
+    if lexical.capacity() != module.functions.len() {
+        preparation.fail();
+        return Err(Refused::MISMATCH);
+    }
+    for function in &module.functions {
+        if helpers::local::requires(function, preparation, anchor)? {
+            preparation.try_charge(anchor, 1, "retained lexical member insertion")?;
+            lexical.push(function);
+        }
+    }
+    Ok((context, lexical))
 }
 
 // Test callers acquire the real held-source context; no metadata is projected away.
@@ -260,20 +277,22 @@ pub(in crate::workspace_graph) fn with_prepared_test_context<T>(
     apply: impl FnOnce(&dyn ReplayContext, crate::cleanup_plan::SelectedReplayPreparation) -> T,
 ) -> Result<T, Vec<Diagnostic>> {
     let anchor = module.functions.first().ok_or_else(fail)?;
-    current_module(module, modules, &mut preparation, anchor)?;
+    current_module(module, modules, &mut preparation, anchor).map_err(legacy)?;
     let imported = module
         .static_text
         .as_ref()
         .and_then(|i| i.lexical.as_ref())
         .is_some_and(|i| i.imported);
     if imported {
-        let context = helpers::authenticate(module, modules, facts, &mut preparation)?;
+        let context =
+            helpers::authenticate(module, modules, facts, &mut preparation).map_err(legacy)?;
         return Ok(apply(&context, preparation));
     }
     preparation
-        .reserve_array::<Context<'_>>(anchor, 1, "held test source context")
-        .map_err(|_| fail())?;
-    let context = helpers::local::authenticate(module, facts, &mut preparation, anchor)?;
+        .try_reserve_array::<Context<'_>>(anchor, 1, "held test source context")
+        .map_err(legacy)?;
+    let context =
+        helpers::local::authenticate(module, facts, &mut preparation, anchor).map_err(legacy)?;
     Ok(apply(&context, preparation))
 }
 
@@ -282,24 +301,22 @@ fn current_module(
     modules: &[WorkspaceResolvedModule],
     preparation: &mut crate::cleanup_plan::SelectedReplayPreparation,
     anchor: &ResolvedFunction,
-) -> Result<(), Vec<Diagnostic>> {
+) -> Result<(), Refused> {
     let mut exact = 0usize;
     let mut namespace = 0usize;
     for current in modules {
-        preparation
-            .charge(
-                anchor,
-                current
-                    .path
-                    .len()
-                    .checked_add(module.path.len())
-                    .and_then(|n| n.checked_add(current.module.len()))
-                    .and_then(|n| n.checked_add(module.module.len()))
-                    .and_then(|n| n.checked_add(1))
-                    .ok_or_else(fail)?,
-                "retained current module membership",
-            )
-            .map_err(|_| fail())?;
+        preparation.try_charge(
+            anchor,
+            current
+                .path
+                .len()
+                .checked_add(module.path.len())
+                .and_then(|n| n.checked_add(current.module.len()))
+                .and_then(|n| n.checked_add(module.module.len()))
+                .and_then(|n| n.checked_add(1))
+                .ok_or(Refused::MISMATCH)?,
+            "retained current module membership",
+        )?;
         if std::ptr::eq(current, module) {
             exact += 1;
         }
@@ -309,7 +326,7 @@ fn current_module(
     }
     if exact != 1 || namespace != 1 {
         preparation.fail();
-        return Err(fail());
+        return Err(Refused::MISMATCH);
     }
     Ok(())
 }

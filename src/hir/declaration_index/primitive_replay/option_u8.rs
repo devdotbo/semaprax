@@ -4,14 +4,9 @@ impl DeclarationIndex {
     pub(crate) fn append_option_u8_replay_metered(
         &mut self,
         physical: &mut ReplayPhysicalReservation,
-        debit: &mut dyn FnMut(usize) -> Result<(), crate::diagnostic::Diagnostic>,
-    ) -> Result<(), crate::diagnostic::Diagnostic> {
-        let fail = || {
-            crate::diagnostic::Diagnostic::io(
-                "SPX-H006",
-                "selected Option metadata reconstruction refused",
-            )
-        };
+        debit: &mut dyn FnMut(usize) -> Result<(), Refused>,
+    ) -> Result<(), Refused> {
+        let fail = || Refused::constructor("selected Option metadata reconstruction refused");
         // These maps start empty on the primitive route. No unbounded tree
         // comparison or candidate metadata is copied into compiler authority.
         if !self.variant_cases.is_empty() || !self.case_fields.is_empty() {

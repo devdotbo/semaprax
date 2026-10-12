@@ -7,6 +7,10 @@ pub(crate) enum SetupReason {
     TextOverflow,
     TextReservation,
     TextCapacity,
+    /// Caller-owned outward report carrier, debited before preparation.
+    ReportCarrier,
+    ReportText,
+    ReportCapacity,
 }
 impl SetupReason {
     pub(crate) fn message(self) -> &'static str {
@@ -16,6 +20,9 @@ impl SetupReason {
             Self::TextOverflow => "cleanup replay refusal layout overflowed",
             Self::TextReservation => "cleanup replay refusal text reservation refused",
             Self::TextCapacity => "cleanup replay refusal allocator capacity differs",
+            Self::ReportCarrier => "cleanup replay report carrier reservation refused",
+            Self::ReportText => "cleanup replay report text reservation refused",
+            Self::ReportCapacity => "cleanup replay report allocator capacity differs",
         }
     }
 }
@@ -24,8 +31,29 @@ pub(crate) struct SetupFailure {
     reason: SetupReason,
 }
 impl SetupFailure {
+    /// Seal a refused ledger. A request that already failed keeps its first
+    /// receipt; otherwise the ledger is rejected so no retry can reopen it.
+    pub(in crate::cleanup_plan::replay) fn refused(
+        mut physical: PhysicalReservation,
+        reason: SetupReason,
+    ) -> Self {
+        physical.reject();
+        Self { physical, reason }
+    }
     pub(crate) fn into_parts(self) -> (PhysicalReservation, SetupReason) {
         (self.physical, self.reason)
+    }
+    /// The fixed reason literal, copied inline beside the retained ledger.
+    pub(crate) fn reason_message(&self) -> &'static str {
+        self.reason.message()
+    }
+    #[cfg(test)]
+    pub(crate) fn reason(&self) -> SetupReason {
+        self.reason
+    }
+    #[cfg(test)]
+    pub(crate) fn ledger_mut(&mut self) -> &mut PhysicalReservation {
+        &mut self.physical
     }
 }
 impl ReplayBudget {

@@ -27,13 +27,22 @@ pub(crate) use selected_context::borrowed::{
 pub(crate) use selected_entry::validate_retained_lexical_with_limit;
 #[cfg(test)]
 pub(crate) use selected_entry::validate_retained_lexical_with_reservation;
+#[cfg(test)]
 pub(crate) use selected_entry::{
-    Preparation as SelectedReplayPreparation, Session as SelectedReplaySession,
+    Cause as SelectedReplayCause, UnpaidReason as SelectedReplayUnpaidReason,
+};
+pub(crate) use selected_entry::{
+    PaidRefusal as SelectedReplayRefusal, PaidReport as SelectedReplayReport,
+    Preparation as SelectedReplayPreparation, Refused as SelectedReplayRefused,
+    ReportForm as SelectedReplayReportForm, Session as SelectedReplaySession,
+    Unpaid as SelectedReplayUnpaid,
 };
 mod selected_owner;
 mod selected_profile;
 mod status_validation;
 pub(crate) use physical_clone::ClonePayload;
+#[cfg(test)]
+pub(crate) use physical_storage::PhysicalRefusal as ReplayPhysicalRefusal;
 pub(crate) use physical_storage::{
     btree_node_upper as replay_btree_node_upper, replay_reserve_vec, PhysicalReservation,
 };

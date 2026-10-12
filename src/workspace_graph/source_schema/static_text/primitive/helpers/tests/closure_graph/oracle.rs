@@ -49,7 +49,7 @@ fn lookup<'a>(
     helpers: &'a [Member<'a>],
     resources: &mut SelectedReplayPreparation,
     anchor: &ResolvedFunction,
-) -> Result<Option<usize>, Vec<Diagnostic>> {
+) -> Result<Option<usize>, Refused> {
     let mut found = None;
     for (i, function) in module
         .functions
@@ -63,11 +63,11 @@ fn lookup<'a>(
             id.as_str()
                 .len()
                 .checked_add(function.id.as_str().len())
-                .ok_or_else(fail)?,
+                .ok_or(Refused::MISMATCH)?,
         )?;
         if function.id == *id {
             if found.replace(i).is_some() {
-                return Err(fail());
+                return Err(Refused::MISMATCH);
             }
         }
     }
@@ -97,27 +97,27 @@ fn closure<'a>(
     resources: &mut SelectedReplayPreparation,
     anchor: &ResolvedFunction,
     shape: &mut Shape,
-) -> Result<Vec<Member<'a>>, Vec<Diagnostic>> {
+) -> Result<Vec<Member<'a>>, Refused> {
     let maximum = modules
         .iter()
         .try_fold(0usize, |n, m| n.checked_add(m.functions.len()))
-        .ok_or_else(fail)?;
+        .ok_or(Refused::MISMATCH)?;
     charge(resources, anchor, modules.len())?;
     resources
         .reserve_array::<Member<'_>>(anchor, maximum, "imported scalar closure members")
-        .map_err(|_| fail())?;
+        .map_err(|_| Refused::MISMATCH)?;
     resources
         .reserve_array::<u8>(
             anchor,
             modules.len(),
             "imported scalar defining source debits",
         )
-        .map_err(|_| fail())?;
+        .map_err(|_| Refused::MISMATCH)?;
     charge(resources, anchor, modules.len())?;
     let mut charged = vec![0u8; modules.len()];
     let mut helpers: Vec<Member<'a>> = Vec::with_capacity(maximum);
     if helpers.capacity() != maximum {
-        return Err(fail());
+        return Err(Refused::MISMATCH);
     }
     let mut processed = 0;
     loop {
@@ -125,7 +125,7 @@ fn closure<'a>(
             .functions
             .len()
             .checked_add(helpers.len())
-            .ok_or_else(fail)?;
+            .ok_or(Refused::MISMATCH)?;
         if processed >= total {
             break;
         }
@@ -139,7 +139,7 @@ fn closure<'a>(
         calls(function, resources, anchor, |id, resources| {
             if builtin(id) {
                 return if provider && !hir::borrowed_scalar::builtin(id.as_str()) {
-                    Err(fail())
+                    Err(Refused::MISMATCH)
                 } else {
                     Ok(())
                 };
@@ -147,12 +147,12 @@ fn closure<'a>(
             if lookup(id, module, &helpers, resources, anchor)?.is_none() {
                 let member = authenticate_target(id, modules, facts, resources, anchor)?;
                 if std::ptr::eq(member.module, module) {
-                    return Err(fail());
+                    return Err(Refused::MISMATCH);
                 }
                 let ordinal = modules
                     .iter()
                     .position(|m| std::ptr::eq(m, member.module))
-                    .ok_or_else(fail)?;
+                    .ok_or(Refused::MISMATCH)?;
                 charge(resources, anchor, modules.len())?;
                 if charged[ordinal] == 0 {
                     charge(
@@ -162,20 +162,20 @@ fn closure<'a>(
                             .module
                             .scalar_helpers
                             .as_deref()
-                            .ok_or_else(fail)?
+                            .ok_or(Refused::MISMATCH)?
                             .capture_work,
                     )?;
                     charged[ordinal] = 1;
                 }
                 if helpers.len() == maximum {
-                    return Err(fail());
+                    return Err(Refused::MISMATCH);
                 }
                 charge(resources, anchor, 1)?;
                 helpers.push(member);
             }
             Ok(())
         })?;
-        processed = processed.checked_add(1).ok_or_else(fail)?;
+        processed = processed.checked_add(1).ok_or(Refused::MISMATCH)?;
     }
     shape.functions = module
         .functions
@@ -187,13 +187,13 @@ fn closure<'a>(
         .functions
         .len()
         .checked_add(helpers.len())
-        .ok_or_else(fail)?;
+        .ok_or(Refused::MISMATCH)?;
     resources
         .reserve_array::<usize>(anchor, count, "imported scalar closure indegrees")
-        .map_err(|_| fail())?;
+        .map_err(|_| Refused::MISMATCH)?;
     resources
         .reserve_array::<usize>(anchor, count, "imported scalar closure ready frontier")
-        .map_err(|_| fail())?;
+        .map_err(|_| Refused::MISMATCH)?;
     charge(resources, anchor, count)?;
     let mut indegree = vec![0usize; count];
     let mut pending = Vec::with_capacity(count);
@@ -209,13 +209,13 @@ fn closure<'a>(
             if builtin(id) {
                 return Ok(());
             }
-            let to = lookup(id, module, &helpers, resources, anchor)?.ok_or_else(fail)?;
+            let to = lookup(id, module, &helpers, resources, anchor)?.ok_or(Refused::MISMATCH)?;
             resources
                 .reserve_vec(anchor, &mut edges, 1, "imported scalar closure edges")
-                .map_err(|_| fail())?;
+                .map_err(|_| Refused::MISMATCH)?;
             charge(resources, anchor, 1)?;
             edges.push((from, to));
-            indegree[to] = indegree[to].checked_add(1).ok_or_else(fail)?;
+            indegree[to] = indegree[to].checked_add(1).ok_or(Refused::MISMATCH)?;
             Ok(())
         })?;
     }
@@ -230,16 +230,16 @@ fn closure<'a>(
     let mut visited = 0usize;
     while let Some(from) = pending.pop() {
         charge(resources, anchor, 1)?;
-        visited = visited.checked_add(1).ok_or_else(fail)?;
+        visited = visited.checked_add(1).ok_or(Refused::MISMATCH)?;
         shape.order.push(from);
         for (source, to) in &edges {
             charge(resources, anchor, 1)?;
             shape.visits += 1;
             if *source == from {
-                indegree[*to] = indegree[*to].checked_sub(1).ok_or_else(fail)?;
+                indegree[*to] = indegree[*to].checked_sub(1).ok_or(Refused::MISMATCH)?;
                 if indegree[*to] == 0 {
                     if pending.len() == count {
-                        return Err(fail());
+                        return Err(Refused::MISMATCH);
                     }
                     charge(resources, anchor, 1)?;
                     pending.push(*to);
@@ -248,7 +248,7 @@ fn closure<'a>(
         }
     }
     if visited != count {
-        return Err(fail());
+        return Err(Refused::MISMATCH);
     }
     shape.acyclic = true;
     Ok(helpers)
@@ -272,7 +272,7 @@ pub(super) fn authenticate<'a>(
     modules: &'a [WorkspaceResolvedModule],
     facts: &BTreeMap<String, WorkspaceDeclarationFact>,
     resources: &mut SelectedReplayPreparation,
-) -> Result<(Closure<'a>, Shape), Vec<Diagnostic>> {
+) -> Result<(Closure<'a>, Shape), Refused> {
     let result = authenticate_inner(module, modules, facts, resources);
     if result.is_err() {
         resources.fail();
@@ -284,12 +284,12 @@ fn authenticate_inner<'a>(
     modules: &'a [WorkspaceResolvedModule],
     facts: &BTreeMap<String, WorkspaceDeclarationFact>,
     resources: &mut SelectedReplayPreparation,
-) -> Result<(Closure<'a>, Shape), Vec<Diagnostic>> {
-    let anchor = module.functions.first().ok_or_else(fail)?;
+) -> Result<(Closure<'a>, Shape), Refused> {
+    let anchor = module.functions.first().ok_or(Refused::MISMATCH)?;
     // The actual current carrier, `carrier_delta` above the 296 carrier.
     resources
         .reserve_array::<Closure<'_>>(anchor, 1, "imported scalar closure owner")
-        .map_err(|_| fail())?;
+        .map_err(|_| Refused::MISMATCH)?;
     let local = local::authenticate(module, facts, resources, anchor)?;
     let mut shape = empty();
     let helpers = closure(module, modules, facts, resources, anchor, &mut shape)?;
@@ -297,7 +297,7 @@ fn authenticate_inner<'a>(
         .functions
         .len()
         .checked_add(helpers.len())
-        .ok_or_else(fail)?;
+        .ok_or(Refused::MISMATCH)?;
     let mut local = local;
     for member in &helpers {
         resources
@@ -306,7 +306,7 @@ fn authenticate_inner<'a>(
                     .index
                     .append_scalar_helper_replay_metered(member.function, physical, debit)
             })
-            .map_err(|_| fail())?;
+            .map_err(|_| Refused::MISMATCH)?;
     }
     resources
         .reserve_array::<&ResolvedFunction>(
@@ -314,10 +314,10 @@ fn authenticate_inner<'a>(
             module.functions.len(),
             "imported consumer lexical members",
         )
-        .map_err(|_| fail())?;
+        .map_err(|_| Refused::MISMATCH)?;
     let mut lexical = Vec::with_capacity(module.functions.len());
     if lexical.capacity() != module.functions.len() {
-        return Err(fail());
+        return Err(Refused::MISMATCH);
     }
     for function in &module.functions {
         if local::requires(function, resources, anchor)? {
@@ -351,10 +351,10 @@ pub(super) fn run(
     module: &WorkspaceResolvedModule,
     modules: &[WorkspaceResolvedModule],
     facts: &BTreeMap<String, WorkspaceDeclarationFact>,
-) -> Result<Shape, Vec<Diagnostic>> {
-    let anchor = module.functions.first().ok_or_else(fail)?;
-    let mut resources =
-        SelectedReplayPreparation::with_limits(anchor, 32_000_000, 1 << 28).map_err(|_| fail())?;
+) -> Result<Shape, Refused> {
+    let anchor = module.functions.first().ok_or(Refused::MISMATCH)?;
+    let mut resources = SelectedReplayPreparation::with_limits(anchor, 32_000_000, 1 << 28)
+        .map_err(|_| Refused::MISMATCH)?;
     let mut shape = empty();
     match closure(module, modules, facts, &mut resources, anchor, &mut shape) {
         Ok(_) => Ok(shape),

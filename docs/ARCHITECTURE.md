@@ -1864,6 +1864,19 @@ passes renewal authority explicitly through the Graph classifiers for that
 invocation. It retains no additional declaration index. Cleanup selector
 equivalences are checked before higher Graph selectors can mask a mismatch;
 frozen from-parts routes without declaration provenance retain their refusal.
+`workspace_graph/paid_view.rs` owns the typed change, operation and schema
+view refusal (`ViewRefusal`). The actual selected lexical replay caller in
+`source_schema/static_text/primitive.rs` acquires the caller's outward report
+carrier (`cleanup_plan/replay/selected_entry/paid.rs`) on its module ledger
+before preparation. Every later refusal transfers that carrier, together with
+the exact failed ledger owner. The authenticators and selected declaration
+constructors on that route refuse with the Copy `SelectedReplayRefused`. A
+budget's prepaid text or a Session's own Diagnostic stays in the failed
+preparation as its first receipt. Remapping Change, Structural Change and
+Operations callers pass the literal they publish. A missing or mismatched form
+fails closed to `SelectedReplayUnpaid`. The remaining allocating boundaries
+are listed in
+[the selected replay protocol](SELECTED-REPLAY-RECOVERING-CONSTRUCTOR-V1.md).
 `src/workspace_graph/session_protocol_decl.rs` owns issue #297's follow-on
 (R21) projection of declared `.spx` `session protocol`s into the Workspace
 Semantic Graph: `semaprax.workspace-semantic-graph.v2`, selected only for a

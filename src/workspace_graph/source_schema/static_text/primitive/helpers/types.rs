@@ -10,10 +10,8 @@ pub(super) fn discover<'a>(
     index: &mut hir::DeclarationIndex,
     resources: &mut SelectedReplayPreparation,
     anchor: &ResolvedFunction,
-) -> Result<Vec<&'a ResolvedTypeDeclaration>, Vec<Diagnostic>> {
-    resources
-        .reserve_array::<Cursor<'_>>(anchor, DEPTH, "retained type body cursor")
-        .map_err(|_| fail())?;
+) -> Result<Vec<&'a ResolvedTypeDeclaration>, Refused> {
+    resources.try_reserve_array::<Cursor<'_>>(anchor, DEPTH, "retained type body cursor")?;
     let mut types = Vec::new();
     for function in &module.functions {
         receive(
@@ -49,7 +47,7 @@ pub(super) fn discover<'a>(
             let mut depth = 1;
             while depth != 0 {
                 charge(resources, anchor, 1)?;
-                let mut cursor = stack[depth - 1].take().ok_or_else(fail)?;
+                let mut cursor = stack[depth - 1].take().ok_or(Refused::MISMATCH)?;
                 if !cursor.is_started() {
                     receive(
                         &cursor.expression().ty,
@@ -64,7 +62,7 @@ pub(super) fn discover<'a>(
                 }
                 if let Some(child) = cursor.next() {
                     if depth == DEPTH {
-                        return Err(fail());
+                        return Err(Refused::MISMATCH);
                     }
                     stack[depth - 1] = Some(cursor);
                     stack[depth] = Some(hir::lexical_exit::ChildCursor::new(child));
@@ -90,7 +88,7 @@ fn receive<'a>(
     resources: &mut SelectedReplayPreparation,
     anchor: &ResolvedFunction,
     held: &mut Vec<&'a ResolvedTypeDeclaration>,
-) -> Result<(), Vec<Diagnostic>> {
+) -> Result<(), Refused> {
     charge(resources, anchor, 1)?;
     let hir::ResolvedType::Nominal {
         declaration,
@@ -102,18 +100,18 @@ fn receive<'a>(
     charge(resources, anchor, declaration.as_str().len())?;
     if declaration.as_str() == crate::prelude::VEC_ID {
         let [element] = arguments.as_slice() else {
-            return Err(fail());
+            return Err(Refused::MISMATCH);
         };
         if matches!(element, hir::ResolvedType::Nominal { arguments, .. } if !arguments.is_empty())
         {
-            return Err(fail());
+            return Err(Refused::MISMATCH);
         }
         return receive(
             element, local, modules, facts, index, resources, anchor, held,
         );
     }
     if !arguments.is_empty() {
-        return Err(fail());
+        return Err(Refused::MISMATCH);
     }
     let mut selected = None;
     for module in modules {
@@ -127,14 +125,14 @@ fn receive<'a>(
                     .len()
                     .checked_add(declaration.as_str().len())
                     .and_then(|n| n.checked_add(1))
-                    .ok_or_else(fail)?,
+                    .ok_or(Refused::MISMATCH)?,
             )?;
             if current.id == *declaration && selected.replace((module, current)).is_some() {
-                return Err(fail());
+                return Err(Refused::MISMATCH);
             }
         }
     }
-    let (module, current) = selected.ok_or_else(fail)?;
+    let (module, current) = selected.ok_or(Refused::MISMATCH)?;
     if std::ptr::eq(module, local) {
         return Ok(());
     }
@@ -152,20 +150,18 @@ fn receive<'a>(
             }
         }
     }
-    let source = module.record_closure.as_deref().ok_or_else(fail)?;
+    let source = module.record_closure.as_deref().ok_or(Refused::MISMATCH)?;
     charge(resources, anchor, 33)?;
     if module.record_source_revision != Some(source.revision()) {
-        return Err(fail());
+        return Err(Refused::MISMATCH);
     }
     if !provider_held {
         charge(resources, anchor, source.capture_work)?;
-        resources
-            .reserve_array::<u8>(
-                anchor,
-                source.owned_capacity_bytes().ok_or_else(fail)?,
-                "held defining record source facts",
-            )
-            .map_err(|_| fail())?;
+        resources.try_reserve_array::<u8>(
+            anchor,
+            source.owned_capacity_bytes().ok_or(Refused::MISMATCH)?,
+            "held defining record source facts",
+        )?;
     }
     super::super::records::prepared::authenticate_provider(
         module,
@@ -177,18 +173,16 @@ fn receive<'a>(
         anchor,
     )?;
     if held.len() == held.capacity() {
-        let target = held.len().checked_add(1).ok_or_else(fail)?;
+        let target = held.len().checked_add(1).ok_or(Refused::MISMATCH)?;
         charge(resources, anchor, held.len())?;
-        resources
-            .reserve_array::<&ResolvedTypeDeclaration>(
-                anchor,
-                target,
-                "borrowed defining type directory",
-            )
-            .map_err(|_| fail())?;
+        resources.try_reserve_array::<&ResolvedTypeDeclaration>(
+            anchor,
+            target,
+            "borrowed defining type directory",
+        )?;
         held.reserve_exact(1);
         if held.capacity() != target {
-            return Err(fail());
+            return Err(Refused::MISMATCH);
         }
     }
     charge(resources, anchor, 1)?;

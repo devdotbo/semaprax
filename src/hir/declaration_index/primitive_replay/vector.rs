@@ -5,14 +5,9 @@ impl DeclarationIndex {
     pub(crate) fn append_vec_replay_metered(
         &mut self,
         physical: &mut ReplayPhysicalReservation,
-        debit: &mut dyn FnMut(usize) -> Result<(), crate::diagnostic::Diagnostic>,
-    ) -> Result<(), crate::diagnostic::Diagnostic> {
-        let fail = || {
-            crate::diagnostic::Diagnostic::io(
-                "SPX-H006",
-                "selected Vec metadata reconstruction refused",
-            )
-        };
+        debit: &mut dyn FnMut(usize) -> Result<(), Refused>,
+    ) -> Result<(), Refused> {
+        let fail = || Refused::constructor("selected Vec metadata reconstruction refused");
         let id = crate::prelude::VEC_ID;
         for key in self.declarations.keys() {
             debit(

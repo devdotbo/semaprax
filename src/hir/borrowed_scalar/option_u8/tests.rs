@@ -159,7 +159,7 @@ fn canonical_index_factory_creation_through_drop_keeps_exact_and_one_short_ledge
         work: usize,
         bytes: usize,
     ) -> (
-        Result<(usize, usize), crate::diagnostic::Diagnostic>,
+        Result<(usize, usize), crate::cleanup_plan::SelectedReplayRefused>,
         crate::test_allocation_observer::Metrics,
     ) {
         crate::test_allocation_observer::measure(|| {
@@ -167,9 +167,11 @@ fn canonical_index_factory_creation_through_drop_keeps_exact_and_one_short_ledge
             let mut physical = crate::cleanup_plan::ReplayPhysicalReservation::new(bytes);
             let mut index = DeclarationIndex::default();
             index.append_option_u8_replay_metered(&mut physical, &mut |units| {
-                remaining = remaining.checked_sub(units).ok_or_else(|| {
-                    crate::diagnostic::Diagnostic::io("SPX-H006", "exact factory work exhausted")
-                })?;
+                remaining = remaining.checked_sub(units).ok_or(
+                    crate::cleanup_plan::SelectedReplayRefused::constructor(
+                        "exact factory work exhausted",
+                    ),
+                )?;
                 Ok(())
             })?;
             let result = (work - remaining, physical.charged());

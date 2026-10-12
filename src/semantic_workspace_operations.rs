@@ -1300,7 +1300,7 @@ fn prepare_parsed_with_limit(
         return Err(limit("total_base_source_bytes", MAX_TOTAL_SOURCE_BYTES));
     }
     let (base_files, _, base_workspace_revision, base_build) = base.into_snapshot_parts();
-    let operation_view = base_build.into_operation_view().map_err(|_| replay())?;
+    let operation_view = base_build.into_operation_view_reporting(REPLAY)?;
     if operation_view.builder_bytes > operations_builder_limit {
         return Err(limit(
             "operations_builder_bytes",
@@ -1558,9 +1558,7 @@ fn prepare_owned_inner(
     })?;
     let (candidate_files, candidate_manifest, candidate_revision, candidate_build) =
         candidate.into_snapshot_parts();
-    let candidate_view = candidate_build
-        .into_operation_view()
-        .map_err(|_| replay())?;
+    let candidate_view = candidate_build.into_operation_view_reporting(REPLAY)?;
     let candidate_change_builder_bytes = candidate_view.change_builder_bytes;
     reserve_operations(candidate_view.builder_bytes)?;
     replay_candidate(&operation_view, &candidate_view, &proposal.operations)?;
@@ -2564,8 +2562,14 @@ fn limit(f: &str, m: usize) -> Vec<Diagnostic> {
         format!("Semantic Workspace Operations exceeds {f} maximum {m}"),
     )]
 }
+/// Both operation views prepay this exact literal; legacy refusals allocate it.
+const REPLAY: crate::cleanup_plan::SelectedReplayReportForm =
+    crate::cleanup_plan::SelectedReplayReportForm::new(
+        "SPX-G200",
+        "Semantic Workspace Operations derivation disagrees with authenticated base or candidate semantics",
+    );
 fn replay() -> Vec<Diagnostic> {
-    vec![Diagnostic::io("SPX-G200","Semantic Workspace Operations derivation disagrees with authenticated base or candidate semantics")]
+    REPLAY.legacy()
 }
 
 fn operations_evidence_replay() -> Vec<Diagnostic> {

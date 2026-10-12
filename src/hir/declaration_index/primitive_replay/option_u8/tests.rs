@@ -17,17 +17,14 @@ fn run(
     index: &DeclarationIndex,
     work: usize,
     bytes: usize,
-) -> (
-    Result<(usize, usize), crate::diagnostic::Diagnostic>,
-    DeclarationIndex,
-) {
+) -> (Result<(usize, usize), Refused>, DeclarationIndex) {
     let mut index = index.clone();
     let mut remaining = work;
     let mut physical = ReplayPhysicalReservation::new(bytes);
     let result = index.append_option_u8_replay_metered(&mut physical, &mut |units| {
-        remaining = remaining.checked_sub(units).ok_or_else(|| {
-            crate::diagnostic::Diagnostic::io("SPX-H006", "exact Option work exhausted")
-        })?;
+        remaining = remaining
+            .checked_sub(units)
+            .ok_or(Refused::constructor("exact Option work exhausted"))?;
         Ok(())
     });
     (
@@ -117,7 +114,11 @@ fn option_u8_replay_refuses_generic_compiler_owned_orphan_and_unfielded_entries(
             }
         }
         let (result, after) = run(&index, 1 << 20, 1 << 20);
-        assert_eq!(result.unwrap_err().code, "SPX-H006", "attack {attack}");
+        assert_eq!(
+            result.unwrap_err().detail(),
+            "selected Option metadata reconstruction refused",
+            "attack {attack}"
+        );
         // Admission is decided before any Option metadata is inserted.
         assert_eq!(after, index, "attack {attack}");
         assert!(!crate::hir::borrowed_scalar::option_u8::authenticated(

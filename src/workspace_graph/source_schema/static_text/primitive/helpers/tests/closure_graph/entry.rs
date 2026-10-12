@@ -11,7 +11,7 @@ type Flow = for<'a> fn(
     &'a [WorkspaceResolvedModule],
     &BTreeMap<String, WorkspaceDeclarationFact>,
     &mut SelectedReplayPreparation,
-) -> Result<Closure<'a>, Vec<Diagnostic>>;
+) -> Result<Closure<'a>, Refused>;
 /// The old algorithm on the current enlarged carrier: its totals include
 /// `oracle::carrier_delta` over the committed 296 carrier.
 fn saved<'a>(
@@ -19,7 +19,7 @@ fn saved<'a>(
     modules: &'a [WorkspaceResolvedModule],
     facts: &BTreeMap<String, WorkspaceDeclarationFact>,
     resources: &mut SelectedReplayPreparation,
-) -> Result<Closure<'a>, Vec<Diagnostic>> {
+) -> Result<Closure<'a>, Refused> {
     oracle::authenticate(module, modules, facts, resources).map(|(closure, _)| closure)
 }
 const SAVED: Flow = saved;
@@ -49,7 +49,8 @@ fn entry(
         &build.hir.modules,
         &build.hir.declarations,
         &mut resources,
-    )?;
+    )
+    .map_err(legacy)?;
     let mut session =
         SelectedReplaySession::from_preparation(&context, anchor, resources).map_err(|_| fail())?;
     for helper in &context.helpers {

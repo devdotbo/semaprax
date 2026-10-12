@@ -5,6 +5,7 @@ use std::fmt::{self, Write};
 mod byte_helper;
 mod static_text;
 pub(super) use byte_helper::Proofs;
+pub(super) use static_text::REPORT;
 
 struct MatchText<'a>(&'a str);
 impl Write for MatchText<'_> {
@@ -153,10 +154,14 @@ fn record_mode(
     })
 }
 
+/// Typed twin for the change view. Builder-structure refusals stay legacy
+/// owned Vecs, including `reserve_builder_structure`'s own limit Vec; only a
+/// selected replay refusal carries the caller's paid `form` report.
 pub(super) fn all(
     modules: &[WorkspaceResolvedModule],
     facts: &BTreeMap<String, WorkspaceDeclarationFact>,
-) -> Result<Vec<&'static str>, Vec<Diagnostic>> {
+    form: crate::cleanup_plan::SelectedReplayReportForm,
+) -> Result<Vec<&'static str>, ViewRefusal> {
     let bytes = modules
         .len()
         .checked_mul(std::mem::size_of::<&'static str>())
@@ -169,7 +174,13 @@ pub(super) fn all(
     }
     let mut proofs = byte_helper::Proofs::new(modules, facts);
     for module in modules {
-        schemas.push(schema_with_proofs(module, modules, facts, &mut proofs)?);
+        schemas.push(schema_with_proofs_paid(
+            module,
+            modules,
+            facts,
+            &mut proofs,
+            form,
+        )?);
     }
     Ok(schemas)
 }
@@ -188,18 +199,57 @@ pub(super) fn schema(
     )
 }
 
+/// Legacy pass-through boundary: a paid G410 report moves out unchanged; an
+/// unpaid carrier refusal reaches the typed unpaid boundary, and only its
+/// named `into_unfunded` allocates the same public literal here.
+#[cfg(test)]
 pub(super) fn schema_with_proofs<'a>(
     module: &'a WorkspaceResolvedModule,
     modules: &'a [WorkspaceResolvedModule],
     facts: &'a BTreeMap<String, WorkspaceDeclarationFact>,
     proofs: &mut byte_helper::Proofs<'a>,
 ) -> Result<&'static str, Vec<Diagnostic>> {
+    schema_with_proofs_paid(module, modules, facts, proofs, static_text::REPORT)
+        .map_err(ViewRefusal::into_legacy)
+}
+
+/// The caller's `form` is acquired as a paid carrier on each selected replay
+/// ledger. Every other refusal here remains a legacy owned Vec.
+pub(super) fn schema_with_proofs_paid<'a>(
+    module: &'a WorkspaceResolvedModule,
+    modules: &'a [WorkspaceResolvedModule],
+    facts: &'a BTreeMap<String, WorkspaceDeclarationFact>,
+    proofs: &mut byte_helper::Proofs<'a>,
+    form: crate::cleanup_plan::SelectedReplayReportForm,
+) -> Result<&'static str, ViewRefusal> {
     if module.native_law {
         return Ok("semaprax.native-law.v1");
     }
     let static_schema = static_text::schema(module, facts)?;
-    let lexical_static =
-        static_schema.is_some() && static_text::replay_lexical(module, modules, facts)?;
+    let mut lexical_static = false;
+    if static_schema.is_some() {
+        lexical_static = static_text::replay_lexical_paid(module, modules, facts, form)
+            .map_err(ViewRefusal::Replay)?;
+    }
+    select(
+        module,
+        modules,
+        facts,
+        proofs,
+        static_schema,
+        lexical_static,
+    )
+    .map_err(ViewRefusal::Legacy)
+}
+
+fn select<'a>(
+    module: &'a WorkspaceResolvedModule,
+    modules: &'a [WorkspaceResolvedModule],
+    facts: &'a BTreeMap<String, WorkspaceDeclarationFact>,
+    proofs: &mut byte_helper::Proofs<'a>,
+    static_schema: Option<&'static str>,
+    lexical_static: bool,
+) -> Result<&'static str, Vec<Diagnostic>> {
     let helper_schema = byte_helper::schema_with_proofs(module, modules, facts, proofs)?;
     let mut string_slots = false;
     for function in module.functions.iter().chain(

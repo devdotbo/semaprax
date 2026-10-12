@@ -7,6 +7,9 @@ mod helper_signature;
 mod option_u8;
 mod vector;
 use crate::cleanup_plan::ReplayPhysicalReservation;
+// Selected constructors refuse with the Copy literal; no Diagnostic or String
+// is allocated on refusal. Only test wrappers render it explicitly.
+use crate::cleanup_plan::SelectedReplayRefused as Refused;
 impl DeclarationIndex {
     #[cfg(test)]
     pub(crate) fn primitive_replay<'a>(
@@ -14,18 +17,14 @@ impl DeclarationIndex {
         physical: &mut ReplayPhysicalReservation,
     ) -> Result<Self, crate::diagnostic::Diagnostic> {
         Self::primitive_replay_metered(functions, physical, &mut |_| Ok(()))
+            .map_err(Refused::into_legacy_diagnostic)
     }
     pub(crate) fn primitive_replay_metered<'a>(
         functions: impl Iterator<Item = (&'a ResolvedFunction, IdentityOrigin)>,
         physical: &mut ReplayPhysicalReservation,
-        debit: &mut dyn FnMut(usize) -> Result<(), crate::diagnostic::Diagnostic>,
-    ) -> Result<Self, crate::diagnostic::Diagnostic> {
-        let fail = || {
-            crate::diagnostic::Diagnostic::io(
-                "SPX-H006",
-                "primitive replay declaration reconstruction refused",
-            )
-        };
+        debit: &mut dyn FnMut(usize) -> Result<(), Refused>,
+    ) -> Result<Self, Refused> {
+        let fail = || Refused::constructor("primitive replay declaration reconstruction refused");
         let mut index = Self::default();
         let mut work = crate::cache_codec::MAX_NODES;
         for (function, origin) in functions {
@@ -160,14 +159,9 @@ impl DeclarationIndex {
         &mut self,
         function: &ResolvedFunction,
         physical: &mut ReplayPhysicalReservation,
-        debit: &mut dyn FnMut(usize) -> Result<(), crate::diagnostic::Diagnostic>,
-    ) -> Result<(), crate::diagnostic::Diagnostic> {
-        let fail = || {
-            crate::diagnostic::Diagnostic::io(
-                "SPX-H006",
-                "scalar helper declaration reconstruction refused",
-            )
-        };
+        debit: &mut dyn FnMut(usize) -> Result<(), Refused>,
+    ) -> Result<(), Refused> {
+        let fail = || Refused::constructor("scalar helper declaration reconstruction refused");
         for key in self.declarations.keys() {
             debit(
                 key.as_str()

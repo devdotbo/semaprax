@@ -33,10 +33,14 @@ pub(crate) use replay::validate_retained_lexical_with_reservation;
 pub(crate) use replay::{
     replay_btree_node_upper, replay_reserve_vec, ClonePayload as ReplayClonePayload,
     PhysicalReservation as ReplayPhysicalReservation, SelectedReplayPreparation,
-    SelectedReplaySession,
+    SelectedReplayRefusal, SelectedReplayRefused, SelectedReplayReport, SelectedReplayReportForm,
+    SelectedReplaySession, SelectedReplayUnpaid,
 };
 #[cfg(test)]
-pub(crate) use replay::{ReplayBorrowedIdentity, ReplayBorrowedLease};
+pub(crate) use replay::{
+    ReplayBorrowedIdentity, ReplayBorrowedLease, ReplayPhysicalRefusal, SelectedReplayCause,
+    SelectedReplayUnpaidReason,
+};
 mod validate;
 
 pub(crate) use build::build_plan;

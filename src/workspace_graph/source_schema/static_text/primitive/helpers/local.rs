@@ -19,7 +19,7 @@ pub(in crate::workspace_graph::source_schema::static_text::primitive) fn authent
     facts: &BTreeMap<String, WorkspaceDeclarationFact>,
     resources: &mut SelectedReplayPreparation,
     anchor: &ResolvedFunction,
-) -> Result<Context<'a>, Vec<Diagnostic>> {
+) -> Result<Context<'a>, Refused> {
     let answer = authenticate_inner(module, facts, resources, anchor);
     if answer.is_err() {
         resources.fail();
@@ -31,12 +31,12 @@ fn authenticate_inner<'a>(
     facts: &BTreeMap<String, WorkspaceDeclarationFact>,
     resources: &mut SelectedReplayPreparation,
     anchor: &ResolvedFunction,
-) -> Result<Context<'a>, Vec<Diagnostic>> {
+) -> Result<Context<'a>, Refused> {
     let inventory = module
         .static_text
         .as_deref()
         .and_then(|i| i.lexical.as_deref())
-        .ok_or_else(fail)?;
+        .ok_or(Refused::MISMATCH)?;
     if !module.interfaces.is_empty()
         || !module.permits.is_empty()
         || !module.agents.is_empty()
@@ -44,16 +44,14 @@ fn authenticate_inner<'a>(
         || !module.function_instances.is_empty()
         || module.functions.len() != inventory.functions.len()
     {
-        return Err(fail());
+        return Err(Refused::MISMATCH);
     }
     charge(resources, anchor, inventory.capture_hash_work)?;
-    resources
-        .reserve_array::<u8>(
-            anchor,
-            crate::workspace_graph::static_text::primitive::digest_scratch_bytes(),
-            "imported consumer body digest scratch",
-        )
-        .map_err(|_| fail())?;
+    resources.try_reserve_array::<u8>(
+        anchor,
+        crate::workspace_graph::static_text::primitive::digest_scratch_bytes(),
+        "imported consumer body digest scratch",
+    )?;
     let mut local_work = WORK;
     for (source, function) in inventory.functions.iter().zip(&module.functions) {
         let origin = fact(source.id.as_str(), facts, resources, anchor)?;
@@ -69,7 +67,7 @@ fn authenticate_inner<'a>(
             .and_then(|n| n.checked_add(origin.path.as_ref().map_or(0, String::len)))
             .and_then(|n| n.checked_add(origin.module.as_ref().map_or(0, String::len)))
             .and_then(|n| n.checked_add(1))
-            .ok_or_else(fail)?;
+            .ok_or(Refused::MISMATCH)?;
         charge(resources, anchor, units)?;
         debit_type(&source.result, resources, anchor)?;
         debit_type(&function.return_type, resources, anchor)?;
@@ -92,11 +90,11 @@ fn authenticate_inner<'a>(
             || function.return_type != source.result
             || function.params.len() != source.params.len()
         {
-            return Err(fail());
+            return Err(Refused::MISMATCH);
         }
         local_work = local_work
             .checked_sub(source.params.len())
-            .ok_or_else(fail)?;
+            .ok_or(Refused::MISMATCH)?;
         for (source, current) in source.params.iter().zip(&function.params) {
             debit_type(&source.ty, resources, anchor)?;
             debit_type(&current.ty, resources, anchor)?;
@@ -108,7 +106,7 @@ fn authenticate_inner<'a>(
                     .len()
                     .checked_add(current.name.len())
                     .and_then(|n| n.checked_add(1))
-                    .ok_or_else(fail)?,
+                    .ok_or(Refused::MISMATCH)?,
             )?;
             if !primitive(&source.ty)
                 || !primitive(&current.ty)
@@ -116,7 +114,7 @@ fn authenticate_inner<'a>(
                 || source.ownership != current.ownership
                 || source.ty != current.ty
             {
-                return Err(fail());
+                return Err(Refused::MISMATCH);
             }
         }
         if !crate::workspace_graph::static_text::primitive::body_matches_metered(
@@ -125,31 +123,29 @@ fn authenticate_inner<'a>(
             function,
             &mut |units| charge(resources, anchor, units).ok(),
         ) {
-            return Err(fail());
+            return Err(Refused::MISMATCH);
         }
     }
-    let mut index = resources
-        .construct(anchor, |physical, debit| {
-            hir::DeclarationIndex::primitive_replay_metered(
-                module
-                    .functions
-                    .iter()
-                    .zip(&inventory.functions)
-                    .map(|(function, source)| {
-                        (
-                            function,
-                            if source.explicit {
-                                hir::IdentityOrigin::Explicit
-                            } else {
-                                hir::IdentityOrigin::Automatic
-                            },
-                        )
-                    }),
-                physical,
-                debit,
-            )
-        })
-        .map_err(|_| fail())?;
+    let mut index = resources.construct(anchor, |physical, debit| {
+        hir::DeclarationIndex::primitive_replay_metered(
+            module
+                .functions
+                .iter()
+                .zip(&inventory.functions)
+                .map(|(function, source)| {
+                    (
+                        function,
+                        if source.explicit {
+                            hir::IdentityOrigin::Explicit
+                        } else {
+                            hir::IdentityOrigin::Automatic
+                        },
+                    )
+                }),
+            physical,
+            debit,
+        )
+    })?;
     let vector = super::super::records::authenticate_prepared(
         module,
         inventory.records.as_deref(),
@@ -170,12 +166,14 @@ pub(in crate::workspace_graph::source_schema::static_text::primitive) fn require
     function: &ResolvedFunction,
     resources: &mut SelectedReplayPreparation,
     anchor: &ResolvedFunction,
-) -> Result<bool, Vec<Diagnostic>> {
+) -> Result<bool, Refused> {
     type Cursor<'a> = Option<hir::lexical_exit::ChildCursor<'a>>;
     const LIMIT: usize = crate::cache_codec::MAX_DEPTH + 1;
-    resources
-        .reserve_array::<Cursor<'_>>(anchor, LIMIT, "imported consumer lexical classifier")
-        .map_err(|_| fail())?;
+    resources.try_reserve_array::<Cursor<'_>>(
+        anchor,
+        LIMIT,
+        "imported consumer lexical classifier",
+    )?;
     let mut stack = [None; LIMIT];
     for root in function
         .requires
@@ -187,7 +185,7 @@ pub(in crate::workspace_graph::source_schema::static_text::primitive) fn require
         let mut depth = 1;
         while depth != 0 {
             charge(resources, anchor, 1)?;
-            let cursor = stack[depth - 1].as_mut().ok_or_else(fail)?;
+            let cursor = stack[depth - 1].as_mut().ok_or(Refused::MISMATCH)?;
             if !cursor.is_started()
                 && matches!(
                     &cursor.expression().kind,
@@ -198,7 +196,7 @@ pub(in crate::workspace_graph::source_schema::static_text::primitive) fn require
             }
             if let Some(child) = cursor.next() {
                 if depth == LIMIT {
-                    return Err(fail());
+                    return Err(Refused::MISMATCH);
                 }
                 stack[depth] = Some(hir::lexical_exit::ChildCursor::new(child));
                 depth += 1;
@@ -215,7 +213,7 @@ fn debit_type(
     ty: &hir::ResolvedType,
     resources: &mut SelectedReplayPreparation,
     anchor: &ResolvedFunction,
-) -> Result<(), Vec<Diagnostic>> {
+) -> Result<(), Refused> {
     charge(resources, anchor, 1)?;
     if let hir::ResolvedType::Nominal {
         declaration,
@@ -225,15 +223,15 @@ fn debit_type(
         charge(resources, anchor, declaration.as_str().len())?;
         if declaration.as_str() == crate::prelude::VEC_ID {
             let [element] = arguments.as_slice() else {
-                return Err(fail());
+                return Err(Refused::MISMATCH);
             };
             if matches!(element, hir::ResolvedType::Nominal { arguments, .. } if !arguments.is_empty())
             {
-                return Err(fail());
+                return Err(Refused::MISMATCH);
             }
             debit_type(element, resources, anchor)?;
         } else if !arguments.is_empty() {
-            return Err(fail());
+            return Err(Refused::MISMATCH);
         }
     }
     Ok(())

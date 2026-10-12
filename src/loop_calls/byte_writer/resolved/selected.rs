@@ -307,22 +307,39 @@ mod tests {
                     function, work, bytes,
                 )?;
                 for _ in 0..calls {
+                    // The typed constructor debit is Copy; this legacy census
+                    // owner keeps its Diagnostic contract through a test-only
+                    // explicit rendering of the refused debit.
                     let result = preparation.construct(function, |physical, debit| {
-                        checked_absent_with_work_reservation(program, function, physical, debit)
+                        let mut legacy = |units| {
+                            debit(units).map_err(|refused| refused.into_legacy_diagnostic())
+                        };
+                        checked_absent_with_work_reservation(
+                            program,
+                            function,
+                            physical,
+                            &mut legacy,
+                        )
+                        .map_err(|_| {
+                            crate::cleanup_plan::SelectedReplayRefused::constructor(
+                                "writer census refused",
+                            )
+                        })
                     });
                     match result {
                         Ok(sites) => assert!(sites.is_empty()),
-                        Err(diagnostic) => {
+                        Err(refused) => {
                             let remaining = preparation.remaining();
                             let sticky = preparation.charge(function, 1, "late census retry");
                             assert_eq!(sticky.unwrap_err().code, "SPX-H006");
                             assert_eq!(preparation.remaining(), remaining);
-                            return Err(diagnostic);
+                            return Err(refused.into_legacy_diagnostic());
                         }
                     }
                 }
-                let charged =
-                    preparation.construct(function, |physical, _| Ok(physical.charged()))?;
+                let charged = preparation
+                    .construct(function, |physical, _| Ok(physical.charged()))
+                    .map_err(|refused| refused.into_legacy_diagnostic())?;
                 Ok::<_, crate::diagnostic::Diagnostic>((work - preparation.remaining(), charged))
             })();
             match answer {

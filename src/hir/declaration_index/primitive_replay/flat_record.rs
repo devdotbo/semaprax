@@ -14,6 +14,7 @@ impl DeclarationIndex {
         self.append_flat_record_replay_metered(record, origin, field_origin, physical, &mut |_| {
             Ok(())
         })
+        .map_err(Refused::into_legacy_diagnostic)
     }
     pub(crate) fn append_flat_record_replay_metered(
         &mut self,
@@ -21,14 +22,9 @@ impl DeclarationIndex {
         origin: IdentityOrigin,
         field_origin: impl Fn(usize) -> Option<IdentityOrigin>,
         physical: &mut ReplayPhysicalReservation,
-        debit: &mut dyn FnMut(usize) -> Result<(), crate::diagnostic::Diagnostic>,
-    ) -> Result<(), crate::diagnostic::Diagnostic> {
-        let fail = || {
-            crate::diagnostic::Diagnostic::io(
-                "SPX-H006",
-                "flat-record declaration reconstruction refused",
-            )
-        };
+        debit: &mut dyn FnMut(usize) -> Result<(), Refused>,
+    ) -> Result<(), Refused> {
+        let fail = || Refused::constructor("flat-record declaration reconstruction refused");
         let ResolvedTypeDeclarationKind::Record { fields } = &record.kind else {
             return Err(fail());
         };

@@ -4,14 +4,9 @@ use super::*;
 pub(super) fn admitted(
     index: &DeclarationIndex,
     function: &ResolvedFunction,
-    debit: &mut dyn FnMut(usize) -> Result<(), crate::diagnostic::Diagnostic>,
-) -> Result<bool, crate::diagnostic::Diagnostic> {
-    let fail = || {
-        crate::diagnostic::Diagnostic::io(
-            "SPX-H006",
-            "scalar helper record signature work overflow",
-        )
-    };
+    debit: &mut dyn FnMut(usize) -> Result<(), Refused>,
+) -> Result<bool, Refused> {
+    let fail = || Refused::constructor("scalar helper record signature work overflow");
     if !is_scalar_resolved_type(&function.return_type) {
         return Ok(false);
     }

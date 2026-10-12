@@ -2,6 +2,10 @@
 //! Independent replay reconstructs every fact from the immutable context; no
 //! attached schema or certificate is an admission shortcut.
 use super::*;
+mod paid;
+#[cfg(test)]
+pub(crate) use paid::{Cause, UnpaidReason};
+pub(crate) use paid::{PaidRefusal, PaidReport, Refused, ReportForm, Unpaid};
 
 #[cfg(test)]
 pub(crate) fn validate_retained_lexical_with_limit(
@@ -28,8 +32,15 @@ pub(crate) fn validate_retained_lexical_with_reservation(
 pub(crate) struct Preparation {
     budget: ReplayBudget,
     failed: bool,
+    /// First paid refusal Diagnostic, moved in once (the budget's prepaid
+    /// text, or a Session's own refusal) and retained with the failed ledger.
+    receipt: Option<Diagnostic>,
 }
+// The owned-Diagnostic constructor and retry methods below are test-only
+// legacy APIs: a failed retry allocates `replay_error`. Production uses the
+// inline `try_new` and the Copy-refusing `try_*`/`construct` in `paid.rs`.
 impl Preparation {
+    #[cfg(test)]
     pub(crate) fn new(
         function: &ResolvedFunction,
         physical: PhysicalReservation,
@@ -48,6 +59,7 @@ impl Preparation {
         Ok(Self {
             budget: ReplayBudget::try_from_reservation(function, physical)?,
             failed: false,
+            receipt: None,
         })
     }
     #[cfg(test)]
@@ -66,6 +78,7 @@ impl Preparation {
         preparation.budget.remaining = work;
         Ok(preparation)
     }
+    #[cfg(test)]
     pub(crate) fn charge(
         &mut self,
         function: &ResolvedFunction,
@@ -82,6 +95,7 @@ impl Preparation {
         self.failed = answer.is_err();
         answer
     }
+    #[cfg(test)]
     pub(crate) fn reserve_array<T>(
         &mut self,
         function: &ResolvedFunction,
@@ -98,6 +112,7 @@ impl Preparation {
         self.failed = answer.is_err();
         answer
     }
+    #[cfg(test)]
     pub(crate) fn reserve_vec<T>(
         &mut self,
         function: &ResolvedFunction,
@@ -119,40 +134,8 @@ impl Preparation {
     pub(crate) fn remaining(&self) -> usize {
         self.budget.remaining
     }
-    /// Constructors borrow both resources from this owner. They cannot copy
-    /// work credits or replace the ledger when their retained backing grows.
-    pub(crate) fn construct<T>(
-        &mut self,
-        function: &ResolvedFunction,
-        apply: impl FnOnce(
-            &mut PhysicalReservation,
-            &mut dyn FnMut(usize) -> Result<(), Diagnostic>,
-        ) -> Result<T, Diagnostic>,
-    ) -> Result<T, Diagnostic> {
-        if self.failed {
-            return Err(replay_error(
-                function,
-                "selected preparation already failed",
-            ));
-        }
-        let ReplayBudget {
-            remaining,
-            physical,
-            ..
-        } = &mut self.budget;
-        let physical = physical
-            .as_deref_mut()
-            .ok_or_else(|| replay_error(function, "selected preparation lost backing ledger"))?;
-        let mut debit = |units| {
-            *remaining = remaining
-                .checked_sub(units)
-                .ok_or_else(|| replay_error(function, "selected constructor work exhausted"))?;
-            Ok(())
-        };
-        let answer = apply(physical, &mut debit);
-        self.failed = answer.is_err();
-        answer
-    }
+    // `construct` lives in `paid.rs`: its refusal is the Copy `Refused`, and
+    // work exhaustion spends the prepaid refusal text instead of formatting.
     /// Status-only owning observation, distinct from an owned-Diagnostic retry.
     /// It never restores work or replaces the held physical account.
     #[cfg(test)]
@@ -185,10 +168,18 @@ impl Preparation {
 pub(crate) struct Session<'a> {
     indexed: selected_callees::Context<'a>,
     budget: ReplayBudget,
+    #[cfg_attr(
+        not(test),
+        allow(dead_code, reason = "read only by the test-only legacy `finish`")
+    )]
     anchor: &'a ResolvedFunction,
     failed: bool,
 }
+// `new`, `from_preparation`, `from_budget` and `finish` are test-only legacy
+// owners whose refusals allocate an owned Diagnostic. The production route
+// uses `try_from_preparation` and `finish_paid` (`paid.rs`).
 impl<'a> Session<'a> {
+    #[cfg(test)]
     pub(crate) fn new(
         program: &'a dyn ReplayContext,
         anchor: &'a ResolvedFunction,
@@ -198,6 +189,7 @@ impl<'a> Session<'a> {
         Self::from_budget(program, anchor, budget)
     }
 
+    #[cfg(test)]
     pub(crate) fn from_preparation(
         program: &'a dyn ReplayContext,
         anchor: &'a ResolvedFunction,
@@ -249,6 +241,7 @@ impl<'a> Session<'a> {
         }
     }
 
+    #[cfg(test)]
     fn from_budget(
         program: &'a dyn ReplayContext,
         anchor: &'a ResolvedFunction,
@@ -260,6 +253,7 @@ impl<'a> Session<'a> {
             Preparation {
                 budget,
                 failed: false,
+                receipt: None,
             },
         )
     }
@@ -320,6 +314,7 @@ impl<'a> Session<'a> {
                 .charged(),
         )
     }
+    #[cfg(test)]
     pub(crate) fn finish(mut self) -> Result<PhysicalReservation, Diagnostic> {
         if self.failed {
             return Err(replay_error(

@@ -156,3 +156,6 @@ mod recovering;
 
 #[path = "tests/setup.rs"]
 mod setup;
+
+#[path = "tests/paid.rs"]
+mod paid;

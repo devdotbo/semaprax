@@ -40,12 +40,12 @@ cursor, then one bounded refusal String. Construction occurs only after those
 requests succeed. A later first refusal moves that actual paid String into its
 Diagnostic; it does not fund an outward report Vec.
 
-The compatibility `Preparation::new` and `ReplayBudget::from_reservation`
-wrappers still convert the inline reason into an allocating owned Diagnostic.
-They are not zero-allocation or caller-funded report boundaries. `PaidReport`
-and full outward report propagation remain unimplemented until an actual caller
-owns and transfers the carrier and text payment. This neutral constructor adds
-no ordinary lexical admission, G410 bypass, new ceiling or allowance.
+The compatibility `Preparation::new` (now test-only) and
+`ReplayBudget::from_reservation` wrappers still convert the inline reason into
+an allocating owned Diagnostic.
+They are not zero-allocation or caller-funded report boundaries. This neutral
+constructor adds no ordinary lexical admission, G410 bypass, new ceiling or
+allowance. The caller-owned report that it does not fund is described below.
 
 Additional owning lib selectors under
 `cleanup_plan::replay::selected_entry::tests::setup`:
@@ -55,4 +55,180 @@ Additional owning lib selectors under
 
 These controls observe setup and refusal through Drop, with independent literal
 carrier requests, zero/one-short setup, first receipt and same text/ledger
-pointers. They do not establish funding for the still-absent outer report owner.
+pointers. They do not themselves fund an outer report owner.
+
+## Caller-owned paid report (#781, authored, not yet executed)
+
+Status: source-only. Neither the build, Clippy nor the selectors below have
+run against this protocol; no allocation fit, performance or benchmark claim
+follows from it.
+
+`selected_entry/paid.rs` owns the crate-private protocol types. `ReportForm`
+is one fixed outward code and literal message chosen by the actual caller.
+`PaidReport` is an affine carrier: `try_acquire` debits exactly one
+`Diagnostic` slot and the form's literal bytes on the caller's selected ledger
+before allocating a capacity-one Vec and an exact-capacity String. No function
+id or formatted detail is published, so no further text is needed. A refused
+debit or a capacity mismatch returns the same rejected ledger and a Copy
+`SetupReason` (`ReportCarrier`, `ReportText` or `ReportCapacity`) and
+allocates nothing.
+
+`PaidRefusal` is sealed; only `paid.rs` constructs it, so no caller can
+present an unpaid or foreign Vec as paid. Its unpaid form retains the failed
+ledger and reason. Its paid form retains the published carrier, a Copy
+`Refused`, and exactly one ledger owner: the `SetupFailure` from
+`PaidReport::prepare` (`Preparation::try_new` on the ledger that paid the
+carrier), the rejected bare ledger, or the failed `Preparation` recovered from
+authentication, a constructor, `Session::try_from_preparation` or a Session
+refusal (`Session::into_failed_preparation`, `Session::finish_paid`).
+Publication writes into the acquired backing without reallocation. Transfer
+marks the preparation failed and rejects its ledger without replacing a first
+receipt. Neither form restores work, physical allowance or admission.
+
+### Inline refusal on the qualified route
+
+`Refused` is a Copy, heap-free value: a `Cause` (`Mismatch`, `Budget`,
+`Constructor`, `Failed`, `Setup`, `Session`), a static detail literal, and the
+first static boundary stage. It has no `From` conversion into a `Diagnostic`
+or `Vec`. Only the test-only `into_legacy_diagnostic`, and the test-only
+`static_text::primitive::legacy` (G410) helper, render it.
+
+The held `Preparation` refuses inline through `try_charge`,
+`try_reserve_array`, `try_reserve_vec` and `construct`. A budget refusal from
+`ReplayBudget` is the first paid Diagnostic: `budget_refusal` moves the
+prepaid refusal text exactly once. The preparation retains it by move as its
+`receipt`. A later refusal returns `Refused::FAILED`, or an empty, unallocated
+String from a spent budget that is dropped, and never replaces that receipt.
+`construct` lends a Copy-refusing debit. Work exhaustion spends the same
+prepaid receipt and fails closed, even if a constructor ignores its refused
+debit. The selected declaration constructors (`primitive_replay_metered`,
+`append_flat_record_replay_metered`, `append_vec_replay_metered`,
+`append_scalar_helper_replay_metered`, `helper_signature::admitted`, and the
+test-only Option factory) now refuse with `Refused::constructor(literal)`
+instead of allocating a `"... reconstruction refused"` Diagnostic.
+
+Every authenticator on the route returns `Result<_, Refused>`:
+`primitive::{members, current_module}`, `helpers::{authenticate,
+authenticate_target, fact, calls, same_type}`, `helpers::local`,
+`helpers::graph`, `helpers::types`, and `records::prepared`. None constructs a
+Diagnostic, Vec or String before returning, and the caller transfers the
+carrier with `PaidReport::refuse(preparation, refused)`. The closure boundary
+records its stage with `Refused::at` (one static pointer) instead of
+formatting test help.
+
+The test-only legacy owners `Preparation::{new, charge, reserve_array,
+reserve_vec}` and `Session::{new, from_preparation, finish}` still allocate
+`replay_error` on refusal or retry. Production no longer reaches them.
+
+### Session refusal and fixed literal remapping
+
+A `Session::try_from_preparation`, `validate` or `validate_scalar` refusal
+returns the Session's own Diagnostic. `PaidReport::refuse_session` moves it
+into the failed preparation as the first receipt, unless an earlier receipt
+is already held. It is never cloned, formatted or published. The route stops
+at the first member refusal. It never validates or finishes a failed Session
+again, so the legacy `already failed` retry Diagnostic never exists.
+
+The outward report is a fixed literal remapping. The public `SPX-G410` form,
+or the remapping caller's literal, is the carrier's prepaid exact owned text.
+The Session text pointer is not transferred into that report. It stays with
+the failed ledger owner and is dropped with it when the refusal is published.
+`finish_paid` on a failed Session refuses inline with `Refused::FAILED` and
+allocates nothing. On success it drops the unused carrier and returns the same
+boxed ledger, with no refund or reset.
+
+### Actual caller
+
+The actual caller is `workspace_graph/source_schema/static_text/primitive.rs`
+`replay_paid` and its imported `helpers::replay` twin. It creates the module's
+ledger, acquires the carrier, then prepares. It transfers the carrier and the
+exact failed owner on every later refusal. This contract is on the actual
+production route, and no test-only envelope stands in for it.
+
+Typed twins carry the refusal outward without remapping:
+`source_schema::schema_with_proofs_paid` and `source_schema::all`, then
+`WorkspaceGraphBuild::{into_change_view_paid, into_operation_view_paid,
+source_graph_schemas_paid}` in `workspace_graph/paid_view.rs` through
+`ViewRefusal`. Remapping callers instead pass the literal they publish:
+Change base and candidate (`SPX-G184`), Structural Change (`SPX-G192`) and
+Operations (`SPX-G200`) call `into_*_view_reporting(form)`. A paid carrier for
+that exact form moves out unchanged, and no replay Vec is formatted after the
+refusal.
+
+`PaidRefusal::into_report(expected)` and `into_published` return
+`Result<Vec<Diagnostic>, Unpaid>`. Only a paid carrier for exactly `expected`
+moves out. An unpaid carrier (`UnpaidReason::Carrier`), a carrier paid for a
+different form (`FormMismatch`, dropped and never relabelled) or a non-replay
+view refusal (`Legacy`) reaches the Copy `Unpaid` boundary without
+allocating. `Unpaid::into_unfunded` is the only operation that then allocates
+the requested literal. It is a named compatibility edge, not a funded report.
+
+These compatibility boundaries remain allocating and unfunded, outside the
+qualified contract:
+
+- `Unpaid::into_unfunded`, at the view wrappers' outward edge.
+- `ViewRefusal::Legacy`: fingerprint and sidecar `SPX-G173`, builder
+  structure including `reserve_builder_structure`'s own limit Vec,
+  literal-site, helper and schema-selection refusals. A remapping caller drops
+  it and publishes its literal through `Unpaid::into_unfunded`.
+- The pass-through wrappers `into_change_view` (test-only),
+  `into_operation_view` (nominal rename) and `source_graph_schemas`
+  (Semantic Workspace preflight/replay). These use the public `SPX-G410` form.
+  A paid G410 carrier passes through them. An unpaid one is allocated there,
+  only through `Unpaid::into_unfunded`.
+- Callers above `semantic_workspace` preflight and the Change, Structural
+  Change and Operations entry points still return owned `Vec<Diagnostic>`.
+  No public type changes in this batch. A v0.10 typed outward refusal would be
+  a separate, specified API change.
+
+Remaining concrete gaps inside the route (not claimed as funded):
+
+- The shared scalar purity classifier
+  (`static_text::scalar_helpers::pure_records_metered`, with
+  `hir::borrowed_scalar` and `borrowed_records`) keeps its owned-Vec
+  contract. The route's debit refuses with an empty, unallocated Vec and keeps
+  its Copy reason. The classifier's own structural refusals still allocate
+  their legacy `fail()` Vec, which the route drops before the transfer.
+- Replay engine refusals inside the Session that are not budget refusals
+  (`replay_error` in `require_entry`, `selected_callees`, `selected_context`
+  and lexical/scalar replay) still allocate their own formatted Diagnostic.
+  The route moves that Diagnostic as the receipt and never publishes it, but
+  its allocation is unfunded.
+- This protocol funds only the outward report carrier and reuses the setup's
+  prepaid refusal text as the receipt. It makes no whole-allocation,
+  application-fit or authority qualification claim for the replay itself.
+
+Every public literal and code is unchanged. Each selected module ledger now
+also carries one report carrier debit (`size_of::<Diagnostic>()` plus the form
+length) inside the existing `MAX_CHANGE_BUILDER_BYTES` and the enclosing
+active budget. No ceiling is raised. The ordinary lexical proposal stays
+unapplied, and no admission, schema or authority is widened.
+
+Owning lib selectors under `cleanup_plan::replay::selected_entry::tests::paid`:
+
+- `paid_report_zero_and_one_short_return_the_exact_rejected_ledger_without_allocating`
+- `paid_report_setup_refusal_publishes_original_backing_and_keeps_setup_ledger`
+- `paid_report_constructor_refusal_keeps_the_exact_ledger_and_first_receipt`
+- `paid_report_budget_refusal_moves_the_prepaid_text_once_without_allocating`
+- `paid_report_constructor_exhaustion_spends_the_prepaid_receipt_and_fails_closed`
+- `paid_report_session_refusal_transfers_carrier_and_retains_first_receipt_through_drop`
+- `paid_finish_returns_the_same_ledger_and_a_failed_finish_allocates_nothing`
+- `paid_report_remap_publishes_only_its_prepaid_form`
+
+Actual-caller selectors under
+`workspace_graph::source_schema::static_text::tests::paid_report`:
+
+- `actual_caller_zero_and_report_one_short_return_the_unpaid_ledger_without_allocating`
+- `actual_caller_paid_setup_refusal_keeps_original_carrier_ledger_and_drop`
+- `actual_caller_authentication_refusal_allocates_and_discards_nothing`
+- `actual_caller_authentication_and_session_refusals_transfer_one_paid_report`
+- `actual_caller_one_short_budget_refusal_retains_the_prepaid_receipt`
+- `reporting_views_publish_the_callers_prepaid_form_and_keep_success_unchanged`
+
+Updated owning callers of the typed constructors and authenticators:
+`hir::declaration_index::primitive_replay::{flat_record, option_u8}::tests`,
+`hir::borrowed_scalar::option_u8::tests`,
+`cleanup_plan::replay::selected_entry::borrowed::tests`,
+`loop_calls::byte_writer::resolved::selected` (census control), and the
+`static_text::primitive::{helpers, records}` test modules (closure-graph
+oracle, entry and prepared controls). None has been executed.

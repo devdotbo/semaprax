@@ -14,11 +14,12 @@ fn prepare<'a>(
         .reserve_array::<super::super::super::Context<'_>>(anchor, 1, "owning prepared context")
         .map_err(|e| vec![e])?;
     let context =
-        super::super::super::helpers::local::authenticate(module, facts, &mut resources, anchor)?;
+        super::super::super::helpers::local::authenticate(module, facts, &mut resources, anchor)
+            .map_err(super::super::super::legacy)?;
     let spent = work - resources.remaining();
     let bytes = resources
         .construct(anchor, |physical, _| Ok(physical.charged()))
-        .map_err(|e| vec![e])?;
+        .map_err(super::super::super::legacy)?;
     Ok((context, spent, bytes))
 }
 #[test]

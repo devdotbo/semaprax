@@ -1,5 +1,6 @@
 //! Retained authority is independently replayed, never inferred from v77.
 use super::*;
+mod paid_report;
 mod retained_lexical_composition;
 const WRITER: &str = include_str!("../../../../tests/owned_data/static_utf8_writer.spx");
 fn build(source: &str) -> WorkspaceGraphBuild {

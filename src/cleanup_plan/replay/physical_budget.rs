@@ -1,7 +1,7 @@
 //! Selected physical allocation requests; ordinary replay keeps its exact route.
 use super::*;
 mod setup;
-pub(crate) use setup::SetupFailure;
+pub(crate) use setup::{SetupFailure, SetupReason};
 
 impl ReplayBudget {
     pub(super) fn with_physical(

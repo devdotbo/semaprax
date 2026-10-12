@@ -348,7 +348,8 @@ fn measured(
             &build.hir.modules,
             &build.hir.declarations,
             &mut resources,
-        )?;
+        )
+        .map_err(legacy)?;
         let mut session = SelectedReplaySession::from_preparation(&context, anchor, resources)
             .map_err(|e| vec![e])?;
         for helper in &context.helpers {
@@ -887,8 +888,14 @@ fn borrowed_provider_parameter_modes_roots_and_loan_proofs_cannot_be_forged() {
         )
         .err()
         .expect("the actual helper receiving seam must refuse mutated authority");
+        // The inline refusal is the receiving seam's own Copy cause, not a
+        // diagnostic Vec rebuilt after the fact.
         assert!(
-            rejected.iter().any(|e| e.code == "SPX-G410"),
+            matches!(
+                rejected.cause(),
+                crate::cleanup_plan::SelectedReplayCause::Mismatch
+                    | crate::cleanup_plan::SelectedReplayCause::Constructor
+            ),
             "mutation {mutation} ({label}): {rejected:?}"
         );
         assert_eq!(
@@ -959,7 +966,7 @@ fn imported_record_signature_equality_debits_the_actual_nominal_prefix() {
         for available in [units, units - 1] {
             let mut left = available;
             let result = same_type(&a, &b, |n| {
-                left = left.checked_sub(n).ok_or_else(fail)?;
+                left = left.checked_sub(n).ok_or(Refused::MISMATCH)?;
                 Ok(())
             });
             assert_eq!(result.is_ok(), available == units);

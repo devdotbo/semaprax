@@ -1000,12 +1000,8 @@ fn prepare_owned_with_limit(
     let remaining_delta_builder = remaining_after_base
         .checked_sub(candidate_builder_bytes)
         .ok_or_else(|| limit("analysis_builder_bytes", MAX_ANALYSIS_BUILDER_BYTES))?;
-    let base_graph = base_graph
-        .into_change_view()
-        .map_err(|diagnostics| map_replay_diagnostics("base-view", diagnostics))?;
-    let candidate_graph = candidate_graph
-        .into_change_view()
-        .map_err(|diagnostics| map_replay_diagnostics("candidate-view", diagnostics))?;
+    let base_graph = base_graph.into_change_view_reporting(REPLAY)?;
+    let candidate_graph = candidate_graph.into_change_view_reporting(REPLAY)?;
     let base_entry_count = base_graph
         .modules()
         .iter()
@@ -1527,11 +1523,14 @@ fn limit(field: &'static str, maximum: usize) -> Vec<Diagnostic> {
     )]
 }
 
-fn replay() -> Vec<Diagnostic> {
-    vec![Diagnostic::io(
+/// Both views prepay this exact literal; legacy refusals allocate it here.
+const REPLAY: crate::cleanup_plan::SelectedReplayReportForm =
+    crate::cleanup_plan::SelectedReplayReportForm::new(
         "SPX-G192",
         "Semantic Workspace Structural Change candidate replay disagrees with authenticated facts",
-    )]
+    );
+fn replay() -> Vec<Diagnostic> {
+    REPLAY.legacy()
 }
 
 fn map_replay_diagnostics(_label: &'static str, _diagnostics: Vec<Diagnostic>) -> Vec<Diagnostic> {

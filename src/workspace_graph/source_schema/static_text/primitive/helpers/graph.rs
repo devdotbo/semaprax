@@ -40,37 +40,40 @@ pub(super) struct Graph<'a> {
     #[cfg(test)]
     pub(super) walks: usize,
 }
-type Debit<'d> = dyn FnMut(usize) -> Result<(), Vec<Diagnostic>> + 'd;
-fn compare(a: &str, b: &str, debit: &mut Debit<'_>) -> Result<Ordering, Vec<Diagnostic>> {
-    debit(a.len().min(b.len()).checked_add(1).ok_or_else(fail)?)?;
+type Debit<'d> = dyn FnMut(usize) -> Result<(), Refused> + 'd;
+fn compare(a: &str, b: &str, debit: &mut Debit<'_>) -> Result<Ordering, Refused> {
+    debit(
+        a.len()
+            .min(b.len())
+            .checked_add(1)
+            .ok_or(Refused::MISMATCH)?,
+    )?;
     Ok(a.cmp(b))
 }
 /// A full buffer relocates every retained element; that move is debited
 /// before the reservation, and the reservation precedes the allocation.
 fn grow<T>(
     values: &mut Vec<T>,
-    phase: &str,
+    phase: &'static str,
     resources: &mut SelectedReplayPreparation,
     anchor: &ResolvedFunction,
-) -> Result<(), Vec<Diagnostic>> {
+) -> Result<(), Refused> {
     if values.len() == values.capacity() {
         charge(resources, anchor, values.len())?;
     }
-    resources
-        .reserve_vec(anchor, values, 1, phase)
-        .map_err(|_| fail())?;
+    resources.try_reserve_vec(anchor, values, 1, phase)?;
     if values.len() == values.capacity() {
-        return Err(fail());
+        return Err(Refused::MISMATCH);
     }
     Ok(())
 }
 fn push<T>(
     values: &mut Vec<T>,
     value: T,
-    phase: &str,
+    phase: &'static str,
     resources: &mut SelectedReplayPreparation,
     anchor: &ResolvedFunction,
-) -> Result<(), Vec<Diagnostic>> {
+) -> Result<(), Refused> {
     grow(values, phase, resources, anchor)?;
     charge(resources, anchor, 1)?;
     values.push(value);
@@ -89,13 +92,17 @@ impl Path {
     pub(super) fn new(
         resources: &mut SelectedReplayPreparation,
         anchor: &ResolvedFunction,
-    ) -> Result<Self, Vec<Diagnostic>> {
-        resources
-            .reserve_array::<usize>(anchor, PATH, "imported scalar closure directory path")
-            .map_err(|_| fail())?;
-        resources
-            .reserve_array::<bool>(anchor, PATH, "imported scalar closure directory path")
-            .map_err(|_| fail())?;
+    ) -> Result<Self, Refused> {
+        resources.try_reserve_array::<usize>(
+            anchor,
+            PATH,
+            "imported scalar closure directory path",
+        )?;
+        resources.try_reserve_array::<bool>(
+            anchor,
+            PATH,
+            "imported scalar closure directory path",
+        )?;
         charge(resources, anchor, 2 * PATH)?;
         Ok(Self {
             at: [NIL; PATH],
@@ -118,15 +125,17 @@ impl<'a> Directory<'a> {
         path: &mut Path,
         resources: &mut SelectedReplayPreparation,
         anchor: &ResolvedFunction,
-    ) -> Result<Self, Vec<Diagnostic>> {
+    ) -> Result<Self, Refused> {
         let local = module.functions.len();
-        resources
-            .reserve_array::<Node<'_>>(anchor, local, "imported scalar closure directory")
-            .map_err(|_| fail())?;
+        resources.try_reserve_array::<Node<'_>>(
+            anchor,
+            local,
+            "imported scalar closure directory",
+        )?;
         charge(resources, anchor, local)?;
         let nodes = Vec::with_capacity(local);
         if nodes.capacity() != local {
-            return Err(fail());
+            return Err(Refused::MISMATCH);
         }
         let mut directory = Self { nodes, root: NIL };
         for function in &module.functions {
@@ -146,9 +155,9 @@ impl<'a> Directory<'a> {
         fresh: bool,
         path: &mut Path,
         debit: &mut Debit<'_>,
-    ) -> Result<usize, Vec<Diagnostic>> {
+    ) -> Result<usize, Refused> {
         if self.nodes.len() == self.nodes.capacity() {
-            return Err(fail());
+            return Err(Refused::MISMATCH);
         }
         let ordinal = self.nodes.len();
         let mut depth = 0;
@@ -157,7 +166,7 @@ impl<'a> Directory<'a> {
         while at != NIL {
             debit(1)?;
             if depth == PATH {
-                return Err(fail());
+                return Err(Refused::MISMATCH);
             }
             let node = &self.nodes[at];
             let order = compare(node.function.id.as_str(), function.id.as_str(), debit)?;
@@ -177,7 +186,7 @@ impl<'a> Directory<'a> {
         }
         if let Some(first) = equal {
             if fresh {
-                return Err(fail());
+                return Err(Refused::MISMATCH);
             }
             debit(1)?;
             self.nodes[first].shared = true;
@@ -190,7 +199,7 @@ impl<'a> Directory<'a> {
             });
             return Ok(ordinal);
         }
-        debit(depth.checked_add(3).ok_or_else(fail)?)?;
+        debit(depth.checked_add(3).ok_or(Refused::MISMATCH)?)?;
         self.nodes.push(Node {
             function,
             left: NIL,
@@ -268,7 +277,7 @@ impl<'a> Directory<'a> {
     }
     /// The unique current ordinal of `id`, if any. A shared current ID
     /// refuses like the saved linear lookup over locals and selected helpers.
-    fn find(&self, id: &str, debit: &mut Debit<'_>) -> Result<Option<usize>, Vec<Diagnostic>> {
+    fn find(&self, id: &str, debit: &mut Debit<'_>) -> Result<Option<usize>, Refused> {
         let mut at = self.root;
         while at != NIL {
             debit(1)?;
@@ -276,7 +285,7 @@ impl<'a> Directory<'a> {
             match compare(node.function.id.as_str(), id, debit)? {
                 Ordering::Less => at = node.right,
                 Ordering::Greater => at = node.left,
-                Ordering::Equal if node.shared => return Err(fail()),
+                Ordering::Equal if node.shared => return Err(Refused::MISMATCH),
                 Ordering::Equal => return Ok(Some(at)),
             }
         }
@@ -306,7 +315,7 @@ impl<'a> Directory<'a> {
         path: &mut Path,
         resources: &mut SelectedReplayPreparation,
         anchor: &ResolvedFunction,
-    ) -> Result<(), Vec<Diagnostic>> {
+    ) -> Result<(), Refused> {
         grow(
             &mut self.nodes,
             "imported scalar closure directory",
@@ -314,7 +323,7 @@ impl<'a> Directory<'a> {
             anchor,
         )?;
         if self.link(function, true, path, &mut |n| charge(resources, anchor, n))? != ordinal {
-            return Err(fail());
+            return Err(Refused::MISMATCH);
         }
         Ok(())
     }
@@ -359,21 +368,19 @@ pub(super) fn discover<'a>(
     facts: &BTreeMap<String, WorkspaceDeclarationFact>,
     resources: &mut SelectedReplayPreparation,
     anchor: &ResolvedFunction,
-) -> Result<Graph<'a>, Vec<Diagnostic>> {
+) -> Result<Graph<'a>, Refused> {
     // The saved whole-input member bound and receipt slots stay as before;
     // members, like the directory, grow only by actual reachable demand.
     let maximum = modules
         .iter()
         .try_fold(0usize, |n, m| n.checked_add(m.functions.len()))
-        .ok_or_else(fail)?;
+        .ok_or(Refused::MISMATCH)?;
     charge(resources, anchor, modules.len())?;
-    resources
-        .reserve_array::<u8>(
-            anchor,
-            modules.len(),
-            "imported scalar defining source debits",
-        )
-        .map_err(|_| fail())?;
+    resources.try_reserve_array::<u8>(
+        anchor,
+        modules.len(),
+        "imported scalar defining source debits",
+    )?;
     charge(resources, anchor, modules.len())?;
     let mut charged = vec![0u8; modules.len()];
     let mut helpers: Vec<Member<'a>> = Vec::new();
@@ -396,7 +403,7 @@ pub(super) fn discover<'a>(
             .functions
             .len()
             .checked_add(helpers.len())
-            .ok_or_else(fail)?;
+            .ok_or(Refused::MISMATCH)?;
         if processed >= total {
             break;
         }
@@ -409,7 +416,7 @@ pub(super) fn discover<'a>(
         calls(function, resources, anchor, |id, resources| {
             if builtin(id) {
                 return if provider && !hir::borrowed_scalar::builtin(id.as_str()) {
-                    Err(fail())
+                    Err(Refused::MISMATCH)
                 } else {
                     Ok(())
                 };
@@ -420,12 +427,12 @@ pub(super) fn discover<'a>(
                 None => {
                     let member = authenticate_target(id, modules, facts, resources, anchor)?;
                     if std::ptr::eq(member.module, module) {
-                        return Err(fail());
+                        return Err(Refused::MISMATCH);
                     }
                     let ordinal = modules
                         .iter()
                         .position(|m| std::ptr::eq(m, member.module))
-                        .ok_or_else(fail)?;
+                        .ok_or(Refused::MISMATCH)?;
                     charge(resources, anchor, modules.len())?;
                     if charged[ordinal] == 0 {
                         charge(
@@ -435,19 +442,19 @@ pub(super) fn discover<'a>(
                                 .module
                                 .scalar_helpers
                                 .as_deref()
-                                .ok_or_else(fail)?
+                                .ok_or(Refused::MISMATCH)?
                                 .capture_work,
                         )?;
                         charged[ordinal] = 1;
                     }
                     if helpers.len() == maximum {
-                        return Err(fail());
+                        return Err(Refused::MISMATCH);
                     }
                     let to = module
                         .functions
                         .len()
                         .checked_add(helpers.len())
-                        .ok_or_else(fail)?;
+                        .ok_or(Refused::MISMATCH)?;
                     directory.publish(member.function, to, &mut path, resources, anchor)?;
                     push(
                         &mut helpers,
@@ -478,7 +485,7 @@ pub(super) fn discover<'a>(
             resources,
             anchor,
         )?;
-        processed = processed.checked_add(1).ok_or_else(fail)?;
+        processed = processed.checked_add(1).ok_or(Refused::MISMATCH)?;
     }
     Ok(Graph {
         helpers,
@@ -498,24 +505,28 @@ pub(super) fn order(
     resources: &mut SelectedReplayPreparation,
     anchor: &ResolvedFunction,
     mut visit: impl FnMut(usize),
-) -> Result<usize, Vec<Diagnostic>> {
-    let count = graph.offsets.len().checked_sub(1).ok_or_else(fail)?;
-    resources
-        .reserve_array::<usize>(anchor, count, "imported scalar closure indegrees")
-        .map_err(|_| fail())?;
-    resources
-        .reserve_array::<usize>(anchor, count, "imported scalar closure ready frontier")
-        .map_err(|_| fail())?;
+) -> Result<usize, Refused> {
+    let count = graph
+        .offsets
+        .len()
+        .checked_sub(1)
+        .ok_or(Refused::MISMATCH)?;
+    resources.try_reserve_array::<usize>(anchor, count, "imported scalar closure indegrees")?;
+    resources.try_reserve_array::<usize>(
+        anchor,
+        count,
+        "imported scalar closure ready frontier",
+    )?;
     charge(resources, anchor, count)?;
     let mut indegree = vec![0usize; count];
     let mut pending = Vec::with_capacity(count);
     if pending.capacity() != count {
-        return Err(fail());
+        return Err(Refused::MISMATCH);
     }
     for to in &graph.targets {
         charge(resources, anchor, 1)?;
-        let n = indegree.get_mut(*to).ok_or_else(fail)?;
-        *n = n.checked_add(1).ok_or_else(fail)?;
+        let n = indegree.get_mut(*to).ok_or(Refused::MISMATCH)?;
+        *n = n.checked_add(1).ok_or(Refused::MISMATCH)?;
     }
     for (i, n) in indegree.iter().enumerate() {
         charge(resources, anchor, 1)?;
@@ -528,21 +539,21 @@ pub(super) fn order(
     let mut edges = 0usize;
     while let Some(from) = pending.pop() {
         charge(resources, anchor, 1)?;
-        visited = visited.checked_add(1).ok_or_else(fail)?;
+        visited = visited.checked_add(1).ok_or(Refused::MISMATCH)?;
         visit(from);
-        let start = *graph.offsets.get(from).ok_or_else(fail)?;
+        let start = *graph.offsets.get(from).ok_or(Refused::MISMATCH)?;
         let end = *graph
             .offsets
-            .get(from.checked_add(1).ok_or_else(fail)?)
-            .ok_or_else(fail)?;
-        for to in graph.targets.get(start..end).ok_or_else(fail)? {
+            .get(from.checked_add(1).ok_or(Refused::MISMATCH)?)
+            .ok_or(Refused::MISMATCH)?;
+        for to in graph.targets.get(start..end).ok_or(Refused::MISMATCH)? {
             charge(resources, anchor, 1)?;
-            edges = edges.checked_add(1).ok_or_else(fail)?;
-            let n = indegree.get_mut(*to).ok_or_else(fail)?;
-            *n = n.checked_sub(1).ok_or_else(fail)?;
+            edges = edges.checked_add(1).ok_or(Refused::MISMATCH)?;
+            let n = indegree.get_mut(*to).ok_or(Refused::MISMATCH)?;
+            *n = n.checked_sub(1).ok_or(Refused::MISMATCH)?;
             if *n == 0 {
                 if pending.len() == count {
-                    return Err(fail());
+                    return Err(Refused::MISMATCH);
                 }
                 charge(resources, anchor, 1)?;
                 pending.push(*to);
@@ -550,7 +561,7 @@ pub(super) fn order(
         }
     }
     if visited != count {
-        return Err(fail());
+        return Err(Refused::MISMATCH);
     }
     Ok(edges)
 }

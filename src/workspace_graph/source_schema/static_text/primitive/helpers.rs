@@ -100,17 +100,15 @@ fn charge(
     resources: &mut SelectedReplayPreparation,
     anchor: &ResolvedFunction,
     n: usize,
-) -> Result<(), Vec<Diagnostic>> {
-    resources
-        .charge(anchor, n, "imported scalar helper authentication")
-        .map_err(|_| fail())
+) -> Result<(), Refused> {
+    resources.try_charge(anchor, n, "imported scalar helper authentication")
 }
 fn fact<'a>(
     id: &str,
     facts: &'a BTreeMap<String, WorkspaceDeclarationFact>,
     resources: &mut SelectedReplayPreparation,
     anchor: &ResolvedFunction,
-) -> Result<&'a WorkspaceDeclarationFact, Vec<Diagnostic>> {
+) -> Result<&'a WorkspaceDeclarationFact, Refused> {
     for (key, value) in facts {
         charge(
             resources,
@@ -118,26 +116,25 @@ fn fact<'a>(
             key.len()
                 .checked_add(id.len())
                 .and_then(|n| n.checked_add(1))
-                .ok_or_else(fail)?,
+                .ok_or(Refused::MISMATCH)?,
         )?;
         if key == id {
             return Ok(value);
         }
     }
-    Err(fail())
+    Err(Refused::MISMATCH)
 }
 fn calls(
     function: &ResolvedFunction,
     resources: &mut SelectedReplayPreparation,
     anchor: &ResolvedFunction,
-    mut call: impl FnMut(
-        &hir::DeclarationId,
-        &mut SelectedReplayPreparation,
-    ) -> Result<(), Vec<Diagnostic>>,
-) -> Result<(), Vec<Diagnostic>> {
-    resources
-        .reserve_array::<Frame<'_>>(anchor, DEPTH, "imported scalar helper body cursor")
-        .map_err(|_| fail())?;
+    mut call: impl FnMut(&hir::DeclarationId, &mut SelectedReplayPreparation) -> Result<(), Refused>,
+) -> Result<(), Refused> {
+    resources.try_reserve_array::<Frame<'_>>(
+        anchor,
+        DEPTH,
+        "imported scalar helper body cursor",
+    )?;
     let mut stack = [None; DEPTH];
     for root in function
         .requires
@@ -149,7 +146,7 @@ fn calls(
         let mut depth = 1;
         while depth != 0 {
             charge(resources, anchor, 1)?;
-            let (mut cursor, entered) = stack[depth - 1].take().ok_or_else(fail)?;
+            let (mut cursor, entered) = stack[depth - 1].take().ok_or(Refused::MISMATCH)?;
             if !entered {
                 if let hir::ResolvedExprKind::Call {
                     callee,
@@ -166,14 +163,14 @@ fn calls(
                                     || matches!(element, hir::ResolvedType::String | hir::ResolvedType::Bytes)
                                     || matches!(element, hir::ResolvedType::Nominal { arguments, .. } if arguments.is_empty()))))
                     {
-                        return Err(fail());
+                        return Err(Refused::MISMATCH);
                     }
                     call(callee, resources)?;
                 }
             }
             if let Some(child) = cursor.next() {
                 if depth == DEPTH {
-                    return Err(fail());
+                    return Err(Refused::MISMATCH);
                 }
                 stack[depth - 1] = Some((cursor, true));
                 stack[depth] = Some((hir::lexical_exit::ChildCursor::new(child), false));
@@ -197,8 +194,8 @@ fn builtin(id: &hir::DeclarationId) -> bool {
 fn same_type(
     source: &hir::ResolvedType,
     current: &hir::ResolvedType,
-    mut debit: impl FnMut(usize) -> Result<(), Vec<Diagnostic>>,
-) -> Result<bool, Vec<Diagnostic>> {
+    mut debit: impl FnMut(usize) -> Result<(), Refused>,
+) -> Result<bool, Refused> {
     debit(1)?;
     if hir::is_scalar_resolved_type(source)
         || matches!(source, hir::ResolvedType::Str | hir::ResolvedType::SliceU8)
@@ -239,13 +236,13 @@ fn authenticate_target<'a>(
     facts: &BTreeMap<String, WorkspaceDeclarationFact>,
     resources: &mut SelectedReplayPreparation,
     anchor: &ResolvedFunction,
-) -> Result<Member<'a>, Vec<Diagnostic>> {
+) -> Result<Member<'a>, Refused> {
     let origin = fact(id.as_str(), facts, resources, anchor)?;
     if origin.kind != hir::DeclarationKind::Function
         || origin.owner.is_some()
         || origin.origin != hir::IdentityOrigin::Explicit
     {
-        return Err(fail());
+        return Err(Refused::MISMATCH);
     }
     let mut provider = None;
     charge(resources, anchor, modules.len())?;
@@ -259,17 +256,17 @@ fn authenticate_target<'a>(
                 .checked_add(module.path.len())
                 .and_then(|n| n.checked_add(origin.module.as_ref().map_or(0, String::len)))
                 .and_then(|n| n.checked_add(origin.path.as_ref().map_or(0, String::len)))
-                .ok_or_else(fail)?,
+                .ok_or(Refused::MISMATCH)?,
         )?;
         if Some(module.module.as_str()) == origin.module.as_deref()
             && Some(module.path.as_str()) == origin.path.as_deref()
             && provider.replace(module).is_some()
         {
-            return Err(fail());
+            return Err(Refused::MISMATCH);
         }
     }
-    let module = provider.ok_or_else(fail)?;
-    let inventory = module.scalar_helpers.as_deref().ok_or_else(fail)?;
+    let module = provider.ok_or(Refused::MISMATCH)?;
+    let inventory = module.scalar_helpers.as_deref().ok_or(Refused::MISMATCH)?;
     charge(
         resources,
         anchor,
@@ -277,7 +274,7 @@ fn authenticate_target<'a>(
             .functions
             .len()
             .checked_add(module.functions.len())
-            .ok_or_else(fail)?,
+            .ok_or(Refused::MISMATCH)?,
     )?;
     let mut selected = None;
     for function in &module.functions {
@@ -289,13 +286,13 @@ fn authenticate_target<'a>(
                 .as_str()
                 .len()
                 .checked_add(id.as_str().len())
-                .ok_or_else(fail)?,
+                .ok_or(Refused::MISMATCH)?,
         )?;
         if function.id == *id && selected.replace(function).is_some() {
-            return Err(fail());
+            return Err(Refused::MISMATCH);
         }
     }
-    let function = selected.ok_or_else(fail)?;
+    let function = selected.ok_or(Refused::MISMATCH)?;
     let mut expected = None;
     for fact in &inventory.functions {
         charge(
@@ -305,13 +302,13 @@ fn authenticate_target<'a>(
                 .as_str()
                 .len()
                 .checked_add(id.as_str().len())
-                .ok_or_else(fail)?,
+                .ok_or(Refused::MISMATCH)?,
         )?;
         if fact.id == *id && expected.replace(fact).is_some() {
-            return Err(fail());
+            return Err(Refused::MISMATCH);
         }
     }
-    let source = expected.ok_or_else(fail)?;
+    let source = expected.ok_or(Refused::MISMATCH)?;
     charge(
         resources,
         anchor,
@@ -319,7 +316,7 @@ fn authenticate_target<'a>(
             .name
             .len()
             .checked_add(function.name.len())
-            .ok_or_else(fail)?,
+            .ok_or(Refused::MISMATCH)?,
     )?;
     if !source.explicit
         || source.name != function.name
@@ -328,7 +325,7 @@ fn authenticate_target<'a>(
         })?
         || source.params.len() != function.params.len()
     {
-        return Err(fail());
+        return Err(Refused::MISMATCH);
     }
     for (source, current) in source.params.iter().zip(&function.params) {
         charge(
@@ -341,24 +338,41 @@ fn authenticate_target<'a>(
                 .checked_add(current.id.as_str().len())
                 .and_then(|n| n.checked_add(source.name.len()))
                 .and_then(|n| n.checked_add(current.name.len()))
-                .ok_or_else(fail)?,
+                .ok_or(Refused::MISMATCH)?,
         )?;
         if source.id != current.id
             || source.name != current.name
             || !same_type(&source.ty, &current.ty, |n| charge(resources, anchor, n))?
             || source.ownership != current.ownership
         {
-            return Err(fail());
+            return Err(Refused::MISMATCH);
         }
     }
-    resources
-        .reserve_array::<Frame<'_>>(anchor, DEPTH, "imported scalar helper profile cursor")
-        .map_err(|_| fail())?;
+    resources.try_reserve_array::<Frame<'_>>(
+        anchor,
+        DEPTH,
+        "imported scalar helper profile cursor",
+    )?;
     let mut work = 1_048_576;
-    if !scalar_helpers::pure_records_metered(function, &module.types, &mut work, &mut |units| {
-        charge(resources, anchor, units)
-    })? {
-        return Err(fail());
+    // The shared purity classifier keeps its owned-Vec contract. Our debit
+    // refuses with an empty, unallocated Vec and keeps the Copy reason here;
+    // the classifier's own structural refusals still build their legacy Vec
+    // internally (a documented remaining gap), dropped before the transfer.
+    let mut debit_refusal = None;
+    let pure =
+        scalar_helpers::pure_records_metered(function, &module.types, &mut work, &mut |units| {
+            charge(resources, anchor, units).map_err(|refused| {
+                debit_refusal = Some(refused);
+                Vec::new()
+            })
+        });
+    match pure {
+        Ok(true) => {}
+        Ok(false) => return Err(Refused::MISMATCH),
+        Err(errors) => {
+            drop(errors);
+            return Err(debit_refusal.unwrap_or(Refused::MISMATCH));
+        }
     }
     // The complete pure walk above independently excludes owned roots and
     // lexical exits. Such a provider has exactly the ordinary empty V1 loan
@@ -372,68 +386,46 @@ fn authenticate_target<'a>(
             .len()
             .min(crate::loan_plan::LOAN_PLAN_SCHEMA_V1.len())
             .checked_add(1)
-            .ok_or_else(fail)?,
+            .ok_or(Refused::MISMATCH)?,
     )?;
     if function.loan_plan.schema != crate::loan_plan::LOAN_PLAN_SCHEMA_V1
         || !function.loan_plan.loans.is_empty()
         || !function.loan_plan.endpoints.is_empty()
         || !function.loan_plan.edges.is_empty()
     {
-        return Err(fail());
+        return Err(Refused::MISMATCH);
     }
-    resources
-        .reserve_array::<u8>(
-            anchor,
-            crate::workspace_graph::static_text::primitive::digest_scratch_bytes(),
-            "imported scalar body digest scratch",
-        )
-        .map_err(|_| fail())?;
+    resources.try_reserve_array::<u8>(
+        anchor,
+        crate::workspace_graph::static_text::primitive::digest_scratch_bytes(),
+        "imported scalar body digest scratch",
+    )?;
     if !scalar_helpers::matches_metered(inventory, source, function, &mut |units| {
         charge(resources, anchor, units).ok()
     }) {
-        return Err(fail());
+        return Err(Refused::MISMATCH);
     }
     Ok(Member { module, function })
 }
 
-/// Keep the stable retained-source diagnostic. Owning tests name the refusing
-/// closure boundary instead of inferring it from a generic G410; an earlier,
-/// more specific help is never replaced. Production output is unchanged.
-fn boundary<T>(
-    answer: Result<T, Vec<Diagnostic>>,
-    stage: &'static str,
-) -> Result<T, Vec<Diagnostic>> {
-    #[cfg(test)]
-    let answer = answer.map_err(|errors| {
-        errors
-            .into_iter()
-            .map(|error| {
-                if error.help.is_some() {
-                    error
-                } else {
-                    error.with_help(format!("imported scalar closure boundary: {stage}"))
-                }
-            })
-            .collect()
-    });
-    #[cfg(not(test))]
-    let _ = stage;
-    answer
+/// Keep the stable retained-source diagnostic. The inline refusal names the
+/// refusing closure boundary (one static pointer, no help text or format);
+/// an earlier, more specific stage is never replaced.
+fn boundary<T>(answer: Result<T, Refused>, stage: &'static str) -> Result<T, Refused> {
+    answer.map_err(|refused| refused.at(stage))
 }
 fn authenticate_inner<'a>(
     module: &'a WorkspaceResolvedModule,
     modules: &'a [WorkspaceResolvedModule],
     facts: &BTreeMap<String, WorkspaceDeclarationFact>,
     resources: &mut SelectedReplayPreparation,
-) -> Result<Closure<'a>, Vec<Diagnostic>> {
-    let anchor = module.functions.first().ok_or_else(fail)?;
+) -> Result<Closure<'a>, Refused> {
+    let anchor = module.functions.first().ok_or(Refused::MISMATCH)?;
     boundary(
         super::current_module(module, modules, resources, anchor),
         "current module",
     )?;
-    resources
-        .reserve_array::<Closure<'_>>(anchor, 1, "imported scalar closure owner")
-        .map_err(|_| fail())?;
+    resources.try_reserve_array::<Closure<'_>>(anchor, 1, "imported scalar closure owner")?;
     let mut local = boundary(
         local::authenticate(module, facts, resources, anchor),
         "local source",
@@ -462,26 +454,22 @@ fn authenticate_inner<'a>(
         .functions
         .len()
         .checked_add(helpers.len())
-        .ok_or_else(fail)?;
+        .ok_or(Refused::MISMATCH)?;
     for member in &helpers {
-        resources
-            .construct(anchor, |physical, debit| {
-                local
-                    .index
-                    .append_scalar_helper_replay_metered(member.function, physical, debit)
-            })
-            .map_err(|_| fail())?;
+        resources.construct(anchor, |physical, debit| {
+            local
+                .index
+                .append_scalar_helper_replay_metered(member.function, physical, debit)
+        })?;
     }
-    resources
-        .reserve_array::<&ResolvedFunction>(
-            anchor,
-            module.functions.len(),
-            "imported consumer lexical members",
-        )
-        .map_err(|_| fail())?;
+    resources.try_reserve_array::<&ResolvedFunction>(
+        anchor,
+        module.functions.len(),
+        "imported consumer lexical members",
+    )?;
     let mut lexical = Vec::with_capacity(module.functions.len());
     if lexical.capacity() != module.functions.len() {
-        return Err(fail());
+        return Err(Refused::MISMATCH);
     }
     for function in &module.functions {
         if local::requires(function, resources, anchor)? {
@@ -507,7 +495,7 @@ pub(super) fn authenticate<'a>(
     modules: &'a [WorkspaceResolvedModule],
     facts: &BTreeMap<String, WorkspaceDeclarationFact>,
     resources: &mut SelectedReplayPreparation,
-) -> Result<Closure<'a>, Vec<Diagnostic>> {
+) -> Result<Closure<'a>, Refused> {
     let result = authenticate_inner(module, modules, facts, resources);
     if result.is_err() {
         resources.fail();
@@ -515,36 +503,44 @@ pub(super) fn authenticate<'a>(
     result
 }
 
+/// Imported closure twin of the primitive paid route. The caller's carrier
+/// was acquired on `physical` before this preparation; every refusal here
+/// transfers it with the exact failed ledger owner. Authentication refuses
+/// inline; a Session refusal moves its own Diagnostic into the failed owner.
 pub(super) fn replay(
     module: &WorkspaceResolvedModule,
     modules: &[WorkspaceResolvedModule],
     facts: &BTreeMap<String, WorkspaceDeclarationFact>,
     physical: crate::cleanup_plan::ReplayPhysicalReservation,
-) -> Result<(), Vec<Diagnostic>> {
-    let anchor = module.functions.first().ok_or_else(fail)?;
-    let mut resources = SelectedReplayPreparation::new(anchor, physical).map_err(|_| fail())?;
+    report: SelectedReplayReport,
+) -> Result<(), SelectedReplayRefusal> {
+    let Some(anchor) = module.functions.first() else {
+        return Err(report.refuse_unprepared(physical));
+    };
+    let (mut resources, report) = report.prepare(anchor, physical)?;
     let context = match authenticate(module, modules, facts, &mut resources) {
         Ok(context) => context,
-        Err(error) => {
-            resources.fail();
-            return Err(error);
-        }
+        Err(refused) => return Err(report.refuse(resources, refused)),
     };
-    let mut session =
-        SelectedReplaySession::from_preparation(&context, anchor, resources).map_err(|_| fail())?;
+    let session = SelectedReplaySession::try_from_preparation(&context, anchor, resources);
+    let mut session = match session {
+        Ok(session) => session,
+        Err((resources, error)) => return Err(report.refuse_session(resources, error)),
+    };
     for helper in &context.helpers {
-        session
-            .validate_scalar(helper.function)
-            .map_err(|_| fail())?;
+        if let Err(error) = session.validate_scalar(helper.function) {
+            return Err(report.refuse_session(session.into_failed_preparation(), error));
+        }
     }
     if context.lexical.is_empty() {
-        return Err(fail());
+        return Err(report.refuse(session.into_failed_preparation(), Refused::MISMATCH));
     }
     for function in &context.lexical {
-        session.validate(function).map_err(|_| fail())?;
+        if let Err(error) = session.validate(function) {
+            return Err(report.refuse_session(session.into_failed_preparation(), error));
+        }
     }
-    session.finish().map_err(|_| fail())?;
-    Ok(())
+    session.finish_paid(report).map(drop)
 }
 
 #[cfg(test)]

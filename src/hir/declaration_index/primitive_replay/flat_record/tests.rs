@@ -25,8 +25,8 @@ pub(in super::super) fn append(
     index: &mut DeclarationIndex,
     record: &ResolvedTypeDeclaration,
     physical: &mut ReplayPhysicalReservation,
-    debit: &mut dyn FnMut(usize) -> Result<(), crate::diagnostic::Diagnostic>,
-) -> Result<(), crate::diagnostic::Diagnostic> {
+    debit: &mut dyn FnMut(usize) -> Result<(), Refused>,
+) -> Result<(), Refused> {
     let ResolvedTypeDeclarationKind::Record { fields } = &record.kind else {
         panic!("record")
     };
@@ -56,9 +56,9 @@ fn flat_record_replay_retains_the_ordinary_empty_parameter_entry_at_exact_work_a
             let mut physical = ReplayPhysicalReservation::new(bytes);
             let mut index = DeclarationIndex::default();
             let result = append(&mut index, record, &mut physical, &mut |units| {
-                remaining = remaining.checked_sub(units).ok_or_else(|| {
-                    crate::diagnostic::Diagnostic::io("SPX-H006", "exact replay work exhausted")
-                })?;
+                remaining = remaining
+                    .checked_sub(units)
+                    .ok_or(Refused::constructor("exact replay work exhausted"))?;
                 Ok(())
             });
             let entry = index.type_parameters(&record.id).map(<[_]>::to_vec);
@@ -124,6 +124,10 @@ fn flat_record_replay_refuses_generic_compiler_owned_and_prior_parameter_entries
                 append(&mut index, &record, &mut physical, &mut |_| Ok(()))
             }
         };
-        assert_eq!(result.unwrap_err().code, "SPX-H006", "attack {attack}");
+        assert_eq!(
+            result.unwrap_err().detail(),
+            "flat-record declaration reconstruction refused",
+            "attack {attack}"
+        );
     }
 }

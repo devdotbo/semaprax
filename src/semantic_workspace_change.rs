@@ -1387,12 +1387,10 @@ fn prepare_owned(
                 semantic_workspace::MAX_CHANGE_BUILDER_BYTES,
             )
         })?;
-    let base_graph = base_graph
-        .into_change_view()
-        .map_err(|_| replay("Semantic Workspace Change base declaration replay disagrees"))?;
-    let candidate_graph = candidate_graph
-        .into_change_view()
-        .map_err(|_| replay("Semantic Workspace Change candidate declaration replay disagrees"))?;
+    // Each view prepays its exact remapped literal; no replay Vec is formatted
+    // after a selected refusal. Unpaid and non-replay refusals stay legacy.
+    let base_graph = base_graph.into_change_view_reporting(BASE_VIEW_REPLAY)?;
+    let candidate_graph = candidate_graph.into_change_view_reporting(CANDIDATE_VIEW_REPLAY)?;
     let prebound = delta_builder_prebound(&base_graph, &candidate_graph)?;
     let (delta, overflowed, delta_builder_bytes) =
         crate::bounded_output::with_limit_usage(remaining_delta_builder, || {
@@ -2975,6 +2973,17 @@ fn stale(message: &'static str) -> Vec<Diagnostic> {
 fn replay(message: &'static str) -> Vec<Diagnostic> {
     vec![Diagnostic::io("SPX-G184", message)]
 }
+
+const BASE_VIEW_REPLAY: crate::cleanup_plan::SelectedReplayReportForm =
+    crate::cleanup_plan::SelectedReplayReportForm::new(
+        "SPX-G184",
+        "Semantic Workspace Change base declaration replay disagrees",
+    );
+const CANDIDATE_VIEW_REPLAY: crate::cleanup_plan::SelectedReplayReportForm =
+    crate::cleanup_plan::SelectedReplayReportForm::new(
+        "SPX-G184",
+        "Semantic Workspace Change candidate declaration replay disagrees",
+    );
 
 fn incomplete(message: &'static str) -> Vec<Diagnostic> {
     vec![Diagnostic::io("SPX-G186", message)]

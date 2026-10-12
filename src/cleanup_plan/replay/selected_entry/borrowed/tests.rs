@@ -42,16 +42,18 @@ fn declarations(
     preparation: &mut Preparation,
 ) -> Result<crate::hir::DeclarationIndex, Diagnostic> {
     let function = &program.functions[0];
-    let mut index = preparation.construct(function, |physical, debit| {
-        crate::hir::DeclarationIndex::primitive_replay_metered(
-            program
-                .functions
-                .iter()
-                .map(|f| (f, crate::hir::IdentityOrigin::Explicit)),
-            physical,
-            debit,
-        )
-    })?;
+    let mut index = preparation
+        .construct(function, |physical, debit| {
+            crate::hir::DeclarationIndex::primitive_replay_metered(
+                program
+                    .functions
+                    .iter()
+                    .map(|f| (f, crate::hir::IdentityOrigin::Explicit)),
+                physical,
+                debit,
+            )
+        })
+        .map_err(Refused::into_legacy_diagnostic)?;
     preparation.append_option_authority(function, &mut index)?;
     preparation.reserve_array::<Provider<'_>>(
         function,
