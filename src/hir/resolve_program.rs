@@ -497,32 +497,7 @@ impl Resolver<'_> {
             self.fused_producer,
             &resolved,
         )?;
-        let loan_plans = staged!(
-            HirLoanPlans,
-            resolved
-                .functions
-                .iter()
-                .map(|function| crate::loan_plan::build_plan(&resolved, function))
-                .collect::<Result<Vec<_>, _>>()
-        )?;
-        for (function, loan_plan) in resolved.functions.iter_mut().zip(loan_plans) {
-            function.loan_plan = loan_plan;
-        }
-        let instance_loan_plans = staged!(
-            HirInstanceLoanPlans,
-            resolved
-                .function_instances
-                .iter()
-                .map(|instance| crate::loan_plan::build_plan(&resolved, &instance.function))
-                .collect::<Result<Vec<_>, _>>()
-        )?;
-        for (instance, loan_plan) in resolved
-            .function_instances
-            .iter_mut()
-            .zip(instance_loan_plans)
-        {
-            instance.function.loan_plan = loan_plan;
-        }
+        initial_loan_plans::attach(&mut resolved)?;
         let inventories = staged!(
             HirCleanupInventories,
             resolved
@@ -1428,4 +1403,5 @@ fn resolve_agent_declaration(
 #[cfg(test)]
 mod tests;
 
+mod initial_loan_plans;
 mod reuse_lowered;

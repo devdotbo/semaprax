@@ -429,3 +429,20 @@ diagnostic text remain outside this scope. Original final independent loan
 validation, forecasts and every literal limit remain unchanged. These source
 controls are unexecuted and establish no application fit or whole-validator
 funding claim.
+
+The initial resolver attachment also captures one existing CFG owner across
+its authored-function and concrete-instance groups. Each full current-member
+planner invocation and exact staging backing is paid before allocation. The
+first successful plan precedes staging allocation, preserving the original
+fallible collection's semantic-error order; the paid directory is deliberately
+exact and does not claim the original fallible shunt used exact capacity.
+Authored plans are installed only after their complete group succeeds and
+before instance construction, whose group has the same publication boundary.
+A physical failure consumes the captured owner's prepaid refusal text; a
+semantic diagnostic is moved unchanged. No new allowance or refund is created.
+Later independent canonical reconstruction and full comparison remain required.
+The added saved-original attachment, authored/instance late-error, actual
+planner-through-Drop and exact/short/sticky controls await execution. This
+extends initial planner funding only: original whole resolve→validation→replay
+and resolved-HIR Drop observers remain unchanged, and no complete pipeline
+funding or application fit is established by this source change.

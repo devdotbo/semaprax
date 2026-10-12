@@ -104,6 +104,17 @@ has no authority. Expression-scoped Copy discovery closes before caller-prefix
 sequencing. The held automata, weighted proof and selected physical backing share
 one cumulative ledger; the selected provider/type profile remains separate.
 
+`hir/resolve_program/initial_loan_plans.rs` owns the initial authored and
+instantiated loan-plan attachment. Active construction captures one existing
+CFG reservation and funds complete planner scratch and both staging directories.
+Each group installs only after its complete collection succeeds, with authored
+attachment preceding instance planning. The later canonical caller still
+rebuilds and compares every full plan independently; initial attachments grant
+no admission or sizing authority. Unobserved construction keeps the legacy
+planner. `loan_plan/funded_flat.rs` owns the exact-current-member paid planner,
+while `bounded_output/cfg_reservation.rs` owns its affine ledger and prepaid
+physical-refusal carrier.
+
 `hir/validation/byte_range.rs` re-derives named-slice and exact inline
 owned-Bytes range origins from live scope. Source loan origin bookkeeping
 independently retains the same owner for immutable composed-range locals;
