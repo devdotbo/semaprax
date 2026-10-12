@@ -225,7 +225,7 @@ fn both_factored_constructors_share_free_work_and_preserve_held_reservations() {
     let mut wide = ReplayBudget::new();
     wide.reserve_skeleton(&function, held).unwrap();
     let available = wide.remaining;
-    let _built = build_comparison(&program, &function, &mut wide, None).unwrap();
+    let _built = build_comparison(&program, &function, &mut wide, None, None).unwrap();
     let spent = available - wide.remaining;
     assert!(spent > 0);
     assert_eq!(wide.skeleton_remaining, held);
@@ -235,7 +235,7 @@ fn both_factored_constructors_share_free_work_and_preserve_held_reservations() {
     let mut exact = ReplayBudget::new();
     exact.reserve_skeleton(&function, held).unwrap();
     exact.remaining = spent;
-    let _built = build_comparison(&program, &function, &mut exact, None).unwrap();
+    let _built = build_comparison(&program, &function, &mut exact, None, None).unwrap();
     assert_eq!(exact.remaining, 0);
     assert_eq!(exact.skeleton_remaining, held);
     assert_eq!(exact.skeleton_spent, spent);
@@ -244,7 +244,7 @@ fn both_factored_constructors_share_free_work_and_preserve_held_reservations() {
     let mut short = ReplayBudget::new();
     short.reserve_skeleton(&function, held).unwrap();
     short.remaining = spent - 1;
-    let error = match build_comparison(&program, &function, &mut short, None) {
+    let error = match build_comparison(&program, &function, &mut short, None, None) {
         Ok(_) => panic!("one-short construction must refuse"),
         Err(error) => error,
     };

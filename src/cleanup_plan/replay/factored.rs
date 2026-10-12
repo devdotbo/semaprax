@@ -79,6 +79,15 @@ pub(super) fn validate_with_index(
     budget: &mut ReplayBudget,
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
 ) -> Result<bool, Diagnostic> {
+    validate_with_index_storage(program, function, budget, helpers, None)
+}
+pub(super) fn validate_with_index_storage<'hir>(
+    program: &'hir dyn crate::cleanup::ReplayContext,
+    function: &'hir ResolvedFunction,
+    budget: &mut ReplayBudget,
+    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'hir>>,
+    continuations: Option<&mut continuation_storage::Storage<'hir>>,
+) -> Result<bool, Diagnostic> {
     let cfg_paths = branch_sensitive_cfg_bounds(function)?.terminal_paths;
     let semantic_paths = hir_terminal_path_bound(function)?;
     if !selected(function, cfg_paths, semantic_paths) {
@@ -86,7 +95,7 @@ pub(super) fn validate_with_index(
         cross_check(program, function);
         return Ok(false);
     }
-    match compare_with_index(program, function, budget, helpers) {
+    match compare_with_index_storage(program, function, budget, helpers, continuations) {
         Ok(Some(true)) => Ok(true),
         Ok(Some(false)) => Err(skeleton_mismatch(function)),
         verdict => {
@@ -126,12 +135,21 @@ pub(super) fn compare_with_index(
     budget: &mut ReplayBudget,
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
 ) -> Result<Option<bool>, Diagnostic> {
+    compare_with_index_storage(program, function, budget, helpers, None)
+}
+fn compare_with_index_storage<'hir>(
+    program: &'hir dyn crate::cleanup::ReplayContext,
+    function: &'hir ResolvedFunction,
+    budget: &mut ReplayBudget,
+    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'hir>>,
+    continuations: Option<&mut continuation_storage::Storage<'hir>>,
+) -> Result<Option<bool>, Diagnostic> {
     let BuiltComparison {
         automaton,
         sink,
         hir_root,
         plan_root,
-    } = build_comparison(program, function, budget, helpers)?;
+    } = build_comparison(program, function, budget, helpers, continuations)?;
 
     #[cfg(test)]
     if let Some(lease) = program.borrowed_helper_lease(function) {
@@ -171,11 +189,12 @@ struct BuiltComparison {
 /// Reconstruct both exact observation languages once, retaining every debit.
 /// The exact strategy census borrows this same physical owner; it never
 /// retries construction after choosing a representation.
-fn build_comparison(
-    program: &dyn crate::cleanup::ReplayContext,
-    function: &ResolvedFunction,
+fn build_comparison<'hir>(
+    program: &'hir dyn crate::cleanup::ReplayContext,
+    function: &'hir ResolvedFunction,
     budget: &mut ReplayBudget,
-    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
+    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'hir>>,
+    continuations: Option<&mut continuation_storage::Storage<'hir>>,
 ) -> Result<BuiltComparison, Diagnostic> {
     // Both independent constructors debit skeleton helpers as well as ordinary
     // constructors. Keep one active allowance through the HIR walk AND plan
@@ -188,7 +207,7 @@ fn build_comparison(
     budget.lent_skeleton = true;
     let result = (|| {
         budget.merge_paths = true;
-        let hir_paths = hir_skeleton_paths_with_index(program, function, budget, helpers);
+        let hir_paths = hir_skeleton_paths_with_index_storage(program, function, budget, helpers, continuations);
         budget.merge_paths = false;
         #[cfg(test)]
         instrumentation::phase(
@@ -1030,3 +1049,81 @@ fn cross_check(program: &dyn crate::cleanup::ReplayContext, function: &ResolvedF
 #[cfg(test)]
 #[path = "factored/lexical_plan_tests.rs"]
 mod lexical_plan_tests;
+
+
+#[cfg(test)]
+mod continuation_tests {
+    use super::*;
+    use super::super::continuation_storage::{Storage, Frame};
+    use crate::bounded_output::with_limit_usage_refusal;
+    use crate::test_allocation_observer::measure;
+    #[test]
+    fn ordinary_factored_functions_and_contracts_reuse_exact_program_storage_with_old_automata_work_and_drop() {
+        let decisions = (0..13).map(|index| format!("let branch_{index}=if 0=={index} {{1}}else{{2}};"))
+            .collect::<String>();
+        let source = format!("module scratch.factored; @id(\"first\") fn first()->i64 requires 0==0 ensures result==42 {{{decisions}42}} @id(\"second\") fn second()->i64 requires 0==0 ensures result==42 {{{decisions}42}} @id(\"main\") fn main()->i64 requires 0==0 ensures result==42 {{{decisions}42}}");
+        let program = crate::hir::resolve(&crate::check(&source, "factored-storage.spx").unwrap()).unwrap();
+        let mut storage = Storage::new(&program);
+        let mut old_budget = ReplayBudget::unobserved();
+        let mut current_budget = ReplayBudget::unobserved();
+        for function in &program.functions {
+            assert!(selected(function, branch_sensitive_cfg_bounds(function).unwrap().terminal_paths,
+                hir_terminal_path_bound(function).unwrap()));
+            let old = build_comparison(&program, function, &mut old_budget, None, None).unwrap();
+            let current = build_comparison(&program, function, &mut current_budget, None, Some(&mut storage)).unwrap();
+            assert_eq!((old.sink, old.hir_root, old.plan_root), (current.sink, current.hir_root, current.plan_root));
+            assert_eq!(old.automaton.nodes.len(), current.automaton.nodes.len());
+            for (old, current) in old.automaton.nodes.iter().zip(&current.automaton.nodes) {
+                assert_eq!(old.moves, current.moves);
+                assert_eq!(old.epsilon, current.epsilon);
+            }
+            assert!(!storage.leased);
+            assert!(storage.frames.as_ref().unwrap().is_empty());
+        }
+        assert_eq!(old_budget.remaining, current_budget.remaining);
+        assert_eq!(old_budget.skeleton_spent, current_budget.skeleton_spent);
+        // Actual ordinary factored admission, rather than only a direct producer.
+        for function in &program.functions {
+            assert!(validate_with_index_storage(&program, function, &mut current_budget,
+                None, Some(&mut storage)).unwrap());
+        }
+        drop(storage);
+        let observe = |limit, pooled| with_limit_usage_refusal(limit, || measure(|| {
+            let mut budget = ReplayBudget::unobserved();
+            let mut storage = Storage::new(&program);
+            let mut success = true;
+            for function in &program.functions {
+                let result = build_comparison(&program, function, &mut budget, None,
+                    if pooled { Some(&mut storage) } else { None });
+                if result.is_err() {
+                    success = false;
+                    assert!(budget.reserve_bytes(function, 0, "retry").is_err());
+                }
+                drop(result);
+                if !success { break; }
+            }
+            assert!(!storage.leased);
+            drop(storage);
+            drop(budget);
+            success
+        }));
+        let ((old_success, old), old_refused, old_charge, _) = observe(usize::MAX, false);
+        let ((success, current), refused, required, _) = observe(usize::MAX, true);
+        assert!(old_success && success && !old_refused && !refused);
+        // Three functions each evaluate requires/body/ensures: nine original
+        // independent 516-frame buffers, versus one retained invocation buffer.
+        let removed = 8 * 516 * std::mem::size_of::<Frame<'_>>();
+        assert_eq!(old.allocated-current.allocated, removed);
+        assert_eq!(old.allocations-current.allocations, 8);
+        assert_eq!(old_charge-required, removed);
+        assert!(!old.invalid && !current.invalid);
+        assert_eq!((old.live, current.live), (0, 0));
+        assert_eq!(old.allocated, old.freed);
+        assert_eq!(current.allocated, current.freed);
+        let ((success, exact), refused, charged, _) = observe(required, true);
+        assert!(success && !refused && charged==required && !exact.invalid && exact.live==0);
+        let ((success, short), refused, _, receipt) = observe(required-1, true);
+        assert!(!success && refused && receipt.is_some() && !short.invalid && short.live==0);
+        assert_eq!(short.allocated, short.freed);
+    }
+}

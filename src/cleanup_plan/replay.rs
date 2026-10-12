@@ -3041,10 +3041,10 @@ fn validate_typed_control_skeleton_with_index<'hir>(
     function: &'hir ResolvedFunction,
     budget: &mut ReplayBudget,
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'hir>>,
-    continuations: Option<&mut continuation_storage::Storage<'hir>>,
+    mut continuations: Option<&mut continuation_storage::Storage<'hir>>,
 ) -> Result<(), Diagnostic> {
     if function.cleanup_plan.lexical_control.is_none()
-        && factored::validate_with_index(program, function, budget, helpers)?
+        && factored::validate_with_index_storage(program, function, budget, helpers, continuations.as_deref_mut())?
     {
         return Ok(());
     }

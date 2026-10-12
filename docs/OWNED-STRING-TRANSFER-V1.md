@@ -62,8 +62,10 @@ and unexecuted. Fuel envelopes prove no partial publication or refuelling; they
 do not independently count interpreter retained owner storage. The native
 forward-to-score window separately counts allocation, payload copy and all
 reallocation attempts; only the explicit-take/subtree controls require zero.
-The original OPT779 recursive default-read zero-copy assertion is unchanged
-and remains unresolved: its ordinary String read clones by contract. Aggregate
+The OPT779 native window retains the original recursive default-read source
+as an exact one-allocation, one-four-byte-copy control. Its explicit-take
+recursive baseline and whole-subtree target retain exact zero-allocation,
+zero-copy and zero-resize assertions; ordinary String reads still clone. Aggregate
 Wasm's existing strict host checks registry settlement; private internal Wasm
 repeated results alone do not prove storage settlement. The independent last-view-use loan owner and actual operation/operand charge
 boundary owner now cover forged loan metadata, exact pointer retention, unchanged

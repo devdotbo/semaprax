@@ -17,7 +17,7 @@ pub(super) struct SkeletonWork<'a, 'b> {
     dag_scratch: Option<std::rc::Rc<std::cell::RefCell<dag_storage::DestructionScratch>>>,
     next_ordinary_dag: usize,
     held_renewals: Option<&'a crate::cleanup_plan::renewal_profile::RenewalBindings<'a>>,
-    ordinary_index: Option<&'a crate::loop_calls::byte_writer::ModuleIndex<'a>>,
+    ordinary_index: Option<&'b crate::loop_calls::byte_writer::ModuleIndex<'a>>,
     ordinary_program: Option<&'a dyn crate::cleanup::ReplayContext>,
     /// Authored same-owner append and direct literal-format String moves.
     pub(super) string_owner_moves: BTreeSet<ExpressionId>,
@@ -39,7 +39,7 @@ impl<'a, 'b> SkeletonWork<'a, 'b> {
         program: &'a dyn crate::cleanup::ReplayContext,
         function: &'a ResolvedFunction,
         budget: &'b mut ReplayBudget,
-        index: Option<&'a crate::loop_calls::byte_writer::ModuleIndex<'a>>,
+        index: Option<&'b crate::loop_calls::byte_writer::ModuleIndex<'a>>,
     ) -> Result<Self, Diagnostic> {
         Ok(Self {
             function,
@@ -70,7 +70,7 @@ impl<'a, 'b> SkeletonWork<'a, 'b> {
         program: &'a dyn crate::cleanup::ReplayContext,
         function: &'a ResolvedFunction,
         budget: &'b mut ReplayBudget,
-        index: Option<&'a crate::loop_calls::byte_writer::ModuleIndex<'a>>,
+        index: Option<&'b crate::loop_calls::byte_writer::ModuleIndex<'a>>,
     ) -> Result<Self, Diagnostic> {
         if !budget.selected() {
             return Self::with_index(program, function, budget, index);

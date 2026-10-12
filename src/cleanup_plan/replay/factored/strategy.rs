@@ -231,7 +231,7 @@ impl Candidate {
                 "lexical strategy requires a lexical function",
             ));
         }
-        let built = build_comparison(program, function, budget, None)?;
+        let built = build_comparison(program, function, budget, None, None)?;
         Self::from_built(function, built, budget)
     }
     fn from_built(
@@ -281,7 +281,7 @@ pub(in crate::cleanup_plan::replay) fn validate_authenticated(
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
     expression_count: usize,
 ) -> Result<(), Diagnostic> {
-    let built = build_comparison(program, function, budget, helpers)?;
+    let built = build_comparison(program, function, budget, helpers, None)?;
     let mut candidate = Candidate::from_built(function, built, budget)?;
     if candidate.strategy == Strategy::RefusedArithmeticOverflow {
         return Err(replay_error(
@@ -313,7 +313,7 @@ pub(in crate::cleanup_plan::replay) fn validate_authenticated(
                     Ok(expression_count)
                 })?;
             reserve_enumerated(function, budget, upper)?;
-            validate_typed_control_skeleton_with_index(program, function, budget, helpers)
+            validate_typed_control_skeleton_with_index(program, function, budget, helpers, None)
         }
         Strategy::LexicalFactored => {
             let BuiltComparison {

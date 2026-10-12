@@ -77,8 +77,17 @@ fn insert_entry_probe(generated: &str, symbol: &str, probe: &str) -> String {
 
 #[test]
 fn subtree_forwarding_allocates_no_replacement_tree_or_payload_copy_at_runtime() {
+    // A default owned String read clones. Keep the original recursive source
+    // as an exact copied control; the explicit transfer is the independent
+    // recursive zero-copy baseline for whole-subtree movement.
+    assert_eq!(RECURSIVE.matches("text:text").count(), 1);
+    let transferred = RECURSIVE.replace("text:text", "text:string_take(text)");
     for populated in [false, true] {
-        for (label, pattern) in [("subtree", SUBTREE), ("recursive", RECURSIVE)] {
+        for (label, pattern, clones) in [
+            ("subtree", SUBTREE, 0u8),
+            ("recursive", transferred.as_str(), 0u8),
+            ("original-recursive-clone", RECURSIVE, 1u8),
+        ] {
             let root = directory(&format!("{label}-no-copy"));
             let text = source(pattern, populated);
             let ast = semaprax::check(&text, root.join("app.spx")).unwrap();
@@ -97,17 +106,18 @@ fn subtree_forwarding_allocates_no_replacement_tree_or_payload_copy_at_runtime()
                     "#define SPX_VEC_REALLOC subtree_resize",
                 );
             let generated=insert_entry_probe(&generated,"spx_decl_666f7277617264",
-                "    ++subtree_forward_entries; subtree_before_allocations=outcome_total_allocations; subtree_before_copies=subtree_payload_copies; subtree_before_resize=subtree_resize_requests;");
+                "    ++subtree_forward_entries; subtree_before_allocations=outcome_total_allocations; subtree_before_copies=subtree_payload_copies; subtree_before_resize=subtree_resize_requests; subtree_before_copy_bytes=subtree_payload_copy_bytes;");
             let generated=insert_entry_probe(&generated,"spx_decl_73636f7265",
-                "    ++subtree_score_entries; if(outcome_total_allocations!=subtree_before_allocations || subtree_payload_copies!=subtree_before_copies || subtree_resize_requests!=subtree_before_resize)abort();");
+                &format!("    ++subtree_score_entries; if(outcome_total_allocations-subtree_before_allocations!={clones} || subtree_payload_copies-subtree_before_copies!={clones} || subtree_resize_requests!=subtree_before_resize || subtree_payload_copy_bytes-subtree_before_copy_bytes!={})abort();", 4 * u64::from(clones)));
             let probes = r#"#include <string.h>
 static uint64_t subtree_before_allocations=0,subtree_before_copies=0,subtree_payload_copies=0;
 static uint64_t subtree_forward_entries=0,subtree_score_entries=0;
+static uint64_t subtree_before_copy_bytes=0,subtree_payload_copy_bytes=0;
 static uint64_t subtree_before_resize=0,subtree_resize_requests=0;
 static __attribute__((unused)) void *subtree_resize(void *p,size_t n){++subtree_resize_requests;return realloc(p,n);}
 static __attribute__((destructor)) void subtree_probe_done(void){if(subtree_forward_entries!=3||subtree_score_entries!=3)abort();}
-static __attribute__((unused)) void *subtree_memcpy(void *to,const void *from,size_t n){if(n)++subtree_payload_copies;return memcpy(to,from,n);}
-static __attribute__((unused)) void *subtree_memmove(void *to,const void *from,size_t n){if(n)++subtree_payload_copies;return memmove(to,from,n);}
+static __attribute__((unused)) void *subtree_memcpy(void *to,const void *from,size_t n){if(n){++subtree_payload_copies;subtree_payload_copy_bytes+=n;}return memcpy(to,from,n);}
+static __attribute__((unused)) void *subtree_memmove(void *to,const void *from,size_t n){if(n){++subtree_payload_copies;subtree_payload_copy_bytes+=n;}return memmove(to,from,n);}
 "#;
             // Uses actual O0/O2 runtime allocator and canonical settlement
             // observer, three fresh invocations each. No compiler allocations
