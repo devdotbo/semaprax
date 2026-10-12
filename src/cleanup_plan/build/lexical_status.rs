@@ -188,6 +188,7 @@ fn expression<'a>(
         }
         | ResolvedExprKind::Block { .. }
         | ResolvedExprKind::VecConstructor { .. }
+        | ResolvedExprKind::RowLoan { .. }
         | ResolvedExprKind::LexicalExit { .. }
         | ResolvedExprKind::If { .. }
         | ResolvedExprKind::ConstructRecord { .. }

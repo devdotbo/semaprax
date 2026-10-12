@@ -48,6 +48,7 @@ pub(in crate::hir) fn schedule<'expr>(
         body,
         paths.at(block_path),
         statement.then(Seg::ForItem),
+        statement.then(Seg::Value),
     )?;
     frames.push(Frame::BlockForBody {
         span: block_span,
@@ -277,6 +278,7 @@ fn prepare(
     body: &crate::ast::Expr,
     statement: ExprPath<'_>,
     item_edge: Step,
+    region_edge: Step,
 ) -> Result<PreparedTraversal, crate::diagnostic::Diagnostic> {
     let fail = || {
         resolver.error("SPX-H006", "borrowed record traversal requires an immutable named Vec of an admitted explicit record", values.span)
@@ -362,8 +364,8 @@ fn prepare(
                 source: source.clone(),
                 index: index_binding,
                 element: element.clone(),
-                region: ExpressionId::new(function, &format!("{statement_path}.value")),
-                bound: ValueId::local(function, &format!("{statement_path}.value.s0")),
+                region: statement.expression_id_with(function, &[region_edge]),
+                bound: statement.value_local_with(function, &[region_edge, Seg::Statement.at(0)]),
             })),
         },
     );
@@ -400,6 +402,7 @@ pub(in crate::hir) fn resolve_reference(
         body,
         path.into(),
         Seg::ForItem.into(),
+        Seg::Value.into(),
     )?;
     let body = resolver.resolve_expr_recursive_reference_inner(
         function,

@@ -31,7 +31,10 @@ static __attribute__((unused)) void spx_row_loan_check_v1(const spx_row_loan_v1 
 
 impl<O: COutput> CEmitter<'_, O> {
     /// Index of `root` when it is one of this function's lent parameters.
-    pub(super) fn lent_parameter(&self, root: &hir::ValueId) -> Option<usize> {
+    pub(in crate::codegen::native_emit) fn lent_parameter(
+        &self,
+        root: &hir::ValueId,
+    ) -> Option<usize> {
         let index = self.function.params.iter().position(|p| p.id == *root)?;
         self.functions
             .get(self.execution)
