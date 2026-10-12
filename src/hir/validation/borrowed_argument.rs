@@ -27,7 +27,7 @@ impl<'a> HirValidator<'a> {
         operation: crate::byte_ops::ByteOp,
         place: &Place,
         span: crate::ast::Span,
-        scope: &BTreeMap<ValueId, ValidationBinding>,
+        scope: &dyn ScopeRead,
     ) -> Result<(), Diagnostic> {
         let binding = scope
             .get(&place.root)
@@ -107,7 +107,7 @@ impl<'a> HirValidator<'a> {
     pub(super) fn validate_byte_slice_call_argument(
         &self,
         argument: &ResolvedExpr,
-        scope: &BTreeMap<ValueId, ValidationBinding>,
+        scope: &dyn ScopeRead,
     ) -> Result<(), Diagnostic> {
         match &argument.kind {
             ResolvedExprKind::Call { .. }
@@ -151,7 +151,7 @@ impl<'a> HirValidator<'a> {
         argument: &ResolvedExpr,
         parameter: &ResolvedParam,
         parameter_index: usize,
-        scope: &BTreeMap<ValueId, ValidationBinding>,
+        scope: &dyn ScopeRead,
     ) -> Result<(), Diagnostic> {
         self.validate_borrowed_bytes_call_argument_fields(
             call,
@@ -168,7 +168,7 @@ impl<'a> HirValidator<'a> {
         argument: &ResolvedExpr,
         parameter: (&ResolvedType, OwnershipMode),
         parameter_index: usize,
-        scope: &BTreeMap<ValueId, ValidationBinding>,
+        scope: &dyn ScopeRead,
     ) -> Result<(), Diagnostic> {
         let (parameter_type, parameter_ownership) = parameter;
         if *parameter_type != ResolvedType::Bytes || parameter_ownership != OwnershipMode::Borrow {

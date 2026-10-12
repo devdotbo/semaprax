@@ -4,7 +4,7 @@ impl HirValidator<'_> {
     pub(super) fn validate_record_traversal(
         &self,
         expression: &ResolvedExpr,
-        scope: &BTreeMap<ValueId, ValidationBinding>,
+        scope: &dyn ScopeRead,
     ) -> Result<(), Diagnostic> {
         let Some(proof) = crate::loan_plan::traversal::inspect(self.program, expression)? else {
             return Ok(());

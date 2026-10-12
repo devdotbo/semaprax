@@ -5,14 +5,14 @@ use super::super::{
 };
 use std::collections::BTreeMap;
 
-pub(super) fn local(expr: &ResolvedExpr, scope: &BTreeMap<ValueId, ValidationBinding>) -> bool {
+pub(super) fn local(expr: &ResolvedExpr, scope: &dyn super::ScopeRead) -> bool {
     expr.ownership == OwnershipMode::Own
         && matches!(expr.ty, ResolvedType::Bytes | ResolvedType::String)
         && matches!(&expr.kind, ResolvedExprKind::Place(place) if place.projections.is_empty()
             && scope.get(&place.root).is_some_and(|binding| binding.contract_local && binding.ownership == OwnershipMode::Own
                 && binding.ty == expr.ty && binding.availability == Availability::Available))
 }
-pub(super) fn fresh(expr: &ResolvedExpr, scope: &BTreeMap<ValueId, ValidationBinding>) -> bool {
+pub(super) fn fresh(expr: &ResolvedExpr, scope: &dyn super::ScopeRead) -> bool {
     if expr.ownership != OwnershipMode::Own {
         return false;
     }

@@ -7,7 +7,7 @@ use super::*;
 impl HirValidator<'_> {
     pub(super) fn merge_availability(
         target: &mut BTreeMap<ValueId, ValidationBinding>,
-        source: &BTreeMap<ValueId, ValidationBinding>,
+        source: &dyn ScopeRead,
         ids: &[ValueId],
     ) {
         for id in ids {
@@ -23,7 +23,7 @@ impl HirValidator<'_> {
 
     pub(super) fn merge_lexical_borrows(
         target: &mut BTreeMap<ValueId, ValidationBinding>,
-        source: &BTreeMap<ValueId, ValidationBinding>,
+        source: &dyn ScopeRead,
         ids: &[ValueId],
     ) {
         for id in ids {
@@ -37,7 +37,7 @@ impl HirValidator<'_> {
 
     pub(super) fn join_conditional(
         baseline: &mut BTreeMap<ValueId, ValidationBinding>,
-        conditional: &BTreeMap<ValueId, ValidationBinding>,
+        conditional: &dyn ScopeRead,
         ids: &[ValueId],
     ) {
         for id in ids {
@@ -57,8 +57,8 @@ impl HirValidator<'_> {
 
     pub(super) fn join_branches(
         target: &mut BTreeMap<ValueId, ValidationBinding>,
-        then_scope: &BTreeMap<ValueId, ValidationBinding>,
-        else_scope: &BTreeMap<ValueId, ValidationBinding>,
+        then_scope: &dyn ScopeRead,
+        else_scope: &dyn ScopeRead,
         ids: &[ValueId],
     ) {
         for id in ids {
@@ -107,7 +107,7 @@ impl HirValidator<'_> {
         }
     }
 
-    fn join_moved_places(
+    pub(super) fn join_moved_places(
         left: &ValidationBinding,
         right: &ValidationBinding,
     ) -> BTreeMap<Vec<PlaceProjection>, Availability> {
@@ -134,7 +134,7 @@ impl HirValidator<'_> {
             .collect()
     }
 
-    fn join_definitely_partial(
+    pub(super) fn join_definitely_partial(
         left: &ValidationBinding,
         right: &ValidationBinding,
     ) -> BTreeSet<Vec<PlaceProjection>> {

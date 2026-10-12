@@ -748,11 +748,11 @@ impl HirValidator<'_> {
 /// unique current generation of `text` as its first argument; the assignment
 /// publishes the next generation into the same binding.
 pub(super) fn reopen_string(
-    scope: &mut BTreeMap<ValueId, ValidationBinding>,
+    scope: &mut dyn ScopeWrite,
     id: &ValueId,
 ) -> Result<(), Diagnostic> {
     let target = scope
-        .get_mut(id)
+        .get_mut(id)?
         .ok_or_else(|| hir_error("string append target is missing"))?;
     if target.availability != Availability::Moved
         || !target.active_loans.is_empty()
@@ -771,11 +771,11 @@ pub(super) fn reopen_string(
 }
 
 pub(super) fn reopen_step(
-    scope: &mut BTreeMap<ValueId, ValidationBinding>,
+    scope: &mut dyn ScopeWrite,
     id: &ValueId,
 ) -> Result<(), Diagnostic> {
     let target = scope
-        .get_mut(id)
+        .get_mut(id)?
         .ok_or_else(|| hir_error("iterator replacement target is missing"))?;
     if target.availability != Availability::Moved
         || !target.active_loans.is_empty()

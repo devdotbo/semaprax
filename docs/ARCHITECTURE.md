@@ -120,6 +120,15 @@ frontier, so scalar leaves and empty nominal arguments need no queue.
 while `bounded_output/cfg_reservation.rs` owns its affine ledger and prepaid
 physical-refusal carrier.
 
+`hir/validation/scope_checkpoint.rs` owns private persistent ordered ownership
+scopes. Branch, loop, match and source-move checkpoints share immutable roots;
+mutation pays for copied paths and full binding payloads before copying. Output
+publication moves the last complete state into prepaid map slots after child
+checkpoints drop. Nested guard publication restores a private scope directly.
+`hir/validation/record_pattern.rs` retains complete record-pattern admission
+against the same ordered read/write interface. Neither owner accepts attached
+proof authority or changes the validation traversal or admitted language profile.
+
 `hir/validation/byte_range.rs` re-derives named-slice and exact inline
 owned-Bytes range origins from live scope. Source loan origin bookkeeping
 independently retains the same owner for immutable composed-range locals;

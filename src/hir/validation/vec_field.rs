@@ -5,7 +5,7 @@ impl HirValidator<'_> {
         &self,
         function: &FunctionExecutionId,
         expression: &ResolvedExpr,
-        scope: &BTreeMap<ValueId, ValidationBinding>,
+        scope: &dyn ScopeRead,
     ) -> Result<ResolvedType, Diagnostic> {
         let ResolvedExprKind::VecFieldRead {
             element,

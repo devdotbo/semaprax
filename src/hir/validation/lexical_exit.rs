@@ -4,7 +4,7 @@ impl HirValidator<'_> {
     pub(super) fn validate_lexical_return_operand(
         &self,
         operand: &ResolvedExpr,
-        scope: &mut BTreeMap<ValueId, ValidationBinding>,
+        scope: &mut dyn ScopeWrite,
     ) -> Result<(), Diagnostic> {
         if operand.ty == ResolvedType::Never
             || operand.ownership != self.expected_ownership(&operand.ty, OwnershipMode::Own)?
@@ -25,8 +25,8 @@ impl HirValidator<'_> {
         left: &ResolvedExpr,
         right: &ResolvedExpr,
         outer: &mut BTreeMap<ValueId, ValidationBinding>,
-        left_scope: &BTreeMap<ValueId, ValidationBinding>,
-        right_scope: &BTreeMap<ValueId, ValidationBinding>,
+        left_scope: &dyn ScopeRead,
+        right_scope: &dyn ScopeRead,
         ids: &[ValueId],
     ) -> Result<(), Diagnostic> {
         match (
@@ -36,6 +36,43 @@ impl HirValidator<'_> {
             (true, false) => Self::merge_availability(outer, right_scope, ids),
             (false, true) => Self::merge_availability(outer, left_scope, ids),
             _ => Self::join_branches(outer, left_scope, right_scope, ids),
+        }
+        let normal = match (
+            left.ty == ResolvedType::Never,
+            right.ty == ResolvedType::Never,
+        ) {
+            (true, false) => right,
+            (false, true) => left,
+            (a, b) => {
+                if !a && !b {
+                    self.require_type(&left.ty, &right.ty, "if branches")?;
+                    if left.ownership != right.ownership {
+                        return Err(hir_error("if branches have inconsistent ownership"));
+                    }
+                }
+                left
+            }
+        };
+        self.finish_expr(expression, &normal.ty, normal.ownership)
+    }
+    #[allow(clippy::too_many_arguments)]
+    pub(super) fn finish_lexical_if_checkpoint(
+        &self,
+        expression: &ResolvedExpr,
+        left: &ResolvedExpr,
+        right: &ResolvedExpr,
+        outer: &mut dyn ScopeWrite,
+        left_scope: &dyn ScopeRead,
+        right_scope: &dyn ScopeRead,
+        ids: &dyn scope_checkpoint::Ids,
+    ) -> Result<(), Diagnostic> {
+        match (
+            super::super::lexical_exit::returns_only(left),
+            super::super::lexical_exit::returns_only(right),
+        ) {
+            (true, false) => scope_checkpoint::merge::availability(outer, right_scope, ids)?,
+            (false, true) => scope_checkpoint::merge::availability(outer, left_scope, ids)?,
+            _ => scope_checkpoint::merge::branches(outer, left_scope, right_scope, ids)?,
         }
         let normal = match (
             left.ty == ResolvedType::Never,

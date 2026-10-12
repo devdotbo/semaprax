@@ -4,7 +4,7 @@ impl HirValidator<'_> {
     pub(super) fn byte_range_origin<'b>(
         &self,
         source: &'b ResolvedExpr,
-        scope: &BTreeMap<ValueId, ValidationBinding>,
+        scope: &dyn ScopeRead,
     ) -> Result<(&'b Place, Place), Diagnostic> {
         match &source.kind {
             ResolvedExprKind::Place(place) if place.projections.is_empty() => {

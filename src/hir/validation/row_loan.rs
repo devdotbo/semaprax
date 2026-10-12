@@ -10,7 +10,7 @@ impl HirValidator<'_> {
         &self,
         function: &FunctionExecutionId,
         expression: &ResolvedExpr,
-        scope: &BTreeMap<ValueId, ValidationBinding>,
+        scope: &dyn ScopeRead,
     ) -> Result<(ResolvedType, OwnershipMode, bool), Diagnostic> {
         if let ResolvedExprKind::VecFieldRead { bytes, .. } = &expression.kind {
             let ty = self.validate_vec_field_shape(function, expression, scope)?;
@@ -34,7 +34,7 @@ impl HirValidator<'_> {
         &self,
         function: &FunctionExecutionId,
         expression: &ResolvedExpr,
-        scope: &BTreeMap<ValueId, ValidationBinding>,
+        scope: &dyn ScopeRead,
     ) -> Result<ResolvedType, Diagnostic> {
         let ResolvedExprKind::RowLoan { loan, args } = &expression.kind else {
             return Err(hir_error("row loan requires its dedicated HIR node"));

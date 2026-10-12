@@ -1,8 +1,8 @@
 //! False guards cannot consume an outer owner before the next arm is checked.
 use super::*;
 pub(super) fn unchanged(
-    before: &BTreeMap<ValueId, ValidationBinding>,
-    after: &BTreeMap<ValueId, ValidationBinding>,
+    before: &dyn ScopeRead,
+    after: &dyn ScopeRead,
 ) -> Result<(), Diagnostic> {
     if before.iter().all(|(id, old)| {
         after.get(id).is_some_and(|new| {

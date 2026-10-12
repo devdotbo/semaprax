@@ -4,7 +4,7 @@ impl HirValidator<'_> {
         &mut self,
         function: &FunctionExecutionId,
         expression: &ResolvedExpr,
-        scope: &mut BTreeMap<ValueId, ValidationBinding>,
+        scope: &mut dyn ScopeWrite,
         path: &str,
         allow_moves: bool,
     ) -> Result<(), Diagnostic> {
@@ -141,7 +141,7 @@ impl HirValidator<'_> {
     pub(super) fn finish_affine_invocation(
         &self,
         expression: &ResolvedExpr,
-        scope: &mut BTreeMap<ValueId, ValidationBinding>,
+        scope: &mut dyn ScopeWrite,
         allow_moves: bool,
     ) -> Result<(), Diagnostic> {
         if let ResolvedExprKind::Invoke { callable, .. } = &expression.kind {
