@@ -119,7 +119,6 @@ fn sparse_local_replay_sequences_lend_exact_current_members_without_materializat
         functions: crate::hir::items::View::indexed(&program.functions, &function_ordinals),
     };
     let (_, observed) = crate::test_allocation_observer::measure(move || {
-        let context = context;
         assert_eq!((context.type_count(), context.function_count()), (2, 2));
         for ordinal in 0..2 {
             assert!(std::ptr::eq(
