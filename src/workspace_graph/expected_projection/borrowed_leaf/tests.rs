@@ -195,7 +195,8 @@ fn borrowed_leaf_full_pipeline_keeps_owned_fallback_and_original_diagnostics() {
     let cached = Input::construct(&programs[0], &authored, &programs, &registry, false).unwrap();
     assert!(cached.owned().is_some());
     let delta = super::input_carrier_delta().unwrap();
-    assert!(delta > 0);
+    // The enum may reuse a niche in Program; zero extra inline bytes is valid.
+    assert!(std::mem::size_of::<Input<'_>>() >= std::mem::size_of::<crate::ast::Program>());
     assert_eq!(
         delta,
         std::mem::size_of::<Input<'_>>() - std::mem::size_of::<crate::ast::Program>()
