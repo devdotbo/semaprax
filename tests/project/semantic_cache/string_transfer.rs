@@ -23,10 +23,27 @@ fn named_string_transfer_checked_cache_keeps_cold_warm_provider_drift_and_recove
     let warm = cache.build(&manifest, &fixture.sources()).unwrap();
     work(&warm, 0, 4);
     same(warm.revision(), fixture.cold().unwrap());
-    assert!(warm
-        .revision()
-        .semantic_graph()
-        .contains("core.string.take"));
+    // The workspace graph inventories declarations; the actual intrinsic
+    // call belongs to the current owning tests-program expression tree.
+    let program = warm.revision().test_program();
+    assert_eq!(program, cold.revision().test_program());
+    let helper = program.functions.iter()
+        .find(|function| function.id.as_str() == "calculator.tests.moved").unwrap();
+    let semaprax::hir::ResolvedExprKind::Block { statements, .. } = &helper.body.kind
+        else { panic!("current moved helper lost its authored block") };
+    let value = statements.iter().find_map(|statement| match statement {
+        semaprax::hir::ResolvedStatement::Let { binding, value, .. }
+            if binding.name == "moved" => Some(value),
+        _ => None,
+    }).unwrap();
+    let semaprax::hir::ResolvedExprKind::Call { callee, instance, args, type_arguments } = &value.kind
+        else { panic!("current moved initializer lost its exact intrinsic call") };
+    assert_eq!(callee.as_str(), "core.string.take");
+    assert!(instance.is_none());
+    assert!(type_arguments.is_empty());
+    assert_eq!(args.len(), 1);
+    assert_eq!(value.ty, semaprax::hir::ResolvedType::String);
+    assert_eq!(value.ownership, semaprax::hir::OwnershipMode::Own);
     let provider = fixture.read("src/core.spx");
     assert!(provider.contains("left + right"));
     fixture.write(
