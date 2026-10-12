@@ -265,7 +265,10 @@ fn local_capacity_refusal_keeps_exact_diagnostic_without_global_poisoning() {
     assert!(budget.refusal_spent);
     assert!(!crate::bounded_output::active_refused());
     let expected=(error.code,error.message.clone());
-    let result=enumerating_result(Err(error),&budget).unwrap_err();
+    let result=match enumerating_result(Err(error),&budget) {
+        Err(error)=>error,
+        Ok(_)=>panic!("local physical refusal became an enumeration fallback"),
+    };
     assert_eq!((result.code,result.message),expected);
     assert!(values.is_empty() && values.capacity()==0);
     // A genuine semantic failure retains the full old zero-allowance fallback.
