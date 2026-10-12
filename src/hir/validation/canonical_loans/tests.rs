@@ -90,19 +90,47 @@ fn independent_origin_directory_matches_saved_owned_endpoints_and_current_projec
         let ordinal = directory.liveness.get(&key).unwrap();
         assert_eq!(directory.origins.get(*ordinal), Some(&place));
     }
-    assert_eq!(directory.origins.len(), 2);
+    // One SliceView plus one BorrowedCall per authored byte_len read.
+    // Canonical construction retains call-long loans as well as local views.
+    for (id, reads) in [("first", 5), ("second", 2)] {
+        let function = program
+            .functions
+            .iter()
+            .find(|function| function.id.as_str() == id)
+            .unwrap();
+        let plan = crate::loan_plan::build_plan(&program, function).unwrap();
+        assert_eq!(
+            plan.loans
+                .iter()
+                .filter(|loan| loan.cause == LoanCause::SliceView)
+                .count(),
+            1
+        );
+        assert_eq!(
+            plan.loans
+                .iter()
+                .filter(|loan| matches!(loan.cause, LoanCause::BorrowedCall { argument: 0 }))
+                .count(),
+            reads
+        );
+        assert_eq!(plan.loans.len(), 1 + reads);
+    }
+    assert_eq!(directory.origins.len(), 9);
     assert!(directory
         .origins
         .iter()
         .all(|place| place.projections.len() == 1));
-    assert_eq!(
-        directory.origins[0].projections,
-        vec![PlaceProjection::Field(DeclarationId::new("payload"))]
-    );
-    assert_eq!(
-        directory.origins[1].projections,
-        vec![PlaceProjection::Field(DeclarationId::new("sibling"))]
-    );
+    for (field, count) in [("payload", 6), ("sibling", 3)] {
+        let projected = vec![PlaceProjection::Field(DeclarationId::new(field))];
+        assert_eq!(
+            directory
+                .origins
+                .iter()
+                .filter(|place| place.projections == projected)
+                .count(),
+            count
+        );
+    }
     assert!(
         directory
             .liveness
@@ -166,7 +194,11 @@ fn endpoint_origin_payload_is_moved_once_and_late_refusals_keep_saved_priority()
         panic!("field")
     };
     assert_eq!(field.as_str().as_ptr(), expected_field);
-    assert!(inventory.liveness.values().all(|ordinal| *ordinal == 0));
+    assert_eq!(inventory.origins.len(), 6);
+    for ((_, _, loan), ordinal) in &inventory.liveness {
+        assert_eq!(*ordinal, usize::from(loan.0));
+        assert_eq!(inventory.origins[*ordinal], inventory.origins[0]);
+    }
     assert!(inventory.liveness.len() > 1);
     // Both faults are present: endpoints are checked before start-phase/ID
     // validation, exactly as the saved independent constructor did.
