@@ -88,4 +88,4 @@ Existing `vec_get`, `vec_clone_at` and `vec_field` contracts retain their meanin
 See [Scoped Vec Field Reads v1](SCOPED-VEC-FIELD-READS-V1.md),
 [Owned Leaf Collections v1](OWNED-LEAF-COLLECTIONS-V1.md),
 [Workspace Semantic Graph v1](WORKSPACE-SEMANTIC-GRAPH-V1.md) and
-[RFC 0003](RFC-0003.md) for the owning failure, staging and replay rules.
+[RFC 0003](RFC-0003-CLEANUP-AND-RESOURCE-ABI.md) for the owning failure, staging and replay rules.

@@ -21,7 +21,7 @@ Two mechanisms, chosen per artifact shape:
 1. Use **`actions/attest-build-provenance`** for release archives and
    generated packages. It produces SLSA v1.0 provenance.
 2. Use **`cosign` keyless** for OCI Image Layout artifacts from
-   `crates/semaprax-oci-package`.
+   `src/oci_package/`.
 
 Both use the same Sigstore trust model.
 
