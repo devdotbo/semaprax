@@ -309,7 +309,7 @@ exact-program inventory, and keeps fresh scopes/identity sets. Equal cloned or
 reordered programs cannot receive the inventory. Ordinary compatibility
 constructors retain the original owned indexes for independent oracle controls.
 
-This prices only the explicit lookup/probe vectors. Independent loan-plan
+This prices only the explicit lookup/probe vectors. Independent standalone loan-plan
 builder scratch, semantic diagnostics, other validator storage and temporary
 closure function construction remain open payers. The standalone/legacy
 `loan_plan::validate_program` remains an independent rebuild; the joined
@@ -317,6 +317,40 @@ invocation route below removes only its repeated terminal rebuild. No forecast d
 whole-validator funding, application fit or runtime advantage follows from this
 source tranche. Storage observers exclude input plans and fixed ledger setup
 explicitly; complete compiler/application inequalities remain unchanged.
+
+### Private canonical CFG scratch carrier
+
+The exact-current-member funded planner uses one affine caller reservation for
+roots, pending and child vectors, identity/root/point directories, edge storage,
+flat adjacency, starts/kills rows and endpoint live sets. Vector growth retains
+the existing geometric policy and prepays the full requested replacement
+payload while old backing remains paid. Observed excess capacity is charged and
+refused; dropping prior backing never refunds that invocation's cumulative debit.
+The explicit local vector, directory, adjacency, CFG and result carriers are paid
+before construction. No work limit, source identity or canonical plan order changes.
+
+Private ordered directories use unique AVL boxes. An absent key prepays the
+actual node heap layout and node initializer before construction or publication.
+Replacement retains the old key and checks the same sticky payer even when it
+allocates nothing. Rotations move unique nodes without allocation or fallible
+payment; lookup and insertion preserve logarithmic height for arbitrary key
+orders. Edge and live-set extraction drains in original key order into one
+exact paid vector. It never sorts or repairs a canonical plan. The original
+public BTree builder and complete saved independent builder remain available.
+
+Source controls compare ascending, descending and interleaved insertion-heavy
+whole directory receivers with the original BTree policy, and compare complete
+plans, CFG point/edge/adjacency identities and original checked-work equations.
+Actual owner construction, receiving, replacement, extraction and Drop are
+observed together; exact and one-short allowances retain sticky refusal and
+failed-node publication leaves the complete prior directory unchanged. Per-node
+allocation overhead and CPU tradeoffs require execution evidence; this source
+change claims no efficiency improvement or issue closure.
+
+This is the private funded CFG route only. Standalone unobserved rebuilding,
+legacy semantic diagnostic rendering, unrelated validator storage and temporary
+closure function construction retain their separate funding seams. Existing
+whole-subtree/application inequalities and original hostile owners remain intact.
 
 ## Invocation-local deferred full comparison
 

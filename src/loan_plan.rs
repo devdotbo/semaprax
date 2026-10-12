@@ -41,6 +41,7 @@ mod adjacency;
 #[cfg(test)]
 mod boundary_tests;
 mod call_arguments;
+mod cfg_directory;
 mod children;
 #[cfg(test)]
 mod children_tests;
@@ -204,7 +205,7 @@ struct CfgDraft {
 
 struct Cfg<'a> {
     points: Vec<LoanProgramPoint>,
-    nodes: BTreeMap<LoanProgramPoint, u16>,
+    nodes: cfg_directory::Nodes,
     expressions: Vec<&'a ResolvedExpr>,
     edges: Vec<(u16, u16)>,
     adjacency: adjacency::Adjacency,
@@ -1015,7 +1016,7 @@ fn build_cfg<'a>(
         adjacency::Adjacency::build_with_storage(points.len(), &edges, work.allocation)?;
     Ok(Cfg {
         points,
-        nodes,
+        nodes: cfg_directory::Nodes::Legacy(nodes),
         expressions,
         edges,
         adjacency,

@@ -122,7 +122,11 @@ Declaration-index disposal sends only nominal children to its existing iterative
 frontier, so scalar leaves and empty nominal arguments need no queue.
 `loan_plan/funded_flat.rs` owns the exact-current-member paid planner,
 while `bounded_output/cfg_reservation.rs` owns its affine ledger and prepaid
-physical-refusal carrier.
+physical-refusal carrier. `loan_plan/cfg_directory.rs` owns private mutable AVL
+scratch for paid CFG identity, root, point and edge directories and endpoint
+live sets. Missing nodes are prepaid before mutation; unique rotations and
+ordered extraction allocate no additional nodes. The public BTree planner and
+complete saved planner retain their independent storage policies.
 
 `hir/validation/scope_checkpoint.rs` owns private persistent ordered ownership
 scopes. Branch, loop, match and source-move checkpoints share immutable roots;

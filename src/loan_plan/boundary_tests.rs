@@ -672,7 +672,7 @@ fn forged_cfg(points: usize, edges: Vec<(u16, u16)>) -> Cfg<'static> {
     let adjacency = adjacency::Adjacency::build(points, &edges).unwrap();
     Cfg {
         points: Vec::new(),
-        nodes: BTreeMap::new(),
+        nodes: cfg_directory::Nodes::Legacy(BTreeMap::new()),
         expressions: Vec::new(),
         edges,
         adjacency,

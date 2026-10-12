@@ -11,13 +11,16 @@ pub(super) fn materialize(
 ) -> Result<LoanPlan, Diagnostic> {
     // The draft count is exact. Result collection need not retain spare
     // geometric capacity in the authoritative physical loan inventory.
-    let mut loans = storage::vector(drafts.len(), Some(payer))?;
+    payer
+        .reserve(std::mem::size_of::<LoanPlan>())
+        .map_err(|_| storage::marker())?;
+    let mut loans = cfg_directory::vector(drafts.len(), payer)?;
     for (index, draft) in drafts.iter().enumerate() {
         let end_edges = storage::clone_vec(&termination_edges[index], Some(payer))?;
         if end_edges.is_empty() {
             return Err(error("loan has no bounded CFG termination edge"));
         }
-        let mut ends = storage::vector(end_edges.len(), Some(payer))?;
+        let mut ends = cfg_directory::vector(end_edges.len(), payer)?;
         ends.extend(
             end_edges
                 .iter()
@@ -35,6 +38,9 @@ pub(super) fn materialize(
             cause: draft.cause.clone(),
         });
     }
+    payer
+        .reserve(2 * std::mem::size_of::<Vec<Vec<LoanId>>>())
+        .map_err(|_| storage::marker())?;
     let mut starts = storage::filled(cfg.points.len(), Vec::<LoanId>::new(), Some(payer))?;
     let mut kills = storage::filled(cfg.points.len(), Vec::<LoanId>::new(), Some(payer))?;
     for loan in &loans {
@@ -48,25 +54,25 @@ pub(super) fn materialize(
             storage::push(&mut kills[to as usize], loan.id, Some(payer))?;
         }
     }
-    let mut endpoints = storage::vector(cfg.points.len(), Some(payer))?;
+    let mut endpoints = cfg_directory::vector(cfg.points.len(), payer)?;
     for (node, point) in cfg.points.iter().enumerate() {
-        let mut live_before = BTreeSet::new();
+        let mut live_before = cfg_directory::Set::new(payer)?;
         for edge in cfg
             .predecessors(node)
             .iter()
             .filter_map(|from| cfg.edges.binary_search(&(*from, node as u16)).ok())
         {
             for id in &edge_live[edge] {
-                storage::set_insert(&mut live_before, *id, Some(payer))?;
+                cfg_directory::set_insert(&mut live_before, *id, Some(payer))?;
             }
         }
-        let mut live_after = BTreeSet::new();
+        let mut live_after = cfg_directory::Set::new(payer)?;
         for edge in cfg
             .successors(node)
             .filter_map(|to| cfg.edges.binary_search(&(node as u16, to)).ok())
         {
             for id in &edge_live[edge] {
-                storage::set_insert(&mut live_after, *id, Some(payer))?;
+                cfg_directory::set_insert(&mut live_after, *id, Some(payer))?;
             }
         }
         endpoints.push(LoanEndpoint {
@@ -83,7 +89,7 @@ pub(super) fn materialize(
             live_after: compact_ids::from_vec_paid(set_vector(live_after, payer)?, payer)?,
         });
     }
-    let mut edges = storage::vector(cfg.edges.len(), Some(payer))?;
+    let mut edges = cfg_directory::vector(cfg.edges.len(), payer)?;
     for ((from, to), live) in cfg.edges.iter().zip(edge_live) {
         edges.push(LoanEdge {
             from: *from,
@@ -114,10 +120,8 @@ pub(super) fn materialize(
 }
 
 fn set_vector(
-    values: BTreeSet<LoanId>,
+    values: cfg_directory::Set<LoanId>,
     payer: &crate::bounded_output::cfg_reservation::CfgReservation,
 ) -> Result<Vec<LoanId>, Diagnostic> {
-    let mut out = storage::vector(values.len(), Some(payer))?;
-    out.extend(values);
-    Ok(out)
+    values.into_vec(payer)
 }

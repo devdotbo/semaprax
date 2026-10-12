@@ -37,3 +37,30 @@ macro_rules! generic_values_source_inventory {
         )
     };
 }
+
+// Complete original loan scratch source join, plus private ordered carrier.
+macro_rules! loan_cfg_source_inventory {
+    () => {
+        concat!(
+            include_str!("../../../../../../src/loan_plan/storage.rs"),
+            include_str!("../../../../../../src/loan_plan/funded_flat.rs"),
+            include_str!("../../../../../../src/loan_plan/funded_flat/tests.rs"),
+            include_str!("../../../../../../src/loan_plan/paid_candidate.rs"),
+            include_str!("../../../../../../src/loan_plan/paid_cfg.rs"),
+            include_str!("../../../../../../src/loan_plan/paid_children.rs"),
+            include_str!("../../../../../../src/loan_plan/paid_patterns.rs"),
+            include_str!("../../../../../../src/loan_plan/paid_plan.rs"),
+            include_str!("../../../../../../src/loan_plan/paid_predicates.rs"),
+            include_str!("../../../../../../src/loan_plan/paid_substitute.rs"),
+            include_str!("../../../../../../src/loan_plan/paid_substitute/tests.rs"),
+            include_str!("../../../../../../src/loan_plan/paid_materialize.rs"),
+            include_str!("../../../../../../src/loan_plan/traversal/paid.rs"),
+            include_str!("../../../../../../src/bounded_output/cfg_reservation.rs"),
+            include_str!("../../../../../../src/bounded_output/cfg_reservation/tests.rs"),
+            include_str!("../../../../../../src/loan_plan/cfg_directory.rs"),
+            include_str!("../../../../../../src/loan_plan/cfg_directory/tree.rs"),
+            include_str!("../../../../../../src/loan_plan/cfg_directory/tests.rs"),
+            include_str!("../../../../../../src/loan_plan/adjacency.rs"),
+        )
+    };
+}
