@@ -20,5 +20,18 @@ pub(super) fn from_vec(ids: Vec<LoanId>) -> Result<Box<[LoanId]>, Diagnostic> {
     Ok(ids.into_boxed_slice())
 }
 
+/// Private paired conversion. Initial Vec storage has its own earlier payment;
+/// only a genuinely new shrink/replacement is paid here, while old backing lives.
+pub(super) fn from_vec_paid(
+    ids: Vec<LoanId>,
+    payer: &crate::bounded_output::cfg_reservation::CfgReservation,
+) -> Result<Box<[LoanId]>, Diagnostic> {
+    payer.reserve(0).map_err(|_| super::storage::marker())?;
+    if !ids.is_empty() && ids.capacity() != ids.len() {
+        payer.array::<LoanId>(ids.len()).map_err(|_| super::storage::marker())?;
+    }
+    Ok(ids.into_boxed_slice())
+}
+
 #[cfg(test)]
 mod tests;

@@ -3,6 +3,7 @@
 //! checked again before it can create loan authority.
 use super::*;
 use crate::hir::ResolvedBinding;
+pub(super) mod paid;
 
 pub(crate) struct Proof<'a> {
     pub(crate) source: &'a ResolvedExpr,

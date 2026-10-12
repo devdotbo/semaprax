@@ -84,6 +84,7 @@ pub(super) fn push<T>(
 pub(super) fn extend<T>(
     values: &mut Vec<T>, iter: impl IntoIterator<Item = T>, payer: Option<&CfgReservation>,
 ) -> Result<(), Diagnostic> {
+    if payer.is_none() { values.extend(iter); return Ok(()); }
     for value in iter { push(values, value, payer)?; }
     Ok(())
 }
@@ -173,4 +174,27 @@ pub(super) fn expression_place(
             _ => return Ok(None),
         }
     }
+}
+
+pub(super) fn clone_vec<T: Clone>(
+    values: &[T], payer: Option<&CfgReservation>,
+) -> Result<Vec<T>, Diagnostic> {
+    let mut out = vector(values.len(), payer)?;
+    out.extend(values.iter().cloned());
+    Ok(out)
+}
+pub(super) fn singleton_set<K: Ord>(
+    value: K, payer: Option<&CfgReservation>,
+) -> Result<std::collections::BTreeSet<K>, Diagnostic> {
+    let mut out = std::collections::BTreeSet::new();
+    set_insert(&mut out, value, payer)?;
+    Ok(out)
+}
+pub(super) fn clone_set<K: Clone + Ord>(
+    values: &std::collections::BTreeSet<K>, payer: Option<&CfgReservation>,
+) -> Result<std::collections::BTreeSet<K>, Diagnostic> {
+    if payer.is_none() { return Ok(values.clone()); }
+    let mut out = std::collections::BTreeSet::new();
+    for value in values { set_insert(&mut out, value.clone(), payer)?; }
+    Ok(out)
 }

@@ -162,16 +162,16 @@ pub(super) fn live_nodes(
     for seed in seeds {
         charge(work)?;
         if reachable.contains(loan, *seed) {
-            pending.push(*seed);
+            super::storage::push(&mut pending, *seed, work.allocation)?;
         }
     }
-    pending.push(start);
+    super::storage::push(&mut pending, start, work.allocation)?;
     while let Some(node) = pending.pop() {
         charge(work)?;
-        if !reachable.contains(loan, node) || !live.insert(node) || node == start {
+        if !reachable.contains(loan, node) || !super::storage::set_insert(&mut live, node, work.allocation)? || node == start {
             continue;
         }
-        pending.extend(cfg.predecessors(node as usize).iter().rev().copied());
+        super::storage::extend(&mut pending, cfg.predecessors(node as usize).iter().rev().copied(), work.allocation)?;
     }
     Ok(live)
 }
@@ -181,8 +181,8 @@ pub(super) fn edge_liveness(
     live: &[BTreeSet<u16>],
     work: &mut WorkCounter,
 ) -> Result<EdgeLiveness, Diagnostic> {
-    let mut edge_live = vec![Vec::<LoanId>::new(); cfg.edges.len()];
-    let mut termination_edges = vec![Vec::<u16>::new(); live.len()];
+    let mut edge_live = super::storage::filled(cfg.edges.len(), Vec::<LoanId>::new(), work.allocation)?;
+    let mut termination_edges = super::storage::filled(live.len(), Vec::<u16>::new(), work.allocation)?;
     for (loan_index, nodes) in live.iter().enumerate() {
         let id = LoanId(loan_index as u16);
         for from in nodes {
@@ -190,9 +190,9 @@ pub(super) fn edge_liveness(
                 charge(work)?;
                 let (_, to) = cfg.edges[edge_index as usize];
                 if nodes.contains(&to) {
-                    edge_live[edge_index as usize].push(id);
+                    super::storage::push(&mut edge_live[edge_index as usize], id, work.allocation)?;
                 } else {
-                    termination_edges[loan_index].push(edge_index);
+                    super::storage::push(&mut termination_edges[loan_index], edge_index, work.allocation)?;
                 }
             }
         }

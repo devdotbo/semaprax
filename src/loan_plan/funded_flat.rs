@@ -1,5 +1,6 @@
-//! Private partial funding route. Draft/liveness/materialization payment
-//! is intentionally unfinished; canonical callers must not activate this entry.
+//! Private funding route pending actual canonical caller handoff. Legacy
+//! semantic diagnostics and upstream compiler preflight remain outside this
+//! storage protocol; canonical callers must not activate it until reviewed.
 use super::*;
 use crate::bounded_output::cfg_reservation::CfgReservation;
 use super::storage::{classify, PlannerError};
@@ -26,7 +27,7 @@ pub(super) fn build(
         if paid_candidate::inspect(program, function, payer)? {
             let mut work = WorkCounter::new(MAX_LOAN_PLAN_WORK_V1);
             work.allocation = Some(payer);
-            build_cfg_plan_counted(program, function, &mut work)
+            paid_plan::build(program, function, &mut work)
         } else {
             let mut plan = LoanPlan::empty_v1();
             if lexical { plan.schema = LOAN_PLAN_SCHEMA_V3; }

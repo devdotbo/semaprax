@@ -50,7 +50,7 @@ pub(super) fn inspect(
     let provisional = provisional_result::root(function);
     let mut root_ownership = BTreeMap::<ValueId, bool>::new();
     for expression in expressions {
-        if let Some(proof) = traversal::inspect(program, expression)? {
+        if let Some(proof) = traversal::paid::inspect(program, expression, payer)? {
             if storage::expression_place(proof.source, Some(payer))?
                 .is_some_and(|place| ownership.get(&place.root) == Some(&OwnershipMode::Own))
             {

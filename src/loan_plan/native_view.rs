@@ -130,3 +130,45 @@ pub(super) fn inventory_aliases_paid(
     }
     Ok(())
 }
+
+pub(super) fn match_parents_paid(
+    expressions: &[&ResolvedExpr],
+    drafts: &[CfgDraft],
+    payer: Option<&crate::bounded_output::cfg_reservation::CfgReservation>,
+) -> Result<BTreeMap<ValueId, LoanId>, Diagnostic> {
+    let mut sites = BTreeMap::new();
+    for (index, draft) in drafts.iter().enumerate() {
+        storage::map_insert(&mut sites, (draft.site.clone(), draft.cause.clone()),
+            LoanId(index as u16), payer)?;
+    }
+    let mut parents = BTreeMap::new();
+    for expression in expressions {
+        let ResolvedExprKind::Match {
+            mode: crate::hir::ResolvedMatchMode::Borrow,
+            arms,
+            ..
+        } = &expression.kind
+        else {
+            continue;
+        };
+        for (arm_index, arm) in arms.iter().enumerate() {
+            let ResolvedMatchPattern::Variant { fields, .. } = &arm.pattern else {
+                continue;
+            };
+            let Some(id) = sites.get(&(
+                expression.id.clone(),
+                LoanCause::MatchBorrow {
+                    arm: arm_index as u16,
+                },
+            )) else {
+                continue;
+            };
+            for field in fields {
+                if field.binding.ownership == OwnershipMode::Borrow {
+                    storage::map_insert(&mut parents, field.binding.id.clone(), *id, payer)?;
+                }
+            }
+        }
+    }
+    Ok(parents)
+}

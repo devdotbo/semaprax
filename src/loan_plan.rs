@@ -57,6 +57,8 @@ mod paid_candidate;
 mod paid_children;
 mod paid_patterns;
 mod paid_cfg;
+mod paid_materialize;
+mod paid_plan;
 #[cfg(test)]
 mod whole_oracle_tests;
 mod work;

@@ -9,6 +9,9 @@ pub(super) fn resolve(
     place: Place,
     work: &mut WorkCounter,
 ) -> Result<Place, Diagnostic> {
+    if let Some(payer) = work.allocation {
+        payer.reserve(0).map_err(|_| super::storage::marker())?;
+    }
     if crate::bounded_output::active_refused() {
         return Err(error(
             "loan alias projection exceeds its active allocation budget",
@@ -20,7 +23,7 @@ pub(super) fn resolve(
     let mut text_bytes = 0usize;
     while let Some(alias) = aliases.get(current) {
         charge(work)?;
-        if !seen.insert(current) {
+        if !super::storage::set_insert(&mut seen, current, work.allocation)? {
             return Err(error("loan alias provenance contains a cycle"));
         }
         count = count
@@ -60,12 +63,32 @@ pub(super) fn resolve(
         .and_then(|bytes| bytes.checked_add(size_of::<Vec<PlaceProjection>>()))
         .and_then(|bytes| bytes.checked_add(text_bytes))
         .ok_or_else(|| error("loan alias projection allocation overflows"))?;
-    if !crate::bounded_output::reserve_active_required(bytes) {
+    if let Some(payer) = work.allocation {
+        payer.reserve(bytes).map_err(|_| super::storage::marker())?;
+    } else if !crate::bounded_output::reserve_active_required(bytes) {
         return Err(error(
             "loan alias projection exceeds its active allocation budget",
         ));
     }
-    let mut projections = Vec::with_capacity(count);
+    // Already prepaid above: retain that original conservative clone envelope,
+    // including its directory/header terms, without a second array debit.
+    let mut projections = Vec::new();
+    if let Some(payer) = work.allocation {
+        let requested = count.checked_mul(size_of::<PlaceProjection>())
+            .ok_or_else(|| { payer.arithmetic(); super::storage::marker() })?;
+        if projections.try_reserve_exact(count).is_err() {
+            payer.allocation(requested);
+            return Err(super::storage::marker());
+        }
+        if projections.capacity() != count {
+            let excess = projections.capacity().saturating_sub(count)
+                .checked_mul(size_of::<PlaceProjection>()).unwrap_or(usize::MAX);
+            let _ = payer.capacity(requested, excess);
+            return Err(super::storage::marker());
+        }
+    } else {
+        projections = Vec::with_capacity(count);
+    }
     // Prefixes encountered near the original root precede the original
     // projections after repeated prepending. Build the reverse once, then
     // reverse the complete vector without allocating or cloning it again.

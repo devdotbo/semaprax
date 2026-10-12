@@ -390,7 +390,7 @@ refusal. Physical failure is distinguished by an owner-held Copy tag; a legacy
 semantic empty H006 is not a funding receipt. Paid refusal transfers the same
 text backing without formatting or acquiring a replacement ledger.
 
-The first private receiver prepays actual flat adjacency and batched forward
+The private receiver prepays actual flat adjacency and batched forward
 reachability arrays before construction and retains the unchanged semantic
 work order and complete saved planner oracle. Exact-capacity discrepancies
 account excess and fail closed. Its observer encloses acquisition, all those
@@ -402,8 +402,11 @@ discovery, native/pattern alias inventories and current CFG containers also
 use the captured owner on the private path. Map/set payment uses a disclosed
 conservative pinned B-tree node upper for each genuinely new key and one
 possibly held initial root, separately from cloned projection payload.
-Draft/live inventories and final materialization still require same-owner
-payment before canonical activation. Upstream ModuleIndex
+Draft/live inventories, native arm-parent maps, traversal freeze scratch and
+canonical result materialization also use the captured owner, including the
+actual starts/kills vectors and compact-list shrink replacement while old
+backing remains live. Canonical activation still awaits the final caller
+handoff and independent source review. Upstream ModuleIndex
 and ConstructorSeed ordering, standalone legacy planning, final independent
 loan validation, forecasts and every literal limit remain unchanged. These
 source controls are unexecuted and establish no application fit or whole-plan
