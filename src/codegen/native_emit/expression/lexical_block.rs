@@ -219,8 +219,10 @@ impl<O: COutput> CEmitter<'_, O> {
                                     // already carries the one transfer that publishes the
                                     // next generation, for `vec_push`, the loop-carried
                                     // `bytes_set` fill, String append and Reader refill alike.
-                                    if super::is_native_owned_vec_type(self.program, &binding.ty)
-                                        || matches!(binding.ty, ResolvedType::Bytes)
+                                    if crate::codegen::native_emit::is_native_owned_vec_type(
+                                        self.program,
+                                        &binding.ty,
+                                    ) || matches!(binding.ty, ResolvedType::Bytes)
                                         || crate::stdin_stream_ops::is_reader(&binding.ty)
                                         || string_append
                                         || crate::string_ops::replacement::admitted(

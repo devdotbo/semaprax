@@ -221,8 +221,11 @@ fn count(
                         let child = count(program, function, value, weight, depth + 1, nearest)?;
                         accumulator = sequence(accumulator, child);
                     }
-                    ResolvedStatement::CopyDiscard { value: body, .. }
-                    | ResolvedStatement::Unsafe { body, .. } => {
+                    ResolvedStatement::CopyDiscard { value, .. } => {
+                        let child = count(program, function, value, weight, depth + 1, nearest)?;
+                        accumulator = sequence(accumulator, child);
+                    }
+                    ResolvedStatement::Unsafe { body, .. } => {
                         let child = count(program, function, body, weight, depth + 1, nearest)?;
                         accumulator = sequence(accumulator, child);
                     }

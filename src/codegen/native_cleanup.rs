@@ -929,7 +929,10 @@ fn validate_expression(
                         // Assignment targets reuse their `let` storage.
                         validate_expression(program, function, value)?;
                     }
-                    ResolvedStatement::CopyDiscard { value: body, .. } | ResolvedStatement::Unsafe { body, .. } => {
+                    ResolvedStatement::CopyDiscard { value, .. } => {
+                        validate_expression(program, function, value)?;
+                    }
+                    ResolvedStatement::Unsafe { body, .. } => {
                         validate_expression(program, function, body)?;
                     }
                     ResolvedStatement::While { condition, body, .. }
