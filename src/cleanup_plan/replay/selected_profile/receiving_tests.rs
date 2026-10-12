@@ -488,7 +488,7 @@ fn named_string_transfer_retained_replay_matches_ordinary_exact_and_short() {
     const SOURCE: &str = r#"module receiving;
 @id("app.probe") fn probe()->i64 {
  let key=str"x";let mut at=0;while at<2 {at=at+1;let text="é";let moved=string_take(text);
- if at==1 {continue;} else {0} return string_len(moved)+str_len_bytes(key);0} 0
+ if at==1 {continue;} else {0} if at==2 {return string_len(moved)+str_len_bytes(key);} else {0} 0} 0
 }
 @id("app.main") fn main()->i64 {probe()}
 "#;

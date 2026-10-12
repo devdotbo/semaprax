@@ -36,7 +36,7 @@ fn explicit_transfer_preserves_native_carriers_clone_baseline_and_failure_settle
     // settlement. Fixed context/observer metadata are initialized before each call.
     // Existing realloc requests are counted too, without changing settlement hooks.
     let tracked = generated.replace("realloc(", "transfer_realloc(");
-    let mut probe=format!("{}\n{}\nstatic unsigned transfer_realloc_requests;\nstatic __attribute__((unused)) void *transfer_realloc(void *p,size_t n){{++transfer_realloc_requests;return realloc(p,n);}}\n{tracked}\n#undef malloc\n#undef free\nint main(void){{struct spx_status_entry entries[32];struct spx_context context={{0}};REQUIRE(spx_context_init(&context,19,entries,32,NULL,NULL,NULL));\n",
+    let mut probe=format!("{}\n{}\nstatic unsigned transfer_realloc_requests;\nstatic __attribute__((unused)) void *transfer_realloc(void *p,size_t n){{++transfer_realloc_requests;return realloc(p,n);}}\n{tracked}\n#undef malloc\n#undef free\nint main(void){{REQUIRE(fixture_binary_stdout());struct spx_status_entry entries[32];struct spx_context context={{0}};REQUIRE(spx_context_init(&context,19,entries,32,NULL,NULL,NULL));\n",
  include_str!("../support/native_fixture_stdio.c"),include_str!("../native_owned_utf8_settlement_v1/allocations.c"));
     for (id, value, allocations) in [("unicode", 3, 1), ("empty", 0, 1), ("clone", 3, 2)] {
         probe.push_str(&format!("for(unsigned i=0;i<3;++i){{uint64_t before=fixture_allocations;unsigned requests=transfer_realloc_requests;int64_t result=INT64_MIN;REQUIRE({}(&context,&result)==0);REQUIRE(result=={value});REQUIRE(fixture_allocations-before=={allocations});REQUIRE(transfer_realloc_requests==requests);REQUIRE(fixture_live==0&&fixture_allocations==fixture_frees);}}\n",symbol(id)));
@@ -157,7 +157,11 @@ function observe(id,mints,bytes,body){
 }
 for(let i=0;i<3;i++){
  for(const [id,value,mints,bytes] of [['unicode',3n,1,3],['empty',0n,1,0],['clone',3n,2,6]])observe(id,mints,bytes,()=>{const r=api.call(id);if(r.kind!=='success'||r.value!==value)throw Error(JSON.stringify(r));});
- for(const [id,domain,code] of [['late','semaprax.arithmetic.v1',4],['pre','semaprax.contract.v1',1],['post','semaprax.contract.v1',2]])observe(id,1,3,()=>{const r=api.call(id);if(r.kind!=='failure'||r.domain!==domain||r.code!==code||'value'in r)throw Error(JSON.stringify(r));});
+ // late fails while staging the second argument: only the literal owner exists. A
+ // contract condition is not a while-condition read, so `string_len(text)` in
+ // `reject` requires and `string_len(result)` in `badpost` ensures each take one
+ // ordinary owning-read clone (mint+copy+drop of 3 bytes) beside the literal.
+ for(const [id,domain,code,mints,bytes] of [['late','semaprax.arithmetic.v1',4,1,3],['pre','semaprax.contract.v1',1,2,6],['post','semaprax.contract.v1',2,2,6]])observe(id,mints,bytes,()=>{const r=api.call(id);if(r.kind!=='failure'||r.domain!==domain||r.code!==code||'value'in r)throw Error(JSON.stringify(r));});
 }
 "#);
     let output = Command::new("node")
@@ -198,7 +202,7 @@ fn named_destructured_string_leaf_keeps_clone_reference_and_all_engine_settlemen
     hir::validate(&program).unwrap();
     let generated = codegen::emit_c(&ast).unwrap();
     let tracked = generated.replace("realloc(", "transfer_realloc(");
-    let mut probe = format!("{}\n{}\nstatic unsigned transfer_realloc_requests;\nstatic __attribute__((unused)) void *transfer_realloc(void *p,size_t n){{++transfer_realloc_requests;return realloc(p,n);}}\n{tracked}\n#undef malloc\n#undef free\nint main(void){{struct spx_status_entry entries[32];struct spx_context context={{0}};REQUIRE(spx_context_init(&context,19,entries,32,NULL,NULL,NULL));\n",
+    let mut probe = format!("{}\n{}\nstatic unsigned transfer_realloc_requests;\nstatic __attribute__((unused)) void *transfer_realloc(void *p,size_t n){{++transfer_realloc_requests;return realloc(p,n);}}\n{tracked}\n#undef malloc\n#undef free\nint main(void){{REQUIRE(fixture_binary_stdout());struct spx_status_entry entries[32];struct spx_context context={{0}};REQUIRE(spx_context_init(&context,19,entries,32,NULL,NULL,NULL));\n",
         include_str!("../support/native_fixture_stdio.c"), include_str!("../native_owned_utf8_settlement_v1/allocations.c"));
     // Two original literal owners. The saved owning-read reference adds exactly
     // one physical title clone; take forwards that same leaf without replacing it.
@@ -265,7 +269,7 @@ for(let i=0;i<3;i++) if(instance.exports.semaprax_main()!==6n) throw Error('name
 
 #[test]
 fn explicit_transfer_fuel_sweep_never_refuels_or_publishes_a_partial_owner() {
-    let mut fixture = Fixture::new(SOURCE);
+    let fixture = Fixture::new(SOURCE);
     for entry in ["unicode", "empty", "clone", "late", "pre", "post"] {
         let ordinary = interpreter::internal_strings::interpret(
             &fixture.source,

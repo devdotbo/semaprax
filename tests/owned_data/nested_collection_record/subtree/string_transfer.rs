@@ -92,9 +92,9 @@ fn explicit_recursive_transfer_retains_pointer_without_allocating_copying_or_res
                     "#define SPX_VEC_REALLOC take_resize",
                 );
             let generated = instrument(&generated, "spx_decl_666f7277617264", &format!(
-                " ++take_forward; take_alloc_before=outcome_total_allocations; take_copy_before=take_copies; take_resize_before=take_resizes; take_pointer=spx_param_0.{}.{};", field("outer.report"), field("report.text")));
+                " ++take_forward; take_alloc_before=outcome_total_allocations; take_copy_before=take_copies; take_resize_before=take_resizes; take_pointer=spx_param_0->{}.{};", field("outer.report"), field("report.text")));
             let generated = instrument(&generated, "spx_decl_73636f7265", &format!(
-                " ++take_score; if(outcome_total_allocations-take_alloc_before!={} || take_copies-take_copy_before!={} || take_resizes!=take_resize_before || (spx_param_0.{}==take_pointer)!={})abort();",
+                " ++take_score; if(outcome_total_allocations-take_alloc_before!={} || take_copies-take_copy_before!={} || take_resizes!=take_resize_before || (spx_param_0->{}==take_pointer)!={})abort();",
                 u8::from(clone), u8::from(clone), field("report.text"), u8::from(!clone)));
             let probes = r#"#include <string.h>
 static uint64_t take_alloc_before,take_copy_before,take_resize_before,take_copies,take_resizes,take_forward,take_score;

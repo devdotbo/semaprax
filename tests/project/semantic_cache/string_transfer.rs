@@ -3,11 +3,18 @@ use super::*;
 #[test]
 fn named_string_transfer_checked_cache_keeps_cold_warm_provider_drift_and_recovery() {
     let fixture = Fixture::new();
-    let original = fixture.read("src/app.spx");
-    assert!(original.contains("add(multiply(6, 7), subtract(divide(4, 2), 2))"));
-    fixture.write("src/app.spx", &original.replace(
-        "add(multiply(6, 7), subtract(divide(4, 2), 2))",
-        "{let text=\"é\";let moved=string_take(text);add(multiply(6, 7), subtract(divide(4, 2), 2))+string_len(moved)}"));
+    // The entry module stays inside the Public Scalar Export Profile, which
+    // refuses a String binding. As in the row-loan and byte-traversal fixtures,
+    // the owned String work lives in the tests module's own non-exported helper.
+    let original = fixture.read("src/tests.spx");
+    assert!(original.contains("is_negative(-1) && not(false)"));
+    fixture.write(
+        "src/tests.spx",
+        &(original.replace(
+            "is_negative(-1) && not(false)",
+            "is_negative(-1) && not(false) && moved_len() == 2",
+        ) + "\n@id(\"calculator.tests.moved\") fn moved_len() -> i64 {let text=\"é\";let moved=string_take(text);string_len(moved)}\n"),
+    );
     let manifest = fixture.manifest();
     let mut cache = ProjectFrontendCache::new_with_semantic_cache();
     let cold = cache.build(&manifest, &fixture.sources()).unwrap();
