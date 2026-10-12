@@ -5,6 +5,8 @@
 //! cleanup from syntax.  Construction and validation are pure and
 //! deterministic.  This module deliberately does not enable resource lowering.
 
+mod allocation;
+pub use allocation::{AllocationCase, AllocationOperation, ALLOCATION_DOMAIN_V1};
 mod build;
 mod deferred_commit;
 mod execute;
@@ -87,6 +89,8 @@ pub const CLEANUP_PLAN_SCHEMA_V17: &str = "semaprax.cleanup-plan.v17";
 pub const CLEANUP_PLAN_SCHEMA_V18: &str = "semaprax.cleanup-plan.v18";
 /// Transitive nonallocating ordinary Bytes helper renewal, with optional lexical control.
 pub const CLEANUP_PLAN_SCHEMA_V19: &str = "semaprax.cleanup-plan.v19";
+/// Additive checked-allocation projection; ordinary production never selects it.
+pub const CLEANUP_PLAN_SCHEMA_V20: &str = "semaprax.cleanup-plan.v20";
 
 macro_rules! numeric_id {
     ($name:ident) => {
@@ -106,6 +110,8 @@ pub enum StatusLane {
     /// Callee-scoped owner validation before atomic argument commitment.
     OwnerAdmission,
     OperationFailure,
+    /// Physical materialization refusal in an exact checked allocation closure.
+    AllocationFailure,
     ContractFalse,
 }
 
@@ -336,6 +342,12 @@ pub enum ContractPhase {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum StatusProducer {
+    /// Fixed allocation domain/class/retryability. The exact cases and operation
+    /// remain independently checked proof data, never allocator permission.
+    CheckedAllocation {
+        operation: AllocationOperation,
+        normalized_cases: [AllocationCase; 2],
+    },
     PropagatedCall {
         callee: DeclarationId,
     },
