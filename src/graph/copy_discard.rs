@@ -32,7 +32,9 @@ pub(super) fn graph_json(
     view: &GraphView<'_>,
 ) -> Result<String, Diagnostic> {
     let selected = crate::hir::copy_discard_program_uses(program);
-    if selected { graph_schema(program)?; }
+    if selected {
+        graph_schema(program)?;
+    }
     let mut graph = super::byte_traversal::graph_json(program, revision, functions, types, view)?;
     if !selected {
         return Ok(graph);

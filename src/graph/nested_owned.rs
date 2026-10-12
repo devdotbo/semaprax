@@ -51,7 +51,10 @@ pub(super) fn nested_cleanup_graph_schema<'a>(
     // activate it; frozen nested schemas retain their original loan guard.
     if let Some(program) = program {
         let current = functions.iter().all(|function| {
-            program.functions.iter().chain(program.function_instances.iter().map(|i| &i.function))
+            program
+                .functions
+                .iter()
+                .chain(program.function_instances.iter().map(|i| &i.function))
                 .any(|held| std::ptr::eq(held, *function))
         });
         if current && super::copy_discard::authenticate_finite_composition(program)? {

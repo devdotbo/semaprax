@@ -10,12 +10,18 @@ pub(in crate::hir::validation) enum Values<'value> {
     Owned(BTreeMap<ValueId, ResolvedType>),
 }
 impl<'value> Values<'value> {
-    pub(in crate::hir::validation) fn new() -> Self { Self::Borrowed(BTreeMap::new()) }
+    pub(in crate::hir::validation) fn new() -> Self {
+        Self::Borrowed(BTreeMap::new())
+    }
     pub(in crate::hir::validation) fn insert(&mut self, id: ValueId, ty: &'value ResolvedType) {
         match self {
-            Self::Borrowed(values) => { values.insert(id, ty); }
+            Self::Borrowed(values) => {
+                values.insert(id, ty);
+            }
             #[cfg(test)]
-            Self::Owned(values) => { values.insert(id, ty.clone()); }
+            Self::Owned(values) => {
+                values.insert(id, ty.clone());
+            }
         }
     }
     pub(in crate::hir::validation) fn get(&self, id: &ValueId) -> Option<&ResolvedType> {
@@ -33,7 +39,9 @@ impl<'value> Values<'value> {
         }
     }
     #[cfg(test)]
-    fn owned() -> Self { Self::Owned(BTreeMap::new()) }
+    fn owned() -> Self {
+        Self::Owned(BTreeMap::new())
+    }
 }
 #[cfg(test)]
 mod tests;

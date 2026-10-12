@@ -87,9 +87,18 @@ pub(super) fn legacy_graph_json(
     view: &GraphView<'_>,
 ) -> Result<String, Diagnostic> {
     if hir::copy_discard_program_uses(program) {
-        return Err(Diagnostic::io("SPX-G410", "lexical Copy discard requires Graph v84"));
+        return Err(Diagnostic::io(
+            "SPX-G410",
+            "lexical Copy discard requires Graph v84",
+        ));
     }
-    ordinary_inner_graph_json(program, source_revision, selected_functions, selected_types, view)
+    ordinary_inner_graph_json(
+        program,
+        source_revision,
+        selected_functions,
+        selected_types,
+        view,
+    )
 }
 
 // The ordinary layered renderer retains its exact previous checks and bytes;

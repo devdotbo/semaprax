@@ -17,14 +17,20 @@ fn deferred_allocating_call_keeps_caller_epochs_until_both_successes_and_rejects
     let source = crate::parse(SOURCE, "checked-deferred.spx").unwrap();
     let entry = DeclarationId::new("checked.deferred.main");
     let prepared = super::super::prepare(&source, &entry).unwrap();
-    assert!(matches!(
-        crate::cleanup_plan::execute::execute_for_conformance(
-            prepared.ordinary_program(),
-            &entry,
-            crate::cleanup_plan::CleanupScenario::new("ordinary-usize", Some(TraceResult::Usize(2))),
+    assert!(
+        matches!(
+            crate::cleanup_plan::execute::execute_for_conformance(
+                prepared.ordinary_program(),
+                &entry,
+                crate::cleanup_plan::CleanupScenario::new(
+                    "ordinary-usize",
+                    Some(TraceResult::Usize(2))
+                ),
+            ),
+            Err(crate::cleanup_plan::execute::CleanupExecutionError::UnsupportedResultType(_))
         ),
-        Err(crate::cleanup_plan::execute::CleanupExecutionError::UnsupportedResultType(_))
-    ), "the private receiving repair must not widen the older public oracle");
+        "the private receiving repair must not widen the older public oracle"
+    );
     let mut owner = prepared.receive().unwrap();
     let function = &owner.program.functions[0];
     let plan = &function.cleanup_plan;

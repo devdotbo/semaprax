@@ -26,13 +26,17 @@ fn program() -> ResolvedProgram {
     assert_eq!(canonical, crate::format::canonical(&reparsed));
     crate::hir::resolve(&reparsed).unwrap()
 }
-fn compare(program: &ResolvedProgram, template: &ResolvedFunctionTemplate) -> Result<(), Diagnostic> {
+fn compare(
+    program: &ResolvedProgram,
+    template: &ResolvedFunctionTemplate,
+) -> Result<(), Diagnostic> {
     let mut borrowed = HirValidator::new(program).unwrap();
     let mut owned = borrowed.clone();
     let execution = FunctionExecutionId::Monomorphic(template.id.clone());
     // Owned insert/snapshot/root are the saved original map operations. Both
     // routes execute the complete symbolic walk, not an env-only mock verdict.
-    let old = owned.validate_template_expressions_with_values(template, &execution, Values::owned());
+    let old =
+        owned.validate_template_expressions_with_values(template, &execution, Values::owned());
     let new = borrowed.validate_template_expressions(template, &execution);
     assert_eq!(new, old);
     assert_eq!(borrowed.expression_ids, owned.expression_ids);
@@ -55,22 +59,45 @@ fn borrowed_template_types_preserve_owned_map_diagnostics_and_current_binding_su
         foreign.params[0].ty = ResolvedType::I64;
         assert_eq!(compare(&program, &foreign).unwrap_err().code, "SPX-H006");
     }
-    let template = program.function_templates.iter().find(|t| t.id.as_str() == "c.rebuild").unwrap();
+    let template = program
+        .function_templates
+        .iter()
+        .find(|t| t.id.as_str() == "c.rebuild")
+        .unwrap();
     let mut stale = template.clone();
-    let ResolvedExprKind::Block { tail, .. } = &mut stale.body.kind else { panic!("block"); };
-    let ResolvedExprKind::Match { arms, .. } = &mut tail.kind else { panic!("record match"); };
-    let ResolvedMatchPattern::Record { fields, .. } = &mut arms[0].pattern else { panic!("record pattern"); };
+    let ResolvedExprKind::Block { tail, .. } = &mut stale.body.kind else {
+        panic!("block");
+    };
+    let ResolvedExprKind::Match { arms, .. } = &mut tail.kind else {
+        panic!("record match");
+    };
+    let ResolvedMatchPattern::Record { fields, .. } = &mut arms[0].pattern else {
+        panic!("record pattern");
+    };
     fields[0].field = DeclarationId::new("foreign.field");
     assert_eq!(compare(&program, &stale).unwrap_err().code, "SPX-H006");
     for wrong_type in [true, false] {
         let mut wrong = template.clone();
-        let ResolvedExprKind::Block { tail, .. } = &mut wrong.body.kind else { panic!("block"); };
-        let ResolvedExprKind::Match { arms, .. } = &mut tail.kind else { panic!("match"); };
-        let ResolvedMatchPattern::Record { fields, .. } = &mut arms[0].pattern else { panic!("Wrap"); };
-        let ResolvedRecordMatchFieldPattern::Record { fields, .. } = &mut fields[0].pattern else { panic!("Pair"); };
-        let ResolvedRecordMatchFieldPattern::Binding(binding) = &mut fields[0].pattern else { panic!("payload"); };
-        if wrong_type { binding.ty = ResolvedType::String; }
-        else { binding.ownership = OwnershipMode::Borrow; }
+        let ResolvedExprKind::Block { tail, .. } = &mut wrong.body.kind else {
+            panic!("block");
+        };
+        let ResolvedExprKind::Match { arms, .. } = &mut tail.kind else {
+            panic!("match");
+        };
+        let ResolvedMatchPattern::Record { fields, .. } = &mut arms[0].pattern else {
+            panic!("Wrap");
+        };
+        let ResolvedRecordMatchFieldPattern::Record { fields, .. } = &mut fields[0].pattern else {
+            panic!("Pair");
+        };
+        let ResolvedRecordMatchFieldPattern::Binding(binding) = &mut fields[0].pattern else {
+            panic!("payload");
+        };
+        if wrong_type {
+            binding.ty = ResolvedType::String;
+        } else {
+            binding.ownership = OwnershipMode::Borrow;
+        }
         // Fresh field substitution must reject before this binding's type can
         // enter either environment, regardless of its immutable source address.
         assert_eq!(compare(&program, &wrong).unwrap_err().code, "SPX-H006");
@@ -79,13 +106,25 @@ fn borrowed_template_types_preserve_owned_map_diagnostics_and_current_binding_su
 #[test]
 fn borrowed_template_snapshots_remove_real_type_payloads_through_complete_drop() {
     let program = program();
-    let parameter = &program.function_templates.iter().find(|t| t.id.as_str() == "c.rebuild").unwrap().params[0];
+    let parameter = &program
+        .function_templates
+        .iter()
+        .find(|t| t.id.as_str() == "c.rebuild")
+        .unwrap()
+        .params[0];
     // Wrap<Pair<Bytes,T>> owns exactly two singleton/type-argument Vecs. The
     // map, shared identity, and immutable input are excluded in neither route;
     // source/program construction precedes this narrow env lifetime observer.
-    let ResolvedType::Nominal { arguments, .. } = &parameter.ty else { panic!("Wrap"); };
+    let ResolvedType::Nominal { arguments, .. } = &parameter.ty else {
+        panic!("Wrap");
+    };
     assert_eq!(arguments.len(), 1);
-    let ResolvedType::Nominal { arguments: inner, .. } = &arguments[0] else { panic!("Pair"); };
+    let ResolvedType::Nominal {
+        arguments: inner, ..
+    } = &arguments[0]
+    else {
+        panic!("Pair");
+    };
     assert_eq!(inner.len(), 2);
     let (_, old) = measure(|| {
         let mut values = Values::owned();
@@ -93,7 +132,10 @@ fn borrowed_template_snapshots_remove_real_type_payloads_through_complete_drop()
         for _ in 0..64 {
             let snapshot = values.clone();
             assert_eq!(snapshot.get(&parameter.id), Some(&parameter.ty));
-            assert_eq!(snapshot.root(&parameter.id).unwrap().as_ref(), &parameter.ty);
+            assert_eq!(
+                snapshot.root(&parameter.id).unwrap().as_ref(),
+                &parameter.ty
+            );
             drop(snapshot);
         }
         drop(values);
@@ -105,7 +147,10 @@ fn borrowed_template_snapshots_remove_real_type_payloads_through_complete_drop()
             let snapshot = values.clone();
             let ty = snapshot.get(&parameter.id).unwrap();
             assert!(std::ptr::eq(ty, &parameter.ty));
-            assert!(matches!(snapshot.root(&parameter.id).unwrap(), Cow::Borrowed(_)));
+            assert!(matches!(
+                snapshot.root(&parameter.id).unwrap(),
+                Cow::Borrowed(_)
+            ));
             drop(snapshot);
         }
         drop(values);

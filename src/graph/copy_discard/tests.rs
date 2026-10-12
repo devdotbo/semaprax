@@ -35,13 +35,24 @@ fn full_current_finite_discard_composes_flat_loans_with_nested_storage_in_v84() 
     for count in [1, 8, 32] {
         let source = SOURCE.replace("count<3", &format!("count<{count}"));
         let (ast, program) = resolved(&source);
-        let score = program.functions.iter().find(|f| f.id.as_str() == "score").unwrap();
+        let score = program
+            .functions
+            .iter()
+            .find(|f| f.id.as_str() == "score")
+            .unwrap();
         assert!(!score.loan_plan.loans.is_empty());
-        assert!(score.loan_plan.loans.iter().all(|loan| loan.origin.projections.is_empty()));
+        assert!(score
+            .loan_plan
+            .loans
+            .iter()
+            .all(|loan| loan.origin.projections.is_empty()));
         assert_full_replay(&program);
         assert!(authenticate_finite_composition(&program).unwrap());
         assert_eq!(graph_schema(&program).unwrap(), SCHEMA);
-        assert_eq!(super::super::nested_owned::pre_filesystem_graph_schema(&program).unwrap(), SCHEMA);
+        assert_eq!(
+            super::super::nested_owned::pre_filesystem_graph_schema(&program).unwrap(),
+            SCHEMA
+        );
         let graph = crate::graph::to_json(&ast).unwrap();
         assert!(graph.starts_with("{\"schema\":\"semaprax.graph.v84\""));
         assert!(graph.contains("\"kind\":\"copy_discard\""));
@@ -62,34 +73,90 @@ fn full_current_finite_discard_composes_flat_loans_with_nested_storage_in_v84() 
 fn current_v84_composition_does_not_lend_frozen_or_detached_parts_authority() {
     let (ast, program) = resolved(SOURCE);
     assert_eq!(legacy_graph_schema(&program).unwrap_err().code, "SPX-G410");
-    assert!(crate::graph::to_legacy_json(&ast).unwrap_err().iter().any(|e| e.code == "SPX-G410"));
-    assert_eq!(crate::graph::to_legacy_hir_json(&program, "source-only").unwrap_err().code, "SPX-G410");
-    assert_eq!(super::super::nested_owned::nested_cleanup_graph_schema(
-        None, program.functions.iter(), false, false,
-    ).unwrap_err().code, "SPX-G410");
+    assert!(crate::graph::to_legacy_json(&ast)
+        .unwrap_err()
+        .iter()
+        .any(|e| e.code == "SPX-G410"));
+    assert_eq!(
+        crate::graph::to_legacy_hir_json(&program, "source-only")
+            .unwrap_err()
+            .code,
+        "SPX-G410"
+    );
+    assert_eq!(
+        super::super::nested_owned::nested_cleanup_graph_schema(
+            None,
+            program.functions.iter(),
+            false,
+            false,
+        )
+        .unwrap_err()
+        .code,
+        "SPX-G410"
+    );
     let detached = program.functions.clone();
-    assert_eq!(super::super::nested_owned::nested_cleanup_graph_schema(
-        Some(&program), detached.iter(), false, false,
-    ).unwrap_err().code, "SPX-G410");
-    let main = program.functions.iter().find(|f| f.id.as_str() == "app.main").unwrap();
-    let K::Block { statements, .. } = &main.body.kind else { panic!("main block"); };
-    let S::LexicalWhile { condition, body, .. } = &statements[1] else { panic!("finite loop"); };
-    assert_eq!(crate::finite_owned_record_loop::resolved(&program, condition, body), Some(3));
+    assert_eq!(
+        super::super::nested_owned::nested_cleanup_graph_schema(
+            Some(&program),
+            detached.iter(),
+            false,
+            false,
+        )
+        .unwrap_err()
+        .code,
+        "SPX-G410"
+    );
+    let main = program
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "app.main")
+        .unwrap();
+    let K::Block { statements, .. } = &main.body.kind else {
+        panic!("main block");
+    };
+    let S::LexicalWhile {
+        condition, body, ..
+    } = &statements[1]
+    else {
+        panic!("finite loop");
+    };
+    assert_eq!(
+        crate::finite_owned_record_loop::resolved(&program, condition, body),
+        Some(3)
+    );
     let detached_body = body.as_ref().clone();
-    assert_eq!(crate::finite_owned_record_loop::resolved(&program, condition, &detached_body), None);
+    assert_eq!(
+        crate::finite_owned_record_loop::resolved(&program, condition, &detached_body),
+        None
+    );
 }
 #[test]
 fn native_import_flags_precede_current_finite_composition_authentication() {
     let (_, mut program) = resolved(SOURCE);
-    assert_eq!(super::super::nested_owned::nested_cleanup_graph_schema(
-        Some(&program), program.functions.iter(), true, false,
-    ).unwrap_err().code, "SPX-G410");
-    let native = crate::hir::resolve(&crate::parse(r#"module native;
+    assert_eq!(
+        super::super::nested_owned::nested_cleanup_graph_schema(
+            Some(&program),
+            program.functions.iter(),
+            true,
+            false,
+        )
+        .unwrap_err()
+        .code,
+        "SPX-G410"
+    );
+    let native = crate::hir::resolve(
+        &crate::parse(
+            r#"module native;
 @id("native.host") interface Host permits {} {
  @id("native.ping") import rust fn ping(value:i64)->i64 effects {} failure infallible;
 }
 @id("native.main") fn main()->i64 {0}
-"#, "graph-v84-native-flags.spx").unwrap()).unwrap();
+"#,
+            "graph-v84-native-flags.spx",
+        )
+        .unwrap(),
+    )
+    .unwrap();
     program.interfaces = native.interfaces;
     assert_eq!(graph_schema(&program).unwrap_err().code, "SPX-G410");
 }
@@ -98,29 +165,60 @@ fn forged_flat_loan_cleanup_and_finite_counter_cannot_select_current_v84_composi
     for mutation in 0..3 {
         let (_, mut program) = resolved(SOURCE);
         if mutation == 0 {
-            let score = program.functions.iter_mut().find(|f| f.id.as_str() == "score").unwrap();
-            score.loan_plan.loans[0].origin.projections.push(crate::hir::PlaceProjection::Field(
-                DeclarationId::new("forged.flat.field"),
-            ));
+            let score = program
+                .functions
+                .iter_mut()
+                .find(|f| f.id.as_str() == "score")
+                .unwrap();
+            score.loan_plan.loans[0]
+                .origin
+                .projections
+                .push(crate::hir::PlaceProjection::Field(DeclarationId::new(
+                    "forged.flat.field",
+                )));
         } else {
-            let main = program.functions.iter_mut().find(|f| f.id.as_str() == "app.main").unwrap();
-            if mutation == 1 { main.cleanup_plan.lexical_control = None; }
-            else {
-                let K::Block { statements, .. } = &mut main.body.kind else { panic!("main block"); };
-                let S::LexicalWhile { condition, .. } = &mut statements[1] else { panic!("finite loop"); };
-                let K::Binary { right, .. } = &mut condition.kind else { panic!("counter bound"); };
+            let main = program
+                .functions
+                .iter_mut()
+                .find(|f| f.id.as_str() == "app.main")
+                .unwrap();
+            if mutation == 1 {
+                main.cleanup_plan.lexical_control = None;
+            } else {
+                let K::Block { statements, .. } = &mut main.body.kind else {
+                    panic!("main block");
+                };
+                let S::LexicalWhile { condition, .. } = &mut statements[1] else {
+                    panic!("finite loop");
+                };
+                let K::Binary { right, .. } = &mut condition.kind else {
+                    panic!("counter bound");
+                };
                 right.kind = K::Int(33);
                 assert!(!authenticate_finite_composition(&program).unwrap());
             }
         }
-        assert_eq!(graph_schema(&program).unwrap_err().code, if mutation == 2 { "SPX-G410" } else { "SPX-H006" }, "mutation {mutation}");
-        assert_eq!(crate::hir::validate(&program).unwrap_err().code, "SPX-H006", "mutation {mutation}");
+        assert_eq!(
+            graph_schema(&program).unwrap_err().code,
+            if mutation == 2 {
+                "SPX-G410"
+            } else {
+                "SPX-H006"
+            },
+            "mutation {mutation}"
+        );
+        assert_eq!(
+            crate::hir::validate(&program).unwrap_err().code,
+            "SPX-H006",
+            "mutation {mutation}"
+        );
     }
 }
 
 #[test]
 fn nonfinite_copy_discard_retains_the_existing_nested_projected_loan_route() {
-    let (ast, program) = resolved(r#"module app;
+    let (ast, program) = resolved(
+        r#"module app;
 @id("leaf") record Leaf {@id("leaf.payload") payload:Bytes,}
 @id("outer") record Outer {@id("outer.leaf") leaf:Leaf,}
 @id("take") fn take(value:own Outer)->i64 {
@@ -132,19 +230,36 @@ fn nonfinite_copy_discard_retains_the_existing_nested_projected_loan_route() {
  byte_len(view)
 }
 @id("app.main") fn main()->i64 {0}
-"#);
+"#,
+    );
     assert!(crate::hir::copy_discard_program_uses(&program));
     assert!(!authenticate_finite_composition(&program).unwrap());
-    let inspect = program.functions.iter().find(|f| f.id.as_str() == "inspect").unwrap();
+    let inspect = program
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "inspect")
+        .unwrap();
     assert!(!inspect.loan_plan.loans.is_empty());
-    assert!(inspect.loan_plan.loans.iter().all(|loan| loan.origin.projections.len() == 2));
+    assert!(inspect
+        .loan_plan
+        .loans
+        .iter()
+        .all(|loan| loan.origin.projections.len() == 2));
     assert_full_replay(&program);
     assert_eq!(graph_schema(&program).unwrap(), SCHEMA);
     let graph = crate::graph::to_json(&ast).unwrap();
     assert!(graph.starts_with("{\"schema\":\"semaprax.graph.v84\""));
     crate::graph::verify_json(&ast, &graph).unwrap();
     let mut forged = program.clone();
-    forged.functions.iter_mut().find(|f| f.id.as_str() == "inspect").unwrap()
-        .loan_plan.loans[0].origin.projections.clear();
+    forged
+        .functions
+        .iter_mut()
+        .find(|f| f.id.as_str() == "inspect")
+        .unwrap()
+        .loan_plan
+        .loans[0]
+        .origin
+        .projections
+        .clear();
     assert_eq!(graph_schema(&forged).unwrap_err().code, "SPX-G410");
 }

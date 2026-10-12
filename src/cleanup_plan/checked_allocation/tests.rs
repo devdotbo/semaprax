@@ -410,7 +410,12 @@ fn aggregate_metadata_cannot_inherit_native_inline_nonallocation_authority() {
 
 #[test]
 fn array_metadata_is_ordinary_valid_but_requires_a_checked_cross_engine_receiver() {
-    for (length, value) in [(0, "[]"), (2, "[1u8, 2u8]"), (0, "[0u8; 0]"), (2, "[7u8; 2]")] {
+    for (length, value) in [
+        (0, "[]"),
+        (2, "[1u8, 2u8]"),
+        (0, "[0u8; 0]"),
+        (2, "[7u8; 2]"),
+    ] {
         let input = format!(
             r#"module checked.array;
 @id("checked.array.main") fn main() -> i64 {{

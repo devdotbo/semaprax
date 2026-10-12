@@ -201,7 +201,10 @@ impl IdSnapshot {
 }
 
 #[cfg(test)]
-#[expect(dead_code, reason = "saved owned-binding loan insertion helper for test-only scope oracles")]
+#[expect(
+    dead_code,
+    reason = "saved owned-binding loan insertion helper for test-only scope oracles"
+)]
 pub(super) fn insert_loan(target: &mut ValidationBinding, loan: LoanId) -> Result<(), Diagnostic> {
     if !target.active_loans.contains(&loan) {
         charge::reserve(crate::cleanup_plan::replay_btree_node_upper::<LoanId, ()>())?;
