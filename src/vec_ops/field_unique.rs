@@ -244,15 +244,6 @@ pub(crate) fn inspect(expression: &ResolvedExpr) -> Option<Use<'_>> {
     })
 }
 
-/// Shape plus complete current descriptor replay, for every backend receiver.
-pub(crate) fn expression_position(
-    index: &DeclarationIndex,
-    expression: &ResolvedExpr,
-) -> Option<(usize, ResolvedType)> {
-    let call = inspect(expression)?;
-    position(index, call.element, call.identity)
-}
-
 /// Loan receiver: the whole named Vec root is borrowed for the call interval.
 pub(crate) fn borrowed_source(call: &ResolvedExpr, position: usize) -> bool {
     position == 0 && inspect(call).is_some()

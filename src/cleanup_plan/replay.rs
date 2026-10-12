@@ -1963,7 +1963,7 @@ fn collect_shape(
                     },
                     lifecycle: lifecycle.clone(),
                 };
-                allocation::leaf_indexes(function, budget, &leaves, &places, *flag, &leaf)?;
+                allocation::leaf_indexes(function, budget, leaves, places, *flag, &leaf)?;
                 if leaves.insert(*flag, leaf.clone()).is_some() {
                     return Err(replay_error(
                         function,

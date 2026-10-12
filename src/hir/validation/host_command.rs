@@ -25,7 +25,7 @@ pub(super) fn require_effects_view(
         return Err(hir_error("contract calls effectful host-command operation"));
     };
     if let Some(effect) =
-        crate::command_io_ops::required_effects(operation).find(|effect| !allowed.contains(*effect))
+        crate::command_io_ops::required_effects(operation).find(|effect| !allowed.contains(effect))
     {
         return Err(hir_error(format!(
             "host-command operation requires undeclared effect `{effect}`"

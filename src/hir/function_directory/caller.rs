@@ -67,8 +67,7 @@ pub(in crate::hir) fn prepare(program: &ResolvedProgram) -> Result<Directory<'_>
         let excess = permits
             .capacity()
             .saturating_sub(program.permits.len())
-            .checked_mul(std::mem::size_of::<&str>())
-            .unwrap_or(usize::MAX);
+            .saturating_mul(std::mem::size_of::<&str>());
         return Err(capacity_refusal(permit_bytes, excess));
     }
     permits.extend(program.permits.iter().map(String::as_str));
