@@ -1,6 +1,6 @@
 //! Full overlay acceptance owners; the saved complete producer remains oracle.
 use super::super::{construct, eligible, reserve_builder_structure, LayoutRegistry};
-use super::{old, parity, sources};
+use super::{linked, old, parity, sources};
 use crate::ast::program_source::ProgramSource;
 use crate::bounded_output::with_limit_usage_refusal;
 use crate::diagnostic::Diagnostic;
@@ -19,14 +19,19 @@ const BOX_CALLER: &str = r#"module overlay.box;
 use function @id("std.mem.box.new") from std.mem as allocate;
 use function @id("std.mem.box.into-inner") from std.mem as consume;
 @id("overlay.box.main") fn main()->i64 { consume<i64>(allocate<i64>(42)) }"#;
+// Class methods are not module functions; each record/class-only provider also
+// declares one inert function so it parses (SPX-P101). Type imports never
+// project a provider function, and the original declarations stay verbatim.
 const CLASS_PROVIDER: &str = r#"module overlay.class_provider;
 @id("overlay.counter") class Counter { @id("overlay.counter.value") value:i64,
-@id("overlay.counter.bumped") fn bumped(self:Counter, amount:i64)->Counter { Counter { value:self.value+amount } } }"#;
+@id("overlay.counter.bumped") fn bumped(self:Counter, amount:i64)->Counter { Counter { value:self.value+amount } } }
+@id("overlay.class_provider.inert") fn inert()->i64 {0}"#;
 const CLASS_CALLER: &str = r#"module overlay.class_app;
 use type @id("overlay.counter") from overlay.class_provider as Counter;
 @id("overlay.class.main") fn main()->i64 { let counter=Counter {value:41}; let updated=counter.bumped(1); updated.value }"#;
 const INVARIANT_PROVIDER: &str = r#"module overlay.invariant_provider;
-@id("overlay.row") record Row { @id("overlay.row.x") x:i64, } requires x>=0"#;
+@id("overlay.row") record Row { @id("overlay.row.x") x:i64, } requires x>=0
+@id("overlay.invariant_provider.inert") fn inert()->i64 {0}"#;
 const INVARIANT_CALLER: &str = r#"module overlay.invariant_app;
 use type @id("overlay.row") from overlay.invariant_provider as Imported;
 @id("overlay.invariant.main") fn main()->i64 { let row=Imported{x:41}; let updated=row with {x:42}; updated.x }"#;
@@ -46,25 +51,60 @@ fn retained_vec_box_class_and_invariant_sources_match_full_owning_projection() {
         let owned = old::construct(&programs[0], &authored, &programs, Some(&registry)).unwrap();
         let view = construct(&programs[0], &authored, &programs, &registry).unwrap();
         let layout = registry.get(&programs[0], &authored, &programs).unwrap();
+        // Retained provider wrappers keep their reserved std identities. Outside
+        // the actual resolver's linked scope this foreign caller projection is
+        // still refused before any identity request.
+        let expected_refusal = match caller {
+            VEC_CALLER => Some("SPX-T283"),
+            BOX_CALLER => Some("SPX-T286"),
+            _ => None,
+        };
+        if let Some(code) = expected_refusal {
+            for unauthenticated in [
+                hir::identity_resolution::resolve(
+                    &owned,
+                    layout.presentation(&programs[0], &owned).unwrap(),
+                    |_| -> Result<(), ()> { panic!("identity request before wrapper refusal") },
+                )
+                .err()
+                .unwrap(),
+                hir::identity_resolution::resolve_source(
+                    &view,
+                    layout.presentation(&programs[0], &view).unwrap(),
+                    |_| -> Result<(), ()> { panic!("identity request before wrapper refusal") },
+                )
+                .err()
+                .unwrap(),
+            ] {
+                let hir::identity_resolution::Failure::Source(errors) = unauthenticated else {
+                    panic!("unauthenticated wrapper refusal remapped")
+                };
+                assert!(errors.iter().any(|error| error.code == code), "{errors:?}");
+            }
+        }
         let mut old_requests = Vec::new();
-        let old = hir::identity_resolution::resolve(
-            &owned,
-            layout.presentation(&programs[0], &owned).unwrap(),
-            |bytes| {
-                old_requests.push(bytes);
-                Ok::<(), ()>(())
-            },
-        )
+        let old = linked(|| {
+            hir::identity_resolution::resolve(
+                &owned,
+                layout.presentation(&programs[0], &owned).unwrap(),
+                |bytes| {
+                    old_requests.push(bytes);
+                    Ok::<(), ()>(())
+                },
+            )
+        })
         .unwrap();
         let mut new_requests = Vec::new();
-        let new = hir::identity_resolution::resolve_source(
-            &view,
-            layout.presentation(&programs[0], &view).unwrap(),
-            |bytes| {
-                new_requests.push(bytes);
-                Ok::<(), ()>(())
-            },
-        )
+        let new = linked(|| {
+            hir::identity_resolution::resolve_source(
+                &view,
+                layout.presentation(&programs[0], &view).unwrap(),
+                |bytes| {
+                    new_requests.push(bytes);
+                    Ok::<(), ()>(())
+                },
+            )
+        })
         .unwrap();
         assert_eq!(old.0, new.0);
         assert_eq!(old.1.reused(), new.1.reused());
@@ -124,20 +164,32 @@ fn invariant_and_wrapper_invalid_cases_keep_the_entire_old_error_order() {
             (Err(old), Err(new)) => assert_eq!(old, new),
             (Ok(old), Ok(view)) => {
                 let layout = registry.get(&programs[0], &authored, &programs).unwrap();
-                let old = hir::resolve_with_function_reuse(
-                    &old,
-                    None,
-                    None,
-                    None,
-                    layout.presentation(&programs[0], &old).unwrap(),
-                )
+                // Within the actual linked scope, so each wrapper case reaches
+                // its intended type/contract error rather than the reserved-ID
+                // refusal shared by both routes outside it.
+                let old = linked(|| {
+                    hir::resolve_with_function_reuse(
+                        &old,
+                        None,
+                        None,
+                        None,
+                        layout.presentation(&programs[0], &old).unwrap(),
+                    )
+                })
                 .err()
                 .unwrap();
-                let new =
+                let new = linked(|| {
                     hir::resolve_source(&view, layout.presentation(&programs[0], &view).unwrap())
-                        .err()
-                        .unwrap();
+                })
+                .err()
+                .unwrap();
                 assert_eq!(old, new);
+                assert!(
+                    !old
+                        .iter()
+                        .any(|error| error.code == "SPX-T283" || error.code == "SPX-T286"),
+                    "{old:?}"
+                );
             }
             _ => panic!("complete old/new constructor verdict differs"),
         }
@@ -172,11 +224,14 @@ fn complete_recursive_owner_receivers_pay_drop_cache_and_short_refusal() {
                         reserve_builder_structure(costs.raw_clone_and_hir)?;
                         let view = construct(&programs[0], &authored, &programs, &registry)?;
                         let layout = registry.get(&programs[0], &authored, &programs)?;
-                        let resolved = hir::identity_resolution::resolve_source(
-                            &view,
-                            layout.presentation(&programs[0], &view)?,
-                            |bytes| reserve_builder_structure(bytes),
-                        )
+                        let presentation = layout.presentation(&programs[0], &view)?;
+                        let resolved = linked(|| {
+                            hir::identity_resolution::resolve_source(
+                                &view,
+                                presentation,
+                                |bytes| reserve_builder_structure(bytes),
+                            )
+                        })
                         .map_err(|error| match error {
                             hir::identity_resolution::Failure::Source(errors) => errors,
                             hir::identity_resolution::Failure::Semantic(error) => vec![error],
@@ -304,5 +359,28 @@ fn conservative_class_default_census_keeps_real_owned_record_forwarding() {
     // A class import enables iterative ownership. The census deliberately
     // overbounds the record default tree; the unchanged actual provider proof
     // still forwards exactly one existing owner through a Var expression.
-    assert!(matches!(&forward.body.kind, crate::ast::ExprKind::Var(_)));
+    // Canonical source `{ value }` is a statement-free Block whose tail is
+    // that Var; only such a Block is peeled, and the Var must still name the
+    // function's single owning parameter.
+    let provider = programs[1]
+        .functions
+        .iter()
+        .find(|function| function.name == "forward")
+        .unwrap();
+    for function in [forward, provider] {
+        let mut tail = &function.body;
+        while let crate::ast::ExprKind::Block { statements, tail: next } = &tail.kind {
+            assert!(statements.is_empty(), "forwarding tail has statements");
+            tail = &**next;
+        }
+        let [owner] = function.params.as_slice() else {
+            panic!("forward has exactly one owning parameter")
+        };
+        assert_eq!(owner.mode, crate::ast::ParamMode::Own);
+        assert!(
+            matches!(&tail.kind, crate::ast::ExprKind::Var(name) if *name == owner.name),
+            "{:?}",
+            tail.kind
+        );
+    }
 }

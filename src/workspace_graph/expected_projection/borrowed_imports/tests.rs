@@ -25,6 +25,15 @@ fn sources(caller: &str, provider: &str) -> [Program; 2] {
         crate::parse(provider, "provider.spx").unwrap(),
     ]
 }
+// The actual module resolver verifies every fresh caller projection inside
+// both linked Vec/Box wrapper scopes. Retained provider wrapper bodies keep
+// their reserved std identities, so oracle and view use that same boundary;
+// outside it the same projection remains refused.
+fn linked<T>(operation: impl FnOnce() -> T) -> T {
+    crate::vec_ops::with_authenticated_linked_source(|| {
+        crate::box_ops::with_authenticated_linked_source(operation)
+    })
+}
 fn parity(caller: &str, provider: &str) {
     let programs = sources(caller, provider);
     let authored = index_authored(&programs).unwrap();
@@ -60,14 +69,17 @@ fn parity(caller: &str, provider: &str) {
         ));
     }
     let layout = registry.get(&programs[0], &authored, &programs).unwrap();
-    let expected = hir::resolve_with_function_reuse(
-        &before,
-        None,
-        None,
-        None,
-        layout.presentation(&programs[0], &before).unwrap(),
-    );
-    let actual = hir::resolve_source(&view, layout.presentation(&programs[0], &view).unwrap());
+    let expected = linked(|| {
+        hir::resolve_with_function_reuse(
+            &before,
+            None,
+            None,
+            None,
+            layout.presentation(&programs[0], &before).unwrap(),
+        )
+    });
+    let actual =
+        linked(|| hir::resolve_source(&view, layout.presentation(&programs[0], &view).unwrap()));
     let (expected, _) = expected.unwrap();
     let (actual, _) = actual.unwrap();
     assert_eq!(expected, actual);
@@ -126,12 +138,18 @@ fn imports_aliases_private_layouts_defaults_and_cache_publication_keep_full_old_
         let caller = format!("module imported.app; use function @id(\"helper\") from imported.provider as helper; @id(\"app.main\") fn main()->i64 {{helper({args})}}");
         parity(&caller, &provider);
     }
+    // A parsed module declares at least one function (SPX-P101). One inert
+    // non-main authored function keeps both callers valid; the imported alias
+    // `main` and the generated synthetic main remain the observed subjects.
     parity(
-        "module imported.app; use function @id(\"helper\") from imported.provider as main;",
+        "module imported.app; use function @id(\"helper\") from imported.provider as main; @id(\"app.inert\") fn inert()->i64 {0}",
         "module imported.provider; @id(\"helper\") fn helper()->i64 {42}",
     );
     parity(
-        &SCALAR_CALLER.replace(" @id(\"app.main\") fn main()->i64 {increment(41)}", ""),
+        &SCALAR_CALLER.replace(
+            " @id(\"app.main\") fn main()->i64 {increment(41)}",
+            " @id(\"app.inert\") fn inert()->i64 {0}",
+        ),
         SCALAR_PROVIDER,
     );
     parity(CALLER, PROVIDER);
@@ -298,7 +316,7 @@ fn plain_overlay_drop_requests_no_new_backing_and_full_route_keeps_old_verdicts(
 #[test]
 fn literal_full_old_layout_removal_is_observed_without_fitting_discovery_counts() {
     let programs = sources(
-        "module imported.app; use function @id(\"helper\") from imported.provider as factory;",
+        "module imported.app; use function @id(\"helper\") from imported.provider as factory; @id(\"app.inert\") fn inert()->i64 {0}",
         "module imported.provider; @id(\"helper\") fn helper()->i64 {42}",
     );
     let authored = index_authored(&programs).unwrap();
@@ -315,9 +333,12 @@ fn literal_full_old_layout_removal_is_observed_without_fitting_discovery_counts(
     };
     let ((), before) = observe(false);
     let ((), after) = observe(true);
-    // Independently saved old source has zero authored declarations, one import
-    // and two generated functions. Old Vec::push obtains capacity4 for this
-    // nonbyte <=1024-byte element; the overlay obtains the exact capacity2.
+    // Independently saved old source has one inert authored function (required
+    // by SPX-P101), one import and two generated functions. Old Program::clone
+    // obtains the exact capacity1 function directory; Vec::push then
+    // reallocates to capacity4 for this nonbyte <=1024-byte element and the
+    // synthetic main fits. The overlay borrows the authored function and
+    // obtains only the exact capacity2 generated directory.
     assert!(
         std::mem::size_of::<Function>() <= 1024
             && std::mem::size_of::<Expr>() <= 1024
@@ -328,14 +349,24 @@ fn literal_full_old_layout_removal_is_observed_without_fitting_discovery_counts(
         + "helper".len()
         + "imported.provider".len()
         + "factory".len();
+    let directories = (1 + 4 - 2) * std::mem::size_of::<Function>();
+    // Old clones the inert function's stable id, name and `{0}` Block's boxed
+    // leaf tail; empty signature/contract Vecs and the inline i64 own none.
+    let inert = "app.inert".len() + "inert".len() + std::mem::size_of::<Expr>();
     let removed = strings + std::mem::size_of::<ModuleUse>()
-        + 2 * std::mem::size_of::<Function>()
+        + directories
+        + inert
         // Saved old Program Drop acquires independent expression/type Vecs,
-        // each capacity4 for the two scalar prototypes. Direct overlay Drop
-        // has only leaf bodies/inline scalar types and obtains no scratch.
+        // each capacity4 for the three scalar results and three bodies (the
+        // inert Block's tail is pushed only after its Block pops). Direct
+        // overlay Drop has only leaf bodies/inline scalar types and obtains
+        // no scratch.
         + 4 * std::mem::size_of::<Expr>() + 4 * std::mem::size_of::<Type>();
     assert_eq!(before.allocated, after.allocated + removed);
-    assert_eq!(before.allocations, after.allocations + 8);
+    // Five strings and one ModuleUse directory, three inert payloads, one
+    // additional old directory acquisition (capacity1 then its capacity4
+    // reallocation versus one exact capacity2) and two Drop scratch Vecs.
+    assert_eq!(before.allocations, after.allocations + 5 + 1 + 3 + 1 + 2);
     for observed in [before, after] {
         assert!(!observed.invalid && observed.live == 0);
         assert_eq!(observed.allocated, observed.freed);
@@ -363,6 +394,11 @@ fn literal_imported_directory_replacements_and_authored_payloads_are_removed() {
         .unwrap();
     }
     caller.push_str(" @id(\"local\") record Local { @id(\"local.x\") x:i64, } @id(\"app.main\") fn main()->i64 {0}");
+    // SPX-P101: the provider declares one inert function after its seventeen
+    // records. Neither producer clones a provider function for type-only
+    // imports, and the shared registry runs identically in both observations,
+    // so the independent caller-side accounting below is unchanged.
+    provider.push_str(" @id(\"indexed.provider.inert\") fn inert()->i64 {0}");
     let programs = sources(&caller, &provider);
     let authored = index_authored(&programs).unwrap();
     let observe = |borrow| {
