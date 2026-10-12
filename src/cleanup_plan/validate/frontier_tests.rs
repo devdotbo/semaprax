@@ -8,23 +8,34 @@ const LEXICAL: &str = r#"module frontier.lexical;
 @id("late") fn late()->i64 {return 1;}
 "#;
 fn program(source: &str) -> ResolvedProgram {
-    let source = crate::parse(source, "validation-frontier.spx").unwrap();
-    let diagnostics = crate::verify::verify(&source);
-    // This internal cleanup owner also admits the unchanged library fixture.
-    // Retain every ordinary source check: only the executable-entry diagnostic
-    // is expected when the original corpus has no main declaration.
-    if source
+    let parsed = crate::parse(source, "validation-frontier.spx").unwrap();
+    let diagnostics = crate::verify::verify(&parsed);
+    if parsed
         .functions
         .iter()
         .any(|function| function.name == "main")
     {
         assert!(diagnostics.is_empty(), "{diagnostics:?}");
+        crate::hir::resolve(&parsed).unwrap()
     } else {
+        // Keep the original complete library and both public entry refusals.
         assert_eq!(diagnostics.len(), 1, "{diagnostics:?}");
         assert_eq!(diagnostics[0].code, "SPX-T105");
+        let rejected = crate::hir::resolve(&parsed).unwrap_err();
+        assert_eq!(rejected.len(), 1, "{rejected:?}");
+        assert_eq!(rejected[0].code, "SPX-T105");
+        // The success receiver owns an executable fixture containing the whole
+        // unchanged library prefix; neither verifier bypasses entry admission.
+        let executable = format!("{source}\n@id(\"frontier.fixture.main\") fn main()->i64 {{0}}\n");
+        let checked = crate::check(&executable, "validation-frontier.spx").unwrap();
+        assert_eq!(
+            &checked.functions[..parsed.functions.len()],
+            parsed.functions
+        );
+        crate::hir::resolve(&checked).unwrap()
     }
-    crate::hir::resolve(&source).unwrap()
 }
+
 fn old(program: &ResolvedProgram) -> Result<(), Diagnostic> {
     super::owned::validate_program_unindexed_reference(program)
 }
@@ -122,12 +133,10 @@ fn deferred_frontier_preserves_earlier_mismatch_and_global_lexical_owner_priorit
     }
     parity(&deep);
     deep.functions[0].cleanup_plan.schema = "forged";
-    assert!(
-        old(&deep)
-            .unwrap_err()
-            .message
-            .contains("non-canonical schema")
-    );
+    assert!(old(&deep)
+        .unwrap_err()
+        .message
+        .contains("non-canonical schema"));
     parity(&deep);
 }
 #[test]

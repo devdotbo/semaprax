@@ -218,8 +218,7 @@ fn forged_flat_loan_cleanup_and_finite_counter_cannot_select_current_v84_composi
 
 #[test]
 fn nonfinite_copy_discard_retains_the_existing_nested_projected_loan_route() {
-    let (ast, program) = resolved(
-        r#"module app;
+    let original = r#"module app;
 @id("leaf") record Leaf {@id("leaf.payload") payload:Bytes,}
 @id("outer") record Outer {@id("outer.leaf") leaf:Leaf,}
 @id("take") fn take(value:own Outer)->i64 {
@@ -231,8 +230,16 @@ fn nonfinite_copy_discard_retains_the_existing_nested_projected_loan_route() {
  byte_len(view)
 }
 @id("app.main") fn main()->i64 {0}
-"#,
+"#;
+    let rejected = crate::check(original, "graph-v84-composition.spx").unwrap_err();
+    assert!(rejected.iter().any(|diagnostic| diagnostic.code == "SPX-P209"));
+    // Retain the whole original return case as a negative control, and exercise
+    // the same owning match's reachable discard on a conditional return path.
+    let reachable = original.replace(
+        "{return 0;}",
+        "{if byte_len(bytes_as_slice(payload))==0usize {return 0;}else{0}}",
     );
+    let (ast, program) = resolved(&reachable);
     assert!(crate::hir::copy_discard_program_uses(&program));
     assert!(!authenticate_finite_composition(&program).unwrap());
     let inspect = program
