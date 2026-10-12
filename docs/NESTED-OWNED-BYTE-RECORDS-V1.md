@@ -171,3 +171,15 @@ aggregate mutation, stable layout, a Project v11 profile, C/Rust/WIT/Component
 ABI, allocator transfer, foreign ownership, concurrency, or production support
 by itself. It is one bounded internal semantic and three-engine execution
 tranche toward general ownership and lifetime safety.
+
+## Private admission-query storage
+
+The HIR classifier retains only an owned-byte leaf count and examined-field
+count. Cleanup and loan consumers still independently derive complete stable
+field paths. Its bounded active record stack compares full structural types,
+without formatting identity keys; flat admission substitutes every field in
+order without collecting a result vector. Saved pre-change classifiers own the
+unlimited-budget verdict and facts oracle. Allocation controls cover query
+construction through Drop; they establish neither a funded whole validator nor
+a production workspace memory-fit result. Existing sticky caller refusal and
+all language bounds remain unchanged.

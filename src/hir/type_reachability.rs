@@ -9,6 +9,8 @@ use std::collections::{BTreeSet, VecDeque};
 
 use super::*;
 
+#[cfg(test)]
+mod classifier_tests;
 mod inventory;
 mod nested_generic_function;
 #[cfg(test)]
@@ -426,9 +428,9 @@ const MAX_NESTED_OWNED_BYTE_LEAVES: usize = 256;
 const MAX_NESTED_OWNED_RECORD_FIELDS: usize = 4_096;
 
 struct NestedOwnedRecordFacts {
-    /// Declaration-stable paths to every owned byte leaf, in declaration
-    /// order. HIR admission therefore never depends on display names.
-    byte_paths: Vec<Vec<PlaceProjection>>,
+    /// Admission needs the count, not ownership paths. Cleanup derives its
+    /// complete stable paths independently.
+    byte_leaves: usize,
     visited_fields: usize,
 }
 
@@ -651,14 +653,12 @@ fn classify_nested_owned_byte_record(
             usize,
             usize,
         ),
-        LeaveRecord(String),
-        LeaveField,
+        LeaveRecord,
     }
 
     let mut frames = vec![Frame::Type(root.clone(), 1)];
-    let mut active = BTreeSet::new();
-    let mut path = Vec::new();
-    let mut byte_paths = Vec::new();
+    let mut active = Vec::new();
+    let mut byte_leaves = 0usize;
     let mut visited_fields = 0usize;
     let mut saw_generic_instance = false;
 
@@ -673,8 +673,8 @@ fn classify_nested_owned_byte_record(
                 _,
             ) => return NestedOwnedRecordAdmission::OutsideProfile,
             Frame::Type(ResolvedType::Bytes, _) => {
-                byte_paths.push(path.clone());
-                if byte_paths.len() > MAX_NESTED_OWNED_BYTE_LEAVES {
+                byte_leaves += 1;
+                if byte_leaves > MAX_NESTED_OWNED_BYTE_LEAVES {
                     return NestedOwnedRecordAdmission::LimitExceeded;
                 }
             }
@@ -710,12 +710,15 @@ fn classify_nested_owned_byte_record(
                 let identity = ResolvedType::Nominal {
                     declaration: declaration.clone(),
                     arguments: arguments.clone(),
-                }
-                .identity_key();
-                if !active.insert(identity.clone()) {
+                };
+                // Structural equality is the complete length-delimited key
+                // equality, without constructing text or tree nodes. The
+                // active path is bounded by the unchanged depth limit.
+                if active.contains(&identity) {
                     return NestedOwnedRecordAdmission::Recursive;
                 }
-                frames.push(Frame::LeaveRecord(identity));
+                active.push(identity);
+                frames.push(Frame::LeaveRecord);
                 frames.push(Frame::Fields(declaration, fields, arguments, 0, depth));
             }
             Frame::Type(
@@ -755,29 +758,24 @@ fn classify_nested_owned_byte_record(
                     index + 1,
                     depth,
                 ));
-                path.push(PlaceProjection::Field(field.id.clone()));
-                frames.push(Frame::LeaveField);
                 let Ok(field_ty) = substitute_type(&field.ty, &declaration, &arguments) else {
                     return NestedOwnedRecordAdmission::OutsideProfile;
                 };
                 frames.push(Frame::Type(field_ty, depth + 1));
             }
-            Frame::LeaveRecord(identity) => {
-                active.remove(&identity);
-            }
-            Frame::LeaveField => {
-                path.pop();
+            Frame::LeaveRecord => {
+                active.pop();
             }
         }
     }
 
-    if byte_paths.is_empty() && saw_generic_instance {
+    if byte_leaves == 0 && saw_generic_instance {
         NestedOwnedRecordAdmission::OutsideProfile
-    } else if byte_paths.is_empty() {
+    } else if byte_leaves == 0 {
         NestedOwnedRecordAdmission::NoOwnedBytes
     } else {
         NestedOwnedRecordAdmission::Admitted(NestedOwnedRecordFacts {
-            byte_paths,
+            byte_leaves,
             visited_fields,
         })
     }
@@ -789,7 +787,7 @@ pub(crate) fn is_admitted_nested_owned_byte_record(
 ) -> bool {
     match classify_nested_owned_byte_record(declarations, ty) {
         NestedOwnedRecordAdmission::Admitted(facts) => {
-            !facts.byte_paths.is_empty() && facts.visited_fields <= MAX_NESTED_OWNED_RECORD_FIELDS
+            facts.byte_leaves != 0 && facts.visited_fields <= MAX_NESTED_OWNED_RECORD_FIELDS
         }
         NestedOwnedRecordAdmission::NoOwnedBytes
         | NestedOwnedRecordAdmission::OutsideProfile
@@ -828,20 +826,21 @@ pub(crate) fn is_flat_owned_byte_record(
     {
         return false;
     }
-    declarations
-        .record_fields(declaration)
-        .and_then(|fields| {
-            fields
-                .iter()
-                .map(|field| substitute_type(&field.ty, declaration, arguments).ok())
-                .collect::<Option<Vec<_>>>()
-        })
-        .is_some_and(|fields| {
-            fields.contains(&ResolvedType::Bytes)
-                && fields.iter().all(|field| {
-                    *field == ResolvedType::Bytes || nested_record_copy_scalar_is_admitted(field)
-                })
-        })
+    let Some(fields) = declarations.record_fields(declaration) else {
+        return false;
+    };
+    let mut saw_bytes = false;
+    let mut all_admitted = true;
+    for field in fields {
+        let Ok(ty) = substitute_type(&field.ty, declaration, arguments) else {
+            return false;
+        };
+        saw_bytes |= ty == ResolvedType::Bytes;
+        // Still substitute later fields after a non-admitted field, matching
+        // the old collect-until-error order.
+        all_admitted &= ty == ResolvedType::Bytes || nested_record_copy_scalar_is_admitted(&ty);
+    }
+    saw_bytes && all_admitted
 }
 
 pub(super) fn is_flat_owned_byte_record_template(
