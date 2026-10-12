@@ -625,10 +625,11 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
         "pub(super) fn rewrite_type(",
         "pub(super) fn collect_expected_edges(",
         "pub(super) fn verify_resolved_call_edges(",
-        // Exact child-module facades: sort_keys, string_slots, vec_constructor.
+        // Exact child-module facades include the field-uniqueness receiver.
         // The complete source union above keeps every child inside this audit.
         "pub(super) fn verify(",
         "pub(super) fn collect_edges(",
+        "pub(super) fn verify(",
         "pub(super) fn verify(",
         "pub(super) fn verify(",
     ];
