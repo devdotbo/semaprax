@@ -111,12 +111,7 @@ fn full_uncached_owned_classifier_layouts_match_complete_original_classifier() {
         let mut roots = Vec::new();
         for function in &program.functions {
             roots.push(function.return_type.clone());
-            roots.extend(
-                function
-                    .parameters
-                    .iter()
-                    .map(|parameter| parameter.ty.clone()),
-            );
+            roots.extend(function.params.iter().map(|parameter| parameter.ty.clone()));
         }
         if let Some(declaration) = index.type_id("GenericChoice") {
             for arguments in [
