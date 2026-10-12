@@ -321,3 +321,32 @@ fn whole_planning_through_drop_requests_fewer_allocations_and_bytes_than_the_sav
     }
     assert!(owners >= 3, "boundary base, padded and 32-view owners must be measured");
 }
+
+#[test]
+fn saved_planner_refuses_new_discard_in_body_and_contracts_before_shared_helpers() {
+    let (program, index) = boundary_tests::fixture(1);
+    let original = &program.functions[index];
+    for contract in [false, true] {
+        // This is a feature-exclusion forgery, not an admitted HIR program.
+        let mut function = original.clone();
+        let value = function.body.clone();
+        let mut block = function.body.clone();
+        let ResolvedExprKind::Block { statements, .. } = &mut block.kind else {
+            panic!("boundary block")
+        };
+        statements.push(ResolvedStatement::CopyDiscard {
+            span: value.span,
+            value,
+        });
+        if contract {
+            function.requires.push(block);
+        } else {
+            function.body = block;
+        }
+        let expected = "saved c8a loan planner does not admit CopyDiscard";
+        assert_eq!(saved_planner::build_plan(&program, &function).unwrap_err().message, expected);
+        let (result, used) = saved_planner::build_cfg_plan_with_work_limit(&program, &function, 0);
+        assert_eq!(result.unwrap_err().message, expected);
+        assert_eq!(used, 0);
+    }
+}

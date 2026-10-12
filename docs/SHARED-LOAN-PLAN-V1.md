@@ -323,3 +323,27 @@ joined route removes its repeated final rebuild, without refunding the first
 build or discounting forecasts. It changes actual allocation and debit counts,
 so low-budget refusal thresholds are not claimed identical. Independent
 builder scratch and detailed diagnostic funding retain their existing scope.
+
+## Private flat CFG storage tranche (OPT-792)
+
+Source implementation; focused executable qualification is pending. The private
+CFG keeps its original sorted edge vector and work traversal order. Successors
+and successor edge indices borrow contiguous runs of that vector. Predecessors
+use one flat backing with exact per-point offsets, preserving the old per-edge
+push order. The 4,096-point/edge and 256-loan limits remain unchanged.
+Evaluation-child discovery borrows fields and operands in the original order
+instead of allocating a temporary child vector. Closure bodies remain excluded
+from capture evaluation; structured control still owns its separate CFG rules.
+
+The saved c8a planner has independent nested adjacency, original child vectors,
+queue, reachability, liveness, complete plan materialization and work accounting.
+It explicitly excludes newer CopyDiscard statements before shared shape helpers.
+Owning controls compare complete plans and diagnostics, work-limit ladders,
+child pointer order, and actual complete planning through Drop. Detached padded
+functions are structural planner fixtures, not complete checked-source evidence.
+
+This tranche reduces actual scratch construction; it does not fund every CFG
+allocation. Roots, directories, queue/liveness and diagnostics still require the
+explicit caller-payer work in OPT-792. Original whole-subtree allocation/debit
+bounds and application corpora remain intact. No public schema, cap, physical
+attribution, application-fit or agent-token claim follows from these sources.
