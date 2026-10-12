@@ -472,7 +472,7 @@ fn consuming_cursor_retains_exact_depth_refusal_and_detached_node_identity() {
 #[test]
 fn consuming_publication_reuses_one_paid_cursor_and_settles_without_heap_backing() {
     let source = crate::check(
-        "module scratch; @id(\"main\") fn main()->i64 {if true {1}else{2}}",
+        "module scratch; @id(\"row\") record Row {@id(\"row.text\") text:string,} @id(\"main\") fn main()->i64 {if true {1}else{2}}",
         "consuming-scratch.spx",
     )
     .unwrap();
@@ -517,5 +517,64 @@ fn consuming_publication_reuses_one_paid_cursor_and_settles_without_heap_backing
     assert_eq!(
         charged, 0,
         "refusal publishes no partially authenticated binding"
+    );
+}
+
+#[test]
+fn absent_current_explicit_record_keeps_old_negative_without_cursor_reservation() {
+    let parsed = crate::check(
+        "module absent; @id(\"main\") fn main()->i64 {let mut n=0;while n<3 {n=n+1;0} n}",
+        "absent-consuming-record.spx",
+    )
+    .unwrap();
+    let program = crate::hir::resolve(&parsed).unwrap();
+    let function = &program.functions[0];
+    assert!(!has_record_candidate(&program));
+    let mut old_sites = 0;
+    assert!(scan(
+        function,
+        &|op, element| super::super::element_mode(&program.declarations, op, element),
+        |_| old_sites += 1
+    ));
+    assert_eq!(
+        old_sites, 0,
+        "full independent old scan has no positive proof"
+    );
+    let ((empty, overflow, charged), observed) = crate::test_allocation_observer::measure(|| {
+        crate::bounded_output::with_limit_usage(0, || {
+            let mut found = BTreeMap::new();
+            append_bindings(&program, function, &mut found);
+            found.is_empty() && sites(&program, function).is_empty()
+        })
+    });
+    assert!(empty && !overflow);
+    assert_eq!(
+        charged, 0,
+        "absent record needs no physical expression cursor"
+    );
+    assert!(!observed.invalid);
+    assert_eq!(
+        (observed.allocations, observed.allocated, observed.live),
+        (0, 0, 0)
+    );
+    // An actual demanded record retains the complete proof and reservation;
+    // declaration presence alone cannot authorize any renewal site.
+    let record_program = checked();
+    let record_function = &record_program.functions[0];
+    assert!(has_record_candidate(&record_program));
+    let mut old_sites = 0;
+    assert!(scan(
+        record_function,
+        &|op, element| super::super::element_mode(&record_program.declarations, op, element),
+        |_| old_sites += 1
+    ));
+    assert_eq!(old_sites, 1);
+    assert_eq!(sites(&record_program, record_function).len(), old_sites);
+    let (sites, overflow, charged) =
+        crate::bounded_output::with_limit_usage(0, || sites(&record_program, record_function));
+    assert!(sites.is_empty() && overflow);
+    assert_eq!(
+        charged, 0,
+        "record candidate cannot bypass physical proof scratch"
     );
 }

@@ -221,11 +221,25 @@ fn reserve_entry<T>(id: &ExpressionId) -> bool {
     crate::bounded_output::reserve_active_required(bytes)
 }
 
+// Both owned_leaf_collection and owned_record_collection require the yielded
+// item's current declaration to be Record + Explicit. Absence refuses discovery
+// without reserving expression scratch; presence grants nothing and retains the
+// complete independent body/protocol/element proof below.
+fn has_record_candidate(program: &dyn crate::cleanup::ReplayContext) -> bool {
+    program.declarations().declarations().any(|declaration| {
+        declaration.kind == crate::hir::DeclarationKind::Record
+            && declaration.identity_origin == crate::hir::IdentityOrigin::Explicit
+    })
+}
+
 pub(crate) fn sites<'a>(
     program: &dyn crate::cleanup::ReplayContext,
     function: &'a ResolvedFunction,
 ) -> BTreeMap<ExpressionId, Site<'a>> {
     let mut found = BTreeMap::new();
+    if !has_record_candidate(program) {
+        return found;
+    }
     let complete = scan(
         function,
         &|op, element| super::element_mode(program.declarations(), op, element),
@@ -246,6 +260,9 @@ pub(super) fn append_bindings<'a>(
     function: &'a ResolvedFunction,
     found: &mut BTreeMap<ExpressionId, &'a ResolvedBinding>,
 ) {
+    if !has_record_candidate(program) {
+        return;
+    }
     // Both independent traversals borrow one actually held fixed cursor. Nested
     // candidate/body/declaration walks still reserve their overlapping scratch.
     let Some(mut frames) = frames() else {

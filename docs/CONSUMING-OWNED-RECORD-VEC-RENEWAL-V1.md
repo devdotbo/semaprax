@@ -58,6 +58,13 @@ outside this additive classifier; their previous profiles remain unchanged.
 
 ## Reservation and failure
 
+When the current declaration index contains no explicitly authored record, this
+additive inventory is necessarily empty. Its collectors return that negative
+result before reserving expression traversal scratch. Record presence grants no
+site: the complete independent element, body and iterator proof still runs with
+its existing reservation. The static forecast remains conservative; this absence
+check does not establish that either original application fits its builder cap.
+
 The existing cleanup-plan v15 protocol reserves the receiver's original history
 position before evaluating the right side. Arguments stage left to right and
 transfer only at the existing grouped call commit. Successful replacement is
