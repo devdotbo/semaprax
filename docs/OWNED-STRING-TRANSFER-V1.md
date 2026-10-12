@@ -1,7 +1,7 @@
 # Owned String Transfer v1
 
-Status: source implementation and initial owning gates authored for OPT790.
-Unexecuted; qualification and the complete acceptance matrix remain pending.
+Status: source implementation and 15 owning controls authored for OPT790.
+Unexecuted; current-head qualification remains pending.
 This contract does not expand public aggregate/UTF-8 ABIs or frozen profiles.
 
 `string_take(value) -> string`, reserved `core.string.take`, consumes exactly
@@ -47,26 +47,11 @@ no new wire tag. Existing graph/cache/source replay must still resolve and
 fully validate the current source, and closed catalogs do not acquire take
 merely because `by_id` recognizes it.
 
-Initial owning selectors (all unexecuted):
-
-- lib `string_ops::take::tests::exact_named_transfer_has_one_commit_no_clone_or_failure_and_keeps_default_reads`
-- lib `string_ops::take::tests::named_only_source_refuses_contracts_computed_borrowed_and_live_loan_transfers`
-- lib `string_ops::take::tests::added_transfer_inventory_pays_its_node_exact_short_sticky_and_drop`
-- language `owned_string_transfer::explicit_transfer_preserves_native_carriers_clone_baseline_and_failure_settlement`
-- language `owned_string_transfer::explicit_transfer_interpreter_and_private_wasm_reentry_keep_selected_status`
-- language `owned_string_transfer::named_destructured_string_leaf_keeps_clone_reference_and_all_engine_settlement`
-
-The native allocation observer covers literal construction through settlement
-for three repeated empty/nonempty calls and an unchanged clone reference,
-counting realloc requests too. These source assertions are not measured gains
-or all-backend no-copy evidence. The additional flat record owner compares
-named destructured transfer with an unchanged owning-read reference on native,
-interpreter and aggregate Wasm; only its native observer counts allocations. Further acceptance remains: recursive-leaf
-and mixed String/Bytes record controls, first/late operand fuel refusal,
-complete loan/status/transfer forgeries, complete compiler metadata funding beyond the new node
-exact/one-short/sticky/Drop control, current Project cache cold/warm/provider drift and the
-full original OPT779 forwarding populations. No Catalog rewrite, forecast
-reduction, accepted-ticket completion or performance claim follows this draft.
+Owning selectors (all unexecuted) cover `string_ops::take::tests`,
+`interpreter::string_operations::take_tests`, retained receiving replay,
+`language::owned_string_transfer`, recursive subtree transfer and current
+Project cache drift. Discover bounded authoring guidance with
+`help language author:string-take`.
 
 The next acceptance tranche adds full empty/populated recursive String+Bytes
 records, three repeated old-clone/explicit-take/subtree calls, pre/postcondition
@@ -89,5 +74,5 @@ clone-reference and failure calls. Exact literal request counts and balanced
 owner/byte retirement supplement existing mandatory empty-registry settlement.
 Those counters measure host payload operations, not total JS engine memory.
 Historical ordinary inventory scratch funding and the broader
-OPT781 transitive engine diagnostic boundary. No issue closure follows this
+OPT781 transitive engine diagnostic boundary remain open. No issue closure follows this
 source tranche.

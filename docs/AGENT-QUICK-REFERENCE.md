@@ -599,6 +599,11 @@ fn main() -> i64
 - `string_concat` results are owned. `string_as_str` borrows a plain `let`
   binding; literals and calls are `SPX-T266`. Pass its view to `borrow str` or
   `str_as_bytes`.
+- `string_take(name)` explicitly forwards a live named owned String and retires
+  that binding; ordinary owning reads still clone. End overlapping views first.
+  Computed/projected values and contracts are refused.
+  See [named String transfer](OWNED-STRING-TRANSFER-V1.md) and
+  `help language author:string-take`; owning qualification is pending.
 - Byte functions take `borrow Slice<u8>`. Get one from `str_as_bytes(view)`,
   `array_as_slice(array_binding)`, or `bytes_as_slice(bytes_binding)`.
 - `string_from_utf8(input: borrow Slice<u8>) -> string` (`core.string.from_utf8`)
@@ -679,6 +684,7 @@ fn main() -> i64
 | --- | --- |
 | `string_len`, `string_len_chars` | `(s: string) -> i64` bytes / scalars |
 | `string_is_empty` | `(s: string) -> bool` |
+| `string_take` | `(name: string) -> string`; explicit named-owner transfer, qualification pending |
 | `string_concat` | `(a: string, b: string) -> string` consumes both |
 | `string_format` | `(literal, fields...) -> string`; literal-only template, up to 32 `i64`, `u8`, `usize`, `bool`, or owned String fields |
 | `string_starts_with`, `string_contains` | `(s: string, other: string) -> bool` |

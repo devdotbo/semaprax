@@ -2,7 +2,7 @@
 use std::fmt::Write as _;
 
 const MAX_BYTES: usize = 2_048;
-const ROUTES: &str = "Authoring routes (complete):\n  author:vec-constructor typed Vec source; ordinary per-item commits\n  author:lexical-exits statement-tail break/continue/return\n  author:stdin-json v27 bounded native stream command\n  author:stream-data-v2           v29 private record/Vec stream command\n  author:owned-data v30 private owned-leaf collections\n  author:collection-records v31 nested records containing Vec\n  author:nested-outcomes v32 typed nested success/error carriers\n  author:file-text native UTF-8 file command\n  author:selected-file native file; :selected-file-resource for v34\n  author:source-web single-source web build\n  author:literal-format checked literal String rendering\n  author:static-utf8              borrowed UTF-8\n  author:string-from-utf8         strict owned String construction from bytes\n  author:copy-record-vec flat Copy-record vectors\n  author:record-sort-keys explicit stable field sort policies\n  author:unique-by field duplicate check\n  author:record-field-views borrowed record and Vec field reads\n  author:record-traversal scoped borrowed rows and optional indices\n  author:byte-traversal named immutable byte-slice traversal\n  author:json-codec checked source JSON codec derivation\n  author:json-identifier-views one identifier as a token view\n  author:json-request-views bounded identifier and record arrays\n  author:json-stream-request-views bounded native stream request view\n  author:json-owned-request bounded owning request collections\n  author:json-utf8-owned-request bounded UTF-8 string values\n  author:json-stream-utf8-owned-request bounded UTF-8 stdin requests\n  author:json-collection-response bounded nested collection encoder\n  author:json-nested-request bounded finite nested request decoder\n  author:json-stream-nested-request bounded finite nested stdin decoder\n  author:json-nested-response bounded finite nested borrowed encoder\n  author:json-request-response typed request/response composition boundaries\nLibrary-only search: help language find:<word>:0\nExact card sections: help language topics\n";
+const ROUTES: &str = "Authoring routes (complete):\n  author:vec-constructor typed Vec source; ordinary per-item commits\n  author:lexical-exits statement-tail break/continue/return\n  author:stdin-json v27 bounded native stream command\n  author:stream-data-v2           v29 private record/Vec stream command\n  author:owned-data v30 private owned-leaf collections\n  author:collection-records v31 nested records containing Vec\n  author:nested-outcomes v32 typed nested success/error carriers\n  author:file-text native UTF-8 file command\n  author:selected-file native file; :selected-file-resource for v34\n  author:source-web single-source web build\n  author:literal-format literal String rendering\n  author:string-take named String owner transfer\n  author:static-utf8              borrowed UTF-8\n  author:string-from-utf8         strict bytes-to-String\n  author:copy-record-vec flat Copy-record vectors\n  author:record-sort-keys explicit stable field sort policies\n  author:unique-by field duplicate check\n  author:record-field-views borrowed record and Vec field reads\n  author:record-traversal scoped borrowed rows and optional indices\n  author:byte-traversal named immutable byte-slice traversal\n  author:json-codec checked source JSON codec derivation\n  author:json-identifier-views one identifier as a token view\n  author:json-request-views bounded identifier and record arrays\n  author:json-stream-request-views bounded native stream request view\n  author:json-owned-request bounded owning request collections\n  author:json-utf8-owned-request bounded UTF-8 string values\n  author:json-stream-utf8-owned-request bounded UTF-8 stdin requests\n  author:json-collection-response nested collection encoder\n  author:json-nested-request finite nested request decoder\n  author:json-stream-nested-request finite nested stdin decoder\n  author:json-nested-response finite nested borrowed encoder\n  author:json-request-response typed request/response composition boundaries\nLibrary-only search: help language find:<word>:0\nExact card sections: help language topics\n";
 
 #[cfg(test)]
 pub(super) fn assert_guide_contract() {
@@ -120,6 +120,13 @@ pub(super) fn lookup(query: &str) -> Result<String, String> {
             "Use ordinary \"...\" for an owning String and string_as_str(owner) for its view where the existing String profile admits it. No implicit conversion, borrowed return, aggregate storage, mutable alias or view escape.\n",
             "Native/internal aggregate Core-Wasm and authenticated command Project definitions are authored; template/Project execution qualification pending. Public scalar/text/data adapters, standalone String arenas and selected-final-UTF8 certificates refuse this root. No new capability or foreign-input allowance.\n",
             "Contract and owning gates: docs/STATIC-BORROWED-UTF8-LITERALS-V1.md.\n"
+        ).to_owned()),
+        "author:string-take" => Ok(concat!(
+            "Named String owner transfer; owning qualification pending.\n",
+            "Use let output = string_take(input); with a live named owned String local, parameter or destructured leaf. It forwards the same owner and retires input; ordinary owning reads still clone. End all overlapping views before take.\n",
+            "Computed values, record projections, borrowed roots and contract calls are refused. Bind a whole String leaf first; take supplies no general move syntax or implicit last-use rule.\n",
+            "Arguments stage left to right. A later argument, precondition or postcondition failure keeps ordinary sticky cleanup; it never revives input or publishes output. Empty Strings still own a carrier.\n",
+            "Interpreter/native and private String Wasm implementation; frozen scalar/candidate/final-UTF8 profiles remain closed. Exact contract: docs/OWNED-STRING-TRANSFER-V1.md.\n"
         ).to_owned()),
         "author:literal-format" => Ok(concat!(
             "Checked literal format source implementation; current-head executable qualification pending.\n",
@@ -660,8 +667,8 @@ mod tests {
         let source = "module help.unique; @id(\"help.unique.row\") record Row { @id(\"help.unique.row.id\") id:string, @id(\"help.unique.row.rank\") rank:i64, } @id(\"help.unique.main\") fn main()->i64 { let rows=vec_with_capacity<Row>(0usize); let ok = vec_unique_by<Row>(rows, \"id\"); if ok {0} else {1} }";
         let checked = semaprax::check(source, "help-unique.spx").unwrap();
         semaprax::hir::validate(&semaprax::hir::resolve(&checked).unwrap()).unwrap();
-        let refused = semaprax::check(&source.replace("\"id\"", "\"rank:asc\""), "bad.spx")
-            .unwrap_err();
+        let refused =
+            semaprax::check(&source.replace("\"id\"", "\"rank:asc\""), "bad.spx").unwrap_err();
         assert!(refused.iter().any(|d| d.code == "SPX-T319"));
     }
 
@@ -703,6 +710,7 @@ mod tests {
             "author:selected-file-resource",
             "author:source-web",
             "author:literal-format",
+            "author:string-take",
             "author:static-utf8",
             "author:string-from-utf8",
             "author:copy-record-vec",
