@@ -813,3 +813,207 @@ fn whole_commit_receiver_preserves_ordinary_verdicts_debit_and_exact_short() {
         assert!(!ok && refused && receipt.is_some() && !short.invalid && short.live == 0);
     }
 }
+
+#[test]
+fn valid_eight_scalar_generic_closures_keep_full_owned_fallback_projection_receiver_and_errors() {
+    // Read the unchanged original application fixture, not a smaller mirrored
+    // closure. Its eight scalar instantiations/captures remain authoritative.
+    let corpus = include_str!("../../../../../tests/language/function_values_generic.rs");
+    let source = corpus
+        .split_once("const GENERIC_TEMPLATE_CLOSURE: &str = r#\"")
+        .unwrap()
+        .1
+        .split_once("\"#;")
+        .unwrap()
+        .0;
+    let ast = crate::check(source, "param-generic-closures.spx").unwrap();
+    let program = crate::hir::resolve(&ast).unwrap();
+    assert_eq!(program.function_instances.len(), 8);
+    assert_eq!(crate::hir::closure::inventory(&program).len(), 8);
+
+    fn projections(
+        program: &ResolvedProgram,
+        function: &ResolvedFunction,
+        expression: &crate::hir::ResolvedExpr,
+    ) -> usize {
+        let mut invocations = 0;
+        if let ResolvedExprKind::Invoke { callable, args } = &expression.kind {
+            let callee = &*crate::hir::function_value::INVOKE_ID;
+            let arguments = [callable.ty.clone()];
+            let old = resolved_call_params(program, function, expression, callee, None, &arguments)
+                .unwrap();
+            let current =
+                resolved_call_param_view(program, function, expression, callee, None, &arguments)
+                    .unwrap();
+            assert_projection(&old, &current);
+            let Params::Owned(current) = current else {
+                panic!("valid closure invocation must retain its owned provider")
+            };
+            assert_eq!(old, current);
+            // The actual Invoke receiver uses cleanup_call, not ParamView.
+            // Its complete params differ only by the documented source span.
+            let (actual_callee, actual_args, actual) =
+                crate::hir::function_value::cleanup_call(expression).unwrap();
+            assert_eq!(actual_callee, callee);
+            assert_eq!(actual_args, args.as_slice());
+            let mut expected = old;
+            for parameter in &mut expected {
+                parameter.span = expression.span;
+            }
+            assert_eq!(actual, expected);
+            assert_eq!(actual.len(), 1);
+            invocations += 1;
+        } else if let ResolvedExprKind::Call {
+            callee,
+            instance,
+            type_arguments,
+            ..
+        } = &expression.kind
+        {
+            let old = resolved_call_params(
+                program,
+                function,
+                expression,
+                callee,
+                instance.as_ref(),
+                type_arguments,
+            )
+            .unwrap();
+            let current = resolved_call_param_view(
+                program,
+                function,
+                expression,
+                callee,
+                instance.as_ref(),
+                type_arguments,
+            )
+            .unwrap();
+            assert_projection(&old, &current);
+            match current {
+                Params::Owned(actual) => assert_eq!(old, actual),
+                Params::Borrowed(actual) => assert_eq!(old.as_slice(), actual),
+                _ => {}
+            }
+        }
+        for index in 0.. {
+            let Some(child) = replay_expression_child(expression, index) else {
+                break;
+            };
+            invocations += projections(program, function, child);
+        }
+        invocations
+    }
+    let mut invocations = 0;
+    for function in program.functions.iter().chain(
+        program
+            .function_instances
+            .iter()
+            .map(|instance| &instance.function),
+    ) {
+        invocations += projections(&program, function, &function.body);
+    }
+    assert_eq!(invocations, 8);
+    // Both complete current source/HIR and ordinary independent cleanup replay
+    // run with the full saved owning parameter constructor and the new route.
+    for old in [false, true] {
+        let run = || {
+            crate::hir::validate(&program).unwrap();
+            validate_program(&program).unwrap();
+        };
+        if old {
+            with_owned_oracle(run);
+        } else {
+            run();
+        }
+    }
+
+    // Traverse exactly the original fixture's block/while/collection-call
+    // structure to corrupt a genuine invocation, without manufacturing a new
+    // callable receiver or replacing any of the eight source instances.
+    fn corrupt(expression: &mut crate::hir::ResolvedExpr, mutation: usize) -> bool {
+        match &mut expression.kind {
+            ResolvedExprKind::Invoke { callable, args } => {
+                match mutation {
+                    0 => args.clear(),
+                    1 => {
+                        args[0].ty = if args[0].ty == ResolvedType::Bool {
+                            ResolvedType::I64
+                        } else {
+                            ResolvedType::Bool
+                        };
+                    }
+                    _ => callable.ty = ResolvedType::I64,
+                }
+                true
+            }
+            ResolvedExprKind::Call { args, .. } => {
+                args.iter_mut().any(|argument| corrupt(argument, mutation))
+            }
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
+                for statement in statements {
+                    match statement {
+                        crate::hir::ResolvedStatement::While {
+                            condition, body, ..
+                        }
+                        | crate::hir::ResolvedStatement::LexicalWhile {
+                            condition, body, ..
+                        } => {
+                            if corrupt(condition, mutation) || corrupt(body, mutation) {
+                                return true;
+                            }
+                        }
+                        _ => {
+                            if corrupt(statement.value_mut(), mutation) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+                corrupt(tail, mutation)
+            }
+            _ => false,
+        }
+    }
+    for mutation in 0..3 {
+        let mut hostile = program.clone();
+        assert!(corrupt(
+            &mut hostile.function_instances[0].function.body,
+            mutation
+        ));
+        let old = with_owned_oracle(|| crate::hir::validate(&hostile));
+        let current = crate::hir::validate(&hostile);
+        assert!(old.is_err());
+        assert_eq!(old, current);
+        let old = with_owned_oracle(|| validate_program(&hostile));
+        let current = validate_program(&hostile);
+        assert!(old.is_err());
+        assert_eq!(old, current);
+    }
+
+    // Hostile provider signatures still select the complete original error,
+    // independently of the actual receiver's callable/argument validation.
+    let function = &program.function_instances[0].function;
+    for arguments in [vec![], vec![ResolvedType::I64], vec![ResolvedType::Bool]] {
+        let old = resolved_call_params(
+            &program,
+            function,
+            &function.body,
+            &*crate::hir::function_value::INVOKE_ID,
+            None,
+            &arguments,
+        );
+        let current = resolved_call_param_view(
+            &program,
+            function,
+            &function.body,
+            &*crate::hir::function_value::INVOKE_ID,
+            None,
+            &arguments,
+        );
+        assert!(old.is_err());
+        assert_eq!(old.unwrap_err(), current.err().unwrap());
+    }
+}

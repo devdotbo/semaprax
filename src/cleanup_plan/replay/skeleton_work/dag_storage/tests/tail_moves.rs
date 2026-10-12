@@ -820,3 +820,129 @@ fn whole_factored_cleanup_keeps_saved_local_extension_results_and_diagnostics() 
         }
     }
 }
+
+const WIDE_TAIL_EVENTS: usize = 4096;
+
+/// Every member contains a real event and a separately paid one-element Vec.
+/// This is independent of the retained wide-empty-Alt canonicalizer control.
+fn wide_event_union(
+    work: &mut SkeletonWork<'_, '_>,
+    item: &Observation,
+    saved: bool,
+) -> Result<Observations, Diagnostic> {
+    work.budget.reserve_array::<Observations>(
+        work.function,
+        WIDE_TAIL_EVENTS,
+        "wide nonempty input carriers",
+    )?;
+    let mut members = Vec::with_capacity(WIDE_TAIL_EVENTS);
+    for _ in 0..WIDE_TAIL_EVENTS {
+        work.budget
+            .reserve_array::<Observation>(work.function, 1, "wide nonempty input event")?;
+        members.push(Observations::from(vec![item.clone()]));
+    }
+    if saved {
+        work.saved_union_observations(members)
+    } else {
+        work.union_observations(members)
+    }
+}
+
+#[test]
+fn selected_4096_nonempty_event_tails_keep_literal_old_current_removed_through_receiver_drop() {
+    let program = fixture();
+    let function = &program.functions[0];
+    let item = observation(function);
+    // Complete ordinal/node/duplicate/event oracle outside the storage witness.
+    let mut old_budget = ReplayBudget::with_physical(function, 1 << 25).unwrap();
+    let mut current_budget = ReplayBudget::with_physical(function, 1 << 25).unwrap();
+    old_budget.skeleton_remaining = MAX_REPLAY_WORK_UNITS;
+    current_budget.skeleton_remaining = MAX_REPLAY_WORK_UNITS;
+    let mut old_work = SkeletonWork::new(&program, function, &mut old_budget);
+    let mut current_work = SkeletonWork::new(&program, function, &mut current_budget);
+    let old = wide_event_union(&mut old_work, &item, true).unwrap();
+    let current = wide_event_union(&mut current_work, &item, false).unwrap();
+    assert_eq!(
+        shape(old.prefix.as_ref().unwrap()),
+        shape(current.prefix.as_ref().unwrap()),
+    );
+    assert_eq!(
+        old_work.budget.skeleton_spent,
+        current_work.budget.skeleton_spent
+    );
+    drop(old);
+    drop(current);
+    drop(old_work);
+    drop(current_work);
+
+    let observe = |saved, limit| {
+        let mut budget = ReplayBudget::with_physical(function, limit).unwrap();
+        budget.skeleton_remaining = MAX_REPLAY_WORK_UNITS;
+        let mut work = SkeletonWork::new(&program, function, &mut budget);
+        let before = work.budget.physical.as_ref().unwrap().charged();
+        crate::test_allocation_observer::measure(|| {
+            let result = wide_event_union(&mut work, &item, saved);
+            let accepted = result.is_ok();
+            if let Ok(value) = &result {
+                let root = value.prefix.as_ref().unwrap();
+                assert_eq!(root.ordinal, Some(WIDE_TAIL_EVENTS));
+                let ObservationDagKind::Alt(parts) = &root.kind else {
+                    panic!("wide nonempty alternatives")
+                };
+                assert_eq!(parts.len(), WIDE_TAIL_EVENTS);
+                for (ordinal, part) in parts.iter().enumerate() {
+                    assert_eq!(part.ordinal, Some(ordinal));
+                    let ObservationDagKind::Seq(None, events) = &part.kind else {
+                        panic!("wide nonempty event receiver")
+                    };
+                    assert_eq!(events.as_slice(), std::slice::from_ref(&item));
+                }
+            }
+            // Receiving result and the shared iterative destruction carrier
+            // are both released in this actual allocator window.
+            drop(result);
+            drop(work.dag_scratch.take());
+            if !accepted {
+                let charged = work.budget.physical.as_ref().unwrap().charged();
+                drop(
+                    work.budget
+                        .reserve_bytes(function, 0, "sticky wide nonempty event union")
+                        .unwrap_err(),
+                );
+                assert_eq!(work.budget.physical.as_ref().unwrap().charged(), charged);
+                return Err(());
+            }
+            Ok((
+                work.budget.physical.as_ref().unwrap().charged() - before,
+                work.budget.skeleton_spent,
+            ))
+        })
+    };
+    let (old, old_metrics) = observe(true, 1 << 25);
+    let (current, current_metrics) = observe(false, 1 << 25);
+    let (charged, spent) = current.unwrap();
+    let removed = WIDE_TAIL_EVENTS * std::mem::size_of::<Observation>();
+    assert_eq!(old.unwrap(), (charged + removed, spent));
+    assert_eq!(old_metrics.allocated, current_metrics.allocated + removed);
+    assert_eq!(
+        old_metrics.allocations,
+        current_metrics.allocations + WIDE_TAIL_EVENTS
+    );
+    for metrics in [old_metrics, current_metrics] {
+        assert!(!metrics.invalid && metrics.live == 0);
+        assert_eq!(metrics.allocated, metrics.freed);
+    }
+    let admission = ReplayBudget::with_physical(function, 1 << 25)
+        .unwrap()
+        .physical
+        .as_ref()
+        .unwrap()
+        .charged();
+    let (exact, metrics) = observe(false, admission + charged);
+    assert_eq!(exact.unwrap(), (charged, spent));
+    assert!(!metrics.invalid && metrics.live == 0 && metrics.allocated <= charged);
+    let (short, metrics) = observe(false, admission + charged - 1);
+    assert!(short.is_err());
+    assert!(!metrics.invalid && metrics.live == 0);
+    assert_eq!(metrics.allocated, metrics.freed);
+}
