@@ -897,6 +897,10 @@ format: `Unreleased` then release buckets, grouped by impact.
 
 ## Unreleased
 
+- Compare complete canonical loan plans during their existing independent build,
+  retaining an exact-program deferred mismatch for the original final validation
+  boundary. Public standalone validation and diagnostic priority remain intact;
+  owning qualification is pending.
 - Add explicit named `string_take` owner transfer while preserving cloning
   reads, canonical argument staging, source move checks and backend forwarding.
   Owning qualification of this consolidated batch remains pending.
