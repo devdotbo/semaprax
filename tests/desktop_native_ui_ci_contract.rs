@@ -85,6 +85,7 @@ fn private_native_ui_is_platform_real_feature_gated_and_source_locked() {
             read(root, "src/codegen/native_emit/checked_allocation/constructors.rs"),
             read(root, "src/codegen/native_emit/checked_allocation/runtime.c"),
             read(root, "src/codegen/native_emit/checked_allocation/bytes.c"),
+            read(root, "src/codegen/native_emit/checked_allocation/format.c"),
             read(root, "src/codegen/native_emit/context.rs"),
             read(root, "src/codegen/native_emit/lexical_epilogue.rs"),
             read(root, "src/codegen/native_emit/expression/lexical_break.rs"),

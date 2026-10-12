@@ -36,7 +36,7 @@ impl<'owner, 'source> Projection<'owner, 'source> {
                         || !matches!(operation, A::StringLiteral | A::StringClone | A::StringConcat
                             | A::StringFromChar | A::StringFromI64 | A::StringFromUsize
                             | A::StringFromStr | A::StringFromUtf8 | A::StringSlice | A::StringTrim
-                            | A::BytesCopy | A::BytesZeroed) {
+                            | A::BytesCopy | A::BytesZeroed | A::LiteralFormat) {
                         return Err(backend_error("checked native allocation receiver has an unjoined materialization"));
                     }
                 }
@@ -84,7 +84,7 @@ fn classify(program: &ResolvedProgram, expression: &ResolvedExpr) -> Result<(), 
     if !leaf_type(&expression.ty) { return Err(backend_error("checked native allocation expression has an unjoined carrier")); }
     match &expression.kind {
         ResolvedExprKind::FunctionReference { .. } | ResolvedExprKind::HostCommandCall(_)
-        | ResolvedExprKind::NativeRustImportCall(_) | ResolvedExprKind::LiteralFormat { .. } =>
+        | ResolvedExprKind::NativeRustImportCall(_) =>
             Err(backend_error("checked native allocation expression has an unjoined runtime helper")),
         ResolvedExprKind::Call { callee, instance, .. } => {
             use crate::string_ops::StringOp as S;
@@ -145,6 +145,7 @@ fn join_runtime(mut prelude: String) -> Result<String, Diagnostic> {
     output.push_str(&kernel);
     output.push_str(ADAPTER);
     output.push_str(RECEIVER);
+    output.push_str(include_str!("checked_allocation/format.c"));
     if output.contains("} spx_bytes_v1;") {
         output.push_str(include_str!("checked_allocation/bytes.c"));
     }

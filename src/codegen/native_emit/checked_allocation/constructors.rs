@@ -6,17 +6,7 @@ impl<O: COutput> CEmitter<'_, O> {
         &mut self, site: &ExpressionId, operation: AllocationOperation,
         call: &str, semantic_failure: bool,
     ) -> Result<(), Diagnostic> {
-        let rows = self.function.cleanup_plan.status_sources.iter().filter(|source|
-            source.id.expression == *site && source.id.lane == StatusLane::AllocationFailure);
-        let mut rows = rows;
-        let row = rows.next().ok_or_else(|| backend_error("checked native String has no physical source"))?;
-        if rows.next().is_some() || !matches!(&row.producer,
-            StatusProducer::CheckedAllocation { operation: actual, normalized_cases }
-            if *actual == operation && *normalized_cases == [crate::cleanup_plan::AllocationCase::PayloadRefused,
-                crate::cleanup_plan::AllocationCase::SizeOverflow]) {
-            return Err(backend_error("checked native String source differs from its constructor"));
-        }
-        let physical = self.failure_jump_at(site, StatusLane::AllocationFailure)?;
+        let physical = self.checked_allocation_failure_jump(site, operation)?;
         self.line(&format!("spx_status = {call};"));
         self.line("if (spx_status != SPX_STATUS_SUCCESS) {");
         self.indent += 1;
@@ -38,6 +28,21 @@ impl<O: COutput> CEmitter<'_, O> {
         self.indent -= 1;
         self.line("}");
         Ok(())
+    }
+    pub(in crate::codegen::native_emit) fn checked_allocation_failure_jump(
+        &self, site: &ExpressionId, operation: AllocationOperation,
+    ) -> Result<String, Diagnostic> {
+        let rows = self.function.cleanup_plan.status_sources.iter().filter(|source|
+            source.id.expression == *site && source.id.lane == StatusLane::AllocationFailure);
+        let mut rows = rows;
+        let row = rows.next().ok_or_else(|| backend_error("checked native String has no physical source"))?;
+        if rows.next().is_some() || !matches!(&row.producer,
+            StatusProducer::CheckedAllocation { operation: actual, normalized_cases }
+            if *actual == operation && *normalized_cases == [crate::cleanup_plan::AllocationCase::PayloadRefused,
+                crate::cleanup_plan::AllocationCase::SizeOverflow]) {
+            return Err(backend_error("checked native String source differs from its constructor"));
+        }
+        self.failure_jump_at(site, StatusLane::AllocationFailure)
     }
     pub(in crate::codegen::native_emit) fn emit_checked_string_operation(
         &mut self, op: StringOp, arguments: &[CValue], out: &str, site: &ExpressionId,

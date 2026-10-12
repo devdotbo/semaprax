@@ -62,6 +62,26 @@ fn generated_native_string_bytes_refusals_keep_empty_owners_and_utf8_precedence(
     run_native(INVALID, 1, 0, true);
 }
 
+#[test]
+fn generated_native_format_null_sweep_settles_all_committed_fields_and_prefixes() {
+    const FORMAT: &str = r#"module checked.native;
+@id("checked.native.main") fn main() -> i64 {
+    let text = string_format("{}{}", "a", "β");
+    string_len(text)
+}
+"#;
+    const EMPTY: &str = r#"module checked.native;
+@id("checked.native.main") fn main() -> i64 {
+    let text = string_format("");
+    string_len(text)
+}
+"#;
+    // Two field literals, empty accumulator, two joins, tail owning-read clone.
+    run_native(FORMAT, 6, 3, false);
+    // Empty accumulator, literal empty part, join, tail owning-read clone.
+    run_native(EMPTY, 4, 0, false);
+}
+
 fn run_native(source: &str, allocations: usize, result: i64, semantic_failure: bool) {
     let source = crate::parse(source, "checked-native.spx").unwrap();
     let owner = crate::cleanup_plan::checked_allocation::prepare(&source,

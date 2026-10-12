@@ -393,3 +393,10 @@ semantic bound check before the physical request. Authored generated-source
 controls sweep both Bytes and String requests, preserve invalid UTF-8 priority,
 and exercise empty owner initialization/settlement. These controls are pending
 execution. This is not an escaped-result SDK join or an all-engine claim.
+
+The same private native receiver now joins literal-format workers. Their existing
+left-to-right argument staging and grouped commit remain; each checked borrowed
+copy/join/conversion returns the selected allocation status. The worker settles
+committed fields and partial accumulators before taking the independently replayed
+allocation failure edge. The added empty/two-String-field NULL sweep is source-only
+and has not been executed. Collection and escaped SDK receivers remain pending.
