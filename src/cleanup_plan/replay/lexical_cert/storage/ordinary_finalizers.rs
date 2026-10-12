@@ -1,4 +1,4 @@
-//! Predicate controls use the actual resolved Option<String> finalizer facts.
+//! Predicate controls use the actual resolved owned String-variant finalizer facts.
 //! Full application acceptance remains the unchanged ShiftSim owner.
 use super::*;
 
@@ -10,7 +10,13 @@ fn fixture() -> (
 ) {
     let parsed = crate::check(
         r#"module paid.finalizer;
-@id("probe") fn probe(value:own Option<string>)->i64 {0}
+@id("payload") variant Payload {
+    @id("payload.empty") Empty,
+    @id("payload.text") Text {
+        @id("payload.text.value") value: string,
+    },
+}
+@id("probe") fn probe(value:own Payload)->i64 {0}
 @id("main") fn main()->i64 {0}"#,
         "paid-finalizer.spx",
     )

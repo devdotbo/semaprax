@@ -113,7 +113,7 @@ fn sources(heavy: bool) -> Vec<Source> {
 
 fn push_heavy_boundaries(out: &mut Vec<Source>) {
     // 128 own-root views plus their 128 last-use calls are exactly 256 loans;
-    // one more pair is the first representable overflow.
+    // one additional view is the first overflow; retain its source refusal too.
     let (program, index) = fixtures::fixture_with_uses(fixtures::WORK_ROOT_LOANS, true);
     out.push(source(
         "256-loan boundary",
@@ -124,11 +124,11 @@ fn push_heavy_boundaries(out: &mut Vec<Source>) {
         },
         false,
     ));
-    let (program, index) = fixtures::fixture_with_uses(fixtures::WORK_ROOT_LOANS + 1, true);
+    let (program, _index, overflow) = fixtures::first_loan_overflow();
     out.push(source(
         "257-loan overflow",
         &program,
-        program.functions[index].clone(),
+        overflow,
         Outcome::Refused("function exceeds 256 shared loans"),
         false,
     ));

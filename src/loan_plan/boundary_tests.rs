@@ -25,6 +25,19 @@ pub(super) fn fixture_with_uses(
     loan_count: usize,
     retain_last_uses: bool,
 ) -> (ResolvedProgram, usize) {
+    let source = boundary_source(loan_count, retain_last_uses);
+    let ast = crate::parse(&source, Path::new("loan-plan-boundaries.spx")).unwrap();
+    assert!(crate::verify::verify(&ast).is_empty());
+    let program = crate::hir::resolve(&ast).unwrap();
+    let index = program
+        .functions
+        .iter()
+        .position(|function| function.id.as_str() == "loan.boundary")
+        .unwrap();
+    (program, index)
+}
+
+fn boundary_source(loan_count: usize, retain_last_uses: bool) -> String {
     let mut source = String::from(
         "module test.loan_plan_boundaries;\n\
          @id(\"loan.boundary\")\n\
@@ -44,15 +57,41 @@ pub(super) fn fixture_with_uses(
         }
     }
     source.push_str("0\n}\n@id(\"app.main\") fn main() -> i64 { 0 }\n");
-    let ast = crate::parse(&source, Path::new("loan-plan-boundaries.spx")).unwrap();
+    source
+}
+
+/// Keep the source overflow refusal and the detached 257-loan planner corpus.
+/// The extra view has fresh binding/expression identities and the same own root.
+pub(super) fn first_loan_overflow() -> (ResolvedProgram, usize, ResolvedFunction) {
+    let text = boundary_source(WORK_ROOT_LOANS, true).replace(
+        "0\n}\n@id",
+        "let boundary_extra = bytes_as_slice(owned);\n0\n}\n@id",
+    );
+    let ast = crate::parse(&text, Path::new("loan-plan-overflow.spx")).unwrap();
     assert!(crate::verify::verify(&ast).is_empty());
-    let program = crate::hir::resolve(&ast).unwrap();
-    let index = program
-        .functions
-        .iter()
-        .position(|function| function.id.as_str() == "loan.boundary")
-        .unwrap();
-    (program, index)
+    let errors = crate::hir::resolve(&ast).unwrap_err();
+    assert!(errors.iter().any(|error| error.message.contains("function exceeds 256 shared loans")), "{errors:?}");
+
+    let (program, index) = fixture_with_uses(WORK_ROOT_LOANS, true);
+    let mut function = program.functions[index].clone();
+    let execution = FunctionExecutionId::Monomorphic(function.id.clone());
+    let ResolvedExprKind::Block { statements, .. } = &mut function.body.kind else {
+        panic!("boundary fixture body remains a block")
+    };
+    let mut extra = statements[1].clone();
+    let ResolvedStatement::Let { binding, value, .. } = &mut extra else {
+        panic!("first view remains a let")
+    };
+    binding.id = ValueId::local(&execution, "overflow.extra.binding");
+    binding.name = "boundary_extra".to_string();
+    value.id = ExpressionId::new(&execution, "overflow.extra.call");
+    let ResolvedExprKind::Call { args, .. } = &mut value.kind else {
+        panic!("first view remains a call")
+    };
+    assert_eq!(args.len(), 1);
+    args[0].id = ExpressionId::new(&execution, "overflow.extra.root");
+    statements.push(extra);
+    (program, index, function)
 }
 
 fn padding_statement(
