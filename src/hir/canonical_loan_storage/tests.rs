@@ -65,10 +65,55 @@ fn funded_current_storage_matches_saved_complete_inventory_and_rejects_transplan
         }
         offset += plan.loans.len();
     }
-    assert_eq!(
-        caller::validate(&program, None, Some(&directory)),
-        owner_renewal::validate_with_directory(&program, None, Some(&directory))
-    );
+    let current = caller::validate(&program, None, Some(&directory));
+    let legacy = owner_renewal::validate_with_directory(&program, None, Some(&directory));
+    assert_eq!(current, legacy);
+    current.unwrap();
+    legacy.unwrap();
+
+    // These actual anonymous bodies take the shared-storage closure branch.
+    // The second parameter shadows the first closure's captured outer name;
+    // accepting both requires fresh body identity/value/scope state.
+    let ast = crate::check(
+        r#"module loan.closure_storage;
+@id("snapshot") fn snapshot()->i64 {
+ let mut captured=7;
+ let callback=fn(value:i64)->i64 {captured+value};
+ captured=100;
+ callback(5)
+}
+@id("shadow") fn shadow(captured:i64)->i64 {
+ let callback=fn(captured:i64)->i64 {captured+1};
+ callback(41)
+}
+@id("main") fn main()->i64 {snapshot()+shadow(99)}
+"#,
+        "canonical-loan-closure-storage.spx",
+    )
+    .unwrap();
+    let closures = crate::hir::resolve(&ast).unwrap();
+    let inventory = crate::hir::closure::inventory(&closures);
+    assert_eq!(inventory.len(), 2);
+    let mut captures = inventory
+        .iter()
+        .map(|expression| {
+            let crate::hir::ResolvedExprKind::Closure { captures, .. } = &expression.kind else {
+                panic!("actual closure inventory");
+            };
+            captures.len()
+        })
+        .collect::<Vec<_>>();
+    captures.sort_unstable();
+    assert_eq!(captures, [0, 1]);
+    let directory = crate::hir::function_directory::caller::prepare(&closures).unwrap();
+    let seed = ConstructorSeed::authenticate(&closures, Some(&directory)).unwrap();
+    let storage = caller::prepare(&seed).unwrap();
+    same(&storage, &old::Inventory::rebuild(&closures).unwrap());
+    let current = caller::validate(&closures, None, Some(&directory));
+    let legacy = owner_renewal::validate_with_directory(&closures, None, Some(&directory));
+    assert_eq!(current, legacy);
+    current.unwrap();
+    legacy.unwrap();
     for reorder in [false, true] {
         let mut clone = program.clone();
         if reorder {
